@@ -1,4 +1,4 @@
-#alienfx-cli
+# alienfx-cli
 Make changes to your AlienFX lights from the command line.
 
 ## Requirements
