@@ -19,5 +19,6 @@ namespace LFXUtil
 			// set LFX color to given RGB value
 			// returns true on success, false on failure
 			ResultT SetLFXColor(unsigned char red, unsigned char green, unsigned char blue);
+			ResultT GetStatus();
 	};
 }
