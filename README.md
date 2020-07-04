@@ -1,8 +1,8 @@
 # alienfx-tools
 Make changes and check status to your AlienFX lights from the command line.
-(In development) Foobar2000 AlienFX haptic plugin
-(In development) PotPlayer AlienFX ambient lights
-More will follow!
+<br>(In development) Foobar2000 AlienFX haptic plugin
+<br>(In development) PotPlayer AlienFX ambient lights
+<br>More will follow!
 
 ## Requirements
 - Alienware AlienFX DLLs installed on your computer. These are automatically installed with Alienware Command Center and 
