@@ -20,8 +20,8 @@ alienfx-cli.exe <command> <command options>
 ```
 The following commands are available:
 - `status` Showing AlienFX devices and their lights id and status
-- `set-color-all <r> <g> <b> [br]` Sets all AlienFX lights to the specified color. Ex: `set-color-all 255 0 0` for red lights.
-- `set-color dev-id light-id r g b [br]` Set one light to color provided. Check light IDs using `status` command first.
+- `set-color-all <r> <g> <b> [br]` Sets all AlienFX lights to the specified color. Ex: `set-color-all 255 0 0` for red lights, `set-color-all 255 0 0 128` for dimmed red.
+- `set-color dev-id light-id r g b [br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-color 0 1 0 0 255` - set light #2 at the device #1 to blue color.
 
 ## Tools Used
 * Visual Studio Community 2019
