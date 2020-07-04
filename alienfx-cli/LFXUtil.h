@@ -13,12 +13,13 @@ namespace LFXUtil
 	class LFXUtilC
 	{
 		public:
-
+			ResultT InitLFX();
 			virtual ~LFXUtilC();
 
 			// set LFX color to given RGB value
 			// returns true on success, false on failure
-			ResultT SetLFXColor(unsigned char red, unsigned char green, unsigned char blue);
+			ResultT SetLFXColor(unsigned char red, unsigned char green, unsigned char blue, unsigned char br);
+			ResultT SetOneLFXColor(unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br);
 			ResultT GetStatus();
 	};
 }

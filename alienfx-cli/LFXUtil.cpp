@@ -46,7 +46,11 @@ namespace
 
 	bool initialized(false);
 
-	ResultT InitLFX()
+}
+
+namespace LFXUtil
+{
+	ResultT LFXUtilC::InitLFX()
 	{
 		if (initialized)
 			return ResultT(true, _T("Already initialized"));
@@ -82,10 +86,7 @@ namespace
 		initialized = true;
 		return ResultT(true, _T("InitFX() success"));
 	}
-}
 
-namespace LFXUtil
-{
 	LFXUtilC::~LFXUtilC()
 	{
 		if (initialized)
@@ -96,14 +97,14 @@ namespace LFXUtil
 		}
 	}
 
-	ResultT LFXUtilC::SetLFXColor(unsigned char red, unsigned char green, unsigned char blue)
+	ResultT LFXUtilC::SetLFXColor(unsigned char red, unsigned char green, unsigned char blue, unsigned char br)
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
 		// abort if initialization fails
-		const ResultT& result(InitLFX());
-		if (!result.first)
-			return result;
+		//const ResultT& result(InitLFX());
+		//if (!result.first)
+		//	return result;
 
 		// Reset the state machine and await light settings
 		if (_LFX_Reset() != LFX_SUCCESS)
@@ -114,8 +115,37 @@ namespace LFXUtil
 		color.cs.red = red;
 		color.cs.green = green;
 		color.cs.blue = blue;
-		color.cs.brightness = 0xFF;
+		color.cs.brightness = br;
 		if (_LFX_Light(LFX_ALL, color.ci) != LFX_SUCCESS)
+			return ResultT(false, _T("_LFX_Light() failed"));
+
+		// Update the state machine, which causes the physical color change
+		if (_LFX_Update() != LFX_SUCCESS)
+			return ResultT(false, _T("_LFX_Update() failed"));
+
+		return ResultT(true, _T("SetLFXColor() success"));
+	}
+
+	ResultT LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br)
+	{
+		// perform lazy initialization
+		// this should support a device being plugged in after the program has already started running
+		// abort if initialization fails
+		//const ResultT& result(InitLFX());
+		//if (!result.first)
+		//	return result;
+
+		// Reset the state machine and await light settings
+		//if (_LFX_Reset() != LFX_SUCCESS)
+		//	return ResultT(false, _T("_LFX_Reset() failed"));
+
+		// Set one light to color
+		static LFX_COLOR color;
+		color.red = red;
+		color.green = green;
+		color.blue = blue;
+		color.brightness = br;
+		if (_LFX_SetLightColor(dev, light, &color) != LFX_SUCCESS)
 			return ResultT(false, _T("_LFX_Light() failed"));
 
 		// Update the state machine, which causes the physical color change
@@ -127,9 +157,9 @@ namespace LFXUtil
 
 	ResultT LFXUtilC::GetStatus()
 	{
-		const ResultT& result(InitLFX());
-		if (!result.first)
-			return result;
+		//const ResultT& result(InitLFX());
+		//if (!result.first)
+		//	return result;
 
 		// Reset the state machine and await light settings
 		//if (_LFX_Update() != LFX_SUCCESS)
@@ -155,7 +185,6 @@ namespace LFXUtil
 			_LFX_GetNumLights(i, &numLights);
 			std::cout << "Device #" << i << ", Name: " << desc << ", ID: " << (unsigned) id << ", Lights: " << numLights << "\n";
 			for (unsigned j = 0; j < numLights; j++) {
-				unsigned res;
 				char ldesc[256]; LFX_COLOR color; LFX_POSITION pos;
 				std::cout << "  Light #" << j << ", Name: ";
 				if (_LFX_GetLightDescription(i, j, ldesc, 256) == 0)
