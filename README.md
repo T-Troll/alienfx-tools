@@ -24,8 +24,8 @@ alienfx-cli.exe <command> <command options>
 ```
 The following commands are available:
 - `status` Showing AlienFX devices and their lights IDs and status
-- `set-all <r> <g> <b> [br]` Sets all AlienFX lights to the specified color. Ex: `set-color-all 255 0 0` for red lights, `set-color-all 255 0 0 128` for dimmed red.
-- `set-dev dev-id light-id r g b [br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-color 0 1 0 0 255` - set light #2 at the device #1 to blue color.
+- `set-all <r> <g> <b> [br]` Sets all AlienFX lights to the specified color. Ex: `set-all 255 0 0` for red lights, `set-all 255 0 0 128` for dimmed red.
+- `set-dev dev-id light-id r g b [br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev 0 1 0 0 255` - set light #2 at the device #1 to blue color.
 - `set-zone zone r g b [br]` Set zone light to color provided.
 - `set-action action dev light r g b [br r g b br]` Set light to color provided and enable action.
 - `set-zone-action action zone r g b [br r g b br]` Set zone light to color provided and enable action.
