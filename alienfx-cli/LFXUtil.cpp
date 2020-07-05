@@ -24,6 +24,7 @@ namespace
 	};
 
 	HINSTANCE hLibrary;
+	HINSTANCE cLibrary;
 	LFX2INITIALIZE _LFX_Initialize;
 	LFX2RELEASE _LFX_Release;
 	LFX2RESET _LFX_Reset;
@@ -50,6 +51,7 @@ namespace
 
 namespace LFXUtil
 {
+
 	ResultT LFXUtilC::InitLFX()
 	{
 		if (initialized)
@@ -87,6 +89,11 @@ namespace LFXUtil
 		return ResultT(true, _T("InitFX() success"));
 	}
 
+	void LFXUtilC::Release()
+	{
+		_LFX_Release();
+	}
+
 	LFXUtilC::~LFXUtilC()
 	{
 		if (initialized)
@@ -97,7 +104,7 @@ namespace LFXUtil
 		}
 	}
 
-	ResultT LFXUtilC::SetLFXColor(unsigned char red, unsigned char green, unsigned char blue, unsigned char br)
+	ResultT LFXUtilC::SetLFXColor(unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br)
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
@@ -107,8 +114,8 @@ namespace LFXUtil
 		//	return result;
 
 		// Reset the state machine and await light settings
-		if (_LFX_Reset() != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Reset() failed"));
+		//if (_LFX_Reset() != LFX_SUCCESS)
+		//	return ResultT(false, _T("_LFX_Reset() failed"));
 
 		// Set all lights to color
 		static ColorU color;
@@ -116,7 +123,30 @@ namespace LFXUtil
 		color.cs.green = green;
 		color.cs.blue = blue;
 		color.cs.brightness = br;
-		if (_LFX_Light(LFX_ALL, color.ci) != LFX_SUCCESS)
+		if (_LFX_Light(zone, color.ci) != LFX_SUCCESS)
+			return ResultT(false, _T("_LFX_Light() failed"));
+
+		// Update the state machine, which causes the physical color change
+		if (_LFX_Update() != LFX_SUCCESS)
+			return ResultT(false, _T("_LFX_Update() failed"));
+
+		return ResultT(true, _T("SetLFXColor() success"));
+	}
+
+	ResultT LFXUtilC::SetLFXZoneAction(unsigned action, unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br, unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2)
+	{
+		// Set all lights to color
+		static ColorU color, color2;
+		color.cs.red = red;
+		color.cs.green = green;
+		color.cs.blue = blue;
+		color.cs.brightness = br;
+		color2.cs.red = r2;
+		color2.cs.green = g2;
+		color2.cs.blue = b2;
+		color2.cs.brightness = br2;
+
+		if (_LFX_ActionColorEx(zone, action, color.ci, color2.ci) != LFX_SUCCESS)
 			return ResultT(false, _T("_LFX_Light() failed"));
 
 		// Update the state machine, which causes the physical color change
@@ -155,6 +185,28 @@ namespace LFXUtil
 		return ResultT(true, _T("SetLFXColor() success"));
 	}
 
+	ResultT LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br, unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2) {
+		static LFX_COLOR color, color2;
+		color.red = red;
+		color.green = green;
+		color.blue = blue;
+		color.brightness = br;
+		color2.red = r2;
+		color2.green = g2;
+		color2.blue = b2;
+		color2.brightness = br2;
+
+		if (_LFX_SetLightActionColorEx(dev, light, action, &color, &color2) != LFX_SUCCESS)
+			return ResultT(false, _T("_LFX_Light() failed"));
+
+		// Update the state machine, which causes the physical color change
+		if (_LFX_Update() != LFX_SUCCESS)
+			return ResultT(false, _T("_LFX_Update() failed"));
+
+		return ResultT(true, _T("SetLFXColor() success"));
+
+	}
+
 	ResultT LFXUtilC::GetStatus()
 	{
 		//const ResultT& result(InitLFX());
@@ -183,7 +235,21 @@ namespace LFXUtil
 			char desc[256]; unsigned char id; unsigned numLights;
 			_LFX_GetDeviceDescription(i, desc, 256, &id);
 			_LFX_GetNumLights(i, &numLights);
-			std::cout << "Device #" << i << ", Name: " << desc << ", ID: " << (unsigned) id << ", Lights: " << numLights << "\n";
+
+			std::string type = "Unknown";
+
+			switch (id) {
+				case LFX_DEVTYPE_DESKTOP: type = "Desktop"; break;
+				case LFX_DEVTYPE_NOTEBOOK: type = "Notebook"; break;
+				case LFX_DEVTYPE_DISPLAY: type = "Display"; break;
+				case LFX_DEVTYPE_MOUSE: type = "Mouse"; break;
+				case LFX_DEVTYPE_KEYBOARD: type = "Keyboard"; break;
+				case LFX_DEVTYPE_GAMEPAD: type = "Gamepad"; break;
+				case LFX_DEVTYPE_SPEAKER: type = "Speaker"; break;
+				case LFX_DEVTYPE_OTHER: type = "Other"; break;
+			}
+
+			std::cout << "Device #" << i << ", Name: " << desc << ", Type: " << type << ", Lights: " << numLights << "\n";
 			for (unsigned j = 0; j < numLights; j++) {
 				char ldesc[256]; LFX_COLOR color; LFX_POSITION pos;
 				std::cout << "  Light #" << j << ", Name: ";
@@ -205,7 +271,6 @@ namespace LFXUtil
 
 		}
 
-		_LFX_Release();
 		return ResultT(true, _T("Ok"));
 	}
 }

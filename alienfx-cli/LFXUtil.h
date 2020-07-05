@@ -14,12 +14,17 @@ namespace LFXUtil
 	{
 		public:
 			ResultT InitLFX();
+			void Release();
 			virtual ~LFXUtilC();
 
 			// set LFX color to given RGB value
 			// returns true on success, false on failure
-			ResultT SetLFXColor(unsigned char red, unsigned char green, unsigned char blue, unsigned char br);
+			ResultT SetLFXColor(unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br);
 			ResultT SetOneLFXColor(unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br);
+			ResultT SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br,
+				unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2);
+			ResultT SetLFXZoneAction(unsigned action, unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br,
+				unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2);
 			ResultT GetStatus();
 	};
 }
