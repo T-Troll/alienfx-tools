@@ -15,7 +15,7 @@ void printUsage()
 	std::cerr << "Usage: alienfx-cli [command] [command options]" << std::endl
 		<< "Commands: " << std::endl
 		<< "\tset-all r g b [br]\t\t\t\t- set all device colors to provided" << std::endl
-		<< "\tset-dev dev light r g b [br]\t\t\t- set one light to color provided." << std::endl
+		<< "\tset-one dev light r g b [br]\t\t\t- set one light to color provided." << std::endl
 		<< "\tset-zone zone r g b [br]\t\t\t- set zone light to color provided." << std::endl
 		<< "\tset-action action dev light r g b [br r g b br]\t- set light to color provided and enable action." << std::endl
 		<< "\tset-zone-action action zone r g b [br r g b br]\t- set zone light to color provided and enable action." << std::endl
@@ -32,8 +32,9 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	const ResultT& result(lfxUtil.InitLFX());
-	if (!result.first)
+	//const ResultT& result(lfxUtil.InitLFX());
+	//if (!result.first)
+	if (!lfxUtil.InitLFX())
 		return 1;
 
 	const char* command = argv[1];
@@ -50,13 +51,20 @@ int main(int argc, char* argv[])
 
 		unsigned zoneCode = LFX_ALL;
 
-		lfxUtil.SetLFXColor(zoneCode, atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), br);
+		static ColorU color;
+		color.cs.red = atoi(argv[2]);
+		color.cs.green = atoi(argv[3]);
+		color.cs.blue = atoi(argv[4]);
+		color.cs.brightness = br;
+
+		lfxUtil.SetLFXColor(zoneCode, color.ci);
+		lfxUtil.Update();
 		//lfxUtil.GetStatus();
 		lfxUtil.Release();
 		return 0;
 	} 
 
-	if (std::string(command) == "set-dev")
+	if (std::string(command) == "set-one")
 	{
 		unsigned char br = 0xff;
 		if (argc < 7)
@@ -67,7 +75,14 @@ int main(int argc, char* argv[])
 
 		if (argc == 8) br = atoi(argv[7]);
 
-		lfxUtil.SetOneLFXColor(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), br);
+		static ColorU color;
+		color.cs.red = atoi(argv[6]);
+		color.cs.green = atoi(argv[5]);
+		color.cs.blue = atoi(argv[4]);
+		color.cs.brightness = br;
+
+		lfxUtil.SetOneLFXColor(atoi(argv[2]), atoi(argv[3]), &color.ci);
+		lfxUtil.Update();
 		//lfxUtil.GetStatus();
 		lfxUtil.Release();
 		return 0;
@@ -97,11 +112,23 @@ int main(int argc, char* argv[])
 
 		if (argc == 9) br = atoi(argv[8]);
 
-		if (argc > 9)
-			lfxUtil.SetLFXAction(actionCode, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), atoi(argv[9]), atoi(argv[10]), atoi(argv[11]), atoi(argv[12]));
-		else
-			lfxUtil.SetLFXAction(actionCode, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), br, 0, 0, 0, 0);
+		static ColorU color, color2;
+		color.cs.red = atoi(argv[7]);
+		color.cs.green = atoi(argv[6]);
+		color.cs.blue = atoi(argv[5]);
+		color.cs.brightness = br;
+		color2.ci = 0;
+
+		if (argc > 9) {
+			color.cs.brightness = atoi(argv[8]);
+			color2.cs.red = atoi(argv[11]);
+			color2.cs.green = atoi(argv[10]);
+			color2.cs.blue = atoi(argv[9]);
+			color2.cs.brightness = atoi(argv[12]);
+		}
+		lfxUtil.SetLFXAction(actionCode, atoi(argv[3]), atoi(argv[4]), &color.ci, &color2.ci);
 		//lfxUtil.GetStatus();
+		lfxUtil.Update();
 		lfxUtil.Release();
 		return 0;
 	}
@@ -139,7 +166,14 @@ int main(int argc, char* argv[])
 			zoneCode = LFX_ALL_REAR;
 		}
 
-		lfxUtil.SetLFXColor(zoneCode, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), br);
+		static ColorU color;
+		color.cs.red = atoi(argv[3]);
+		color.cs.green = atoi(argv[4]);
+		color.cs.blue = atoi(argv[5]);
+		color.cs.brightness = br;
+
+		lfxUtil.SetLFXColor(zoneCode, color.ci);
+		lfxUtil.Update();
 		//lfxUtil.GetStatus();
 		lfxUtil.Release();
 		return 0;
@@ -191,10 +225,23 @@ int main(int argc, char* argv[])
 
 		if (argc == 8) br = atoi(argv[7]);
 
-		if (argc > 8)
-			lfxUtil.SetLFXZoneAction(actionCode, zoneCode, atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), atoi(argv[9]), atoi(argv[10]), atoi(argv[11]));
-		else
-			lfxUtil.SetLFXZoneAction(actionCode, zoneCode, atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), br, 0, 0, 0, 0);
+		static ColorU color, color2;
+		color.cs.red = atoi(argv[4]);
+		color.cs.green = atoi(argv[5]);
+		color.cs.blue = atoi(argv[6]);
+		color.cs.brightness = br;
+		color2.ci = 0;
+
+		if (argc > 9) {
+			color.cs.brightness = atoi(argv[7]);
+			color2.cs.red = atoi(argv[8]);
+			color2.cs.green = atoi(argv[9]);
+			color2.cs.blue = atoi(argv[10]);
+			color2.cs.brightness = atoi(argv[11]);
+		}
+
+		lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
+		lfxUtil.Update();
 		//lfxUtil.GetStatus();
 		lfxUtil.Release();
 		return 0;

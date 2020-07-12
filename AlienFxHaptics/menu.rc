@@ -1,0 +1,78 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MYMENU MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit",                       ID_FILE_EXIT
+    END
+    POPUP "&Scale y axis"
+    BEGIN
+        MENUITEM "&Up to 500 [V]",              ID_Y_1000
+        MENUITEM "&Up to 250 [V]",              ID_Y_100
+        MENUITEM "&Up to 100 [V]",              ID_Y_10
+        MENUITEM "&Up to 50 [V]",               ID_Y_5
+        MENUITEM "&Up to 20 [V]",               ID_Y_2_5
+        MENUITEM "&Up to 10 [V]",               ID_Y_1
+        MENUITEM "&Up to 5 [V]",                ID_Y_0_5
+    END
+    POPUP "&Parameters"
+    BEGIN
+        MENUITEM "&Power",                      ID_PARAMS_1
+        MENUITEM "&Frequncy",                   ID_PARAMS_2
+        MENUITEM "&Settings",                   ID_PARAMETERS_SETTINGS
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "icon1.ico"
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

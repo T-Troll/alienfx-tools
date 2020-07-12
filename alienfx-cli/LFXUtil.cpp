@@ -1,7 +1,6 @@
 // UniLight by HunterZ
 
 #include "LFXUtil.h"
-
 #include "LFX2.h"
 #include <tchar.h>
 #include <windows.h>
@@ -9,20 +8,6 @@
 
 namespace
 {
-	struct ColorS
-	{
-		unsigned char blue;
-		unsigned char green;
-		unsigned char red;
-		unsigned char brightness;
-	};
-
-	union ColorU
-	{
-		struct ColorS cs;
-		unsigned int ci;
-	};
-
 	HINSTANCE hLibrary;
 	HINSTANCE cLibrary;
 	LFX2INITIALIZE _LFX_Initialize;
@@ -52,15 +37,15 @@ namespace
 namespace LFXUtil
 {
 
-	ResultT LFXUtilC::InitLFX()
+	int LFXUtilC::InitLFX()
 	{
 		if (initialized)
-			return ResultT(true, _T("Already initialized"));
+			return 0;// ResultT(true, _T("Already initialized"));
 
 		// Dell is stupid and forces us to manually load the DLL and bind its functions
 		hLibrary = LoadLibrary(_T(LFX_DLL_NAME));
 		if (!hLibrary)
-			return ResultT(false, _T("LoadLibrary() failed"));
+			return 0;// ResultT(false, _T("LoadLibrary() failed"));
 
 		_LFX_Initialize = (LFX2INITIALIZE)GetProcAddress(hLibrary, LFX_DLL_INITIALIZE);
 		_LFX_Release = (LFX2RELEASE)GetProcAddress(hLibrary, LFX_DLL_RELEASE);
@@ -83,15 +68,33 @@ namespace LFXUtil
 		_LFX_GetVersion = (LFX2GETVERSION)GetProcAddress(hLibrary, LFX_DLL_GETVERSION);
 
 		if (_LFX_Initialize() != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Initialize() failed"));
+			return 0;// ResultT(false, _T("_LFX_Initialize() failed"));
 
 		initialized = true;
-		return ResultT(true, _T("InitFX() success"));
+		return 1;// ResultT(true, _T("InitFX() success"));
 	}
 
 	void LFXUtilC::Release()
 	{
 		_LFX_Release();
+	}
+
+	int LFXUtilC::Update()
+	{
+		if (_LFX_Update() != LFX_SUCCESS)
+			return 0;// ResultT(false, _T("_LFX_Update() failed"));
+
+		return 1;
+	}
+
+	int LFXUtilC::Reset() {
+		if (_LFX_Reset() != LFX_SUCCESS)
+			return 0;
+		return 1;
+	}
+
+	unsigned LFXUtilC::GetNumDev() {
+		return numDev;
 	}
 
 	LFXUtilC::~LFXUtilC()
@@ -104,7 +107,7 @@ namespace LFXUtil
 		}
 	}
 
-	ResultT LFXUtilC::SetLFXColor(unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br)
+	int LFXUtilC::SetLFXColor(unsigned zone, unsigned color)
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
@@ -118,25 +121,25 @@ namespace LFXUtil
 		//	return ResultT(false, _T("_LFX_Reset() failed"));
 
 		// Set all lights to color
-		static ColorU color;
+		/*static ColorU color;
 		color.cs.red = red;
 		color.cs.green = green;
 		color.cs.blue = blue;
-		color.cs.brightness = br;
-		if (_LFX_Light(zone, color.ci) != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Light() failed"));
+		color.cs.brightness = br;*/
+		if (_LFX_Light(zone, color) != LFX_SUCCESS)
+			return 0;// ResultT(false, _T("_LFX_Light() failed"));
 
 		// Update the state machine, which causes the physical color change
-		if (_LFX_Update() != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Update() failed"));
+		//if (_LFX_Update() != LFX_SUCCESS)
+		//	return 0;// ResultT(false, _T("_LFX_Update() failed"));
 
-		return ResultT(true, _T("SetLFXColor() success"));
+		return 1;// ResultT(true, _T("SetLFXColor() success"));
 	}
 
-	ResultT LFXUtilC::SetLFXZoneAction(unsigned action, unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br, unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2)
+	int LFXUtilC::SetLFXZoneAction(unsigned action, unsigned zone, unsigned color, unsigned color2)
 	{
 		// Set all lights to color
-		static ColorU color, color2;
+		/*static ColorU color, color2;
 		color.cs.red = red;
 		color.cs.green = green;
 		color.cs.blue = blue;
@@ -144,19 +147,19 @@ namespace LFXUtil
 		color2.cs.red = r2;
 		color2.cs.green = g2;
 		color2.cs.blue = b2;
-		color2.cs.brightness = br2;
+		color2.cs.brightness = br2;*/
 
-		if (_LFX_ActionColorEx(zone, action, color.ci, color2.ci) != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Light() failed"));
+		if (_LFX_ActionColorEx(zone, action, color, color2) != LFX_SUCCESS)
+			return 0;// ResultT(false, _T("_LFX_Light() failed"));
 
 		// Update the state machine, which causes the physical color change
-		if (_LFX_Update() != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Update() failed"));
+		//if (_LFX_Update() != LFX_SUCCESS)
+		//	return 0;// ResultT(false, _T("_LFX_Update() failed"));
 
-		return ResultT(true, _T("SetLFXColor() success"));
+		return 1;// ResultT(true, _T("SetLFXColor() success"));
 	}
 
-	ResultT LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br)
+	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned *color)
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
@@ -170,23 +173,23 @@ namespace LFXUtil
 		//	return ResultT(false, _T("_LFX_Reset() failed"));
 
 		// Set one light to color
-		static LFX_COLOR color;
+		/*static LFX_COLOR color;
 		color.red = red;
 		color.green = green;
 		color.blue = blue;
-		color.brightness = br;
-		if (_LFX_SetLightColor(dev, light, &color) != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Light() failed"));
+		color.brightness = br;*/
+		if (_LFX_SetLightColor(dev, light, (PLFX_COLOR)color) != LFX_SUCCESS)
+			return 0;// ResultT(false, _T("_LFX_Light() failed"));
 
 		// Update the state machine, which causes the physical color change
-		if (_LFX_Update() != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Update() failed"));
+		//if (_LFX_Update() != LFX_SUCCESS)
+		//	return 0;//ResultT(false, _T("_LFX_Update() failed"));
 
-		return ResultT(true, _T("SetLFXColor() success"));
+		return 1;//ResultT(true, _T("SetLFXColor() success"));
 	}
 
-	ResultT LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br, unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2) {
-		static LFX_COLOR color, color2;
+	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned *color, unsigned *color2) {
+		/*static LFX_COLOR color, color2;
 		color.red = red;
 		color.green = green;
 		color.blue = blue;
@@ -194,37 +197,32 @@ namespace LFXUtil
 		color2.red = r2;
 		color2.green = g2;
 		color2.blue = b2;
-		color2.brightness = br2;
+		color2.brightness = br2;*/
 
-		if (_LFX_SetLightActionColorEx(dev, light, action, &color, &color2) != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Light() failed"));
+		if (_LFX_SetLightActionColorEx(dev, light, action, (PLFX_COLOR)color, (PLFX_COLOR)color2) != LFX_SUCCESS)
+			return 0;//ResultT(false, _T("_LFX_Light() failed"));
 
 		// Update the state machine, which causes the physical color change
-		if (_LFX_Update() != LFX_SUCCESS)
-			return ResultT(false, _T("_LFX_Update() failed"));
+		//if (_LFX_Update() != LFX_SUCCESS)
+		//	return 0;//ResultT(false, _T("_LFX_Update() failed"));
 
-		return ResultT(true, _T("SetLFXColor() success"));
+		return 0;//ResultT(true, _T("SetLFXColor() success"));
 
 	}
 
-	ResultT LFXUtilC::GetStatus()
+	int LFXUtilC::GetStatus()
 	{
-		//const ResultT& result(InitLFX());
-		//if (!result.first)
-		//	return result;
-
-		// Reset the state machine and await light settings
-		//if (_LFX_Update() != LFX_SUCCESS)
-		//	return ResultT(false, _T("_LFX_Reset() failed"));
 
 		char vdesc[256];
 
 		if (_LFX_GetVersion(vdesc, 256) == 0)
 			std::cout << "API version " << vdesc << " detected\n";
 		else {
-			std::cout << "No API detected, exiting";
-			return ResultT(false, _T("No API detected"));
+			std::cout << "Old API detected";
+//			return 0;//ResultT(false, _T("No API detected"));
 		}
+
+		Update();
 
 		unsigned numDev;
 
@@ -271,6 +269,51 @@ namespace LFXUtil
 
 		}
 
-		return ResultT(true, _T("Ok"));
+		return 1;//ResultT(true, _T("Ok"));
+	}
+
+	int LFXUtilC::FillInfo()
+	{
+
+		_LFX_GetNumDevices(&numDev);
+		//std::cout << "Devices found: " << numDev << "\n";
+
+		for (unsigned i = 0; i < numDev; i++) {
+			deviceinfo d;
+			_LFX_GetDeviceDescription(i, d.desc, 256, &d.type);
+			_LFX_GetNumLights(i, &d.lights);
+			d.id = i;
+			devlist.push_back(d);
+
+			std::string type = "Unknown";
+
+			std::vector<lightinfo> d_l;
+
+			for (unsigned j = 0; j < d.lights; j++) {
+				lightinfo l;
+				l.id = j;
+				_LFX_GetLightDescription(i, j, l.desc, 256);
+				_LFX_GetLightLocation(i, j, &l.pos);
+				d_l.push_back(l);
+			}
+			lightlist.push_back(d_l);
+
+		}
+
+		return 1;//ResultT(true, _T("Ok"));
+	}
+
+	deviceinfo *LFXUtilC::GetDevInfo(unsigned id) {
+		if (id < numDev)
+			return &devlist[id];
+		else
+			return NULL;
+	}
+
+	lightinfo *LFXUtilC::GetLightInfo(unsigned id, unsigned lid) {
+		if (id < numDev && lid < lightlist[id].size())
+			return &(lightlist[id][lid]);
+		else
+			return NULL;
 	}
 }

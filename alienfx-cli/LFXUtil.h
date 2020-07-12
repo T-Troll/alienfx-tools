@@ -1,8 +1,35 @@
 // Taken from UniLight by HunterZ
 
 #pragma once
+#include <vector>
+#include "LFXDecl.h"
 
-#include "alienfx-cli.h"
+struct deviceinfo {
+	char desc[256];
+	unsigned id;
+	unsigned char type;
+	unsigned lights;
+};
+
+struct lightinfo {
+	unsigned id;
+	LFX_POSITION pos;
+	char desc[256];
+};
+
+struct ColorS
+{
+	unsigned char blue;
+	unsigned char green;
+	unsigned char red;
+	unsigned char brightness;
+};
+
+union ColorU
+{
+	struct ColorS cs;
+	unsigned int ci;
+};
 
 // utilities for working with Dell LightFX/AlienFX API
 namespace LFXUtil
@@ -12,19 +39,31 @@ namespace LFXUtil
 	// lazy initialization is used, so it's safe to instantiate this at any point
 	class LFXUtilC
 	{
+		private:
+			unsigned numDev = 0;
+			std::vector<deviceinfo> devlist;
+			std::vector<std::vector<lightinfo>> lightlist;
 		public:
-			ResultT InitLFX();
+			int InitLFX();
 			void Release();
 			virtual ~LFXUtilC();
 
+			int Update();
+			int Reset();
+
 			// set LFX color to given RGB value
 			// returns true on success, false on failure
-			ResultT SetLFXColor(unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br);
-			ResultT SetOneLFXColor(unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br);
-			ResultT SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned char red, unsigned char green, unsigned char blue, unsigned char br,
-				unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2);
-			ResultT SetLFXZoneAction(unsigned action, unsigned zone, unsigned char red, unsigned char green, unsigned char blue, unsigned char br,
-				unsigned char r2, unsigned char g2, unsigned char b2, unsigned char br2);
-			ResultT GetStatus();
+			int SetLFXColor(unsigned zone, unsigned color);
+			int SetOneLFXColor(unsigned dev, unsigned light, unsigned *color);
+			int SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned *color,
+				unsigned *color2);
+			int SetLFXZoneAction(unsigned action, unsigned zone, unsigned color,
+				unsigned color2);
+			int GetStatus();
+
+			int FillInfo();
+			unsigned GetNumDev();
+			deviceinfo *GetDevInfo(unsigned devId);
+			lightinfo *GetLightInfo(unsigned devId, unsigned lightId);
 	};
 }

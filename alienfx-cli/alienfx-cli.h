@@ -8,4 +8,4 @@
 // result type:
 // first: true => success, false => failure
 // second: status message (optional)
-typedef std::pair<bool, std::wstring> ResultT;
+//typedef std::pair<bool, std::wstring> ResultT;
