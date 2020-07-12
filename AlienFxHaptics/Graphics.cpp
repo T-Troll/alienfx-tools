@@ -358,10 +358,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	{
 	case WM_INITDIALOG:
 	{
-		double coeff = 22050 / log(20);
-		char frqname[55]; int prevfreq = 0;
-		for (i = 1; i < 20; i++) {
-			int frq = 22050 - round((log(20-i) * coeff));
+		double coeff = 22030 / log(21);
+		char frqname[55]; int prevfreq = 20;
+		for (i = 1; i < 21; i++) {
+			int frq = 22050 - round((log(21-i) * coeff));
 			sprintf_s(frqname, 55, "%d-%dHz", prevfreq, frq);
 			prevfreq = frq;
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);

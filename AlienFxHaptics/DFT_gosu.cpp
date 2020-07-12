@@ -49,13 +49,12 @@ double arg;// , arg2;
 	x2 = (double*)malloc(NUMPTS*sizeof(double));
     y2 = (double*)malloc(NUMPTS*sizeof(double));
 
-	s_indexes = (int*)malloc((RECTSNUM) * sizeof(int));
+	s_indexes = (int*)malloc((NUMPTS/2) * sizeof(int));
 	// exp(RECTNUM) = NUMPTS log(NUMPTS) = RECTNUM
-	double coeff = (NUMPTS/2) / (log(RECTSNUM+1));
-	for (i = 0; i < RECTSNUM; i++) {
+	double correction = ((double)RECTSNUM + 2) / log((NUMPTS / 2) - 2);
+	for (i = 2; i < (NUMPTS / 2) - 2; i++) {
 		//s_indexes[i] = (NUMPTS / 2) * (i+1) / (RECTSNUM+1);
-		s_indexes[i] = (NUMPTS / 2) - round(coeff * (log(RECTSNUM - i)));
-		std::cout << s_indexes[i];
+		s_indexes[i] = round(correction * log(i)) - 2;
 	}
 
 
@@ -66,7 +65,7 @@ void DFT_gosu::calc(double *x1)
 {
 
    long i,k;
-   int j,mm = NUMPTS/2;
+   int mm = NUMPTS/2;
    
    if (done == 1) {
 	   stopped = 1;
@@ -104,23 +103,13 @@ void DFT_gosu::calc(double *x1)
 		//  x2[i]=0;
 	  //}
 
-	  double step = 22050.0 / mm;
-	  double correction = ((double)RECTSNUM) / log(mm+1);
-	  unsigned s_i = 0;
+	  //double correction = ((double)RECTSNUM+2) / log(mm-2);
 	  //accumulate ajusent frequencies into bars:
-	  for (i=0; i < mm; i++){
+	  for (i=2; i < mm-2; i++){
 		  //j = (int)( ((double)i*(double)RECTSNUM)/(double)mm );
 		  // f(0) = 0; f(mm) = RECTSNUM; log. log(mm+1) * x = RECTSNUM; x = RECTSNUM / log(mm+1);
-		  j = round(correction * log(i+1));
-		  x2[j] += x1[i];
-		  //std::cout << s_indexes[s_i];
-		  /*if (i <= s_indexes[s_i])
-			 x2[s_i]+=x1[i];
-		  else {
-			  //x2[s_i] /= s_indexes[s_i];
-			  s_i++;
-			  x2[s_i] = x1[i];
-		  }*/
+		  //j = round(correction * log(i)) - 2;
+		  x2[s_indexes[i]] += x1[i];
 	  }
 
 	  //limit to y_scale and normalize the result to range [0,100]:
