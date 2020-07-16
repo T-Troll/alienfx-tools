@@ -40,6 +40,13 @@ The following commands are available:
 ## alienfx-haptics Usage
 Run `alienfx-haptics.exe`. At first launch, choose `Parameters-Settings` from top menu for setting up light mappings and colors.
 <br>Minimize, then start player or game of choice.
+```
+How it works
+```
+This application get audio stream from default input device, then made a real-time spectrum analysis.
+<br>After that, spectrum powers gropped into 20 groups using octave scale.
+<br>For each light found into the system, you can define group(s) it should react, as well as color for Zero (low) and Max (High) power.
+<br>It's also possible to compress diapasone if group always not so or so high powered - use low-cut as a bottom range and hi-cut as a top one (values are 0-255).
 
 ## Tools Used
 * Visual Studio Community 2019
