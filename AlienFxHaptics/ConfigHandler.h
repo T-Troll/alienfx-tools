@@ -21,6 +21,8 @@ struct mapping {
 	unsigned lightid;
 	Colorcode colorfrom;
 	Colorcode colorto;
+	unsigned char lowcut;
+	unsigned char hicut;
 	std::vector<unsigned char> map;
 };
 

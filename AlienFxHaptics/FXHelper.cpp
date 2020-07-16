@@ -41,10 +41,10 @@ int FXHelper::Refresh(int numbars)
 			from.ci = map.colorfrom.ci; to.ci = map.colorto.ci;
 			// here need to check less bars...
 			for (int j = 0; j < map.map.size(); j++) {
-				power += freq[map.map[j]] / 256.0;
+				power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut: 0 );
 			}
-			if (map.map.size() > 1)
-				power = power / map.map.size();
+			if (map.map.size() > 0)
+				power = power / (map.map.size() * (map.hicut - map.lowcut));
 			fin.cs.blue = (1 - power) * from.cs.red + power * to.cs.red;
 			fin.cs.green = (1 - power) * from.cs.green + power * to.cs.green;
 			fin.cs.red = (1 - power) * from.cs.blue + power * to.cs.blue;

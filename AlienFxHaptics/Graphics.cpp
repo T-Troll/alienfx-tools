@@ -36,6 +36,8 @@ ConfigHandler* config;
 
 HINSTANCE ghInstance;
 
+NOTIFYICONDATA niData;
+
 // default constructor
 Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LFXUtilC *lfxutil, ConfigHandler *conf)
 {
@@ -236,6 +238,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	char szSize[500];
 	INT_PTR dlg;
+
 	switch(msg)
 	{
 		case WM_COMMAND:
@@ -335,6 +338,40 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			PostQuitMessage(0);
 		break;
+		case WM_SIZE:
+			if (wParam == SIZE_MINIMIZED) {
+				// go to tray...
+
+				ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+				niData.cbSize = sizeof(NOTIFYICONDATA);
+				niData.uID = IDI_ICON1;
+				niData.uFlags = NIF_ICON | NIF_MESSAGE;
+				niData.hIcon =
+					(HICON)LoadImage(GetModuleHandle(NULL),
+						MAKEINTRESOURCE(IDI_ICON1),
+						IMAGE_ICON,
+						GetSystemMetrics(SM_CXSMICON),
+						GetSystemMetrics(SM_CYSMICON),
+						LR_DEFAULTCOLOR);
+				niData.hWnd = hwnd;
+				niData.uCallbackMessage = WM_APP + 1;
+				Shell_NotifyIcon(NIM_ADD, &niData);
+				ShowWindow(hwnd, SW_HIDE);
+			} break;
+		case WM_APP + 1: {
+			switch (lParam)
+			{
+			case WM_LBUTTONDBLCLK:
+			case WM_LBUTTONUP:
+				ShowWindow(hwnd, SW_RESTORE);
+				Shell_NotifyIcon(NIM_DELETE, &niData);
+			break;
+			//case WM_RBUTTONDOWN:
+			//case WM_CONTEXTMENU:
+			//	ShowContextMenu(hWnd);
+			}
+			break;
+		} break;
 		default:
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
@@ -352,6 +389,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
 	HWND from_color = GetDlgItem(hDlg, IDC_FROMCOLOR);
 	HWND to_color = GetDlgItem(hDlg, IDC_TOCOLOR);
+	HWND low_cut = GetDlgItem(hDlg, IDC_EDIT_LOWCUT);
+	HWND hi_cut = GetDlgItem(hDlg, IDC_EDIT_HIGHCUT);
 	mapping* map = NULL;
 
 	switch (message)
@@ -415,6 +454,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				for (i = 0; i < config->mappings.size(); i++) {
 					config->mappings[i].colorfrom.ci = 0;
 					config->mappings[i].colorto.ci = 0;
+					config->mappings[i].lowcut = 0;
+					config->mappings[i].hicut = 255;
 					config->mappings[i].map.clear();
 				}
 				SendMessage(freq_list, LB_SETSEL, FALSE, -1);
@@ -423,6 +464,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				SendMessage(to_color, IPM_SETADDRESS, 0, 0);
 				RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				TCHAR locut[] = "0", hicut[] = "255";
+				SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
+				RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)hicut);
+				RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 			} break;
 			}
 		} break;
@@ -448,6 +494,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 					SendMessage(to_color, IPM_SETADDRESS, 0, 0);
 					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					//  clear cuts....
+					TCHAR locut[] = "0", hicut[] = "255";
+					SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
+					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)hicut);
+					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				}
 			} break;
 			}
@@ -469,6 +521,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					newmap.lightid = lid;
 					newmap.colorfrom.ci = 0;
 					newmap.colorto.ci = 0;
+					newmap.lowcut = 0;
+					newmap.hicut = 255;
 					config->mappings.push_back(newmap);
 					map = &config->mappings[i];
 				}
@@ -486,6 +540,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
 				SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
 				RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				// load cuts...
+				TCHAR locut[6], hicut[6];
+				sprintf_s(locut, 5, "%d", map->lowcut);
+				sprintf_s(hicut, 5, "%d", map->hicut);
+				SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
+				RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)hicut);
+				RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 			}
 			break;
 		}
@@ -519,6 +581,36 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			} break;
 			}
 		} break;
+		case IDC_EDIT_LOWCUT:
+			switch (HIWORD(wParam)) {
+			case EN_UPDATE: {
+				// update lo-cut
+				for (i = 0; i < config->mappings.size(); i++)
+					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
+						break;
+				if (i < config->mappings.size()) {
+					map = &config->mappings[i];
+					TCHAR buffer[4]; buffer[0] = 3;
+					SendMessage(low_cut, EM_GETLINE, 0, (LPARAM)buffer);
+					map->lowcut = atoi(buffer) < 256 ? atoi(buffer) : 255;
+				}
+			} break;
+			} break;
+		case IDC_EDIT_HIGHCUT:
+			switch (HIWORD(wParam)) {
+			case EN_UPDATE: {
+				// update lo-cut
+				for (i = 0; i < config->mappings.size(); i++)
+					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
+						break;
+				if (i < config->mappings.size()) {
+					map = &config->mappings[i];
+					TCHAR buffer[4]; buffer[0] = 3;
+					SendMessage(hi_cut, EM_GETLINE, 0, (LPARAM)buffer);
+					map->hicut = atoi(buffer) < 256 ? atoi(buffer) : 255;
+				}
+			} break;
+			} break;
 		case IDC_FROMCOLOR: { // should update light data
 			switch (HIWORD(wParam))
 			{

@@ -60,7 +60,7 @@ int ConfigHandler::Load() {
     if (!res) {
         res = 250;
     }
-    unsigned vindex = 0, inarray[25];
+    unsigned vindex = 0, inarray[30];
     TCHAR name[255];
     unsigned ret = 0;
     do {
@@ -81,7 +81,9 @@ int ConfigHandler::Load() {
             if (ret2 != EOF) {
                 map.colorfrom.ci = inarray[0];
                 map.colorto.ci = inarray[1];
-                for (unsigned i = 2; i < (lend / 4); i++)
+                map.lowcut = inarray[2];
+                map.hicut = inarray[3];
+                for (unsigned i = 4; i < (lend / 4); i++)
                     map.map.push_back(inarray[i]);
                 mappings.push_back(map);
             }
@@ -92,7 +94,7 @@ int ConfigHandler::Load() {
 }
 int ConfigHandler::Save() {
     TCHAR name[256];
-    unsigned out[25];
+    unsigned out[30];
 
     RegSetValueEx(
         hKey1,
@@ -116,11 +118,13 @@ int ConfigHandler::Save() {
         //preparing binary....
         out[0] = mappings[i].colorfrom.ci;
         out[1] = mappings[i].colorto.ci;
+        out[2] = mappings[i].lowcut;
+        out[3] = mappings[i].hicut;
         int j, size;
         for (j = 0; j < mappings[i].map.size(); j++) {
-            out[j + 2] = mappings[i].map[j];
+            out[j + 4] = mappings[i].map[j];
         }
-        size = (j + 2) * 4;
+        size = (j + 4) * sizeof(unsigned);
         RegSetValueEx(
             hKey2,
             name,
