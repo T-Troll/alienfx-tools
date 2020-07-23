@@ -31,8 +31,9 @@ class ConfigHandler
 private:
 	HKEY   hKey1, hKey2;
 public:
-	unsigned numbars;
-	unsigned res;
+	DWORD numbars;
+	DWORD res;
+	DWORD inpType;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();

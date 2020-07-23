@@ -8,6 +8,7 @@
 #include <math.h>
 #include "LFXUtil.h"
 #include "ConfigHandler.h"
+#include "WSAudioIn.h"
 #pragma comment(lib, "winmm.lib")
 
 class Graphics {
@@ -25,6 +26,8 @@ public:
 	void setCurrentAvgFreq(int af);
 	void setShortAvgFreq(int af);
 	void setLongAvgFreq(int af);
+	void ShowError(char* T);
+	void SetAudioObject(WSAudioIn* wsa);
 
 private:
 	WNDCLASSEX wc;

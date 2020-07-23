@@ -9,7 +9,7 @@
 #include <math.h>
 #include "resource.h"
 #include "resource_config.h"
-#include "AudioIn.h"
+//#include "AudioIn.h"
 #include <string>
 
 #pragma comment(lib, "winmm.lib")
@@ -31,8 +31,9 @@ int avg_freq;
 int short_term_avg_freq;
 int long_term_avg_freq;
 
-LFXUtil::LFXUtilC* lfxUtil;
-ConfigHandler* config;
+LFXUtil::LFXUtilC* lfxUtil = NULL;
+ConfigHandler* config = NULL;
+WSAudioIn* audio = NULL;
 
 HINSTANCE ghInstance;
 
@@ -54,7 +55,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 	lfxUtil = lfxutil;
 	config = conf;
 
-	strcpy(g_szClassName,"myWindowClass");
+	strcpy_s(g_szClassName,14,"myWindowClass");
 	for (int i=0; i<16; i++)
 		 g_rgbCustom[i]=0;
 	rms = (char***)malloc(7*sizeof(char**));
@@ -63,26 +64,26 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 		rms[i][0]=(char*)malloc(4*sizeof(char*));
 		rms[i][1]=(char*)malloc(4*sizeof(char*));
 	}
-	strcpy(rms[0][0],"500");
-	strcpy(rms[0][1],"250");
+	strcpy_s(rms[0][0],4,"500");
+	strcpy_s(rms[0][1],4,"250");
 
-	strcpy(rms[1][0],"250");
-	strcpy(rms[1][1],"125");
+	strcpy_s(rms[1][0],4,"255");
+	strcpy_s(rms[1][1], 4, "128");
 
-	strcpy(rms[2][0],"100");
-	strcpy(rms[2][1]," 50");
+	strcpy_s(rms[2][0], 4, "100");
+	strcpy_s(rms[2][1], 4, " 50");
 
-	strcpy(rms[3][0]," 50");
-	strcpy(rms[3][1]," 25");
+	strcpy_s(rms[3][0], 4, " 50");
+	strcpy_s(rms[3][1], 4, " 25");
 
-	strcpy(rms[4][0]," 20");
-	strcpy(rms[4][1]," 10");
+	strcpy_s(rms[4][0], 4, " 20");
+	strcpy_s(rms[4][1], 4, " 10");
 
-	strcpy(rms[5][0]," 10");
-	strcpy(rms[5][1],"  5");
+	strcpy_s(rms[5][0], 4, " 10");
+	strcpy_s(rms[5][1], 4, "  5");
 
-	strcpy(rms[6][0],"  5");
-	strcpy(rms[6][1],"2.5");
+	strcpy_s(rms[6][0], 4, "  5");
+	strcpy_s(rms[6][1], 4, "2.5");
 
 
 
@@ -124,6 +125,11 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 		MessageBox(NULL, "Window Creation Failed!", "Error!",
 			MB_ICONEXCLAMATION | MB_OK);
 	}
+
+	if (config->inpType)
+		CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
+	else
+		CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 
 	//configHwnd = CreateDialog(GetModuleHandle(NULL),         /// instance handle
 	//	MAKEINTRESOURCE(IDD_DIALOG_CONFIG),    /// dialog box template
@@ -177,6 +183,16 @@ void Graphics::setLongAvgFreq(int af){
 	long_term_avg_freq=af;
 }
 
+void Graphics::ShowError(char* T)
+{
+	MessageBox(hwnd, T, "Error!", MB_OK);
+}
+
+void Graphics::SetAudioObject(WSAudioIn* wsa)
+{
+	audio = wsa;
+}
+
 void DrawFreq(HDC hdc, LPRECT rcClientP) 
 { 
 	int i,rectop;
@@ -205,7 +221,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	LineTo(hdc, 45, 35);
 	MoveToEx(hdc, 40, 30, (LPPOINT) NULL);
 	LineTo(hdc, 35, 35);
-	TextOut(hdc,15,10, "[V]", 3);
+	TextOut(hdc,15,10, "[P]", 3);
 	//wsprintf(szSize, "%6d", (int)y_scale);
 	//TextOut(hdc, 150, 10, szSize, 6);
 	TextOut(hdc,10,40, rms[rmsI][0], 3);
@@ -223,7 +239,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	int oldvalue = (-1);
 	double coeff = 22 / (log(22.0));
 	for (i = 0; i <= 22; i++) {
-		int frq = 22 - round((log(22.0 - i) * coeff));
+		int frq = int(22 - round((log(22.0 - i) * coeff)));
 		if (frq > oldvalue) {
 			wsprintf(szSize, "%2d", frq);
 			TextOut(hdc, ((rcClientP->right - 100) * i) / 23 + 50, rcClientP->bottom - 20, szSize, 2);
@@ -236,7 +252,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	char szSize[500];
+	//char szSize[500];
 	INT_PTR dlg;
 
 	switch(msg)
@@ -247,6 +263,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				case ID_FILE_EXIT:
 					PostMessage(hwnd, WM_CLOSE, 0, 0);
 				break;
+				case ID_INPUT_DEFAULTOUTPUTDEVICE:
+					config->inpType = 0;
+					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_UNCHECKED);
+					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
+					audio->RestartDevice(0);
+					break;
+				case ID_INPUT_DEFAULTINPUTDEVICE:
+					config->inpType = 1;
+					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
+					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_UNCHECKED);
+					audio->RestartDevice(1);
+					break;
 				/*case ID_X_41:
 					bars = 6;
 				break;
@@ -257,7 +285,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					bars = 21;
 				break;*/
 
-				case ID_Y_1000:
+				/*case ID_Y_1000:
 					//y_scale = 1000000000;
 					y_scale = 500;
 					rmsI=0;
@@ -300,7 +328,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				case ID_PARAMS_2:
 					wsprintf(szSize, "          \n\n          Instantaneous center frequency: %d Hz          \n\n          Weighted Average of the center frequency: %d Hz          \n\n          Average center frequency: %d Hz          \n\n          ", avg_freq, short_term_avg_freq, long_term_avg_freq );
 					MessageBox(hwnd, szSize, "Parameters", MB_OK);
-				break;
+				break;*/
 				case ID_PARAMETERS_SETTINGS:
 					dlg=DialogBox/*CreateDialog*/(GetModuleHandle(NULL),         /// instance handle
 						MAKEINTRESOURCE(IDD_DIALOG_CONFIG),    /// dialog box template
@@ -400,7 +428,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		double coeff = 22030 / log(21);
 		char frqname[55]; int prevfreq = 20;
 		for (i = 1; i < 21; i++) {
-			int frq = 22050 - round((log(21-i) * coeff));
+			int frq = 22050 - (int) round((log(21-i) * coeff));
 			sprintf_s(frqname, 55, "%d-%dHz", prevfreq, frq);
 			prevfreq = frq;
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);

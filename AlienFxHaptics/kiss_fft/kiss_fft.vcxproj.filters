@@ -7,7 +7,7 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
@@ -15,68 +15,43 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DFT_gosu.cpp">
+    <ClCompile Include="kiss_fft.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics.cpp">
+    <ClCompile Include="kiss_fft.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="tools\kiss_fftr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\alienfx-cli\LFXUtil.cpp">
+    <ClCompile Include="tools\kfc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigHandler.cpp">
+    <ClCompile Include="tools\kiss_fastfir.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FXHelper.cpp">
+    <ClCompile Include="tools\kiss_fftnd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WSAudioIn.cpp">
+    <ClCompile Include="tools\kiss_fftr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DFT_gosu.h">
+    <ClInclude Include="kiss_fft.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics.h">
+    <ClInclude Include="_kiss_fft_guts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="tools\kfc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource_config.h">
+    <ClInclude Include="tools\kiss_fftnd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConfigHandler.h">
+    <ClInclude Include="tools\kiss_fftr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FXHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WSAudioIn.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="menu.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
-    <ResourceCompile Include="Config.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="menu_one.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="icon1.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="..\..\..\Users\none_9dpcwvt\Downloads\alien-icon-11.jpg">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
 </Project>

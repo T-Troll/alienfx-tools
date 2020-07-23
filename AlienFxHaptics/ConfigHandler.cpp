@@ -60,6 +60,13 @@ int ConfigHandler::Load() {
     if (!res) {
         res = 250;
     }
+    RegGetValue(hKey1,
+        NULL,
+        TEXT("Input"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &inpType,
+        (LPDWORD)&size);
     unsigned vindex = 0, inarray[30];
     TCHAR name[255];
     unsigned ret = 0;
@@ -110,6 +117,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&res,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("Input"),
+        0,
+        REG_DWORD,
+        (BYTE*)&inpType,
         4
     );
     for (int i = 0; i < mappings.size(); i++) {

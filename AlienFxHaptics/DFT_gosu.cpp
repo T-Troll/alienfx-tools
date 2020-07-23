@@ -9,6 +9,10 @@
 #include <math.h>
 using namespace std;
 
+#ifndef PI
+#define PI 3.141592653589793238462643383279502884197169399375
+#endif
+
 // default constructor
 DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 {
@@ -18,104 +22,138 @@ DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 	done=0;
 	stopped = 0;
 	spectrum=output;
-	infinity=0;
+	//infinity=0;
 	short_term_avg_freq=0;
 	long_term_avg_freq=0;
 	short_term_power=0;
 	long_term_power=0;
-
-	//=-=-=-=-=-=-=-=-=-=- setting up the dft: -=-=-=-=-=-=-=-=-=-=-=-=-=-=-//
-int i,k;
-double arg;// , arg2;
-		cosarg=(double**)malloc(NUMPTS*sizeof(double*));
-		sinarg=(double**)malloc(NUMPTS*sizeof(double*));
-
-		for(i=0;i<NUMPTS;i++){
-			cosarg[i]=(double*)malloc(NUMPTS*sizeof(double));
-			sinarg[i]=(double*)malloc(NUMPTS*sizeof(double));
-		}
-
-		//pre-calculation of all the exponent arguments that we will need:
-		   for (k=0;k<NUMPTS;k++) {
-
-			  arg = -1*2.0 * 3.141592654 * (double)k / (double)NUMPTS;
-			  //arg2 = 2.0 * 3.141592654 * (double)k / (double)NUMPTS;
-			  for (i=0;i<NUMPTS;i++) {
-				 cosarg[k][i] = cos(i * arg);
-				 sinarg[k][i] = sin(i * arg);
-			  }
-		   }
-
-	x2 = (double*)malloc(NUMPTS*sizeof(double));
-    y2 = (double*)malloc(NUMPTS*sizeof(double));
-
-	s_indexes = (int*)malloc((NUMPTS/2) * sizeof(int));
-	// exp(RECTNUM) = NUMPTS log(NUMPTS) = RECTNUM
-	double correction = ((double)RECTSNUM + 2) / log((NUMPTS / 2) - 2);
-	for (i = 2; i < (NUMPTS / 2) - 2; i++) {
-		//s_indexes[i] = (NUMPTS / 2) * (i+1) / (RECTSNUM+1);
-		s_indexes[i] = round(correction * log(i)) - 2;
+	//--- New settings
+	// Arrays...
+	x2 = (double*)malloc(NUMPTS * sizeof(double));
+	blackman = (double*)malloc(NUMPTS * sizeof(double));
+	hanning = (double*)malloc(NUMPTS * sizeof(double));
+	padded_in = (kiss_fft_scalar*)malloc(NUMPTS * sizeof(kiss_fft_scalar));
+	padded_out = (kiss_fft_cpx*)malloc(NUMPTS * sizeof(kiss_fft_cpx));
+	// Preparing data...
+	//int i, k;
+	for (int i = 0; i < NUMPTS; i++) {
+		double p = (double)i / double(NUMPTS - 1);
+		blackman[i] = (0.42 - 0.5 * cos(2 * PI * p) + 0.8 * cos(4 * PI * p));
+		double inv = 1 / (double)NUMPTS;
+		hanning[i] = sqrt(cos((PI * inv) * (i - (double)(NUMPTS - 1) / 2)));
 	}
+	kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
+
+	/*s_indexes = (int*)malloc((NUMPTS/2) * sizeof(int));
+	s_numbers = (int*)malloc((RECTSNUM) * sizeof(int));
+	memset(s_numbers, 0, RECTSNUM * sizeof(int));
+	// exp(RECTNUM) = NUMPTS log(NUMPTS) = RECTNUM
+	double correction = ((double)RECTSNUM + 2) / log((NUMPTS/2) - 2);
+	for (i = 2; i < (NUMPTS/2) - 2; i++) {
+		//s_indexes[i] = (NUMPTS / 2) * (i+1) / (RECTSNUM+1);
+		s_indexes[i] = (int) round(correction * log(i)) - 2;
+		s_numbers[s_indexes[i]]++;
+	}*/
 
 
 } // end DFT_gosu constructor
 
+DFT_gosu::~DFT_gosu()
+{
+	free(x2);
+	free(blackman);
+	free(hanning);
+	free(padded_in);
+	free(padded_out);
+}
+
 // calculate DFT of the signal x1, and calculate relevant parameters
 void DFT_gosu::calc(double *x1)
 {
+	if (done == 1) {
+		stopped = 1;
+		return;
+	}
 
-   long i,k;
-   int mm = NUMPTS/2;
-   
-   if (done == 1) {
-	   stopped = 1;
-	   return;
-   }
+   // ----------------- new --------------------
+	for (int n = 0; n < NUMPTS; n++) {
+		padded_in[n] = (kiss_fft_scalar) (x1[n] * blackman[n]);
+		//x1 += sizeof(double);
+	}
+	kiss_fftr(kiss_cfg, padded_in, padded_out);
 
-   //dft calculation, only for half of the spectrum:
-   for (k=0;k<mm;k++) {
-      x2[k] = 0;
-      y2[k] = 0;
-      for (i=0;i<NUMPTS;i++) {
-         x2[k] += (x1[i] * cosarg[k][i] );
-         y2[k] += (x1[i] * sinarg[k][i]  );
-      }
-   }
+	/*unsigned f = RECTSNUM * 2 / NUMPTS;
+	for (unsigned n = 0; n < NUMPTS; n++) {
+		unsigned idx = n / f;
+		spectrum[n] = (int) sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
+	}*/
+	unsigned f = (NUMPTS / 2) / (RECTSNUM + 1);
+	unsigned m;
+	double minP = MAXINT, maxP = 0;
+	for (int n = 1; n < RECTSNUM + 1; n++) {
+		float v = 0;
+		for (m = 0; m < f; m++) {
+			int idx = n * f + m;
+			v = v + sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
+		}
+		if (n > 0) {
+			x2[n - 1] = (double)(v / f);
+			if (x2[n - 1] < minP)
+				minP = x2[n - 1];
+			if (spectrum[n - 1] > maxP)
+				maxP = x2[n - 1];
+		}
+	}
+	/*memset(x2, 0, RECTSNUM * sizeof(double));
+	for (unsigned n = 2; n < NUMPTS/2 - 2; n++) {
+		x2[s_indexes[n]] += sqrt(padded_out[n].r * padded_out[n].r + padded_out[n].i * padded_out[n].i);
+	}*/
 
+	/*for (unsigned n = 0; n < RECTSNUM; n++) {
+		//x2[n] /= s_numbers[n];
+		if (x2[n] < minP)
+			minP = x2[n];
+		if (x2[n] > maxP)
+			maxP = x2[n];
+	}*/
 
-	power=0;
+	if (peak < maxP)
+		peak = maxP;
+	else
+		peak = (peak > minP + 10000) ? peak - 10000 : minP;
 
-	//calculate |X(w)| and the signal power
-      for (k=0;k<mm;k++) {
-		 x1[k] = x2[k]*x2[k] +y2[k]*y2[k];
-		 power=power+x1[k];
-         x1[k]=sqrt(x1[k]);	 
-	  }
+	double coeff = (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
+	for (int n = 0; n < RECTSNUM; n++) {
+		spectrum[n] = (int) ((x2[n] - minP) * coeff);
+	}
+	// Normalize
 
-/* only the first half of x1 is good the other is bolshit*/
-	  power=2*power/NUMPTS/NUMPTS;
+	return;
 
-	 // mm=NUMPTS/2;
-
-	  memset(x2, 0, RECTSNUM * sizeof(double));
+	/*  memset(x2, 0, RECTSNUM * sizeof(double));
 
 	  //for(i=0; i<RECTSNUM; i++){
 		//  x2[i]=0;
 	  //}
 
+	  //int j;
 	  //double correction = ((double)RECTSNUM+2) / log(mm-2);
 	  //accumulate ajusent frequencies into bars:
 	  for (i=2; i < mm-2; i++){
+	  //for (i = 4; i < mm - 4; i++) {
 		  //j = (int)( ((double)i*(double)RECTSNUM)/(double)mm );
 		  // f(0) = 0; f(mm) = RECTSNUM; log. log(mm+1) * x = RECTSNUM; x = RECTSNUM / log(mm+1);
 		  //j = round(correction * log(i)) - 2;
-		  x2[s_indexes[i]] += x1[i];
+		  x2[s_indexes[i]] += x3[i];
+		  //x2[j] += x3[i];
 	  }
 
 	  //limit to y_scale and normalize the result to range [0,100]:
 	  double cl_scale = y_scale, max_scale = 0;;
 	  for (i=0; i<RECTSNUM; i++){
 		  //x2[i] = x2[i] * log10((i + 1) * 10.0);// pow(i + 1, 2);
+		  x2[i] /= s_numbers[i];
+		  //x2[i] = x2[i] / 10;
 		  if (x2[i] > max_scale)
 			  max_scale = x2[i];
 		  if (x2[i] > y_scale) {
@@ -125,42 +163,14 @@ void DFT_gosu::calc(double *x1)
 			  x2[i] = y_scale;
 		  }
 		  spectrum[i] = (int) ((255.0/y_scale)*x2[i]);
-	  }
+	  } 
 	  // upscale if needed
 //	  if (max_scale > y_scale)
 //		y_scale=y_scale*2;
 	  // do we need downscale?
 //	  if (max_scale > 10 && y_scale > max_scale * max_scale)
 //		  y_scale = y_scale / 2;
-
-
-	  //calculate current average frequency:
-	int end,start;
-   avg_freq=0;
-   start =0;
-   end= RECTSNUM-1;
-	while (start<end){
-			  if(avg_freq<0){
-				  avg_freq+=spectrum[start];
-				  start++;
-			  }
-			  else{
-				  avg_freq=avg_freq-spectrum[end];
-				  end--;
-			  }
-	}
-	avg_freq=end*((22000/(double)RECTSNUM));
-	  
-
-
-
-	//calculate long term values:
-		short_term_avg_freq=(short_term_avg_freq*19+avg_freq)/(20.0);
-		short_term_power=(short_term_power*19+power)/(20.0);
-		long_term_avg_freq=(long_term_avg_freq*infinity+avg_freq)/(infinity+1);
-		long_term_power=(long_term_power*infinity+power)/(infinity+1);
-		infinity=infinity+1;
-
+	*/
 
 } // end function calc
 
@@ -187,20 +197,21 @@ int DFT_gosu::getLongAvgFreq(){
 
 void DFT_gosu::kill()
 {
-int i;
+//int i;
 	//killing dft:
 	done=1;
-	while (!stopped)
-		Sleep(100);
-	for(i=0;i<NUMPTS;i++){
+	//while (!stopped)
+	//	Sleep(100);
+	/*for(i=0;i<NUMPTS;i++){
 		free(cosarg[i]);
 		free(sinarg[i]);
 	}
 	free(cosarg);
 	free(sinarg);
 	  free(x2);
+	  free(x3);
 	  free(y2);
-	  free(s_indexes);
+	  free(s_indexes); */
 }
 
 void DFT_gosu::setXscale(int x)

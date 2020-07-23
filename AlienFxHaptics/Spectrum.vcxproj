@@ -94,13 +94,15 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>../alienfx-cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools;../alienfx-cli</AdditionalIncludeDirectories>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -119,7 +121,10 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-      <AdditionalIncludeDirectories>../alienfx-cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools;../alienfx-cli</AdditionalIncludeDirectories>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -133,7 +138,8 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>../alienfx-cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools;../alienfx-cli</AdditionalIncludeDirectories>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -152,7 +158,8 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-      <AdditionalIncludeDirectories>../alienfx-cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools;../alienfx-cli</AdditionalIncludeDirectories>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -163,21 +170,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\alienfx-cli\LFXUtil.cpp" />
-    <ClCompile Include="AudioIn.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="DFT_gosu.cpp" />
     <ClCompile Include="FXHelper.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="WSAudioIn.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AudioIn.h" />
     <ClInclude Include="ConfigHandler.h" />
     <ClInclude Include="DFT_gosu.h" />
     <ClInclude Include="FXHelper.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource_config.h" />
+    <ClInclude Include="WSAudioIn.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Config.rc" />
@@ -187,6 +194,11 @@
     <Image Include="..\..\..\Users\none_9dpcwvt\Downloads\alien-icon-11.jpg" />
     <Image Include="icon1.ico" />
     <Image Include="menu_one.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="kiss_fft\kiss_fft.vcxproj">
+      <Project>{e6f98b66-1c66-4afd-8a48-faa1022f8196}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

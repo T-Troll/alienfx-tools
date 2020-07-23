@@ -38,20 +38,13 @@ BEGIN
     BEGIN
         MENUITEM "E&xit",                       ID_FILE_EXIT
     END
-    POPUP "&Scale y axis"
+    POPUP "Input"
     BEGIN
-        MENUITEM "&Up to 500 [V]",              ID_Y_1000
-        MENUITEM "&Up to 250 [V]",              ID_Y_100
-        MENUITEM "&Up to 100 [V]",              ID_Y_10
-        MENUITEM "&Up to 50 [V]",               ID_Y_5
-        MENUITEM "&Up to 20 [V]",               ID_Y_2_5
-        MENUITEM "&Up to 10 [V]",               ID_Y_1
-        MENUITEM "&Up to 5 [V]",                ID_Y_0_5
+        MENUITEM "Default &Output device",      ID_INPUT_DEFAULTOUTPUTDEVICE
+        MENUITEM "Default &Input device",       ID_INPUT_DEFAULTINPUTDEVICE
     END
     POPUP "&Parameters"
     BEGIN
-        MENUITEM "&Power",                      ID_PARAMS_1
-        MENUITEM "&Frequncy",                   ID_PARAMS_2
         MENUITEM "&Settings",                   ID_PARAMETERS_SETTINGS
     END
 END

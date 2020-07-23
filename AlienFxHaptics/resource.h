@@ -18,6 +18,8 @@
 #define ID_PARAMS_1                     9012
 #define ID_PARAMS_2                     9013
 #define ID_PARAMETERS_SETTINGS          9014
+#define ID_INPUT_DEFAULTOUTPUTDEVICE    40002
+#define ID_INPUT_DEFAULTINPUTDEVICE     40003
 
 // Next default values for new objects
 // 
@@ -25,7 +27,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        114
-#define _APS_NEXT_COMMAND_VALUE         40002
+#define _APS_NEXT_COMMAND_VALUE         40004
 #define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
