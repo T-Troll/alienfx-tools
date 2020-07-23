@@ -21,7 +21,7 @@ Unzip the installation archive to any directory of your choise, run.<br>
 <s>`alienfx-haptics` uses default audio `input` device as audio source, so you possible need to map you audio `output` to virtual input (or use Microphone/Line-In devices instead).
 <br>For Realtek-based hardware, you can do it using `Stereo Mixer` audio device (look in `Control Panel - Sound - Recording`)
 <br>For other hardware, virtual audio cable software (f.e. [VB-Audio VirtualCable](https://www.vb-audio.com/Cable/)) required to do this.</s>
-<br>`alienfx-haptics` uses default output device (there are all sound from playes, videos, games played) as an input, but you can switch it to default input device (f.e. microphone or line-in).
+<br>`alienfx-haptics` uses default output device (there are all sound from audio players, video players, games played) as an input, but you can switch it to default input device (f.e. microphone or line-in).
 
 ## alienfx-cli Usage
 Run `alienfx-cli.exe` with a command and any options for that command. 
