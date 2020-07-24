@@ -56,7 +56,7 @@ This application get audio stream from default input device, then made a real-ti
 MIT
 
 ## Credits
-Integration code and haptic algorythms- T-Troll
+Integration code and haptic algorythms- T-Troll<br>
 API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).<br>
 AlienFX interaction code is from HunterZ's [UniLight](https://github.com/HunterZ/UniLight).<br>
 Spectrum Analyzer code is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
