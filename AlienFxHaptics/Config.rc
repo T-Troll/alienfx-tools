@@ -12,13 +12,6 @@
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
-/////////////////////////////////////////////////////////////////////////////
-// Russian (Russia) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -44,16 +37,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Russian (Russia) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-LANGUAGE LANG_ENGLISH, SUBLANG_NEUTRAL
-#pragma code_page(1252)
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -67,6 +50,7 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 375
+        VERTGUIDE, 111
         VERTGUIDE, 141
         VERTGUIDE, 256
         TOPMARGIN, 7
@@ -84,14 +68,13 @@ END
 //
 
 IDD_DIALOG_CONFIG DIALOGEX 0, 0, 382, 200
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_BORDER
 EXSTYLE WS_EX_STATICEDGE
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",1,270,179,50,14
-    PUSHBUTTON      "Cancel",2,325,179,50,14
+    DEFPUSHBUTTON   "OK",1,325,179,50,14
     COMBOBOX        IDC_DEVICE,7,16,368,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    LISTBOX         IDC_FREQ,7,39,105,133,LBS_MULTIPLESEL | LBS_NOINTEGRALHEIGHT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_FREQ,7,39,104,133,LBS_MULTIPLESEL | LBS_NOINTEGRALHEIGHT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
     LISTBOX         IDC_LIGHTS,141,39,103,133,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Device",IDC_STATIC,7,7,22,8
     LTEXT           "Frequancy",IDC_STATIC,7,31,34,8
@@ -107,6 +90,9 @@ BEGIN
     EDITTEXT        IDC_EDIT_HIGHCUT,325,129,40,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Low-Cut",IDC_STATIC,271,120,27,8
     LTEXT           "Hi-Cut",IDC_STATIC,325,120,21,8
+    CTEXT           "<<",IDC_STATIC,111,39,30,133,SS_CENTERIMAGE
+    LTEXT           "Decay",IDC_STATIC,141,181,20,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_DECAY,174,181,70,12,ES_AUTOHSCROLL | ES_NUMBER
 END
 
 
@@ -119,11 +105,6 @@ IDD_DIALOG_CONFIG AFX_DIALOG_LAYOUT
 BEGIN
     0
 END
-
-#endif    // English resources
-/////////////////////////////////////////////////////////////////////////////
-
-
 
 #ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////

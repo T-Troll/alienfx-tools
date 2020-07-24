@@ -75,7 +75,7 @@
     <Image Include="icon1.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\..\..\Users\none_9dpcwvt\Downloads\alien-icon-11.jpg">
+    <Image Include="icon2.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -3,7 +3,7 @@
 // Used by menu.rc
 //
 #define IDR_MYMENU                      101
-#define IDI_ICON1                       113
+#define IDI_ALIEN                       118
 #define ID_FILE_EXIT                    9001
 #define ID_X_41                         9002
 #define ID_X_101                        9003
@@ -26,7 +26,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        114
+#define _APS_NEXT_RESOURCE_VALUE        122
 #define _APS_NEXT_COMMAND_VALUE         40004
 #define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           101

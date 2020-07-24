@@ -22,15 +22,6 @@ ConfigHandler::ConfigHandler() {
         NULL,
         &hKey2,
         &dwDisposition);
-    /*RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxhaptics\MappingsSize"),
-        0,
-        NULL,
-        REG_OPTION_NON_VOLATILE,
-        KEY_WRITE,
-        NULL,
-        &hKey3,
-        &dwDisposition);*/
 }
 ConfigHandler::~ConfigHandler() {
     RegCloseKey(hKey1);
@@ -58,7 +49,7 @@ int ConfigHandler::Load() {
         &res,
         (LPDWORD)&size);
     if (!res) {
-        res = 250;
+        res = 10000;
     }
     RegGetValue(hKey1,
         NULL,

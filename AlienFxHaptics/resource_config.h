@@ -11,6 +11,8 @@
 #define IDC_RESET                       1009
 #define IDC_EDIT_LOWCUT                 1010
 #define IDC_EDIT_HIGHCUT                1011
+#define IDC_EDIT1                       1012
+#define IDC_EDIT_DECAY                  1012
 
 // Next default values for new objects
 // 
@@ -19,7 +21,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1012
+#define _APS_NEXT_CONTROL_VALUE         1013
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

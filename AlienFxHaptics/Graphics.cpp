@@ -58,36 +58,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 	strcpy_s(g_szClassName,14,"myWindowClass");
 	for (int i=0; i<16; i++)
 		 g_rgbCustom[i]=0;
-	rms = (char***)malloc(7*sizeof(char**));
-	for(int i=0; i<7; i++){
-		rms[i]=(char**)malloc(2*sizeof(char*));
-		rms[i][0]=(char*)malloc(4*sizeof(char*));
-		rms[i][1]=(char*)malloc(4*sizeof(char*));
-	}
-	strcpy_s(rms[0][0],4,"500");
-	strcpy_s(rms[0][1],4,"250");
 
-	strcpy_s(rms[1][0],4,"255");
-	strcpy_s(rms[1][1], 4, "128");
-
-	strcpy_s(rms[2][0], 4, "100");
-	strcpy_s(rms[2][1], 4, " 50");
-
-	strcpy_s(rms[3][0], 4, " 50");
-	strcpy_s(rms[3][1], 4, " 25");
-
-	strcpy_s(rms[4][0], 4, " 20");
-	strcpy_s(rms[4][1], 4, " 10");
-
-	strcpy_s(rms[5][0], 4, " 10");
-	strcpy_s(rms[5][1], 4, "  5");
-
-	strcpy_s(rms[6][0], 4, "  5");
-	strcpy_s(rms[6][1], 4, "2.5");
-
-
-
-	
 	wc.cbSize		 = sizeof(WNDCLASSEX);
 	wc.style		 = CS_VREDRAW | CS_HREDRAW;
 	wc.lpfnWndProc	 = WndProc;
@@ -102,8 +73,8 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 	wc.lpszMenuName = MAKEINTRESOURCE(IDR_MYMENU);
 	wc.lpszClassName = g_szClassName;
 	//wc.hIconSm		 = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
-	wc.hIconSm = (HICON)LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 16, 16, 0);
+	wc.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIEN));
+	wc.hIconSm = (HICON)LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_ALIEN), IMAGE_ICON, 16, 16, 0);
 	
 
 	if(!RegisterClassEx(&wc))
@@ -221,11 +192,11 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	LineTo(hdc, 45, 35);
 	MoveToEx(hdc, 40, 30, (LPPOINT) NULL);
 	LineTo(hdc, 35, 35);
-	TextOut(hdc,15,10, "[P]", 3);
+	TextOut(hdc,15,10, "[Power]", 3);
 	//wsprintf(szSize, "%6d", (int)y_scale);
 	//TextOut(hdc, 150, 10, szSize, 6);
-	TextOut(hdc,10,40, rms[rmsI][0], 3);
-	TextOut(hdc,10,(rcClientP->bottom)/2, rms[rmsI][1], 3);
+	TextOut(hdc,10,40, "255", 3);
+	TextOut(hdc,10,(rcClientP->bottom)/2, "128", 3);
 	TextOut(hdc,10,rcClientP->bottom - 35, "  0", 3);
 
 
@@ -268,60 +239,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_UNCHECKED);
 					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 					audio->RestartDevice(0);
+					config->Save();
 					break;
 				case ID_INPUT_DEFAULTINPUTDEVICE:
 					config->inpType = 1;
 					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
 					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_UNCHECKED);
 					audio->RestartDevice(1);
+					config->Save();
 					break;
-				/*case ID_X_41:
-					bars = 6;
-				break;
-				case ID_X_101:
-					bars = 11;
-				break;
-				case ID_X_201:
-					bars = 21;
-				break;*/
-
-				/*case ID_Y_1000:
-					//y_scale = 1000000000;
-					y_scale = 500;
-					rmsI=0;
-				break;
-				case ID_Y_100:
-					//y_scale = 100000000;
-					y_scale = 250;
-					rmsI=1;
-				break;
-				case ID_Y_10:
-					//y_scale = 10000000;
-					y_scale = 100;
-					rmsI=2;
-				break;
-				case ID_Y_5:
-					//y_scale = 5000000;
-					y_scale = 50;
-					rmsI=3;
-				break;
-				case ID_Y_2_5:
-					//y_scale = 2500000;
-					y_scale = 20;
-					rmsI=4;
-				break;
-				case ID_Y_1:
-					//y_scale = 1000000;
-					y_scale = 10;
-					rmsI=5;
-				break;
-				case ID_Y_0_5:
-					//y_scale = 500000;
-					y_scale = 5;
-					rmsI=6;
-				break;
-
-				case ID_PARAMS_1:
+				/*case ID_PARAMS_1:
 					wsprintf(szSize, "          \n          Instantaneous Power: %d µW          \n\n          Weighted Average Power: %d µW          \n\n          Average Power: %d µW          \n\n          ", ((int)(power*1000000)), ((int)(short_term_power*1000000)), ((int)(long_term_power*1000000)) );
 					MessageBox(hwnd, szSize, "Parameters", MB_OK);
 				break;
@@ -372,11 +299,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 				ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
 				niData.cbSize = sizeof(NOTIFYICONDATA);
-				niData.uID = IDI_ICON1;
+				niData.uID = IDI_ALIEN;
 				niData.uFlags = NIF_ICON | NIF_MESSAGE;
 				niData.hIcon =
 					(HICON)LoadImage(GetModuleHandle(NULL),
-						MAKEINTRESOURCE(IDI_ICON1),
+						MAKEINTRESOURCE(IDI_ALIEN),
 						IMAGE_ICON,
 						GetSystemMetrics(SM_CXSMICON),
 						GetSystemMetrics(SM_CYSMICON),
@@ -419,6 +346,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	HWND to_color = GetDlgItem(hDlg, IDC_TOCOLOR);
 	HWND low_cut = GetDlgItem(hDlg, IDC_EDIT_LOWCUT);
 	HWND hi_cut = GetDlgItem(hDlg, IDC_EDIT_HIGHCUT);
+	HWND hdecay = GetDlgItem(hDlg, IDC_EDIT_DECAY);
 	mapping* map = NULL;
 
 	switch (message)
@@ -448,6 +376,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
 			}
 		}
+		TCHAR decay[17];
+		sprintf_s(decay, 16, "%d", config->res);
+		SendMessage(hdecay, WM_SETTEXT, 0, (LPARAM)decay);
 	}
 	break;
 
@@ -469,11 +400,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 		break;
 
-		case IDCANCEL:
+		/*case IDCANCEL:
 		{
 			/// handle Cancel button click
 			EndDialog(hDlg, IDCANCEL);
-		}
+		}*/
 		break;
 		case IDC_RESET: {
 			switch (HIWORD(wParam))
@@ -609,6 +540,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			} break;
 			}
 		} break;
+		case IDC_EDIT_DECAY:
+			switch (HIWORD(wParam)) {
+			case EN_UPDATE: {
+				// update Decay rate
+				TCHAR buffer[17]; buffer[0] = 16;
+				SendMessage(hdecay, EM_GETLINE, 0, (LPARAM)buffer);
+				config->res = atoi(buffer);
+			} break;
+			}
+			break;
 		case IDC_EDIT_LOWCUT:
 			switch (HIWORD(wParam)) {
 			case EN_UPDATE: {

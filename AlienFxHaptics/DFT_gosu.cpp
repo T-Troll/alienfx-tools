@@ -65,6 +65,7 @@ DFT_gosu::~DFT_gosu()
 	free(hanning);
 	free(padded_in);
 	free(padded_out);
+	kiss_fft_free(kiss_cfg);
 }
 
 // calculate DFT of the signal x1, and calculate relevant parameters
@@ -118,9 +119,9 @@ void DFT_gosu::calc(double *x1)
 	}*/
 
 	if (peak < maxP)
-		peak = maxP;
+		peak = (peak > maxP - 2 * y_scale) ? maxP : peak + 2 * y_scale;
 	else
-		peak = (peak > minP + 10000) ? peak - 10000 : minP;
+		peak = (peak > minP + y_scale) ? peak - y_scale : minP;
 
 	double coeff = (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
 	for (int n = 0; n < RECTSNUM; n++) {
