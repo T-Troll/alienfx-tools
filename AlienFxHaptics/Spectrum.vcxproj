@@ -203,7 +203,6 @@
     <ResourceCompile Include="menu.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icon1.ico" />
     <Image Include="icon2.ico" />
     <Image Include="menu_one.ico" />
   </ItemGroup>
