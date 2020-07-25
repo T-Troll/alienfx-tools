@@ -57,7 +57,7 @@ Global parameter "Decay" defines how fast detected Peak Level decayed if not pea
 MIT
 
 ## Credits
-Integration code and haptic algorythms- T-Troll<br>
+Integration code and haptic algorythms by T-Troll<br>
 API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).<br>
 AlienFX interaction code is from HunterZ's [UniLight](https://github.com/HunterZ/UniLight).<br>
 Spectrum Analyzer code is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
