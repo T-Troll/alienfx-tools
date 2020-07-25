@@ -183,7 +183,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	DWORD dwThreadID;
 	UINT32 packetLength = 0;
 	UINT32 numFramesAvailable = 0;
-	int arrayPos = 0;
+	int arrayPos = 0, shift;
 	UINT bytesPerChannel = bytePerSample / nChannel;
 	BYTE* pData;
 	DWORD flags;
@@ -202,12 +202,13 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 		{
 			// got new buffer....
 			pCapCli->GetNextPacketSize(&packetLength);
+			shift = 0;
 			while (!done && packetLength != 0) {
 				pCapCli->GetBuffer(
 					(BYTE**)&pData,
 					&numFramesAvailable,
 					&flags, NULL, NULL);
-				for (UINT i = 0; i < numFramesAvailable && arrayPos + i < NUMSAM; i++) {
+				for (UINT i = 0; i < numFramesAvailable; i++) {
 					INT64 finVal = 0;
 					for (int k = 0; k < nChannel; k++) {
 						INT32 val = 0;
@@ -215,27 +216,27 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 						for (int j = bytesPerChannel - 1; j >=0 ; j--) {
 							val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
 						}
-						finVal += val +32768;
+						finVal += val;
 					}
 					//double val = pData[4 * i] + pData[4 * i + 1] * 256;
-					waveT[arrayPos + i] = (double)(finVal / nChannel);// / (pow(256, bytesPerChannel) - 1);
+					waveT[arrayPos + i - shift] = (double)(finVal / nChannel);// / (pow(256, bytesPerChannel) - 1);
+					if (arrayPos + i == NUMSAM - 1) {
+						//buffer full, send to process.
+						memcpy(waveD, waveT, NUMSAM * sizeof(double));
+						CreateThread(
+							NULL,              // default security
+							0,                 // default stack size
+							mFunction,        // name of the thread function
+							waveD,
+							0,                 // default startup flags
+							&dwThreadID);
+						//reset arrayPos
+						arrayPos = 0;
+						shift = i;
+					}
 				}
 				pCapCli->ReleaseBuffer(numFramesAvailable);
-				arrayPos += numFramesAvailable;
-				if (arrayPos >= NUMSAM) {
-					// call processing
-					//waveD = (double*)malloc(NUMSAM * sizeof(double));
-					memcpy(waveD, waveT, NUMSAM * sizeof(double));
-					CreateThread(
-						NULL,              // default security
-						0,                 // default stack size
-						mFunction,        // name of the thread function
-						waveD,
-						0,                 // default startup flags
-						&dwThreadID);
-					arrayPos = 0;
-				}
-				// Process....
+				arrayPos += numFramesAvailable - shift;
 				pCapCli->GetNextPacketSize(&packetLength);
 			}
 		}

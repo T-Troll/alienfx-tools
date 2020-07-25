@@ -192,7 +192,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	LineTo(hdc, 45, 35);
 	MoveToEx(hdc, 40, 30, (LPPOINT) NULL);
 	LineTo(hdc, 35, 35);
-	TextOut(hdc,15,10, "[Power]", 3);
+	TextOut(hdc,15,10, "[Power]", 7);
 	//wsprintf(szSize, "%6d", (int)y_scale);
 	//TextOut(hdc, 150, 10, szSize, 6);
 	TextOut(hdc,10,40, "255", 3);
@@ -546,7 +546,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				// update Decay rate
 				TCHAR buffer[17]; buffer[0] = 16;
 				SendMessage(hdecay, EM_GETLINE, 0, (LPARAM)buffer);
-				config->res = atoi(buffer);
+				y_scale = config->res = atoi(buffer);
 			} break;
 			}
 			break;

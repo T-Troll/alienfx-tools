@@ -86,17 +86,17 @@ DWORD WINAPI resample(LPVOID lpParam)
 {
 	double* waveDouble = (double*)lpParam;
 
-	dftG->setXscale(Graphika->getBarsNum());
+	//dftG->setXscale(Graphika->getBarsNum());
 	dftG->setYscale(Graphika->getYScale());
 
 	dftG->calc(waveDouble);
 
-	Graphika->setCurrentPower(dftG->getCurrentPower());
-	Graphika->setShortPower(dftG->getShortPower());
-	Graphika->setLongPower(dftG->getLongPower());
-	Graphika->setCurrentAvgFreq(dftG->getCurrentAvgFreq());
-	Graphika->setShortAvgFreq(dftG->getShortAvgFreq());
-	Graphika->setLongAvgFreq(dftG->getLongAvgFreq());
+	//Graphika->setCurrentPower(dftG->getCurrentPower());
+	//Graphika->setShortPower(dftG->getShortPower());
+	//Graphika->setLongPower(dftG->getLongPower());
+	//Graphika->setCurrentAvgFreq(dftG->getCurrentAvgFreq());
+	//Graphika->setShortAvgFreq(dftG->getShortAvgFreq());
+	//Graphika->setLongAvgFreq(dftG->getLongAvgFreq());
 
 	//Graphika->setYScale(dftG->getYscale());
 
