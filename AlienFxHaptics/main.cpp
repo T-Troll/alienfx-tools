@@ -25,7 +25,7 @@ const int NUMPTS = 2048;// 44100 / 15;
 //void resample(double* waveDouble);
 DWORD WINAPI resample(LPVOID lpParam);
 
-//bool done = false;
+bool tdone = false;
 
 //HANDLE cEvent;
 
@@ -67,7 +67,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//audio.startSampling();
 
 	Graphika->start();
-
+	tdone = 1;
+	Sleep(200);
 	//audio.stopSampling();
 	wsa.stopSampling();
 	FXproc->StopFX();
@@ -84,6 +85,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 DWORD WINAPI resample(LPVOID lpParam)
 //void resample(double* waveDouble)
 {
+	if (tdone) return 0;
 	double* waveDouble = (double*)lpParam;
 
 	//dftG->setXscale(Graphika->getBarsNum());

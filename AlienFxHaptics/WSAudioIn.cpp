@@ -202,12 +202,12 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 		{
 			// got new buffer....
 			pCapCli->GetNextPacketSize(&packetLength);
-			shift = 0;
 			while (!done && packetLength != 0) {
 				pCapCli->GetBuffer(
 					(BYTE**)&pData,
 					&numFramesAvailable,
 					&flags, NULL, NULL);
+				shift = 0;
 				for (UINT i = 0; i < numFramesAvailable; i++) {
 					INT64 finVal = 0;
 					for (int k = 0; k < nChannel; k++) {

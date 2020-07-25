@@ -32,8 +32,8 @@ protected:
 	int RECTSNUM;
 	int sampleRate = 44100;
 	int done, stopped;
-	//int* s_indexes;
-	//int* s_numbers;
+	int* s_indexes;
+	int* s_numbers;
 	int* spectrum;
 	//long long int infinity;
 	double avg_freq;

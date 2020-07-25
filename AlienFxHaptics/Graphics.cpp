@@ -30,6 +30,7 @@ double long_term_power;
 int avg_freq;
 int short_term_avg_freq;
 int long_term_avg_freq;
+bool axis_draw = true;
 
 LFXUtil::LFXUtilC* lfxUtil = NULL;
 ConfigHandler* config = NULL;
@@ -88,7 +89,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 		g_szClassName,
 		"Universal AlienFX haptics",
 		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 700, 400,
+		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 700,
 		NULL, NULL, hInstance, NULL);
 
 	if(hwnd == NULL)
@@ -106,6 +107,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 	//	MAKEINTRESOURCE(IDD_DIALOG_CONFIG),    /// dialog box template
 	//	hwnd,                    /// handle to parent
 	//	(DLGPROC)DialogConfigStatic);
+
 }
 
 
@@ -164,41 +166,52 @@ void Graphics::SetAudioObject(WSAudioIn* wsa)
 	audio = wsa;
 }
 
-void DrawFreq(HDC hdc, LPRECT rcClientP) 
-{ 
-	int i,rectop;
+void DrawFreq(HDC hdc, LPRECT rcClientP)
+{
+	int i, rectop;
 	char szSize[100]; //freq axis
 
 	//setting collors:
-	SetDCBrushColor(hdc, RGB(255,255,255));
-	SetDCPenColor(hdc, RGB(255,255,39));
-	SetTextColor(hdc, RGB(255,255,255));
-	SelectObject(hdc, GetStockObject(DC_BRUSH));  
+	SetDCBrushColor(hdc, RGB(255, 255, 255));
+	SetDCPenColor(hdc, RGB(255, 255, 39));
+	SetTextColor(hdc, RGB(255, 255, 255));
+	SelectObject(hdc, GetStockObject(DC_BRUSH));
 	SelectObject(hdc, GetStockObject(DC_PEN));
 	SetBkMode(hdc, TRANSPARENT);
 
+	if (axis_draw) {
+		//draw x axis:
+		MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
+		LineTo(hdc, rcClientP->right - 50, rcClientP->bottom - 21);
+		LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 26);
+		MoveToEx(hdc, rcClientP->right - 50, rcClientP->bottom - 21, (LPPOINT)NULL);
+		LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 16);
+		TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
 
-	//draw x axis:
-	MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT) NULL); 
-	LineTo(hdc, rcClientP->right - 50, rcClientP->bottom - 21);
-	LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 26);
-	MoveToEx(hdc, rcClientP->right - 50, rcClientP->bottom - 21, (LPPOINT) NULL); 
-	LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 16);
-	TextOut(hdc,rcClientP->right - 45,rcClientP->bottom - 27, "f(kHz)", 6);
-
-	//draw y axis:
-	MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT) NULL);
-	LineTo(hdc, 40, 30);
-	LineTo(hdc, 45, 35);
-	MoveToEx(hdc, 40, 30, (LPPOINT) NULL);
-	LineTo(hdc, 35, 35);
-	TextOut(hdc,15,10, "[Power]", 7);
-	//wsprintf(szSize, "%6d", (int)y_scale);
-	//TextOut(hdc, 150, 10, szSize, 6);
-	TextOut(hdc,10,40, "255", 3);
-	TextOut(hdc,10,(rcClientP->bottom)/2, "128", 3);
-	TextOut(hdc,10,rcClientP->bottom - 35, "  0", 3);
-
+		//draw y axis:
+		MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
+		LineTo(hdc, 40, 30);
+		LineTo(hdc, 45, 35);
+		MoveToEx(hdc, 40, 30, (LPPOINT)NULL);
+		LineTo(hdc, 35, 35);
+		TextOut(hdc, 15, 10, "[Power]", 7);
+		//wsprintf(szSize, "%6d", (int)y_scale);
+		//TextOut(hdc, 150, 10, szSize, 6);
+		TextOut(hdc, 10, 40, "255", 3);
+		TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
+		TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
+		//axis_draw = false;
+		int oldvalue = (-1);
+		double coeff = 22 / (log(22.0));
+		for (i = 0; i <= 22; i++) {
+			int frq = int(22 - round((log(22.0 - i) * coeff)));
+			if (frq > oldvalue) {
+				wsprintf(szSize, "%2d", frq);
+				TextOut(hdc, ((rcClientP->right - 100) * i) / 23 + 50, rcClientP->bottom - 20, szSize, 2);
+				oldvalue = frq;
+			}
+		}
+	}
 
 	for (i=0; i<bars; i++){
 		rectop = ((255-freq[i])*(rcClientP->bottom-30))/255;
@@ -206,16 +219,6 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 		Rectangle(hdc, ((rcClientP->right - 120)*i)/bars + 50, rectop, ((rcClientP->right - 120)*(i+1))/bars-2 + 50, rcClientP->bottom-30);
 		//wsprintf(szSize, "%3d", freq[i]);
 		//TextOut(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop - 15, szSize, 3);
-	}
-	int oldvalue = (-1);
-	double coeff = 22 / (log(22.0));
-	for (i = 0; i <= 22; i++) {
-		int frq = int(22 - round((log(22.0 - i) * coeff)));
-		if (frq > oldvalue) {
-			wsprintf(szSize, "%2d", frq);
-			TextOut(hdc, ((rcClientP->right - 100) * i) / 23 + 50, rcClientP->bottom - 20, szSize, 2);
-			oldvalue = frq;
-		}
 	}
 } 
 

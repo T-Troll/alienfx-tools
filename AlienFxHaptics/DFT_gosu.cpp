@@ -44,16 +44,24 @@ DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 	}
 	kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
 
-	/*s_indexes = (int*)malloc((NUMPTS/2) * sizeof(int));
-	s_numbers = (int*)malloc((RECTSNUM) * sizeof(int));
+	//s_indexes = (int*)malloc((NUMPTS/2) * sizeof(int));
+	s_numbers = (int*)malloc((RECTSNUM+2) * sizeof(int));
 	memset(s_numbers, 0, RECTSNUM * sizeof(int));
 	// exp(RECTNUM) = NUMPTS log(NUMPTS) = RECTNUM
-	double correction = ((double)RECTSNUM + 2) / log((NUMPTS/2) - 2);
-	for (i = 2; i < (NUMPTS/2) - 2; i++) {
+	/*double correction = ((double)RECTSNUM+1) / log((NUMPTS/2) - 2);
+	for (int i = 2; i < (NUMPTS/2) - 2; i++) {
 		//s_indexes[i] = (NUMPTS / 2) * (i+1) / (RECTSNUM+1);
 		s_indexes[i] = (int) round(correction * log(i)) - 2;
 		s_numbers[s_indexes[i]]++;
 	}*/
+	double correction = (log(NUMPTS/2 - 1)/log(2))/(RECTSNUM);
+	//double sum = 0;
+	for (int i = 1 ; i < RECTSNUM+1; i++) {
+		double res = pow(2, i * correction);
+		//sum = round(res);
+		//double delta = sum - s_numbers[i - 1];
+		s_numbers[i-1] = round(res);
+	}
 
 
 } // end DFT_gosu constructor
@@ -72,7 +80,7 @@ DFT_gosu::~DFT_gosu()
 void DFT_gosu::calc(double *x1)
 {
 	if (done == 1) {
-		stopped = 1;
+	//	stopped = 1;
 		return;
 	}
 
@@ -88,23 +96,40 @@ void DFT_gosu::calc(double *x1)
 		unsigned idx = n / f;
 		spectrum[n] = (int) sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
 	}*/
-	unsigned f = (NUMPTS / 2) / (RECTSNUM + 1);
-	unsigned m;
+	unsigned f = (NUMPTS / 2 - 50) / RECTSNUM;
+	unsigned m, prev = 0;
 	double minP = MAXINT, maxP = 0;
-	for (int n = 1; n < RECTSNUM + 1; n++) {
-		float v = 0;
+	for (int n = 0; n < RECTSNUM; n++) {
+		double v = 0;
 		for (m = 0; m < f; m++) {
-			int idx = n * f + m;
-			v = v + sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
+			int idx = (n+1) * f + m;
+			//v = v + sqrt(padded_out[m+1].r * padded_out[m + 1].r + padded_out[m + 1].i * padded_out[m + 1].i);
+			v = v + sqrt(padded_out[idx+1].r * padded_out[idx+1].r + padded_out[idx+1].i * padded_out[idx+1].i);
 		}
-		if (n > 0) {
-			x2[n - 1] = (double)(v / f);
-			if (x2[n - 1] < minP)
-				minP = x2[n - 1];
-			if (spectrum[n - 1] > maxP)
-				maxP = x2[n - 1];
-		}
+
+		x2[n] = v / f;
+		//x2[n] = v / (s_numbers[n] - prev);
+		prev = s_numbers[n];
+		if (x2[n] < minP)
+			minP = x2[n];
+		if (x2[n] > maxP)
+			maxP = x2[n];
+
 	}
+	/*memset(x2, 0, RECTSNUM * sizeof(double));
+	//memset(s_numbers, 0, RECTSNUM * sizeof(int));
+	for (int i = 2; i < NUMPTS/2 - 2; i++) {
+		x2[s_indexes[i]] += sqrt(padded_out[i].r * padded_out[i].r + padded_out[i].i * padded_out[i].i);
+		//s_numbers[s_indexes[i]]++;
+	}
+	for (int i = 0; i < RECTSNUM; i++) {
+		x2[i] = x2[i] / (double) s_numbers[i];
+		if (x2[i] < minP)
+			minP = x2[i];
+		if (x2[i] > maxP)
+			maxP = x2[i];
+
+	}*/
 	/*memset(x2, 0, RECTSNUM * sizeof(double));
 	for (unsigned n = 2; n < NUMPTS/2 - 2; n++) {
 		x2[s_indexes[n]] += sqrt(padded_out[n].r * padded_out[n].r + padded_out[n].i * padded_out[n].i);
@@ -209,10 +234,11 @@ void DFT_gosu::kill()
 	}
 	free(cosarg);
 	free(sinarg);
-	  free(x2);
-	  free(x3);
 	  free(y2);
-	  free(s_indexes); */
+	  free(x3);*/
+	  free(x2);
+	  //free(s_indexes);
+	  free(s_numbers);
 }
 
 void DFT_gosu::setXscale(int x)
