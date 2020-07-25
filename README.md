@@ -47,7 +47,8 @@ How it works
 This application get audio stream from default input device, then made a real-time spectrum analysis.
 <br>After that, spectrum powers gropped into 20 groups using octave scale.
 <br>For each light found into the system, you can define group(s) it should react, as well as color for Zero (low) and Max (High) power.
-<br>It's also possible to compress diapasone if group always not so or so high powered - use low-cut as a bottom range and hi-cut as a top one (values are 0-255).
+<br>It's also possible to compress diapasone if group always not so or so high powered - use low-cut as a bottom range and hi-cut as a top one (values are 0-255).<br>
+Global parameter "Decay" defines how fast detected Peak Level decayed if not peak detected or increased if detected peak is higher (2xDecay). Keep it at default 10000 if you audio is 16-bit, alter to about 1000000 in case of 24-bit, set 0 to disable decay, or experiment with you own values.
 
 ## Tools Used
 * Visual Studio Community 2019
