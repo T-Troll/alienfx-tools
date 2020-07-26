@@ -8,6 +8,7 @@ A bunch of tools for Alienware LighFX controls:
 ## Requirements
 - Alienware LightFX DLLs installed on your computer. These are automatically installed with Alienware Command Center and 
 should be picked up by this program.
+- You should enable Alienfx API into AWCC: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 8+ (binary files for x64 only, but you can compile project for x86 as well).
 
 Device checked: `Alienware m15R1`, `Alienware M13R2` (should work with any Alienware device with API 1.0 or later)
