@@ -109,7 +109,7 @@ void DFT_gosu::calc(double *x1)
 
 		x2[n] = v / f;
 		//x2[n] = v / (s_numbers[n] - prev);
-		prev = s_numbers[n];
+		//prev = s_numbers[n];
 		if (x2[n] < minP)
 			minP = x2[n];
 		if (x2[n] > maxP)

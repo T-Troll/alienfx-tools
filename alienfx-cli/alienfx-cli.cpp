@@ -34,9 +34,15 @@ int main(int argc, char* argv[])
 
 	//const ResultT& result(lfxUtil.InitLFX());
 	//if (!result.first)
-	if (!lfxUtil.InitLFX())
+	int res = lfxUtil.InitLFX();
+	if ( res != -1) {
+		switch (res) {
+		case 0: std::cerr << "Can't load DLL library!" << std::endl; break;
+		case 1: std::cerr << "Can't init library!" << std::endl; break;
+		default: std::cerr << "Unknown error!" << std::endl; break;
+		}
 		return 1;
-
+	}
 	const char* command = argv[1];
 	if (std::string(command) == "set-all")
 	{

@@ -40,7 +40,7 @@ namespace LFXUtil
 	int LFXUtilC::InitLFX()
 	{
 		if (initialized)
-			return 0;// ResultT(true, _T("Already initialized"));
+			return -1;// ResultT(true, _T("Already initialized"));
 
 		// Dell is stupid and forces us to manually load the DLL and bind its functions
 		hLibrary = LoadLibrary(_T(LFX_DLL_NAME));
@@ -68,10 +68,10 @@ namespace LFXUtil
 		_LFX_GetVersion = (LFX2GETVERSION)GetProcAddress(hLibrary, LFX_DLL_GETVERSION);
 
 		if (_LFX_Initialize() != LFX_SUCCESS)
-			return 0;// ResultT(false, _T("_LFX_Initialize() failed"));
+			return 1;// ResultT(false, _T("_LFX_Initialize() failed"));
 
 		initialized = true;
-		return 1;// ResultT(true, _T("InitFX() success"));
+		return -1;// ResultT(true, _T("InitFX() success"));
 	}
 
 	void LFXUtilC::Release()

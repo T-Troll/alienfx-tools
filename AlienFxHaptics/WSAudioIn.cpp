@@ -188,6 +188,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	BYTE* pData;
 	DWORD flags;
 	double* waveT = (double*)malloc(NUMSAM * sizeof(double));
+	UINT32 maxLevel = pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
 	//pCaptureClient = lpParam;
 
@@ -208,6 +209,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					&numFramesAvailable,
 					&flags, NULL, NULL);
 				shift = 0;
+				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) continue;
 				for (UINT i = 0; i < numFramesAvailable; i++) {
 					INT64 finVal = 0;
 					for (int k = 0; k < nChannel; k++) {
@@ -216,10 +218,10 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 						for (int j = bytesPerChannel - 1; j >=0 ; j--) {
 							val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
 						}
-						finVal += val;
+						finVal += val;// +((maxLevel + 1) / 2);
 					}
 					//double val = pData[4 * i] + pData[4 * i + 1] * 256;
-					waveT[arrayPos + i - shift] = (double)(finVal / nChannel);// / (pow(256, bytesPerChannel) - 1);
+					waveT[arrayPos + i - shift] = (double)(finVal / nChannel) / maxLevel / NUMSAM;// / (pow(256, bytesPerChannel) - 1);
 					if (arrayPos + i == NUMSAM - 1) {
 						//buffer full, send to process.
 						memcpy(waveD, waveT, NUMSAM * sizeof(double));
