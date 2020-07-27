@@ -2,7 +2,7 @@
 A bunch of tools for Alienware LighFX controls:
 - alienfx-cli - Make changes and check status of your AlienFX lights from the command line.
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
-- (In development) AlienFX ambient lights - Visualize screen picture as ambient light (from desktop, game, video player)
+- AlienFX ambient lights Pre-Alpha - Visualize screen picture as ambient light (from desktop, game, video player) - not released yet!
 <br>More will follow!
 
 ## Requirements
@@ -62,4 +62,5 @@ Integration code and haptic algorythms by T-Troll<br>
 API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).<br>
 AlienFX interaction code is from HunterZ's [UniLight](https://github.com/HunterZ/UniLight).<br>
 Spectrum Analyzer code is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
-FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.
+FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.<br>
+DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.
