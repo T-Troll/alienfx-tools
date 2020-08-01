@@ -2,7 +2,7 @@
 A bunch of tools for Alienware LighFX controls:
 - alienfx-cli - Make changes and check status of your AlienFX lights from the command line.
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
-- AlienFX ambient lights Pre-Alpha - Visualize screen picture as ambient light (from desktop, game, video player) - not released yet!
+- AlienFX ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
 <br>More will follow!
 
 ## Requirements
@@ -50,6 +50,19 @@ This application get audio stream from default input device, then made a real-ti
 <br>For each light found into the system, you can define group(s) it should react, as well as color for Zero (low) and Max (High) power.
 <br>It's also possible to compress diapasone if group always not so or so high powered - use low-cut as a bottom range and hi-cut as a top one (values are 0-255).<br>
 Global parameter "Decay" defines how fast detected Peak Level decayed if not peak detected or increased if detected peak is higher (2xDecay). Keep it at default 10000 if you audio is 16-bit, alter to about 1000000 in case of 24-bit, set 0 to disable decay, or experiment with you own values.
+
+## alienfx-ambient Usage
+Run `alienfx-ambient.exe`. At first launch, set screen zones mapping to lights and parameters.
+<br>Minimize, then start video player or game of choice.
+```
+How it works
+```
+This application get shot of screen (privary or secondary), then divide it to several zones.
+<br>For each zone, dominant color calculated (you can see it at the button in app interface).
+<br>For each light found into the system, you can define zone(s) it should follow.
+<br>You can also select which screen to grab - primary or secondary, if you have more, then one. 
+<br>WARNING! Changing screen requires application restart to apply!
+<br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value increase update performance, but decrease dominant color extraction presision. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if works ok for you.
 
 ## Tools Used
 * Visual Studio Community 2019
