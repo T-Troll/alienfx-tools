@@ -59,7 +59,7 @@ How it works
 ```
 This application get shot of screen (privary or secondary), then divide it to several zones.
 <br>For each zone, dominant color calculated (you can see it at the button in app interface).
-<br>For each light found into the system, you can define zone(s) it should follow.
+<br>For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one (NOT reccomeded to do it in 0.5.0, results can be ugly sometimes).
 <br>You can also select which screen to grab - primary or secondary, if you have more, then one. 
 <br>WARNING! Changing screen requires application restart to apply!
 <br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value increase update performance, but decrease dominant color extraction presision. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if works ok for you.
