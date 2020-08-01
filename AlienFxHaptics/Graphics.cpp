@@ -32,7 +32,7 @@ int short_term_avg_freq;
 int long_term_avg_freq;
 bool axis_draw = true;
 
-LFXUtil::LFXUtilC* lfxUtil = NULL;
+//LFXUtil::LFXUtilC* lfxUtil = NULL;
 ConfigHandler* config = NULL;
 WSAudioIn* audio = NULL;
 
@@ -41,7 +41,7 @@ HINSTANCE ghInstance;
 NOTIFYICONDATA niData;
 
 // default constructor
-Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LFXUtilC *lfxutil, ConfigHandler *conf)
+Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf)
 {
 
 	nCmdShow=mainCmdShow;
@@ -53,7 +53,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LF
 	g_rgbText = RGB(255, 255, 255);
 	g_rgbBackground = RGB(0, 0, 0);
 	freq=freqp;
-	lfxUtil = lfxutil;
+	//lfxUtil = lfxutil;
 	config = conf;
 
 	strcpy_s(g_szClassName,14,"myWindowClass");
@@ -171,54 +171,58 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	int i, rectop;
 	char szSize[100]; //freq axis
 
-	//setting collors:
-	SetDCBrushColor(hdc, RGB(255, 255, 255));
-	SetDCPenColor(hdc, RGB(255, 255, 39));
-	SetTextColor(hdc, RGB(255, 255, 255));
-	SelectObject(hdc, GetStockObject(DC_BRUSH));
-	SelectObject(hdc, GetStockObject(DC_PEN));
-	SetBkMode(hdc, TRANSPARENT);
+	HWND hwnd = WindowFromDC(hdc);
+	if (!IsIconic(hwnd)) {
 
-	if (axis_draw) {
-		//draw x axis:
-		MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
-		LineTo(hdc, rcClientP->right - 50, rcClientP->bottom - 21);
-		LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 26);
-		MoveToEx(hdc, rcClientP->right - 50, rcClientP->bottom - 21, (LPPOINT)NULL);
-		LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 16);
-		TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
+		//setting collors:
+		SetDCBrushColor(hdc, RGB(255, 255, 255));
+		SetDCPenColor(hdc, RGB(255, 255, 39));
+		SetTextColor(hdc, RGB(255, 255, 255));
+		SelectObject(hdc, GetStockObject(DC_BRUSH));
+		SelectObject(hdc, GetStockObject(DC_PEN));
+		SetBkMode(hdc, TRANSPARENT);
 
-		//draw y axis:
-		MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
-		LineTo(hdc, 40, 30);
-		LineTo(hdc, 45, 35);
-		MoveToEx(hdc, 40, 30, (LPPOINT)NULL);
-		LineTo(hdc, 35, 35);
-		TextOut(hdc, 15, 10, "[Power]", 7);
-		//wsprintf(szSize, "%6d", (int)y_scale);
-		//TextOut(hdc, 150, 10, szSize, 6);
-		TextOut(hdc, 10, 40, "255", 3);
-		TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
-		TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
-		//axis_draw = false;
-		int oldvalue = (-1);
-		double coeff = 22 / (log(22.0));
-		for (i = 0; i <= 22; i++) {
-			int frq = int(22 - round((log(22.0 - i) * coeff)));
-			if (frq > oldvalue) {
-				wsprintf(szSize, "%2d", frq);
-				TextOut(hdc, ((rcClientP->right - 100) * i) / 23 + 50, rcClientP->bottom - 20, szSize, 2);
-				oldvalue = frq;
+		if (axis_draw) {
+			//draw x axis:
+			MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
+			LineTo(hdc, rcClientP->right - 50, rcClientP->bottom - 21);
+			LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 26);
+			MoveToEx(hdc, rcClientP->right - 50, rcClientP->bottom - 21, (LPPOINT)NULL);
+			LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 16);
+			TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
+
+			//draw y axis:
+			MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
+			LineTo(hdc, 40, 30);
+			LineTo(hdc, 45, 35);
+			MoveToEx(hdc, 40, 30, (LPPOINT)NULL);
+			LineTo(hdc, 35, 35);
+			TextOut(hdc, 15, 10, "[Power]", 7);
+			//wsprintf(szSize, "%6d", (int)y_scale);
+			//TextOut(hdc, 150, 10, szSize, 6);
+			TextOut(hdc, 10, 40, "255", 3);
+			TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
+			TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
+			//axis_draw = false;
+			int oldvalue = (-1);
+			double coeff = 22 / (log(22.0));
+			for (i = 0; i <= 22; i++) {
+				int frq = int(22 - round((log(22.0 - i) * coeff)));
+				if (frq > oldvalue) {
+					wsprintf(szSize, "%2d", frq);
+					TextOut(hdc, ((rcClientP->right - 100) * i) / 23 + 50, rcClientP->bottom - 20, szSize, 2);
+					oldvalue = frq;
+				}
 			}
 		}
-	}
 
-	for (i=0; i<bars; i++){
-		rectop = ((255-freq[i])*(rcClientP->bottom-30))/255;
-		if (rectop < 50 ) rectop = 50;
-		Rectangle(hdc, ((rcClientP->right - 120)*i)/bars + 50, rectop, ((rcClientP->right - 120)*(i+1))/bars-2 + 50, rcClientP->bottom-30);
-		//wsprintf(szSize, "%3d", freq[i]);
-		//TextOut(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop - 15, szSize, 3);
+		for (i = 0; i < bars; i++) {
+			rectop = ((255 - freq[i]) * (rcClientP->bottom - 30)) / 255;
+			if (rectop < 50) rectop = 50;
+			Rectangle(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop, ((rcClientP->right - 120) * (i + 1)) / bars - 2 + 50, rcClientP->bottom - 30);
+			//wsprintf(szSize, "%3d", freq[i]);
+			//TextOut(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop - 15, szSize, 3);
+		}
 	}
 } 
 
@@ -322,6 +326,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			case WM_LBUTTONDBLCLK:
 			case WM_LBUTTONUP:
 				ShowWindow(hwnd, SW_RESTORE);
+				SetWindowPos(hwnd,       // handle to window
+					HWND_TOPMOST,  // placement-order handle
+					0,     // horizontal position
+					0,      // vertical position
+					0,  // width
+					0, // height
+					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+				);
 				Shell_NotifyIcon(NIM_DELETE, &niData);
 			break;
 			//case WM_RBUTTONDOWN:
@@ -364,17 +376,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			prevfreq = frq;
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
-		unsigned numdev = lfxUtil->GetNumDev();
+		unsigned numdev = config->lfxUtil->GetNumDev();
 		for (i = 0; i < numdev; i++) {
-			deviceinfo* dev = lfxUtil->GetDevInfo(i);
+			deviceinfo* dev = config->lfxUtil->GetDevInfo(i);
 			int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(TEXT(dev->desc)));
 			SendMessage(dev_list, LB_SETITEMDATA, pos, (LPARAM)dev->id);
 		}
 		SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 		if (numdev > 0) {
-			unsigned lights = lfxUtil->GetDevInfo(0)->lights;
+			unsigned lights = config->lfxUtil->GetDevInfo(0)->lights;
 			for (i = 0; i < lights; i++) {
-				lightinfo *lgh = lfxUtil->GetLightInfo(0, i);
+				lightinfo *lgh = config->lfxUtil->GetLightInfo(0, i);
 				int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh->desc)));
 				SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
 			}
@@ -438,14 +450,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
-				unsigned numdev = lfxUtil->GetNumDev();
+				unsigned numdev = config->lfxUtil->GetNumDev();
 				if (numdev > 0) {
-					unsigned lights = lfxUtil->GetDevInfo(did)->lights;
+					unsigned lights = config->lfxUtil->GetDevInfo(did)->lights;
 					EnableWindow(freq_list, FALSE);
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 					for (i = 0; i < lights; i++) {
-						lightinfo* lgh = lfxUtil->GetLightInfo(did, i);
+						lightinfo* lgh = config->lfxUtil->GetLightInfo(did, i);
 						int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh->desc)));
 						SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
 					}
@@ -624,6 +636,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 	}
 	break;
+	default: return false;
 	}
 
 	return TRUE;

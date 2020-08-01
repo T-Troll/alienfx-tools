@@ -29,11 +29,6 @@ bool tdone = false;
 
 //HANDLE cEvent;
 
-namespace
-{
-	LFXUtil::LFXUtilC lfxUtil;
-}
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine, int nCmdShow)
 {
@@ -49,9 +44,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	ConfigHandler conf;
 	conf.Load();
 
-	Graphika = new Graphics(hInstance ,nCmdShow, freq, &lfxUtil, &conf);
+	Graphika = new Graphics(hInstance ,nCmdShow, freq, &conf);
 	dftG = new DFT_gosu(NUMPTS, Graphika->getBarsNum() , Graphika->getYScale() , freq);
-	FXproc = new FXHelper(freq, &lfxUtil, &conf);
+	FXproc = new FXHelper(freq, &conf);
 
 	//void (*callbackfunc)(double*) = resample;
 	DWORD (*callbackfunc)(LPVOID) = resample;

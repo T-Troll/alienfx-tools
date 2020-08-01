@@ -14,7 +14,7 @@
 class Graphics {
 
 public:
-	Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, LFXUtil::LFXUtilC *lfxUtil, ConfigHandler *conf);
+	Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf);
 	void start();
 	int getBarsNum();
 	double getYScale();

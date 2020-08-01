@@ -30,12 +30,27 @@
     <ClInclude Include="CaptureHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConfigHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FXHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfx-ambient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CaptureHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FXHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\alienfx-cli\LFXUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -49,6 +64,12 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="alienfx-ambient.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="alien.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icon1.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

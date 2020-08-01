@@ -1,10 +1,10 @@
 #include "FXHelper.h"
 
-FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
-	freq = freqp;
+FXHelper::FXHelper(ConfigHandler* conf) {
+	//freq = freqp;
+	lfx = conf->lfx;
 	config = conf;
 	//lastUpdate = GetTickCount64();
-	lfx = conf->lfxUtil;
 	done = 0;
 	stopped = 0;
 	lastLights = 0;
@@ -30,25 +30,27 @@ void FXHelper::StopFX() {
 	lfx->Release();
 };
 
-int FXHelper::Refresh(int numbars)
+int FXHelper::Refresh(UCHAR* img)
 {
 	unsigned i = 0;
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
-		double power = 0.0;
-		Colorcode from, to, fin;
-		from.ci = map.colorfrom.ci; to.ci = map.colorto.ci;
+		//double power = 0.0;
+		Colorcode fin = { 0 };
+		//from.ci = map.colorfrom.ci; to.ci = map.colorto.ci;
 		// here need to check less bars...
 		for (int j = 0; j < map.map.size(); j++) {
-			power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut: 0 );
+			fin.cs.red += img[4 * map.map[j]];
+			fin.cs.green += img[4 * map.map[j] +1];
+			fin.cs.blue += img[4 * map.map[j] +2 ];
+			fin.cs.brightness += img[4 * map.map[j] +3];
 		}
-		if (map.map.size() > 0)
-			power = power / (map.map.size() * (map.hicut - map.lowcut));
-		fin.cs.blue = (unsigned char)((1 - power) * from.cs.red + power * to.cs.red);
-		fin.cs.green = (unsigned char)((1 - power) * from.cs.green + power * to.cs.green);
-		fin.cs.red = (unsigned char)((1 - power) * from.cs.blue + power * to.cs.blue);
-		//it's a bug into LightFX - r and b are inverted in this call!
-		fin.cs.brightness = (unsigned char)((1 - power) * from.cs.brightness + power * to.cs.brightness);
+		if (map.map.size() > 0) {
+			fin.cs.red /= map.map.size();
+			fin.cs.green /= map.map.size();
+			fin.cs.blue /= map.map.size();
+			fin.cs.brightness /= map.map.size();
+		}
 		updates[i].color = fin;
 		updates[i].devid = map.devid;
 		updates[i].lightid = map.lightid;

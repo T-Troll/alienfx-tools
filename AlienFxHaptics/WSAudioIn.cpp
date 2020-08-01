@@ -188,7 +188,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	BYTE* pData;
 	DWORD flags;
 	double* waveT = (double*)malloc(NUMSAM * sizeof(double));
-	UINT32 maxLevel = pow(256, bytesPerChannel) - 1;
+	UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
 	//pCaptureClient = lpParam;
 

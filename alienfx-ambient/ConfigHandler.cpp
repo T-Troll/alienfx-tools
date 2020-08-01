@@ -2,15 +2,17 @@
 
 namespace
 {
-    LFXUtil::LFXUtilC lfx;
+    LFXUtil::LFXUtilC lfxUtil;
 }
 
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
-    //TCHAR  szData[] = TEXT("USR:SOFTWARE\\Alienfxhaptics\\Settings");
-    lfxUtil = &lfx;
+    lfx = &lfxUtil;
+    lfx->InitLFX();
+    lfx->FillInfo();
+
     RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxhaptics"),
+        TEXT("SOFTWARE\\Alienfxambient"),
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
@@ -19,7 +21,7 @@ ConfigHandler::ConfigHandler() {
         &hKey1,
         &dwDisposition);
     RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxhaptics\\Mappings"),
+        TEXT("SOFTWARE\\Alienfxambient\\Mappings"),
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
@@ -31,38 +33,35 @@ ConfigHandler::ConfigHandler() {
 ConfigHandler::~ConfigHandler() {
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
-    //RegCloseKey(hKey3);
 }
 int ConfigHandler::Load() {
     int size = 4;
 
     RegGetValue(hKey1,
         NULL,
-        TEXT("Bars"),
+        TEXT("MaxColors"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
-        &numbars,
+        &maxcolors,
         (LPDWORD) &size);
-    if (!numbars) { // no key
-        numbars = 20;
+    if (!maxcolors) { // no key
+        maxcolors = 20;
     }
     RegGetValue(hKey1,
         NULL,
-        TEXT("Power"),
+        TEXT("Mode"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
-        &res,
+        &mode,
         (LPDWORD)&size);
-    if (!res) {
-        res = 10000;
-    }
     RegGetValue(hKey1,
         NULL,
-        TEXT("Input"),
+        TEXT("Divider"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
-        &inpType,
+        &divider,
         (LPDWORD)&size);
+    if (!divider) divider = 8;
     unsigned vindex = 0, inarray[30];
     TCHAR name[255];
     unsigned ret = 0;
@@ -80,13 +79,13 @@ int ConfigHandler::Load() {
         );
         // get id(s)...
         if (ret == ERROR_SUCCESS) {
-            unsigned ret2 = sscanf_s(name, "%d-%d", &map.devid, &map.lightid);
+            unsigned ret2 = sscanf_s((char *) name, "%d-%d", &map.devid, &map.lightid);
             if (ret2 != EOF) {
-                map.colorfrom.ci = inarray[0];
-                map.colorto.ci = inarray[1];
-                map.lowcut = inarray[2];
-                map.hicut = inarray[3];
-                for (unsigned i = 4; i < (lend / 4); i++)
+                //map.colorfrom.ci = inarray[0];
+                //map.colorto.ci = inarray[1];
+                //map.lowcut = inarray[2];
+                //map.hicut = inarray[3];
+                for (unsigned i = 0; i < (lend / 4); i++)
                     map.map.push_back(inarray[i]);
                 mappings.push_back(map);
             }
@@ -104,38 +103,38 @@ int ConfigHandler::Save() {
         TEXT("Bars"),
         0,
         REG_DWORD,
-        (BYTE *) &numbars,
+        (BYTE *) &maxcolors,
         4
     );
     RegSetValueEx(
         hKey1,
-        TEXT("Power"),
+        TEXT("Mode"),
         0,
         REG_DWORD,
-        (BYTE*)&res,
+        (BYTE*)&mode,
         4
     );
     RegSetValueEx(
         hKey1,
-        TEXT("Input"),
+        TEXT("Divider"),
         0,
         REG_DWORD,
-        (BYTE*)&inpType,
+        (BYTE*)&divider,
         4
     );
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
-        sprintf_s(name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+        sprintf_s((char *)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
         //preparing binary....
-        out[0] = mappings[i].colorfrom.ci;
-        out[1] = mappings[i].colorto.ci;
-        out[2] = mappings[i].lowcut;
-        out[3] = mappings[i].hicut;
+        //out[0] = mappings[i].colorfrom.ci;
+        //out[1] = mappings[i].colorto.ci;
+        //out[2] = mappings[i].lowcut;
+       // out[3] = mappings[i].hicut;
         int j, size;
         for (j = 0; j < mappings[i].map.size(); j++) {
-            out[j + 4] = mappings[i].map[j];
+            out[j] = mappings[i].map[j];
         }
-        size = (j + 4) * sizeof(unsigned);
+        size = j * sizeof(unsigned);
         RegSetValueEx(
             hKey2,
             name,
