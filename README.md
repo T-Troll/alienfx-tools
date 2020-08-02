@@ -2,7 +2,8 @@
 A bunch of tools for Alienware LighFX controls:
 - alienfx-cli - Make changes and check status of your AlienFX lights from the command line.
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
-- AlienFX ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
+- AlienFX Ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
+- (In development) AlienFX Monitor - Visual feedback for CPU/RAM/HDD/SSD/Network loading.
 <br>More will follow!
 
 ## Requirements
