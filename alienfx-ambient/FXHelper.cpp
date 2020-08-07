@@ -43,7 +43,7 @@ int FXHelper::Refresh(UCHAR* img)
 			fin.cs.red += img[4 * map.map[j]];
 			fin.cs.green += img[4 * map.map[j] +1];
 			fin.cs.blue += img[4 * map.map[j] +2 ];
-			fin.cs.brightness += img[4 * map.map[j] +3];
+			fin.cs.brightness += img[4 * map.map[j] + 3];
 		}
 		if (map.map.size() > 0) {
 			fin.cs.red /= map.map.size();
@@ -60,7 +60,7 @@ int FXHelper::Refresh(UCHAR* img)
 }
 
 int FXHelper::UpdateLights() {
-	if (done) { stopped = 1; return 1; }
+	if (done) { return 1; }
 	ULONGLONG cTime = GetTickCount64();
 	ULONGLONG oldTime = cTime;
 	int uIndex = 0;
@@ -70,10 +70,10 @@ int FXHelper::UpdateLights() {
 			uIndex = j;
 		}
 	}
-	//if (cTime - oldTime > 50) {
+	if (cTime - oldTime > 50) {
 		lfx->SetOneLFXColor(updates[uIndex].devid, updates[uIndex].lightid, &updates[uIndex].color.ci);
 		lfx->Update();
 		updates[uIndex].lastUpdate = cTime;
-	//}
+	}
 	return 0;
 }

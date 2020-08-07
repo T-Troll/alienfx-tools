@@ -96,6 +96,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     cap->Stop();
     conf->Save();
+    conf->lfx->Reset();
     delete cap;
     delete conf;
 
@@ -331,7 +332,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 UINT bid = IDC_CHECK1;
                 //SendMessage(freq_list, LB_SETSEL, FALSE, -1);
                 // clear checks...
-                for (i = 0; i < 9; i++) {
+                for (i = 0; i < 12; i++) {
                     CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
                 }
                 for (int j = 0; j < map->map.size(); j++) {
@@ -344,7 +345,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             } break;
         } break;
         case IDC_BUTTON1: case IDC_BUTTON2: case IDC_BUTTON3: case IDC_BUTTON4: case IDC_BUTTON5: case IDC_BUTTON6: case IDC_BUTTON7:
-        case IDC_BUTTON8: case IDC_BUTTON9: {
+        case IDC_BUTTON8: case IDC_BUTTON9: case IDC_BUTTON10: case IDC_BUTTON11: case IDC_BUTTON12: {
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {

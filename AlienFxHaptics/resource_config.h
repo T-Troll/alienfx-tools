@@ -13,6 +13,11 @@
 #define IDC_EDIT_HIGHCUT                1011
 #define IDC_EDIT1                       1012
 #define IDC_EDIT_DECAY                  1012
+#define IDC_SLIDER_LOWCUT               1013
+#define IDC_SLIDER_HICUT                1014
+#define IDC_BUTTON_LPC                  1015
+#define IDC_BUTTON_LPC2                 1016
+#define IDC_BUTTON_HPC                  1016
 
 // Next default values for new objects
 // 
@@ -21,7 +26,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1013
+#define _APS_NEXT_CONTROL_VALUE         1016
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

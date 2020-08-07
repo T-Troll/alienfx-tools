@@ -22,8 +22,11 @@
 #define IDC_BUTTON7                     1006
 #define IDC_BUTTON8                     1007
 #define IDC_BUTTON9                     1008
-#define IDC_DEVICE                      1009
-#define IDC_LIGHTS                      1010
+#define IDC_BUTTON10                    1009
+#define IDC_BUTTON11                    1010
+#define IDC_BUTTON12                    1011
+#define IDC_DEVICE                      1012
+#define IDC_LIGHTS                      1013
 #define IDC_CHECK1                      1026
 #define IDC_CHECK2                      1027
 #define IDC_CHECK3                      1028
@@ -33,9 +36,12 @@
 #define IDC_CHECK7                      1032
 #define IDC_CHECK8                      1033
 #define IDC_CHECK9                      1034
-#define IDC_RADIO_PRIMARY               1036
-#define IDC_RADIO_SECONDARY             1037
-#define IDC_EDIT_DIVIDER                1038
+#define IDC_CHECK10                     1035
+#define IDC_CHECK11                     1036
+#define IDC_CHECK12                     1037
+#define IDC_RADIO_PRIMARY               1038
+#define IDC_RADIO_SECONDARY             1039
+#define IDC_EDIT_DIVIDER                1040
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

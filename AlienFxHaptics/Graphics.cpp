@@ -348,7 +348,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
+void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
+	RECT rect;
+	HBRUSH Brush = NULL;
+	HWND tl = GetDlgItem(hDlg, id);
+	GetWindowRect(tl, &rect);
+	HDC cnt = GetWindowDC(tl);
+	rect.bottom -= rect.top;
+	rect.right -= rect.left;
+	rect.top = rect.left = 0;
+	// BGR!
+	Brush = CreateSolidBrush(RGB(r, g, b));
+	FillRect(cnt, &rect, Brush);
+	DeleteObject(Brush);
+}
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -362,6 +375,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	HWND low_cut = GetDlgItem(hDlg, IDC_EDIT_LOWCUT);
 	HWND hi_cut = GetDlgItem(hDlg, IDC_EDIT_HIGHCUT);
 	HWND hdecay = GetDlgItem(hDlg, IDC_EDIT_DECAY);
+	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
+	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
 	mapping* map = NULL;
 
 	switch (message)
@@ -394,6 +409,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		TCHAR decay[17];
 		sprintf_s(decay, 16, "%d", config->res);
 		SendMessage(hdecay, WM_SETTEXT, 0, (LPARAM)decay);
+		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 	}
 	break;
 
@@ -404,6 +421,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		lbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
 		int did = (int)SendMessage(dev_list, CB_GETITEMDATA, lbItem, 0);
 		int fid = (int)SendMessage(freq_list, LB_GETCURSEL, 0, 0);
+		for (i = 0; i < config->mappings.size(); i++)
+			if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
+				break;
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
@@ -483,9 +503,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			{
 			case LBN_SELCHANGE: {
 				// check in config - do we have mappings?
-				for (i = 0; i < config->mappings.size(); i++)
-					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-						break;
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
 				}
@@ -514,6 +531,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
 				SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
 				RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
+				RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
 				// load cuts...
 				TCHAR locut[6], hicut[6];
 				sprintf_s(locut, 5, "%d", map->lowcut);
@@ -522,6 +541,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)hicut);
 				RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
+				SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
 			}
 			break;
 		}
@@ -530,9 +551,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case LBN_SELCHANGE: {
-				for (i = 0; i < config->mappings.size(); i++)
-					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-						break;
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
 					// add mapping
@@ -569,14 +587,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case EN_UPDATE: {
 				// update lo-cut
-				for (i = 0; i < config->mappings.size(); i++)
-					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-						break;
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
 					TCHAR buffer[4]; buffer[0] = 3;
 					SendMessage(low_cut, EM_GETLINE, 0, (LPARAM)buffer);
 					map->lowcut = atoi(buffer) < 256 ? atoi(buffer) : 255;
+					SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 				}
 			} break;
 			} break;
@@ -584,14 +600,83 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case EN_UPDATE: {
 				// update lo-cut
-				for (i = 0; i < config->mappings.size(); i++)
-					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-						break;
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
 					TCHAR buffer[4]; buffer[0] = 3;
 					SendMessage(hi_cut, EM_GETLINE, 0, (LPARAM)buffer);
 					map->hicut = atoi(buffer) < 256 ? atoi(buffer) : 255;
+					SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
+				}
+			} break;
+			} break;
+		
+		case IDC_BUTTON_LPC:
+			switch (HIWORD(wParam))
+			{
+			case BN_CLICKED: {
+				if (i < config->mappings.size()) {
+					map = &config->mappings[i];
+					CHOOSECOLOR cc;                 // common dialog box structure 
+					static COLORREF acrCustClr[16]; // array of custom colors 
+					//HWND hwnd;                      // owner window
+					//HBRUSH hbrush;                  // brush handle
+
+					// Initialize CHOOSECOLOR 
+					ZeroMemory(&cc, sizeof(cc));
+					cc.lStructSize = sizeof(cc);
+					cc.hwndOwner = hDlg;
+					cc.lpCustColors = (LPDWORD)acrCustClr;
+					cc.rgbResult = RGB(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
+					cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+					if (ChooseColor(&cc) == TRUE)
+					{
+						//BYTE br = map->colorfrom.cs.brightness;
+						map->colorfrom.cs.red = cc.rgbResult &0xff;
+						map->colorfrom.cs.green = cc.rgbResult >> 8 & 0xff;
+						map->colorfrom.cs.blue = cc.rgbResult >> 16 & 0xff;
+						//map->colorfrom.cs.brightness = br;
+						unsigned clrmap = MAKEIPADDRESS(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue, map->colorfrom.cs.brightness);
+						SendMessage(from_color, IPM_SETADDRESS, 0, clrmap);
+						RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+						RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
+						//rgbCurrent = cc.rgbResult;
+					}
+				}
+			} break;
+		} break;
+		case IDC_BUTTON_HPC:
+			switch (HIWORD(wParam))
+			{
+			case BN_CLICKED: {
+				if (i < config->mappings.size()) {
+					map = &config->mappings[i];
+					CHOOSECOLOR cc;                 // common dialog box structure 
+					static COLORREF acrCustClr[16]; // array of custom colors 
+					//HWND hwnd;                      // owner window
+					//HBRUSH hbrush;                  // brush handle
+
+					// Initialize CHOOSECOLOR 
+					ZeroMemory(&cc, sizeof(cc));
+					cc.lStructSize = sizeof(cc);
+					cc.hwndOwner = hDlg;
+					cc.lpCustColors = (LPDWORD)acrCustClr;
+					cc.rgbResult = RGB(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
+					cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+					if (ChooseColor(&cc) == TRUE)
+					{
+						//BYTE br = map->colorfrom.cs.brightness;
+						map->colorto.cs.red = cc.rgbResult & 0xff;
+						map->colorto.cs.green = cc.rgbResult >> 8 & 0xff;
+						map->colorto.cs.blue = cc.rgbResult >> 16 & 0xff;
+						//map->colorfrom.cs.brightness = br;
+						unsigned clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
+						SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
+						RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+						RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
+						//rgbCurrent = cc.rgbResult;
+					}
 				}
 			} break;
 			} break;
@@ -599,9 +684,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case EN_KILLFOCUS:/*EN_CHANGE:*/ {
-				for (i = 0; i < config->mappings.size(); i++)
-					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-						break;
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
 					unsigned clrmap = 0;
@@ -610,6 +692,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					map->colorfrom.cs.green = SECOND_IPADDRESS(clrmap);
 					map->colorfrom.cs.blue = THIRD_IPADDRESS(clrmap);
 					map->colorfrom.cs.brightness = FOURTH_IPADDRESS(clrmap);
+					RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
 				}
 			} break;
 			}
@@ -618,9 +701,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case EN_KILLFOCUS:/*EN_CHANGE:*/ {
-				for (i = 0; i < config->mappings.size(); i++)
-					if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-						break;
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
 					unsigned clrmap = 0;
@@ -629,6 +709,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					map->colorto.cs.green = SECOND_IPADDRESS(clrmap);
 					map->colorto.cs.blue = THIRD_IPADDRESS(clrmap);
 					map->colorto.cs.brightness = FOURTH_IPADDRESS(clrmap);
+					RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
 				}
 			} break;
 			}
@@ -636,6 +717,37 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 	}
 	break;
+	case WM_HSCROLL: {
+		int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
+		int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+		lbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
+		int did = (int)SendMessage(dev_list, CB_GETITEMDATA, lbItem, 0);
+		//int fid = (int)SendMessage(freq_list, LB_GETCURSEL, 0, 0);
+		switch (LOWORD(wParam)) {
+		case TB_THUMBTRACK: case TB_ENDTRACK: {
+			for (i = 0; i < config->mappings.size(); i++)
+				if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
+					break;
+			if (i < config->mappings.size()) {
+				map = &config->mappings[i];
+				if ((HWND)lParam == hLowSlider) {
+					map->lowcut = SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
+					TCHAR locut[6];
+					sprintf_s(locut, 5, "%d", map->lowcut);
+					SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
+					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				}
+				if ((HWND)lParam == hHiSlider) {
+					map->hicut = SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
+					TCHAR locut[6];
+					sprintf_s(locut, 5, "%d", map->hicut);
+					SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)locut);
+					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				}
+			}
+		} break;
+		}
+	} break;
 	default: return false;
 	}
 

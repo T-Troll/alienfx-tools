@@ -84,28 +84,35 @@ UCHAR* Resize(UCHAR* src, UINT w1, UINT h1, UINT cd, UINT st, UINT div)
 	};
 	typedef std::vector<std::pair<UINT32, int> > colordist;
 	typedef std::map<UINT32, int> colormap;
-	int wPix = w1 / 3, hPix = h1 / 3;
-	UCHAR* retval = new UCHAR[9 * cd];
+	int wPix = w1 / 4, hPix = h1 / 3;
+	UCHAR* retval = new UCHAR[12 * cd];
 	colormap cMap;
 	colordist pCount;
 	Colorcode cColor;
+	DWORD64 overallBr;
 	int ptr = 0;
 	//int rad = 50; // hPix;
 	int x = 0, y = 0;
 
 	for (int y = 0; y < 3; y++)
-		for (int x = 0; x < 3; x++) {
+		for (int x = 0; x < 4; x++) {
 			//count colors across zone....
 			//ptr = (y * w1 * hPix + x * wPix) * 3;
+			overallBr = 0;
 			for (int dy = 0; dy < hPix; dy+=div) {
+				DWORD64 lineBr = 0;
 				for (int dx = 0; dx < wPix; dx+=div) {
 					int ptr = GetPtr(dx + x * wPix, dy + y * hPix, cd, st);
 					cColor.cs.r = src[ptr];
 					cColor.cs.g = src[ptr+1];
 					cColor.cs.b = src[ptr+2];
-					cColor.cs.br = src[ptr+3];
+					//cColor.cs.br = src[ptr+3];
 					cMap[cColor.ci]++;
+					lineBr += (0.299 * cColor.cs.r + 0.587 * cColor.cs.g + 0.114 * cColor.cs.b);// src[ptr + 3];
+
 				}
+				lineBr /= wPix / div;
+				overallBr += lineBr;
 			}
 			// Now reduce colors.....
 			//pCount.clear();
@@ -122,11 +129,11 @@ UCHAR* Resize(UCHAR* src, UINT w1, UINT h1, UINT cd, UINT st, UINT div)
 			}
 			cMap.clear();
 			//tk.ci = pCount[0].first;
-			int ptr = GetPtr(x, y, cd, 3 * cd);
+			int ptr = GetPtr(x, y, cd, 4 * cd);
 				retval[ptr] = tk.cs.r;
 				retval[ptr+1] = tk.cs.g;
 				retval[ptr+2] = tk.cs.b;
-				retval[ptr+3] = tk.cs.br;
+				retval[ptr + 3] = overallBr * div / hPix; // tk.cs.br;
 		}
 	return retval;
 }
@@ -192,7 +199,7 @@ DWORD WINAPI CDlgProc(LPVOID param)
 	UCHAR* img = (UCHAR *)param;
 	RECT rect;
 	HBRUSH Brush = NULL;
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 12; i++) {
 		HWND tl = GetDlgItem(hDlg, IDC_BUTTON1 + i);
 		HWND cBid = GetDlgItem(hDlg, IDC_CHECK1 + i);
 		GetWindowRect(tl, &rect);
