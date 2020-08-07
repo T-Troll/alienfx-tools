@@ -20,6 +20,7 @@ This may fixed in upcoming AWCC updates.
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
+In case apps can't locate LightFX dll's, you can find it into /DLL folder and copy to apps folder one you need (for x32 or x64).</br>
 <s>`alienfx-haptics` uses default audio `input` device as audio source, so you possible need to map you audio `output` to virtual input (or use Microphone/Line-In devices instead).
 <br>For Realtek-based hardware, you can do it using `Stereo Mixer` audio device (look in `Control Panel - Sound - Recording`)
 <br>For other hardware, virtual audio cable software (f.e. [VB-Audio VirtualCable](https://www.vb-audio.com/Cable/)) required to do this.</s>
