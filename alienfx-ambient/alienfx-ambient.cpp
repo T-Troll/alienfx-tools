@@ -96,7 +96,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     cap->Stop();
     conf->Save();
-    conf->lfx->Reset();
+    //conf->lfx->Reset();
     delete cap;
     delete conf;
 
@@ -262,7 +262,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             unsigned lights = conf->lfx->GetDevInfo(0)->lights;
             for (i = 0; i < lights; i++) {
                 lightinfo* lgh = conf->lfx->GetLightInfo(0, i);
-                int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)((lgh->desc)));
+                int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh->desc)));
                 SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
             }
         }
@@ -302,7 +302,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     SendMessage(light_list, LB_RESETCONTENT, 0, 0);
                     for (i = 0; i < lights; i++) {
                         lightinfo* lgh = conf->lfx->GetLightInfo(did, i);
-                        int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh->desc)));
+                        int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh->desc));
                         SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
                     }
                     RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);

@@ -11,11 +11,12 @@ struct UpdateData {
 class FXHelper
 {
 private:
-	int* freq, done, stopped, lastLights;
+	//int done, lastLights;
+	int pid;
 	LFXUtil::LFXUtilC* lfx;
 	ConfigHandler* config;
 	ULONGLONG lastUpdate;
-	UpdateData updates[50];
+	std::vector<UpdateData> updates;
 public:
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();

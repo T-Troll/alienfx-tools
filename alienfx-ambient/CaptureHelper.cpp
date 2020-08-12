@@ -1,10 +1,17 @@
 #include "CaptureHelper.h"
+#include <WinNT.h>
 #include <DaramCam.MediaFoundationGenerator.h>
 #include <map>
 #include <list>
 #include <algorithm>
 #include "resource.h"
 #include "FXHelper.h"
+#include "./opencv/include/opencv2/core/mat.hpp"
+#include "./opencv/include/opencv2/imgproc.hpp"
+//#include "opencv2/opencv.hpp"
+
+using namespace cv;
+using namespace std;
 
 DWORD WINAPI CInProc(LPVOID);
 DWORD WINAPI CDlgProc(LPVOID);
@@ -16,6 +23,11 @@ HWND hDlg;
 
 ConfigHandler* config;
 FXHelper* fxh;
+
+UCHAR  imgz[4 * 3 * 3];
+
+DWORD uiThread, cuThread;
+HANDLE uiHandle = 0, cuHandle = 0;
 
 CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf)
 {
@@ -40,7 +52,8 @@ CaptureHelper::~CaptureHelper()
 void CaptureHelper::Start()
 {
 	inWork = true;
-	CreateThread(
+	fxh->StartFX();
+	dwHandle = CreateThread(
 		NULL,              // default security
 		0,                 // default stack size
 		CInProc,        // name of the thread function
@@ -51,7 +64,20 @@ void CaptureHelper::Start()
 
 void CaptureHelper::Stop()
 {
+	DWORD exitCode, exitCode2;
 	inWork = false;
+	GetExitCodeThread(dwHandle, &exitCode);
+	while (exitCode == STILL_ACTIVE)
+		GetExitCodeThread(dwHandle, &exitCode);
+	GetExitCodeThread(uiHandle, &exitCode);
+	GetExitCodeThread(cuHandle, &exitCode2);
+	while ((exitCode == STILL_ACTIVE) || (exitCode2 == STILL_ACTIVE)) {
+		GetExitCodeThread(uiHandle, &exitCode);
+		GetExitCodeThread(cuHandle, &exitCode2);
+	}
+	fxh->StopFX();
+	//uiThread.stop;
+	//cuThread.stop;
 }
 
 int CaptureHelper::GetColor(int pos)
@@ -64,88 +90,118 @@ bool compare(std::pair<UINT32, int> a, std::pair<UINT32, int> b)
 	return a.second > b.second;
 }
 
-UINT GetPtr(int x, int y, int cd, int st) {
-	return y * st + x * cd;
+cv::Mat extractHPts(const cv::Mat& inImage)
+{
+	// container for storing Hue Points
+	cv::Mat listOfHPts(inImage.cols * inImage.rows, 1, CV_32FC1);
+	//listOfHPts = cv::Mat::zeros(inImage.cols * inImage.rows, 1, CV_32FC1);
+	Mat res[3];
+	split(inImage, res);
+	res[0].reshape(1, inImage.cols * inImage.rows).convertTo(listOfHPts, CV_32FC1);
+	//return res[0];
+	// index for listOfHPts container
+	/*int idx = 0;
+	for (int j = 0; j < inImage.rows; j++)
+	{
+		for (int i = 0; i < inImage.cols; i++)
+		{
+			cv::Vec3b tempVec;
+			tempVec = inImage.at<cv::Vec3b>(j, i);
+
+			// extract the H channel and store in Hpts list
+			listOfHPts.at<float>(idx++, 0) = float(tempVec[0]);
+		}
+	} */
+
+	return listOfHPts;
 }
 
-UCHAR* Resize(UCHAR* src, UINT w1, UINT h1, UINT cd, UINT st, UINT div)
+// function for extracting dominant color from foreground pixels
+cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 {
-	struct ColorComp
-	{
-		unsigned char b;
-		unsigned char g;
-		unsigned char r;
-		unsigned char br;
-	};
-	union Colorcode
-	{
-		struct ColorComp cs;
-		unsigned int ci;
-	};
-	typedef std::vector<std::pair<UINT32, int> > colordist;
-	typedef std::map<UINT32, int> colormap;
-	int wPix = w1 / 4, hPix = h1 / 3;
-	UCHAR* retval = new UCHAR[12 * cd];
-	colormap cMap;
-	colordist pCount;
-	Colorcode cColor;
-	DWORD64 overallBr;
-	int ptr = 0;
-	//int rad = 50; // hPix;
-	int x = 0, y = 0;
+	// first we determine which cluster is foreground
+	// assuming the our object of interest is the biggest object in the image region
 
-	for (int y = 0; y < 3; y++)
-		for (int x = 0; x < 4; x++) {
-			//count colors across zone....
-			//ptr = (y * w1 * hPix + x * wPix) * 3;
-			overallBr = 0;
-			for (int dy = 0; dy < hPix; dy+=div) {
-				DWORD64 lineBr = 0;
-				for (int dx = 0; dx < wPix; dx+=div) {
-					int ptr = GetPtr(dx + x * wPix, dy + y * hPix, cd, st);
-					cColor.cs.r = src[ptr];
-					cColor.cs.g = src[ptr+1];
-					cColor.cs.b = src[ptr+2];
-					//cColor.cs.br = src[ptr+3];
-					cMap[cColor.ci]++;
-					lineBr += (0.299 * cColor.cs.r + 0.587 * cColor.cs.g + 0.114 * cColor.cs.b);// src[ptr + 3];
+	cv::Mat fPtsLabel, sumLabel;
+	ptsLabel.convertTo(fPtsLabel, CV_32FC1);
 
-				}
-				lineBr /= wPix / div;
-				overallBr += lineBr;
+	cv::reduce(fPtsLabel, sumLabel, 0, CV_REDUCE_SUM, CV_32FC1);
+
+	int numFGPts = 0;
+
+	if (sumLabel.at<float>(0, 0) < ptsLabel.rows / 2)
+	{
+		// invert the 0's and 1's where 1s represent foreground
+		fPtsLabel = (fPtsLabel - 1) * (-1);
+		numFGPts = fPtsLabel.rows - sumLabel.at<float>(0, 0);
+	}
+	else
+		numFGPts = sumLabel.at<float>(0, 0);
+
+	// to find dominant color, I just average all points belonging to foreground
+	cv::Mat dominantColor;
+	dominantColor = cv::Mat::zeros(1, 3, CV_32FC1);
+
+	int idx = 0; int fgIdx = 0;
+	for (int j = 0; j < inImage.rows; j++)
+	{
+		for (int i = 0; i < inImage.cols; i++)
+		{
+			if (fPtsLabel.at<float>(idx++, 0) == 1)
+			{
+				cv::Vec3b tempVec;
+				tempVec = inImage.at<cv::Vec3b>(j, i);
+				dominantColor.at<float>(0, 0) += (tempVec[0]);
+				dominantColor.at<float>(0, 1) += (tempVec[1]);
+				dominantColor.at<float>(0, 2) += (tempVec[2]);
+
+				fgIdx++;
 			}
-			// Now reduce colors.....
-			//pCount.clear();
-			//pCount.resize(cMap.size());
-			//copy(cMap.begin(), cMap.end(), pCount.begin());
-			// Sort by popularity
-			// sort(pCount.begin(), pCount.end(), compare);
-			Colorcode tk; int mcount = 0;
-			for (auto& it : cMap) {
-				if (it.second > mcount) {
-					tk.ci = it.first;
-					mcount = it.second;
-				}
-			}
-			cMap.clear();
-			//tk.ci = pCount[0].first;
-			int ptr = GetPtr(x, y, cd, 4 * cd);
-				retval[ptr] = tk.cs.r;
-				retval[ptr+1] = tk.cs.g;
-				retval[ptr+2] = tk.cs.b;
-				retval[ptr + 3] = overallBr * div / hPix; // tk.cs.br;
 		}
-	return retval;
+	}
+
+	dominantColor /= numFGPts;
+
+	// convert to uchar so that it can be used directly for visualization
+	cv::Mat dColor(1, 3, CV_8UC1);
+	//dColor = cv::Mat::zeros(1, 3, CV_8UC1);
+
+	dominantColor.convertTo(dColor, CV_8UC1);
+
+	//std::cout << "Dominant Color is: " <<  dColor << std::endl;
+
+	return dColor;
+}
+
+void FillColors(Mat src, UCHAR* dst) {
+	uint w = src.cols / 4, h = src.rows / 3;
+	Mat cPos;
+	for (uint dy = 0; dy < 3; dy++)
+		for (uint dx = 0; dx < 4; dx++) {
+			uint ptr = (dy * 4 + dx) * 3;
+			cPos = src.rowRange(dy * h + 1, (dy + 1) * h)
+				.colRange(dx * w + 1, (dx + 1) * w);
+			cv::Mat hPts;
+			hPts = extractHPts(cPos);
+			cv::Mat ptsLabel, kCenters;
+			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
+
+			cv::Mat dColor;
+			dColor = getDominantColor(cPos, ptsLabel);
+			dst[ptr] = dColor.ptr<UCHAR>()[0];
+			dst[ptr + 1] = dColor.ptr<UCHAR>()[1];
+			dst[ptr + 2] = dColor.ptr<UCHAR>()[2];
+		}
 }
 
 DWORD WINAPI CInProc(LPVOID param)
 {
-	//IStream* stream;
+	//IStream* stream = NULL;
 	DCScreenCapturer* screenCapturer = (DCScreenCapturer*)param;
 	UINT w, h, st, cdp;
 	UCHAR* img = 0;
-	UCHAR* imgz = 0;
-	DWORD uiThread;
+	DWORD exitCode;
+
 	UINT div = config->divider;
 	while (inWork) {
 		screenCapturer->Capture();
@@ -155,16 +211,27 @@ DWORD WINAPI CInProc(LPVOID param)
 		cdp = screenCapturer->GetCapturedBitmap()->GetColorDepth();
 		st = screenCapturer->GetCapturedBitmap()->GetStride();
 		// Resize
-		delete imgz;
-		imgz = Resize(img, w, h, cdp, st, div);
+		Mat src(h, w, CV_8UC4, img, st);
+		Mat reduced;// (h / div, w / div, CV_8UC4);
+		cv::resize(src, reduced, Size(w/div, h/div),0,0, INTER_AREA);
+		//reduced /= 96;
+		//reduced *= 96;
+		cv::Mat redCenter;
+		cv::cvtColor(reduced, redCenter, CV_RGBA2RGB);
+		//cv::cvtColor(redCenter, reduced, CV_RGB2HSV);
+
+		//imgz = redCenter.ptr<UCHAR>();
+		FillColors(redCenter, imgz);
+		//delete imgz;
+		//imgz = Resize(img, w, h, cdp, st, div);
 		// DEBUG!
-		//SHCreateStreamOnFileEx(TEXT("C:\\TEMP\\Test.png"), STGM_READWRITE | STGM_CREATE, 0, false, 0, &stream);
-		//DCBitmap out(3, 3, cdp);
+		//SHCreateStreamOnFileEx(L"C:\\Temp\\Test.png", STGM_READWRITE | STGM_CREATE, 0, false, 0, &stream);
+		//DCBitmap out(w / div, h / div, 3);
 		//out.Resize(w/3, h/3);
 		//out.SetIsDirectMode(true);
 		//out.SetDirectBuffer(imgz);
 		//DCImageGenerator* imgGen = DCCreateWICImageGenerator(DCWICImageType_PNG);
-		//SIZE size = { 3, 3 }; //(LONG)screenCapturer->GetCapturedBitmap()->GetWidth(), (LONG)screenCapturer->GetCapturedBitmap()->GetHeight()
+		//SIZE size = { w/div, h/div }; //(LONG)screenCapturer->GetCapturedBitmap()->GetWidth(), (LONG)screenCapturer->GetCapturedBitmap()->GetHeight()
 		
 		//DCSetSizeToWICImageGenerator(imgGen, &size);
 		//imgGen->Generate(stream, &out);
@@ -173,21 +240,25 @@ DWORD WINAPI CInProc(LPVOID param)
 
 		//delete imgGen;
 		// Update lights
-		CreateThread(
-			NULL,              // default security
-			0,                 // default stack size
-			CFXProc,        // name of the thread function
-			imgz,
-			0,                 // default startup flags
-			&uiThread);
+		GetExitCodeThread(uiHandle, &exitCode);
+		if (exitCode != STILL_ACTIVE)
+			uiHandle = CreateThread(
+				NULL,              // default security
+				0,                 // default stack size
+				CFXProc,        // name of the thread function
+				imgz,
+				0,                 // default startup flags
+				&uiThread);
 		// Update UI
-		CreateThread(
-			NULL,              // default security
-			0,                 // default stack size
-			CDlgProc,        // name of the thread function
-			imgz,
-			0,                 // default startup flags
-			&uiThread);
+		GetExitCodeThread(cuHandle, &exitCode);
+		if (exitCode != STILL_ACTIVE)
+			cuHandle = CreateThread(
+				NULL,              // default security
+				0,                 // default stack size
+				CDlgProc,        // name of the thread function
+				imgz,
+				0,                 // default startup flags
+				&cuThread);
 		//free(imgz);
 		//Sleep(100);
 	}
@@ -210,7 +281,7 @@ DWORD WINAPI CDlgProc(LPVOID param)
 		rect.right -= rect.left;
 		rect.top = rect.left = 0;
 		// BGR!
-		Brush = CreateSolidBrush(RGB(img[i*4+2], img[i*4+1], img[i*4]));
+		Brush = CreateSolidBrush(RGB(img[i*3+2], img[i*3+1], img[i*3]));
 		FillRect(cnt, &rect, Brush);
 		DeleteObject(Brush);
 		UINT state = IsDlgButtonChecked(hDlg, IDC_CHECK1 + i); //Get state of the button
@@ -229,6 +300,6 @@ DWORD WINAPI CDlgProc(LPVOID param)
 
 DWORD WINAPI CFXProc(LPVOID param) {
 	fxh->Refresh((UCHAR*)param);
-	fxh->UpdateLights();
+	//fxh->UpdateLights();
 	return 0;
 }

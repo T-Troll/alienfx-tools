@@ -14,5 +14,6 @@ public:
 private:
 	DCScreenCapturer* screenCapturer = NULL;
 	DWORD dwThreadID = 0;
+	HANDLE dwHandle = NULL;
 };
 

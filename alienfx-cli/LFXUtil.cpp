@@ -67,8 +67,12 @@ namespace LFXUtil
 		_LFX_SetTiming = (LFX2SETTIMING)GetProcAddress(hLibrary, LFX_DLL_SETTIMING);
 		_LFX_GetVersion = (LFX2GETVERSION)GetProcAddress(hLibrary, LFX_DLL_GETVERSION);
 
-		if (_LFX_Initialize() != LFX_SUCCESS)
+		int res = _LFX_Initialize();
+
+		if (res == LFX_FAILURE)
 			return 1;// ResultT(false, _T("_LFX_Initialize() failed"));
+		if (res == LFX_ERROR_NODEVS)
+			return 2;
 
 		initialized = true;
 		return -1;// ResultT(true, _T("InitFX() success"));
