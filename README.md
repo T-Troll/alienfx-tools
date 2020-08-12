@@ -78,4 +78,5 @@ API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/k
 AlienFX interaction code is from HunterZ's [UniLight](https://github.com/HunterZ/UniLight).<br>
 Spectrum Analyzer code is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.<br>
-DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.
+DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.<br>
+Dominant light extraction usues [OpenCV](https://github.com/opencv/opencv) library.
