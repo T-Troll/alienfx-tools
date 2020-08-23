@@ -16,7 +16,8 @@ Device checked: `Alienware m15R1`, `Alienware M13R2` (should work with any Alien
 
 ## Known issues
 On some devices, some functions can work uncorrectly: can't retrieve positions and colors, can't set zone to action.
-This may fixed in upcoming AWCC updates.
+This may fixed in upcoming AWCC updates.<br>
+<b>WARNING!</b> After latest AWCC update, they fix a bug with default lights, so now lights return back to default AS FAST AS APP LOST A FOCUS. It makes alienfx-cli useless, but i will fix it using batch mode and keep it working until stopped by user.
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
