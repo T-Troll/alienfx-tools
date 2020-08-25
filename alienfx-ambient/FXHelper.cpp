@@ -73,7 +73,7 @@ int FXHelper::Refresh(UCHAR* img)
 			abs(fin.cs.green - updates[i].color.cs.green) > 10) {
 			lfx->SetOneLFXColor(map.devid, map.lightid, &fin.ci);
 			lfx->Update();
-			Sleep(50);
+			Sleep(60);
 			//if (AlienFX_SDK::Functions::IsDeviceReady()) {
 			//	AlienFX_SDK::Functions::SetColor(map.lightid + 1, fin.cs.red, fin.cs.blue, fin.cs.green);
 				updates[i].color = fin;

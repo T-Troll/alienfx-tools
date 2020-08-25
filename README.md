@@ -17,28 +17,26 @@ Device checked: `Alienware m15R1`, `Alienware M13R2` (should work with any Alien
 ## Known issues
 On some devices, some functions can work uncorrectly: can't retrieve positions and colors, can't set zone to action.
 This may fixed in upcoming AWCC updates.<br>
-<b>WARNING!</b> After latest AWCC update, they fix a bug with default lights, so now lights return back to default AS FAST AS APP LOST A FOCUS. It makes alienfx-cli useless, but i will fix it using batch mode and keep it working until stopped by user.
+<s><b>WARNING!</b> After latest AWCC update, they fix a bug with default lights, so now lights return back to default AS FAST AS APP LOST A FOCUS. It makes alienfx-cli useless, but i will fix it using batch mode and keep it working until stopped by user.</s> (fixed in 0.5.3)
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
 In case apps can't locate LightFX dll's, you can find it into /DLL folder and copy to apps folder one you need (for x32 or x64).</br>
-<s>`alienfx-haptics` uses default audio `input` device as audio source, so you possible need to map you audio `output` to virtual input (or use Microphone/Line-In devices instead).
-<br>For Realtek-based hardware, you can do it using `Stereo Mixer` audio device (look in `Control Panel - Sound - Recording`)
-<br>For other hardware, virtual audio cable software (f.e. [VB-Audio VirtualCable](https://www.vb-audio.com/Cable/)) required to do this.</s>
 <br>`alienfx-haptics` uses default output device (there are all sound from audio players, video players, games played) as an input, but you can switch it to default input device (f.e. microphone or line-in).
 
 ## alienfx-cli Usage
 Run `alienfx-cli.exe` with a command and any options for that command. 
 ```
-alienfx-cli.exe <command> <command options>
+alienfx-cli.exe [command=option,option,option] ... [command=option,option,option] [loop]
 ```
 The following commands are available:
 - `status` Showing AlienFX devices and their lights IDs and status
-- `set-all <r> <g> <b> [br]` Sets all AlienFX lights to the specified color. Ex: `set-all 255 0 0` for red lights, `set-all 255 0 0 128` for dimmed red.
-- `set-one dev-id light-id r g b [br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev 0 1 0 0 255` - set light #2 at the device #1 to blue color.
-- `set-zone zone r g b [br]` Set zone light to color provided.
-- `set-action action dev light r g b [br r g b br]` Set light to color provided and enable action.
-- `set-zone-action action zone r g b [br r g b br]` Set zone light to color provided and enable action.
+- `set-all <r>,<g>,<b>[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red.
+- `set-one dev-id,light-id,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color.
+- `set-zone zone,r,g,b[,br]` Set zone light to color provided.
+- `set-action action dev,light,r,g,b[,br,r,g,b[,br]]` Set light to color provided and enable action.
+- `set-zone-action action,zone,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
+- `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 <br>Supported Zones: `left, right, top, bottom, front, rear`
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`
 
