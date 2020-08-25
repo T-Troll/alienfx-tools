@@ -6,9 +6,9 @@
 #include <algorithm>
 #include "resource.h"
 #include "FXHelper.h"
-#include "./opencv/include/opencv2/core/mat.hpp"
-#include "./opencv/include/opencv2/imgproc.hpp"
-//#include "opencv2/opencv.hpp"
+#include "opencv2/core.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/opencv.hpp"
 
 using namespace cv;
 using namespace std;

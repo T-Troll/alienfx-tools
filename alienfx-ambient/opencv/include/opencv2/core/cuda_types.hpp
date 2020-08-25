@@ -106,8 +106,8 @@ namespace cv
 
             size_t step;
 
-            __CV_CUDA_HOST_DEVICE__       T* ptr(int y = 0)       { return (      T*)( (      char*)DevPtr<T>::data + y * step); }
-            __CV_CUDA_HOST_DEVICE__ const T* ptr(int y = 0) const { return (const T*)( (const char*)DevPtr<T>::data + y * step); }
+            __CV_CUDA_HOST_DEVICE__       T* ptr(int y = 0)       { return (      T*)( (      char*)(((DevPtr<T>*)this)->data) + y * step); }
+            __CV_CUDA_HOST_DEVICE__ const T* ptr(int y = 0) const { return (const T*)( (const char*)(((DevPtr<T>*)this)->data) + y * step); }
 
             __CV_CUDA_HOST_DEVICE__       T& operator ()(int y, int x)       { return ptr(y)[x]; }
             __CV_CUDA_HOST_DEVICE__ const T& operator ()(int y, int x) const { return ptr(y)[x]; }
@@ -127,10 +127,12 @@ namespace cv
         };
 
         typedef PtrStepSz<unsigned char> PtrStepSzb;
+        typedef PtrStepSz<unsigned short> PtrStepSzus;
         typedef PtrStepSz<float> PtrStepSzf;
         typedef PtrStepSz<int> PtrStepSzi;
 
         typedef PtrStep<unsigned char> PtrStepb;
+        typedef PtrStep<unsigned short> PtrStepus;
         typedef PtrStep<float> PtrStepf;
         typedef PtrStep<int> PtrStepi;
 
