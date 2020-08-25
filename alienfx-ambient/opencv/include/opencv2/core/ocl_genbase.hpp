@@ -7,14 +7,9 @@
 //  copy or use the software.
 //
 //
-//                          License Agreement
+//                           License Agreement
 //                For Open Source Computer Vision Library
 //
-<<<<<<< HEAD:alienfx-ambient/opencv/include/opencv2/core/ocl_genbase.hpp
-=======
-// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
->>>>>>> aienfx-cli fix:alienfx-ambient/opencv/include/opencv2/cudev/expr/deriv.hpp
 // Copyright (C) 2013, OpenCV Foundation, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
@@ -44,7 +39,6 @@
 //
 //M*/
 
-<<<<<<< HEAD:alienfx-ambient/opencv/include/opencv2/core/ocl_genbase.hpp
 #ifndef OPENCV_OPENCL_GENBASE_HPP
 #define OPENCV_OPENCL_GENBASE_HPP
 
@@ -71,88 +65,5 @@ struct CV_EXPORTS ProgramEntry
 } } } // namespace
 
 //! @endcond
-=======
-#pragma once
-
-#ifndef OPENCV_CUDEV_EXPR_DERIV_HPP
-#define OPENCV_CUDEV_EXPR_DERIV_HPP
-
-#include "../common.hpp"
-#include "../ptr2d/traits.hpp"
-#include "../ptr2d/deriv.hpp"
-#include "expr.hpp"
-
-namespace cv { namespace cudev {
-
-//! @addtogroup cudev
-//! @{
-
-// derivX
-
-template <class SrcPtr>
-__host__ Expr<DerivXPtrSz<typename PtrTraits<SrcPtr>::ptr_type> >
-derivX_(const SrcPtr& src)
-{
-    return makeExpr(derivXPtr(src));
-}
-
-// derivY
-
-template <class SrcPtr>
-__host__ Expr<DerivYPtrSz<typename PtrTraits<SrcPtr>::ptr_type> >
-derivY_(const SrcPtr& src)
-{
-    return makeExpr(derivYPtr(src));
-}
-
-// sobelX
-
-template <class SrcPtr>
-__host__ Expr<SobelXPtrSz<typename PtrTraits<SrcPtr>::ptr_type> >
-sobelX_(const SrcPtr& src)
-{
-    return makeExpr(sobelXPtr(src));
-}
-
-// sobelY
-
-template <class SrcPtr>
-__host__ Expr<SobelYPtrSz<typename PtrTraits<SrcPtr>::ptr_type> >
-sobelY_(const SrcPtr& src)
-{
-    return makeExpr(sobelYPtr(src));
-}
-
-// scharrX
-
-template <class SrcPtr>
-__host__ Expr<ScharrXPtrSz<typename PtrTraits<SrcPtr>::ptr_type> >
-scharrX_(const SrcPtr& src)
-{
-    return makeExpr(scharrXPtr(src));
-}
-
-// scharrY
-
-template <class SrcPtr>
-__host__ Expr<ScharrYPtrSz<typename PtrTraits<SrcPtr>::ptr_type> >
-scharrY_(const SrcPtr& src)
-{
-    return makeExpr(scharrYPtr(src));
-}
-
-// laplacian
-
-template <int ksize, class SrcPtr>
-__host__ Expr<LaplacianPtrSz<ksize, typename PtrTraits<SrcPtr>::ptr_type> >
-laplacian_(const SrcPtr& src)
-{
-    return makeExpr(laplacianPtr<ksize>(src));
-}
-
-//! @}
-
-}}
->>>>>>> aienfx-cli fix:alienfx-ambient/opencv/include/opencv2/cudev/expr/deriv.hpp
 
 #endif

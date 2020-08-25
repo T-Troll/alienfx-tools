@@ -7,7 +7,7 @@
 //  copy or use the software.
 //
 //
-//                          License Agreement
+//                           License Agreement
 //                For Open Source Computer Vision Library
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
@@ -41,61 +41,8 @@
 //
 //M*/
 
-<<<<<<< HEAD:alienfx-ambient/opencv/include/opencv2/imgproc/imgproc.hpp
 #ifdef __OPENCV_BUILD
 #error this is a compatibility header which should not be used inside the OpenCV library
-=======
-#pragma once
-
-#ifndef OPENCV_CUDEV_COMMON_HPP
-#define OPENCV_CUDEV_COMMON_HPP
-
-#include <cuda_runtime.h>
-#include "opencv2/core/cuda.hpp"
-#include "opencv2/core/cuda_stream_accessor.hpp"
-
-namespace cv { namespace cudev {
-
-//! @addtogroup cudev
-//! @{
-
-using namespace cv::cuda;
-
-// CV_CUDEV_ARCH
-
-#ifndef __CUDA_ARCH__
-#   define CV_CUDEV_ARCH 0
-#else
-#   define CV_CUDEV_ARCH __CUDA_ARCH__
-#endif
-
-// CV_CUDEV_SAFE_CALL
-
-__host__ __forceinline__ void checkCudaError(cudaError_t err, const char* file, const int line, const char* func)
-{
-    if (cudaSuccess != err)
-        cv::error(cv::Error::GpuApiCallError, cudaGetErrorString(err), func, file, line);
-}
-
-#define CV_CUDEV_SAFE_CALL(expr) cv::cudev::checkCudaError((expr), __FILE__, __LINE__, CV_Func)
-
-// divUp
-
-__host__ __device__ __forceinline__ int divUp(int total, int grain)
-{
-    return (total + grain - 1) / grain;
-}
-
-// math constants
-
-#define CV_PI_F   ((float)CV_PI)
-#define CV_LOG2_F ((float)CV_LOG2)
-
-//! @}
-
-}}
-
->>>>>>> aienfx-cli fix:alienfx-ambient/opencv/include/opencv2/cudev/common.hpp
 #endif
 
 #include "opencv2/imgproc.hpp"

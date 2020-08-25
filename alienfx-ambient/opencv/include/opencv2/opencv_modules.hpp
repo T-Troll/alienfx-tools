@@ -11,12 +11,6 @@
 /* #undef OPENCV_ENABLE_NONFREE */
 
 #define HAVE_OPENCV_CORE
-<<<<<<< HEAD
-=======
-#define HAVE_OPENCV_CUDAIMGPROC
-#define HAVE_OPENCV_CUDAWARPING
-#define HAVE_OPENCV_CUDEV
->>>>>>> aienfx-cli fix
 #define HAVE_OPENCV_IMGPROC
 
 

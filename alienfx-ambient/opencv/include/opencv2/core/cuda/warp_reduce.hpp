@@ -7,12 +7,11 @@
 //  copy or use the software.
 //
 //
-//                          License Agreement
+//                           License Agreement
 //                For Open Source Computer Vision Library
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
 // Copyright (C) 2009, Willow Garage Inc., all rights reserved.
-// Copyright (C) 2013, OpenCV Foundation, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -41,7 +40,6 @@
 //
 //M*/
 
-<<<<<<< HEAD:alienfx-ambient/opencv/include/opencv2/core/cuda/warp_reduce.hpp
 #ifndef OPENCV_CUDA_WARP_REDUCE_HPP__
 #define OPENCV_CUDA_WARP_REDUCE_HPP__
 
@@ -76,53 +74,3 @@ namespace cv { namespace cuda { namespace device
 //! @endcond
 
 #endif /* OPENCV_CUDA_WARP_REDUCE_HPP__ */
-=======
-#pragma once
-
-#ifndef OPENCV_CUDEV_BLOCK_DYNAMIC_SMEM_HPP
-#define OPENCV_CUDEV_BLOCK_DYNAMIC_SMEM_HPP
-
-#include "../common.hpp"
-
-namespace cv { namespace cudev {
-
-//! @addtogroup cudev
-//! @{
-
-template <class T> struct DynamicSharedMem
-{
-    __device__ __forceinline__ operator T*()
-    {
-        extern __shared__ int __smem[];
-        return (T*) __smem;
-    }
-
-    __device__ __forceinline__ operator const T*() const
-    {
-        extern __shared__ int __smem[];
-        return (T*) __smem;
-    }
-};
-
-// specialize for double to avoid unaligned memory access compile errors
-template <> struct DynamicSharedMem<double>
-{
-    __device__ __forceinline__ operator double*()
-    {
-        extern __shared__ double __smem_d[];
-        return (double*) __smem_d;
-    }
-
-    __device__ __forceinline__ operator const double*() const
-    {
-        extern __shared__ double __smem_d[];
-        return (double*) __smem_d;
-    }
-};
-
-//! @}
-
-}}
-
-#endif
->>>>>>> aienfx-cli fix:alienfx-ambient/opencv/include/opencv2/cudev/block/dynamic_smem.hpp

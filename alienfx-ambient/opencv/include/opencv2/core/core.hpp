@@ -41,41 +41,8 @@
 //
 //M*/
 
-<<<<<<< HEAD:alienfx-ambient/opencv/include/opencv2/core/core.hpp
 #ifdef __OPENCV_BUILD
 #error this is a compatibility header which should not be used inside the OpenCV library
-=======
-#pragma once
-
-#ifndef OPENCV_CUDEV_GRID_INTEGRAL_HPP
-#define OPENCV_CUDEV_GRID_INTEGRAL_HPP
-
-#include "../common.hpp"
-#include "../ptr2d/traits.hpp"
-#include "../ptr2d/gpumat.hpp"
-#include "detail/integral.hpp"
-
-namespace cv { namespace cudev {
-
-//! @addtogroup cudev
-//! @{
-
-template <class SrcPtr, typename DstType>
-__host__ void gridIntegral(const SrcPtr& src, GpuMat_<DstType>& dst, Stream& stream = Stream::Null())
-{
-    const int rows = getRows(src);
-    const int cols = getCols(src);
-
-    dst.create(rows, cols);
-
-    integral_detail::integral(shrinkPtr(src), shrinkPtr(dst), rows, cols, StreamAccessor::getStream(stream));
-}
-
-//! @}
-
-}}
-
->>>>>>> aienfx-cli fix:alienfx-ambient/opencv/include/opencv2/cudev/grid/integral.hpp
 #endif
 
 #include "opencv2/core.hpp"

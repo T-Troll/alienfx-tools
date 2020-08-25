@@ -11,14 +11,10 @@
 /* #undef CV_DISABLE_OPTIMIZATION */
 
 /* Compile for 'real' NVIDIA GPU architectures */
-<<<<<<< HEAD
 #define CUDA_ARCH_BIN ""
-=======
-#define CUDA_ARCH_BIN " 35 37 50 52 60 61 70 75 80"
->>>>>>> aienfx-cli fix
 
 /* NVIDIA GPU features are used */
-#define CUDA_ARCH_FEATURES " 35 37 50 52 60 61 70 75 80"
+#define CUDA_ARCH_FEATURES ""
 
 /* Compile for 'virtual' NVIDIA PTX architectures */
 #define CUDA_ARCH_PTX ""
@@ -36,24 +32,16 @@
 /* #undef HAVE_COCOA */
 
 /* NVIDIA CUDA Runtime API*/
-<<<<<<< HEAD
 /* #undef HAVE_CUDA */
-=======
-#define HAVE_CUDA
->>>>>>> aienfx-cli fix
 
 /* NVIDIA CUDA Basic Linear Algebra Subprograms (BLAS) API*/
-#define HAVE_CUBLAS
+/* #undef HAVE_CUBLAS */
 
 /* NVIDIA CUDA Deep Neural Network (cuDNN) API*/
 /* #undef HAVE_CUDNN */
 
 /* NVIDIA CUDA Fast Fourier Transform (FFT) API*/
-<<<<<<< HEAD
 /* #undef HAVE_CUFFT */
-=======
-#define HAVE_CUFFT
->>>>>>> aienfx-cli fix
 
 /* DirectX */
 /* #undef HAVE_DIRECTX */
@@ -81,7 +69,7 @@
 /* #undef HAVE_VULKAN */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
+/* #undef HAVE_INTTYPES_H */
 
 /* Intel Integrated Performance Primitives */
 /* #undef HAVE_IPP */
