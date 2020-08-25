@@ -56,7 +56,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_ALIENFXAMBIENT, szWindowClass, MAX_LOADSTRING);
+    //LoadStringW(hInstance, IDC_ALIENFXAMBIENT, szWindowClass, MAX_LOADSTRING);
     //MyRegisterClass(hInstance);
 
     // Perform application initialization:
@@ -69,7 +69,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXAMBIENT));
+    //HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXAMBIENT));
 
     MSG msg; bool ret;
 
@@ -395,6 +395,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
                 conf->mode = 0;
+                //restart capture....
+                /*cap->Stop();
+                delete cap;
+                cap = new CaptureHelper(hDlg, conf);
+                cap->Start();*/
                 break;
             }
         break;
@@ -404,6 +409,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_CHECKED);
                 conf->mode = 1;
+                /*cap->Stop();
+                delete cap;
+                cap = new CaptureHelper(hDlg, conf);
+                cap->Start();*/
                 break;
             }
             break;

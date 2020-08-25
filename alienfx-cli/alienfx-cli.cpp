@@ -10,18 +10,21 @@ namespace
 	LFXUtil::LFXUtilC lfxUtil;
 }
 
+using namespace std;
+
 void printUsage() 
 {
-	std::cerr << "Usage: alienfx-cli [command] [command options]" << std::endl
-		<< "Commands: " << std::endl
-		<< "\tset-all r g b [br]\t\t\t\t- set all device colors to provided" << std::endl
-		<< "\tset-one dev light r g b [br]\t\t\t- set one light to color provided." << std::endl
-		<< "\tset-zone zone r g b [br]\t\t\t- set zone light to color provided." << std::endl
-		<< "\tset-action action dev light r g b [br r g b br]\t- set light to color provided and enable action." << std::endl
-		<< "\tset-zone-action action zone r g b [br r g b br]\t- set zone light to color provided and enable action." << std::endl
-		<< "\tstatus\t\t\t\t\t\t- shows devices and lights id's, name and status" << std::endl << std::endl
-		<< "Zones: left, right, top, bottom, front, rear" << std::endl
-		<< "Actions: pulse, morph (you need 2 colors for morth), color (disable action)" << std::endl;
+	cerr << "Usage: alienfx-cli [command=option,option,option] ... [command=option,option,option] [loop]" << endl
+		<< "Commands:\tOptions:" << endl
+		<< "set-all\t\tr,g,b[,br] - set all device lights." << endl
+		<< "set-one\t\tdev,light,r,g,b[,br] - set one light." << endl
+		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
+		<< "set-action\taction,dev,light,r,g,b[,br,r,g,b[,br]] - set light and enable it's action." << endl
+		<< "set-zone-action\taction,zone,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
+		<< "status\t\tshows devices and lights id's, names and statuses" << endl
+		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
+		<< "Zones: left, right, top, bottom, front, rear" << endl
+		<< "Actions: pulse, morph (you need 2 colors for morph), color (disable action)" << endl;
 }
 
 int main(int argc, char* argv[])
@@ -37,234 +40,179 @@ int main(int argc, char* argv[])
 	int res = lfxUtil.InitLFX();
 	if ( res != -1) {
 		switch (res) {
-		case 0: std::cerr << "Can't load DLL library!" << std::endl; break;
-		case 1: std::cerr << "Can't init library!" << std::endl; break;
-		case 2: std::cerr << "No devices found!" << std::endl; break;
-		default: std::cerr << "Unknown error!" << std::endl; break;
+		case 0: cerr << "Can't load DLL library!" << endl; break;
+		case 1: cerr << "Can't init library!" << endl; break;
+		case 2: cerr << "No devices found!" << endl; break;
+		default: cerr << "Unknown error!" << endl; break;
 		}
 		return 1;
 	}
 	const char* command = argv[1];
-	if (std::string(command) == "set-all")
-	{
-		unsigned char br = 0xff;
-		if (argc < 5) 
-		{
-			printUsage();
-			return 1;
+	for (int cc = 1; cc < argc; cc++) {
+		Sleep(100);
+		string arg = string(argv[cc]);
+		size_t vid = arg.find_first_of('=');
+		string command = arg.substr(0, vid);
+		string values;
+		vector<string> args;
+		if (vid != string::npos) {
+			size_t vpos = 0;
+			values = arg.substr(vid + 1, arg.size());
+			while (vpos < values.size()) {
+				size_t tvpos = values.find(',', vpos);
+				args.push_back(values.substr(vpos, tvpos-vpos));
+				vpos = tvpos == string::npos ? values.size() : tvpos+1;
+			}
 		}
-
-		if (argc == 6) br = atoi(argv[5]);
-
-		unsigned zoneCode = LFX_ALL;
-
-		static ColorU color;
-		color.cs.red = atoi(argv[2]);
-		color.cs.green = atoi(argv[3]);
-		color.cs.blue = atoi(argv[4]);
-		color.cs.brightness = br;
-
-		lfxUtil.SetLFXColor(zoneCode, color.ci);
-		lfxUtil.Update();
-		//lfxUtil.GetStatus();
-		lfxUtil.Release();
-		return 0;
-	} 
-
-	if (std::string(command) == "set-one")
-	{
-		unsigned char br = 0xff;
-		if (argc < 7)
-		{
-			printUsage();
-			return 1;
+		if (command == "loop") {
+			//cerr << "Executing " << command << endl;
+			cc = 0;
+			continue;
 		}
-
-		if (argc == 8) br = atoi(argv[7]);
-
-		static ColorU color;
-		color.cs.red = atoi(argv[6]);
-		color.cs.green = atoi(argv[5]);
-		color.cs.blue = atoi(argv[4]);
-		color.cs.brightness = br;
-
-		lfxUtil.SetOneLFXColor(atoi(argv[2]), atoi(argv[3]), &color.ci);
-		lfxUtil.Update();
-		//lfxUtil.GetStatus();
-		lfxUtil.Release();
-		return 0;
+		if (command == "status") {
+			//cerr << "Executing " << command << endl;
+			lfxUtil.GetStatus();
+			continue;
+		}
+		if (command == "set-all") {
+			//cerr << "Executing " << command << " " << values << endl;
+			if (args.size() < 3) {
+				cerr << "set-all: Incorrect arguments" << endl;
+				continue;
+			}
+			unsigned zoneCode = LFX_ALL;
+			static ColorU color;
+			color.cs.red = atoi(args.at(0).c_str());
+			color.cs.green = atoi(args.at(1).c_str());
+			color.cs.blue = atoi(args.at(2).c_str());
+			color.cs.brightness = args.size() > 3 ? atoi(args.at(3).c_str()) : 255;
+			lfxUtil.SetLFXColor(zoneCode, color.ci);
+			lfxUtil.Update(); 
+			continue;
+		}
+		if (command == "set-one") {
+			//cerr << "Executing " << command << " " << values << endl;
+			if (args.size() < 5) {
+				cerr << "set-one: Incorrect arguments" << endl;
+				continue;
+			}
+			static ColorU color;
+			color.cs.red = atoi(args.at(2).c_str());
+			color.cs.green = atoi(args.at(3).c_str());
+			color.cs.blue = atoi(args.at(4).c_str());
+			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
+			lfxUtil.SetOneLFXColor(atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &color.ci);
+			lfxUtil.Update(); 
+			continue;
+		}
+		if (command == "set-zone") {
+			//cerr << "Executing " << command << " " << values << endl;
+			if (args.size() < 4) {
+				cerr << "set-zone: Incorrect arguments" << endl;
+				continue;
+			}
+			unsigned zoneCode = LFX_ALL;
+			if (args.at(0) == "left") {
+				zoneCode = LFX_ALL_LEFT;
+			}
+			if (args.at(0) == "right") {
+				zoneCode = LFX_ALL_RIGHT;
+			}
+			if (args.at(0) == "top") {
+				zoneCode = LFX_ALL_UPPER;
+			}
+			if (args.at(0) == "bottom") {
+				zoneCode = LFX_ALL_LOWER;
+			}
+			if (args.at(0) == "front") {
+				zoneCode = LFX_ALL_FRONT;
+			}
+			if (args.at(0) == "rear") {
+				zoneCode = LFX_ALL_REAR;
+			}
+			static ColorU color;
+			color.cs.red = atoi(args.at(1).c_str());
+			color.cs.green = atoi(args.at(2).c_str());
+			color.cs.blue = atoi(args.at(3).c_str());
+			color.cs.brightness = args.size() > 4 ? atoi(args.at(4).c_str()) : 255;
+			lfxUtil.SetLFXColor(zoneCode, color.ci);
+			lfxUtil.Update();
+			continue;
+		}
+		if (command == "set-action") {
+			//cerr << "Executing " << command << " " << values << endl;
+			if (args.size() < 6) {
+				cerr << "set-action: Incorrect arguments" << endl;
+				continue;
+			}
+			unsigned actionCode = LFX_ACTION_COLOR;
+			if (args.at(0) == "pulse")
+				actionCode = LFX_ACTION_PULSE;
+			else if (args.at(0) == "morph")
+				actionCode = LFX_ACTION_MORPH;
+			static ColorU color, color2;
+			color.cs.red = atoi(args.at(3).c_str());
+			color.cs.green = atoi(args.at(4).c_str());
+			color.cs.blue = atoi(args.at(5).c_str());
+			color.cs.brightness = args.size() > 6 ? atoi(args.at(6).c_str()) : 255;
+			if (args.size() > 7) {
+				color2.cs.red = atoi(args.at(7).c_str());
+				color2.cs.green = atoi(args.at(8).c_str());
+				color2.cs.blue = atoi(args.at(9).c_str());
+				color2.cs.brightness = args.size() > 10 ? atoi(args.at(10).c_str()) : 255;
+			}
+			lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
+			lfxUtil.Update(); 
+			continue;
+		}
+		if (command == "set-zone-action") {
+			//cerr << "Executing " << command << " " << values << endl;
+			if (args.size() < 5) {
+				cerr << "set-zone-action: Incorrect arguments" << endl;
+				continue;
+			}
+			unsigned actionCode = LFX_ACTION_COLOR;
+			if (args.at(0) == "pulse")
+				actionCode = LFX_ACTION_PULSE;
+			else if (args.at(0) == "morph")
+				actionCode = LFX_ACTION_MORPH;
+			static ColorU color, color2;
+			unsigned zoneCode = LFX_ALL;
+			if (args.at(1) == "left") {
+				zoneCode = LFX_ALL_LEFT;
+			}
+			if (args.at(1) == "right") {
+				zoneCode = LFX_ALL_RIGHT;
+			}
+			if (args.at(1) == "top") {
+				zoneCode = LFX_ALL_UPPER;
+			}
+			if (args.at(1) == "bottom") {
+				zoneCode = LFX_ALL_LOWER;
+			}
+			if (args.at(1) == "front") {
+				zoneCode = LFX_ALL_FRONT;
+			}
+			if (args.at(1) == "rear") {
+				zoneCode = LFX_ALL_REAR;
+			}
+			color.cs.red = atoi(args.at(2).c_str());
+			color.cs.green = atoi(args.at(3).c_str());
+			color.cs.blue = atoi(args.at(4).c_str());
+			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
+			if (args.size() > 8) {
+				color2.cs.red = atoi(args.at(6).c_str());
+				color2.cs.green = atoi(args.at(7).c_str());
+				color2.cs.blue = atoi(args.at(8).c_str());
+				color2.cs.brightness = args.size() > 9 ? atoi(args.at(9).c_str()) : 255;
+			}
+			lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
+			lfxUtil.Update();
+			continue;
+		}
+		cerr << "Unknown command: " << command << endl;
 	}
-
-	if (std::string(command) == "set-action")
-	{
-		unsigned char br = 0xff;
-		if (argc < 8)
-		{
-			printUsage();
-			return 1;
-		}
-
-		const char* action = argv[2];
-		unsigned actionCode = LFX_ACTION_COLOR;
-
-		if (std::string(action) == "pulse") {
-			actionCode = LFX_ACTION_PULSE;
-		}
-		if (std::string(action) == "morph") {
-			actionCode = LFX_ACTION_MORPH;
-		}
-		if (std::string(action) == "color") {
-			actionCode = LFX_ACTION_COLOR;
-		}
-
-		if (argc == 9) br = atoi(argv[8]);
-
-		static ColorU color, color2;
-		color.cs.red = atoi(argv[7]);
-		color.cs.green = atoi(argv[6]);
-		color.cs.blue = atoi(argv[5]);
-		color.cs.brightness = br;
-		color2.ci = 0;
-
-		if (argc > 9) {
-			color.cs.brightness = atoi(argv[8]);
-			color2.cs.red = atoi(argv[11]);
-			color2.cs.green = atoi(argv[10]);
-			color2.cs.blue = atoi(argv[9]);
-			color2.cs.brightness = atoi(argv[12]);
-		}
-		lfxUtil.SetLFXAction(actionCode, atoi(argv[3]), atoi(argv[4]), &color.ci, &color2.ci);
-		//lfxUtil.GetStatus();
-		lfxUtil.Update();
-		lfxUtil.Release();
-		return 0;
-	}
-
-	if (std::string(command) == "set-zone")
-	{
-		unsigned char br = 0xff;
-		if (argc < 6)
-		{
-			printUsage();
-			return 1;
-		}
-
-		if (argc == 7) br = atoi(argv[6]);
-
-		const char* zone = argv[2];
-		unsigned zoneCode = LFX_ALL;
-
-		if (std::string(zone) == "left") {
-			zoneCode = LFX_ALL_LEFT;
-		}
-		if (std::string(zone) == "right") {
-			zoneCode = LFX_ALL_RIGHT;
-		}
-		if (std::string(zone) == "top") {
-			zoneCode = LFX_ALL_UPPER;
-		}
-		if (std::string(zone) == "bottom") {
-			zoneCode = LFX_ALL_LOWER;
-		}
-		if (std::string(zone) == "front") {
-			zoneCode = LFX_ALL_FRONT;
-		}
-		if (std::string(zone) == "rear") {
-			zoneCode = LFX_ALL_REAR;
-		}
-
-		static ColorU color;
-		color.cs.red = atoi(argv[3]);
-		color.cs.green = atoi(argv[4]);
-		color.cs.blue = atoi(argv[5]);
-		color.cs.brightness = br;
-
-		lfxUtil.SetLFXColor(zoneCode, color.ci);
-		lfxUtil.Update();
-		//lfxUtil.GetStatus();
-		lfxUtil.Release();
-		return 0;
-	}
-
-	if (std::string(command) == "set-zone-action")
-	{
-		unsigned char br = 0xff;
-		if (argc < 7)
-		{
-			printUsage();
-			return 1;
-		}
-
-		const char* action = argv[2];
-		unsigned actionCode = LFX_ACTION_COLOR;
-
-		if (std::string(action) == "pulse") {
-			actionCode = LFX_ACTION_PULSE;
-		}
-		if (std::string(action) == "morph") {
-			actionCode = LFX_ACTION_MORPH;
-		}
-		if (std::string(action) == "color") {
-			actionCode = LFX_ACTION_COLOR;
-		}
-
-		const char* zone = argv[3];
-		unsigned zoneCode = LFX_ALL;
-
-		if (std::string(zone) == "left") {
-			zoneCode = LFX_ALL_LEFT;
-		}
-		if (std::string(zone) == "right") {
-			zoneCode = LFX_ALL_RIGHT;
-		}
-		if (std::string(zone) == "top") {
-			zoneCode = LFX_ALL_UPPER;
-		}
-		if (std::string(zone) == "bottom") {
-			zoneCode = LFX_ALL_LOWER;
-		}
-		if (std::string(zone) == "front") {
-			zoneCode = LFX_ALL_FRONT;
-		}
-		if (std::string(zone) == "rear") {
-			zoneCode = LFX_ALL_REAR;
-		}
-
-		if (argc == 8) br = atoi(argv[7]);
-
-		static ColorU color, color2;
-		color.cs.red = atoi(argv[4]);
-		color.cs.green = atoi(argv[5]);
-		color.cs.blue = atoi(argv[6]);
-		color.cs.brightness = br;
-		color2.ci = 0;
-
-		if (argc > 9) {
-			color.cs.brightness = atoi(argv[7]);
-			color2.cs.red = atoi(argv[8]);
-			color2.cs.green = atoi(argv[9]);
-			color2.cs.blue = atoi(argv[10]);
-			color2.cs.brightness = atoi(argv[11]);
-		}
-
-		lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
-		lfxUtil.Update();
-		//lfxUtil.GetStatus();
-		lfxUtil.Release();
-		return 0;
-	}
-
-	if (std::string(command) == "status")
-	{
-		lfxUtil.GetStatus();
-		lfxUtil.Release();
-
-		return 0;
-
-	}
-
-	std::cerr << "Unknown command " << command << std::endl;
-	printUsage();
+	lfxUtil.Release();
 
     return 1;
 }
