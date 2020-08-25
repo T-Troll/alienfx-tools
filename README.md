@@ -30,12 +30,12 @@ Run `alienfx-cli.exe` with a command and any options for that command.
 alienfx-cli.exe [command=option,option,option] ... [command=option,option,option] [loop]
 ```
 The following commands are available:
-- `status` Showing AlienFX devices and their lights IDs and status
-- `set-all <r>,<g>,<b>[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red.
-- `set-one dev-id,light-id,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color.
-- `set-zone zone,r,g,b[,br]` Set zone light to color provided.
-- `set-action action dev,light,r,g,b[,br,r,g,b[,br]]` Set light to color provided and enable action.
-- `set-zone-action action,zone,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
+- `status` Showing AlienFX device IDs and their lights IDs and status
+- `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red.
+- `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color.
+- `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided.
+- `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,r,g,b[,br]]` Set light to color provided and enable action.
+- `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 <br>Supported Zones: `left, right, top, bottom, front, rear`
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`
