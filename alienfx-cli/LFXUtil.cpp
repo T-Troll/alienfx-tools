@@ -111,54 +111,25 @@ namespace LFXUtil
 		}
 	}
 
+	int LFXUtilC::SetTempo(unsigned tempo) {
+		if (_LFX_SetTiming(tempo) != LFX_SUCCESS)
+			return 0;
+		return 1;
+	}
+
 	int LFXUtilC::SetLFXColor(unsigned zone, unsigned color)
 	{
-		// perform lazy initialization
-		// this should support a device being plugged in after the program has already started running
-		// abort if initialization fails
-		//const ResultT& result(InitLFX());
-		//if (!result.first)
-		//	return result;
-
-		// Reset the state machine and await light settings
-		//if (_LFX_Reset() != LFX_SUCCESS)
-		//	return ResultT(false, _T("_LFX_Reset() failed"));
-
-		// Set all lights to color
-		/*static ColorU color;
-		color.cs.red = red;
-		color.cs.green = green;
-		color.cs.blue = blue;
-		color.cs.brightness = br;*/
 		if (_LFX_Light(zone, color) != LFX_SUCCESS)
 			return 0;// ResultT(false, _T("_LFX_Light() failed"));
-
-		// Update the state machine, which causes the physical color change
-		//if (_LFX_Update() != LFX_SUCCESS)
-		//	return 0;// ResultT(false, _T("_LFX_Update() failed"));
-
 		return 1;// ResultT(true, _T("SetLFXColor() success"));
 	}
 
 	int LFXUtilC::SetLFXZoneAction(unsigned action, unsigned zone, unsigned color, unsigned color2)
 	{
 		// Set all lights to color
-		/*static ColorU color, color2;
-		color.cs.red = red;
-		color.cs.green = green;
-		color.cs.blue = blue;
-		color.cs.brightness = br;
-		color2.cs.red = r2;
-		color2.cs.green = g2;
-		color2.cs.blue = b2;
-		color2.cs.brightness = br2;*/
 
 		if (_LFX_ActionColorEx(zone, action, color, color2) != LFX_SUCCESS)
 			return 0;// ResultT(false, _T("_LFX_Light() failed"));
-
-		// Update the state machine, which causes the physical color change
-		//if (_LFX_Update() != LFX_SUCCESS)
-		//	return 0;// ResultT(false, _T("_LFX_Update() failed"));
 
 		return 1;// ResultT(true, _T("SetLFXColor() success"));
 	}

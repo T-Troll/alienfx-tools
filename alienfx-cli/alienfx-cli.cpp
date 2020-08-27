@@ -21,6 +21,7 @@ void printUsage()
 		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
 		<< "set-action\taction,dev,light,r,g,b[,br,r,g,b[,br]] - set light and enable it's action." << endl
 		<< "set-zone-action\taction,zone,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
+		<< "set-tempo\ttempo - selt light action tempo (in milliseconds)" << endl
 		<< "status\t\tshows devices and lights id's, names and statuses" << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
 		<< "Zones: left, right, top, bottom, front, rear" << endl
@@ -74,6 +75,16 @@ int main(int argc, char* argv[])
 			lfxUtil.GetStatus();
 			continue;
 		}
+		if (command == "set-tempo") {
+			if (args.size() < 1) {
+				cerr << "set-tempo: Incorrect argument" << endl;
+				continue;
+			}
+			unsigned tempo = atoi(args.at(0).c_str());
+			lfxUtil.SetTempo(tempo);
+			//lfxUtil.Update();
+			continue;
+		}
 		if (command == "set-all") {
 			//cerr << "Executing " << command << " " << values << endl;
 			if (args.size() < 3) {
@@ -97,9 +108,9 @@ int main(int argc, char* argv[])
 				continue;
 			}
 			static ColorU color;
-			color.cs.red = atoi(args.at(2).c_str());
+			color.cs.red = atoi(args.at(4).c_str());
 			color.cs.green = atoi(args.at(3).c_str());
-			color.cs.blue = atoi(args.at(4).c_str());
+			color.cs.blue = atoi(args.at(2).c_str());
 			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
 			lfxUtil.SetOneLFXColor(atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &color.ci);
 			lfxUtil.Update(); 
@@ -151,14 +162,14 @@ int main(int argc, char* argv[])
 			else if (args.at(0) == "morph")
 				actionCode = LFX_ACTION_MORPH;
 			static ColorU color, color2;
-			color.cs.red = atoi(args.at(3).c_str());
+			color.cs.red = atoi(args.at(5).c_str());
 			color.cs.green = atoi(args.at(4).c_str());
-			color.cs.blue = atoi(args.at(5).c_str());
+			color.cs.blue = atoi(args.at(3).c_str());
 			color.cs.brightness = args.size() > 6 ? atoi(args.at(6).c_str()) : 255;
 			if (args.size() > 7) {
-				color2.cs.red = atoi(args.at(7).c_str());
+				color2.cs.red = atoi(args.at(9).c_str());
 				color2.cs.green = atoi(args.at(8).c_str());
-				color2.cs.blue = atoi(args.at(9).c_str());
+				color2.cs.blue = atoi(args.at(7).c_str());
 				color2.cs.brightness = args.size() > 10 ? atoi(args.at(10).c_str()) : 255;
 			}
 			lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
