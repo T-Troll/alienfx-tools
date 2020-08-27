@@ -1,5 +1,6 @@
 # alienfx-tools
 A bunch of tools for Alienware LighFX controls:
+- alienfx-probe - Looking up for low-level device, shows it's ID and let you define light names.
 - alienfx-cli - Make changes and check status of your AlienFX lights from the command line.
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
@@ -15,14 +16,20 @@ should be picked up by this program.
 Device checked: `Alienware m15R1`, `Alienware M13R2` (should work with any Alienware device with API 1.0 or later)
 
 ## Known issues
-On some devices, some functions can work uncorrectly: can't retrieve positions and colors, can't set zone to action.
+On some devices, some functions can work incorrectly: can't retrieve positions and colors, can't set zone to action.
 This may fixed in upcoming AWCC updates.<br>
-<s><b>WARNING!</b> After latest AWCC update, they fix a bug with default lights, so now lights return back to default AS FAST AS APP LOST A FOCUS. It makes alienfx-cli useless, but i will fix it using batch mode and keep it working until stopped by user.</s> (fixed in 0.5.3)
+`alenfx-cli set-tempo` command doesn't work yet (bug in SDK).
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
 In case apps can't locate LightFX dll's, you can find it into /DLL folder and copy to apps folder one you need (for x32 or x64).</br>
 <br>`alienfx-haptics` uses default output device (there are all sound from audio players, video players, games played) as an input, but you can switch it to default input device (f.e. microphone or line-in).
+
+## alienfx-probe Usage
+Run `alienfx-probe.exe`<br>
+Application shows some info, then begins switch light to green and prompt to enter light name (you can enter name or ID from SDK - it's show as well), then change light to blue then set. If you didn't see which light is changed, just press ENTER to skip it.<br>
+It check 15 first lights into the system.<br>
+The purpose of this app is to check low-level API and to prepare to low-level SDK migration, this names are stored and will be used later in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
 ## alienfx-cli Usage
 Run `alienfx-cli.exe` with a command and any options for that command. 
@@ -36,6 +43,7 @@ The following commands are available:
 - `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided.
 - `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,r,g,b[,br]]` Set light to color provided and enable action.
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
+- `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 <br>Supported Zones: `left, right, top, bottom, front, rear`
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`
