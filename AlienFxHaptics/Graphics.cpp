@@ -11,6 +11,7 @@
 #include "resource_config.h"
 //#include "AudioIn.h"
 #include <string>
+#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
 #pragma comment(lib, "winmm.lib")
 
@@ -391,19 +392,18 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			prevfreq = frq;
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
-		unsigned numdev = config->lfxUtil->GetNumDev();
+		unsigned numdev = 1; // config->lfxUtil->GetNumDev();
 		for (i = 0; i < numdev; i++) {
-			deviceinfo* dev = config->lfxUtil->GetDevInfo(i);
-			int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(TEXT(dev->desc)));
-			SendMessage(dev_list, LB_SETITEMDATA, pos, (LPARAM)dev->id);
+			int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(TEXT("Device 1")));
+			SendMessage(dev_list, LB_SETITEMDATA, pos, (LPARAM)AlienFX_SDK::Functions::vid);
 		}
 		SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 		if (numdev > 0) {
-			unsigned lights = config->lfxUtil->GetDevInfo(0)->lights;
+			unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
 			for (i = 0; i < lights; i++) {
-				lightinfo *lgh = config->lfxUtil->GetLightInfo(0, i);
-				int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh->desc)));
-				SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
+				AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+				int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
+				SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
 			}
 		}
 		TCHAR decay[17];
@@ -470,16 +470,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
-				unsigned numdev = config->lfxUtil->GetNumDev();
+				unsigned numdev = 1;// config->lfxUtil->GetNumDev();
 				if (numdev > 0) {
-					unsigned lights = config->lfxUtil->GetDevInfo(did)->lights;
+					unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
 					EnableWindow(freq_list, FALSE);
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 					for (i = 0; i < lights; i++) {
-						lightinfo* lgh = config->lfxUtil->GetLightInfo(did, i);
-						int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh->desc)));
-						SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
+						AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+						int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
+						SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
 					}
 					RedrawWindow(freq_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 					RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);

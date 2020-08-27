@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <Windows.h>
-#include "LFXUtil.h"
 
 struct ColorComp
 {
@@ -41,6 +40,5 @@ public:
 	~ConfigHandler();
 	int Load();
 	int Save();
-	LFXUtil::LFXUtilC *lfxUtil;
 };
 

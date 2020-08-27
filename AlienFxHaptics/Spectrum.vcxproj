@@ -122,7 +122,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -187,7 +187,6 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\alienfx-cli\LFXUtil.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="DFT_gosu.cpp" />
     <ClCompile Include="FXHelper.cpp" />
@@ -213,8 +212,8 @@
     <Image Include="menu_one.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\alienfx-cli\alienfx-cli.vcxproj">
-      <Project>{ff6119ea-878f-4e7b-9fcd-8410a5d3fbf8}</Project>
+    <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
+      <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
     </ProjectReference>
     <ProjectReference Include="kiss_fft\kiss_fft.vcxproj">
       <Project>{e6f98b66-1c66-4afd-8a48-faa1022f8196}</Project>

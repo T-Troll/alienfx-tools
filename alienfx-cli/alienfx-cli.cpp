@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "LFXUtil.h"
 #include "LFXDecl.h"
+#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
 namespace 
 {
@@ -21,7 +22,8 @@ void printUsage()
 		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
 		<< "set-action\taction,dev,light,r,g,b[,br,r,g,b[,br]] - set light and enable it's action." << endl
 		<< "set-zone-action\taction,zone,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
-		<< "set-tempo\ttempo - selt light action tempo (in milliseconds)" << endl
+		<< "set-tempo\ttempo - set light action tempo (in milliseconds)" << endl
+		<< "low-level\t\tswitch to low-level SDK" << endl
 		<< "status\t\tshows devices and lights id's, names and statuses" << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
 		<< "Zones: left, right, top, bottom, front, rear" << endl
@@ -30,14 +32,14 @@ void printUsage()
 
 int main(int argc, char* argv[])
 {
+	bool low_level = false;
+	UINT sleepy = 0;
 	if (argc < 2) 
 	{
 		printUsage();
 		return 1;
 	}
 
-	//const ResultT& result(lfxUtil.InitLFX());
-	//if (!result.first)
 	int res = lfxUtil.InitLFX();
 	if ( res != -1) {
 		switch (res) {
@@ -46,11 +48,29 @@ int main(int argc, char* argv[])
 		case 2: cerr << "No devices found!" << endl; break;
 		default: cerr << "Unknown error!" << endl; break;
 		}
-		return 1;
+		low_level = true;
+	}
+	int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
+	//std::cout << "PID: " << std::hex << isInit << std::endl;
+	if (isInit != -1)
+	{
+		bool result = AlienFX_SDK::Functions::Reset(false);
+		if (!result) {
+			std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
+			return 1;
+		}
+		result = AlienFX_SDK::Functions::IsDeviceReady();
+		AlienFX_SDK::Functions::LoadMappings();
+	}
+	else {
+		cerr << "No low-level device found!" << endl;
 	}
 	const char* command = argv[1];
 	for (int cc = 1; cc < argc; cc++) {
-		Sleep(100);
+		if (low_level && cc > 1) 
+			Sleep(sleepy); 
+		else
+			Sleep(100);
 		string arg = string(argv[cc]);
 		size_t vid = arg.find_first_of('=');
 		string command = arg.substr(0, vid);
@@ -65,6 +85,10 @@ int main(int argc, char* argv[])
 				vpos = tvpos == string::npos ? values.size() : tvpos+1;
 			}
 		}
+		if (command == "low-level") {
+			low_level = true;
+			continue;
+		}
 		if (command == "loop") {
 			//cerr << "Executing " << command << endl;
 			cc = 0;
@@ -72,7 +96,16 @@ int main(int argc, char* argv[])
 		}
 		if (command == "status") {
 			//cerr << "Executing " << command << endl;
-			lfxUtil.GetStatus();
+			if (low_level) {
+				cout << "Current device PID: " << std::hex << isInit << std::endl;
+				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
+						cout << "Device ID#" << std::hex << AlienFX_SDK::Functions::GetMappings()->at(i).devid
+						<< ", Light ID#" << AlienFX_SDK::Functions::GetMappings()->at(i).lightid << ", Name: " << AlienFX_SDK::Functions::GetMappings()->at(i).name << endl;
+				}
+			}
+			else {
+				lfxUtil.GetStatus();
+			}
 			continue;
 		}
 		if (command == "set-tempo") {
@@ -80,9 +113,14 @@ int main(int argc, char* argv[])
 				cerr << "set-tempo: Incorrect argument" << endl;
 				continue;
 			}
-			unsigned tempo = atoi(args.at(0).c_str());
-			lfxUtil.SetTempo(tempo);
-			//lfxUtil.Update();
+			if (low_level) {
+				sleepy = atoi(args.at(0).c_str());
+			}
+			else {
+				unsigned tempo = atoi(args.at(0).c_str());
+				lfxUtil.SetTempo(tempo);
+				lfxUtil.Update();
+			}
 			continue;
 		}
 		if (command == "set-all") {
@@ -97,6 +135,14 @@ int main(int argc, char* argv[])
 			color.cs.green = atoi(args.at(1).c_str());
 			color.cs.blue = atoi(args.at(2).c_str());
 			color.cs.brightness = args.size() > 3 ? atoi(args.at(3).c_str()) : 255;
+			if (low_level) {
+				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
+					if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == isInit)
+						AlienFX_SDK::Functions::SetColor(AlienFX_SDK::Functions::GetMappings()->at(i).lightid,
+							color.cs.red, color.cs.green, color.cs.blue);
+				}
+				AlienFX_SDK::Functions::UpdateColors();
+			}
 			lfxUtil.SetLFXColor(zoneCode, color.ci);
 			lfxUtil.Update(); 
 			continue;
@@ -112,8 +158,15 @@ int main(int argc, char* argv[])
 			color.cs.green = atoi(args.at(3).c_str());
 			color.cs.blue = atoi(args.at(2).c_str());
 			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
-			lfxUtil.SetOneLFXColor(atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &color.ci);
-			lfxUtil.Update(); 
+			if (low_level) {
+				AlienFX_SDK::Functions::SetColor(atoi(args.at(1).c_str()),
+					color.cs.blue, color.cs.green, color.cs.red);
+				AlienFX_SDK::Functions::UpdateColors();
+			}
+			else {
+				lfxUtil.SetOneLFXColor(atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &color.ci);
+				lfxUtil.Update();
+			}
 			continue;
 		}
 		if (command == "set-zone") {
@@ -146,6 +199,10 @@ int main(int argc, char* argv[])
 			color.cs.green = atoi(args.at(2).c_str());
 			color.cs.blue = atoi(args.at(3).c_str());
 			color.cs.brightness = args.size() > 4 ? atoi(args.at(4).c_str()) : 255;
+			if (low_level) {
+				cerr << "Low level API doesn not support zones!" << endl;
+				continue;
+			}
 			lfxUtil.SetLFXColor(zoneCode, color.ci);
 			lfxUtil.Update();
 			continue;
@@ -171,6 +228,10 @@ int main(int argc, char* argv[])
 				color2.cs.green = atoi(args.at(8).c_str());
 				color2.cs.blue = atoi(args.at(7).c_str());
 				color2.cs.brightness = args.size() > 10 ? atoi(args.at(10).c_str()) : 255;
+			}
+			if (low_level) {
+				cerr << "Low level API doesn not support actions yet!" << endl;
+				continue;
 			}
 			lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
 			lfxUtil.Update(); 
@@ -217,12 +278,17 @@ int main(int argc, char* argv[])
 				color2.cs.blue = atoi(args.at(8).c_str());
 				color2.cs.brightness = args.size() > 9 ? atoi(args.at(9).c_str()) : 255;
 			}
+			if (low_level) {
+				cerr << "Low level API doesn not support actions yet!" << endl;
+				continue;
+			}
 			lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
 			lfxUtil.Update();
 			continue;
 		}
 		cerr << "Unknown command: " << command << endl;
 	}
+	AlienFX_SDK::Functions::AlienFXClose();
 	lfxUtil.Release();
 
     return 1;

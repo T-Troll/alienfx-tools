@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <math.h>
-#include "LFXUtil.h"
 #include "ConfigHandler.h"
 #include "WSAudioIn.h"
 #pragma comment(lib, "winmm.lib")

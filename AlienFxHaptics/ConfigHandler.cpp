@@ -1,14 +1,8 @@
 #include "ConfigHandler.h"
 
-namespace
-{
-    LFXUtil::LFXUtilC lfx;
-}
-
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
     //TCHAR  szData[] = TEXT("USR:SOFTWARE\\Alienfxhaptics\\Settings");
-    lfxUtil = &lfx;
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxhaptics"),
         0,
@@ -81,7 +75,7 @@ int ConfigHandler::Load() {
         // get id(s)...
         if (ret == ERROR_SUCCESS) {
             unsigned ret2 = sscanf_s(name, "%d-%d", &map.devid, &map.lightid);
-            if (ret2 != EOF) {
+            if (ret2 == 2) {
                 map.colorfrom.ci = inarray[0];
                 map.colorto.ci = inarray[1];
                 map.lowcut = inarray[2];

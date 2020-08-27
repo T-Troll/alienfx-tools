@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-cli", "alienfx-cli\alienfx-cli.vcxproj", "{FF6119EA-878F-4E7B-9FCD-8410A5D3FBF8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{90879993-7449-4A28-972E-7228D4C4D0A8} = {90879993-7449-4A28-972E-7228D4C4D0A8}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-haptics", "AlienFxHaptics\Spectrum.vcxproj", "{E613B07E-0494-472D-A7FB-955C94E164D3}"
 EndProject

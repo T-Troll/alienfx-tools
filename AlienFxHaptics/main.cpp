@@ -8,7 +8,6 @@
 //#include "AudioIn.h"
 #include "Graphics.h"
 #include "DFT_gosu.h"
-#include "LFXUtil.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 #include "WSAudioIn.h"
@@ -99,6 +98,6 @@ DWORD WINAPI resample(LPVOID lpParam)
 
 	Graphika->refresh();
 	FXproc->Refresh(Graphika->getBarsNum());
-	FXproc->UpdateLights();
+	//FXproc->UpdateLights();
 	return 0;
 }
