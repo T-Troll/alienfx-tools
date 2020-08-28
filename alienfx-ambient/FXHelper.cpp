@@ -50,37 +50,40 @@ int FXHelper::Refresh(UCHAR* img)
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		Colorcode fin = { 0 };
-		for (int j = 0; j < map.map.size(); j++) {
-			fin.cs.red += img[3 * map.map[j]];
-			fin.cs.green += img[3 * map.map[j] +1];
-			fin.cs.blue += img[3 * map.map[j] +2 ];
-			//fin.cs.brightness += 0.2126 * img[3 * map.map[j]] 
-			//	+ 0.7152 * img[3 * map.map[j] + 1] 
-			//	+ 0.0722 * img[3 * map.map[j] + 2];// img[4 * map.map[j] + 3];
-		}
-		if (map.map.size() > 1) {
-			fin.cs.red /= map.map.size();
-			fin.cs.green /= map.map.size();
-			fin.cs.blue /= map.map.size();
-			//fin.cs.brightness /= map.map.size();
-		}
-		//fin.cs.brightness = (0.2126 * fin.cs.red
-		//	+ 0.7152 * fin.cs.green
-		//	+ 0.0722 * fin.cs.blue) / 4 + 192;
-		//updates[i].color = fin;
-		//updates[i].devid = map.devid;
-		//updates[i].lightid = map.lightid;
-		//if (abs(fin.cs.red - updates[i].color.cs.red) > 10 ||
-		//	abs(fin.cs.blue - updates[i].color.cs.blue) > 10 ||
-		//	abs(fin.cs.green - updates[i].color.cs.green) > 10) {
-			//lfx->SetOneLFXColor(map.devid, map.lightid, &fin.ci);
-			//lfx->Update();
-			//Sleep(60);
-			//if (AlienFX_SDK::Functions::IsDeviceReady()) {
-		AlienFX_SDK::Functions::SetColor(map.lightid, fin.cs.blue, fin.cs.green, fin.cs.red);
+		UINT r = 0, g = 0, b = 0, size = map.map.size();
+		if (size > 0) {
+			for (int j = 0; j < size; j++) {
+				r += img[3 * map.map[j]+2];
+				g += img[3 * map.map[j] + 1];
+				b += img[3 * map.map[j]];
+				//fin.cs.brightness += 0.2126 * img[3 * map.map[j]] 
+				//	+ 0.7152 * img[3 * map.map[j] + 1] 
+				//	+ 0.0722 * img[3 * map.map[j] + 2];// img[4 * map.map[j] + 3];
+			}
+			if (size > 1) {
+				fin.cs.red = r / size;
+				fin.cs.green = g / size;
+				fin.cs.blue = b / size;
+				//fin.cs.brightness /= map.map.size();
+			}
+			//fin.cs.brightness = (0.2126 * fin.cs.red
+			//	+ 0.7152 * fin.cs.green
+			//	+ 0.0722 * fin.cs.blue) / 4 + 192;
+			//updates[i].color = fin;
+			//updates[i].devid = map.devid;
+			//updates[i].lightid = map.lightid;
+			//if (abs(fin.cs.red - updates[i].color.cs.red) > 10 ||
+			//	abs(fin.cs.blue - updates[i].color.cs.blue) > 10 ||
+			//	abs(fin.cs.green - updates[i].color.cs.green) > 10) {
+				//lfx->SetOneLFXColor(map.devid, map.lightid, &fin.ci);
+				//lfx->Update();
+				//Sleep(60);
+				//if (AlienFX_SDK::Functions::IsDeviceReady()) {
+			AlienFX_SDK::Functions::SetColor(map.lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
 			//updates[i].color = fin;
 			//}
 		//}
+		}
 	}
 	//lastLights = i;
 	AlienFX_SDK::Functions::UpdateColors();

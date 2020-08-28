@@ -58,7 +58,7 @@ int ConfigHandler::Load() {
     char name[255];
     unsigned ret = 0;
     do {
-        DWORD len = 255, lend = 25 * 4; mapping map;
+        DWORD len = 255, lend = 12 * 4; mapping map;
         ret = RegEnumValueA(
             hKey2,
             vindex,
@@ -72,14 +72,12 @@ int ConfigHandler::Load() {
         // get id(s)...
         if (ret == ERROR_SUCCESS) {
             unsigned ret2 = sscanf_s((char *) name, "%d-%d", &map.devid, &map.lightid);
-            if (ret2 != EOF) {
-                //map.colorfrom.ci = inarray[0];
-                //map.colorto.ci = inarray[1];
-                //map.lowcut = inarray[2];
-                //map.hicut = inarray[3];
-                for (unsigned i = 0; i < (lend / 4); i++)
-                    map.map.push_back(inarray[i]);
-                mappings.push_back(map);
+            if (ret2 == 2) {
+                if (lend > 0) {
+                    for (unsigned i = 0; i < (lend / 4); i++)
+                        map.map.push_back(inarray[i]);
+                    mappings.push_back(map);
+                }
             }
             vindex++;
         }
@@ -116,21 +114,23 @@ int ConfigHandler::Save() {
     );
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
-        sprintf_s((char *)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+        sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
         //preparing binary....
         int j, size;
-        for (j = 0; j < mappings[i].map.size(); j++) {
-            out[j] = mappings[i].map[j];
+        if (mappings[i].map.size() > 0) {
+            for (j = 0; j < mappings[i].map.size(); j++) {
+                out[j] = mappings[i].map[j];
+            }
+            size = j * sizeof(unsigned);
+            RegSetValueExA(
+                hKey2,
+                name,
+                0,
+                REG_BINARY,
+                (BYTE*)out,
+                size
+            );
         }
-        size = j * sizeof(unsigned);
-        RegSetValueExA(
-            hKey2,
-            name,
-            0,
-            REG_BINARY,
-            (BYTE*)out,
-            size
-        );
     }
 	return 0;
 }

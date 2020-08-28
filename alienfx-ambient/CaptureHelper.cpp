@@ -1,6 +1,6 @@
 #include "CaptureHelper.h"
 #include <WinNT.h>
-#include <DaramCam.MediaFoundationGenerator.h>
+//#include <DaramCam.MediaFoundationGenerator.h>
 #include <map>
 #include <list>
 #include <algorithm>
@@ -33,7 +33,7 @@ HANDLE uiHandle = 0, cuHandle = 0;
 CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 {
 	DCStartup();
-	DCMFStartup();
+	//DCMFStartup();
 	switch (conf->mode) {
 	case 0: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_MainMonitor);
 		break;
@@ -46,7 +46,7 @@ CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 
 CaptureHelper::~CaptureHelper()
 {
-	DCMFShutdown();
+	//DCMFShutdown();
 	DCShutdown();
 }
 

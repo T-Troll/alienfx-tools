@@ -185,9 +185,6 @@
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
       <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
     </ProjectReference>
-    <ProjectReference Include="DaramCam\DaramCam.MediaFoundationGenerator\DaramCam.MediaFoundationGenerator.vcxproj">
-      <Project>{6427d44e-2199-43d5-9fa6-a4d6a1441fe5}</Project>
-    </ProjectReference>
     <ProjectReference Include="DaramCam\DaramCam\DaramCam.vcxproj">
       <Project>{cf2c45db-8b57-41f5-9bbc-157442310ac3}</Project>
     </ProjectReference>

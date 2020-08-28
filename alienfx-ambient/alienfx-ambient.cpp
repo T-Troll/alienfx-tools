@@ -13,7 +13,7 @@
 #include <shellapi.h>
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
 
-#pragma comment ( lib, "DaramCam.MediaFoundationGenerator.lib" )
+//#pragma comment ( lib, "DaramCam.MediaFoundationGenerator.lib" )
 #pragma comment(linker, \
   "\"/manifestdependency:type='Win32' "\
   "name='Microsoft.Windows.Common-Controls' "\
