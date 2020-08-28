@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <Windows.h>
-#include "../alienfx-cli/LFXUtil.h"
+
 
 struct ColorComp
 {
@@ -20,10 +20,6 @@ union Colorcode
 struct mapping {
 	unsigned devid;
 	unsigned lightid;
-	//Colorcode colorfrom;
-	//Colorcode colorto;
-	//unsigned char lowcut;
-	//unsigned char hicut;
 	std::vector<unsigned char> map;
 };
 
@@ -36,7 +32,6 @@ public:
 	DWORD mode;
 	DWORD divider;
 	std::vector<mapping> mappings;
-	LFXUtil::LFXUtilC* lfx;
 
 	ConfigHandler();
 	~ConfigHandler();

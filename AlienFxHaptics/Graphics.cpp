@@ -393,17 +393,21 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
 		unsigned numdev = 1; // config->lfxUtil->GetNumDev();
+		int pid = AlienFX_SDK::Functions::GetPID();
 		for (i = 0; i < numdev; i++) {
-			int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(TEXT("Device 1")));
-			SendMessage(dev_list, LB_SETITEMDATA, pos, (LPARAM)AlienFX_SDK::Functions::vid);
+			std::string devName = "Device #1";// +AlienFX_SDK::Functions::GetPID();
+			int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(TEXT(devName.c_str())));
+			SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
 		}
 		SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 		if (numdev > 0) {
 			unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
 			for (i = 0; i < lights; i++) {
 				AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-				int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
-				SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
+				if (lgh.devid == pid) {
+					int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
+					SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
+				}
 			}
 		}
 		TCHAR decay[17];
@@ -478,8 +482,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 					for (i = 0; i < lights; i++) {
 						AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-						int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
-						SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
+						if (lgh.devid == did) { // should be did
+							int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
+							SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
+						}
 					}
 					RedrawWindow(freq_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 					RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);

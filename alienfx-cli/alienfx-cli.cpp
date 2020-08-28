@@ -23,7 +23,8 @@ void printUsage()
 		<< "set-action\taction,dev,light,r,g,b[,br,r,g,b[,br]] - set light and enable it's action." << endl
 		<< "set-zone-action\taction,zone,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
 		<< "set-tempo\ttempo - set light action tempo (in milliseconds)" << endl
-		<< "low-level\t\tswitch to low-level SDK" << endl
+		<< "low-level\tswitch to low-level SDK (USB driver)" << endl
+		<< "high-level\tswitch to high-level SDK (Alienware LightFX)" << endl
 		<< "status\t\tshows devices and lights id's, names and statuses" << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
 		<< "Zones: left, right, top, bottom, front, rear" << endl
@@ -87,6 +88,11 @@ int main(int argc, char* argv[])
 		}
 		if (command == "low-level") {
 			low_level = true;
+			continue;
+		}
+		if (command == "high-level") {
+			if (res == (-1))
+				low_level = false;
 			continue;
 		}
 		if (command == "loop") {

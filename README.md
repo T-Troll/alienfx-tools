@@ -8,22 +8,25 @@ A bunch of tools for Alienware LighFX controls:
 <br>More will follow!
 
 ## Requirements
-- Alienware LightFX DLLs installed on your computer. These are automatically installed with Alienware Command Center and 
+- Alienware device present into the system and have USBHID driver active.
+- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and 
 should be picked up by this program.
-- You should enable Alienfx API into AWCC: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
+- (Optional) You should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 8+ (binary files for x64 only, but you can compile project for x86 as well).
 
-Device checked: `Alienware m15R1`, `Alienware M13R2` (should work with any Alienware device with API 1.0 or later)
+Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work with any Alienware device with API 1.0 or later)
 
 ## Known issues
-On some devices, some functions can work incorrectly: can't retrieve positions and colors, can't set zone to action.
-This may fixed in upcoming AWCC updates.<br>
-`alenfx-cli set-tempo` command doesn't work yet (bug in SDK).
+- On some devices, some functions can work incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
+- `alienfx-cli set-tempo` command doesn't work with high-level SDK (bug in SDK, low-level only).<br>
+- `alienfx-cli` commands `set-zone` and `set-zone-action` not supported with low-level SDK (no zones defined).<br>
+- `alienfx-cli` command `set-action` donsn't work with low-level SDK (work in progress)
+- Only frist device found can be controlled trough low-level SDK - no multi-device support yet.
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
 In case apps can't locate LightFX dll's, you can find it into /DLL folder and copy to apps folder one you need (for x32 or x64).</br>
-<br>`alienfx-haptics` uses default output device (there are all sound from audio players, video players, games played) as an input, but you can switch it to default input device (f.e. microphone or line-in).
+After install, run `alienfx-probe` once to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not works wihout it).</br> 
 
 ## alienfx-probe Usage
 Run `alienfx-probe.exe`<br>
@@ -32,18 +35,20 @@ It check 15 first lights into the system.<br>
 The purpose of this app is to check low-level API and to prepare to low-level SDK migration, this names are stored and will be used later in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
 ## alienfx-cli Usage
-Run `alienfx-cli.exe` with a command and any options for that command. 
+Run `alienfx-cli.exe` with a command and any options for that command. Bu default, `alienfx-cli` using high-level SDK (Alienware LightFX) if found, and low-level (USB driver) if not. You can switch it by command. 
 ```
 alienfx-cli.exe [command=option,option,option] ... [command=option,option,option] [loop]
 ```
 The following commands are available:
-- `status` Showing AlienFX device IDs and their lights IDs and status
+- `status` Showing AlienFX device IDs and their lights IDs and status. Output is different for low- and high- level SDKs.
 - `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red.
 - `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color.
 - `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided.
 - `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,r,g,b[,br]]` Set light to color provided and enable action.
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
+- `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
+- `high-level` - Next commands pass trough high-level API (Alienware LightFX).
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 <br>Supported Zones: `left, right, top, bottom, front, rear`
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`

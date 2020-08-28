@@ -5,7 +5,6 @@
 #include <list>
 #include <algorithm>
 #include "resource.h"
-#include "FXHelper.h"
 #include "opencv2/core/mat.hpp"
 #include "opencv2/imgproc.hpp"
 #include <opencv2\imgproc\types_c.h>
@@ -31,7 +30,7 @@ UCHAR  imgz[4 * 3 * 3];
 DWORD uiThread, cuThread;
 HANDLE uiHandle = 0, cuHandle = 0;
 
-CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf)
+CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 {
 	DCStartup();
 	DCMFStartup();
@@ -42,7 +41,7 @@ CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf)
 	}
 	hDlg = dlg;
 	config = conf;
-	fxh = new FXHelper(conf);
+	fxh = fhh;// new FXHelper(conf);
 }
 
 CaptureHelper::~CaptureHelper()

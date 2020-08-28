@@ -4,12 +4,13 @@
 FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
 	freq = freqp;
 	config = conf;
+	//config->fxh = this;
 	//lastUpdate = GetTickCount64();
 	done = 0;
 	stopped = 0;
-	int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
+	pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
 	//std::cout << "PID: " << std::hex << isInit << std::endl;
-	if (isInit != -1)
+	if (pid != -1)
 	{
 		bool result = AlienFX_SDK::Functions::Reset(false);
 		if (!result) {
@@ -37,6 +38,10 @@ void FXHelper::StopFX() {
 	//lfx->Update();
 	//lfx->Release();
 };
+
+int FXHelper::GetPID() {
+	return pid;
+}
 
 int FXHelper::Refresh(int numbars)
 {

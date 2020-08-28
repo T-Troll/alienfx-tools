@@ -1,15 +1,7 @@
 #include "ConfigHandler.h"
 
-namespace
-{
-    LFXUtil::LFXUtilC lfxUtil;
-}
-
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
-    lfx = &lfxUtil;
-    lfx->InitLFX();
-    lfx->FillInfo();
 
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxambient"),
@@ -63,11 +55,11 @@ int ConfigHandler::Load() {
         (LPDWORD)&size);
     if (!divider) divider = 8;
     unsigned vindex = 0, inarray[30];
-    TCHAR name[255];
+    char name[255];
     unsigned ret = 0;
     do {
         DWORD len = 255, lend = 25 * 4; mapping map;
-        ret = RegEnumValue(
+        ret = RegEnumValueA(
             hKey2,
             vindex,
             name,
@@ -95,12 +87,12 @@ int ConfigHandler::Load() {
 	return 0;
 }
 int ConfigHandler::Save() {
-    TCHAR name[256];
+    char name[256];
     unsigned out[30];
 
     RegSetValueEx(
         hKey1,
-        TEXT("Bars"),
+        TEXT("MaxColors"),
         0,
         REG_DWORD,
         (BYTE *) &maxcolors,
@@ -126,16 +118,12 @@ int ConfigHandler::Save() {
         //preparing name
         sprintf_s((char *)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
         //preparing binary....
-        //out[0] = mappings[i].colorfrom.ci;
-        //out[1] = mappings[i].colorto.ci;
-        //out[2] = mappings[i].lowcut;
-       // out[3] = mappings[i].hicut;
         int j, size;
         for (j = 0; j < mappings[i].map.size(); j++) {
             out[j] = mappings[i].map[j];
         }
         size = j * sizeof(unsigned);
-        RegSetValueEx(
+        RegSetValueExA(
             hKey2,
             name,
             0,

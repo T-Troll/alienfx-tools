@@ -10,8 +10,9 @@
 class FXHelper
 {
 private:
-	int* freq, done, stopped;// , lastLights;
-	ConfigHandler* config;
+	int* freq;
+	int done, stopped, pid;
+	ConfigHandler *config;
 	//ULONGLONG lastUpdate;
 	//UpdateData updates[50];
 public:
@@ -20,6 +21,7 @@ public:
 	void StartFX();
 	void StopFX();
 	int Refresh(int numbars);
+	int GetPID();
 	//int UpdateLights();
 };
 

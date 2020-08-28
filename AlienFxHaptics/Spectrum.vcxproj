@@ -128,7 +128,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools;../alienfx-cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools</AdditionalIncludeDirectories>
       <SupportJustMyCode>true</SupportJustMyCode>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <MinimalRebuild>false</MinimalRebuild>
@@ -173,7 +173,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools;../alienfx-cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>

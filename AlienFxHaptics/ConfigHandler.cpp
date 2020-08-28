@@ -58,11 +58,11 @@ int ConfigHandler::Load() {
         &inpType,
         (LPDWORD)&size);
     unsigned vindex = 0, inarray[30];
-    TCHAR name[255];
+    char name[255];
     unsigned ret = 0;
     do {
         DWORD len = 255, lend = 25 * 4; mapping map;
-        ret = RegEnumValue(
+        ret = RegEnumValueA(
             hKey2,
             vindex,
             name,
@@ -90,7 +90,7 @@ int ConfigHandler::Load() {
 	return 0;
 }
 int ConfigHandler::Save() {
-    TCHAR name[256];
+    char name[256];
     unsigned out[30];
 
     RegSetValueEx(
@@ -130,7 +130,7 @@ int ConfigHandler::Save() {
             out[j + 4] = mappings[i].map[j];
         }
         size = (j + 4) * sizeof(unsigned);
-        RegSetValueEx(
+        RegSetValueExA(
             hKey2,
             name,
             0,
@@ -141,3 +141,4 @@ int ConfigHandler::Save() {
     }
 	return 0;
 }
+

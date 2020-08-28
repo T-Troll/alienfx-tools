@@ -1,6 +1,5 @@
 #pragma once
 #include "ConfigHandler.h"
-#include "../alienfx-cli/LFXUtil.h"
 
 struct UpdateData {
 	Colorcode color;
@@ -13,9 +12,8 @@ class FXHelper
 private:
 	//int done, lastLights;
 	int pid;
-	LFXUtil::LFXUtilC* lfx;
 	ConfigHandler* config;
-	ULONGLONG lastUpdate;
+	//ULONGLONG lastUpdate;
 	std::vector<UpdateData> updates;
 public:
 	FXHelper(ConfigHandler* conf);
@@ -23,6 +21,7 @@ public:
 	void StartFX();
 	void StopFX();
 	int Refresh(UCHAR* img);
-	int UpdateLights();
+	//int GetPID();
+	//int UpdateLights();
 };
 

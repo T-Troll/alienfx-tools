@@ -8,8 +8,10 @@
 #include <DaramCam.MediaFoundationGenerator.h>
 #include "CaptureHelper.h"
 #include "ConfigHandler.h"
+#include "FXHelper.h"
 #include <CommCtrl.h>
 #include <shellapi.h>
+#include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
 
 #pragma comment ( lib, "DaramCam.MediaFoundationGenerator.lib" )
 #pragma comment(linker, \
@@ -23,6 +25,7 @@
 
 #define MAX_LOADSTRING 100
 
+FXHelper* fxhl;
 CaptureHelper* cap;
 ConfigHandler* conf;
 
@@ -63,6 +66,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HWND hDlg;
     InitCommonControls();
     conf = new ConfigHandler();
+    fxhl = new FXHelper(conf);
     conf->Load();
     if (!(hDlg=InitInstance (hInstance, nCmdShow)))
     {
@@ -98,6 +102,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf->Save();
     //conf->lfx->Reset();
     delete cap;
+    delete fxhl;
     delete conf;
 
     return (int) msg.wParam;
@@ -160,10 +165,10 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     	(DLGPROC)DialogConfigStatic, 0);
    if (!dlg) return NULL;
 
+   cap = new CaptureHelper(dlg, conf, fxhl);
+
    SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXAMBIENT)));
    SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXAMBIENT), IMAGE_ICON, 16, 16, 0));
-
-   cap = new CaptureHelper(dlg, conf);
 
    //ShowWindow(hWnd, nCmdShow);
    ShowWindow(dlg, nCmdShow);
@@ -251,19 +256,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
     case WM_INITDIALOG:
     {
-        unsigned numdev = conf->lfx->GetNumDev();
+        unsigned numdev = 1;// conf->lfx->GetNumDev();
+        int pid = AlienFX_SDK::Functions::GetPID();
         for (i = 0; i < numdev; i++) {
-            deviceinfo* dev = conf->lfx->GetDevInfo(i);
-            int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)((dev->desc)));
-            SendMessage(dev_list, LB_SETITEMDATA, pos, (LPARAM)dev->id);
+            //deviceinfo* dev = conf->lfx->GetDevInfo(i);
+            std::string devName = "Device #1";// +cap->GetPID();
+            int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
+            SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
         }
         SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
         if (numdev > 0) {
-            unsigned lights = conf->lfx->GetDevInfo(0)->lights;
+            unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
             for (i = 0; i < lights; i++) {
-                lightinfo* lgh = conf->lfx->GetLightInfo(0, i);
-                int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh->desc)));
-                SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
+                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+                if (lgh.devid == pid) {
+                    int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
+                    SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
+                }
             }
         }
         // divider....
@@ -296,17 +305,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE: {
-                unsigned numdev = conf->lfx->GetNumDev();
-                if (numdev > 0 && did < numdev) {
-                    unsigned lights = conf->lfx->GetDevInfo(did)->lights;
-                    SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+                    unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
+                    SendMessage(light_list, CB_RESETCONTENT, 0, 0);
                     for (i = 0; i < lights; i++) {
-                        lightinfo* lgh = conf->lfx->GetLightInfo(did, i);
-                        int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh->desc));
-                        SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh->id);
+                        AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+                        if (lgh.devid == did) { // should be did
+                            int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
+                            SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
+                        }
                     }
                     RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-                }
             } break;
             }
         } break;// should reload dev list
