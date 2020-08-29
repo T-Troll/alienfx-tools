@@ -65,6 +65,7 @@ int main(int argc, char* argv[])
 	}
 	else {
 		cerr << "No low-level device found!" << endl;
+		return 1;
 	}
 	const char* command = argv[1];
 	for (int cc = 1; cc < argc; cc++) {
@@ -103,7 +104,7 @@ int main(int argc, char* argv[])
 		if (command == "status") {
 			//cerr << "Executing " << command << endl;
 			if (low_level) {
-				cout << "Current device PID: " << std::hex << isInit << std::endl;
+				cout << "Current device ID: " << std::hex << isInit << std::endl;
 				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
 						cout << "Device ID#" << std::hex << AlienFX_SDK::Functions::GetMappings()->at(i).devid
 						<< ", Light ID#" << AlienFX_SDK::Functions::GetMappings()->at(i).lightid << ", Name: " << AlienFX_SDK::Functions::GetMappings()->at(i).name << endl;
@@ -295,7 +296,8 @@ int main(int argc, char* argv[])
 		cerr << "Unknown command: " << command << endl;
 	}
 	AlienFX_SDK::Functions::AlienFXClose();
-	lfxUtil.Release();
+	if (res == -1) 
+		lfxUtil.Release();
 
     return 1;
 }

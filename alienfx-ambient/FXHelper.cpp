@@ -50,7 +50,7 @@ int FXHelper::Refresh(UCHAR* img)
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		Colorcode fin = { 0 };
-		UINT r = 0, g = 0, b = 0, size = map.map.size();
+		UINT r = 0, g = 0, b = 0, size = (UINT) map.map.size();
 		if (size > 0) {
 			for (int j = 0; j < size; j++) {
 				r += img[3 * map.map[j]+2];
@@ -60,12 +60,9 @@ int FXHelper::Refresh(UCHAR* img)
 				//	+ 0.7152 * img[3 * map.map[j] + 1] 
 				//	+ 0.0722 * img[3 * map.map[j] + 2];// img[4 * map.map[j] + 3];
 			}
-			if (size > 1) {
-				fin.cs.red = r / size;
-				fin.cs.green = g / size;
-				fin.cs.blue = b / size;
-				//fin.cs.brightness /= map.map.size();
-			}
+			fin.cs.red = r / size;
+			fin.cs.green = g / size;
+			fin.cs.blue = b / size;
 			//fin.cs.brightness = (0.2126 * fin.cs.red
 			//	+ 0.7152 * fin.cs.green
 			//	+ 0.0722 * fin.cs.blue) / 4 + 192;
@@ -85,7 +82,6 @@ int FXHelper::Refresh(UCHAR* img)
 		//}
 		}
 	}
-	//lastLights = i;
 	AlienFX_SDK::Functions::UpdateColors();
 	return 0;
 }

@@ -3,9 +3,9 @@
 
 #include "framework.h"
 #include "alienfx-ambient.h"
-#include <DaramCam.h>
+#include "DaramCam/DaramCam.h"
 #pragma comment ( lib, "DaramCam.lib" )
-#include <DaramCam.MediaFoundationGenerator.h>
+//#include <DaramCam.MediaFoundationGenerator.h>
 #include "CaptureHelper.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
@@ -38,14 +38,9 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 NOTIFYICONDATA niData;
 
 // Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
 HWND                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-void SetButtonColors(UCHAR* data) {
-
-}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -59,8 +54,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    //LoadStringW(hInstance, IDC_ALIENFXAMBIENT, szWindowClass, MAX_LOADSTRING);
-    //MyRegisterClass(hInstance);
 
     // Perform application initialization:
     HWND hDlg;
@@ -98,7 +91,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    cap->Stop();
+    //cap->Stop();
     conf->Save();
     //conf->lfx->Reset();
     delete cap;
@@ -106,34 +99,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     delete conf;
 
     return (int) msg.wParam;
-}
-
-
-
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-    WNDCLASSEXW wcex;
-
-    wcex.cbSize = sizeof(WNDCLASSEX);
-
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXAMBIENT));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_ALIENFXAMBIENT);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ALIENFXAMBIENT));
-
-    return RegisterClassExW(&wcex);
 }
 
 //
@@ -266,7 +231,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         }
         SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
         if (numdev > 0) {
-            unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
+            size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
             for (i = 0; i < lights; i++) {
                 AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
                 if (lgh.devid == pid) {
@@ -299,13 +264,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         {
         case IDOK: case IDCANCEL: case IDCLOSE:
         {
+            cap->Stop();
             DestroyWindow(hDlg); //EndDialog(hDlg, IDOK);
         } break;
         case IDC_DEVICE: {
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE: {
-                    unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
+                    size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
                     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
                     for (i = 0; i < lights; i++) {
                         AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
@@ -419,7 +385,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 conf->mode = 1;
                 /*cap->Stop();
                 delete cap;
-                cap = new CaptureHelper(hDlg, conf);
+                cap = new CaptureHelper(hDlg, conf, fxhl);
                 cap->Start();*/
                 break;
             }
@@ -469,7 +435,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     } break;
-    case WM_CLOSE: DestroyWindow(hDlg); break;
+    case WM_CLOSE: cap->Stop(); DestroyWindow(hDlg); break;
     case WM_DESTROY: PostQuitMessage(0); break;
     default: return false;
     }

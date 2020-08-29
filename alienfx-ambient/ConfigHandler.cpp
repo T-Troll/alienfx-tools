@@ -54,8 +54,8 @@ int ConfigHandler::Load() {
         &divider,
         (LPDWORD)&size);
     if (!divider) divider = 8;
-    unsigned vindex = 0, inarray[30];
-    char name[255];
+    unsigned vindex = 0, inarray[12*4];
+    char name[256];
     unsigned ret = 0;
     do {
         DWORD len = 255, lend = 12 * 4; mapping map;
@@ -86,7 +86,7 @@ int ConfigHandler::Load() {
 }
 int ConfigHandler::Save() {
     char name[256];
-    unsigned out[30];
+    unsigned out[12*4];
 
     RegSetValueEx(
         hKey1,
@@ -116,12 +116,12 @@ int ConfigHandler::Save() {
         //preparing name
         sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
         //preparing binary....
-        int j, size;
-        if (mappings[i].map.size() > 0) {
-            for (j = 0; j < mappings[i].map.size(); j++) {
+        UINT j, size = (UINT) mappings[i].map.size();
+        if (size > 0) {
+            for (j = 0; j < size; j++) {
                 out[j] = mappings[i].map[j];
             }
-            size = j * sizeof(unsigned);
+            size *= sizeof(unsigned);
             RegSetValueExA(
                 hKey2,
                 name,

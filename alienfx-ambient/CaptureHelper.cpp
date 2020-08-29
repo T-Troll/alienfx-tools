@@ -36,8 +36,9 @@ CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 	//DCMFStartup();
 	switch (conf->mode) {
 	case 0: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_MainMonitor);
-		break;
-	case 1: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_SubMonitors); break; // other monitors.
+		break; // primary monitor.
+	case 1: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_SubMonitors); 
+		break; // other monitors.
 	}
 	hDlg = dlg;
 	config = conf;
@@ -65,31 +66,32 @@ void CaptureHelper::Start()
 
 void CaptureHelper::Stop()
 {
-	DWORD exitCode, exitCode2;
+	DWORD exitCode;
 	inWork = false;
 	GetExitCodeThread(dwHandle, &exitCode);
-	while (exitCode == STILL_ACTIVE)
+	while (exitCode == STILL_ACTIVE) {
+		Sleep(100);
 		GetExitCodeThread(dwHandle, &exitCode);
-	GetExitCodeThread(uiHandle, &exitCode);
-	GetExitCodeThread(cuHandle, &exitCode2);
-	if ((exitCode == STILL_ACTIVE) || (exitCode2 == STILL_ACTIVE)) {
-		Sleep(400);
-		//GetExitCodeThread(uiHandle, &exitCode);
-		//GetExitCodeThread(cuHandle, &exitCode2);
 	}
+	CloseHandle(dwHandle);
+	GetExitCodeThread(uiHandle, &exitCode);
+	while (exitCode == STILL_ACTIVE) {
+		Sleep(100);
+		GetExitCodeThread(uiHandle, &exitCode);
+	}
+	CloseHandle(uiHandle);
+	GetExitCodeThread(cuHandle, &exitCode);
+	if (exitCode == STILL_ACTIVE)
+		CloseHandle(cuHandle);
+	dwHandle = uiHandle = cuHandle = 0;
+	/*GetExitCodeThread(cuHandle, &exitCode);
+	while (exitCode == STILL_ACTIVE) {
+		Sleep(100);
+		GetExitCodeThread(cuHandle, &exitCode);
+	}*/
 	fxh->StopFX();
 	//uiThread.stop;
 	//cuThread.stop;
-}
-
-int CaptureHelper::GetColor(int pos)
-{
-	return 0;
-}
-
-bool compare(std::pair<UINT32, int> a, std::pair<UINT32, int> b)
-{
-	return a.second > b.second;
 }
 
 cv::Mat extractHPts(const cv::Mat& inImage)
@@ -100,21 +102,6 @@ cv::Mat extractHPts(const cv::Mat& inImage)
 	Mat res[3];
 	split(inImage, res);
 	res[0].reshape(1, inImage.cols * inImage.rows).convertTo(listOfHPts, CV_32FC1);
-	//return res[0];
-	// index for listOfHPts container
-	/*int idx = 0;
-	for (int j = 0; j < inImage.rows; j++)
-	{
-		for (int i = 0; i < inImage.cols; i++)
-		{
-			cv::Vec3b tempVec;
-			tempVec = inImage.at<cv::Vec3b>(j, i);
-
-			// extract the H channel and store in Hpts list
-			listOfHPts.at<float>(idx++, 0) = float(tempVec[0]);
-		}
-	} */
-
 	return listOfHPts;
 }
 
@@ -135,10 +122,10 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 	{
 		// invert the 0's and 1's where 1s represent foreground
 		fPtsLabel = (fPtsLabel - 1) * (-1);
-		numFGPts = fPtsLabel.rows - sumLabel.at<float>(0, 0);
+		numFGPts = fPtsLabel.rows - (int) sumLabel.at<float>(0, 0);
 	}
 	else
-		numFGPts = sumLabel.at<float>(0, 0);
+		numFGPts = (int) sumLabel.at<float>(0, 0);
 
 	// to find dominant color, I just average all points belonging to foreground
 	cv::Mat dominantColor;
@@ -175,7 +162,7 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 	return dColor;
 }
 
-struct procData {
+/*struct procData {
 	Mat src;
 	UCHAR* dst;
 };
@@ -197,40 +184,41 @@ DWORD WINAPI ColorProc(LPVOID inp) {
 	delete src;
 	fcount++;
 	return 0;
-}
+}*/
 
-void FillColors(Mat src, UCHAR* dst) {
+void FillColors(Mat src) {
 	uint w = src.cols / 4, h = src.rows / 3;
 	Mat cPos;
-	fcount = 0;
+	//fcount = 0;
+	//procData* callData = NULL;
 	for (uint dy = 0; dy < 3; dy++)
 		for (uint dx = 0; dx < 4; dx++) {
-			procData* callData = new procData();
+			//callData = new procData();
 			uint ptr = (dy * 4 + dx) * 3;
 			cPos = src.rowRange(dy * h + 1, (dy + 1) * h)
 				.colRange(dx * w + 1, (dx + 1) * w);
-			callData->src = cPos;
-			callData->dst = dst + ptr;
+			/*callData->src = cPos;
+			callData->dst = imgz + ptr;
 			CreateThread(
 				NULL,              // default security
-				0,                 // default stack size
+				4*1024*1024,                 // default stack size
 				ColorProc,        // name of the thread function
 				callData,
 				0,                 // default startup flags
-				&uiThread);
-			/*cv::Mat hPts;
+				&uiThread);*/
+			cv::Mat hPts;
 			hPts = extractHPts(cPos);
 			cv::Mat ptsLabel, kCenters;
 			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
 
 			cv::Mat dColor;
 			dColor = getDominantColor(cPos, ptsLabel);
-			dst[ptr] = dColor.ptr<UCHAR>()[0];
-			dst[ptr + 1] = dColor.ptr<UCHAR>()[1];
-			dst[ptr + 2] = dColor.ptr<UCHAR>()[2];*/
+			imgz[ptr] = dColor.ptr<UCHAR>()[0];
+			imgz[ptr + 1] = dColor.ptr<UCHAR>()[1];
+			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];
 
 		}
-	while (fcount != 12) Sleep(20);
+	//while (fcount != 12) Sleep(20);
 }
 
 DWORD WINAPI CInProc(LPVOID param)
@@ -238,70 +226,57 @@ DWORD WINAPI CInProc(LPVOID param)
 	//IStream* stream = NULL;
 	DCScreenCapturer* screenCapturer = (DCScreenCapturer*)param;
 	UINT w, h, st, cdp;
-	UCHAR* img = 0;
-	DWORD exitCode;
+	UCHAR* img = NULL;
+	DWORD exitCode = 0;
 
 	UINT div = config->divider;
 	while (inWork) {
+		//Sleep(100);
 		screenCapturer->Capture();
 		img = screenCapturer->GetCapturedBitmap()->GetByteArray();
 		w = screenCapturer->GetCapturedBitmap()->GetWidth();
 		h = screenCapturer->GetCapturedBitmap()->GetHeight();
 		cdp = screenCapturer->GetCapturedBitmap()->GetColorDepth();
 		st = screenCapturer->GetCapturedBitmap()->GetStride();
-		// Resize
-		cv::Mat redCenter;
-		if (cdp == 4) {
-			Mat src(h, w, CV_8UC4, img, st);
-			Mat reduced;// (h / div, w / div, CV_8UC4);
-			cv::resize(src, reduced, Size(w / div, h / div), 0, 0, INTER_AREA);
-			cv::cvtColor(reduced, redCenter, CV_RGBA2RGB);
+		// Resize & calc
+		if (img != NULL) {
+			cv::Mat redCenter;
+			if (cdp == 4) {
+				Mat src(h, w, CV_8UC4, img, st);
+				Mat reduced;// (h / div, w / div, CV_8UC4);
+				cv::resize(src, reduced, Size(w / div, h / div), 0, 0, INTER_AREA);
+				cv::cvtColor(reduced, redCenter, CV_RGBA2RGB);
+			}
+			else {
+				Mat src(h, w, CV_8UC3, img, st);
+				cv::resize(src, redCenter, Size(w / div, h / div), 0, 0, INTER_AREA);
+			}
+
+			FillColors(redCenter);
+
+			// Update lights
+			if (uiHandle)
+				GetExitCodeThread(uiHandle, &exitCode);
+			if (exitCode != STILL_ACTIVE)
+				uiHandle = CreateThread(
+					NULL,              // default security
+					0,                 // default stack size
+					CFXProc,        // name of the thread function
+					imgz,
+					0,                 // default startup flags
+					&uiThread);
+			// Update UI
+			if (cuHandle)
+				GetExitCodeThread(cuHandle, &exitCode);
+			if (exitCode != STILL_ACTIVE)
+				cuHandle = CreateThread(
+					NULL,              // default security
+					0,                 // default stack size
+					CDlgProc,        // name of the thread function
+					imgz,
+					0,                 // default startup flags
+					&cuThread);
 		}
-		else {
-			Mat src(h, w, CV_8UC3, img, st);
-			cv::resize(src, redCenter, Size(w / div, h / div), 0, 0, INTER_AREA);
-		}
-		//cv::cvtColor(redCenter, reduced, CV_RGB2HSV);
-
-		//imgz = redCenter.ptr<UCHAR>();
-		FillColors(redCenter, imgz);
-		//delete imgz;
-		//imgz = Resize(img, w, h, cdp, st, div);
-		// DEBUG!
-		//SHCreateStreamOnFileEx(L"C:\\Temp\\Test.png", STGM_READWRITE | STGM_CREATE, 0, false, 0, &stream);
-		//DCBitmap out(w / div, h / div, 3);
-		//out.Resize(w/3, h/3);
-		//out.SetIsDirectMode(true);
-		//out.SetDirectBuffer(imgz);
-		//DCImageGenerator* imgGen = DCCreateWICImageGenerator(DCWICImageType_PNG);
-		//SIZE size = { w/div, h/div }; //(LONG)screenCapturer->GetCapturedBitmap()->GetWidth(), (LONG)screenCapturer->GetCapturedBitmap()->GetHeight()
-		
-		//DCSetSizeToWICImageGenerator(imgGen, &size);
-		//imgGen->Generate(stream, &out);
-
-		//stream->Release();
-
-		//delete imgGen;
-		// Update lights
-		GetExitCodeThread(uiHandle, &exitCode);
-		if (exitCode != STILL_ACTIVE)
-			uiHandle = CreateThread(
-				NULL,              // default security
-				0,                 // default stack size
-				CFXProc,        // name of the thread function
-				imgz,
-				0,                 // default startup flags
-				&uiThread);
-		// Update UI
-		GetExitCodeThread(cuHandle, &exitCode);
-		if (exitCode != STILL_ACTIVE)
-			cuHandle = CreateThread(
-				NULL,              // default security
-				0,                 // default stack size
-				CDlgProc,        // name of the thread function
-				imgz,
-				0,                 // default startup flags
-				&cuThread);
 		//free(imgz);
 		//Sleep(100);
 	}
