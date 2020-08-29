@@ -150,8 +150,10 @@ int main(int argc, char* argv[])
 				}
 				AlienFX_SDK::Functions::UpdateColors();
 			}
-			lfxUtil.SetLFXColor(zoneCode, color.ci);
-			lfxUtil.Update(); 
+			else {
+				lfxUtil.SetLFXColor(zoneCode, color.ci);
+				lfxUtil.Update();
+			}
 			continue;
 		}
 		if (command == "set-one") {
@@ -208,10 +210,11 @@ int main(int argc, char* argv[])
 			color.cs.brightness = args.size() > 4 ? atoi(args.at(4).c_str()) : 255;
 			if (low_level) {
 				cerr << "Low level API doesn not support zones!" << endl;
-				continue;
 			}
-			lfxUtil.SetLFXColor(zoneCode, color.ci);
-			lfxUtil.Update();
+			else {
+				lfxUtil.SetLFXColor(zoneCode, color.ci);
+				lfxUtil.Update();
+			}
 			continue;
 		}
 		if (command == "set-action") {
@@ -238,10 +241,11 @@ int main(int argc, char* argv[])
 			}
 			if (low_level) {
 				cerr << "Low level API doesn not support actions yet!" << endl;
-				continue;
 			}
-			lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
-			lfxUtil.Update(); 
+			else {
+				lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
+				lfxUtil.Update();
+			}
 			continue;
 		}
 		if (command == "set-zone-action") {
@@ -287,10 +291,11 @@ int main(int argc, char* argv[])
 			}
 			if (low_level) {
 				cerr << "Low level API doesn not support actions yet!" << endl;
-				continue;
 			}
-			lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
-			lfxUtil.Update();
+			else {
+				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
+				lfxUtil.Update();
+			}
 			continue;
 		}
 		cerr << "Unknown command: " << command << endl;
