@@ -23,6 +23,7 @@ Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work wit
 - `alienfx-cli` command `set-action` donsn't work with low-level SDK (work in progress)
 - Only frist device found can be controlled trough low-level SDK - no multi-device support yet.
 - Brightness is not supported for low-level API, just ignored now.
+- `Alienfx-ambient` stop working and should be restarted after screen off (sleep or timeout) (work in progress).
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
