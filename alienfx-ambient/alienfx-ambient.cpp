@@ -214,6 +214,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     HWND dev_list = GetDlgItem(hDlg, IDC_DEVICE);
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND divider = GetDlgItem(hDlg, IDC_EDIT_DIVIDER);
+    HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
     mapping* map = NULL;
     unsigned i;
 
@@ -253,6 +254,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
             CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
         }
+        SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 128));
+        SendMessage(brSlider, TBM_SETPOS, true, conf->shift);
     } break;
     case WM_COMMAND:
     {
@@ -370,10 +373,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
                 conf->mode = 0;
                 //restart capture....
-                /*cap->Stop();
-                delete cap;
-                cap = new CaptureHelper(hDlg, conf);
-                cap->Start();*/
+                cap->Stop();
+                cap->SetCaptureScreen(0);
+                cap->Start();
                 break;
             }
         break;
@@ -383,12 +385,30 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_CHECKED);
                 conf->mode = 1;
-                /*cap->Stop();
-                delete cap;
-                cap = new CaptureHelper(hDlg, conf, fxhl);
-                cap->Start();*/
+                cap->Stop();
+                cap->SetCaptureScreen(1);
+                cap->Start();
                 break;
             }
+            break;
+        case IDC_BUTTON_MIN:
+            // go to tray...
+
+            ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+            niData.cbSize = sizeof(NOTIFYICONDATA);
+            niData.uID = IDI_ALIENFXAMBIENT;
+            niData.uFlags = NIF_ICON | NIF_MESSAGE;
+            niData.hIcon =
+                (HICON)LoadImage(GetModuleHandle(NULL),
+                    MAKEINTRESOURCE(IDI_ALIENFXAMBIENT),
+                    IMAGE_ICON,
+                    GetSystemMetrics(SM_CXSMICON),
+                    GetSystemMetrics(SM_CYSMICON),
+                    LR_DEFAULTCOLOR);
+            niData.hWnd = hDlg;
+            niData.uCallbackMessage = WM_APP + 1;
+            Shell_NotifyIcon(NIM_ADD, &niData);
+            ShowWindow(hDlg, SW_HIDE);
             break;
         default: return false;
         }
@@ -435,6 +455,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     } break;
+    case WM_HSCROLL:
+        switch (LOWORD(wParam)) {
+        case TB_THUMBTRACK: case TB_ENDTRACK: 
+            if ((HWND)lParam == brSlider) {
+                conf->shift = SendMessage(brSlider, TBM_GETPOS, 0, 0);
+            }
+            break;
+        }
+        break;
     case WM_CLOSE: cap->Stop(); DestroyWindow(hDlg); break;
     case WM_DESTROY: PostQuitMessage(0); break;
     default: return false;

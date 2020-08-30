@@ -64,7 +64,7 @@ HRESULT DXGIOutputDuplication::AcquireNextFrame(IDXGISurface1** pDXGISurface, DX
 {
 	DXGI_OUTDUPL_FRAME_INFO fi;
 	CComPtr<IDXGIResource> spDXGIResource;
-	HRESULT hr = m_DXGIOutputDuplication->AcquireNextFrame(20, &fi, &spDXGIResource);
+	HRESULT hr = m_DXGIOutputDuplication->AcquireNextFrame(100, &fi, &spDXGIResource);
 	if(FAILED(hr))
 	{
 		return hr;
@@ -100,7 +100,7 @@ HRESULT DXGIOutputDuplication::AcquireNextFrame(IDXGISurface1** pDXGISurface, DX
 	*pDXGISurface = spDXGISurface.Detach();
 	
 	// Updating mouse pointer, if visible
-	if(fi.PointerPosition.Visible)
+	/*if(fi.PointerPosition.Visible)
 	{
 		BYTE* pPointerShape = new BYTE[fi.PointerShapeBufferSize];
 
@@ -146,7 +146,7 @@ HRESULT DXGIOutputDuplication::AcquireNextFrame(IDXGISurface1** pDXGISurface, DX
 		{
 			delete [] pPointerShape;
 		}
-	}
+	}*/
 
 	return hr;
 }
@@ -280,8 +280,13 @@ CaptureSource DXGIManager::GetCaptureSource()
 
 HRESULT DXGIManager::Init()
 {
-	if(m_bInitialized)
-		return S_OK;
+	if (m_bInitialized) {
+		//return S_OK;
+		// re-init, f.e. after sleep
+		m_vOutputs.clear();
+		m_spDXGIFactory1.Release();
+		m_bInitialized = false;
+	}
 
 	HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&m_spDXGIFactory1) );
 	if( FAILED(hr) )
@@ -477,7 +482,7 @@ HRESULT DXGIManager::GetOutputBits(BYTE* pBits, bool reverse )
 	if(FAILED(hr))
 		return hr;
 
-	DrawMousePointer(pBuf, rcOutput, rcOutput);
+	//DrawMousePointer(pBuf, rcOutput, rcOutput);
 	
 	return hr;
 }

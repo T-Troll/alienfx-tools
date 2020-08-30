@@ -37,7 +37,17 @@ int ConfigHandler::Load() {
         &maxcolors,
         (LPDWORD) &size);
     if (!maxcolors) { // no key
-        maxcolors = 20;
+        maxcolors = 12;
+    }
+    RegGetValue(hKey1,
+        NULL,
+        TEXT("Shift"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &shift,
+        (LPDWORD)&size);
+    if (!shift) { // no key
+        shift = 40;// 0;
     }
     RegGetValue(hKey1,
         NULL,
@@ -94,6 +104,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE *) &maxcolors,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("Shift"),
+        0,
+        REG_DWORD,
+        (BYTE*)&shift,
         4
     );
     RegSetValueEx(

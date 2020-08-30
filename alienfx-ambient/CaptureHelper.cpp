@@ -34,12 +34,7 @@ CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 {
 	DCStartup();
 	//DCMFStartup();
-	switch (conf->mode) {
-	case 0: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_MainMonitor);
-		break; // primary monitor.
-	case 1: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_SubMonitors); 
-		break; // other monitors.
-	}
+	SetCaptureScreen(conf->mode);
 	hDlg = dlg;
 	config = conf;
 	fxh = fhh;// new FXHelper(conf);
@@ -49,6 +44,17 @@ CaptureHelper::~CaptureHelper()
 {
 	//DCMFShutdown();
 	DCShutdown();
+}
+
+void CaptureHelper::SetCaptureScreen(int mode) {
+	if (screenCapturer != NULL)
+		delete screenCapturer;
+	switch (mode) {
+	case 0: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_MainMonitor);
+		break; // primary monitor.
+	case 1: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_SubMonitors);
+		break; // other monitors.
+	}
 }
 
 void CaptureHelper::Start()
@@ -231,7 +237,6 @@ DWORD WINAPI CInProc(LPVOID param)
 
 	UINT div = config->divider;
 	while (inWork) {
-		//Sleep(100);
 		screenCapturer->Capture();
 		img = screenCapturer->GetCapturedBitmap()->GetByteArray();
 		w = screenCapturer->GetCapturedBitmap()->GetWidth();
@@ -278,7 +283,7 @@ DWORD WINAPI CInProc(LPVOID param)
 					&cuThread);
 		}
 		//free(imgz);
-		//Sleep(100);
+		//Sleep(50);
 	}
 	return 0;
 }

@@ -26,11 +26,12 @@ struct mapping {
 class ConfigHandler
 {
 private:
-	HKEY   hKey1, hKey2;
+	HKEY   hKey1 = NULL, hKey2 = NULL;
 public:
-	DWORD maxcolors;
-	DWORD mode;
-	DWORD divider;
+	DWORD maxcolors = 12;
+	DWORD mode = 0;
+	DWORD divider = 16;
+	DWORD shift = 40;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();
