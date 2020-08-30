@@ -37,7 +37,7 @@ int main()
 		else {
 			lfxUtil.FillInfo();
 			cout << "Lights found for " << lfxUtil.GetDevInfo(0)->desc << ":" << endl;
-			for (int i = 0; i < lfxUtil.GetDevInfo(0)->lights; i++) {
+			for (UINT i = 0; i < lfxUtil.GetDevInfo(0)->lights; i++) {
 				cout << "Light #" << lfxUtil.GetLightInfo(0, i)->id
 					<< " - " << lfxUtil.GetLightInfo(0, i)->desc << endl;
 			}
@@ -60,7 +60,7 @@ int main()
 			if (j != AlienFX_SDK::Functions::GetMappings()->size())
 				cout << " (Old value - " << AlienFX_SDK::Functions::GetMappings()->at(j).name << ")";*/
 			cout << ": ";
-			char name[256], *outName; int lid;
+			char name[256], *outName;
 			AlienFX_SDK::Functions::SetColor(i, 0, 255, 0);
 			AlienFX_SDK::Functions::UpdateColors();
 			Sleep(100);

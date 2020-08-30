@@ -18,8 +18,8 @@ union Colorcode
 };
 
 struct mapping {
-	unsigned devid;
-	unsigned lightid;
+	unsigned devid = 0;
+	unsigned lightid = 0;
 	std::vector<unsigned char> map;
 };
 

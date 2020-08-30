@@ -53,7 +53,7 @@ int FXHelper::Refresh(UCHAR* img)
 		Colorcode fin = { 0 };
 		unsigned r = 0, g = 0, b = 0, size = (unsigned) map.map.size();
 		if (size > 0) {
-			for (int j = 0; j < size; j++) {
+			for (unsigned j = 0; j < size; j++) {
 				r += img[3 * map.map[j]+2];
 				g += img[3 * map.map[j] + 1];
 				b += img[3 * map.map[j]];
@@ -65,7 +65,7 @@ int FXHelper::Refresh(UCHAR* img)
 			fin.cs.green = g / size;
 			fin.cs.blue = b / size;
 			// Brightness correction...
-			int //cmax = fin.cs.red > fin.cs.green ? max(fin.cs.red, fin.cs.blue) : max(fin.cs.green, fin.cs.blue),
+			unsigned //cmax = fin.cs.red > fin.cs.green ? max(fin.cs.red, fin.cs.blue) : max(fin.cs.green, fin.cs.blue),
 				cmin = fin.cs.red < fin.cs.green ? min(fin.cs.red, fin.cs.blue) : min(fin.cs.green, fin.cs.blue),
 				//lght = (cmax + cmin) > shift * 2 ? (cmax + cmin) / 2 - shift : 0,
 				//strn = (cmax - cmin) == 0 ? 0 : (cmax - cmin) / (255 - std::abs((cmax + cmin) - 255)),

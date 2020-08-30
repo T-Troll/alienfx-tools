@@ -401,7 +401,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 		SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 		if (numdev > 0) {
-			unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
+			size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
 			for (i = 0; i < lights; i++) {
 				AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
 				if (lgh.devid == pid) {
@@ -476,7 +476,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case CBN_SELCHANGE: {
 				unsigned numdev = 1;// config->lfxUtil->GetNumDev();
 				if (numdev > 0) {
-					unsigned lights = AlienFX_SDK::Functions::GetMappings()->size();
+					size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
 					EnableWindow(freq_list, FALSE);
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
@@ -737,14 +737,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (i < config->mappings.size()) {
 				map = &config->mappings[i];
 				if ((HWND)lParam == hLowSlider) {
-					map->lowcut = SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
+					map->lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
 					TCHAR locut[6];
 					sprintf_s(locut, 5, "%d", map->lowcut);
 					SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
 					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				}
 				if ((HWND)lParam == hHiSlider) {
-					map->hicut = SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
+					map->hicut = (UCHAR) SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
 					TCHAR locut[6];
 					sprintf_s(locut, 5, "%d", map->hicut);
 					SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)locut);

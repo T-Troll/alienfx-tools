@@ -459,7 +459,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (LOWORD(wParam)) {
         case TB_THUMBTRACK: case TB_ENDTRACK: 
             if ((HWND)lParam == brSlider) {
-                conf->shift = SendMessage(brSlider, TBM_GETPOS, 0, 0);
+                conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
             }
             break;
         }

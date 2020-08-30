@@ -49,14 +49,14 @@ DARAMCAM_EXPORTS void DCGetProcesses ( DWORD * buffer, unsigned * bufferSize )
 DARAMCAM_EXPORTS void DCGetProcessName ( DWORD pId, char * nameBuffer, unsigned nameBufferSize )
 {
 	HANDLE hProcess = OpenProcess ( PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pId );
-	if ( hProcess != nullptr )
+	if (hProcess != nullptr)
 	{
 		HMODULE hModule;
 		DWORD cbNeeded;
-		if ( EnumProcessModules ( hProcess, &hModule, sizeof ( HMODULE ), &cbNeeded ) )
-			GetModuleBaseNameA ( hProcess, hModule, nameBuffer, nameBufferSize );
+		if (EnumProcessModules(hProcess, &hModule, sizeof(HMODULE), &cbNeeded))
+			GetModuleBaseNameA(hProcess, hModule, nameBuffer, nameBufferSize);
+		CloseHandle(hProcess);
 	}
-	CloseHandle ( hProcess );
 }
 
 DARAMCAM_EXPORTS HWND DCGetActiveWindowFromProcess ( DWORD pId )

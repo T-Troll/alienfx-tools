@@ -13,8 +13,8 @@ namespace AlienFX_SDK
 
 {	
 	struct mapping {
-		unsigned devid;
-		unsigned lightid;
+		unsigned devid = 0;
+		unsigned lightid = 0;
 		std::string name;
 	};
 
@@ -48,10 +48,10 @@ namespace AlienFX_SDK
 		static   bool AlienFXInitialize(int vid, int pid);
 
 		//De-init
-		static   bool AlienFXClose();
+		static  bool AlienFXClose();
 
 		//Enable/Disable all lights
-		static  bool Reset(bool status);
+		static  bool Reset(int status);
 
 		static  bool IsDeviceReady();
 

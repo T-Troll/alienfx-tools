@@ -60,7 +60,7 @@ DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 		double res = pow(2, i * correction);
 		//sum = round(res);
 		//double delta = sum - s_numbers[i - 1];
-		s_numbers[i-1] = round(res);
+		s_numbers[i-1] = (int) round(res);
 	}
 
 

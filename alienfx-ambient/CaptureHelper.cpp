@@ -283,7 +283,7 @@ DWORD WINAPI CInProc(LPVOID param)
 					&cuThread);
 		}
 		//free(imgz);
-		//Sleep(50);
+		Sleep(50);
 	}
 	return 0;
 }

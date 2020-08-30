@@ -62,9 +62,9 @@ DCDXGIScreenCapturer::~DCDXGIScreenCapturer ()
 void DCDXGIScreenCapturer::Capture ( bool reverse ) noexcept
 {
 	int cnt;
-	for (cnt = 0; cnt < 50 && FAILED(dxgiManager->GetOutputBits(capturedBitmap.GetByteArray(), reverse)); cnt++)
-		Sleep(10);
-	if (cnt == 50)
+	for (cnt = 0; cnt < 10 && FAILED(dxgiManager->GetOutputBits(capturedBitmap.GetByteArray(), reverse)); cnt++)
+		Sleep(20);
+	if (cnt == 10)
 		dxgiManager->SetCaptureSource(dxgiManager->GetCaptureSource());
 }
 
