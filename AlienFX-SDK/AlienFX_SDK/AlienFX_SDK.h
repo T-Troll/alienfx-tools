@@ -57,6 +57,11 @@ namespace AlienFX_SDK
 
 		static  bool SetColor(int index, int Red, int Green, int Blue);
 
+		// Set multipy lights to the same color. This only works for new API devices, and emulated at old ones.
+		// numLights - how many lights need to be set
+		// lights - pointer to array of light IDs need to be set.
+		static  bool SetMultiColor(int numLights, UCHAR* lights, int r, int g, int b);
+
 		static  bool UpdateColors();
 
 		// load light names from registry

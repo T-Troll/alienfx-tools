@@ -100,6 +100,12 @@ void CaptureHelper::Stop()
 	//cuThread.stop;
 }
 
+void CaptureHelper::Restart() {
+	Stop();
+	SetCaptureScreen(config->mode);
+	Start();
+}
+
 cv::Mat extractHPts(const cv::Mat& inImage)
 {
 	// container for storing Hue Points

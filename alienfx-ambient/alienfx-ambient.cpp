@@ -373,9 +373,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
                 conf->mode = 0;
                 //restart capture....
-                cap->Stop();
-                cap->SetCaptureScreen(0);
-                cap->Start();
+                cap->Restart();
                 break;
             }
         break;
@@ -385,9 +383,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_CHECKED);
                 conf->mode = 1;
-                cap->Stop();
-                cap->SetCaptureScreen(1);
-                cap->Start();
+                cap->Restart();
                 break;
             }
             break;
@@ -466,6 +462,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         break;
     case WM_CLOSE: cap->Stop(); DestroyWindow(hDlg); break;
     case WM_DESTROY: PostQuitMessage(0); break;
+    case WM_POWERBROADCAST:
+        if (wParam == PBT_APMRESUMEAUTOMATIC) {
+            //resumed from sleep
+            cap->Restart();
+        }
+        break;
+    case WM_DISPLAYCHANGE:
+        // Monitor configuration changed
+        cap->Restart();
+        break;
     default: return false;
     }
     return true;

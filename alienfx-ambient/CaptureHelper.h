@@ -12,6 +12,7 @@ public:
 	void SetCaptureScreen(int mode);
 	void Start();
 	void Stop();
+	void Restart();
 private:
 	DCScreenCapturer* screenCapturer = NULL;
 	DWORD dwThreadID = 0;
