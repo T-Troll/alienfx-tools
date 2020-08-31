@@ -32,7 +32,7 @@ int main()
 			default: cerr << "Unknown error!" << endl; break;
 			}
 			// No SDK detected
-			cout << "No LightFX SDK detected, you should provide names yourself!";
+			cout << "No LightFX SDK detected, you should provide names yourself!" << endl;
 		}
 		else {
 			lfxUtil.FillInfo();
@@ -49,8 +49,9 @@ int main()
 		}
 		result = AlienFX_SDK::Functions::IsDeviceReady();
 		// Let's probe low-level lights....
-		cout << "Probing device lights." << endl <<"For each light please enter LightFX SDK light ID or light name if ID is not avaliable" << endl;
-		cout << "Tested light become green, and change color to blue after testing." << endl << "Just press Enter if no light at this ID for skip it" << endl;
+		cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
+		     << "Tested light become green, and change color to blue after testing." << endl 
+			 << "Just press Enter if no visible light at this ID to skip it." << endl;
 		for (int i = 0; i < 16; i++) {
 			//int j = 0;
 			cout << "Testing light #" << i;
@@ -68,7 +69,7 @@ int main()
 			if (name[0] != 0) {
 				//not skipped
 				//cout << "Ok, " << name << endl;
-				if (isdigit(name[0])) {
+				if (isdigit(name[0]) && res == (-1)) {
 					outName = lfxUtil.GetLightInfo(0, atoi(name))->desc;
 				}
 				else {
