@@ -222,13 +222,26 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
     case WM_INITDIALOG:
     {
-        unsigned numdev = 1;// conf->lfx->GetNumDev();
+        unsigned numdev = 0;// conf->lfx->GetNumDev();
         int pid = AlienFX_SDK::Functions::GetPID();
-        for (i = 0; i < numdev; i++) {
-            //deviceinfo* dev = conf->lfx->GetDevInfo(i);
-            std::string devName = "Device #1";// +cap->GetPID();
+        if (pid == -1) {
+            std::string devName = "No device found";
             int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
             SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
+        }
+        else {
+            size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+            int cpid = (-1);
+            for (i = 0; i < lights; i++) {
+                if (AlienFX_SDK::Functions::GetMappings()->at(i).devid != cpid) {
+                    cpid = AlienFX_SDK::Functions::GetMappings()->at(i).devid;
+                    char devName[256];
+                    sprintf_s(devName, 255, "Device #%X", cpid);
+                    int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
+                    SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
+                    numdev++;
+                }
+            }
         }
         SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
         if (numdev > 0) {
@@ -275,6 +288,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             {
             case CBN_SELCHANGE: {
                     size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+                    AlienFX_SDK::Functions::AlienFXChangeDevice(did);
                     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
                     for (i = 0; i < lights; i++) {
                         AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);

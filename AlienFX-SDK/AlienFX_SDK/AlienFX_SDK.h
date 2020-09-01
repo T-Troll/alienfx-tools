@@ -45,10 +45,13 @@ namespace AlienFX_SDK
 		//returns PID
 		static  int AlienFXInitialize(int vid);
 
-		static   bool AlienFXInitialize(int vid, int pid);
+		static  bool AlienFXInitialize(int vid, int pid);
 
 		//De-init
 		static  bool AlienFXClose();
+
+		// Switch to other AlienFX device
+		static  bool AlienFXChangeDevice(int pid);
 
 		//Enable/Disable all lights
 		static  bool Reset(int status);
