@@ -9,15 +9,13 @@ A bunch of tools for Alienware LighFX controls:
 
 ## Requirements
 - Alienware device present into the system and have USBHID driver active.
-- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and 
-should be picked up by this program.
-- (Optional) You should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
+- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 8+ (binary files for x64 only, but you can compile project for x86 as well).
 
 Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work with any Alienware device with API 1.0 or later)
 
 ## Known issues
-- On some devices, some functions can work incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
+- On some devices, some functions from high-level SDK can works incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
 - `alienfx-cli set-tempo` command doesn't work with high-level SDK (bug in SDK, low-level only).<br>
 - `alienfx-cli` commands `set-zone` and `set-zone-action` not supported with low-level SDK (no zones defined).<br>
 - `alienfx-cli` command `set-action` donsn't work with low-level SDK (work in progress)
@@ -27,14 +25,14 @@ Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work wit
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
-In case apps can't locate LightFX dll's, you can find it into /DLL folder and copy to apps folder one you need (for x32 or x64).</br>
+In case you plan to use high-level SDK, but apps can't locate LightFX dll's, you can find it into /DLL folder and copy to apps folder one you need (for x32 or x64).</br>
 After install, run `alienfx-probe` once to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not works wihout it).</br> 
 
 ## alienfx-probe Usage
-Run `alienfx-probe.exe`<br>
-Application shows some info, then begins switch light to green and prompt to enter light name (you can enter name or ID from SDK - it's show as well), then change light to blue then set. If you didn't see which light is changed, just press ENTER to skip it.<br>
-It check 15 first lights into the system.<br>
-The purpose of this app is to check low-level API and to prepare to low-level SDK migration, this names are stored and will be used later in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
+`alienfx-probe.exe` is a probe for light IDs of the low-level DSK, and it assign names for them (similar to alienfx-led-tester, but wider device support) as well.<br> 
+Then run, it shows some info, then switch lights to green one-by-one and prompt to enter light name (you can enter name or ID from high-level SDK - it's also shown as a part of info). Then the name is set, light switched to blue. If you didn't see which light is changed, just press ENTER to skip it.<br>
+It only check 15 first lights into the system (may be not enough for per-key lights, please check and tell me).<br>
+The purpose of this app is to check low-level API and to prepare light names for other apps, this names are stored and will be used in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
 ## alienfx-cli Usage
 Run `alienfx-cli.exe` with a command and any options for that command. Bu default, `alienfx-cli` using high-level SDK (Alienware LightFX) if found, and low-level (USB driver) if not. You can switch it by command. 
@@ -50,7 +48,7 @@ The following commands are available:
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
-- `high-level` - Next commands pass trough high-level API (Alienware LightFX).
+- `high-level` - Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 <br>Supported Zones: `left, right, top, bottom, front, rear`
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`
@@ -88,7 +86,8 @@ This application get shot of screen (privary or secondary), then divide it to se
 MIT
 
 ## Credits
-Integration code and haptic algorythms by T-Troll<br>
+Integration code, new devices support, haptic and ambient algorythms by T-Troll<br>
+Low-level SDK based on Gurjot95's [AlienFX_SDK](https://github.com/Gurjot95/AlienFX-SDK)<br>
 API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).<br>
 AlienFX interaction code is from HunterZ's [UniLight](https://github.com/HunterZ/UniLight).<br>
 Spectrum Analyzer code is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
