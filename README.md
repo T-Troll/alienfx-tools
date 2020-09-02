@@ -22,6 +22,7 @@ Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work wit
 - Only frist device found can be controlled trough low-level SDK - no multi-device support yet.
 - Brightness is not supported for low-level API, just ignored now.
 - <s>`Alienfx-ambient` stop working and should be restarted after screen off (sleep or timeout).</s> Fixed in 0.6.4.
+- <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
