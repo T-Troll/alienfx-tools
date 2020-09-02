@@ -20,7 +20,7 @@ void printUsage()
 		<< "set-all\t\tr,g,b[,br] - set all device lights." << endl
 		<< "set-one\t\tdev,light,r,g,b[,br] - set one light." << endl
 		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
-		<< "set-action\taction,dev,light,r,g,b[,br,r,g,b[,br]] - set light and enable it's action." << endl
+		<< "set-action\taction,dev,light,r,g,b[,br,action,r,g,b[,br]] - set light and enable it's action." << endl
 		<< "set-zone-action\taction,zone,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
 		<< "set-tempo\ttempo - set light action tempo (in milliseconds)" << endl
 		<< "low-level\tswitch to low-level SDK (USB driver)" << endl
@@ -223,24 +223,38 @@ int main(int argc, char* argv[])
 				cerr << "set-action: Incorrect arguments" << endl;
 				continue;
 			}
-			unsigned actionCode = LFX_ACTION_COLOR;
-			if (args.at(0) == "pulse")
+			unsigned actionCode = LFX_ACTION_COLOR, action_low = AlienFX_SDK::Action::AlienFX_Color, action_low_2 = AlienFX_SDK::Action::AlienFX_Color;
+			if (args.at(0) == "pulse") {
 				actionCode = LFX_ACTION_PULSE;
-			else if (args.at(0) == "morph")
+				action_low = AlienFX_SDK::Action::AlienFX_Pulse;
+			}
+			else if (args.at(0) == "morph") {
 				actionCode = LFX_ACTION_MORPH;
+				action_low = AlienFX_SDK::Action::AlienFX_Morph;
+			}
 			static ColorU color, color2;
 			color.cs.red = atoi(args.at(5).c_str());
 			color.cs.green = atoi(args.at(4).c_str());
 			color.cs.blue = atoi(args.at(3).c_str());
 			color.cs.brightness = args.size() > 6 ? atoi(args.at(6).c_str()) : 255;
 			if (args.size() > 7) {
-				color2.cs.red = atoi(args.at(9).c_str());
-				color2.cs.green = atoi(args.at(8).c_str());
-				color2.cs.blue = atoi(args.at(7).c_str());
-				color2.cs.brightness = args.size() > 10 ? atoi(args.at(10).c_str()) : 255;
+				if (args.at(7) == "pulse") {
+					//actionCode = LFX_ACTION_PULSE;
+					action_low_2 = AlienFX_SDK::Action::AlienFX_Pulse;
+				}
+				else if (args.at(7) == "morph") {
+					//actionCode = LFX_ACTION_MORPH;
+					action_low_2 = AlienFX_SDK::Action::AlienFX_Morph;
+				}
+				color2.cs.red = atoi(args.at(10).c_str());
+				color2.cs.green = atoi(args.at(9).c_str());
+				color2.cs.blue = atoi(args.at(8).c_str());
+				color2.cs.brightness = args.size() > 11 ? atoi(args.at(11).c_str()) : 255;
 			}
 			if (low_level) {
-				cerr << "Low level API doesn not support actions yet!" << endl;
+				AlienFX_SDK::Functions::SetAction(atoi(args.at(2).c_str()), action_low, 7, sleepy,
+					color.cs.blue, color.cs.green, color.cs.red,
+					action_low_2, 7, sleepy, color2.cs.blue, color2.cs.green, color2.cs.red);
 			}
 			else {
 				lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);

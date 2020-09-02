@@ -32,7 +32,14 @@ namespace AlienFX_SDK
 		AlienFX_RightPanelBottom = 10,
 		AlienFX_TouchPad = 11,
 		AlienFX_AlienBackLogo = 12, // 0 for m15
-		AlienFX_Power = 13, // 1 for m15
+		AlienFX_Power = 13 // 1 for m15
+	};
+	
+	enum Action
+	{
+		AlienFX_Color = 0,
+		AlienFX_Pulse = 1,
+		AlienFX_Morph = 2
 	};
 
 	class Functions
@@ -64,6 +71,13 @@ namespace AlienFX_SDK
 		// numLights - how many lights need to be set
 		// lights - pointer to array of light IDs need to be set.
 		static  bool SetMultiColor(int numLights, UCHAR* lights, int r, int g, int b);
+
+		// Set color to action
+		// action - action type (see enum above)
+		// time - how much time to keep action (0-255)
+		// tempo - how fast to do evolution (f.e. pulse - 0-255) 
+		// It can possible to mix 2 actions in one (useful for morph), in this case use action2...Blue2
+		static  bool SetAction(int index, int action, int time, int tempo, int Red, int Green, int Blue, int action2 = 4, int time2 = 0, int tempo2=0, int Red2 = 0, int Green2 = 0, int Blue2 = 0);
 
 		static  bool UpdateColors();
 
