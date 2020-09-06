@@ -18,7 +18,7 @@ Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work wit
 - On some devices, some functions from high-level SDK can works incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
 - `alienfx-cli set-tempo` command doesn't work with high-level SDK (bug in SDK, low-level only).<br>
 - `alienfx-cli` commands `set-zone` and `set-zone-action` not supported with low-level SDK (no zones defined).<br>
-- `alienfx-cli` command `set-action` donsn't work with low-level SDK (work in progress)
+- <s>`alienfx-cli` command `set-action` donsn't work with low-level SDK (work in progress).</s> Fixed in 0.6.6
 - Only frist device found can be controlled trough low-level SDK - no multi-device support yet.
 - Brightness is not supported for low-level API, just ignored now.
 - <s>`Alienfx-ambient` stop working and should be restarted after screen off (sleep or timeout).</s> Fixed in 0.6.4.
@@ -45,7 +45,7 @@ The following commands are available:
 - `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red.
 - `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color.
 - `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided.
-- `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,r,g,b[,br]]` Set light to color provided and enable action.
+- `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,<action2>,r,g,b[,br]]` Set light to color provided and enable action.
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
