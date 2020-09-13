@@ -5,6 +5,7 @@ A bunch of tools for Alienware LighFX controls:
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
 - (In development) AlienFX Monitor - Visual feedback for CPU/RAM/HDD/SSD/Network loading.
+- (In development) AlienFX GUI - Lightweighted Control Center for persons who don't want to keep AWCC.
 <br>More will follow!
 
 ## Requirements
