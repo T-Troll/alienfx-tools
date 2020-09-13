@@ -87,6 +87,7 @@ int main(int argc, char* argv[])
 				vpos = tvpos == string::npos ? values.size() : tvpos+1;
 			}
 		}
+		//cerr << "Executing " << command << " with " << values << endl;
 		if (command == "low-level") {
 			low_level = true;
 			continue;
@@ -131,7 +132,6 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "set-all") {
-			//cerr << "Executing " << command << " " << values << endl;
 			if (args.size() < 3) {
 				cerr << "set-all: Incorrect arguments" << endl;
 				continue;

@@ -16,8 +16,9 @@ extern "C" {
 #define ALIENFX_READY 0x10
 #define ALIENFX_BUSY 0x11
 #define ALIENFX_UNKOWN_COMMAND 0x12
-// new statuses for m15 - 33 = ok, 36 = wait for reset,
+// new statuses for m15 - 33 = ok, 36 = wait for reset, 35 = wait for command/update
 #define ALIENFX_NEW_READY 33
+#define ALIENFX_NEW_WAITUPDATE 35
 #define ALIENFX_NEW_WAITRESET 36
 
 namespace AlienFX_SDK
@@ -187,6 +188,22 @@ namespace AlienFX_SDK
 
 	}
 
+	void Loop()
+	{
+		size_t BytesWritten;
+		byte BufferN[] = { 0x00, 0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
+			, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
+		byte BufferO[] = { 0x02 ,0x04 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00,0x00 ,0x00 ,0x00 };
+		if (length == 34) {
+			// m15 require Input report as a confirmation, not output. 
+			DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
+			//std::cout << "Status: 0x" << std::hex << (int) BufferN[2] << std::endl;
+		}
+		else {
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+		}
+	}
+
 	bool Functions::Reset(int status)
 	{
 		size_t BytesWritten;
@@ -207,8 +224,11 @@ namespace AlienFX_SDK
 				Buffer[2] = 0x03;
 		}
 		result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+		if (length == 34)
+			Loop();
 		//if (!result)
 		//	res = GetLastError();
+		//std::cout << "Reset!" << std::endl;
 		return result;
 	}
 
@@ -222,29 +242,15 @@ namespace AlienFX_SDK
 		byte BufferO[] = { 0x02 ,0x05 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00,0x00 ,0x00 ,0x00 };
 		if (length == 34) {
 			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferN, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
 			Functions::Reset(false);
+			Loop();
 		}
 		else
 			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+		//std::cout << "Update!" << std::endl;
 		return res;
 	}
-
-	void Loop()
-	{
-		size_t BytesWritten;
-		byte BufferN[] = { 0x00, 0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
-			, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
-		byte BufferO[] = { 0x02 ,0x04 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00,0x00 ,0x00 ,0x00 };
-		if (length == 34) {
-			// m15 require Input report as a confirmation, not output. 
-			DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
-			//std::cout << "Status: " << BufferN[2] << std::endl;
-		}
-		else {
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-		}
-	}
-
 
 	int Power = 13;
 	int Macro = 0;
@@ -302,6 +308,7 @@ namespace AlienFX_SDK
 			Buffer[9] = g;
 			Buffer[10] = b;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
 		}
 		else {
 			Buffer = BufferO;
@@ -356,12 +363,12 @@ namespace AlienFX_SDK
 			Buffer[9] = g;
 			Buffer[10] = b;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
 		}
 		else {
-			bool ret;
+			bool ret = false;
 			for (int nc = 0; nc < numLights; nc++)
 				ret = SetColor(lights[nc], r, g, b);
-			Loop();
 			return ret;
 		}
 		bool val = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
@@ -372,7 +379,7 @@ namespace AlienFX_SDK
 	bool Functions::SetAction(int index, int action, int time, int tempo, int Red, int Green, int Blue, int action2, int time2, int tempo2, int Red2, int Green2, int Blue2)
 	{
 		size_t BytesWritten;
-		// Buffer[3], [11] - action type 
+		// Buffer[3], [11] - action type ( 0 - light, 1 - pulse, 2 - morph)
 		// Buffer[4], [12] - how long phase keeps
 		// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph
 		// Buffer[7], [15] - tempo (0xfa - steady)
@@ -410,7 +417,10 @@ namespace AlienFX_SDK
 			}
 
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			return DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			int res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			return res;
 		}
 		return false;
 	}
@@ -500,7 +510,7 @@ namespace AlienFX_SDK
 		}
 		else if (status != ALIENFX_READY && status != ALIENFX_NEW_READY)
 		{
-			if (status == ALIENFX_BUSY)
+			if (status == ALIENFX_BUSY || status == ALIENFX_NEW_WAITUPDATE)
 			{
 				Reset(0x04);
 
