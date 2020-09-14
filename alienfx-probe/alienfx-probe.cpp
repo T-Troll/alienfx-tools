@@ -13,8 +13,9 @@ namespace
 	LFXUtil::LFXUtilC lfxUtil;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+	int numlights = 16;
 	cout << "Probing low-level access... ";
 	int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
 	std::cout << "PID: " << std::hex << isInit << std::endl;
@@ -48,11 +49,14 @@ int main()
 			return 1;
 		}
 		result = AlienFX_SDK::Functions::IsDeviceReady();
+		// How many lights to check?
+		if (argc > 1) // we have number of lights...
+			numlights = atoi(argv[1]);
 		// Let's probe low-level lights....
 		cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		     << "Tested light become green, and change color to blue after testing." << endl 
 			 << "Just press Enter if no visible light at this ID to skip it." << endl;
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < numlights; i++) {
 			//int j = 0;
 			cout << "Testing light #" << i;
 			/*for (j = 0; j < AlienFX_SDK::Functions::GetMappings()->size() &&

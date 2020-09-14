@@ -98,12 +98,10 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "loop") {
-			//cerr << "Executing " << command << endl;
 			cc = 0;
 			continue;
 		}
 		if (command == "status") {
-			//cerr << "Executing " << command << endl;
 			if (low_level) {
 				cout << "Current device ID: " << std::hex << isInit << std::endl;
 				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
@@ -157,7 +155,6 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "set-one") {
-			//cerr << "Executing " << command << " " << values << endl;
 			if (args.size() < 5) {
 				cerr << "set-one: Incorrect arguments" << endl;
 				continue;
@@ -179,7 +176,6 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "set-zone") {
-			//cerr << "Executing " << command << " " << values << endl;
 			if (args.size() < 4) {
 				cerr << "set-zone: Incorrect arguments" << endl;
 				continue;
@@ -218,7 +214,6 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "set-action") {
-			//cerr << "Executing " << command << " " << values << endl;
 			if (args.size() < 6) {
 				cerr << "set-action: Incorrect arguments" << endl;
 				continue;
@@ -239,11 +234,9 @@ int main(int argc, char* argv[])
 			color.cs.brightness = args.size() > 6 ? atoi(args.at(6).c_str()) : 255;
 			if (args.size() > 7) {
 				if (args.at(7) == "pulse") {
-					//actionCode = LFX_ACTION_PULSE;
 					action_low_2 = AlienFX_SDK::Action::AlienFX_Pulse;
 				}
 				else if (args.at(7) == "morph") {
-					//actionCode = LFX_ACTION_MORPH;
 					action_low_2 = AlienFX_SDK::Action::AlienFX_Morph;
 				}
 				color2.cs.red = atoi(args.at(10).c_str());
@@ -263,7 +256,6 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "set-zone-action") {
-			//cerr << "Executing " << command << " " << values << endl;
 			if (args.size() < 5) {
 				cerr << "set-zone-action: Incorrect arguments" << endl;
 				continue;
@@ -304,7 +296,7 @@ int main(int argc, char* argv[])
 				color2.cs.brightness = args.size() > 9 ? atoi(args.at(9).c_str()) : 255;
 			}
 			if (low_level) {
-				cerr << "Low level API doesn not support actions yet!" << endl;
+				cerr << "Low level API doesn not support zones!" << endl;
 			}
 			else {
 				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
