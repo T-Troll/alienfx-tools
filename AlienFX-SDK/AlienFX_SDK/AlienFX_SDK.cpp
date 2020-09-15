@@ -29,9 +29,78 @@ namespace AlienFX_SDK
 
 	// Name mappings for lights
 	static std::vector <mapping> mappings;
+	static std::vector <devmap> devices;
 
 	static int pid = -1;
 	static int version = -1;
+
+	std::vector<int> Functions::AlienFXEnumDevices(int vid)
+	{
+		std::vector<int> pids;
+		GUID guid;
+		bool flag = false;
+
+		HidD_GetHidGuid(&guid);
+		HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+		if (hDevInfo == INVALID_HANDLE_VALUE)
+		{
+			//std::cout << "Couldn't get guid";
+			return pids;
+		}
+		unsigned int dw = 0;
+		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
+
+		unsigned int lastError = 0;
+		while (!flag)
+		{
+			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
+			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
+			{
+				lastError = GetLastError();
+				flag = true;
+				continue;
+			}
+			dw++;
+			DWORD dwRequiredSize = 0;
+			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
+			{
+				//std::cout << "Getting the needed buffer size failed";
+				//return pids;
+				continue;
+			}
+			//std::cout << "Required size is " << dwRequiredSize << std::endl;
+			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+			{
+				//std::cout << "Last error is not ERROR_INSUFFICIENT_BUFFER";
+				//return pid;
+				continue;
+			}
+			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
+			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
+			{
+				std::wstring devicePath = deviceInterfaceDetailData->DevicePath;
+				//OutputDebugString(devicePath.c_str());
+				devHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+
+				if (devHandle != INVALID_HANDLE_VALUE)
+				{
+					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
+					attributes->Size = sizeof(HIDD_ATTRIBUTES);
+					if (HidD_GetAttributes(devHandle, attributes.get()))
+					{
+
+						if (attributes->VendorID == vid)
+						{
+							pids.push_back(attributes->ProductID);
+						}
+					}
+				}
+				CloseHandle(devHandle);
+			}
+		}
+		return pids;
+	}
 
 	//Use this method to scan for devices that uses same vid
 	int Functions::AlienFXInitialize(int vid)
@@ -45,7 +114,7 @@ namespace AlienFX_SDK
 		if (hDevInfo == INVALID_HANDLE_VALUE)
 		{
 			//std::cout << "Couldn't get guid";
-			return false;
+			return pid;
 		}
 		unsigned int dw = 0;
 		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
@@ -197,7 +266,7 @@ namespace AlienFX_SDK
 		if (length == 34) {
 			// m15 require Input report as a confirmation, not output. 
 			DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
-			//std::cout << "Status: 0x" << std::hex << (int) BufferN[2] << std::endl;
+			// std::cout << "Status: 0x" << std::hex << (int) BufferN[2] << std::endl;
 		}
 		else {
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
@@ -579,7 +648,7 @@ namespace AlienFX_SDK
 			NULL,
 			&numlights,
 			(LPDWORD)&size);
-		unsigned vindex = 0; mapping map;
+		unsigned vindex = 0; mapping map; devmap dev;
 		char name[255], inarray[255];
 		unsigned ret = 0;
 		do {
@@ -598,9 +667,19 @@ namespace AlienFX_SDK
 			if (ret == ERROR_SUCCESS) {
 				unsigned ret2 = sscanf_s((char*)name, "%d-%d", &map.devid, &map.lightid);
 				if (ret2 == 2) {
+					// light name
 					std::string out(inarray);
 					map.name = out;
 					mappings.push_back(map);
+				}
+				else {
+					// device name?
+					ret2 = sscanf_s((char*)name, "Dev#%d", &dev.devid);
+					if (ret2 == 1) {
+						std::string devname(inarray);
+						dev.name = devname;
+						devices.push_back(dev);
+					}
 				}
 				vindex++;
 			}
@@ -611,6 +690,7 @@ namespace AlienFX_SDK
 	void Functions::SaveMappings() {
 		DWORD  dwDisposition;
 		HKEY   hKey1;
+		size_t numdevs = devices.size();
 		size_t numlights = mappings.size();
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
@@ -631,6 +711,19 @@ namespace AlienFX_SDK
 			(BYTE*)&numlights,
 			4
 		);
+		for (int i = 0; i < numdevs; i++) {
+			//preparing name
+			sprintf_s((char*)name, 255, "Dev#%d", devices[i].devid);
+
+			RegSetValueExA(
+				hKey1,
+				name,
+				0,
+				REG_SZ,
+				(BYTE*)devices[i].name.c_str(),
+				(DWORD)devices[i].name.size()
+			);
+		}
 		for (int i = 0; i < numlights; i++) {
 			//preparing name
 			sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
@@ -650,6 +743,11 @@ namespace AlienFX_SDK
 	std::vector<mapping>* Functions::GetMappings()
 	{
 		return &mappings;
+	}
+
+	std::vector<devmap>* Functions::GetDevices()
+	{
+		return &devices;
 	}
 
 	int Functions::GetPID()

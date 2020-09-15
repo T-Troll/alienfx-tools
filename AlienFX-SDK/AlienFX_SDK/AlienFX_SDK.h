@@ -18,6 +18,11 @@ namespace AlienFX_SDK
 		std::string name;
 	};
 
+	struct devmap {
+		unsigned devid = 0;
+		std::string name;
+	};
+
 	enum Index
 	{
 		AlienFX_leftZone = 1, // 2 for m15
@@ -49,6 +54,8 @@ namespace AlienFX_SDK
 		//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
 		const static int vid = 0x187c;
 
+		// Enum alienware devices
+		static  std::vector<int> AlienFXEnumDevices(int vid);
 		//returns PID
 		static  int AlienFXInitialize(int vid);
 
@@ -87,13 +94,16 @@ namespace AlienFX_SDK
 		// save light names into registry
 		static void SaveMappings();
 
-		// get current light names
+		// get saved devices names
+		static std::vector<devmap>* GetDevices();
+
+		// get saved light names
 		static std::vector <mapping>* GetMappings();
 
 		// get PID in use
 		static int GetPID();
 
-		// get version for used device
+		// get version for current device
 		static int GetVersion();
 	};
 

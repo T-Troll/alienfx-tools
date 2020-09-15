@@ -557,7 +557,9 @@
     <ResourceCompile Include="alienfx-gui.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="alien.ico" />
     <Image Include="alienfx-gui.ico" />
+    <Image Include="icon1.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>

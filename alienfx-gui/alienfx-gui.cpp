@@ -3,6 +3,7 @@
 
 #include "framework.h"
 #include "alienfx-gui.h"
+#include <CommCtrl.h>
 
 #define MAX_LOADSTRING 100
 
@@ -13,9 +14,11 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
+HWND                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -30,10 +33,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_ALIENFXGUI, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
-
+    //MyRegisterClass(hInstance);
+    HWND hDlg;
     // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
+    if (!(hDlg=InitInstance (hInstance, nCmdShow)))
     {
         return FALSE;
     }
@@ -41,16 +44,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
     MSG msg;
-
     // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
+    while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+        if (!IsDialogMessage(hDlg, &msg)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+    
+    /*while (GetMessage(&msg, nullptr, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-    }
+    }*/
 
     return (int) msg.wParam;
 }
@@ -78,7 +87,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_ALIENFXGUI);
     wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI));
 
     return RegisterClassExW(&wcex);
 }
@@ -93,22 +102,25 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Store instance handle in our global variable
+    HWND dlg;
+    dlg = CreateDialogParam(hInstance,//GetModuleHandle(NULL),         /// instance handle
+        MAKEINTRESOURCE(IDD_MAINWINDOW),    /// dialog box template
+        NULL,                    /// handle to parent
+        (DLGPROC)DialogConfigStatic, 0);
+    if (!dlg) return NULL;
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+    //cap = new CaptureHelper(dlg, conf, fxhl);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+    SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
+    SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+    //ShowWindow(hWnd, nCmdShow);
+    ShowWindow(dlg, nCmdShow);
+    //UpdateWindow(dlg);
 
-   return TRUE;
+    return dlg;
 }
 
 //
@@ -177,4 +189,39 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+
+    HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN);
+
+    switch (message)
+    {
+    case WM_INITDIALOG:
+    {
+        TCITEM tie;
+
+        tie.mask = TCIF_TEXT;
+        tie.pszText = (LPWSTR)L"Colors";
+        tie.iImage = -1;
+        SendMessage(tab_list, TCM_INSERTITEM, 0, (LPARAM)&tie);
+        
+    } break;
+    case WM_COMMAND:
+    {
+        switch (LOWORD(wParam))
+        {
+        case IDOK: case IDCANCEL: case IDCLOSE:
+        {
+            //cap->Stop();
+            DestroyWindow(hDlg); //EndDialog(hDlg, IDOK);
+        } break;
+        }
+    } break;
+    case WM_CLOSE: //cap->Stop(); 
+        DestroyWindow(hDlg); break;
+    case WM_DESTROY: PostQuitMessage(0); break;
+    default: return false;
+    }
+    return true;
 }

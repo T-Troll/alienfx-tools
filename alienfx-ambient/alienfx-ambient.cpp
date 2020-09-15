@@ -42,6 +42,156 @@ HWND                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
+// Service processing
+/*TCHAR szCommand[10];
+TCHAR szSvcName[80] = "AWCCService";
+
+SC_HANDLE schSCManager;
+SC_HANDLE schService;
+
+VOID __stdcall DoStopSvc()
+{
+    SERVICE_STATUS_PROCESS ssp;
+    DWORD dwStartTime = GetTickCount();
+    DWORD dwBytesNeeded;
+    DWORD dwTimeout = 30000; // 30-second time-out
+    DWORD dwWaitTime;
+
+    // Get a handle to the SCM database. 
+
+    schSCManager = OpenSCManager(
+        NULL,                    // local computer
+        NULL,                    // ServicesActive database 
+        SC_MANAGER_ALL_ACCESS);  // full access rights 
+
+    if (NULL == schSCManager)
+    {
+        printf("OpenSCManager failed (%d)\n", GetLastError());
+        return;
+    }
+
+    // Get a handle to the service.
+
+    schService = OpenService(
+        schSCManager,         // SCM database 
+        szSvcName,            // name of service 
+        SERVICE_STOP |
+        SERVICE_QUERY_STATUS |
+        SERVICE_ENUMERATE_DEPENDENTS);
+
+    if (schService == NULL)
+    {
+        printf("OpenService failed (%d)\n", GetLastError());
+        CloseServiceHandle(schSCManager);
+        return;
+    }
+
+    // Make sure the service is not already stopped.
+
+    if (!QueryServiceStatusEx(
+        schService,
+        SC_STATUS_PROCESS_INFO,
+        (LPBYTE)&ssp,
+        sizeof(SERVICE_STATUS_PROCESS),
+        &dwBytesNeeded))
+    {
+        printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
+        goto stop_cleanup;
+    }
+
+    if (ssp.dwCurrentState == SERVICE_STOPPED)
+    {
+        printf("Service is already stopped.\n");
+        goto stop_cleanup;
+    }
+
+    // If a stop is pending, wait for it.
+
+    while (ssp.dwCurrentState == SERVICE_STOP_PENDING)
+    {
+        printf("Service stop pending...\n");
+
+        // Do not wait longer than the wait hint. A good interval is 
+        // one-tenth of the wait hint but not less than 1 second  
+        // and not more than 10 seconds. 
+
+        dwWaitTime = ssp.dwWaitHint / 10;
+
+        if (dwWaitTime < 1000)
+            dwWaitTime = 1000;
+        else if (dwWaitTime > 10000)
+            dwWaitTime = 10000;
+
+        Sleep(dwWaitTime);
+
+        if (!QueryServiceStatusEx(
+            schService,
+            SC_STATUS_PROCESS_INFO,
+            (LPBYTE)&ssp,
+            sizeof(SERVICE_STATUS_PROCESS),
+            &dwBytesNeeded))
+        {
+            printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
+            goto stop_cleanup;
+        }
+
+        if (ssp.dwCurrentState == SERVICE_STOPPED)
+        {
+            printf("Service stopped successfully.\n");
+            goto stop_cleanup;
+        }
+
+        if (GetTickCount() - dwStartTime > dwTimeout)
+        {
+            printf("Service stop timed out.\n");
+            goto stop_cleanup;
+        }
+    }
+
+    // Send a stop code to the service.
+
+    if (!ControlService(
+        schService,
+        SERVICE_CONTROL_STOP,
+        (LPSERVICE_STATUS)&ssp))
+    {
+        printf("ControlService failed (%d)\n", GetLastError());
+        goto stop_cleanup;
+    }
+
+    // Wait for the service to stop.
+
+    while (ssp.dwCurrentState != SERVICE_STOPPED)
+    {
+        Sleep(ssp.dwWaitHint);
+        if (!QueryServiceStatusEx(
+            schService,
+            SC_STATUS_PROCESS_INFO,
+            (LPBYTE)&ssp,
+            sizeof(SERVICE_STATUS_PROCESS),
+            &dwBytesNeeded))
+        {
+            printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
+            goto stop_cleanup;
+        }
+
+        if (ssp.dwCurrentState == SERVICE_STOPPED)
+            break;
+
+        if (GetTickCount() - dwStartTime > dwTimeout)
+        {
+            printf("Wait timed out\n");
+            goto stop_cleanup;
+        }
+    }
+    printf("Service stopped successfully\n");
+
+stop_cleanup:
+    CloseServiceHandle(schService);
+    CloseServiceHandle(schSCManager);
+} */
+
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -61,6 +211,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf = new ConfigHandler();
     fxhl = new FXHelper(conf);
     conf->Load();
+    // Stop AWCC service...
+    //DoStopSvc();
+
     if (!(hDlg=InitInstance (hInstance, nCmdShow)))
     {
         return FALSE;
@@ -81,7 +234,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }*/
-    while ((ret = GetMessage(&msg, 0, 0, 0)) != 0) {
+    while ((GetMessage(&msg, 0, 0, 0)) != 0) {
         //if (ret == -1)
         //    return -1;
 
