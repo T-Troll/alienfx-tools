@@ -392,30 +392,35 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			prevfreq = frq;
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
-		unsigned numdev = 0;// conf->lfx->GetNumDev();
 		int pid = AlienFX_SDK::Functions::GetPID();
+		size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+		size_t numdev = AlienFX_SDK::Functions::GetDevices()->size();
+
 		if (pid == -1) {
 			std::string devName = "No device found";
 			int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
 			SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
 		}
 		else {
-			size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
-			int cpid = (-1);
-			for (i = 0; i < lights; i++) {
-				if (AlienFX_SDK::Functions::GetMappings()->at(i).devid != cpid) {
-					cpid = AlienFX_SDK::Functions::GetMappings()->at(i).devid;
-					char devName[256];
-					sprintf_s(devName, 255, "Device #%X", cpid);
-					int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
-					SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
-					numdev++;
+			int cpid = (-1), cpos = (-1);
+			for (i = 0; i < numdev; i++) {
+				cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
+				std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
+				int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
+				SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
+				if (cpid == pid) {
+					// select this device.
+					SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+					cpos = pos;
 				}
 			}
-		}
-		SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-		if (numdev > 0) {
-			size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+			if (cpos == -1) { // device have no name!
+				char devName[256];
+				sprintf_s(devName, 255, "Device #%X", pid);
+				int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
+				SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
+				SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+			}
 			for (i = 0; i < lights; i++) {
 				AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
 				if (lgh.devid == pid) {

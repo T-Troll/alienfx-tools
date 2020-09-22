@@ -4,8 +4,8 @@ A bunch of tools for Alienware LighFX controls:
 - alienfx-cli - Make changes and check status of your AlienFX lights from the command line.
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
-- (In development) AlienFX Monitor - Visual feedback for CPU/RAM/HDD/SSD/Network loading.
-- (In development) AlienFX GUI - Lightweighted Control Center for persons who don't want to keep AWCC.
+- <s>(In development) AlienFX Monitor - Visual feedback for CPU/RAM/HDD/SSD/Network loading</s>. Will be part of Alienfx-gui.
+- AlienFX GUI ALPHA - Lightweighted Control Center for persons who don't want to keep AWCC.
 <br>More will follow!
 
 ## Requirements
@@ -32,7 +32,7 @@ After install, run `alienfx-probe` once to check and set light names (`alienfx-a
 
 ## alienfx-probe Usage
 `alienfx-probe.exe` is a probe for light IDs of the low-level DSK, and it assign names for them (similar to alienfx-led-tester, but wider device support) as well.<br> 
-Then run, it shows some info, then switch lights to green one-by-one and prompt to enter light name (you can enter name or ID from high-level SDK - it's also shown as a part of info). Then the name is set, light switched to blue. If you didn't see which light is changed, just press ENTER to skip it.<br>
+Then run, it shows some info, then switch lights to green one-by-one and prompt to enter devices and lights name (you can enter name or ID from high-level SDK - it's also shown as a part of info). Then the name is set, light switched to blue. If you didn't see which light is changed, just press ENTER to skip it.<br>
 It's check 16 first lights into the system by default, but you can change this value runnning `alienfx-probe.exe [number of lights]`.<br>
 The purpose of this app is to check low-level API and to prepare light names for other apps, this names are stored and will be used in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
@@ -80,6 +80,10 @@ This application get shot of screen (privary or secondary), then divide it to se
 <br><s>WARNING! Changing screen requires application restart to apply!</s> Fixed in 0.6.4.
 <br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value increase update performance, but decrease dominant color extraction presision. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if it works ok for you.
 <br>"Brightness correction" slider removes some white component from color, made them not so close to white at high brighness and more vivid or darker. Leftmost position disable the correction, rightmost cut 50% white.
+
+## alienfx-gui Usage
+Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set immedately.
+WARNING: Pulse and Morph modes doens't works for old devices.
 
 ## Tools Used
 * Visual Studio Community 2019

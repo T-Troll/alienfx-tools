@@ -15,7 +15,7 @@ const IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
 REFERENCE_TIME hnsRequestedDuration = 0;
 
 int NUMSAM;
-bool done = false;
+bool done = false, isDone = false;
 double* waveD;
 int nChannel;
 int bytePerSample;
@@ -49,6 +49,7 @@ void WSAudioIn::startSampling()
 {
 	DWORD dwThreadID;
 	done = false;
+	isDone = false;
 	// creating listener thread...
 	if (pAudioClient) {
 		CreateThread(
@@ -65,6 +66,7 @@ void WSAudioIn::startSampling()
 void WSAudioIn::stopSampling()
 {
 	done = true;
+	while (!isDone) Sleep(20);
 	pAudioClient->Stop();
 }
 
@@ -244,5 +246,6 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 		}
 	}
 	free(waveT);
+	isDone = true;
 	return 0;
 }

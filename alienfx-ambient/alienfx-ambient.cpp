@@ -42,156 +42,6 @@ HWND                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-// Service processing
-/*TCHAR szCommand[10];
-TCHAR szSvcName[80] = "AWCCService";
-
-SC_HANDLE schSCManager;
-SC_HANDLE schService;
-
-VOID __stdcall DoStopSvc()
-{
-    SERVICE_STATUS_PROCESS ssp;
-    DWORD dwStartTime = GetTickCount();
-    DWORD dwBytesNeeded;
-    DWORD dwTimeout = 30000; // 30-second time-out
-    DWORD dwWaitTime;
-
-    // Get a handle to the SCM database. 
-
-    schSCManager = OpenSCManager(
-        NULL,                    // local computer
-        NULL,                    // ServicesActive database 
-        SC_MANAGER_ALL_ACCESS);  // full access rights 
-
-    if (NULL == schSCManager)
-    {
-        printf("OpenSCManager failed (%d)\n", GetLastError());
-        return;
-    }
-
-    // Get a handle to the service.
-
-    schService = OpenService(
-        schSCManager,         // SCM database 
-        szSvcName,            // name of service 
-        SERVICE_STOP |
-        SERVICE_QUERY_STATUS |
-        SERVICE_ENUMERATE_DEPENDENTS);
-
-    if (schService == NULL)
-    {
-        printf("OpenService failed (%d)\n", GetLastError());
-        CloseServiceHandle(schSCManager);
-        return;
-    }
-
-    // Make sure the service is not already stopped.
-
-    if (!QueryServiceStatusEx(
-        schService,
-        SC_STATUS_PROCESS_INFO,
-        (LPBYTE)&ssp,
-        sizeof(SERVICE_STATUS_PROCESS),
-        &dwBytesNeeded))
-    {
-        printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
-        goto stop_cleanup;
-    }
-
-    if (ssp.dwCurrentState == SERVICE_STOPPED)
-    {
-        printf("Service is already stopped.\n");
-        goto stop_cleanup;
-    }
-
-    // If a stop is pending, wait for it.
-
-    while (ssp.dwCurrentState == SERVICE_STOP_PENDING)
-    {
-        printf("Service stop pending...\n");
-
-        // Do not wait longer than the wait hint. A good interval is 
-        // one-tenth of the wait hint but not less than 1 second  
-        // and not more than 10 seconds. 
-
-        dwWaitTime = ssp.dwWaitHint / 10;
-
-        if (dwWaitTime < 1000)
-            dwWaitTime = 1000;
-        else if (dwWaitTime > 10000)
-            dwWaitTime = 10000;
-
-        Sleep(dwWaitTime);
-
-        if (!QueryServiceStatusEx(
-            schService,
-            SC_STATUS_PROCESS_INFO,
-            (LPBYTE)&ssp,
-            sizeof(SERVICE_STATUS_PROCESS),
-            &dwBytesNeeded))
-        {
-            printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
-            goto stop_cleanup;
-        }
-
-        if (ssp.dwCurrentState == SERVICE_STOPPED)
-        {
-            printf("Service stopped successfully.\n");
-            goto stop_cleanup;
-        }
-
-        if (GetTickCount() - dwStartTime > dwTimeout)
-        {
-            printf("Service stop timed out.\n");
-            goto stop_cleanup;
-        }
-    }
-
-    // Send a stop code to the service.
-
-    if (!ControlService(
-        schService,
-        SERVICE_CONTROL_STOP,
-        (LPSERVICE_STATUS)&ssp))
-    {
-        printf("ControlService failed (%d)\n", GetLastError());
-        goto stop_cleanup;
-    }
-
-    // Wait for the service to stop.
-
-    while (ssp.dwCurrentState != SERVICE_STOPPED)
-    {
-        Sleep(ssp.dwWaitHint);
-        if (!QueryServiceStatusEx(
-            schService,
-            SC_STATUS_PROCESS_INFO,
-            (LPBYTE)&ssp,
-            sizeof(SERVICE_STATUS_PROCESS),
-            &dwBytesNeeded))
-        {
-            printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
-            goto stop_cleanup;
-        }
-
-        if (ssp.dwCurrentState == SERVICE_STOPPED)
-            break;
-
-        if (GetTickCount() - dwStartTime > dwTimeout)
-        {
-            printf("Wait timed out\n");
-            goto stop_cleanup;
-        }
-    }
-    printf("Service stopped successfully\n");
-
-stop_cleanup:
-    CloseServiceHandle(schService);
-    CloseServiceHandle(schSCManager);
-} */
-
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -211,8 +61,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf = new ConfigHandler();
     fxhl = new FXHelper(conf);
     conf->Load();
-    // Stop AWCC service...
-    //DoStopSvc();
 
     if (!(hDlg=InitInstance (hInstance, nCmdShow)))
     {
@@ -221,27 +69,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     //HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXAMBIENT));
 
-    MSG msg; bool ret;
+    MSG msg; //bool ret;
 
     cap->Start();
 
     // Main message loop:
-    /*while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }*/
     while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-        //if (ret == -1)
-        //    return -1;
-
-        if (!IsDialogMessage(hDlg, &msg)) {
+        //if (!IsDialogMessage(hDlg, &msg)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-        }
+        //}
     }
 
     //cap->Stop();
@@ -375,30 +212,35 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
     case WM_INITDIALOG:
     {
-        unsigned numdev = 0;// conf->lfx->GetNumDev();
         int pid = AlienFX_SDK::Functions::GetPID();
+        size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+        size_t numdev = AlienFX_SDK::Functions::GetDevices()->size();
+
         if (pid == -1) {
             std::string devName = "No device found";
             int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
             SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
         }
         else {
-            size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
-            int cpid = (-1);
-            for (i = 0; i < lights; i++) {
-                if (AlienFX_SDK::Functions::GetMappings()->at(i).devid != cpid) {
-                    cpid = AlienFX_SDK::Functions::GetMappings()->at(i).devid;
-                    char devName[256];
-                    sprintf_s(devName, 255, "Device #%X", cpid);
-                    int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
-                    SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
-                    numdev++;
+            int cpid = (-1), cpos = (-1);
+            for (i = 0; i < numdev; i++) {
+                cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
+                std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
+                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
+                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
+                if (cpid == pid) {
+                    // select this device.
+                    SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+                    cpos = pos;
                 }
             }
-        }
-        SendMessage(dev_list, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-        if (numdev > 0) {
-            size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+            if (cpos == -1) { // device have no name!
+                char devName[256];
+                sprintf_s(devName, 255, "Device #%X", pid);
+                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
+                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
+                SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+            }
             for (i = 0; i < lights; i++) {
                 AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
                 if (lgh.devid == pid) {

@@ -27,9 +27,21 @@
     <ClInclude Include="alienfx-gui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConfigHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FXHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfx-gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FXHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
