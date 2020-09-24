@@ -103,10 +103,25 @@ int main(int argc, char* argv[])
 		}
 		if (command == "status") {
 			if (low_level) {
-				cout << "Current device ID: " << std::hex << isInit << std::endl;
-				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
-						cout << "Device ID#" << std::hex << AlienFX_SDK::Functions::GetMappings()->at(i).devid
-						<< ", Light ID#" << AlienFX_SDK::Functions::GetMappings()->at(i).lightid << ", Name: " << AlienFX_SDK::Functions::GetMappings()->at(i).name << endl;
+				vector<int> devs = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+				for (int i = 0; i < AlienFX_SDK::Functions::GetDevices()->size(); i++) {
+					cout << "Device ID#" << std::hex << AlienFX_SDK::Functions::GetDevices()->at(i).devid
+						<< " - " << AlienFX_SDK::Functions::GetDevices()->at(i).name;
+					if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == AlienFX_SDK::Functions::GetPID()) {
+						cout << " (Active)";
+					}
+					else {
+						for (int j = 0; j < devs.size(); j++)
+							if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == devs[i])
+								cout << " (Found)";
+					}
+					cout << endl;
+					for (int k = 0; k < AlienFX_SDK::Functions::GetMappings()->size(); k++) {
+						if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == 
+							AlienFX_SDK::Functions::GetMappings()->at(k).devid)
+						cout << "  Light ID#" << AlienFX_SDK::Functions::GetMappings()->at(k).lightid 
+							<< " - " << AlienFX_SDK::Functions::GetMappings()->at(k).name << endl;
+					}
 				}
 			}
 			else {
