@@ -550,6 +550,7 @@
   <ItemGroup>
     <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="ConfigHandler.h" />
+    <ClInclude Include="EventHandler.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FXHelper.h" />
     <ClInclude Include="Resource.h" />
@@ -558,6 +559,7 @@
   <ItemGroup>
     <ClCompile Include="alienfx-gui.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
+    <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="FXHelper.cpp" />
   </ItemGroup>
   <ItemGroup>

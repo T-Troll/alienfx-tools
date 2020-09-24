@@ -20,24 +20,22 @@ FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
 		result = AlienFX_SDK::Functions::IsDeviceReady();
 		AlienFX_SDK::Functions::LoadMappings();
 	}
+	Reset();
 };
 FXHelper::~FXHelper() {
 	AlienFX_SDK::Functions::AlienFXClose();
 };
-void FXHelper::StartFX() {
-	//done = 0;
-	//stopped = 0;
-	//lfx->Reset();
-	//lfx->Update();
-};
-void FXHelper::StopFX() {
-	done = 1;
-	//while (!stopped)
-	//	Sleep(100);
-	//lfx->Reset();
-	//lfx->Update();
-	//lfx->Release();
-};
+
+void FXHelper::Reset()
+{
+	for (int i = 0; i < config->mappings.size(); i++) {
+		mapping map = config->mappings[i];
+		AlienFX_SDK::Functions::SetColor(map.lightid,
+			0, 0, 0);
+	}
+	AlienFX_SDK::Functions::UpdateColors();
+}
+;
 
 int FXHelper::GetPID() {
 	return pid;

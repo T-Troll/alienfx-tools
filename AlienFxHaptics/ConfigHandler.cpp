@@ -92,6 +92,7 @@ int ConfigHandler::Load() {
 int ConfigHandler::Save() {
     char name[256];
     unsigned out[30];
+    DWORD dwDisposition;
 
     RegSetValueEx(
         hKey1,
@@ -117,6 +118,16 @@ int ConfigHandler::Save() {
         (BYTE*)&inpType,
         4
     );
+    RegDeleteTreeA(hKey1, "Mappings");
+    RegCreateKeyEx(HKEY_CURRENT_USER,
+        TEXT("SOFTWARE\\Alienfxhaptics\\Mappings"),
+        0,
+        NULL,
+        REG_OPTION_NON_VOLATILE,
+        KEY_ALL_ACCESS,//KEY_WRITE,
+        NULL,
+        &hKey2,
+        &dwDisposition);
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
         sprintf_s(name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
@@ -141,4 +152,5 @@ int ConfigHandler::Save() {
     }
 	return 0;
 }
+
 

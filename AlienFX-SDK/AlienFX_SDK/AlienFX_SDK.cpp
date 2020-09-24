@@ -629,7 +629,7 @@ namespace AlienFX_SDK
 	void Functions::LoadMappings() {
 		DWORD  dwDisposition;
 		HKEY   hKey1;
-		int numlights;
+
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
 			0,
@@ -641,13 +641,6 @@ namespace AlienFX_SDK
 			&dwDisposition);
 		int size = 4;
 
-		RegGetValue(hKey1,
-			NULL,
-			TEXT("NumLights"),
-			RRF_RT_DWORD | RRF_ZEROONFAILURE,
-			NULL,
-			&numlights,
-			(LPDWORD)&size);
 		unsigned vindex = 0; mapping map; devmap dev;
 		char name[255], inarray[255];
 		unsigned ret = 0;
@@ -703,14 +696,6 @@ namespace AlienFX_SDK
 			&dwDisposition);
 		char name[256];
 
-		RegSetValueEx(
-			hKey1,
-			TEXT("NumLights"),
-			0,
-			REG_DWORD,
-			(BYTE*)&numlights,
-			4
-		);
 		for (int i = 0; i < numdevs; i++) {
 			//preparing name
 			sprintf_s((char*)name, 255, "Dev#%d", devices[i].devid);

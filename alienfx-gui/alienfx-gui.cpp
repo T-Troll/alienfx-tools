@@ -6,9 +6,11 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <Commdlg.h>
+#include <shellapi.h>
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
+#include "EventHandler.h"
 
 #define MAX_LOADSTRING 100
 
@@ -16,6 +18,8 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+
+NOTIFYICONDATA niData;
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -28,6 +32,7 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
 ConfigHandler* conf;
+EventHandler* eve;
 
 HWND mDlg;
 
@@ -48,6 +53,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     conf = new ConfigHandler();
     fxhl = new FXHelper(conf);
+    eve = new EventHandler(conf, fxhl);
+
+    conf->Load();
 
     // Perform application initialization:
     if (!(mDlg=InitInstance (hInstance, nCmdShow)))
@@ -75,6 +83,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }*/
 
+    conf->Save();
+
+    delete eve;
     delete fxhl;
     delete conf;
 
@@ -320,11 +331,50 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
         switch (LOWORD(wParam))
         {
-        case IDOK: case IDCANCEL: case IDCLOSE:
+        case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT: case ID_TRAYMENU_EXIT:
         {
             //cap->Stop();
+            Shell_NotifyIcon(NIM_DELETE, &niData);
             DestroyWindow(hDlg); //EndDialog(hDlg, IDOK);
         } break;
+        case IDM_ABOUT: // about dialogue here
+            break;
+        case IDC_BUTTON_MINIMIZE:
+            ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+            niData.cbSize = sizeof(NOTIFYICONDATA);
+            niData.uID = IDI_ALIENFXGUI;
+            niData.uFlags = NIF_ICON | NIF_MESSAGE;
+            niData.hIcon =
+                (HICON)LoadImage(GetModuleHandle(NULL),
+                    MAKEINTRESOURCE(IDI_ALIENFXGUI),
+                    IMAGE_ICON,
+                    GetSystemMetrics(SM_CXSMICON),
+                    GetSystemMetrics(SM_CYSMICON),
+                    LR_DEFAULTCOLOR);
+            niData.hWnd = hDlg;
+            niData.uCallbackMessage = WM_APP + 1;
+            Shell_NotifyIcon(NIM_ADD, &niData);
+            ShowWindow(hDlg, SW_HIDE);
+            break;
+        case IDC_BUTTON_REFRESH: case ID_TRAYMENU_REFRESH:
+            fxhl->Refresh();
+            break;
+        case ID_TRAYMENU_RESTORE:
+            ShowWindow(hDlg, SW_RESTORE);
+            SetWindowPos(hDlg,       // handle to window
+                HWND_TOPMOST,  // placement-order handle
+                0,     // horizontal position
+                0,      // vertical position
+                0,  // width
+                0, // height
+                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+            );
+            Shell_NotifyIcon(NIM_DELETE, &niData);
+            break;
+        case IDC_BUTTON_SAVE:
+            AlienFX_SDK::Functions::SaveMappings();
+            conf->Save();
+            break;
         }
     } break;
     case WM_NOTIFY: {
@@ -339,6 +389,67 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         } break;
         }
     } break;
+    case WM_SIZE:
+        if (wParam == SIZE_MINIMIZED) {
+            // go to tray...
+
+            ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+            niData.cbSize = sizeof(NOTIFYICONDATA);
+            niData.uID = IDI_ALIENFXGUI;
+            niData.uFlags = NIF_ICON | NIF_MESSAGE;
+            niData.hIcon =
+                (HICON)LoadImage(GetModuleHandle(NULL),
+                    MAKEINTRESOURCE(IDI_ALIENFXGUI),
+                    IMAGE_ICON,
+                    GetSystemMetrics(SM_CXSMICON),
+                    GetSystemMetrics(SM_CYSMICON),
+                    LR_DEFAULTCOLOR);
+            niData.hWnd = hDlg;
+            niData.uCallbackMessage = WM_APP + 1;
+            Shell_NotifyIcon(NIM_ADD, &niData);
+            ShowWindow(hDlg, SW_HIDE);
+        } break;
+    case WM_APP + 1: {
+        switch (lParam)
+        {
+        case WM_LBUTTONDBLCLK:
+        //case WM_LBUTTONUP:
+            ShowWindow(hDlg, SW_RESTORE);
+            SetWindowPos(hDlg,       // handle to window
+                HWND_TOPMOST,  // placement-order handle
+                0,     // horizontal position
+                0,      // vertical position
+                0,  // width
+                0, // height
+                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+            );
+            Shell_NotifyIcon(NIM_DELETE, &niData);
+            break;
+            //case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP: case WM_CONTEXTMENU: {
+            POINT lpClickPoint;
+            HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
+            tMenu = GetSubMenu(tMenu, 0);
+            GetCursorPos(&lpClickPoint);
+            SetForegroundWindow(hDlg);
+            TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
+                lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
+        } break;
+        }
+        break;
+    } break;
+    case WM_POWERBROADCAST:
+        switch (wParam) {
+        case PBT_APMRESUMEAUTOMATIC:
+                //resumed from sleep
+            fxhl->Refresh();
+            eve->ChangePowerState();
+            break;
+        case PBT_APMPOWERSTATUSCHANGE:
+            // bat/ac change
+            eve->ChangePowerState();
+        }
+        break;
     case WM_CLOSE: //cap->Stop(); 
         DestroyWindow(hDlg); break;
     case WM_DESTROY: PostQuitMessage(0); break;
@@ -364,15 +475,28 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
     //RedrawWindow(hDlg, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
-void SetLightMode(HWND hDlg, int mode, mapping* map) {
-    if (map != NULL) map->mode = mode;
-    CheckDlgButton(hDlg, IDC_RADIO_COLOR, BST_UNCHECKED);
-    CheckDlgButton(hDlg, IDC_RADIO_PULSE, BST_UNCHECKED);
-    CheckDlgButton(hDlg, IDC_RADIO_MORPH, BST_UNCHECKED);
-    switch (mode) {
-    case 0: CheckDlgButton(hDlg, IDC_RADIO_COLOR, BST_CHECKED); break;
-    case 1: CheckDlgButton(hDlg, IDC_RADIO_PULSE, BST_CHECKED); break;
-    case 2: CheckDlgButton(hDlg, IDC_RADIO_MORPH, BST_CHECKED); break;
+void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
+    if (num == 0) {
+        if (map != NULL) map->mode = mode;
+        CheckDlgButton(hDlg, IDC_RADIO_COLOR, BST_UNCHECKED);
+        CheckDlgButton(hDlg, IDC_RADIO_PULSE, BST_UNCHECKED);
+        CheckDlgButton(hDlg, IDC_RADIO_MORPH, BST_UNCHECKED);
+        switch (mode) {
+        case 0: CheckDlgButton(hDlg, IDC_RADIO_COLOR, BST_CHECKED); break;
+        case 1: CheckDlgButton(hDlg, IDC_RADIO_PULSE, BST_CHECKED); break;
+        case 2: CheckDlgButton(hDlg, IDC_RADIO_MORPH, BST_CHECKED); break;
+        }
+    }
+    else {
+        if (map != NULL) map->mode2 = mode;
+        CheckDlgButton(hDlg, IDC_RADIO_COLOR2, BST_UNCHECKED);
+        CheckDlgButton(hDlg, IDC_RADIO_PULSE2, BST_UNCHECKED);
+        CheckDlgButton(hDlg, IDC_RADIO_MORPH2, BST_UNCHECKED);
+        switch (mode) {
+        case 0: CheckDlgButton(hDlg, IDC_RADIO_COLOR2, BST_CHECKED); break;
+        case 1: CheckDlgButton(hDlg, IDC_RADIO_PULSE2, BST_CHECKED); break;
+        case 2: CheckDlgButton(hDlg, IDC_RADIO_MORPH2, BST_CHECKED); break;
+        }
     }
 }
 
@@ -393,6 +517,12 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         l1_slider = GetDlgItem(hDlg, IDC_LENGTH1);
         l2_slider = GetDlgItem(hDlg, IDC_LENGTH2);
         break;
+    case 1:
+        light_list = GetDlgItem(hDlg, IDC_LIGHTS_E);
+        break;
+    case 2:
+        light_list = GetDlgItem(hDlg, IDC_LIGHTS_S);
+        break;
     }
 
     switch (message)
@@ -401,13 +531,14 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     {
         //int pid = AlienFX_SDK::Functions::GetPID();
         size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+ 
         switch (tabSel) {
         case 0: // Colors
             for (i = 0; i < lights; i++) {
                 AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
                 if (lgh.devid == pid) {
                     int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-                    SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)TEXT(lgh.lightid));
+                    SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
                 }
             }
             RedrawButton(hDlg, IDC_BUTTON_C1, 0, 0, 0);
@@ -418,8 +549,43 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             SendMessage(l2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
             break;
         case 1: // events
+            for (i = 0; i < lights; i++) {
+                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+                if (lgh.devid == pid) {
+                    int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+                    SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
+                }
+            }
             break;
         case 2: // settings
+            HWND dev_list = GetDlgItem(hDlg, IDC_DEVICES);
+            size_t numdev = AlienFX_SDK::Functions::GetDevices()->size();
+            int cpid = (-1), cpos = (-1);
+            for (i = 0; i < numdev; i++) {
+                cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
+                std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
+                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
+                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
+                if (cpid == pid) {
+                    // select this device.
+                    SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+                    cpos = pos;
+                }
+            }
+            if (cpos == -1) { // device have no name!
+                char devName[256];
+                sprintf_s(devName, 255, "Device #%X", pid);
+                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
+                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
+                SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+            }
+            for (i = 0; i < lights; i++) {
+                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+                if (lgh.devid == pid) {
+                    int pos = (int)SendMessage(light_list, CB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+                    SendMessage(light_list, CB_SETITEMDATA, pos, lgh.lightid);
+                }
+            }
             break;
         }
     } break;
@@ -427,24 +593,26 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
         int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
         for (i = 0; i < conf->mappings.size(); i++)
-            if (conf->mappings[i].devid == pid && conf->mappings[i].lightid == lid)
+            if (conf->mappings[i].devid == pid && conf->mappings[i].lightid == lid) {
+                map = &conf->mappings[i];
                 break;
+            }
         switch (LOWORD(wParam))
         {
         case IDC_LIGHTS: // should reload mappings
             switch (HIWORD(wParam))
             {
             case LBN_SELCHANGE:
-                if (i < conf->mappings.size())
-                    map = &conf->mappings[i];
-                else {
+                if (map == NULL) {
                     mapping newmap;
                     newmap.devid = pid;
                     newmap.lightid = lid;
+                    newmap.c1.ci = newmap.c2.ci = 0;
                     conf->mappings.push_back(newmap);
                     map = &conf->mappings[i];
                 }
-                SetLightMode(hDlg, map->mode, map);
+                SetLightMode(hDlg, 0, map->mode, NULL);
+                SetLightMode(hDlg, 1, map->mode2, NULL);
                 RedrawButton(hDlg, IDC_BUTTON_C1, map->c1.cs.red, map->c1.cs.green, map->c1.cs.blue);
                 RedrawButton(hDlg, IDC_BUTTON_C2, map->c2.cs.red, map->c2.cs.green, map->c2.cs.blue);
                 SendMessage(s1_slider, TBM_SETPOS, true, map->speed1);
@@ -457,8 +625,7 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {
-                if (i < conf->mappings.size()) {
-                    map = &conf->mappings[i];
+                if (map != NULL) {
                     CHOOSECOLOR cc;                 // common dialog box structure 
                     static COLORREF acrCustClr[16]; // array of custom colors 
 
@@ -490,8 +657,7 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {
-                if (i < conf->mappings.size()) {
-                    map = &conf->mappings[i];
+                if (map != NULL) {
                     CHOOSECOLOR cc;                 // common dialog box structure 
                     static COLORREF acrCustClr[16]; // array of custom colors 
                     //HWND hwnd;                      // owner window
@@ -522,19 +688,30 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         case IDC_RADIO_COLOR: case IDC_RADIO_PULSE: case IDC_RADIO_MORPH:
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
-                if (i < conf->mappings.size()) {
-                    map = &conf->mappings[i];
+                if (map != NULL) {
                     int mid = LOWORD(wParam) - IDC_RADIO_COLOR;
-                    SetLightMode(hDlg, mid, map);
+                    SetLightMode(hDlg, 0, mid, map);
                 }
                 else
-                    SetLightMode(hDlg, 3, NULL);
+                    SetLightMode(hDlg, 0, 3, NULL);
+                break;
+            }
+            break;
+        case IDC_RADIO_COLOR2: case IDC_RADIO_PULSE2: case IDC_RADIO_MORPH2:
+            switch (HIWORD(wParam)) {
+            case BN_CLICKED:
+                if (map != NULL) {
+                    int mid = LOWORD(wParam) - IDC_RADIO_COLOR2;
+                    SetLightMode(hDlg, 1, mid, map);
+                }
+                else
+                    SetLightMode(hDlg, 1, 3, NULL);
                 break;
             }
             break;
         default: return false;
         }
-        fxhl->UpdateLight(i);
+        fxhl->UpdateLight(map);
     } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
@@ -542,26 +719,23 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
             int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
             for (i = 0; i < conf->mappings.size(); i++)
-                if (conf->mappings[i].devid == pid && conf->mappings[i].lightid == lid)
+                if (conf->mappings[i].devid == pid && conf->mappings[i].lightid == lid) {
+                    map = &conf->mappings[i];
+                    if ((HWND)lParam == s1_slider) {
+                        map->speed1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    }
+                    if ((HWND)lParam == s2_slider) {
+                        map->speed2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    }
+                    if ((HWND)lParam == l1_slider) {
+                        map->length1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    }
+                    if ((HWND)lParam == l2_slider) {
+                        map->length2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    }
+                    fxhl->UpdateLight(map);
                     break;
-            if (i < conf->mappings.size()) {
-                map = &conf->mappings[i];
-                if ((HWND)lParam == s1_slider) {
-                    map->speed1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                if ((HWND)lParam == s2_slider) {
-                    map->speed2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                }
-                if ((HWND)lParam == l1_slider) {
-                    map->length1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                }
-                if ((HWND)lParam == l2_slider) {
-                    map->length2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                }
-                fxhl->UpdateLight(i);
-            }
-            //if (i < conf->mappings.size())
-            //    map->speed1 = (DWORD)SendMessage(s1_slider, TBM_GETPOS, 0, 0);
             break;
         }
         break;

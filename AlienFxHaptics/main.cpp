@@ -65,7 +65,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Sleep(200);
 	//audio.stopSampling();
 	wsa.stopSampling();
-	FXproc->StopFX();
 
 	//killing dft:
 	dftG->kill();

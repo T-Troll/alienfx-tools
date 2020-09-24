@@ -274,6 +274,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 		break;
 		case WM_CLOSE:
+			Shell_NotifyIcon(NIM_DELETE, &niData);
 			DestroyWindow(hwnd);
 		break;
 		case WM_PAINT:
@@ -738,6 +739,19 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
 				}
 			} break;
+			}
+		} break;
+		case IDC_BUTTON_REMOVE: {
+			switch (HIWORD(wParam))
+			{
+			case BN_CLICKED: {
+				std::vector <mapping>::iterator Iter;
+				for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++)
+					if (Iter->devid == did && Iter->lightid == lid) {
+						config->mappings.erase(Iter);
+						break;
+					}
+				} break;
 			}
 		} break;
 		}

@@ -39,41 +39,28 @@ ConfigHandler::~ConfigHandler() {
 int ConfigHandler::Load() {
     int size = 4;
 
-    /*RegGetValue(hKey1,
+    RegGetValue(hKey1,
         NULL,
-        TEXT("MaxColors"),
+        TEXT("AutoStart"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
-        &maxcolors,
+        &startWindows,
         (LPDWORD) &size);
-    if (!maxcolors) { // no key
-        maxcolors = 12;
-    }
     RegGetValue(hKey1,
         NULL,
-        TEXT("Shift"),
+        TEXT("Minimized"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
-        &shift,
-        (LPDWORD)&size);
-    if (!shift) { // no key
-        shift = 40;// 0;
-    }
-    RegGetValue(hKey1,
-        NULL,
-        TEXT("Mode"),
-        RRF_RT_DWORD | RRF_ZEROONFAILURE,
-        NULL,
-        &mode,
+        &startMinimized,
         (LPDWORD)&size);
     RegGetValue(hKey1,
         NULL,
-        TEXT("Divider"),
+        TEXT("Refresh"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
-        &divider,
+        &autoRefresh,
         (LPDWORD)&size);
-    if (!divider) divider = 8;*/
+
     unsigned vindex = 0, inarray[8];
     char name[256];
     unsigned ret = 0;
@@ -114,33 +101,34 @@ int ConfigHandler::Load() {
 }
 int ConfigHandler::Save() {
     char name[256];
-    unsigned out[8];
+    unsigned out[12];
+    DWORD dwDisposition;
 
+    RegSetValueEx(
+        hKey1,
+        TEXT("AutoStart"),
+        0,
+        REG_DWORD,
+        (BYTE *) &startWindows,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("Minimized"),
+        0,
+        REG_DWORD,
+        (BYTE*)&startMinimized,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("Refresh"),
+        0,
+        REG_DWORD,
+        (BYTE*)&autoRefresh,
+        4
+    );
     /*RegSetValueEx(
-        hKey1,
-        TEXT("MaxColors"),
-        0,
-        REG_DWORD,
-        (BYTE *) &maxcolors,
-        4
-    );
-    RegSetValueEx(
-        hKey1,
-        TEXT("Shift"),
-        0,
-        REG_DWORD,
-        (BYTE*)&shift,
-        4
-    );
-    RegSetValueEx(
-        hKey1,
-        TEXT("Mode"),
-        0,
-        REG_DWORD,
-        (BYTE*)&mode,
-        4
-    );
-    RegSetValueEx(
         hKey1,
         TEXT("Divider"),
         0,
@@ -148,6 +136,17 @@ int ConfigHandler::Save() {
         (BYTE*)&divider,
         4
     );*/
+    // clear old events
+    RegDeleteTreeA(hKey1, "Events");
+    RegCreateKeyEx(HKEY_CURRENT_USER,
+        TEXT("SOFTWARE\\Alienfxgui\\Events"),
+        0,
+        NULL,
+        REG_OPTION_NON_VOLATILE,
+        KEY_ALL_ACCESS,//KEY_WRITE,
+        NULL,
+        &hKey3,
+        &dwDisposition);
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
         sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
@@ -170,6 +169,21 @@ int ConfigHandler::Save() {
             (BYTE*)out,
             size
         );
+        /*size = mappings[i].events.size() * 12;
+        for (int j = 0; j < mappings[i].events.size(); j++) {
+            out[j * 3] = mappings[i].events[j].type;
+            out[j * 3 + 1] = mappings[i].events[j].source;
+            out[j * 3 + 2] = mappings[i].events[j].color.ci;
+        }
+        if (size > 0)
+            RegSetValueExA(
+                hKey3,
+                name,
+                0,
+                REG_BINARY,
+                (BYTE*)out,
+                size
+            );*/
     }
 	return 0;
 }

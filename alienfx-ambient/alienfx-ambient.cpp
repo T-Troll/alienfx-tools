@@ -276,6 +276,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case IDOK: case IDCANCEL: case IDCLOSE:
         {
             cap->Stop();
+            Shell_NotifyIcon(NIM_DELETE, &niData);
             DestroyWindow(hDlg); //EndDialog(hDlg, IDOK);
         } break;
         case IDC_DEVICE: {
@@ -412,6 +413,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     LR_DEFAULTCOLOR);
             niData.hWnd = hDlg;
             niData.uCallbackMessage = WM_APP + 1;
+            //strcpy_s(niData.szTip, "Click to restore");
             Shell_NotifyIcon(NIM_ADD, &niData);
             ShowWindow(hDlg, SW_HIDE);
             break;

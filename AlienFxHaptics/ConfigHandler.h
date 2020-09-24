@@ -40,5 +40,6 @@ public:
 	~ConfigHandler();
 	int Load();
 	int Save();
+
 };
 

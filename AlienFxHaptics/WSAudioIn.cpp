@@ -211,7 +211,12 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					&numFramesAvailable,
 					&flags, NULL, NULL);
 				shift = 0;
-				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) continue;
+				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) {
+					pCapCli->ReleaseBuffer(numFramesAvailable);
+					pCapCli->GetNextPacketSize(&packetLength);
+					arrayPos = 0;
+					continue;
+				}
 				for (UINT i = 0; i < numFramesAvailable; i++) {
 					INT64 finVal = 0;
 					for (int k = 0; k < nChannel; k++) {

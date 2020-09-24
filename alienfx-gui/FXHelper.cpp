@@ -42,16 +42,15 @@ void FXHelper::StopFX() {
 	AlienFX_SDK::Functions::Reset(false);
 };
 
-void FXHelper::UpdateLight(int id) {
-	if (id < config->mappings.size()) {
-		mapping map = config->mappings[id];
-		if (map.mode == 0) {
-			AlienFX_SDK::Functions::SetColor(map.lightid, map.c1.cs.red, map.c1.cs.green, map.c1.cs.blue);
+void FXHelper::UpdateLight(mapping* map) {
+	if (map != NULL) {
+		if (map->mode == 0) {
+			AlienFX_SDK::Functions::SetColor(map->lightid, map->c1.cs.red, map->c1.cs.green, map->c1.cs.blue);
 		}
 		else {
-			AlienFX_SDK::Functions::SetAction(map.lightid,
-				map.mode, map.length1, map.speed1, map.c1.cs.red, map.c1.cs.green, map.c1.cs.blue,
-				map.mode, map.length2, map.speed2, map.c2.cs.red, map.c2.cs.green, map.c2.cs.blue
+			AlienFX_SDK::Functions::SetAction(map->lightid,
+				map->mode, map->length1, map->speed1, map->c1.cs.red, map->c1.cs.green, map->c1.cs.blue,
+				map->mode2, map->length2, map->speed2, map->c2.cs.red, map->c2.cs.green, map->c2.cs.blue
 			);
 		}
 		AlienFX_SDK::Functions::UpdateColors();

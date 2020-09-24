@@ -20,7 +20,7 @@ public:
 	~FXHelper();
 	void StartFX();
 	void StopFX();
-	void UpdateLight(int id);
+	void UpdateLight(mapping* map);
 	int Refresh();
 	//int GetPID();
 	//int UpdateLights();

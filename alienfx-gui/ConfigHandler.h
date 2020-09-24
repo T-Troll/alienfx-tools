@@ -17,6 +17,12 @@ union Colorcode
 	unsigned int ci;
 };
 
+struct event {
+	unsigned type = 0;
+	unsigned source = 0;
+	Colorcode color;
+};
+
 struct mapping {
 	unsigned devid = 0;
 	unsigned lightid = 0;
@@ -25,7 +31,7 @@ struct mapping {
 	unsigned speed1 = 0, speed2 = 0;
 	unsigned length1 = 0, length2 = 0;
 	Colorcode c1, c2;
-	//std::vector<unsigned char> map; // events will be here
+	std::vector<event> events; // events will be here
 };
 
 class ConfigHandler
@@ -33,9 +39,9 @@ class ConfigHandler
 private:
 	HKEY   hKey1 = NULL, hKey2 = NULL, hKey3 = NULL;
 public:
-	//DWORD maxcolors = 12;
-	//DWORD mode = 0;
-	//DWORD divider = 16;
+	DWORD startWindows = 0;
+	DWORD startMinimized = 0;
+	DWORD autoRefresh = 0;
 	//DWORD shift = 40;
 	std::vector<mapping> mappings;
 
