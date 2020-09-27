@@ -7,22 +7,28 @@ struct UpdateData {
 	ULONGLONG lastUpdate;
 };
 
+#define MODE_AC		0
+#define MODE_BAT	1
+#define MODE_CHARGE	2
+#define MODE_LOW	3
+
 class FXHelper
 {
 private:
-	//int done, lastLights;
 	int pid;
 	ConfigHandler* config;
-	//ULONGLONG lastUpdate;
-	std::vector<UpdateData> updates;
+	int activeMode = 0;
+	int lastTest = -1;
+	std::vector<int> devList;
 public:
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
 	void StartFX();
 	void StopFX();
-	void UpdateLight(mapping* map);
+	void UpdateLight(lightset* map, bool update = true);
 	int Refresh();
-	//int GetPID();
-	//int UpdateLights();
+	int SetMode(int mode);
+	std::vector<int> GetDevList();
+	void TestLight(int id);
 };
 

@@ -1,16 +1,10 @@
 #include "FXHelper.h"
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
-//using namespace AlienFX_SDK;
-//#ifdef _DEBUG
-//#pragma comment(lib, "opencvworld343d.lib")
-//#else
-//#pragma comment(lib, "opencvworld343.lib")
-//#endif
-
 FXHelper::FXHelper(ConfigHandler* conf) {
 	config = conf;
 	//lastUpdate = 0;
+	devList = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
 	if (pid != -1)
 	{
@@ -24,6 +18,7 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 	}
 };
 FXHelper::~FXHelper() {
+	AlienFX_SDK::Functions::SaveMappings();
 	AlienFX_SDK::Functions::AlienFXClose();
 	//lfx->Release();
 };
@@ -42,18 +37,50 @@ void FXHelper::StopFX() {
 	AlienFX_SDK::Functions::Reset(false);
 };
 
-void FXHelper::UpdateLight(mapping* map) {
+std::vector<int> FXHelper::GetDevList() {
+	return devList;
+}
+
+void FXHelper::TestLight(int id)
+{
+	if (id != lastTest) {
+		if (lastTest != (-1))
+			AlienFX_SDK::Functions::SetColor(lastTest, 0, 0, 0);
+		lastTest = id;
+		AlienFX_SDK::Functions::SetColor(id, 0, 255, 0);
+	}
+	AlienFX_SDK::Functions::UpdateColors();
+}
+
+void FXHelper::UpdateLight(lightset* map, bool update) {
 	if (map != NULL) {
-		if (map->mode == 0) {
-			AlienFX_SDK::Functions::SetColor(map->lightid, map->c1.cs.red, map->c1.cs.green, map->c1.cs.blue);
+		if (map->eve[2].flags || map->eve[3].flags) return;
+		mapping* mmap = &map->eve[0].map;
+		Colorcode c1 = mmap->c1, c2 = mmap->c2;
+		if (!map->eve[0].flags)
+			c1.ci = c2.ci = 0;
+		int mode1 = mmap->mode, mode2 = mmap->mode2;
+		if (map->eve[1].flags) {
+			// use power event;
+			c2 = map->eve[1].map.c2;
+			switch (activeMode) {
+			case MODE_AC: mode1 = mode2 = 0; c1 = mmap->c1; break;
+			case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
+			case MODE_LOW: mode1 = mode2 = 1; break;
+			case MODE_CHARGE: mode1 = mode2 = 2; break;
+			}
+		}
+		if (mode1 == 0) {
+			AlienFX_SDK::Functions::SetColor(map->lightid, c1.cs.red, c1.cs.green, c1.cs.blue);
 		}
 		else {
 			AlienFX_SDK::Functions::SetAction(map->lightid,
-				map->mode, map->length1, map->speed1, map->c1.cs.red, map->c1.cs.green, map->c1.cs.blue,
-				map->mode2, map->length2, map->speed2, map->c2.cs.red, map->c2.cs.green, map->c2.cs.blue
+				mode1, mmap->length1, mmap->speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
+				mode2, mmap->length2, mmap->speed2, c2.cs.red, c2.cs.green, c2.cs.blue
 			);
 		}
-		AlienFX_SDK::Functions::UpdateColors();
+		if (update)
+			AlienFX_SDK::Functions::UpdateColors();
 	}
 }
 
@@ -61,19 +88,17 @@ int FXHelper::Refresh()
 {
 	unsigned i = 0;
 	for (i = 0; i < config->mappings.size(); i++) {
-		mapping map = config->mappings[i];
-		if (map.mode == 0) {
-			AlienFX_SDK::Functions::SetColor(map.lightid, map.c1.cs.red, map.c1.cs.green, map.c1.cs.blue);
-		}
-		else {
-			AlienFX_SDK::Functions::SetAction(map.lightid,
-				map.mode, map.length1, map.speed1, map.c1.cs.red, map.c1.cs.green, map.c1.cs.blue,
-				map.mode, map.length2, map.speed2, map.c2.cs.red, map.c2.cs.green, map.c2.cs.blue
-			);
-		}
+		UpdateLight(&config->mappings[i], false);	
 	}
 	AlienFX_SDK::Functions::UpdateColors();
 	return 0;
+}
+
+int FXHelper::SetMode(int mode)
+{
+	int t = activeMode;
+	activeMode = mode;
+	return t;
 }
 
 

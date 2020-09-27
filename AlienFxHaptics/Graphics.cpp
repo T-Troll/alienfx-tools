@@ -430,9 +430,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 			}
 		}
-		TCHAR decay[17];
-		sprintf_s(decay, 16, "%d", config->res);
-		SendMessage(hdecay, WM_SETTEXT, 0, (LPARAM)decay);
+		SetDlgItemInt(hDlg, IDC_EDIT_DECAY, config->res, false);
 		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 	}
@@ -476,17 +474,18 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					config->mappings[i].hicut = 255;
 					config->mappings[i].map.clear();
 				}
-				SendMessage(freq_list, LB_SETSEL, FALSE, -1);
-				RedrawWindow(freq_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				// clear colors...
 				SendMessage(from_color, IPM_SETADDRESS, 0, 0);
 				RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				SendMessage(to_color, IPM_SETADDRESS, 0, 0);
 				RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				TCHAR locut[] = "0", hicut[] = "255";
-				SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
+				//  clear cuts....
+				SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
+				SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
 				RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)hicut);
 				RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				SendMessage(hLowSlider, TBM_SETPOS, true, 0);
+				SendMessage(hHiSlider, TBM_SETPOS, true, 255);
 			} break;
 			}
 		} break;
@@ -516,11 +515,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					SendMessage(to_color, IPM_SETADDRESS, 0, 0);
 					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 					//  clear cuts....
-					TCHAR locut[] = "0", hicut[] = "255";
-					SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
+					SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
+					SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
 					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)hicut);
 					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					SendMessage(hLowSlider, TBM_SETPOS, true, 0);
+					SendMessage(hHiSlider, TBM_SETPOS, true, 255);
 				}
 			} break;
 			}
@@ -561,12 +561,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
 				RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
 				// load cuts...
-				TCHAR locut[6], hicut[6];
-				sprintf_s(locut, 5, "%d", map->lowcut);
-				sprintf_s(hicut, 5, "%d", map->hicut);
-				SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
+				SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, map->lowcut, false);
+				SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, map->hicut, false);
 				RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)hicut);
 				RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 				SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
@@ -604,9 +601,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case EN_UPDATE: {
 				// update Decay rate
-				TCHAR buffer[17]; buffer[0] = 16;
-				SendMessage(hdecay, EM_GETLINE, 0, (LPARAM)buffer);
-				y_scale = config->res = atoi(buffer);
+				y_scale = config->res = GetDlgItemInt(hDlg, IDC_EDIT_DECAY, NULL, false);//atoi(buffer);
 			} break;
 			}
 			break;
@@ -616,9 +611,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				// update lo-cut
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
-					TCHAR buffer[4]; buffer[0] = 3;
-					SendMessage(low_cut, EM_GETLINE, 0, (LPARAM)buffer);
-					map->lowcut = atoi(buffer) < 256 ? atoi(buffer) : 255;
+					map->lowcut = GetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, NULL, false);
+					map->lowcut = map->lowcut < 256 ? map->lowcut : 255;
 					SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 				}
 			} break;
@@ -629,9 +623,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				// update lo-cut
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
-					TCHAR buffer[4]; buffer[0] = 3;
-					SendMessage(hi_cut, EM_GETLINE, 0, (LPARAM)buffer);
-					map->hicut = atoi(buffer) < 256 ? atoi(buffer) : 255;
+					map->hicut = GetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, NULL, false);
+					map->hicut = map->hicut < 256 ? map->hicut : 255;
 					SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
 				}
 			} break;

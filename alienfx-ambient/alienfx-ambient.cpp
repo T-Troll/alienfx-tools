@@ -250,9 +250,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             }
         }
         // divider....
-        TCHAR decay[17];
-        sprintf_s(decay, 16, "%d", conf->divider);
-        SendMessage(divider, WM_SETTEXT, 0, (LPARAM)decay);
+        SetDlgItemInt(hDlg, IDC_EDIT_DIVIDER, conf->divider, false);
         // Mode...
         if (conf->mode) {
             CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
@@ -371,9 +369,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case IDC_EDIT_DIVIDER:
             switch (HIWORD(wParam)) {
             case EN_UPDATE: {
-                TCHAR buffer[17]; buffer[0] = 16; buffer[1] = 0;
-                if (SendMessage(divider, EM_GETLINE, 0, (LPARAM)buffer))
-                    conf->divider = atoi(buffer) > 0 ? atoi(buffer) : 1;
+                conf->divider = GetDlgItemInt(hDlg, IDC_EDIT_DIVIDER, NULL, false);
+                if (conf->divider <= 0) conf->divider = 1;
             } break;
         } break;
         case IDC_RADIO_PRIMARY:

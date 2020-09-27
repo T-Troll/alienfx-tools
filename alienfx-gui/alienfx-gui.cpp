@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "alienfx-gui.h"
 #include <Windows.h>
+#include <windowsx.h>
 #include <CommCtrl.h>
 #include <Commdlg.h>
 #include <shellapi.h>
@@ -28,7 +29,9 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
 ConfigHandler* conf;
@@ -56,6 +59,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     eve = new EventHandler(conf, fxhl);
 
     conf->Load();
+
+    eve->ChangePowerState();
 
     // Perform application initialization:
     if (!(mDlg=InitInstance (hInstance, nCmdShow)))
@@ -256,9 +261,14 @@ VOID OnSelChanged(HWND hwndDlg)
     // Destroy the current child dialog box, if any. 
     if (pHdr->hwndDisplay != NULL)
         DestroyWindow(pHdr->hwndDisplay);
-
+    DLGPROC tdl = NULL;
+    switch (tabSel) {
+    case 0: tdl = (DLGPROC)TabColorDialog; break;
+    case 1: tdl = (DLGPROC)TabEventsDialog; break;
+    case 2: tdl = (DLGPROC)TabSettingsDialog; break;
+    }
     pHdr->hwndDisplay = CreateDialogIndirect(hInst,
-        (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, (DLGPROC)TabDialog);
+        (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
 
     SetWindowPos(pHdr->hwndDisplay, NULL,
         pHdr->rcDisplay.left, pHdr->rcDisplay.top,
@@ -472,7 +482,7 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
     FillRect(cnt, &rect, Brush);
     DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
     DeleteObject(Brush);
-    //RedrawWindow(hDlg, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+    //RedrawWindow(tl, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
@@ -500,30 +510,57 @@ void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
     }
 }
 
-BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    mapping* map = NULL;
-    unsigned i;
-    int pid = AlienFX_SDK::Functions::GetPID();
-    HWND light_list = NULL;
-    HWND s1_slider = NULL,
-        s2_slider = NULL,
-        l1_slider = NULL,
-        l2_slider = NULL;
-    switch (tabSel) {
-    case 0:
-        light_list = GetDlgItem(hDlg, IDC_LIGHTS);
-        s1_slider = GetDlgItem(hDlg, IDC_SPEED1);
-        s2_slider = GetDlgItem(hDlg, IDC_SPEED2);
-        l1_slider = GetDlgItem(hDlg, IDC_LENGTH1);
-        l2_slider = GetDlgItem(hDlg, IDC_LENGTH2);
-        break;
-    case 1:
-        light_list = GetDlgItem(hDlg, IDC_LIGHTS_E);
-        break;
-    case 2:
-        light_list = GetDlgItem(hDlg, IDC_LIGHTS_S);
-        break;
+bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
+    CHOOSECOLOR cc;                 // common dialog box structure 
+    static COLORREF acrCustClr[16]; // array of custom colors 
+    bool ret;
+    // Initialize CHOOSECOLOR 
+    ZeroMemory(&cc, sizeof(cc));
+    cc.lStructSize = sizeof(cc);
+    cc.hwndOwner = mDlg;
+    cc.lpCustColors = (LPDWORD)acrCustClr;
+    cc.rgbResult = RGB(*r, *g, *b);
+    cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+    if (ret = ChooseColor(&cc))
+    {
+        *r = cc.rgbResult & 0xff;
+        *g = cc.rgbResult >> 8 & 0xff;
+        *b = cc.rgbResult >> 16 & 0xff;
+        RedrawButton(hDlg, id, *r, *g, *b);
     }
+    return ret;
+}
+
+mapping* FindMapping(int did, int lid, int index)
+{
+    lightset *map = NULL;
+    mapping* mmap = NULL;
+    for (int i = 0; i < conf->mappings.size(); i++)
+        if (conf->mappings[i].devid == did && conf->mappings[i].lightid == lid) {
+            map = &conf->mappings[i];
+            //mmap = &map->eve[0].map;
+            break;
+        }
+    if (map != NULL) {
+        mmap = &map->eve[index].map;
+        mmap->lightset = (void*)map;
+    }
+    return mmap;
+}
+
+int eLid = (-1), eDid = (-1), eItem = (-1), dItem = (-1);
+
+BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+    //lightset* map = NULL;
+    //mapping* mmap = NULL;
+    //unsigned i;
+    int pid = AlienFX_SDK::Functions::GetPID();
+    HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS),
+        s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
+        s2_slider = GetDlgItem(hDlg, IDC_SPEED2),
+        l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
+        l2_slider = GetDlgItem(hDlg, IDC_LENGTH2);
 
     switch (message)
     {
@@ -532,124 +569,60 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         //int pid = AlienFX_SDK::Functions::GetPID();
         size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
  
-        switch (tabSel) {
-        case 0: // Colors
-            for (i = 0; i < lights; i++) {
-                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                if (lgh.devid == pid) {
-                    int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-                    SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
-                }
+        for (int i = 0; i < lights; i++) {
+            AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+            if (lgh.devid == pid) {
+                int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+                SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
             }
-            RedrawButton(hDlg, IDC_BUTTON_C1, 0, 0, 0);
-            RedrawButton(hDlg, IDC_BUTTON_C2, 0, 0, 0);
-            SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-            SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-            SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-            SendMessage(l2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-            break;
-        case 1: // events
-            for (i = 0; i < lights; i++) {
-                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                if (lgh.devid == pid) {
-                    int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-                    SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
-                }
-            }
-            break;
-        case 2: // settings
-            HWND dev_list = GetDlgItem(hDlg, IDC_DEVICES);
-            size_t numdev = AlienFX_SDK::Functions::GetDevices()->size();
-            int cpid = (-1), cpos = (-1);
-            for (i = 0; i < numdev; i++) {
-                cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
-                std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
-                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
-                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
-                if (cpid == pid) {
-                    // select this device.
-                    SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-                    cpos = pos;
-                }
-            }
-            if (cpos == -1) { // device have no name!
-                char devName[256];
-                sprintf_s(devName, 255, "Device #%X", pid);
-                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
-                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
-                SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-            }
-            for (i = 0; i < lights; i++) {
-                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                if (lgh.devid == pid) {
-                    int pos = (int)SendMessage(light_list, CB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-                    SendMessage(light_list, CB_SETITEMDATA, pos, lgh.lightid);
-                }
-            }
-            break;
+        }
+        SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        SendMessage(l2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        if (eItem != (-1)) {
+            SendMessage(light_list, LB_SETCURSEL, eItem, 0);
+            SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
         }
     } break;
     case WM_COMMAND: {
         int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
         int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-        for (i = 0; i < conf->mappings.size(); i++)
-            if (conf->mappings[i].devid == pid && conf->mappings[i].lightid == lid) {
-                map = &conf->mappings[i];
-                break;
-            }
+        mapping* mmap = FindMapping(pid, lid, 0);
+        // BLOCK FOR COLORS
         switch (LOWORD(wParam))
         {
         case IDC_LIGHTS: // should reload mappings
             switch (HIWORD(wParam))
             {
             case LBN_SELCHANGE:
-                if (map == NULL) {
-                    mapping newmap;
+                eItem = lbItem;
+                if (mmap == NULL) {
+                    lightset newmap;
                     newmap.devid = pid;
                     newmap.lightid = lid;
-                    newmap.c1.ci = newmap.c2.ci = 0;
+                    newmap.eve[0].flags = 1;
+                    newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
                     conf->mappings.push_back(newmap);
-                    map = &conf->mappings[i];
+                    mmap = &conf->mappings.back().eve[0].map;
+                    mmap->lightset = &conf->mappings.back();
                 }
-                SetLightMode(hDlg, 0, map->mode, NULL);
-                SetLightMode(hDlg, 1, map->mode2, NULL);
-                RedrawButton(hDlg, IDC_BUTTON_C1, map->c1.cs.red, map->c1.cs.green, map->c1.cs.blue);
-                RedrawButton(hDlg, IDC_BUTTON_C2, map->c2.cs.red, map->c2.cs.green, map->c2.cs.blue);
-                SendMessage(s1_slider, TBM_SETPOS, true, map->speed1);
-                SendMessage(s2_slider, TBM_SETPOS, true, map->speed2);
-                SendMessage(l1_slider, TBM_SETPOS, true, map->length1);
-                SendMessage(l2_slider, TBM_SETPOS, true, map->length2);
+                SetLightMode(hDlg, 0, mmap->mode, NULL);
+                SetLightMode(hDlg, 1, mmap->mode2, NULL);
+                RedrawButton(hDlg, IDC_BUTTON_C1, mmap->c1.cs.red, mmap->c1.cs.green, mmap->c1.cs.blue);
+                RedrawButton(hDlg, IDC_BUTTON_C2, mmap->c2.cs.red, mmap->c2.cs.green, mmap->c2.cs.blue);
+                SendMessage(s1_slider, TBM_SETPOS, true, mmap->speed1);
+                SendMessage(s2_slider, TBM_SETPOS, true, mmap->speed2);
+                SendMessage(l1_slider, TBM_SETPOS, true, mmap->length1);
+                SendMessage(l2_slider, TBM_SETPOS, true, mmap->length2);
                 break;
             } break;
         case IDC_BUTTON_C1:
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {
-                if (map != NULL) {
-                    CHOOSECOLOR cc;                 // common dialog box structure 
-                    static COLORREF acrCustClr[16]; // array of custom colors 
-
-                    // Initialize CHOOSECOLOR 
-                    ZeroMemory(&cc, sizeof(cc));
-                    cc.lStructSize = sizeof(cc);
-                    cc.hwndOwner = mDlg;
-                    cc.lpCustColors = (LPDWORD)acrCustClr;
-                    cc.rgbResult = RGB(map->c1.cs.red, map->c1.cs.green, map->c1.cs.blue);
-                    cc.Flags = CC_FULLOPEN | CC_RGBINIT;
-
-                    if (ChooseColor(&cc) == TRUE)
-                    {
-                        //BYTE br = map->colorfrom.cs.brightness;
-                        map->c1.cs.red = cc.rgbResult & 0xff;
-                        map->c1.cs.green = cc.rgbResult >> 8 & 0xff;
-                        map->c1.cs.blue = cc.rgbResult >> 16 & 0xff;
-                        //map->c1.cs.brightness = br;
-                        //unsigned clrmap = MAKEIPADDRESS(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue, map->colorfrom.cs.brightness);
-                 //       SendMessage(from_color, IPM_SETADDRESS, 0, clrmap);
-                 //       RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-                        RedrawButton(hDlg, IDC_BUTTON_C1, cc.rgbResult & 0xff, cc.rgbResult >> 8 & 0xff, cc.rgbResult >> 16 & 0xff);
-                        //rgbCurrent = cc.rgbResult;
-                    }
+                if (mmap != NULL) {
+                    SetColor(hDlg, IDC_BUTTON_C1, &mmap->c1.cs.red, &mmap->c1.cs.green, &mmap->c1.cs.blue);
                 }
             } break;
             } break;
@@ -657,40 +630,17 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {
-                if (map != NULL) {
-                    CHOOSECOLOR cc;                 // common dialog box structure 
-                    static COLORREF acrCustClr[16]; // array of custom colors 
-                    //HWND hwnd;                      // owner window
-                    //HBRUSH hbrush;                  // brush handle
-
-                    // Initialize CHOOSECOLOR 
-                    ZeroMemory(&cc, sizeof(cc));
-                    cc.lStructSize = sizeof(cc);
-                    cc.hwndOwner = mDlg;
-                    cc.lpCustColors = (LPDWORD)acrCustClr;
-                    cc.rgbResult = RGB(map->c2.cs.red, map->c2.cs.green, map->c2.cs.blue);
-                    cc.Flags = CC_FULLOPEN | CC_RGBINIT;
-
-                    if (ChooseColor(&cc) == TRUE)
-                    {
-                        map->c2.cs.red = cc.rgbResult & 0xff;
-                        map->c2.cs.green = cc.rgbResult >> 8 & 0xff;
-                        map->c2.cs.blue = cc.rgbResult >> 16 & 0xff;
-                        //unsigned clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
-                 //       SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
-                 //       RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-                        RedrawButton(hDlg, IDC_BUTTON_C2, cc.rgbResult & 0xff, cc.rgbResult >> 8 & 0xff, cc.rgbResult >> 16 & 0xff);
-                        //rgbCurrent = cc.rgbResult;
-                    }
+                if (mmap != NULL) {
+                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->c1.cs.red, &mmap->c1.cs.green, &mmap->c1.cs.blue);
                 }
             } break;
             } break;
         case IDC_RADIO_COLOR: case IDC_RADIO_PULSE: case IDC_RADIO_MORPH:
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
-                if (map != NULL) {
+                if (mmap != NULL) {
                     int mid = LOWORD(wParam) - IDC_RADIO_COLOR;
-                    SetLightMode(hDlg, 0, mid, map);
+                    SetLightMode(hDlg, 0, mid, mmap);
                 }
                 else
                     SetLightMode(hDlg, 0, 3, NULL);
@@ -700,45 +650,354 @@ BOOL CALLBACK TabDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         case IDC_RADIO_COLOR2: case IDC_RADIO_PULSE2: case IDC_RADIO_MORPH2:
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
-                if (map != NULL) {
+                if (mmap != NULL) {
                     int mid = LOWORD(wParam) - IDC_RADIO_COLOR2;
-                    SetLightMode(hDlg, 1, mid, map);
+                    SetLightMode(hDlg, 1, mid, mmap);
                 }
                 else
                     SetLightMode(hDlg, 1, 3, NULL);
                 break;
             }
-            break;
+            break;       
         default: return false;
         }
-        fxhl->UpdateLight(map);
+        if (mmap != NULL)
+            fxhl->UpdateLight((lightset*)mmap->lightset);
     } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
         case TB_THUMBTRACK: case TB_ENDTRACK:
             int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
             int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-            for (i = 0; i < conf->mappings.size(); i++)
-                if (conf->mappings[i].devid == pid && conf->mappings[i].lightid == lid) {
-                    map = &conf->mappings[i];
-                    if ((HWND)lParam == s1_slider) {
-                        map->speed1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                    }
-                    if ((HWND)lParam == s2_slider) {
-                        map->speed2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                    }
-                    if ((HWND)lParam == l1_slider) {
-                        map->length1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                    }
-                    if ((HWND)lParam == l2_slider) {
-                        map->length2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                    }
-                    fxhl->UpdateLight(map);
-                    break;
+            mapping* mmap = FindMapping(pid, lid, 0);
+            if (mmap != NULL) {
+                if ((HWND)lParam == s1_slider) {
+                    mmap->speed1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
+                if ((HWND)lParam == s2_slider) {
+                    mmap->speed2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }
+                if ((HWND)lParam == l1_slider) {
+                    mmap->length1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }
+                if ((HWND)lParam == l2_slider) {
+                    mmap->length2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }
+                fxhl->UpdateLight((lightset*)mmap->lightset);
+            }
+        break;
+    } break;
+    case WM_DRAWITEM:
+        switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+        case IDC_BUTTON_C1: case IDC_BUTTON_C2:
+            Colorcode c; c.ci = 0;
+            if (eItem != -1) {
+                int lid = (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0);
+                mapping* map = FindMapping(pid, lid, 0);
+                if (map != NULL) {
+                    switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+                    case IDC_BUTTON_C1: c = map->c1; break;
+                    case IDC_BUTTON_C2: c = map->c2; break;
+                    }
+                }
+            }
+            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.cs.red, c.cs.green, c.cs.blue);
             break;
         }
         break;
+    default: return false;
+    }
+    return true;
+}
+
+BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    //lightset* map = NULL;
+    //mapping* mmap = NULL;
+    //unsigned i;
+    int pid = AlienFX_SDK::Functions::GetPID();
+    HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
+    mode_light = GetDlgItem(hDlg, IDC_CHECK_NOEVENT),
+    mode_power = GetDlgItem(hDlg, IDC_CHECK_POWER),
+    mode_perf = GetDlgItem(hDlg, IDC_CHECK_PERF),
+    mode_status = GetDlgItem(hDlg, IDC_CHECK_STATUS);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+    {
+        size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+        for (int i = 0; i < lights; i++) {
+            AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+            if (lgh.devid == pid) {
+                int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+                SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
+            }
+        }
+        if (eItem != (-1)) {
+            SendMessage(light_list, LB_SETCURSEL, eItem, 0);
+            SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)hDlg);
+        }
+    } break;
+    case WM_COMMAND: {
+        int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
+        int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+        mapping* mmap = FindMapping(pid, lid, 1);
+        lightset* map = NULL;
+        if (mmap != NULL)
+            map = (lightset*)mmap->lightset;
+        switch (LOWORD(wParam))
+        {
+        case IDC_LIGHTS_E: // should reload mappings
+            switch (HIWORD(wParam))
+            {
+            case LBN_SELCHANGE:
+                eItem = lbItem;
+                if (mmap == NULL) {
+                    lightset newmap;
+                    newmap.devid = pid;
+                    newmap.lightid = lid;
+                    newmap.eve[0].flags = 0;
+                    newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
+                    conf->mappings.push_back(newmap);
+                    mmap = &conf->mappings.back().eve[0].map;
+                    mmap->lightset = map = &conf->mappings.back();
+                }
+                //RedrawButton(hDlg, IDC_BUTTON_C1, mmap->c1.cs.red, mmap->c1.cs.green, mmap->c1.cs.blue);
+                //SendMessage(s1_slider, TBM_SETPOS, true, mmap->speed1);
+                for (int i = 0; i < 4; i++) {
+                    if (map->eve[i].flags)
+                        CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, BST_CHECKED);
+                    else
+                        CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, BST_UNCHECKED);
+                    if (i > 0)
+                        RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map.c2.cs.red, 
+                            map->eve[i].map.c2.cs.green, map->eve[i].map.c2.cs.blue);
+                }
+                break;
+            } break;
+        case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
+            int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
+            map->eve[eid].flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+        } break;
+        case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: {
+            int eid = LOWORD(wParam) - IDC_BUTTON_CM1 + 1;
+            switch (HIWORD(wParam))
+            {
+            case BN_CLICKED:
+                if (map != NULL) {
+                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c2.cs.red,
+                        &map->eve[eid].map.c2.cs.green, &map->eve[eid].map.c2.cs.blue);
+                }
+                break;
+            }
+        } break;
+        }
+        if (map != NULL)
+           fxhl->UpdateLight(map);
+    } break;
+    case WM_DRAWITEM:
+        switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+        case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3:
+            int cid = ((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM1 + 1;
+            Colorcode c; c.ci = 0;
+            if (eItem != -1) {
+                int lid = (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0);
+                mapping* map = FindMapping(pid, lid, cid);
+                if (map != NULL)
+                    c = map->c2;
+            }
+            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.cs.red, c.cs.green, c.cs.blue);
+            break;
+        }
+        break;
+    default: return false;
+    }
+    return true;
+}
+
+bool nEdited = false;
+
+int UpdateLightList(HWND light_list, int pid) {
+
+    int pos = -1;
+    size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+    SendMessage(light_list, CB_RESETCONTENT, 0, 0);
+    for (int i = 0; i < lights; i++) {
+        AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+        if (lgh.devid == pid) {
+            pos = (int)SendMessage(light_list, CB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+            SendMessage(light_list, CB_SETITEMDATA, pos, lgh.lightid);
+        }
+    }
+    RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+    return pos;
+}
+
+BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    lightset* map = NULL;
+    mapping* mmap = NULL;
+    unsigned i;
+    int pid = AlienFX_SDK::Functions::GetPID();
+    HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
+        dev_list = GetDlgItem(hDlg, IDC_DEVICES),
+        light_id = GetDlgItem(hDlg, IDC_LIGHTID);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+    {
+        size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+        size_t numdev = fxhl->GetDevList().size();
+        int cpid = (-1), pos = (-1);
+        for (i = 0; i < numdev; i++) {
+            cpid = fxhl->GetDevList().at(i);
+            int j;
+            for (j = 0; j < AlienFX_SDK::Functions::GetDevices()->size(); j++) {
+                if (cpid == AlienFX_SDK::Functions::GetDevices()->at(j).devid) {
+                    std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
+                    pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
+                    SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
+                    break;
+                }
+            }
+            if (j == AlienFX_SDK::Functions::GetDevices()->size()) {
+                // no name
+                char devName[256];
+                sprintf_s(devName, 255, "Device #%X", cpid);
+                pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
+                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
+            }
+            if (cpid == pid) {
+                // select this device.
+                SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+            }
+        }
+
+        UpdateLightList(light_list, pid);
+        eItem = -1;
+    } break;
+    case WM_COMMAND: {
+        int lbItem = (int)SendMessage(light_list, CB_GETCURSEL, 0, 0);
+        int lid = (int)SendMessage(light_list, CB_GETITEMDATA, lbItem, 0);
+        int dbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
+        int did = (int)SendMessage(dev_list, CB_GETITEMDATA, dbItem, 0);
+        switch (LOWORD(wParam))
+        {
+        case IDC_DEVICES: {
+            switch (HIWORD(wParam))
+            {
+            case CBN_SELCHANGE: {
+                AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+                UpdateLightList(light_list, did);
+                eItem = -1;
+            } break;
+            case CBN_EDITCHANGE:
+                char buffer[256];
+                ComboBox_GetText(dev_list, buffer, 256);
+                if (did != (-1)) {
+                    eDid = did; dItem = dbItem;
+                }
+                for (i = 0; i < AlienFX_SDK::Functions::GetDevices()->size(); i++) {
+                    if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == eDid) {
+                        AlienFX_SDK::Functions::GetDevices()->at(i).name = buffer;
+                        break;
+                    }
+                }
+                if (i == AlienFX_SDK::Functions::GetDevices()->size() && eDid != -1) {
+                    // not found, need to add...
+                    AlienFX_SDK::devmap dev;
+                    dev.devid = did;
+                    dev.name = buffer;
+                    AlienFX_SDK::Functions::GetDevices()->push_back(dev);
+                }
+                SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
+                SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
+                SendMessage(dev_list, CB_SETITEMDATA, dItem, (LPARAM)eDid);
+                break;
+            }
+        } break;// should reload dev list
+        case IDC_LIGHTS_S:
+            switch (HIWORD(wParam))
+            {
+            case CBN_SELCHANGE: {
+                if (nEdited) {
+                    UpdateLightList(light_list, did);
+                    SendMessage(light_list, CB_SETCURSEL, lbItem, 0);
+                    nEdited = false;
+                }
+                SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
+                // highlight to check....
+                fxhl->TestLight(lid);
+            } break;
+            case CBN_EDITCHANGE:
+                char buffer[256];
+                nEdited = true;
+                if (lid != (-1)) eLid = lid;
+                ComboBox_GetText(light_list, buffer, 256);
+                for (i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
+                    if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == did &&
+                        AlienFX_SDK::Functions::GetMappings()->at(i).lightid == eLid) {
+                        AlienFX_SDK::Functions::GetMappings()->at(i).name = buffer;
+                        break;
+                    }
+                }
+                /*if (i == AlienFX_SDK::Functions::GetMappings()->size() && eLid != -1) {
+                    // not found, need to add...
+                    AlienFX_SDK::mapping dev;
+                    dev.devid = did;
+                    dev.lightid = lid;
+                    dev.name = buffer;
+                    AlienFX_SDK::Functions::GetMappings()->push_back(dev);
+                }*/
+                break;
+            case CBN_KILLFOCUS:
+                fxhl->Refresh();
+                if (nEdited) {
+                    UpdateLightList(light_list, did);
+                    SendMessage(light_list, CB_SETCURSEL, lbItem, 0);
+                    nEdited = false;
+                }
+                eLid = (-1);
+                break;
+            }
+            break;
+        case IDC_BUTTON_ADDL: {
+            char buffer[255];
+            int cid = GetDlgItemInt(hDlg, IDC_LIGHTID, NULL, false);
+            // let's check if we have the same ID, need to use max+1 in this case
+            unsigned maxID = 0; bool haveID = false;
+            size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+            for (int i = 0; i < lights; i++) {
+                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+                if (lgh.devid == did) {
+                    if (lgh.lightid > maxID)
+                        maxID = lgh.lightid;
+                    if (lgh.lightid == cid) haveID = true;
+                }
+            }
+            if (haveID) cid = maxID + 1;
+            AlienFX_SDK::mapping dev;
+            dev.devid = did;
+            dev.lightid = cid;
+            sprintf_s(buffer, 255, "Light #%d", cid);
+            dev.name = buffer;
+            AlienFX_SDK::Functions::GetMappings()->push_back(dev);
+            UpdateLightList(light_list, did);
+        } break;
+        case IDC_BUTTON_REML:
+            //std::vector <AlienFX_SDK::mapping>::iterator Iter = AlienFX_SDK::Functions::GetMappings()->begin();
+            for (std::vector <AlienFX_SDK::mapping>::iterator Iter = AlienFX_SDK::Functions::GetMappings()->begin();
+                Iter != AlienFX_SDK::Functions::GetMappings()->end(); Iter++) {
+                if (Iter->devid == did && Iter->lightid == lid) {
+                    AlienFX_SDK::Functions::GetMappings()->erase(Iter);
+                    break;
+                }
+            }
+            UpdateLightList(light_list, did);
+            break;
+        default: return false;
+        }
+    } break;
     default: return false;
     }
     return true;

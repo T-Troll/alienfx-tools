@@ -15,5 +15,7 @@ public:
 
 	EventHandler(ConfigHandler* config, FXHelper* fx);
 	~EventHandler();
+
+	bool stop = false;
 };
 

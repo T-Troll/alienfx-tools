@@ -17,21 +17,25 @@ union Colorcode
 	unsigned int ci;
 };
 
-struct event {
-	unsigned type = 0;
-	unsigned source = 0;
-	Colorcode color;
-};
-
 struct mapping {
-	unsigned devid = 0;
-	unsigned lightid = 0;
 	unsigned mode = 0;
 	unsigned mode2 = 0;
 	unsigned speed1 = 0, speed2 = 0;
 	unsigned length1 = 0, length2 = 0;
 	Colorcode c1, c2;
-	std::vector<event> events; // events will be here
+	void* lightset;
+};
+
+struct event {
+	unsigned flags = 0;
+	unsigned source = 0;
+	mapping  map;
+};
+
+struct lightset {
+	unsigned devid = 0;
+	unsigned lightid = 0;
+	event	 eve[4];
 };
 
 class ConfigHandler
@@ -43,7 +47,7 @@ public:
 	DWORD startMinimized = 0;
 	DWORD autoRefresh = 0;
 	//DWORD shift = 40;
-	std::vector<mapping> mappings;
+	std::vector<lightset> mappings;
 
 	ConfigHandler();
 	~ConfigHandler();

@@ -12,7 +12,7 @@ ConfigHandler::ConfigHandler() {
         NULL,
         &hKey1,
         &dwDisposition);
-    RegCreateKeyEx(HKEY_CURRENT_USER,
+    /*RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxgui\\Colors"),
         0,
         NULL,
@@ -20,7 +20,7 @@ ConfigHandler::ConfigHandler() {
         KEY_ALL_ACCESS,//KEY_WRITE,
         NULL,
         &hKey2,
-        &dwDisposition);
+        &dwDisposition);*/
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxgui\\Events"),
         0,
@@ -33,7 +33,7 @@ ConfigHandler::ConfigHandler() {
 }
 ConfigHandler::~ConfigHandler() {
     RegCloseKey(hKey1);
-    RegCloseKey(hKey2);
+    //RegCloseKey(hKey2);
     RegCloseKey(hKey3);
 }
 int ConfigHandler::Load() {
@@ -61,13 +61,13 @@ int ConfigHandler::Load() {
         &autoRefresh,
         (LPDWORD)&size);
 
-    unsigned vindex = 0, inarray[8];
+    unsigned vindex = 0, inarray[40];
     char name[256];
     unsigned ret = 0;
     do {
-        DWORD len = 255, lend = 8 * 4; mapping map;
+        DWORD len = 255, lend = 40*4; lightset map;
         ret = RegEnumValueA(
-            hKey2,
+            hKey3,
             vindex,
             name,
             &len,
@@ -80,14 +80,19 @@ int ConfigHandler::Load() {
         if (ret == ERROR_SUCCESS) {
             unsigned ret2 = sscanf_s((char *) name, "%d-%d", &map.devid, &map.lightid);
             if (ret2 == 2) {
-                map.mode = inarray[0];
-                map.mode2 = inarray[1];
-                map.c1.ci = inarray[2];
-                map.c2.ci = inarray[3];
-                map.speed1 = inarray[4];
-                map.speed2 = inarray[5];
-                map.length1 = inarray[6];
-                map.length2 = inarray[7];
+                for (int i = 0; i < 4; i++) {
+                    map.eve[i].flags = inarray[i*10];
+                    map.eve[i].source = inarray[i * 10 + 1];
+                    map.eve[i].map.mode = inarray[i * 10 + 2];
+                    map.eve[i].map.mode2 = inarray[i * 10 + 3];
+                    map.eve[i].map.c1.ci = inarray[i * 10 + 4];
+                    map.eve[i].map.c2.ci = inarray[i * 10 + 5];
+                    map.eve[i].map.speed1 = inarray[i * 10 + 6];
+                    map.eve[i].map.speed2 = inarray[i * 10 + 7];
+                    map.eve[i].map.length1 = inarray[i * 10 + 8];
+                    map.eve[i].map.length2 = inarray[i * 10 + 9];
+                }
+                mappings.push_back(map);
                 /*if (lend > 0) {
                     for (unsigned i = 0; i < (lend / 4); i++)
                         map.map.push_back(inarray[i]);
@@ -101,7 +106,7 @@ int ConfigHandler::Load() {
 }
 int ConfigHandler::Save() {
     char name[256];
-    unsigned out[12];
+    unsigned out[40];
     DWORD dwDisposition;
 
     RegSetValueEx(
@@ -149,20 +154,24 @@ int ConfigHandler::Save() {
         &dwDisposition);
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
-        sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+        lightset cur = mappings[i];
+        sprintf_s((char*)name, 255, "%d-%d", cur.devid, cur.lightid);
         //preparing binary....
-        UINT size = 8 * 4;// (UINT)mappings[i].map.size();
-        out[0] = mappings[i].mode;
-        out[1] = mappings[i].mode2;
-        out[2] = mappings[i].c1.ci;
-        out[3] = mappings[i].c2.ci;
-        out[4] = mappings[i].speed1;
-        out[5] = mappings[i].speed2;
-        out[6] = mappings[i].length1;
-        out[7] = mappings[i].length2;
- 
+        UINT size = 40*4;// (UINT)mappings[i].map.size();
+        for (int j = 0; j < 4; j++) {
+            out[j * 10] = cur.eve[j].flags;
+            out[j * 10 + 1] = cur.eve[j].source;
+            out[j * 10 + 2] = cur.eve[j].map.mode;
+            out[j * 10 + 3] = cur.eve[j].map.mode2;
+            out[j * 10 + 4] = cur.eve[j].map.c1.ci;
+            out[j * 10 + 5] = cur.eve[j].map.c2.ci;
+            out[j * 10 + 6] = cur.eve[j].map.speed1;
+            out[j * 10 + 7] = cur.eve[j].map.speed2;
+            out[j * 10 + 8] = cur.eve[j].map.length1;
+            out[j * 10 + 9] = cur.eve[j].map.length2;
+        }
         RegSetValueExA(
-            hKey2,
+            hKey3,
             name,
             0,
             REG_BINARY,

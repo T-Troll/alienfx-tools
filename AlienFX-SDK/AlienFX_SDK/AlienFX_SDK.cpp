@@ -491,6 +491,10 @@ namespace AlienFX_SDK
 			Loop();
 			return res;
 		}
+		else {
+			// can't set action for old, just use color
+			SetColor(index, Red, Green, Blue);
+		}
 		return false;
 	}
 
@@ -615,8 +619,8 @@ namespace AlienFX_SDK
 	bool Functions::AlienFXChangeDevice(int npid)
 	{
 		int res;
-		if (pid != (-1))
-			AlienFXClose();
+		if (pid != (-1) && devHandle != NULL)
+				CloseHandle(devHandle);
 		res = AlienFXInitialize(vid, npid);
 		if (res != (-1)) {
 			pid = res;
