@@ -82,7 +82,9 @@ This application get shot of screen (privary or secondary), then divide it to se
 <br>"Brightness correction" slider removes some white component from color, made them not so close to white at high brighness and more vivid or darker. Leftmost position disable the correction, rightmost cut 50% white.
 
 ## alienfx-gui Usage
-Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set immedately.
+Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set immedately.<br>
+You can also assign event for light to react on (power, performance indicator, or just activity light), as well as a color for reaction. In this case, first color from "Color" tab will be used for "calm" situation, and the color from "Events" tab will be uset for "active" situation.<br>
+If the app minimized, it hide itsef at the tray, check thay menu (right-click on tray button) for some cool features as well.<br>
 WARNING: Pulse and Morph modes doens't works for old devices.
 
 ## Tools Used
