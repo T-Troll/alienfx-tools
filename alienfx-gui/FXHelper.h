@@ -30,5 +30,6 @@ public:
 	int SetMode(int mode);
 	std::vector<int> GetDevList();
 	void TestLight(int id);
+	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD);
 };
 

@@ -61,6 +61,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf->Load();
 
     eve->ChangePowerState();
+    eve->StartEvents();
 
     // Perform application initialization:
     if (!(mDlg=InitInstance (hInstance, nCmdShow)))
@@ -88,6 +89,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }*/
 
+    eve->StopEvents();
     conf->Save();
 
     delete eve;
@@ -517,7 +519,7 @@ bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
     // Initialize CHOOSECOLOR 
     ZeroMemory(&cc, sizeof(cc));
     cc.lStructSize = sizeof(cc);
-    cc.hwndOwner = mDlg;
+    cc.hwndOwner = hDlg;
     cc.lpCustColors = (LPDWORD)acrCustClr;
     cc.rgbResult = RGB(*r, *g, *b);
     cc.Flags = CC_FULLOPEN | CC_RGBINIT;
@@ -712,15 +714,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    //lightset* map = NULL;
-    //mapping* mmap = NULL;
-    //unsigned i;
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
     mode_light = GetDlgItem(hDlg, IDC_CHECK_NOEVENT),
     mode_power = GetDlgItem(hDlg, IDC_CHECK_POWER),
     mode_perf = GetDlgItem(hDlg, IDC_CHECK_PERF),
-    mode_status = GetDlgItem(hDlg, IDC_CHECK_STATUS);
+    mode_status = GetDlgItem(hDlg, IDC_CHECK_STATUS),
+    list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
+    list_status = GetDlgItem(hDlg, IDC_STATUSLIST);
+
     switch (message)
     {
     case WM_INITDIALOG:
@@ -733,14 +735,34 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
             }
         }
+
+        // Set counter list...
+        std::string name = "CPU load";
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        name = "RAM load";
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        name = "Disk(s) load";
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        name = "GPU load";
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        name = "Network load";
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        // Set indicator list
+        name = "HDD activity";
+        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        name = "Network activity";
+        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)hDlg);
         }
     } break;
     case WM_COMMAND: {
-        int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
-        int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+        int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0),
+            lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0),
+            countid = (int)SendMessage(list_counter, CB_GETCURSEL, 0, 0),
+            statusid = (int)SendMessage(list_status, CB_GETCURSEL, 0, 0);
         mapping* mmap = FindMapping(pid, lid, 1);
         lightset* map = NULL;
         if (mmap != NULL)
@@ -773,6 +795,10 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map.c2.cs.red, 
                             map->eve[i].map.c2.cs.green, map->eve[i].map.c2.cs.blue);
                 }
+                SendMessage(list_counter, CB_SETCURSEL, map->eve[2].source, 0);
+                SendMessage(list_status, CB_SETCURSEL, map->eve[3].source, 0);
+                RedrawWindow(list_counter, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+                RedrawWindow(list_status, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
                 break;
             } break;
         case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
@@ -791,6 +817,26 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             }
         } break;
+        case IDC_COUNTERLIST:
+            switch (HIWORD(wParam))
+            {
+            case CBN_SELCHANGE:
+                if (mmap != NULL) {
+                    map->eve[2].source = countid;
+                }
+                break;
+            }
+            break;
+        case IDC_STATUSLIST:
+            switch (HIWORD(wParam))
+            {
+            case CBN_SELCHANGE:
+                if (mmap != NULL) {
+                    map->eve[3].source = statusid;
+                }
+                break;
+            }
+            break;
         }
         if (map != NULL)
            fxhl->UpdateLight(map);

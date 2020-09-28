@@ -365,6 +365,28 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 	DeleteObject(Brush);
 }
 
+bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
+	CHOOSECOLOR cc;                 // common dialog box structure 
+	static COLORREF acrCustClr[16]; // array of custom colors 
+	bool ret;
+	// Initialize CHOOSECOLOR 
+	ZeroMemory(&cc, sizeof(cc));
+	cc.lStructSize = sizeof(cc);
+	cc.hwndOwner = hDlg;
+	cc.lpCustColors = (LPDWORD)acrCustClr;
+	cc.rgbResult = RGB(*r, *g, *b);
+	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+	if (ret = ChooseColor(&cc))
+	{
+		*r = cc.rgbResult & 0xff;
+		*g = cc.rgbResult >> 8 & 0xff;
+		*b = cc.rgbResult >> 16 & 0xff;
+		RedrawButton(hDlg, id, *r, *g, *b);
+	}
+	return ret;
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	unsigned i;
@@ -636,32 +658,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case BN_CLICKED: {
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
-					CHOOSECOLOR cc;                 // common dialog box structure 
-					static COLORREF acrCustClr[16]; // array of custom colors 
-					//HWND hwnd;                      // owner window
-					//HBRUSH hbrush;                  // brush handle
-
-					// Initialize CHOOSECOLOR 
-					ZeroMemory(&cc, sizeof(cc));
-					cc.lStructSize = sizeof(cc);
-					cc.hwndOwner = hDlg;
-					cc.lpCustColors = (LPDWORD)acrCustClr;
-					cc.rgbResult = RGB(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
-					cc.Flags = CC_FULLOPEN | CC_RGBINIT;
-
-					if (ChooseColor(&cc) == TRUE)
-					{
-						//BYTE br = map->colorfrom.cs.brightness;
-						map->colorfrom.cs.red = cc.rgbResult &0xff;
-						map->colorfrom.cs.green = cc.rgbResult >> 8 & 0xff;
-						map->colorfrom.cs.blue = cc.rgbResult >> 16 & 0xff;
-						//map->colorfrom.cs.brightness = br;
-						unsigned clrmap = MAKEIPADDRESS(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue, map->colorfrom.cs.brightness);
-						SendMessage(from_color, IPM_SETADDRESS, 0, clrmap);
-						RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-						RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
-						//rgbCurrent = cc.rgbResult;
-					}
+					SetColor(hDlg, IDC_BUTTON_LPC, &map->colorfrom.cs.red,
+						&map->colorfrom.cs.green, &map->colorfrom.cs.blue);
+					unsigned clrmap = MAKEIPADDRESS(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue, map->colorfrom.cs.brightness);
+					SendMessage(from_color, IPM_SETADDRESS, 0, clrmap);
+					RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				}
 			} break;
 		} break;
@@ -671,32 +672,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case BN_CLICKED: {
 				if (i < config->mappings.size()) {
 					map = &config->mappings[i];
-					CHOOSECOLOR cc;                 // common dialog box structure 
-					static COLORREF acrCustClr[16]; // array of custom colors 
-					//HWND hwnd;                      // owner window
-					//HBRUSH hbrush;                  // brush handle
-
-					// Initialize CHOOSECOLOR 
-					ZeroMemory(&cc, sizeof(cc));
-					cc.lStructSize = sizeof(cc);
-					cc.hwndOwner = hDlg;
-					cc.lpCustColors = (LPDWORD)acrCustClr;
-					cc.rgbResult = RGB(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
-					cc.Flags = CC_FULLOPEN | CC_RGBINIT;
-
-					if (ChooseColor(&cc) == TRUE)
-					{
-						//BYTE br = map->colorfrom.cs.brightness;
-						map->colorto.cs.red = cc.rgbResult & 0xff;
-						map->colorto.cs.green = cc.rgbResult >> 8 & 0xff;
-						map->colorto.cs.blue = cc.rgbResult >> 16 & 0xff;
-						//map->colorfrom.cs.brightness = br;
-						unsigned clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
-						SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
-						RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-						RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
-						//rgbCurrent = cc.rgbResult;
-					}
+					SetColor(hDlg, IDC_BUTTON_HPC, &map->colorto.cs.red,
+						&map->colorto.cs.green, &map->colorto.cs.blue);
+					unsigned clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
+					SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
+					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				}
 			} break;
 			} break;

@@ -14,7 +14,7 @@ struct ColorComp
 union Colorcode
 {
 	struct ColorComp cs;
-	unsigned int ci;
+	unsigned int ci = 0;
 };
 
 struct mapping {

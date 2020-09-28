@@ -1,5 +1,8 @@
-#include <Wbemidl.h>
-#pragma comment(lib, "wbemuuid.lib")
+
+#include <pdh.h>
+#include <pdhmsg.h>
+#pragma comment(lib, "pdh.lib")
+
 #include "EventHandler.h"
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
@@ -76,33 +79,114 @@ DWORD WINAPI CEventProc(LPVOID param)
 {
     EventHandler* src = (EventHandler*)param;
 
-    IWbemHiPerfEnum* pEnum = NULL;
     long lID;
-    IWbemConfigureRefresher* pConfig;
-    IWbemServices* pNameSpace;
-    HRESULT hr;
+    
+    LPCTSTR COUNTER_PATH_CPU = "\\Processor(_Total)\\% Processor Time",
+        COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
+        COUNTER_PATH_RAM = "\\Memory\\Avaliable MBytes",
+        COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Disk Time";
+    ULONG SAMPLE_INTERVAL_MS = 1000;
 
-    /*if (FAILED(hr = pConfig->AddEnum(
-        pNameSpace,
-        L"Win32_PerfFormattedData_PerfDisk_PhysicalDisk",
-        0,
-        NULL,
-        &pEnum,
-        &lID)))
+    HQUERY hQuery = NULL;
+    HLOG hLog = NULL;
+    PDH_STATUS pdhStatus;
+    DWORD dwLogType = PDH_LOG_TYPE_CSV;
+    HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter;
+
+    MEMORYSTATUSEX memStat;
+
+    memStat.dwLength = sizeof(MEMORYSTATUSEX);
+
+    // Open a query object.
+    pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
+
+    if (pdhStatus != ERROR_SUCCESS)
     {
-        pConfig->Release();
-        return 1;
-    }*/
+        wprintf(L"PdhOpenQuery failed with 0x%x\n", pdhStatus);
+        goto cleanup;
+    }
+
+    // Add one counter that will provide the data.
+    pdhStatus = PdhAddCounter(hQuery,
+        COUNTER_PATH_CPU,
+        0,
+        &hCPUCounter);
+
+    if (pdhStatus != ERROR_SUCCESS)
+    {
+        wprintf(L"PdhAddCounter failed with 0x%x\n", pdhStatus);
+        goto cleanup;
+    }
+
+    pdhStatus = PdhAddCounter(hQuery,
+        COUNTER_PATH_HDD,
+        0,
+        &hHDDCounter);
+
+    if (pdhStatus != ERROR_SUCCESS)
+    {
+        wprintf(L"PdhAddCounter failed with 0x%x\n", pdhStatus);
+        goto cleanup;
+    }
+
+    pdhStatus = PdhAddCounter(hQuery,
+        COUNTER_PATH_NET,
+        0,
+        &hNETCounter);
+
+    if (pdhStatus != ERROR_SUCCESS)
+    {
+        wprintf(L"PdhAddCounter failed with 0x%x\n", pdhStatus);
+        goto cleanup;
+    }
 
     while (!src->stop) {
         // get indicators...
-        /*if (FAILED(hr = pConfig->Refresh(0L)))
-        {
-            // can't refresh
-        }*/
+        PdhCollectQueryData(hQuery);
+        PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal, cNETVal;
+        DWORD cType = 0;
+        pdhStatus = PdhGetFormattedCounterValue(
+            hCPUCounter,
+            PDH_FMT_LONG,
+            &cType,
+            &cCPUVal
+        );
+        pdhStatus = PdhGetFormattedCounterValue(
+            hHDDCounter,
+            PDH_FMT_LONG,
+            &cType,
+            &cHDDVal
+        );
+
+        pdhStatus = PdhGetFormattedCounterValue(
+            hNETCounter,
+            PDH_FMT_LONG,
+            &cType,
+            &cNETVal
+        );
+
+        if (pdhStatus == PDH_INVALID_DATA) {
+            cNETVal.longValue = 0;
+        }
+
+        GlobalMemoryStatusEx(&memStat);
+
+        char buff[2048];
+        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, cNETVal.longValue);
+        OutputDebugString(buff);
+
+        src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, 0, 0, cHDDVal.longValue);
         // check events...
-        Sleep(100);
+        Sleep(200);
+
+        // DEBUG!
+        //src->stop = true;
     }
-    //pConfig->Release();
+
+cleanup:
+
+    if (hQuery)
+        PdhCloseQuery(hQuery);
+
     return 0;
 }
