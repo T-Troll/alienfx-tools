@@ -89,30 +89,35 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 
 void FXHelper::UpdateLight(lightset* map, bool update) {
 	if (map != NULL && map->devid == pid) {
-		if (map->eve[2].flags || map->eve[3].flags) return;
-		mapping* mmap = &map->eve[0].map;
-		Colorcode c1 = mmap->c1, c2 = mmap->c2;
-		if (!map->eve[0].flags)
-			c1.ci = c2.ci = 0;
-		int mode1 = mmap->mode, mode2 = mmap->mode2;
-		if (map->eve[1].flags) {
-			// use power event;
-			c2 = map->eve[1].map.c2;
-			switch (activeMode) {
-			case MODE_AC: mode1 = mode2 = 0; c1 = mmap->c1; break;
-			case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
-			case MODE_LOW: mode1 = mode2 = 1; c1 = c2; break;
-			case MODE_CHARGE: mode1 = mode2 = 2; c1 = mmap->c1; break;
+		if (config->lightsOn) {
+			if (map->eve[2].flags || map->eve[3].flags) return;
+			mapping* mmap = &map->eve[0].map;
+			Colorcode c1 = mmap->c1, c2 = mmap->c2;
+			if (!map->eve[0].flags)
+				c1.ci = c2.ci = 0;
+			int mode1 = mmap->mode, mode2 = mmap->mode2;
+			if (map->eve[1].flags) {
+				// use power event;
+				c2 = map->eve[1].map.c2;
+				switch (activeMode) {
+				case MODE_AC: mode1 = mode2 = 0; c1 = mmap->c1; break;
+				case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
+				case MODE_LOW: mode1 = mode2 = 1; c1 = c2; break;
+				case MODE_CHARGE: mode1 = mode2 = 2; c1 = mmap->c1; break;
+				}
+			}
+			if (mode1 == 0) {
+				AlienFX_SDK::Functions::SetColor(map->lightid, c1.cs.red, c1.cs.green, c1.cs.blue);
+			}
+			else {
+				AlienFX_SDK::Functions::SetAction(map->lightid,
+					mode1, mmap->length1, mmap->speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
+					mode2, mmap->length2, mmap->speed2, c2.cs.red, c2.cs.green, c2.cs.blue
+				);
 			}
 		}
-		if (mode1 == 0) {
-			AlienFX_SDK::Functions::SetColor(map->lightid, c1.cs.red, c1.cs.green, c1.cs.blue);
-		}
 		else {
-			AlienFX_SDK::Functions::SetAction(map->lightid,
-				mode1, mmap->length1, mmap->speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
-				mode2, mmap->length2, mmap->speed2, c2.cs.red, c2.cs.green, c2.cs.blue
-			);
+			AlienFX_SDK::Functions::SetColor(map->lightid, 0, 0, 0);
 		}
 		if (update)
 			AlienFX_SDK::Functions::UpdateColors();

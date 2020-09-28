@@ -61,7 +61,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf->Load();
 
     eve->ChangePowerState();
-    eve->StartEvents();
+    if (conf->lightsOn) {
+        eve->StartEvents();
+    }
 
     // Perform application initialization:
     if (!(mDlg=InitInstance (hInstance, nCmdShow)))
@@ -89,7 +91,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }*/
 
-    eve->StopEvents();
+    if (conf->lightsOn) {
+        eve->StopEvents();
+    }
     conf->Save();
 
     delete eve;
@@ -370,6 +374,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDC_BUTTON_REFRESH: case ID_TRAYMENU_REFRESH:
             fxhl->Refresh();
+            break;
+        case ID_TRAYMENU_LIGHTSON:
+            if (conf->lightsOn) {
+                // disable lights!
+                conf->lightsOn = 0;
+                eve->StopEvents();
+                fxhl->Refresh();
+            }
+            else {
+                // enable lights
+                conf->lightsOn = 1;
+                eve->StartEvents();
+                fxhl->Refresh();
+            }
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
