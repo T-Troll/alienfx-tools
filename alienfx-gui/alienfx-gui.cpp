@@ -651,7 +651,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             {
             case BN_CLICKED: {
                 if (mmap != NULL) {
-                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->c1.cs.red, &mmap->c1.cs.green, &mmap->c1.cs.blue);
+                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->c2.cs.red, &mmap->c2.cs.green, &mmap->c2.cs.blue);
                 }
             } break;
             } break;
