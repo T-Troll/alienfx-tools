@@ -4,8 +4,7 @@ A bunch of tools for Alienware LighFX controls:
 - alienfx-cli - Make changes and check status of your AlienFX lights from the command line.
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
-- <s>(In development) AlienFX Monitor - Visual feedback for CPU/RAM/HDD/SSD/Network loading</s>. Will be part of Alienfx-gui.
-- AlienFX GUI ALPHA - Lightweighted Control Center for persons who don't want to keep AWCC.
+- AlienFX GUI BETA - Lightweighted Control Center for persons who looking AWCC alternative. It only control lights, but can do a way more tricks then AWCC about it.
 <br>More will follow!
 
 ## Requirements
@@ -19,16 +18,14 @@ Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work wit
 - On some devices, some functions from high-level SDK can works incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
 - `alienfx-cli set-tempo` command doesn't work with high-level SDK (bug in SDK, low-level only).<br>
 - `alienfx-cli` commands `set-zone` and `set-zone-action` not supported with low-level SDK (no zones defined).<br>
-- <s>`alienfx-cli` command `set-action` donsn't work with low-level SDK (work in progress).</s> Fixed in 0.6.6
-- Only frist device found can be controlled trough low-level SDK - no multi-device support yet.
+- Only one device per time can be controlled trough low-level SDK, but you can choose which one.
 - Brightness is not supported for low-level API, just ignored now.
-- <s>`Alienfx-ambient` stop working and should be restarted after screen off (sleep or timeout).</s> Fixed in 0.6.4.
+- Hardware light effects doesn't supported for older devices and can't work with direct effects at the same time (hardware limitation).
 - <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 
 ## Installation
 Unzip the installation archive to any directory of your choise, run.<br>
-In case you plan to use high-level SDK, but apps can't locate LightFX dll's, you can find it into /DLL folder and copy to apps folder one you need (for x32 or x64).</br>
-After install, run `alienfx-probe` once to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not works wihout it).</br> 
+After install, run `alienfx-probe` or `alienfx-gui` to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not work correctly wihout this operation).</br> 
 
 ## alienfx-probe Usage
 `alienfx-probe.exe` is a probe for light IDs of the low-level DSK, and it assign names for them (similar to alienfx-led-tester, but wider device support) as well.<br> 
@@ -77,15 +74,16 @@ This application get shot of screen (privary or secondary), then divide it to se
 <br>For each zone, dominant color calculated (you can see it at the button in app interface).
 <br>For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.
 <br>You can also select which screen to grab - primary or secondary, if you have more, then one. 
-<br><s>WARNING! Changing screen requires application restart to apply!</s> Fixed in 0.6.4.
 <br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value increase update performance, but decrease dominant color extraction presision. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if it works ok for you.
 <br>"Brightness correction" slider removes some white component from color, made them not so close to white at high brighness and more vivid or darker. Leftmost position disable the correction, rightmost cut 50% white.
 
 ## alienfx-gui Usage
-Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set immedately.<br>
-You can also assign event for light to react on (power, performance indicator, or just activity light), as well as a color for reaction. In this case, first color from "Color" tab will be used for "calm" situation, and the color from "Events" tab will be uset for "active" situation.<br>
+Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set up immedately.<br>
+First, use "Setup" tab to configure out devices, lights and system settings (once), if you don't run `alienfx-probe` yet.
+Use "Color" tab for simple lights setup (this colors and modes will stay as default until AWCC run or modified by other app), even after reboot.</br>
+You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a color for reaction at "Events" tab. In this case, first color from "Color" tab will be used for "calm" situation, and the color from "Events" tab will be uset for "active" situation.<br>
 If the app minimized, it hide itsef at the tray, check thay menu (right-click on tray button) for some cool features as well.<br>
-WARNING: Pulse and Morph modes doens't works for old devices.
+WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activily lights.
 
 ## Tools Used
 * Visual Studio Community 2019
@@ -101,4 +99,5 @@ AlienFX interaction code is from HunterZ's [UniLight](https://github.com/HunterZ
 Spectrum Analyzer code is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.<br>
 DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.<br>
-Dominant light extraction usues [OpenCV](https://github.com/opencv/opencv) library.
+Dominant light extraction usues [OpenCV](https://github.com/opencv/opencv) library.<br>
+Special thanks to [PhSHu](https://github.com/PhSMu) for ideas, testing and arwork.
