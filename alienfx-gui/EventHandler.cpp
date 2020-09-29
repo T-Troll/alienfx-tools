@@ -169,9 +169,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 
         GlobalMemoryStatusEx(&memStat);
 
-        char buff[2048];
-        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, cNETVal.longValue);
-        OutputDebugString(buff);
+        //char buff[2048];
+        //sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, cNETVal.longValue);
+        //OutputDebugString(buff);
 
         src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, 0, 0, cHDDVal.longValue);
         // check events...

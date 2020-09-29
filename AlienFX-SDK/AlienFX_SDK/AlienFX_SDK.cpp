@@ -696,6 +696,16 @@ namespace AlienFX_SDK
 		size_t numdevs = devices.size();
 		size_t numlights = mappings.size();
 		RegCreateKeyEx(HKEY_CURRENT_USER,
+			TEXT("SOFTWARE"),
+			0,
+			NULL,
+			REG_OPTION_NON_VOLATILE,
+			KEY_ALL_ACCESS,//KEY_WRITE,
+			NULL,
+			&hKey1,
+			&dwDisposition);
+		RegDeleteTreeA(hKey1, "Alienfx_SDK");
+		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
 			0,
 			NULL,

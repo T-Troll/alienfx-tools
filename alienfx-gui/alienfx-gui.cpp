@@ -75,6 +75,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
+    //register global hotkeys...
+    RegisterHotKey(
+        mDlg,
+        1,
+        MOD_CONTROL | MOD_SHIFT,
+        VK_F12
+    );
+
+    // minimize if needed
     if (conf->startMinimized)
         SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
@@ -82,10 +91,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg;
     // Main message loop:
     while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-        //if (!IsDialogMessage(hDlg, &msg)) {
+        if (!TranslateAccelerator(
+            mDlg,      // handle to receiving window 
+            hAccelTable,        // handle to active accelerator table 
+            &msg))         // message data 
+        {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-        //}
+        }
     }
     
     /*while (GetMessage(&msg, nullptr, 0, 0))
@@ -416,6 +429,28 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             AlienFX_SDK::Functions::SaveMappings();
             conf->Save();
             break;
+        case ID_ACC_COLOR:
+            TabCtrl_SetCurSel(tab_list, 0);
+            OnSelChanged(tab_list);
+            break;
+        case ID_ACC_EVENTS:
+            TabCtrl_SetCurSel(tab_list, 1);
+            OnSelChanged(tab_list);
+            break;
+        case ID_ACC_SETTINGS:
+            TabCtrl_SetCurSel(tab_list, 2);
+            OnSelChanged(tab_list);
+            break;
+        case ID_ACC_ONOFF:
+            conf->lightsOn = !conf->lightsOn;
+            fxhl->Refresh();
+            if (conf->lightsOn) eve->StartEvents();
+            else eve->StopEvents();
+            break;
+        case ID_ACC_DIM:
+            conf->dimmed = !conf->dimmed;
+            fxhl->Refresh();
+            break;
         }
     } break;
     case WM_NOTIFY: {
@@ -485,12 +520,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
                 //resumed from sleep
-            fxhl->Refresh();
             eve->ChangePowerState();
+            fxhl->Refresh();
             break;
         case PBT_APMPOWERSTATUSCHANGE:
             // bat/ac change
             eve->ChangePowerState();
+            fxhl->Refresh();
+        }
+        break;
+    case WM_HOTKEY:
+        switch (wParam) {
+        case 1: // on/off
+            conf->lightsOn = !conf->lightsOn;
+            fxhl->Refresh();
+            if (conf->lightsOn) eve->StartEvents();
+            else eve->StopEvents();
+            break;
         }
         break;
     case WM_CLOSE: //cap->Stop(); 
@@ -835,7 +881,8 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             } break;
         case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
             int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
-            map->eve[eid].flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            if (map != NULL)
+                map->eve[eid].flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
         } break;
         case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: {
             int eid = LOWORD(wParam) - IDC_BUTTON_CM1 + 1;
@@ -919,6 +966,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
         dev_list = GetDlgItem(hDlg, IDC_DEVICES),
+        dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING),
         light_id = GetDlgItem(hDlg, IDC_LIGHTID);
     switch (message)
     {
@@ -958,6 +1006,8 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (conf->startMinimized) CheckDlgButton(hDlg, IDC_STARTM, BST_CHECKED);
         if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
         if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
+        SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
     } break;
     case WM_COMMAND: {
         int lbItem = (int)SendMessage(light_list, CB_GETCURSEL, 0, 0);
@@ -1073,6 +1123,13 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 Iter != AlienFX_SDK::Functions::GetMappings()->end(); Iter++) {
                 if (Iter->devid == did && Iter->lightid == lid) {
                     AlienFX_SDK::Functions::GetMappings()->erase(Iter);
+                    // erase mappings!
+                    for (std::vector <lightset>::iterator mIter = conf->mappings.begin();
+                        mIter != conf->mappings.end(); mIter++)
+                        if (mIter->devid == did && mIter->lightid == lid) {
+                            conf->mappings.erase(mIter);
+                            break;
+                        }
                     break;
                 }
             }
@@ -1093,6 +1150,15 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         default: return false;
         }
     } break;
+    case WM_HSCROLL:
+        switch (LOWORD(wParam)) {
+        case TB_THUMBTRACK: case TB_ENDTRACK: {
+                if ((HWND)lParam == dim_slider) {
+                    conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }
+                fxhl->Refresh();
+            } break;
+        } break;
     default: return false;
     }
     return true;

@@ -99,7 +99,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 void FXHelper::SetLight(int id, int mode1, int length1, int speed1, BYTE r, BYTE g, BYTE b, int mode2, int length2, int speed2, BYTE r2, BYTE g2, BYTE b2)
 {
 	// modify colors for dimmed...
-	const BYTE delta = 92;
+	const BYTE delta = config->dimmingPower;
 
 	if (config->lightsOn) {
 		if (config->dimmed ||
@@ -193,7 +193,7 @@ int FXHelper::Refresh()
 				case MODE_CHARGE: mode1 = mode2 = 2; c1 = Iter->eve[0].map.c1; break;
 				}
 			}
-			if (Iter->eve[2].flags || Iter->eve[3].flags) continue;
+			if ((Iter->eve[2].flags || Iter->eve[3].flags) && config->lightsOn) continue;
 			/*if (Iter->eve[2].flags) {
 				// counter
 				double coeff = 0.0;

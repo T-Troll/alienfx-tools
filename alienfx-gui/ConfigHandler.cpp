@@ -83,6 +83,15 @@ int ConfigHandler::Load() {
         NULL,
         &dimmedBatt,
         (LPDWORD)&size);
+    ret = RegGetValue(hKey1,
+        NULL,
+        TEXT("DimmingPower"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &dimmingPower,
+        (LPDWORD)&size);
+    if (ret != ERROR_SUCCESS)
+        dimmingPower = 92;
 
     unsigned vindex = 0, inarray[40];
     char name[256];
@@ -180,6 +189,14 @@ int ConfigHandler::Save() {
         (BYTE*)&dimmedBatt,
         4
     );
+    RegSetValueEx(
+            hKey1,
+            TEXT("DimmingPower"),
+            0,
+            REG_DWORD,
+            (BYTE*)&dimmingPower,
+            4
+        );
     // clear old events
     RegDeleteTreeA(hKey1, "Events");
     RegCreateKeyEx(HKEY_CURRENT_USER,

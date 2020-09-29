@@ -49,6 +49,7 @@ public:
 	DWORD lightsOn = 1;
 	DWORD dimmed = 0;
 	DWORD dimmedBatt = 0;
+	DWORD dimmingPower = 92;
 	//DWORD shift = 40;
 	std::vector<lightset> mappings;
 
