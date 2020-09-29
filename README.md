@@ -89,7 +89,7 @@ WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph ef
 * Visual Studio Community 2019
 
 ## License
-MIT
+MIT. You can use this tools for any non-commerical or commercial tasks, modify it any way, in case you provide a link to this page from you product page and mention me as one of authors and full source code of you product avaliable for review.
 
 ## Credits
 Integration code, new devices support, haptic and ambient algorythms by T-Troll<br>
