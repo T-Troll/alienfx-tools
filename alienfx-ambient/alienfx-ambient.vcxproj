@@ -139,6 +139,9 @@
       <AdditionalDependencies>./opencv/lib/zlibd.lib;./opencv/lib/opencv_core440d.lib;./opencv/lib/opencv_imgproc440d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>false</Profile>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -162,6 +165,9 @@
       <AdditionalLibraryDirectories>./opencv/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>./opencv/lib/zlib.lib;./opencv/lib/opencv_core440.lib;./opencv/lib/opencv_imgproc440.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="alienfx-ambient.h" />

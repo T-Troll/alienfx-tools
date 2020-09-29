@@ -78,8 +78,6 @@ EventHandler::~EventHandler()
 DWORD WINAPI CEventProc(LPVOID param)
 {
     EventHandler* src = (EventHandler*)param;
-
-    long lID;
     
     LPCTSTR COUNTER_PATH_CPU = "\\Processor(_Total)\\% Processor Time",
         COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",

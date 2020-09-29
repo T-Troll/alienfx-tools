@@ -60,10 +60,33 @@ int ConfigHandler::Load() {
         NULL,
         &autoRefresh,
         (LPDWORD)&size);
+    unsigned ret = RegGetValue(hKey1,
+        NULL,
+        TEXT("LightsOn"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &lightsOn,
+        (LPDWORD)&size);
+    if (ret != ERROR_SUCCESS)
+        lightsOn = 1;
+    RegGetValue(hKey1,
+        NULL,
+        TEXT("Dimmed"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &dimmed,
+        (LPDWORD)&size);
+    RegGetValue(hKey1,
+        NULL,
+        TEXT("DimmedOnBattery"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &dimmedBatt,
+        (LPDWORD)&size);
 
     unsigned vindex = 0, inarray[40];
     char name[256];
-    unsigned ret = 0;
+    ret = 0;
     do {
         DWORD len = 255, lend = 40*4; lightset map;
         ret = RegEnumValueA(
@@ -133,14 +156,30 @@ int ConfigHandler::Save() {
         (BYTE*)&autoRefresh,
         4
     );
-    /*RegSetValueEx(
+    RegSetValueEx(
         hKey1,
-        TEXT("Divider"),
+        TEXT("LightsOn"),
         0,
         REG_DWORD,
-        (BYTE*)&divider,
+        (BYTE*)&lightsOn,
         4
-    );*/
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("Dimmed"),
+        0,
+        REG_DWORD,
+        (BYTE*)&dimmed,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("DimmedOnBattery"),
+        0,
+        REG_DWORD,
+        (BYTE*)&dimmedBatt,
+        4
+    );
     // clear old events
     RegDeleteTreeA(hKey1, "Events");
     RegCreateKeyEx(HKEY_CURRENT_USER,

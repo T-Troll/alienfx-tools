@@ -13,6 +13,10 @@
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
 #include "EventHandler.h"
 
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -71,6 +75,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
+    if (conf->startMinimized)
+        SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
     MSG msg;
@@ -93,6 +99,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     if (conf->lightsOn) {
         eve->StopEvents();
+        fxhl->Refresh();
     }
     conf->Save();
 
@@ -389,6 +396,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 fxhl->Refresh();
             }
             break;
+        case ID_TRAYMENU_DIMLIGHTS:
+            conf->dimmed = !conf->dimmed;
+            fxhl->Refresh();
+            break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
             SetWindowPos(hDlg,       // handle to window
@@ -462,6 +473,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             tMenu = GetSubMenu(tMenu, 0);
             GetCursorPos(&lpClickPoint);
             SetForegroundWindow(hDlg);
+            if (conf->lightsOn) CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, MF_CHECKED);
+            if (conf->dimmed) CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, MF_CHECKED);
             TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
                 lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
         } break;
@@ -682,7 +695,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         default: return false;
         }
         if (mmap != NULL)
-            fxhl->UpdateLight((lightset*)mmap->lightset);
+            fxhl->Refresh();
     } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
@@ -703,7 +716,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if ((HWND)lParam == l2_slider) {
                     mmap->length2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                fxhl->UpdateLight((lightset*)mmap->lightset);
+                fxhl->Refresh();
             }
         break;
     } break;
@@ -765,6 +778,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
         name = "Network load";
         SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        SendMessage(list_counter, CB_SETMINVISIBLE, 5, 0);
         // Set indicator list
         name = "HDD activity";
         SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
@@ -857,7 +871,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
         if (map != NULL)
-           fxhl->UpdateLight(map);
+           fxhl->Refresh();
     } break;
     case WM_DRAWITEM:
         switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
@@ -939,6 +953,11 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
         UpdateLightList(light_list, pid);
         eItem = -1;
+        // system settings...
+        if (conf->startWindows) CheckDlgButton(hDlg, IDC_STARTW, BST_CHECKED);
+        if (conf->startMinimized) CheckDlgButton(hDlg, IDC_STARTM, BST_CHECKED);
+        if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
+        if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
     } break;
     case WM_COMMAND: {
         int lbItem = (int)SendMessage(light_list, CB_GETCURSEL, 0, 0);
@@ -1058,6 +1077,18 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
             UpdateLightList(light_list, did);
+            break;
+        case IDC_STARTM:
+            conf->startMinimized = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            break;
+        case IDC_AUTOREFRESH:
+            conf->autoRefresh = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            break;
+        case IDC_STARTW:
+            conf->startWindows = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            break;
+        case IDC_BATTDIM:
+            conf->dimmedBatt = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             break;
         default: return false;
         }
