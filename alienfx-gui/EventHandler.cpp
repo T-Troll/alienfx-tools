@@ -82,6 +82,7 @@ DWORD WINAPI CEventProc(LPVOID param)
     LPCTSTR COUNTER_PATH_CPU = "\\Processor(_Total)\\% Processor Time",
         COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
         COUNTER_PATH_RAM = "\\Memory\\Avaliable MBytes",
+        COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
         COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Disk Time";
     ULONG SAMPLE_INTERVAL_MS = 1000;
 
@@ -92,15 +93,19 @@ DWORD WINAPI CEventProc(LPVOID param)
     HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter;
 
     MEMORYSTATUSEX memStat;
-
     memStat.dwLength = sizeof(MEMORYSTATUSEX);
+
+    PDH_FMT_COUNTERVALUE_ITEM netArray[20] = { 0 };
+    DWORD maxnet = 1;
+
+    PDH_FMT_COUNTERVALUE_ITEM gpuArray[500] = { 0 };
 
     // Open a query object.
     pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
 
     if (pdhStatus != ERROR_SUCCESS)
     {
-        wprintf(L"PdhOpenQuery failed with 0x%x\n", pdhStatus);
+        //wprintf(L"PdhOpenQuery failed with 0x%x\n", pdhStatus);
         goto cleanup;
     }
 
@@ -110,39 +115,27 @@ DWORD WINAPI CEventProc(LPVOID param)
         0,
         &hCPUCounter);
 
-    if (pdhStatus != ERROR_SUCCESS)
-    {
-        wprintf(L"PdhAddCounter failed with 0x%x\n", pdhStatus);
-        goto cleanup;
-    }
-
     pdhStatus = PdhAddCounter(hQuery,
         COUNTER_PATH_HDD,
         0,
         &hHDDCounter);
-
-    if (pdhStatus != ERROR_SUCCESS)
-    {
-        wprintf(L"PdhAddCounter failed with 0x%x\n", pdhStatus);
-        goto cleanup;
-    }
 
     pdhStatus = PdhAddCounter(hQuery,
         COUNTER_PATH_NET,
         0,
         &hNETCounter);
 
-    if (pdhStatus != ERROR_SUCCESS)
-    {
-        wprintf(L"PdhAddCounter failed with 0x%x\n", pdhStatus);
-        goto cleanup;
-    }
+    pdhStatus = PdhAddCounter(hQuery,
+        COUNTER_PATH_GPU,
+        0,
+        &hGPUCounter);
 
     while (!src->stop) {
         // get indicators...
         PdhCollectQueryData(hQuery);
-        PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal, cNETVal;
-        DWORD cType = 0;
+        PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal, cNETVal, cGPUVal;
+        DWORD cType = 0, netbSize = 20 * sizeof(PDH_FMT_COUNTERVALUE_ITEM), netCount = 0,
+            gpubSize = 500 * sizeof(PDH_FMT_COUNTERVALUE_ITEM), gpuCount = 0;
         pdhStatus = PdhGetFormattedCounterValue(
             hCPUCounter,
             PDH_FMT_LONG,
@@ -156,29 +149,55 @@ DWORD WINAPI CEventProc(LPVOID param)
             &cHDDVal
         );
 
-        pdhStatus = PdhGetFormattedCounterValue(
+        pdhStatus = PdhGetFormattedCounterArray(
             hNETCounter,
             PDH_FMT_LONG,
-            &cType,
-            &cNETVal
+            &netbSize,
+            &netCount,
+            netArray
         );
 
         if (pdhStatus == PDH_INVALID_DATA) {
-            cNETVal.longValue = 0;
+            netCount = 0;
+        }
+
+        pdhStatus = PdhGetFormattedCounterArray(
+            hGPUCounter,
+            PDH_FMT_LONG,
+            &gpubSize,
+            &gpuCount,
+            gpuArray
+        );
+
+        if (pdhStatus == PDH_INVALID_DATA) {
+            gpuCount = 0;
         }
 
         GlobalMemoryStatusEx(&memStat);
 
+        // Normilizing net values...
+        DWORD totalNet = 0;
+        for (int i = 0; i < netCount; i++) {
+            totalNet += netArray[i].FmtValue.longValue;
+        }
+
+        if (maxnet < totalNet) maxnet = totalNet;
+        //if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
+        totalNet = (totalNet * 100) / maxnet;
+
+        // Getting maximum GPU load value...
+        DWORD maxGPU = 0;
+        for (int i = 0; i < gpuCount; i++) {
+            if (maxGPU < gpuArray[i].FmtValue.longValue) maxGPU = gpuArray[i].FmtValue.longValue;
+        }
+
         //char buff[2048];
-        //sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, cNETVal.longValue);
+        //sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU);
         //OutputDebugString(buff);
 
-        src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, 0, 0, cHDDVal.longValue);
+        src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue);
         // check events...
         Sleep(200);
-
-        // DEBUG!
-        //src->stop = true;
     }
 
 cleanup:

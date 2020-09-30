@@ -52,14 +52,20 @@
 #define IDC_BUTTON_CM1                  1029
 #define IDC_BUTTON_CM2                  1030
 #define IDC_BUTTON_CM3                  1031
-#define IDC_CHECK1                      1031
 #define IDC_BATTDIM                     1031
+#define IDC_SLIDER_DIMMING              1032
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
 #define ID_TRAYMENU_EXIT                32775
 #define ID_TRAYMENU_REFRESH             32776
+#define ID_ACC_COLOR                    32777
+#define ID_ACC_EVENTS                   32778
+#define ID_ACC_SETTINGS                 32779
+#define ID_ACC_DIM                      32780
+#define ID_ACC_ONOFF                    32781
+#define ID_ACC_REFRESH                  32783
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -68,8 +74,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        139
-#define _APS_NEXT_COMMAND_VALUE         32777
-#define _APS_NEXT_CONTROL_VALUE         1032
+#define _APS_NEXT_COMMAND_VALUE         32785
+#define _APS_NEXT_CONTROL_VALUE         1033
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

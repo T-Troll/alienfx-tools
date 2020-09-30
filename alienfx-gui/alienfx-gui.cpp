@@ -83,6 +83,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         VK_F12
     );
 
+    RegisterHotKey(
+        mDlg,
+        2,
+        MOD_CONTROL | MOD_SHIFT,
+        VK_F11
+    );
+
     // minimize if needed
     if (conf->startMinimized)
         SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
@@ -298,8 +305,8 @@ VOID OnSelChanged(HWND hwndDlg)
 
     SetWindowPos(pHdr->hwndDisplay, NULL,
         pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-        (pHdr->rcDisplay.right - pHdr->rcDisplay.left) - cxMargin - (2 * GetSystemMetrics(SM_CXDLGFRAME)),
-        (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top) - cyMargin - (2 * GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION),
+        (pHdr->rcDisplay.right - pHdr->rcDisplay.left) - cxMargin - (GetSystemMetrics(SM_CXDLGFRAME)) + 1,
+        (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top) - /*cyMargin - */(GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION) + 3,
         SWP_SHOWWINDOW);
     ShowWindow(pHdr->hwndDisplay, SW_SHOW);
     return;
@@ -315,8 +322,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
         RECT rcTab;
         DWORD dwDlgBase = GetDialogBaseUnits();
-        int cxMargin = LOWORD(dwDlgBase) / 4;
-        int cyMargin = HIWORD(dwDlgBase) / 8;
+        int cxMargin = -(GetSystemMetrics(SM_CXDLGFRAME)); // LOWORD(dwDlgBase) / 4;
+        int cyMargin = -1; // GetSystemMetrics(SM_CYDLGFRAME); // HIWORD(dwDlgBase) / 8;
         DLGHDR* pHdr = (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
         SetWindowLongPtr(tab_list, GWLP_USERDATA, (LONG_PTR)pHdr);
         
@@ -395,21 +402,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case IDC_BUTTON_REFRESH: case ID_TRAYMENU_REFRESH:
             fxhl->Refresh();
             break;
-        case ID_TRAYMENU_LIGHTSON:
-            if (conf->lightsOn) {
-                // disable lights!
-                conf->lightsOn = 0;
-                eve->StopEvents();
-                fxhl->Refresh();
-            }
-            else {
-                // enable lights
-                conf->lightsOn = 1;
-                eve->StartEvents();
-                fxhl->Refresh();
-            }
+        case ID_TRAYMENU_LIGHTSON: case ID_ACC_ONOFF:
+            conf->lightsOn = !conf->lightsOn;
+            fxhl->Refresh();
+            if (conf->lightsOn) eve->StartEvents();
+            else eve->StopEvents();
             break;
-        case ID_TRAYMENU_DIMLIGHTS:
+        case ID_TRAYMENU_DIMLIGHTS: case ID_ACC_DIM:
             conf->dimmed = !conf->dimmed;
             fxhl->Refresh();
             break;
@@ -440,16 +439,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case ID_ACC_SETTINGS:
             TabCtrl_SetCurSel(tab_list, 2);
             OnSelChanged(tab_list);
-            break;
-        case ID_ACC_ONOFF:
-            conf->lightsOn = !conf->lightsOn;
-            fxhl->Refresh();
-            if (conf->lightsOn) eve->StartEvents();
-            else eve->StopEvents();
-            break;
-        case ID_ACC_DIM:
-            conf->dimmed = !conf->dimmed;
-            fxhl->Refresh();
             break;
         }
     } break;
@@ -536,6 +525,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             fxhl->Refresh();
             if (conf->lightsOn) eve->StartEvents();
             else eve->StopEvents();
+            break;
+        case 2: // dim
+            conf->dimmed = !conf->dimmed;
+            fxhl->Refresh();
             break;
         }
         break;

@@ -12,15 +12,16 @@ ConfigHandler::ConfigHandler() {
         NULL,
         &hKey1,
         &dwDisposition);
-    /*RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxgui\\Colors"),
+    RegCreateKeyEx(HKEY_CURRENT_USER,
+        TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"),
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
         KEY_ALL_ACCESS,//KEY_WRITE,
         NULL,
         &hKey2,
-        &dwDisposition);*/
+        &dwDisposition);
+    //RegCreateKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", &hKey2);
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxgui\\Events"),
         0,
@@ -33,7 +34,7 @@ ConfigHandler::ConfigHandler() {
 }
 ConfigHandler::~ConfigHandler() {
     RegCloseKey(hKey1);
-    //RegCloseKey(hKey2);
+    RegCloseKey(hKey2);
     RegCloseKey(hKey3);
 }
 int ConfigHandler::Load() {
@@ -140,6 +141,16 @@ int ConfigHandler::Save() {
     char name[256];
     unsigned out[40];
     DWORD dwDisposition;
+
+    if (startWindows) {
+        char pathBuffer[2048];
+        GetModuleFileName(NULL, pathBuffer, 2047);
+        RegSetValueEx(hKey2, TEXT("Alienfx GUI"), 0, REG_SZ, (BYTE*)pathBuffer, strlen(pathBuffer)+1);
+    }
+    else {
+        // remove key.
+        RegDeleteKeyA(hKey2, TEXT("Alienfx GUI"));
+    }
 
     RegSetValueEx(
         hKey1,
