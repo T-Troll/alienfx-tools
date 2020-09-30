@@ -187,13 +187,14 @@ DWORD WINAPI CEventProc(LPVOID param)
 
         // Getting maximum GPU load value...
         DWORD maxGPU = 0;
-        for (int i = 0; i < gpuCount; i++) {
-            if (maxGPU < gpuArray[i].FmtValue.longValue) maxGPU = gpuArray[i].FmtValue.longValue;
+        for (int i = 0; i < gpuCount && gpuArray[i].szName != NULL; i++) {
+            if (maxGPU < gpuArray[i].FmtValue.longValue) 
+                maxGPU = gpuArray[i].FmtValue.longValue;
         }
 
-        //char buff[2048];
-        //sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU);
-        //OutputDebugString(buff);
+        char buff[2048];
+        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU);
+        OutputDebugString(buff);
 
         src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue);
         // check events...
