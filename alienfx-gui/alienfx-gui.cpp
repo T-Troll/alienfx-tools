@@ -90,6 +90,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         VK_F11
     );
 
+    RegisterHotKey(
+        mDlg,
+        3,
+        0,
+        VK_F18
+    );
+
     // minimize if needed
     if (conf->startMinimized)
         SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
@@ -530,6 +537,25 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             conf->dimmed = !conf->dimmed;
             fxhl->Refresh();
             break;
+        case 3: // off-dim-full circle
+            if (conf->lightsOn) {
+                if (conf->dimmed) {
+                    conf->lightsOn = !conf->lightsOn;
+                    conf->dimmed = !conf->dimmed;
+                    fxhl->Refresh();
+                    eve->StopEvents();
+                }
+                else {
+                    conf->dimmed = !conf->dimmed;
+                    fxhl->Refresh();
+                }
+            }
+            else {
+                conf->lightsOn = !conf->lightsOn;
+                fxhl->Refresh();
+                eve->StartEvents();
+            }
+            break;
         }
         break;
     case WM_CLOSE: //cap->Stop(); 
@@ -817,11 +843,15 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
         name = "Network load";
         SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        SendMessage(list_counter, CB_SETMINVISIBLE, 5, 0);
+        name = "Max. Temperature";
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        //SendMessage(list_counter, CB_SETMINVISIBLE, 5, 0);
         // Set indicator list
         name = "HDD activity";
         SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
         name = "Network activity";
+        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        name = "System is hot";
         SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
 
         if (eItem != (-1)) {

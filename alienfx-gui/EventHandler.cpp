@@ -81,24 +81,28 @@ DWORD WINAPI CEventProc(LPVOID param)
     
     LPCTSTR COUNTER_PATH_CPU = "\\Processor(_Total)\\% Processor Time",
         COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
-        COUNTER_PATH_RAM = "\\Memory\\Avaliable MBytes",
+        //COUNTER_PATH_RAM = "\\Memory\\Avaliable MBytes",
         COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
+        COUNTER_PATH_HOT = "\\Thermal Zone Information(*)\\Temperature",
         COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Disk Time";
-    ULONG SAMPLE_INTERVAL_MS = 1000;
 
     HQUERY hQuery = NULL;
     HLOG hLog = NULL;
     PDH_STATUS pdhStatus;
     DWORD dwLogType = PDH_LOG_TYPE_CSV;
-    HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter;
+    HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter;
 
     MEMORYSTATUSEX memStat;
     memStat.dwLength = sizeof(MEMORYSTATUSEX);
 
     PDH_FMT_COUNTERVALUE_ITEM netArray[20] = { 0 };
-    DWORD maxnet = 1;
+    long maxnet = 1;
 
-    PDH_FMT_COUNTERVALUE_ITEM gpuArray[500] = { 0 };
+    //PDH_FMT_COUNTERVALUE_ITEM gpuArray[300] = { 0 };
+    long maxgpuarray = 300;
+    PDH_FMT_COUNTERVALUE_ITEM* gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
+
+    PDH_FMT_COUNTERVALUE_ITEM tempArray[20] = { 0 };
 
     // Open a query object.
     pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
@@ -129,13 +133,18 @@ DWORD WINAPI CEventProc(LPVOID param)
         COUNTER_PATH_GPU,
         0,
         &hGPUCounter);
+    pdhStatus = PdhAddCounter(hQuery,
+        COUNTER_PATH_HOT,
+        0,
+        &hTempCounter);
 
     while (!src->stop) {
         // get indicators...
         PdhCollectQueryData(hQuery);
-        PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal, cNETVal, cGPUVal;
+        PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
         DWORD cType = 0, netbSize = 20 * sizeof(PDH_FMT_COUNTERVALUE_ITEM), netCount = 0,
-            gpubSize = 500 * sizeof(PDH_FMT_COUNTERVALUE_ITEM), gpuCount = 0;
+            gpubSize = maxgpuarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), gpuCount = 0,
+            tempbSize = 20 * sizeof(PDH_FMT_COUNTERVALUE_ITEM), tempCount = 0;
         pdhStatus = PdhGetFormattedCounterValue(
             hCPUCounter,
             PDH_FMT_LONG,
@@ -157,9 +166,11 @@ DWORD WINAPI CEventProc(LPVOID param)
             netArray
         );
 
-        if (pdhStatus == PDH_INVALID_DATA) {
+        if (pdhStatus != ERROR_SUCCESS) {
             netCount = 0;
         }
+
+        //memset(gpuArray, 0, gpubSize-1);
 
         pdhStatus = PdhGetFormattedCounterArray(
             hGPUCounter,
@@ -169,15 +180,30 @@ DWORD WINAPI CEventProc(LPVOID param)
             gpuArray
         );
 
-        if (pdhStatus == PDH_INVALID_DATA) {
+        if (pdhStatus != ERROR_SUCCESS) {
+            maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+            delete gpuArray;
+            gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
             gpuCount = 0;
+        }
+
+        pdhStatus = PdhGetFormattedCounterArray(
+            hTempCounter,
+            PDH_FMT_LONG,
+            &tempbSize,
+            &tempCount,
+            tempArray
+        );
+
+        if (pdhStatus != ERROR_SUCCESS) {
+            tempCount = 0;
         }
 
         GlobalMemoryStatusEx(&memStat);
 
         // Normilizing net values...
-        DWORD totalNet = 0;
-        for (int i = 0; i < netCount; i++) {
+        long totalNet = 0;
+        for (unsigned i = 0; i < netCount; i++) {
             totalNet += netArray[i].FmtValue.longValue;
         }
 
@@ -186,17 +212,26 @@ DWORD WINAPI CEventProc(LPVOID param)
         totalNet = (totalNet * 100) / maxnet;
 
         // Getting maximum GPU load value...
-        DWORD maxGPU = 0;
-        for (int i = 0; i < gpuCount && gpuArray[i].szName != NULL; i++) {
+        long maxGPU = 0;
+        for (unsigned i = 0; i < gpuCount && gpuArray[i].szName != NULL; i++) {
             if (maxGPU < gpuArray[i].FmtValue.longValue) 
                 maxGPU = gpuArray[i].FmtValue.longValue;
         }
 
-        char buff[2048];
-        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU);
-        OutputDebugString(buff);
+        // Getting maximum temp...
+        long maxTemp = 0;
+        for (unsigned i = 0; i < tempCount; i++) {
+            if (maxTemp < tempArray[i].FmtValue.longValue)
+                maxTemp = tempArray[i].FmtValue.longValue;
+        }
 
-        src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue);
+#ifdef _DEBUG
+        char buff[2048];
+        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU, maxTemp);
+        OutputDebugString(buff);
+#endif
+
+        src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue, maxTemp);
         // check events...
         Sleep(200);
     }

@@ -17,6 +17,8 @@
 #define IDD_DIALOG_EVENTS               134
 #define IDD_DIALOG_SETTINGS             135
 #define IDR_MENU_TRAY                   136
+#define IDI_ICON1                       141
+#define IDI_UFO_GUI                     141
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001
 #define IDC_RADIO_COLOR                 1002
@@ -73,7 +75,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        139
+#define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         32785
 #define _APS_NEXT_CONTROL_VALUE         1033
 #define _APS_NEXT_SYMED_VALUE           110
