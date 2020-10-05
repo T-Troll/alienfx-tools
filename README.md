@@ -1,26 +1,26 @@
-# alienfx-tools
-A bunch of tools for Alienware LighFX controls:
-- alienfx-probe - Looking up for low-level device, shows it's ID and let you define light names.
-- alienfx-cli - Make changes and check status of your AlienFX lights from the command line.
+# Alienfx tools
+A bunch of tools for Alienware AlienFX/Dell LightFX controls:
+- alienfx-probe - Looking up for low-level devices, shows it's IDs, then check it and define device and light names.
+- alienfx-cli - Make changes and check status of your AlienFX/LightFX lights from the command line.
 - AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
-- AlienFX GUI BETA - Lightweighted Control Center for persons who looking AWCC alternative. It only control lights, but can do a way more tricks then AWCC about it.
+- AlienFX GUI BETA - Lightweighted light control tool for persons who looking AWCC alternative. It only control lights, but can do a way more tricks then AWCC about it.
 <br>More will follow!
 
 ## Requirements
-- Alienware device present into the system and have USBHID driver active.
+- Alienware light device present into the system and have USBHID driver active.
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
-- Windows 8+ (binary files for x64 only, but you can compile project for x86 as well).
+- Windows 10 (binary files for x64 only, but you can compile project for x86 as well).
 
-Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work with any Alienware device with API 1.0 or later)
+Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G5` (should work with any Alienware device with API 1.0 or later)
 
 ## Known issues
 - On some devices, some functions from high-level SDK can works incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
 - `alienfx-cli set-tempo` command doesn't work with high-level SDK (bug in SDK, low-level only).<br>
-- `alienfx-cli` commands `set-zone` and `set-zone-action` not supported with low-level SDK (no zones defined).<br>
+- `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
 - Only one device per time can be controlled trough low-level SDK, but you can choose which one.
 - Brightness is not supported for low-level API, just ignored now.
-- Hardware light effects doesn't supported for older devices and can't work with hardware light effects at the same time (hardware limitation).
+- Hardware light effects (pulse, morph) doesn't supported for older devices and can't work with hardware light effects at the same time (hardware limitation).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't monitor GPU load for it.
 - <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 
@@ -91,15 +91,14 @@ WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph ef
 * Visual Studio Community 2019
 
 ## License
-MIT. You can use this tools for any non-commerical or commercial tasks, modify it any way, in case you provide a link to this page from you product page and mention me as one of authors and full source code of you product avaliable for review.
+MIT. You can use this tools for any non-commerical or commercial use, modify it any way - supposing you provide a link to this page from you product page, mention me as one of authors and full source code of you product avaliable for review.
 
 ## Credits
-Integration code, new devices support, haptic and ambient algorythms by T-Troll<br>
+Functionality idea and code, new devices support, haptic and ambient algorythms by T-Troll<br>
 Low-level SDK based on Gurjot95's [AlienFX_SDK](https://github.com/Gurjot95/AlienFX-SDK)<br>
 API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).<br>
-AlienFX interaction code is from HunterZ's [UniLight](https://github.com/HunterZ/UniLight).<br>
-Spectrum Analyzer code is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
+Spectrum Analyzer UI is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.<br>
 DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.<br>
-Dominant light extraction usues [OpenCV](https://github.com/opencv/opencv) library.<br>
+Dominant light extraction math usues [OpenCV](https://github.com/opencv/opencv) library.<br>
 Special thanks to [PhSHu](https://github.com/PhSMu) for ideas, testing and arwork.
