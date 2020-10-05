@@ -47,9 +47,11 @@ public:
 	DWORD startMinimized = 0;
 	DWORD autoRefresh = 0;
 	DWORD lightsOn = 1;
+	DWORD offWithScreen = 0;
 	DWORD dimmed = 0;
 	DWORD dimmedBatt = 0;
 	DWORD dimmingPower = 92;
+	unsigned stateDimmed = 0, stateOn = 1;
 	//DWORD shift = 40;
 	std::vector<lightset> mappings;
 

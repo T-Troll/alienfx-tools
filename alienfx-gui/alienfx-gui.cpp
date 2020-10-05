@@ -97,6 +97,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         VK_F18
     );
 
+    // Power notifications...
+    RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
+
     // minimize if needed
     if (conf->startMinimized)
         SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
@@ -126,7 +129,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     if (conf->lightsOn) {
         eve->StopEvents();
-        fxhl->Refresh();
+        //fxhl->Refresh();
     }
     conf->Save();
 
@@ -407,17 +410,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_HIDE);
             break;
         case IDC_BUTTON_REFRESH: case ID_TRAYMENU_REFRESH:
-            fxhl->Refresh();
+            fxhl->RefreshState();
             break;
         case ID_TRAYMENU_LIGHTSON: case ID_ACC_ONOFF:
             conf->lightsOn = !conf->lightsOn;
-            fxhl->Refresh();
+            //fxhl->Refresh();
             if (conf->lightsOn) eve->StartEvents();
             else eve->StopEvents();
             break;
         case ID_TRAYMENU_DIMLIGHTS: case ID_ACC_DIM:
             conf->dimmed = !conf->dimmed;
-            fxhl->Refresh();
+            fxhl->RefreshState();
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
@@ -484,7 +487,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_APP + 1: {
         switch (lParam)
         {
-        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONDBLCLK: case WM_LBUTTONUP:
         //case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
             SetWindowPos(hDlg,       // handle to window
@@ -514,45 +517,47 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     } break;
     case WM_POWERBROADCAST:
         switch (wParam) {
-        case PBT_APMRESUMEAUTOMATIC:
-                //resumed from sleep
+        case PBT_APMRESUMEAUTOMATIC: case PBT_APMPOWERSTATUSCHANGE:
+                //power status changed
             eve->ChangePowerState();
-            fxhl->Refresh();
+            //fxhl->RefreshState();
             break;
-        case PBT_APMPOWERSTATUSCHANGE:
-            // bat/ac change
-            eve->ChangePowerState();
-            fxhl->Refresh();
+        case PBT_POWERSETTINGCHANGE:
+            POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
+            if (sParams->PowerSetting == GUID_MONITOR_POWER_ON) {
+                eve->ChangeScreenState(sParams->Data[0]);
+            }
+            break;
         }
         break;
     case WM_HOTKEY:
         switch (wParam) {
         case 1: // on/off
             conf->lightsOn = !conf->lightsOn;
-            fxhl->Refresh();
+            //fxhl->Refresh();
             if (conf->lightsOn) eve->StartEvents();
             else eve->StopEvents();
             break;
         case 2: // dim
             conf->dimmed = !conf->dimmed;
-            fxhl->Refresh();
+            fxhl->RefreshState();
             break;
         case 3: // off-dim-full circle
             if (conf->lightsOn) {
                 if (conf->dimmed) {
                     conf->lightsOn = !conf->lightsOn;
                     conf->dimmed = !conf->dimmed;
-                    fxhl->Refresh();
+                    //fxhl->Refresh();
                     eve->StopEvents();
                 }
                 else {
                     conf->dimmed = !conf->dimmed;
-                    fxhl->Refresh();
+                    fxhl->RefreshState();
                 }
             }
             else {
                 conf->lightsOn = !conf->lightsOn;
-                fxhl->Refresh();
+                //fxhl->Refresh();
                 eve->StartEvents();
             }
             break;
@@ -678,6 +683,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(l2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        //TBM_SETTICFREQ
+        SendMessage(s1_slider, TBM_SETTICFREQ, 32, 0);
+        SendMessage(s2_slider, TBM_SETTICFREQ, 32, 0);
+        SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
+        SendMessage(l2_slider, TBM_SETTICFREQ, 32, 0);
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
@@ -730,6 +740,18 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             case BN_CLICKED: {
                 if (mmap != NULL) {
                     SetColor(hDlg, IDC_BUTTON_C2, &mmap->c2.cs.red, &mmap->c2.cs.green, &mmap->c2.cs.blue);
+                }
+            } break;
+            } break;
+        case IDC_BUTTON_SETALL:
+            switch (HIWORD(wParam))
+            {
+            case BN_CLICKED: {
+                if (mmap != NULL) {
+                    for (int i = 0; i < conf->mappings.size(); i++)
+                        if (conf->mappings[i].devid == pid) {
+                            conf->mappings[i].eve[0] = ((lightset*)mmap->lightset)->eve[0];
+                        }
                 }
             } break;
             } break;
@@ -1029,6 +1051,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (conf->startMinimized) CheckDlgButton(hDlg, IDC_STARTM, BST_CHECKED);
         if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
         if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
+        if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_BATTSCREENOFF, BST_CHECKED);
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
     } break;
@@ -1169,6 +1192,9 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDC_BATTDIM:
             conf->dimmedBatt = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            break;
+        case IDC_BATTSCREENOFF:
+            conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             break;
         default: return false;
         }

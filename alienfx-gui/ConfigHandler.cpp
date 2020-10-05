@@ -72,6 +72,13 @@ int ConfigHandler::Load() {
         lightsOn = 1;
     RegGetValue(hKey1,
         NULL,
+        TEXT("OffWithScreen"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &lightsOn,
+        (LPDWORD)&offWithScreen);
+    RegGetValue(hKey1,
+        NULL,
         TEXT("Dimmed"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
@@ -135,6 +142,8 @@ int ConfigHandler::Load() {
             vindex++;
         }
     } while (ret == ERROR_SUCCESS);
+    stateDimmed = dimmed;
+    stateOn = lightsOn;
 	return 0;
 }
 int ConfigHandler::Save() {
@@ -182,6 +191,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&lightsOn,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("OffWithScreen"),
+        0,
+        REG_DWORD,
+        (BYTE*)&offWithScreen,
         4
     );
     RegSetValueEx(

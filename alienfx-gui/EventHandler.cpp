@@ -37,12 +37,25 @@ void EventHandler::ChangePowerState()
             break;
         }
     }
-    fxh->Refresh();
+    fxh->RefreshState();
+}
+
+void EventHandler::ChangeScreenState(DWORD state)
+{
+    if (conf->offWithScreen) {
+        conf->stateOn = state;
+        //fxh->Refresh();
+        if (state)
+            StartEvents();
+        else
+            StopEvents();
+    }
 }
 
 void EventHandler::StartEvents()
 {
     stop = false;
+    fxh->RefreshState();
     // start threas with this as a param
     dwHandle = CreateThread(
         NULL,              // default security
@@ -63,6 +76,7 @@ void EventHandler::StopEvents()
         GetExitCodeThread(dwHandle, &exitCode);
     }
     CloseHandle(dwHandle);
+    fxh->RefreshState();
 }
 
 EventHandler::EventHandler(ConfigHandler* config, FXHelper* fx)
@@ -139,6 +153,8 @@ DWORD WINAPI CEventProc(LPVOID param)
         &hTempCounter);
 
     while (!src->stop) {
+        // wait a little...
+        Sleep(200);
         // get indicators...
         PdhCollectQueryData(hQuery);
         PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
@@ -232,8 +248,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 #endif
 
         src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue, maxTemp);
-        // check events...
-        Sleep(200);
+        
     }
 
 cleanup:

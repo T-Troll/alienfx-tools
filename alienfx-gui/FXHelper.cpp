@@ -55,7 +55,7 @@ void FXHelper::TestLight(int id)
 	devbusy = false;
 }
 
-void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp)
+void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, bool force)
 {
 	if (config->autoRefresh) Refresh();
 	std::vector <lightset>::iterator Iter;
@@ -68,12 +68,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				// counter
 				double coeff = 0.0;
 				switch (Iter->eve[2].source) {
-				case 0: if (lCPU == cCPU) continue; coeff = cCPU / 100.0; break;
-				case 1: if (lRAM == cRAM) continue; coeff = cRAM / 100.0; break;
-				case 2: if (lHDD == cHDD) continue; coeff = cHDD / 100.0; break;
-				case 3: if (lGPU == cGPU) continue; coeff = cGPU / 100.0; break;
-				case 4: if (lNET == cNet) continue; coeff = cNet / 100.0; break;
-				case 5: if (lTemp == cTemp) continue; coeff = (cTemp > 273) ? (cTemp - 273.0) / 100.0 : 0; break;
+				case 0: if (!force && lCPU == cCPU) continue; coeff = cCPU / 100.0; break;
+				case 1: if (!force && lRAM == cRAM) continue; coeff = cRAM / 100.0; break;
+				case 2: if (!force && lHDD == cHDD) continue; coeff = cHDD / 100.0; break;
+				case 3: if (!force && lGPU == cGPU) continue; coeff = cGPU / 100.0; break;
+				case 4: if (!force && lNET == cNet) continue; coeff = cNet / 100.0; break;
+				case 5: if (!force && lTemp == cTemp) continue; coeff = (cTemp > 273) ? (cTemp - 273.0) / 100.0 : 0; break;
 				}
 				fin.cs.red = Iter->eve[0].map.c1.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
 				fin.cs.green = Iter->eve[0].map.c1.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
@@ -84,9 +84,9 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				// indicator
 				long indi = 0;
 				switch (Iter->eve[3].source) {
-				case 0: if (lHDD == cHDD) continue; indi = cHDD; break;
-				case 1: if (lNET == cNet) continue; indi = cNet; break;
-				case 2: if (lTemp == cTemp) continue; indi = (cTemp - 273) > 90; break;
+				case 0: if (!force && lHDD == cHDD) continue; indi = cHDD; break;
+				case 1: if (!force && lNET == cNet) continue; indi = cNet; break;
+				case 2: if (!force && lTemp == cTemp) continue; indi = (cTemp - 273) > 90; break;
 				}
 				fin = (indi > 0) ? Iter->eve[3].map.c2 : Iter->eve[0].map.c1;
 				SetLight(Iter->lightid, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
@@ -103,7 +103,7 @@ void FXHelper::SetLight(int id, int mode1, int length1, int speed1, BYTE r, BYTE
 	// modify colors for dimmed...
 	const BYTE delta = (BYTE) config->dimmingPower;
 
-	if (config->lightsOn) {
+	if (config->lightsOn && config->stateOn) {
 		if (config->dimmed ||
 			(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
 			r = r < delta ? 0 : r - delta;
@@ -127,6 +127,12 @@ void FXHelper::SetLight(int id, int mode1, int length1, int speed1, BYTE r, BYTE
 	else {
 		AlienFX_SDK::Functions::SetColor(id, 0, 0, 0);
 	}
+}
+
+void FXHelper::RefreshState()
+{
+	SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, true);
+	Refresh();
 }
 
 /*void FXHelper::UpdateLight(lightset* map, bool update) {
@@ -199,7 +205,7 @@ int FXHelper::Refresh()
 				case MODE_CHARGE: mode1 = mode2 = 2; c1 = Iter->eve[0].map.c1; break;
 				}
 			}
-			if ((Iter->eve[2].flags || Iter->eve[3].flags) && config->lightsOn) continue;
+			if ((Iter->eve[2].flags || Iter->eve[3].flags) && config->lightsOn && config->stateOn) continue;
 			/*if (Iter->eve[2].flags) {
 				// counter
 				double coeff = 0.0;

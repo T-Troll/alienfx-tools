@@ -46,8 +46,6 @@ int FXHelper::Refresh(UCHAR* img)
 {
 	unsigned i = 0;
 	unsigned shift = config->shift;
-	if (updates.size() < config->mappings.size())
-		updates.resize(config->mappings.size());
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		Colorcode fin = { 0 };
@@ -94,6 +92,10 @@ int FXHelper::Refresh(UCHAR* img)
 	}
 	AlienFX_SDK::Functions::UpdateColors();
 	return 0;
+}
+
+void FXHelper::FadeToBlack()
+{
 }
 
 

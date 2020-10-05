@@ -18,7 +18,6 @@
 #define IDD_DIALOG_SETTINGS             135
 #define IDR_MENU_TRAY                   136
 #define IDI_ICON1                       141
-#define IDI_UFO_GUI                     141
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001
 #define IDC_RADIO_COLOR                 1002
@@ -56,6 +55,11 @@
 #define IDC_BUTTON_CM3                  1031
 #define IDC_BATTDIM                     1031
 #define IDC_SLIDER_DIMMING              1032
+#define IDC_BUTTON1                     1033
+#define IDC_BUTTON_SETALL               1033
+#define IDC_BATTSCREENOFF               1033
+#define IDC_COMBO1                      1034
+#define IDC_BUTTON2                     1035
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -77,7 +81,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         32785
-#define _APS_NEXT_CONTROL_VALUE         1033
+#define _APS_NEXT_CONTROL_VALUE         1036
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

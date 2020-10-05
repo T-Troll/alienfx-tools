@@ -8,6 +8,7 @@ private:
 
 public:
 	void ChangePowerState();
+	void ChangeScreenState(DWORD state);
 	void StartEvents();
 	void StopEvents();
 

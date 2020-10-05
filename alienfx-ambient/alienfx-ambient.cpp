@@ -71,6 +71,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg; //bool ret;
 
+    RegisterPowerSettingNotification(hDlg, &GUID_MONITOR_POWER_ON, 0);
+
     cap->Start();
 
     // Main message loop:
@@ -471,9 +473,24 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_CLOSE: cap->Stop(); DestroyWindow(hDlg); break;
     case WM_DESTROY: PostQuitMessage(0); break;
     case WM_POWERBROADCAST:
-        if (wParam == PBT_APMRESUMEAUTOMATIC) {
-            //resumed from sleep
-            cap->Restart();
+        switch (wParam) {
+        case PBT_APMRESUMEAUTOMATIC: case PBT_APMPOWERSTATUSCHANGE:
+            if (wParam == PBT_APMRESUMEAUTOMATIC) {
+                //resumed from sleep
+                cap->Restart();
+            }
+            break;
+        case PBT_POWERSETTINGCHANGE:
+            POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
+            if (sParams->PowerSetting == GUID_MONITOR_POWER_ON) {
+                if (sParams->Data[0] == 0) {
+                    cap->Stop();
+                    fxhl->FadeToBlack();
+                }
+                else
+                    cap->Start();
+            }
+            break;
         }
         break;
     case WM_DISPLAYCHANGE:

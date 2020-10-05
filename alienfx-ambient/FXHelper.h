@@ -4,7 +4,7 @@
 struct UpdateData {
 	Colorcode color;
 	unsigned devid, lightid;
-	ULONGLONG lastUpdate;
+	//ULONGLONG lastUpdate;
 };
 
 class FXHelper
@@ -14,13 +14,14 @@ private:
 	int pid;
 	ConfigHandler* config;
 	//ULONGLONG lastUpdate;
-	std::vector<UpdateData> updates;
+	//std::vector<UpdateData> updates;
 public:
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
 	void StartFX();
 	void StopFX();
 	int Refresh(UCHAR* img);
+	void FadeToBlack();
 	//int GetPID();
 	//int UpdateLights();
 };
