@@ -36,7 +36,7 @@ It's check 16 first lights into the system by default, but you can change this v
 The purpose of this app is to check low-level API and to prepare light names for other apps, this names are stored and will be used in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
 ## alienfx-cli Usage
-Run `alienfx-cli.exe` with a command and any options for that command. Bu default, `alienfx-cli` using high-level SDK (Alienware LightFX) if found, and low-level (USB driver) if not. You can switch it by command. 
+Run `alienfx-cli.exe` with a command and any options for that command. Bu default, `alienfx-cli` using high-level SDK (Alienware LightFX) if found, and low-level (USB driver) if not. You can switch it by using `low-level` and `high-level` commands. 
 ```
 alienfx-cli.exe [command=option,option,option] ... [command=option,option,option] [loop]
 ```
