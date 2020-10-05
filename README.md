@@ -25,6 +25,7 @@ Device checked: `Alienware m15R1`, `Alienware M13R2`, `Dell G5` (should work wit
 - <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 
 ## Installation
+Download latest release archive from [here](https://github.com/T-Troll/alienfx-tools/releases).<br>
 Unzip the installation archive to any directory of your choise, run.<br>
 After install, run `alienfx-probe` or `alienfx-gui` to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not work correctly wihout this operation).</br> 
 
