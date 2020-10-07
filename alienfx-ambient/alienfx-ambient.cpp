@@ -445,14 +445,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg,       // handle to window
+            /*SetWindowPos(hDlg,       // handle to window
                 HWND_TOPMOST,  // placement-order handle
                 0,     // horizontal position
                 0,      // vertical position
                 0,  // width
                 0, // height
                 SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
+            );*/
             Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
             //case WM_RBUTTONDOWN:

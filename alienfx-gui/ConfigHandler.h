@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include <Windows.h>
 
 
@@ -38,10 +39,16 @@ struct lightset {
 	event	 eve[4];
 };
 
+struct profile {
+	unsigned id = 0;
+	std::string name;
+	std::vector<lightset> lightsets;
+};
+
 class ConfigHandler
 {
 private:
-	HKEY   hKey1 = NULL, hKey2 = NULL, hKey3 = NULL;
+	HKEY   hKey1 = NULL, hKey2 = NULL, hKey3 = NULL, hKey4 = NULL;
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -51,9 +58,13 @@ public:
 	DWORD dimmed = 0;
 	DWORD dimmedBatt = 0;
 	DWORD dimmingPower = 92;
+	DWORD enableMon = 1;
+	DWORD activeProfile = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
 	//DWORD shift = 40;
+	COLORREF customColors[16];
 	std::vector<lightset> mappings;
+	std::vector<profile> profiles;
 
 	ConfigHandler();
 	~ConfigHandler();

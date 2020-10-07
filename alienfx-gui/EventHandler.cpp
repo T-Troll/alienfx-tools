@@ -56,26 +56,30 @@ void EventHandler::StartEvents()
 {
     stop = false;
     fxh->RefreshState();
-    // start threas with this as a param
-    dwHandle = CreateThread(
-        NULL,              // default security
-        0,                 // default stack size
-        CEventProc,        // name of the thread function
-        this,
-        0,                 // default startup flags
-        &dwThreadID);
+    if (conf->enableMon) {
+        // start threas with this as a param
+        dwHandle = CreateThread(
+            NULL,              // default security
+            0,                 // default stack size
+            CEventProc,        // name of the thread function
+            this,
+            0,                 // default startup flags
+            &dwThreadID);
+    }
 }
 
 void EventHandler::StopEvents()
 {
     stop = true;
     DWORD exitCode;
-    GetExitCodeThread(dwHandle, &exitCode);
-    while (exitCode == STILL_ACTIVE) {
-        Sleep(50);
+    if (conf->enableMon) {
         GetExitCodeThread(dwHandle, &exitCode);
+        while (exitCode == STILL_ACTIVE) {
+            Sleep(50);
+            GetExitCodeThread(dwHandle, &exitCode);
+        }
+        CloseHandle(dwHandle);
     }
-    CloseHandle(dwHandle);
     fxh->RefreshState();
 }
 

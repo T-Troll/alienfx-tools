@@ -57,7 +57,6 @@ void FXHelper::TestLight(int id)
 
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, bool force)
 {
-	if (config->autoRefresh) Refresh();
 	std::vector <lightset>::iterator Iter;
 	Colorcode fin;
 	while (devbusy) Sleep(20);
@@ -67,6 +66,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 			if (Iter->eve[2].flags) {
 				// counter
 				double coeff = 0.0;
+				Colorcode cfin = Iter->eve[0].flags ? Iter->eve[0].map.c1 : Iter->eve[2].map.c1;
 				switch (Iter->eve[2].source) {
 				case 0: if (!force && lCPU == cCPU) continue; coeff = cCPU / 100.0; break;
 				case 1: if (!force && lRAM == cRAM) continue; coeff = cRAM / 100.0; break;
@@ -75,9 +75,9 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 4: if (!force && lNET == cNet) continue; coeff = cNet / 100.0; break;
 				case 5: if (!force && lTemp == cTemp) continue; coeff = (cTemp > 273) ? (cTemp - 273.0) / 100.0 : 0; break;
 				}
-				fin.cs.red = Iter->eve[0].map.c1.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
-				fin.cs.green = Iter->eve[0].map.c1.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
-				fin.cs.blue = Iter->eve[0].map.c1.cs.blue * (1 - coeff) + Iter->eve[2].map.c2.cs.blue * coeff;
+				fin.cs.red = cfin.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
+				fin.cs.green = cfin.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
+				fin.cs.blue = cfin.cs.blue * (1 - coeff) + Iter->eve[2].map.c2.cs.blue * coeff;
 				SetLight(Iter->lightid, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
 			}
 			if (Iter->eve[3].flags) {
@@ -88,7 +88,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 1: if (!force && lNET == cNet) continue; indi = cNet; break;
 				case 2: if (!force && lTemp == cTemp) continue; indi = (cTemp - 273) > 90; break;
 				}
-				fin = (indi > 0) ? Iter->eve[3].map.c2 : Iter->eve[0].map.c1;
+				fin = (indi > 0) ? Iter->eve[3].map.c2 : Iter->eve[0].flags ? Iter->eve[0].map.c1 : Iter->eve[3].map.c1;
 				SetLight(Iter->lightid, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
 			}
 		}
@@ -96,6 +96,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	AlienFX_SDK::Functions::UpdateColors();
 	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp;
 	devbusy = false;
+	if (config->autoRefresh) Refresh();
 }
 
 void FXHelper::SetLight(int id, int mode1, int length1, int speed1, BYTE r, BYTE g, BYTE b, int mode2, int length2, int speed2, BYTE r2, BYTE g2, BYTE b2)
@@ -131,7 +132,8 @@ void FXHelper::SetLight(int id, int mode1, int length1, int speed1, BYTE r, BYTE
 
 void FXHelper::RefreshState()
 {
-	SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, true);
+	if (config->enableMon)
+		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, true);
 	Refresh();
 }
 
@@ -194,43 +196,20 @@ int FXHelper::Refresh()
 			if (Iter->eve[1].flags) {
 				// use power event;
 				c2 = Iter->eve[1].map.c2;
+				c1 = Iter->eve[1].map.c1;
 				switch (activeMode) {
 				case MODE_AC: if (Iter->eve[0].flags) {
 					c1 = Iter->eve[0].map.c1; c2 = Iter->eve[0].map.c2;
 				} else {
-					mode1 = mode2 = 0; c1 = Iter->eve[0].map.c1;
+					mode1 = mode2 = 0; //c1 = Iter->eve[1].map.c1;
 				} break;
 				case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
 				case MODE_LOW: mode1 = mode2 = 1; c1 = c2; break;
-				case MODE_CHARGE: mode1 = mode2 = 2; c1 = Iter->eve[0].map.c1; break;
+				case MODE_CHARGE: mode1 = mode2 = 2; /*c1 = Iter->eve[0].map.c1;*/ break;
 				}
 			}
-			if ((Iter->eve[2].flags || Iter->eve[3].flags) && config->lightsOn && config->stateOn) continue;
-			/*if (Iter->eve[2].flags) {
-				// counter
-				double coeff = 0.0;
-				switch (Iter->eve[2].source) {
-				case 0: coeff = lCPU / 100.0; break;
-				case 1: coeff = lRAM / 100.0; break;
-				case 2: coeff = lHDD / 100.0; break;
-				case 3: coeff = lGPU / 100.0; break;
-				case 4: coeff = lNET / 100.0; break;
-				}
-				c1.cs.red = Iter->eve[0].map.c1.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
-				c1.cs.green = Iter->eve[0].map.c1.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
-				c1.cs.blue = Iter->eve[0].map.c1.cs.blue * (1 - coeff) + Iter->eve[2].map.c2.cs.blue * coeff;
-				mode1 = 0;
-			}
-			if (Iter->eve[3].flags) {
-				// indicator
-				long indi = 0;
-				switch (Iter->eve[3].source) {
-				case 0: indi = lHDD; break;
-				case 1: indi = lNET; break;
-				}
-				c1 = (indi > 0) ? Iter->eve[3].map.c2 : Iter->eve[0].map.c1;
-				mode1 = 0;
-			}*/
+			if ((Iter->eve[2].flags || Iter->eve[3].flags) 
+				&& !config->enableMon && config->lightsOn && config->stateOn) continue;
 			SetLight(Iter->lightid,
 				mode1, Iter->eve[0].map.length1, Iter->eve[0].map.speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
 				mode2, Iter->eve[0].map.length2, Iter->eve[0].map.speed2, c2.cs.red, c2.cs.green, c2.cs.blue

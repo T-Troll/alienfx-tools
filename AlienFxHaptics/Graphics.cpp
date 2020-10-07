@@ -328,14 +328,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			case WM_LBUTTONDBLCLK:
 			case WM_LBUTTONUP:
 				ShowWindow(hwnd, SW_RESTORE);
-				SetWindowPos(hwnd,       // handle to window
+				/*SetWindowPos(hwnd,       // handle to window
 					HWND_TOPMOST,  // placement-order handle
 					0,     // horizontal position
 					0,      // vertical position
 					0,  // width
 					0, // height
 					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-				);
+				);*/
 				Shell_NotifyIcon(NIM_DELETE, &niData);
 			break;
 			//case WM_RBUTTONDOWN:

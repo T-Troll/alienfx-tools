@@ -132,6 +132,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //fxhl->Refresh();
     }
     conf->Save();
+    AlienFX_SDK::Functions::SaveMappings();
 
     delete eve;
     delete fxhl;
@@ -322,9 +323,12 @@ VOID OnSelChanged(HWND hwndDlg)
     return;
 }
 
+int pRid = -1, pRitem = -1;
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
-    HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN);
+    HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
+        profile_list = GetDlgItem(hDlg, IDC_PROFILES);
 
     switch (message)
     {
@@ -378,6 +382,24 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         TabCtrl_AdjustRect(pHdr->hwndTab, FALSE, &pHdr->rcDisplay);
 
         OnSelChanged(tab_list);
+
+        if (conf->profiles.size() == 0) {
+            std::string dname = "Default";
+            int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
+            SendMessage(profile_list, CB_SETITEMDATA, pos, 0);
+            SendMessage(profile_list, CB_SETCURSEL, pos, 0);
+            pRid = 0; pRitem = pos;
+        }
+        else {
+            for (int i = 0; i < conf->profiles.size(); i++) {
+                int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
+                SendMessage(profile_list, CB_SETITEMDATA, pos, conf->profiles[i].id);
+                if (conf->profiles[i].id == conf->activeProfile) {
+                    SendMessage(profile_list, CB_SETCURSEL, pos, 0);
+                    pRid = conf->activeProfile; pRitem = pos;
+                }
+            }
+        }
         
     } break;
     case WM_COMMAND:
@@ -424,14 +446,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg,       // handle to window
+            /*SetWindowPos(hDlg,       // handle to window
                 HWND_TOPMOST,  // placement-order handle
                 0,     // horizontal position
                 0,      // vertical position
                 0,  // width
                 0, // height
                 SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
+            );*/
             Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
         case IDC_BUTTON_SAVE:
@@ -450,7 +472,79 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             TabCtrl_SetCurSel(tab_list, 2);
             OnSelChanged(tab_list);
             break;
-        }
+        case IDC_PROFILES: {
+            int pbItem = (int)SendMessage(profile_list, CB_GETCURSEL, 0, 0);
+            int prid = (int)SendMessage(profile_list, CB_GETITEMDATA, pbItem, 0);
+            switch (HIWORD(wParam))
+            {
+            case CBN_SELCHANGE: {
+                for (int i = 0; i < conf->profiles.size(); i++)
+                    if (conf->profiles[i].id == prid) {
+                        conf->mappings = conf->profiles[i].lightsets;
+                        conf->activeProfile = prid;
+                        // Reload lighs list at colors and events.
+                        OnSelChanged(tab_list);
+                        pRitem = pbItem; pRid = prid;
+                        conf->activeProfile = prid;
+                    }
+            } break;
+            case CBN_EDITCHANGE: {
+                char* buffer = new char[32767];
+                ComboBox_GetText(profile_list, buffer, 32767);
+                for (int i = 0; i < conf->profiles.size(); i++) {
+                    if (conf->profiles[i].id == pRid) {
+                        conf->profiles[i].name = buffer;
+                        break;
+                    }
+                }
+                SendMessage(profile_list, CB_DELETESTRING, pRitem, 0);
+                SendMessage(profile_list, CB_INSERTSTRING, pRitem, (LPARAM)(buffer));
+                SendMessage(profile_list, CB_SETITEMDATA, pRitem, (LPARAM)pRid);
+                delete buffer;
+            } break;
+            } 
+        } break;
+        case IDC_ADDPROFILE: {
+            char buf[128]; unsigned vacID = 0;
+            profile prof;
+            for (int i = 0; i < conf->profiles.size(); i++)
+                if (vacID == conf->profiles[i].id) {
+                    vacID++; i = 0;
+                }
+            sprintf_s(buf, 128, "Profile %d", vacID);
+            prof.id = vacID;
+            prof.name = buf;
+            prof.lightsets = conf->mappings;
+            conf->profiles.push_back(prof);
+            int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(prof.name.c_str()));
+            SendMessage(profile_list, CB_SETITEMDATA, pos, vacID);
+            SendMessage(profile_list, CB_SETCURSEL, pos, 0);
+            pRid = conf->activeProfile = vacID; pRitem = pos;
+        } break;
+        case IDC_REMOVEPROFILE: {
+            if (conf->profiles.size() > 1) { // can't delete last profile!
+                for (std::vector <profile>::iterator Iter = conf->profiles.begin(); 
+                    Iter != conf->profiles.end(); Iter++)
+                    if (Iter->id == pRid) {
+                        conf->profiles.erase(Iter);
+                        break;
+                    }
+                // now delete from list and reselect
+                SendMessage(profile_list, CB_DELETESTRING, pRitem, 0);
+                pRitem = pRitem > 0 ? pRitem - 1 : 0;
+                SendMessage(profile_list, CB_SETCURSEL, pRitem, 0);
+                pRid = (int)SendMessage(profile_list, CB_GETITEMDATA, pRitem, 0);
+                conf->activeProfile = pRid;
+                // Reload mappings...
+                for (int i = 0; i < conf->profiles.size(); i++)
+                    if (conf->profiles[i].id == pRid) {
+                        conf->mappings = conf->profiles[i].lightsets;
+                        break;
+                    }
+                OnSelChanged(tab_list);
+            }
+        } break;
+        } break;
     } break;
     case WM_NOTIFY: {
         NMHDR* event = (NMHDR*)lParam;
@@ -487,17 +581,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_APP + 1: {
         switch (lParam)
         {
-        case WM_LBUTTONDBLCLK: case WM_LBUTTONUP:
-        //case WM_LBUTTONUP:
+        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg,       // handle to window
-                HWND_TOPMOST,  // placement-order handle
+            /*SetWindowPos(hDlg,       // handle to window
+                HWND_TOP,  // placement-order handle
                 0,     // horizontal position
                 0,      // vertical position
                 0,  // width
                 0, // height
                 SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
+            );*/
             Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
             //case WM_RBUTTONDOWN:
@@ -615,13 +709,13 @@ void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
 
 bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
     CHOOSECOLOR cc;                 // common dialog box structure 
-    static COLORREF acrCustClr[16]; // array of custom colors 
+    //static COLORREF acrCustClr[16]; // array of custom colors 
     bool ret;
     // Initialize CHOOSECOLOR 
     ZeroMemory(&cc, sizeof(cc));
     cc.lStructSize = sizeof(cc);
     cc.hwndOwner = hDlg;
-    cc.lpCustColors = (LPDWORD)acrCustClr;
+    cc.lpCustColors = (LPDWORD)conf->customColors;// acrCustClr;
     cc.rgbResult = RGB(*r, *g, *b);
     cc.Flags = CC_FULLOPEN | CC_RGBINIT;
 
@@ -914,8 +1008,11 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, BST_CHECKED);
                     else
                         CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, BST_UNCHECKED);
+                    
                     if (i > 0)
-                        RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map.c2.cs.red, 
+                        RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map.c1.cs.red,
+                            map->eve[i].map.c1.cs.green, map->eve[i].map.c1.cs.blue);
+                        RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, map->eve[i].map.c2.cs.red, 
                             map->eve[i].map.c2.cs.green, map->eve[i].map.c2.cs.blue);
                 }
                 SendMessage(list_counter, CB_SETCURSEL, map->eve[2].source, 0);
@@ -931,6 +1028,18 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         } break;
         case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: {
             int eid = LOWORD(wParam) - IDC_BUTTON_CM1 + 1;
+            switch (HIWORD(wParam))
+            {
+            case BN_CLICKED:
+                if (map != NULL) {
+                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c1.cs.red,
+                        &map->eve[eid].map.c1.cs.green, &map->eve[eid].map.c1.cs.blue);
+                }
+                break;
+            }
+        } break;
+        case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
+            int eid = LOWORD(wParam) - IDC_BUTTON_CM4 + 1;
             switch (HIWORD(wParam))
             {
             case BN_CLICKED:
@@ -967,8 +1076,19 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     } break;
     case WM_DRAWITEM:
         switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-        case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3:
+        case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: {
             int cid = ((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM1 + 1;
+            Colorcode c; c.ci = 0;
+            if (eItem != -1) {
+                int lid = (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0);
+                mapping* map = FindMapping(pid, lid, cid);
+                if (map != NULL)
+                    c = map->c1;
+            }
+            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.cs.red, c.cs.green, c.cs.blue);
+        } break;
+        case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
+            int cid = ((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM4 + 1;
             Colorcode c; c.ci = 0;
             if (eItem != -1) {
                 int lid = (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0);
@@ -977,7 +1097,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     c = map->c2;
             }
             RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.cs.red, c.cs.green, c.cs.blue);
-            break;
+        } break;
         }
         break;
     default: return false;
@@ -1041,6 +1161,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (cpid == pid) {
                 // select this device.
                 SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+                eDid = pid; dItem = pos;
             }
         }
 
@@ -1052,7 +1173,9 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
         if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
         if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_BATTSCREENOFF, BST_CHECKED);
+        if (conf->enableMon) CheckDlgButton(hDlg, IDC_BATTMONITOR, BST_CHECKED);
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
         SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
     } break;
     case WM_COMMAND: {
@@ -1068,27 +1191,24 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             case CBN_SELCHANGE: {
                 AlienFX_SDK::Functions::AlienFXChangeDevice(did);
                 UpdateLightList(light_list, did);
-                eItem = -1;
+                eItem = -1; eDid = did; dItem = dbItem;
             } break;
             case CBN_EDITCHANGE:
                 char buffer[256];
                 ComboBox_GetText(dev_list, buffer, 256);
-                if (did != (-1)) {
-                    eDid = did; dItem = dbItem;
-                }
                 for (i = 0; i < AlienFX_SDK::Functions::GetDevices()->size(); i++) {
                     if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == eDid) {
                         AlienFX_SDK::Functions::GetDevices()->at(i).name = buffer;
                         break;
                     }
                 }
-                if (i == AlienFX_SDK::Functions::GetDevices()->size() && eDid != -1) {
+                /*if (i == AlienFX_SDK::Functions::GetDevices()->size() && eDid != -1) {
                     // not found, need to add...
                     AlienFX_SDK::devmap dev;
                     dev.devid = did;
                     dev.name = buffer;
                     AlienFX_SDK::Functions::GetDevices()->push_back(dev);
-                }
+                }*/
                 SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
                 SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
                 SendMessage(dev_list, CB_SETITEMDATA, dItem, (LPARAM)eDid);
@@ -1195,6 +1315,11 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDC_BATTSCREENOFF:
             conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            break;
+        case IDC_BATTMONITOR:
+            eve->StopEvents();
+            conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            eve->StartEvents();
             break;
         default: return false;
         }
