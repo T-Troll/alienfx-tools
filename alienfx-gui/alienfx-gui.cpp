@@ -486,6 +486,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                         OnSelChanged(tab_list);
                         pRitem = pbItem; pRid = prid;
                         conf->activeProfile = prid;
+                        fxhl->RefreshState();
                     }
             } break;
             case CBN_EDITCHANGE: {
@@ -542,6 +543,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                         break;
                     }
                 OnSelChanged(tab_list);
+                fxhl->RefreshState();
             }
         } break;
         } break;
