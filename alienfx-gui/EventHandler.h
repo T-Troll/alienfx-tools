@@ -18,6 +18,6 @@ public:
 	bool stop = false;
 	FXHelper* fxh = NULL;
 
-	long maxRam = 0, maxNet = 1;
+	long maxNet = 1;
 };
 

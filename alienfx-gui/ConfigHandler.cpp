@@ -40,6 +40,9 @@ ConfigHandler::ConfigHandler() {
         NULL,
         &hKey4,
         &dwDisposition);
+
+    testColor.ci = 0;
+    testColor.cs.green = 255;
 }
 ConfigHandler::~ConfigHandler() {
     RegCloseKey(hKey1);
@@ -259,12 +262,12 @@ int ConfigHandler::Save() {
 
     if (startWindows) {
         char pathBuffer[2048];
-        GetModuleFileName(NULL, pathBuffer, 2047);
-        RegSetValueEx(hKey2, TEXT("Alienfx GUI"), 0, REG_SZ, (BYTE*)pathBuffer, strlen(pathBuffer)+1);
+        GetModuleFileNameA(NULL, pathBuffer, 2047);
+        RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)pathBuffer, strlen(pathBuffer)+1);
     }
     else {
         // remove key.
-        RegDeleteKeyA(hKey2, TEXT("Alienfx GUI"));
+        RegDeleteKeyA(hKey2, "Alienfx GUI");
     }
 
     RegSetValueEx(

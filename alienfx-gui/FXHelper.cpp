@@ -45,12 +45,12 @@ void FXHelper::TestLight(int id)
 {
 	while (devbusy) Sleep(20);
 	devbusy = true;
-	if (id != lastTest) {
+	/*if (id != lastTest) {
 		if (lastTest != (-1))
 			AlienFX_SDK::Functions::SetColor(lastTest, 0, 0, 0);
 		lastTest = id;
-	}
-	AlienFX_SDK::Functions::SetColor(id, 0, 255, 0);
+	}*/
+	AlienFX_SDK::Functions::SetColor(id, config->testColor.cs.red, config->testColor.cs.green, config->testColor.cs.blue);
 	AlienFX_SDK::Functions::UpdateColors();
 	devbusy = false;
 }
@@ -191,7 +191,7 @@ int FXHelper::Refresh()
 		if (Iter->devid == pid) {
 			Colorcode c1 = Iter->eve[0].map.c1, c2 = Iter->eve[0].map.c2;
 			if (!Iter->eve[0].flags)
-				c1.ci = c2.ci = 0;
+					c1.ci = 0; c2.ci = 0;
 			int mode1 = Iter->eve[0].map.mode, mode2 = Iter->eve[0].map.mode2;
 			if (Iter->eve[1].flags) {
 				// use power event;

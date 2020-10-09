@@ -61,7 +61,7 @@ public:
 	DWORD enableMon = 1;
 	DWORD activeProfile = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
-	//DWORD shift = 40;
+	Colorcode testColor;
 	COLORREF customColors[16];
 	std::vector<lightset> mappings;
 	std::vector<profile> profiles;

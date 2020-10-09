@@ -148,7 +148,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //
 //  PURPOSE: Registers the window class.
 //
-ATOM MyRegisterClass(HINSTANCE hInstance)
+/*ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
 
@@ -167,7 +167,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI));
 
     return RegisterClassExW(&wcex);
-}
+}*/
 
 //
 //   FUNCTION: InitInstance(HINSTANCE, int)
@@ -210,7 +210,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - post a quit message and return
 //
 //
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+/*LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -246,7 +246,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
-}
+}*/
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -351,11 +351,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
         tie.mask = TCIF_TEXT;
         tie.iImage = -1;
-        tie.pszText = (LPSTR)TEXT("Colors");
+        tie.pszText = (LPSTR)"Colors";
         SendMessage(tab_list, TCM_INSERTITEM, 0, (LPARAM)&tie);
-        tie.pszText = (LPSTR)TEXT("Events");
+        tie.pszText = (LPSTR)"Events";
         SendMessage(tab_list, TCM_INSERTITEM, 1, (LPARAM)&tie);
-        tie.pszText = (LPSTR)TEXT("Settings");
+        tie.pszText = (LPSTR)"Settings";
         SendMessage(tab_list, TCM_INSERTITEM, 2, (LPARAM)&tie);
 
         //SetRectEmpty(&rcTab);
@@ -408,11 +408,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         {
         case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT: case ID_TRAYMENU_EXIT:
         {
-            //cap->Stop();
+            eve->StopEvents();
             Shell_NotifyIcon(NIM_DELETE, &niData);
-            DestroyWindow(hDlg); //EndDialog(hDlg, IDOK);
+            EndDialog(hDlg, IDOK);
+            DestroyWindow(hDlg);
         } break;
         case IDM_ABOUT: // about dialogue here
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
             break;
         case IDC_BUTTON_MINIMIZE:
             ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
@@ -434,15 +436,21 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case IDC_BUTTON_REFRESH: case ID_TRAYMENU_REFRESH:
             fxhl->RefreshState();
             break;
-        case ID_TRAYMENU_LIGHTSON: case ID_ACC_ONOFF:
+        case ID_TRAYMENU_LIGHTSON:
             conf->lightsOn = !conf->lightsOn;
             //fxhl->Refresh();
             if (conf->lightsOn) eve->StartEvents();
             else eve->StopEvents();
             break;
-        case ID_TRAYMENU_DIMLIGHTS: case ID_ACC_DIM:
+        case ID_TRAYMENU_DIMLIGHTS:
             conf->dimmed = !conf->dimmed;
             fxhl->RefreshState();
+            break;
+        case ID_TRAYMENU_MONITORING:
+            eve->StopEvents();
+            conf->enableMon = !conf->enableMon;
+            eve->StartEvents();
+            //fxhl->RefreshState();
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
@@ -491,7 +499,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             } break;
             case CBN_EDITCHANGE: {
                 char* buffer = new char[32767];
-                ComboBox_GetText(profile_list, buffer, 32767);
+                GetWindowTextA(profile_list, buffer, 32767);
                 for (int i = 0; i < conf->profiles.size(); i++) {
                     if (conf->profiles[i].id == pRid) {
                         conf->profiles[i].name = buffer;
@@ -546,6 +554,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 fxhl->RefreshState();
             }
         } break;
+
         } break;
     } break;
     case WM_NOTIFY: {
@@ -599,12 +608,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             //case WM_RBUTTONDOWN:
         case WM_RBUTTONUP: case WM_CONTEXTMENU: {
             POINT lpClickPoint;
-            HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
+            HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
             tMenu = GetSubMenu(tMenu, 0);
             GetCursorPos(&lpClickPoint);
             SetForegroundWindow(hDlg);
             if (conf->lightsOn) CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, MF_CHECKED);
             if (conf->dimmed) CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, MF_CHECKED);
+            if (conf->enableMon) CheckMenuItem(tMenu, ID_TRAYMENU_MONITORING, MF_CHECKED);
             TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
                 lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
         } break;
@@ -657,10 +667,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 eve->StartEvents();
             }
             break;
+        default: return false;
         }
         break;
-    case WM_CLOSE: //cap->Stop(); 
-        DestroyWindow(hDlg); break;
+    //case WM_CLOSE:
+    //    DestroyWindow(hDlg); break;
     case WM_DESTROY: PostQuitMessage(0); break;
     default: return false;
     }
@@ -1197,26 +1208,19 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             } break;
             case CBN_EDITCHANGE:
                 char buffer[256];
-                ComboBox_GetText(dev_list, buffer, 256);
+                GetWindowTextA(dev_list, buffer, 256);
                 for (i = 0; i < AlienFX_SDK::Functions::GetDevices()->size(); i++) {
                     if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == eDid) {
                         AlienFX_SDK::Functions::GetDevices()->at(i).name = buffer;
                         break;
                     }
                 }
-                /*if (i == AlienFX_SDK::Functions::GetDevices()->size() && eDid != -1) {
-                    // not found, need to add...
-                    AlienFX_SDK::devmap dev;
-                    dev.devid = did;
-                    dev.name = buffer;
-                    AlienFX_SDK::Functions::GetDevices()->push_back(dev);
-                }*/
                 SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
                 SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
                 SendMessage(dev_list, CB_SETITEMDATA, dItem, (LPARAM)eDid);
                 break;
             }
-        } break;// should reload dev list
+        } break;
         case IDC_LIGHTS_S:
             switch (HIWORD(wParam))
             {
@@ -1227,35 +1231,35 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     nEdited = false;
                 }
                 SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
+                eve->StopEvents();
                 // highlight to check....
                 fxhl->TestLight(lid);
+                eLid = lid;
             } break;
             case CBN_EDITCHANGE:
                 char buffer[256];
                 nEdited = true;
                 if (lid != (-1)) eLid = lid;
-                ComboBox_GetText(light_list, buffer, 256);
+                GetWindowTextA(light_list, buffer, 256);
                 for (i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
                     if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == did &&
                         AlienFX_SDK::Functions::GetMappings()->at(i).lightid == eLid) {
                         AlienFX_SDK::Functions::GetMappings()->at(i).name = buffer;
+                        //UpdateLightList(light_list, did);
                         break;
                     }
                 }
-                /*if (i == AlienFX_SDK::Functions::GetMappings()->size() && eLid != -1) {
-                    // not found, need to add...
-                    AlienFX_SDK::mapping dev;
-                    dev.devid = did;
-                    dev.lightid = lid;
-                    dev.name = buffer;
-                    AlienFX_SDK::Functions::GetMappings()->push_back(dev);
-                }*/
                 break;
+            /*case CBN_SETFOCUS:
+                OutputDebugString("SetFocus\n");
+                eve->StopEvents();
+                break;*/
             case CBN_KILLFOCUS:
-                fxhl->Refresh();
+                OutputDebugString("KillFocus\n");
+                eve->StartEvents();
                 if (nEdited) {
                     UpdateLightList(light_list, did);
-                    SendMessage(light_list, CB_SETCURSEL, lbItem, 0);
+                    //SendMessage(light_list, CB_SETCURSEL, lbItem, 0);
                     nEdited = false;
                 }
                 eLid = (-1);
@@ -1303,6 +1307,15 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
             UpdateLightList(light_list, did);
             break;
+        case IDC_BUTTON_TESTCOLOR: {
+            SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor.cs.red, &conf->testColor.cs.green, &conf->testColor.cs.blue);
+            if (lid != -1) {
+                eve->StopEvents();
+                SetFocus(light_list);
+                //SendMessage(light_list, CB_SETCURSEL, lbItem, 0);
+                fxhl->TestLight(lid);
+            }
+        } break;
         case IDC_STARTM:
             conf->startMinimized = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             break;
@@ -1334,6 +1347,12 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 fxhl->Refresh();
             } break;
+        } break;
+    case WM_DRAWITEM:
+        switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+        case IDC_BUTTON_TESTCOLOR:
+            RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.cs.red, conf->testColor.cs.green, conf->testColor.cs.blue);
+            break;
         } break;
     default: return false;
     }

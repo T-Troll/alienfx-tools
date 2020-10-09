@@ -54,10 +54,10 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::StartEvents()
 {
-    stop = false;
     fxh->RefreshState();
     if (conf->enableMon) {
         // start threas with this as a param
+        this->stop = false;
         dwHandle = CreateThread(
             NULL,              // default security
             0,                 // default stack size
@@ -70,9 +70,9 @@ void EventHandler::StartEvents()
 
 void EventHandler::StopEvents()
 {
-    stop = true;
     DWORD exitCode;
-    if (conf->enableMon) {
+    if (!this->stop && conf->enableMon) {
+        this->stop = true; 
         GetExitCodeThread(dwHandle, &exitCode);
         while (exitCode == STILL_ACTIVE) {
             Sleep(50);
