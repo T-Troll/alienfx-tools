@@ -55,7 +55,7 @@ void FXHelper::TestLight(int id)
 	devbusy = false;
 }
 
-void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, bool force)
+void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
 {
 	std::vector <lightset>::iterator Iter;
 	Colorcode fin;
@@ -74,6 +74,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 3: if (!force && lGPU == cGPU) continue; coeff = cGPU / 100.0; break;
 				case 4: if (!force && lNET == cNet) continue; coeff = cNet / 100.0; break;
 				case 5: if (!force && lTemp == cTemp) continue; coeff = (cTemp > 273) ? (cTemp - 273.0) / 100.0 : 0; break;
+				case 6: if (!force && lBatt == cBatt) continue; coeff = cBatt / 100.0; break;
 				}
 				fin.cs.red = cfin.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
 				fin.cs.green = cfin.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
@@ -94,8 +95,8 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		}
 	}
 	AlienFX_SDK::Functions::UpdateColors();
-	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp;
 	devbusy = false;
+	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
 	if (config->autoRefresh) Refresh();
 }
 
@@ -115,7 +116,7 @@ void FXHelper::SetLight(int id, int mode1, int length1, int speed1, BYTE r, BYTE
 				b2 = b2 < delta ? 0 : b2 - delta;
 		}
 
-		if (mode1 == 0) {
+		if (mode1 == 0 && mode2 == 0) {
 			AlienFX_SDK::Functions::SetColor(id, r, g, b);
 		}
 		else {
@@ -133,52 +134,9 @@ void FXHelper::SetLight(int id, int mode1, int length1, int speed1, BYTE r, BYTE
 void FXHelper::RefreshState()
 {
 	if (config->enableMon)
-		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, true);
+		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, true);
 	Refresh();
 }
-
-/*void FXHelper::UpdateLight(lightset* map, bool update) {
-	if (map != NULL && map->devid == pid) {
-		while (devbusy) Sleep(20);
-		devbusy = true;
-		if (config->lightsOn) {
-			if (map->eve[2].flags || map->eve[3].flags) {
-				devbusy = false;
-				return;
-			}
-			mapping* mmap = &map->eve[0].map;
-			Colorcode c1 = mmap->c1, c2 = mmap->c2;
-			if (!map->eve[0].flags)
-				c1.ci = c2.ci = 0;
-			int mode1 = mmap->mode, mode2 = mmap->mode2;
-			if (map->eve[1].flags) {
-				// use power event;
-				c2 = map->eve[1].map.c2;
-				switch (activeMode) {
-				case MODE_AC: mode1 = mode2 = 0; c1 = mmap->c1; break;
-				case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
-				case MODE_LOW: mode1 = mode2 = 1; c1 = c2; break;
-				case MODE_CHARGE: mode1 = mode2 = 2; c1 = mmap->c1; break;
-				}
-			}
-			if (mode1 == 0) {
-				AlienFX_SDK::Functions::SetColor(map->lightid, c1.cs.red, c1.cs.green, c1.cs.blue);
-			}
-			else {
-				AlienFX_SDK::Functions::SetAction(map->lightid,
-					mode1, mmap->length1, mmap->speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
-					mode2, mmap->length2, mmap->speed2, c2.cs.red, c2.cs.green, c2.cs.blue
-				);
-			}
-		}
-		else {
-			AlienFX_SDK::Functions::SetColor(map->lightid, 0, 0, 0);
-		}
-		if (update)
-			AlienFX_SDK::Functions::UpdateColors();
-		devbusy = false;
-	}
-}*/
 
 int FXHelper::Refresh()
 {
@@ -190,8 +148,9 @@ int FXHelper::Refresh()
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
 		if (Iter->devid == pid) {
 			Colorcode c1 = Iter->eve[0].map.c1, c2 = Iter->eve[0].map.c2;
-			if (!Iter->eve[0].flags)
-					c1.ci = 0; c2.ci = 0;
+			if (!Iter->eve[0].flags) {
+				c1.ci = 0; c2.ci = 0;
+			}
 			int mode1 = Iter->eve[0].map.mode, mode2 = Iter->eve[0].map.mode2;
 			if (Iter->eve[1].flags) {
 				// use power event;
@@ -209,7 +168,7 @@ int FXHelper::Refresh()
 				}
 			}
 			if ((Iter->eve[2].flags || Iter->eve[3].flags) 
-				&& !config->enableMon && config->lightsOn && config->stateOn) continue;
+				&& config->enableMon && config->lightsOn && config->stateOn) continue;
 			SetLight(Iter->lightid,
 				mode1, Iter->eve[0].map.length1, Iter->eve[0].map.speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
 				mode2, Iter->eve[0].map.length2, Iter->eve[0].map.speed2, c2.cs.red, c2.cs.green, c2.cs.blue

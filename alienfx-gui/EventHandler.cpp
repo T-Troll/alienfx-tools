@@ -113,6 +113,8 @@ DWORD WINAPI CEventProc(LPVOID param)
     MEMORYSTATUSEX memStat;
     memStat.dwLength = sizeof(MEMORYSTATUSEX);
 
+    SYSTEM_POWER_STATUS state;
+
     PDH_FMT_COUNTERVALUE_ITEM netArray[20] = { 0 };
     long maxnet = 1;
 
@@ -220,6 +222,7 @@ DWORD WINAPI CEventProc(LPVOID param)
         }
 
         GlobalMemoryStatusEx(&memStat);
+        GetSystemPowerStatus(&state);
 
         // Normilizing net values...
         long totalNet = 0;
@@ -245,13 +248,15 @@ DWORD WINAPI CEventProc(LPVOID param)
                 maxTemp = tempArray[i].FmtValue.longValue;
         }
 
+        if (state.BatteryLifePercent > 100) state.BatteryLifePercent = 100;
+
 #ifdef _DEBUG
         char buff[2048];
-        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU, maxTemp);
+        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU, maxTemp, state.BatteryLifePercent);
         OutputDebugString(buff);
 #endif
 
-        src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue, maxTemp);
+        src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue, maxTemp, state.BatteryLifePercent);
         
     }
 

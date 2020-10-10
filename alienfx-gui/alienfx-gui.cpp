@@ -258,10 +258,14 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        switch (LOWORD(wParam)) {
+        case IDOK: case IDCANCEL:
         {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
+        } break;
+        case IDC_SYSLINK_HOMEPAGE: 
+            ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
         }
         break;
     }
@@ -695,7 +699,7 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
     //RedrawWindow(tl, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
-void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
+/*void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
     if (num == 0) {
         if (map != NULL) map->mode = mode;
         CheckDlgButton(hDlg, IDC_RADIO_COLOR, BST_UNCHECKED);
@@ -718,7 +722,7 @@ void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
         case 2: CheckDlgButton(hDlg, IDC_RADIO_MORPH2, BST_CHECKED); break;
         }
     }
-}
+}*/
 
 bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
     CHOOSECOLOR cc;                 // common dialog box structure 
@@ -762,15 +766,15 @@ mapping* FindMapping(int did, int lid, int index)
 int eLid = (-1), eDid = (-1), eItem = (-1), dItem = (-1);
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    //lightset* map = NULL;
-    //mapping* mmap = NULL;
-    //unsigned i;
+
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS),
         s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
         s2_slider = GetDlgItem(hDlg, IDC_SPEED2),
         l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
-        l2_slider = GetDlgItem(hDlg, IDC_LENGTH2);
+        l2_slider = GetDlgItem(hDlg, IDC_LENGTH2),
+        type_c1 = GetDlgItem(hDlg, IDC_TYPE1),
+        type_c2 = GetDlgItem(hDlg, IDC_TYPE2);
 
     switch (message)
     {
@@ -778,14 +782,34 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     {
         //int pid = AlienFX_SDK::Functions::GetPID();
         size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
- 
+        bool noLights = true;
         for (int i = 0; i < lights; i++) {
             AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
             if (lgh.devid == pid) {
                 int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
                 SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
+                noLights = false;
             }
         }
+        if (noLights) {// no lights, switch to setup
+            HWND tab_list = GetParent(hDlg);
+            TabCtrl_SetCurSel(tab_list, 2);
+            OnSelChanged(tab_list);
+        }
+        // Set types list...
+        char buffer[100];
+        LoadString(hInst, IDS_TYPE_COLOR, buffer, 100);
+        SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+        SendMessage(type_c2, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_TYPE_PULSE, buffer, 100);
+        SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+        SendMessage(type_c2, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_TYPE_MORPH, buffer, 100);
+        SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+        SendMessage(type_c2, CB_ADDSTRING, 0, (LPARAM)buffer);
+        SendMessage(type_c1, CB_SETCURSEL, 0, 0);
+        SendMessage(type_c2, CB_SETCURSEL, 0, 0);
+        // now sliders...
         SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -803,6 +827,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     case WM_COMMAND: {
         int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
         int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+        int lType1 = (int)SendMessage(type_c1, CB_GETCURSEL, 0, 0);
+        int lType2 = (int)SendMessage(type_c2, CB_GETCURSEL, 0, 0);
         mapping* mmap = FindMapping(pid, lid, 0);
         // BLOCK FOR COLORS
         switch (LOWORD(wParam))
@@ -822,8 +848,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     mmap = &conf->mappings.back().eve[0].map;
                     mmap->lightset = &conf->mappings.back();
                 }
-                SetLightMode(hDlg, 0, mmap->mode, NULL);
-                SetLightMode(hDlg, 1, mmap->mode2, NULL);
+                //SetLightMode(hDlg, 0, mmap->mode, NULL);
+                //SetLightMode(hDlg, 1, mmap->mode2, NULL);
+                SendMessage(type_c1, CB_SETCURSEL, mmap->mode, 0);
+                SendMessage(type_c2, CB_SETCURSEL, mmap->mode2, 0);
                 RedrawButton(hDlg, IDC_BUTTON_C1, mmap->c1.cs.red, mmap->c1.cs.green, mmap->c1.cs.blue);
                 RedrawButton(hDlg, IDC_BUTTON_C2, mmap->c2.cs.red, mmap->c2.cs.green, mmap->c2.cs.blue);
                 SendMessage(s1_slider, TBM_SETPOS, true, mmap->speed1);
@@ -832,6 +860,18 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 SendMessage(l2_slider, TBM_SETPOS, true, mmap->length2);
                 break;
             } break;
+        case IDC_TYPE1:
+            if (HIWORD(wParam) == CBN_SELCHANGE) {
+                if (mmap != NULL)
+                    mmap->mode = lType1;
+            }
+            break;
+        case IDC_TYPE2:
+            if (HIWORD(wParam) == CBN_SELCHANGE) {
+                if (mmap != NULL)
+                    mmap->mode2 = lType2;
+            }
+            break;
         case IDC_BUTTON_C1:
             switch (HIWORD(wParam))
             {
@@ -862,7 +902,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 }
             } break;
             } break;
-        case IDC_RADIO_COLOR: case IDC_RADIO_PULSE: case IDC_RADIO_MORPH:
+        /*case IDC_RADIO_COLOR: case IDC_RADIO_PULSE: case IDC_RADIO_MORPH:
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
                 if (mmap != NULL) {
@@ -885,13 +925,13 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     SetLightMode(hDlg, 1, 3, NULL);
                 break;
             }
-            break;       
+            break;*/       
         default: return false;
         }
         if (mmap != NULL)
             fxhl->Refresh();
     } break;
-    case WM_HSCROLL:
+    case WM_VSCROLL:
         switch (LOWORD(wParam)) {
         case TB_THUMBTRACK: case TB_ENDTRACK:
             int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
@@ -962,26 +1002,28 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         // Set counter list...
-        std::string name = "CPU load";
-        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        name = "RAM load";
-        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        name = "Disk(s) load";
-        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        name = "GPU load";
-        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        name = "Network load";
-        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        name = "Max. Temperature";
-        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        //SendMessage(list_counter, CB_SETMINVISIBLE, 5, 0);
+        char buffer[100];
+        LoadString(hInst, IDS_CPU, buffer, 100);
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_RAM, buffer, 100);
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_HDD, buffer, 100);
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_GPU, buffer, 100);
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_NET, buffer, 100);
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_TEMP, buffer, 100);
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_BATT, buffer, 100);
+        SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
         // Set indicator list
-        name = "HDD activity";
-        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        name = "Network activity";
-        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
-        name = "System is hot";
-        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)(name.c_str()));
+        LoadString(hInst, IDS_A_HDD, buffer, 100);
+        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_A_NET, buffer, 100);
+        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_A_HOT, buffer, 100);
+        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
 
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
