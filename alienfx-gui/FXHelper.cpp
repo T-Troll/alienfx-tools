@@ -148,27 +148,30 @@ int FXHelper::Refresh()
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
 		if (Iter->devid == pid) {
 			Colorcode c1 = Iter->eve[0].map.c1, c2 = Iter->eve[0].map.c2;
-			if (!Iter->eve[0].flags) {
-				c1.ci = 0; c2.ci = 0;
-			}
 			int mode1 = Iter->eve[0].map.mode, mode2 = Iter->eve[0].map.mode2;
-			if (Iter->eve[1].flags) {
-				// use power event;
-				c2 = Iter->eve[1].map.c2;
-				c1 = Iter->eve[1].map.c1;
-				switch (activeMode) {
-				case MODE_AC: if (Iter->eve[0].flags) {
-					c1 = Iter->eve[0].map.c1; c2 = Iter->eve[0].map.c2;
-				} else {
-					mode1 = mode2 = 0; //c1 = Iter->eve[1].map.c1;
-				} break;
-				case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
-				case MODE_LOW: mode1 = mode2 = 1; c1 = c2; break;
-				case MODE_CHARGE: mode1 = mode2 = 2; /*c1 = Iter->eve[0].map.c1;*/ break;
+			if (config->enableMon) {
+				if (!Iter->eve[0].flags) {
+					c1.ci = 0; c2.ci = 0;
 				}
+				if (Iter->eve[1].flags) {
+					// use power event;
+					c2 = Iter->eve[1].map.c2;
+					c1 = Iter->eve[1].map.c1;
+					switch (activeMode) {
+					case MODE_AC: if (Iter->eve[0].flags) {
+						c1 = Iter->eve[0].map.c1; c2 = Iter->eve[0].map.c2;
+					}
+								else {
+						mode1 = mode2 = 0; //c1 = Iter->eve[1].map.c1;
+					} break;
+					case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
+					case MODE_LOW: mode1 = mode2 = 1; c1 = c2; break;
+					case MODE_CHARGE: mode1 = mode2 = 2; /*c1 = Iter->eve[0].map.c1;*/ break;
+					}
+				}
+				if ((Iter->eve[2].flags || Iter->eve[3].flags)
+					&& config->lightsOn && config->stateOn) continue;
 			}
-			if ((Iter->eve[2].flags || Iter->eve[3].flags) 
-				&& config->enableMon && config->lightsOn && config->stateOn) continue;
 			SetLight(Iter->lightid,
 				mode1, Iter->eve[0].map.length1, Iter->eve[0].map.speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
 				mode2, Iter->eve[0].map.length2, Iter->eve[0].map.speed2, c2.cs.red, c2.cs.green, c2.cs.blue

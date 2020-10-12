@@ -380,6 +380,8 @@ int ConfigHandler::Save() {
         NULL,
         &hKey3,
         &dwDisposition);
+    // set current profile mappings to current set!
+    profiles[activeProfile].lightsets = mappings;
     for (int j = 0; j < profiles.size(); j++) {
         sprintf_s((char*)name, 255, "Profile-%d", profiles[j].id);
         RegSetValueExA(

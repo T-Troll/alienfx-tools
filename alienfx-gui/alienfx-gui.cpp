@@ -492,12 +492,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             case CBN_SELCHANGE: {
                 for (int i = 0; i < conf->profiles.size(); i++)
                     if (conf->profiles[i].id == prid) {
+                        // save current profile mappings...
+                        conf->profiles[conf->activeProfile].lightsets = conf->mappings;
+                        // load new mappings...
                         conf->mappings = conf->profiles[i].lightsets;
                         conf->activeProfile = prid;
                         // Reload lighs list at colors and events.
                         OnSelChanged(tab_list);
                         pRitem = pbItem; pRid = prid;
-                        conf->activeProfile = prid;
                         fxhl->RefreshState();
                     }
             } break;
@@ -535,7 +537,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             pRid = conf->activeProfile = vacID; pRitem = pos;
         } break;
         case IDC_REMOVEPROFILE: {
-            if (conf->profiles.size() > 1) { // can't delete last profile!
+            if (conf->profiles.size() > 1 && MessageBox(hDlg, "Do you really want to remove current profile and all settings for it?", "Warning!",
+                MB_YESNO | MB_ICONWARNING) == IDYES) { // can't delete last profile!
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin(); 
                     Iter != conf->profiles.end(); Iter++)
                     if (Iter->id == pRid) {
@@ -894,7 +897,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {
-                if (mmap != NULL) {
+                if (mmap != NULL &&
+                    MessageBox(hDlg, "Do you really want to set all lights for current device to this settings?", "Warning!",
+                        MB_YESNO | MB_ICONWARNING) == IDYES) {
                     for (int i = 0; i < conf->mappings.size(); i++)
                         if (conf->mappings[i].devid == pid) {
                             conf->mappings[i].eve[0] = ((lightset*)mmap->lightset)->eve[0];
@@ -1332,22 +1337,27 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             UpdateLightList(light_list, did);
         } break;
         case IDC_BUTTON_REML:
-            //std::vector <AlienFX_SDK::mapping>::iterator Iter = AlienFX_SDK::Functions::GetMappings()->begin();
-            for (std::vector <AlienFX_SDK::mapping>::iterator Iter = AlienFX_SDK::Functions::GetMappings()->begin();
-                Iter != AlienFX_SDK::Functions::GetMappings()->end(); Iter++) {
-                if (Iter->devid == did && Iter->lightid == lid) {
-                    AlienFX_SDK::Functions::GetMappings()->erase(Iter);
-                    // erase mappings!
-                    for (std::vector <lightset>::iterator mIter = conf->mappings.begin();
-                        mIter != conf->mappings.end(); mIter++)
+            if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
+                MB_YESNO | MB_ICONWARNING) == IDYES) {
+                // delete from all profiles...
+                for (std::vector <profile>::iterator Iter = conf->profiles.begin();
+                    Iter != conf->profiles.end(); Iter++) {
+                    // erase mappings
+                    for (std::vector <lightset>::iterator mIter = Iter->lightsets.begin();
+                        mIter != Iter->lightsets.end(); mIter++)
                         if (mIter->devid == did && mIter->lightid == lid) {
                             conf->mappings.erase(mIter);
                             break;
                         }
-                    break;
                 }
+                // reset active mappings
+                conf->mappings = conf->profiles[conf->activeProfile].lightsets;
+                for (std::vector <AlienFX_SDK::mapping>::iterator Iter = AlienFX_SDK::Functions::GetMappings()->begin();
+                    Iter != AlienFX_SDK::Functions::GetMappings()->end(); Iter++)
+                    if (Iter->devid == did && Iter->lightid == lid)
+                        AlienFX_SDK::Functions::GetMappings()->erase(Iter);
+                UpdateLightList(light_list, did);
             }
-            UpdateLightList(light_list, did);
             break;
         case IDC_BUTTON_TESTCOLOR: {
             SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor.cs.red, &conf->testColor.cs.green, &conf->testColor.cs.blue);
