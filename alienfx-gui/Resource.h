@@ -80,8 +80,9 @@
 #define IDC_BUTTON_TESTCOLOR            1039
 #define IDC_TYPE1                       1040
 #define IDC_TYPE2                       1041
-#define IDC_SYSLINK1                    1043
 #define IDC_SYSLINK_HOMEPAGE            1043
+#define IDC_CHECK1                      1044
+#define IDC_ISPOWERBUTTON               1044
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -104,7 +105,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        143
 #define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1044
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

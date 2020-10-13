@@ -132,6 +132,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //fxhl->Refresh();
     }
     conf->Save();
+    conf->enableMon = 0;
+    fxhl->Refresh();
     AlienFX_SDK::Functions::SaveMappings();
 
     delete eve;
@@ -702,31 +704,6 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
     //RedrawWindow(tl, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
-/*void SetLightMode(HWND hDlg, int num, int mode, mapping* map) {
-    if (num == 0) {
-        if (map != NULL) map->mode = mode;
-        CheckDlgButton(hDlg, IDC_RADIO_COLOR, BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_RADIO_PULSE, BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_RADIO_MORPH, BST_UNCHECKED);
-        switch (mode) {
-        case 0: CheckDlgButton(hDlg, IDC_RADIO_COLOR, BST_CHECKED); break;
-        case 1: CheckDlgButton(hDlg, IDC_RADIO_PULSE, BST_CHECKED); break;
-        case 2: CheckDlgButton(hDlg, IDC_RADIO_MORPH, BST_CHECKED); break;
-        }
-    }
-    else {
-        if (map != NULL) map->mode2 = mode;
-        CheckDlgButton(hDlg, IDC_RADIO_COLOR2, BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_RADIO_PULSE2, BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_RADIO_MORPH2, BST_UNCHECKED);
-        switch (mode) {
-        case 0: CheckDlgButton(hDlg, IDC_RADIO_COLOR2, BST_CHECKED); break;
-        case 1: CheckDlgButton(hDlg, IDC_RADIO_PULSE2, BST_CHECKED); break;
-        case 2: CheckDlgButton(hDlg, IDC_RADIO_MORPH2, BST_CHECKED); break;
-        }
-    }
-}*/
-
 bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
     CHOOSECOLOR cc;                 // common dialog box structure 
     //static COLORREF acrCustClr[16]; // array of custom colors 
@@ -797,7 +774,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         if (noLights) {// no lights, switch to setup
             HWND tab_list = GetParent(hDlg);
             TabCtrl_SetCurSel(tab_list, 2);
+            EndDialog(hDlg, IDOK);
+            DestroyWindow(hDlg);
             OnSelChanged(tab_list);
+            return true;
         }
         // Set types list...
         char buffer[100];
@@ -998,12 +978,22 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG:
     {
         size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+        bool noLights = true;
         for (int i = 0; i < lights; i++) {
             AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
             if (lgh.devid == pid) {
                 int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
                 SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
+                noLights = false;
             }
+        }
+        if (noLights) {// no lights, switch to setup
+            HWND tab_list = GetParent(hDlg);
+            TabCtrl_SetCurSel(tab_list, 2);
+            EndDialog(hDlg, IDOK);
+            DestroyWindow(hDlg);
+            OnSelChanged(tab_list);
+            return true;
         }
 
         // Set counter list...
@@ -1278,6 +1268,10 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     nEdited = false;
                 }
                 SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
+                if (AlienFX_SDK::Functions::GetFlags(pid, lid))
+                    CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_CHECKED);
+                else
+                    CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
                 eve->StopEvents();
                 // highlight to check....
                 fxhl->TestLight(lid);
@@ -1364,10 +1358,18 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (lid != -1) {
                 eve->StopEvents();
                 SetFocus(light_list);
-                //SendMessage(light_list, CB_SETCURSEL, lbItem, 0);
                 fxhl->TestLight(lid);
             }
         } break;
+        case IDC_ISPOWERBUTTON:
+            if (lid != -1) {
+                unsigned flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
+                AlienFX_SDK::Functions::SetFlags(did, lid, flags);
+                mapping* map = FindMapping(did, lid, 1);
+                if (map != NULL)
+                    ((lightset*)(map->lightset))->eve[1].source = flags;
+            }
+            break;
         case IDC_STARTM:
             conf->startMinimized = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             break;

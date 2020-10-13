@@ -456,7 +456,7 @@ namespace AlienFX_SDK
 		size_t BytesWritten;
 		// Buffer[3], [11] - action type ( 0 - light, 1 - pulse, 2 - morph)
 		// Buffer[4], [12] - how long phase keeps
-		// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph
+		// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph
 		// Buffer[7], [15] - tempo (0xfa - steady)
 		byte Buffer[] = { 0x00, 0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0x32 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x64 , 0x00
 		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
@@ -469,23 +469,25 @@ namespace AlienFX_SDK
 			Buffer[11] = action2;
 			Buffer[12] = time2;
 			Buffer[15] = tempo2;
-			Buffer2[6] = index;
 			Buffer[8] = Red;
 			Buffer[9] = Green;
 			Buffer[10] = Blue;
 			Buffer[16] = Red2;
 			Buffer[17] = Green2;
 			Buffer[18] = Blue2;
+			Buffer2[6] = index;
 
 			switch (action) {
 			case 0: Buffer[5] = 0xd0; Buffer[7] = 0xfa; break;
 			case 1: Buffer[5] = 0xdc; break;
 			case 2: Buffer[5] = 0xcf; break;
+			case 3: Buffer[5] = 0xe8; Buffer[3] = AlienFX_A_Morph; break;
 			}
 			switch (action2) {
-			case 0: Buffer[13] = 0xd0; Buffer[15] = 0xfa; break;
+			case 0: Buffer[13] = 0xd0; Buffer[11] = 0; Buffer[15] = 0xfa; break;
 			case 1: Buffer[13] = 0xdc; break;
 			case 2: Buffer[13] = 0xcf; break;
+			case 3: Buffer[13] = 0xe8; Buffer[11] = AlienFX_A_Morph; break;
 			case 4: // No action
 				Buffer[11] = Buffer[12] = Buffer[13] = Buffer[14] = Buffer[15] = 0;
 				break;
@@ -504,6 +506,83 @@ namespace AlienFX_SDK
 		return false;
 	}
 
+	bool Functions::SetPowerAction(int index, int Red, int Green, int Blue, int Red2, int Green2, int Blue2)
+	{
+		size_t BytesWritten;
+		byte Buffer[] = { 0x00, 0x03 ,0x22 ,0x00 ,0x02 ,0x00 ,0x5b ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
+		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
+		if (length == 34) { // only supported at new devices
+			// AC power... (color 1)
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Buffer[4] = 4; Buffer[6]++;
+			Loop();
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			Buffer[4] = 1;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			SetAction(index, AlienFX_A_Color, 0, 0, Red, Green, Blue);
+			// Charge....
+			Buffer[4] = 2;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Buffer[4] = 4; Buffer[6]++;
+			Loop();
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			Buffer[4] = 1;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			SetAction(index, AlienFX_A_Power, 3, 0x64, Red, Green, Blue, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2);
+			// Battery low...
+			Buffer[4] = 2;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Buffer[4] = 4; Buffer[6]++;
+			Loop();
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			Buffer[4] = 1;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			SetAction(index, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2, AlienFX_A_Power, 3, 0x64, 0, 0, 0);
+			// Battery mode
+			Buffer[4] = 2;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Buffer[4] = 4; Buffer[6]++;
+			Loop();
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			Buffer[4] = 1;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
+			// Unknown...
+			Buffer[4] = 2;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Buffer[4] = 4; Buffer[6]++;
+			Loop();
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			Buffer[4] = 1;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
+			// Finish
+			Buffer[4] = 2;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Buffer[4] = 4; Buffer[6]++;
+			Loop();
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			Buffer[4] = 1;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+		}
+		else {
+			// can't set action for old, just use color
+			SetColor(index, Red, Green, Blue);
+		}
+		return 0;
+	}
 	int ReadStatus;
 
 	byte AlienfxGetDeviceStatus()
@@ -636,9 +715,35 @@ namespace AlienFX_SDK
 		return false;
 	}
 
+	void AddMapping(int devID, int lightID, char* name, int flags) {
+		mapping map;
+		int i = 0;
+		for (i = 0; i < mappings.size(); i++) {
+			if (mappings[i].devid == devID && mappings[i].lightid == lightID) {
+				if (name != NULL)
+					mappings[i].name = name;
+				else
+					mappings[i].flags = flags;
+				break;
+			}
+		}
+		if (i == mappings.size()) {
+			// add new mapping
+			map.devid = devID; map.lightid = lightID;
+			if (name != NULL)
+				map.name = name;
+			else
+				map.flags = flags;
+			mappings.push_back(map);
+		}
+	}
+
 	void Functions::LoadMappings() {
 		DWORD  dwDisposition;
 		HKEY   hKey1;
+
+		devices.clear();
+		mappings.clear();
 
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
@@ -668,20 +773,26 @@ namespace AlienFX_SDK
 			);
 			// get id(s)...
 			if (ret == ERROR_SUCCESS) {
-				unsigned ret2 = sscanf_s((char*)name, "%d-%d", &map.devid, &map.lightid);
+				int lID = 0, dID = 0;
+				unsigned ret2 = sscanf_s((char*)name, "%d-%d", &dID, &lID);
 				if (ret2 == 2) {
 					// light name
-					std::string out(inarray);
-					map.name = out;
-					mappings.push_back(map);
+					AddMapping(dID, lID, inarray, 0);
 				}
 				else {
-					// device name?
-					ret2 = sscanf_s((char*)name, "Dev#%d", &dev.devid);
-					if (ret2 == 1) {
-						std::string devname(inarray);
-						dev.name = devname;
-						devices.push_back(dev);
+					// device flags?
+					ret2 = sscanf_s((char*)name, "Flags%d-%d", &dID, &lID);
+					if (ret2 == 2) {
+						AddMapping(dID, lID, NULL, *(unsigned *)inarray);
+					}
+					else {
+						// device name?
+						ret2 = sscanf_s((char*)name, "Dev#%d", &dev.devid);
+						if (ret2 == 1) {
+							std::string devname(inarray);
+							dev.name = devname;
+							devices.push_back(dev);
+						}
 					}
 				}
 				vindex++;
@@ -741,6 +852,16 @@ namespace AlienFX_SDK
 				(BYTE*)mappings[i].name.c_str(),
 				(DWORD)mappings[i].name.size()
 			);
+			sprintf_s((char*)name, 255, "Flags%d-%d", mappings[i].devid, mappings[i].lightid);
+
+			RegSetValueExA(
+				hKey1,
+				name,
+				0,
+				REG_DWORD,
+				(BYTE*)&mappings[i].flags,
+				4
+			);
 		}
 		RegCloseKey(hKey1);
 	}
@@ -748,6 +869,23 @@ namespace AlienFX_SDK
 	std::vector<mapping>* Functions::GetMappings()
 	{
 		return &mappings;
+	}
+
+	unsigned Functions::GetFlags(int devid, int lightid)
+	{
+		for (int i = 0; i < mappings.size(); i++)
+			if (mappings[i].devid == devid && mappings[i].lightid == lightid)
+				return mappings[i].flags;
+		return -1;
+	}
+
+	void Functions::SetFlags(int devid, int lightid, int flags)
+	{
+		for (int i = 0; i < mappings.size(); i++)
+			if (mappings[i].devid == devid && mappings[i].lightid == lightid) {
+				mappings[i].flags = flags;
+				return;
+			}
 	}
 
 	std::vector<devmap>* Functions::GetDevices()

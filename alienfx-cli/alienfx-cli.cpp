@@ -56,11 +56,10 @@ int main(int argc, char* argv[])
 	if (isInit != -1)
 	{
 		bool result = AlienFX_SDK::Functions::Reset(false);
-		if (!result) {
-			std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
-			return 1;
+		if (result) {
+			//std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
+			result = AlienFX_SDK::Functions::IsDeviceReady();
 		}
-		result = AlienFX_SDK::Functions::IsDeviceReady();
 		AlienFX_SDK::Functions::LoadMappings();
 	}
 	else {
@@ -234,14 +233,14 @@ int main(int argc, char* argv[])
 				cerr << "set-action: Incorrect arguments" << endl;
 				continue;
 			}
-			unsigned actionCode = LFX_ACTION_COLOR, action_low = AlienFX_SDK::Action::AlienFX_Color, action_low_2 = AlienFX_SDK::Action::AlienFX_Color;
+			unsigned actionCode = LFX_ACTION_COLOR, action_low = AlienFX_SDK::Action::AlienFX_A_Color, action_low_2 = AlienFX_SDK::Action::AlienFX_A_Color;
 			if (args.at(0) == "pulse") {
 				actionCode = LFX_ACTION_PULSE;
-				action_low = AlienFX_SDK::Action::AlienFX_Pulse;
+				action_low = AlienFX_SDK::Action::AlienFX_A_Pulse;
 			}
 			else if (args.at(0) == "morph") {
 				actionCode = LFX_ACTION_MORPH;
-				action_low = AlienFX_SDK::Action::AlienFX_Morph;
+				action_low = AlienFX_SDK::Action::AlienFX_A_Morph;
 			}
 			static ColorU color, color2;
 			color.cs.red = atoi(args.at(5).c_str());
@@ -250,10 +249,10 @@ int main(int argc, char* argv[])
 			color.cs.brightness = args.size() > 6 ? atoi(args.at(6).c_str()) : 255;
 			if (args.size() > 7) {
 				if (args.at(7) == "pulse") {
-					action_low_2 = AlienFX_SDK::Action::AlienFX_Pulse;
+					action_low_2 = AlienFX_SDK::Action::AlienFX_A_Pulse;
 				}
 				else if (args.at(7) == "morph") {
-					action_low_2 = AlienFX_SDK::Action::AlienFX_Morph;
+					action_low_2 = AlienFX_SDK::Action::AlienFX_A_Morph;
 				}
 				color2.cs.red = atoi(args.at(10).c_str());
 				color2.cs.green = atoi(args.at(9).c_str());

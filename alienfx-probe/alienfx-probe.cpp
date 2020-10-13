@@ -60,9 +60,8 @@ int main(int argc, char* argv[])
 				bool result = AlienFX_SDK::Functions::Reset(false);
 				if (!result) {
 					std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
-					return 1;
+					result = AlienFX_SDK::Functions::IsDeviceReady();
 				}
-				result = AlienFX_SDK::Functions::IsDeviceReady();
 				cout << "Enter device name or id: ";
 				std::cin.getline(name, 255);
 				if (isdigit(name[0]) && res == (-1)) {
