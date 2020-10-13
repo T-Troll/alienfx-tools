@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
 {
 	bool low_level = false;
 	UINT sleepy = 0;
+	cerr << "alienfx-cli v0.8.11" << endl;
 	if (argc < 2) 
 	{
 		printUsage();

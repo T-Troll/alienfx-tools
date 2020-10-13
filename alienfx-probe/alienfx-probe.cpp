@@ -16,7 +16,7 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 16;
-	cout << "Probing low-level access... ";
+	cout << "alienfx-probe v0.8.11" << endl << "Probing low-level access... ";
 	vector<int> pids;
 	pids = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	if (pids.size() > 0) {
