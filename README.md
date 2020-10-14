@@ -20,7 +20,7 @@ Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
 - Only one device per time can be controlled trough low-level SDK, but you can choose which one.
 - Brightness is not supported for low-level API, just ignored now.
-- Hardware light effects (pulse, morph) doesn't supported for older devices and can't work with hardware light effects at the same time (hardware limitation).
+- Hardware light effects (pulse, morph) doesn't supported for older devices and can't work with software light effects at the same time (hardware limitation).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't monitor GPU load for it.
 - <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 - <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown you notebook (some lights can stay on after shutdown), remove power adapter cord and wait 15 sec (or then lights come off), then start it back. Use with care!
@@ -91,7 +91,7 @@ If the app minimized, it hide itsef at the tray, check thay menu (right-click on
 How it works
 ```
 "Color" tab is set hardware color mode for light. This mode will remain even if you exit application.<br>
-"Events" tab designed for dynamic control system events and change lights to reflect it - like power events, system load, temperatures.
+"Events" tab designed for dynamic control system events and change lights to reflect it - like power events, system load, temperatures.<br>
 "Settings" tab is a mix of `alienfx-probe`-like GUI to set device and light names, and also control application settings.<br>
 Please keep in mind some settings only avaliable from tray menu or keyboard shortcut.<br>
 Keyboard shortcuts (any time):
@@ -104,7 +104,7 @@ Other shortcuts (then application active):
 - ALT+s - switch to Settings tab
 - ALT+r - refresh all lights
 - ALT+? - about app
-WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activily lights.
+WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events.
 
 ## Tools Used
 * Visual Studio Community 2019
