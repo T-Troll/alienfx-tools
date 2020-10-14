@@ -23,6 +23,7 @@ Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G
 - Hardware light effects (pulse, morph) doesn't supported for older devices and can't work with hardware light effects at the same time (hardware limitation).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't monitor GPU load for it.
 - <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
+- <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown you notebook (some lights can stay on after shutdown), remove power adapter cord and wait 15 sec (or then lights come off), then start it back. Use with care!
 
 ## Installation
 Download latest release archive from [here](https://github.com/T-Troll/alienfx-tools/releases).<br>
@@ -47,6 +48,7 @@ The following commands are available:
 - `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided.
 - `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,<action2>,r,g,b[,br]]` Set light to color provided and enable action.
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
+- `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` - Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
@@ -85,6 +87,23 @@ First, use "Setup" tab to configure out devices, lights and system settings (onc
 Use "Color" tab for simple lights setup (this colors and modes will stay as default until AWCC run or modified by other app), even after reboot.</br>
 You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a color for reaction at "Events" tab. In this case, first color from "Color" tab will be used for "calm" situation, and the color from "Events" tab will be uset for "active" situation.<br>
 If the app minimized, it hide itsef at the tray, check thay menu (right-click on tray button) for some cool features as well.<br>
+```
+How it works
+```
+"Color" tab is set hardware color mode for light. This mode will remain even if you exit application.<br>
+"Events" tab designed for dynamic control system events and change lights to reflect it - like power events, system load, temperatures.
+"Settings" tab is a mix of `alienfx-probe`-like GUI to set device and light names, and also control application settings.<br>
+Please keep in mind some settings only avaliable from tray menu or keyboard shortcut.<br>
+Keyboard shortcuts (any time):
+- CTRL+SHIFT+F12 - enable/disable lights
+- CTRL+SHIFT+F11 - dim/undim lights
+- F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
+Other shortcuts (then application active):
+- ALT+c - switch to Color tab
+- ALT+e - switch to Event tab
+- ALT+s - switch to Settings tab
+- ALT+r - refresh all lights
+- ALT+? - about app
 WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activily lights.
 
 ## Tools Used
