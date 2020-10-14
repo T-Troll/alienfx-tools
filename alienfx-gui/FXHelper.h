@@ -28,7 +28,7 @@ public:
 	void StartFX();
 	void StopFX();
 	//void UpdateLight(lightset* map, bool update = true);
-	int Refresh();
+	int Refresh(bool force=false);
 	int SetMode(int mode);
 	std::vector<int> GetDevList();
 	void TestLight(int id);

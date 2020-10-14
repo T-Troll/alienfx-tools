@@ -22,13 +22,14 @@ void printUsage()
 		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
 		<< "set-action\taction,dev,light,r,g,b[,br,action,r,g,b[,br]] - set light and enable it's action." << endl
 		<< "set-zone-action\taction,zone,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
-		<< "set-tempo\ttempo - set light action tempo (in milliseconds)" << endl
-		<< "low-level\tswitch to low-level SDK (USB driver)" << endl
-		<< "high-level\tswitch to high-level SDK (Alienware LightFX)" << endl
-		<< "status\t\tshows devices and lights id's, names and statuses" << endl
+		<< "set-power\tlight,r,g,b,r2,g2,b2 - set power button colors (low-level only)." << endl
+		<< "set-tempo\ttempo - set light action tempo (in milliseconds)." << endl
+		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
+		<< "high-level\tswitch to high-level SDK (Alienware LightFX)." << endl
+		<< "status\t\tshows devices and lights id's, names and statuses." << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
-		<< "Zones: left, right, top, bottom, front, rear" << endl
-		<< "Actions: pulse, morph (you need 2 colors for morph), color (disable action)" << endl;
+		<< "Zones: left, right, top, bottom, front, rear." << endl
+		<< "Actions: pulse, morph (you need 2 colors for morph), color (disable action)." << endl;
 }
 
 int main(int argc, char* argv[])
@@ -118,10 +119,14 @@ int main(int argc, char* argv[])
 					}
 					cout << endl;
 					for (int k = 0; k < AlienFX_SDK::Functions::GetMappings()->size(); k++) {
-						if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == 
-							AlienFX_SDK::Functions::GetMappings()->at(k).devid)
-						cout << "  Light ID#" << AlienFX_SDK::Functions::GetMappings()->at(k).lightid 
-							<< " - " << AlienFX_SDK::Functions::GetMappings()->at(k).name << endl;
+						if (AlienFX_SDK::Functions::GetDevices()->at(i).devid ==
+							AlienFX_SDK::Functions::GetMappings()->at(k).devid) {
+							cout << "  Light ID#" << AlienFX_SDK::Functions::GetMappings()->at(k).lightid
+								<< " - " << AlienFX_SDK::Functions::GetMappings()->at(k).name;
+							if (AlienFX_SDK::Functions::GetMappings()->at(k).flags)
+								cout << " (Power button)";
+							cout << endl;
+						}
 					}
 				}
 			}
@@ -229,6 +234,32 @@ int main(int argc, char* argv[])
 			}
 			continue;
 		}
+		if (command == "set-power") {
+			if (args.size() != 7) {
+				cerr << "set-power: Incorrect arguments" << endl;
+				continue;
+			}
+			static ColorU color, color2;
+			color.cs.red = atoi(args.at(1).c_str());
+			color.cs.green = atoi(args.at(2).c_str());
+			color.cs.blue = atoi(args.at(3).c_str());
+			//color.cs.brightness = 255;
+			color2.cs.red = atoi(args.at(4).c_str());
+			color2.cs.green = atoi(args.at(5).c_str());
+			color2.cs.blue = atoi(args.at(6).c_str());
+			//color2.cs.brightness = 255;
+			if (low_level) {
+				AlienFX_SDK::Functions::SetPowerAction(atoi(args.at(0).c_str()),
+					color.cs.red, color.cs.green, color.cs.blue,
+					color2.cs.red, color2.cs.green, color2.cs.blue);
+			}
+			else {
+			//	lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
+			//	lfxUtil.Update();
+				cerr << "set-power doens't supported" << endl;
+			}
+			continue;
+		}
 		if (command == "set-action") {
 			if (args.size() < 6) {
 				cerr << "set-action: Incorrect arguments" << endl;
@@ -322,6 +353,7 @@ int main(int argc, char* argv[])
 		}
 		cerr << "Unknown command: " << command << endl;
 	}
+	cout << "Done." << endl;
 	AlienFX_SDK::Functions::AlienFXClose();
 	if (res == -1) 
 		lfxUtil.Release();

@@ -506,76 +506,68 @@ namespace AlienFX_SDK
 		return false;
 	}
 
+	byte AlienfxWaitForReady();
+
 	bool Functions::SetPowerAction(int index, int Red, int Green, int Blue, int Red2, int Green2, int Blue2)
 	{
 		size_t BytesWritten;
-		byte Buffer[] = { 0x00, 0x03 ,0x22 ,0x00 ,0x02 ,0x00 ,0x5b ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
+		byte Buffer[] = { 0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		if (length == 34) { // only supported at new devices
-			// AC power... (color 1)
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Buffer[4] = 4; Buffer[6]++;
-			Loop();
+			// Need to flush query...
+			if (inSet) UpdateColors();
+			// Now set....
+			for (BYTE cid = 0x5b; cid < 0x61; cid++) {
+				// Init query...
+				Buffer[6] = cid;
+				Buffer[4] = 4;
+				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				Loop();
+				Buffer[4] = 1;
+				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				Loop();
+				// Now set color by type...
+				switch (cid) {
+				case 0x5b: // Alarm
+					SetAction(index, AlienFX_A_Power, 3, 0x64, Red, Green, Blue, AlienFX_A_Power, 3, 0x64, 0, 0, 0);
+					break;
+				case 0x5c: // AC power
+					SetAction(index, AlienFX_A_Color, 0, 0, Red, Green, Blue);
+					break;
+				case 0x5d: // Charge
+					SetAction(index, AlienFX_A_Power, 3, 0x64, Red, Green, Blue, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2);
+					break;
+				case 0x5e: // Low batt
+					SetAction(index, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2, AlienFX_A_Power, 3, 0x64, 0, 0, 0);
+					break;
+				case 0x5f: // Batt power
+					SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
+					break;
+				case 0x60: // Unknown - No battery?
+					SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
+					break;
+				}
+				// And finish
+				Buffer[4] = 2;
+				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				Loop();
+			}
+			// Now color set...
+			/*Buffer[2] = 0x21; Buffer[4] = 4; Buffer[6] = 0x61;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
 			Buffer[4] = 1;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
-			SetAction(index, AlienFX_A_Color, 0, 0, Red, Green, Blue);
-			// Charge....
+			// TODO: color set here...
 			Buffer[4] = 2;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Buffer[4] = 4; Buffer[6]++;
-			Loop();
+			Loop();*/
+			Buffer[4] = 6; Buffer[6] = 0x60;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
-			Buffer[4] = 1;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			SetAction(index, AlienFX_A_Power, 3, 0x64, Red, Green, Blue, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2);
-			// Battery low...
-			Buffer[4] = 2;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Buffer[4] = 4; Buffer[6]++;
-			Loop();
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			Buffer[4] = 1;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			SetAction(index, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2, AlienFX_A_Power, 3, 0x64, 0, 0, 0);
-			// Battery mode
-			Buffer[4] = 2;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Buffer[4] = 4; Buffer[6]++;
-			Loop();
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			Buffer[4] = 1;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
-			// Unknown...
-			Buffer[4] = 2;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Buffer[4] = 4; Buffer[6]++;
-			Loop();
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			Buffer[4] = 1;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
-			// Finish
-			Buffer[4] = 2;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Buffer[4] = 4; Buffer[6]++;
-			Loop();
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			Buffer[4] = 1;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
+			AlienfxWaitForReady();
+			inSet = false;
 		}
 		else {
 			// can't set action for old, just use color
@@ -618,7 +610,7 @@ namespace AlienFX_SDK
 		{
 			if (status == ALIENFX_DEVICE_RESET)
 				return status;
-			Sleep(2);
+			Sleep(20);
 			status = AlienfxGetDeviceStatus();
 		}
 		return status;

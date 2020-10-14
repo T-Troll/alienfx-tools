@@ -65,6 +65,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf->Load();
 
     eve->ChangePowerState();
+
+    fxhl->Refresh(true);
+
     if (conf->lightsOn) {
         eve->StartEvents();
     }
@@ -127,13 +130,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }*/
 
-    if (conf->lightsOn) {
-        eve->StopEvents();
-        //fxhl->Refresh();
-    }
+    eve->StopEvents();
+
     conf->Save();
-    conf->enableMon = 0;
-    fxhl->Refresh();
+
+    fxhl->Refresh(true);
+
     AlienFX_SDK::Functions::SaveMappings();
 
     delete eve;
