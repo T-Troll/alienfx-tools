@@ -27,8 +27,18 @@ struct mapping {
 	void* lightset;
 };
 
+union FlagSet {
+	struct {
+		BYTE flags;
+		BYTE cut;
+		BYTE proc;
+		BYTE reserved;
+	} b;
+	unsigned s = 0;
+};
+
 struct event {
-	unsigned flags = 0;
+	FlagSet fs;
 	unsigned source = 0;
 	mapping  map;
 };

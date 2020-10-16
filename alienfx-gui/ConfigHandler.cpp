@@ -194,7 +194,7 @@ int ConfigHandler::Load() {
             switch (ret2) {
             case 3: { // new format
                 for (int i = 0; i < 4; i++) {
-                    map.eve[i].flags = inarray[i * 10];
+                    map.eve[i].fs.s = inarray[i * 10];
                     map.eve[i].source = inarray[i * 10 + 1];
                     map.eve[i].map.mode = inarray[i * 10 + 2];
                     map.eve[i].map.mode2 = inarray[i * 10 + 3];
@@ -213,7 +213,7 @@ int ConfigHandler::Load() {
             }
             case 2: { // old format
                 for (int i = 0; i < 4; i++) {
-                    map.eve[i].flags = inarray[i * 10];
+                    map.eve[i].fs.s = inarray[i * 10];
                     map.eve[i].source = inarray[i * 10 + 1];
                     map.eve[i].map.mode = inarray[i * 10 + 2];
                     map.eve[i].map.mode2 = inarray[i * 10 + 3];
@@ -399,7 +399,7 @@ int ConfigHandler::Save() {
             //preparing binary....
             UINT size = 40 * 4;// (UINT)mappings[i].map.size();
             for (int j = 0; j < 4; j++) {
-                out[j * 10] = cur.eve[j].flags;
+                out[j * 10] = cur.eve[j].fs.s;
                 out[j * 10 + 1] = cur.eve[j].source;
                 out[j * 10 + 2] = cur.eve[j].map.mode;
                 out[j * 10 + 3] = cur.eve[j].map.mode2;

@@ -827,8 +827,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     lightset newmap;
                     newmap.devid = pid;
                     newmap.lightid = lid;
-                    newmap.eve[0].flags = 1;
+                    newmap.eve[0].fs.b.flags = 1;
                     newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
+                    newmap.eve[3].fs.b.cut = 90;
                     conf->mappings.push_back(newmap);
                     mmap = &conf->mappings.back().eve[0].map;
                     mmap->lightset = &conf->mappings.back();
@@ -888,31 +889,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                         }
                 }
             } break;
-            } break;
-        /*case IDC_RADIO_COLOR: case IDC_RADIO_PULSE: case IDC_RADIO_MORPH:
-            switch (HIWORD(wParam)) {
-            case BN_CLICKED:
-                if (mmap != NULL) {
-                    int mid = LOWORD(wParam) - IDC_RADIO_COLOR;
-                    SetLightMode(hDlg, 0, mid, mmap);
-                }
-                else
-                    SetLightMode(hDlg, 0, 3, NULL);
-                break;
-            }
-            break;
-        case IDC_RADIO_COLOR2: case IDC_RADIO_PULSE2: case IDC_RADIO_MORPH2:
-            switch (HIWORD(wParam)) {
-            case BN_CLICKED:
-                if (mmap != NULL) {
-                    int mid = LOWORD(wParam) - IDC_RADIO_COLOR2;
-                    SetLightMode(hDlg, 1, mid, mmap);
-                }
-                else
-                    SetLightMode(hDlg, 1, 3, NULL);
-                break;
-            }
-            break;*/       
+            } break;   
         default: return false;
         }
         if (mmap != NULL)
@@ -968,12 +945,14 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
-    mode_light = GetDlgItem(hDlg, IDC_CHECK_NOEVENT),
-    mode_power = GetDlgItem(hDlg, IDC_CHECK_POWER),
-    mode_perf = GetDlgItem(hDlg, IDC_CHECK_PERF),
-    mode_status = GetDlgItem(hDlg, IDC_CHECK_STATUS),
-    list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
-    list_status = GetDlgItem(hDlg, IDC_STATUSLIST);
+        mode_light = GetDlgItem(hDlg, IDC_CHECK_NOEVENT),
+        mode_power = GetDlgItem(hDlg, IDC_CHECK_POWER),
+        mode_perf = GetDlgItem(hDlg, IDC_CHECK_PERF),
+        mode_status = GetDlgItem(hDlg, IDC_CHECK_STATUS),
+        list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
+        list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
+        s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
+        s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
     switch (message)
     {
@@ -1021,6 +1000,14 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
         LoadString(hInst, IDS_A_HOT, buffer, 100);
         SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_A_OOM, buffer, 100);
+        SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+        // Set sliders
+        SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 99));
+        SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 99));
+        //TBM_SETTICFREQ
+        SendMessage(s1_slider, TBM_SETTICFREQ, 10, 0);
+        SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
 
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
@@ -1047,25 +1034,32 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     lightset newmap;
                     newmap.devid = pid;
                     newmap.lightid = lid;
-                    newmap.eve[0].flags = 0;
+                    newmap.eve[0].fs.b.flags = 0;
                     newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
+                    newmap.eve[3].fs.b.cut = 90;
                     conf->mappings.push_back(newmap);
                     mmap = &conf->mappings.back().eve[0].map;
                     mmap->lightset = map = &conf->mappings.back();
                 }
-                //RedrawButton(hDlg, IDC_BUTTON_C1, mmap->c1.cs.red, mmap->c1.cs.green, mmap->c1.cs.blue);
-                //SendMessage(s1_slider, TBM_SETPOS, true, mmap->speed1);
+
                 for (int i = 0; i < 4; i++) {
-                    if (map->eve[i].flags)
-                        CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, BST_CHECKED);
-                    else
-                        CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, BST_UNCHECKED);
-                    
-                    if (i > 0)
+                    CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, map->eve[i].fs.b.flags ? BST_CHECKED : BST_UNCHECKED);
+
+                    switch (i) {
+                    case 3: { // checkbox + slider
+                        CheckDlgButton(hDlg, IDC_STATUS_BLINK, map->eve[i].fs.b.proc ? BST_CHECKED : BST_UNCHECKED);
+                        SendMessage(s2_slider, TBM_SETPOS, true, map->eve[i].fs.b.cut);
+                    } break;
+                    case 2: { //slider
+                        SendMessage(s1_slider, TBM_SETPOS, true, map->eve[i].fs.b.cut);
+                    } break;
+                    }
+                    if (i > 0) {
                         RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map.c1.cs.red,
                             map->eve[i].map.c1.cs.green, map->eve[i].map.c1.cs.blue);
-                        RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, map->eve[i].map.c2.cs.red, 
+                        RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, map->eve[i].map.c2.cs.red,
                             map->eve[i].map.c2.cs.green, map->eve[i].map.c2.cs.blue);
+                        }
                 }
                 SendMessage(list_counter, CB_SETCURSEL, map->eve[2].source, 0);
                 SendMessage(list_status, CB_SETCURSEL, map->eve[3].source, 0);
@@ -1076,8 +1070,12 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
             int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
             if (map != NULL)
-                map->eve[eid].flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+                map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
         } break;
+        case IDC_STATUS_BLINK:
+            if (map != NULL)
+                map->eve[3].fs.b.proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            break;
         case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: {
             int eid = LOWORD(wParam) - IDC_BUTTON_CM1 + 1;
             switch (HIWORD(wParam))
@@ -1153,6 +1151,26 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     default: return false;
+    case WM_HSCROLL:
+        switch (LOWORD(wParam)) {
+        case TB_THUMBTRACK: case TB_ENDTRACK:
+            int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
+            int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+            mapping* mmap = FindMapping(pid, lid, 0);
+            lightset* map = NULL;
+            if (mmap != NULL)
+                map = (lightset*)mmap->lightset;
+            if (mmap != NULL) {
+                if ((HWND)lParam == s1_slider) {
+                    map->eve[2].fs.b.cut = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }
+                if ((HWND)lParam == s2_slider) {
+                    map->eve[3].fs.b.cut = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }
+                fxhl->Refresh();
+            }
+            break;
+        } break;
     }
     return true;
 }

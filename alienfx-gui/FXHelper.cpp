@@ -57,45 +57,60 @@ void FXHelper::TestLight(int id)
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
 {
 	std::vector <lightset>::iterator Iter;
-	Colorcode fin;
+	//Colorcode fin;
 	while (devbusy) Sleep(20);
 	devbusy = true;
+	bStage = !bStage;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
-		if (Iter->devid == pid) {
-			if (Iter->eve[2].flags) {
+		if (Iter->devid == pid && (Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {
+			Colorcode fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map.c1 : Iter->eve[2].fs.b.flags ?
+				Iter->eve[2].map.c1 : Iter->eve[3].map.c1;
+			if (Iter->eve[2].fs.b.flags) {
 				// counter
-				double coeff = 0.0;
-				Colorcode cfin = Iter->eve[0].flags ? Iter->eve[1].source && activeMode != MODE_AC ?
-					Iter->eve[0].map.c2 : Iter->eve[0].map.c1 : Iter->eve[2].map.c1;
+				double coeff = 0.0, ccut = Iter->eve[2].fs.b.cut;
+				//Colorcode cfin = Iter->eve[0].fs.b.flags ? Iter->eve[1].source && activeMode != MODE_AC ?
+				//	Iter->eve[0].map.c2 : Iter->eve[0].map.c1 : Iter->eve[2].map.c1;
 				switch (Iter->eve[2].source) {
-				case 0: if (!force && lCPU == cCPU) continue; coeff = cCPU / 100.0; break;
-				case 1: if (!force && lRAM == cRAM) continue; coeff = cRAM / 100.0; break;
-				case 2: if (!force && lHDD == cHDD) continue; coeff = cHDD / 100.0; break;
-				case 3: if (!force && lGPU == cGPU) continue; coeff = cGPU / 100.0; break;
-				case 4: if (!force && lNET == cNet) continue; coeff = cNet / 100.0; break;
-				case 5: if (!force && lTemp == cTemp) continue; coeff = (cTemp > 273) ? (cTemp - 273.0) / 100.0 : 0; break;
-				case 6: if (!force && lBatt == cBatt) continue; coeff = cBatt / 100.0; break;
+				case 0: if (!force && lCPU == cCPU) continue; coeff = cCPU; break;
+				case 1: if (!force && lRAM == cRAM) continue; coeff = cRAM; break;
+				case 2: if (!force && lHDD == cHDD) continue; coeff = cHDD; break;
+				case 3: if (!force && lGPU == cGPU) continue; coeff = cGPU; break;
+				case 4: if (!force && lNET == cNet) continue; coeff = cNet; break;
+				case 5: if (!force && lTemp == cTemp) continue; coeff = (cTemp > 273) ? cTemp - 273.0 : 0; break;
+				case 6: if (!force && lBatt == cBatt) continue; coeff = cBatt; break;
 				}
-				fin.cs.red = cfin.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
-				fin.cs.green = cfin.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
-				fin.cs.blue = cfin.cs.blue * (1 - coeff) + Iter->eve[2].map.c2.cs.blue * coeff;
-				SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
-					0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
+				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
+				fin.cs.red = fin.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
+				fin.cs.green = fin.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
+				fin.cs.blue = fin.cs.blue * (1 - coeff) + Iter->eve[2].map.c2.cs.blue * coeff;
+				//SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
+				//	0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
 				//continue;
 			}
-			if (Iter->eve[3].flags) {
+			if (Iter->eve[3].fs.b.flags) {
 				// indicator
-				long indi = 0;
+				long indi = 0, ccut = Iter->eve[3].fs.b.cut;
 				switch (Iter->eve[3].source) {
 				case 0: if (!force && ((!lHDD && !cHDD) || (cHDD && lHDD))) continue; indi = cHDD; break;
 				case 1: if (!force && ((!lNET && !cNet) || (cNet && lNET))) continue; indi = cNet; break;
-				case 2: if (!force && ((lTemp < 363 && cTemp < 363) || (cTemp > 363 && lTemp > 363))) continue; indi = cTemp - 363; break;
+				case 2: if (!force && !Iter->eve[3].fs.b.proc && 
+					((lTemp <= 273 + ccut && cTemp <= 273 + ccut) ||
+					(cTemp > 273 + ccut && lTemp > 273 + ccut))) continue; indi = cTemp - 273 - ccut; break;
+				case 3: if (!force && !Iter->eve[3].fs.b.proc && 
+					((lRAM <= ccut && cRAM <= ccut) || (lRAM > ccut && cRAM > ccut))) continue; indi = cRAM - ccut; break;
 				}
-				fin = (indi > 0) ? Iter->eve[3].map.c2 : Iter->eve[0].flags ? Iter->eve[1].source && activeMode != MODE_AC ?
-					Iter->eve[0].map.c2 : Iter->eve[0].map.c1 : Iter->eve[3].map.c1;
+				fin = (indi > 0) ? bStage ? Iter->eve[3].map.c2 : fin : fin;
+			}
+			if (Iter->eve[1].source)
+				if (activeMode != MODE_AC && activeMode != MODE_CHARGE)
+				SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, Iter->eve[0].map.c1.cs.red, Iter->eve[0].map.c1.cs.green, Iter->eve[0].map.c1.cs.blue,
+					0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
+				else
+					SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
+						0, 0, 0, Iter->eve[0].map.c2.cs.red, Iter->eve[0].map.c2.cs.green, Iter->eve[0].map.c2.cs.blue);
+			else
 				SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
 					0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
-			}
 		}
 	}
 	AlienFX_SDK::Functions::UpdateColors();
@@ -162,15 +177,15 @@ int FXHelper::Refresh(bool forced)
 			Colorcode c1 = Iter->eve[0].map.c1, c2 = Iter->eve[0].map.c2;
 			int mode1 = Iter->eve[0].map.mode, mode2 = Iter->eve[0].map.mode2;
 			if (config->enableMon && !forced) {
-				if (!Iter->eve[0].flags) {
+				if (!Iter->eve[0].fs.b.flags) {
 					c1.ci = 0; c2.ci = 0;
 				}
-				if (Iter->eve[1].flags) {
+				if (Iter->eve[1].fs.b.flags) {
 					// use power event;
 					c2 = Iter->eve[1].map.c2;
 					c1 = Iter->eve[1].map.c1;
 					switch (activeMode) {
-					case MODE_AC: if (Iter->eve[0].flags) {
+					case MODE_AC: if (Iter->eve[0].fs.b.flags) {
 						c1 = Iter->eve[0].map.c1; c2 = Iter->eve[0].map.c2;
 					}
 								else {
@@ -181,7 +196,7 @@ int FXHelper::Refresh(bool forced)
 					case MODE_CHARGE: mode1 = mode2 = 2; /*c1 = Iter->eve[0].map.c1;*/ break;
 					}
 				}
-				if ((Iter->eve[2].flags || Iter->eve[3].flags)
+				if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 					&& config->lightsOn && config->stateOn) continue;
 			}
 			SetLight(Iter->lightid, Iter->eve[1].source,

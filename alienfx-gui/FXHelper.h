@@ -22,6 +22,7 @@ private:
 	bool devbusy = false;
 	std::vector<int> devList;
 	long lCPU=0, lRAM=0, lHDD=0, lGPU=0, lNET=0, lTemp=0, lBatt = 100;
+	bool bStage = false;
 public:
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();

@@ -20,6 +20,7 @@
 #define IDS_A_HDD                       112
 #define IDS_A_NET                       113
 #define IDS_A_HOT                       114
+#define IDS_A_OOM                       115
 #define IDR_MAINFRAME                   128
 #define IDD_MAINWINDOW                  129
 #define IDI_ALIENFXGUI                  132
@@ -81,8 +82,11 @@
 #define IDC_TYPE1                       1040
 #define IDC_TYPE2                       1041
 #define IDC_SYSLINK_HOMEPAGE            1043
-#define IDC_CHECK1                      1044
 #define IDC_ISPOWERBUTTON               1044
+#define IDC_MINPVALUE                   1045
+#define IDC_CUTLEVEL                    1046
+#define IDC_CHECK1                      1047
+#define IDC_STATUS_BLINK                1047
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -105,7 +109,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        143
 #define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1045
+#define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
