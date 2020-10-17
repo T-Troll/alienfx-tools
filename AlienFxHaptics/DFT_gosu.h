@@ -42,7 +42,7 @@ protected:
 	double power;
 	double long_term_power,short_term_power;
 	//-------------------------------------------------
-	double *blackman, *hanning;
+	double* blackman;// , * hanning;
 	kiss_fft_scalar *padded_in;
 	kiss_fft_cpx *padded_out;
 	void* kiss_cfg;

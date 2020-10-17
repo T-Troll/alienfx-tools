@@ -512,9 +512,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             );
             Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
-            //case WM_RBUTTONDOWN:
-            //case WM_CONTEXTMENU:
-            //	ShowContextMenu(hWnd);
+            case WM_RBUTTONUP:
+            case WM_CONTEXTMENU:
+                cap->Stop();
+                Shell_NotifyIcon(NIM_DELETE, &niData);
+                DestroyWindow(hDlg);
+                break;
         }
         break;
     } break;

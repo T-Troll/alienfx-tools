@@ -7,7 +7,6 @@
 #define IDS_APP_TITLE                   103
 #define IDD_ABOUTBOX                    103
 #define IDM_ABOUT                       104
-#define IDS_STRING104                   104
 #define IDS_RAM                         104
 #define IDM_EXIT                        105
 #define IDS_CPU                         105
@@ -20,6 +19,7 @@
 #define IDS_A_HDD                       112
 #define IDS_A_NET                       113
 #define IDS_A_HOT                       114
+#define IDS_A_OOM                       115
 #define IDR_MAINFRAME                   128
 #define IDD_MAINWINDOW                  129
 #define IDI_ALIENFXGUI                  132
@@ -30,12 +30,10 @@
 #define IDI_ICON1                       141
 #define IDS_TYPE_COLOR                  142
 #define IDS_TYPE_PULSE                  143
+#define IDD_DIALOG_DEVICES              143
 #define IDS_TYPE_MORPH                  144
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001
-#define IDC_RADIO_COLOR                 1002
-#define IDC_RADIO_PULSE                 1003
-#define IDC_RADIO_MORPH                 1004
 #define IDC_BUTTON_C1                   1005
 #define IDC_BUTTON_C2                   1006
 #define IDC_SPEED1                      1007
@@ -44,11 +42,8 @@
 #define IDC_CHECK_NOEVENT               1009
 #define IDC_LENGTH2                     1010
 #define IDC_CHECK_POWER                 1010
-#define IDC_RADIO_COLOR2                1011
 #define IDC_CHECK_PERF                  1011
-#define IDC_RADIO_PULSE2                1012
 #define IDC_CHECK_STATUS                1012
-#define IDC_RADIO_MORPH2                1013
 #define IDC_COUNTERLIST                 1013
 #define IDC_STATUSLIST                  1014
 #define IDC_DEVICES                     1015
@@ -81,8 +76,13 @@
 #define IDC_TYPE1                       1040
 #define IDC_TYPE2                       1041
 #define IDC_SYSLINK_HOMEPAGE            1043
-#define IDC_CHECK1                      1044
 #define IDC_ISPOWERBUTTON               1044
+#define IDC_MINPVALUE                   1045
+#define IDC_CUTLEVEL                    1046
+#define IDC_STATUS_BLINK                1047
+#define IDC_STATIC_VERSION              1048
+#define IDC_CHECK_LON                   1049
+#define IDC_CHECK_DIM                   1050
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -96,6 +96,7 @@
 #define ID_ACC_ONOFF                    32781
 #define ID_ACC_REFRESH                  32783
 #define ID_TRAYMENU_MONITORING          32785
+#define ID_ACC_DEVICES                  32786
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -103,9 +104,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        143
-#define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1045
+#define _APS_NEXT_RESOURCE_VALUE        144
+#define _APS_NEXT_COMMAND_VALUE         32788
+#define _APS_NEXT_CONTROL_VALUE         1051
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

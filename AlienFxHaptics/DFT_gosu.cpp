@@ -31,7 +31,7 @@ DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 	// Arrays...
 	x2 = (double*)malloc(NUMPTS * sizeof(double));
 	blackman = (double*)malloc(NUMPTS * sizeof(double));
-	hanning = (double*)malloc(NUMPTS * sizeof(double));
+	//hanning = (double*)malloc(NUMPTS * sizeof(double));
 	padded_in = (kiss_fft_scalar*)malloc(NUMPTS * sizeof(kiss_fft_scalar));
 	padded_out = (kiss_fft_cpx*)malloc(NUMPTS * sizeof(kiss_fft_cpx));
 	// Preparing data...
@@ -40,7 +40,7 @@ DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 		double p = (double)i / double(NUMPTS - 1);
 		blackman[i] = (0.42 - 0.5 * cos(2 * PI * p) + 0.8 * cos(4 * PI * p));
 		double inv = 1 / (double)NUMPTS;
-		hanning[i] = sqrt(cos((PI * inv) * (i - (double)(NUMPTS - 1) / 2)));
+		//hanning[i] = sqrt(cos((PI * inv) * (i - (double)(NUMPTS - 1) / 2)));
 	}
 	kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
 
@@ -70,7 +70,7 @@ DFT_gosu::~DFT_gosu()
 {
 	free(x2);
 	free(blackman);
-	free(hanning);
+	//free(hanning);
 	free(padded_in);
 	free(padded_out);
 	kiss_fft_free(kiss_cfg);
@@ -96,18 +96,21 @@ void DFT_gosu::calc(double *x1)
 		unsigned idx = n / f;
 		spectrum[n] = (int) sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
 	}*/
-	unsigned f = (NUMPTS / 2 - 50) / RECTSNUM;
+	unsigned f = (NUMPTS/2) / RECTSNUM - 12;
 	unsigned m, prev = 0;
 	double minP = MAXINT, maxP = 0;
+	double diver = sqrt(6)/2, mult = 1;
 	for (int n = 0; n < RECTSNUM; n++) {
 		double v = 0;
-		for (m = 0; m < f; m++) {
+		for (int m = 0; m < f; m++) {
 			int idx = (n+1) * f + m;
-			//v = v + sqrt(padded_out[m+1].r * padded_out[m + 1].r + padded_out[m + 1].i * padded_out[m + 1].i);
 			v = v + sqrt(padded_out[idx+1].r * padded_out[idx+1].r + padded_out[idx+1].i * padded_out[idx+1].i);
+			//v += sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
+			//idx--;
 		}
 
 		x2[n] = v / f;
+		//mult = n * diver;
 		//x2[n] = v / (s_numbers[n] - prev);
 		//prev = s_numbers[n];
 		if (x2[n] < minP)

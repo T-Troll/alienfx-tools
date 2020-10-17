@@ -59,45 +59,40 @@ void CaptureHelper::SetCaptureScreen(int mode) {
 
 void CaptureHelper::Start()
 {
-	inWork = true;
-	//fxh->StartFX();
-	dwHandle = CreateThread(
-		NULL,              // default security
-		0,                 // default stack size
-		CInProc,        // name of the thread function
-		screenCapturer,
-		0,                 // default startup flags
-		&dwThreadID);
+	if (dwHandle == 0) {
+		inWork = true;
+		dwHandle = CreateThread(
+			NULL,              // default security
+			0,                 // default stack size
+			CInProc,        // name of the thread function
+			screenCapturer,
+			0,                 // default startup flags
+			&dwThreadID);
+	}
 }
 
 void CaptureHelper::Stop()
 {
 	DWORD exitCode;
-	inWork = false;
-	GetExitCodeThread(dwHandle, &exitCode);
-	while (exitCode == STILL_ACTIVE) {
-		Sleep(100);
+	if (dwHandle != 0) {
+		inWork = false;
 		GetExitCodeThread(dwHandle, &exitCode);
-	}
-	CloseHandle(dwHandle);
-	GetExitCodeThread(uiHandle, &exitCode);
-	while (exitCode == STILL_ACTIVE) {
-		Sleep(100);
+		while (exitCode == STILL_ACTIVE) {
+			Sleep(100);
+			GetExitCodeThread(dwHandle, &exitCode);
+		}
+		CloseHandle(dwHandle);
 		GetExitCodeThread(uiHandle, &exitCode);
-	}
-	CloseHandle(uiHandle);
-	GetExitCodeThread(cuHandle, &exitCode);
-	if (exitCode == STILL_ACTIVE)
-		CloseHandle(cuHandle);
-	dwHandle = uiHandle = cuHandle = 0;
-	/*GetExitCodeThread(cuHandle, &exitCode);
-	while (exitCode == STILL_ACTIVE) {
-		Sleep(100);
+		while (exitCode == STILL_ACTIVE) {
+			Sleep(100);
+			GetExitCodeThread(uiHandle, &exitCode);
+		}
+		CloseHandle(uiHandle);
 		GetExitCodeThread(cuHandle, &exitCode);
-	}*/
-	//fxh->StopFX();
-	//uiThread.stop;
-	//cuThread.stop;
+		if (exitCode == STILL_ACTIVE)
+			CloseHandle(cuHandle);
+		dwHandle = uiHandle = cuHandle = 0;
+	}
 }
 
 void CaptureHelper::Restart() {

@@ -64,7 +64,7 @@ HRESULT DXGIOutputDuplication::AcquireNextFrame(IDXGISurface1** pDXGISurface, DX
 {
 	DXGI_OUTDUPL_FRAME_INFO fi;
 	CComPtr<IDXGIResource> spDXGIResource;
-	HRESULT hr = m_DXGIOutputDuplication->AcquireNextFrame(100, &fi, &spDXGIResource);
+	HRESULT hr = m_DXGIOutputDuplication->AcquireNextFrame(200, &fi, &spDXGIResource);
 	if(FAILED(hr))
 	{
 		return hr;
