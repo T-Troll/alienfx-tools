@@ -23,7 +23,8 @@ Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G
 - Hardware light effects (pulse, morph) doesn't supported for older devices and can't work with software light effects at the same time (hardware limitation).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't monitor GPU load for it.
 - <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
-- <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown you notebook (some lights can stay on after shutdown), remove power adapter cord and wait 15 sec (or then lights come off), then start it back. Use with care!
+- <b>DO NOT</b> use alienfx-gui monitroing with other app switching light colors - it can provide unexpected results! Especially, <b>DO NOT</b> use hardware power button monitoring events in this case (see below).
+- <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or then lights come off), then start it back. Use with care!
 
 ## Installation
 Download latest release archive from [here](https://github.com/T-Troll/alienfx-tools/releases).<br>
@@ -83,28 +84,31 @@ This application get shot of screen (privary or secondary), then divide it to se
 
 ## alienfx-gui Usage
 Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set up immedately.<br>
-First, use "Setup" tab to configure out devices, lights and system settings (once), if you don't run `alienfx-probe` yet.
+First, use "Devices and Lights" tab to configure out devices and lights settings, if you don't run `alienfx-probe` yet.
 Use "Color" tab for simple lights setup (this colors and modes will stay as default until AWCC run or modified by other app), even after reboot.</br>
-You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a color for reaction at "Events" tab. In this case, first color from "Color" tab will be used for "calm" situation, and the color from "Events" tab will be uset for "active" situation.<br>
-If the app minimized, it hide itsef at the tray, check thay menu (right-click on tray button) for some cool features as well.<br>
+You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a color for reaction at "Monitoring" tab.<br>
+If "Use color settings as default" is active, first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be uset for "active" situation, if it's not active - both colors will taken from "Monitoring" tab.<br>
+You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and "system overheat". In this case Status color always override Performance one, as well as both override Power one.<br>
+If the app minimized, it hide itsef at the tray, check tray menu (right-click on tray button) for some fast switch buttons as well.<br>
 ```
 How it works
 ```
 "Color" tab is set hardware color mode for light. This mode will remain even if you exit application.<br>
-"Events" tab designed for dynamic control system events and change lights to reflect it - like power events, system load, temperatures.<br>
-"Settings" tab is a mix of `alienfx-probe`-like GUI to set device and light names, and also control application settings.<br>
-Please keep in mind some settings only avaliable from tray menu or keyboard shortcut.<br>
+"Monitoring" tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
+"Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings.
+"Settings" tab is for application settings control.<br>
 Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
 Other shortcuts (then application active):
 - ALT+c - switch to Color tab
-- ALT+e - switch to Event tab
+- ALT+m - switch to Monitoring tab
+- ALT+d - switch to Device and Lights tab
 - ALT+s - switch to Settings tab
 - ALT+r - refresh all lights
 - ALT+? - about app
-WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events.
+WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
 
 ## Tools Used
 * Visual Studio Community 2019
