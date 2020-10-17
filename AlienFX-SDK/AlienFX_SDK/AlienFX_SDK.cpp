@@ -863,7 +863,7 @@ namespace AlienFX_SDK
 		return &mappings;
 	}
 
-	unsigned Functions::GetFlags(int devid, int lightid)
+	int Functions::GetFlags(int devid, int lightid)
 	{
 		for (int i = 0; i < mappings.size(); i++)
 			if (mappings[i].devid == devid && mappings[i].lightid == lightid)

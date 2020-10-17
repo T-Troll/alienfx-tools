@@ -60,7 +60,7 @@ void CaptureHelper::SetCaptureScreen(int mode) {
 void CaptureHelper::Start()
 {
 	inWork = true;
-	fxh->StartFX();
+	//fxh->StartFX();
 	dwHandle = CreateThread(
 		NULL,              // default security
 		0,                 // default stack size
@@ -95,7 +95,7 @@ void CaptureHelper::Stop()
 		Sleep(100);
 		GetExitCodeThread(cuHandle, &exitCode);
 	}*/
-	fxh->StopFX();
+	//fxh->StopFX();
 	//uiThread.stop;
 	//cuThread.stop;
 }

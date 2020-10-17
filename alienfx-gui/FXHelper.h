@@ -26,9 +26,8 @@ private:
 public:
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
-	void StartFX();
-	void StopFX();
-	//void UpdateLight(lightset* map, bool update = true);
+	//void StartFX();
+	//void StopFX();
 	int Refresh(bool force=false);
 	int SetMode(int mode);
 	std::vector<int> GetDevList();

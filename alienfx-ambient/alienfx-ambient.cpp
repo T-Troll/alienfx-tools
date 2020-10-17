@@ -9,7 +9,9 @@
 #include "CaptureHelper.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
+#include <windowsx.h>
 #include <CommCtrl.h>
+#include <Commdlg.h>
 #include <shellapi.h>
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
 
@@ -21,7 +23,8 @@
   "processorArchitecture='*' "\
   "publicKeyToken='6595b64144ccf1df' "\
   "language='*'\"")
-#pragma comment(lib, "ComCtl32.lib")
+//#pragma comment(lib, "ComCtl32.lib")
+#pragma comment(lib,"Version.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -57,7 +60,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Perform application initialization:
     HWND hDlg;
-    InitCommonControls();
+    //InitCommonControls();
     conf = new ConfigHandler();
     fxhl = new FXHelper(conf);
     conf->Load();
@@ -144,7 +147,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - post a quit message and return
 //
 //
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+/*LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -180,7 +183,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
-}
+}*/
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -188,14 +191,56 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
     {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+    case WM_INITDIALOG: {
+        HRSRC hResInfo;
+        DWORD dwSize;
+        HGLOBAL hResData;
+        LPVOID pRes, pResCopy;
+        UINT uLen;
+        VS_FIXEDFILEINFO* lpFfi;
 
+        HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
+
+        hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
+        dwSize = SizeofResource(hInst, hResInfo);
+        hResData = LoadResource(hInst, hResInfo);
+        pRes = LockResource(hResData);
+        pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
+        CopyMemory(pResCopy, pRes, dwSize);
+        FreeResource(hResData);
+
+        VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+        char buf[255];
+
+        DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
+        DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
+
+        sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
+
+        Static_SetText(version_text, buf);
+
+        LocalFree(pResCopy);
+        return (INT_PTR)TRUE;
+    }
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
+        }
+        break;
+    case WM_NOTIFY:
+        switch (LOWORD(wParam)) {
+        case IDC_SYSLINK_HOMEPAGE:
+            switch (((LPNMHDR)lParam)->code)
+            {
+
+            case NM_CLICK:          // Fall through to the next case.
+
+            case NM_RETURN:
+                ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
+                break;
+            } break;
         }
         break;
     }
@@ -245,7 +290,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             }
             for (i = 0; i < lights; i++) {
                 AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                if (lgh.devid == pid) {
+                if (lgh.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, lgh.lightid) == 0) {
                     int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
                     SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
                 }
@@ -264,6 +309,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         }
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 128));
         SendMessage(brSlider, TBM_SETPOS, true, conf->shift);
+        SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
     } break;
     case WM_COMMAND:
     {
@@ -273,12 +319,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         int did = (int)SendMessage(dev_list, CB_GETITEMDATA, lbItem, 0);
         switch (LOWORD(wParam))
         {
-        case IDOK: case IDCANCEL: case IDCLOSE:
+        case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
         {
             cap->Stop();
             Shell_NotifyIcon(NIM_DELETE, &niData);
             DestroyWindow(hDlg); //EndDialog(hDlg, IDOK);
         } break;
+        case IDM_ABOUT: // about dialogue here
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
+            break;
         case IDC_DEVICE: {
             switch (HIWORD(wParam))
             {
@@ -288,7 +337,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
                     for (i = 0; i < lights; i++) {
                         AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                        if (lgh.devid == did) { // should be did
+                        if (lgh.devid == did && AlienFX_SDK::Functions::GetFlags(did, lgh.lightid) == 0) { // should be did
                             int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
                             SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
                         }
@@ -445,14 +494,22 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
-            /*SetWindowPos(hDlg,       // handle to window
+            SetWindowPos(hDlg,       // handle to window
                 HWND_TOPMOST,  // placement-order handle
                 0,     // horizontal position
                 0,      // vertical position
                 0,  // width
                 0, // height
                 SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );*/
+            );
+            SetWindowPos(hDlg,       // handle to window
+                HWND_NOTOPMOST,  // placement-order handle
+                0,     // horizontal position
+                0,      // vertical position
+                0,  // width
+                0, // height
+                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+            );
             Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
             //case WM_RBUTTONDOWN:

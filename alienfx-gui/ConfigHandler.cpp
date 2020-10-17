@@ -267,7 +267,7 @@ int ConfigHandler::Save() {
     }
     else {
         // remove key.
-        RegDeleteKeyA(hKey2, "Alienfx GUI");
+        RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)&"", 1);
     }
 
     RegSetValueEx(

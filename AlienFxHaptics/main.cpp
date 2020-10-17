@@ -80,9 +80,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 
 DWORD WINAPI resample(LPVOID lpParam)
-//void resample(double* waveDouble)
 {
-	if (tdone) return 0;
+	if (tdone) {
+		FXproc->FadeToBlack(); return 0;
+	}
 	double* waveDouble = (double*)lpParam;
 
 	//dftG->setXscale(Graphika->getBarsNum());
@@ -101,6 +102,5 @@ DWORD WINAPI resample(LPVOID lpParam)
 
 	Graphika->refresh();
 	FXproc->Refresh(Graphika->getBarsNum());
-	//FXproc->UpdateLights();
 	return 0;
 }

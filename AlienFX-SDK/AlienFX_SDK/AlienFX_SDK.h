@@ -108,7 +108,7 @@ namespace AlienFX_SDK
 		static std::vector <mapping>* GetMappings();
 
 		// get saved light names
-		static unsigned GetFlags(int devid, int lightid);
+		static int GetFlags(int devid, int lightid);
 
 		// get saved light names
 		static void SetFlags(int devid, int lightid, int flags);

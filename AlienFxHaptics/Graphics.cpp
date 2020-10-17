@@ -328,14 +328,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			case WM_LBUTTONDBLCLK:
 			case WM_LBUTTONUP:
 				ShowWindow(hwnd, SW_RESTORE);
-				/*SetWindowPos(hwnd,       // handle to window
+				SetWindowPos(hwnd,       // handle to window
 					HWND_TOPMOST,  // placement-order handle
 					0,     // horizontal position
 					0,      // vertical position
 					0,  // width
 					0, // height
 					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-				);*/
+				);
+				SetWindowPos(hwnd,       // handle to window
+					HWND_NOTOPMOST,  // placement-order handle
+					0,     // horizontal position
+					0,      // vertical position
+					0,  // width
+					0, // height
+					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+				);
 				Shell_NotifyIcon(NIM_DELETE, &niData);
 			break;
 			//case WM_RBUTTONDOWN:
@@ -362,6 +370,7 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 	// BGR!
 	Brush = CreateSolidBrush(RGB(r, g, b));
 	FillRect(cnt, &rect, Brush);
+	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
 }
 
@@ -446,7 +455,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 			for (i = 0; i < lights; i++) {
 				AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-				if (lgh.devid == pid) {
+				if (lgh.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, lgh.lightid) == 0) {
 					int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
 					SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
 				}
@@ -455,6 +464,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		SetDlgItemInt(hDlg, IDC_EDIT_DECAY, config->res, false);
 		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		//TBM_SETTICFREQ
+		SendMessage(hLowSlider, TBM_SETTICFREQ, 16, 0);
+		SendMessage(hHiSlider, TBM_SETTICFREQ, 16, 0);
 	}
 	break;
 
@@ -470,44 +482,39 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				break;
 		switch (LOWORD(wParam))
 		{
-		case IDOK:
+		case IDOK: case IDCANCEL: case IDCLOSE:
 		{
-			// save mappings!
 			config->Save();
-			/// handle OK button click
 			EndDialog(hDlg, IDOK);
 		}
-		break;
-
-		/*case IDCANCEL:
-		{
-			/// handle Cancel button click
-			EndDialog(hDlg, IDCANCEL);
-		}*/
 		break;
 		case IDC_RESET: {
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				for (i = 0; i < config->mappings.size(); i++) {
-					config->mappings[i].colorfrom.ci = 0;
-					config->mappings[i].colorto.ci = 0;
-					config->mappings[i].lowcut = 0;
-					config->mappings[i].hicut = 255;
-					config->mappings[i].map.clear();
+				if (MessageBox(hDlg, "Do you really want to reset settings and colors for ALL lights?", "Warning!",
+					MB_YESNO | MB_ICONWARNING) == IDYES) {
+					config->mappings.clear();
+					/*for (i = 0; i < config->mappings.size(); i++) {
+						config->mappings[i].colorfrom.ci = 0;
+						config->mappings[i].colorto.ci = 0;
+						config->mappings[i].lowcut = 0;
+						config->mappings[i].hicut = 255;
+						config->mappings[i].map.clear();
+					}*/
+					// clear colors...
+					SendMessage(from_color, IPM_SETADDRESS, 0, 0);
+					RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					SendMessage(to_color, IPM_SETADDRESS, 0, 0);
+					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					//  clear cuts....
+					SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
+					SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
+					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					SendMessage(hLowSlider, TBM_SETPOS, true, 0);
+					SendMessage(hHiSlider, TBM_SETPOS, true, 255);
 				}
-				// clear colors...
-				SendMessage(from_color, IPM_SETADDRESS, 0, 0);
-				RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				SendMessage(to_color, IPM_SETADDRESS, 0, 0);
-				RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				//  clear cuts....
-				SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
-				SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
-				RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				SendMessage(hLowSlider, TBM_SETPOS, true, 0);
-				SendMessage(hHiSlider, TBM_SETPOS, true, 255);
 			} break;
 			}
 		} break;
@@ -524,7 +531,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 					for (i = 0; i < lights; i++) {
 						AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-						if (lgh.devid == did) { // should be did
+						if (lgh.devid == did && AlienFX_SDK::Functions::GetFlags(did, lgh.lightid)) { // should be did
 							int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
 							SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
 						}

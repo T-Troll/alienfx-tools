@@ -43,8 +43,9 @@
 #define IDC_RADIO_SECONDARY             1039
 #define IDC_EDIT_DIVIDER                1040
 #define IDC_SLIDER_BR                   1041
-#define IDC_BUTTON13                    1042
 #define IDC_BUTTON_MIN                  1042
+#define IDC_STATIC_VERSION              1043
+#define IDC_SYSLINK_HOMEPAGE            1044
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -54,7 +55,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        133
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1043
+#define _APS_NEXT_CONTROL_VALUE         1044
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

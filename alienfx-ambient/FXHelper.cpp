@@ -24,23 +24,16 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 	}
 };
 FXHelper::~FXHelper() {
+	FadeToBlack();
 	AlienFX_SDK::Functions::AlienFXClose();
-	//lfx->Release();
 };
-void FXHelper::StartFX() {
-	//done = 0;
-	//stopped = 0;
-	//lfx->Reset();
-	//lfx->Update();
-	AlienFX_SDK::Functions::Reset(false);
-};
-void FXHelper::StopFX() {
-	//while (!stopped)
-	//	Sleep(100);
-	//lfx->Reset();
-	//lfx->Update();
-	AlienFX_SDK::Functions::Reset(false);
-};
+//void FXHelper::StartFX() {
+	//AlienFX_SDK::Functions::Reset(false);
+//};
+//void FXHelper::StopFX() {
+
+	//AlienFX_SDK::Functions::Reset(false);
+//};
 
 int FXHelper::Refresh(UCHAR* img)
 {
@@ -50,7 +43,7 @@ int FXHelper::Refresh(UCHAR* img)
 		mapping map = config->mappings[i];
 		Colorcode fin = { 0 };
 		unsigned r = 0, g = 0, b = 0, size = (unsigned) map.map.size();
-		if (size > 0) {
+		if (map.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, map.lightid) == 0 && size > 0) {
 			for (unsigned j = 0; j < size; j++) {
 				r += img[3 * map.map[j]+2];
 				g += img[3 * map.map[j] + 1];
@@ -96,6 +89,15 @@ int FXHelper::Refresh(UCHAR* img)
 
 void FXHelper::FadeToBlack()
 {
+	for (int i = 0; i < config->mappings.size(); i++) {
+		mapping map = config->mappings[i];
+		Colorcode fin = { 0 };
+		unsigned r = 0, g = 0, b = 0, size = (unsigned)map.map.size();
+		if (map.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, map.lightid) == 0 && size > 0) {
+			AlienFX_SDK::Functions::SetColor(map.lightid, 0, 0, 0);
+		}
+	}
+	AlienFX_SDK::Functions::UpdateColors();
 }
 
 

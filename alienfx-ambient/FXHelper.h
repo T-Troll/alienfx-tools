@@ -18,8 +18,8 @@ private:
 public:
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
-	void StartFX();
-	void StopFX();
+	//void StartFX();
+	//void StopFX();
 	int Refresh(UCHAR* img);
 	void FadeToBlack();
 	//int GetPID();

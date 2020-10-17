@@ -19,9 +19,8 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 FXHelper::~FXHelper() {
 	AlienFX_SDK::Functions::SaveMappings();
 	AlienFX_SDK::Functions::AlienFXClose();
-	//lfx->Release();
 };
-void FXHelper::StartFX() {
+/*void FXHelper::StartFX() {
 	//done = 0;
 	//stopped = 0;
 	//lfx->Reset();
@@ -34,7 +33,7 @@ void FXHelper::StopFX() {
 	//lfx->Reset();
 	//lfx->Update();
 	AlienFX_SDK::Functions::Reset(false);
-};
+};*/
 
 std::vector<int> FXHelper::GetDevList() {
 	return devList;
@@ -61,8 +60,10 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	while (devbusy) Sleep(20);
 	devbusy = true;
 	bStage = !bStage;
+	int lFlags = 0;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
-		if (Iter->devid == pid && (Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {
+		if (Iter->devid == pid && (Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
+			&& (lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) != (-1)) {
 			Colorcode fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map.c1 : Iter->eve[2].fs.b.flags ?
 				Iter->eve[2].map.c1 : Iter->eve[3].map.c1;
 			if (Iter->eve[2].fs.b.flags) {
@@ -101,15 +102,15 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				}
 				fin = (indi > 0) ? bStage ? Iter->eve[3].map.c2 : fin : fin;
 			}
-			if (Iter->eve[1].source)
+			if (lFlags)
 				if (activeMode != MODE_AC && activeMode != MODE_CHARGE)
-				SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, Iter->eve[0].map.c1.cs.red, Iter->eve[0].map.c1.cs.green, Iter->eve[0].map.c1.cs.blue,
+				SetLight(Iter->lightid, lFlags, 0, 0, 0, Iter->eve[0].map.c1.cs.red, Iter->eve[0].map.c1.cs.green, Iter->eve[0].map.c1.cs.blue,
 					0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
 				else
-					SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
+					SetLight(Iter->lightid, lFlags, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
 						0, 0, 0, Iter->eve[0].map.c2.cs.red, Iter->eve[0].map.c2.cs.green, Iter->eve[0].map.c2.cs.blue);
 			else
-				SetLight(Iter->lightid, Iter->eve[1].source, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
+				SetLight(Iter->lightid, lFlags, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
 					0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
 		}
 	}
@@ -172,8 +173,9 @@ int FXHelper::Refresh(bool forced)
 	Colorcode fin;
 	while (devbusy) Sleep(20);
 	devbusy = true;
+	int lFlags = 0;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
-		if (Iter->devid == pid) {
+		if (Iter->devid == pid && (lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) != (-1)) {
 			Colorcode c1 = Iter->eve[0].map.c1, c2 = Iter->eve[0].map.c2;
 			int mode1 = Iter->eve[0].map.mode, mode2 = Iter->eve[0].map.mode2;
 			if (config->enableMon && !forced) {
@@ -199,7 +201,7 @@ int FXHelper::Refresh(bool forced)
 				if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 					&& config->lightsOn && config->stateOn) continue;
 			}
-			SetLight(Iter->lightid, Iter->eve[1].source,
+			SetLight(Iter->lightid, lFlags,
 				mode1, Iter->eve[0].map.length1, Iter->eve[0].map.speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
 				mode2, Iter->eve[0].map.length2, Iter->eve[0].map.speed2, c2.cs.red, c2.cs.green, c2.cs.blue
 			);

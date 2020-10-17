@@ -581,10 +581,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="alien.ico" />
-    <Image Include="alienfx-gui.ico" />
-    <Image Include="icon1.ico" />
-    <Image Include="small.ico" />
-    <Image Include="UFO-Purple.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">

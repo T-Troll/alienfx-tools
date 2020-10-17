@@ -18,8 +18,9 @@ private:
 public:
 	FXHelper(int* freqp, ConfigHandler* conf);
 	~FXHelper();
-	void Reset();
+	//void Reset();
 	int Refresh(int numbars);
+	void FadeToBlack();
 	int GetPID();
 	//int UpdateLights();
 };

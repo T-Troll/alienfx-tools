@@ -20,22 +20,11 @@ FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
 		result = AlienFX_SDK::Functions::IsDeviceReady();
 		AlienFX_SDK::Functions::LoadMappings();
 	}
-	Reset();
+	FadeToBlack();
 };
 FXHelper::~FXHelper() {
 	AlienFX_SDK::Functions::AlienFXClose();
 };
-
-void FXHelper::Reset()
-{
-	for (int i = 0; i < config->mappings.size(); i++) {
-		mapping map = config->mappings[i];
-		AlienFX_SDK::Functions::SetColor(map.lightid,
-			0, 0, 0);
-	}
-	AlienFX_SDK::Functions::UpdateColors();
-}
-;
 
 int FXHelper::GetPID() {
 	return pid;
@@ -46,7 +35,7 @@ int FXHelper::Refresh(int numbars)
 	unsigned i = 0;
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
-		if (map.map.size() > 0) {
+		if (map.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, map.lightid) == 0 && map.map.size() > 0) {
 			double power = 0.0;
 			Colorcode from, to, fin;
 			from.ci = map.colorfrom.ci; to.ci = map.colorto.ci;
@@ -68,21 +57,15 @@ int FXHelper::Refresh(int numbars)
 	return 0;
 }
 
-/*int FXHelper::UpdateLights() {
-	if (done) { stopped = 1; return 1; }
-	ULONGLONG cTime = GetTickCount64();
-	ULONGLONG oldTime = cTime;
-	int uIndex = 0;
-	for (int j = 0; j < lastLights; j++) {
-		if (oldTime > updates[j].lastUpdate) {
-			oldTime = updates[j].lastUpdate;
-			uIndex = j;
+void FXHelper::FadeToBlack()
+{
+	for (int i = 0; i < config->mappings.size(); i++) {
+		mapping map = config->mappings[i];
+		Colorcode fin = { 0 };
+		unsigned r = 0, g = 0, b = 0, size = (unsigned)map.map.size();
+		if (map.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, map.lightid) == 0 && size > 0) {
+			AlienFX_SDK::Functions::SetColor(map.lightid, 0, 0, 0);
 		}
 	}
-	//if (cTime - oldTime > 50) {
-		lfx->SetOneLFXColor(updates[uIndex].devid, updates[uIndex].lightid, &updates[uIndex].color.ci);
-		lfx->Update();
-		updates[uIndex].lastUpdate = cTime;
-	//}
-	return 0;
-}*/
+	AlienFX_SDK::Functions::UpdateColors();
+}

@@ -16,6 +16,7 @@
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#pragma comment(lib,"Version.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -35,6 +36,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
@@ -204,63 +206,43 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     return dlg;
 }
 
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE: Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
-/*LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
-        }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
-}*/
-
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
     {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+    case WM_INITDIALOG: {
+        HRSRC hResInfo;
+        DWORD dwSize;
+        HGLOBAL hResData;
+        LPVOID pRes, pResCopy;
+        UINT uLen;
+        VS_FIXEDFILEINFO* lpFfi;
 
+        HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
+
+        hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
+        dwSize = SizeofResource(hInst, hResInfo);
+        hResData = LoadResource(hInst, hResInfo);
+        pRes = LockResource(hResData);
+        pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
+        CopyMemory(pResCopy, pRes, dwSize);
+        FreeResource(hResData);
+
+        VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+        char buf[255];
+
+        DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
+        DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
+
+        sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
+
+        Static_SetText(version_text, buf);
+
+        LocalFree(pResCopy);
+        return (INT_PTR)TRUE;
+    } break;
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
         case IDOK: case IDCANCEL:
@@ -268,15 +250,27 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
         } break;
-        case IDC_SYSLINK_HOMEPAGE: 
-            ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
+        }
+        break;
+    case WM_NOTIFY:
+        switch (LOWORD(wParam)) {
+        case IDC_SYSLINK_HOMEPAGE:
+            switch (((LPNMHDR)lParam)->code)
+            {
+
+            case NM_CLICK:          // Fall through to the next case.
+
+            case NM_RETURN:
+                ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
+                break;
+            } break;
         }
         break;
     }
     return (INT_PTR)FALSE;
 }
 
-#define C_PAGES 3 
+#define C_PAGES 4
 
 typedef struct tag_dlghdr {
     HWND hwndTab;       // tab control 
@@ -317,7 +311,8 @@ VOID OnSelChanged(HWND hwndDlg)
     switch (tabSel) {
     case 0: tdl = (DLGPROC)TabColorDialog; break;
     case 1: tdl = (DLGPROC)TabEventsDialog; break;
-    case 2: tdl = (DLGPROC)TabSettingsDialog; break;
+    case 2: tdl = (DLGPROC)TabDevicesDialog; break;
+    case 3: tdl = (DLGPROC)TabSettingsDialog; break;
     }
     pHdr->hwndDisplay = CreateDialogIndirect(hInst,
         (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
@@ -353,7 +348,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
         pHdr->apRes[0] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_COLORS));
         pHdr->apRes[1] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_EVENTS));
-        pHdr->apRes[2] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
+        pHdr->apRes[2] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_DEVICES));
+        pHdr->apRes[3] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
 
         TCITEM tie;
 
@@ -361,10 +357,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         tie.iImage = -1;
         tie.pszText = (LPSTR)"Colors";
         SendMessage(tab_list, TCM_INSERTITEM, 0, (LPARAM)&tie);
-        tie.pszText = (LPSTR)"Events";
+        tie.pszText = (LPSTR)"Monitoring";
         SendMessage(tab_list, TCM_INSERTITEM, 1, (LPARAM)&tie);
-        tie.pszText = (LPSTR)"Settings";
+        tie.pszText = (LPSTR)"Devices and Lights";
         SendMessage(tab_list, TCM_INSERTITEM, 2, (LPARAM)&tie);
+        tie.pszText = (LPSTR)"Settings";
+        SendMessage(tab_list, TCM_INSERTITEM, 3, (LPARAM)&tie);
 
         //SetRectEmpty(&rcTab);
         /*rcTab.right = pHdr->apRes[0]->cx;
@@ -408,6 +406,22 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 }
             }
         }
+
+        // tray icon...
+        ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+        niData.cbSize = sizeof(NOTIFYICONDATA);
+        niData.uID = IDI_ALIENFXGUI;
+        niData.uFlags = NIF_ICON | NIF_MESSAGE;
+        niData.hIcon =
+            (HICON)LoadImage(GetModuleHandle(NULL),
+                MAKEINTRESOURCE(IDI_ALIENFXGUI),
+                IMAGE_ICON,
+                GetSystemMetrics(SM_CXSMICON),
+                GetSystemMetrics(SM_CYSMICON),
+                LR_DEFAULTCOLOR);
+        niData.hWnd = hDlg;
+        niData.uCallbackMessage = WM_APP + 1;
+        Shell_NotifyIcon(NIM_ADD, &niData);
         
     } break;
     case WM_COMMAND:
@@ -462,15 +476,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
-            /*SetWindowPos(hDlg,       // handle to window
+            SetWindowPos(hDlg,       // handle to window
                 HWND_TOPMOST,  // placement-order handle
                 0,     // horizontal position
                 0,      // vertical position
                 0,  // width
                 0, // height
                 SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );*/
-            Shell_NotifyIcon(NIM_DELETE, &niData);
+            );
+            SetWindowPos(hDlg,       // handle to window
+                HWND_NOTOPMOST,  // placement-order handle
+                0,     // horizontal position
+                0,      // vertical position
+                0,  // width
+                0, // height
+                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+            );
+            //Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
         case IDC_BUTTON_SAVE:
             AlienFX_SDK::Functions::SaveMappings();
@@ -484,8 +506,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             TabCtrl_SetCurSel(tab_list, 1);
             OnSelChanged(tab_list);
             break;
-        case ID_ACC_SETTINGS:
+        case ID_ACC_DEVICES:
             TabCtrl_SetCurSel(tab_list, 2);
+            OnSelChanged(tab_list);
+            break;
+        case ID_ACC_SETTINGS:
+            TabCtrl_SetCurSel(tab_list, 3);
             OnSelChanged(tab_list);
             break;
         case IDC_PROFILES: {
@@ -583,21 +609,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_SIZE:
         if (wParam == SIZE_MINIMIZED) {
             // go to tray...
-
-            ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-            niData.cbSize = sizeof(NOTIFYICONDATA);
-            niData.uID = IDI_ALIENFXGUI;
-            niData.uFlags = NIF_ICON | NIF_MESSAGE;
-            niData.hIcon =
-                (HICON)LoadImage(GetModuleHandle(NULL),
-                    MAKEINTRESOURCE(IDI_ALIENFXGUI),
-                    IMAGE_ICON,
-                    GetSystemMetrics(SM_CXSMICON),
-                    GetSystemMetrics(SM_CYSMICON),
-                    LR_DEFAULTCOLOR);
-            niData.hWnd = hDlg;
-            niData.uCallbackMessage = WM_APP + 1;
-            Shell_NotifyIcon(NIM_ADD, &niData);
             ShowWindow(hDlg, SW_HIDE);
         } break;
     case WM_APP + 1: {
@@ -606,17 +617,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
-            /*SetWindowPos(hDlg,       // handle to window
-                HWND_TOP,  // placement-order handle
+            SetWindowPos(hDlg,       // handle to window
+                HWND_TOPMOST,  // placement-order handle
                 0,     // horizontal position
                 0,      // vertical position
                 0,  // width
                 0, // height
                 SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );*/
-            Shell_NotifyIcon(NIM_DELETE, &niData);
+            );
+            SetWindowPos(hDlg,       // handle to window
+                HWND_NOTOPMOST,  // placement-order handle
+                0,     // horizontal position
+                0,      // vertical position
+                0,  // width
+                0, // height
+                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+            );
             break;
-            //case WM_RBUTTONDOWN:
         case WM_RBUTTONUP: case WM_CONTEXTMENU: {
             POINT lpClickPoint;
             HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
@@ -1193,7 +1210,7 @@ int UpdateLightList(HWND light_list, int pid) {
     return pos;
 }
 
-BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     lightset* map = NULL;
     mapping* mmap = NULL;
@@ -1201,7 +1218,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
         dev_list = GetDlgItem(hDlg, IDC_DEVICES),
-        dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING),
+        //dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING),
         light_id = GetDlgItem(hDlg, IDC_LIGHTID);
     switch (message)
     {
@@ -1237,16 +1254,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
         UpdateLightList(light_list, pid);
         eItem = -1;
-        // system settings...
-        if (conf->startWindows) CheckDlgButton(hDlg, IDC_STARTW, BST_CHECKED);
-        if (conf->startMinimized) CheckDlgButton(hDlg, IDC_STARTM, BST_CHECKED);
-        if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
-        if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
-        if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_BATTSCREENOFF, BST_CHECKED);
-        if (conf->enableMon) CheckDlgButton(hDlg, IDC_BATTMONITOR, BST_CHECKED);
-        SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-        SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
-        SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
+
     } break;
     case WM_COMMAND: {
         int lbItem = (int)SendMessage(light_list, CB_GETCURSEL, 0, 0);
@@ -1311,10 +1319,10 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
-            /*case CBN_SETFOCUS:
-                OutputDebugString("SetFocus\n");
-                eve->StopEvents();
-                break;*/
+                /*case CBN_SETFOCUS:
+                    OutputDebugString("SetFocus\n");
+                    eve->StopEvents();
+                    break;*/
             case CBN_KILLFOCUS:
                 OutputDebugString("KillFocus\n");
                 eve->StartEvents();
@@ -1385,11 +1393,47 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (lid != -1) {
                 unsigned flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
                 AlienFX_SDK::Functions::SetFlags(did, lid, flags);
-                mapping* map = FindMapping(did, lid, 1);
-                if (map != NULL)
-                    ((lightset*)(map->lightset))->eve[1].source = flags;
             }
             break;
+        default: return false;
+        }
+    } break;
+    case WM_DRAWITEM:
+        switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+        case IDC_BUTTON_TESTCOLOR:
+            RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.cs.red, conf->testColor.cs.green, conf->testColor.cs.blue);
+            break;
+        } break;
+    default: return false;
+    }
+    return true;
+}
+
+BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+
+    //int pid = AlienFX_SDK::Functions::GetPID();
+    HWND dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+    {
+        // system settings...
+        if (conf->startWindows) CheckDlgButton(hDlg, IDC_STARTW, BST_CHECKED);
+        if (conf->startMinimized) CheckDlgButton(hDlg, IDC_STARTM, BST_CHECKED);
+        if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
+        if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
+        if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_BATTSCREENOFF, BST_CHECKED);
+        if (conf->enableMon) CheckDlgButton(hDlg, IDC_BATTMONITOR, BST_CHECKED);
+        if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
+        if (conf->dimmed) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
+        SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+        SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
+        SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
+    } break;
+    case WM_COMMAND: {
+        switch (LOWORD(wParam))
+        {
         case IDC_STARTM:
             conf->startMinimized = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             break;
@@ -1401,6 +1445,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDC_BATTDIM:
             conf->dimmedBatt = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            fxhl->RefreshState();
             break;
         case IDC_BATTSCREENOFF:
             conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
@@ -1409,6 +1454,15 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             eve->StopEvents();
             conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             eve->StartEvents();
+            break;
+        case IDC_CHECK_LON:
+            eve->StopEvents();
+            conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            eve->StartEvents();
+            break;
+        case IDC_CHECK_DIM:
+            conf->dimmed = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            fxhl->RefreshState();
             break;
         default: return false;
         }
@@ -1419,14 +1473,8 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 if ((HWND)lParam == dim_slider) {
                     conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                fxhl->Refresh();
+                fxhl->RefreshState();
             } break;
-        } break;
-    case WM_DRAWITEM:
-        switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-        case IDC_BUTTON_TESTCOLOR:
-            RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.cs.red, conf->testColor.cs.green, conf->testColor.cs.blue);
-            break;
         } break;
     default: return false;
     }
