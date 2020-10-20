@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 {
 	bool low_level = false;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v0.8.11" << endl;
+	cerr << "alienfx-cli v0.9.1" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -46,10 +46,10 @@ int main(int argc, char* argv[])
 	int res = lfxUtil.InitLFX();
 	if ( res != -1) {
 		switch (res) {
-		case 0: cerr << "Can't load DLL library!" << endl; break;
-		case 1: cerr << "Can't init library!" << endl; break;
-		case 2: cerr << "No devices found!" << endl; break;
-		default: cerr << "Unknown error!" << endl; break;
+		case 0: cerr << "Dell library DLL not found (no library?)!" << endl; break;
+		case 1: cerr << "Can't init Dell library!" << endl; break;
+		case 2: cerr << "No high-level devices found!" << endl; break;
+		default: cerr << "Dell library unknown error!" << endl; break;
 		}
 		low_level = true;
 	}
@@ -57,11 +57,10 @@ int main(int argc, char* argv[])
 	//std::cout << "PID: " << std::hex << isInit << std::endl;
 	if (isInit != -1)
 	{
-		bool result = AlienFX_SDK::Functions::Reset(false);
-		if (result) {
-			//std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
-			result = AlienFX_SDK::Functions::IsDeviceReady();
-		}
+		for (int rcount = 0; rcount < 10 && !AlienFX_SDK::Functions::IsDeviceReady(); rcount++)
+			Sleep(20);
+		if (!AlienFX_SDK::Functions::IsDeviceReady())
+			AlienFX_SDK::Functions::Reset(false);
 		AlienFX_SDK::Functions::LoadMappings();
 	}
 	else {

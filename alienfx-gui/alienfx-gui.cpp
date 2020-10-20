@@ -68,7 +68,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     eve->ChangePowerState();
 
-    fxhl->Refresh(true);
+    //fxhl->Refresh(true);
 
     if (conf->lightsOn) {
         eve->StartEvents();
@@ -136,7 +136,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     conf->Save();
 
-    fxhl->Refresh(true);
+    //fxhl->Refresh(true);
 
     AlienFX_SDK::Functions::SaveMappings();
 
@@ -430,7 +430,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         {
         case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT: case ID_TRAYMENU_EXIT:
         {
-            eve->StopEvents();
+            //eve->StopEvents();
             Shell_NotifyIcon(NIM_DELETE, &niData);
             EndDialog(hDlg, IDOK);
             DestroyWindow(hDlg);
@@ -460,8 +460,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_LIGHTSON:
             conf->lightsOn = !conf->lightsOn;
-            //fxhl->Refresh();
-            if (conf->lightsOn) eve->StartEvents();
+            if (conf->lightsOn) {
+                fxhl->Refresh(true);
+                eve->StartEvents();
+            }
             else eve->StopEvents();
             break;
         case ID_TRAYMENU_DIMLIGHTS:
@@ -668,8 +670,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case 1: // on/off
             conf->lightsOn = !conf->lightsOn;
-            //fxhl->Refresh();
-            if (conf->lightsOn) eve->StartEvents();
+            if (conf->lightsOn) {
+                fxhl->Refresh(true);
+                eve->StartEvents();
+            }
             else eve->StopEvents();
             break;
         case 2: // dim
@@ -691,7 +695,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             }
             else {
                 conf->lightsOn = !conf->lightsOn;
-                //fxhl->Refresh();
+                fxhl->Refresh(true);
                 eve->StartEvents();
             }
             break;
@@ -851,8 +855,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     mmap = &conf->mappings.back().eve[0].map;
                     mmap->lightset = &conf->mappings.back();
                 }
-                //SetLightMode(hDlg, 0, mmap->mode, NULL);
-                //SetLightMode(hDlg, 1, mmap->mode2, NULL);
+                // Enable or disable controls
+                bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
+                EnableWindow(type_c1, flag);
+                EnableWindow(type_c2, flag);
+                EnableWindow(s1_slider, flag);
+                EnableWindow(s2_slider, flag);
+                EnableWindow(l1_slider, flag);
+                EnableWindow(l2_slider, flag);
+                // Set data
                 SendMessage(type_c1, CB_SETCURSEL, mmap->mode, 0);
                 SendMessage(type_c2, CB_SETCURSEL, mmap->mode2, 0);
                 RedrawButton(hDlg, IDC_BUTTON_C1, mmap->c1.cs.red, mmap->c1.cs.green, mmap->c1.cs.blue);

@@ -96,20 +96,23 @@ void DFT_gosu::calc(double *x1)
 		unsigned idx = n / f;
 		spectrum[n] = (int) sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
 	}*/
-	unsigned f = (NUMPTS/2) / RECTSNUM - 12;
-	unsigned m, prev = 0;
+	//unsigned f = ((NUMPTS-2)/2) / RECTSNUM;
+	//unsigned m, prev = 0;
 	double minP = MAXINT, maxP = 0;
-	double diver = sqrt(6)/2, mult = 1;
+	double mult = 1.3394/* sqrt3(2)*/, f = 1.0;
+	int idx = 2;
 	for (int n = 0; n < RECTSNUM; n++) {
 		double v = 0;
 		for (int m = 0; m < f; m++) {
-			int idx = (n+1) * f + m;
-			v = v + sqrt(padded_out[idx+1].r * padded_out[idx+1].r + padded_out[idx+1].i * padded_out[idx+1].i);
+			//int idx = n * f + m;
+			if (idx < NUMPTS/2)
+				v = v + sqrt(padded_out[idx+1].r * padded_out[idx+1].r + padded_out[idx+1].i * padded_out[idx+1].i);
 			//v += sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
-			//idx--;
+			idx++;
 		}
 
-		x2[n] = v / f;
+		x2[n] = v / (int)f * 6 * (n+1);
+		f *= mult;
 		//mult = n * diver;
 		//x2[n] = v / (s_numbers[n] - prev);
 		//prev = s_numbers[n];
@@ -119,39 +122,23 @@ void DFT_gosu::calc(double *x1)
 			maxP = x2[n];
 
 	}
-	/*memset(x2, 0, RECTSNUM * sizeof(double));
-	//memset(s_numbers, 0, RECTSNUM * sizeof(int));
-	for (int i = 2; i < NUMPTS/2 - 2; i++) {
-		x2[s_indexes[i]] += sqrt(padded_out[i].r * padded_out[i].r + padded_out[i].i * padded_out[i].i);
-		//s_numbers[s_indexes[i]]++;
-	}
-	for (int i = 0; i < RECTSNUM; i++) {
-		x2[i] = x2[i] / (double) s_numbers[i];
-		if (x2[i] < minP)
-			minP = x2[i];
-		if (x2[i] > maxP)
-			maxP = x2[i];
 
-	}*/
-	/*memset(x2, 0, RECTSNUM * sizeof(double));
-	for (unsigned n = 2; n < NUMPTS/2 - 2; n++) {
-		x2[s_indexes[n]] += sqrt(padded_out[n].r * padded_out[n].r + padded_out[n].i * padded_out[n].i);
-	}*/
-
-	/*for (unsigned n = 0; n < RECTSNUM; n++) {
-		//x2[n] /= s_numbers[n];
-		if (x2[n] < minP)
-			minP = x2[n];
-		if (x2[n] > maxP)
-			maxP = x2[n];
-	}*/
+	//double d_scale = y_scale / 10000.0;
 
 	if (peak < maxP)
-		peak = (peak > maxP - 2 * y_scale) ? maxP : peak + 2 * y_scale;
+		peak = (peak < maxP - 2 * minP) ? maxP : peak + 2 * minP; // 2* y_scale
 	else
-		peak = (peak > minP + y_scale) ? peak - y_scale : minP;
+		peak = (peak > 2 * minP) ? peak - minP : peak; // y_scale
+	peak = (peak > minP) ? peak : minP;
 
-	double coeff = (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
+	double coeff = 256.0 / peak;// (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
+
+#ifdef _DEBUG
+	char buff[2048];
+	sprintf_s(buff, 2047, "Peak:%f, Coeff:%f, Min:%f, Max:%f, P(1):%f, P(2):%f\n", peak, coeff, minP, maxP, x2[0], x2[1]);
+	OutputDebugString(buff);
+#endif
+
 	for (int n = 0; n < RECTSNUM; n++) {
 		spectrum[n] = (int) ((x2[n] - minP) * coeff);
 	}

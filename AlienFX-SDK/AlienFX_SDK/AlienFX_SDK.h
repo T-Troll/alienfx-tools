@@ -70,7 +70,7 @@ namespace AlienFX_SDK
 		// Switch to other AlienFX device
 		static  bool AlienFXChangeDevice(int pid);
 
-		//Enable/Disable all lights
+		//Enable/Disable all lights (or just prepare to set)
 		static  bool Reset(int status);
 
 		static  bool IsDeviceReady();
@@ -93,6 +93,10 @@ namespace AlienFX_SDK
 		// For now, settings as a default of AWCC, but it possible to do it more complex
 		static  bool SetPowerAction(int index, int Red, int Green, int Blue, int Red2, int Green2, int Blue2);
 
+		// return current device state
+		static  BYTE AlienfxGetDeviceStatus();
+
+		// Apply changes and update colors
 		static  bool UpdateColors();
 
 		// load light names from registry

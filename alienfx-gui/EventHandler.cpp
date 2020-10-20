@@ -44,9 +44,10 @@ void EventHandler::ChangeScreenState(DWORD state)
 {
     if (conf->offWithScreen) {
         conf->stateOn = state;
-        //fxh->Refresh();
-        if (state)
+        if (state) {
+            fxh->Refresh(true);
             StartEvents();
+        }
         else
             StopEvents();
     }
@@ -54,9 +55,12 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::StartEvents()
 {
-    fxh->RefreshState();
-    if (conf->enableMon) {
+    //fxh->RefreshState();
+    if (!dwHandle && conf->enableMon) {
         // start threas with this as a param
+#ifdef _DEBUG
+        OutputDebugString("Event thread start.\n");
+#endif
         this->stop = false;
         dwHandle = CreateThread(
             NULL,              // default security
@@ -71,7 +75,10 @@ void EventHandler::StartEvents()
 void EventHandler::StopEvents()
 {
     DWORD exitCode;
-    if (!this->stop && conf->enableMon) {
+    if (dwHandle) {
+#ifdef _DEBUG
+        OutputDebugString("Event thread stop.\n");
+#endif
         this->stop = true; 
         GetExitCodeThread(dwHandle, &exitCode);
         while (exitCode == STILL_ACTIVE) {
@@ -79,8 +86,9 @@ void EventHandler::StopEvents()
             GetExitCodeThread(dwHandle, &exitCode);
         }
         CloseHandle(dwHandle);
+        dwHandle = 0;
     }
-    fxh->RefreshState();
+    fxh->RefreshState(true);
 }
 
 EventHandler::EventHandler(ConfigHandler* config, FXHelper* fx)
@@ -249,12 +257,6 @@ DWORD WINAPI CEventProc(LPVOID param)
         }
 
         if (state.BatteryLifePercent > 100) state.BatteryLifePercent = 100;
-
-#ifdef _DEBUG
-        char buff[2048];
-        sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPUVal.longValue, memStat.dwMemoryLoad, cHDDVal.longValue, totalNet, maxGPU, maxTemp, state.BatteryLifePercent);
-        OutputDebugString(buff);
-#endif
 
         src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, totalNet, cHDDVal.longValue, maxTemp, state.BatteryLifePercent);
         

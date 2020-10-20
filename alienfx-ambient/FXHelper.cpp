@@ -1,25 +1,17 @@
 #include "FXHelper.h"
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
-//using namespace AlienFX_SDK;
-//#ifdef _DEBUG
-//#pragma comment(lib, "opencvworld343d.lib")
-//#else
-//#pragma comment(lib, "opencvworld343.lib")
-//#endif
-
 FXHelper::FXHelper(ConfigHandler* conf) {
 	config = conf;
 	//lastUpdate = 0;
 	pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
 	if (pid != -1)
 	{
-		bool result = AlienFX_SDK::Functions::Reset(false);
-		if (!result) {
-			//std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
-			return;
-		}
-		result = AlienFX_SDK::Functions::IsDeviceReady();
+		int count;
+		for (count = 0; count < 5 && !AlienFX_SDK::Functions::IsDeviceReady(); count++)
+			Sleep(20);
+		if (count == 5)
+			AlienFX_SDK::Functions::Reset(false);
 		AlienFX_SDK::Functions::LoadMappings();
 	}
 };
@@ -27,18 +19,12 @@ FXHelper::~FXHelper() {
 	FadeToBlack();
 	AlienFX_SDK::Functions::AlienFXClose();
 };
-//void FXHelper::StartFX() {
-	//AlienFX_SDK::Functions::Reset(false);
-//};
-//void FXHelper::StopFX() {
-
-	//AlienFX_SDK::Functions::Reset(false);
-//};
 
 int FXHelper::Refresh(UCHAR* img)
 {
 	unsigned i = 0;
 	unsigned shift = config->shift;
+	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		Colorcode fin = { 0 };
@@ -48,9 +34,6 @@ int FXHelper::Refresh(UCHAR* img)
 				r += img[3 * map.map[j]+2];
 				g += img[3 * map.map[j] + 1];
 				b += img[3 * map.map[j]];
-				//fin.cs.brightness += 0.2126 * img[3 * map.map[j]] 
-				//	+ 0.7152 * img[3 * map.map[j] + 1] 
-				//	+ 0.0722 * img[3 * map.map[j] + 2];// img[4 * map.map[j] + 3];
 			}
 			fin.cs.red = r / size;
 			fin.cs.green = g / size;
@@ -64,23 +47,8 @@ int FXHelper::Refresh(UCHAR* img)
 			fin.cs.red -= delta;  //fin.cs.red < shift ? 0 : fin.cs.red - shift;
 			fin.cs.green -= delta;  //fin.cs.green < shift ? 0 : fin.cs.green - shift;
 			fin.cs.blue -= delta;  //fin.cs.blue < shift ? 0 : fin.cs.blue - shift;
-			//fin.cs.brightness = (0.2126 * fin.cs.red
-			//	+ 0.7152 * fin.cs.green
-			//	+ 0.0722 * fin.cs.blue) / 4 + 192;
-			//updates[i].color = fin;
-			//updates[i].devid = map.devid;
-			//updates[i].lightid = map.lightid;
-			//if (abs(fin.cs.red - updates[i].color.cs.red) > 10 ||
-			//	abs(fin.cs.blue - updates[i].color.cs.blue) > 10 ||
-			//	abs(fin.cs.green - updates[i].color.cs.green) > 10) {
-				//lfx->SetOneLFXColor(map.devid, map.lightid, &fin.ci);
-				//lfx->Update();
-				//Sleep(60);
-				//if (AlienFX_SDK::Functions::IsDeviceReady()) {
 			AlienFX_SDK::Functions::SetColor(map.lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
-			//updates[i].color = fin;
-			//}
-		//}
+
 		}
 	}
 	AlienFX_SDK::Functions::UpdateColors();
@@ -89,6 +57,7 @@ int FXHelper::Refresh(UCHAR* img)
 
 void FXHelper::FadeToBlack()
 {
+	if (!AlienFX_SDK::Functions::IsDeviceReady()) return;
 	for (int i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		Colorcode fin = { 0 };

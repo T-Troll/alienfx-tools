@@ -7,6 +7,7 @@ struct UpdateData {
 	ULONGLONG lastUpdate;
 };
 
+// Power modes: AC = 0, Battery = 1, Charge = 2, Low Battery = 4
 #define MODE_AC		0
 #define MODE_BAT	1
 #define MODE_CHARGE	2
@@ -19,15 +20,14 @@ private:
 	ConfigHandler* config;
 	int activeMode = 0;
 	//int lastTest = -1;
-	bool devbusy = false;
+	//bool devbusy = false;
 	std::vector<int> devList;
 	long lCPU=0, lRAM=0, lHDD=0, lGPU=0, lNET=0, lTemp=0, lBatt = 100;
+	int HDDTrigger = 0, NetTrigger = 0;
 	bool bStage = false;
 public:
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
-	//void StartFX();
-	//void StopFX();
 	int Refresh(bool force=false);
 	int SetMode(int mode);
 	std::vector<int> GetDevList();
@@ -35,6 +35,6 @@ public:
 	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force = false);
 	void SetLight(int id, bool power, int mode1, int length1, int speed1, BYTE r, BYTE g, BYTE b,
 		int mode2=0, int length2 =0, int speed2 =0, BYTE r2=0, BYTE g2=0, BYTE b2=0);
-	void RefreshState();
+	void RefreshState(bool force = false);
 };
 

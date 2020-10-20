@@ -16,7 +16,7 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 16;
-	cout << "alienfx-probe v0.8.11" << endl << "Probing low-level access... ";
+	cout << "alienfx-probe v0.9.1" << endl << "Probing low-level access... ";
 	vector<int> pids;
 	pids = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	if (pids.size() > 0) {
@@ -27,10 +27,10 @@ int main(int argc, char* argv[])
 		int res = lfxUtil.InitLFX();
 		if (res != -1) {
 			switch (res) {
-			case 0: cerr << "Can't load DLL library!" << endl; break;
-			case 1: cerr << "Can't init library!" << endl; break;
-			case 2: cerr << "No devices found!" << endl; break;
-			default: cerr << "Unknown error!" << endl; break;
+			case 0: cerr << "Dell library DLL not found (no library?)!" << endl; break;
+			case 1: cerr << "Can't init Dell library!" << endl; break;
+			case 2: cerr << "No high-level devices found!" << endl; break;
+			default: cerr << "Dell library unknown error!" << endl; break;
 			}
 			// No SDK detected
 			cout << "No LightFX SDK detected, you should provide names yourself!" << endl;
@@ -55,13 +55,11 @@ int main(int argc, char* argv[])
 			if (isInit != -1)
 			{
 				char name[256], *outName;
-				//AlienFX_SDK::Functions::LoadMappings();
-				// now check about Dell SDK...
-				bool result = AlienFX_SDK::Functions::Reset(false);
-				if (!result) {
-					std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
-					result = AlienFX_SDK::Functions::IsDeviceReady();
-				}
+				int count;
+				for (count = 0; count < 5 && !AlienFX_SDK::Functions::IsDeviceReady(); count++)
+					Sleep(20);
+				if (count == 5)
+					AlienFX_SDK::Functions::Reset(false);
 				cout << "Enter device name or id: ";
 				std::cin.getline(name, 255);
 				if (isdigit(name[0]) && res == (-1)) {
@@ -82,20 +80,13 @@ int main(int argc, char* argv[])
 				// Let's probe low-level lights....
 				for (int i = 0; i < numlights; i++) {
 					//int j = 0;
-					cout << "Testing light #" << i;
-					/*for (j = 0; j < AlienFX_SDK::Functions::GetMappings()->size() &&
-						(AlienFX_SDK::Functions::GetMappings()->at(j).devid != isInit ||
-						AlienFX_SDK::Functions::GetMappings()->at(j).lightid != i); j++);
-					if (j != AlienFX_SDK::Functions::GetMappings()->size())
-						cout << " (Old value - " << AlienFX_SDK::Functions::GetMappings()->at(j).name << ")";*/
-					cout << ": ";
+					cout << "Testing light #" << i << ": ";
 					AlienFX_SDK::Functions::SetColor(i, 0, 255, 0);
 					AlienFX_SDK::Functions::UpdateColors();
 					Sleep(100);
 					std::cin.getline(name, 255);
 					if (name[0] != 0) {
 						//not skipped
-						//cout << "Ok, " << name << endl;
 						if (isdigit(name[0]) && res == (-1)) {
 							outName = lfxUtil.GetLightInfo(0, atoi(name))->desc;
 						}
@@ -111,7 +102,6 @@ int main(int argc, char* argv[])
 						AlienFX_SDK::Functions::GetMappings()->push_back(map);
 					}
 					else {
-						//outName = name;
 						cout << "Skipped. ";
 					}
 					AlienFX_SDK::Functions::SetColor(i, 0, 0, 255);
@@ -125,13 +115,13 @@ int main(int argc, char* argv[])
 				AlienFX_SDK::Functions::SaveMappings();
 			}
 			else {
-				cerr << "AlienFX device not found, please check device manager";
+				cerr << "AlienFX device not found, please check device manager!";
 			}
 			AlienFX_SDK::Functions::AlienFXClose();
 		}
 	}
 	else {
-		cout << "No devices found, exiting." << endl;
+		cout << "AlienFX devices not present, please check device manage!" << endl;
 	}
 	return 0;
 }
