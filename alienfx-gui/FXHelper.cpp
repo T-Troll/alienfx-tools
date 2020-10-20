@@ -28,7 +28,8 @@ std::vector<int> FXHelper::GetDevList() {
 
 void FXHelper::TestLight(int id)
 {
-	while (!AlienFX_SDK::Functions::IsDeviceReady()) Sleep(20);
+	for (int i = 0; i < 25 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
+	if (!AlienFX_SDK::Functions::IsDeviceReady()) return;
 	AlienFX_SDK::Functions::SetColor(id, config->testColor.cs.red, config->testColor.cs.green, config->testColor.cs.blue);
 	AlienFX_SDK::Functions::UpdateColors();
 }
@@ -42,6 +43,8 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	//sprintf_s(buff, 2047, "CounterUpdate: S%d,", AlienFX_SDK::Functions::AlienfxGetDeviceStatus());
 	OutputDebugString(buff);
 #endif
+	if (force)
+		for (int i = 0; i < 25 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return;
 	bStage = !bStage;
 	int lFlags = 0;
@@ -158,9 +161,9 @@ void FXHelper::RefreshState(bool force)
 
 int FXHelper::Refresh(bool forced)
 {
-	unsigned i = 0;
 	std::vector <lightset>::iterator Iter;
 	Colorcode fin;
+	for (int i = 0; i < 10 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
 	int lFlags = 0;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {

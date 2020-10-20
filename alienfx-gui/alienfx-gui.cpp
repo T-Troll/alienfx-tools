@@ -1330,12 +1330,8 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
-                /*case CBN_SETFOCUS:
-                    OutputDebugString("SetFocus\n");
-                    eve->StopEvents();
-                    break;*/
             case CBN_KILLFOCUS:
-                OutputDebugString("KillFocus\n");
+                fxhl->Refresh();
                 eve->StartEvents();
                 if (nEdited) {
                     UpdateLightList(light_list, did);
