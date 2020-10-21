@@ -727,24 +727,63 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
     //RedrawWindow(tl, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
-bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
+#include <ColorDlg.h>
+Colorcode* mod;
+
+UINT_PTR Lpcchookproc(
+    HWND hDlg,
+    UINT message,
+    WPARAM wParam,
+    LPARAM lParam
+) {
+    DRAWITEMSTRUCT* item = 0;
+    //Colorcode* mod;
+    //HWND r = GetDlgItem(hDlg, 706);
+    UINT r = 0, g = 0, b = 0;
+
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        mod = (Colorcode*)((CHOOSECOLOR*)lParam)->lCustData;
+        break;
+    case WM_COMMAND:
+        break;
+    case WM_CTLCOLOREDIT:
+        r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
+        g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
+        b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
+        if (r != mod->cs.red || g != mod->cs.green || b != mod->cs.blue) {
+            mod->cs.red = r;
+            mod->cs.green = g;
+            mod->cs.blue = b;
+            // update lights....
+            fxhl->RefreshState();
+        }
+        break;
+    }
+    return 0;
+}
+
+bool SetColor(HWND hDlg, int id, Colorcode* map) {
     CHOOSECOLOR cc;                 // common dialog box structure 
-    //static COLORREF acrCustClr[16]; // array of custom colors 
     bool ret;
+
+    unsigned savedColor = map->ci;
+
     // Initialize CHOOSECOLOR 
     ZeroMemory(&cc, sizeof(cc));
     cc.lStructSize = sizeof(cc);
     cc.hwndOwner = hDlg;
-    cc.lpCustColors = (LPDWORD)conf->customColors;// acrCustClr;
-    cc.rgbResult = RGB(*r, *g, *b);
-    cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+    cc.lpfnHook = Lpcchookproc;
+    cc.lCustData = (LPARAM) map;
+    cc.lpCustColors = (LPDWORD)conf->customColors;
+    cc.rgbResult = RGB(map->cs.red, map->cs.green, map->cs.blue);
+    cc.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK;
 
-    if (ret = ChooseColor(&cc))
+    if (!(ret = ChooseColor(&cc)))
     {
-        *r = cc.rgbResult & 0xff;
-        *g = cc.rgbResult >> 8 & 0xff;
-        *b = cc.rgbResult >> 16 & 0xff;
-        RedrawButton(hDlg, id, *r, *g, *b);
+        map->ci = savedColor;
+        RedrawButton(hDlg, id, map->cs.red, map->cs.green, map->cs.blue);
     }
     return ret;
 }
@@ -891,7 +930,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             {
             case BN_CLICKED: {
                 if (mmap != NULL) {
-                    SetColor(hDlg, IDC_BUTTON_C1, &mmap->c1.cs.red, &mmap->c1.cs.green, &mmap->c1.cs.blue);
+                    SetColor(hDlg, IDC_BUTTON_C1, &mmap->c1);
                 }
             } break;
             } break;
@@ -900,7 +939,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             {
             case BN_CLICKED: {
                 if (mmap != NULL) {
-                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->c2.cs.red, &mmap->c2.cs.green, &mmap->c2.cs.blue);
+                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->c2);
                 }
             } break;
             } break;
@@ -1110,8 +1149,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case BN_CLICKED:
                 if (map != NULL) {
-                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c1.cs.red,
-                        &map->eve[eid].map.c1.cs.green, &map->eve[eid].map.c1.cs.blue);
+                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c1);
                 }
                 break;
             }
@@ -1122,8 +1160,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case BN_CLICKED:
                 if (map != NULL) {
-                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c2.cs.red,
-                        &map->eve[eid].map.c2.cs.green, &map->eve[eid].map.c2.cs.blue);
+                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c2);
                 }
                 break;
             }
@@ -1389,7 +1426,7 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
         case IDC_BUTTON_TESTCOLOR: {
-            SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor.cs.red, &conf->testColor.cs.green, &conf->testColor.cs.blue);
+            SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
             if (lid != -1) {
                 eve->StopEvents();
                 SetFocus(light_list);

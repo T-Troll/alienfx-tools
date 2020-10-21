@@ -505,6 +505,10 @@ namespace AlienFX_SDK
 		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		if (length == 34) { // only supported at new devices
 			//OutputDebugString(L"Power button set initiated.\n");
+			ULONGLONG cPowerCall = GetTickCount64();
+			if (cPowerCall - lastPowerCall < 260)
+				//Sleep(lastPowerCall + 260 - cPowerCall);
+				return false;
 			// Need to flush query...
 			if (inSet) UpdateColors();
 			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
@@ -512,9 +516,6 @@ namespace AlienFX_SDK
 				return false;
 			}
 			// this function can be called not early then 250ms after last call!
-			ULONGLONG cPowerCall = GetTickCount64();
-			if (cPowerCall - lastPowerCall < 260)
-				Sleep(lastPowerCall + 260 - cPowerCall);
 			inSet = true;
 			// Now set....
 			for (BYTE cid = 0x5b; cid < 0x61; cid++) {
