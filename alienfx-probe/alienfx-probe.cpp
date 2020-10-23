@@ -16,7 +16,11 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 16;
-	cout << "alienfx-probe v0.9.1" << endl << "Probing low-level access... ";
+	cout << "alienfx-probe v0.9.1" << endl;
+	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
+		<< "Tested light become green, and turned off after testing." << endl
+		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
+	cout << "Probing low-level access... ";
 	vector<int> pids;
 	pids = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	if (pids.size() > 0) {
@@ -37,17 +41,16 @@ int main(int argc, char* argv[])
 		}
 		else {
 			lfxUtil.FillInfo();
+			cout << "Found!" << endl << endl;
 			for (int cdev = 0; cdev < lfxUtil.GetNumDev(); cdev++) {
-				cout << "Lights found for device #" << cdev << " (" << lfxUtil.GetDevInfo(cdev)->desc << "):" << endl;
+				cout << "Device #" << cdev << " (" << lfxUtil.GetDevInfo(cdev)->desc << "):" << endl;
 				for (UINT i = 0; i < lfxUtil.GetDevInfo(cdev)->lights; i++) {
-					cout << "Light #" << lfxUtil.GetLightInfo(cdev, i)->id
+					cout << "\tLight #" << lfxUtil.GetLightInfo(cdev, i)->id
 						<< " - " << lfxUtil.GetLightInfo(cdev, i)->desc << endl;
 				}
 			}
 		}
-		cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
-			<< "Tested light become green, and change color to blue after testing." << endl
-			<< "Just press Enter if no visible light at this ID to skip it." << endl;
+
 		for (int cdev = 0; cdev < pids.size(); cdev++) {
 			cout << "Probing device PID 0x" << std::hex << pids[cdev] << endl;
 			int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid, pids[cdev]);
@@ -58,8 +61,7 @@ int main(int argc, char* argv[])
 				int count;
 				for (count = 0; count < 5 && !AlienFX_SDK::Functions::IsDeviceReady(); count++)
 					Sleep(20);
-				if (count == 5)
-					AlienFX_SDK::Functions::Reset(false);
+				AlienFX_SDK::Functions::Reset(false);
 				cout << "Enter device name or id: ";
 				std::cin.getline(name, 255);
 				if (isdigit(name[0]) && res == (-1)) {
@@ -80,7 +82,7 @@ int main(int argc, char* argv[])
 				// Let's probe low-level lights....
 				for (int i = 0; i < numlights; i++) {
 					//int j = 0;
-					cout << "Testing light #" << i << ": ";
+					cout << "Testing light #" << i << "(enter name or ID, ENTER for skip): ";
 					AlienFX_SDK::Functions::SetColor(i, 0, 255, 0);
 					AlienFX_SDK::Functions::UpdateColors();
 					Sleep(100);
@@ -104,8 +106,9 @@ int main(int argc, char* argv[])
 					else {
 						cout << "Skipped. ";
 					}
-					AlienFX_SDK::Functions::SetColor(i, 0, 0, 255);
+					AlienFX_SDK::Functions::SetColor(i, 0, 0, 0);
 					AlienFX_SDK::Functions::UpdateColors();
+					AlienFX_SDK::Functions::Reset(false);
 					Sleep(100);
 				}
 				if (res == (-1))

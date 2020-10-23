@@ -223,24 +223,27 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
 
         hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-        dwSize = SizeofResource(hInst, hResInfo);
-        hResData = LoadResource(hInst, hResInfo);
-        pRes = LockResource(hResData);
-        pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-        CopyMemory(pResCopy, pRes, dwSize);
-        FreeResource(hResData);
+        if (hResInfo) {
+            dwSize = SizeofResource(hInst, hResInfo);
+            hResData = LoadResource(hInst, hResInfo);
+            if (hResData) {
+                pRes = LockResource(hResData);
+                pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
+                CopyMemory(pResCopy, pRes, dwSize);
+                FreeResource(hResData);
 
-        VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-        char buf[255];
+                VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+                char buf[255];
 
-        DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-        DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
+                DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
+                DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
 
-        sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
+                sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
 
-        Static_SetText(version_text, buf);
-
-        LocalFree(pResCopy);
+                Static_SetText(version_text, buf);
+                LocalFree(pResCopy);
+            }
+        }
         return (INT_PTR)TRUE;
     } break;
     case WM_COMMAND:
@@ -292,10 +295,6 @@ int tabSel = (-1);
 
 VOID OnSelChanged(HWND hwndDlg)
 {
-    //RECT rcTab;
-    DWORD dwDlgBase = GetDialogBaseUnits();
-    int cxMargin = LOWORD(dwDlgBase) / 4;
-    int cyMargin = HIWORD(dwDlgBase) / 8;
 
     // Get the dialog header data.
     DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(
@@ -319,8 +318,8 @@ VOID OnSelChanged(HWND hwndDlg)
 
     SetWindowPos(pHdr->hwndDisplay, NULL,
         pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-        (pHdr->rcDisplay.right - pHdr->rcDisplay.left) - cxMargin - (GetSystemMetrics(SM_CXDLGFRAME)) + 1,
-        (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top) - /*cyMargin - */(GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION) + 3,
+        (pHdr->rcDisplay.right - pHdr->rcDisplay.left), //- cxMargin - (GetSystemMetrics(SM_CXDLGFRAME)) + 1,
+        (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top), //- /*cyMargin - */(GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION) + 3,
         SWP_SHOWWINDOW);
     ShowWindow(pHdr->hwndDisplay, SW_SHOW);
     return;
@@ -338,9 +337,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_INITDIALOG:
     {
         RECT rcTab;
-        DWORD dwDlgBase = GetDialogBaseUnits();
-        int cxMargin = -(GetSystemMetrics(SM_CXDLGFRAME)); // LOWORD(dwDlgBase) / 4;
-        int cyMargin = -1; // GetSystemMetrics(SM_CYDLGFRAME); // HIWORD(dwDlgBase) / 8;
         DLGHDR* pHdr = (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
         SetWindowLongPtr(tab_list, GWLP_USERDATA, (LONG_PTR)pHdr);
         
@@ -364,28 +360,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         tie.pszText = (LPSTR)"Settings";
         SendMessage(tab_list, TCM_INSERTITEM, 3, (LPARAM)&tie);
 
-        //SetRectEmpty(&rcTab);
-        /*rcTab.right = pHdr->apRes[0]->cx;
-        rcTab.bottom = pHdr->apRes[0]->cy;
-        for (i = 0; i < C_PAGES; i++)
-        {
-            if (pHdr->apRes[i]->cx > rcTab.right)
-                rcTab.right = pHdr->apRes[i]->cx;
-            if (pHdr->apRes[i]->cy > rcTab.bottom)
-                rcTab.bottom = pHdr->apRes[i]->cy;
-        }*/
+        SetRectEmpty(&rcTab);
 
         GetClientRect(pHdr->hwndTab, &rcTab);
-        MapDialogRect(pHdr->hwndTab, &rcTab);
-
-        // Calculate how large to make the tab control, so 
-        // the display area can accommodate all the child dialog boxes. 
-        TabCtrl_AdjustRect(pHdr->hwndTab, TRUE, &rcTab);
-        OffsetRect(&rcTab, cxMargin - rcTab.left, cyMargin - rcTab.top);
+        //MapDialogRect(pHdr->hwndTab, &rcTab);
 
         // Calculate the display rectangle. 
         CopyRect(&pHdr->rcDisplay, &rcTab);
         TabCtrl_AdjustRect(pHdr->hwndTab, FALSE, &pHdr->rcDisplay);
+
+        //OffsetRect(&pHdr->rcDisplay, GetSystemMetrics(SM_CXDLGFRAME)-pHdr->rcDisplay.left - 2, -GetSystemMetrics(SM_CYDLGFRAME) - 2);// +GetSystemMetrics(SM_CYMENUSIZE));// GetSystemMetrics(SM_CXDLGFRAME), GetSystemMetrics(SM_CYDLGFRAME) + GetSystemMetrics(SM_CYCAPTION));// GetSystemMetrics(SM_CYCAPTION) - pHdr->rcDisplay.top);
+        pHdr->rcDisplay.left = 1;
+        pHdr->rcDisplay.top -= GetSystemMetrics(SM_CYDLGFRAME);
+        pHdr->rcDisplay.right += 2 * GetSystemMetrics(SM_CXDLGFRAME) + 1;
+        pHdr->rcDisplay.bottom += 3 * GetSystemMetrics(SM_CYDLGFRAME) - 1;
 
         OnSelChanged(tab_list);
 
@@ -1405,6 +1393,8 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         case IDC_BUTTON_REML:
             if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
+                // store profile...
+                conf->profiles[conf->activeProfile].lightsets = conf->mappings;
                 // delete from all profiles...
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++) {
@@ -1412,16 +1402,19 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     for (std::vector <lightset>::iterator mIter = Iter->lightsets.begin();
                         mIter != Iter->lightsets.end(); mIter++)
                         if (mIter->devid == did && mIter->lightid == lid) {
-                            conf->mappings.erase(mIter);
+                            Iter->lightsets.erase(mIter);
                             break;
                         }
                 }
                 // reset active mappings
                 conf->mappings = conf->profiles[conf->activeProfile].lightsets;
-                for (std::vector <AlienFX_SDK::mapping>::iterator Iter = AlienFX_SDK::Functions::GetMappings()->begin();
-                    Iter != AlienFX_SDK::Functions::GetMappings()->end(); Iter++)
-                    if (Iter->devid == did && Iter->lightid == lid)
+                std::vector <AlienFX_SDK::mapping>* mapps = AlienFX_SDK::Functions::GetMappings();
+                for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
+                    Iter != mapps->end(); Iter++)
+                    if (Iter->devid == did && Iter->lightid == lid) {
                         AlienFX_SDK::Functions::GetMappings()->erase(Iter);
+                        break;
+                    }
                 UpdateLightList(light_list, did);
             }
             break;

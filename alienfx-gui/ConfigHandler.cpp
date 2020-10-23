@@ -97,8 +97,8 @@ int ConfigHandler::Load() {
         TEXT("OffWithScreen"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
-        &lightsOn,
-        (LPDWORD)&offWithScreen);
+        &offWithScreen,
+        (LPDWORD)&size);
     RegGetValue(hKey1,
         NULL,
         TEXT("Dimmed"),

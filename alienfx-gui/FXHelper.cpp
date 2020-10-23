@@ -11,7 +11,7 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 		for (count = 0; count < 5 && !AlienFX_SDK::Functions::IsDeviceReady(); count++)
 			Sleep(20);
 		if (count == 5)
-			AlienFX_SDK::Functions::Reset(false);
+			AlienFX_SDK::Functions::Reset(0);
 		AlienFX_SDK::Functions::LoadMappings();
 	}
 };

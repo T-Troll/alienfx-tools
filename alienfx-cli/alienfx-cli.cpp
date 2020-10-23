@@ -34,25 +34,17 @@ void printUsage()
 
 int main(int argc, char* argv[])
 {
-	bool low_level = false;
+	bool low_level = true;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v0.9.1" << endl;
+	cerr << "alienfx-cli v0.9.3" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
 		return 1;
 	}
 
-	int res = lfxUtil.InitLFX();
-	if ( res != -1) {
-		switch (res) {
-		case 0: cerr << "Dell library DLL not found (no library?)!" << endl; break;
-		case 1: cerr << "Can't init Dell library!" << endl; break;
-		case 2: cerr << "No high-level devices found!" << endl; break;
-		default: cerr << "Dell library unknown error!" << endl; break;
-		}
-		low_level = true;
-	}
+	int res = -1; 
+	vector<int> devs = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
 	//std::cout << "PID: " << std::hex << isInit << std::endl;
 	if (isInit != -1)
@@ -60,7 +52,7 @@ int main(int argc, char* argv[])
 		for (int rcount = 0; rcount < 10 && !AlienFX_SDK::Functions::IsDeviceReady(); rcount++)
 			Sleep(20);
 		if (!AlienFX_SDK::Functions::IsDeviceReady())
-			AlienFX_SDK::Functions::Reset(false);
+			AlienFX_SDK::Functions::Reset(0);
 		AlienFX_SDK::Functions::LoadMappings();
 	}
 	else {
@@ -69,8 +61,10 @@ int main(int argc, char* argv[])
 	}
 	const char* command = argv[1];
 	for (int cc = 1; cc < argc; cc++) {
-		if (low_level && cc > 1) 
-			Sleep(sleepy); 
+		if (low_level && cc > 1) {
+			cerr << "Sleep " << sleepy << endl;
+			Sleep(sleepy);
+		}
 		else
 			Sleep(100);
 		string arg = string(argv[cc]);
@@ -87,34 +81,47 @@ int main(int argc, char* argv[])
 				vpos = tvpos == string::npos ? values.size() : tvpos+1;
 			}
 		}
-		//cerr << "Executing " << command << " with " << values << endl;
+		cerr << "Executing " << command << " with " << values << endl;
 		if (command == "low-level") {
 			low_level = true;
 			continue;
 		}
 		if (command == "high-level") {
 			if (res == (-1))
-				low_level = false;
+				res = lfxUtil.InitLFX();
+				if (res != -1) {
+					switch (res) {
+					case 0: cerr << "Dell library DLL not found (no library?)!" << endl; break;
+					case 1: cerr << "Can't init Dell library!" << endl; break;
+					case 2: cerr << "No high-level devices found!" << endl; break;
+					default: cerr << "Dell library unknown error!" << endl; break;
+					}
+					low_level = true;
+				}
+				else
+					low_level = false;
 			continue;
 		}
 		if (command == "loop") {
 			cc = 0;
+			AlienFX_SDK::Functions::UpdateColors();
+			AlienFX_SDK::Functions::Reset(false);
 			continue;
 		}
 		if (command == "status") {
 			if (low_level) {
-				vector<int> devs = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+				// vector<int> devs = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 				for (int i = 0; i < devs.size(); i++) {
 					cout << "Device ID#" << std::hex << devs[i];
 					int dn;
 					for (dn = 0; dn < AlienFX_SDK::Functions::GetDevices()->size(); dn++) {
 						if (devs[i] == AlienFX_SDK::Functions::GetDevices()->at(i).devid) {
 							cout << " - " << AlienFX_SDK::Functions::GetDevices()->at(i).name;
+							if (devs[i] == AlienFX_SDK::Functions::GetPID()) {
+								cout << " (Active, V" << AlienFX_SDK::Functions::GetVersion() << ")";
+							}
 							break;
 						}
-					}
-					if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == AlienFX_SDK::Functions::GetPID()) {
-						cout << " (Active)";
 					}
 					cout << endl;
 					for (int k = 0; k < AlienFX_SDK::Functions::GetMappings()->size(); k++) {
@@ -187,7 +194,7 @@ int main(int argc, char* argv[])
 			if (low_level) {
 				AlienFX_SDK::Functions::SetColor(atoi(args.at(1).c_str()),
 					color.cs.blue, color.cs.green, color.cs.red);
-				AlienFX_SDK::Functions::UpdateColors();
+				//AlienFX_SDK::Functions::UpdateColors();
 			}
 			else {
 				lfxUtil.SetOneLFXColor(atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &color.ci);
@@ -255,7 +262,7 @@ int main(int argc, char* argv[])
 			else {
 			//	lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
 			//	lfxUtil.Update();
-				cerr << "set-power doens't supported" << endl;
+				cerr << "High-level API doesn't support set-power!" << endl;
 			}
 			continue;
 		}
@@ -353,8 +360,10 @@ int main(int argc, char* argv[])
 		cerr << "Unknown command: " << command << endl;
 	}
 	cout << "Done." << endl;
-	AlienFX_SDK::Functions::AlienFXClose();
-	if (res == -1) 
+	if (isInit != -1)
+		AlienFX_SDK::Functions::UpdateColors();
+		AlienFX_SDK::Functions::AlienFXClose();
+	if (res != -1) 
 		lfxUtil.Release();
 
     return 1;
