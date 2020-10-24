@@ -20,10 +20,11 @@ Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
 - Only one device per time can be controlled trough low-level SDK, but you can choose which one.
 - Brightness is not supported for low-level API, just ignored now.
-- Hardware light effects (pulse, morph) doesn't supported for older devices and can't work with software light effects at the same time (hardware limitation).
+- Hardware light effects (<s>pulse</s>(fixed in 0.9.3), morph) doesn't supported for older devices.
+- Hardware light effects can't work with software light effects at the same time (hardware bug, Update command stop all effects).
 - Some colors (f.e. 128,64,64) presented to wrong color on light device. Looks like a bug in hardware color mix system. I'm working on investigation and software fix.
-- DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't monitor GPU load for it.
-- <b>WARNING!</b> In case you run `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
+- DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
+- <b>WARNING!</b> In case you run `alienfx-gui`, `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use gui, haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 - <b>DO NOT</b> use alienfx-gui with hardware power button setup and monitroing with other app switching light colors - it can provide unexpected results (see below)! But you can use any of my apps, they have a check for this situation, so it's safe.
 - <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or then lights come off), then start it back.
 
@@ -39,17 +40,17 @@ It's check 16 first lights into the system by default, but you can change this v
 The purpose of this app is to check low-level API and to prepare light names for other apps, this names are stored and will be used in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
 ## alienfx-cli Usage
-Run `alienfx-cli.exe` with a command and any options for that command. Bu default, `alienfx-cli` using high-level SDK (Alienware LightFX) if found, and low-level (USB driver) if not. You can switch it by using `low-level` and `high-level` commands. 
+Run `alienfx-cli.exe` with a command and any options for that command. Bu default, `alienfx-cli` using high-level SDK (Alienware LightFX) or low-level (USB driver) - by default. You can switch it by using `low-level` and `high-level` commands. 
 ```
 alienfx-cli.exe [command=option,option,option] ... [command=option,option,option] [loop]
 ```
 The following commands are available:
 - `status` Showing AlienFX device IDs and their lights IDs and status. Output is different for low- and high- level SDKs.
-- `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red.
-- `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color.
-- `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided.
-- `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,<action2>,r,g,b[,br]]` Set light to color provided and enable action.
-- `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
+- `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red. NB: For low-level, it requires lights setup using `alienfx-probe`/-gui to work correctly!
+- `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color. Dev-id is ignored for low-level SDK.
+- `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided. This command only works with high-level API.
+- `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,<action2>,r,g,b[,br]]` Set light to color provided and enable action. Dev-id is ignored for low-level SDK.
+- `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action. This command only works with high-level API.
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
@@ -96,20 +97,20 @@ How it works
 ```
 "Color" tab is set hardware color mode for light. This mode will remain even if you exit application.<br>
 "Monitoring" tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
-"Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings.
+"Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings.<br>
 "Settings" tab is for application settings control.<br>
 Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights
-- F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
-Other shortcuts (then application active):
+- F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)<br>
+<br>Other shortcuts (only then application active):
 - ALT+c - switch to Color tab
 - ALT+m - switch to Monitoring tab
 - ALT+d - switch to Device and Lights tab
 - ALT+s - switch to Settings tab
 - ALT+r - refresh all lights
 - ALT+? - about app
-WARNING: Pulse and Morph modes doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
+<br><br>WARNING: Morph mode doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
 
 ## Tools Used
 * Visual Studio Community 2019
