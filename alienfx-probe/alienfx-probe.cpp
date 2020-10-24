@@ -16,7 +16,7 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 16;
-	cout << "alienfx-probe v0.9.1" << endl;
+	cout << "alienfx-probe v0.9.3" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
@@ -52,11 +52,12 @@ int main(int argc, char* argv[])
 		}
 
 		for (int cdev = 0; cdev < pids.size(); cdev++) {
-			cout << "Probing device PID 0x" << std::hex << pids[cdev] << endl;
+			cout << "Probing device PID 0x..." << std::hex << pids[cdev];
 			int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid, pids[cdev]);
 			//std::cout << "PID: " << std::hex << isInit << std::endl;
 			if (isInit != -1)
 			{
+				cout << " Connected." << endl;
 				char name[256], *outName;
 				int count;
 				for (count = 0; count < 5 && !AlienFX_SDK::Functions::IsDeviceReady(); count++)
@@ -118,7 +119,7 @@ int main(int argc, char* argv[])
 				AlienFX_SDK::Functions::SaveMappings();
 			}
 			else {
-				cerr << "AlienFX device not found, please check device manager!";
+				cerr << " Device didn't answer!" << endl;
 			}
 			AlienFX_SDK::Functions::AlienFXClose();
 		}

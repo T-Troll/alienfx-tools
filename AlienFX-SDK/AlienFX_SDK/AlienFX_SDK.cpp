@@ -293,8 +293,7 @@ namespace AlienFX_SDK
 			else
 				BufferO[2] = 0x03;
 			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			int status = AlienfxWaitForBusy();
-			std::cout << "Reset status:" << status << std::endl;
+			AlienfxWaitForBusy();
 		}
 		inSet = true;
 		//std::cout << "Reset!" << std::endl;
@@ -317,8 +316,7 @@ namespace AlienFX_SDK
 		}
 		else {
 			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			int status = AlienfxWaitForReady();
-			std::cout << "Update status: " << status << std::endl;
+			AlienfxWaitForReady();
 		}
 		//std::cout << "Update!" << std::endl;
 		inSet = false;
@@ -373,7 +371,7 @@ namespace AlienFX_SDK
 		/// Buffer2[6-33] - LightID (index, not mask) - it can be COUNT of them.
 		byte Buffer2[] = { 0x00, 0x03 ,0x23 ,0x01 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 				, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
-		byte BufferO2[] = { 0x02 ,0x08 ,0x01 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00 ,0x00 ,0x00 };
+		//byte BufferO2[] = { 0x02 ,0x08 ,0x01 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00 ,0x00 ,0x00 };
 		if (!inSet)
 			Reset(1);
 
@@ -524,7 +522,7 @@ namespace AlienFX_SDK
 		byte Buffer[] = { 0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		if (length == 34) { // only supported at new devices
-			//OutputDebugString(L"Power button set initiated.\n");
+			// this function can be called not early then 250ms after last call!
 			ULONGLONG cPowerCall = GetTickCount64();
 			if (cPowerCall - lastPowerCall < 260)
 				//Sleep(lastPowerCall + 260 - cPowerCall);
@@ -532,7 +530,6 @@ namespace AlienFX_SDK
 			// Need to flush query...
 			if (inSet) UpdateColors();
 			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
-				//OutputDebugString(L"Power set skipped.");
 				return false;
 			}
 			// this function can be called not early then 250ms after last call!
@@ -574,7 +571,7 @@ namespace AlienFX_SDK
 				Loop();
 				//AlienfxGetDeviceStatus();
 			}
-			// Now color set...
+			// Now color set, if needed...
 			/*Buffer[2] = 0x21; Buffer[4] = 4; Buffer[6] = 0x61;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
