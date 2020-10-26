@@ -55,8 +55,8 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::StartEvents()
 {
-    //fxh->RefreshState();
-    if (!dwHandle && conf->enableMon) {
+    fxh->RefreshState();
+    if (!dwHandle && conf->enableMon && conf->stateOn) {
         // start threas with this as a param
 #ifdef _DEBUG
         OutputDebugString("Event thread start.\n");
@@ -88,7 +88,7 @@ void EventHandler::StopEvents()
         CloseHandle(dwHandle);
         dwHandle = 0;
     }
-    fxh->RefreshState(true);
+    fxh->Refresh(true);
 }
 
 EventHandler::EventHandler(ConfigHandler* config, FXHelper* fx)

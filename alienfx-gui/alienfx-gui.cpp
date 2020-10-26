@@ -1495,7 +1495,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDC_CHECK_LON:
             eve->StopEvents();
-            conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            conf->stateOn = conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             eve->StartEvents();
             break;
         case IDC_CHECK_DIM:
