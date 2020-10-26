@@ -122,6 +122,13 @@ int ConfigHandler::Load() {
         (LPDWORD)&size);
     RegGetValue(hKey1,
         NULL,
+        TEXT("OffPowerButton"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &offPowerButton,
+        (LPDWORD)&size);
+    RegGetValue(hKey1,
+        NULL,
         TEXT("CustomColors"),
         RRF_RT_REG_BINARY | RRF_ZEROONFAILURE,
         NULL,
@@ -332,6 +339,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&dimmedBatt,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("OffPowerButton"),
+        0,
+        REG_DWORD,
+        (BYTE*)&offPowerButton,
         4
     );
     RegSetValueEx(

@@ -371,9 +371,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
         //OffsetRect(&pHdr->rcDisplay, GetSystemMetrics(SM_CXDLGFRAME)-pHdr->rcDisplay.left - 2, -GetSystemMetrics(SM_CYDLGFRAME) - 2);// +GetSystemMetrics(SM_CYMENUSIZE));// GetSystemMetrics(SM_CXDLGFRAME), GetSystemMetrics(SM_CYDLGFRAME) + GetSystemMetrics(SM_CYCAPTION));// GetSystemMetrics(SM_CYCAPTION) - pHdr->rcDisplay.top);
         pHdr->rcDisplay.left = 1;
-        pHdr->rcDisplay.top -= GetSystemMetrics(SM_CYDLGFRAME);
-        pHdr->rcDisplay.right += 2 * GetSystemMetrics(SM_CXDLGFRAME) + 1;
-        pHdr->rcDisplay.bottom += 3 * GetSystemMetrics(SM_CYDLGFRAME) - 1;
+        pHdr->rcDisplay.top -= 1; // GetSystemMetrics(SM_CYDLGFRAME);
+        pHdr->rcDisplay.right += 1; GetSystemMetrics(SM_CXDLGFRAME);// +1;
+        pHdr->rcDisplay.bottom += 2;// 2 * GetSystemMetrics(SM_CYDLGFRAME) - 1;
 
         OnSelChanged(tab_list);
 
@@ -1464,6 +1464,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (conf->enableMon) CheckDlgButton(hDlg, IDC_BATTMONITOR, BST_CHECKED);
         if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
         if (conf->dimmed) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
+        if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
         SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -1499,6 +1500,10 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDC_CHECK_DIM:
             conf->dimmed = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            fxhl->RefreshState();
+            break;
+        case IDC_OFFPOWERBUTTON:
+            conf->offPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             fxhl->RefreshState();
             break;
         default: return false;

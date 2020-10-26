@@ -43,8 +43,9 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	//sprintf_s(buff, 2047, "CounterUpdate: S%d,", AlienFX_SDK::Functions::AlienfxGetDeviceStatus());
 	OutputDebugString(buff);
 #endif
+	if (config->autoRefresh) Refresh();
 	if (force)
-		for (int i = 0; i < 25 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
+		for (int i = 0; i < 15 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return;
 	bStage = !bStage;
 	int lFlags = 0;
@@ -111,7 +112,6 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		//Refresh(false, false);
 		AlienFX_SDK::Functions::UpdateColors();
 	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
-	if (config->autoRefresh) Refresh();
 }
 
 void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, BYTE r, BYTE g, BYTE b, int mode2, int length2, int speed2, BYTE r2, BYTE g2, BYTE b2)
@@ -130,25 +130,22 @@ void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, 
 				b2 = b2 < delta ? 0 : b2 - delta;
 		}
 
-		if (power) {
-			AlienFX_SDK::Functions::SetPowerAction(id,
-				r, g, b,
-				r2, g2, b2
-			);
-		} else 
-			if (mode1 == 0 && mode2 == 0) {
+		if (power)
+			AlienFX_SDK::Functions::SetPowerAction(id, r, g, b, r2, g2, b2);
+		else 
+			if (mode1 == 0 && mode2 == 0)
 				AlienFX_SDK::Functions::SetColor(id, r, g, b);
-			}
-			else {
+			else
 				AlienFX_SDK::Functions::SetAction(id,
 					mode1, length1, speed1, r, g, b,
-					mode2, length2, speed2, r2, g2, b2
-				);
-			}
+					mode2, length2, speed2, r2, g2, b2);
 	}
 	else {
 		if (!power)
 			AlienFX_SDK::Functions::SetColor(id, 0, 0, 0);
+		else
+			if (config->offPowerButton)
+				AlienFX_SDK::Functions::SetPowerAction(id, 0, 0, 0, 0, 0, 0);
 	}
 }
 
@@ -163,7 +160,7 @@ int FXHelper::Refresh(bool forced)
 {
 	std::vector <lightset>::iterator Iter;
 	Colorcode fin;
-	for (int i = 0; i < 10 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
+	for (int i = 0; i < 15 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
 	int lFlags = 0;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {

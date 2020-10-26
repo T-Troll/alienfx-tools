@@ -340,25 +340,6 @@ namespace AlienFX_SDK
 
 	bool Functions::SetColor(int index, int r, int g, int b)
 	{
-		int location;
-		switch (index)
-		{
-		case 1: location = leftZone; break;
-		case 2: location = leftMiddleZone; break;
-		case 3: location = rightZone; break;
-		case 4: location = rightMiddleZone; break;
-		case 5: location = Macro; break;
-		case 6: location = AlienFrontLogo; break;
-		case 7: location = LeftPanelTop; break;
-		case 8: location = LeftPanelBottom; break;
-		case 9: location = RightPanelTop; break;
-		case 10: location = RightPanelBottom; break;
-
-		case 12: location = AlienBackLogo; break;
-		case 11: location = Power; break;
-		case 13: location = TouchPad; break;
-		default: return 0; // location = AlienFrontLogo; break;
-		}
 		size_t BytesWritten;
 		byte* Buffer;
 		bool val = false;
@@ -386,6 +367,25 @@ namespace AlienFX_SDK
 			val = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 		}
 		else {
+			int location;
+			switch (index)
+			{
+			case 1: location = leftZone; break;
+			case 2: location = leftMiddleZone; break;
+			case 3: location = rightZone; break;
+			case 4: location = rightMiddleZone; break;
+			case 5: location = Macro; break;
+			case 6: location = AlienFrontLogo; break;
+			case 7: location = LeftPanelTop; break;
+			case 8: location = LeftPanelBottom; break;
+			case 9: location = RightPanelTop; break;
+			case 10: location = RightPanelBottom; break;
+
+			case 12: location = AlienBackLogo; break;
+			case 11: location = Power; break;
+			case 13: location = TouchPad; break;
+			default: location = AlienFrontLogo; break;
+			}
 			Buffer = BufferO;
 			Buffer[0] = 0x02;
 			Buffer[1] = 0x03;
@@ -417,8 +417,8 @@ namespace AlienFX_SDK
 			//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			val = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			int status = AlienfxWaitForReady();
-			std::cout << "Color status:" << status << std::endl;
+			//int status = AlienfxWaitForReady();
+			//std::cout << "Color status:" << status << std::endl;
 		}
 		
 		Loop();

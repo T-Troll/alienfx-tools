@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 {
 	bool low_level = true;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v0.9.3" << endl;
+	cerr << "alienfx-cli v0.9.4" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -169,7 +169,8 @@ int main(int argc, char* argv[])
 			color.cs.brightness = args.size() > 3 ? atoi(args.at(3).c_str()) : 255;
 			if (low_level) {
 				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
-					if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == isInit)
+					if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == isInit &&
+						!AlienFX_SDK::Functions::GetMappings()->at(i).flags)
 						AlienFX_SDK::Functions::SetColor(AlienFX_SDK::Functions::GetMappings()->at(i).lightid,
 							color.cs.red, color.cs.green, color.cs.blue);
 				}
