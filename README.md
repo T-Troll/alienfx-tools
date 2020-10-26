@@ -40,7 +40,7 @@ It's check 16 first lights into the system by default, but you can change this v
 The purpose of this app is to check low-level API and to prepare light names for other apps, this names are stored and will be used in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
 ## alienfx-cli Usage
-Run `alienfx-cli.exe` with a command and any options for that command. Bu default, `alienfx-cli` using high-level SDK (Alienware LightFX) or low-level (USB driver) - by default. You can switch it by using `low-level` and `high-level` commands. 
+Run `alienfx-cli.exe` with a command and any options for that command. `alienfx-cli` uses low-level (USB driver) access by default, but you can switch to high-level SDK (Alienware LightFX) issuing `high-level` command. 
 ```
 alienfx-cli.exe [command=option,option,option] ... [command=option,option,option] [loop]
 ```
@@ -54,7 +54,7 @@ The following commands are available:
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
-- `high-level` - Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
+- `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 <br>Supported Zones: `left, right, top, bottom, front, rear`
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`
@@ -89,16 +89,16 @@ Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set up
 First, use "Devices and Lights" tab to configure out devices and lights settings, if you don't run `alienfx-probe` yet.
 Use "Color" tab for simple lights setup (this colors and modes will stay as default until AWCC run or modified by other app), even after reboot.</br>
 You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a color for reaction at "Monitoring" tab.<br>
-If "Use color settings as default" is active, first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be uset for "active" situation, if it's not active - both colors will taken from "Monitoring" tab.<br>
+If "Use color settings as default" is active, first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be uset for "active" situation, if it's not active - both colors will taken from "Monitoring" tab (and colors from "Color" tab if monitoring is disabled).<br>
 You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and "system overheat". In this case Status color always override Performance one, as well as both override Power one.<br>
-If the app minimized, it hide itsef at the tray, check tray menu (right-click on tray button) for some fast switch buttons as well.<br>
+Tray menu (right-click on tray button) avaliable all the time for some fast switch functins, application hide to tray completely then minimized.<br>
 ```
 How it works
 ```
 "Color" tab is set hardware color mode for light. This mode will remain even if you exit application.<br>
 "Monitoring" tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
-"Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings.<br>
-"Settings" tab is for application settings control.<br>
+"Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings. NB: If you want to add new light, type light ID into LightID box. If this ID already present in list, it will be overrided to first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
+"Settings" tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings.<br>
 Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights
@@ -109,7 +109,23 @@ Keyboard shortcuts (any time):
 - ALT+d - switch to Device and Lights tab
 - ALT+s - switch to Settings tab
 - ALT+r - refresh all lights
-- ALT+? - about app
+- ALT+? - about app<br><br>
+Monitoring events avaliable:<br>
+System Load:
+- CPU Load - CPU load color mix from 0% ("calm") to 100% ("Active")
+- RAM Load - The same for used RAM percentage
+- GPU Load - The same for utilized GPU percentage (top one across GPUs if more, then one present into the system).
+- HDD Load - It's not exactly a load, but IDLE time. If idle - it's "calm", 100% busy - active, and mix between.
+- Network load - Current network traffic value against maximal value detected (across allnetwork adapters into the system).
+- Max. Temperature - Maximal temperature in Celsius degrees (0=calm-100=active) across all temperature sensors detected into the system.
+- Battery level - Battery charge level in percent (0=dischagred, 100=full).
+You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the rooom temperature - only heat above it will change color after.<br>
+Status Led:
+- Disk activity - Switch light every disk activity event (HDD IDLE above zero).
+- Network activity - Switch light if any network traffic detected (across all adapters).
+- System overheat - Switch light if sustem temperature above cut level (default 95C, but you can change it using slider below).
+- Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
+"Blink" checkbox switch triggered value to blink between on-off colors 5 times per sec (well... about 5 times).
 <br><br>WARNING: Morph mode doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
 
 ## Tools Used
