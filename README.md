@@ -116,17 +116,17 @@ System Load:
 - RAM Load - The same for used RAM percentage
 - GPU Load - The same for utilized GPU percentage (top one across GPUs if more, then one present into the system).
 - HDD Load - It's not exactly a load, but IDLE time. If idle - it's "calm", 100% busy - active, and mix between.
-- Network load - Current network traffic value against maximal value detected (across allnetwork adapters into the system).
+- Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
 - Max. Temperature - Maximal temperature in Celsius degrees (0=calm-100=active) across all temperature sensors detected into the system.
-- Battery level - Battery charge level in percent (0=dischagred, 100=full).
-You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the rooom temperature - only heat above it will change color after.<br>
+- Battery level - Battery charge level in percent (0=dischagred, 100=full).<br>
+You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.<br>
 Status Led:
 - Disk activity - Switch light every disk activity event (HDD IDLE above zero).
 - Network activity - Switch light if any network traffic detected (across all adapters).
 - System overheat - Switch light if sustem temperature above cut level (default 95C, but you can change it using slider below).
-- Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
+- Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).<br>
 "Blink" checkbox switch triggered value to blink between on-off colors 5 times per sec (well... about 5 times).
-<br><br>WARNING: Morph mode doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
+<br><br><b>WARNING:</b> Morph mode doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
 
 ## Tools Used
 * Visual Studio Community 2019
