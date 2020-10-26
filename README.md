@@ -123,7 +123,7 @@ You can use "Minimal value" slider to define zone of no reaction - for example, 
 Status Led:
 - Disk activity - Switch light every disk activity event (HDD IDLE above zero).
 - Network activity - Switch light if any network traffic detected (across all adapters).
-- System overheat - Switch light if sustem temperature above cut level (default 95C, but you can change it using slider below).
+- System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
 - Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).<br>
 "Blink" checkbox switch triggered value to blink between on-off colors 5 times per sec (well... about 5 times).
 <br><br><b>WARNING:</b> Morph mode doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
