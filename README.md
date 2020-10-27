@@ -22,7 +22,7 @@ Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G
 - Brightness is not supported for low-level API, just ignored now.
 - Hardware light effects (<s>pulse</s>(fixed in 0.9.3), morph) doesn't supported for older devices.
 - Hardware light effects can't work with software light effects at the same time (hardware bug, Update command stop all effects).
-- Some colors (f.e. 128,64,64) presented to wrong color on light device. Looks like a bug in hardware color mix system. I'm working on investigation and software fix.
+- <s>Some colors (f.e. 128,64,64) presented to wrong color on light device. Looks like a bug in hardware color mix system. I'm working on investigation and software fix.</s> Fixed in 0.9.5.
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
 - <b>WARNING!</b> In case you run `alienfx-gui`, `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use gui, haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 - <b>DO NOT</b> use alienfx-gui with hardware power button setup and monitroing with other app switching light colors - it can provide unexpected results (see below)! But you can use any of my apps, they have a check for this situation, so it's safe.
@@ -69,7 +69,6 @@ This application get audio stream from default input device, then made a real-ti
 <br>After that, spectrum powers gropped into 20 groups using octave scale.
 <br>For each light found into the system, you can define group(s) it should react, as well as color for Zero (low) and Max (High) power.
 <br>It's also possible to compress diapasone if group always not so or so high powered - use low-cut as a bottom range and hi-cut as a top one (values are 0-255).<br>
-<s>Global parameter "Decay" defines how fast detected Peak Level decayed if not peak detected or increased if detected peak is higher (2xDecay). Keep it at default 10000 if you audio is 16-bit, alter to about 1000000 in case of 24-bit, set 0 to disable decay, or experiment with you own values.</s> Removed in 0.9.1
 
 ## alienfx-ambient Usage
 Run `alienfx-ambient.exe`. At first launch, set screen zones mapping to lights and parameters.
@@ -82,7 +81,8 @@ This application get shot of screen (privary or secondary), then divide it to se
 <br>For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.
 <br>You can also select which screen to grab - primary or secondary, if you have more, then one. 
 <br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value increase update performance, but decrease dominant color extraction presision. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if it works ok for you.
-<br>"Brightness correction" slider removes some white component from color, made them not so close to white at high brighness and more vivid or darker. Leftmost position disable the correction, rightmost cut 50% white.
+<br>"Brightness" slider removes some white component from color, made them not so close to white at high brighness and more vivid or darker. Leftmost position disable the correction, rightmost cut 50% white.
+<br>"Gamma Correction" checkbox enables visual color correction, make them more close to screen one.
 
 ## alienfx-gui Usage
 Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set up immedately.<br>
