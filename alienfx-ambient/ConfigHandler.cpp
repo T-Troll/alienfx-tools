@@ -46,9 +46,6 @@ int ConfigHandler::Load() {
         NULL,
         &shift,
         (LPDWORD)&size);
-    if (!shift) { // no key
-        shift = 40;// 0;
-    }
     RegGetValue(hKey1,
         NULL,
         TEXT("Mode"),
@@ -63,10 +60,19 @@ int ConfigHandler::Load() {
         NULL,
         &divider,
         (LPDWORD)&size);
+    unsigned ret = RegGetValue(hKey1,
+        NULL,
+        TEXT("GammaCorrection"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &gammaCorrection,
+        (LPDWORD)&size);
+    if (ret != ERROR_SUCCESS)
+        gammaCorrection = 1;
     if (!divider) divider = 8;
     unsigned vindex = 0, inarray[12*4];
     char name[256];
-    unsigned ret = 0;
+    ret = 0;
     do {
         DWORD len = 255, lend = 12 * 4; mapping map;
         ret = RegEnumValueA(
@@ -128,6 +134,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&divider,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("GammaCorrection"),
+        0,
+        REG_DWORD,
+        (BYTE*)&gammaCorrection,
         4
     );
     for (int i = 0; i < mappings.size(); i++) {

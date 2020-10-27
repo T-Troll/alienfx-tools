@@ -66,9 +66,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     conf->Load();
 
-    eve->ChangePowerState();
+    fxhl->Refresh(true);
 
-    //fxhl->Refresh(true);
+    eve->ChangePowerState();
 
     if (conf->lightsOn) {
         eve->StartEvents();
@@ -122,21 +122,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
-    
-    /*while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }*/
 
     eve->StopEvents();
 
     conf->Save();
-
-    //fxhl->Refresh(true);
 
     AlienFX_SDK::Functions::SaveMappings();
 
@@ -147,44 +136,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int) msg.wParam;
 }
 
-
-
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
-/*ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-    WNDCLASSEXW wcex;
-
-    wcex.cbSize = sizeof(WNDCLASSEX);
-
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_ALIENFXGUI);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI));
-
-    return RegisterClassExW(&wcex);
-}*/
-
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     HWND dlg;
@@ -447,7 +398,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             fxhl->RefreshState();
             break;
         case ID_TRAYMENU_LIGHTSON:
-            conf->lightsOn = !conf->lightsOn;
+            conf->stateOn = conf->lightsOn = !conf->lightsOn;
             if (conf->lightsOn) {
                 fxhl->Refresh(true);
                 eve->StartEvents();
@@ -456,13 +407,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_DIMLIGHTS:
             conf->dimmed = !conf->dimmed;
+            fxhl->Refresh(true);
             fxhl->RefreshState();
             break;
         case ID_TRAYMENU_MONITORING:
             eve->StopEvents();
             conf->enableMon = !conf->enableMon;
             eve->StartEvents();
-            //fxhl->RefreshState();
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
@@ -642,9 +593,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC: case PBT_APMPOWERSTATUSCHANGE:
-                //power status changed
+            //power status changed
             eve->ChangePowerState();
-            //fxhl->RefreshState();
             break;
         case PBT_POWERSETTINGCHANGE:
             POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
@@ -657,7 +607,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_HOTKEY:
         switch (wParam) {
         case 1: // on/off
-            conf->lightsOn = !conf->lightsOn;
+            conf->stateOn = conf->lightsOn = !conf->lightsOn;
             if (conf->lightsOn) {
                 fxhl->Refresh(true);
                 eve->StartEvents();
@@ -666,6 +616,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case 2: // dim
             conf->dimmed = !conf->dimmed;
+            fxhl->Refresh(true);
             fxhl->RefreshState();
             break;
         case 3: // off-dim-full circle
@@ -673,16 +624,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 if (conf->dimmed) {
                     conf->lightsOn = !conf->lightsOn;
                     conf->dimmed = !conf->dimmed;
-                    //fxhl->Refresh();
+                    //fxhl->Refresh(true);
                     eve->StopEvents();
                 }
                 else {
                     conf->dimmed = !conf->dimmed;
+                    fxhl->Refresh(true);
                     fxhl->RefreshState();
                 }
             }
             else {
-                conf->lightsOn = !conf->lightsOn;
+                conf->stateOn = conf->lightsOn = !conf->lightsOn;
                 fxhl->Refresh(true);
                 eve->StartEvents();
             }
@@ -690,8 +642,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         default: return false;
         }
         break;
-    //case WM_CLOSE:
-    //    DestroyWindow(hDlg); break;
     case WM_DESTROY: PostQuitMessage(0); break;
     default: return false;
     }
@@ -948,7 +898,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         default: return false;
         }
         if (mmap != NULL)
-            fxhl->Refresh();
+            fxhl->Refresh(AlienFX_SDK::Functions::GetFlags(pid, lid));
     } break;
     case WM_VSCROLL:
         switch (LOWORD(wParam)) {
@@ -1464,6 +1414,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (conf->enableMon) CheckDlgButton(hDlg, IDC_BATTMONITOR, BST_CHECKED);
         if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
         if (conf->dimmed) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
+        if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
         if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
@@ -1500,6 +1451,10 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDC_CHECK_DIM:
             conf->dimmed = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            fxhl->RefreshState();
+            break;
+        case IDC_CHECK_GAMMA:
+            conf->gammaCorrection = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             fxhl->RefreshState();
             break;
         case IDC_OFFPOWERBUTTON:

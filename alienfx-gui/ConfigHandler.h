@@ -72,6 +72,7 @@ public:
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
+	DWORD gammaCorrection = 1;
 	Colorcode testColor;
 	COLORREF customColors[16];
 	std::vector<lightset> mappings;

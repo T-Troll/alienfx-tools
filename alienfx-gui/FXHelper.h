@@ -33,8 +33,8 @@ public:
 	std::vector<int> GetDevList();
 	void TestLight(int id);
 	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force = false);
-	void SetLight(int id, bool power, int mode1, int length1, int speed1, BYTE r, BYTE g, BYTE b,
-		int mode2=0, int length2 =0, int speed2 =0, BYTE r2=0, BYTE g2=0, BYTE b2=0);
-	void RefreshState(bool force = false);
+	void SetLight(int id, bool power, int mode1, int length1, int speed1, int r, int g, int b,
+		int mode2=0, int length2 =0, int speed2 =0, int r2=0, int g2=0, int b2=0);
+	void RefreshState();
 };
 

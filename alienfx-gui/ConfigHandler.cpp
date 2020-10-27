@@ -92,6 +92,15 @@ int ConfigHandler::Load() {
         (LPDWORD)&size);
     if (ret != ERROR_SUCCESS)
         enableMon = 1;
+    ret = RegGetValue(hKey1,
+        NULL,
+        TEXT("GammaCorrection"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &gammaCorrection,
+        (LPDWORD)&size);
+    if (ret != ERROR_SUCCESS)
+        gammaCorrection = 1;
     RegGetValue(hKey1,
         NULL,
         TEXT("OffWithScreen"),
@@ -363,6 +372,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&activeProfile,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("GammaCorrection"),
+        0,
+        REG_DWORD,
+        (BYTE*)&gammaCorrection,
         4
     );
     RegSetValueEx(

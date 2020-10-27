@@ -30,7 +30,11 @@ void FXHelper::TestLight(int id)
 {
 	for (int i = 0; i < 25 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return;
-	AlienFX_SDK::Functions::SetColor(id, config->testColor.cs.red, config->testColor.cs.green, config->testColor.cs.blue);
+	int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
+		g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
+		b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
+	AlienFX_SDK::Functions::SetColor(id, r, g, b);
+		// config->testColor.cs.red, config->testColor.cs.green, config->testColor.cs.blue);
 	AlienFX_SDK::Functions::UpdateColors();
 }
 
@@ -114,7 +118,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
 }
 
-void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, BYTE r, BYTE g, BYTE b, int mode2, int length2, int speed2, BYTE r2, BYTE g2, BYTE b2)
+void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, int r, int g, int b, int mode2, int length2, int speed2, int r2, int g2, int b2)
 {
 	// modify colors for dimmed...
 	const BYTE delta = (BYTE) config->dimmingPower;
@@ -128,6 +132,15 @@ void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, 
 				r2 = r2 < delta ? 0 : r2 - delta;
 				g2 = g2 < delta ? 0 : g2 - delta;
 				b2 = b2 < delta ? 0 : b2 - delta;
+		}
+		// gamma-correction...
+		if (config->gammaCorrection) {
+			r = (r * r) >> 8;
+			g = (g * g) >> 8;
+			b = (b * b) >> 8;
+			r2 = (r2 * r2) >> 8;
+			g2 = (g2 * g2) >> 8;
+			b2 = (b2 * b2) >> 8;
 		}
 
 		if (power)
@@ -149,11 +162,11 @@ void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, 
 	}
 }
 
-void FXHelper::RefreshState(bool force)
+void FXHelper::RefreshState()
 {
-	if (config->enableMon && !force)
+	if (config->enableMon)
 		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, true);
-	Refresh(force);
+	Refresh();
 }
 
 int FXHelper::Refresh(bool forced)
@@ -164,7 +177,7 @@ int FXHelper::Refresh(bool forced)
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
 	int lFlags = 0;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
-		if (Iter->devid == pid && (lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) != (-1)) {
+		if (Iter->devid == pid && (!(lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) || forced)) {
 			Colorcode c1 = Iter->eve[0].map.c1, c2 = Iter->eve[0].map.c2;
 			int mode1 = Iter->eve[0].map.mode, mode2 = Iter->eve[0].map.mode2;
 			if (config->enableMon && !forced) {

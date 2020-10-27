@@ -32,6 +32,7 @@ public:
 	DWORD mode = 0;
 	DWORD divider = 16;
 	DWORD shift = 40;
+	DWORD gammaCorrection = 1;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();

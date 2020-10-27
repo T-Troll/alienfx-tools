@@ -47,6 +47,11 @@ int FXHelper::Refresh(UCHAR* img)
 			fin.cs.red -= delta;  //fin.cs.red < shift ? 0 : fin.cs.red - shift;
 			fin.cs.green -= delta;  //fin.cs.green < shift ? 0 : fin.cs.green - shift;
 			fin.cs.blue -= delta;  //fin.cs.blue < shift ? 0 : fin.cs.blue - shift;
+			if (config->gammaCorrection) {
+				fin.cs.red = ((int)fin.cs.red * fin.cs.red) >> 8;
+				fin.cs.green = ((int)fin.cs.green * fin.cs.green) >> 8;
+				fin.cs.blue = ((int)fin.cs.blue * fin.cs.blue) >> 8;
+			}
 			AlienFX_SDK::Functions::SetColor(map.lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
 
 		}

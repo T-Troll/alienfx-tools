@@ -307,6 +307,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
             CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
         }
+        CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection ? BST_CHECKED : BST_UNCHECKED);
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 128));
         SendMessage(brSlider, TBM_SETPOS, true, conf->shift);
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
@@ -444,6 +445,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 cap->Restart();
                 break;
             }
+            break;
+        case IDC_CHECK_GAMMA:
+            conf->gammaCorrection = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             break;
         case IDC_BUTTON_MIN:
             // go to tray...
