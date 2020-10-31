@@ -5,7 +5,6 @@
 #include "alienfx-ambient.h"
 #include "DaramCam/DaramCam.h"
 #pragma comment ( lib, "DaramCam.lib" )
-//#include <DaramCam.MediaFoundationGenerator.h>
 #include "CaptureHelper.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
@@ -14,8 +13,8 @@
 #include <Commdlg.h>
 #include <shellapi.h>
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
+#include <algorithm>
 
-//#pragma comment ( lib, "DaramCam.MediaFoundationGenerator.lib" )
 #pragma comment(linker, \
   "\"/manifestdependency:type='Win32' "\
   "name='Microsoft.Windows.Common-Controls' "\
@@ -23,7 +22,6 @@
   "processorArchitecture='*' "\
   "publicKeyToken='6595b64144ccf1df' "\
   "language='*'\"")
-//#pragma comment(lib, "ComCtl32.lib")
 #pragma comment(lib,"Version.lib")
 
 #define MAX_LOADSTRING 100
@@ -137,54 +135,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
    return dlg;
 }
 
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE: Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
-/*LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
-        }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
-}*/
-
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -247,13 +197,20 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+mapping* FindMapping(int did, int lid) {
+    for (int i = 0; i < conf->mappings.size(); i++)
+        if (conf->mappings[i].devid == did && conf->mappings[i].lightid == lid)
+                return &conf->mappings[i];
+    return NULL;
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND dev_list = GetDlgItem(hDlg, IDC_DEVICE);
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND divider = GetDlgItem(hDlg, IDC_EDIT_DIVIDER);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
     mapping* map = NULL;
-    unsigned i;
+    //unsigned i;
 
     switch (message)
     {
@@ -270,7 +227,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         }
         else {
             int cpid = (-1), cpos = (-1);
-            for (i = 0; i < numdev; i++) {
+            for (int i = 0; i < numdev; i++) {
                 cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
                 std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
                 int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
@@ -288,7 +245,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
                 SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
             }
-            for (i = 0; i < lights; i++) {
+            for (int i = 0; i < lights; i++) {
                 AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
                 if (lgh.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, lgh.lightid) == 0) {
                     int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
@@ -336,7 +293,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
                     AlienFX_SDK::Functions::AlienFXChangeDevice(did);
                     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
-                    for (i = 0; i < lights; i++) {
+                    for (int i = 0; i < lights; i++) {
                         AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
                         if (lgh.devid == did && AlienFX_SDK::Functions::GetFlags(did, lgh.lightid) == 0) { // should be did
                             int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
@@ -352,24 +309,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             {
             case LBN_SELCHANGE: {
                 // check in config - do we have mappings?
-                for (i = 0; i < conf->mappings.size(); i++)
-                    if (conf->mappings[i].devid == did && conf->mappings[i].lightid == lid)
-                        break;
-                if (i < conf->mappings.size()) {
-                    map = &conf->mappings[i];
-                }
-                else {
+                map = FindMapping(did, lid);
+                if (map == NULL) {
                     mapping newmap;
                     newmap.devid = did;
                     newmap.lightid = lid;
                     conf->mappings.push_back(newmap);
-                    map = &conf->mappings[i];
+                    std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                    map = FindMapping(did, lid);
                 }
                 // load zones....
                 UINT bid = IDC_CHECK1;
                 //SendMessage(freq_list, LB_SETSEL, FALSE, -1);
                 // clear checks...
-                for (i = 0; i < 12; i++) {
+                for (int i = 0; i < 12; i++) {
                     CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
                 }
                 for (int j = 0; j < map->map.size(); j++) {
@@ -388,13 +341,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             case BN_CLICKED: {
                 UINT id = LOWORD(wParam) - IDC_BUTTON1;
                 UINT bid = IDC_CHECK1 + id;
-                for (i = 0; i < conf->mappings.size(); i++)
-                    if (conf->mappings[i].devid == did && conf->mappings[i].lightid == lid)
-                        break;
-                if (i < conf->mappings.size()) {
-                    map = &conf->mappings[i];
+                map = FindMapping(did, lid);
+                if (map != NULL) {
                     // add mapping
                     std::vector <unsigned char>::iterator Iter = map->map.begin();
+                    int i = 0;
                     for (i = 0; i < map->map.size(); i++)
                         if (map->map[i] == id)
                             break;
@@ -405,15 +356,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                         // new mapping, add and select
                         map->map.push_back(id);
                         CheckDlgButton(hDlg, bid, BST_CHECKED);
-                        //SendMessage(cBid, BM_SETSTATE, TRUE, 0);
                     }
                     else {
                         map->map.erase(Iter);
                         CheckDlgButton(hDlg, bid, BST_UNCHECKED);
-                        //SendMessage(cBid, BM_SETSTATE, FALSE, 0);
                     }
-                    //RedrawWindow(cBid, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-                    // remove selection
                 }
             } break;
             }

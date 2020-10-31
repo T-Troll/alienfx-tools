@@ -13,12 +13,12 @@ public:
 	void setXscale(int x);
 	void setYscale(double y);
 	void setSampleRate(int rate) { sampleRate = rate; };
-	double getCurrentPower();
+	/*double getCurrentPower();
 	double getShortPower();
 	double getLongPower();
 	int getCurrentAvgFreq();
 	int getShortAvgFreq();
-	int getLongAvgFreq();
+	int getLongAvgFreq();*/
 	double getYscale();
 
 protected:
@@ -32,15 +32,15 @@ protected:
 	int RECTSNUM;
 	int sampleRate = 44100;
 	int done, stopped;
-	int* s_indexes;
-	int* s_numbers;
+	//int* s_indexes;
+	//int* s_numbers;
 	int* spectrum;
 	//long long int infinity;
-	double avg_freq;
-	double long_term_avg_freq,short_term_avg_freq;//integral over the avg on sample
+	//double avg_freq;
+	//double long_term_avg_freq,short_term_avg_freq;//integral over the avg on sample
 
-	double power;
-	double long_term_power,short_term_power;
+	//double power;
+	//double long_term_power,short_term_power;
 	//-------------------------------------------------
 	double* blackman;// , * hanning;
 	kiss_fft_scalar *padded_in;

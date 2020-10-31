@@ -40,6 +40,6 @@ public:
 	~ConfigHandler();
 	int Load();
 	int Save();
-
+	static bool ConfigHandler::sortMappings(mapping i, mapping j);
 };
 

@@ -83,8 +83,9 @@
 #define IDC_STATIC_VERSION              1048
 #define IDC_CHECK_LON                   1049
 #define IDC_CHECK_DIM                   1050
-#define IDC_CHECK1                      1051
 #define IDC_OFFPOWERBUTTON              1051
+#define IDC_CHECK1                      1052
+#define IDC_CHECK_GAMMA                 1052
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -108,7 +109,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        144
 #define _APS_NEXT_COMMAND_VALUE         32788
-#define _APS_NEXT_CONTROL_VALUE         1052
+#define _APS_NEXT_CONTROL_VALUE         1053
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

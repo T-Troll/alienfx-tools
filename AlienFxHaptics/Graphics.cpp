@@ -12,6 +12,7 @@
 //#include "AudioIn.h"
 #include <string>
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
+#include <algorithm>
 
 #pragma comment(lib, "winmm.lib")
 
@@ -396,9 +397,16 @@ bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
 	return ret;
 }
 
+mapping* FindMapping(int did, int lid) {
+	for (int i = 0; i < config->mappings.size(); i++)
+		if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
+			return &config->mappings[i];
+	return NULL;
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	unsigned i;
+	//unsigned i;
 
 	HWND freq_list = GetDlgItem(hDlg, IDC_FREQ);
 	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICE);
@@ -418,7 +426,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	{
 		double coeff = 22030 / log(21);
 		char frqname[55]; int prevfreq = 20;
-		for (i = 1; i < 21; i++) {
+		for (int i = 1; i < 21; i++) {
 			int frq = 22050 - (int) round((log(21-i) * coeff));
 			sprintf_s(frqname, 55, "%d-%dHz", prevfreq, frq);
 			prevfreq = frq;
@@ -435,7 +443,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 		else {
 			int cpid = (-1), cpos = (-1);
-			for (i = 0; i < numdev; i++) {
+			for (int i = 0; i < numdev; i++) {
 				cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
 				std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
 				int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
@@ -453,7 +461,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
 				SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
 			}
-			for (i = 0; i < lights; i++) {
+			for (int i = 0; i < lights; i++) {
 				AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
 				if (lgh.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, lgh.lightid) == 0) {
 					int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
@@ -477,9 +485,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		int dbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
 		int did = (int)SendMessage(dev_list, CB_GETITEMDATA, dbItem, 0);
 		int fid = (int)SendMessage(freq_list, LB_GETCURSEL, 0, 0);
-		for (i = 0; i < config->mappings.size(); i++)
-			if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-				break;
+		map = FindMapping(did, lid);
 		switch (LOWORD(wParam))
 		{
 		case IDOK: case IDCANCEL: case IDCLOSE:
@@ -527,7 +533,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					EnableWindow(freq_list, FALSE);
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
-					for (i = 0; i < lights; i++) {
+					for (int i = 0; i < lights; i++) {
 						AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
 						if (lgh.devid == did && AlienFX_SDK::Functions::GetFlags(did, lgh.lightid) == 0) {
 							int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
@@ -560,10 +566,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			{
 			case LBN_SELCHANGE: {
 				// check in config - do we have mappings?
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
-				}
-				else {
+				if (map == NULL) {
 					mapping newmap;
 					newmap.devid = did;
 					newmap.lightid = lid;
@@ -572,7 +575,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					newmap.lowcut = 0;
 					newmap.hicut = 255;
 					config->mappings.push_back(newmap);
-					map = &config->mappings[i];
+					std::sort(config->mappings.begin(), config->mappings.end(), ConfigHandler::sortMappings);
+					map = FindMapping(did, lid);
 				}
 				// load freq....
 				EnableWindow(freq_list, TRUE);
@@ -605,10 +609,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case LBN_SELCHANGE: {
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
+				if (map != NULL) {
 					// add mapping
 					std::vector <unsigned char>::iterator Iter = map->map.begin();
+					int i = 0;
 					for (i = 0; i < map->map.size(); i++)
 						if (map->map[i] == fid)
 							break;
@@ -639,8 +643,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case EN_UPDATE: {
 				// update lo-cut
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
+				if (map != NULL) {
 					map->lowcut = GetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, NULL, false);
 					map->lowcut = map->lowcut < 256 ? map->lowcut : 255;
 					SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
@@ -651,8 +654,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case EN_UPDATE: {
 				// update lo-cut
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
+				if (map != NULL) {
 					map->hicut = GetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, NULL, false);
 					map->hicut = map->hicut < 256 ? map->hicut : 255;
 					SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
@@ -664,8 +666,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
+				if (map != NULL) {
 					SetColor(hDlg, IDC_BUTTON_LPC, &map->colorfrom.cs.red,
 						&map->colorfrom.cs.green, &map->colorfrom.cs.blue);
 					unsigned clrmap = MAKEIPADDRESS(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue, map->colorfrom.cs.brightness);
@@ -678,8 +679,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
+				if (map != NULL) {
 					SetColor(hDlg, IDC_BUTTON_HPC, &map->colorto.cs.red,
 						&map->colorto.cs.green, &map->colorto.cs.blue);
 					unsigned clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
@@ -692,8 +692,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case EN_KILLFOCUS:/*EN_CHANGE:*/ {
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
+				if (map != NULL) {
 					unsigned clrmap = 0;
 					SendMessage(from_color, IPM_GETADDRESS, 0, (LPARAM) &clrmap);
 					map->colorfrom.cs.red = FIRST_IPADDRESS(clrmap);
@@ -709,8 +708,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case EN_KILLFOCUS:/*EN_CHANGE:*/ {
-				if (i < config->mappings.size()) {
-					map = &config->mappings[i];
+				if (map != NULL) {
 					unsigned clrmap = 0;
 					SendMessage(to_color, IPM_GETADDRESS, 0, (LPARAM) &clrmap);
 					map->colorto.cs.red = FIRST_IPADDRESS(clrmap);
@@ -726,7 +724,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				if (i < config->mappings.size()) {
+				if (map != NULL) {
 					std::vector <mapping>::iterator Iter;
 					for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++)
 						if (Iter->devid == did && Iter->lightid == lid) {
@@ -765,11 +763,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		//int fid = (int)SendMessage(freq_list, LB_GETCURSEL, 0, 0);
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK: {
-			for (i = 0; i < config->mappings.size(); i++)
-				if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-					break;
-			if (i < config->mappings.size()) {
-				map = &config->mappings[i];
+			map = FindMapping(did, lid);
+			if (map != NULL) {
 				if ((HWND)lParam == hLowSlider) {
 					map->lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
 					TCHAR locut[6];

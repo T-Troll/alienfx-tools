@@ -39,5 +39,6 @@ public:
 	~ConfigHandler();
 	int Load();
 	int Save();
+	static bool sortMappings(mapping i, mapping j);
 };
 

@@ -666,6 +666,7 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 }
 
 #include <ColorDlg.h>
+#include <algorithm>
 Colorcode* mod;
 
 UINT_PTR Lpcchookproc(
@@ -829,8 +830,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
                     newmap.eve[3].fs.b.cut = 90;
                     conf->mappings.push_back(newmap);
-                    mmap = &conf->mappings.back().eve[0].map;
-                    mmap->lightset = &conf->mappings.back();
+                    std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                    mmap = FindMapping(pid, lid, 0);
                 }
                 // Enable or disable controls
                 bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
@@ -1043,8 +1044,8 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
                     newmap.eve[3].fs.b.cut = 90;
                     conf->mappings.push_back(newmap);
-                    mmap = &conf->mappings.back().eve[0].map;
-                    mmap->lightset = map = &conf->mappings.back();
+                    std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                    mmap = FindMapping(pid, lid, 0);
                 }
 
                 for (int i = 0; i < 4; i++) {

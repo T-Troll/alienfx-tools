@@ -1,14 +1,12 @@
 #include "CaptureHelper.h"
 #include <WinNT.h>
-//#include <DaramCam.MediaFoundationGenerator.h>
-#include <map>
-#include <list>
-#include <algorithm>
+//#include <map>
+//#include <list>
+//#include <algorithm>
 #include "resource.h"
-#include "opencv2/core/mat.hpp"
+//#include "opencv2/core/mat.hpp"
 #include "opencv2/imgproc.hpp"
 #include <opencv2\imgproc\types_c.h>
-//#include "opencv2/opencv.hpp"
 
 using namespace cv;
 using namespace std;
@@ -230,13 +228,13 @@ void FillColors(Mat src) {
 
 DWORD WINAPI CInProc(LPVOID param)
 {
-	//IStream* stream = NULL;
 	DCScreenCapturer* screenCapturer = (DCScreenCapturer*)param;
 	UINT w, h, st, cdp;
 	UCHAR* img = NULL;
 	DWORD exitCode = 0;
-
+	
 	UINT div = config->divider;
+
 	while (inWork) {
 		screenCapturer->Capture();
 		img = screenCapturer->GetCapturedBitmap()->GetByteArray();
@@ -246,18 +244,16 @@ DWORD WINAPI CInProc(LPVOID param)
 		st = screenCapturer->GetCapturedBitmap()->GetStride();
 		// Resize & calc
 		if (img != NULL) {
-			cv::Mat redCenter;
+			cv::Mat redCenter(w / div, h / div, CV_8UC3);
 			if (cdp == 4) {
-				Mat src(h, w, CV_8UC4, img, st);
-				Mat reduced;// (h / div, w / div, CV_8UC4);
-				cv::resize(src, reduced, Size(w / div, h / div), 0, 0, INTER_AREA);
-				cv::cvtColor(reduced, redCenter, CV_RGBA2RGB);
+				Mat src(h, w, CV_8UC4, img, st), reduced(h, w, CV_8UC3);
+				cv::cvtColor(src, reduced, CV_RGBA2RGB);
+				cv::resize(reduced, redCenter, Size(w / div, h / div), 0, 0, INTER_AREA);
 			}
 			else {
 				Mat src(h, w, CV_8UC3, img, st);
 				cv::resize(src, redCenter, Size(w / div, h / div), 0, 0, INTER_AREA);
 			}
-
 			FillColors(redCenter);
 
 			// Update lights
@@ -284,7 +280,7 @@ DWORD WINAPI CInProc(LPVOID param)
 					&cuThread);
 		}
 		//free(imgz);
-		Sleep(50);
+		//Sleep(50);
 	}
 	return 0;
 }

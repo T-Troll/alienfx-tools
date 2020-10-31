@@ -82,5 +82,6 @@ public:
 	~ConfigHandler();
 	int Load();
 	int Save();
+	static bool sortMappings(lightset i, lightset j);
 };
 

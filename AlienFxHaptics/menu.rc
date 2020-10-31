@@ -67,7 +67,7 @@ BEGIN
         BLOCK "040004b0"
         BEGIN
             VALUE "FileDescription", "AlienFX Haptics"
-            VALUE "FileVersion", "0.9.1.0"
+            VALUE "FileVersion", "0.9.6.0"
             VALUE "InternalName", "alienfx-haptics.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "alienfx-haptics.exe"

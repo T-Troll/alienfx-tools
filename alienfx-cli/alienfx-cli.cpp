@@ -27,6 +27,8 @@ void printUsage()
 		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
 		<< "high-level\tswitch to high-level SDK (Alienware LightFX)." << endl
 		<< "status\t\tshows devices and lights id's, names and statuses." << endl
+		<< "update\t\tupdates light status (for looped commands or old devices)." << endl
+		<< "reset\t\treset device state." << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
 		<< "Zones: left, right, top, bottom, front, rear." << endl
 		<< "Actions: pulse, morph (you need 2 colors for morph), color (disable action)." << endl;
@@ -36,7 +38,7 @@ int main(int argc, char* argv[])
 {
 	bool low_level = true;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v0.9.4" << endl;
+	cerr << "alienfx-cli v0.9.6" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -62,7 +64,7 @@ int main(int argc, char* argv[])
 	const char* command = argv[1];
 	for (int cc = 1; cc < argc; cc++) {
 		if (low_level && cc > 1) {
-			//cerr << "Sleep " << sleepy << endl;
+			cerr << "Sleep " << sleepy << endl;
 			Sleep(sleepy);
 		}
 		else
@@ -81,7 +83,7 @@ int main(int argc, char* argv[])
 				vpos = tvpos == string::npos ? values.size() : tvpos+1;
 			}
 		}
-		//cerr << "Executing " << command << " with " << values << endl;
+		cerr << "Executing " << command << " with " << values << endl;
 		if (command == "low-level") {
 			low_level = true;
 			continue;
@@ -103,9 +105,12 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "loop") {
-			cc = 0;
-			AlienFX_SDK::Functions::UpdateColors();
-			AlienFX_SDK::Functions::Reset(false);
+			cc = 1;
+			if (low_level)
+				AlienFX_SDK::Functions::UpdateColors();
+			//AlienFX_SDK::Functions::Reset(1);
+			else
+				lfxUtil.Update();
 			continue;
 		}
 		if (command == "status") {
@@ -154,6 +159,20 @@ int main(int argc, char* argv[])
 				lfxUtil.SetTempo(tempo);
 				lfxUtil.Update();
 			}
+			continue;
+		}
+		if (command == "reset") {
+			if (low_level)
+				AlienFX_SDK::Functions::Reset(1);
+			else
+				lfxUtil.Reset();
+			continue;
+		}
+		if (command == "update") {
+			if (low_level)
+				AlienFX_SDK::Functions::UpdateColors();
+			else
+				lfxUtil.Update();
 			continue;
 		}
 		if (command == "set-all") {

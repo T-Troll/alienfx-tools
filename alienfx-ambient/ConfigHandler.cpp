@@ -1,4 +1,5 @@
 #include "ConfigHandler.h"
+#include <algorithm>
 
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
@@ -98,6 +99,7 @@ int ConfigHandler::Load() {
             vindex++;
         }
     } while (ret == ERROR_SUCCESS);
+    std::sort(mappings.begin(), mappings.end(), sortMappings);
 	return 0;
 }
 int ConfigHandler::Save() {
@@ -165,4 +167,9 @@ int ConfigHandler::Save() {
         }
     }
 	return 0;
+}
+
+bool ConfigHandler::sortMappings(mapping i, mapping j)
+{
+    return i.lightid < j.lightid;
 }

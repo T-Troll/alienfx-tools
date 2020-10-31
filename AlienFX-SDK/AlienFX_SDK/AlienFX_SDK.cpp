@@ -283,7 +283,7 @@ namespace AlienFX_SDK
 	bool Functions::Reset(int status)
 	{
 		size_t BytesWritten;
-		bool result;
+		bool result = false;
 		byte* Buffer = NULL;
 		// m15/m17 use 34 bytes (ID (always 0) + 33 bytes payload) report.
 		byte BufferN[] = { 0x00, 0x03 ,0x21 ,0x00 ,0x01 ,0xff ,0xff ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
@@ -295,20 +295,14 @@ namespace AlienFX_SDK
 			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferN, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
 		} break;
-		case API_V2: {
+		case API_V2: case API_V1: {
 			if (status)
 				BufferO[2] = 0x04;
 			else
 				BufferO[2] = 0x03;
-			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			AlienfxWaitForBusy();
-		} break;
-		case API_V1: {
-			if (status)
-				BufferO[2] = 0x04;
-			else
-				BufferO[2] = 0x03;
 			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			AlienfxWaitForReady();
 		} break;
 		}
 		inSet = true;
@@ -331,13 +325,9 @@ namespace AlienFX_SDK
 				Loop();
 			}
 		} break;
-		case API_V2: {
+		case API_V2: case API_V1: {
 			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			AlienfxWaitForReady();
 		} break;
-		case API_V1:
-			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferO, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			break;
 		}
 		//std::cout << "Update!" << std::endl;
 		inSet = false;
@@ -379,7 +369,6 @@ namespace AlienFX_SDK
 		//byte BufferO2[] = { 0x02 ,0x08 ,0x01 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00 ,0x00 ,0x00 };
 		if (!inSet)
 			Reset(1);
-
 		switch (length) {
 		case API_V3: {
 			Buffer2[6] = index;
@@ -451,7 +440,7 @@ namespace AlienFX_SDK
 
 	bool Functions::SetMultiColor(int numLights, UCHAR* lights, int r, int g, int b)
 	{
-		size_t BytesWritten; bool val;
+		size_t BytesWritten; bool val = false;
 		byte Buffer[] = { 0x00, 0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 				, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		/// But we need to issue 2 commands - light_select and color_set.... this for light_select
@@ -556,7 +545,7 @@ namespace AlienFX_SDK
 		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		switch (length) {
 		case API_V3: { // only supported at new devices
-				// this function can be called not early then 250ms after last call!
+			// this function can be called not early then 250ms after last call!
 			ULONGLONG cPowerCall = GetTickCount64();
 			if (cPowerCall - lastPowerCall < 260)
 				//Sleep(lastPowerCall + 260 - cPowerCall);
@@ -566,7 +555,6 @@ namespace AlienFX_SDK
 			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
 				return false;
 			}
-			// this function can be called not early then 250ms after last call!
 			inSet = true;
 			// Now set....
 			for (BYTE cid = 0x5b; cid < 0x61; cid++) {
@@ -636,7 +624,7 @@ namespace AlienFX_SDK
 		byte ret = 0;
 		byte BufferN[] = { 0x00, 0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 			, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
-		byte Buffer[] = { 0x02 ,0x06 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 };
+		byte Buffer[] = { 0x02 ,0x06 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00 };
 		switch (length) {
 		case API_V3: {
 			DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
@@ -710,7 +698,7 @@ namespace AlienFX_SDK
 				//AlienfxReinit();
 
 			}
-			else if (status != ALIENFX_BUSY && status != ALIENFX_NEW_WAITUPDATE)
+			else if (status != ALIENFX_BUSY)
 			{
 				Sleep(50);
 			}
@@ -963,7 +951,7 @@ namespace AlienFX_SDK
 		switch (length) {
 		case 34: return 3;
 		case 12: return 2;
-		case 8: return 1;
+		case 9: return 1;
 		default: return -1;
 		}
 		return length;

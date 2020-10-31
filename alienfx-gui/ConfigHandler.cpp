@@ -1,4 +1,5 @@
 #include "ConfigHandler.h"
+#include <algorithm>
 
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
@@ -44,12 +45,16 @@ ConfigHandler::ConfigHandler() {
     testColor.ci = 0;
     testColor.cs.green = 255;
 }
+
 ConfigHandler::~ConfigHandler() {
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
     RegCloseKey(hKey3);
     RegCloseKey(hKey4);
 }
+
+bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
+
 int ConfigHandler::Load() {
     int size = 4, size_c = 4*16;
 
@@ -241,11 +246,6 @@ int ConfigHandler::Load() {
                     map.eve[i].map.length2 = inarray[i * 10 + 9];
                 }
                 mappings.push_back(map);
-                /*if (lend > 0) {
-                    for (unsigned i = 0; i < (lend / 4); i++)
-                        map.map.push_back(inarray[i]);
-                    mappings.push_back(map);
-                }*/
             } break;
             }
             vindex++;
@@ -255,11 +255,13 @@ int ConfigHandler::Load() {
     stateOn = lightsOn;
     // set active profile...
     if (profiles.size() > 0) {
-        for (int i = 0; i < profiles.size(); i++)
-            if (profiles[i].id == activeProfile){
+        for (int i = 0; i < profiles.size(); i++) {
+            std::sort(profiles[i].lightsets.begin(), profiles[i].lightsets.end(), ConfigHandler::sortMappings);
+            if (profiles[i].id == activeProfile) {
                 mappings = profiles[i].lightsets;
-                break;
+                //break;
             }
+        }
     }
     else {
         // need new profile
@@ -267,6 +269,7 @@ int ConfigHandler::Load() {
         prof.id = 0;
         prof.name = "Default";
         prof.lightsets = mappings;
+        std::sort(mappings.begin(), mappings.end(), ConfigHandler::sortMappings);
         profiles.push_back(prof);
     }
 	return 0;

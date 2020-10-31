@@ -20,9 +20,8 @@ Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
 - Only one device per time can be controlled trough low-level SDK, but you can choose which one.
 - Brightness is not supported for low-level API, just ignored now.
-- Hardware light effects (<s>pulse</s>(fixed in 0.9.3), morph) doesn't supported for older devices.
+- Hardware light effect morph doesn't supported for older devices.
 - Hardware light effects can't work with software light effects at the same time (hardware bug, Update command stop all effects).
-- <s>Some colors (f.e. 128,64,64) presented to wrong color on light device. Looks like a bug in hardware color mix system. I'm working on investigation and software fix.</s> Fixed in 0.9.5.
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
 - <b>WARNING!</b> In case you run `alienfx-gui`, `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use gui, haptics or ambient for a long time. I'll contact Dell about this issue, as well as look for workaround in my code.
 - <b>DO NOT</b> use alienfx-gui with hardware power button setup and monitroing with other app switching light colors - it can provide unexpected results (see below)! But you can use any of my apps, they have a check for this situation, so it's safe.
@@ -53,6 +52,8 @@ The following commands are available:
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action. This command only works with high-level API.
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
+- `Update` Updates light status (for looped commands or old devices).
+- `Reset` Reset device state.
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
