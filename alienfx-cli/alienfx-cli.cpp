@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 	const char* command = argv[1];
 	for (int cc = 1; cc < argc; cc++) {
 		if (low_level && cc > 1) {
-			cerr << "Sleep " << sleepy << endl;
+			//cerr << "Sleep " << sleepy << endl;
 			Sleep(sleepy);
 		}
 		else
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 				vpos = tvpos == string::npos ? values.size() : tvpos+1;
 			}
 		}
-		cerr << "Executing " << command << " with " << values << endl;
+		//cerr << "Executing " << command << " with " << values << endl;
 		if (command == "low-level") {
 			low_level = true;
 			continue;
