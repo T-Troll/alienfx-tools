@@ -602,13 +602,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 eve->ChangeScreenState(sParams->Data[0]);
             }
         } break;
-        case PBT_APMSUSPEND:
-            // Shutdown/restart scheduled....
-            eve->StopEvents();
-            conf->Save();
-            AlienFX_SDK::Functions::SaveMappings();
-            break;
         }
+        break;
+    case WM_QUERYENDSESSION: case WM_ENDSESSION:
+        // Shutdown/restart scheduled....
+#ifdef _DEBUG
+        OutputDebugString("Suspend initiated\n");
+#endif
+        eve->StopEvents();
+        conf->Save();
+        AlienFX_SDK::Functions::SaveMappings();
+        //ShutdownBlockReasonCreate(hDlg, L"Please, wait me!");
+        EndDialog(hDlg, IDOK);
+        DestroyWindow(hDlg);
+        return true;// DefWindowProc(hDlg, message, wParam, lParam);
         break;
     case WM_HOTKEY:
         switch (wParam) {
@@ -648,7 +655,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         default: return false;
         }
         break;
-    case WM_DESTROY: PostQuitMessage(0); break;
+    case WM_DESTROY:
+#ifdef _DEBUG
+        OutputDebugString("Destroy initiated\n");
+#endif
+        PostQuitMessage(0); break;
     default: return false;
     }
     return true;
