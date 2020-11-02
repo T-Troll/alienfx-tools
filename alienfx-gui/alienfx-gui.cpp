@@ -596,11 +596,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             //power status changed
             eve->ChangePowerState();
             break;
-        case PBT_POWERSETTINGCHANGE:
+        case PBT_POWERSETTINGCHANGE: {
             POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
             if (sParams->PowerSetting == GUID_MONITOR_POWER_ON) {
                 eve->ChangeScreenState(sParams->Data[0]);
             }
+        } break;
+        case PBT_APMSUSPEND:
+            // Shutdown/restart scheduled....
+            eve->StopEvents();
+            conf->Save();
+            AlienFX_SDK::Functions::SaveMappings();
             break;
         }
         break;
