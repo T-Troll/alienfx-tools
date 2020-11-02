@@ -12,7 +12,7 @@ A bunch of tools for Alienware AlienFX/Dell LightFX controls:
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 10 (binary files for x64 only, but you can compile project for x86 as well).
 
-Device checked: `Alienware m15R1`, `Alienware m17R1`, `Alienware M13R2`, `Dell G5` (should work with any Alienware device with API 1.0 or later)
+Device checked: `Alienware m15R1` (API v3), `Alienware m17R1` (API v3), `Alienware M13R2` (API v2), `Dell G5` (API v3), `Alienware M14x` (API v1) (should work with any Alienware device with API v1 or later, but i didn't test latest per-key devices).
 
 ## Known issues
 - On some devices, some functions from high-level SDK can works incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
