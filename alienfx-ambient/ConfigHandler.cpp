@@ -88,7 +88,7 @@ int ConfigHandler::Load() {
         );
         // get id(s)...
         if (ret == ERROR_SUCCESS) {
-            unsigned ret2 = sscanf_s((char *) name, "%d-%d", &map.devid, &map.lightid);
+            unsigned ret2 = sscanf_s(name, "%d-%d", &map.devid, &map.lightid);
             if (ret2 == 2) {
                 if (lend > 0) {
                     for (unsigned i = 0; i < (lend / 4); i++)

@@ -7,6 +7,7 @@
 //#include "opencv2/core/mat.hpp"
 #include "opencv2/imgproc.hpp"
 #include <opencv2\imgproc\types_c.h>
+#include <windowsx.h>
 
 using namespace cv;
 using namespace std;
@@ -23,7 +24,7 @@ HWND hDlg;
 ConfigHandler* config;
 FXHelper* fxh;
 
-UCHAR  imgz[4 * 3 * 3];
+UCHAR  imgz[12 * 3];
 
 DWORD uiThread, cuThread;
 HANDLE uiHandle = 0, cuHandle = 0;
@@ -35,12 +36,13 @@ CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 	SetCaptureScreen(conf->mode);
 	hDlg = dlg;
 	config = conf;
-	fxh = fhh;// new FXHelper(conf);
+	fxh = fhh;
 }
 
 CaptureHelper::~CaptureHelper()
 {
 	//DCMFShutdown();
+	delete screenCapturer;
 	DCShutdown();
 }
 
@@ -136,7 +138,7 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 	cv::Mat dominantColor;
 	dominantColor = cv::Mat::zeros(1, 3, CV_32FC1);
 
-	int idx = 0; int fgIdx = 0;
+	int idx = 0; //int fgIdx = 0;
 	for (int j = 0; j < inImage.rows; j++)
 	{
 		for (int i = 0; i < inImage.cols; i++)
@@ -149,7 +151,7 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 				dominantColor.at<float>(0, 1) += (tempVec[1]);
 				dominantColor.at<float>(0, 2) += (tempVec[2]);
 
-				fgIdx++;
+				//fgIdx++;
 			}
 		}
 	}
@@ -167,63 +169,76 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 	return dColor;
 }
 
-/*struct procData {
+struct procData {
 	Mat src;
 	UCHAR* dst;
+	bool done;
 };
 
 uint fcount = 0;
 
 DWORD WINAPI ColorProc(LPVOID inp) {
 	procData* src = (procData*) inp;
-	cv::Mat hPts;
+	Mat hPts;
 	hPts = extractHPts(src->src);
-	cv::Mat ptsLabel, kCenters;
+	Mat ptsLabel, kCenters;
 	cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
 
-	cv::Mat dColor;
+	Mat dColor;
 	dColor = getDominantColor(src->src, ptsLabel);
 	src->dst[0] = dColor.ptr<UCHAR>()[0];
 	src->dst[1] = dColor.ptr<UCHAR>()[1];
 	src->dst[2] = dColor.ptr<UCHAR>()[2];
-	delete src;
-	fcount++;
+	//delete src;
+	//fcount++;
+	src->done = true;
+	//ExitThread(1);
 	return 0;
-}*/
+}
 
-void FillColors(Mat src) {
-	uint w = src.cols / 4, h = src.rows / 3;
-	Mat cPos;
+void FillColors(Mat* src) {
+	uint w = src->cols / 4, h = src->rows / 3;
+	Mat cPos( w, h, CV_8UC3), hPts;
+	Mat ptsLabel, kCenters, dColor;
+	DWORD pThread;
+	procData callData[3][4];
+	//HANDLE rThread[12];
 	//fcount = 0;
-	//procData* callData = NULL;
 	for (uint dy = 0; dy < 3; dy++)
 		for (uint dx = 0; dx < 4; dx++) {
 			//callData = new procData();
 			uint ptr = (dy * 4 + dx) * 3;
-			cPos = src.rowRange(dy * h + 1, (dy + 1) * h)
+			cPos = src->rowRange(dy * h + 1, (dy + 1) * h)
 				.colRange(dx * w + 1, (dx + 1) * w);
-			/*callData->src = cPos;
-			callData->dst = imgz + ptr;
+			callData[dy][dx].src = cPos;
+			callData[dy][dx].dst = imgz + ptr;
+			callData[dy][dx].done = false;
 			CreateThread(
 				NULL,              // default security
 				4*1024*1024,                 // default stack size
 				ColorProc,        // name of the thread function
-				callData,
+				&callData[dy][dx],
 				0,                 // default startup flags
-				&uiThread);*/
-			cv::Mat hPts;
-			hPts = extractHPts(cPos);
-			cv::Mat ptsLabel, kCenters;
+				&pThread);
+			/*hPts = extractHPts(cPos);
 			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
-
-			cv::Mat dColor;
 			dColor = getDominantColor(cPos, ptsLabel);
 			imgz[ptr] = dColor.ptr<UCHAR>()[0];
 			imgz[ptr + 1] = dColor.ptr<UCHAR>()[1];
-			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];
-
+			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];*/
 		}
-	//while (fcount != 12) Sleep(20);
+	//while (fcount < 12) Sleep(5);
+	bool finished = false;
+	do {
+		Sleep(5);
+		finished = true;
+		for (int y=0; y<3; y++)
+			for (int x=0; x<4; x++)
+				if (!callData[y][x].done) {
+					finished = false;
+					break;
+				}
+	} while (!finished);
 }
 
 DWORD WINAPI CInProc(LPVOID param)
@@ -232,29 +247,32 @@ DWORD WINAPI CInProc(LPVOID param)
 	UINT w, h, st, cdp;
 	UCHAR* img = NULL;
 	DWORD exitCode = 0;
-	
-	UINT div = config->divider;
+	ULONGLONG lastTick = GetTickCount64();
 
 	while (inWork) {
+		UINT div = config->divider;
 		screenCapturer->Capture();
 		img = screenCapturer->GetCapturedBitmap()->GetByteArray();
 		w = screenCapturer->GetCapturedBitmap()->GetWidth();
 		h = screenCapturer->GetCapturedBitmap()->GetHeight();
 		cdp = screenCapturer->GetCapturedBitmap()->GetColorDepth();
 		st = screenCapturer->GetCapturedBitmap()->GetStride();
+
 		// Resize & calc
 		if (img != NULL) {
-			cv::Mat redCenter(w / div, h / div, CV_8UC3);
+			//Mat redCenter(w / div, h / div, CV_8UC3);
+			Mat* src = NULL;
 			if (cdp == 4) {
-				Mat src(h, w, CV_8UC4, img, st), reduced(h, w, CV_8UC3);
-				cv::cvtColor(src, reduced, CV_RGBA2RGB);
-				cv::resize(reduced, redCenter, Size(w / div, h / div), 0, 0, INTER_AREA);
+				src = new Mat(h, w, CV_8UC4, img, st);
+				cv::cvtColor(*src, *src, CV_RGBA2RGB);
 			}
 			else {
-				Mat src(h, w, CV_8UC3, img, st);
-				cv::resize(src, redCenter, Size(w / div, h / div), 0, 0, INTER_AREA);
+				src = new Mat(h, w, CV_8UC3, img, st);
 			}
-			FillColors(redCenter);
+			cv::resize(*src, *src, Size(w / div, h / div), 0, 0, INTER_AREA);
+			FillColors(src);
+			//src->release();
+			delete src;
 
 			// Update lights
 			if (uiHandle)
@@ -281,6 +299,17 @@ DWORD WINAPI CInProc(LPVOID param)
 		}
 		//free(imgz);
 		//Sleep(50);
+		ULONGLONG nextTick = GetTickCount64();
+		unsigned lastfps = 1000 / (nextTick - lastTick);
+		if (nextTick - lastTick < 100) {
+			Sleep(100 - (nextTick - lastTick));
+		}
+		lastTick = GetTickCount64();
+		//char text[256];
+		//sprintf_s(text, 255, "Last fps: %d\n", lastfps);
+		//OutputDebugString(text);
+		//HWND fpstext = GetDlgItem(hDlg, IDC_STATIC_LAST);
+		//Static_SetText(fpstext, text);
 	}
 	return 0;
 }

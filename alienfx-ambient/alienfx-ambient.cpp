@@ -58,7 +58,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Perform application initialization:
     HWND hDlg;
-    //InitCommonControls();
+
     conf = new ConfigHandler();
     fxhl = new FXHelper(conf);
     conf->Load();
@@ -68,13 +68,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
+    cap = new CaptureHelper(hDlg, conf, fxhl);
     //HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXAMBIENT));
 
     MSG msg; //bool ret;
 
     RegisterPowerSettingNotification(hDlg, &GUID_MONITOR_POWER_ON, 0);
 
-    cap->Start();
+    //cap->Start();
 
     // Main message loop:
     while ((GetMessage(&msg, 0, 0, 0)) != 0) {
@@ -84,14 +85,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //}
     }
 
-    //cap->Stop();
+    cap->Stop();
     conf->Save();
-    //conf->lfx->Reset();
     delete cap;
     delete fxhl;
     delete conf;
 
-    return (int) msg.wParam;
+    return 0;// (int)msg.wParam;
 }
 
 //
@@ -122,8 +122,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     	NULL,                    /// handle to parent
     	(DLGPROC)DialogConfigStatic, 0);
    if (!dlg) return NULL;
-
-   cap = new CaptureHelper(dlg, conf, fxhl);
 
    SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXAMBIENT)));
    SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXAMBIENT), IMAGE_ICON, 16, 16, 0));
@@ -265,9 +263,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
         }
         CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection ? BST_CHECKED : BST_UNCHECKED);
-        SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 128));
+        SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 256));
         SendMessage(brSlider, TBM_SETPOS, true, conf->shift);
-        SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
+        SendMessage(brSlider, TBM_SETTICFREQ, 32, 0);
     } break;
     case WM_COMMAND:
     {
@@ -474,7 +472,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
-        case TB_THUMBTRACK: case TB_ENDTRACK: 
+        case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == brSlider) {
                 conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
             }

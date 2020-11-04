@@ -48,8 +48,10 @@ int FXHelper::Refresh(int numbars)
 			fin.cs.red = (unsigned char)((1 - power) * from.cs.red + power * to.cs.red);
 			fin.cs.green = (unsigned char)((1 - power) * from.cs.green + power * to.cs.green);
 			fin.cs.blue = (unsigned char)((1 - power) * from.cs.blue + power * to.cs.blue);
-			//it's a bug into LightFX - r and b are inverted in this call!
-			fin.cs.brightness = (unsigned char)((1 - power) * from.cs.brightness + power * to.cs.brightness);
+			fin.cs.red = (fin.cs.red * fin.cs.red) >> 8;
+			fin.cs.green = (fin.cs.green * fin.cs.green) >> 8;
+			fin.cs.blue = (fin.cs.blue * fin.cs.blue) >> 8;
+			//fin.cs.brightness = (unsigned char)((1 - power) * from.cs.brightness + power * to.cs.brightness);
 			AlienFX_SDK::Functions::SetColor(map.lightid,
 				fin.cs.red, fin.cs.green, fin.cs.blue);
 		}

@@ -594,6 +594,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC: case PBT_APMPOWERSTATUSCHANGE:
             //power status changed
+            eve->StartEvents();
             eve->ChangePowerState();
             break;
         case PBT_POWERSETTINGCHANGE: {
@@ -602,9 +603,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 eve->ChangeScreenState(sParams->Data[0]);
             }
         } break;
+        case PBT_APMSUSPEND:
+            eve->StopEvents();
+            break;
         }
         break;
-    case WM_QUERYENDSESSION: case WM_ENDSESSION:
+    case WM_QUERYENDSESSION: //case WM_ENDSESSION:
         // Shutdown/restart scheduled....
 #ifdef _DEBUG
         OutputDebugString("Suspend initiated\n");
@@ -1484,7 +1488,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
-        case TB_THUMBTRACK: case TB_ENDTRACK: {
+        case TB_THUMBPOSITION: case TB_ENDTRACK: {
                 if ((HWND)lParam == dim_slider) {
                     conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }

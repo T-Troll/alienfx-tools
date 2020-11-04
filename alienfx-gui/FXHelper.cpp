@@ -121,17 +121,23 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, int r, int g, int b, int mode2, int length2, int speed2, int r2, int g2, int b2)
 {
 	// modify colors for dimmed...
-	const BYTE delta = (BYTE) config->dimmingPower;
+	const unsigned delta = 256 - config->dimmingPower;
 
 	if (config->lightsOn && config->stateOn) {
 		if (config->dimmed ||
 			(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
-			r = r < delta ? 0 : r - delta;
-				g = g < delta ? 0 : g - delta;
-				b = b < delta ? 0 : b - delta;
-				r2 = r2 < delta ? 0 : r2 - delta;
-				g2 = g2 < delta ? 0 : g2 - delta;
-				b2 = b2 < delta ? 0 : b2 - delta;
+			/*r = r < delta ? 0 : r - delta;
+			g = g < delta ? 0 : g - delta;
+			b = b < delta ? 0 : b - delta;
+			r2 = r2 < delta ? 0 : r2 - delta;
+			g2 = g2 < delta ? 0 : g2 - delta;
+			b2 = b2 < delta ? 0 : b2 - delta;*/
+			r = (r * delta) >> 8;
+			g = (g * delta) >> 8;
+			b = (b * delta) >> 8;
+			r2 = (r2 * delta) >> 8;
+			g2 = (g2 * delta) >> 8;
+			b2 = (b2 * delta) >> 8;
 		}
 		// gamma-correction...
 		if (config->gammaCorrection) {
