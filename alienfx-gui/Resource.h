@@ -32,6 +32,7 @@
 #define IDS_TYPE_PULSE                  143
 #define IDD_DIALOG_DEVICES              143
 #define IDS_TYPE_MORPH                  144
+#define IDD_DIALOG_PROFILES             144
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001
 #define IDC_BUTTON_C1                   1005
@@ -84,8 +85,14 @@
 #define IDC_CHECK_LON                   1049
 #define IDC_CHECK_DIM                   1050
 #define IDC_OFFPOWERBUTTON              1051
-#define IDC_CHECK1                      1052
 #define IDC_CHECK_GAMMA                 1052
+#define IDC_BUTTON_RESET                1053
+#define IDC_BUTTON_RESETCOLOR           1053
+#define IDC_LIST_PROFILES               1054
+#define IDC_LIST_APPLICATIONS           1055
+#define IDC_CHECK_DEFPROFILE            1056
+#define IDC_CHECK_NOMON                 1057
+#define IDC_DEVICE_STATUS               1058
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -107,9 +114,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        144
+#define _APS_NEXT_RESOURCE_VALUE        145
 #define _APS_NEXT_COMMAND_VALUE         32788
-#define _APS_NEXT_CONTROL_VALUE         1053
+#define _APS_NEXT_CONTROL_VALUE         1059
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

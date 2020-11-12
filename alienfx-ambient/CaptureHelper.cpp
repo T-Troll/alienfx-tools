@@ -169,7 +169,7 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 	return dColor;
 }
 
-struct procData {
+/*struct procData {
 	Mat src;
 	UCHAR* dst;
 	bool done;
@@ -194,23 +194,20 @@ DWORD WINAPI ColorProc(LPVOID inp) {
 	src->done = true;
 	//ExitThread(1);
 	return 0;
-}
+}*/
 
 void FillColors(Mat* src) {
 	uint w = src->cols / 4, h = src->rows / 3;
 	Mat cPos( w, h, CV_8UC3), hPts;
 	Mat ptsLabel, kCenters, dColor;
 	DWORD pThread;
-	procData callData[3][4];
-	//HANDLE rThread[12];
-	//fcount = 0;
+	//procData callData[3][4];
 	for (uint dy = 0; dy < 3; dy++)
 		for (uint dx = 0; dx < 4; dx++) {
-			//callData = new procData();
 			uint ptr = (dy * 4 + dx) * 3;
 			cPos = src->rowRange(dy * h + 1, (dy + 1) * h)
 				.colRange(dx * w + 1, (dx + 1) * w);
-			callData[dy][dx].src = cPos;
+			/*callData[dy][dx].src = cPos;
 			callData[dy][dx].dst = imgz + ptr;
 			callData[dy][dx].done = false;
 			CreateThread(
@@ -219,16 +216,15 @@ void FillColors(Mat* src) {
 				ColorProc,        // name of the thread function
 				&callData[dy][dx],
 				0,                 // default startup flags
-				&pThread);
-			/*hPts = extractHPts(cPos);
+				&pThread);*/
+			hPts = extractHPts(cPos);
 			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
 			dColor = getDominantColor(cPos, ptsLabel);
 			imgz[ptr] = dColor.ptr<UCHAR>()[0];
 			imgz[ptr + 1] = dColor.ptr<UCHAR>()[1];
-			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];*/
+			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];
 		}
-	//while (fcount < 12) Sleep(5);
-	bool finished = false;
+	/*bool finished = false;
 	do {
 		Sleep(5);
 		finished = true;
@@ -238,7 +234,7 @@ void FillColors(Mat* src) {
 					finished = false;
 					break;
 				}
-	} while (!finished);
+	} while (!finished);*/
 }
 
 DWORD WINAPI CInProc(LPVOID param)

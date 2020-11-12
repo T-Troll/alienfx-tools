@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 {
 	bool low_level = true;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v0.9.6" << endl;
+	cerr << "alienfx-cli v0.9.8" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -291,7 +291,8 @@ int main(int argc, char* argv[])
 				cerr << "set-action: Incorrect arguments" << endl;
 				continue;
 			}
-			unsigned actionCode = LFX_ACTION_COLOR, action_low = AlienFX_SDK::Action::AlienFX_A_Color, action_low_2 = AlienFX_SDK::Action::AlienFX_A_Color;
+			unsigned actionCode = LFX_ACTION_COLOR;
+			BYTE action_low = AlienFX_SDK::Action::AlienFX_A_Color, action_low_2 = AlienFX_SDK::Action::AlienFX_A_Color;
 			if (args.at(0) == "pulse") {
 				actionCode = LFX_ACTION_PULSE;
 				action_low = AlienFX_SDK::Action::AlienFX_A_Pulse;
@@ -318,9 +319,10 @@ int main(int argc, char* argv[])
 				color2.cs.brightness = args.size() > 11 ? atoi(args.at(11).c_str()) : 255;
 			}
 			if (low_level) {
-				AlienFX_SDK::Functions::SetAction(atoi(args.at(2).c_str()), action_low, 7, sleepy,
-					color.cs.blue, color.cs.green, color.cs.red,
-					action_low_2, 7, sleepy, color2.cs.blue, color2.cs.green, color2.cs.red);
+				std::vector<AlienFX_SDK::afx_act> act;
+				act.push_back(AlienFX_SDK::afx_act{ action_low, 7, (BYTE)sleepy, color.cs.blue, color.cs.green, color.cs.red });
+				act.push_back(AlienFX_SDK::afx_act{ action_low_2, 7, (BYTE)sleepy, color2.cs.blue, color2.cs.green, color2.cs.red });
+				AlienFX_SDK::Functions::SetAction(atoi(args.at(2).c_str()), act);
 			}
 			else {
 				lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);

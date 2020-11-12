@@ -51,6 +51,8 @@ struct lightset {
 
 struct profile {
 	unsigned id = 0;
+	unsigned flags = 0;
+	std::string triggerapp;
 	std::string name;
 	std::vector<lightset> lightsets;
 };
@@ -69,6 +71,7 @@ public:
 	DWORD dimmedBatt = 0;
 	DWORD dimmingPower = 92;
 	DWORD enableMon = 1;
+	DWORD monState = 1;
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
@@ -83,5 +86,6 @@ public:
 	int Load();
 	int Save();
 	static bool sortMappings(lightset i, lightset j);
+	void updateProfileByID(int id, std::string name, std::string app, DWORD flags);
 };
 

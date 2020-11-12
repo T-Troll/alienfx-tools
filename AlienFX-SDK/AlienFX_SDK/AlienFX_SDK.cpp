@@ -470,13 +470,15 @@ namespace AlienFX_SDK
 		return val;
 	}
 
-	bool Functions::SetAction(int index, int action, int time, int tempo, int Red, int Green, int Blue, int action2, int time2, int tempo2, int Red2, int Green2, int Blue2)
+	bool Functions::SetAction(int index, std::vector<afx_act> act)
+		//int action, int time, int tempo, int Red, int Green, int Blue, int action2, int time2, int tempo2, int Red2, int Green2, int Blue2)
 	{
 		size_t BytesWritten;
 		// Buffer[3], [11] - action type ( 0 - light, 1 - pulse, 2 - morph)
 		// Buffer[4], [12] - how long phase keeps
 		// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph
 		// Buffer[7], [15] - tempo (0xfa - steady)
+		// Buffer[8-10]    - rgb
 		// 00 03 24 02 0b b7 00 64
 		// 00 03 24 02 05 dc 00 64 - pulse, but mode 2
 		// 00 03 24 02 02 82 00 0f x3rgb(!) x3(!) - last one only 1 color.
@@ -487,8 +489,41 @@ namespace AlienFX_SDK
 				, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		switch (length) {
 		case API_V3: { // only supported at new devices
-			Buffer[3] = action;
+			if (!inSet) Reset(false);
+			Buffer2[6] = index;
+			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			Loop();
+			int bPos = 3, res = 0;
+			for (int ca = 0; ca < act.size(); ca++) {
+				// 3 actions per record..
+				Buffer[bPos] = act[ca].type;
+				Buffer[bPos + 1] = act[ca].time;
+				Buffer[bPos + 3] = 0;
+				Buffer[bPos + 4] = act[ca].tempo;
+				Buffer[bPos + 5] = act[ca].r;
+				Buffer[bPos + 6] = act[ca].g;
+				Buffer[bPos + 7] = act[ca].b;
+				switch (act[ca].type) {
+				case AlienFX_A_Color: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa; break;
+				case AlienFX_A_Pulse: Buffer[bPos + 2] = 0xdc; break;
+				case AlienFX_A_Morph: Buffer[bPos + 2] = 0xcf; break;
+				case AlienFX_A_Power: Buffer[bPos + 2] = 0xe8; Buffer[bPos] = AlienFX_A_Morph; break;
+				default: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa;
+				}
+				bPos += 8;
+				if (bPos > 34) {
+					res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+					Loop();
+					bPos = 3;
+				}
+			}
+			if (bPos != 3) {
+				res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				Loop();
+			}
+			/*Buffer[3] = action;
 			Buffer[4] = time;
+			// 5 = action;
 			Buffer[7] = tempo;
 			Buffer[11] = action2;
 			Buffer[12] = time2;
@@ -499,7 +534,6 @@ namespace AlienFX_SDK
 			Buffer[16] = Red2;
 			Buffer[17] = Green2;
 			Buffer[18] = Blue2;
-			Buffer2[6] = index;
 
 			switch (action) {
 			case 0: Buffer[5] = 0xd0; Buffer[7] = 0xfa; break;
@@ -515,30 +549,25 @@ namespace AlienFX_SDK
 			case 4: // No action
 				Buffer[11] = Buffer[12] = Buffer[13] = Buffer[14] = Buffer[15] = 0;
 				break;
-			}
-			if (!inSet) Reset(false);
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
-			int res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
+			}*/
 			return res;
 		} break;
 		case API_V2: {
-			SetColor(index, Red, Green, Blue);
+			SetColor(index, act[0].r, act[0].g, act[0].b);
 			// But here trick for Pulse!
-			switch (action) {
-			case 1: SetColor(index, Red2, Green2, Blue2); break;
+			switch (act[0].type) {
+			case 1: SetColor(index, act[0].r, act[0].g, act[0].b); break;
 			}
 		} break;
 		case API_V1: {
 			// can't set action for old, just use color. 
-			SetColor(index, Red, Green, Blue);
+			SetColor(index, act[0].r, act[0].g, act[0].b);
 		} break;
 		}
 		return false;
 	}
 
-	bool Functions::SetPowerAction(int index, int Red, int Green, int Blue, int Red2, int Green2, int Blue2)
+	bool Functions::SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force)
 	{
 		size_t BytesWritten;
 		byte Buffer[] = { 0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
@@ -548,8 +577,10 @@ namespace AlienFX_SDK
 			// this function can be called not early then 250ms after last call!
 			ULONGLONG cPowerCall = GetTickCount64();
 			if (cPowerCall - lastPowerCall < 260)
-				//Sleep(lastPowerCall + 260 - cPowerCall);
-				return false;
+				if (force)
+					Sleep(lastPowerCall + 260 - cPowerCall);
+				else
+					return false;
 			// Need to flush query...
 			if (inSet) UpdateColors();
 			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
@@ -567,25 +598,34 @@ namespace AlienFX_SDK
 				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				Loop();
 				// Now set color by type...
+				std::vector<afx_act> act;
 				switch (cid) {
 				case 0x5b: // Alarm
-					SetAction(index, AlienFX_A_Power, 3, 0x64, Red, Green, Blue, AlienFX_A_Power, 3, 0x64, 0, 0, 0);
+					act.push_back(afx_act{ AlienFX_A_Power, 3, 0x64, Red, Green, Blue });
+					act.push_back(afx_act{ AlienFX_A_Power, 3, 0x64, 0, 0, 0 });
+					SetAction(index, act);
 					break;
 				case 0x5c: // AC power
-					SetAction(index, AlienFX_A_Color, 0, 0, Red, Green, Blue);
+					act.push_back(afx_act{ AlienFX_A_Color, 0, 0, Red, Green, Blue });
+					SetAction(index, act);
 					break;
 				case 0x5d: // Charge
-					SetAction(index, AlienFX_A_Power, 3, 0x64, Red, Green, Blue, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2);
+					act.push_back(afx_act{ AlienFX_A_Power, 3, 0x64, Red, Green, Blue });
+					act.push_back(afx_act{ AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2 });
+					SetAction(index, act);
 					break;
 				case 0x5e: // Low batt
-					SetAction(index, AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2, AlienFX_A_Power, 3, 0x64, 0, 0, 0);
+					act.push_back(afx_act{ AlienFX_A_Power, 3, 0x64, Red2, Green2, Blue2 });
+					act.push_back(afx_act{ AlienFX_A_Power, 3, 0x64, 0, 0, 0 });
+					SetAction(index, act);
 					break;
 				case 0x5f: // Batt power
-					SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
+					act.push_back(afx_act{ AlienFX_A_Color, 0, 0, Red2, Green2, Blue2 });
+					SetAction(index, act);
 					break;
 				case 0x60: // System sleep?
-					SetAction(index, AlienFX_A_Color, 0, 0, Red2, Green2, Blue2);
-					break;
+					act.push_back(afx_act{ AlienFX_A_Color, 0, 0, Red2, Green2, Blue2 });
+					SetAction(index, act);
 				}
 				// And finish
 				Buffer[4] = 2;

@@ -24,6 +24,15 @@ namespace AlienFX_SDK
 		std::string name;
 	};
 
+	struct afx_act {
+		BYTE type;
+		BYTE time;
+		BYTE tempo;
+		BYTE r;
+		BYTE g;
+		BYTE b;
+	};
+
 	enum Index
 	{
 		AlienFX_leftZone = 1, // 2 for m15
@@ -87,11 +96,12 @@ namespace AlienFX_SDK
 		// time - how much time to keep action (0-255)
 		// tempo - how fast to do evolution (f.e. pulse - 0-255) 
 		// It can possible to mix 2 actions in one (useful for morph), in this case use action2...Blue2
-		static  bool SetAction(int index, int action, int time, int tempo, int Red, int Green, int Blue, int action2 = AlienFX_A_NoAction, int time2 = 0, int tempo2=0, int Red2 = 0, int Green2 = 0, int Blue2 = 0);
+		static  bool SetAction(int index, std::vector<afx_act> act);
+			//int action, int time, int tempo, int Red, int Green, int Blue, int action2 = AlienFX_A_NoAction, int time2 = 0, int tempo2=0, int Red2 = 0, int Green2 = 0, int Blue2 = 0);
 
 		// Set action for Power button
 		// For now, settings as a default of AWCC, but it possible to do it more complex
-		static  bool SetPowerAction(int index, int Red, int Green, int Blue, int Red2, int Green2, int Blue2);
+		static  bool SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force = false);
 
 		// return current device state
 		static  BYTE AlienfxGetDeviceStatus();

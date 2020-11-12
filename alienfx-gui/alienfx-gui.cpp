@@ -8,6 +8,7 @@
 #include <CommCtrl.h>
 #include <Commdlg.h>
 #include <shellapi.h>
+#include <psapi.h>
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
@@ -37,6 +38,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
@@ -224,7 +226,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-#define C_PAGES 4
+#define C_PAGES 5
 
 typedef struct tag_dlghdr {
     HWND hwndTab;       // tab control 
@@ -262,7 +264,8 @@ VOID OnSelChanged(HWND hwndDlg)
     case 0: tdl = (DLGPROC)TabColorDialog; break;
     case 1: tdl = (DLGPROC)TabEventsDialog; break;
     case 2: tdl = (DLGPROC)TabDevicesDialog; break;
-    case 3: tdl = (DLGPROC)TabSettingsDialog; break;
+    case 3: tdl = (DLGPROC)TabProfilesDialog; break;
+    case 4: tdl = (DLGPROC)TabSettingsDialog; break;
     }
     pHdr->hwndDisplay = CreateDialogIndirect(hInst,
         (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
@@ -296,7 +299,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         pHdr->apRes[0] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_COLORS));
         pHdr->apRes[1] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_EVENTS));
         pHdr->apRes[2] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_DEVICES));
-        pHdr->apRes[3] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
+        pHdr->apRes[3] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_PROFILES));
+        pHdr->apRes[4] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
 
         TCITEM tie;
 
@@ -308,8 +312,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         SendMessage(tab_list, TCM_INSERTITEM, 1, (LPARAM)&tie);
         tie.pszText = (LPSTR)"Devices and Lights";
         SendMessage(tab_list, TCM_INSERTITEM, 2, (LPARAM)&tie);
-        tie.pszText = (LPSTR)"Settings";
+        tie.pszText = (LPSTR)"Profiles";
         SendMessage(tab_list, TCM_INSERTITEM, 3, (LPARAM)&tie);
+        tie.pszText = (LPSTR)"Settings";
+        SendMessage(tab_list, TCM_INSERTITEM, 4, (LPARAM)&tie);
 
         SetRectEmpty(&rcTab);
 
@@ -1226,7 +1232,6 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
         dev_list = GetDlgItem(hDlg, IDC_DEVICES),
-        //dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING),
         light_id = GetDlgItem(hDlg, IDC_LIGHTID);
     switch (message)
     {
@@ -1261,6 +1266,10 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         UpdateLightList(light_list, pid);
+        if (AlienFX_SDK::Functions::AlienfxGetDeviceStatus())
+            SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
+        else
+            SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Unavaliable");
         eItem = -1;
 
     } break;
@@ -1277,6 +1286,10 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             case CBN_SELCHANGE: {
                 AlienFX_SDK::Functions::AlienFXChangeDevice(did);
                 UpdateLightList(light_list, did);
+                if (AlienFX_SDK::Functions::AlienfxGetDeviceStatus())
+                    SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
+                else
+                    SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Unavaliable");
                 eItem = -1; eDid = did; dItem = dbItem;
             } break;
             case CBN_EDITCHANGE:
@@ -1390,6 +1403,26 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 UpdateLightList(light_list, did);
             }
             break;
+        case IDC_BUTTON_RESETCOLOR:
+            if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning!",
+                MB_YESNO | MB_ICONWARNING) == IDYES) {
+                // store profile...
+                conf->profiles[conf->activeProfile].lightsets = conf->mappings;
+                // delete from all profiles...
+                for (std::vector <profile>::iterator Iter = conf->profiles.begin();
+                    Iter != conf->profiles.end(); Iter++) {
+                    // erase mappings
+                    for (std::vector <lightset>::iterator mIter = Iter->lightsets.begin();
+                        mIter != Iter->lightsets.end(); mIter++)
+                        if (mIter->devid == did && mIter->lightid == lid) {
+                            Iter->lightsets.erase(mIter);
+                            break;
+                        }
+                }
+                // reset active mappings
+                conf->mappings = conf->profiles[conf->activeProfile].lightsets;
+            }
+            break;
         case IDC_BUTTON_TESTCOLOR: {
             SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
             if (lid != -1) {
@@ -1413,6 +1446,96 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.cs.red, conf->testColor.cs.green, conf->testColor.cs.blue);
             break;
         } break;
+    default: return false;
+    }
+    return true;
+}
+
+BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
+        profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+    {
+        if (conf->profiles.size() == 0) {
+            std::string dname = "Default";
+            int pos = (int)SendMessage(profile_list, LB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
+            SendMessage(profile_list, LB_SETITEMDATA, pos, 0);
+            SendMessage(profile_list, LB_SETCURSEL, pos, 0);
+            pRid = 0; pRitem = pos;
+        }
+        else {
+            for (int i = 0; i < conf->profiles.size(); i++) {
+                int pos = (int)SendMessage(profile_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
+                SendMessage(profile_list, LB_SETITEMDATA, pos, conf->profiles[i].id);
+                if (conf->profiles[i].id == conf->activeProfile) {
+                    SendMessage(profile_list, LB_SETCURSEL, pos, 0);
+                    pRid = conf->activeProfile; pRitem = pos;
+                }
+            }
+        }
+
+        DWORD aProcesses[1024], cbNeeded, cProcesses;
+        unsigned int i;
+
+        if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
+        {
+            cProcesses = cbNeeded / sizeof(DWORD);
+            for (i = 0; i < cProcesses; i++)
+            {
+                if (aProcesses[i] != 0)
+                {
+                    TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+                    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                        PROCESS_VM_READ,
+                        FALSE, aProcesses[i]);
+                    if (NULL != hProcess)
+                    {
+                        HMODULE hMod;
+                        DWORD cbNeeded;
+
+                        if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
+                            &cbNeeded))
+                        {
+                            /*GetModuleBaseName*/GetModuleFileNameEx(hProcess, hMod, szProcessName,
+                                sizeof(szProcessName) / sizeof(TCHAR));
+                            SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(szProcessName));
+                        }
+                    }
+                }
+            }
+        }
+
+    } break;
+    case WM_COMMAND:
+    {
+        switch (LOWORD(wParam))
+        {
+        case IDC_PROFILES: {
+            int pbItem = (int)SendMessage(profile_list, LB_GETCURSEL, 0, 0);
+            int prid = (int)SendMessage(profile_list, LB_GETITEMDATA, pbItem, 0);
+            switch (HIWORD(wParam))
+            {
+            case LBN_SELCHANGE: {
+                for (int i = 0; i < conf->profiles.size(); i++)
+                    if (conf->profiles[i].id == prid) {
+                        // save current profile mappings...
+                        conf->profiles[conf->activeProfile].lightsets = conf->mappings;
+                        // load new mappings...
+                        conf->mappings = conf->profiles[i].lightsets;
+                        conf->activeProfile = prid;
+                        // Reload lighs list at colors and events.
+                        //OnSelChanged(tab_list);
+                        pRitem = pbItem; pRid = prid;
+                        fxhl->RefreshState();
+                    }
+            } break;
+            } break;
+        } break;
+        }
+    } break;
     default: return false;
     }
     return true;

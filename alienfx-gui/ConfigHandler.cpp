@@ -55,6 +55,31 @@ ConfigHandler::~ConfigHandler() {
 
 bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
 
+void ConfigHandler::updateProfileByID(int id, std::string name, std::string app, DWORD flags) {
+    for (std::vector <profile>::iterator Iter = profiles.begin();
+        Iter != profiles.end(); Iter++) {
+        if (Iter->id == id) {
+            // update profile..
+            if (name != "")
+                Iter->name = name;
+            if (app != "")
+                Iter->triggerapp = app;
+            if (flags != -1)
+                Iter->flags = flags;
+            return;
+        }
+    }
+    profile prof;
+    // update data...
+    if (name != "")
+        prof.name = name;
+    if (app != "")
+        prof.triggerapp = app;
+    if (flags != -1)
+        prof.flags = flags;
+    profiles.push_back(prof);
+}
+
 int ConfigHandler::Load() {
     int size = 4, size_c = 4*16;
 
@@ -159,7 +184,7 @@ int ConfigHandler::Load() {
         dimmingPower = 92;
 
     unsigned vindex = 0, inarray[40];
-    char name[256];
+    char name[256]; int pid = -1, appid = -1;
     ret = 0;
     do {
         DWORD len = 255, lend = 0; profile prof;
@@ -174,26 +199,56 @@ int ConfigHandler::Load() {
             &lend
         );
         lend++; len = 255;
-        char* profname = new char[lend];
-        ret = RegEnumValueA(
-            hKey4,
-            vindex,
-            name,
-            &len,
-            NULL,
-            NULL,
-            (LPBYTE)profname,
-            &lend
-        );
-        if (ret == ERROR_SUCCESS) {
-            vindex++;
-            unsigned ret2 = sscanf_s((char*)name, "Profile-%d", &prof.id);
-            if (ret2 == 1) {
-                prof.name = profname;
-                profiles.push_back(prof);
-            }
+        unsigned ret2 = sscanf_s((char*)name, "Profile-%d", &pid);
+        if (ret == ERROR_SUCCESS && ret2 == 1) {
+            char* profname = new char[lend];
+            profname[0] = 0;
+            ret = RegEnumValueA(
+                hKey4,
+                vindex,
+                name,
+                &len,
+                NULL,
+                NULL,
+                (LPBYTE)profname,
+                &lend
+            );
+            updateProfileByID(pid, profname, "", -1);
+            delete profname;
         }
-        delete profname;
+        ret2 = sscanf_s((char*)name, "Profile-flags-%d", &pid);
+        if (ret == ERROR_SUCCESS && ret2 == 1) {
+            DWORD pFlags;
+            ret = RegEnumValueA(
+                hKey4,
+                vindex,
+                name,
+                &len,
+                NULL,
+                NULL,
+                (LPBYTE)&pFlags,
+                &lend
+            );
+            updateProfileByID(pid, "", "", pFlags);
+        }
+        ret2 = sscanf_s((char*)name, "Profile-app-%d-%d", &pid, &appid);
+        if (ret == ERROR_SUCCESS && ret2 == 2) {
+            char* profname = new char[lend];
+            profname[0] = 0;
+            ret = RegEnumValueA(
+                hKey4,
+                vindex,
+                name,
+                &len,
+                NULL,
+                NULL,
+                (LPBYTE)profname,
+                &lend
+            );
+            updateProfileByID(pid, "", profname, -1);
+            delete profname;
+        }
+        vindex++;
     } while (ret == ERROR_SUCCESS);
     vindex = 0; ret = 0;
     do {
@@ -259,7 +314,8 @@ int ConfigHandler::Load() {
             std::sort(profiles[i].lightsets.begin(), profiles[i].lightsets.end(), ConfigHandler::sortMappings);
             if (profiles[i].id == activeProfile) {
                 mappings = profiles[i].lightsets;
-                //break;
+                if (profiles[i].flags & 0x2)
+                    monState = 0;
             }
         }
     }
@@ -267,11 +323,14 @@ int ConfigHandler::Load() {
         // need new profile
         profile prof;
         prof.id = 0;
+        prof.flags = 1;
         prof.name = "Default";
         prof.lightsets = mappings;
         std::sort(mappings.begin(), mappings.end(), ConfigHandler::sortMappings);
         profiles.push_back(prof);
     }
+    if (profiles.size() == 1)
+        profiles[0].flags = profiles[0].flags | 0x1;
 	return 0;
 }
 int ConfigHandler::Save() {
@@ -426,6 +485,24 @@ int ConfigHandler::Save() {
             REG_SZ,
             (BYTE*)profiles[j].name.c_str(),
             profiles[j].name.length()
+        );
+        sprintf_s((char*)name, 255, "Profile-flags-%d", profiles[j].id);
+        RegSetValueExA(
+            hKey4,
+            name,
+            0,
+            REG_DWORD,
+            (BYTE*)&profiles[j].flags,
+            sizeof(DWORD)
+        );
+        sprintf_s((char*)name, 255, "Profile-app-%d-0", profiles[j].id);
+        RegSetValueExA(
+            hKey4,
+            name,
+            0,
+            REG_SZ,
+            (BYTE*)profiles[j].triggerapp.c_str(),
+            profiles[j].triggerapp.length()
         );
         for (int i = 0; i < profiles[j].lightsets.size(); i++) {
             //preparing name

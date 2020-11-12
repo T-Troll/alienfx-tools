@@ -104,10 +104,10 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 			if (lFlags)
 				if (activeMode != MODE_AC && activeMode != MODE_CHARGE)
 					SetLight(Iter->lightid, lFlags, 0, 0, 0, Iter->eve[0].map.c1.cs.red, Iter->eve[0].map.c1.cs.green, Iter->eve[0].map.c1.cs.blue,
-						0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
+						0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue, force);
 				else
 					SetLight(Iter->lightid, lFlags, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
-						0, 0, 0, Iter->eve[0].map.c2.cs.red, Iter->eve[0].map.c2.cs.green, Iter->eve[0].map.c2.cs.blue);
+						0, 0, 0, Iter->eve[0].map.c2.cs.red, Iter->eve[0].map.c2.cs.green, Iter->eve[0].map.c2.cs.blue, force);
 			else
 				SetLight(Iter->lightid, lFlags, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
 					0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
@@ -118,7 +118,8 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
 }
 
-void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, int r, int g, int b, int mode2, int length2, int speed2, int r2, int g2, int b2)
+void FXHelper::SetLight(int id, bool power, BYTE mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b, 
+	BYTE mode2, BYTE length2, BYTE speed2, BYTE r2, BYTE g2, BYTE b2, bool force)
 {
 	// modify colors for dimmed...
 	const unsigned delta = 256 - config->dimmingPower;
@@ -150,14 +151,16 @@ void FXHelper::SetLight(int id, bool power, int mode1, int length1, int speed1, 
 		}
 
 		if (power)
-			AlienFX_SDK::Functions::SetPowerAction(id, r, g, b, r2, g2, b2);
+			AlienFX_SDK::Functions::SetPowerAction(id, r, g, b, r2, g2, b2, force);
 		else 
 			if (mode1 == 0 && mode2 == 0)
 				AlienFX_SDK::Functions::SetColor(id, r, g, b);
-			else
-				AlienFX_SDK::Functions::SetAction(id,
-					mode1, length1, speed1, r, g, b,
-					mode2, length2, speed2, r2, g2, b2);
+			else {
+				std::vector<AlienFX_SDK::afx_act> act;
+				act.push_back(AlienFX_SDK::afx_act{ mode1, length1, speed1, r, g, b });
+				act.push_back(AlienFX_SDK::afx_act{ mode2, length2, speed2, r2, g2, b2 });
+				AlienFX_SDK::Functions::SetAction(id,act);
+			}
 	}
 	else {
 		if (!power)
@@ -211,7 +214,8 @@ int FXHelper::Refresh(bool forced)
 			}
 			SetLight(Iter->lightid, lFlags,
 				mode1, Iter->eve[0].map.length1, Iter->eve[0].map.speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
-				mode2, Iter->eve[0].map.length2, Iter->eve[0].map.speed2, c2.cs.red, c2.cs.green, c2.cs.blue
+				mode2, Iter->eve[0].map.length2, Iter->eve[0].map.speed2, c2.cs.red, c2.cs.green, c2.cs.blue,
+				forced
 			);
 		}
 		//UpdateLight(&config->mappings[i], false);	
