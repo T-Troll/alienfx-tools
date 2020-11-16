@@ -71,6 +71,7 @@ void ConfigHandler::updateProfileByID(int id, std::string name, std::string app,
     }
     profile prof;
     // update data...
+    prof.id = id;
     if (name != "")
         prof.name = name;
     if (app != "")
@@ -131,6 +132,15 @@ int ConfigHandler::Load() {
         (LPDWORD)&size);
     if (ret != ERROR_SUCCESS)
         gammaCorrection = 1;
+    ret = RegGetValue(hKey1,
+        NULL,
+        TEXT("ProfileAutoSwitch"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &enableProf,
+        (LPDWORD)&size);
+    if (ret != ERROR_SUCCESS)
+        enableProf = 1;
     RegGetValue(hKey1,
         NULL,
         TEXT("OffWithScreen"),
@@ -308,6 +318,7 @@ int ConfigHandler::Load() {
     } while (ret == ERROR_SUCCESS);
     stateDimmed = dimmed;
     stateOn = lightsOn;
+    monState = enableMon;
     // set active profile...
     if (profiles.size() > 0) {
         for (int i = 0; i < profiles.size(); i++) {
@@ -442,6 +453,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&gammaCorrection,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("ProfileAutoSwitch"),
+        0,
+        REG_DWORD,
+        (BYTE*)&enableProf,
         4
     );
     RegSetValueEx(

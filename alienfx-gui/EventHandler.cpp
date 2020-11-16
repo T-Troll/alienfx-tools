@@ -5,10 +5,12 @@
 
 #include "EventHandler.h"
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
+#include <Psapi.h>
 
 DWORD WINAPI CEventProc(LPVOID);
+DWORD WINAPI CProfileProc(LPVOID);
 
-HANDLE dwHandle;
+HANDLE dwHandle = 0, dwProfile = 0;
 DWORD dwThreadID;
 
 void EventHandler::ChangePowerState()
@@ -56,7 +58,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 void EventHandler::StartEvents()
 {
     fxh->RefreshState();
-    if (!dwHandle && conf->enableMon && conf->stateOn) {
+    if (!dwHandle && conf->monState && conf->stateOn) {
         // start threas with this as a param
 #ifdef _DEBUG
         OutputDebugString("Event thread start.\n");
@@ -91,14 +93,152 @@ void EventHandler::StopEvents()
     fxh->Refresh(true);
 }
 
+void EventHandler::StartProfiles()
+{
+    DWORD dwThreadID;
+    if (dwProfile == 0 && conf->enableProf) {
+#ifdef _DEBUG
+        OutputDebugString("Profile thread starting.\n");
+#endif
+        dwProfile = CreateThread(
+            NULL,              // default security
+            0,                 // default stack size
+            CProfileProc,        // name of the thread function
+            this,
+            0,                 // default startup flags
+            &dwThreadID);
+    }
+}
+
+void EventHandler::StopProfiles()
+{
+    DWORD exitCode;
+    if (dwProfile) {
+#ifdef _DEBUG
+        OutputDebugString("Profile thread stop.\n");
+#endif
+        this->stopProf = true;
+        GetExitCodeThread(dwProfile, &exitCode);
+        while (exitCode == STILL_ACTIVE) {
+            Sleep(50);
+            GetExitCodeThread(dwProfile, &exitCode);
+        }
+        CloseHandle(dwProfile);
+        dwProfile = 0;
+    }
+}
+
+void EventHandler::ToggleEvents()
+{
+    if (conf->monState && conf->stateOn && !dwHandle)
+        StartEvents();
+    else
+        if ((!conf->monState || !conf->stateOn) && dwHandle)
+            StopEvents();
+}
+
 EventHandler::EventHandler(ConfigHandler* config, FXHelper* fx)
 {
     conf = config;
     fxh = fx;
+    StartProfiles();
+    StartEvents();
 }
 
 EventHandler::~EventHandler()
 {
+    StopProfiles();
+    StopEvents();
+}
+
+DWORD CProfileProc(LPVOID param) {
+    EventHandler* src = (EventHandler*)param;
+    DWORD aProcesses[1024], cbNeeded, cProcesses;
+    unsigned int i;
+
+    while (!src->stopProf) {
+        unsigned nProfi = 0, newp = src->conf->activeProfile;
+        bool notDefault = false;
+
+        Sleep(100);
+
+        if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
+        {
+            cProcesses = cbNeeded / sizeof(DWORD);
+            for (i = 0; i < cProcesses && !notDefault; i++)
+            {
+                if (aProcesses[i] != 0)
+                {
+                    TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+                    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                        PROCESS_VM_READ,
+                        FALSE, aProcesses[i]);
+                    if (NULL != hProcess)
+                    {
+                        HMODULE hMod;
+                        DWORD cbNeeded;
+
+                        if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
+                            &cbNeeded))
+                        {
+                            /*GetModuleBaseName*/GetModuleFileNameEx(hProcess, hMod, szProcessName,
+                                sizeof(szProcessName) / sizeof(TCHAR));
+                            // is it related to profile?
+                            for (int j = 0; j < src->conf->profiles.size(); j++)
+                                if (src->conf->profiles[j].triggerapp == std::string(szProcessName)) {
+                                    // found trigger
+                                    newp = src->conf->profiles[j].id;
+                                    notDefault = true;
+                                    nProfi = j;
+                                    break;
+                                }
+
+                        }
+                    }
+                }
+            }
+        }
+        // do we need to switch?
+        if (notDefault) {
+            if (newp != src->conf->activeProfile) {
+                // just switch between profiles...
+                for (int j = 0; j < src->conf->profiles.size(); j++)
+                    if (src->conf->profiles[j].id == src->conf->activeProfile) {
+                        src->StopEvents();
+                        src->conf->profiles[j].lightsets = src->conf->mappings;
+                        src->conf->mappings = src->conf->profiles[nProfi].lightsets;
+                        src->conf->activeProfile = newp;
+                        src->conf->monState = src->conf->profiles[nProfi].flags & 0x2 ? 0 : src->conf->enableMon;
+                        src->StartEvents();
+                        //src->fxh->RefreshState();
+                        break;
+                    }
+            }
+        }
+        else {
+            // looking for default profile....
+            int defIndex = 0;
+            for (int j = 0; j < src->conf->profiles.size(); j++)
+                if (src->conf->profiles[j].flags & 0x1) {
+                    defIndex = j;
+                    break;
+                }
+            if (src->conf->profiles[defIndex].id != newp) {
+                // switch to default profile
+                for (int j = 0; j < src->conf->profiles.size(); j++)
+                    if (src->conf->profiles[j].id == newp) {
+                        src->StopEvents();
+                        src->conf->profiles[j].lightsets = src->conf->mappings;
+                        src->conf->mappings = src->conf->profiles[defIndex].lightsets;
+                        src->conf->activeProfile = src->conf->profiles[defIndex].id;
+                        src->conf->monState = src->conf->profiles[defIndex].flags & 0x2 ? 0 : src->conf->enableMon;
+                        src->StartEvents();
+                        //src->fxh->RefreshState();
+                    }
+            }
+        }
+    }
+    return 0;
 }
 
 DWORD WINAPI CEventProc(LPVOID param)
@@ -169,6 +309,8 @@ DWORD WINAPI CEventProc(LPVOID param)
     while (!src->stop) {
         // wait a little...
         Sleep(240);
+
+        //CheckProfileSwitch(src);
         // get indicators...
         PdhCollectQueryData(hQuery);
         PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;

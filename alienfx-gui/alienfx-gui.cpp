@@ -64,17 +64,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     conf = new ConfigHandler();
     fxhl = new FXHelper(conf);
-    eve = new EventHandler(conf, fxhl);
 
     conf->Load();
-
     fxhl->Refresh(true);
+
+    eve = new EventHandler(conf, fxhl);
 
     eve->ChangePowerState();
 
-    if (conf->lightsOn) {
-        eve->StartEvents();
-    }
+    //eve->StartEvents();
 
     // Perform application initialization:
     if (!(mDlg=InitInstance (hInstance, nCmdShow)))
@@ -125,7 +123,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    eve->StopEvents();
+    //eve->StopEvents();
 
     conf->Save();
 
@@ -281,6 +279,8 @@ VOID OnSelChanged(HWND hwndDlg)
 
 int pRid = -1, pRitem = -1;
 
+profile* FindProfile(int id);
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
     HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
@@ -405,11 +405,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_LIGHTSON:
             conf->stateOn = conf->lightsOn = !conf->lightsOn;
-            if (conf->lightsOn) {
-                fxhl->Refresh(true);
-                eve->StartEvents();
-            }
-            else eve->StopEvents();
+            eve->ToggleEvents();
             break;
         case ID_TRAYMENU_DIMLIGHTS:
             conf->dimmed = !conf->dimmed;
@@ -417,9 +413,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             fxhl->RefreshState();
             break;
         case ID_TRAYMENU_MONITORING:
-            eve->StopEvents();
             conf->enableMon = !conf->enableMon;
-            eve->StartEvents();
+            conf->monState = FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
+            eve->ToggleEvents();
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
@@ -467,18 +463,22 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE: {
-                for (int i = 0; i < conf->profiles.size(); i++)
-                    if (conf->profiles[i].id == prid) {
-                        // save current profile mappings...
-                        conf->profiles[conf->activeProfile].lightsets = conf->mappings;
-                        // load new mappings...
-                        conf->mappings = conf->profiles[i].lightsets;
-                        conf->activeProfile = prid;
-                        // Reload lighs list at colors and events.
-                        OnSelChanged(tab_list);
-                        pRitem = pbItem; pRid = prid;
-                        fxhl->RefreshState();
-                    }
+                profile* prof = FindProfile(prid);
+                if (prof != NULL) {
+                    eve->StopEvents();
+                    // save current profile mappings...
+                    profile* defProf = FindProfile(conf->activeProfile);
+                    defProf->lightsets = conf->mappings;
+                    // load new mappings...
+                    conf->mappings = prof->lightsets;
+                    conf->activeProfile = prid;
+                    // Reload lighs list at colors and events.
+                    OnSelChanged(tab_list);
+                    pRitem = pbItem; pRid = prid;
+                    conf->monState = prof->flags & 0x2 ? 0 : conf->enableMon;
+                    eve->StartEvents();
+                    //fxhl->RefreshState();
+                }
             } break;
             case CBN_EDITCHANGE: {
                 char* buffer = new char[32767];
@@ -508,6 +508,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             prof.name = buf;
             prof.lightsets = conf->mappings;
             conf->profiles.push_back(prof);
+            conf->monState = conf->enableMon;
             int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(prof.name.c_str()));
             SendMessage(profile_list, CB_SETITEMDATA, pos, vacID);
             SendMessage(profile_list, CB_SETCURSEL, pos, 0);
@@ -529,11 +530,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 pRid = (int)SendMessage(profile_list, CB_GETITEMDATA, pRitem, 0);
                 conf->activeProfile = pRid;
                 // Reload mappings...
-                for (int i = 0; i < conf->profiles.size(); i++)
-                    if (conf->profiles[i].id == pRid) {
-                        conf->mappings = conf->profiles[i].lightsets;
-                        break;
-                    }
+                profile* prof = FindProfile(pRid);
+                if (prof != NULL) {
+                    eve->StopEvents();
+                    conf->mappings = prof->lightsets;
+                    conf->monState = prof->flags & 0x2 ? 0 : conf->enableMon;
+                    eve->StartEvents();
+                }
                 OnSelChanged(tab_list);
                 fxhl->RefreshState();
             }
@@ -631,11 +634,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case 1: // on/off
             conf->stateOn = conf->lightsOn = !conf->lightsOn;
-            if (conf->lightsOn) {
-                fxhl->Refresh(true);
-                eve->StartEvents();
-            }
-            else eve->StopEvents();
+            eve->ToggleEvents();
             break;
         case 2: // dim
             conf->dimmed = !conf->dimmed;
@@ -645,7 +644,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case 3: // off-dim-full circle
             if (conf->lightsOn) {
                 if (conf->dimmed) {
-                    conf->lightsOn = !conf->lightsOn;
+                    conf->stateOn = conf->lightsOn = !conf->lightsOn;
                     conf->dimmed = !conf->dimmed;
                     //fxhl->Refresh(true);
                     eve->StopEvents();
@@ -658,7 +657,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             }
             else {
                 conf->stateOn = conf->lightsOn = !conf->lightsOn;
-                fxhl->Refresh(true);
+                //fxhl->Refresh(true);
                 eve->StartEvents();
             }
             break;
@@ -666,9 +665,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     case WM_DESTROY:
-#ifdef _DEBUG
-        OutputDebugString("Destroy initiated\n");
-#endif
         PostQuitMessage(0); break;
     default: return false;
     }
@@ -1266,10 +1262,11 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         UpdateLightList(light_list, pid);
-        if (AlienFX_SDK::Functions::AlienfxGetDeviceStatus())
+        BYTE status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
+        if (status && status != 0xff)
             SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
         else
-            SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Unavaliable");
+            SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
         eItem = -1;
 
     } break;
@@ -1451,6 +1448,16 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return true;
 }
 
+profile* FindProfile(int id) {
+    profile* prof = NULL;
+    for (int i = 0; i < conf->profiles.size(); i++)
+        if (conf->profiles[i].id == id) {
+            prof = &conf->profiles[i];
+            break;
+        }
+    return prof;
+}
+
 BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
@@ -1459,25 +1466,22 @@ BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_INITDIALOG:
     {
-        if (conf->profiles.size() == 0) {
-            std::string dname = "Default";
-            int pos = (int)SendMessage(profile_list, LB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
-            SendMessage(profile_list, LB_SETITEMDATA, pos, 0);
-            SendMessage(profile_list, LB_SETCURSEL, pos, 0);
-            pRid = 0; pRitem = pos;
-        }
-        else {
-            for (int i = 0; i < conf->profiles.size(); i++) {
-                int pos = (int)SendMessage(profile_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
-                SendMessage(profile_list, LB_SETITEMDATA, pos, conf->profiles[i].id);
-                if (conf->profiles[i].id == conf->activeProfile) {
-                    SendMessage(profile_list, LB_SETCURSEL, pos, 0);
-                    pRid = conf->activeProfile; pRitem = pos;
-                }
+        for (int i = 0; i < conf->profiles.size(); i++) {
+            int pos = (int)SendMessage(profile_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
+            SendMessage(profile_list, LB_SETITEMDATA, pos, conf->profiles[i].id);
+            if (conf->profiles[i].id == conf->activeProfile) {
+                SendMessage(profile_list, LB_SETCURSEL, pos, 0);
+                pRid = conf->activeProfile; pRitem = pos;
+                if (conf->profiles[i].flags & 0x1) CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
+                if (conf->profiles[i].flags & 0x2) CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_CHECKED);
             }
         }
 
-        DWORD aProcesses[1024], cbNeeded, cProcesses;
+        profile* cur = FindProfile(pRid);
+        if (cur != NULL)
+            SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(cur->triggerapp.c_str()));
+
+        /*DWORD aProcesses[1024], cbNeeded, cProcesses;
         unsigned int i;
 
         if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
@@ -1499,41 +1503,81 @@ BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
                             &cbNeeded))
                         {
-                            /*GetModuleBaseName*/GetModuleFileNameEx(hProcess, hMod, szProcessName,
+                            /*GetModuleBaseName*//*GetModuleFileNameEx(hProcess, hMod, szProcessName,
                                 sizeof(szProcessName) / sizeof(TCHAR));
                             SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(szProcessName));
                         }
                     }
                 }
             }
-        }
+        }*/
 
     } break;
     case WM_COMMAND:
     {
+        int pbItem = (int)SendMessage(profile_list, LB_GETCURSEL, 0, 0);
+        int prid = (int)SendMessage(profile_list, LB_GETITEMDATA, pbItem, 0);
+        profile* prof = FindProfile(prid);
+        
         switch (LOWORD(wParam))
         {
-        case IDC_PROFILES: {
-            int pbItem = (int)SendMessage(profile_list, LB_GETCURSEL, 0, 0);
-            int prid = (int)SendMessage(profile_list, LB_GETITEMDATA, pbItem, 0);
+        case IDC_LIST_PROFILES: {
             switch (HIWORD(wParam))
             {
             case LBN_SELCHANGE: {
-                for (int i = 0; i < conf->profiles.size(); i++)
-                    if (conf->profiles[i].id == prid) {
-                        // save current profile mappings...
-                        conf->profiles[conf->activeProfile].lightsets = conf->mappings;
-                        // load new mappings...
-                        conf->mappings = conf->profiles[i].lightsets;
-                        conf->activeProfile = prid;
-                        // Reload lighs list at colors and events.
-                        //OnSelChanged(tab_list);
-                        pRitem = pbItem; pRid = prid;
-                        fxhl->RefreshState();
-                    }
+                if (prof != NULL) {
+                    CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & 0x1 ? BST_CHECKED : BST_UNCHECKED);
+                    CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & 0x2 ? BST_CHECKED : BST_UNCHECKED);
+                    SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+                    SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(prof->triggerapp.c_str()));
+                    pRitem = pbItem; pRid = prid;
+
+                }
             } break;
             } break;
         } break;
+        case IDC_APP_RESET:
+            if (prof != NULL) {
+                prof->triggerapp = "";
+                SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+            }
+            break;
+        case IDC_APP_BROWSE: {
+            if (prof != NULL) {
+                // fileopen dialogue...
+                OPENFILENAMEA fstruct;
+                char appName[512];
+                ZeroMemory(&fstruct, sizeof(OPENFILENAMEA));
+                fstruct.lStructSize = sizeof(OPENFILENAMEA);
+                fstruct.hwndOwner = hDlg;
+                fstruct.lpstrFile = appName;
+                fstruct.lpstrFile[0] = 0;
+                fstruct.nMaxFile = 511;
+                fstruct.lpstrFilter = "Applications\0*.exe\0\0";
+                fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES;
+                if (GetOpenFileNameA(&fstruct)) {
+                    prof->triggerapp = appName;
+                    SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+                    SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(prof->triggerapp.c_str()));
+                }
+            }
+        } break;
+        case IDC_CHECK_DEFPROFILE:
+            // TODO: there are should be only 1 default profile!
+            if (prof != NULL)
+                prof->flags = (prof->flags & 2) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            break;
+        case IDC_CHECK_NOMON:
+            if (prof != NULL) {
+                prof->flags = (prof->flags & 1) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
+                if (prof->id == conf->activeProfile) {
+                    bool oldState = conf->monState;
+                    conf->monState = prof->flags & 0x2 ? 0 : conf->enableMon;
+                    if (oldState != conf->monState)
+                        eve->ToggleEvents();
+                }
+            }
+            break;
         }
     } break;
     default: return false;
@@ -1561,6 +1605,7 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (conf->dimmed) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
         if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
         if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
+        if (conf->enableProf) CheckDlgButton(hDlg, IDC_BATTPROFILE, BST_CHECKED);
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
         SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -1585,14 +1630,18 @@ BOOL TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             break;
         case IDC_BATTMONITOR:
-            eve->StopEvents();
             conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-            eve->StartEvents();
+            conf->monState = FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
+            eve->ToggleEvents();
+            break;
+        case IDC_BATTPROFILE:
+            eve->StopProfiles();
+            conf->enableProf = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            eve->StartProfiles();
             break;
         case IDC_CHECK_LON:
-            eve->StopEvents();
             conf->stateOn = conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-            eve->StartEvents();
+            eve->ToggleEvents();
             break;
         case IDC_CHECK_DIM:
             conf->dimmed = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);

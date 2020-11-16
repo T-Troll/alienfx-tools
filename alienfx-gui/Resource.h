@@ -73,6 +73,8 @@
 #define IDC_PROFILES                    1034
 #define IDC_ADDPROFILE                  1035
 #define IDC_BATTMONITOR                 1036
+#define IDC_BATTMONITOR2                1037
+#define IDC_BATTPROFILE                 1037
 #define IDC_BUTTON_TESTCOLOR            1039
 #define IDC_TYPE1                       1040
 #define IDC_TYPE2                       1041
@@ -93,6 +95,8 @@
 #define IDC_CHECK_DEFPROFILE            1056
 #define IDC_CHECK_NOMON                 1057
 #define IDC_DEVICE_STATUS               1058
+#define IDC_APP_RESET                   1059
+#define IDC_APP_BROWSE                  1060
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -116,7 +120,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        145
 #define _APS_NEXT_COMMAND_VALUE         32788
-#define _APS_NEXT_CONTROL_VALUE         1059
+#define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

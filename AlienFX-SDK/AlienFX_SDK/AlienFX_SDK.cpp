@@ -660,6 +660,7 @@ namespace AlienFX_SDK
 
 	BYTE Functions::AlienfxGetDeviceStatus()
 	{
+		if (pid == -1) return 0xff;
 		size_t BytesWritten;
 		byte ret = 0;
 		byte BufferN[] = { 0x00, 0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
@@ -669,7 +670,6 @@ namespace AlienFX_SDK
 		case API_V3: {
 			DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
 			ret = BufferN[2];
-			//std::cout << "Status: " << std::hex << ret << std::endl;
 		} break;
 		case API_V2: case API_V1: {
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);

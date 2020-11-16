@@ -200,7 +200,7 @@ void FillColors(Mat* src) {
 	uint w = src->cols / 4, h = src->rows / 3;
 	Mat cPos( w, h, CV_8UC3), hPts;
 	Mat ptsLabel, kCenters, dColor;
-	DWORD pThread;
+	//DWORD pThread;
 	//procData callData[3][4];
 	for (uint dy = 0; dy < 3; dy++)
 		for (uint dx = 0; dx < 4; dx++) {

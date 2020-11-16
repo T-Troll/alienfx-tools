@@ -71,6 +71,7 @@ public:
 	DWORD dimmedBatt = 0;
 	DWORD dimmingPower = 92;
 	DWORD enableMon = 1;
+	DWORD enableProf = 1;
 	DWORD monState = 1;
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = 0;
