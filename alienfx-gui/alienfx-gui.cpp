@@ -417,6 +417,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             conf->monState = FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
             eve->ToggleEvents();
             break;
+        case ID_TRAYMENU_PROFILESWITCH:
+            eve->StopProfiles();
+            conf->enableProf = !conf->enableProf;
+            eve->StartProfiles();
+            break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
             SetWindowPos(hDlg,       // handle to window
@@ -593,6 +598,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             if (conf->lightsOn) CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, MF_CHECKED);
             if (conf->dimmed) CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, MF_CHECKED);
             if (conf->enableMon) CheckMenuItem(tMenu, ID_TRAYMENU_MONITORING, MF_CHECKED);
+            if (conf->enableProf) CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, MF_CHECKED);
             TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
                 lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
         } break;

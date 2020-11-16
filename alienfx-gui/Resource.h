@@ -73,7 +73,6 @@
 #define IDC_PROFILES                    1034
 #define IDC_ADDPROFILE                  1035
 #define IDC_BATTMONITOR                 1036
-#define IDC_BATTMONITOR2                1037
 #define IDC_BATTPROFILE                 1037
 #define IDC_BUTTON_TESTCOLOR            1039
 #define IDC_TYPE1                       1040
@@ -111,6 +110,7 @@
 #define ID_ACC_REFRESH                  32783
 #define ID_TRAYMENU_MONITORING          32785
 #define ID_ACC_DEVICES                  32786
+#define ID_TRAYMENU_PROFILESWITCH       32788
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -119,7 +119,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        145
-#define _APS_NEXT_COMMAND_VALUE         32788
+#define _APS_NEXT_COMMAND_VALUE         32789
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
