@@ -19,9 +19,8 @@ Device checked: `Alienware m15R1` (API v3), `Alienware m17R1` (API v3), `Alienwa
 - `alienfx-cli set-tempo` command doesn't work with high-level SDK (bug in SDK, low-level only).<br>
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
 - Only one device per time can be controlled trough low-level SDK, but you can choose which one.
-- Brightness is not supported for low-level API, just ignored now.
-- Hardware light effect morph doesn't supported for older devices.
-- Hardware light effects can't work with software light effects at the same time (hardware bug, Update command stop all effects).
+- Hardware light effects morph, breathing, spectrum, rainbow doesn't supported for older devices.
+- Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
 - <b>WARNING!</b> In case you run `alienfx-gui`, `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use gui, haptics or ambient for a long time.
 - <b>DO NOT</b> use alienfx-gui with hardware power button setup and monitroing with other app switching light colors - it can provide unexpected results (see below)! But you can use any of my apps, they have a check for this situation, so it's safe. Stop AWCC service befor using power button control!
@@ -29,8 +28,9 @@ Device checked: `Alienware m15R1` (API v3), `Alienware m17R1` (API v3), `Alienwa
 
 ## Installation
 Download latest release archive from [here](https://github.com/T-Troll/alienfx-tools/releases).<br>
-Unzip the installation archive to any directory of your choise, run.<br>
-After install, run `alienfx-probe` or `alienfx-gui` to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not work correctly wihout this operation).</br> 
+Unpack the archive to any directory of your choise.<br>
+After unpack, run `alienfx-probe` or `alienfx-gui` to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not work correctly wihout this operation).</br>
+Run any tool you need from this folder!
 
 ## alienfx-probe Usage
 `alienfx-probe.exe` is a probe for light IDs of the low-level DSK, and it assign names for them (similar to alienfx-led-tester, but wider device support) as well.<br> 
@@ -48,7 +48,7 @@ The following commands are available:
 - `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red. NB: For low-level, it requires lights setup using `alienfx-probe`/-gui to work correctly!
 - `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color. Dev-id is ignored for low-level SDK.
 - `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided. This command only works with high-level API.
-- `set-action=<action>,<dev-id>,<light-id>,r,g,b[,br,<action2>,r,g,b[,br]]` Set light to color provided and enable action. Dev-id is ignored for low-level SDK.
+- `set-action=<dev-id>,<light-id>,<action>,r,g,b[,br[,<action>,r,g,b,br]]` Set light to color provided and enable action. Dev-id is ignored for low-level SDK. You can define up to 9 actions in this command, but only first 1 or 2 will be used for high-level API.
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action. This command only works with high-level API.
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
@@ -58,7 +58,7 @@ The following commands are available:
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 <br>Supported Zones: `left, right, top, bottom, front, rear`
-<br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`
+<br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`. For low-level api V3, it also support `breath, spectrum, rainbow`.
 
 ## alienfx-haptics Usage
 Run `alienfx-haptics.exe`. At first launch, choose `Parameters-Settings` from top menu for setting up light mappings and colors.
@@ -91,12 +91,12 @@ First, use "Devices and Lights" tab to configure out devices and lights settings
 Use "Color" tab for simple lights setup (this colors and modes will stay as default until AWCC run or modified by other app), even after reboot.</br>
 You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a color for reaction at "Monitoring" tab.<br>
 If "Use color settings as default" is active, first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be uset for "active" situation, if it's not active - both colors will taken from "Monitoring" tab (and colors from "Color" tab if monitoring is disabled).<br>
-You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and "system overheat". In this case Status color always override Performance one, as well as both override Power one.<br>
+You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and "system overheat". In this case Status color always override Performance one then triggered, as well as both override Power one.<br>
 Tray menu (right-click on tray button) avaliable all the time for some fast switch functins, application hide to tray completely then minimized.<br>
 ```
 How it works
 ```
-"Color" tab is set hardware color mode for light. This mode will remain even if you exit application.<br>
+"Color" tab is set hardware color mode for light. This setting will remains even if you exit application.<br>
 "Monitoring" tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
 "Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings. NB: If you want to add new light, type light ID into LightID box. If this ID already present in list, it will be overrided to first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
 "Profiles" tab control profile settings, like selecting defalult profile, per-profile monitoring control and automatic switch to this profile then the defined application run.<br>
