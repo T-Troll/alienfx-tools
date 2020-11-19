@@ -25,12 +25,12 @@ namespace AlienFX_SDK
 	};
 
 	struct afx_act {
-		BYTE type;
-		BYTE time;
-		BYTE tempo;
-		BYTE r;
-		BYTE g;
-		BYTE b;
+		BYTE type = 0;
+		BYTE time = 0;
+		BYTE tempo = 0;
+		BYTE r = 0;
+		BYTE g = 0;
+		BYTE b = 0;
 	};
 
 	enum Index
@@ -55,8 +55,11 @@ namespace AlienFX_SDK
 		AlienFX_A_Color = 0,
 		AlienFX_A_Pulse = 1,
 		AlienFX_A_Morph = 2,
-		AlienFX_A_Power = 3,
-		AlienFX_A_NoAction = 4
+		AlienFX_A_Breathing= 3,
+		AlienFX_A_Spectrum = 4,
+		AlienFX_A_Rainbow = 5,
+		AlienFX_A_Power = 6,
+		AlienFX_A_NoAction = 7
 	};
 
 	class Functions

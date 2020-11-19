@@ -6,7 +6,7 @@ This SDK not only fixes up its issue and performs better but is written from scr
 
 Please checkout Sample App for reference.
 
-**Currently tested on AW13/R2, AW13/R3, AW15R2/R3, AW17R3/R4, AWm15/R1 but should be working with all alienware laptops.**
+**Currently tested on AW13/R2, AW13/R3, AWM14x, AW15R2/R3, AW17R3/R4, AWm15/R1, AWm17/R1, Dell G5, but should be working with all alienware laptops.**
 
 ### Initialization
 ```C++

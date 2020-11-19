@@ -20,6 +20,9 @@
 #define IDS_A_NET                       113
 #define IDS_A_HOT                       114
 #define IDS_A_OOM                       115
+#define IDS_TYPE_BREATH                 116
+#define IDS_TYPE_SPECTRUM               117
+#define IDS_TYPE_RAINBOW                118
 #define IDR_MAINFRAME                   128
 #define IDD_MAINWINDOW                  129
 #define IDI_ALIENFXGUI                  132
@@ -36,12 +39,9 @@
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001
 #define IDC_BUTTON_C1                   1005
-#define IDC_BUTTON_C2                   1006
 #define IDC_SPEED1                      1007
-#define IDC_SPEED2                      1008
 #define IDC_LENGTH1                     1009
 #define IDC_CHECK_NOEVENT               1009
-#define IDC_LENGTH2                     1010
 #define IDC_CHECK_POWER                 1010
 #define IDC_CHECK_PERF                  1011
 #define IDC_CHECK_STATUS                1012
@@ -76,7 +76,6 @@
 #define IDC_BATTPROFILE                 1037
 #define IDC_BUTTON_TESTCOLOR            1039
 #define IDC_TYPE1                       1040
-#define IDC_TYPE2                       1041
 #define IDC_SYSLINK_HOMEPAGE            1043
 #define IDC_ISPOWERBUTTON               1044
 #define IDC_MINPVALUE                   1045
@@ -96,6 +95,9 @@
 #define IDC_DEVICE_STATUS               1058
 #define IDC_APP_RESET                   1059
 #define IDC_APP_BROWSE                  1060
+#define IDC_EFFECTS_LIST                1066
+#define IDC_BUT_ADD_EFFECT              1068
+#define IDC_BUTT_REMOVE_EFFECT          1069
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -118,9 +120,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        145
+#define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32789
-#define _APS_NEXT_CONTROL_VALUE         1061
+#define _APS_NEXT_CONTROL_VALUE         1070
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

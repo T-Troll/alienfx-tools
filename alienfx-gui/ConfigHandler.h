@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <Windows.h>
+#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
 
 struct ColorComp
@@ -40,7 +41,7 @@ union FlagSet {
 struct event {
 	FlagSet fs;
 	unsigned source = 0;
-	mapping  map;
+	std::vector<AlienFX_SDK::afx_act> map;
 };
 
 struct lightset {

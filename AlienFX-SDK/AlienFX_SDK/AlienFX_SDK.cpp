@@ -476,7 +476,7 @@ namespace AlienFX_SDK
 		size_t BytesWritten;
 		// Buffer[3], [11] - action type ( 0 - light, 1 - pulse, 2 - morph)
 		// Buffer[4], [12] - how long phase keeps
-		// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph
+		// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph, 0x82 - spectrum, 0xac - rainbow
 		// Buffer[7], [15] - tempo (0xfa - steady)
 		// Buffer[8-10]    - rgb
 		// 00 03 24 02 0b b7 00 64
@@ -496,7 +496,7 @@ namespace AlienFX_SDK
 			int bPos = 3, res = 0;
 			for (int ca = 0; ca < act.size(); ca++) {
 				// 3 actions per record..
-				Buffer[bPos] = act[ca].type;
+				Buffer[bPos] = act[ca].type < AlienFX_A_Breathing ? act[ca].type : AlienFX_A_Morph;
 				Buffer[bPos + 1] = act[ca].time;
 				Buffer[bPos + 3] = 0;
 				Buffer[bPos + 4] = act[ca].tempo;
@@ -507,8 +507,11 @@ namespace AlienFX_SDK
 				case AlienFX_A_Color: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa; break;
 				case AlienFX_A_Pulse: Buffer[bPos + 2] = 0xdc; break;
 				case AlienFX_A_Morph: Buffer[bPos + 2] = 0xcf; break;
-				case AlienFX_A_Power: Buffer[bPos + 2] = 0xe8; Buffer[bPos] = AlienFX_A_Morph; break;
-				default: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa;
+				case AlienFX_A_Breathing: Buffer[bPos + 2] = 0xdc; break;
+				case AlienFX_A_Spectrum: Buffer[bPos + 2] = 0x82; break;
+				case AlienFX_A_Rainbow: Buffer[bPos + 2] = 0xac; break;
+				case AlienFX_A_Power: Buffer[bPos + 2] = 0xe8; break;
+				default: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa; Buffer[bPos] = AlienFX_A_Color;
 				}
 				bPos += 8;
 				if (bPos > 34) {
@@ -521,35 +524,6 @@ namespace AlienFX_SDK
 				res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				Loop();
 			}
-			/*Buffer[3] = action;
-			Buffer[4] = time;
-			// 5 = action;
-			Buffer[7] = tempo;
-			Buffer[11] = action2;
-			Buffer[12] = time2;
-			Buffer[15] = tempo2;
-			Buffer[8] = Red;
-			Buffer[9] = Green;
-			Buffer[10] = Blue;
-			Buffer[16] = Red2;
-			Buffer[17] = Green2;
-			Buffer[18] = Blue2;
-
-			switch (action) {
-			case 0: Buffer[5] = 0xd0; Buffer[7] = 0xfa; break;
-			case 1: Buffer[5] = 0xdc; break;
-			case 2: Buffer[5] = 0xcf; break;
-			case 3: Buffer[5] = 0xe8; Buffer[3] = AlienFX_A_Morph; break;
-			}
-			switch (action2) {
-			case 0: Buffer[13] = 0xd0; Buffer[11] = 0; Buffer[15] = 0xfa; break;
-			case 1: Buffer[13] = 0xdc; break;
-			case 2: Buffer[13] = 0xcf; break;
-			case 3: Buffer[13] = 0xe8; Buffer[11] = AlienFX_A_Morph; break;
-			case 4: // No action
-				Buffer[11] = Buffer[12] = Buffer[13] = Buffer[14] = Buffer[15] = 0;
-				break;
-			}*/
 			return res;
 		} break;
 		case API_V2: {

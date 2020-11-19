@@ -18,6 +18,7 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"Version.lib")
+#pragma comment(lib,"comctl32.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -696,7 +697,7 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 
 #include <ColorDlg.h>
 #include <algorithm>
-Colorcode* mod;
+AlienFX_SDK::afx_act* mod;
 
 UINT_PTR Lpcchookproc(
     HWND hDlg,
@@ -712,7 +713,7 @@ UINT_PTR Lpcchookproc(
     switch (message)
     {
     case WM_INITDIALOG:
-        mod = (Colorcode*)((CHOOSECOLOR*)lParam)->lCustData;
+        mod = (AlienFX_SDK::afx_act*)((CHOOSECOLOR*)lParam)->lCustData;
         break;
     case WM_COMMAND:
         break;
@@ -720,10 +721,10 @@ UINT_PTR Lpcchookproc(
         r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
         g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
         b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
-        if (r != mod->cs.red || g != mod->cs.green || b != mod->cs.blue) {
-            mod->cs.red = r;
-            mod->cs.green = g;
-            mod->cs.blue = b;
+        if (r != mod->r || g != mod->g || b != mod->b) {
+            mod->r = r;
+            mod->g = g;
+            mod->b = b;
             // update lights....
             fxhl->RefreshState();
         }
@@ -732,11 +733,11 @@ UINT_PTR Lpcchookproc(
     return 0;
 }
 
-bool SetColor(HWND hDlg, int id, Colorcode* map) {
+bool SetColor(HWND hDlg, int id, AlienFX_SDK::afx_act* map) {
     CHOOSECOLOR cc;                 // common dialog box structure 
     bool ret;
 
-    unsigned savedColor = map->ci;
+    AlienFX_SDK::afx_act savedColor = *map;
 
     // Initialize CHOOSECOLOR 
     ZeroMemory(&cc, sizeof(cc));
@@ -745,46 +746,93 @@ bool SetColor(HWND hDlg, int id, Colorcode* map) {
     cc.lpfnHook = Lpcchookproc;
     cc.lCustData = (LPARAM) map;
     cc.lpCustColors = (LPDWORD)conf->customColors;
-    cc.rgbResult = RGB(map->cs.red, map->cs.green, map->cs.blue);
+    cc.rgbResult = RGB(map->r, map->g, map->b);
     cc.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK;
 
     if (!(ret = ChooseColor(&cc)))
     {
-        map->ci = savedColor;
-        RedrawButton(hDlg, id, map->cs.red, map->cs.green, map->cs.blue);
+        map->r = savedColor.r;
+        map->g = savedColor.g;
+        map->b = savedColor.b;
+        RedrawButton(hDlg, id, map->r, map->g, map->b);
     }
     return ret;
 }
 
-mapping* FindMapping(int did, int lid, int index)
+lightset* FindMapping(int did, int lid)
 {
     lightset *map = NULL;
-    mapping* mmap = NULL;
+    //mapping* mmap = NULL;
     for (int i = 0; i < conf->mappings.size(); i++)
         if (conf->mappings[i].devid == did && conf->mappings[i].lightid == lid) {
             map = &conf->mappings[i];
-            //mmap = &map->eve[0].map;
             break;
         }
-    if (map != NULL) {
-        mmap = &map->eve[index].map;
-        mmap->lightset = (void*)map;
-    }
-    return mmap;
+    return map;
 }
 
-int eLid = (-1), eDid = (-1), eItem = (-1), dItem = (-1);
+int eLid = (-1), eDid = (-1), eItem = (-1), dItem = (-1), effID = (-1);
+
+void RebuildEffectList(HWND eff_list, lightset* mmap) {
+    // Populate effects list...
+    ListView_DeleteAllItems(eff_list);
+    HIMAGELIST hSmall;
+    hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
+        GetSystemMetrics(SM_CYSMICON),
+        ILC_COLOR32/*ILC_MASK*/, 1, 1);
+    for (int i = 0; i < mmap->eve[0].map.size(); i++) {
+        UINT* picData = (UINT*)malloc(GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON) * sizeof(UINT));
+        for (int j = 0; j < GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON); j++)
+            picData[j] = RGB(mmap->eve[0].map[i].b, mmap->eve[0].map[i].g, mmap->eve[0].map[i].r);
+        HBITMAP colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+            1, 32, picData);
+        free(picData);
+        ImageList_Add(hSmall, colorBox, NULL);
+    }
+    ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
+    for (int i = 0; i < mmap->eve[0].map.size(); i++) {
+        LVITEMA lItem; char efName[100];
+        lItem.mask = LVIF_TEXT | LVIF_IMAGE;
+        lItem.iItem = i;
+        lItem.iImage = i;
+        lItem.iSubItem = 0;
+        switch (mmap->eve[0].map[i].type) {
+        case AlienFX_SDK::AlienFX_A_Color:
+            LoadString(hInst, IDS_TYPE_COLOR, efName, 100);
+            break;
+        case AlienFX_SDK::AlienFX_A_Pulse:
+            LoadString(hInst, IDS_TYPE_PULSE, efName, 100);
+            break;
+        case AlienFX_SDK::AlienFX_A_Morph:
+            LoadString(hInst, IDS_TYPE_MORPH, efName, 100);
+            break;
+        case AlienFX_SDK::AlienFX_A_Spectrum:
+            LoadString(hInst, IDS_TYPE_SPECTRUM, efName, 100);
+            break;
+        case AlienFX_SDK::AlienFX_A_Breathing:
+            LoadString(hInst, IDS_TYPE_BREATH, efName, 100);
+            break;
+        case AlienFX_SDK::AlienFX_A_Rainbow:
+            LoadString(hInst, IDS_TYPE_RAINBOW, efName, 100);
+            break;
+        }
+        lItem.pszText = efName;
+        ListView_InsertItem(eff_list, &lItem);
+    }
+    ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
+}
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS),
+        eff_list = GetDlgItem(hDlg, IDC_EFFECTS_LIST),
         s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
-        s2_slider = GetDlgItem(hDlg, IDC_SPEED2),
+        //s2_slider = GetDlgItem(hDlg, IDC_SPEED2),
         l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
-        l2_slider = GetDlgItem(hDlg, IDC_LENGTH2),
-        type_c1 = GetDlgItem(hDlg, IDC_TYPE1),
-        type_c2 = GetDlgItem(hDlg, IDC_TYPE2);
+        //l2_slider = GetDlgItem(hDlg, IDC_LENGTH2),
+        type_c1 = GetDlgItem(hDlg, IDC_TYPE1);// ,
+        //type_c2 = GetDlgItem(hDlg, IDC_TYPE2);
 
     switch (message)
     {
@@ -813,25 +861,23 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         char buffer[100];
         LoadString(hInst, IDS_TYPE_COLOR, buffer, 100);
         SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
-        SendMessage(type_c2, CB_ADDSTRING, 0, (LPARAM)buffer);
         LoadString(hInst, IDS_TYPE_PULSE, buffer, 100);
         SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
-        SendMessage(type_c2, CB_ADDSTRING, 0, (LPARAM)buffer);
         LoadString(hInst, IDS_TYPE_MORPH, buffer, 100);
         SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
-        SendMessage(type_c2, CB_ADDSTRING, 0, (LPARAM)buffer);
-        SendMessage(type_c1, CB_SETCURSEL, 0, 0);
-        SendMessage(type_c2, CB_SETCURSEL, 0, 0);
+        LoadString(hInst, IDS_TYPE_BREATH, buffer, 100);
+        SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_TYPE_SPECTRUM, buffer, 100);
+        SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+        LoadString(hInst, IDS_TYPE_RAINBOW, buffer, 100);
+        SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
         // now sliders...
         SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-        SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-        SendMessage(l2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         //TBM_SETTICFREQ
         SendMessage(s1_slider, TBM_SETTICFREQ, 32, 0);
-        SendMessage(s2_slider, TBM_SETTICFREQ, 32, 0);
         SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
-        SendMessage(l2_slider, TBM_SETTICFREQ, 32, 0);
+        // Restore selection....
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
@@ -839,10 +885,12 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     } break;
     case WM_COMMAND: {
         int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
-        int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-        int lType1 = (int)SendMessage(type_c1, CB_GETCURSEL, 0, 0);
-        int lType2 = (int)SendMessage(type_c2, CB_GETCURSEL, 0, 0);
-        mapping* mmap = FindMapping(pid, lid, 0);
+        int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0),
+          ceItem = (int)SendMessage(eff_list, LB_GETCURSEL, 0, 0),
+          ceid = (int)SendMessage(eff_list, LB_GETITEMDATA, ceItem, 0),
+          lType1 = (int)SendMessage(type_c1, CB_GETCURSEL, 0, 0);
+        //int lType2 = (int)SendMessage(type_c2, CB_GETCURSEL, 0, 0);
+        lightset* mmap = FindMapping(pid, lid);
         // BLOCK FOR COLORS
         switch (LOWORD(wParam))
         {
@@ -853,64 +901,108 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 eItem = lbItem;
                 if (mmap == NULL) {
                     lightset newmap;
+                    AlienFX_SDK::afx_act act;
                     newmap.devid = pid;
                     newmap.lightid = lid;
                     newmap.eve[0].fs.b.flags = 1;
-                    newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
+                    newmap.eve[0].map.push_back(act);
+                    if (!AlienFX_SDK::Functions::GetFlags(pid, lid))
+                        newmap.eve[0].map.push_back(act);
+                    newmap.eve[1].map.push_back(act);
+                    newmap.eve[1].map.push_back(act);
+                    newmap.eve[2].map.push_back(act);
+                    newmap.eve[2].map.push_back(act);
+                    newmap.eve[3].map.push_back(act);
+                    newmap.eve[3].map.push_back(act);
                     newmap.eve[3].fs.b.cut = 90;
                     conf->mappings.push_back(newmap);
                     std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
-                    mmap = FindMapping(pid, lid, 0);
+                    mmap = FindMapping(pid, lid);
                 }
+                // Populate effects list...
+                effID = 0;
+                RebuildEffectList(eff_list, mmap);
                 // Enable or disable controls
                 bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
+                if (!flag && mmap->eve[0].map.size() < 2) {
+                    AlienFX_SDK::afx_act act;
+                    mmap->eve[0].map.push_back(act);
+                }
                 EnableWindow(type_c1, flag);
-                EnableWindow(type_c2, flag);
+                //EnableWindow(type_c2, flag);
                 EnableWindow(s1_slider, flag);
-                EnableWindow(s2_slider, flag);
+                //EnableWindow(s2_slider, flag);
                 EnableWindow(l1_slider, flag);
-                EnableWindow(l2_slider, flag);
+                //EnableWindow(l2_slider, flag);
                 // Set data
-                SendMessage(type_c1, CB_SETCURSEL, mmap->mode, 0);
-                SendMessage(type_c2, CB_SETCURSEL, mmap->mode2, 0);
-                RedrawButton(hDlg, IDC_BUTTON_C1, mmap->c1.cs.red, mmap->c1.cs.green, mmap->c1.cs.blue);
-                RedrawButton(hDlg, IDC_BUTTON_C2, mmap->c2.cs.red, mmap->c2.cs.green, mmap->c2.cs.blue);
-                SendMessage(s1_slider, TBM_SETPOS, true, mmap->speed1);
-                SendMessage(s2_slider, TBM_SETPOS, true, mmap->speed2);
-                SendMessage(l1_slider, TBM_SETPOS, true, mmap->length1);
-                SendMessage(l2_slider, TBM_SETPOS, true, mmap->length2);
+                SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[0].type, 0);
+                //SendMessage(type_c2, CB_SETCURSEL, mmap->eve[0].map[1].type, 0);
+                RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[0].r, mmap->eve[0].map[0].g, mmap->eve[0].map[0].b);
+                //RedrawButton(hDlg, IDC_BUTTON_C2, mmap->eve[0].map[1].r, mmap->eve[0].map[1].g, mmap->eve[0].map[1].b);
+                SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[0].tempo);
+                //SendMessage(s2_slider, TBM_SETPOS, true, mmap->eve[0].map[1].tempo);
+                SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[0].time);
+                //SendMessage(l2_slider, TBM_SETPOS, true, mmap->eve[0].map[1].time);
                 break;
             } break;
         case IDC_TYPE1:
             if (HIWORD(wParam) == CBN_SELCHANGE) {
-                if (mmap != NULL)
-                    mmap->mode = lType1;
+                if (mmap != NULL) {
+                    mmap->eve[0].map[effID].type = lType1;
+                    RebuildEffectList(eff_list, mmap);
+                }
             }
             break;
-        case IDC_TYPE2:
+        /*case IDC_TYPE2:
             if (HIWORD(wParam) == CBN_SELCHANGE) {
                 if (mmap != NULL)
-                    mmap->mode2 = lType2;
+                    mmap->eve[0].map[1].type = lType2;
             }
-            break;
+            break;*/
         case IDC_BUTTON_C1:
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {
                 if (mmap != NULL) {
-                    SetColor(hDlg, IDC_BUTTON_C1, &mmap->c1);
+                    SetColor(hDlg, IDC_BUTTON_C1, &mmap->eve[0].map[effID]);
+                    RebuildEffectList(eff_list, mmap);
                 }
             } break;
             } break;
-        case IDC_BUTTON_C2:
+        /*case IDC_BUTTON_C2:
             switch (HIWORD(wParam))
             {
             case BN_CLICKED: {
                 if (mmap != NULL) {
-                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->c2);
+                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->eve[0].map[1]);
                 }
             } break;
-            } break;
+            } break;*/
+        case IDC_BUT_ADD_EFFECT:
+            if (HIWORD(wParam) == BN_CLICKED && mmap != NULL && !AlienFX_SDK::Functions::GetFlags(pid, lid) && mmap->eve[0].map.size() < 9) {
+                AlienFX_SDK::afx_act act;
+                mmap->eve[0].map.push_back(act);
+                RebuildEffectList(eff_list, mmap);
+            }
+            break;
+        case IDC_BUTT_REMOVE_EFFECT:
+            if (HIWORD(wParam) == BN_CLICKED && mmap != NULL && !AlienFX_SDK::Functions::GetFlags(pid, lid) && mmap->eve[0].map.size() > 1) {
+                mmap->eve[0].map.pop_back();
+                if (effID == mmap->eve[0].map.size()) {
+                    effID--;
+                    bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
+                    EnableWindow(type_c1, flag);
+                    EnableWindow(s1_slider, flag);
+                    EnableWindow(l1_slider, flag);
+                    // Set data
+                    SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
+                    RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
+                    SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
+                    SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
+                }
+                RebuildEffectList(eff_list, mmap);
+            }
+            break;
         case IDC_BUTTON_SETALL:
             switch (HIWORD(wParam))
             {
@@ -920,7 +1012,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                         MB_YESNO | MB_ICONWARNING) == IDYES) {
                     for (int i = 0; i < conf->mappings.size(); i++)
                         if (conf->mappings[i].devid == pid) {
-                            conf->mappings[i].eve[0] = ((lightset*)mmap->lightset)->eve[0];
+                            conf->mappings[i].eve[0] = mmap->eve[0];
                         }
                 }
             } break;
@@ -935,39 +1027,65 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         case TB_THUMBTRACK: case TB_ENDTRACK:
             int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
             int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-            mapping* mmap = FindMapping(pid, lid, 0);
+            lightset* mmap = FindMapping(pid, lid);
             if (mmap != NULL) {
                 if ((HWND)lParam == s1_slider) {
-                    mmap->speed1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    mmap->eve[0].map[effID].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                if ((HWND)lParam == s2_slider) {
-                    mmap->speed2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                }
+                /*if ((HWND)lParam == s2_slider) {
+                    mmap->eve[0].map[1].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }*/
                 if ((HWND)lParam == l1_slider) {
-                    mmap->length1 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    mmap->eve[0].map[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                if ((HWND)lParam == l2_slider) {
-                    mmap->length2 = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                }
+                /*if ((HWND)lParam == l2_slider) {
+                    mmap->eve[0].map[1].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                }*/
                 fxhl->Refresh();
             }
         break;
     } break;
     case WM_DRAWITEM:
         switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-        case IDC_BUTTON_C1: case IDC_BUTTON_C2:
-            Colorcode c; c.ci = 0;
+        case IDC_BUTTON_C1: //case IDC_BUTTON_C2:
+            AlienFX_SDK::afx_act c;
             if (eItem != -1) {
                 int lid = (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0);
-                mapping* map = FindMapping(pid, lid, 0);
+                lightset* map = FindMapping(pid, lid);
                 if (map != NULL) {
                     switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-                    case IDC_BUTTON_C1: c = map->c1; break;
-                    case IDC_BUTTON_C2: c = map->c2; break;
+                    case IDC_BUTTON_C1: c = map->eve[0].map[effID]; break;
+                    //case IDC_BUTTON_C2: c = map->eve[0].map[1]; break;
                     }
                 }
             }
-            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.cs.red, c.cs.green, c.cs.blue);
+            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.r, c.g, c.b);
+            break;
+        }
+        break;
+    case WM_NOTIFY:
+        switch (((NMHDR*)lParam)->idFrom) {
+        case IDC_EFFECTS_LIST:
+            int code = ((NMHDR*)lParam)->code;
+            if (((NMHDR*)lParam)->code == NM_CLICK) {
+                NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
+                // Select other color....
+                effID = sItem->iItem;
+                int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
+                int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+                lightset* mmap = FindMapping(pid, lid);
+                if (mmap != NULL) {
+                    bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
+                    EnableWindow(type_c1, flag);
+                    EnableWindow(s1_slider, flag);
+                    EnableWindow(l1_slider, flag);
+                    // Set data
+                    SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
+                    RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
+                    SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
+                    SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
+                }
+            }
             break;
         }
         break;
@@ -1054,10 +1172,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0),
             countid = (int)SendMessage(list_counter, CB_GETCURSEL, 0, 0),
             statusid = (int)SendMessage(list_status, CB_GETCURSEL, 0, 0);
-        mapping* mmap = FindMapping(pid, lid, 1);
-        lightset* map = NULL;
-        if (mmap != NULL)
-            map = (lightset*)mmap->lightset;
+        lightset* map = FindMapping(pid, lid);
         switch (LOWORD(wParam))
         {
         case IDC_LIGHTS_E: // should reload mappings
@@ -1065,16 +1180,23 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case LBN_SELCHANGE:
                 eItem = lbItem;
-                if (mmap == NULL) {
+                if (map == NULL) {
                     lightset newmap;
+                    AlienFX_SDK::afx_act act;
                     newmap.devid = pid;
                     newmap.lightid = lid;
                     newmap.eve[0].fs.b.flags = 0;
-                    newmap.eve[0].map.c1.ci = newmap.eve[0].map.c2.ci = 0;
+                    newmap.eve[0].map.push_back(act);
+                    newmap.eve[1].map.push_back(act);
+                    newmap.eve[1].map.push_back(act);
+                    newmap.eve[2].map.push_back(act);
+                    newmap.eve[2].map.push_back(act);
+                    newmap.eve[3].map.push_back(act);
+                    newmap.eve[3].map.push_back(act);
                     newmap.eve[3].fs.b.cut = 90;
                     conf->mappings.push_back(newmap);
                     std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
-                    mmap = FindMapping(pid, lid, 0);
+                    map = FindMapping(pid, lid);
                 }
 
                 for (int i = 0; i < 4; i++) {
@@ -1090,10 +1212,10 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     } break;
                     }
                     if (i > 0) {
-                        RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map.c1.cs.red,
-                            map->eve[i].map.c1.cs.green, map->eve[i].map.c1.cs.blue);
-                        RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, map->eve[i].map.c2.cs.red,
-                            map->eve[i].map.c2.cs.green, map->eve[i].map.c2.cs.blue);
+                        RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map[0].r,
+                            map->eve[i].map[0].g, map->eve[i].map[0].b);
+                        RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, map->eve[i].map[1].r,
+                            map->eve[i].map[1].g, map->eve[i].map[1].b);
                         }
                 }
                 SendMessage(list_counter, CB_SETCURSEL, map->eve[2].source, 0);
@@ -1117,7 +1239,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case BN_CLICKED:
                 if (map != NULL) {
-                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c1);
+                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map[0]);
                 }
                 break;
             }
@@ -1128,7 +1250,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case BN_CLICKED:
                 if (map != NULL) {
-                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map.c2);
+                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map[1]);
                 }
                 break;
             }
@@ -1137,7 +1259,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE:
-                if (mmap != NULL) {
+                if (map != NULL) {
                     map->eve[2].source = countid;
                 }
                 break;
@@ -1147,7 +1269,7 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE:
-                if (mmap != NULL) {
+                if (map != NULL) {
                     map->eve[3].source = statusid;
                 }
                 break;
@@ -1161,25 +1283,25 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
         case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: {
             int cid = ((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM1 + 1;
-            Colorcode c; c.ci = 0;
+            AlienFX_SDK::afx_act c;
             if (eItem != -1) {
                 int lid = (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0);
-                mapping* map = FindMapping(pid, lid, cid);
+                lightset* map = FindMapping(pid, lid);
                 if (map != NULL)
-                    c = map->c1;
+                    c = map->eve[cid].map[0];
             }
-            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.cs.red, c.cs.green, c.cs.blue);
+            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.r, c.g, c.b);
         } break;
         case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
             int cid = ((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM4 + 1;
-            Colorcode c; c.ci = 0;
+            AlienFX_SDK::afx_act c;
             if (eItem != -1) {
                 int lid = (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0);
-                mapping* map = FindMapping(pid, lid, cid);
+                lightset* map = FindMapping(pid, lid);
                 if (map != NULL)
-                    c = map->c2;
+                    c = map->eve[cid].map[1];
             }
-            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.cs.red, c.cs.green, c.cs.blue);
+            RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c.r, c.g, c.b);
         } break;
         }
         break;
@@ -1189,16 +1311,13 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         case TB_THUMBTRACK: case TB_ENDTRACK:
             int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
             int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-            mapping* mmap = FindMapping(pid, lid, 0);
-            lightset* map = NULL;
-            if (mmap != NULL)
-                map = (lightset*)mmap->lightset;
-            if (mmap != NULL) {
+            lightset* map = FindMapping(pid, lid);
+            if (map != NULL) {
                 if ((HWND)lParam == s1_slider) {
-                    map->eve[2].fs.b.cut = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    map->eve[2].fs.b.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
                 if ((HWND)lParam == s2_slider) {
-                    map->eve[3].fs.b.cut = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    map->eve[3].fs.b.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
                 fxhl->Refresh();
             }
@@ -1427,7 +1546,14 @@ BOOL TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
         case IDC_BUTTON_TESTCOLOR: {
-            SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
+            AlienFX_SDK::afx_act c;
+            c.r = conf->testColor.cs.red;
+            c.g = conf->testColor.cs.green;
+            c.b = conf->testColor.cs.blue;
+            SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &c);
+            conf->testColor.cs.red = c.r;
+            conf->testColor.cs.green = c.g;
+            conf->testColor.cs.blue = c.b;
             if (lid != -1) {
                 eve->StopEvents();
                 SetFocus(light_list);
@@ -1486,37 +1612,6 @@ BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         profile* cur = FindProfile(pRid);
         if (cur != NULL)
             SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(cur->triggerapp.c_str()));
-
-        /*DWORD aProcesses[1024], cbNeeded, cProcesses;
-        unsigned int i;
-
-        if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
-        {
-            cProcesses = cbNeeded / sizeof(DWORD);
-            for (i = 0; i < cProcesses; i++)
-            {
-                if (aProcesses[i] != 0)
-                {
-                    TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
-                    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-                        PROCESS_VM_READ,
-                        FALSE, aProcesses[i]);
-                    if (NULL != hProcess)
-                    {
-                        HMODULE hMod;
-                        DWORD cbNeeded;
-
-                        if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
-                            &cbNeeded))
-                        {
-                            /*GetModuleBaseName*//*GetModuleFileNameEx(hProcess, hMod, szProcessName,
-                                sizeof(szProcessName) / sizeof(TCHAR));
-                            SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(szProcessName));
-                        }
-                    }
-                }
-            }
-        }*/
 
     } break;
     case WM_COMMAND:
@@ -1577,7 +1672,7 @@ BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (prof != NULL) {
                 prof->flags = (prof->flags & 1) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
                 if (prof->id == conf->activeProfile) {
-                    bool oldState = conf->monState;
+                    DWORD oldState = conf->monState;
                     conf->monState = prof->flags & 0x2 ? 0 : conf->enableMon;
                     if (oldState != conf->monState)
                         eve->ToggleEvents();

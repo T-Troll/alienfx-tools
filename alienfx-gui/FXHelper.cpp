@@ -4,6 +4,7 @@
 FXHelper::FXHelper(ConfigHandler* conf) {
 	config = conf;
 	devList = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+	AlienFX_SDK::Functions::LoadMappings();
 	pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
 	if (pid != -1)
 	{
@@ -12,7 +13,6 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 			Sleep(20);
 		if (count == 5)
 			AlienFX_SDK::Functions::Reset(0);
-		AlienFX_SDK::Functions::LoadMappings();
 	}
 };
 FXHelper::~FXHelper() {
@@ -60,8 +60,9 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		if (Iter->devid == pid 
 		&& (Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 			&& (lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) != (-1)) {
-			Colorcode fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map.c1 : Iter->eve[2].fs.b.flags ?
-				Iter->eve[2].map.c1 : Iter->eve[3].map.c1;
+			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map[0] : Iter->eve[2].fs.b.flags ?
+				Iter->eve[2].map[0] : Iter->eve[3].map[0];
+			fin.type = 0;
 			if (Iter->eve[2].fs.b.flags) {
 				// counter
 				double coeff = 0.0, ccut = Iter->eve[2].fs.b.cut;
@@ -75,9 +76,9 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 6: if (!force && (lBatt == cBatt || lBatt < ccut && cBatt < ccut)) continue; coeff = cBatt; break;
 				}
 				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
-				fin.cs.red = fin.cs.red * (1 - coeff) + Iter->eve[2].map.c2.cs.red * coeff;
-				fin.cs.green = fin.cs.green * (1 - coeff) + Iter->eve[2].map.c2.cs.green * coeff;
-				fin.cs.blue = fin.cs.blue * (1 - coeff) + Iter->eve[2].map.c2.cs.blue * coeff;
+				fin.r = fin.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff;
+				fin.g = fin.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff;
+				fin.b = fin.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff;
 			}
 			if (Iter->eve[3].fs.b.flags) {
 				// indicator
@@ -96,70 +97,65 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				}
 				fin = indi > 0 ? 
 						blink ?
-							bStage ? Iter->eve[3].map.c2 : fin 
-							: Iter->eve[3].map.c2 
+							bStage ? Iter->eve[3].map[1] : fin 
+							: Iter->eve[3].map[1]
 						: fin;
 			}
 			wasChanged = true;
+			std::vector<AlienFX_SDK::afx_act> actions;
 			if (lFlags)
-				if (activeMode != MODE_AC && activeMode != MODE_CHARGE)
-					SetLight(Iter->lightid, lFlags, 0, 0, 0, Iter->eve[0].map.c1.cs.red, Iter->eve[0].map.c1.cs.green, Iter->eve[0].map.c1.cs.blue,
-						0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue, force);
-				else
-					SetLight(Iter->lightid, lFlags, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
-						0, 0, 0, Iter->eve[0].map.c2.cs.red, Iter->eve[0].map.c2.cs.green, Iter->eve[0].map.c2.cs.blue, force);
+				if (activeMode != MODE_AC && activeMode != MODE_CHARGE) {
+					actions.push_back(Iter->eve[0].map[0]);
+					actions.push_back(fin);
+				}
+				else {
+					actions.push_back(fin);
+					actions.push_back(Iter->eve[0].map.size() > 1 ? Iter->eve[0].map[1] : Iter->eve[0].map[0]);
+				}
 			else
-				SetLight(Iter->lightid, lFlags, 0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue,
-					0, 0, 0, fin.cs.red, fin.cs.green, fin.cs.blue);
+				actions.push_back(fin);
+			SetLight(Iter->lightid, lFlags, actions, force);
 		}
 	if (wasChanged)
-		//Refresh(false, false);
 		AlienFX_SDK::Functions::UpdateColors();
 	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
 }
 
-void FXHelper::SetLight(int id, bool power, BYTE mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b, 
-	BYTE mode2, BYTE length2, BYTE speed2, BYTE r2, BYTE g2, BYTE b2, bool force)
+void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force)// mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b,
+	//BYTE mode2, BYTE length2, BYTE speed2, BYTE r2, BYTE g2, BYTE b2, bool force)
 {
 	// modify colors for dimmed...
 	const unsigned delta = 256 - config->dimmingPower;
 
 	if (config->lightsOn && config->stateOn) {
-		if (config->dimmed ||
-			(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
-			/*r = r < delta ? 0 : r - delta;
-			g = g < delta ? 0 : g - delta;
-			b = b < delta ? 0 : b - delta;
-			r2 = r2 < delta ? 0 : r2 - delta;
-			g2 = g2 < delta ? 0 : g2 - delta;
-			b2 = b2 < delta ? 0 : b2 - delta;*/
-			r = (r * delta) >> 8;
-			g = (g * delta) >> 8;
-			b = (b * delta) >> 8;
-			r2 = (r2 * delta) >> 8;
-			g2 = (g2 * delta) >> 8;
-			b2 = (b2 * delta) >> 8;
+		for (int i = 0; i < actions.size(); i++) {
+			if (config->dimmed ||
+				(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
+				actions[i].r = (actions[i].r * delta) >> 8;
+				actions[i].g = (actions[i].g * delta) >> 8;
+				actions[i].b = (actions[i].b * delta) >> 8;
+				/*r2 = (r2 * delta) >> 8;
+				g2 = (g2 * delta) >> 8;
+				b2 = (b2 * delta) >> 8;*/
+			}
+			// gamma-correction...
+			if (config->gammaCorrection) {
+				actions[i].r = (actions[i].r * actions[i].r) >> 8;
+				actions[i].g = (actions[i].g * actions[i].g) >> 8;
+				actions[i].b = (actions[i].b * actions[i].b) >> 8;
+				/*r2 = (r2 * r2) >> 8;
+				g2 = (g2 * g2) >> 8;
+				b2 = (b2 * b2) >> 8;*/
+			}
 		}
-		// gamma-correction...
-		if (config->gammaCorrection) {
-			r = (r * r) >> 8;
-			g = (g * g) >> 8;
-			b = (b * b) >> 8;
-			r2 = (r2 * r2) >> 8;
-			g2 = (g2 * g2) >> 8;
-			b2 = (b2 * b2) >> 8;
-		}
-
-		if (power)
-			AlienFX_SDK::Functions::SetPowerAction(id, r, g, b, r2, g2, b2, force);
+		if (power && actions.size() > 1)
+			AlienFX_SDK::Functions::SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
+				actions[1].r, actions[1].g, actions[1].b, force);
 		else 
-			if (mode1 == 0 && mode2 == 0)
-				AlienFX_SDK::Functions::SetColor(id, r, g, b);
+			if (actions[0].type == 0)
+				AlienFX_SDK::Functions::SetColor(id, actions[0].r, actions[0].g, actions[0].b);
 			else {
-				std::vector<AlienFX_SDK::afx_act> act;
-				act.push_back(AlienFX_SDK::afx_act{ mode1, length1, speed1, r, g, b });
-				act.push_back(AlienFX_SDK::afx_act{ mode2, length2, speed2, r2, g2, b2 });
-				AlienFX_SDK::Functions::SetAction(id,act);
+				AlienFX_SDK::Functions::SetAction(id,actions);
 			}
 	}
 	else {
@@ -185,40 +181,40 @@ int FXHelper::Refresh(bool forced)
 	for (int i = 0; i < 15 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
 	int lFlags = 0;
+	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
 		if (Iter->devid == pid && (!(lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) || forced)) {
-			Colorcode c1 = Iter->eve[0].map.c1, c2 = Iter->eve[0].map.c2;
-			int mode1 = Iter->eve[0].map.mode, mode2 = Iter->eve[0].map.mode2;
+			actions = Iter->eve[0].map;
 			if (config->enableMon && !forced) {
-				if (!Iter->eve[0].fs.b.flags) {
+				/*if (!Iter->eve[0].fs.b.flags) {
 					c1.ci = 0; c2.ci = 0;
-				}
+				}*/
 				if (Iter->eve[1].fs.b.flags) {
 					// use power event;
-					c2 = Iter->eve[1].map.c2;
-					c1 = Iter->eve[1].map.c1;
+					if (!Iter->eve[0].fs.b.flags)
+						actions = Iter->eve[1].map;
+					else
+						if (actions.size() < 2)
+							actions.push_back(Iter->eve[1].map[1]);
 					switch (activeMode) {
-					case MODE_AC: if (Iter->eve[0].fs.b.flags) {
-						c1 = Iter->eve[0].map.c1; c2 = Iter->eve[0].map.c2;
-					}
-								else {
-						mode1 = mode2 = 0; //c1 = Iter->eve[1].map.c1;
-					} break;
-					case MODE_BAT: mode1 = mode2 = 0; c1 = c2; break;
-					case MODE_LOW: mode1 = mode2 = 1; c1 = c2; break;
-					case MODE_CHARGE: mode1 = mode2 = 2; /*c1 = Iter->eve[0].map.c1;*/ break;
+					case MODE_BAT:
+						action = actions[0]; actions[0] = actions[1]; actions[1] = action;
+						actions[0].type = 0;
+						break;
+					case MODE_LOW:
+						action = actions[0]; actions[0] = actions[1]; actions[1] = action;
+						actions[0].type = actions[1].type = 1;
+						break;
+					case MODE_CHARGE: 
+						actions[0].type = actions[1].type = 2; 
+						break;
 					}
 				}
 				if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 					&& config->lightsOn && config->stateOn) continue;
 			}
-			SetLight(Iter->lightid, lFlags,
-				mode1, Iter->eve[0].map.length1, Iter->eve[0].map.speed1, c1.cs.red, c1.cs.green, c1.cs.blue,
-				mode2, Iter->eve[0].map.length2, Iter->eve[0].map.speed2, c2.cs.red, c2.cs.green, c2.cs.blue,
-				forced
-			);
+			SetLight(Iter->lightid, lFlags, actions, forced);
 		}
-		//UpdateLight(&config->mappings[i], false);	
 	}
 	AlienFX_SDK::Functions::UpdateColors();
 	return 0;

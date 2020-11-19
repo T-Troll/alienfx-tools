@@ -20,8 +20,8 @@ void printUsage()
 		<< "set-all\t\tr,g,b[,br] - set all device lights." << endl
 		<< "set-one\t\tdev,light,r,g,b[,br] - set one light." << endl
 		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
-		<< "set-action\taction,dev,light,r,g,b[,br,action,r,g,b[,br]] - set light and enable it's action." << endl
-		<< "set-zone-action\taction,zone,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
+		<< "set-action\tdev,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action." << endl
+		<< "set-zone-action\tzone,action,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
 		<< "set-power\tlight,r,g,b,r2,g2,b2 - set power button colors (low-level only)." << endl
 		<< "set-tempo\ttempo - set light action tempo (in milliseconds)." << endl
 		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
@@ -30,15 +30,16 @@ void printUsage()
 		<< "update\t\tupdates light status (for looped commands or old devices)." << endl
 		<< "reset\t\treset device state." << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
-		<< "Zones: left, right, top, bottom, front, rear." << endl
-		<< "Actions: pulse, morph (you need 2 colors for morph), color (disable action)." << endl;
+		<< "Zones:\tleft, right, top, bottom, front, rear." << endl
+		<< "Actions:color (disable action), pulse, morph (you need 2 colors for morph)," << endl
+		<< "\t(only for low-level) breath, spectrum (up to 9 colors), rainbow (up to 9 colors)." << endl;
 }
 
 int main(int argc, char* argv[])
 {
 	bool low_level = true;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v0.9.8" << endl;
+	cerr << "alienfx-cli v0.9.9" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -187,6 +188,9 @@ int main(int argc, char* argv[])
 			color.cs.blue = atoi(args.at(2).c_str());
 			color.cs.brightness = args.size() > 3 ? atoi(args.at(3).c_str()) : 255;
 			if (low_level) {
+				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
+				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
+				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
 				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
 					if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == isInit &&
 						!AlienFX_SDK::Functions::GetMappings()->at(i).flags)
@@ -212,9 +216,11 @@ int main(int argc, char* argv[])
 			color.cs.blue = atoi(args.at(2).c_str());
 			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
 			if (low_level) {
+				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
+				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
+				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
 				AlienFX_SDK::Functions::SetColor(atoi(args.at(1).c_str()),
 					color.cs.blue, color.cs.green, color.cs.red);
-				//AlienFX_SDK::Functions::UpdateColors();
 			}
 			else {
 				lfxUtil.SetOneLFXColor(atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &color.ci);
@@ -280,8 +286,6 @@ int main(int argc, char* argv[])
 					color2.cs.red, color2.cs.green, color2.cs.blue);
 			}
 			else {
-			//	lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
-			//	lfxUtil.Update();
 				cerr << "High-level API doesn't support set-power!" << endl;
 			}
 			continue;
@@ -292,40 +296,54 @@ int main(int argc, char* argv[])
 				continue;
 			}
 			unsigned actionCode = LFX_ACTION_COLOR;
-			BYTE action_low = AlienFX_SDK::Action::AlienFX_A_Color, action_low_2 = AlienFX_SDK::Action::AlienFX_A_Color;
-			if (args.at(0) == "pulse") {
-				actionCode = LFX_ACTION_PULSE;
-				action_low = AlienFX_SDK::Action::AlienFX_A_Pulse;
-			}
-			else if (args.at(0) == "morph") {
-				actionCode = LFX_ACTION_MORPH;
-				action_low = AlienFX_SDK::Action::AlienFX_A_Morph;
-			}
-			static ColorU color, color2;
-			color.cs.red = atoi(args.at(5).c_str());
-			color.cs.green = atoi(args.at(4).c_str());
-			color.cs.blue = atoi(args.at(3).c_str());
-			color.cs.brightness = args.size() > 6 ? atoi(args.at(6).c_str()) : 255;
-			if (args.size() > 7) {
-				if (args.at(7) == "pulse") {
-					action_low_2 = AlienFX_SDK::Action::AlienFX_A_Pulse;
+			std::vector<AlienFX_SDK::afx_act> act;
+			std::vector<ColorU> clrs;
+			int argPos = 2;
+			while (argPos < args.size()) {
+				AlienFX_SDK::afx_act c_act;
+				ColorU c;
+				if (args.at(argPos) == "pulse") {
+					actionCode = LFX_ACTION_PULSE;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Pulse;
 				}
-				else if (args.at(7) == "morph") {
-					action_low_2 = AlienFX_SDK::Action::AlienFX_A_Morph;
+				else if (args.at(argPos) == "morph") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Morph;
 				}
-				color2.cs.red = atoi(args.at(10).c_str());
-				color2.cs.green = atoi(args.at(9).c_str());
-				color2.cs.blue = atoi(args.at(8).c_str());
-				color2.cs.brightness = args.size() > 11 ? atoi(args.at(11).c_str()) : 255;
+				else if (args.at(argPos) == "breath") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Breathing;
+				}
+				else if (args.at(argPos) == "spectrum") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Spectrum;
+				}
+				else if (args.at(argPos) == "rainbow") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Rainbow;
+				}
+				c.cs.blue = c_act.r = atoi(args.at(argPos+1).c_str());
+				c.cs.green = c_act.g = atoi(args.at(argPos + 2).c_str());
+				c.cs.red = c_act.b = atoi(args.at(argPos + 3).c_str());
+				c.cs.brightness = argPos + 4 < args.size() ? atoi(args.at(argPos + 4).c_str()) : 255;
+				c_act.tempo = 7;
+				c_act.time = sleepy;
+				c_act.r = (c_act.r * c.cs.brightness) >> 8;
+				c_act.g = (c_act.g * c.cs.brightness) >> 8;
+				c_act.b = (c_act.b * c.cs.brightness) >> 8;
+				act.push_back(c_act);
+				clrs.push_back(c);
+				argPos += 5;
 			}
 			if (low_level) {
-				std::vector<AlienFX_SDK::afx_act> act;
-				act.push_back(AlienFX_SDK::afx_act{ action_low, 7, (BYTE)sleepy, color.cs.blue, color.cs.green, color.cs.red });
-				act.push_back(AlienFX_SDK::afx_act{ action_low_2, 7, (BYTE)sleepy, color2.cs.blue, color2.cs.green, color2.cs.red });
-				AlienFX_SDK::Functions::SetAction(atoi(args.at(2).c_str()), act);
+				AlienFX_SDK::Functions::SetAction(atoi(args.at(1).c_str()), act);
 			}
 			else {
-				lfxUtil.SetLFXAction(actionCode, atoi(args.at(1).c_str()), atoi(args.at(2).c_str()), &color.ci, &color2.ci);
+				if (clrs.size() < 2) {
+					ColorU c;
+					clrs.push_back(c);
+				}
+				lfxUtil.SetLFXAction(actionCode, atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &clrs[0].ci, &clrs[1].ci);
 				lfxUtil.Update();
 			}
 			continue;
@@ -336,28 +354,28 @@ int main(int argc, char* argv[])
 				continue;
 			}
 			unsigned actionCode = LFX_ACTION_COLOR;
-			if (args.at(0) == "pulse")
+			if (args.at(1) == "pulse")
 				actionCode = LFX_ACTION_PULSE;
-			else if (args.at(0) == "morph")
+			else if (args.at(1) == "morph")
 				actionCode = LFX_ACTION_MORPH;
 			static ColorU color, color2;
 			unsigned zoneCode = LFX_ALL;
-			if (args.at(1) == "left") {
+			if (args.at(0) == "left") {
 				zoneCode = LFX_ALL_LEFT;
 			}
-			if (args.at(1) == "right") {
+			if (args.at(0) == "right") {
 				zoneCode = LFX_ALL_RIGHT;
 			}
-			if (args.at(1) == "top") {
+			if (args.at(0) == "top") {
 				zoneCode = LFX_ALL_UPPER;
 			}
-			if (args.at(1) == "bottom") {
+			if (args.at(0) == "bottom") {
 				zoneCode = LFX_ALL_LOWER;
 			}
-			if (args.at(1) == "front") {
+			if (args.at(0) == "front") {
 				zoneCode = LFX_ALL_FRONT;
 			}
-			if (args.at(1) == "rear") {
+			if (args.at(0) == "rear") {
 				zoneCode = LFX_ALL_REAR;
 			}
 			color.cs.red = atoi(args.at(2).c_str());
