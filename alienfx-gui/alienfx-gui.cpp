@@ -335,14 +335,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
         OnSelChanged(tab_list);
 
-        if (conf->profiles.size() == 0) {
+        /*if (conf->profiles.size() == 0) {
             std::string dname = "Default";
             int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
             SendMessage(profile_list, CB_SETITEMDATA, pos, 0);
             SendMessage(profile_list, CB_SETCURSEL, pos, 0);
             pRid = 0; pRitem = pos;
         }
-        else {
+        else {*/
             for (int i = 0; i < conf->profiles.size(); i++) {
                 int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
                 SendMessage(profile_list, CB_SETITEMDATA, pos, conf->profiles[i].id);
@@ -351,7 +351,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     pRid = conf->activeProfile; pRitem = pos;
                 }
             }
-        }
+        //}
 
         // tray icon...
         ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
@@ -479,9 +479,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     conf->mappings = prof->lightsets;
                     conf->activeProfile = prid;
                     // Reload lighs list at colors and events.
-                    OnSelChanged(tab_list);
                     pRitem = pbItem; pRid = prid;
                     conf->monState = prof->flags & 0x2 ? 0 : conf->enableMon;
+                    OnSelChanged(tab_list);
                     eve->StartEvents();
                     //fxhl->RefreshState();
                 }
@@ -498,6 +498,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 SendMessage(profile_list, CB_DELETESTRING, pRitem, 0);
                 SendMessage(profile_list, CB_INSERTSTRING, pRitem, (LPARAM)(buffer));
                 SendMessage(profile_list, CB_SETITEMDATA, pRitem, (LPARAM)pRid);
+                //SendMessage(profile_list, CB_SETCURSEL, pRitem, 0);
+                OnSelChanged(tab_list);
                 delete buffer;
             } break;
             } 
@@ -519,6 +521,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             SendMessage(profile_list, CB_SETITEMDATA, pos, vacID);
             SendMessage(profile_list, CB_SETCURSEL, pos, 0);
             pRid = conf->activeProfile = vacID; pRitem = pos;
+            OnSelChanged(tab_list);
         } break;
         case IDC_REMOVEPROFILE: {
             if (conf->profiles.size() > 1 && MessageBox(hDlg, "Do you really want to remove current profile and all settings for it?", "Warning!",
@@ -531,9 +534,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     }
                 // now delete from list and reselect
                 SendMessage(profile_list, CB_DELETESTRING, pRitem, 0);
-                pRitem = pRitem > 0 ? pRitem - 1 : 0;
-                SendMessage(profile_list, CB_SETCURSEL, pRitem, 0);
-                pRid = (int)SendMessage(profile_list, CB_GETITEMDATA, pRitem, 0);
+                //pRitem = pRitem > 0 ? pRitem - 1 : 0;
+                SendMessage(profile_list, CB_SETCURSEL, 0, 0);
+                pRid = (int)SendMessage(profile_list, CB_GETITEMDATA, 0, 0);
                 conf->activeProfile = pRid;
                 // Reload mappings...
                 profile* prof = FindProfile(pRid);
@@ -1603,7 +1606,6 @@ BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             SendMessage(profile_list, LB_SETITEMDATA, pos, conf->profiles[i].id);
             if (conf->profiles[i].id == conf->activeProfile) {
                 SendMessage(profile_list, LB_SETCURSEL, pos, 0);
-                pRid = conf->activeProfile; pRitem = pos;
                 if (conf->profiles[i].flags & 0x1) CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
                 if (conf->profiles[i].flags & 0x2) CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_CHECKED);
             }
@@ -1631,8 +1633,6 @@ BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & 0x2 ? BST_CHECKED : BST_UNCHECKED);
                     SendMessage(app_list, LB_RESETCONTENT, 0, 0);
                     SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(prof->triggerapp.c_str()));
-                    pRitem = pbItem; pRid = prid;
-
                 }
             } break;
             } break;

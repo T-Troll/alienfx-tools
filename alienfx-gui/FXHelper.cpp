@@ -155,7 +155,7 @@ void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> ac
 			if (actions[0].type == 0)
 				AlienFX_SDK::Functions::SetColor(id, actions[0].r, actions[0].g, actions[0].b);
 			else {
-				AlienFX_SDK::Functions::SetAction(id,actions);
+				AlienFX_SDK::Functions::SetAction(id, actions);
 			}
 	}
 	else {
@@ -185,7 +185,7 @@ int FXHelper::Refresh(bool forced)
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
 		if (Iter->devid == pid && (!(lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) || forced)) {
 			actions = Iter->eve[0].map;
-			if (config->enableMon && !forced) {
+			if (config->monState && !forced) {
 				/*if (!Iter->eve[0].fs.b.flags) {
 					c1.ci = 0; c2.ci = 0;
 				}*/

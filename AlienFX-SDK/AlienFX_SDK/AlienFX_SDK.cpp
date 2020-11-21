@@ -484,45 +484,49 @@ namespace AlienFX_SDK
 		// 00 03 24 02 02 82 00 0f x3rgb(!) x3(!) - last one only 1 color.
 		// 00 03 24 02 01 ac 00 0f x3rgb x3
 		byte Buffer[] = { 0x00, 0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0x32 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x64 , 0x00
-		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
+		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00, 0x00 };
 		byte Buffer2[] = { 0x00, 0x03 ,0x23 ,0x01 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 				, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		switch (length) {
 		case API_V3: { // only supported at new devices
 			if (!inSet) Reset(false);
-			Buffer2[6] = index;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
 			int bPos = 3, res = 0;
-			for (int ca = 0; ca < act.size(); ca++) {
-				// 3 actions per record..
-				Buffer[bPos] = act[ca].type < AlienFX_A_Breathing ? act[ca].type : AlienFX_A_Morph;
-				Buffer[bPos + 1] = act[ca].time;
-				Buffer[bPos + 3] = 0;
-				Buffer[bPos + 4] = act[ca].tempo;
-				Buffer[bPos + 5] = act[ca].r;
-				Buffer[bPos + 6] = act[ca].g;
-				Buffer[bPos + 7] = act[ca].b;
-				switch (act[ca].type) {
-				case AlienFX_A_Color: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa; break;
-				case AlienFX_A_Pulse: Buffer[bPos + 2] = 0xdc; break;
-				case AlienFX_A_Morph: Buffer[bPos + 2] = 0xcf; break;
-				case AlienFX_A_Breathing: Buffer[bPos + 2] = 0xdc; break;
-				case AlienFX_A_Spectrum: Buffer[bPos + 2] = 0x82; break;
-				case AlienFX_A_Rainbow: Buffer[bPos + 2] = 0xac; break;
-				case AlienFX_A_Power: Buffer[bPos + 2] = 0xe8; break;
-				default: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa; Buffer[bPos] = AlienFX_A_Color;
+			if (act.size() > 0) {
+				Buffer2[6] = index;
+				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer2, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				Loop();				
+				for (int ca = 0; ca < act.size(); ca++) {
+					// 3 actions per record..
+					Buffer[bPos] = act[ca].type < AlienFX_A_Breathing ? act[ca].type : AlienFX_A_Morph;
+					Buffer[bPos + 1] = act[ca].time;
+					Buffer[bPos + 3] = 0;
+					Buffer[bPos + 4] = act[ca].tempo;
+					Buffer[bPos + 5] = act[ca].r;
+					Buffer[bPos + 6] = act[ca].g;
+					Buffer[bPos + 7] = act[ca].b;
+					switch (act[ca].type) {
+					case AlienFX_A_Color: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa; break;
+					case AlienFX_A_Pulse: Buffer[bPos + 2] = 0xdc; break;
+					case AlienFX_A_Morph: Buffer[bPos + 2] = 0xcf; break;
+					case AlienFX_A_Breathing: Buffer[bPos + 2] = 0xdc; break;
+					case AlienFX_A_Spectrum: Buffer[bPos + 2] = 0x82; break;
+					case AlienFX_A_Rainbow: Buffer[bPos + 2] = 0xac; break;
+					case AlienFX_A_Power: Buffer[bPos + 2] = 0xe8; break;
+					default: Buffer[bPos + 2] = 0xd0; Buffer[bPos + 4] = 0xfa; Buffer[bPos] = AlienFX_A_Color;
+					}
+					bPos += 8;
+					if (bPos == 27) {
+						res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+						Loop();
+						// clean buffer....
+						ZeroMemory(Buffer + 3, 31);
+						bPos = 3;
+					}
 				}
-				bPos += 8;
-				if (bPos > 34) {
+				if (bPos != 3) {
 					res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 					Loop();
-					bPos = 3;
 				}
-			}
-			if (bPos != 3) {
-				res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-				Loop();
 			}
 			return res;
 		} break;
