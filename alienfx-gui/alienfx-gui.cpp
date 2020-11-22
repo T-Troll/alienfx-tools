@@ -244,6 +244,7 @@ DLGTEMPLATE* DoLockDlgRes(LPCTSTR lpszResName)
 }
 
 int tabSel = (-1);
+bool wasNullTab = false;
 
 VOID OnSelChanged(HWND hwndDlg)
 {
@@ -256,8 +257,11 @@ VOID OnSelChanged(HWND hwndDlg)
     tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
 
     // Destroy the current child dialog box, if any. 
-    if (pHdr->hwndDisplay != NULL)
+    if (pHdr->hwndDisplay != NULL) {
+        EndDialog(pHdr->hwndDisplay, IDOK);
         DestroyWindow(pHdr->hwndDisplay);
+        pHdr->hwndDisplay = NULL;
+    }
     DLGPROC tdl = NULL;
     switch (tabSel) {
     case 0: tdl = (DLGPROC)TabColorDialog; break;
@@ -265,20 +269,25 @@ VOID OnSelChanged(HWND hwndDlg)
     case 2: tdl = (DLGPROC)TabDevicesDialog; break;
     case 3: tdl = (DLGPROC)TabProfilesDialog; break;
     case 4: tdl = (DLGPROC)TabSettingsDialog; break;
+    default: tdl = (DLGPROC)TabColorDialog;
     }
-    pHdr->hwndDisplay = CreateDialogIndirect(hInst,
+    HWND newDisplay = CreateDialogIndirect(hInst,
         (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
-
-    SetWindowPos(pHdr->hwndDisplay, NULL,
-        pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-        (pHdr->rcDisplay.right - pHdr->rcDisplay.left), //- cxMargin - (GetSystemMetrics(SM_CXDLGFRAME)) + 1,
-        (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top), //- /*cyMargin - */(GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION) + 3,
-        SWP_SHOWWINDOW);
-    ShowWindow(pHdr->hwndDisplay, SW_SHOW);
+    if (pHdr->hwndDisplay == NULL)
+        pHdr->hwndDisplay = newDisplay;
+    if (pHdr->hwndDisplay != NULL)
+        SetWindowPos(pHdr->hwndDisplay, NULL,
+            pHdr->rcDisplay.left, pHdr->rcDisplay.top,
+            (pHdr->rcDisplay.right - pHdr->rcDisplay.left), //- cxMargin - (GetSystemMetrics(SM_CXDLGFRAME)) + 1,
+            (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top), //- /*cyMargin - */(GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION) + 3,
+            SWP_SHOWWINDOW);
+    //ShowWindow(pHdr->hwndDisplay, SW_SHOW);
+    //SetActiveWindow(pHdr->hwndDisplay);
     return;
 }
 
 int pRid = -1, pRitem = -1;
+bool isProfileEdited = false;
 
 profile* FindProfile(int id);
 
@@ -335,23 +344,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
         OnSelChanged(tab_list);
 
-        /*if (conf->profiles.size() == 0) {
-            std::string dname = "Default";
-            int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
-            SendMessage(profile_list, CB_SETITEMDATA, pos, 0);
-            SendMessage(profile_list, CB_SETCURSEL, pos, 0);
-            pRid = 0; pRitem = pos;
-        }
-        else {*/
-            for (int i = 0; i < conf->profiles.size(); i++) {
-                int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
-                SendMessage(profile_list, CB_SETITEMDATA, pos, conf->profiles[i].id);
-                if (conf->profiles[i].id == conf->activeProfile) {
-                    SendMessage(profile_list, CB_SETCURSEL, pos, 0);
-                    pRid = conf->activeProfile; pRitem = pos;
-                }
+        for (int i = 0; i < conf->profiles.size(); i++) {
+            int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
+            SendMessage(profile_list, CB_SETITEMDATA, pos, conf->profiles[i].id);
+            if (conf->profiles[i].id == conf->activeProfile) {
+                SendMessage(profile_list, CB_SETCURSEL, pos, 0);
+                pRid = conf->activeProfile; pRitem = pos;
             }
-        //}
+        }
 
         // tray icon...
         ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
@@ -468,7 +468,41 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             int prid = (int)SendMessage(profile_list, CB_GETITEMDATA, pbItem, 0);
             switch (HIWORD(wParam))
             {
+            case CBN_KILLFOCUS: case CBN_DROPDOWN:
+                if (isProfileEdited) {
+                    char* buffer = new char[32767];
+                    GetWindowTextA(profile_list, buffer, 32767);
+                    for (int i = 0; i < conf->profiles.size(); i++) {
+                        if (conf->profiles[i].id == pRid) {
+                            conf->profiles[i].name = buffer;
+                            break;
+                        }
+                    }
+                    SendMessage(profile_list, CB_DELETESTRING, pRitem, 0);
+                    SendMessage(profile_list, CB_INSERTSTRING, pRitem, (LPARAM)(buffer));
+                    SendMessage(profile_list, CB_SETITEMDATA, pRitem, (LPARAM)pRid);
+                    SendMessage(profile_list, CB_SETCURSEL, pRitem, 0);
+                    OnSelChanged(tab_list);
+                    isProfileEdited = false;
+                }
+                break;
             case CBN_SELCHANGE: {
+                if (isProfileEdited) {
+                    char* buffer = new char[32767];
+                    GetWindowTextA(profile_list, buffer, 32767);
+                    for (int i = 0; i < conf->profiles.size(); i++) {
+                        if (conf->profiles[i].id == pRid) {
+                            conf->profiles[i].name = buffer;
+                            break;
+                        }
+                    }
+                    SendMessage(profile_list, CB_DELETESTRING, pRitem, 0);
+                    SendMessage(profile_list, CB_INSERTSTRING, pRitem, (LPARAM)(buffer));
+                    SendMessage(profile_list, CB_SETITEMDATA, pRitem, (LPARAM)pRid);
+                    //SendMessage(profile_list, CB_SETCURSEL, pRitem, 0);
+                    OnSelChanged(tab_list);
+                    isProfileEdited = false;
+                }
                 profile* prof = FindProfile(prid);
                 if (prof != NULL) {
                     eve->StopEvents();
@@ -483,24 +517,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     conf->monState = prof->flags & 0x2 ? 0 : conf->enableMon;
                     OnSelChanged(tab_list);
                     eve->StartEvents();
-                    //fxhl->RefreshState();
                 }
             } break;
             case CBN_EDITCHANGE: {
-                char* buffer = new char[32767];
-                GetWindowTextA(profile_list, buffer, 32767);
-                for (int i = 0; i < conf->profiles.size(); i++) {
-                    if (conf->profiles[i].id == pRid) {
-                        conf->profiles[i].name = buffer;
-                        break;
-                    }
-                }
-                SendMessage(profile_list, CB_DELETESTRING, pRitem, 0);
-                SendMessage(profile_list, CB_INSERTSTRING, pRitem, (LPARAM)(buffer));
-                SendMessage(profile_list, CB_SETITEMDATA, pRitem, (LPARAM)pRid);
-                //SendMessage(profile_list, CB_SETCURSEL, pRitem, 0);
-                OnSelChanged(tab_list);
-                delete buffer;
+                isProfileEdited = true;
             } break;
             } 
         } break;
@@ -557,10 +577,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         NMHDR* event = (NMHDR*)lParam;
         switch (event->idFrom) {
         case IDC_TAB_MAIN: {
-            //NMHDR* event = (NMHDR*)lParam;
-            int newTab = TabCtrl_GetCurSel(tab_list);
-            if (newTab != tabSel) { // selection changed!
-                OnSelChanged(tab_list);
+            if (event->code == TCN_SELCHANGE) {
+                int newTab = TabCtrl_GetCurSel(tab_list);
+                if (newTab != tabSel) { // selection changed!
+                    OnSelChanged(tab_list);
+                }
             }
         } break;
         }
@@ -635,10 +656,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         eve->StopEvents();
         conf->Save();
         AlienFX_SDK::Functions::SaveMappings();
-        //ShutdownBlockReasonCreate(hDlg, L"Please, wait me!");
         EndDialog(hDlg, IDOK);
         DestroyWindow(hDlg);
-        return true;// DefWindowProc(hDlg, message, wParam, lParam);
+        return true;
         break;
     case WM_HOTKEY:
         switch (wParam) {
@@ -656,7 +676,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 if (conf->dimmed) {
                     conf->stateOn = conf->lightsOn = !conf->lightsOn;
                     conf->dimmed = !conf->dimmed;
-                    //fxhl->Refresh(true);
                     eve->StopEvents();
                 }
                 else {
@@ -831,11 +850,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS),
         eff_list = GetDlgItem(hDlg, IDC_EFFECTS_LIST),
         s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
-        //s2_slider = GetDlgItem(hDlg, IDC_SPEED2),
         l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
-        //l2_slider = GetDlgItem(hDlg, IDC_LENGTH2),
-        type_c1 = GetDlgItem(hDlg, IDC_TYPE1);// ,
-        //type_c2 = GetDlgItem(hDlg, IDC_TYPE2);
+        type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
 
     switch (message)
     {
@@ -855,10 +871,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         if (noLights) {// no lights, switch to setup
             HWND tab_list = GetParent(hDlg);
             TabCtrl_SetCurSel(tab_list, 2);
-            EndDialog(hDlg, IDOK);
-            DestroyWindow(hDlg);
             OnSelChanged(tab_list);
-            return true;
+            return false;
         }
         // Set types list...
         char buffer[100];
@@ -887,14 +901,12 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         }
     } break;
     case WM_COMMAND: {
-        int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
-        int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0),
+        int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0),
+          lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0),
           ceItem = (int)SendMessage(eff_list, LB_GETCURSEL, 0, 0),
           ceid = (int)SendMessage(eff_list, LB_GETITEMDATA, ceItem, 0),
           lType1 = (int)SendMessage(type_c1, CB_GETCURSEL, 0, 0);
-        //int lType2 = (int)SendMessage(type_c2, CB_GETCURSEL, 0, 0);
         lightset* mmap = FindMapping(pid, lid);
-        // BLOCK FOR COLORS
         switch (LOWORD(wParam))
         {
         case IDC_LIGHTS: // should reload mappings
@@ -932,20 +944,13 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     mmap->eve[0].map.push_back(act);
                 }
                 EnableWindow(type_c1, flag);
-                //EnableWindow(type_c2, flag);
                 EnableWindow(s1_slider, flag);
-                //EnableWindow(s2_slider, flag);
                 EnableWindow(l1_slider, flag);
-                //EnableWindow(l2_slider, flag);
                 // Set data
                 SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[0].type, 0);
-                //SendMessage(type_c2, CB_SETCURSEL, mmap->eve[0].map[1].type, 0);
                 RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[0].r, mmap->eve[0].map[0].g, mmap->eve[0].map[0].b);
-                //RedrawButton(hDlg, IDC_BUTTON_C2, mmap->eve[0].map[1].r, mmap->eve[0].map[1].g, mmap->eve[0].map[1].b);
                 SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[0].tempo);
-                //SendMessage(s2_slider, TBM_SETPOS, true, mmap->eve[0].map[1].tempo);
                 SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[0].time);
-                //SendMessage(l2_slider, TBM_SETPOS, true, mmap->eve[0].map[1].time);
                 break;
             } break;
         case IDC_TYPE1:
@@ -956,12 +961,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 }
             }
             break;
-        /*case IDC_TYPE2:
-            if (HIWORD(wParam) == CBN_SELCHANGE) {
-                if (mmap != NULL)
-                    mmap->eve[0].map[1].type = lType2;
-            }
-            break;*/
         case IDC_BUTTON_C1:
             switch (HIWORD(wParam))
             {
@@ -972,18 +971,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 }
             } break;
             } break;
-        /*case IDC_BUTTON_C2:
-            switch (HIWORD(wParam))
-            {
-            case BN_CLICKED: {
-                if (mmap != NULL) {
-                    SetColor(hDlg, IDC_BUTTON_C2, &mmap->eve[0].map[1]);
-                }
-            } break;
-            } break;*/
         case IDC_BUT_ADD_EFFECT:
             if (HIWORD(wParam) == BN_CLICKED && mmap != NULL && !AlienFX_SDK::Functions::GetFlags(pid, lid) && mmap->eve[0].map.size() < 9) {
-                AlienFX_SDK::afx_act act;
+                AlienFX_SDK::afx_act act = mmap->eve[0].map.back();
                 mmap->eve[0].map.push_back(act);
                 RebuildEffectList(eff_list, mmap);
             }
@@ -1035,15 +1025,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if ((HWND)lParam == s1_slider) {
                     mmap->eve[0].map[effID].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                /*if ((HWND)lParam == s2_slider) {
-                    mmap->eve[0].map[1].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                }*/
                 if ((HWND)lParam == l1_slider) {
                     mmap->eve[0].map[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                /*if ((HWND)lParam == l2_slider) {
-                    mmap->eve[0].map[1].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                }*/
                 fxhl->Refresh();
             }
         break;
@@ -1058,7 +1042,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if (map != NULL) {
                     switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
                     case IDC_BUTTON_C1: c = map->eve[0].map[effID]; break;
-                    //case IDC_BUTTON_C2: c = map->eve[0].map[1]; break;
                     }
                 }
             }
@@ -1127,10 +1110,8 @@ BOOL TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (noLights) {// no lights, switch to setup
             HWND tab_list = GetParent(hDlg);
             TabCtrl_SetCurSel(tab_list, 2);
-            EndDialog(hDlg, IDOK);
-            DestroyWindow(hDlg);
             OnSelChanged(tab_list);
-            return true;
+            return false;
         }
 
         // Set counter list...
@@ -1608,13 +1589,9 @@ BOOL TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 SendMessage(profile_list, LB_SETCURSEL, pos, 0);
                 if (conf->profiles[i].flags & 0x1) CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
                 if (conf->profiles[i].flags & 0x2) CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_CHECKED);
+                SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].triggerapp.c_str()));
             }
         }
-
-        profile* cur = FindProfile(pRid);
-        if (cur != NULL)
-            SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(cur->triggerapp.c_str()));
-
     } break;
     case WM_COMMAND:
     {
