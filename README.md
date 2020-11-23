@@ -23,7 +23,7 @@ Device checked: `Alienware m15R1` (API v3), `Alienware m17R1` (API v3), `Alienwa
 - Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
 - <b>WARNING!</b> In case you run `alienfx-gui`, `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use gui, haptics or ambient for a long time.
-- <b>DO NOT</b> use alienfx-gui with hardware power button setup and monitroing with other app switching light colors - it can provide unexpected results (see below)! But you can use any of my apps, they have a check for this situation, so it's safe. Stop AWCC service befor using power button control!
+- <b>DO NOT</b> use alienfx-gui with hardware power button setup and monitroing with other app switching light colors - it can provide unexpected results (see below)! But you can use any of my apps, they have a check for this situation, so it's safe. Stop AWCC service before using power button control!
 - <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or then lights come off), then start it back.
 
 ## Installation
@@ -46,9 +46,9 @@ alienfx-cli.exe [command=option,option,option] ... [command=option,option,option
 The following commands are available:
 - `status` Showing AlienFX device IDs and their lights IDs and status. Output is different for low- and high- level SDKs.
 - `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red. NB: For low-level, it requires lights setup using `alienfx-probe`/-gui to work correctly!
-- `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-dev=0,1,0,0,255` - set light #2 at the device #1 to blue color. Dev-id is ignored for low-level SDK.
-- `set-zone=<zone>,r,g,b[,br]` Set zone light to color provided. This command only works with high-level API.
-- `set-action=<dev-id>,<light-id>,<action>,r,g,b[,br[,<action>,r,g,b,br]]` Set light to color provided and enable action. Dev-id is ignored for low-level SDK. You can define up to 9 actions in this command, but only first 1 or 2 will be used for high-level API.
+- `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-one=0,1,0,0,255` - set light #2 at the device #1 to blue color. Dev-id is ignored for low-level SDK.
+- `set-zone=<zone>,r,g,b[,br]` Set zone (see possible zones list below) light to color provided. This command only works with high-level API.
+- `set-action=<dev-id>,<light-id>,<action>,r,g,b[,br[,<action>,r,g,b,br]]` Set light to color provided and enable action. Dev-id is ignored for low-level SDK. You can define up to 9 actions in this command, but only first 1 or 2 will be used for high-level API and for older devices.
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action. This command only works with high-level API.
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
