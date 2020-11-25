@@ -74,7 +74,7 @@ namespace AlienFX_SDK
 		//returns PID
 		static  int AlienFXInitialize(int vid);
 
-		static  bool AlienFXInitialize(int vid, int pid);
+		static  int AlienFXInitialize(int vid, int pid);
 
 		//De-init
 		static  bool AlienFXClose();

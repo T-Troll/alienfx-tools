@@ -166,7 +166,7 @@ namespace AlienFX_SDK
 
 						if (attributes->VendorID == vid)
 						{
-							// I use it to detect is it old device or new, i have version = 0 for old, and version = 512 for new
+							// I use Version to detect is it old device or new, i have version = 0 for old, and version = 512 for new
 							if (attributes->VersionNumber > 511)
 								length = 34;
 							else
@@ -186,18 +186,18 @@ namespace AlienFX_SDK
 	}
 
 	//Use this method for general devices
-	bool Functions::AlienFXInitialize(int vid, int pidd)
+	int Functions::AlienFXInitialize(int vid, int pidd)
 	{
 		GUID guid;
 		bool flag = false;
-		pid = pidd;
+		pidd = -1;
 
 		HidD_GetHidGuid(&guid);
 		HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 		if (hDevInfo == INVALID_HANDLE_VALUE)
 		{
 			//std::cout << "Couldn't get guid";
-			return false;
+			return pid;
 		}
 		unsigned int dw = 0;
 		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
@@ -209,20 +209,20 @@ namespace AlienFX_SDK
 			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
 			{
 				lastError = GetLastError();
-				return false;
+				return pid;
 			}
 			dw++;
 			DWORD dwRequiredSize = 0;
 			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
 			{
 				//std::cout << "Getting the needed buffer size failed";
-				return false;
+				return pid;
 			}
 			//std::cout << "Required size is " << dwRequiredSize << std::endl;
 			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
 			{
 				//std::cout << "Last error is not ERROR_INSUFFICIENT_BUFFER";
-				return false;
+				return pid;
 			}
 			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
 			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
@@ -239,15 +239,15 @@ namespace AlienFX_SDK
 					if (HidD_GetAttributes(devHandle, attributes.get()))
 					{
 
-						if (((attributes->VendorID == vid) && (attributes->ProductID == pid)))
+						if (((attributes->VendorID == vid) && (attributes->ProductID == pidd)))
 						{
-							// BUGFIX - length was not filled in this procedure
-							// I use it to detect is it old device or new, i have version = 0 for old, and version = 512 for new
+							// Check API version...
 							if (attributes->VersionNumber > 511)
 								length = 34;
 							else
 								length = attributes->Size;
 							version = attributes->VersionNumber;
+							pid = pidd;
 							flag = true;
 						}
 					}
@@ -256,7 +256,7 @@ namespace AlienFX_SDK
 			}
 		}
 		//OutputDebugString(flag);
-		return flag;
+		return pidd;
 	}
 
 	void Loop()
@@ -774,7 +774,7 @@ namespace AlienFX_SDK
 				CloseHandle(devHandle);
 		res = AlienFXInitialize(vid, npid);
 		if (res != (-1)) {
-			pid = res;
+			pid = npid;
 			Reset(false);
 			return true;
 		}

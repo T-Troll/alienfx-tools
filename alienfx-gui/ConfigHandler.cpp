@@ -339,14 +339,12 @@ int ConfigHandler::Load() {
     stateOn = lightsOn;
     monState = enableMon;
     // set active profile...
+    int activeFound = 0;
     if (profiles.size() > 0) {
         for (int i = 0; i < profiles.size(); i++) {
             std::sort(profiles[i].lightsets.begin(), profiles[i].lightsets.end(), ConfigHandler::sortMappings);
-            if (profiles[i].id == activeProfile) {
-                mappings = profiles[i].lightsets;
-                if (profiles[i].flags & 0x2)
-                    monState = 0;
-            }
+            if (profiles[i].id == activeProfile)
+                activeFound = i;
         }
     }
     else {
@@ -361,6 +359,12 @@ int ConfigHandler::Load() {
     }
     if (profiles.size() == 1)
         profiles[0].flags = profiles[0].flags | 0x1;
+    activeProfile = profiles[activeFound].id;
+    mappings = profiles[activeFound].lightsets;
+    if (profiles[activeFound].flags & 0x2)
+        monState = 0;
+    if (profiles[activeFound].flags & 0x4)
+        stateDimmed = 1;
 	return 0;
 }
 int ConfigHandler::Save() {

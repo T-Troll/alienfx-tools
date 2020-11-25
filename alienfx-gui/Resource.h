@@ -60,6 +60,7 @@
 #define IDC_BUTTON_ADDL                 1027
 #define IDC_BUTTON_REML                 1028
 #define IDC_BUTTON_CM1                  1029
+#define IDC_BUTTON_DEVRESET             1029
 #define IDC_BUTTON_CM2                  1030
 #define IDC_BUTTON_CM3                  1031
 #define IDC_BATTDIM                     1031
@@ -98,6 +99,9 @@
 #define IDC_EFFECTS_LIST                1066
 #define IDC_BUT_ADD_EFFECT              1068
 #define IDC_BUTT_REMOVE_EFFECT          1069
+#define IDC_CHECK_PROFDIM               1071
+#define IDC_COMBO1                      1072
+#define IDC_COMBO_PROFILES              1072
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -122,7 +126,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32789
-#define _APS_NEXT_CONTROL_VALUE         1070
+#define _APS_NEXT_CONTROL_VALUE         1073
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

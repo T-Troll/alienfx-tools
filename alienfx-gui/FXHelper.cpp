@@ -129,7 +129,7 @@ void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> ac
 
 	if (config->lightsOn && config->stateOn) {
 		for (int i = 0; i < actions.size(); i++) {
-			if (config->dimmed ||
+			if (config->dimmed || config->stateDimmed ||
 				(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
 				actions[i].r = (actions[i].r * delta) >> 8;
 				actions[i].g = (actions[i].g * delta) >> 8;
