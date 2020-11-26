@@ -45,13 +45,46 @@ void EventHandler::ChangePowerState()
 void EventHandler::ChangeScreenState(DWORD state)
 {
     if (conf->offWithScreen) {
-        conf->stateOn = state;
-        if (state) {
-            fxh->Refresh(true);
+        conf->stateOn = conf->lightsOn && state;
+        fxh->Refresh(true);
+        if (conf->stateOn) {
             StartEvents();
         }
         else
             StopEvents();
+    }
+}
+
+profile* EventHandler::FindProfile(int id) {
+    profile* prof = NULL;
+    for (int i = 0; i < conf->profiles.size(); i++)
+        if (conf->profiles[i].id == id) {
+            prof = &conf->profiles[i];
+            break;
+        }
+    return prof;
+}
+
+void EventHandler::SwitchActiveProfile(int newID)
+{
+    if (newID != conf->activeProfile) {
+        profile* newP = FindProfile(newID),
+            * oldP = FindProfile(conf->activeProfile);
+        if (newP != NULL) {
+            StopEvents();
+            if (oldP != NULL)
+                oldP->lightsets = conf->mappings;
+            conf->mappings = newP->lightsets;
+            conf->activeProfile = newID;
+            conf->monState = newP->flags & 0x2 ? 0 : conf->enableMon;
+            conf->stateDimmed = newP->flags & 0x4;
+            StartEvents();
+    #ifdef _DEBUG
+            char buff[2048];
+            sprintf_s(buff, 2047, "Profile switched to %s\n", newP->name.c_str());
+            OutputDebugString(buff);
+    #endif
+        }
     }
 }
 
@@ -157,13 +190,14 @@ DWORD CProfileProc(LPVOID param) {
     unsigned int i;
 
     while (!src->stopProf) {
-        unsigned nProfi = 0, newp = src->conf->activeProfile;
+        unsigned newp = src->conf->activeProfile;
         bool notDefault = false;
 
         Sleep(100);
 
         if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
         {
+            HMODULE hMod;
             cProcesses = cbNeeded / sizeof(DWORD);
             for (i = 0; i < cProcesses && !notDefault; i++)
             {
@@ -175,9 +209,6 @@ DWORD CProfileProc(LPVOID param) {
                         FALSE, aProcesses[i]);
                     if (NULL != hProcess)
                     {
-                        HMODULE hMod;
-                        DWORD cbNeeded;
-
                         if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
                             &cbNeeded))
                         {
@@ -189,7 +220,6 @@ DWORD CProfileProc(LPVOID param) {
                                     // found trigger
                                     newp = src->conf->profiles[j].id;
                                     notDefault = true;
-                                    nProfi = j;
                                     break;
                                 }
 
@@ -197,44 +227,19 @@ DWORD CProfileProc(LPVOID param) {
                     }
                 }
             }
-        }
-        // do we need to switch?
-        if (notDefault) {
-            if (newp != src->conf->activeProfile) {
-                // just switch between profiles...
+            // do we need to switch?
+            if (notDefault) {
+                src->SwitchActiveProfile(newp);
+            }
+            else {
+                // looking for default profile....
+                int defIndex = 0;
                 for (int j = 0; j < src->conf->profiles.size(); j++)
-                    if (src->conf->profiles[j].id == src->conf->activeProfile) {
-                        src->StopEvents();
-                        src->conf->profiles[j].lightsets = src->conf->mappings;
-                        src->conf->mappings = src->conf->profiles[nProfi].lightsets;
-                        src->conf->activeProfile = newp;
-                        src->conf->monState = src->conf->profiles[nProfi].flags & 0x2 ? 0 : src->conf->enableMon;
-                        src->StartEvents();
-                        //src->fxh->RefreshState();
+                    if (src->conf->profiles[j].flags & 0x1) {
+                        defIndex = j;
                         break;
                     }
-            }
-        }
-        else {
-            // looking for default profile....
-            int defIndex = 0;
-            for (int j = 0; j < src->conf->profiles.size(); j++)
-                if (src->conf->profiles[j].flags & 0x1) {
-                    defIndex = j;
-                    break;
-                }
-            if (src->conf->profiles[defIndex].id != newp) {
-                // switch to default profile
-                for (int j = 0; j < src->conf->profiles.size(); j++)
-                    if (src->conf->profiles[j].id == newp) {
-                        src->StopEvents();
-                        src->conf->profiles[j].lightsets = src->conf->mappings;
-                        src->conf->mappings = src->conf->profiles[defIndex].lightsets;
-                        src->conf->activeProfile = src->conf->profiles[defIndex].id;
-                        src->conf->monState = src->conf->profiles[defIndex].flags & 0x2 ? 0 : src->conf->enableMon;
-                        src->StartEvents();
-                        //src->fxh->RefreshState();
-                    }
+                src->SwitchActiveProfile(defIndex);
             }
         }
     }

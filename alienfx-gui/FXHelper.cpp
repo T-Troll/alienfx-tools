@@ -60,7 +60,8 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		if (Iter->devid == pid 
 		&& (Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 			&& (lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) != (-1)) {
-			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map[0] : Iter->eve[2].fs.b.flags ?
+			int mIndex = lFlags && Iter->eve[0].map.size() > 1 && activeMode != MODE_AC && activeMode != MODE_CHARGE ? 1 : 0;
+			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map[mIndex] : Iter->eve[2].fs.b.flags ?
 				Iter->eve[2].map[0] : Iter->eve[3].map[0];
 			fin.type = 0;
 			if (Iter->eve[2].fs.b.flags) {
@@ -178,13 +179,14 @@ int FXHelper::Refresh(bool forced)
 {
 	std::vector <lightset>::iterator Iter;
 	Colorcode fin;
-	for (int i = 0; i < 15 && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
+	for (int i = 0; i < 15 && forced && !AlienFX_SDK::Functions::IsDeviceReady(); i++) Sleep(20);
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
 	int lFlags = 0;
 	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
-		if (Iter->devid == pid && (!(lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) || forced)) {
+		if (Iter->devid == pid) {
 			actions = Iter->eve[0].map;
+			lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid);
 			if (config->monState && !forced) {
 				/*if (!Iter->eve[0].fs.b.flags) {
 					c1.ci = 0; c2.ci = 0;
