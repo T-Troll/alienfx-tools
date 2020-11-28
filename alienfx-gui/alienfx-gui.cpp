@@ -429,8 +429,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             TabCtrl_SetCurSel(tab_list, 2);
             OnSelChanged(tab_list);
             break;
-        case ID_ACC_SETTINGS:
+        case ID_ACC_PROFILES:
             TabCtrl_SetCurSel(tab_list, 3);
+            OnSelChanged(tab_list);
+            break;
+        case ID_ACC_SETTINGS:
+            TabCtrl_SetCurSel(tab_list, 4);
             OnSelChanged(tab_list);
             break;
         case IDC_PROFILES: {

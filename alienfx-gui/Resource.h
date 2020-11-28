@@ -118,6 +118,8 @@
 #define ID_ACC_DEVICES                  32786
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
+#define ID_ACCELERATOR32790             32790
+#define ID_ACC_PROFILES                 32790
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -126,7 +128,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
-#define _APS_NEXT_COMMAND_VALUE         32790
+#define _APS_NEXT_COMMAND_VALUE         32792
 #define _APS_NEXT_CONTROL_VALUE         1073
 #define _APS_NEXT_SYMED_VALUE           111
 #endif
