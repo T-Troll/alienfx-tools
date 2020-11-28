@@ -15,16 +15,14 @@ A bunch of tools for Alienware AlienFX/Dell LightFX controls:
 Device checked: `Alienware m15R1` (API v3), `Alienware m17R1` (API v3), `Alienware M13R2` (API v2), `Dell G5` (API v3), `Alienware M14x` (API v1) (should work with any Alienware device with API v1 or later, but i didn't test latest per-key devices).
 
 ## Known issues
-- On some devices, some functions from high-level SDK can works incorrectly: can't retrieve positions and colors, can't set zone to action. This may fixed in upcoming AWCC updates.
-- `alienfx-cli set-tempo` command doesn't work with high-level SDK (bug in SDK, low-level only).<br>
+- Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.<br>
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
 - Only one device per time can be controlled trough low-level SDK, but you can choose which one.
-- Hardware light effects morph, breathing, spectrum, rainbow doesn't supported for older devices.
+- Hardware light effects morph, breathing, spectrum, rainbow doesn't supported for older (v1, v2) devices.
 - Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
-- <b>WARNING!</b> In case you run `alienfx-gui`, `alienfx-haptics` or `alienfx-ambient` for a long time (1 hour+) and have AWCC installed and running, you can meet significant system slowdown, die to `WMI Host Process` high CPU usage. It's a bug into `AWCCService` AWCC component, producing excessive calls "Throttling Idle Tasks" to WMI. Quick fix: Stop AWCCService if you plan to use gui, haptics or ambient for a long time.
-- <b>DO NOT</b> use alienfx-gui with hardware power button setup and monitroing with other app switching light colors - it can provide unexpected results (see below)! But you can use any of my apps, they have a check for this situation, so it's safe. Stop AWCC service before using power button control!
-- <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or then lights come off), then start it back.
+- <b>WARNING!</b> I strongly reccomend to stop AWCCService if you plan to use gui, haptics or ambient application. Keep it working can provide unexpected results, espectially if you handle Power Button in gui app.
+- <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or until lights turn off), then start it back.
 
 ## Installation
 Download latest release archive from [here](https://github.com/T-Troll/alienfx-tools/releases).<br>
@@ -106,10 +104,11 @@ Keyboard shortcuts (any time):
 - CTRL+SHIFT+F11 - dim/undim lights
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)<br>
 <br>Other shortcuts (only then application active):
-- ALT+c - switch to Color tab
-- ALT+m - switch to Monitoring tab
-- ALT+d - switch to Device and Lights tab
-- ALT+s - switch to Settings tab
+- ALT+c - switch to "Colors" tab
+- ALT+m - switch to "Monitoring" tab
+- ALT+d - switch to "Devices and Lights" tab
+- ALT+p - switch to "Profiles" tab
+- ALT+s - switch to "Settings" tab
 - ALT+r - refresh all lights
 - ALT+? - about app<br><br>
 Monitoring events avaliable:<br>
@@ -119,7 +118,7 @@ System Load:
 - GPU Load - The same for utilized GPU percentage (top one across GPUs if more, then one present into the system).
 - HDD Load - It's not exactly a load, but IDLE time. If idle - it's "calm", 100% busy - active, and mix between.
 - Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
-- Max. Temperature - Maximal temperature in Celsius degrees (0=calm-100=active) across all temperature sensors detected into the system.
+- Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
 - Battery level - Battery charge level in percent (0=dischagred, 100=full).<br>
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.<br>
 Status Led:
@@ -127,8 +126,8 @@ Status Led:
 - Network activity - Switch light if any network traffic detected (across all adapters).
 - System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
 - Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).<br>
-"Blink" checkbox switch triggered value to blink between on-off colors 5 times per sec (well... about 5 times).
-<br><br><b>WARNING:</b> Morph mode doens't works for old devices. Pulse and Morph effects doesn't work if you use any Performance or Activity events monitoring.
+"Blink" checkbox switch triggered value to blink between on-off colors 4 times per sec.
+<br><br><b>WARNING:</b> All color effects stop working if you enable any Event monitoring.
 
 ## Tools Used
 * Visual Studio Community 2019
