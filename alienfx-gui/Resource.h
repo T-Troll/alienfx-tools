@@ -15,6 +15,7 @@
 #define IDS_GPU                         108
 #define IDC_ALIENFXGUI                  109
 #define IDS_TEMP                        110
+#define ID_TRAYMENU_PROFILE_SELECTED    110
 #define IDS_BATT                        111
 #define IDS_A_HDD                       112
 #define IDS_A_NET                       113
@@ -100,7 +101,6 @@
 #define IDC_BUT_ADD_EFFECT              1068
 #define IDC_BUTT_REMOVE_EFFECT          1069
 #define IDC_CHECK_PROFDIM               1071
-#define IDC_COMBO1                      1072
 #define IDC_COMBO_PROFILES              1072
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772
@@ -117,6 +117,7 @@
 #define ID_TRAYMENU_MONITORING          32785
 #define ID_ACC_DEVICES                  32786
 #define ID_TRAYMENU_PROFILESWITCH       32788
+#define ID_TRAYMENU_PROFILES            32789
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -125,8 +126,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
-#define _APS_NEXT_COMMAND_VALUE         32789
+#define _APS_NEXT_COMMAND_VALUE         32790
 #define _APS_NEXT_CONTROL_VALUE         1073
-#define _APS_NEXT_SYMED_VALUE           110
+#define _APS_NEXT_SYMED_VALUE           111
 #endif
 #endif

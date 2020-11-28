@@ -383,7 +383,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
         switch (LOWORD(wParam))
         {
-        case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT: case ID_TRAYMENU_EXIT:
+        case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
         {
             //eve->StopEvents();
             Shell_NotifyIcon(NIM_DELETE, &niData);
@@ -410,48 +410,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             Shell_NotifyIcon(NIM_ADD, &niData);
             ShowWindow(hDlg, SW_HIDE);
             break;
-        case IDC_BUTTON_REFRESH: case ID_TRAYMENU_REFRESH:
+        case IDC_BUTTON_REFRESH:
             fxhl->RefreshState();
-            break;
-        case ID_TRAYMENU_LIGHTSON:
-            conf->stateOn = conf->lightsOn = !conf->lightsOn;
-            fxhl->Refresh(true);
-            eve->ToggleEvents();
-            break;
-        case ID_TRAYMENU_DIMLIGHTS:
-            conf->dimmed = !conf->dimmed;
-            fxhl->RefreshState();
-            break;
-        case ID_TRAYMENU_MONITORING:
-            conf->enableMon = !conf->enableMon;
-            conf->monState = eve->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
-            eve->ToggleEvents();
-            break;
-        case ID_TRAYMENU_PROFILESWITCH:
-            eve->StopProfiles();
-            conf->enableProf = !conf->enableProf;
-            ReloadProfileList(hDlg);
-            eve->StartProfiles();
-            break;
-        case ID_TRAYMENU_RESTORE:
-            ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg,       // handle to window
-                HWND_TOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
-            SetWindowPos(hDlg,       // handle to window
-                HWND_NOTOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
-            //Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
         case IDC_BUTTON_SAVE:
             AlienFX_SDK::Functions::SaveMappings();
@@ -532,6 +492,29 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             POINT lpClickPoint;
             HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
             tMenu = GetSubMenu(tMenu, 0);
+            // add profiles...
+            HMENU pMenu = CreatePopupMenu();
+            MENUINFO mi;
+            memset(&mi, 0, sizeof(mi));
+            mi.cbSize = sizeof(mi);
+            mi.fMask = MIM_STYLE;
+            mi.dwStyle = MNS_NOTIFYBYPOS;
+            //SetMenuInfo(pMenu, &mi);
+            SetMenuInfo(tMenu, &mi);
+            MENUITEMINFO mInfo;
+            mInfo.cbSize = sizeof(MENUITEMINFO);
+            mInfo.fMask = MIIM_STRING | MIIM_ID;
+            mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
+            for (int i = 0; i < conf->profiles.size(); i++) {
+                mInfo.dwTypeData = (LPSTR)conf->profiles[i].name.c_str();
+                InsertMenuItem(pMenu, i, false, &mInfo);
+                if (conf->profiles[i].id == conf->activeProfile)
+                    CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
+            }
+            if (conf->enableProf)
+                ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED | MF_STRING, 0, "&Profiles...");
+            else
+                ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR)pMenu, "&Profiles...");
             GetCursorPos(&lpClickPoint);
             SetForegroundWindow(hDlg);
             if (conf->lightsOn) CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, MF_CHECKED);
@@ -543,6 +526,69 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         } break;
         }
         break;
+    } break;
+    case WM_MENUCOMMAND: {
+        HMENU menu = (HMENU)lParam;
+        int idx = LOWORD(wParam);
+        switch (GetMenuItemID(menu, idx)) {
+        case ID_TRAYMENU_EXIT:
+        {
+            //eve->StopEvents();
+            Shell_NotifyIcon(NIM_DELETE, &niData);
+            EndDialog(hDlg, IDOK);
+            DestroyWindow(hDlg);
+        } break;
+        case ID_TRAYMENU_REFRESH:
+            fxhl->RefreshState();
+            break;
+        case ID_TRAYMENU_LIGHTSON:
+            conf->stateOn = conf->lightsOn = !conf->lightsOn;
+            fxhl->Refresh(true);
+            eve->ToggleEvents();
+            break;
+        case ID_TRAYMENU_DIMLIGHTS:
+            conf->dimmed = !conf->dimmed;
+            fxhl->RefreshState();
+            break;
+        case ID_TRAYMENU_MONITORING:
+            conf->enableMon = !conf->enableMon;
+            conf->monState = eve->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
+            eve->ToggleEvents();
+            break;
+        case ID_TRAYMENU_PROFILESWITCH:
+            eve->StopProfiles();
+            conf->enableProf = !conf->enableProf;
+            ReloadProfileList(hDlg);
+            eve->StartProfiles();
+            break;
+        case ID_TRAYMENU_RESTORE:
+            ShowWindow(hDlg, SW_RESTORE);
+            SetWindowPos(hDlg,       // handle to window
+                HWND_TOPMOST,  // placement-order handle
+                0,     // horizontal position
+                0,      // vertical position
+                0,  // width
+                0, // height
+                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+            );
+            SetWindowPos(hDlg,       // handle to window
+                HWND_NOTOPMOST,  // placement-order handle
+                0,     // horizontal position
+                0,      // vertical position
+                0,  // width
+                0, // height
+                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
+            );
+            //Shell_NotifyIcon(NIM_DELETE, &niData);
+            break;
+        case ID_TRAYMENU_PROFILE_SELECTED: {
+            if (idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
+                eve->SwitchActiveProfile(conf->profiles[idx].id);
+                ReloadProfileList(hDlg);
+                OnSelChanged(tab_list);
+            }
+        } break;
+        }
     } break;
     case WM_POWERBROADCAST:
         switch (wParam) {
@@ -821,6 +867,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
+            lightset* mmap = FindMapping(pid, (int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0));
+            if (mmap != NULL)
+                RebuildEffectList(eff_list, mmap);
         }
     } break;
     case WM_COMMAND: {
@@ -881,6 +930,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if (mmap != NULL) {
                     mmap->eve[0].map[effID].type = lType1;
                     RebuildEffectList(eff_list, mmap);
+                    fxhl->RefreshState();
                 }
             }
             break;
@@ -891,6 +941,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if (mmap != NULL) {
                     SetColor(hDlg, IDC_BUTTON_C1, &mmap->eve[0].map[effID]);
                     RebuildEffectList(eff_list, mmap);
+                    fxhl->RefreshState();
                 }
             } break;
             } break;
@@ -899,6 +950,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 AlienFX_SDK::afx_act act = mmap->eve[0].map.back();
                 mmap->eve[0].map.push_back(act);
                 RebuildEffectList(eff_list, mmap);
+                fxhl->RefreshState();
             }
             break;
         case IDC_BUTT_REMOVE_EFFECT:
@@ -917,6 +969,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
                 }
                 RebuildEffectList(eff_list, mmap);
+                fxhl->RefreshState();
             }
             break;
         case IDC_BUTTON_SETALL:
@@ -930,13 +983,14 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                         if (conf->mappings[i].devid == pid) {
                             conf->mappings[i].eve[0] = mmap->eve[0];
                         }
+                    fxhl->RefreshState();
                 }
             } break;
             } break;   
         default: return false;
         }
-        if (mmap != NULL)
-            fxhl->Refresh(AlienFX_SDK::Functions::GetFlags(pid, lid));
+        //if (mmap != NULL)
+        //    fxhl->Refresh(AlienFX_SDK::Functions::GetFlags(pid, lid));
     } break;
     case WM_VSCROLL:
         switch (LOWORD(wParam)) {
@@ -1133,8 +1187,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             } break;
         case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
             int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
-            if (map != NULL)
+            if (map != NULL) {
                 map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+                fxhl->RefreshState();
+            }
         } break;
         case IDC_STATUS_BLINK:
             if (map != NULL)
@@ -1168,6 +1224,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             case CBN_SELCHANGE:
                 if (map != NULL) {
                     map->eve[2].source = countid;
+                    fxhl->RefreshState();
                 }
                 break;
             }
@@ -1178,13 +1235,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             case CBN_SELCHANGE:
                 if (map != NULL) {
                     map->eve[3].source = statusid;
+                    fxhl->RefreshState();
                 }
                 break;
             }
             break;
         }
-        if (map != NULL)
-           fxhl->Refresh();
+        //if (map != NULL)
+        //   fxhl->Refresh();
     } break;
     case WM_DRAWITEM:
         switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
@@ -1226,7 +1284,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
                 if ((HWND)lParam == s2_slider) {
                     map->eve[3].fs.b.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                fxhl->Refresh();
+                fxhl->RefreshState();
             }
             break;
         } break;
