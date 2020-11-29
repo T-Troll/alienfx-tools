@@ -178,9 +178,10 @@
       </AdditionalUsingDirectories>
       <AdditionalIncludeDirectories>./kiss_fft;./kiss_fft/tools</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -205,17 +206,14 @@
     <ClInclude Include="DFT_gosu.h" />
     <ClInclude Include="FXHelper.h" />
     <ClInclude Include="Graphics.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="resource_config.h" />
     <ClInclude Include="WSAudioIn.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Config.rc" />
-    <ResourceCompile Include="menu.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon2.ico" />
-    <Image Include="menu_one.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">

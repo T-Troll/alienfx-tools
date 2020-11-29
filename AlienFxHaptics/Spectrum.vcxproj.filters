@@ -41,9 +41,6 @@
     <ClInclude Include="Graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -58,17 +55,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="menu.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
     <ResourceCompile Include="Config.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="menu_one.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="icon2.ico">
       <Filter>Resource Files</Filter>
     </Image>

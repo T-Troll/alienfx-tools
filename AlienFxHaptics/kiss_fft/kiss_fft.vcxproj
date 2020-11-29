@@ -113,6 +113,9 @@
     <ClCompile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

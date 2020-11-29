@@ -7,9 +7,7 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <math.h>
-#include "resource.h"
 #include "resource_config.h"
-//#include "AudioIn.h"
 #include <string>
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 #include <algorithm>
