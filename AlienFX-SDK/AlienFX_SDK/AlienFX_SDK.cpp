@@ -256,7 +256,7 @@ namespace AlienFX_SDK
 			}
 		}
 		//OutputDebugString(flag);
-		return pidd;
+		return pid;
 	}
 
 	void Loop()

@@ -24,6 +24,7 @@ void printUsage()
 		<< "set-zone-action\tzone,action,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
 		<< "set-power\tlight,r,g,b,r2,g2,b2 - set power button colors (low-level only)." << endl
 		<< "set-tempo\ttempo - set light action tempo (in milliseconds)." << endl
+		<< "set-dev\t\tdevID - set active device for low-level." << endl
 		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
 		<< "high-level\tswitch to high-level SDK (Alienware LightFX)." << endl
 		<< "status\t\tshows devices and lights id's, names and statuses." << endl
@@ -31,15 +32,15 @@ void printUsage()
 		<< "reset\t\treset device state." << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
 		<< "Zones:\tleft, right, top, bottom, front, rear." << endl
-		<< "Actions:color (disable action), pulse, morph (you need 2 colors for morph)," << endl
-		<< "\t(only for low-level) breath, spectrum (up to 9 colors), rainbow (up to 9 colors)." << endl;
+		<< "Actions:color (disable action), pulse, morph (you need 2 colors)," << endl
+		<< "\t(only for low-level v3) breath, spectrum (up to 9 colors), rainbow (up to 9 colors)." << endl;
 }
 
 int main(int argc, char* argv[])
 {
 	bool low_level = true;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v0.9.9" << endl;
+	cerr << "alienfx-cli v0.9.15" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -109,7 +110,6 @@ int main(int argc, char* argv[])
 			cc = 1;
 			if (low_level)
 				AlienFX_SDK::Functions::UpdateColors();
-			//AlienFX_SDK::Functions::Reset(1);
 			else
 				lfxUtil.Update();
 			continue;
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 			if (low_level) {
 				// vector<int> devs = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 				for (int i = 0; i < devs.size(); i++) {
-					cout << "Device ID#" << std::hex << devs[i];
+					cout << "Device ID#" << devs[i];
 					int dn;
 					for (dn = 0; dn < AlienFX_SDK::Functions::GetDevices()->size(); dn++) {
 						if (devs[i] == AlienFX_SDK::Functions::GetDevices()->at(i).devid) {
@@ -161,6 +161,27 @@ int main(int argc, char* argv[])
 				lfxUtil.Update();
 			}
 			continue;
+		}
+		if (command == "set-dev") {
+			if (args.size() < 1) {
+				cerr << "set-dev: Incorrect argument" << endl;
+				continue;
+			}
+			if (low_level) {
+				int newDev = atoi(args.at(0).c_str());
+				for (int i = 0; i < devs.size(); i++)
+					if (devs[i] == newDev) {
+						isInit = AlienFX_SDK::Functions::AlienFXChangeDevice(newDev);
+						if (isInit) {
+							isInit = newDev;
+						} else { 
+							cerr << "Can't init device ID#" << newDev << ", exiting!" << endl;
+							return 1;
+						}
+						break;
+					}
+				continue;
+			}
 		}
 		if (command == "reset") {
 			if (low_level)
@@ -211,6 +232,7 @@ int main(int argc, char* argv[])
 				continue;
 			}
 			static ColorU color;
+			int devid = atoi(args.at(0).c_str());
 			color.cs.red = atoi(args.at(4).c_str());
 			color.cs.green = atoi(args.at(3).c_str());
 			color.cs.blue = atoi(args.at(2).c_str());
@@ -219,11 +241,13 @@ int main(int argc, char* argv[])
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
+				if (devid != isInit && devid != 0)
+					AlienFX_SDK::Functions::AlienFXChangeDevice(devid);
 				AlienFX_SDK::Functions::SetColor(atoi(args.at(1).c_str()),
 					color.cs.blue, color.cs.green, color.cs.red);
 			}
 			else {
-				lfxUtil.SetOneLFXColor(atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &color.ci);
+				lfxUtil.SetOneLFXColor(devid, atoi(args.at(1).c_str()), &color.ci);
 				lfxUtil.Update();
 			}
 			continue;
@@ -299,6 +323,7 @@ int main(int argc, char* argv[])
 			std::vector<AlienFX_SDK::afx_act> act;
 			std::vector<ColorU> clrs;
 			int argPos = 2;
+			int devid = atoi(args.at(0).c_str());
 			while (argPos < args.size()) {
 				AlienFX_SDK::afx_act c_act;
 				ColorU c;
@@ -336,6 +361,8 @@ int main(int argc, char* argv[])
 				argPos += 5;
 			}
 			if (low_level) {
+				if (devid != isInit && devid != 0)
+					AlienFX_SDK::Functions::AlienFXChangeDevice(devid);
 				AlienFX_SDK::Functions::SetAction(atoi(args.at(1).c_str()), act);
 			}
 			else {
@@ -343,7 +370,7 @@ int main(int argc, char* argv[])
 					ColorU c;
 					clrs.push_back(c);
 				}
-				lfxUtil.SetLFXAction(actionCode, atoi(args.at(0).c_str()), atoi(args.at(1).c_str()), &clrs[0].ci, &clrs[1].ci);
+				lfxUtil.SetLFXAction(actionCode, devid, atoi(args.at(1).c_str()), &clrs[0].ci, &clrs[1].ci);
 				lfxUtil.Update();
 			}
 			continue;
