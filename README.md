@@ -2,9 +2,9 @@
 A bunch of tools for Alienware AlienFX/Dell LightFX controls:
 - alienfx-probe - Looking up for low-level devices, shows it's IDs, then check it and define device and light names.
 - alienfx-cli - Make changes and check status of your AlienFX/LightFX lights from the command line.
-- AlienFX Universal haptics BETA - Visualize any sound around you (microphone, audio player, game, movie).
-- AlienFX Ambient lights BETA - Visualize screen picture as ambient light (from desktop, game, video player).
-- AlienFX GUI BETA - Lightweighted light control tool for persons who looking AWCC alternative. It only control lights, but can do a way more tricks then AWCC about it.
+- AlienFX Universal haptics - Visualize any sound around you (microphone, audio player, game, movie).
+- AlienFX Ambient lights - Visualize screen picture as ambient light (from desktop, game, video player).
+- AlienFX GUI Light Control - Lightweighted light control tool (AWCC alternative). It only control lights, but can do a way more tricks then AWCC about it.
 <br>More will follow!
 
 ## Requirements
@@ -79,10 +79,10 @@ How it works
 This application get shot of screen (privary or secondary), then divide it to several zones.
 <br>For each zone, dominant color calculated (you can see it at the button in app interface).
 <br>For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.
-<br>You can also select which screen to grab - primary or secondary, if you have more, then one. 
-<br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value increase update performance, but decrease dominant color extraction presision. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if it works ok for you.
-<br>"Brightness" slider removes some white component from color, made them not so close to white at high brighness and more vivid or darker. Leftmost position disable the correction, rightmost cut 50% white.
-<br>"Gamma Correction" checkbox enables visual color correction, make them more close to screen one.
+<br>You can also select which screen to grab - primary or secondary, if you have more, then one. You can also press "Reset" button to re-initialize screen capturing.
+<br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value decrease CPU load, but decrease dominant color extraction presision as well. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if it works ok for you.
+<br>"Brightness" slider dimming the overall lights brigtness - use it for better fit you current monitor brightness.
+<br>"Gamma Correction" checkbox enables visual color gamma correction, make them more close to screen one.
 
 ## alienfx-gui Usage
 Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set up immedately.<br>
