@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include "DFT_gosu.h" // DFT_gosu class definition
+#include "DFT_gosu.h"
 #include <windows.h>
 #include <mmsystem.h>
 #include <stdio.h>
@@ -36,7 +36,7 @@ DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 		//hanning[i] = sqrt(cos((PI * inv) * (i - (double)(NUMPTS - 1) / 2)));
 	}
 	kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
-} // end DFT_gosu constructor
+}
 
 DFT_gosu::~DFT_gosu()
 {
@@ -52,13 +52,11 @@ DFT_gosu::~DFT_gosu()
 void DFT_gosu::calc(double *x1)
 {
 	if (done == 1) {
-	//	stopped = 1;
 		return;
 	}
 
 	for (int n = 0; n < NUMPTS; n++) {
 		padded_in[n] = (kiss_fft_scalar) (x1[n] * blackman[n]);
-		//x1 += sizeof(double);
 	}
 	kiss_fftr(kiss_cfg, padded_in, padded_out);
 
@@ -68,18 +66,14 @@ void DFT_gosu::calc(double *x1)
 	for (int n = 0; n < RECTSNUM; n++) {
 		double v = 0;
 		for (int m = 0; m < f; m++) {
-			//int idx = n * f + m;
 			if (idx < NUMPTS/2)
 				v = v + sqrt(padded_out[idx+1].r * padded_out[idx+1].r + padded_out[idx+1].i * padded_out[idx+1].i);
-			//v += sqrt(padded_out[idx].r * padded_out[idx].r + padded_out[idx].i * padded_out[idx].i);
 			idx++;
 		}
 
 		x2[n] = v / (int)f * 6 * (n+1);
 		f *= mult;
-		//mult = n * diver;
-		//x2[n] = v / (s_numbers[n] - prev);
-		//prev = s_numbers[n];
+
 		if (x2[n] < minP)
 			minP = x2[n];
 		if (x2[n] > maxP)
@@ -109,45 +103,9 @@ void DFT_gosu::calc(double *x1)
 	return;
 } // end function calc
 
-/*double DFT_gosu::getCurrentPower(){
-	return power;
-}
-double DFT_gosu::getShortPower(){
-	return short_term_power;
-}
-double DFT_gosu::getLongPower(){
-	return long_term_power;
-}
-int DFT_gosu::getCurrentAvgFreq(){
-	return (int)avg_freq;
-}
-
-int DFT_gosu::getShortAvgFreq(){
-	return (int)short_term_avg_freq;
-}
-
-int DFT_gosu::getLongAvgFreq(){
-	return (int)long_term_avg_freq;
-}*/
-
 void DFT_gosu::kill()
 {
-//int i;
-	//killing dft:
 	done=1;
-	//while (!stopped)
-	//	Sleep(100);
-	/*for(i=0;i<NUMPTS;i++){
-		free(cosarg[i]);
-		free(sinarg[i]);
-	}
-	free(cosarg);
-	free(sinarg);
-	  free(y2);
-	  free(x3);*/
-	  //free(x2);
-	  //free(s_indexes);
-	  //free(s_numbers);
 }
 
 void DFT_gosu::setXscale(int x)

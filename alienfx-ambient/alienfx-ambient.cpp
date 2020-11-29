@@ -108,14 +108,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
-   //HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-   //    CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-   //if (!hWnd)
-   //{
-   //   return FALSE;
-   //}
-
    HWND dlg;
    dlg = CreateDialogParam(hInstance,//GetModuleHandle(NULL),         /// instance handle
     	MAKEINTRESOURCE(IDD_DIALOG_MAIN),    /// dialog box template
@@ -126,9 +118,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
    SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXAMBIENT)));
    SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXAMBIENT), IMAGE_ICON, 16, 16, 0));
 
-   //ShowWindow(hWnd, nCmdShow);
    ShowWindow(dlg, nCmdShow);
-   //UpdateWindow(dlg);
 
    return dlg;
 }
@@ -183,8 +173,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             switch (((LPNMHDR)lParam)->code)
             {
 
-            case NM_CLICK:          // Fall through to the next case.
-
+            case NM_CLICK:
             case NM_RETURN:
                 ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
                 break;
@@ -208,7 +197,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     HWND divider = GetDlgItem(hDlg, IDC_EDIT_DIVIDER);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
     mapping* map = NULL;
-    //unsigned i;
 
     switch (message)
     {
@@ -279,7 +267,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         {
             cap->Stop();
             Shell_NotifyIcon(NIM_DELETE, &niData);
-            DestroyWindow(hDlg); //EndDialog(hDlg, IDOK);
+            DestroyWindow(hDlg); 
         } break;
         case IDM_ABOUT: // about dialogue here
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
@@ -318,18 +306,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 }
                 // load zones....
                 UINT bid = IDC_CHECK1;
-                //SendMessage(freq_list, LB_SETSEL, FALSE, -1);
                 // clear checks...
                 for (int i = 0; i < 12; i++) {
                     CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
                 }
                 for (int j = 0; j < map->map.size(); j++) {
-                    //HWND cBid = GetDlgItem(hDlg, bid + map->map[j]);
-                    //SendMessage(cBid, BM_SETSTATE, TRUE, 0);
-                    //RedrawWindow(cBid, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
                     CheckDlgButton(hDlg, bid+map->map[j], BST_CHECKED);
                 }
-                //RedrawWindow(freq_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
             } break;
         } break;
         case IDC_BUTTON1: case IDC_BUTTON2: case IDC_BUTTON3: case IDC_BUTTON4: case IDC_BUTTON5: case IDC_BUTTON6: case IDC_BUTTON7:
@@ -396,7 +379,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDC_BUTTON_MIN:
             // go to tray...
-
             ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
             niData.cbSize = sizeof(NOTIFYICONDATA);
             niData.uID = IDI_ALIENFXAMBIENT;
@@ -410,9 +392,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     LR_DEFAULTCOLOR);
             niData.hWnd = hDlg;
             niData.uCallbackMessage = WM_APP + 1;
-            //strcpy_s(niData.szTip, "Click to restore");
             Shell_NotifyIcon(NIM_ADD, &niData);
             ShowWindow(hDlg, SW_HIDE);
+            break;
+        case IDC_BUTTON_RESET:
+            AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+            cap->Restart();
             break;
         default: return false;
         }
@@ -420,7 +405,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_SIZE:
         if (wParam == SIZE_MINIMIZED) {
             // go to tray...
-
             ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
             niData.cbSize = sizeof(NOTIFYICONDATA);
             niData.uID = IDI_ALIENFXAMBIENT;

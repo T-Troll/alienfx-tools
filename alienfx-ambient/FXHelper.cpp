@@ -35,19 +35,13 @@ int FXHelper::Refresh(UCHAR* img)
 				g += img[3 * map.map[j] + 1];
 				b += img[3 * map.map[j]];
 			}
+
+			// Brightness correction...
 			fin.cs.red = (r * shift) / (256 * size);
 			fin.cs.green = (g * shift) / (256 * size);
 			fin.cs.blue = (b *shift) / (256 * size);
-			// Brightness correction...
-			/*unsigned //cmax = fin.cs.red > fin.cs.green ? max(fin.cs.red, fin.cs.blue) : max(fin.cs.green, fin.cs.blue),
-				cmin = fin.cs.red < fin.cs.green ? min(fin.cs.red, fin.cs.blue) : min(fin.cs.green, fin.cs.blue),
-				//lght = (cmax + cmin) > shift * 2 ? (cmax + cmin) / 2 - shift : 0,
-				//strn = (cmax - cmin) == 0 ? 0 : (cmax - cmin) / (255 - std::abs((cmax + cmin) - 255)),
-				delta = cmin > shift ? shift : cmin;// lght - (strn * (255 - 2 * std::abs(lght - 255))) / 2;
-			fin.cs.red -= delta;  //fin.cs.red < shift ? 0 : fin.cs.red - shift;
-			fin.cs.green -= delta;  //fin.cs.green < shift ? 0 : fin.cs.green - shift;
-			fin.cs.blue -= delta;  //fin.cs.blue < shift ? 0 : fin.cs.blue - shift;*/
 
+			// Gamma correction...
 			if (config->gammaCorrection) {
 				fin.cs.red = ((int)fin.cs.red * fin.cs.red) >> 8;
 				fin.cs.green = ((int)fin.cs.green * fin.cs.green) >> 8;

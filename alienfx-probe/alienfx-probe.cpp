@@ -5,7 +5,6 @@
 #include <vector>
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 #include "../alienfx-cli/LFXUtil.h"
-//#include "ConfigHandler.h"
 
 using namespace std;
 namespace
@@ -16,7 +15,7 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 16;
-	cout << "alienfx-probe v0.9.3" << endl;
+	cout << "alienfx-probe v1.0.0" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
@@ -25,8 +24,6 @@ int main(int argc, char* argv[])
 	pids = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	if (pids.size() > 0) {
 		cout << "Found " << pids.size() << " device(s)" << endl;
-		// DEBUG: load....
-		//AlienFX_SDK::Functions::LoadMappings();
 		cout << "Probing Dell SDK... ";
 		int res = lfxUtil.InitLFX();
 		if (res != -1) {
@@ -42,7 +39,7 @@ int main(int argc, char* argv[])
 		else {
 			lfxUtil.FillInfo();
 			cout << "Found!" << endl << endl;
-			for (int cdev = 0; cdev < lfxUtil.GetNumDev(); cdev++) {
+			for (unsigned cdev = 0; cdev < lfxUtil.GetNumDev(); cdev++) {
 				cout << "Device #" << cdev << " (" << lfxUtil.GetDevInfo(cdev)->desc << "):" << endl;
 				for (UINT i = 0; i < lfxUtil.GetDevInfo(cdev)->lights; i++) {
 					cout << "\tLight #" << lfxUtil.GetLightInfo(cdev, i)->id
@@ -53,8 +50,7 @@ int main(int argc, char* argv[])
 
 		for (int cdev = 0; cdev < pids.size(); cdev++) {
 			cout << "Probing device PID 0x..." << std::hex << pids[cdev];
-			int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid, pids[cdev]);
-			//std::cout << "PID: " << std::hex << isInit << std::endl;
+			int isInit = AlienFX_SDK::Functions::AlienFXChangeDevice(pids[cdev]);
 			if (isInit != -1)
 			{
 				cout << " Connected." << endl;
@@ -76,7 +72,6 @@ int main(int argc, char* argv[])
 				devs.devid = pids[cdev];
 				devs.name = outName;
 				AlienFX_SDK::Functions::GetDevices()->push_back(devs);
-				// TODO: Store name
 				// How many lights to check?
 				if (argc > 1) // we have number of lights...
 					numlights = atoi(argv[1]);
@@ -112,17 +107,16 @@ int main(int argc, char* argv[])
 					AlienFX_SDK::Functions::Reset(false);
 					Sleep(100);
 				}
-				if (res == (-1))
-					lfxUtil.Release();
 				// now store config...
-
 				AlienFX_SDK::Functions::SaveMappings();
 			}
 			else {
 				cerr << " Device didn't answer!" << endl;
 			}
-			AlienFX_SDK::Functions::AlienFXClose();
 		}
+		if (res == (-1))
+			lfxUtil.Release();
+		AlienFX_SDK::Functions::AlienFXClose();
 	}
 	else {
 		cout << "AlienFX devices not present, please check device manage!" << endl;

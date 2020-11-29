@@ -4,7 +4,6 @@
 //#include <list>
 //#include <algorithm>
 #include "resource.h"
-//#include "opencv2/core/mat.hpp"
 #include "opencv2/imgproc.hpp"
 #include <opencv2\imgproc\types_c.h>
 #include <windowsx.h>
@@ -160,15 +159,13 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 
 	// convert to uchar so that it can be used directly for visualization
 	cv::Mat dColor(1, 3, CV_8UC1);
-	//dColor = cv::Mat::zeros(1, 3, CV_8UC1);
 
 	dominantColor.convertTo(dColor, CV_8UC1);
-
-	//std::cout << "Dominant Color is: " <<  dColor << std::endl;
 
 	return dColor;
 }
 
+// Commented part is for multi-thread processing, but single-thread working better.
 /*struct procData {
 	Mat src;
 	UCHAR* dst;
@@ -256,7 +253,6 @@ DWORD WINAPI CInProc(LPVOID param)
 
 		// Resize & calc
 		if (img != NULL) {
-			//Mat redCenter(w / div, h / div, CV_8UC3);
 			Mat* src = NULL;
 			if (cdp == 4) {
 				src = new Mat(h, w, CV_8UC4, img, st);
@@ -267,7 +263,6 @@ DWORD WINAPI CInProc(LPVOID param)
 			}
 			cv::resize(*src, *src, Size(w / div, h / div), 0, 0, INTER_AREA);
 			FillColors(src);
-			//src->release();
 			delete src;
 
 			// Update lights
@@ -293,19 +288,11 @@ DWORD WINAPI CInProc(LPVOID param)
 					0,                 // default startup flags
 					&cuThread);
 		}
-		//free(imgz);
-		//Sleep(50);
 		ULONGLONG nextTick = GetTickCount64();
-		unsigned lastfps = 1000 / (nextTick - lastTick);
 		if (nextTick - lastTick < 100) {
-			Sleep(100 - (nextTick - lastTick));
+			Sleep(100 - (DWORD)(nextTick - lastTick));
 		}
 		lastTick = GetTickCount64();
-		//char text[256];
-		//sprintf_s(text, 255, "Last fps: %d\n", lastfps);
-		//OutputDebugString(text);
-		//HWND fpstext = GetDlgItem(hDlg, IDC_STATIC_LAST);
-		//Static_SetText(fpstext, text);
 	}
 	return 0;
 }
@@ -320,8 +307,6 @@ DWORD WINAPI CDlgProc(LPVOID param)
 		HWND cBid = GetDlgItem(hDlg, IDC_CHECK1 + i);
 		GetWindowRect(tl, &rect);
 		HDC cnt = GetWindowDC(tl);
-		//SetBkColor(cnt, RGB(255, 0, 0));
-		//SetBkMode(cnt, TRANSPARENT);
 		rect.bottom -= rect.top;
 		rect.right -= rect.left;
 		rect.top = rect.left = 0;
@@ -329,15 +314,11 @@ DWORD WINAPI CDlgProc(LPVOID param)
 		Brush = CreateSolidBrush(RGB(img[i*3+2], img[i*3+1], img[i*3]));
 		FillRect(cnt, &rect, Brush);
 		DeleteObject(Brush);
-		UINT state = IsDlgButtonChecked(hDlg, IDC_CHECK1 + i); //Get state of the button
-		if ((state & BST_CHECKED))            // If it is pressed
-		{
-			DrawEdge(cnt, &rect, EDGE_SUNKEN, BF_RECT);    // Draw a sunken face
-		}
+		UINT state = IsDlgButtonChecked(hDlg, IDC_CHECK1 + i); 
+		if ((state & BST_CHECKED))            
+			DrawEdge(cnt, &rect, EDGE_SUNKEN, BF_RECT);   
 		else
-		{
-			DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);    // Draw a raised face
-		}
+			DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);    
 		RedrawWindow(cBid, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 	}
 	return 0;
@@ -345,6 +326,5 @@ DWORD WINAPI CDlgProc(LPVOID param)
 
 DWORD WINAPI CFXProc(LPVOID param) {
 	fxh->Refresh((UCHAR*)param);
-	//fxh->UpdateLights();
 	return 0;
 }

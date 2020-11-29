@@ -32,7 +32,6 @@ int short_term_avg_freq;
 int long_term_avg_freq;
 bool axis_draw = true;
 
-//LFXUtil::LFXUtilC* lfxUtil = NULL;
 ConfigHandler* config = NULL;
 WSAudioIn* audio = NULL;
 
@@ -53,7 +52,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 	g_rgbText = RGB(255, 255, 255);
 	g_rgbBackground = RGB(0, 0, 0);
 	freq=freqp;
-	//lfxUtil = lfxutil;
+
 	config = conf;
 
 	strcpy_s(g_szClassName,14,"myWindowClass");
@@ -102,12 +101,6 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 		CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
 	else
 		CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
-
-	//configHwnd = CreateDialog(GetModuleHandle(NULL),         /// instance handle
-	//	MAKEINTRESOURCE(IDD_DIALOG_CONFIG),    /// dialog box template
-	//	hwnd,                    /// handle to parent
-	//	(DLGPROC)DialogConfigStatic);
-
 }
 
 
@@ -230,7 +223,6 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	//char szSize[500];
 	INT_PTR dlg;
 
 	switch(msg)
@@ -255,20 +247,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					audio->RestartDevice(1);
 					config->Save();
 					break;
-				/*case ID_PARAMS_1:
-					wsprintf(szSize, "          \n          Instantaneous Power: %d µW          \n\n          Weighted Average Power: %d µW          \n\n          Average Power: %d µW          \n\n          ", ((int)(power*1000000)), ((int)(short_term_power*1000000)), ((int)(long_term_power*1000000)) );
-					MessageBox(hwnd, szSize, "Parameters", MB_OK);
-				break;
-				case ID_PARAMS_2:
-					wsprintf(szSize, "          \n\n          Instantaneous center frequency: %d Hz          \n\n          Weighted Average of the center frequency: %d Hz          \n\n          Average center frequency: %d Hz          \n\n          ", avg_freq, short_term_avg_freq, long_term_avg_freq );
-					MessageBox(hwnd, szSize, "Parameters", MB_OK);
-				break;*/
 				case ID_PARAMETERS_SETTINGS:
 					dlg=DialogBox/*CreateDialog*/(GetModuleHandle(NULL),         /// instance handle
 						MAKEINTRESOURCE(IDD_DIALOG_CONFIG),    /// dialog box template
 						hwnd,                    /// handle to parent
 						(DLGPROC)DialogConfigStatic);
-					//ShowWindow(dlg, SW_SHOW);
 				break;
 			}
 		break;
@@ -284,13 +267,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			GetClientRect(hwnd, &rcClient);
 
 			HBRUSH hb = CreateSolidBrush(RGB(0,0,0)); 
-			//HBRUSH hb=CreatePatternBrush((HBITMAP) LoadImage(0,("background.bmp"),IMAGE_BITMAP,rcClient.right,rcClient.bottom,LR_CREATEDIBSECTION|LR_LOADFROMFILE));
+			
 			FillRect(hdc, &rcClient, hb);
 			DeleteObject(hb);
 
 			DrawFreq(hdc, &rcClient);
 
-			//EndPaint(hwnd, &ps);
 			ReleaseDC(hwnd, hdc);
 
 			RedrawWindow(hwnd, 0, 0, RDW_VALIDATE );
@@ -404,7 +386,6 @@ mapping* FindMapping(int did, int lid) {
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	//unsigned i;
 
 	HWND freq_list = GetDlgItem(hDlg, IDC_FREQ);
 	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICE);
@@ -524,7 +505,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
-				unsigned numdev = 1;// config->lfxUtil->GetNumDev();
+
+				size_t numdev = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid).size();
 				if (numdev > 0) {
 					size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
 					AlienFX_SDK::Functions::AlienFXChangeDevice(did);
@@ -629,14 +611,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			} break;
 			}
 		} break;
-		/*case IDC_EDIT_DECAY:
-			switch (HIWORD(wParam)) {
-			case EN_UPDATE: {
-				// update Decay rate
-				y_scale = config->res = GetDlgItemInt(hDlg, IDC_EDIT_DECAY, NULL, false);//atoi(buffer);
-			} break;
-			}
-			break;*/
 		case IDC_EDIT_LOWCUT:
 			switch (HIWORD(wParam)) {
 			case EN_UPDATE: {
@@ -758,7 +732,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
 		lbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
 		int did = (int)SendMessage(dev_list, CB_GETITEMDATA, lbItem, 0);
-		//int fid = (int)SendMessage(freq_list, LB_GETCURSEL, 0, 0);
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK: {
 			map = FindMapping(did, lid);

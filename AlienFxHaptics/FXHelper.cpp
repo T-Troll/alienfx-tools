@@ -4,12 +4,9 @@
 FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
 	freq = freqp;
 	config = conf;
-	//config->fxh = this;
-	//lastUpdate = GetTickCount64();
 	done = 0;
 	stopped = 0;
 	pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
-	//std::cout << "PID: " << std::hex << isInit << std::endl;
 	if (pid != -1)
 	{
 		int count;
@@ -51,7 +48,6 @@ int FXHelper::Refresh(int numbars)
 			fin.cs.red = (fin.cs.red * fin.cs.red) >> 8;
 			fin.cs.green = (fin.cs.green * fin.cs.green) >> 8;
 			fin.cs.blue = (fin.cs.blue * fin.cs.blue) >> 8;
-			//fin.cs.brightness = (unsigned char)((1 - power) * from.cs.brightness + power * to.cs.brightness);
 			AlienFX_SDK::Functions::SetColor(map.lightid,
 				fin.cs.red, fin.cs.green, fin.cs.blue);
 		}
