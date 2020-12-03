@@ -19,15 +19,6 @@ union Colorcode
 	unsigned int ci = 0;
 };
 
-struct mapping {
-	unsigned mode = 0;
-	unsigned mode2 = 0;
-	unsigned speed1 = 0, speed2 = 0;
-	unsigned length1 = 0, length2 = 0;
-	Colorcode c1, c2;
-	void* lightset;
-};
-
 union FlagSet {
 	struct {
 		BYTE flags;
@@ -61,7 +52,8 @@ struct profile {
 class ConfigHandler
 {
 private:
-	HKEY   hKey1 = NULL, hKey2 = NULL, hKey3 = NULL, hKey4 = NULL;
+	HKEY hKey1 = NULL, hKey2 = NULL, hKey3 = NULL, hKey4 = NULL;
+	bool conf_loaded = false;
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -80,7 +72,7 @@ public:
 	DWORD gammaCorrection = 1;
 	Colorcode testColor;
 	COLORREF customColors[16];
-	std::vector<lightset> mappings;
+	std::vector<lightset> active_set;
 	std::vector<profile> profiles;
 
 	ConfigHandler();

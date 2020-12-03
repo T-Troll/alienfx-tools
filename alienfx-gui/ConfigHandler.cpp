@@ -47,6 +47,7 @@ ConfigHandler::ConfigHandler() {
 }
 
 ConfigHandler::~ConfigHandler() {
+    Save();
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
     RegCloseKey(hKey3);
@@ -353,24 +354,27 @@ int ConfigHandler::Load() {
         prof.id = 0;
         prof.flags = 1;
         prof.name = "Default";
-        prof.lightsets = mappings;
-        std::sort(mappings.begin(), mappings.end(), ConfigHandler::sortMappings);
+        prof.lightsets = active_set;
+        std::sort(active_set.begin(), active_set.end(), ConfigHandler::sortMappings);
         profiles.push_back(prof);
     }
     if (profiles.size() == 1)
         profiles[0].flags = profiles[0].flags | 0x1;
     activeProfile = profiles[activeFound].id;
-    mappings = profiles[activeFound].lightsets;
+    active_set = profiles[activeFound].lightsets;
     if (profiles[activeFound].flags & 0x2)
         monState = 0;
     if (profiles[activeFound].flags & 0x4)
         stateDimmed = 1;
+    conf_loaded = true;
 	return 0;
 }
 int ConfigHandler::Save() {
     char name[256];
     BYTE* out;
     DWORD dwDisposition;
+
+    if (!conf_loaded) return 0; // do not save clear config!
 
     if (startWindows) {
         char pathBuffer[2048];
@@ -492,32 +496,45 @@ int ConfigHandler::Save() {
         0,
         REG_BINARY,
         (BYTE*)customColors,
-        4*16
+        4 * 16
     );
-    // clear old profiles
-    RegDeleteTreeA(hKey1, "Profiles");
-    RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxgui\\Profiles"),
-        0,
-        NULL,
-        REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
-        NULL,
-        &hKey4,
-        &dwDisposition);
-    // clear old events
-    RegDeleteTreeA(hKey1, "Events");
-    RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxgui\\Events"),
-        0,
-        NULL,
-        REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
-        NULL,
-        &hKey3,
-        &dwDisposition);
     // set current profile mappings to current set!
-    profiles[activeProfile].lightsets = mappings;
+    profiles[activeProfile].lightsets = active_set;
+    // clear old profiles - check for clean ram (debug!)
+    if (profiles.size() > 0) {
+        RegDeleteTreeA(hKey1, "Profiles");
+        RegCreateKeyEx(HKEY_CURRENT_USER,
+            TEXT("SOFTWARE\\Alienfxgui\\Profiles"),
+            0,
+            NULL,
+            REG_OPTION_NON_VOLATILE,
+            KEY_ALL_ACCESS,//KEY_WRITE,
+            NULL,
+            &hKey4,
+            &dwDisposition);
+    }
+#ifdef _DEBUG
+    else
+        OutputDebugString("Attempt to save empy profiles!\n");
+#endif
+    // clear old events - check for zero events (debug!)
+    if (active_set.size() > 0) {
+        RegDeleteTreeA(hKey1, "Events");
+        RegCreateKeyEx(HKEY_CURRENT_USER,
+            TEXT("SOFTWARE\\Alienfxgui\\Events"),
+            0,
+            NULL,
+            REG_OPTION_NON_VOLATILE,
+            KEY_ALL_ACCESS,//KEY_WRITE,
+            NULL,
+            &hKey3,
+            &dwDisposition);
+    }
+#ifdef _DEBUG
+    else
+        OutputDebugString("Attempt to save empy mappings!\n");
+#endif
+
     for (int j = 0; j < profiles.size(); j++) {
         sprintf_s((char*)name, 255, "Profile-%d", profiles[j].id);
         RegSetValueExA(

@@ -34,7 +34,6 @@ void FXHelper::TestLight(int id)
 		g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
 		b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
 	AlienFX_SDK::Functions::SetColor(id, r, g, b);
-		// config->testColor.cs.red, config->testColor.cs.green, config->testColor.cs.blue);
 	AlienFX_SDK::Functions::UpdateColors();
 }
 
@@ -56,7 +55,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	bool wasChanged = false;
 	bool tHDD = force || (lHDD && !cHDD) || (!lHDD && cHDD),
 		 tNet = force || (lNET && !cNet) || (!lNET && cNet);
-	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++)
+	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++)
 		if (Iter->devid == pid 
 		&& (Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 			&& (lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) != (-1)) {
@@ -183,7 +182,7 @@ int FXHelper::Refresh(bool forced)
 	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
 	int lFlags = 0;
 	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
-	for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++) {
+	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++) {
 		if (Iter->devid == pid) {
 			actions = Iter->eve[0].map;
 			lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid);

@@ -73,8 +73,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     eve->ChangePowerState();
 
-    //eve->StartEvents();
-
     // Perform application initialization:
     if (!(mDlg=InitInstance (hInstance, nCmdShow)))
     {
@@ -124,12 +122,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    //eve->StopEvents();
-
-    conf->Save();
-
-    AlienFX_SDK::Functions::SaveMappings();
-
     delete eve;
     delete fxhl;
     delete conf;
@@ -146,14 +138,10 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
         (DLGPROC)DialogConfigStatic, 0);
     if (!dlg) return NULL;
 
-    //cap = new CaptureHelper(dlg, conf, fxhl);
-
     SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
     SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
 
-    //ShowWindow(hWnd, nCmdShow);
     ShowWindow(dlg, nCmdShow);
-    //UpdateWindow(dlg);
 
     return dlg;
 }
@@ -625,9 +613,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
         OutputDebugString("Suspend initiated\n");
 #endif
-        eve->StopEvents();
-        conf->Save();
-        AlienFX_SDK::Functions::SaveMappings();
         EndDialog(hDlg, IDOK);
         DestroyWindow(hDlg);
         return true;
@@ -758,9 +743,9 @@ lightset* FindMapping(int did, int lid)
 {
     lightset *map = NULL;
     //mapping* mmap = NULL;
-    for (int i = 0; i < conf->mappings.size(); i++)
-        if (conf->mappings[i].devid == did && conf->mappings[i].lightid == lid) {
-            map = &conf->mappings[i];
+    for (int i = 0; i < conf->active_set.size(); i++)
+        if (conf->active_set[i].devid == did && conf->active_set[i].lightid == lid) {
+            map = &conf->active_set[i];
             break;
         }
     return map;
@@ -906,8 +891,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     newmap.eve[3].map.push_back(act);
                     newmap.eve[3].map.push_back(act);
                     newmap.eve[3].fs.b.cut = 90;
-                    conf->mappings.push_back(newmap);
-                    std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                    conf->active_set.push_back(newmap);
+                    std::sort(conf->active_set.begin(), conf->active_set.end(), ConfigHandler::sortMappings);
                     mmap = FindMapping(pid, lid);
                 }
                 // Populate effects list...
@@ -983,9 +968,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if (mmap != NULL &&
                     MessageBox(hDlg, "Do you really want to set all lights for current device to this settings?", "Warning!",
                         MB_YESNO | MB_ICONWARNING) == IDYES) {
-                    for (int i = 0; i < conf->mappings.size(); i++)
-                        if (conf->mappings[i].devid == pid) {
-                            conf->mappings[i].eve[0] = mmap->eve[0];
+                    for (int i = 0; i < conf->active_set.size(); i++)
+                        if (conf->active_set[i].devid == pid && !AlienFX_SDK::Functions::GetFlags(pid, conf->active_set[i].lightid)) {
+                            conf->active_set[i].eve[0] = mmap->eve[0];
                         }
                     fxhl->RefreshState();
                 }
@@ -1033,8 +1018,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_EFFECTS_LIST:
-            int code = ((NMHDR*)lParam)->code;
-            if (((NMHDR*)lParam)->code == NM_CLICK) {
+            //int code = ((NMHDR*)lParam)->code;
+            if (((NMHDR*)lParam)->code == (int)NM_CLICK) {
                 NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
                 // Select other color....
                 effID = sItem->iItem;
@@ -1159,8 +1144,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
                     newmap.eve[3].map.push_back(act);
                     newmap.eve[3].map.push_back(act);
                     newmap.eve[3].fs.b.cut = 90;
-                    conf->mappings.push_back(newmap);
-                    std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                    conf->active_set.push_back(newmap);
+                    std::sort(conf->active_set.begin(), conf->active_set.end(), ConfigHandler::sortMappings);
                     map = FindMapping(pid, lid);
                 }
 
@@ -1317,7 +1302,6 @@ int eLid = (-1), eDid = (-1), lItem = -1, dItem = (-1);
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     lightset* map = NULL;
-    mapping* mmap = NULL;
     unsigned i;
     int pid = AlienFX_SDK::Functions::GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
@@ -1455,7 +1439,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
                 // store profile...
-                conf->profiles[conf->activeProfile].lightsets = conf->mappings;
+                conf->profiles[conf->activeProfile].lightsets = conf->active_set;
                 // delete from all profiles...
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++) {
@@ -1468,7 +1452,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         }
                 }
                 // reset active mappings
-                conf->mappings = conf->profiles[conf->activeProfile].lightsets;
+                conf->active_set = conf->profiles[conf->activeProfile].lightsets;
                 /*std::vector <AlienFX_SDK::mapping>* mapps = AlienFX_SDK::Functions::GetMappings();
                 for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
                     Iter != mapps->end(); Iter++)
@@ -1483,7 +1467,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
                 // store profile...
-                conf->profiles[conf->activeProfile].lightsets = conf->mappings;
+                conf->profiles[conf->activeProfile].lightsets = conf->active_set;
                 // delete from all profiles...
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++) {
@@ -1496,7 +1480,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         }
                 }
                 // reset active mappings
-                conf->mappings = conf->profiles[conf->activeProfile].lightsets;
+                conf->active_set = conf->profiles[conf->activeProfile].lightsets;
             }
             break;
         case IDC_BUTTON_TESTCOLOR: {
@@ -1524,6 +1508,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (pid != -1) {
                 eve->StopEvents();
                 AlienFX_SDK::Functions::AlienFXChangeDevice(pid);
+                //conf->mappings = conf->profiles[conf->activeProfile].lightsets;
                 BYTE status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
                 if (status && status != 0xff)
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
@@ -1629,7 +1614,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             sprintf_s(buf, 128, "Profile %d", vacID);
             prof.id = vacID;
             prof.name = buf;
-            prof.lightsets = conf->mappings;
+            prof.lightsets = conf->active_set;
             conf->profiles.push_back(prof);
             pCitem = ReloadProfileCombo(hDlg, vacID);
             pCid = vacID; 

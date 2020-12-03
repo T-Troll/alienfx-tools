@@ -73,8 +73,8 @@ void EventHandler::SwitchActiveProfile(int newID)
         if (newP != NULL) {
             StopEvents();
             if (oldP != NULL)
-                oldP->lightsets = conf->mappings;
-            conf->mappings = newP->lightsets;
+                oldP->lightsets = conf->active_set;
+            conf->active_set = newP->lightsets;
             conf->activeProfile = newID;
             conf->monState = newP->flags & 0x2 ? 0 : conf->enableMon;
             conf->stateDimmed = newP->flags & 0x4;
