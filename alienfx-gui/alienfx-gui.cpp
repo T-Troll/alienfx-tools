@@ -9,6 +9,8 @@
 #include <Commdlg.h>
 #include <shellapi.h>
 #include <psapi.h>
+#include <ColorDlg.h>
+#include <algorithm>
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
@@ -48,6 +50,169 @@ EventHandler* eve;
 
 HWND mDlg;
 
+bool DoStopService(bool kind) {
+    SERVICE_STATUS_PROCESS ssp;
+    DWORD dwStartTime = GetTickCount();
+    DWORD dwBytesNeeded;
+    DWORD dwTimeout = 10000; // 10-second time-out
+    //DWORD dwWaitTime;
+
+    // Get a handle to the SCM database. 
+
+    SC_HANDLE schSCManager = OpenSCManager(
+        NULL,                    // local computer
+        NULL,                    // ServicesActive database 
+        /*SC_MANAGER_ALL_ACCESS*/ GENERIC_READ);  // full access rights 
+
+    if (NULL == schSCManager)
+    {
+        //printf("OpenSCManager failed (%d)\n", GetLastError());
+        return false;
+    }
+
+    // Get a handle to the service.
+
+    SC_HANDLE schService = OpenService(
+        schSCManager,         // SCM database 
+        "AWCCService",            // name of service 
+        /*SERVICE_STOP |*/
+        SERVICE_QUERY_STATUS /*|
+        SERVICE_ENUMERATE_DEPENDENTS*/);
+
+    if (schService == NULL)
+    {
+        //printf("OpenService failed (%d)\n", GetLastError());
+        CloseServiceHandle(schSCManager);
+        return false;
+    }
+
+    // Make sure the service is not already stopped.
+
+    if (QueryServiceStatusEx(
+        schService,
+        SC_STATUS_PROCESS_INFO,
+        (LPBYTE)&ssp,
+        sizeof(SERVICE_STATUS_PROCESS),
+        &dwBytesNeeded))
+    {
+
+        if (ssp.dwCurrentState == SERVICE_STOPPED)
+        {
+            //printf("Service is already stopped.\n");
+            if (kind) {
+                CloseServiceHandle(schService);
+                CloseServiceHandle(schSCManager);
+                return false;
+            } // TODO - start service if it was stopped.
+            else {
+                schService = OpenService(
+                    schSCManager,         // SCM database 
+                    "AWCCService",            // name of service 
+                    SERVICE_STOP | SERVICE_START |
+                    SERVICE_QUERY_STATUS /*|
+                    SERVICE_ENUMERATE_DEPENDENTS*/);
+
+                if (schService != NULL)
+                {
+                    StartService(
+                        schService,  // handle to service 
+                        0,           // number of arguments 
+                        NULL);
+
+                    CloseServiceHandle(schService);
+                    CloseServiceHandle(schSCManager);
+                    return false;
+                }
+            }
+        }
+
+        // Evalute UAC and re-open manager and service here.
+
+        CloseServiceHandle(schService);
+        
+        schService = OpenService(
+            schSCManager,         // SCM database 
+            "AWCCService",            // name of service 
+            SERVICE_STOP | SERVICE_START |
+            SERVICE_QUERY_STATUS /*|
+            SERVICE_ENUMERATE_DEPENDENTS*/);
+
+        if (schService == NULL)
+        {
+            // Evaluation attempt...
+            char szPath[MAX_PATH];
+            if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+            {
+                // Launch itself as admin
+                SHELLEXECUTEINFO sei = { sizeof(sei) };
+                sei.lpVerb = "runas";
+                sei.lpFile = szPath;
+                sei.hwnd = NULL;
+                sei.nShow = SW_NORMAL;
+                if (!ShellExecuteEx(&sei))
+                {
+                    DWORD dwError = GetLastError();
+                    if (dwError == ERROR_CANCELLED)
+                    {
+                        CloseServiceHandle(schService);
+                        CloseServiceHandle(schSCManager);
+                        return false;
+                    }
+                }
+                else
+                {
+                    _exit(1);  // Quit itself
+                }
+            }
+            return false;
+        }
+
+        // Send a stop code to the service.
+
+        if (!ControlService(
+            schService,
+            SERVICE_CONTROL_STOP,
+            (LPSERVICE_STATUS)&ssp))
+        {
+            CloseServiceHandle(schService);
+            CloseServiceHandle(schSCManager);
+            return false;
+        }
+
+        // Wait for the service to stop.
+
+        while (ssp.dwCurrentState != SERVICE_STOPPED)
+        {
+            Sleep(ssp.dwWaitHint);
+            if (!QueryServiceStatusEx(
+                schService,
+                SC_STATUS_PROCESS_INFO,
+                (LPBYTE)&ssp,
+                sizeof(SERVICE_STATUS_PROCESS),
+                &dwBytesNeeded))
+            {
+                CloseServiceHandle(schService);
+                CloseServiceHandle(schSCManager);
+                return false;
+            }
+
+            if (ssp.dwCurrentState == SERVICE_STOPPED)
+                break;
+
+            if (GetTickCount() - dwStartTime > dwTimeout)
+            {
+                CloseServiceHandle(schService);
+                CloseServiceHandle(schSCManager);
+                return false;
+            }
+        }
+    }
+
+    CloseServiceHandle(schService);
+    CloseServiceHandle(schSCManager);
+    return true;
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -56,28 +221,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Place code here.
-
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_ALIENFXGUI, szWindowClass, MAX_LOADSTRING);
     //MyRegisterClass(hInstance);
-
-    conf = new ConfigHandler();
-    fxhl = new FXHelper(conf);
-
-    conf->Load();
-    fxhl->Refresh(true);
-
-    eve = new EventHandler(conf, fxhl);
-
-    eve->ChangePowerState();
-
-    // Perform application initialization:
-    if (!(mDlg=InitInstance (hInstance, nCmdShow)))
-    {
-        return FALSE;
-    }
 
     //register global hotkeys...
     RegisterHotKey(
@@ -104,29 +251,60 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Power notifications...
     RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
-    // minimize if needed
-    if (conf->startMinimized)
-        SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
+    bool wasAWCC = DoStopService(true);
 
-    MSG msg;
-    // Main message loop:
-    while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-        if (!TranslateAccelerator(
-            mDlg,      // handle to receiving window 
-            hAccelTable,        // handle to active accelerator table 
-            &msg))         // message data 
+    conf = new ConfigHandler();
+    fxhl = new FXHelper(conf);
+
+    conf->Load();
+
+    if (fxhl->GetDevList().size() > 0) {
+
+        fxhl->Refresh(true);
+
+        eve = new EventHandler(conf, fxhl);
+
+        eve->ChangePowerState();
+
+        // Perform application initialization:
+        if (!(mDlg = InitInstance(hInstance, nCmdShow)))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            return FALSE;
         }
+
+        // minimize if needed
+        if (conf->startMinimized)
+            SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
+        HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
+
+        MSG msg;
+        // Main message loop:
+        while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+            if (!TranslateAccelerator(
+                mDlg,      // handle to receiving window 
+                hAccelTable,        // handle to active accelerator table 
+                &msg))         // message data 
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+
+        delete eve;
+
+    }
+    else {
+        // no fx device detected!
+        MessageBox(NULL, "No Alienware light devices detected, exiting!", "Fatal error",
+            MB_OK | MB_ICONSTOP);
     }
 
-    delete eve;
     delete fxhl;
     delete conf;
 
-    return (int) msg.wParam;
+    if (wasAWCC) DoStopService(false);
+
+    return 0;
 }
 
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
@@ -675,8 +853,6 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
     //RedrawWindow(tl, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
-#include <ColorDlg.h>
-#include <algorithm>
 AlienFX_SDK::afx_act* mod;
 
 UINT_PTR Lpcchookproc(
