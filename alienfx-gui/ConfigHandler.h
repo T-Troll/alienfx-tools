@@ -68,6 +68,7 @@ public:
 	DWORD monState = 1;
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = 0;
+	DWORD defaultProfile = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
 	DWORD gammaCorrection = 1;
 	Colorcode testColor;

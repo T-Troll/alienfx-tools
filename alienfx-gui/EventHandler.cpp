@@ -46,7 +46,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 {
     if (conf->offWithScreen) {
         conf->stateOn = conf->lightsOn && state;
-        fxh->Refresh(true);
+        //fxh->Refresh(true);
         if (conf->stateOn) {
             StartEvents();
         }
@@ -81,7 +81,7 @@ void EventHandler::SwitchActiveProfile(int newID)
             StartEvents();
     #ifdef _DEBUG
             char buff[2048];
-            sprintf_s(buff, 2047, "Profile switched to %s\n", newP->name.c_str());
+            sprintf_s(buff, 2047, "Profile switched to #%d (\"%s\")\n", newP->id, newP->name.c_str());
             OutputDebugString(buff);
     #endif
         }
@@ -232,14 +232,8 @@ DWORD CProfileProc(LPVOID param) {
                 src->SwitchActiveProfile(newp);
             }
             else {
-                // looking for default profile....
-                int defIndex = 0;
-                for (int j = 0; j < src->conf->profiles.size(); j++)
-                    if (src->conf->profiles[j].flags & 0x1) {
-                        defIndex = j;
-                        break;
-                    }
-                src->SwitchActiveProfile(defIndex);
+                // switch for default profile....
+                src->SwitchActiveProfile(src->conf->defaultProfile);
             }
         }
     }

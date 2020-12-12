@@ -346,6 +346,8 @@ int ConfigHandler::Load() {
             std::sort(profiles[i].lightsets.begin(), profiles[i].lightsets.end(), ConfigHandler::sortMappings);
             if (profiles[i].id == activeProfile)
                 activeFound = i;
+            if (profiles[i].flags & 0x1)
+                defaultProfile = profiles[i].id;
         }
     }
     else {
@@ -354,13 +356,14 @@ int ConfigHandler::Load() {
         prof.id = 0;
         prof.flags = 1;
         prof.name = "Default";
-        prof.lightsets = active_set;
         std::sort(active_set.begin(), active_set.end(), ConfigHandler::sortMappings);
+        prof.lightsets = active_set;
         profiles.push_back(prof);
     }
-    if (profiles.size() == 1)
+    if (profiles.size() == 1) {
         profiles[0].flags = profiles[0].flags | 0x1;
-    activeProfile = profiles[activeFound].id;
+        defaultProfile = activeProfile = profiles[0].id;
+    }
     active_set = profiles[activeFound].lightsets;
     if (profiles[activeFound].flags & 0x2)
         monState = 0;

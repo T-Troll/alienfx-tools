@@ -758,9 +758,10 @@ namespace AlienFX_SDK
 	bool Functions::AlienFXClose()
 	{
 		bool result = false;
-		mappings.clear();
 		if (devHandle != NULL)
 		{
+			mappings.clear();
+			devices.clear();
 			result = CloseHandle(devHandle);
 		}
 		return result;
@@ -819,7 +820,7 @@ namespace AlienFX_SDK
 			NULL,
 			&hKey1,
 			&dwDisposition);
-		int size = 4;
+		//int size = 4;
 
 		unsigned vindex = 0; mapping map; devmap dev;
 		char name[255], inarray[255];
@@ -871,6 +872,7 @@ namespace AlienFX_SDK
 		HKEY   hKey1;
 		size_t numdevs = devices.size();
 		size_t numlights = mappings.size();
+		if (numdevs == 0) return;
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE"),
 			0,
@@ -881,6 +883,7 @@ namespace AlienFX_SDK
 			&hKey1,
 			&dwDisposition);
 		RegDeleteTreeA(hKey1, "Alienfx_SDK");
+		RegCloseKey(hKey1);
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
 			0,
@@ -894,7 +897,7 @@ namespace AlienFX_SDK
 
 		for (int i = 0; i < numdevs; i++) {
 			//preparing name
-			sprintf_s((char*)name, 255, "Dev#%d", devices[i].devid);
+			sprintf_s(name, 255, "Dev#%d", devices[i].devid);
 
 			RegSetValueExA(
 				hKey1,

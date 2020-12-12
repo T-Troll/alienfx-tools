@@ -41,10 +41,10 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 {
 	std::vector <lightset>::iterator Iter;
 #ifdef _DEBUG
-	char buff[2048];
-	sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
+	//char buff[2048];
+	//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
 	//sprintf_s(buff, 2047, "CounterUpdate: S%d,", AlienFX_SDK::Functions::AlienfxGetDeviceStatus());
-	OutputDebugString(buff);
+	//OutputDebugString(buff);
 #endif
 	if (config->autoRefresh) Refresh();
 	if (force)
@@ -121,8 +121,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
 }
 
-void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force)// mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b,
-	//BYTE mode2, BYTE length2, BYTE speed2, BYTE r2, BYTE g2, BYTE b2, bool force)
+void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force)
 {
 	// modify colors for dimmed...
 	const unsigned delta = 256 - config->dimmingPower;
@@ -134,18 +133,12 @@ void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> ac
 				actions[i].r = (actions[i].r * delta) >> 8;
 				actions[i].g = (actions[i].g * delta) >> 8;
 				actions[i].b = (actions[i].b * delta) >> 8;
-				/*r2 = (r2 * delta) >> 8;
-				g2 = (g2 * delta) >> 8;
-				b2 = (b2 * delta) >> 8;*/
 			}
 			// gamma-correction...
 			if (config->gammaCorrection) {
 				actions[i].r = (actions[i].r * actions[i].r) >> 8;
 				actions[i].g = (actions[i].g * actions[i].g) >> 8;
 				actions[i].b = (actions[i].b * actions[i].b) >> 8;
-				/*r2 = (r2 * r2) >> 8;
-				g2 = (g2 * g2) >> 8;
-				b2 = (b2 * b2) >> 8;*/
 			}
 		}
 		if (power && actions.size() > 1)

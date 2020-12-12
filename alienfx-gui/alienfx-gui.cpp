@@ -226,31 +226,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     LoadStringW(hInstance, IDC_ALIENFXGUI, szWindowClass, MAX_LOADSTRING);
     //MyRegisterClass(hInstance);
 
-    //register global hotkeys...
-    RegisterHotKey(
-        mDlg,
-        1,
-        MOD_CONTROL | MOD_SHIFT,
-        VK_F12
-    );
-
-    RegisterHotKey(
-        mDlg,
-        2,
-        MOD_CONTROL | MOD_SHIFT,
-        VK_F11
-    );
-
-    RegisterHotKey(
-        mDlg,
-        3,
-        0,
-        VK_F18
-    );
-
-    // Power notifications...
-    RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
-
     bool wasAWCC = DoStopService(true);
 
     conf = new ConfigHandler();
@@ -271,6 +246,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         {
             return FALSE;
         }
+
+        //register global hotkeys...
+        RegisterHotKey(
+            mDlg,
+            1,
+            MOD_CONTROL | MOD_SHIFT,
+            VK_F12
+        );
+
+        RegisterHotKey(
+            mDlg,
+            2,
+            MOD_CONTROL | MOD_SHIFT,
+            VK_F11
+        );
+
+        RegisterHotKey(
+            mDlg,
+            3,
+            0,
+            VK_F18
+        );
+
+        // Power notifications...
+        RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
         // minimize if needed
         if (conf->startMinimized)
@@ -764,11 +764,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC: {
             // resume from sleep/hybernate
+            //AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+#ifdef _DEBUG
+            OutputDebugString("Resume from Sleep/hibernate initiated\n");
+#endif
             int cPid = AlienFX_SDK::Functions::GetPID();
             if (cPid != -1) {
                 AlienFX_SDK::Functions::AlienFXChangeDevice(cPid);
                 eve->ChangePowerState();
-                eve->StartEvents();
+                eve->StartProfiles();
             }
         } break;
         case PBT_APMPOWERSTATUSCHANGE:
@@ -779,10 +783,18 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
             if (sParams->PowerSetting == GUID_MONITOR_POWER_ON) {
                 eve->ChangeScreenState(sParams->Data[0]);
+#ifdef _DEBUG
+                OutputDebugString("Screen state changed\n");
+#endif
             }
         } break;
         case PBT_APMSUSPEND:
-            eve->StopEvents();
+#ifdef _DEBUG
+            OutputDebugString("Sleep/hibernate initiated\n");
+#endif
+            eve->StopProfiles();
+            //fxhl->Refresh(true);
+            return true;
             break;
         }
         break;
@@ -791,6 +803,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
         OutputDebugString("Suspend initiated\n");
 #endif
+        eve->StopEvents();
+        fxhl->Refresh(true);
         EndDialog(hDlg, IDOK);
         DestroyWindow(hDlg);
         return true;
@@ -1809,14 +1823,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                     }
                 // now check about profile switch needed
                 if (conf->activeProfile == pCid) {
-                    // find default profile..
-                    for (std::vector <profile>::iterator Iter = conf->profiles.begin();
-                        Iter != conf->profiles.end(); Iter++)
-                        if (Iter->flags & 0x1) {
-                            pCid = Iter->id;
-                            break;
-                        }
-                    eve->SwitchActiveProfile(pCid);
+                    // switch to default profile..
+                    eve->SwitchActiveProfile(conf->defaultProfile);
                     pCitem = ReloadProfileCombo(hDlg, conf->activeProfile);
                 }
                 else {
@@ -1857,14 +1865,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             if (prof != NULL) {
                 bool nflags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
                 if (nflags) {
-                    for (std::vector <profile>::iterator Iter = conf->profiles.begin();
-                        Iter != conf->profiles.end(); Iter++)
-                        if (Iter->flags & 0x1) {
-                            // there are should be only 1 default profile!
-                            Iter->flags = Iter->flags & 0xfe;
-                            //break;
-                        }
+                    profile* old_def = eve->FindProfile(conf->defaultProfile);
+                    if (old_def != NULL)
+                        old_def->flags = old_def->flags & 0xfe;
                     prof->flags = prof->flags | 0x1;
+                    conf->defaultProfile = prof->id;
                 }
                 else
                     CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
