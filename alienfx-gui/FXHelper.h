@@ -19,8 +19,7 @@ private:
 	int pid;
 	ConfigHandler* config;
 	int activeMode = 0;
-	//int lastTest = -1;
-	//bool devbusy = false;
+	int lastTest = -1;
 	std::vector<int> devList;
 	long lCPU=0, lRAM=0, lHDD=0, lGPU=0, lNET=0, lTemp=0, lBatt = 100;
 	int HDDTrigger = 0, NetTrigger = 0;

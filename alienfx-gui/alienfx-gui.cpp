@@ -1566,6 +1566,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         break;
                     }
                 }
+                if (i == AlienFX_SDK::Functions::GetDevices()->size()) {
+                    AlienFX_SDK::devmap nDev;
+                    nDev.devid = eDid;
+                    nDev.name = buffer;
+                    AlienFX_SDK::Functions::GetDevices()->push_back(nDev);
+                }
                 SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
                 SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
                 SendMessage(dev_list, CB_SETITEMDATA, dItem, (LPARAM)eDid);

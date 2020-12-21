@@ -33,6 +33,11 @@ void FXHelper::TestLight(int id)
 	int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
 		g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
 		b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
+	if (id != lastTest) {
+		if (lastTest >= 0)
+			AlienFX_SDK::Functions::SetColor(lastTest, 0, 0, 0);
+		lastTest = id;
+	}
 	AlienFX_SDK::Functions::SetColor(id, r, g, b);
 	AlienFX_SDK::Functions::UpdateColors();
 }
