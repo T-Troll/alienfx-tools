@@ -1520,7 +1520,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 char devName[256];
                 sprintf_s(devName, 255, "Device #%X", cpid);
                 pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
-                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
+                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
             }
             if (cpid == pid) {
                 // select this device.
@@ -1554,7 +1554,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 if (AlienFX_SDK::Functions::AlienfxGetDeviceStatus())
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
                 else
-                    SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Unavaliable");
+                    SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
                 eLid = -1; lItem = -1; eDid = did; dItem = dbItem;
             } break;
             case CBN_EDITCHANGE:
@@ -1593,7 +1593,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 char buffer[256];
                 GetWindowTextA(light_list, buffer, 256);
                 for (i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
-                    if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == did &&
+                    if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == eDid &&
                         AlienFX_SDK::Functions::GetMappings()->at(i).lightid == eLid) {
                         AlienFX_SDK::Functions::GetMappings()->at(i).name = buffer;
                         SendMessage(light_list, CB_DELETESTRING, lItem , 0);
@@ -1616,7 +1616,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
             for (int i = 0; i < lights; i++) {
                 AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                if (lgh.devid == did) {
+                if (lgh.devid == eDid) {
                     if (lgh.lightid > maxID)
                         maxID = lgh.lightid;
                     if (lgh.lightid == cid) haveID = true;
@@ -1624,12 +1624,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             }
             if (haveID) cid = maxID + 1;
             AlienFX_SDK::mapping dev;
-            dev.devid = did;
+            dev.devid = eDid;
             dev.lightid = cid;
             sprintf_s(buffer, 255, "Light #%d", cid);
             dev.name = buffer;
             AlienFX_SDK::Functions::GetMappings()->push_back(dev);
-            UpdateLightList(light_list, did);
+            UpdateLightList(light_list, eDid);
         } break;
         case IDC_BUTTON_REML:
             if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
@@ -1649,14 +1649,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 }
                 // reset active mappings
                 conf->active_set = conf->profiles[conf->activeProfile].lightsets;
-                /*std::vector <AlienFX_SDK::mapping>* mapps = AlienFX_SDK::Functions::GetMappings();
+                std::vector <AlienFX_SDK::mapping>* mapps = AlienFX_SDK::Functions::GetMappings();
                 for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
                     Iter != mapps->end(); Iter++)
-                    if (Iter->devid == did && Iter->lightid == lid) {
+                    if (Iter->devid == eDid && Iter->lightid == lid) {
                         AlienFX_SDK::Functions::GetMappings()->erase(Iter);
                         break;
-                    }*/
-                UpdateLightList(light_list, did);
+                    }
+                UpdateLightList(light_list, eDid);
             }
             break;
         case IDC_BUTTON_RESETCOLOR:
