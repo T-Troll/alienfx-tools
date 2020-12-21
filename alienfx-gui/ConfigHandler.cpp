@@ -140,8 +140,6 @@ int ConfigHandler::Load() {
         NULL,
         &enableProf,
         (LPDWORD)&size);
-    if (ret != ERROR_SUCCESS)
-        enableProf = 1;
     RegGetValue(hKey1,
         NULL,
         TEXT("OffWithScreen"),

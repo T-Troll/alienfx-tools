@@ -1072,7 +1072,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     newmap.lightid = lid;
                     newmap.eve[0].fs.b.flags = 1;
                     newmap.eve[0].map.push_back(act);
-                    if (!AlienFX_SDK::Functions::GetFlags(pid, lid))
+                    if (AlienFX_SDK::Functions::GetFlags(pid, lid))
                         newmap.eve[0].map.push_back(act);
                     newmap.eve[1].map.push_back(act);
                     newmap.eve[1].map.push_back(act);
