@@ -47,6 +47,7 @@ namespace AlienFX_SDK
 		std::vector<int> pids;
 		GUID guid;
 		bool flag = false;
+		HANDLE tdevHandle;
 
 		HidD_GetHidGuid(&guid);
 		HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
@@ -89,13 +90,13 @@ namespace AlienFX_SDK
 			{
 				std::wstring devicePath = deviceInterfaceDetailData->DevicePath;
 				//OutputDebugString(devicePath.c_str());
-				devHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+				tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
-				if (devHandle != INVALID_HANDLE_VALUE)
+				if (tdevHandle != INVALID_HANDLE_VALUE)
 				{
 					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
 					attributes->Size = sizeof(HIDD_ATTRIBUTES);
-					if (HidD_GetAttributes(devHandle, attributes.get()))
+					if (HidD_GetAttributes(tdevHandle, attributes.get()))
 					{
 
 						if (attributes->VendorID == vid)
@@ -104,7 +105,7 @@ namespace AlienFX_SDK
 						}
 					}
 				}
-				CloseHandle(devHandle);
+				CloseHandle(tdevHandle);
 			}
 		}
 		return pids;

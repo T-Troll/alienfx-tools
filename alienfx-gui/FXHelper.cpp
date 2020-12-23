@@ -23,6 +23,7 @@ FXHelper::~FXHelper() {
 };
 
 std::vector<int> FXHelper::GetDevList() {
+	devList = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	return devList;
 }
 
