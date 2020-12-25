@@ -135,6 +135,15 @@ int ConfigHandler::Load() {
         gammaCorrection = 1;
     ret = RegGetValue(hKey1,
         NULL,
+        TEXT("DisableAWCC"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &awcc_disable,
+        (LPDWORD)&size);
+    if (ret != ERROR_SUCCESS)
+        awcc_disable = 1;
+    RegGetValue(hKey1,
+        NULL,
         TEXT("ProfileAutoSwitch"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
@@ -489,6 +498,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&enableProf,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("DisableAWCC"),
+        0,
+        REG_DWORD,
+        (BYTE*)&awcc_disable,
         4
     );
     RegSetValueEx(

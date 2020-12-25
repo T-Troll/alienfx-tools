@@ -69,6 +69,8 @@ public:
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = 0;
 	DWORD defaultProfile = 0;
+	DWORD awcc_disable = 1;
+	DWORD block_power = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
 	DWORD gammaCorrection = 1;
 	Colorcode testColor;

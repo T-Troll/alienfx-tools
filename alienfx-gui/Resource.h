@@ -76,6 +76,8 @@
 #define IDC_ADDPROFILE                  1035
 #define IDC_BATTMONITOR                 1036
 #define IDC_BATTPROFILE                 1037
+#define IDC_BATTPROFILE2                1038
+#define IDC_AWCC                        1038
 #define IDC_BUTTON_TESTCOLOR            1039
 #define IDC_TYPE1                       1040
 #define IDC_SYSLINK_HOMEPAGE            1043
@@ -118,7 +120,6 @@
 #define ID_ACC_DEVICES                  32786
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
-#define ID_ACCELERATOR32790             32790
 #define ID_ACC_PROFILES                 32790
 #define IDC_STATIC                      -1
 

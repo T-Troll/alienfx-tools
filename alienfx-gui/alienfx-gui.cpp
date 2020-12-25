@@ -102,6 +102,7 @@ bool DoStopService(bool kind) {
             if (kind) {
                 CloseServiceHandle(schService);
                 CloseServiceHandle(schSCManager);
+                conf->block_power = false;
                 return false;
             } // TODO - start service if it was stopped.
             else {
@@ -129,83 +130,88 @@ bool DoStopService(bool kind) {
         // Evalute UAC and re-open manager and service here.
 
         CloseServiceHandle(schService);
-        
-        schService = OpenService(
-            schSCManager,         // SCM database 
-            "AWCCService",            // name of service 
-            SERVICE_STOP | SERVICE_START |
-            SERVICE_QUERY_STATUS /*|
-            SERVICE_ENUMERATE_DEPENDENTS*/);
 
-        if (schService == NULL)
-        {
-            // Evaluation attempt...
-            char szPath[MAX_PATH];
-            if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+        if (conf->awcc_disable && kind) {
+
+            schService = OpenService(
+                schSCManager,         // SCM database 
+                "AWCCService",            // name of service 
+                SERVICE_STOP | SERVICE_START |
+                SERVICE_QUERY_STATUS /*|
+                SERVICE_ENUMERATE_DEPENDENTS*/);
+
+            if (schService == NULL)
             {
-                // Launch itself as admin
-                SHELLEXECUTEINFO sei = { sizeof(sei) };
-                sei.lpVerb = "runas";
-                sei.lpFile = szPath;
-                sei.hwnd = NULL;
-                sei.nShow = SW_NORMAL;
-                if (!ShellExecuteEx(&sei))
+                // Evaluation attempt...
+                char szPath[MAX_PATH];
+                if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
                 {
-                    DWORD dwError = GetLastError();
-                    if (dwError == ERROR_CANCELLED)
+                    // Launch itself as admin
+                    SHELLEXECUTEINFO sei = { sizeof(sei) };
+                    sei.lpVerb = "runas";
+                    sei.lpFile = szPath;
+                    sei.hwnd = NULL;
+                    sei.nShow = SW_NORMAL;
+                    if (!ShellExecuteEx(&sei))
                     {
-                        CloseServiceHandle(schService);
-                        CloseServiceHandle(schSCManager);
-                        return false;
+                        DWORD dwError = GetLastError();
+                        if (dwError == ERROR_CANCELLED)
+                        {
+                            CloseServiceHandle(schService);
+                            CloseServiceHandle(schSCManager);
+                            conf->block_power = true;
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        _exit(1);  // Quit itself
                     }
                 }
-                else
+                return false;
+            }
+
+            // Send a stop code to the service.
+
+            if (!ControlService(
+                schService,
+                SERVICE_CONTROL_STOP,
+                (LPSERVICE_STATUS)&ssp))
+            {
+                CloseServiceHandle(schService);
+                CloseServiceHandle(schSCManager);
+                return false;
+            }
+
+            // Wait for the service to stop.
+
+            while (ssp.dwCurrentState != SERVICE_STOPPED)
+            {
+                Sleep(ssp.dwWaitHint);
+                if (!QueryServiceStatusEx(
+                    schService,
+                    SC_STATUS_PROCESS_INFO,
+                    (LPBYTE)&ssp,
+                    sizeof(SERVICE_STATUS_PROCESS),
+                    &dwBytesNeeded))
                 {
-                    _exit(1);  // Quit itself
+                    CloseServiceHandle(schService);
+                    CloseServiceHandle(schSCManager);
+                    return false;
+                }
+
+                if (ssp.dwCurrentState == SERVICE_STOPPED)
+                    break;
+
+                if (GetTickCount() - dwStartTime > dwTimeout)
+                {
+                    CloseServiceHandle(schService);
+                    CloseServiceHandle(schSCManager);
+                    return false;
                 }
             }
-            return false;
         }
-
-        // Send a stop code to the service.
-
-        if (!ControlService(
-            schService,
-            SERVICE_CONTROL_STOP,
-            (LPSERVICE_STATUS)&ssp))
-        {
-            CloseServiceHandle(schService);
-            CloseServiceHandle(schSCManager);
-            return false;
-        }
-
-        // Wait for the service to stop.
-
-        while (ssp.dwCurrentState != SERVICE_STOPPED)
-        {
-            Sleep(ssp.dwWaitHint);
-            if (!QueryServiceStatusEx(
-                schService,
-                SC_STATUS_PROCESS_INFO,
-                (LPBYTE)&ssp,
-                sizeof(SERVICE_STATUS_PROCESS),
-                &dwBytesNeeded))
-            {
-                CloseServiceHandle(schService);
-                CloseServiceHandle(schSCManager);
-                return false;
-            }
-
-            if (ssp.dwCurrentState == SERVICE_STOPPED)
-                break;
-
-            if (GetTickCount() - dwStartTime > dwTimeout)
-            {
-                CloseServiceHandle(schService);
-                CloseServiceHandle(schSCManager);
-                return false;
-            }
-        }
+        else conf->block_power = true;
     }
 
     CloseServiceHandle(schService);
@@ -226,12 +232,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     LoadStringW(hInstance, IDC_ALIENFXGUI, szWindowClass, MAX_LOADSTRING);
     //MyRegisterClass(hInstance);
 
-    bool wasAWCC = DoStopService(true);
-
     conf = new ConfigHandler();
     fxhl = new FXHelper(conf);
 
     conf->Load();
+
+    bool wasAWCC = DoStopService(true);
 
     if (fxhl->GetDevList().size() > 0) {
 
@@ -772,6 +778,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             if (cPid != -1) {
                 AlienFX_SDK::Functions::AlienFXChangeDevice(cPid);
                 eve->ChangePowerState();
+                eve->StartEvents();
                 eve->StartProfiles();
             }
         } break;
@@ -793,7 +800,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             OutputDebugString("Sleep/hibernate initiated\n");
 #endif
             eve->StopProfiles();
-            //fxhl->Refresh(true);
+            eve->StopEvents();
             return true;
             break;
         }
@@ -801,10 +808,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_QUERYENDSESSION: //case WM_ENDSESSION:
         // Shutdown/restart scheduled....
 #ifdef _DEBUG
-        OutputDebugString("Suspend initiated\n");
+        OutputDebugString("Shutdown initiated\n");
 #endif
+        eve->StopProfiles();
         eve->StopEvents();
-        fxhl->Refresh(true);
+        //fxhl->Refresh(true);
         EndDialog(hDlg, IDOK);
         DestroyWindow(hDlg);
         return true;
@@ -1929,6 +1937,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
         if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
         if (conf->enableProf) CheckDlgButton(hDlg, IDC_BATTPROFILE, BST_CHECKED);
+        if (conf->awcc_disable) CheckDlgButton(hDlg, IDC_AWCC, BST_CHECKED);
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
         SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -1979,6 +1988,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         case IDC_OFFPOWERBUTTON:
             conf->offPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             fxhl->RefreshState();
+            break;
+        case IDC_AWCC:
+            conf->awcc_disable = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            if (!conf->awcc_disable) conf->block_power = true;
             break;
         default: return false;
         }
