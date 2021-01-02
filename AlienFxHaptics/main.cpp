@@ -74,7 +74,7 @@ DWORD WINAPI resample(LPVOID lpParam)
 	}
 	double* waveDouble = (double*)lpParam;
 
-	dftG->setYscale(Graphika->getYScale());
+	//dftG->setYscale(Graphika->getYScale());
 
 	dftG->calc(waveDouble);
 

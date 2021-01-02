@@ -30,7 +30,12 @@ int FXHelper::GetPID() {
 int FXHelper::Refresh(int numbars)
 {
 	unsigned i = 0;
-	if (!AlienFX_SDK::Functions::IsDeviceReady()) return 1;
+	if (!AlienFX_SDK::Functions::IsDeviceReady()) {
+#ifdef _DEBUG
+		OutputDebugString("Device not ready!\n");
+#endif
+		return 1;
+	}
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		if (map.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, map.lightid) == 0 && map.map.size() > 0) {

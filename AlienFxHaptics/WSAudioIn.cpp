@@ -183,6 +183,7 @@ IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
 DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 {
 	DWORD dwThreadID;
+	HANDLE updHandle = 0;
 	UINT32 packetLength = 0;
 	UINT32 numFramesAvailable = 0;
 	int arrayPos = 0, shift;
@@ -231,14 +232,24 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					waveT[arrayPos + i - shift] = (double)(finVal / nChannel) / maxLevel / NUMSAM;// / (pow(256, bytesPerChannel) - 1);
 					if (arrayPos + i == NUMSAM - 1) {
 						//buffer full, send to process.
-						memcpy(waveD, waveT, NUMSAM * sizeof(double));
-						CreateThread(
-							NULL,              // default security
-							0,                 // default stack size
-							mFunction,        // name of the thread function
-							waveD,
-							0,                 // default startup flags
-							&dwThreadID);
+						DWORD exitCode = 0;
+						if (updHandle)
+							GetExitCodeThread(updHandle, &exitCode);
+						if (exitCode != STILL_ACTIVE) {
+							memcpy(waveD, waveT, NUMSAM * sizeof(double));
+							updHandle = CreateThread(
+								NULL,              // default security
+								0,                 // default stack size
+								mFunction,        // name of the thread function
+								waveD,
+								0,                 // default startup flags
+								&dwThreadID);
+						}
+#ifdef _DEBUG
+						else {
+							OutputDebugString("Update in process, skipping!\n");
+						}
+#endif
 						//reset arrayPos
 						arrayPos = 0;
 						shift = i;

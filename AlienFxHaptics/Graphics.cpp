@@ -203,7 +203,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 				int frq = int(22 - round((log(22.0 - i) * coeff)));
 				if (frq > oldvalue) {
 					wsprintf(szSize, "%2d", frq);
-					TextOut(hdc, ((rcClientP->right - 100) * i) / 23 + 50, rcClientP->bottom - 20, szSize, 2);
+					TextOut(hdc, ((rcClientP->right - 100) * i) / 22 + 50, rcClientP->bottom - 20, szSize, 2);
 					oldvalue = frq;
 				}
 			}

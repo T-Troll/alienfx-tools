@@ -269,7 +269,8 @@ namespace AlienFX_SDK
 		switch (length) {
 		case API_V3: {
 			// m15 require Input report as a confirmation, not output. 
-			DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
+			// DEBUG!!!!
+			// DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
 			// std::cout << "Status: 0x" << std::hex << (int) BufferN[2] << std::endl;
 		} break;
 		case API_V2: case API_V1: {
