@@ -9,6 +9,7 @@ A bunch of tools for Alienware AlienFX/Dell LightFX controls:
 
 ## Requirements
 - Alienware light device present into the system and have USBHID driver active.
+- `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35).
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 10 (binary files for x64 only, but you can compile project for x86 as well).
 
