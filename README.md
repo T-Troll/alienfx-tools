@@ -13,9 +13,11 @@ Main goal of this project is to create a bunch of lightweighted tools for Alienw
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 10 (binary files for x64 only, but you can compile project for x86 as well).
 
-Device checked: `Alienware m15R1-R4` (API v3), `Alienware m17R1` (API v3), `Alienware M13R2` (API v2), `Dell G5` (API v3), `Alienware M14x` (API v1) (should work with any Alienware device with API v1 or later, but i didn't test aganst latest per-key devices yet).
+Device checked: `Alienware m15R1-R4` (API v3), `Alienware m17R1` (API v3), `Alienware M13R2` (API v2), `Dell G5` (API v3), `Alienware M14x` (API v1) (should work with any Alienware device with API v1 or later, per-button light keyboard devices and some external devices like mouses doesn't supported now).
 
 ## Known issues
+- Per-button light keyboard devices (API v4, 64 bytes command) does not supported (i'm working on it). But you still can control other lights (logo, power).
+- External devices (mouse, display) not supported - they have different vendor ID (i'm working on it).
 - Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.<br>
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
 - Only one device per time can be controlled trough low-level SDK, but you can choose which one.
