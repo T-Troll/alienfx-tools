@@ -5,7 +5,18 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 	config = conf;
 	devList = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
 	AlienFX_SDK::Functions::LoadMappings();
-	pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
+	pid = 0;
+	if (conf->lastActive != 0)
+		for (int i = 0; i < devList.size(); i++)
+			if (devList[i] == conf->lastActive) {
+				pid = conf->lastActive;
+				break;
+			}
+	if (pid == 0)
+		pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
+	else
+		pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid, pid);
+
 	if (pid != -1)
 	{
 		int count;
@@ -13,6 +24,7 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 			Sleep(20);
 		if (count == 5)
 			AlienFX_SDK::Functions::Reset(0);
+		conf->lastActive = pid;
 	}
 };
 FXHelper::~FXHelper() {

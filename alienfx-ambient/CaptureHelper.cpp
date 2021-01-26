@@ -36,6 +36,8 @@ CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 	hDlg = dlg;
 	config = conf;
 	fxh = fhh;
+	if (screenCapturer == NULL)
+		isDirty = true;
 }
 
 CaptureHelper::~CaptureHelper()

@@ -34,6 +34,7 @@ public:
 	DWORD numbars;
 	DWORD res;
 	DWORD inpType;
+	DWORD lastActive = 0;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();

@@ -510,6 +510,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				if (numdev > 0) {
 					size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
 					AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+					config->lastActive = did;
 					EnableWindow(freq_list, FALSE);
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);

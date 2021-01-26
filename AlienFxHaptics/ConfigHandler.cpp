@@ -59,6 +59,13 @@ int ConfigHandler::Load() {
         NULL,
         &inpType,
         (LPDWORD)&size);
+    RegGetValue(hKey1,
+        NULL,
+        TEXT("LastActive"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &lastActive,
+        (LPDWORD)&size);
     unsigned vindex = 0, inarray[30];
     char name[255];
     unsigned ret = 0;
@@ -119,6 +126,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&inpType,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("LastActive"),
+        0,
+        REG_DWORD,
+        (BYTE*)&lastActive,
         4
     );
     RegDeleteTreeA(hKey1, "Mappings");

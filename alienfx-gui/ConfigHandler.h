@@ -73,6 +73,7 @@ public:
 	DWORD block_power = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
 	DWORD gammaCorrection = 1;
+	DWORD lastActive = 0;
 	Colorcode testColor;
 	COLORREF customColors[16];
 	std::vector<lightset> active_set;

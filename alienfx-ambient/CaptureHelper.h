@@ -13,6 +13,7 @@ public:
 	void Start();
 	void Stop();
 	void Restart();
+	bool isDirty = false;
 private:
 	DCScreenCapturer* screenCapturer = NULL;
 	DWORD dwThreadID = 0;

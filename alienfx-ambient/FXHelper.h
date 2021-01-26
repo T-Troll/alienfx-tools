@@ -16,6 +16,7 @@ private:
 	//ULONGLONG lastUpdate;
 	//std::vector<UpdateData> updates;
 public:
+	std::vector<int> devList;
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
 	//void StartFX();

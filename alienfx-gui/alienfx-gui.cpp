@@ -233,9 +233,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     //MyRegisterClass(hInstance);
 
     conf = new ConfigHandler();
-    fxhl = new FXHelper(conf);
-
     conf->Load();
+    fxhl = new FXHelper(conf);
 
     bool wasAWCC = DoStopService(true);
 
@@ -788,10 +787,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case PBT_POWERSETTINGCHANGE: {
             POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
-            if (sParams->PowerSetting == GUID_MONITOR_POWER_ON) {
+#ifdef _DEBUG
+            OutputDebugString("Power state changed\n");
+#endif
+            if (sParams->PowerSetting == GUID_MONITOR_POWER_ON || sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE) {
                 eve->ChangeScreenState(sParams->Data[0]);
 #ifdef _DEBUG
-                OutputDebugString("Screen state changed\n");
+                OutputDebugString("Monitor state changed\n");
 #endif
             }
         } break;
@@ -1558,6 +1560,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             {
             case CBN_SELCHANGE: {
                 AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+                conf->lastActive = did;
                 UpdateLightList(light_list, did);
                 if (AlienFX_SDK::Functions::AlienfxGetDeviceStatus())
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");

@@ -60,8 +60,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HWND hDlg;
 
     conf = new ConfigHandler();
-    fxhl = new FXHelper(conf);
     conf->Load();
+    fxhl = new FXHelper(conf);
 
     if (!(hDlg=InitInstance (hInstance, nCmdShow)))
     {
@@ -71,22 +71,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     cap = new CaptureHelper(hDlg, conf, fxhl);
     //HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXAMBIENT));
 
-    MSG msg; //bool ret;
+    if (cap->isDirty) {
+        // no capture device detected!
+        MessageBox(NULL, "Can't capture you screen! Do you have DirectX installed?", "Error",
+            MB_OK | MB_ICONSTOP);
+        
+    }
+    else {
 
-    RegisterPowerSettingNotification(hDlg, &GUID_MONITOR_POWER_ON, 0);
+        MSG msg; //bool ret;
 
-    //cap->Start();
+        RegisterPowerSettingNotification(hDlg, &GUID_MONITOR_POWER_ON, 0);
 
-    // Main message loop:
-    while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-        //if (!IsDialogMessage(hDlg, &msg)) {
+        //cap->Start();
+
+        // Main message loop:
+        while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+            //if (!IsDialogMessage(hDlg, &msg)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-        //}
-    }
+            //}
+        }
 
-    cap->Stop();
-    conf->Save();
+        cap->Stop();
+        conf->Save();
+    }
     delete cap;
     delete fxhl;
     delete conf;
@@ -278,6 +287,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             case CBN_SELCHANGE: {
                     size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
                     AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+                    conf->lastActive = did;
                     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
                     for (int i = 0; i < lights; i++) {
                         AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);

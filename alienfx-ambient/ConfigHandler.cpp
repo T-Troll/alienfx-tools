@@ -61,6 +61,13 @@ int ConfigHandler::Load() {
         NULL,
         &divider,
         (LPDWORD)&size);
+    RegGetValue(hKey1,
+        NULL,
+        TEXT("LastActive"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &lastActive,
+        (LPDWORD)&size);
     unsigned ret = RegGetValue(hKey1,
         NULL,
         TEXT("GammaCorrection"),
@@ -144,6 +151,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&gammaCorrection,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("LastActive"),
+        0,
+        REG_DWORD,
+        (BYTE*)&lastActive,
         4
     );
     for (int i = 0; i < mappings.size(); i++) {
