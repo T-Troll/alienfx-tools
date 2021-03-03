@@ -21,7 +21,7 @@ int nChannel;
 int bytePerSample;
 int blockAlign;
 
-HANDLE hEvent;
+HANDLE hEvent = 0;
 
 DWORD(*mFunction)(LPVOID);
 
@@ -96,10 +96,12 @@ int WSAudioIn::init(int type)
 	}
 
 	pAudioClient->GetMixFormat(&pwfx);
-	switch (pwfx->wFormatTag)
+
+	/*switch (pwfx->wFormatTag)
 	{
 	case WAVE_FORMAT_IEEE_FLOAT:
 		pwfx->wFormatTag = WAVE_FORMAT_PCM;
+		//pwfx->cbSize = 0;
 		//pwfx->wBitsPerSample = 16;
 		//!!!
 		pwfx->nChannels = 2;
@@ -115,6 +117,7 @@ int WSAudioIn::init(int type)
 		if (IsEqualGUID(KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, pEx->SubFormat))
 		{
 			pEx->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+			//pEx->Format.cbSize = 0;
 			//pEx->Samples.wValidBitsPerSample = 16;
 			//pwfx->wBitsPerSample = 16;
 			//!!!
@@ -123,33 +126,38 @@ int WSAudioIn::init(int type)
 			//pwfx->nChannels = 1;
 			//pwfx->nSamplesPerSec = rate;
 			//!!!
-			pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
-			pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
+			//pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
+			//pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
+			pEx->Format.nBlockAlign = 2 * pwfx->wBitsPerSample / 8;
+			pEx->Format.nAvgBytesPerSec = pEx->Format.nBlockAlign * pwfx->nSamplesPerSec;
 		}
 	}
 	break;
-	}
+	}*/
 
 	hnsRequestedDuration = 10000000 / 5;// (rate / (2 * N));
 	//ret = pAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, pwfx, &suggest);
 	if (!type)
 		ret = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-			AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_RATEADJUST /*| AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM*/,
+			AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | /*AUDCLNT_STREAMFLAGS_RATEADJUST |*/ AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
 			hnsRequestedDuration, 0, pwfx, NULL);
 	else
 		ret = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
 			AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_RATEADJUST /*| AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM*/,
 			hnsRequestedDuration, 0, pwfx, NULL);
 	if (ret)
-		gHandle->ShowError("Input device doesn't support and suitable format!");
+		gHandle->ShowError("Input device doesn't support any suitable format!");
 	//ret = pAudioClient->GetService(IID_IAudioClockAdjustment,
 	//	(void**)&pRateClient);
 	//ret = pRateClient->SetSampleRate(44100.0);
 	pAudioClient->GetMixFormat(&pwfx);
 	//rate = pwfx->nSamplesPerSec;
-	nChannel = pwfx->nChannels;
-	bytePerSample = pwfx->wBitsPerSample / 8;
+	//if (pwfx->nChannels > 6)
+	//	nChannel = 2; // pwfx->nChannels; - Realtek bugfix
+	//else
+		nChannel = pwfx->nChannels;
 	blockAlign = pwfx->nBlockAlign;
+	bytePerSample = pwfx->wBitsPerSample / 8;
 	pAudioClient->SetEventHandle(hEvent);
 	pAudioClient->GetService(
 		IID_IAudioCaptureClient,
@@ -187,7 +195,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	UINT32 packetLength = 0;
 	UINT32 numFramesAvailable = 0;
 	int arrayPos = 0, shift;
-	UINT bytesPerChannel = bytePerSample / nChannel;
+	UINT bytesPerChannel = bytePerSample;// / nChannel;
 	BYTE* pData;
 	DWORD flags;
 	double* waveT = (double*)malloc(NUMSAM * sizeof(double));
@@ -207,7 +215,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 			// got new buffer....
 			pCapCli->GetNextPacketSize(&packetLength);
 			while (!done && packetLength != 0) {
-				pCapCli->GetBuffer(
+				int ret = pCapCli->GetBuffer(
 					(BYTE**)&pData,
 					&numFramesAvailable,
 					&flags, NULL, NULL);
@@ -218,7 +226,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					arrayPos = 0;
 					continue;
 				}
-				for (UINT i = 0; i < numFramesAvailable; i++) {
+				for (UINT i = 0; i < numFramesAvailable ; i++) {
 					INT64 finVal = 0;
 					for (int k = 0; k < nChannel; k++) {
 						INT32 val = 0;

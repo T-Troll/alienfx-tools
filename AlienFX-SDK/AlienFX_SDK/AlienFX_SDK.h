@@ -68,6 +68,7 @@ namespace AlienFX_SDK
 
 		//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
 		const static int vid = 0x187c;
+		const static int vid2 = 0x0d62; // DARFON per-key RGB keyboard - m1X R2, R3. 
 
 		// Enum alienware devices
 		static  std::vector<int> AlienFXEnumDevices(int vid);

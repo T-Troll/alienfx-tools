@@ -27,7 +27,7 @@ FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
 			Sleep(20);
 		if (count == 5)
 			AlienFX_SDK::Functions::Reset(false);
-		AlienFX_SDK::Functions::LoadMappings();
+		//AlienFX_SDK::Functions::LoadMappings();
 		conf->lastActive = pid;
 	}
 	FadeToBlack();

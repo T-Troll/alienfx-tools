@@ -618,20 +618,6 @@ int ConfigHandler::Save() {
                     memcpy(outPos, &cur.eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
                     outPos += sizeof(AlienFX_SDK::afx_act);
                 }
-                /*out[j * 10 + 2] = cur.eve[j].map[0].type;
-                out[j * 10 + 3] = cur.eve[j].map[1].type;
-                ccd.cs.red = cur.eve[j].map[0].r;
-                ccd.cs.green = cur.eve[j].map[0].g;
-                ccd.cs.blue = cur.eve[j].map[0].b;
-                out[j * 10 + 4] = ccd.ci;
-                ccd.cs.red = cur.eve[j].map[1].r;
-                ccd.cs.green = cur.eve[j].map[1].g;
-                ccd.cs.blue = cur.eve[j].map[1].b;
-                out[j * 10 + 5] = ccd.ci;
-                out[j * 10 + 6] = cur.eve[j].map[0].tempo;
-                out[j * 10 + 7] = cur.eve[j].map[1].tempo;
-                out[j * 10 + 8] = cur.eve[j].map[0].time;
-                out[j * 10 + 9] = cur.eve[j].map[1].time;*/
             }
             RegSetValueExA(
                 hKey3,

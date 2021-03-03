@@ -174,9 +174,16 @@ void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> ac
 			}
 		}
 		if (power && actions.size() > 1) {
-			if (!config->block_power)
+			if (!config->block_power) {
+#ifdef _DEBUG
+				char buff[2048];
+				//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
+				sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
+				OutputDebugString(buff);
+#endif
 				AlienFX_SDK::Functions::SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 					actions[1].r, actions[1].g, actions[1].b, force);
+			}
 		}
 		else
 			if (actions[0].type == 0)
@@ -209,9 +216,19 @@ int FXHelper::Refresh(bool forced)
 	bool dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
 	int c_count = 0;
 	while (!dev_ready) {
-		if (!forced) return 1;
+		if (!forced) {
+#ifdef _DEBUG
+			OutputDebugString("Refresh failed.\n");
+#endif
+			return 1;
+		}
 		c_count++;
-		if (c_count > 5) return 1;
+		if (c_count > 15) {
+#ifdef _DEBUG
+			OutputDebugString("Forced refresh failed.\n");
+#endif
+			return 1;
+		}
 		Sleep(20);
 		dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
 	}
