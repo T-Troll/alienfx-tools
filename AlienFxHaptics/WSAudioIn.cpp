@@ -194,13 +194,14 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	HANDLE updHandle = 0;
 	UINT32 packetLength = 0;
 	UINT32 numFramesAvailable = 0;
-	int arrayPos = 0, shift;
+	int arrayPos = 0, shift = 0;
 	UINT bytesPerChannel = bytePerSample;// / nChannel;
 	BYTE* pData;
 	DWORD flags;
 	double* waveT = (double*)malloc(NUMSAM * sizeof(double));
 	UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
+	int ret;
 	//pCaptureClient = lpParam;
 
 	//dwWaitResult = WaitForSingleObject(
@@ -208,9 +209,9 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	//	2000);
 	//waveD = (double*)malloc(NUMSAM * sizeof(double));
 	while (!done) {
-		while (!done && WaitForSingleObject(
+		while (!done && (ret = WaitForSingleObject(
 			hEvent, // event handle
-			1000) == WAIT_OBJECT_0)
+			1000)) == WAIT_OBJECT_0)
 		{
 			// got new buffer....
 			pCapCli->GetNextPacketSize(&packetLength);
@@ -221,9 +222,30 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					&flags, NULL, NULL);
 				shift = 0;
 				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) {
+					FillMemory(waveD, NUMSAM * sizeof(double), 0);
+					//buffer full, send to process.
+					DWORD exitCode = 0;
+					if (updHandle)
+						GetExitCodeThread(updHandle, &exitCode);
+					if (exitCode != STILL_ACTIVE) {
+						updHandle = CreateThread(
+							NULL,              // default security
+							0,                 // default stack size
+							mFunction,        // name of the thread function
+							waveD,
+							0,                 // default startup flags
+							&dwThreadID);
+					}
+#ifdef _DEBUG
+					else {
+						OutputDebugString("Update in process, skipping!\n");
+					}
+#endif
+					//reset arrayPos
+					arrayPos = 0;
+					shift = 0;
 					pCapCli->ReleaseBuffer(numFramesAvailable);
 					pCapCli->GetNextPacketSize(&packetLength);
-					arrayPos = 0;
 					continue;
 				}
 				for (UINT i = 0; i < numFramesAvailable ; i++) {
@@ -267,6 +289,30 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 				arrayPos += numFramesAvailable - shift;
 				pCapCli->GetNextPacketSize(&packetLength);
 			}
+		}
+		if (ret == WAIT_TIMEOUT) { // no buffer data for 1 sec...
+			FillMemory(waveD, NUMSAM * sizeof(double), 0);
+			//buffer full, send to process.
+			DWORD exitCode = 0;
+			if (updHandle)
+				GetExitCodeThread(updHandle, &exitCode);
+			if (exitCode != STILL_ACTIVE) {
+				updHandle = CreateThread(
+					NULL,              // default security
+					0,                 // default stack size
+					mFunction,        // name of the thread function
+					waveD,
+					0,                 // default startup flags
+					&dwThreadID);
+			}
+#ifdef _DEBUG
+			else {
+				OutputDebugString("Update in process, skipping!\n");
+			}
+#endif
+			//reset arrayPos
+			arrayPos = 0;
+			shift = 0;
 		}
 	}
 	free(waveT);
