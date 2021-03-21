@@ -27,7 +27,7 @@ private:
 
 	//Graphics* gHandle;
 
-	WAVEFORMATEX* pwfx;
+	WAVEFORMATEX* pwfx, *suggest;
 
 	BYTE* byteArray;
 	unsigned byteArrayLength;

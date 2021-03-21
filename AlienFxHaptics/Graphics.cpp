@@ -327,9 +327,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				);
 				Shell_NotifyIcon(NIM_DELETE, &niData);
 			break;
-			//case WM_RBUTTONDOWN:
-			//case WM_CONTEXTMENU:
-			//	ShowContextMenu(hWnd);
+			case WM_RBUTTONUP:
+			case WM_CONTEXTMENU:
+				Shell_NotifyIcon(NIM_DELETE, &niData);
+				DestroyWindow(hwnd);
+				break;
 			}
 			break;
 		} break;

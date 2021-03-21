@@ -84,10 +84,10 @@ void DFT_gosu::calc(double *x1)
 	if (peak < maxP)
 		peak = (peak < maxP - 2 * minP) ? maxP : peak + 2 * minP; // 2* y_scale
 	else
-		peak = (peak > 2 * minP) ? peak - minP : peak; // y_scale
+		peak = (peak > minP) ? peak - peak / 16 : peak; // y_scale
 	peak = (peak > minP) ? peak : minP;
 
-	double coeff = 256.0 / peak;// (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
+	double coeff = peak > 0.00001 ? 256.0 / peak : 0.0;// (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
 
 #ifdef _DEBUG
 	char buff[2048];

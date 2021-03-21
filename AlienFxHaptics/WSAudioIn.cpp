@@ -97,7 +97,7 @@ int WSAudioIn::init(int type)
 
 	pAudioClient->GetMixFormat(&pwfx);
 
-	/*switch (pwfx->wFormatTag)
+	switch (pwfx->wFormatTag)
 	{
 	case WAVE_FORMAT_IEEE_FLOAT:
 		pwfx->wFormatTag = WAVE_FORMAT_PCM;
@@ -107,8 +107,8 @@ int WSAudioIn::init(int type)
 		pwfx->nChannels = 2;
 		//pwfx->nSamplesPerSec = rate;
 		//!!!
-		pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
-		pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
+		//pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
+		//pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
 		break;
 
 	case WAVE_FORMAT_EXTENSIBLE:
@@ -128,12 +128,12 @@ int WSAudioIn::init(int type)
 			//!!!
 			//pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
 			//pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
-			pEx->Format.nBlockAlign = 2 * pwfx->wBitsPerSample / 8;
-			pEx->Format.nAvgBytesPerSec = pEx->Format.nBlockAlign * pwfx->nSamplesPerSec;
+			//pEx->Format.nBlockAlign = 2 * pwfx->wBitsPerSample / 8;
+			//pEx->Format.nAvgBytesPerSec = pEx->Format.nBlockAlign * pwfx->nSamplesPerSec;
 		}
 	}
 	break;
-	}*/
+	}
 
 	hnsRequestedDuration = 10000000 / 5;// (rate / (2 * N));
 	//ret = pAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, pwfx, &suggest);
