@@ -65,9 +65,10 @@ void DCBitmap::SetDirectBuffer ( void * buffer ) noexcept
 void DCBitmap::Resize ( unsigned _width, unsigned _height, unsigned _colorDepth )
 {
 	if ( _width == width && _height == _height && colorDepth == _colorDepth ) return;
-	if ( byteArray && !directMode )
-		delete [] byteArray;
-	byteArray = nullptr;
+	if (byteArray && !directMode) {
+		delete[] byteArray;
+		byteArray = nullptr;
+	}
 	if ( ( _width == 0 && _height == 0 ) || ( _colorDepth != 3 && _colorDepth != 4 ) )
 	{
 		byteArray = nullptr;

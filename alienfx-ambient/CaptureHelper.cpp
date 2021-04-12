@@ -248,13 +248,13 @@ DWORD WINAPI CInProc(LPVOID param)
 		UINT div = config->divider;
 		screenCapturer->Capture();
 		img = screenCapturer->GetCapturedBitmap()->GetByteArray();
-		w = screenCapturer->GetCapturedBitmap()->GetWidth();
-		h = screenCapturer->GetCapturedBitmap()->GetHeight();
-		cdp = screenCapturer->GetCapturedBitmap()->GetColorDepth();
-		st = screenCapturer->GetCapturedBitmap()->GetStride();
 
 		// Resize & calc
 		if (img != NULL) {
+			w = screenCapturer->GetCapturedBitmap()->GetWidth();
+			h = screenCapturer->GetCapturedBitmap()->GetHeight();
+			cdp = screenCapturer->GetCapturedBitmap()->GetColorDepth();
+			st = screenCapturer->GetCapturedBitmap()->GetStride();
 			Mat* src = NULL;
 			if (cdp == 4) {
 				src = new Mat(h, w, CV_8UC4, img, st);

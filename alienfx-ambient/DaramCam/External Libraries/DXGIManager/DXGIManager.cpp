@@ -311,6 +311,9 @@ HRESULT DXGIManager::Init()
 	{
 		vector<CComPtr<IDXGIOutput>> vOutputs;
 
+		//DXGI_ADAPTER_DESC pDesc;
+		//(*AdapterIter)->GetDesc(&pDesc);
+
 		CComPtr<IDXGIOutput> spDXGIOutput;
 		for(int i=0; (*AdapterIter)->EnumOutputs(i, &spDXGIOutput) != DXGI_ERROR_NOT_FOUND; ++i)
 		{ 
@@ -331,7 +334,7 @@ HRESULT DXGIManager::Init()
 		// Creating device for each adapter that has the output
 		CComPtr<ID3D11Device> spD3D11Device;
 		CComPtr<ID3D11DeviceContext> spD3D11DeviceContext;
-		D3D_FEATURE_LEVEL fl = D3D_FEATURE_LEVEL_11_1;
+		D3D_FEATURE_LEVEL fl = D3D_FEATURE_LEVEL_11_0;// 11_1;
 		hr = D3D11CreateDevice((*AdapterIter), D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0, D3D11_SDK_VERSION, &spD3D11Device, &fl, &spD3D11DeviceContext);
 		if( FAILED(hr) )
 		{
