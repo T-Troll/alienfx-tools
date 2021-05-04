@@ -17,14 +17,15 @@ void EventHandler::ChangePowerState()
 {
 	SYSTEM_POWER_STATUS state;
 	GetSystemPowerStatus(&state);
+    bool sameState = true;
     if (state.ACLineStatus) {
         // AC line
         switch (state.BatteryFlag) {
         case 8: // charging
-            fxh->SetMode(MODE_CHARGE);
+            sameState = fxh->SetMode(MODE_CHARGE);
             break;
         default:
-            fxh->SetMode(MODE_AC);
+            sameState = fxh->SetMode(MODE_AC);
             break;
         }
     }
@@ -32,26 +33,26 @@ void EventHandler::ChangePowerState()
         // Battery - check BatteryFlag for details
         switch (state.BatteryFlag) {
         case 1: // ok
-            fxh->SetMode(MODE_BAT);
+            sameState = fxh->SetMode(MODE_BAT);
             break;
         case 2: case 4: // low/critical
-            fxh->SetMode(MODE_LOW);
+            sameState = fxh->SetMode(MODE_LOW);
             break;
         }
     }
-    fxh->RefreshState();
+    if (!sameState) fxh->RefreshState();
 }
 
 void EventHandler::ChangeScreenState(DWORD state)
 {
     if (conf->offWithScreen) {
         conf->stateOn = conf->lightsOn && state;
-        //fxh->Refresh(true);
-        if (conf->stateOn) {
+        fxh->RefreshState();// Refresh(true);
+/*        if (conf->stateOn) {
             StartEvents();
         }
         else
-            StopEvents();
+            StopEvents();*/
     }
 }
 

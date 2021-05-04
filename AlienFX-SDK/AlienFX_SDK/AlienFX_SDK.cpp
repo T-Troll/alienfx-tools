@@ -28,13 +28,15 @@ extern "C" {
 #define API_V2 12
 #define API_V1 8
 
+#define POWER_DELAY 260
+
 namespace AlienFX_SDK
 {
 	bool isInitialized = false;
 	HANDLE devHandle;
 	int length = 9;
 	bool inSet = false;
-	ULONGLONG lastPowerCall = 0;
+	ULONGLONG lastPowerCall = GetTickCount64();
 
 	// Name mappings for lights
 	static std::vector <mapping> mappings;
@@ -344,13 +346,13 @@ namespace AlienFX_SDK
 		switch (length) {
 		case API_V4: {
 			if (inSet) {
-				res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer4, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer4, API_V4, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				Loop();
 			}
 		}
 		case API_V3: {
 			if (inSet) {
-				res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferN, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, BufferN, API_V3, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				Loop();
 			}
 		} break;
@@ -606,21 +608,27 @@ namespace AlienFX_SDK
 			if (force)
 				OutputDebugString(TEXT("Forced power button update!\n"));
 #endif
-			if (cPowerCall - lastPowerCall < 260)
+			if (cPowerCall - lastPowerCall < POWER_DELAY)
 				if (force) {
 #ifdef _DEBUG
 					OutputDebugString(TEXT("Forced power button update waiting...\n"));
 #endif
-					Sleep(lastPowerCall + 260 - cPowerCall);
+					Sleep(lastPowerCall + (ULONGLONG)POWER_DELAY - cPowerCall);
 				}
-				else
+				else {
+#ifdef _DEBUG
+					OutputDebugString(TEXT("Power update skipped!\n"));
+#endif
 					return false;
+				}
 			// Need to flush query...
-			if (inSet) UpdateColors();
+			/*if (inSet)*/ UpdateColors();
 			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
 #ifdef _DEBUG
 				if (force)
 					OutputDebugString(TEXT("Forced power update - device still not ready\n"));
+				else
+					OutputDebugString(TEXT("Power update - device still not ready\n"));
 #endif
 				return false;
 			}
@@ -721,10 +729,8 @@ namespace AlienFX_SDK
 		} break;
 		}
 #ifdef _DEBUG
-		wchar_t buff[2048];
 		if (ret == 0) {
-			swprintf_s(buff, 2047, L"Status: %d\n", ret);
-			OutputDebugString(buff);
+			OutputDebugString(TEXT("System hangs!\n"));
 		}
 #endif
 		return ret;

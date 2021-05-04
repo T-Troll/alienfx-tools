@@ -77,7 +77,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	while (!dev_ready) {
 		if (!force) return;
 		c_count++;
-		if (c_count > 5) return;
+		if (c_count > 20) {
+#ifdef _DEBUG
+			OutputDebugString(TEXT("SetCounter device busy!\n"));
+#endif
+			return;
+		}
 		Sleep(20);
 		dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
 	}
@@ -108,9 +113,9 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 6: if (!force && (lBatt == cBatt || lBatt < ccut && cBatt < ccut)) continue; coeff = cBatt; break;
 				}
 				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
-				fin.r = fin.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff;
-				fin.g = fin.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff;
-				fin.b = fin.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff;
+				fin.r = (BYTE) (fin.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
+				fin.g = (BYTE) (fin.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
+				fin.b = (BYTE) (fin.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
 			}
 			if (Iter->eve[3].fs.b.flags) {
 				// indicator
@@ -158,47 +163,46 @@ void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> ac
 	// modify colors for dimmed...
 	const unsigned delta = 256 - config->dimmingPower;
 
-	if (config->lightsOn && config->stateOn) {
-		for (int i = 0; i < actions.size(); i++) {
-			if (config->dimmed || config->stateDimmed ||
-				(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
-				actions[i].r = (actions[i].r * delta) >> 8;
-				actions[i].g = (actions[i].g * delta) >> 8;
-				actions[i].b = (actions[i].b * delta) >> 8;
-			}
-			// gamma-correction...
-			if (config->gammaCorrection) {
-				actions[i].r = (actions[i].r * actions[i].r) >> 8;
-				actions[i].g = (actions[i].g * actions[i].g) >> 8;
-				actions[i].b = (actions[i].b * actions[i].b) >> 8;
-			}
+	for (int i = 0; i < actions.size(); i++) {
+		if (config->dimmed || config->stateDimmed ||
+			(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
+			actions[i].r = (actions[i].r * delta) >> 8;
+			actions[i].g = (actions[i].g * delta) >> 8;
+			actions[i].b = (actions[i].b * delta) >> 8;
 		}
-		if (power && actions.size() > 1) {
-			if (!config->block_power) {
+		// gamma-correction...
+		if (config->gammaCorrection) {
+			actions[i].r = (actions[i].r * actions[i].r) >> 8;
+			actions[i].g = (actions[i].g * actions[i].g) >> 8;
+			actions[i].b = (actions[i].b * actions[i].b) >> 8;
+		}
+	}
+	if (power && actions.size() > 1) {
+		if (!config->block_power) {
 #ifdef _DEBUG
-				char buff[2048];
-				//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
-				sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
-				OutputDebugString(buff);
+			char buff[2048];
+			//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
+			sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
+			OutputDebugString(buff);
 #endif
+			if (config->lightsOn && config->stateOn || !config->offPowerButton)
 				AlienFX_SDK::Functions::SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 					actions[1].r, actions[1].g, actions[1].b, force);
-			}
+			else
+				AlienFX_SDK::Functions::SetPowerAction(id, 0, 0, 0, 0, 0, 0);
 		}
-		else
+	}
+	else
+		if (config->lightsOn && config->stateOn) {
 			if (actions[0].type == 0)
 				AlienFX_SDK::Functions::SetColor(id, actions[0].r, actions[0].g, actions[0].b);
 			else {
 				AlienFX_SDK::Functions::SetAction(id, actions);
 			}
-	}
-	else {
-		if (!power)
+		}
+		else {
 			AlienFX_SDK::Functions::SetColor(id, 0, 0, 0);
-		else
-			if (config->offPowerButton && !config->block_power)
-				AlienFX_SDK::Functions::SetPowerAction(id, 0, 0, 0, 0, 0, 0);
-	}
+		}
 }
 
 void FXHelper::RefreshState()
@@ -223,7 +227,7 @@ int FXHelper::Refresh(bool forced)
 			return 1;
 		}
 		c_count++;
-		if (c_count > 15) {
+		if (c_count > 20) {
 #ifdef _DEBUG
 			OutputDebugString("Forced refresh failed.\n");
 #endif
@@ -277,7 +281,7 @@ int FXHelper::SetMode(int mode)
 {
 	int t = activeMode;
 	activeMode = mode;
-	return t;
+	return t == activeMode;
 }
 
 
