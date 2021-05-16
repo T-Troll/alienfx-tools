@@ -14,8 +14,8 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	int numlights = 16;
-	cout << "alienfx-probe v1.0.0" << endl;
+	int numlights = 8;
+	cout << "alienfx-probe v1.1.6" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
@@ -98,6 +98,7 @@ int main(int argc, char* argv[])
 						map.lightid = i;
 						map.name = std::string(outName);
 						AlienFX_SDK::Functions::GetMappings()->push_back(map);
+						AlienFX_SDK::Functions::SaveMappings();
 					}
 					else {
 						cout << "Skipped. ";

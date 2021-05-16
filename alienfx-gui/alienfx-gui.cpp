@@ -878,7 +878,33 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 }
 
 AlienFX_SDK::afx_act* mod;
+ULONGLONG lastColorCall = 0;
+bool runLightsRefresh = false;
 
+DWORD CColorRefreshProc(LPVOID param) {
+    AlienFX_SDK::afx_act last;
+    ULONGLONG cColorCall = 0;
+    lastColorCall = GetTickCount64();
+    last.r = mod->r;
+    last.g = mod->g;
+    last.b = mod->b;
+    while (runLightsRefresh) {
+        if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
+            cColorCall = GetTickCount64();
+            if (cColorCall - lastColorCall > 350) {
+                // set colors...
+                last.r = mod->r;
+                last.g = mod->g;
+                last.b = mod->b;
+                fxhl->RefreshState();
+                lastColorCall = GetTickCount64();
+            }
+        }
+        else
+            Sleep(100);
+    }
+    return 0;
+}
 UINT_PTR Lpcchookproc(
     HWND hDlg,
     UINT message,
@@ -886,7 +912,6 @@ UINT_PTR Lpcchookproc(
     LPARAM lParam
 ) {
     DRAWITEMSTRUCT* item = 0;
-    //Colorcode* mod;
     //HWND r = GetDlgItem(hDlg, 706);
     UINT r = 0, g = 0, b = 0;
 
@@ -894,8 +919,6 @@ UINT_PTR Lpcchookproc(
     {
     case WM_INITDIALOG:
         mod = (AlienFX_SDK::afx_act*)((CHOOSECOLOR*)lParam)->lCustData;
-        break;
-    case WM_COMMAND:
         break;
     case WM_CTLCOLOREDIT:
         r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
@@ -905,8 +928,6 @@ UINT_PTR Lpcchookproc(
             mod->r = r;
             mod->g = g;
             mod->b = b;
-            // update lights....
-            fxhl->RefreshState();
         }
         break;
     }
@@ -918,6 +939,8 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::afx_act* map) {
     bool ret;
 
     AlienFX_SDK::afx_act savedColor = *map;
+    DWORD crThreadID;
+    HANDLE crRefresh;
 
     // Initialize CHOOSECOLOR 
     ZeroMemory(&cc, sizeof(cc));
@@ -929,6 +952,16 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::afx_act* map) {
     cc.rgbResult = RGB(map->r, map->g, map->b);
     cc.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK;
 
+    mod = map;
+    runLightsRefresh = true;
+    crRefresh = CreateThread(
+        NULL,              // default security
+        0,                 // default stack size
+        CColorRefreshProc,        // name of the thread function
+        hDlg,
+        0,                 // default startup flags
+        &crThreadID);
+
     if (!(ret = ChooseColor(&cc)))
     {
         map->r = savedColor.r;
@@ -936,6 +969,7 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::afx_act* map) {
         map->b = savedColor.b;
         RedrawButton(hDlg, id, map->r, map->g, map->b);
     }
+    runLightsRefresh = false;
     return ret;
 }
 
@@ -1178,8 +1212,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             } break;   
         default: return false;
         }
-        //if (mmap != NULL)
-        //    fxhl->Refresh(AlienFX_SDK::Functions::GetFlags(pid, lid));
     } break;
     case WM_VSCROLL:
         switch (LOWORD(wParam)) {
@@ -1582,6 +1614,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     nDev.devid = eDid;
                     nDev.name = buffer;
                     AlienFX_SDK::Functions::GetDevices()->push_back(nDev);
+                    AlienFX_SDK::Functions::SaveMappings();
                 }
                 SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
                 SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
@@ -1607,6 +1640,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == eDid &&
                         AlienFX_SDK::Functions::GetMappings()->at(i).lightid == eLid) {
                         AlienFX_SDK::Functions::GetMappings()->at(i).name = buffer;
+                        AlienFX_SDK::Functions::SaveMappings();
                         SendMessage(light_list, CB_DELETESTRING, lItem , 0);
                         SendMessage(light_list, CB_INSERTSTRING, lItem, (LPARAM)buffer);
                         SendMessage(light_list, CB_SETITEMDATA, lItem, eLid);
@@ -1640,6 +1674,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             sprintf_s(buffer, 255, "Light #%d", cid);
             dev.name = buffer;
             AlienFX_SDK::Functions::GetMappings()->push_back(dev);
+            AlienFX_SDK::Functions::SaveMappings();
             UpdateLightList(light_list, eDid);
         } break;
         case IDC_BUTTON_REML:
@@ -1667,6 +1702,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         AlienFX_SDK::Functions::GetMappings()->erase(Iter);
                         break;
                     }
+                AlienFX_SDK::Functions::SaveMappings();
+                conf->Save();
                 UpdateLightList(light_list, eDid);
             }
             break;
@@ -1709,6 +1746,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (lid != -1) {
                 unsigned flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
                 AlienFX_SDK::Functions::SetFlags(did, lid, flags);
+                // remove power button config from chip if unchecked
+                if (!flags) {
+                    fxhl->ResetPower();
+                    MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system!", "Warning!",
+                        MB_OK);
+                }
+                fxhl->Refresh(true);
             }
             break;
         case IDC_BUTTON_DEVRESET: {

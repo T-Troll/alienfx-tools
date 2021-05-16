@@ -61,6 +61,11 @@ void FXHelper::TestLight(int id)
 	AlienFX_SDK::Functions::UpdateColors();
 }
 
+void FXHelper::ResetPower()
+{
+	AlienFX_SDK::Functions::SetPowerAction(63, 0, 0, 0, 0, 0, 0, true);
+}
+
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
 {
 	std::vector <lightset>::iterator Iter;
