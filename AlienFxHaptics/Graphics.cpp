@@ -9,7 +9,8 @@
 #include <math.h>
 #include "resource_config.h"
 #include <string>
-#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
+//#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
+#include "FXHelper.h"
 #include <algorithm>
 
 #pragma comment(lib, "winmm.lib")
@@ -33,6 +34,7 @@ int long_term_avg_freq;
 bool axis_draw = true;
 
 ConfigHandler* config = NULL;
+FXHelper* afx = NULL;
 WSAudioIn* audio = NULL;
 
 HINSTANCE ghInstance;
@@ -40,7 +42,7 @@ HINSTANCE ghInstance;
 NOTIFYICONDATA niData;
 
 // default constructor
-Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf)
+Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf, FXHelper *fxproc)
 {
 
 	nCmdShow=mainCmdShow;
@@ -54,6 +56,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 	freq=freqp;
 
 	config = conf;
+	afx = fxproc;
 
 	strcpy_s(g_szClassName,14,"myWindowClass");
 	for (int i=0; i<16; i++)
@@ -413,9 +416,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			prevfreq = frq;
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
-		int pid = AlienFX_SDK::Functions::GetPID();
-		size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
-		size_t numdev = AlienFX_SDK::Functions::GetDevices()->size();
+		int pid = afx->afx_dev->GetPID();
+		size_t lights = afx->afx_dev->GetMappings()->size();
+		size_t numdev = afx->afx_dev->GetDevices()->size();
 
 		if (pid == -1) {
 			std::string devName = "No device found";
@@ -425,8 +428,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		else {
 			int cpid = (-1), cpos = (-1);
 			for (int i = 0; i < numdev; i++) {
-				cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
-				std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
+				cpid = afx->afx_dev->GetDevices()->at(i).devid;
+				std::string dname = afx->afx_dev->GetDevices()->at(i).name;
 				int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
 				SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
 				if (cpid == pid) {
@@ -443,8 +446,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
 			}
 			for (int i = 0; i < lights; i++) {
-				AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-				if (lgh.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, lgh.lightid) == 0) {
+				AlienFX_SDK::mapping lgh = afx->afx_dev->GetMappings()->at(i);
+				if (lgh.devid == pid && afx->afx_dev->GetFlags(pid, lgh.lightid) == 0) {
 					int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
 					SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
 				}
@@ -508,17 +511,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			{
 			case CBN_SELCHANGE: {
 
-				size_t numdev = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid).size();
+				size_t numdev = afx->afx_dev->AlienFXEnumDevices(afx->afx_dev->vid).size();
 				if (numdev > 0) {
-					size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
-					AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+					size_t lights = afx->afx_dev->GetMappings()->size();
+					afx->afx_dev->AlienFXChangeDevice(did);
 					config->lastActive = did;
 					EnableWindow(freq_list, FALSE);
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 					for (int i = 0; i < lights; i++) {
-						AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-						if (lgh.devid == did && AlienFX_SDK::Functions::GetFlags(did, lgh.lightid) == 0) {
+						AlienFX_SDK::mapping lgh = afx->afx_dev->GetMappings()->at(i);
+						if (lgh.devid == did && afx->afx_dev->GetFlags(did, lgh.lightid) == 0) {
 							int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
 							SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
 						}

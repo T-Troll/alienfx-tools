@@ -25,6 +25,7 @@ private:
 	int HDDTrigger = 0, NetTrigger = 0;
 	bool bStage = false;
 public:
+	AlienFX_SDK::Functions* afx_dev;
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
 	int Refresh(bool force=false);

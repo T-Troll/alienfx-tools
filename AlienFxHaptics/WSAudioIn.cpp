@@ -27,7 +27,7 @@ DWORD(*mFunction)(LPVOID);
 
 Graphics* gHandle;
 
-WSAudioIn::WSAudioIn(int &rate, int N, int type, void* gr, DWORD(*func)(LPVOID))
+WSAudioIn::WSAudioIn(int &rate_e, int N, int type, void* gr, DWORD(*func)(LPVOID))
 {
 	NUMSAM = N;
 	mFunction = func;
@@ -36,7 +36,7 @@ WSAudioIn::WSAudioIn(int &rate, int N, int type, void* gr, DWORD(*func)(LPVOID))
 	gHandle = (Graphics *) gr;
 	gHandle->SetAudioObject(this);
 	rate = init(type);
-
+	rate_e = rate;
 }
 
 WSAudioIn::~WSAudioIn()
@@ -51,7 +51,7 @@ void WSAudioIn::startSampling()
 	done = false;
 	isDone = false;
 	// creating listener thread...
-	if (pAudioClient) {
+	if (pAudioClient && rate > 0) {
 		CreateThread(
 			NULL,              // default security
 			0,                 // default stack size
@@ -66,16 +66,18 @@ void WSAudioIn::startSampling()
 void WSAudioIn::stopSampling()
 {
 	done = true;
-	while (!isDone) Sleep(20);
-	pAudioClient->Stop();
+	if (rate > 0) {
+		while (!isDone) Sleep(20);
+		pAudioClient->Stop();
+	}
 }
 
 void WSAudioIn::RestartDevice(int type)
 {
 	release();
 	
-	init(type);
-	startSampling();
+	if (init(type))
+		startSampling();
 }
 
 int WSAudioIn::init(int type)
@@ -97,15 +99,15 @@ int WSAudioIn::init(int type)
 
 	pAudioClient->GetMixFormat(&pwfx);
 
-	switch (pwfx->wFormatTag)
+	/*switch (pwfx->wFormatTag)
 	{
 	case WAVE_FORMAT_IEEE_FLOAT:
 		pwfx->wFormatTag = WAVE_FORMAT_PCM;
 		//pwfx->cbSize = 0;
 		//pwfx->wBitsPerSample = 16;
 		//!!!
-		pwfx->nChannels = 2;
-		//pwfx->nSamplesPerSec = rate;
+		//pwfx->nChannels = 2;
+		//pwfx->nSamplesPerSec = 44100;// rate;
 		//!!!
 		//pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
 		//pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
@@ -117,11 +119,12 @@ int WSAudioIn::init(int type)
 		if (IsEqualGUID(KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, pEx->SubFormat))
 		{
 			pEx->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+			pwfx->wFormatTag = WAVE_FORMAT_PCM;
 			//pEx->Format.cbSize = 0;
 			//pEx->Samples.wValidBitsPerSample = 16;
 			//pwfx->wBitsPerSample = 16;
 			//!!!
-			pEx->Format.nChannels = 2;
+			//pEx->Format.nChannels = 2;
 			//pEx->Format.nSamplesPerSec = 44100;
 			//pwfx->nChannels = 1;
 			//pwfx->nSamplesPerSec = rate;
@@ -133,29 +136,32 @@ int WSAudioIn::init(int type)
 		}
 	}
 	break;
-	}
+	}*/
 
 	hnsRequestedDuration = 10000000 / 5;// (rate / (2 * N));
 	//ret = pAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, pwfx, &suggest);
 	if (!type)
 		ret = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-			AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | /*AUDCLNT_STREAMFLAGS_RATEADJUST |*/ AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
+			AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
 			hnsRequestedDuration, 0, pwfx, NULL);
 	else
 		ret = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-			AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_RATEADJUST /*| AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM*/,
+			AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
 			hnsRequestedDuration, 0, pwfx, NULL);
-	if (ret)
+	if (ret) {
 		gHandle->ShowError("Input device doesn't support any suitable format!");
+		return 0;
+	}
 	//ret = pAudioClient->GetService(IID_IAudioClockAdjustment,
 	//	(void**)&pRateClient);
 	//ret = pRateClient->SetSampleRate(44100.0);
 	pAudioClient->GetMixFormat(&pwfx);
+	//PWAVEFORMATEXTENSIBLE pEx = reinterpret_cast<PWAVEFORMATEXTENSIBLE>(pwfx);
 	//rate = pwfx->nSamplesPerSec;
 	//if (pwfx->nChannels > 6)
 	//	nChannel = 2; // pwfx->nChannels; - Realtek bugfix
 	//else
-		nChannel = pwfx->nChannels;
+	nChannel = pwfx->nChannels;
 	blockAlign = pwfx->nBlockAlign;
 	bytePerSample = pwfx->wBitsPerSample / 8;
 	pAudioClient->SetEventHandle(hEvent);
@@ -168,7 +174,8 @@ int WSAudioIn::init(int type)
 void WSAudioIn::release()
 {
 	stopSampling();
-	pCaptureClient->Release();
+	if (pCaptureClient)
+		pCaptureClient->Release();
 	pAudioClient->Release();
 	inpDev->Release();
 }
@@ -187,7 +194,6 @@ IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
 	return pDevice;
 }
 
-//void CALLBACK WSwaveInProc(HWAVEIN hWaveIn, UINT message, DWORD dwInstance, DWORD wParam, DWORD lParam)
 DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 {
 	DWORD dwThreadID;
@@ -202,12 +208,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
 	int ret;
-	//pCaptureClient = lpParam;
 
-	//dwWaitResult = WaitForSingleObject(
-	//	hEvent, // event handle
-	//	2000);
-	//waveD = (double*)malloc(NUMSAM * sizeof(double));
 	while (!done) {
 		while (!done && (ret = WaitForSingleObject(
 			hEvent, // event handle
@@ -252,7 +253,6 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					INT64 finVal = 0;
 					for (int k = 0; k < nChannel; k++) {
 						INT32 val = 0;
-						//for (UINT j = 0; j < bytesPerChannel; j++) {
 						for (int j = bytesPerChannel - 1; j >=0 ; j--) {
 							val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
 						}

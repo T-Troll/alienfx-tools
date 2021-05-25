@@ -130,6 +130,7 @@ void EventHandler::StopEvents()
 void EventHandler::StartProfiles()
 {
     DWORD dwThreadID;
+    this->stopProf = false;
     if (dwProfile == 0 && conf->enableProf) {
 #ifdef _DEBUG
         OutputDebugString("Profile thread starting.\n");
@@ -188,15 +189,40 @@ EventHandler::~EventHandler()
 DWORD CProfileProc(LPVOID param) {
     EventHandler* src = (EventHandler*)param;
     DWORD aProcesses[1024], cbNeeded, cProcesses;
+    TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+    
     unsigned int i;
 
     while (!src->stopProf) {
         unsigned newp = src->conf->activeProfile;
         bool notDefault = false;
 
-        Sleep(100);
+        GUITHREADINFO activeThread;
+        activeThread.cbSize = sizeof(GUITHREADINFO);
 
-        if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
+        Sleep(100);
+        GetGUIThreadInfo(NULL, &activeThread);
+
+        if (activeThread.hwndActive != 0) {
+            // is it related to profile?
+            DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
+            DWORD prcId = 0;
+            GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                PROCESS_VM_READ,
+                FALSE, prcId);
+            QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
+
+            for (int j = 0; j < src->conf->profiles.size(); j++)
+                if (src->conf->profiles[j].triggerapp == std::string(szProcessName)) {
+                    // found trigger
+                    newp = src->conf->profiles[j].id;
+                    notDefault = true;
+                    break;
+                }
+        }
+
+        if (!notDefault && EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
         {
             HMODULE hMod;
             cProcesses = cbNeeded / sizeof(DWORD);
@@ -204,7 +230,6 @@ DWORD CProfileProc(LPVOID param) {
             {
                 if (aProcesses[i] != 0)
                 {
-                    TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
                     HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
                         PROCESS_VM_READ,
                         FALSE, aProcesses[i]);
@@ -213,11 +238,10 @@ DWORD CProfileProc(LPVOID param) {
                         if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
                             &cbNeeded))
                         {
-                            /*GetModuleBaseName*/GetModuleFileNameEx(hProcess, hMod, szProcessName,
-                                sizeof(szProcessName) / sizeof(TCHAR));
+                            GetModuleFileNameEx(hProcess, hMod, szProcessName, MAX_PATH);
                             // is it related to profile?
                             for (int j = 0; j < src->conf->profiles.size(); j++)
-                                if (src->conf->profiles[j].triggerapp == std::string(szProcessName)) {
+                                if (!(src->conf->profiles[j].flags & 0x8) && src->conf->profiles[j].triggerapp == std::string(szProcessName)) {
                                     // found trigger
                                     newp = src->conf->profiles[j].id;
                                     notDefault = true;
@@ -228,15 +252,14 @@ DWORD CProfileProc(LPVOID param) {
                     }
                 }
             }
-            // do we need to switch?
-            if (notDefault) {
-                src->SwitchActiveProfile(newp);
-            }
-            else {
-                // switch for default profile....
-                src->SwitchActiveProfile(src->conf->defaultProfile);
-            }
         }
+        // do we need to switch?
+        if (notDefault) {
+            src->SwitchActiveProfile(newp);
+        }
+        else 
+            // switch for default profile....
+            src->SwitchActiveProfile(src->conf->defaultProfile);
     }
     return 0;
 }

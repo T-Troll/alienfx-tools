@@ -3,8 +3,9 @@
 
 FXHelper::FXHelper(ConfigHandler* conf) {
 	config = conf;
-	devList = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
-	AlienFX_SDK::Functions::LoadMappings();
+	afx_dev = new AlienFX_SDK::Functions();
+	devList = afx_dev->AlienFXEnumDevices(afx_dev->vid);
+	afx_dev->LoadMappings();
 	pid = 0;
 	if (conf->lastActive != 0)
 		for (int i = 0; i < devList.size(); i++)
@@ -13,57 +14,58 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 				break;
 			}
 	if (pid == 0)
-		pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
+		pid = afx_dev->AlienFXInitialize(afx_dev->vid);
 	else
-		pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid, pid);
+		pid = afx_dev->AlienFXInitialize(afx_dev->vid, pid);
 
 	if (pid != -1)
 	{
 		int count;
-		for (count = 0; count < 5 && !AlienFX_SDK::Functions::IsDeviceReady(); count++)
+		for (count = 0; count < 5 && !afx_dev->IsDeviceReady(); count++)
 			Sleep(20);
 		if (count == 5)
-			AlienFX_SDK::Functions::Reset(0);
+			afx_dev->Reset(0);
 		conf->lastActive = pid;
 	}
 };
 FXHelper::~FXHelper() {
 	if (pid != -1) {
-		AlienFX_SDK::Functions::SaveMappings();
-		AlienFX_SDK::Functions::AlienFXClose();
+		afx_dev->SaveMappings();
+		afx_dev->AlienFXClose();
 	}
+	delete afx_dev;
 };
 
 std::vector<int> FXHelper::GetDevList() {
-	devList = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+	devList = afx_dev->AlienFXEnumDevices(afx_dev->vid);
 	return devList;
 }
 
 void FXHelper::TestLight(int id)
 {
-	bool dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
+	bool dev_ready = afx_dev->IsDeviceReady();
 	int c_count = 0;
 	while (!dev_ready) {
 		c_count++;
 		if (c_count > 5) return;
 		Sleep(20);
-		dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
+		dev_ready = afx_dev->IsDeviceReady();
 	}
 	int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
 		g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
 		b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
 	if (id != lastTest) {
 		if (lastTest >= 0)
-			AlienFX_SDK::Functions::SetColor(lastTest, 0, 0, 0);
+			afx_dev->SetColor(lastTest, 0, 0, 0);
 		lastTest = id;
 	}
-	AlienFX_SDK::Functions::SetColor(id, r, g, b);
-	AlienFX_SDK::Functions::UpdateColors();
+	afx_dev->SetColor(id, r, g, b);
+	afx_dev->UpdateColors();
 }
 
 void FXHelper::ResetPower()
 {
-	AlienFX_SDK::Functions::SetPowerAction(63, 0, 0, 0, 0, 0, 0, true);
+	afx_dev->SetPowerAction(63, 0, 0, 0, 0, 0, 0, true);
 }
 
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
@@ -72,12 +74,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 #ifdef _DEBUG
 	//char buff[2048];
 	//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
-	//sprintf_s(buff, 2047, "CounterUpdate: S%d,", AlienFX_SDK::Functions::AlienfxGetDeviceStatus());
+	//sprintf_s(buff, 2047, "CounterUpdate: S%d,", afx_dev->AlienfxGetDeviceStatus());
 	//OutputDebugString(buff);
 #endif
 
 	if (config->autoRefresh) Refresh();
-	bool dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
+	bool dev_ready = afx_dev->IsDeviceReady();
 	int c_count = 0;
 	while (!dev_ready) {
 		if (!force) return;
@@ -89,7 +91,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 			return;
 		}
 		Sleep(20);
-		dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
+		dev_ready = afx_dev->IsDeviceReady();
 	}
 
 	bStage = !bStage;
@@ -100,7 +102,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++)
 		if (Iter->devid == pid 
 		&& (Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
-			&& (lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid)) != (-1)) {
+			&& (lFlags = afx_dev->GetFlags(pid, Iter->lightid)) != (-1)) {
 			int mIndex = lFlags && Iter->eve[0].map.size() > 1 && activeMode != MODE_AC && activeMode != MODE_CHARGE ? 1 : 0;
 			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map[mIndex] : Iter->eve[2].fs.b.flags ?
 				Iter->eve[2].map[0] : Iter->eve[3].map[0];
@@ -159,7 +161,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 			SetLight(Iter->lightid, lFlags, actions, force);
 		}
 	if (wasChanged)
-		AlienFX_SDK::Functions::UpdateColors();
+		afx_dev->UpdateColors();
 	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
 }
 
@@ -191,22 +193,22 @@ void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> ac
 			OutputDebugString(buff);
 #endif
 			if (config->lightsOn && config->stateOn || !config->offPowerButton)
-				AlienFX_SDK::Functions::SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
+				afx_dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 					actions[1].r, actions[1].g, actions[1].b, force);
 			else
-				AlienFX_SDK::Functions::SetPowerAction(id, 0, 0, 0, 0, 0, 0);
+				afx_dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0);
 		}
 	}
 	else
 		if (config->lightsOn && config->stateOn) {
 			if (actions[0].type == 0)
-				AlienFX_SDK::Functions::SetColor(id, actions[0].r, actions[0].g, actions[0].b);
+				afx_dev->SetColor(id, actions[0].r, actions[0].g, actions[0].b);
 			else {
-				AlienFX_SDK::Functions::SetAction(id, actions);
+				afx_dev->SetAction(id, actions);
 			}
 		}
 		else {
-			AlienFX_SDK::Functions::SetColor(id, 0, 0, 0);
+			afx_dev->SetColor(id, 0, 0, 0);
 		}
 }
 
@@ -222,7 +224,7 @@ int FXHelper::Refresh(bool forced)
 	std::vector <lightset>::iterator Iter;
 	Colorcode fin;
 
-	bool dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
+	bool dev_ready = afx_dev->IsDeviceReady();
 	int c_count = 0;
 	while (!dev_ready) {
 		if (!forced) {
@@ -239,14 +241,14 @@ int FXHelper::Refresh(bool forced)
 			return 1;
 		}
 		Sleep(20);
-		dev_ready = AlienFX_SDK::Functions::IsDeviceReady();
+		dev_ready = afx_dev->IsDeviceReady();
 	}
 	int lFlags = 0;
 	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++) {
 		if (Iter->devid == pid) {
 			actions = Iter->eve[0].map;
-			lFlags = AlienFX_SDK::Functions::GetFlags(pid, Iter->lightid);
+			lFlags = afx_dev->GetFlags(pid, Iter->lightid);
 			if (config->monState && !forced) {
 				/*if (!Iter->eve[0].fs.b.flags) {
 					c1.ci = 0; c2.ci = 0;
@@ -278,7 +280,7 @@ int FXHelper::Refresh(bool forced)
 			SetLight(Iter->lightid, lFlags, actions, forced);
 		}
 	}
-	AlienFX_SDK::Functions::UpdateColors();
+	afx_dev->UpdateColors();
 	return 0;
 }
 

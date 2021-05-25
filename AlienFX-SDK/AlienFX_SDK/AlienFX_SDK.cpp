@@ -32,7 +32,7 @@ extern "C" {
 
 namespace AlienFX_SDK
 {
-	bool isInitialized = false;
+	/*bool isInitialized = false;
 	HANDLE devHandle;
 	int length = 9;
 	bool inSet = false;
@@ -43,7 +43,7 @@ namespace AlienFX_SDK
 	static std::vector <devmap> devices;
 
 	static int pid = -1;
-	static int version = -1;
+	static int version = -1;*/
 
 	std::vector<int> Functions::AlienFXEnumDevices(int vid)
 	{
@@ -279,7 +279,7 @@ namespace AlienFX_SDK
 		return pid;
 	}
 
-	void Loop()
+	void Functions::Loop()
 	{
 		size_t BytesWritten;
 		byte BufferN[] = { 0x00, 0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
@@ -736,7 +736,7 @@ namespace AlienFX_SDK
 		return ret;
 	}
 
-	byte AlienfxWaitForReady()
+	BYTE Functions::AlienfxWaitForReady()
 	{
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
 		for (int i = 0; i < 10 && (status != ALIENFX_READY && status != ALIENFX_NEW_READY); i++)
@@ -749,7 +749,7 @@ namespace AlienFX_SDK
 		return status;
 	}
 
-	byte AlienfxWaitForBusy()
+	BYTE Functions::AlienfxWaitForBusy()
 	{
 
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
@@ -848,7 +848,7 @@ namespace AlienFX_SDK
 		return false;
 	}
 
-	void AddMapping(int devID, int lightID, char* name, int flags) {
+	void Functions::AddMapping(int devID, int lightID, char* name, int flags) {
 		mapping map;
 		int i = 0;
 		for (i = 0; i < mappings.size(); i++) {
@@ -1045,10 +1045,6 @@ namespace AlienFX_SDK
 		return length;
 	}
 
-	int GetError()
-	{
-		return GetLastError();
-	}
 }
 
 

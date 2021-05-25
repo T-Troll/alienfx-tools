@@ -211,9 +211,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
     case WM_INITDIALOG:
     {
-        int pid = AlienFX_SDK::Functions::GetPID();
-        size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
-        size_t numdev = AlienFX_SDK::Functions::GetDevices()->size();
+        int pid = fxhl->afx_dev->GetPID();
+        size_t lights = fxhl->afx_dev->GetMappings()->size();
+        size_t numdev = fxhl->afx_dev->GetDevices()->size();
 
         if (pid == -1) {
             std::string devName = "No device found";
@@ -223,8 +223,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         else {
             int cpid = (-1), cpos = (-1);
             for (int i = 0; i < numdev; i++) {
-                cpid = AlienFX_SDK::Functions::GetDevices()->at(i).devid;
-                std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
+                cpid = fxhl->afx_dev->GetDevices()->at(i).devid;
+                std::string dname = fxhl->afx_dev->GetDevices()->at(i).name;
                 int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
                 SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
                 if (cpid == pid) {
@@ -241,8 +241,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
             }
             for (int i = 0; i < lights; i++) {
-                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                if (lgh.devid == pid && AlienFX_SDK::Functions::GetFlags(pid, lgh.lightid) == 0) {
+                AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
+                if (lgh.devid == pid && fxhl->afx_dev->GetFlags(pid, lgh.lightid) == 0) {
                     int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
                     SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
                 }
@@ -285,13 +285,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE: {
-                    size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
-                    AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+                    size_t lights = fxhl->afx_dev->GetMappings()->size();
+                    fxhl->afx_dev->AlienFXChangeDevice(did);
                     conf->lastActive = did;
                     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
                     for (int i = 0; i < lights; i++) {
-                        AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
-                        if (lgh.devid == did && AlienFX_SDK::Functions::GetFlags(did, lgh.lightid) == 0) { // should be did
+                        AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
+                        if (lgh.devid == did && fxhl->afx_dev->GetFlags(did, lgh.lightid) == 0) { // should be did
                             int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
                             SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
                         }
@@ -406,7 +406,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_HIDE);
             break;
         case IDC_BUTTON_RESET:
-            AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+            fxhl->afx_dev->AlienFXChangeDevice(did);
             cap->Restart();
             break;
         default: return false;

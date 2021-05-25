@@ -1,5 +1,6 @@
 #pragma once
 #include "ConfigHandler.h"
+#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
 class FXHelper
 {
@@ -9,6 +10,7 @@ private:
 	ConfigHandler *config;
 
 public:
+	AlienFX_SDK::Functions* afx_dev;
 	FXHelper(int* freqp, ConfigHandler* conf);
 	~FXHelper();
 

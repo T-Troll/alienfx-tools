@@ -585,7 +585,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             fxhl->RefreshState();
             break;
         case IDC_BUTTON_SAVE:
-            AlienFX_SDK::Functions::SaveMappings();
+            fxhl->afx_dev->SaveMappings();
             conf->Save();
             break;
         case ID_ACC_COLOR:
@@ -769,13 +769,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC: {
             // resume from sleep/hybernate
-            //AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+            //fxhl->afx_dev->AlienFXEnumDevices(fxhl->afx_dev->vid);
 #ifdef _DEBUG
             OutputDebugString("Resume from Sleep/hibernate initiated\n");
 #endif
-            int cPid = AlienFX_SDK::Functions::GetPID();
+            int cPid = fxhl->afx_dev->GetPID();
             if (cPid != -1) {
-                AlienFX_SDK::Functions::AlienFXChangeDevice(cPid);
+                fxhl->afx_dev->AlienFXChangeDevice(cPid);
                 eve->ChangePowerState();
                 eve->StartEvents();
                 eve->StartProfiles();
@@ -1038,7 +1038,7 @@ void RebuildEffectList(HWND eff_list, lightset* mmap) {
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
-    int pid = AlienFX_SDK::Functions::GetPID();
+    int pid = fxhl->afx_dev->GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS),
         eff_list = GetDlgItem(hDlg, IDC_EFFECTS_LIST),
         s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
@@ -1049,11 +1049,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     {
     case WM_INITDIALOG:
     {
-        //int pid = AlienFX_SDK::Functions::GetPID();
-        size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+        //int pid = fxhl->afx_dev->GetPID();
+        size_t lights = fxhl->afx_dev->GetMappings()->size();
         bool noLights = true;
         for (int i = 0; i < lights; i++) {
-            AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+            AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
             if (lgh.devid == pid) {
                 int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
                 SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
@@ -1116,7 +1116,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     newmap.lightid = lid;
                     newmap.eve[0].fs.b.flags = 1;
                     newmap.eve[0].map.push_back(act);
-                    if (AlienFX_SDK::Functions::GetFlags(pid, lid))
+                    if (fxhl->afx_dev->GetFlags(pid, lid))
                         newmap.eve[0].map.push_back(act);
                     newmap.eve[1].map.push_back(act);
                     newmap.eve[1].map.push_back(act);
@@ -1133,7 +1133,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 effID = 0;
                 RebuildEffectList(eff_list, mmap);
                 // Enable or disable controls
-                bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
+                bool flag = !fxhl->afx_dev->GetFlags(pid, lid);
                 if (!flag && mmap->eve[0].map.size() < 2) {
                     AlienFX_SDK::afx_act act;
                     mmap->eve[0].map.push_back(act);
@@ -1169,7 +1169,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             } break;
             } break;
         case IDC_BUT_ADD_EFFECT:
-            if (HIWORD(wParam) == BN_CLICKED && mmap != NULL && !AlienFX_SDK::Functions::GetFlags(pid, lid) && mmap->eve[0].map.size() < 9) {
+            if (HIWORD(wParam) == BN_CLICKED && mmap != NULL && !fxhl->afx_dev->GetFlags(pid, lid) && mmap->eve[0].map.size() < 9) {
                 AlienFX_SDK::afx_act act = mmap->eve[0].map.back();
                 mmap->eve[0].map.push_back(act);
                 RebuildEffectList(eff_list, mmap);
@@ -1177,11 +1177,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             }
             break;
         case IDC_BUTT_REMOVE_EFFECT:
-            if (HIWORD(wParam) == BN_CLICKED && mmap != NULL && !AlienFX_SDK::Functions::GetFlags(pid, lid) && mmap->eve[0].map.size() > 1) {
+            if (HIWORD(wParam) == BN_CLICKED && mmap != NULL && !fxhl->afx_dev->GetFlags(pid, lid) && mmap->eve[0].map.size() > 1) {
                 mmap->eve[0].map.pop_back();
                 if (effID == mmap->eve[0].map.size()) {
                     effID--;
-                    bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
+                    bool flag = !fxhl->afx_dev->GetFlags(pid, lid);
                     EnableWindow(type_c1, flag);
                     EnableWindow(s1_slider, flag);
                     EnableWindow(l1_slider, flag);
@@ -1203,7 +1203,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     MessageBox(hDlg, "Do you really want to set all lights for current device to this settings?", "Warning!",
                         MB_YESNO | MB_ICONWARNING) == IDYES) {
                     for (int i = 0; i < conf->active_set.size(); i++)
-                        if (conf->active_set[i].devid == pid && !AlienFX_SDK::Functions::GetFlags(pid, conf->active_set[i].lightid)) {
+                        if (conf->active_set[i].devid == pid && !fxhl->afx_dev->GetFlags(pid, conf->active_set[i].lightid)) {
                             conf->active_set[i].eve[0] = mmap->eve[0];
                         }
                     fxhl->RefreshState();
@@ -1259,7 +1259,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
                 lightset* mmap = FindMapping(pid, lid);
                 if (mmap != NULL) {
-                    bool flag = !AlienFX_SDK::Functions::GetFlags(pid, lid);
+                    bool flag = !fxhl->afx_dev->GetFlags(pid, lid);
                     EnableWindow(type_c1, flag);
                     EnableWindow(s1_slider, flag);
                     EnableWindow(l1_slider, flag);
@@ -1280,7 +1280,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    int pid = AlienFX_SDK::Functions::GetPID();
+    int pid = fxhl->afx_dev->GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
         mode_light = GetDlgItem(hDlg, IDC_CHECK_NOEVENT),
         mode_power = GetDlgItem(hDlg, IDC_CHECK_POWER),
@@ -1295,10 +1295,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     {
     case WM_INITDIALOG:
     {
-        size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+        size_t lights = fxhl->afx_dev->GetMappings()->size();
         bool noLights = true;
         for (int i = 0; i < lights; i++) {
-            AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+            AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
             if (lgh.devid == pid) {
                 int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
                 SendMessage(light_list, LB_SETITEMDATA, pos, lgh.lightid);
@@ -1516,10 +1516,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 int UpdateLightList(HWND light_list, int pid) {
 
     int pos = -1;
-    size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+    size_t lights = fxhl->afx_dev->GetMappings()->size();
     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
     for (int i = 0; i < lights; i++) {
-        AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+        AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
         if (lgh.devid == pid) {
             pos = (int)SendMessage(light_list, CB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
             SendMessage(light_list, CB_SETITEMDATA, pos, lgh.lightid);
@@ -1535,7 +1535,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 {
     lightset* map = NULL;
     unsigned i;
-    int pid = AlienFX_SDK::Functions::GetPID();
+    int pid = fxhl->afx_dev->GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
         dev_list = GetDlgItem(hDlg, IDC_DEVICES),
         light_id = GetDlgItem(hDlg, IDC_LIGHTID);
@@ -1543,21 +1543,21 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     {
     case WM_INITDIALOG:
     {
-        size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+        size_t lights = fxhl->afx_dev->GetMappings()->size();
         size_t numdev = fxhl->GetDevList().size();
         int cpid = (-1), pos = (-1);
         for (i = 0; i < numdev; i++) {
             cpid = fxhl->GetDevList().at(i);
             int j;
-            for (j = 0; j < AlienFX_SDK::Functions::GetDevices()->size(); j++) {
-                if (cpid == AlienFX_SDK::Functions::GetDevices()->at(j).devid) {
-                    std::string dname = AlienFX_SDK::Functions::GetDevices()->at(i).name;
+            for (j = 0; j < fxhl->afx_dev->GetDevices()->size(); j++) {
+                if (cpid == fxhl->afx_dev->GetDevices()->at(j).devid) {
+                    std::string dname = fxhl->afx_dev->GetDevices()->at(i).name;
                     pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
                     SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
                     break;
                 }
             }
-            if (j == AlienFX_SDK::Functions::GetDevices()->size()) {
+            if (j == fxhl->afx_dev->GetDevices()->size()) {
                 // no name
                 char devName[256];
                 sprintf_s(devName, 255, "Device #%X", cpid);
@@ -1572,7 +1572,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
 
         UpdateLightList(light_list, pid);
-        BYTE status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
+        BYTE status = fxhl->afx_dev->AlienfxGetDeviceStatus();
         if (status && status != 0xff)
             SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
         else
@@ -1591,10 +1591,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE: {
-                AlienFX_SDK::Functions::AlienFXChangeDevice(did);
+                fxhl->afx_dev->AlienFXChangeDevice(did);
                 conf->lastActive = did;
                 UpdateLightList(light_list, did);
-                if (AlienFX_SDK::Functions::AlienfxGetDeviceStatus())
+                if (fxhl->afx_dev->AlienfxGetDeviceStatus())
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
                 else
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
@@ -1603,18 +1603,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             case CBN_EDITCHANGE:
                 char buffer[256];
                 GetWindowTextA(dev_list, buffer, 256);
-                for (i = 0; i < AlienFX_SDK::Functions::GetDevices()->size(); i++) {
-                    if (AlienFX_SDK::Functions::GetDevices()->at(i).devid == eDid) {
-                        AlienFX_SDK::Functions::GetDevices()->at(i).name = buffer;
+                for (i = 0; i < fxhl->afx_dev->GetDevices()->size(); i++) {
+                    if (fxhl->afx_dev->GetDevices()->at(i).devid == eDid) {
+                        fxhl->afx_dev->GetDevices()->at(i).name = buffer;
                         break;
                     }
                 }
-                if (i == AlienFX_SDK::Functions::GetDevices()->size()) {
+                if (i == fxhl->afx_dev->GetDevices()->size()) {
                     AlienFX_SDK::devmap nDev;
                     nDev.devid = eDid;
                     nDev.name = buffer;
-                    AlienFX_SDK::Functions::GetDevices()->push_back(nDev);
-                    AlienFX_SDK::Functions::SaveMappings();
+                    fxhl->afx_dev->GetDevices()->push_back(nDev);
+                    fxhl->afx_dev->SaveMappings();
                 }
                 SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
                 SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
@@ -1627,7 +1627,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             {
             case CBN_SELCHANGE: {
                 SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
-                CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, AlienFX_SDK::Functions::GetFlags(did, lid) ? BST_CHECKED : BST_UNCHECKED);
+                CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev->GetFlags(did, lid) ? BST_CHECKED : BST_UNCHECKED);
                 eve->StopEvents();
                 // highlight to check....
                 fxhl->TestLight(lid);
@@ -1636,11 +1636,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             case CBN_EDITCHANGE:
                 char buffer[256];
                 GetWindowTextA(light_list, buffer, 256);
-                for (i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
-                    if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == eDid &&
-                        AlienFX_SDK::Functions::GetMappings()->at(i).lightid == eLid) {
-                        AlienFX_SDK::Functions::GetMappings()->at(i).name = buffer;
-                        AlienFX_SDK::Functions::SaveMappings();
+                for (i = 0; i < fxhl->afx_dev->GetMappings()->size(); i++) {
+                    if (fxhl->afx_dev->GetMappings()->at(i).devid == eDid &&
+                        fxhl->afx_dev->GetMappings()->at(i).lightid == eLid) {
+                        fxhl->afx_dev->GetMappings()->at(i).name = buffer;
+                        fxhl->afx_dev->SaveMappings();
                         SendMessage(light_list, CB_DELETESTRING, lItem , 0);
                         SendMessage(light_list, CB_INSERTSTRING, lItem, (LPARAM)buffer);
                         SendMessage(light_list, CB_SETITEMDATA, lItem, eLid);
@@ -1658,9 +1658,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             int cid = GetDlgItemInt(hDlg, IDC_LIGHTID, NULL, false);
             // let's check if we have the same ID, need to use max+1 in this case
             unsigned maxID = 0; bool haveID = false;
-            size_t lights = AlienFX_SDK::Functions::GetMappings()->size();
+            size_t lights = fxhl->afx_dev->GetMappings()->size();
             for (int i = 0; i < lights; i++) {
-                AlienFX_SDK::mapping lgh = AlienFX_SDK::Functions::GetMappings()->at(i);
+                AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
                 if (lgh.devid == eDid) {
                     if (lgh.lightid > maxID)
                         maxID = lgh.lightid;
@@ -1673,8 +1673,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             dev.lightid = cid;
             sprintf_s(buffer, 255, "Light #%d", cid);
             dev.name = buffer;
-            AlienFX_SDK::Functions::GetMappings()->push_back(dev);
-            AlienFX_SDK::Functions::SaveMappings();
+            fxhl->afx_dev->GetMappings()->push_back(dev);
+            fxhl->afx_dev->SaveMappings();
             UpdateLightList(light_list, eDid);
         } break;
         case IDC_BUTTON_REML:
@@ -1695,14 +1695,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 }
                 // reset active mappings
                 conf->active_set = conf->profiles[conf->activeProfile].lightsets;
-                std::vector <AlienFX_SDK::mapping>* mapps = AlienFX_SDK::Functions::GetMappings();
+                std::vector <AlienFX_SDK::mapping>* mapps = fxhl->afx_dev->GetMappings();
                 for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
                     Iter != mapps->end(); Iter++)
                     if (Iter->devid == eDid && Iter->lightid == lid) {
-                        AlienFX_SDK::Functions::GetMappings()->erase(Iter);
+                        fxhl->afx_dev->GetMappings()->erase(Iter);
                         break;
                     }
-                AlienFX_SDK::Functions::SaveMappings();
+                fxhl->afx_dev->SaveMappings();
                 conf->Save();
                 UpdateLightList(light_list, eDid);
             }
@@ -1745,7 +1745,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         case IDC_ISPOWERBUTTON:
             if (lid != -1) {
                 unsigned flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-                AlienFX_SDK::Functions::SetFlags(did, lid, flags);
+                fxhl->afx_dev->SetFlags(did, lid, flags);
                 // remove power button config from chip if unchecked
                 if (!flags) {
                     fxhl->ResetPower();
@@ -1758,9 +1758,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         case IDC_BUTTON_DEVRESET: {
             if (pid != -1) {
                 eve->StopEvents();
-                AlienFX_SDK::Functions::AlienFXChangeDevice(pid);
+                fxhl->afx_dev->AlienFXChangeDevice(pid);
                 //conf->mappings = conf->profiles[conf->activeProfile].lightsets;
-                BYTE status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
+                BYTE status = fxhl->afx_dev->AlienfxGetDeviceStatus();
                 if (status && status != 0xff)
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
                 else
@@ -1797,6 +1797,7 @@ int ReloadProfileCombo(HWND hDlg, int cID) {
             CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, conf->profiles[i].flags & 0x1 ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hDlg, IDC_CHECK_NOMON, conf->profiles[i].flags & 0x2 ? BST_CHECKED : BST_UNCHECKED);
             CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, conf->profiles[i].flags & 0x4 ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, conf->profiles[i].flags & 0x8 ? BST_CHECKED : BST_UNCHECKED);
             SendMessage(app_list, LB_RESETCONTENT, 0, 0);
             SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].triggerapp.c_str()));
             rpos = pos;
@@ -1922,7 +1923,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             }
         } break;
         case IDC_CHECK_DEFPROFILE:
-            // TODO: there are should be only 1 default profile!
             if (prof != NULL) {
                 bool nflags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
                 if (nflags) {
@@ -1956,6 +1956,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                 }
             }
             break;
+        case IDC_CHECK_FOREGROUND:
+            if (prof != NULL) {
+                prof->flags = (prof->flags & 0xf7) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 3;
+            }
+            break;
         }
     } break;
     default: return false;
@@ -1966,7 +1971,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 
-    //int pid = AlienFX_SDK::Functions::GetPID();
+    //int pid = fxhl->afx_dev->GetPID();
     HWND dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
     switch (message)
     {

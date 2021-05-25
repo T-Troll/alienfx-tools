@@ -19,10 +19,10 @@ public:
 	void release();
 private:
 	IMMDevice* inpDev;
-	IAudioClient* pAudioClient;
-	IAudioCaptureClient* pCaptureClient;
-	IAudioClockAdjustment* pRateClient;
-	ISimpleAudioVolume* pAudioVolume;
+	IAudioClient* pAudioClient = NULL;
+	IAudioCaptureClient* pCaptureClient = NULL;
+	IAudioClockAdjustment* pRateClient = NULL;
+	ISimpleAudioVolume* pAudioVolume = NULL;
 	float originalVolume;
 
 	//Graphics* gHandle;
@@ -31,6 +31,7 @@ private:
 
 	BYTE* byteArray;
 	unsigned byteArrayLength;
+	int rate;
 
 	UINT32 bufferFrameCount;
 

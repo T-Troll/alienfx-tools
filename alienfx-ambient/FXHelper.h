@@ -1,5 +1,6 @@
 #pragma once
 #include "ConfigHandler.h"
+#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
 struct UpdateData {
 	Colorcode color;
@@ -17,6 +18,7 @@ private:
 	//std::vector<UpdateData> updates;
 public:
 	std::vector<int> devList;
+	AlienFX_SDK::Functions* afx_dev;
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
 	//void StartFX();

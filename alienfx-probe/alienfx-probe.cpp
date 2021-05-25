@@ -15,13 +15,15 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 8;
-	cout << "alienfx-probe v1.1.6" << endl;
+	cout << "alienfx-probe v1.1.7" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
 	cout << "Probing low-level access... ";
 	vector<int> pids;
-	pids = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
+	//afx_dev->LoadMappings();
+	pids = afx_dev->AlienFXEnumDevices(afx_dev->vid);
 	if (pids.size() > 0) {
 		cout << "Found " << pids.size() << " device(s)" << endl;
 		cout << "Probing Dell SDK... ";
@@ -50,15 +52,15 @@ int main(int argc, char* argv[])
 
 		for (int cdev = 0; cdev < pids.size(); cdev++) {
 			cout << "Probing device PID 0x..." << std::hex << pids[cdev];
-			int isInit = AlienFX_SDK::Functions::AlienFXChangeDevice(pids[cdev]);
+			int isInit = afx_dev->AlienFXChangeDevice(pids[cdev]);
 			if (isInit != -1)
 			{
 				cout << " Connected." << endl;
 				char name[256], *outName;
 				int count;
-				for (count = 0; count < 5 && !AlienFX_SDK::Functions::IsDeviceReady(); count++)
+				for (count = 0; count < 5 && !afx_dev->IsDeviceReady(); count++)
 					Sleep(20);
-				AlienFX_SDK::Functions::Reset(false);
+				afx_dev->Reset(false);
 				cout << "Enter device name or id: ";
 				std::cin.getline(name, 255);
 				if (isdigit(name[0]) && res == (-1)) {
@@ -71,7 +73,7 @@ int main(int argc, char* argv[])
 				AlienFX_SDK::devmap devs;
 				devs.devid = pids[cdev];
 				devs.name = outName;
-				AlienFX_SDK::Functions::GetDevices()->push_back(devs);
+				afx_dev->GetDevices()->push_back(devs);
 				// How many lights to check?
 				if (argc > 1) // we have number of lights...
 					numlights = atoi(argv[1]);
@@ -79,8 +81,8 @@ int main(int argc, char* argv[])
 				for (int i = 0; i < numlights; i++) {
 					//int j = 0;
 					cout << "Testing light #" << i << "(enter name or ID, ENTER for skip): ";
-					AlienFX_SDK::Functions::SetColor(i, 0, 255, 0);
-					AlienFX_SDK::Functions::UpdateColors();
+					afx_dev->SetColor(i, 0, 255, 0);
+					afx_dev->UpdateColors();
 					Sleep(100);
 					std::cin.getline(name, 255);
 					if (name[0] != 0) {
@@ -97,19 +99,19 @@ int main(int argc, char* argv[])
 						map.devid = pids[cdev];
 						map.lightid = i;
 						map.name = std::string(outName);
-						AlienFX_SDK::Functions::GetMappings()->push_back(map);
-						AlienFX_SDK::Functions::SaveMappings();
+						afx_dev->GetMappings()->push_back(map);
+						afx_dev->SaveMappings();
 					}
 					else {
 						cout << "Skipped. ";
 					}
-					AlienFX_SDK::Functions::SetColor(i, 0, 0, 0);
-					AlienFX_SDK::Functions::UpdateColors();
-					AlienFX_SDK::Functions::Reset(false);
+					afx_dev->SetColor(i, 0, 0, 0);
+					afx_dev->UpdateColors();
+					afx_dev->Reset(false);
 					Sleep(100);
 				}
 				// now store config...
-				AlienFX_SDK::Functions::SaveMappings();
+				afx_dev->SaveMappings();
 			}
 			else {
 				cerr << " Device didn't answer!" << endl;
@@ -117,11 +119,12 @@ int main(int argc, char* argv[])
 		}
 		if (res == (-1))
 			lfxUtil.Release();
-		AlienFX_SDK::Functions::AlienFXClose();
+		afx_dev->AlienFXClose();
 	}
 	else {
 		cout << "AlienFX devices not present, please check device manage!" << endl;
 	}
+	delete afx_dev;
 	return 0;
 }
 

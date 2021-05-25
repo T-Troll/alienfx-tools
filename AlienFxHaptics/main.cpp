@@ -41,7 +41,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	conf.Load();
 
 	FXproc = new FXHelper(freq, &conf);
-	Graphika = new Graphics(hInstance ,nCmdShow, freq, &conf);
+	Graphika = new Graphics(hInstance ,nCmdShow, freq, &conf, FXproc);
 	dftG = new DFT_gosu(NUMPTS, Graphika->getBarsNum() , Graphika->getYScale() , freq);
 
 	DWORD (*callbackfunc)(LPVOID) = resample;

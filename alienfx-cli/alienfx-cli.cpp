@@ -40,7 +40,8 @@ int main(int argc, char* argv[])
 {
 	bool low_level = true;
 	UINT sleepy = 0;
-	cerr << "alienfx-cli v1.0.0" << endl;
+	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
+	cerr << "alienfx-cli v1.1.7" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -48,16 +49,16 @@ int main(int argc, char* argv[])
 	}
 
 	int res = -1; 
-	vector<int> devs = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
-	int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::Functions::vid);
+	vector<int> devs = afx_dev->AlienFXEnumDevices(afx_dev->vid);
+	int isInit = afx_dev->AlienFXInitialize(afx_dev->vid);
 	//std::cout << "PID: " << std::hex << isInit << std::endl;
 	if (isInit != -1)
 	{
-		for (int rcount = 0; rcount < 10 && !AlienFX_SDK::Functions::IsDeviceReady(); rcount++)
+		for (int rcount = 0; rcount < 10 && !afx_dev->IsDeviceReady(); rcount++)
 			Sleep(20);
-		if (!AlienFX_SDK::Functions::IsDeviceReady())
-			AlienFX_SDK::Functions::Reset(0);
-		AlienFX_SDK::Functions::LoadMappings();
+		if (!afx_dev->IsDeviceReady())
+			afx_dev->Reset(0);
+		afx_dev->LoadMappings();
 	}
 	else {
 		cerr << "No low-level device found!" << endl;
@@ -109,33 +110,33 @@ int main(int argc, char* argv[])
 		if (command == "loop") {
 			cc = 1;
 			if (low_level)
-				AlienFX_SDK::Functions::UpdateColors();
+				afx_dev->UpdateColors();
 			else
 				lfxUtil.Update();
 			continue;
 		}
 		if (command == "status") {
 			if (low_level) {
-				// vector<int> devs = AlienFX_SDK::Functions::AlienFXEnumDevices(AlienFX_SDK::Functions::vid);
+				// vector<int> devs = afx_dev->AlienFXEnumDevices(afx_dev->vid);
 				for (int i = 0; i < devs.size(); i++) {
 					cout << "Device ID#" << devs[i];
 					int dn;
-					for (dn = 0; dn < AlienFX_SDK::Functions::GetDevices()->size(); dn++) {
-						if (devs[i] == AlienFX_SDK::Functions::GetDevices()->at(i).devid) {
-							cout << " - " << AlienFX_SDK::Functions::GetDevices()->at(i).name;
-							if (devs[i] == AlienFX_SDK::Functions::GetPID()) {
-								cout << " (Active, V" << AlienFX_SDK::Functions::GetVersion() << ")";
+					for (dn = 0; dn < afx_dev->GetDevices()->size(); dn++) {
+						if (devs[i] == afx_dev->GetDevices()->at(i).devid) {
+							cout << " - " << afx_dev->GetDevices()->at(i).name;
+							if (devs[i] == afx_dev->GetPID()) {
+								cout << " (Active, V" << afx_dev->GetVersion() << ")";
 							}
 							break;
 						}
 					}
 					cout << endl;
-					for (int k = 0; k < AlienFX_SDK::Functions::GetMappings()->size(); k++) {
-						if (AlienFX_SDK::Functions::GetDevices()->at(i).devid ==
-							AlienFX_SDK::Functions::GetMappings()->at(k).devid) {
-							cout << "  Light ID#" << AlienFX_SDK::Functions::GetMappings()->at(k).lightid
-								<< " - " << AlienFX_SDK::Functions::GetMappings()->at(k).name;
-							if (AlienFX_SDK::Functions::GetMappings()->at(k).flags)
+					for (int k = 0; k < afx_dev->GetMappings()->size(); k++) {
+						if (afx_dev->GetDevices()->at(i).devid ==
+							afx_dev->GetMappings()->at(k).devid) {
+							cout << "  Light ID#" << afx_dev->GetMappings()->at(k).lightid
+								<< " - " << afx_dev->GetMappings()->at(k).name;
+							if (afx_dev->GetMappings()->at(k).flags)
 								cout << " (Power button)";
 							cout << endl;
 						}
@@ -171,7 +172,7 @@ int main(int argc, char* argv[])
 				int newDev = atoi(args.at(0).c_str());
 				for (int i = 0; i < devs.size(); i++)
 					if (devs[i] == newDev) {
-						isInit = AlienFX_SDK::Functions::AlienFXChangeDevice(newDev);
+						isInit = afx_dev->AlienFXChangeDevice(newDev);
 						if (isInit) {
 							isInit = newDev;
 						} else { 
@@ -185,14 +186,14 @@ int main(int argc, char* argv[])
 		}
 		if (command == "reset") {
 			if (low_level)
-				AlienFX_SDK::Functions::Reset(1);
+				afx_dev->Reset(1);
 			else
 				lfxUtil.Reset();
 			continue;
 		}
 		if (command == "update") {
 			if (low_level)
-				AlienFX_SDK::Functions::UpdateColors();
+				afx_dev->UpdateColors();
 			else
 				lfxUtil.Update();
 			continue;
@@ -212,13 +213,13 @@ int main(int argc, char* argv[])
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
-				for (int i = 0; i < AlienFX_SDK::Functions::GetMappings()->size(); i++) {
-					if (AlienFX_SDK::Functions::GetMappings()->at(i).devid == isInit &&
-						!AlienFX_SDK::Functions::GetMappings()->at(i).flags)
-						AlienFX_SDK::Functions::SetColor(AlienFX_SDK::Functions::GetMappings()->at(i).lightid,
+				for (int i = 0; i < afx_dev->GetMappings()->size(); i++) {
+					if (afx_dev->GetMappings()->at(i).devid == isInit &&
+						!afx_dev->GetMappings()->at(i).flags)
+						afx_dev->SetColor(afx_dev->GetMappings()->at(i).lightid,
 							color.cs.red, color.cs.green, color.cs.blue);
 				}
-				AlienFX_SDK::Functions::UpdateColors();
+				afx_dev->UpdateColors();
 			}
 			else {
 				lfxUtil.SetLFXColor(zoneCode, color.ci);
@@ -242,8 +243,8 @@ int main(int argc, char* argv[])
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
 				if (devid != isInit && devid != 0)
-					AlienFX_SDK::Functions::AlienFXChangeDevice(devid);
-				AlienFX_SDK::Functions::SetColor(atoi(args.at(1).c_str()),
+					afx_dev->AlienFXChangeDevice(devid);
+				afx_dev->SetColor(atoi(args.at(1).c_str()),
 					color.cs.blue, color.cs.green, color.cs.red);
 			}
 			else {
@@ -305,7 +306,7 @@ int main(int argc, char* argv[])
 			color2.cs.blue = atoi(args.at(6).c_str());
 			//color2.cs.brightness = 255;
 			if (low_level) {
-				AlienFX_SDK::Functions::SetPowerAction(atoi(args.at(0).c_str()),
+				afx_dev->SetPowerAction(atoi(args.at(0).c_str()),
 					color.cs.red, color.cs.green, color.cs.blue,
 					color2.cs.red, color2.cs.green, color2.cs.blue);
 			}
@@ -362,8 +363,8 @@ int main(int argc, char* argv[])
 			}
 			if (low_level) {
 				if (devid != isInit && devid != 0)
-					AlienFX_SDK::Functions::AlienFXChangeDevice(devid);
-				AlienFX_SDK::Functions::SetAction(atoi(args.at(1).c_str()), act);
+					afx_dev->AlienFXChangeDevice(devid);
+				afx_dev->SetAction(atoi(args.at(1).c_str()), act);
 			}
 			else {
 				if (clrs.size() < 2) {
@@ -428,11 +429,11 @@ int main(int argc, char* argv[])
 	}
 	cout << "Done." << endl;
 	if (isInit != -1)
-		AlienFX_SDK::Functions::UpdateColors();
-		AlienFX_SDK::Functions::AlienFXClose();
+		afx_dev->UpdateColors();
+		afx_dev->AlienFXClose();
 	if (res != -1) 
 		lfxUtil.Release();
-
+	delete afx_dev;
     return 1;
 }
 
