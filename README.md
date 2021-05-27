@@ -146,6 +146,7 @@ Low-level SDK based on Gurjot95's [AlienFX_SDK](https://github.com/Gurjot95/Alie
 API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).<br>
 Spectrum Analyzer UI is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.<br>
-DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.<br>
+<s>DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.</s><br>
+DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.<br>
 Dominant light extraction math usues [OpenCV](https://github.com/opencv/opencv) library.<br>
 Special thanks to [PhSHu](https://github.com/PhSMu) for ideas, testing and arwork.
