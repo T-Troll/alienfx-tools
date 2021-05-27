@@ -44,6 +44,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
+    <CLRSupport>false</CLRSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -126,7 +127,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>Default</ConformanceMode>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -150,7 +151,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>Default</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
@@ -175,6 +176,7 @@
     <ClInclude Include="alienfx-ambient.h" />
     <ClInclude Include="CaptureHelper.h" />
     <ClInclude Include="ConfigHandler.h" />
+    <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FXHelper.h" />
     <ClInclude Include="Resource.h" />
@@ -184,6 +186,7 @@
     <ClCompile Include="alienfx-ambient.cpp" />
     <ClCompile Include="CaptureHelper.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
+    <ClCompile Include="DXGIManager.cpp" />
     <ClCompile Include="FXHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -195,9 +198,6 @@
   <ItemGroup>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
       <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
-    </ProjectReference>
-    <ProjectReference Include="DaramCam\DaramCam.vcxproj">
-      <Project>{cf2c45db-8b57-41f5-9bbc-157442310ac3}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -3,8 +3,6 @@
 
 #include "framework.h"
 #include "alienfx-ambient.h"
-#include "DaramCam/DaramCam.h"
-#pragma comment ( lib, "DaramCam.lib" )
 #include "CaptureHelper.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"

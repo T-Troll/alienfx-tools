@@ -1,6 +1,5 @@
 #pragma once
 #include <wtypes.h>
-#include "DaramCam/DaramCam.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 
@@ -15,7 +14,6 @@ public:
 	void Restart();
 	bool isDirty = false;
 private:
-	DCScreenCapturer* screenCapturer = NULL;
 	DWORD dwThreadID = 0;
 	HANDLE dwHandle = NULL;
 };

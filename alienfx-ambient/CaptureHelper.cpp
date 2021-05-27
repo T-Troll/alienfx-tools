@@ -8,6 +8,66 @@
 #include <opencv2\imgproc\types_c.h>
 #include <windowsx.h>
 
+#include "DXGIManager.hpp"
+
+// C ABI
+extern "C" {
+	//__declspec(dllexport)
+	void init() {
+		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	}
+
+	//__declspec(dllexport)
+	void uninit() {
+		CoUninitialize();
+	}
+
+	//__declspec(dllexport)
+	void* create_dxgi_manager() {
+		DXGIManager* dxgi_manager = new DXGIManager();
+		dxgi_manager->setup();
+		return (void*)dxgi_manager;
+	}
+	//__declspec(dllexport)
+	void delete_dxgi_manager(void* dxgi_manager) {
+		DXGIManager* m = (DXGIManager*)(dxgi_manager);
+		delete m;
+	}
+
+	//__declspec(dllexport)
+	void set_timeout(void* dxgi_manager, uint32_t timeout) {
+		((DXGIManager*)dxgi_manager)->set_timeout(timeout);
+	}
+
+	//__declspec(dllexport)
+	void set_capture_source(void* dxgi_manager, uint16_t cs) {
+		((DXGIManager*)dxgi_manager)->set_capture_source(cs);
+	}
+
+	//__declspec(dllexport)
+	uint16_t get_capture_source(void* dxgi_manager) {
+		return ((DXGIManager*)dxgi_manager)->get_capture_source();
+	}
+
+	//__declspec(dllexport)
+	bool refresh_output(void* dxgi_manager) {
+		return ((DXGIManager*)dxgi_manager)->refresh_output();
+	}
+
+	//__declspec(dllexport)
+	void get_output_dimensions(void* const dxgi_manager, uint32_t* width, uint32_t* height) {
+		RECT dimensions = ((DXGIManager*)dxgi_manager)->get_output_rect();
+		*width = dimensions.right - dimensions.left;
+		*height = dimensions.bottom - dimensions.top;
+	}
+
+	// Return the CaptureResult of acquiring frame and its data
+	//__declspec(dllexport)
+	uint8_t get_frame_bytes(void* dxgi_manager, size_t* o_size, uint8_t** o_bytes) {
+		return ((DXGIManager*)dxgi_manager)->get_output_data(o_bytes, o_size);
+	}
+}
+
 using namespace cv;
 using namespace std;
 
@@ -28,34 +88,28 @@ UCHAR  imgz[12 * 3];
 DWORD uiThread, cuThread;
 HANDLE uiHandle = 0, cuHandle = 0;
 
+void* dxgi_manager;
+
 CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 {
-	DCStartup();
-	//DCMFStartup();
+	init();
+    dxgi_manager = create_dxgi_manager();
 	SetCaptureScreen(conf->mode);
+	set_timeout(dxgi_manager, 100);
+
 	hDlg = dlg;
 	config = conf;
 	fxh = fhh;
-	if (screenCapturer == NULL)
-		isDirty = true;
 }
 
 CaptureHelper::~CaptureHelper()
 {
-	//DCMFShutdown();
-	delete screenCapturer;
-	DCShutdown();
+	delete_dxgi_manager(dxgi_manager);
+	uninit();
 }
 
 void CaptureHelper::SetCaptureScreen(int mode) {
-	if (screenCapturer != NULL)
-		delete screenCapturer;
-	switch (mode) {
-	case 0: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_MainMonitor);
-		break; // primary monitor.
-	case 1: screenCapturer = DCCreateDXGIScreenCapturer(DCDXGIScreenCapturerRange_SubMonitors);
-		break; // other monitors.
-	}
+	set_capture_source(dxgi_manager, mode);
 }
 
 void CaptureHelper::Start()
@@ -66,7 +120,7 @@ void CaptureHelper::Start()
 			NULL,              // default security
 			0,                 // default stack size
 			CInProc,        // name of the thread function
-			screenCapturer,
+			dxgi_manager,//screenCapturer,
 			0,                 // default startup flags
 			&dwThreadID);
 	}
@@ -238,31 +292,21 @@ void FillColors(Mat* src) {
 
 DWORD WINAPI CInProc(LPVOID param)
 {
-	DCScreenCapturer* screenCapturer = (DCScreenCapturer*)param;
-	UINT w, h, st, cdp;
+	UINT w, h, cdp = 4;
 	UCHAR* img = NULL;
 	DWORD exitCode = 0;
+	size_t buf_size;
 	ULONGLONG lastTick = GetTickCount64();
 
 	while (inWork) {
 		UINT div = config->divider;
-		screenCapturer->Capture();
-		img = screenCapturer->GetCapturedBitmap()->GetByteArray();
+		get_output_dimensions(dxgi_manager, &w, &h);
 
 		// Resize & calc
-		if (img != NULL) {
-			w = screenCapturer->GetCapturedBitmap()->GetWidth();
-			h = screenCapturer->GetCapturedBitmap()->GetHeight();
-			cdp = screenCapturer->GetCapturedBitmap()->GetColorDepth();
-			st = screenCapturer->GetCapturedBitmap()->GetStride();
-			Mat* src = NULL;
-			if (cdp == 4) {
-				src = new Mat(h, w, CV_8UC4, img, st);
+		if (get_frame_bytes(dxgi_manager, &buf_size, &img) == CR_OK && img != NULL) {
+			Mat* src = new Mat(h, w, CV_8UC4, img);// , st);
 				cv::cvtColor(*src, *src, CV_RGBA2RGB);
-			}
-			else {
-				src = new Mat(h, w, CV_8UC3, img, st);
-			}
+
 			cv::resize(*src, *src, Size(w / div, h / div), 0, 0, INTER_AREA);
 			FillColors(src);
 			delete src;

@@ -36,6 +36,9 @@
     <ClInclude Include="FXHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DXGIManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfx-ambient.cpp">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FXHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DXGIManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
