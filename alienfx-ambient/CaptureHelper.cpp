@@ -301,39 +301,43 @@ DWORD WINAPI CInProc(LPVOID param)
 	while (inWork) {
 		UINT div = config->divider;
 		get_output_dimensions(dxgi_manager, &w, &h);
-
+		if (!w && !h) {
+			// Restart capture!
+			set_capture_source(dxgi_manager, config->mode);
+			get_output_dimensions(dxgi_manager, &w, &h);
+		} else
 		// Resize & calc
-		if (get_frame_bytes(dxgi_manager, &buf_size, &img) == CR_OK && img != NULL) {
-			Mat* src = new Mat(h, w, CV_8UC4, img);// , st);
-			cv::cvtColor(*src, *src, CV_RGBA2RGB);
+			if (get_frame_bytes(dxgi_manager, &buf_size, &img) == CR_OK && img != NULL) {
+				Mat* src = new Mat(h, w, CV_8UC4, img);// , st);
+				cv::cvtColor(*src, *src, CV_RGBA2RGB);
 
-			cv::resize(*src, *src, Size(w / div, h / div), 0, 0, INTER_AREA);
-			FillColors(src);
-			delete src;
+				cv::resize(*src, *src, Size(w / div, h / div), 0, 0, INTER_AREA);
+				FillColors(src);
+				delete src;
 
-			// Update lights
-			if (uiHandle)
-				GetExitCodeThread(uiHandle, &exitCode);
-			if (exitCode != STILL_ACTIVE)
-				uiHandle = CreateThread(
-					NULL,              // default security
-					0,                 // default stack size
-					CFXProc,        // name of the thread function
-					imgz,
-					0,                 // default startup flags
-					&uiThread);
-			// Update UI
-			if (cuHandle)
-				GetExitCodeThread(cuHandle, &exitCode);
-			if (exitCode != STILL_ACTIVE)
-				cuHandle = CreateThread(
-					NULL,              // default security
-					0,                 // default stack size
-					CDlgProc,        // name of the thread function
-					imgz,
-					0,                 // default startup flags
-					&cuThread);
-		}
+				// Update lights
+				if (uiHandle)
+					GetExitCodeThread(uiHandle, &exitCode);
+				if (exitCode != STILL_ACTIVE)
+					uiHandle = CreateThread(
+						NULL,              // default security
+						0,                 // default stack size
+						CFXProc,        // name of the thread function
+						imgz,
+						0,                 // default startup flags
+						&uiThread);
+				// Update UI
+				if (cuHandle)
+					GetExitCodeThread(cuHandle, &exitCode);
+				if (exitCode != STILL_ACTIVE)
+					cuHandle = CreateThread(
+						NULL,              // default security
+						0,                 // default stack size
+						CDlgProc,        // name of the thread function
+						imgz,
+						0,                 // default startup flags
+						&cuThread);
+			}
 		ULONGLONG nextTick = GetTickCount64();
 		if (nextTick - lastTick < 100) {
 			Sleep(100 - (DWORD)(nextTick - lastTick));

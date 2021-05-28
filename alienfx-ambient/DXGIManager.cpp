@@ -249,8 +249,11 @@ bool DXGIManager::update_buffer_allocation() {
 }
 
 RECT DXGIManager::get_output_rect() {
-	DXGI_OUTPUT_DESC output_desc = m_output_duplication->get_desc();
-	return output_desc.DesktopCoordinates;
+	if (m_output_duplication) {
+		DXGI_OUTPUT_DESC output_desc = m_output_duplication->get_desc();
+		return output_desc.DesktopCoordinates;
+	}
+	return { 0,0,0,0 };
 }
 
 CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size) {
