@@ -489,7 +489,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     fxhl->FadeToBlack();
                 }
                 else
-                    cap->Start();
+                    cap->Restart();
             }
             break;
         }
