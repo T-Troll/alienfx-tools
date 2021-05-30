@@ -34,8 +34,9 @@ public:
 	void TestLight(int id);
 	void ResetPower();
 	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force = false);
-	void SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force); //BYTE mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b,
+	void SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force = false); //BYTE mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b,
 		//BYTE mode2=0, BYTE length2 =0, BYTE speed2 =0, BYTE r2=0, BYTE g2=0, BYTE b2=0, bool force = false);
-	void RefreshState();
+	void RefreshState(bool force = false);
+	void RefreshMon();
 };
 

@@ -28,22 +28,10 @@ extern "C" {
 #define API_V2 12
 #define API_V1 8
 
-#define POWER_DELAY 260
+#define POWER_DELAY 500
 
 namespace AlienFX_SDK
 {
-	/*bool isInitialized = false;
-	HANDLE devHandle;
-	int length = 9;
-	bool inSet = false;
-	ULONGLONG lastPowerCall = GetTickCount64();
-
-	// Name mappings for lights
-	static std::vector <mapping> mappings;
-	static std::vector <devmap> devices;
-
-	static int pid = -1;
-	static int version = -1;*/
 
 	std::vector<int> Functions::AlienFXEnumDevices(int vid)
 	{
@@ -192,8 +180,6 @@ namespace AlienFX_SDK
 							flag = true;
 						}
 					}
-
-
 				}
 			}
 		}
@@ -297,9 +283,6 @@ namespace AlienFX_SDK
 		} break;
 		}
 	}
-
-	byte AlienfxWaitForReady();
-	byte AlienfxWaitForBusy();
 
 	bool Functions::Reset(int status)
 	{
@@ -598,6 +581,7 @@ namespace AlienFX_SDK
 	bool Functions::SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force)
 	{
 		size_t BytesWritten;
+		bool oldInSet;
 		byte Buffer[] = { 0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		switch (length) {
@@ -622,7 +606,8 @@ namespace AlienFX_SDK
 					return false;
 				}
 			// Need to flush query...
-			/*if (inSet)*/ UpdateColors();
+			oldInSet = inSet;
+			if (inSet) UpdateColors();
 			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
 #ifdef _DEBUG
 				if (force)
@@ -693,7 +678,8 @@ namespace AlienFX_SDK
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
 			lastPowerCall = GetTickCount64();
-			Reset(false);
+			if (oldInSet) Reset(false);
+			inSet = oldInSet;
 		} break;
 		case API_V2: case API_V1: {
 			// can't set action for old, just use color
@@ -769,7 +755,7 @@ namespace AlienFX_SDK
 		switch (length) {
 		case API_V3: {
 			status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-			return status == ALIENFX_NEW_READY;
+			return status == ALIENFX_NEW_READY || status == ALIENFX_NEW_WAITUPDATE;
 		} break;
 		case API_V2: case API_V1: {
 			status = AlienfxWaitForBusy();

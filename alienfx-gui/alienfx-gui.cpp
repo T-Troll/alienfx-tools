@@ -582,7 +582,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_HIDE);
             break;
         case IDC_BUTTON_REFRESH:
-            fxhl->RefreshState();
+            fxhl->RefreshState(true);
             break;
         case IDC_BUTTON_SAVE:
             fxhl->afx_dev->SaveMappings();
@@ -714,11 +714,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             DestroyWindow(hDlg);
         } break;
         case ID_TRAYMENU_REFRESH:
-            fxhl->RefreshState();
+            fxhl->RefreshState(true);
             break;
         case ID_TRAYMENU_LIGHTSON:
             conf->stateOn = conf->lightsOn = !conf->lightsOn;
-            fxhl->Refresh(true);
+            //fxhl->Refresh(true);
             eve->ToggleEvents();
             break;
         case ID_TRAYMENU_DIMLIGHTS:
@@ -823,7 +823,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case 1: // on/off
             conf->stateOn = conf->lightsOn = !conf->lightsOn;
-            fxhl->Refresh(true);
+            fxhl->RefreshState(true);
             eve->ToggleEvents();
             break;
         case 2: // dim
@@ -1153,7 +1153,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if (mmap != NULL) {
                     mmap->eve[0].map[effID].type = lType1;
                     RebuildEffectList(eff_list, mmap);
-                    fxhl->RefreshState();
+                    fxhl->RefreshState(true);
                 }
             }
             break;
@@ -1173,7 +1173,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 AlienFX_SDK::afx_act act = mmap->eve[0].map.back();
                 mmap->eve[0].map.push_back(act);
                 RebuildEffectList(eff_list, mmap);
-                fxhl->RefreshState();
+                fxhl->RefreshState(true);
             }
             break;
         case IDC_BUTT_REMOVE_EFFECT:
@@ -1192,7 +1192,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
                 }
                 RebuildEffectList(eff_list, mmap);
-                fxhl->RefreshState();
+                fxhl->RefreshState(true);
             }
             break;
         case IDC_BUTTON_SETALL:
@@ -1206,7 +1206,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                         if (conf->active_set[i].devid == pid && !fxhl->afx_dev->GetFlags(pid, conf->active_set[i].lightid)) {
                             conf->active_set[i].eve[0] = mmap->eve[0];
                         }
-                    fxhl->RefreshState();
+                    fxhl->RefreshState(true);
                 }
             } break;
             } break;   
@@ -1410,7 +1410,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
             if (map != NULL) {
                 map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-                fxhl->RefreshState();
+                fxhl->RefreshMon();
             }
         } break;
         case IDC_STATUS_BLINK:
@@ -1445,7 +1445,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             case CBN_SELCHANGE:
                 if (map != NULL) {
                     map->eve[2].source = countid;
-                    fxhl->RefreshState();
+                    fxhl->RefreshMon();
                 }
                 break;
             }
@@ -1456,7 +1456,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             case CBN_SELCHANGE:
                 if (map != NULL) {
                     map->eve[3].source = statusid;
-                    fxhl->RefreshState();
+                    fxhl->RefreshMon();
                 }
                 break;
             }
@@ -1505,7 +1505,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
                 if ((HWND)lParam == s2_slider) {
                     map->eve[3].fs.b.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 }
-                fxhl->RefreshState();
+                //fxhl->RefreshMon();
             }
             break;
         } break;
@@ -1841,7 +1841,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             case CBN_EDITCHANGE:
                 prof = eve->FindProfile(pCid);
                 if (prof != NULL) {
-                    char buffer[32767];
+                    char* buffer = (char *) calloc(32767, sizeof(char));
                     GetWindowTextA(profile_list, buffer, 32767);
                     prof->name = buffer;
                     SendMessage(profile_list, CB_DELETESTRING, pCitem, 0);
@@ -1849,6 +1849,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                     SendMessage(profile_list, CB_SETITEMDATA, pCitem, pCid);
                     if (pCid == conf->activeProfile)
                         ReloadProfileList(NULL);
+                    free(buffer);
                 }
                 break;
             case CBN_KILLFOCUS:
@@ -1906,7 +1907,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             if (prof != NULL) {
                 // fileopen dialogue...
                 OPENFILENAMEA fstruct;
-                char appName[512];
+                char appName[MAX_PATH];
                 ZeroMemory(&fstruct, sizeof(OPENFILENAMEA));
                 fstruct.lStructSize = sizeof(OPENFILENAMEA);
                 fstruct.hwndOwner = hDlg;

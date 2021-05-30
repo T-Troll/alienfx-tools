@@ -81,6 +81,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	if (config->autoRefresh) Refresh();
 	bool dev_ready = afx_dev->IsDeviceReady();
 	int c_count = 0;
+	/*if (!dev_ready) {
+#ifdef _DEBUG
+		OutputDebugString(TEXT("SetCounter: device busy!\n"));
+#endif
+		return;
+	}*/
 	while (!dev_ready) {
 		if (!force) return;
 		c_count++;
@@ -158,11 +164,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				}
 			else
 				actions.push_back(fin);
-			SetLight(Iter->lightid, lFlags, actions, force);
+			SetLight(Iter->lightid, lFlags, actions);// , force);
 		}
-	if (wasChanged)
+	if (wasChanged) {
 		afx_dev->UpdateColors();
-	lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
+		lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
+	}
 }
 
 void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force)
@@ -184,39 +191,51 @@ void FXHelper::SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> ac
 			actions[i].b = (actions[i].b * actions[i].b) >> 8;
 		}
 	}
-	if (power && actions.size() > 1) {
-		if (!config->block_power) {
+	if (afx_dev->IsDeviceReady()) {
+		if (power && actions.size() > 1) {
+			if (!config->block_power) {
 #ifdef _DEBUG
-			char buff[2048];
-			//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
-			sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
-			OutputDebugString(buff);
+				char buff[2048];
+				//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
+				sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
+				OutputDebugString(buff);
 #endif
-			if (config->lightsOn && config->stateOn || !config->offPowerButton)
-				afx_dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
-					actions[1].r, actions[1].g, actions[1].b, force);
-			else
-				afx_dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0);
-		}
-	}
-	else
-		if (config->lightsOn && config->stateOn) {
-			if (actions[0].type == 0)
-				afx_dev->SetColor(id, actions[0].r, actions[0].g, actions[0].b);
-			else {
-				afx_dev->SetAction(id, actions);
+				if (config->lightsOn && config->stateOn || !config->offPowerButton)
+					afx_dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
+						actions[1].r, actions[1].g, actions[1].b, force);
+				else
+					afx_dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0, force);
 			}
 		}
-		else {
-			afx_dev->SetColor(id, 0, 0, 0);
-		}
+		else
+			if (config->lightsOn && config->stateOn) {
+				if (actions[0].type == 0)
+					afx_dev->SetColor(id, actions[0].r, actions[0].g, actions[0].b);
+				else {
+					afx_dev->SetAction(id, actions);
+				}
+			}
+			else {
+				afx_dev->SetColor(id, 0, 0, 0);
+			}
+	}
+	else {
+#ifdef _DEBUG
+		OutputDebugString(TEXT("SetLight: device busy!\n"));
+#endif
+	}
 }
 
-void FXHelper::RefreshState()
+void FXHelper::RefreshState(bool force)
+{
+	Refresh(force);
+	RefreshMon();
+}
+
+void FXHelper::RefreshMon()
 {
 	if (config->enableMon)
 		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, true);
-	Refresh();
 }
 
 int FXHelper::Refresh(bool forced)
