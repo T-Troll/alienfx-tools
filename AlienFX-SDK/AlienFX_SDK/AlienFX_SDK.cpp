@@ -16,7 +16,7 @@ extern "C" {
 #define ALIENFX_READY 0x10
 #define ALIENFX_BUSY 0x11
 #define ALIENFX_UNKNOWN_COMMAND 0x12
-// new statuses for m15 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
+// new statuses for apiv3 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
 #define ALIENFX_NEW_READY 33
 #define ALIENFX_NEW_BUSY 34
 #define ALIENFX_NEW_WAITCOLOR 35
@@ -606,7 +606,6 @@ namespace AlienFX_SDK
 					return false;
 				}
 			// Need to flush query...
-			oldInSet = inSet;
 			if (inSet) UpdateColors();
 			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
 #ifdef _DEBUG
@@ -678,8 +677,7 @@ namespace AlienFX_SDK
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
 			lastPowerCall = GetTickCount64();
-			if (oldInSet) Reset(false);
-			inSet = oldInSet;
+			Reset(false);
 		} break;
 		case API_V2: case API_V1: {
 			// can't set action for old, just use color
