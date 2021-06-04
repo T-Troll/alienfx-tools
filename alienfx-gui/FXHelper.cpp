@@ -71,12 +71,12 @@ void FXHelper::ResetPower()
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
 {
 	std::vector <lightset>::iterator Iter;
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	//char buff[2048];
 	//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
 	//sprintf_s(buff, 2047, "CounterUpdate: S%d,", afx_dev->AlienfxGetDeviceStatus());
 	//OutputDebugString(buff);
-#endif
+//#endif
 
 	if (config->autoRefresh) Refresh();
 	bool dev_ready = afx_dev->IsDeviceReady();
@@ -122,7 +122,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 2: if (!force && (lHDD == cHDD || lHDD < ccut && cHDD < ccut)) continue; coeff = cHDD; break;
 				case 3: if (!force && (lGPU == cGPU || lGPU < ccut && cGPU < ccut)) continue; coeff = cGPU; break;
 				case 4: if (!force && (lNET == cNet || lNET < ccut && cNet < ccut)) continue; coeff = cNet; break;
-				case 5: if (!force && (lTemp == cTemp || lTemp < ccut && cTemp < ccut)) continue; coeff = (cTemp > 273) ? cTemp - 273.0 : 0; break;
+				case 5: if (!force && (lTemp == cTemp || lTemp < ccut && cTemp < ccut)) continue; coeff = cTemp; break;
 				case 6: if (!force && (lBatt == cBatt || lBatt < ccut && cBatt < ccut)) continue; coeff = cBatt; break;
 				}
 				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
@@ -140,8 +140,8 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 1: if (!tNet && !blink) continue;
 					indi = cNet; break;
 				case 2: if (!force && !blink &&
-					((lTemp <= 273 + ccut && cTemp <= 273 + ccut) ||
-						(cTemp > 273 + ccut && lTemp > 273 + ccut))) continue; indi = cTemp - 273 - ccut; break;
+					((lTemp <= ccut && cTemp <= ccut) ||
+						(cTemp > ccut && lTemp > ccut))) continue; indi = cTemp - ccut; break;
 				case 3: if (!force && !blink &&
 					((lRAM <= ccut && cRAM <= ccut) || (lRAM > ccut && cRAM > ccut))) continue; indi = cRAM - ccut; break;
 				}

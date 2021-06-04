@@ -69,13 +69,15 @@ public:
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = 0;
 	DWORD defaultProfile = 0;
-	DWORD awcc_disable = 1;
+	DWORD awcc_disable = 0;
+	DWORD esif_temp = 0;
 	DWORD block_power = 0;
 	unsigned stateDimmed = 0, stateOn = 1;
 	DWORD gammaCorrection = 1;
 	DWORD lastActive = 0;
+	bool wasAWCC = false;
 	Colorcode testColor;
-	COLORREF customColors[16];
+	COLORREF customColors[16] = { 0 };
 	std::vector<lightset> active_set;
 	std::vector<profile> profiles;
 

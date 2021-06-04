@@ -581,7 +581,6 @@ namespace AlienFX_SDK
 	bool Functions::SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force)
 	{
 		size_t BytesWritten;
-		bool oldInSet;
 		byte Buffer[] = { 0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b ,0x00 ,0x00 ,0x00, 0x00, 0x00, 0x00, 0x00 , 0x00 , 0x00 , 0x00
 		, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00, 0x00, 0x00 };
 		switch (length) {
@@ -597,7 +596,7 @@ namespace AlienFX_SDK
 #ifdef _DEBUG
 					OutputDebugString(TEXT("Forced power button update waiting...\n"));
 #endif
-					Sleep(lastPowerCall + (ULONGLONG)POWER_DELAY - cPowerCall);
+					Sleep(lastPowerCall + POWER_DELAY - cPowerCall);
 				}
 				else {
 #ifdef _DEBUG

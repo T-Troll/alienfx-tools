@@ -8,6 +8,7 @@
 #include <CommCtrl.h>
 #include <Commdlg.h>
 #include <shellapi.h>
+#include <Shlobj.h>
 #include <psapi.h>
 #include <ColorDlg.h>
 #include <algorithm>
@@ -50,9 +51,37 @@ EventHandler* eve;
 
 HWND mDlg;
 
+DWORD EvaluteToAdmin() {
+    // Evaluation attempt...
+    DWORD dwError = ERROR_CANCELLED;
+    char szPath[MAX_PATH];
+    if (!IsUserAnAdmin()) {
+        if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+        {
+            // Launch itself as admin
+            SHELLEXECUTEINFO sei = { sizeof(sei) };
+            sei.lpVerb = "runas";
+            sei.lpFile = szPath;
+            sei.hwnd = NULL;
+            sei.nShow = SW_NORMAL;
+            if (!ShellExecuteEx(&sei))
+            {
+                dwError = GetLastError();
+            }
+            else
+            {
+                conf->Save();
+                _exit(1);  // Quit itself
+            }
+        }
+        return dwError;
+    }
+    return 0;
+}
+
 bool DoStopService(bool kind) {
     SERVICE_STATUS_PROCESS ssp;
-    DWORD dwStartTime = GetTickCount();
+    DWORD dwStartTime = GetTickCount64();
     DWORD dwBytesNeeded;
     DWORD dwTimeout = 10000; // 10-second time-out
     //DWORD dwWaitTime;
@@ -104,7 +133,7 @@ bool DoStopService(bool kind) {
                 CloseServiceHandle(schSCManager);
                 conf->block_power = false;
                 return false;
-            } // TODO - start service if it was stopped.
+            } 
             else {
                 schService = OpenService(
                     schSCManager,         // SCM database 
@@ -119,7 +148,7 @@ bool DoStopService(bool kind) {
                         schService,  // handle to service 
                         0,           // number of arguments 
                         NULL);
-
+                    conf->block_power = true;
                     CloseServiceHandle(schService);
                     CloseServiceHandle(schSCManager);
                     return false;
@@ -143,32 +172,13 @@ bool DoStopService(bool kind) {
             if (schService == NULL)
             {
                 // Evaluation attempt...
-                char szPath[MAX_PATH];
-                if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+                if (EvaluteToAdmin() == ERROR_CANCELLED)
                 {
-                    // Launch itself as admin
-                    SHELLEXECUTEINFO sei = { sizeof(sei) };
-                    sei.lpVerb = "runas";
-                    sei.lpFile = szPath;
-                    sei.hwnd = NULL;
-                    sei.nShow = SW_NORMAL;
-                    if (!ShellExecuteEx(&sei))
-                    {
-                        DWORD dwError = GetLastError();
-                        if (dwError == ERROR_CANCELLED)
-                        {
-                            CloseServiceHandle(schService);
-                            CloseServiceHandle(schSCManager);
-                            conf->block_power = true;
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        _exit(1);  // Quit itself
-                    }
+                    //CloseServiceHandle(schService);
+                    CloseServiceHandle(schSCManager);
+                    conf->block_power = true;
+                    return false;
                 }
-                return false;
             }
 
             // Send a stop code to the service.
@@ -203,7 +213,7 @@ bool DoStopService(bool kind) {
                 if (ssp.dwCurrentState == SERVICE_STOPPED)
                     break;
 
-                if (GetTickCount() - dwStartTime > dwTimeout)
+                if (GetTickCount64() - dwStartTime > dwTimeout)
                 {
                     CloseServiceHandle(schService);
                     CloseServiceHandle(schSCManager);
@@ -236,11 +246,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf->Load();
     fxhl = new FXHelper(conf);
 
-    bool wasAWCC = DoStopService(true);
-
     if (fxhl->GetDevList().size() > 0) {
 
+        conf->wasAWCC = DoStopService(true);
+
         fxhl->Refresh(true);
+
+        if (conf->esif_temp)
+            EvaluteToAdmin();
 
         eve = new EventHandler(conf, fxhl);
 
@@ -297,6 +310,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         delete eve;
 
+        if (conf->wasAWCC) DoStopService(false);
+
     }
     else {
         // no fx device detected!
@@ -306,8 +321,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     delete fxhl;
     delete conf;
-
-    if (wasAWCC) DoStopService(false);
 
     return 0;
 }
@@ -352,19 +365,21 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (hResData) {
                 pRes = LockResource(hResData);
                 pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-                CopyMemory(pResCopy, pRes, dwSize);
+                if (pResCopy) {
+                    CopyMemory(pResCopy, pRes, dwSize);
+
+                    VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+                    char buf[255];
+
+                    DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
+                    DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
+
+                    sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
+
+                    Static_SetText(version_text, buf);
+                    LocalFree(pResCopy);
+                }
                 FreeResource(hResData);
-
-                VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-                char buf[255];
-
-                DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-                DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
-
-                sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
-
-                Static_SetText(version_text, buf);
-                LocalFree(pResCopy);
             }
         }
         return (INT_PTR)TRUE;
@@ -489,7 +504,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_INITDIALOG:
     {
         RECT rcTab;
-        DLGHDR* pHdr = (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
+        DLGHDR* pHdr = (DLGHDR*) LocalAlloc(LPTR, sizeof(DLGHDR));
         SetWindowLongPtr(tab_list, GWLP_USERDATA, (LONG_PTR)pHdr);
         
         pHdr->hwndTab = tab_list;
@@ -1251,7 +1266,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_EFFECTS_LIST:
             //int code = ((NMHDR*)lParam)->code;
-            if (((NMHDR*)lParam)->code == (int)NM_CLICK) {
+            if (((NMHDR*)lParam)->code == NM_CLICK) {
                 NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
                 // Select other color....
                 effID = sItem->iItem;
@@ -1991,6 +2006,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
         if (conf->enableProf) CheckDlgButton(hDlg, IDC_BATTPROFILE, BST_CHECKED);
         if (conf->awcc_disable) CheckDlgButton(hDlg, IDC_AWCC, BST_CHECKED);
+        if (conf->esif_temp) CheckDlgButton(hDlg, IDC_ESIFTEMP, BST_CHECKED);
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
         SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -2044,7 +2060,17 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             break;
         case IDC_AWCC:
             conf->awcc_disable = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-            if (!conf->awcc_disable) conf->block_power = true;
+            if (!conf->awcc_disable) {
+                //conf->block_power = true;
+                if (conf->wasAWCC) DoStopService(false);
+            }
+            else
+                conf->wasAWCC = DoStopService(true);
+            break;
+        case IDC_ESIFTEMP:
+            conf->esif_temp = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            if (conf->esif_temp)
+                EvaluteToAdmin(); // Check admin rights!
             break;
         default: return false;
         }

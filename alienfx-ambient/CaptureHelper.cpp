@@ -310,8 +310,8 @@ DWORD WINAPI CInProc(LPVOID param)
 			if (get_frame_bytes(dxgi_manager, &buf_size, &img) == CR_OK && img != NULL) {
 				Mat* src = new Mat(h, w, CV_8UC4, img);// , st);
 				cv::cvtColor(*src, *src, CV_RGBA2RGB);
-
-				cv::resize(*src, *src, Size(w / div, h / div), 0, 0, INTER_AREA);
+				cv::resize(*src, *src, Size(w / div, h / div), 0, 0, INTER_NEAREST);// INTER_AREA);
+				
 				FillColors(src);
 				delete src;
 

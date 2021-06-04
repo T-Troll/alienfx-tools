@@ -198,6 +198,13 @@ int ConfigHandler::Load() {
         NULL,
         &lastActive,
         (LPDWORD)&size);
+    RegGetValue(hKey1,
+        NULL,
+        TEXT("EsifTemp"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &esif_temp,
+        (LPDWORD)&size);
     ret = RegGetValue(hKey1,
         NULL,
         TEXT("DimmingPower"),
@@ -240,7 +247,7 @@ int ConfigHandler::Load() {
                 &lend
             );
             updateProfileByID(pid, profname, "", -1);
-            delete profname;
+            delete[] profname;
         }
         ret2 = sscanf_s((char*)name, "Profile-flags-%d", &pid);
         if (ret == ERROR_SUCCESS && ret2 == 1) {
@@ -272,7 +279,7 @@ int ConfigHandler::Load() {
                 &lend
             );
             updateProfileByID(pid, "", profname, -1);
-            delete profname;
+            delete[] profname;
         }
         vindex++;
     } while (ret == ERROR_SUCCESS);
@@ -517,6 +524,14 @@ int ConfigHandler::Save() {
     );
     RegSetValueEx(
         hKey1,
+        TEXT("EsifTemp"),
+        0,
+        REG_DWORD,
+        (BYTE*)&esif_temp,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
         TEXT("LastActive"),
         0,
         REG_DWORD,
@@ -601,7 +616,7 @@ int ConfigHandler::Save() {
             lightset cur = profiles[j].lightsets[i];
             sprintf_s((char*)name, 255, "Set-%d-%d-%d", cur.devid, cur.lightid, profiles[j].id);
             //preparing binary....
-            UINT size = 6 * 4;// (UINT)mappings[i].map.size();
+            size_t size = 6 * 4;// (UINT)mappings[i].map.size();
             for (int j = 0; j < 4; j++)
                 size += cur.eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
             out = (BYTE*)malloc(size);

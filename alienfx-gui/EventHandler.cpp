@@ -273,27 +273,27 @@ DWORD WINAPI CEventProc(LPVOID param)
         //COUNTER_PATH_RAM = "\\Memory\\Avaliable MBytes",
         COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
         COUNTER_PATH_HOT = "\\Thermal Zone Information(*)\\Temperature",
+        COUNTER_PATH_HOT2 = "\\EsifDeviceInformation(*)\\Temperature",
         COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Disk Time";
 
     HQUERY hQuery = NULL;
     HLOG hLog = NULL;
     PDH_STATUS pdhStatus;
     DWORD dwLogType = PDH_LOG_TYPE_CSV;
-    HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter;
+    HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2;
 
     MEMORYSTATUSEX memStat;
     memStat.dwLength = sizeof(MEMORYSTATUSEX);
 
     SYSTEM_POWER_STATUS state;
 
-    PDH_FMT_COUNTERVALUE_ITEM netArray[20] = { 0 };
     long maxnet = 1;
 
     //PDH_FMT_COUNTERVALUE_ITEM gpuArray[300] = { 0 };
-    long maxgpuarray = 300;
+    long maxgpuarray = 10, maxnetarray = 10, maxtemparray = 10;
     PDH_FMT_COUNTERVALUE_ITEM* gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
-
-    PDH_FMT_COUNTERVALUE_ITEM tempArray[20] = { 0 };
+    PDH_FMT_COUNTERVALUE_ITEM* netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
+    PDH_FMT_COUNTERVALUE_ITEM* tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
 
     // Open a query object.
     pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
@@ -329,17 +329,22 @@ DWORD WINAPI CEventProc(LPVOID param)
         0,
         &hTempCounter);
 
+    pdhStatus = PdhAddCounter(hQuery,
+        COUNTER_PATH_HOT2,
+        0,
+        &hTempCounter2);
+
     while (!src->stop) {
         // wait a little...
-        Sleep(240);
+        Sleep(200);
 
-        //CheckProfileSwitch(src);
         // get indicators...
         PdhCollectQueryData(hQuery);
         PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
-        DWORD cType = 0, netbSize = 20 * sizeof(PDH_FMT_COUNTERVALUE_ITEM), netCount = 0,
+        DWORD cType = 0, 
+            netbSize = maxnetarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), netCount = 0,
             gpubSize = maxgpuarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), gpuCount = 0,
-            tempbSize = 20 * sizeof(PDH_FMT_COUNTERVALUE_ITEM), tempCount = 0;
+            tempbSize = maxtemparray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), tempCount = 0;
         pdhStatus = PdhGetFormattedCounterValue(
             hCPUCounter,
             PDH_FMT_LONG,
@@ -362,40 +367,13 @@ DWORD WINAPI CEventProc(LPVOID param)
         );
 
         if (pdhStatus != ERROR_SUCCESS) {
+            if (pdhStatus == PDH_MORE_DATA) {
+                maxnetarray = netbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+                delete[] netArray;
+                netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
+            }
             netCount = 0;
         }
-
-        //memset(gpuArray, 0, gpubSize-1);
-
-        pdhStatus = PdhGetFormattedCounterArray(
-            hGPUCounter,
-            PDH_FMT_LONG,
-            &gpubSize,
-            &gpuCount,
-            gpuArray
-        );
-
-        if (pdhStatus != ERROR_SUCCESS) {
-            maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-            delete gpuArray;
-            gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
-            gpuCount = 0;
-        }
-
-        pdhStatus = PdhGetFormattedCounterArray(
-            hTempCounter,
-            PDH_FMT_LONG,
-            &tempbSize,
-            &tempCount,
-            tempArray
-        );
-
-        if (pdhStatus != ERROR_SUCCESS) {
-            tempCount = 0;
-        }
-
-        GlobalMemoryStatusEx(&memStat);
-        GetSystemPowerStatus(&state);
 
         // Normilizing net values...
         long totalNet = 0;
@@ -407,19 +385,83 @@ DWORD WINAPI CEventProc(LPVOID param)
         //if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
         totalNet = (totalNet * 100) / maxnet;
 
+        pdhStatus = PdhGetFormattedCounterArray(
+            hGPUCounter,
+            PDH_FMT_LONG,
+            &gpubSize,
+            &gpuCount,
+            gpuArray
+        );
+
+        if (pdhStatus != ERROR_SUCCESS) {
+            if (pdhStatus == PDH_MORE_DATA) {
+                maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+                delete gpuArray;
+                gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
+            }
+            gpuCount = 0;
+        }
+
         // Getting maximum GPU load value...
         long maxGPU = 0;
         for (unsigned i = 0; i < gpuCount && gpuArray[i].szName != NULL; i++) {
-            if (maxGPU < gpuArray[i].FmtValue.longValue) 
+            if (maxGPU < gpuArray[i].FmtValue.longValue)
                 maxGPU = gpuArray[i].FmtValue.longValue;
+        }
+
+        pdhStatus = PdhGetFormattedCounterArray(
+            hTempCounter,
+            PDH_FMT_LONG,
+            &tempbSize,
+            &tempCount,
+            tempArray
+        );
+
+        if (pdhStatus != ERROR_SUCCESS) {
+            if (pdhStatus == PDH_MORE_DATA) {
+                maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+                delete tempArray;
+                tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
+            }
+            tempCount = 0;
         }
 
         // Getting maximum temp...
         long maxTemp = 0;
         for (unsigned i = 0; i < tempCount; i++) {
-            if (maxTemp < tempArray[i].FmtValue.longValue)
-                maxTemp = tempArray[i].FmtValue.longValue;
+            if (maxTemp + 273 < tempArray[i].FmtValue.longValue)
+                maxTemp = tempArray[i].FmtValue.longValue - 273;
         }
+
+        // Now other temp sensor block...
+        if (src->conf->esif_temp) {
+            tempbSize = maxtemparray * sizeof(PDH_FMT_COUNTERVALUE_ITEM); tempCount = 0;
+            pdhStatus = PdhGetFormattedCounterArray(
+                hTempCounter2,
+                PDH_FMT_LONG,
+                &tempbSize,
+                &tempCount,
+                tempArray
+            );
+
+            if (pdhStatus != ERROR_SUCCESS) {
+                if (pdhStatus == PDH_MORE_DATA) {
+                    maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+                    delete tempArray;
+                    tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
+                }
+                tempCount = 0;
+            }
+
+            // Added other set maximum temp...
+            for (unsigned i = 0; i < tempCount; i++) {
+                if (maxTemp < tempArray[i].FmtValue.longValue)
+                    maxTemp = tempArray[i].FmtValue.longValue;
+            }
+        }
+
+        GlobalMemoryStatusEx(&memStat);
+        GetSystemPowerStatus(&state);
 
         if (state.BatteryLifePercent > 100) state.BatteryLifePercent = 100;
 
