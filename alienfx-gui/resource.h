@@ -78,6 +78,8 @@
 #define IDC_BATTPROFILE                 1037
 #define IDC_AWCC                        1038
 #define IDC_BUTTON_TESTCOLOR            1039
+#define IDC_AWCC2                       1039
+#define IDC_ESIFTEMP                    1039
 #define IDC_TYPE1                       1040
 #define IDC_SYSLINK_HOMEPAGE            1043
 #define IDC_ISPOWERBUTTON               1044
@@ -103,7 +105,6 @@
 #define IDC_BUTT_REMOVE_EFFECT          1069
 #define IDC_CHECK_PROFDIM               1071
 #define IDC_COMBO_PROFILES              1072
-#define IDC_CHECK_PROFDIM2              1073
 #define IDC_CHECK_FOREGROUND            1073
 #define ID_TRAYMENU                     32771
 #define ID_TRAYMENU_RESTORE             32772

@@ -600,7 +600,7 @@ namespace AlienFX_SDK
 				}
 				else {
 #ifdef _DEBUG
-					OutputDebugString(TEXT("Power update skipped!\n"));
+					OutputDebugString(TEXT("Power button update skipped!\n"));
 #endif
 					return false;
 				}
@@ -752,6 +752,13 @@ namespace AlienFX_SDK
 		switch (length) {
 		case API_V3: {
 			status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
+/*#ifdef _DEBUG
+			if (status != ALIENFX_NEW_READY && status != ALIENFX_NEW_WAITUPDATE) {
+				WCHAR buff[2048];
+				wsprintf(buff, L"Status: %d\n", status);
+				OutputDebugString(buff);
+			}
+#endif*/
 			return status == ALIENFX_NEW_READY || status == ALIENFX_NEW_WAITUPDATE;
 		} break;
 		case API_V2: case API_V1: {

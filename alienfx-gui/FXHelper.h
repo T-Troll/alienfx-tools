@@ -16,25 +16,29 @@ struct UpdateData {
 class FXHelper
 {
 private:
-	int pid;
+	//int pid;
 	ConfigHandler* config;
 	int activeMode = 0;
 	int lastTest = -1;
 	std::vector<int> devList;
 	long lCPU=0, lRAM=0, lHDD=0, lGPU=0, lNET=0, lTemp=0, lBatt = 100;
-	int HDDTrigger = 0, NetTrigger = 0;
+	//int HDDTrigger = 0, NetTrigger = 0;
 	bool bStage = false;
 public:
-	AlienFX_SDK::Functions* afx_dev;
+	AlienFX_SDK::Functions afx_dev;
+	std::vector<AlienFX_SDK::Functions*> devs;
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
+	AlienFX_SDK::Functions* LocateDev(int pid);
+	void FillDevs();
 	int Refresh(bool force=false);
 	int SetMode(int mode);
 	std::vector<int> GetDevList();
-	void TestLight(int id);
-	void ResetPower();
+	void TestLight(int did, int id);
+	void ResetPower(int did);
+	void UpdateColors();
 	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force = false);
-	void SetLight(int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force = false); //BYTE mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b,
+	bool SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force = false); //BYTE mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b,
 		//BYTE mode2=0, BYTE length2 =0, BYTE speed2 =0, BYTE r2=0, BYTE g2=0, BYTE b2=0, bool force = false);
 	void RefreshState(bool force = false);
 	void RefreshMon();

@@ -382,10 +382,13 @@ bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
 	return ret;
 }
 
-mapping* FindMapping(int did, int lid) {
-	for (int i = 0; i < config->mappings.size(); i++)
-		if (config->mappings[i].devid == did && config->mappings[i].lightid == lid)
-			return &config->mappings[i];
+mapping* FindMapping(int lid) {
+	if (lid != -1) {
+		AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
+		for (int i = 0; i < config->mappings.size(); i++)
+			if (config->mappings[i].devid == lgh.devid && config->mappings[i].lightid == lgh.lightid)
+				return &config->mappings[i];
+	}
 	return NULL;
 }
 
@@ -393,7 +396,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 {
 
 	HWND freq_list = GetDlgItem(hDlg, IDC_FREQ);
-	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICE);
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
 	HWND from_color = GetDlgItem(hDlg, IDC_FROMCOLOR);
 	HWND to_color = GetDlgItem(hDlg, IDC_TOCOLOR);
@@ -416,43 +418,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			prevfreq = frq;
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
-		int pid = afx->afx_dev->GetPID();
-		size_t lights = afx->afx_dev->GetMappings()->size();
-		size_t numdev = afx->afx_dev->GetDevices()->size();
 
-		if (pid == -1) {
-			std::string devName = "No device found";
-			int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
-			SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
-		}
-		else {
-			int cpid = (-1), cpos = (-1);
-			for (int i = 0; i < numdev; i++) {
-				cpid = afx->afx_dev->GetDevices()->at(i).devid;
-				std::string dname = afx->afx_dev->GetDevices()->at(i).name;
-				int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
-				SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
-				if (cpid == pid) {
-					// select this device.
-					SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-					cpos = pos;
-				}
-			}
-			if (cpos == -1) { // device have no name!
-				char devName[256];
-				sprintf_s(devName, 255, "Device #%X", pid);
-				int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
-				SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
-				SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-			}
-			for (int i = 0; i < lights; i++) {
-				AlienFX_SDK::mapping lgh = afx->afx_dev->GetMappings()->at(i);
-				if (lgh.devid == pid && afx->afx_dev->GetFlags(pid, lgh.lightid) == 0) {
-					int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
-					SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
-				}
+		size_t lights = afx->afx_dev.GetMappings()->size();
+		for (int i = 0; i < lights; i++) {
+			AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(i);
+			if (afx->LocateDev(lgh.devid)) {
+				int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+				SendMessage(light_list, LB_SETITEMDATA, pos, i);
 			}
 		}
+
 		SetDlgItemInt(hDlg, IDC_EDIT_DECAY, config->res, false);
 		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -466,10 +441,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	{
 		int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
 		int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-		int dbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
-		int did = (int)SendMessage(dev_list, CB_GETITEMDATA, dbItem, 0);
 		int fid = (int)SendMessage(freq_list, LB_GETCURSEL, 0, 0);
-		map = FindMapping(did, lid);
+		map = FindMapping(lid);
 		switch (LOWORD(wParam))
 		{
 		case IDOK: case IDCANCEL: case IDCLOSE:
@@ -506,47 +479,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			} break;
 			}
 		} break;
-		case IDC_DEVICE: {
-			switch (HIWORD(wParam))
-			{
-			case CBN_SELCHANGE: {
-
-				size_t numdev = afx->afx_dev->AlienFXEnumDevices(afx->afx_dev->vid).size();
-				if (numdev > 0) {
-					size_t lights = afx->afx_dev->GetMappings()->size();
-					afx->afx_dev->AlienFXChangeDevice(did);
-					config->lastActive = did;
-					EnableWindow(freq_list, FALSE);
-					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
-					SendMessage(light_list, LB_RESETCONTENT, 0, 0);
-					for (int i = 0; i < lights; i++) {
-						AlienFX_SDK::mapping lgh = afx->afx_dev->GetMappings()->at(i);
-						if (lgh.devid == did && afx->afx_dev->GetFlags(did, lgh.lightid) == 0) {
-							int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
-							SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
-						}
-					}
-					// clear colors...
-					SendMessage(from_color, IPM_SETADDRESS, 0, 0);
-					RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					SendMessage(to_color, IPM_SETADDRESS, 0, 0);
-					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					RedrawButton(hDlg, IDC_BUTTON_LPC, 0, 0, 0);
-					RedrawButton(hDlg, IDC_BUTTON_HPC, 0, 0, 0);
-					//  clear cuts....
-					SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
-					SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
-					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					SendMessage(hLowSlider, TBM_SETPOS, true, 0);
-					SendMessage(hHiSlider, TBM_SETPOS, true, 255);
-					// clear selections
-					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
-					SendMessage(light_list, LB_SETCURSEL, -1, 0);
-				}
-			} break;
-			}
-		} break;
 		case IDC_LIGHTS: // should reload mappings
 			switch (HIWORD(wParam))
 			{
@@ -554,15 +486,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				// check in config - do we have mappings?
 				if (map == NULL) {
 					mapping newmap;
-					newmap.devid = did;
-					newmap.lightid = lid;
+					AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
+					newmap.devid = lgh.devid;
+					newmap.lightid = lgh.lightid;
 					newmap.colorfrom.ci = 0;
 					newmap.colorto.ci = 0;
 					newmap.lowcut = 0;
 					newmap.hicut = 255;
 					config->mappings.push_back(newmap);
 					std::sort(config->mappings.begin(), config->mappings.end(), ConfigHandler::sortMappings);
-					map = FindMapping(did, lid);
+					map = FindMapping(lid);
 				}
 				// load freq....
 				EnableWindow(freq_list, TRUE);
@@ -704,28 +637,29 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case BN_CLICKED: {
 				if (map != NULL) {
 					std::vector <mapping>::iterator Iter;
+					AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
 					for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++)
-						if (Iter->devid == did && Iter->lightid == lid) {
+						if (Iter->devid == lgh.devid && Iter->lightid == lgh.lightid) {
 							config->mappings.erase(Iter);
+							// clear colors...
+							SendMessage(from_color, IPM_SETADDRESS, 0, 0);
+							RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+							SendMessage(to_color, IPM_SETADDRESS, 0, 0);
+							RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+							RedrawButton(hDlg, IDC_BUTTON_LPC, 0, 0, 0);
+							RedrawButton(hDlg, IDC_BUTTON_HPC, 0, 0, 0);
+							//  clear cuts....
+							SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
+							SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
+							RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+							RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+							SendMessage(hLowSlider, TBM_SETPOS, true, 0);
+							SendMessage(hHiSlider, TBM_SETPOS, true, 255);
+							// clear selections
+							SendMessage(freq_list, LB_SETSEL, FALSE, -1);
+							SendMessage(light_list, LB_SETCURSEL, -1, 0);
 							break;
 						}
-					// clear colors...
-					SendMessage(from_color, IPM_SETADDRESS, 0, 0);
-					RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					SendMessage(to_color, IPM_SETADDRESS, 0, 0);
-					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					RedrawButton(hDlg, IDC_BUTTON_LPC, 0, 0, 0);
-					RedrawButton(hDlg, IDC_BUTTON_HPC, 0, 0, 0);
-					//  clear cuts....
-					SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
-					SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
-					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					SendMessage(hLowSlider, TBM_SETPOS, true, 0);
-					SendMessage(hHiSlider, TBM_SETPOS, true, 255);
-					// clear selections
-					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
-					SendMessage(light_list, LB_SETCURSEL, -1, 0);
 				}
 			} break;
 			}
@@ -736,11 +670,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_HSCROLL: {
 		int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
 		int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-		lbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
-		int did = (int)SendMessage(dev_list, CB_GETITEMDATA, lbItem, 0);
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK: {
-			map = FindMapping(did, lid);
+			map = FindMapping(lid);
 			if (map != NULL) {
 				if ((HWND)lParam == hLowSlider) {
 					map->lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);

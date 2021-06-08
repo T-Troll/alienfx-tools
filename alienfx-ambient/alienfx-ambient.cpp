@@ -191,15 +191,33 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-mapping* FindMapping(int did, int lid) {
-    for (int i = 0; i < conf->mappings.size(); i++)
-        if (conf->mappings[i].devid == did && conf->mappings[i].lightid == lid)
+mapping* FindMapping(int lid) {
+    if (lid != -1) {
+        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+        for (int i = 0; i < conf->mappings.size(); i++)
+            if (conf->mappings[i].devid == lgh.devid && conf->mappings[i].lightid == lgh.lightid)
                 return &conf->mappings[i];
+    }
     return NULL;
 }
 
+int UpdateLightList(HWND light_list) {
+
+    int pos = -1;
+    size_t lights = fxhl->afx_dev.GetMappings()->size();
+    SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+    for (int i = 0; i < lights; i++) {
+        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
+        if (fxhl->LocateDev(lgh.devid)) {
+            pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+            SendMessage(light_list, LB_SETITEMDATA, pos, i);
+        }
+    }
+    RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+    return pos;
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    HWND dev_list = GetDlgItem(hDlg, IDC_DEVICE);
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND divider = GetDlgItem(hDlg, IDC_EDIT_DIVIDER);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
@@ -209,43 +227,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
     case WM_INITDIALOG:
     {
-        int pid = fxhl->afx_dev->GetPID();
-        size_t lights = fxhl->afx_dev->GetMappings()->size();
-        size_t numdev = fxhl->afx_dev->GetDevices()->size();
+        UpdateLightList(light_list);
 
-        if (pid == -1) {
-            std::string devName = "No device found";
-            int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
-            SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
-        }
-        else {
-            int cpid = (-1), cpos = (-1);
-            for (int i = 0; i < numdev; i++) {
-                cpid = fxhl->afx_dev->GetDevices()->at(i).devid;
-                std::string dname = fxhl->afx_dev->GetDevices()->at(i).name;
-                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
-                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
-                if (cpid == pid) {
-                    // select this device.
-                    SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-                    cpos = pos;
-                }
-            }
-            if (cpos == -1) { // device have no name!
-                char devName[256];
-                sprintf_s(devName, 255, "Device #%X", pid);
-                int pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
-                SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)pid);
-                SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-            }
-            for (int i = 0; i < lights; i++) {
-                AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
-                if (lgh.devid == pid && fxhl->afx_dev->GetFlags(pid, lgh.lightid) == 0) {
-                    int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
-                    SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
-                }
-            }
-        }
         // divider....
         SetDlgItemInt(hDlg, IDC_EDIT_DIVIDER, conf->divider, false);
         // Mode...
@@ -266,8 +249,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
         int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
         int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-        lbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
-        int did = (int)SendMessage(dev_list, CB_GETITEMDATA, lbItem, 0);
         switch (LOWORD(wParam))
         {
         case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
@@ -279,38 +260,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case IDM_ABOUT: // about dialogue here
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
             break;
-        case IDC_DEVICE: {
-            switch (HIWORD(wParam))
-            {
-            case CBN_SELCHANGE: {
-                    size_t lights = fxhl->afx_dev->GetMappings()->size();
-                    fxhl->afx_dev->AlienFXChangeDevice(did);
-                    conf->lastActive = did;
-                    SendMessage(light_list, CB_RESETCONTENT, 0, 0);
-                    for (int i = 0; i < lights; i++) {
-                        AlienFX_SDK::mapping lgh = fxhl->afx_dev->GetMappings()->at(i);
-                        if (lgh.devid == did && fxhl->afx_dev->GetFlags(did, lgh.lightid) == 0) { // should be did
-                            int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(TEXT(lgh.name.c_str())));
-                            SendMessage(light_list, LB_SETITEMDATA, pos, (LPARAM)lgh.lightid);
-                        }
-                    }
-                    RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-            } break;
-            }
-        } break;// should reload dev list
         case IDC_LIGHTS: // should reload mappings
             switch (HIWORD(wParam))
             {
             case LBN_SELCHANGE: {
                 // check in config - do we have mappings?
-                map = FindMapping(did, lid);
+                map = FindMapping(lid);
                 if (map == NULL) {
                     mapping newmap;
-                    newmap.devid = did;
-                    newmap.lightid = lid;
+                    AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+                    newmap.devid = lgh.devid;
+                    newmap.lightid = lgh.lightid;
                     conf->mappings.push_back(newmap);
                     std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
-                    map = FindMapping(did, lid);
+                    map = FindMapping(lid);
                 }
                 // load zones....
                 UINT bid = IDC_CHECK1;
@@ -330,7 +293,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             case BN_CLICKED: {
                 UINT id = LOWORD(wParam) - IDC_BUTTON1;
                 UINT bid = IDC_CHECK1 + id;
-                map = FindMapping(did, lid);
+                map = FindMapping(lid);
                 if (map != NULL) {
                     // add mapping
                     std::vector <unsigned char>::iterator Iter = map->map.begin();
@@ -367,7 +330,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
                 conf->mode = 0;
-                //restart capture....
                 cap->Restart();
                 break;
             }
@@ -404,7 +366,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_HIDE);
             break;
         case IDC_BUTTON_RESET:
-            fxhl->afx_dev->AlienFXChangeDevice(did);
+            fxhl->FillDevs();
+            UpdateLightList(light_list);
             cap->Restart();
             break;
         default: return false;

@@ -5,55 +5,25 @@ FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
 	config = conf;
 	done = 0;
 	stopped = 0;
-	afx_dev = new AlienFX_SDK::Functions();
-	std::vector<int> devList = afx_dev->AlienFXEnumDevices(afx_dev->vid);
-	afx_dev->LoadMappings();
-	pid = 0;
-	if (conf->lastActive != 0)
-		for (int i = 0; i < devList.size(); i++)
-			if (devList[i] == conf->lastActive) {
-				pid = conf->lastActive;
-				break;
-			}
-	if (pid == 0)
-		pid = afx_dev->AlienFXInitialize(afx_dev->vid);
-	else
-		pid = afx_dev->AlienFXInitialize(afx_dev->vid, pid);
-
-	if (pid != -1)
-	{
-		int count;
-		for (count = 0; count < 5 && !afx_dev->IsDeviceReady(); count++)
-			Sleep(20);
-		if (count == 5)
-			afx_dev->Reset(false);
-		//afx_dev->LoadMappings();
-		conf->lastActive = pid;
-	}
+	afx_dev.LoadMappings();
+	FillDevs();
 	FadeToBlack();
 };
 FXHelper::~FXHelper() {
 	FadeToBlack();
-	afx_dev->AlienFXClose();
-	delete afx_dev;
+	if (devList.size() > 0) {
+		for (int i = 0; i < devs.size(); i++)
+			devs[i]->AlienFXClose();
+		devs.clear();
+	}
 };
-
-int FXHelper::GetPID() {
-	return pid;
-}
 
 int FXHelper::Refresh(int numbars)
 {
-	unsigned i = 0;
-	if (!afx_dev->IsDeviceReady()) {
-#ifdef _DEBUG
-		OutputDebugString("Device not ready!\n");
-#endif
-		return 1;
-	}
-	for (i = 0; i < config->mappings.size(); i++) {
+	for (unsigned i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
-		if (map.devid == pid && afx_dev->GetFlags(pid, map.lightid) == 0 && map.map.size() > 0) {
+		AlienFX_SDK::Functions* dev = LocateDev(map.devid);
+		if (dev && afx_dev.GetFlags(map.devid, map.lightid) == 0 && map.map.size() > 0) {
 			double power = 0.0;
 			Colorcode from, to, fin;
 			from.ci = map.colorfrom.ci; to.ci = map.colorto.ci;
@@ -68,22 +38,51 @@ int FXHelper::Refresh(int numbars)
 			fin.cs.red = (fin.cs.red * fin.cs.red) >> 8;
 			fin.cs.green = (fin.cs.green * fin.cs.green) >> 8;
 			fin.cs.blue = (fin.cs.blue * fin.cs.blue) >> 8;
-			afx_dev->SetColor(map.lightid,
-				fin.cs.red, fin.cs.green, fin.cs.blue);
+			if (dev->IsDeviceReady())
+				dev->SetColor(map.lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
 		}
 	}
-	afx_dev->UpdateColors();
+	UpdateColors();
 	return 0;
 }
 
 void FXHelper::FadeToBlack()
 {
-	if (!afx_dev->IsDeviceReady()) return;
 	for (int i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
-		if (map.devid == pid && afx_dev->GetFlags(pid, map.lightid) == 0) {
-			afx_dev->SetColor(map.lightid, 0, 0, 0);
+		AlienFX_SDK::Functions* dev = LocateDev(map.devid);
+		if (dev && afx_dev.GetFlags(map.devid, map.lightid) == 0 && dev->IsDeviceReady()) {
+			dev->SetColor(map.lightid, 0, 0, 0);
 		}
 	}
-	afx_dev->UpdateColors();
+	UpdateColors();
+}
+
+AlienFX_SDK::Functions* FXHelper::LocateDev(int pid)
+{
+	for (int i = 0; i < devs.size(); i++)
+		if (devs[i]->GetPID() == pid)
+			return devs[i];
+	return nullptr;
+}
+void FXHelper::FillDevs()
+{
+	devList = afx_dev.AlienFXEnumDevices(afx_dev.vid);
+	if (devList.size() > 0) {
+		for (int i = 0; i < devs.size(); i++)
+			devs[i]->AlienFXClose();
+		devs.clear();
+	}
+	for (int i = 0; i < devList.size(); i++) {
+		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
+		int pid = dev->AlienFXInitialize(dev->vid, devList[i]);
+		if (pid != -1)
+			devs.push_back(dev);
+	}
+}
+
+void FXHelper::UpdateColors()
+{
+	for (int i = 0; i < devs.size(); i++)
+		devs[i]->UpdateColors();
 }

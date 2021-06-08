@@ -47,12 +47,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 {
     if (conf->offWithScreen) {
         conf->stateOn = conf->lightsOn && state;
-        fxh->RefreshState(true);// Refresh(true);
-/*        if (conf->stateOn) {
-            StartEvents();
-        }
-        else
-            StopEvents();*/
+        fxh->RefreshState(true);
     }
 }
 

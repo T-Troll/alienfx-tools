@@ -5,27 +5,23 @@
 struct UpdateData {
 	Colorcode color;
 	unsigned devid, lightid;
-	//ULONGLONG lastUpdate;
 };
 
 class FXHelper
 {
 private:
-	//int done, lastLights;
-	int pid;
 	ConfigHandler* config;
-	//ULONGLONG lastUpdate;
-	//std::vector<UpdateData> updates;
-public:
 	std::vector<int> devList;
-	AlienFX_SDK::Functions* afx_dev;
+public:
+	AlienFX_SDK::Functions afx_dev;
+	std::vector<AlienFX_SDK::Functions*> devs;
+	AlienFX_SDK::Functions* LocateDev(int pid);
+	void FillDevs();
+	void UpdateColors();
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
-	//void StartFX();
-	//void StopFX();
 	int Refresh(UCHAR* img);
 	void FadeToBlack();
-	//int GetPID();
-	//int UpdateLights();
+	
 };
 

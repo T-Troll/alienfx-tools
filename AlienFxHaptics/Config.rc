@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,6,1
- PRODUCTVERSION 1,2,0,0
+ FILEVERSION 2,0,0,0
+ PRODUCTVERSION 2,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040004b0"
         BEGIN
             VALUE "FileDescription", "AlienFX Haptics"
-            VALUE "FileVersion", "1.1.6.1"
+            VALUE "FileVersion", "2.0.0.0"
             VALUE "InternalName", "alienfx-haptics.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "alienfx-haptics.exe"
             VALUE "ProductName", "AlienFX Tools"
-            VALUE "ProductVersion", "1.2.0.0"
+            VALUE "ProductVersion", "2.0.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -134,12 +134,10 @@ CAPTION "Settings"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",1,295,191,62,14
-    COMBOBOX        IDC_DEVICE,7,16,192,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LISTBOX         IDC_FREQ,7,39,63,166,LBS_MULTIPLESEL | LBS_NOINTEGRALHEIGHT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
-    LISTBOX         IDC_LIGHTS,97,39,102,166,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Device",IDC_STATIC,7,7,22,8
-    LTEXT           "Frequancy",IDC_STATIC,7,31,34,8
-    LTEXT           "Lights",IDC_STATIC,97,31,20,8
+    LISTBOX         IDC_FREQ,7,16,63,189,LBS_MULTIPLESEL | LBS_NOINTEGRALHEIGHT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_LIGHTS,97,16,102,189,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Frequency",IDC_STATIC,7,8,34,8
+    LTEXT           "Lights",IDC_STATIC,97,8,20,8
     GROUPBOX        "",IDC_STATIC,209,35,148,137,BS_FLAT,WS_EX_TRANSPARENT
     LTEXT           "Colors",IDC_STATIC,209,31,21,8
     CONTROL         "",IDC_FROMCOLOR,"SysIPAddress32",WS_TABSTOP,216,53,94,14
