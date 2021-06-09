@@ -22,6 +22,8 @@
 #define IDC_BUTTON_HPC                  1016
 #define IDC_BUTTON1                     1017
 #define IDC_BUTTON_REMOVE               1017
+#define IDC_BUT_REFRESH                 1018
+#define IDC_BUTTON_REFRESH              1018
 #define ID_FILE_EXIT                    9001
 #define ID_PARAMETERS_SETTINGS          9014
 #define ID_INPUT_DEFAULTOUTPUTDEVICE    40002
@@ -34,7 +36,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1018
+#define _APS_NEXT_CONTROL_VALUE         1019
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

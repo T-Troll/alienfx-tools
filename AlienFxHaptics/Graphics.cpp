@@ -312,22 +312,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			case WM_LBUTTONDBLCLK:
 			case WM_LBUTTONUP:
 				ShowWindow(hwnd, SW_RESTORE);
-				SetWindowPos(hwnd,       // handle to window
-					HWND_TOPMOST,  // placement-order handle
-					0,     // horizontal position
-					0,      // vertical position
-					0,  // width
-					0, // height
-					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-				);
-				SetWindowPos(hwnd,       // handle to window
-					HWND_NOTOPMOST,  // placement-order handle
-					0,     // horizontal position
-					0,      // vertical position
-					0,  // width
-					0, // height
-					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-				);
+				SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+				SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 				Shell_NotifyIcon(NIM_DELETE, &niData);
 			break;
 			case WM_RBUTTONUP:
@@ -392,6 +378,19 @@ mapping* FindMapping(int lid) {
 	return NULL;
 }
 
+void ReloadLightList(HWND light_list) {
+	size_t lights = afx->afx_dev.GetMappings()->size();
+	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+	for (int i = 0; i < lights; i++) {
+		AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(i);
+		if (afx->LocateDev(lgh.devid)) {
+			int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+			SendMessage(light_list, LB_SETITEMDATA, pos, i);
+		}
+	}
+	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 
@@ -419,14 +418,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
 
-		size_t lights = afx->afx_dev.GetMappings()->size();
-		for (int i = 0; i < lights; i++) {
-			AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(i);
-			if (afx->LocateDev(lgh.devid)) {
-				int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-				SendMessage(light_list, LB_SETITEMDATA, pos, i);
-			}
-		}
+		ReloadLightList(light_list);
 
 		SetDlgItemInt(hDlg, IDC_EDIT_DECAY, config->res, false);
 		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -597,6 +589,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
 					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				}
+			} break;
+			} break;
+		case IDC_BUTTON_REFRESH:
+			switch (HIWORD(wParam))
+			{
+			case BN_CLICKED: {
+				afx->FillDevs();
+				ReloadLightList(light_list);
 			} break;
 			} break;
 		case IDC_FROMCOLOR: { // should update light data

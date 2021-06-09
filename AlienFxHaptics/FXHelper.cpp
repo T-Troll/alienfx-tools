@@ -68,7 +68,7 @@ AlienFX_SDK::Functions* FXHelper::LocateDev(int pid)
 void FXHelper::FillDevs()
 {
 	devList = afx_dev.AlienFXEnumDevices(afx_dev.vid);
-	if (devList.size() > 0) {
+	if (devs.size() > 0) {
 		for (int i = 0; i < devs.size(); i++)
 			devs[i]->AlienFXClose();
 		devs.clear();
