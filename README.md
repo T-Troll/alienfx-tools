@@ -5,7 +5,6 @@ Main goal of this project is to create a bunch of lightweighted tools for Alienw
 - AlienFX Universal haptics - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights - Visualize screen picture as ambient light (from desktop, game, video player).
 - AlienFX GUI Light Control - Lightweighted light control tool (AWCC alternative). It only control lights, but can do a way more tricks then AWCC.
-<br>More will follow!
 
 ## Requirements
 - Alienware light device present into the system and have USBHID driver active.
@@ -18,9 +17,9 @@ Device checked: `Alienware m15R1-R4` (API v3), `Alienware m17R1` (API v3), `Alie
 ## Known issues
 - Per-button light keyboard devices (API v4, 64 bytes command) does not supported (i'm working on it). But you still can control other lights (logo, power).
 - External devices (mouse, display) not supported - they have different vendor ID (i'm working on it).
-- Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.<br>
-- `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).<br>
-- Only one device per time can be controlled trough low-level SDK, but you can choose which one.
+- Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.
+- `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).
+- <s>Only one device per time can be controlled trough low-level SDK, but you can choose which one.</s>
 - Hardware light effects morph, breathing, spectrum, rainbow doesn't supported for older (v1, v2) devices.
 - Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
@@ -60,6 +59,7 @@ The following commands are available:
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
+
 <br>Supported Zones: `left, right, top, bottom, front, rear`
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`. For low-level api V3, it also support `breath, spectrum, rainbow`.
 
@@ -83,17 +83,17 @@ How it works
 This application get shot of screen (privary or secondary), then divide it to several zones.
 <br>For each zone, dominant color calculated (you can see it at the button in app interface).
 <br>For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.
-<br>You can also select which screen to grab - primary or secondary, if you have more, then one. You can also press "Reset" button to re-initialize screen capturing.
+<br>You can also select which screen to grab - primary or secondary, if you have more, then one. You can also press "Reset" button to re-initialize screen capturing and lights list.
 <br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value decrease CPU load, but decrease dominant color extraction presision as well. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if it works ok for you.
 <br>"Brightness" slider dimming the overall lights brigtness - use it for better fit you current monitor brightness.
 <br>"Gamma Correction" checkbox enables visual color gamma correction, make them more close to screen one.
 
 ## alienfx-gui Usage
-Run `alienfx-gui.exe`. Select light, set it colors and patterns - it will set up immedately.<br>
+Run `alienfx-gui.exe`.<br>
 First, use "Devices and Lights" tab to configure out devices and lights settings, if you don't run `alienfx-probe` yet.
 Use "Color" tab for simple lights setup (this colors and modes will stay as default until AWCC run or modified by other app), even after reboot.</br>
 You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a color for reaction at "Monitoring" tab.<br>
-If "Use color settings as default" is active, first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be uset for "active" situation, if it's not active - both colors will taken from "Monitoring" tab (and colors from "Color" tab if monitoring is disabled).<br>
+If "Use color settings as default" is active on "Monitoring" tab, first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be uset for "active" situation, if it's not active - both colors will taken from "Monitoring" tab (and colors from "Color" tab if monitoring is disabled).<br>
 You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and "system overheat". In this case Status color always override Performance one then triggered, as well as both override Power one.<br>
 Tray menu (right-click on tray button) avaliable all the time for some fast switch functins, application hide to tray completely then minimized.<br>
 ```
@@ -104,18 +104,20 @@ How it works
 "Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings. NB: If you want to add new light, type light ID into LightID box. If this ID already present in list, it will be overrided to first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
 "Profiles" tab control profile settings, like selecting defalult profile, per-profile monitoring control and automatic switch to this profile then the defined application run.<br>
 "Settings" tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings.<br>
-Keyboard shortcuts (any time):
+<br>Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)<br>
-<br>Other shortcuts (only then application active):
+
+Other shortcuts (only then application active):
 - ALT+c - switch to "Colors" tab
 - ALT+m - switch to "Monitoring" tab
 - ALT+d - switch to "Devices and Lights" tab
 - ALT+p - switch to "Profiles" tab
 - ALT+s - switch to "Settings" tab
 - ALT+r - refresh all lights
-- ALT+? - about app<br><br>
+- ALT+? - about app
+
 Monitoring events avaliable:<br>
 System Load:
 - CPU Load - CPU load color mix from 0% ("calm") to 100% ("Active")
@@ -124,15 +126,17 @@ System Load:
 - HDD Load - It's not exactly a load, but IDLE time. If idle - it's "calm", 100% busy - active, and mix between.
 - Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
 - Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
-- Battery level - Battery charge level in percent (0=dischagred, 100=full).<br>
-You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.<br>
+- Battery level - Battery charge level in percent (0=dischagred, 100=full).
+<br>You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.
+
 Status Led:
 - Disk activity - Switch light every disk activity event (HDD IDLE above zero).
 - Network activity - Switch light if any network traffic detected (across all adapters).
 - System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
-- Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).<br>
-"Blink" checkbox switch triggered value to blink between on-off colors 4 times per sec.
-<br><br><b>WARNING:</b> All color effects stop working if you enable any Event monitoring.
+- Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
+<br>"Blink" checkbox switch triggered value to blink between on-off colors 4 times per sec.
+
+<br><b>WARNING:</b> All color effects stop working if you enable any Event monitoring.
 
 ## Tools Used
 * Visual Studio Community 2019
@@ -146,7 +150,6 @@ Low-level SDK based on Gurjot95's [AlienFX_SDK](https://github.com/Gurjot95/Alie
 API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).<br>
 Spectrum Analyzer UI is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).<br>
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.<br>
-<s>DX Screen capture based on Daramkun's [DaramCam](https://github.com/daramkun/DaramCam) library.</s><br>
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.<br>
 Dominant light extraction math usues [OpenCV](https://github.com/opencv/opencv) library.<br>
 Special thanks to [PhSHu](https://github.com/PhSMu) for ideas, testing and arwork.
