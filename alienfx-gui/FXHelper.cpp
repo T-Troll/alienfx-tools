@@ -33,8 +33,10 @@ void FXHelper::FillDevs()
 	for (int i = 0; i < devList.size(); i++) {
 		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
 		int pid = dev->AlienFXInitialize(dev->vid, devList[i]);
-		if (pid != -1)
+		if (pid != -1) {
 			devs.push_back(dev);
+			dev->Reset(false);
+		}
 	}
 }
 
