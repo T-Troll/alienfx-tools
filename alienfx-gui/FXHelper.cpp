@@ -218,7 +218,17 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 			actions[i].b = (actions[i].b * actions[i].b) >> 8;
 		}
 	}
-	if (dev != NULL && dev->IsDeviceReady()) {
+	if (dev != NULL) {
+		bool devReady = false;
+		for (int wcount = 0; wcount < 10 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
+			Sleep(50);
+		if (!devReady) {
+#ifdef _DEBUG
+			if (force)
+				OutputDebugString("Forced light update skipped!\n");
+#endif
+			return false;
+		}
 		if (power && actions.size() > 1) {
 			if (!config->block_power) {
 #ifdef _DEBUG
@@ -246,12 +256,8 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 				dev->SetColor(id, 0, 0, 0);
 			}
 	}
-	else {
-//#ifdef _DEBUG
-//		OutputDebugString(TEXT("SetLight: device busy!\n"));
-//#endif
+	else
 		return false;
-	}
 	return true;
 }
 
