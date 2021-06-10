@@ -47,7 +47,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 {
     if (conf->offWithScreen) {
         conf->stateOn = conf->lightsOn && state;
-        fxh->RefreshState(true);
+        fxh->Refresh(true);// State(true);
     }
 }
 
@@ -86,8 +86,8 @@ void EventHandler::SwitchActiveProfile(int newID)
 
 void EventHandler::StartEvents()
 {
-    fxh->RefreshState();
     if (!dwHandle && conf->monState) {
+        fxh->RefreshMon();// RefreshState();
         // start threas with this as a param
 #ifdef _DEBUG
         OutputDebugString("Event thread start.\n");
@@ -118,8 +118,8 @@ void EventHandler::StopEvents()
         }
         CloseHandle(dwHandle);
         dwHandle = 0;
+        fxh->Refresh(true);
     }
-    fxh->Refresh(true);
 }
 
 void EventHandler::StartProfiles()

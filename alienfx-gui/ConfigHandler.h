@@ -39,6 +39,7 @@ struct lightset {
 	unsigned devid = 0;
 	unsigned lightid = 0;
 	event	 eve[4];
+	bool valid = false;
 };
 
 struct profile {

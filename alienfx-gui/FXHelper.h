@@ -18,10 +18,10 @@ class FXHelper
 private:
 	//int pid;
 	ConfigHandler* config;
-	int activeMode = 0;
+	int activeMode = -1;
 	int lastTest = -1;
 	std::vector<int> devList;
-	long lCPU=0, lRAM=0, lHDD=0, lGPU=0, lNET=0, lTemp=0, lBatt = 100;
+	long lCPU=101, lRAM=0, lHDD=101, lGPU=101, lNET=-1, lTemp=-1, lBatt = 101;
 	//int HDDTrigger = 0, NetTrigger = 0;
 	bool bStage = false;
 public:
@@ -32,7 +32,7 @@ public:
 	AlienFX_SDK::Functions* LocateDev(int pid);
 	void FillDevs();
 	int Refresh(bool force=false);
-	int SetMode(int mode);
+	bool SetMode(int mode);
 	std::vector<int> GetDevList();
 	void TestLight(int did, int id);
 	void ResetPower(int did);

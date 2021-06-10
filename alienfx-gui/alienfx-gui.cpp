@@ -250,10 +250,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         conf->wasAWCC = DoStopService(true);
 
-        fxhl->Refresh(true);
-
         if (conf->esif_temp)
             EvaluteToAdmin();
+
+        if (!conf->enableMon)
+            fxhl->Refresh(true);
 
         eve = new EventHandler(conf, fxhl);
 
@@ -784,15 +785,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC: {
             // resume from sleep/hybernate
-            //fxhl->afx_dev->AlienFXEnumDevices(fxhl->afx_dev->vid);
 #ifdef _DEBUG
             OutputDebugString("Resume from Sleep/hibernate initiated\n");
 #endif
-            //int cPid = fxhl->afx_dev->GetPID();
-            //if (cPid != -1) {
             fxhl->FillDevs();
             if (fxhl->devs.size() > 0) {
-                //fxhl->afx_dev->AlienFXChangeDevice(cPid);
                 eve->ChangePowerState();
                 eve->StartEvents();
                 eve->StartProfiles();

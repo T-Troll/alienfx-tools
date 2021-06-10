@@ -57,6 +57,7 @@ void FXHelper::TestLight(int did, int id)
 		int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
 			g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
 			b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
+
 		if (id != lastTest) {
 			if (lastTest >= 0)
 				dev->SetColor(lastTest, 0, 0, 0);
@@ -76,22 +77,27 @@ void FXHelper::ResetPower(int did)
 
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
 {
-	std::vector <lightset>::iterator Iter;
-//#ifdef _DEBUG
+
+#ifdef _DEBUG
 	//char buff[2048];
 	//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
 	//sprintf_s(buff, 2047, "CounterUpdate: S%d,", afx_dev->AlienfxGetDeviceStatus());
 	//OutputDebugString(buff);
-//#endif
+	if (force)
+		OutputDebugString("Forced Counter update initiated...\n");
+#endif
 
 	if (config->autoRefresh) Refresh();
 
+	std::vector <lightset>::iterator Iter;
 	bStage = !bStage;
 	int lFlags = 0;
 	bool wasChanged = false;
-	int whatChanged = -1;
-	bool tHDD = force || (lHDD && !cHDD) || (!lHDD && cHDD),
-		 tNet = force || (lNET && !cNet) || (!lNET && cNet);
+	if (force) {
+		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = -1; lTemp = -1; lBatt = 101;
+	}
+	bool tHDD = (lHDD && !cHDD) || (!lHDD && cHDD),
+		tNet = (lNET && !cNet) || (!lNET && cNet);
 	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++)
 		if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 			&& (lFlags = afx_dev.GetFlags(Iter->devid, Iter->lightid)) != (-1)) {
@@ -99,47 +105,45 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map[mIndex] : Iter->eve[2].fs.b.flags ?
 				Iter->eve[2].map[0] : Iter->eve[3].map[0];
 			fin.type = 0;
+			bool valid = force ? false : Iter->valid;
 			if (Iter->eve[2].fs.b.flags) {
 				// counter
 				double coeff = 0.0, ccut = Iter->eve[2].fs.b.cut;
 				switch (Iter->eve[2].source) {
-				case 0: if (!force && (lCPU == cCPU || lCPU < ccut && cCPU < ccut)) continue; coeff = cCPU; break;
-				case 1: if (!force && (lRAM == cRAM || lRAM < ccut && cRAM < ccut)) continue; coeff = cRAM; break;
-				case 2: if (!force && (lHDD == cHDD || lHDD < ccut && cHDD < ccut)) continue; coeff = cHDD; break;
-				case 3: if (!force && (lGPU == cGPU || lGPU < ccut && cGPU < ccut)) continue; coeff = cGPU; break;
-				case 4: if (!force && (lNET == cNet || lNET < ccut && cNet < ccut)) continue; coeff = cNet; break;
-				case 5: if (!force && (lTemp == cTemp || lTemp < ccut && cTemp < ccut)) continue; coeff = cTemp; break;
-				case 6: if (!force && (lBatt == cBatt || lBatt < ccut && cBatt < ccut)) continue; coeff = cBatt; break;
+				case 0: if (/*!force &&*/ valid && (lCPU == cCPU || lCPU < ccut && cCPU < ccut)) continue; coeff = cCPU; break;
+				case 1: if (valid && (lRAM == cRAM || lRAM < ccut && cRAM < ccut)) continue; coeff = cRAM; break;
+				case 2: if (valid && (lHDD == cHDD || lHDD < ccut && cHDD < ccut)) continue; coeff = cHDD; break;
+				case 3: if (valid && (lGPU == cGPU || lGPU < ccut && cGPU < ccut)) continue; coeff = cGPU; break;
+				case 4: if (valid && (lNET == cNet || lNET < ccut && cNet < ccut)) continue; coeff = cNet; break;
+				case 5: if (valid && (lTemp == cTemp || lTemp < ccut && cTemp < ccut)) continue; coeff = cTemp; break;
+				case 6: if (valid && (lBatt == cBatt || lBatt < ccut && cBatt < ccut)) continue; coeff = cBatt; break;
 				}
 				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
 				fin.r = (BYTE) (fin.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
 				fin.g = (BYTE) (fin.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
 				fin.b = (BYTE) (fin.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
-				whatChanged = 2;
 			}
 			if (Iter->eve[3].fs.b.flags) {
 				// indicator
 				long indi = 0, ccut = Iter->eve[3].fs.b.cut;
 				bool blink = Iter->eve[3].fs.b.proc;
 				switch (Iter->eve[3].source) {
-				case 0: if (!tHDD && !blink) continue;
-					indi = cHDD; break;
-				case 1: if (!tNet && !blink) continue;
-					indi = cNet; break;
-				case 2: if (!force && !blink &&
+				case 0: if (!tHDD && valid && !blink) continue; indi = cHDD; break;
+				case 1: if (!tNet && valid && !blink) continue; indi = cNet; break;
+				case 2: if (valid && !blink &&
 					((lTemp <= ccut && cTemp <= ccut) ||
 						(cTemp > ccut && lTemp > ccut))) continue; 
 					indi = cTemp - ccut; break;
-				case 3: if (!force && !blink &&
+				case 3: if (valid && !blink &&
 					((lRAM <= ccut && cRAM <= ccut) || (lRAM > ccut && cRAM > ccut))) continue; 
 					indi = cRAM - ccut; break;
 				}
 				fin = indi > 0 ? 
 						blink ?
-							bStage ? Iter->eve[3].map[1] : fin 
+							bStage ? 
+								Iter->eve[3].map[1] : fin 
 							: Iter->eve[3].map[1]
 						: fin;
-				whatChanged = 3;
 			}
 			wasChanged = true;
 			std::vector<AlienFX_SDK::afx_act> actions;
@@ -154,33 +158,11 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				}
 			else
 				actions.push_back(fin);
-			if (SetLight(Iter->devid, Iter->lightid, lFlags, actions)) {// , force);
-				switch (whatChanged) {
-					case 2:
-						switch (Iter->eve[2].source) {
-						case 0: lCPU = cCPU; break;
-						case 1: lRAM = cRAM; break;
-						case 2: lHDD = cHDD; break;
-						case 3: lGPU = cGPU; break;
-						case 4: lNET = cNet; break;
-						case 5: lTemp = cTemp; break;
-						case 6: lBatt = cBatt; break;
-						}
-						break;
-					case 3:
-						switch (Iter->eve[3].source) {
-						case 0: lHDD = cHDD; break;
-						case 1: lNET = cNet; break;
-						case 2: lTemp = cTemp; break;
-						case 3: lRAM = cRAM; break;
-						}
-						break;
-				}
-			}
+			Iter->valid = SetLight(Iter->devid, Iter->lightid, lFlags, actions, force);
 		}
 	if (wasChanged) {
 		UpdateColors();
-		//lCPU = cCPU; lRAM = cRAM; lGPU = cGPU; lHDD = cHDD; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
+		lCPU = cCPU; lRAM = cRAM; lHDD = cHDD; lGPU = cGPU; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
 	}
 }
 
@@ -212,7 +194,7 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 	}
 	if (dev != NULL) {
 		bool devReady = false;
-		for (int wcount = 0; wcount < 5 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
+		for (int wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
 			Sleep(20);
 		if (!devReady) {
 #ifdef _DEBUG
@@ -270,16 +252,11 @@ int FXHelper::Refresh(bool forced)
 	std::vector <lightset>::iterator Iter;
 	Colorcode fin;
 
-	/*bool dev_ready = false;
-	for (int c_count = 0; c_count < 20 && !(dev_ready = afx_dev.IsDeviceReady()) && forced; c_count++) {
-		Sleep(20);
-	}
-	if (!dev_ready) {
-		#ifdef _DEBUG
-				OutputDebugString(TEXT("Refresh: device busy!\n"));
-		#endif
-		return 1;
-	}*/
+#ifdef _DEBUG
+	if (forced)
+		OutputDebugString("Forced Refresh initiated...\n");
+#endif
+
 	int lFlags = 0;
 	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++) {
@@ -316,7 +293,7 @@ int FXHelper::Refresh(bool forced)
 	return 0;
 }
 
-int FXHelper::SetMode(int mode)
+bool FXHelper::SetMode(int mode)
 {
 	int t = activeMode;
 	activeMode = mode;
