@@ -4,7 +4,7 @@ Main goal of this project is to create a bunch of lightweighted tools for Alienw
 - alienfx-cli - Make changes and check status of your AlienFX/LightFX lights from the command line.
 - AlienFX Universal haptics - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights - Visualize screen picture as ambient light (from desktop, game, video player).
-- AlienFX GUI Light Control - Lightweighted light control tool (AWCC alternative). It only control lights, but can do a way more tricks then AWCC.
+- AlienFX GUI Editor - Lightweighted light control tool (AWCC alternative). It only control lights, but can do a way more tricks then AWCC.
 
 ## Requirements
 - Alienware light device present into the system and have USBHID driver active.
