@@ -331,7 +331,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 
     while (!src->stop) {
         // wait a little...
-        Sleep(200);
+        Sleep(150);
 
         // get indicators...
         PdhCollectQueryData(hQuery);

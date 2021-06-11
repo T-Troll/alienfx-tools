@@ -174,6 +174,7 @@ void FXHelper::UpdateColors()
 
 bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force)
 {
+	bool ret = true;
 	// modify colors for dimmed...
 	const unsigned delta = 256 - config->dimmingPower;
 	AlienFX_SDK::Functions* dev = LocateDev(did);
@@ -212,10 +213,10 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 				OutputDebugString(buff);
 #endif
 				if (config->lightsOn && config->stateOn || !config->offPowerButton)
-					dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
+					ret = dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 						actions[1].r, actions[1].g, actions[1].b, force);
 				else
-					dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0, force);
+					ret = dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0, force);
 			}
 		}
 		else
@@ -232,7 +233,7 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 	}
 	else
 		return false;
-	return true;
+	return ret;
 }
 
 void FXHelper::RefreshState(bool force)

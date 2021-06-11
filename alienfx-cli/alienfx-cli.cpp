@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 	bool low_level = true;
 	UINT sleepy = 0;
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v1.1.7" << endl;
+	cerr << "alienfx-cli v2.0.2" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -170,8 +170,12 @@ int main(int argc, char* argv[])
 			}
 			if (low_level) {
 				int newDev = atoi(args.at(0).c_str());
+				if (newDev == afx_dev->GetPID())
+					continue;
 				for (int i = 0; i < devs.size(); i++)
 					if (devs[i] == newDev) {
+						afx_dev->UpdateColors();
+						afx_dev->AlienFXClose();
 						isInit = afx_dev->AlienFXChangeDevice(newDev);
 						if (isInit) {
 							isInit = newDev;
@@ -181,8 +185,8 @@ int main(int argc, char* argv[])
 						}
 						break;
 					}
-				continue;
 			}
+			continue;
 		}
 		if (command == "reset") {
 			if (low_level)
@@ -242,8 +246,11 @@ int main(int argc, char* argv[])
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
-				if (devid != isInit && devid != 0)
+				if (devid != isInit && devid != 0 && devid != afx_dev->GetPID()) {
+					afx_dev->UpdateColors();
+					afx_dev->AlienFXClose();
 					afx_dev->AlienFXChangeDevice(devid);
+				}
 				afx_dev->SetColor(atoi(args.at(1).c_str()),
 					color.cs.blue, color.cs.green, color.cs.red);
 			}
@@ -308,7 +315,7 @@ int main(int argc, char* argv[])
 			if (low_level) {
 				afx_dev->SetPowerAction(atoi(args.at(0).c_str()),
 					color.cs.red, color.cs.green, color.cs.blue,
-					color2.cs.red, color2.cs.green, color2.cs.blue);
+					color2.cs.red, color2.cs.green, color2.cs.blue, true);
 			}
 			else {
 				cerr << "High-level API doesn't support set-power!" << endl;
@@ -362,8 +369,11 @@ int main(int argc, char* argv[])
 				argPos += 5;
 			}
 			if (low_level) {
-				if (devid != isInit && devid != 0)
+				if (devid != isInit && devid != 0 && devid != afx_dev->GetPID()) {
+					afx_dev->UpdateColors();
+					afx_dev->AlienFXClose();
 					afx_dev->AlienFXChangeDevice(devid);
+				}
 				afx_dev->SetAction(atoi(args.at(1).c_str()), act);
 			}
 			else {

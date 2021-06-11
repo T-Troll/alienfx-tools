@@ -683,7 +683,7 @@ namespace AlienFX_SDK
 			SetColor(index, Red, Green, Blue);
 		} break;
 		}
-		return 0;
+		return true;
 	}
 	int ReadStatus;
 
