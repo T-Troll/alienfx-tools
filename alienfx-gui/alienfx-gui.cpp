@@ -329,6 +329,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     HWND dlg;
+
     dlg = CreateDialogParam(hInstance,//GetModuleHandle(NULL),         /// instance handle
         MAKEINTRESOURCE(IDD_MAINWINDOW),    /// dialog box template
         NULL,                    /// handle to parent
@@ -1084,6 +1085,50 @@ int UpdateLightListC(HWND light_list, int pid) {
     return pos;
 }
 
+HWND CreateToolTip(HWND hwndParent)
+{
+    // Create a tooltip.
+    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        hwndParent, NULL, hInst, NULL);
+
+    SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+    // Set up "tool" information. In this case, the "tool" is the entire parent window.
+
+    TOOLINFO ti = { 0 };
+    ti.cbSize = sizeof(TOOLINFO);
+    ti.uFlags = TTF_SUBCLASS;
+    ti.hwnd = hwndParent;
+    ti.hinst = hInst;
+    ti.lpszText = (LPSTR) "0";
+
+    GetClientRect(hwndParent, &ti.rect);
+
+    // Associate the tooltip with the "tool" window.
+    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+    return hwndTT;
+}
+
+char tBuff[4], lBuff[4];
+HWND sTip = 0, lTip = 0;
+
+void SetSlider(HWND tt, char* buff, int value) {
+    //HWND tt = (HWND)SendMessage(sControl, TBM_GETTOOLTIPS, 0, 0);
+    TOOLINFO ti = { 0 };
+    ti.cbSize = sizeof(ti);
+    ti.lpszText = buff;
+    if (tt) {
+        int nTools = SendMessage(tt, TTM_GETTOOLCOUNT, 0, 0);
+        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+        _itoa_s(value, buff, 4, 10);
+        ti.lpszText = buff;
+        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+    }
+}
+
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
     //int pid = fxhl->afx_dev->GetPID();
@@ -1097,19 +1142,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     {
     case WM_INITDIALOG:
     {
-        //int pid = fxhl->afx_dev->GetPID();
-        /*size_t lights = fxhl->afx_dev.GetMappings()->size();
-        bool noLights = true;
-        for (int i = 0; i < lights; i++) {
-            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-            if (fxhl->LocateDev(lgh.devid)) {
-                int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-                SendMessage(light_list, LB_SETITEMDATA, pos, i);
-                noLights = false;
-            }
-        }*/
         if (UpdateLightList(light_list) < 0) {
-        //if (noLights) {// no lights, switch to setup
+            // no lights, switch to setup
             HWND tab_list = GetParent(hDlg);
             TabCtrl_SetCurSel(tab_list, 2);
             OnSelChanged(tab_list);
@@ -1135,13 +1169,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         //TBM_SETTICFREQ
         SendMessage(s1_slider, TBM_SETTICFREQ, 32, 0);
         SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
+        sTip = CreateToolTip(s1_slider);
+        lTip = CreateToolTip(l1_slider);
         // Restore selection....
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-            lightset* mmap = FindMapping((int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0));
-            if (mmap != NULL)
-                RebuildEffectList(eff_list, mmap);
+            //lightset* mmap = FindMapping((int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0));
+            //if (mmap != NULL)
+            //    RebuildEffectList(eff_list, mmap);
         }
     } break;
     case WM_COMMAND: {
@@ -1195,7 +1231,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[0].type, 0);
                 RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[0].r, mmap->eve[0].map[0].g, mmap->eve[0].map[0].b);
                 SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[0].tempo);
+                SetSlider(sTip, tBuff, mmap->eve[0].map[0].tempo);
                 SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[0].time);
+                SetSlider(lTip, lBuff, mmap->eve[0].map[0].time);
                 break;
             } break;
         case IDC_TYPE1:
@@ -1239,7 +1277,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
                     RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
                     SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
+                    SetSlider(sTip, tBuff, mmap->eve[0].map[0].tempo);
                     SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
+                    SetSlider(lTip, lBuff, mmap->eve[0].map[0].time);
                 }
                 RebuildEffectList(eff_list, mmap);
                 fxhl->RefreshState(true);
@@ -1272,9 +1312,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             if (mmap != NULL) {
                 if ((HWND)lParam == s1_slider) {
                     mmap->eve[0].map[effID].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    SetSlider(sTip, tBuff, mmap->eve[0].map[0].tempo);
                 }
                 if ((HWND)lParam == l1_slider) {
                     mmap->eve[0].map[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    SetSlider(lTip, lBuff, mmap->eve[0].map[0].time);
                 }
                 fxhl->Refresh();
             }
@@ -1300,7 +1342,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_EFFECTS_LIST:
-            //int code = ((NMHDR*)lParam)->code;
             if (((NMHDR*)lParam)->code == NM_CLICK) {
                 NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
                 // Select other color....
@@ -1394,6 +1435,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
         //TBM_SETTICFREQ
         SendMessage(s1_slider, TBM_SETTICFREQ, 10, 0);
         SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
+        sTip = CreateToolTip(s1_slider);
+        lTip = CreateToolTip(s2_slider);
 
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
@@ -1440,9 +1483,11 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
                     case 3: { // checkbox + slider
                         CheckDlgButton(hDlg, IDC_STATUS_BLINK, map->eve[i].fs.b.proc ? BST_CHECKED : BST_UNCHECKED);
                         SendMessage(s2_slider, TBM_SETPOS, true, map->eve[i].fs.b.cut);
+                        SetSlider(lTip, lBuff, map->eve[i].fs.b.cut);
                     } break;
                     case 2: { //slider
                         SendMessage(s1_slider, TBM_SETPOS, true, map->eve[i].fs.b.cut);
+                        SetSlider(sTip, tBuff, map->eve[i].fs.b.cut);
                     } break;
                     }
                     if (i > 0) {
@@ -1543,7 +1588,6 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
         } break;
         }
         break;
-    default: return false;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
         case TB_THUMBTRACK: case TB_ENDTRACK:
@@ -1553,13 +1597,16 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             if (map != NULL) {
                 if ((HWND)lParam == s1_slider) {
                     map->eve[2].fs.b.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    SetSlider(sTip, tBuff, map->eve[2].fs.b.cut);
                 }
                 if ((HWND)lParam == s2_slider) {
                     map->eve[3].fs.b.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    SetSlider(lTip, lBuff, map->eve[3].fs.b.cut);
                 }
             }
             break;
         } break;
+    default: return false;
     }
     return true;
 }
@@ -1877,6 +1924,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                     CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & 0x1 ? BST_CHECKED : BST_UNCHECKED);
                     CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & 0x2 ? BST_CHECKED : BST_UNCHECKED);
                     CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & 0x4 ? BST_CHECKED : BST_UNCHECKED);
+                    CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & 0x8 ? BST_CHECKED : BST_UNCHECKED);
                     SendMessage(app_list, LB_RESETCONTENT, 0, 0);
                     SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(prof->triggerapp.c_str()));
                     pCid = prid; pCitem = pbItem;
@@ -2039,6 +2087,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
         SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
+        sTip = CreateToolTip(dim_slider);
+        SetSlider(sTip, tBuff, conf->dimmingPower);
     } break;
     case WM_COMMAND: {
         switch (LOWORD(wParam))
@@ -2109,6 +2159,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         case TB_THUMBPOSITION: case TB_ENDTRACK: {
                 if ((HWND)lParam == dim_slider) {
                     conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                    SetSlider(sTip, tBuff, conf->dimmingPower);
                 }
                 fxhl->RefreshState();
             } break;

@@ -371,7 +371,7 @@ DWORD WINAPI CEventProc(LPVOID param)
         }
 
         // Normilizing net values...
-        long totalNet = 0;
+        ULONGLONG totalNet = 0;
         for (unsigned i = 0; i < netCount; i++) {
             totalNet += netArray[i].FmtValue.longValue;
         }
@@ -454,6 +454,8 @@ DWORD WINAPI CEventProc(LPVOID param)
                     maxTemp = tempArray[i].FmtValue.longValue;
             }
         }
+
+        if (maxTemp > 100) maxTemp = 100;
 
         GlobalMemoryStatusEx(&memStat);
         GetSystemPowerStatus(&state);
