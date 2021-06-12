@@ -32,11 +32,12 @@ public:
 	AlienFX_SDK::Functions* LocateDev(int pid);
 	void FillDevs();
 	int Refresh(bool force=false);
+	bool RefreshOne(lightset* map, bool force = false, bool update = false);
 	bool SetMode(int mode);
 	std::vector<int> GetDevList();
 	void TestLight(int did, int id);
 	void ResetPower(int did);
-	void UpdateColors();
+	void UpdateColors(int did = -1);
 	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force = false);
 	bool SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force = false); //BYTE mode1, BYTE length1, BYTE speed1, BYTE r, BYTE g, BYTE b,
 		//BYTE mode2=0, BYTE length2 =0, BYTE speed2 =0, BYTE r2=0, BYTE g2=0, BYTE b2=0, bool force = false);

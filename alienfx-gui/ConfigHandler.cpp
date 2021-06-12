@@ -140,8 +140,6 @@ int ConfigHandler::Load() {
         NULL,
         &awcc_disable,
         (LPDWORD)&size);
-    if (ret != ERROR_SUCCESS)
-        awcc_disable = 1;
     RegGetValue(hKey1,
         NULL,
         TEXT("ProfileAutoSwitch"),

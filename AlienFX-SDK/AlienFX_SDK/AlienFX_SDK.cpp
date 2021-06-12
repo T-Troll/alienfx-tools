@@ -930,7 +930,7 @@ namespace AlienFX_SDK
 		size_t numdevs = devices.size();
 		size_t numlights = mappings.size();
 		if (numdevs == 0) return;
-		RegCreateKeyEx(HKEY_CURRENT_USER,
+		/*RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE"),
 			0,
 			NULL,
@@ -940,7 +940,7 @@ namespace AlienFX_SDK
 			&hKey1,
 			&dwDisposition);
 		RegDeleteTreeA(hKey1, "Alienfx_SDK");
-		RegCloseKey(hKey1);
+		RegCloseKey(hKey1);*/
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
 			0,
@@ -965,6 +965,7 @@ namespace AlienFX_SDK
 				(DWORD)devices[i].name.size()
 			);
 		}
+
 		for (int i = 0; i < numlights; i++) {
 			//preparing name
 			sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
@@ -988,6 +989,24 @@ namespace AlienFX_SDK
 				4
 			);
 		}
+
+		std::vector <mapping> oldMappings = mappings;
+		LoadMappings();
+		// remove non-existing mappings...
+		for (int i = 0; i < mappings.size(); i++) {
+			int j;
+			for (j = 0; j < numlights && (mappings[i].devid != oldMappings[j].devid ||
+				mappings[i].lightid != oldMappings[j].lightid); j++);
+			if (j == numlights) { // no mapping found, delete...
+				sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+				RegDeleteValueA(hKey1, name);
+				sprintf_s((char*)name, 255, "Flags%d-%d", mappings[i].devid, mappings[i].lightid);
+				RegDeleteValueA(hKey1, name);
+			}
+		}
+
+		mappings = oldMappings;
+
 		RegCloseKey(hKey1);
 	}
 

@@ -166,10 +166,11 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	}
 }
 
-void FXHelper::UpdateColors()
+void FXHelper::UpdateColors(int did)
 {
 	for (int i = 0; i < devs.size(); i++)
-		devs[i]->UpdateColors();
+		if (did == -1 || did == devs[i]->GetPID())
+			devs[i]->UpdateColors();
 }
 
 bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force)
@@ -207,10 +208,10 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 		if (power && actions.size() > 1) {
 			if (!config->block_power) {
 #ifdef _DEBUG
-				char buff[2048];
+				//char buff[2048];
 				//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
-				sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
-				OutputDebugString(buff);
+				//sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
+				//OutputDebugString(buff);
 #endif
 				if (config->lightsOn && config->stateOn || !config->offPowerButton)
 					ret = dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
@@ -251,17 +252,17 @@ void FXHelper::RefreshMon()
 int FXHelper::Refresh(bool forced)
 {
 	std::vector <lightset>::iterator Iter;
-	Colorcode fin;
+	//Colorcode fin;
 
 #ifdef _DEBUG
 	if (forced)
 		OutputDebugString("Forced Refresh initiated...\n");
 #endif
 
-	int lFlags = 0;
-	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
+	//int lFlags = 0;
+	//std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++) {
-			actions = Iter->eve[0].map;
+			/*actions = Iter->eve[0].map;
 			lFlags = afx_dev.GetFlags(Iter->devid, Iter->lightid);
 			if (config->monState && !forced) {
 				if (Iter->eve[1].fs.b.flags) {
@@ -288,7 +289,8 @@ int FXHelper::Refresh(bool forced)
 				if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
 					&& config->lightsOn && config->stateOn) continue;
 			}
-			SetLight(Iter->devid, Iter->lightid, lFlags, actions, forced);
+			SetLight(Iter->devid, Iter->lightid, lFlags, actions, forced);*/
+		RefreshOne(&(*Iter), forced);
 	}
 	UpdateColors();
 	return 0;
@@ -299,6 +301,44 @@ bool FXHelper::SetMode(int mode)
 	int t = activeMode;
 	activeMode = mode;
 	return t == activeMode;
+}
+
+bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
+{
+	int lFlags = 0;
+	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
+	bool ret = false;
+
+	actions = map->eve[0].map;
+	lFlags = afx_dev.GetFlags(map->devid, map->lightid);
+	if (config->monState && !force) {
+		if (map->eve[1].fs.b.flags) {
+			// use power event;
+			if (!map->eve[0].fs.b.flags)
+				actions = map->eve[1].map;
+			else
+				if (actions.size() < 2)
+					actions.push_back(map->eve[1].map[1]);
+			switch (activeMode) {
+			case MODE_BAT:
+				action = actions[0]; actions[0] = actions[1]; actions[1] = action;
+				actions[0].type = 0;
+				break;
+			case MODE_LOW:
+				action = actions[0]; actions[0] = actions[1]; actions[1] = action;
+				actions[0].type = actions[1].type = 1;
+				break;
+			case MODE_CHARGE:
+				actions[0].type = actions[1].type = 2;
+				break;
+			}
+		}
+		if ((map->eve[2].fs.b.flags || map->eve[3].fs.b.flags)
+			&& config->lightsOn && config->stateOn) return true;
+	}
+	ret = SetLight(map->devid, map->lightid, lFlags, actions, force);
+	if (update) UpdateColors(map->devid);
+	return ret;
 }
 
 

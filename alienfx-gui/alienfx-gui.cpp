@@ -900,6 +900,7 @@ DWORD CColorRefreshProc(LPVOID param) {
     AlienFX_SDK::afx_act last;
     ULONGLONG cColorCall = 0;
     lastColorCall = GetTickCount64();
+    lightset* mmap = (lightset*)param;
     last.r = mod->r;
     last.g = mod->g;
     last.b = mod->b;
@@ -911,7 +912,8 @@ DWORD CColorRefreshProc(LPVOID param) {
                 last.r = mod->r;
                 last.g = mod->g;
                 last.b = mod->b;
-                fxhl->RefreshState();
+                //fxhl->RefreshState();
+                if (mmap != NULL) fxhl->RefreshOne(mmap, true);
                 lastColorCall = GetTickCount64();
             }
         }
@@ -949,7 +951,7 @@ UINT_PTR Lpcchookproc(
     return 0;
 }
 
-bool SetColor(HWND hDlg, int id, AlienFX_SDK::afx_act* map) {
+bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
     CHOOSECOLOR cc;                 // common dialog box structure 
     bool ret;
 
@@ -973,18 +975,20 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::afx_act* map) {
         NULL,              // default security
         0,                 // default stack size
         CColorRefreshProc,        // name of the thread function
-        hDlg,
+        mmap,
         0,                 // default startup flags
         &crThreadID);
 
     if (!(ret = ChooseColor(&cc)))
     {
+        runLightsRefresh = false;
         map->r = savedColor.r;
         map->g = savedColor.g;
         map->b = savedColor.b;
         RedrawButton(hDlg, id, map->r, map->g, map->b);
-    }
-    runLightsRefresh = false;
+        fxhl->RefreshState();
+    } else
+        runLightsRefresh = false;
     return ret;
 }
 
@@ -1076,7 +1080,7 @@ int UpdateLightListC(HWND light_list, int pid) {
     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
     for (int i = 0; i < lights; i++) {
         AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-        if ((pid == (-1) || pid == lgh.devid) && fxhl->LocateDev(lgh.devid)) {
+        if (pid == lgh.devid && fxhl->LocateDev(lgh.devid)) {
             pos = (int)SendMessage(light_list, CB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
             SendMessage(light_list, CB_SETITEMDATA, pos, i);
         }
@@ -1241,7 +1245,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if (mmap != NULL) {
                     mmap->eve[0].map[effID].type = lType1;
                     RebuildEffectList(eff_list, mmap);
-                    fxhl->RefreshState(true);
+                    fxhl->RefreshOne(mmap, true, true);
+                    //fxhl->RefreshState(true);
                 }
             }
             break;
@@ -1250,9 +1255,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             {
             case BN_CLICKED: {
                 if (mmap != NULL) {
-                    SetColor(hDlg, IDC_BUTTON_C1, &mmap->eve[0].map[effID]);
+                    SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->eve[0].map[effID]);
                     RebuildEffectList(eff_list, mmap);
-                    fxhl->RefreshState();
+                    fxhl->RefreshOne(mmap, true, true);
+                    //fxhl->RefreshState();
                 }
             } break;
             } break;
@@ -1261,7 +1267,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 AlienFX_SDK::afx_act act = mmap->eve[0].map.back();
                 mmap->eve[0].map.push_back(act);
                 RebuildEffectList(eff_list, mmap);
-                fxhl->RefreshState(true);
+                //fxhl->RefreshState(true);
+                fxhl->RefreshOne(mmap, true, true);
             }
             break;
         case IDC_BUTT_REMOVE_EFFECT:
@@ -1282,7 +1289,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     SetSlider(lTip, lBuff, mmap->eve[0].map[0].time);
                 }
                 RebuildEffectList(eff_list, mmap);
-                fxhl->RefreshState(true);
+                fxhl->RefreshOne(mmap, true, true);
+                //fxhl->RefreshState(true);
             }
             break;
         case IDC_BUTTON_SETALL:
@@ -1318,7 +1326,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     mmap->eve[0].map[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                     SetSlider(lTip, lBuff, mmap->eve[0].map[0].time);
                 }
-                fxhl->Refresh();
+                //fxhl->Refresh();
+                fxhl->RefreshOne(mmap, true, true);
             }
         break;
     } break;
@@ -1386,18 +1395,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     {
     case WM_INITDIALOG:
     {
-        //size_t lights = fxhl->afx_dev.GetMappings()->size();
-        //bool noLights = true;
-        /*for (int i = 0; i < lights; i++) {
-            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-            if (fxhl->LocateDev(lgh.devid)) {
-                int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-                SendMessage(light_list, LB_SETITEMDATA, pos, i);
-                noLights = false;
-            }
-        }*/
         if (UpdateLightList(light_list) < 0) {
-        //if (noLights) {// no lights, switch to setup
             HWND tab_list = GetParent(hDlg);
             TabCtrl_SetCurSel(tab_list, 2);
             OnSelChanged(tab_list);
@@ -1520,7 +1518,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             {
             case BN_CLICKED:
                 if (map != NULL) {
-                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map[0]);
+                    SetColor(hDlg, LOWORD(wParam), map, &map->eve[eid].map[0]);
                 }
                 break;
             }
@@ -1531,7 +1529,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             {
             case BN_CLICKED:
                 if (map != NULL) {
-                    SetColor(hDlg, LOWORD(wParam), &map->eve[eid].map[1]);
+                    SetColor(hDlg, LOWORD(wParam), map, &map->eve[eid].map[1]);
                 }
                 break;
             }
@@ -1634,24 +1632,31 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         // Now check current device list..
         size_t lights = fxhl->afx_dev.GetMappings()->size();
         size_t numdev = fxhl->GetDevList().size();
+        size_t numharddev = fxhl->afx_dev.GetDevices()->size();
         int cpid = (-1), pos = (-1);
         for (i = 0; i < numdev; i++) {
             cpid = fxhl->GetDevList().at(i);
             int j;
-            for (j = 0; j < fxhl->devs.size(); j++) {
+            for (j = 0; j < numharddev; j++) {
                 if (cpid == fxhl->afx_dev.GetDevices()->at(j).devid) {
-                    std::string dname = fxhl->afx_dev.GetDevices()->at(i).name;
+                    std::string dname = fxhl->afx_dev.GetDevices()->at(j).name;
                     pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(dname.c_str()));
                     SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
                     break;
                 }
             }
-            if (j == fxhl->afx_dev.GetDevices()->size()) {
+            if (j == numharddev) {
                 // no name
                 char devName[256];
                 sprintf_s(devName, 255, "Device #%X", cpid);
                 pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
                 SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
+                // need to add device mapping...
+                AlienFX_SDK::devmap newDev;
+                newDev.devid = cpid;
+                newDev.name = devName;
+                fxhl->afx_dev.GetDevices()->push_back(newDev);
+                fxhl->afx_dev.SaveMappings();
             }
             if (cpid == conf->lastActive) {
                 // select this device.
@@ -1660,14 +1665,24 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             }
         }
 
-        UpdateLightListC(light_list, eDid);
-        BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();// fxhl->afx_dev->AlienfxGetDeviceStatus();
-        if (status && status != 0xff)
-            SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
-        else
-            SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
         eLid = -1; lItem = -1;
 
+        if (numdev > 0) {
+            if (eDid == -1) { // no selection, let's try to select dev#0
+                dItem = 0;
+                eDid = fxhl->GetDevList().at(0);
+                SendMessage(dev_list, CB_SETCURSEL, 0, (LPARAM)0);
+                conf->lastActive = eDid;
+            }
+
+            UpdateLightListC(light_list, eDid);
+
+            BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();// fxhl->afx_dev->AlienfxGetDeviceStatus();
+            if (status && status != 0xff)
+                SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
+            else
+                SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
+        }
     } break;
     case WM_COMMAND: {
         int lbItem = (int)SendMessage(light_list, CB_GETCURSEL, 0, 0);
@@ -1740,7 +1755,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 break;
             case CBN_KILLFOCUS:
                 eve->StartEvents();
-                fxhl->afx_dev.SaveMappings();
+                //fxhl->afx_dev.SaveMappings();
                 break;
             }
             break;
@@ -1766,7 +1781,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             dev.name = buffer;
             fxhl->afx_dev.GetMappings()->push_back(dev);
             fxhl->afx_dev.SaveMappings();
-            UpdateLightListC(light_list, did);
+            UpdateLightListC(light_list, eDid);
         } break;
         case IDC_BUTTON_REML:
             if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
@@ -1795,7 +1810,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     }
                 fxhl->afx_dev.SaveMappings();
                 conf->Save();
-                UpdateLightListC(light_list, did); //eDid
+                UpdateLightListC(light_list, eDid); //eDid
             }
             break;
         case IDC_BUTTON_RESETCOLOR:
@@ -1823,7 +1838,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             c.r = conf->testColor.cs.red;
             c.g = conf->testColor.cs.green;
             c.b = conf->testColor.cs.blue;
-            SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &c);
+            SetColor(hDlg, IDC_BUTTON_TESTCOLOR, NULL, &c);
             conf->testColor.cs.red = c.r;
             conf->testColor.cs.green = c.g;
             conf->testColor.cs.blue = c.b;
