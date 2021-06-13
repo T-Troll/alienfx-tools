@@ -103,8 +103,24 @@ How it works
 "Monitoring" tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
 "Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings. NB: If you want to add new light, type light ID into LightID box. If this ID already present in list, it will be overrided to first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
 "Profiles" tab control profile settings, like selecting defalult profile, per-profile monitoring control and automatic switch to this profile then the defined application run.<br>
-"Settings" tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings.<br>
-<br>Keyboard shortcuts (any time):
+"Settings" tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings:<br>
+- "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
+- "Turn off lights then screen off" - Fade all lights to black then system screen off (default - off).
+- "Off power button too" - Hardware Power button light follows the system state. Power light will be always on if disabled (default - off).
+- "Autorefresh" - All lights will be refreshed 6 times per second. It's useful if you have AWCC runinning, but still want to control lights (default - off).
+- "Color Gamma correction" - Enables color correction to make them looks close to screen one. It keep original AWCC colors if disabled (default - on).
+- "Dim lights" - Dim system lights brightness. It's useful for night/battery scenario (default - off).
+- "Dim Power button" - Power button follows system dim state. Power button will always have full brightness if disabled (default - off).
+- "Dim lights on battery" - Automatically dim lights if system runing at battery power, decreasing energy usage (default - on).
+- "Dimming power" - Amount of the brightness decrease then dimmed. Values can be from 0 to 255, default is 92.
+- "Start with Windows" - Start application at Windows start. It will not work if application request run as admin level (see below) (default - off).
+- "Start minimized" - Hide application window in system tray after start.
+- "Enable monitoring" - Application start to monitor system metrics (CPU/GPU/RAM load, etc) and refresh lights according to it (default - on).
+- "Profile autoswitch" - Switch between prfiles avaliable automatically, according of applications start and finish. This also block manual profile selection (default - off).
+- "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" priviledge (default - off).
+- "Esif temperature" - Read hardware device temperature counters. If disabled, only system-wide ones will be read. It's useful for some Dell (not Alienware) systems. but also provide a lot of component temperature readings. It will require "Run as administrator" priviledge (default - off).
+
+Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)<br>
