@@ -49,14 +49,15 @@ void FXHelper::TestLight(int did, int id)
 {
 	AlienFX_SDK::Functions* dev = LocateDev(did);
 	if (dev != NULL) {
-		bool dev_ready = false;// afx_dev->IsDeviceReady();
-		for (int c_count = 0; c_count < 15 && !(dev_ready = dev->IsDeviceReady()); c_count++)
-			Sleep(20);
-		if (!dev_ready) return;
 
 		int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
 			g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
 			b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
+
+		bool dev_ready = false;
+		for (int c_count = 0; c_count < 20 && !(dev_ready = dev->IsDeviceReady()); c_count++)
+			Sleep(20);
+		if (!dev_ready) return;
 
 		if (id != lastTest) {
 			if (lastTest >= 0)
@@ -181,12 +182,13 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 	AlienFX_SDK::Functions* dev = LocateDev(did);
 
 	for (int i = 0; i < actions.size(); i++) {
-		if (config->dimmed || config->stateDimmed ||
-			(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
-			actions[i].r = (actions[i].r * delta) >> 8;
-			actions[i].g = (actions[i].g * delta) >> 8;
-			actions[i].b = (actions[i].b * delta) >> 8;
-		}
+		if (!power || (power && config->dimPowerButton))
+			if (config->dimmed || config->stateDimmed ||
+				(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
+				actions[i].r = (actions[i].r * delta) >> 8;
+				actions[i].g = (actions[i].g * delta) >> 8;
+				actions[i].b = (actions[i].b * delta) >> 8;
+			}
 		// gamma-correction...
 		if (config->gammaCorrection) {
 			actions[i].r = (actions[i].r * actions[i].r) >> 8;
@@ -209,7 +211,6 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 			if (!config->block_power) {
 #ifdef _DEBUG
 				//char buff[2048];
-				//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
 				//sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
 				//OutputDebugString(buff);
 #endif
@@ -252,45 +253,14 @@ void FXHelper::RefreshMon()
 int FXHelper::Refresh(bool forced)
 {
 	std::vector <lightset>::iterator Iter;
-	//Colorcode fin;
 
 #ifdef _DEBUG
 	if (forced)
 		OutputDebugString("Forced Refresh initiated...\n");
 #endif
 
-	//int lFlags = 0;
-	//std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++) {
-			/*actions = Iter->eve[0].map;
-			lFlags = afx_dev.GetFlags(Iter->devid, Iter->lightid);
-			if (config->monState && !forced) {
-				if (Iter->eve[1].fs.b.flags) {
-					// use power event;
-					if (!Iter->eve[0].fs.b.flags)
-						actions = Iter->eve[1].map;
-					else
-						if (actions.size() < 2)
-							actions.push_back(Iter->eve[1].map[1]);
-					switch (activeMode) {
-					case MODE_BAT:
-						action = actions[0]; actions[0] = actions[1]; actions[1] = action;
-						actions[0].type = 0;
-						break;
-					case MODE_LOW:
-						action = actions[0]; actions[0] = actions[1]; actions[1] = action;
-						actions[0].type = actions[1].type = 1;
-						break;
-					case MODE_CHARGE: 
-						actions[0].type = actions[1].type = 2; 
-						break;
-					}
-				}
-				if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)
-					&& config->lightsOn && config->stateOn) continue;
-			}
-			SetLight(Iter->devid, Iter->lightid, lFlags, actions, forced);*/
-		RefreshOne(&(*Iter), forced);
+		Iter->valid = RefreshOne(&(*Iter), forced);
 	}
 	UpdateColors();
 	return 0;

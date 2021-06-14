@@ -163,6 +163,13 @@ int ConfigHandler::Load() {
         (LPDWORD)&size);
     RegGetValue(hKey1,
         NULL,
+        TEXT("DimPower"),
+        RRF_RT_DWORD | RRF_ZEROONFAILURE,
+        NULL,
+        &dimPowerButton,
+        (LPDWORD)&size);
+    RegGetValue(hKey1,
+        NULL,
         TEXT("DimmedOnBattery"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
@@ -462,6 +469,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&dimmed,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("DimPower"),
+        0,
+        REG_DWORD,
+        (BYTE*)&dimPowerButton,
         4
     );
     RegSetValueEx(

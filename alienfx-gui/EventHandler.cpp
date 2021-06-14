@@ -160,11 +160,17 @@ void EventHandler::StopProfiles()
 
 void EventHandler::ToggleEvents()
 {
-    if (conf->monState && conf->stateOn && !dwHandle)
-        StartEvents();
+    if (conf->monState && conf->stateOn)
+        if (!dwHandle)
+            StartEvents();
+        else
+            fxh->Refresh();
     else
-        if ((!conf->monState || !conf->stateOn) && dwHandle)
-            StopEvents();
+        if (!conf->monState || !conf->stateOn)
+            if (dwHandle)
+                StopEvents();
+            else
+                fxh->Refresh(true);
 }
 
 EventHandler::EventHandler(ConfigHandler* config, FXHelper* fx)

@@ -735,12 +735,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_LIGHTSON:
             conf->stateOn = conf->lightsOn = !conf->lightsOn;
-            //fxhl->Refresh(true);
             eve->ToggleEvents();
             break;
         case ID_TRAYMENU_DIMLIGHTS:
             conf->dimmed = !conf->dimmed;
-            fxhl->RefreshState();
+            fxhl->RefreshState(true);
             break;
         case ID_TRAYMENU_MONITORING:
             conf->enableMon = !conf->enableMon;
@@ -774,7 +773,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             //Shell_NotifyIcon(NIM_DELETE, &niData);
             break;
         case ID_TRAYMENU_PROFILE_SELECTED: {
-            if (idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
+            if (!conf->enableProf && idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
                 eve->SwitchActiveProfile(conf->profiles[idx].id);
                 ReloadProfileList(hDlg);
                 OnSelChanged(tab_list);
@@ -838,31 +837,27 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (wParam) {
         case 1: // on/off
             conf->stateOn = conf->lightsOn = !conf->lightsOn;
-            fxhl->RefreshState(true);
             eve->ToggleEvents();
             break;
         case 2: // dim
             conf->dimmed = !conf->dimmed;
-            //fxhl->Refresh(true);
-            fxhl->RefreshState();
+            fxhl->RefreshState(true);
             break;
         case 3: // off-dim-full circle
             if (conf->lightsOn) {
                 if (conf->dimmed) {
                     conf->stateOn = conf->lightsOn = !conf->lightsOn;
                     conf->dimmed = !conf->dimmed;
-                    eve->StopEvents();
+                    eve->ToggleEvents();
                 }
                 else {
                     conf->dimmed = !conf->dimmed;
-                    //fxhl->Refresh(true);
-                    fxhl->RefreshState();
+                    fxhl->RefreshState(true);
                 }
             }
             else {
                 conf->stateOn = conf->lightsOn = !conf->lightsOn;
-                //fxhl->Refresh(true);
-                eve->StartEvents();
+                eve->ToggleEvents();
             }
             break;
         default: return false;
@@ -1080,7 +1075,7 @@ int UpdateLightListC(HWND light_list, int pid) {
     SendMessage(light_list, CB_RESETCONTENT, 0, 0);
     for (int i = 0; i < lights; i++) {
         AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-        if (pid == lgh.devid && fxhl->LocateDev(lgh.devid)) {
+        if (pid == lgh.devid) { // && fxhl->LocateDev(lgh.devid)) {
             pos = (int)SendMessage(light_list, CB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
             SendMessage(light_list, CB_SETITEMDATA, pos, i);
         }
@@ -1677,7 +1672,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
             UpdateLightListC(light_list, eDid);
 
-            BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();// fxhl->afx_dev->AlienfxGetDeviceStatus();
+            BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();
             if (status && status != 0xff)
                 SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
             else
@@ -1755,7 +1750,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 break;
             case CBN_KILLFOCUS:
                 eve->StartEvents();
-                //fxhl->afx_dev.SaveMappings();
+                fxhl->afx_dev.SaveMappings();
                 break;
             }
             break;
@@ -1770,7 +1765,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 if (lgh.devid == eDid) {
                     if (lgh.lightid > maxID)
                         maxID = lgh.lightid;
-                    if (lgh.lightid == cid) haveID = true;
+                    if (lgh.lightid == cid)
+                        haveID = true;
                 }
             }
             if (haveID) cid = maxID + 1;
@@ -1810,7 +1806,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     }
                 fxhl->afx_dev.SaveMappings();
                 conf->Save();
-                UpdateLightListC(light_list, eDid); //eDid
+                UpdateLightListC(light_list, eDid);
             }
             break;
         case IDC_BUTTON_RESETCOLOR:
@@ -1862,17 +1858,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             }
             break;
         case IDC_BUTTON_DEVRESET: {
-                eve->StopEvents();
-                //fxhl->afx_dev->AlienFXChangeDevice(pid);
-                //conf->mappings = conf->profiles[conf->activeProfile].lightsets;
-                AlienFX_SDK::Functions* dev = fxhl->LocateDev(did);
-                dev->AlienFXChangeDevice(did);
+            eve->StopProfiles();
+            eve->StopEvents();
+            fxhl->FillDevs();
+            AlienFX_SDK::Functions* dev = fxhl->LocateDev(did);
+            if (dev) {
                 BYTE status = dev->AlienfxGetDeviceStatus();
                 if (status && status != 0xff)
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
                 else
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
-                eve->StartEvents();
+            }
+            eve->StartEvents();
+            eve->StartProfiles();
         } break;
         default: return false;
         }
@@ -2094,6 +2092,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         if (conf->enableMon) CheckDlgButton(hDlg, IDC_BATTMONITOR, BST_CHECKED);
         if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
         if (conf->dimmed) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
+        if (conf->dimPowerButton) CheckDlgButton(hDlg, IDC_POWER_DIM, BST_CHECKED);
         if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
         if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
         if (conf->enableProf) CheckDlgButton(hDlg, IDC_BATTPROFILE, BST_CHECKED);
@@ -2137,7 +2136,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             break;
         case IDC_CHECK_LON:
             conf->stateOn = conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-            fxhl->Refresh(true);
+            //fxhl->Refresh(true);
             eve->ToggleEvents();
             break;
         case IDC_CHECK_DIM:
@@ -2152,10 +2151,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             conf->offPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             fxhl->RefreshState();
             break;
+        case IDC_POWER_DIM:
+            conf->dimPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+            fxhl->RefreshState();
+            break;
         case IDC_AWCC:
             conf->awcc_disable = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
             if (!conf->awcc_disable) {
-                //conf->block_power = true;
                 if (conf->wasAWCC) DoStopService(false);
             }
             else

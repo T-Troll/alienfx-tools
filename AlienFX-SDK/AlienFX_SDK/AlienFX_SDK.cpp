@@ -28,7 +28,7 @@ extern "C" {
 #define API_V2 12
 #define API_V1 8
 
-#define POWER_DELAY 500
+#define POWER_DELAY 300
 
 namespace AlienFX_SDK
 {

@@ -62,7 +62,8 @@ public:
 	DWORD lightsOn = 1;
 	DWORD offWithScreen = 0;
 	DWORD dimmed = 0;
-	DWORD dimmedBatt = 0;
+	DWORD dimmedBatt = 1;
+	DWORD dimPowerButton = 0;
 	DWORD dimmingPower = 92;
 	DWORD enableMon = 1;
 	DWORD enableProf = 0;
