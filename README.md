@@ -19,7 +19,6 @@ Device checked: `Alienware m15R1-R4` (API v3), `Alienware m17R1` (API v3), `Alie
 - External devices (mouse, display) not supported - they have different vendor ID (i'm working on it).
 - Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).
-- <s>Only one device per time can be controlled trough low-level SDK, but you can choose which one.</s>
 - Hardware light effects morph, breathing, spectrum, rainbow doesn't supported for older (v1, v2) devices.
 - Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
@@ -64,12 +63,12 @@ The following commands are available:
 <br>Supported Actions: `pulse, morph (you need 2 colors for morth), color (disable action)`. For low-level api V3, it also support `breath, spectrum, rainbow`.
 
 ## alienfx-haptics Usage
-Run `alienfx-haptics.exe`. At first launch, choose `Parameters-Settings` from top menu for setting up light mappings and colors.
+Run `alienfx-haptics.exe`. At first launch, set up light mappings and colors.
 <br>Minimize, then start player or game of choice.
 ```
 How it works
 ```
-This application get audio stream from default input device, then made a real-time spectrum analysis.
+This application get audio stream from default output or input device (you can select it at the top menu), then made a real-time spectrum analysis.
 <br>After that, spectrum powers gropped into 20 groups using octave scale.
 <br>For each light found into the system, you can define group(s) it should react, as well as color for Zero (low) and Max (High) power.
 <br>It's also possible to compress diapasone if group always not so or so high powered - use low-cut as a bottom range and hi-cut as a top one (values are 0-255).<br>
