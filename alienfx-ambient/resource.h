@@ -2,16 +2,12 @@
 // Microsoft Visual C++ generated include file.
 // Used by alienfx-ambient.rc
 //
-#define IDC_MYICON                      2
-#define IDD_ALIENFXAMBIENT_DIALOG       102
 #define IDS_APP_TITLE                   103
 #define IDD_ABOUTBOX                    103
 #define IDM_ABOUT                       104
 #define IDM_EXIT                        105
 #define IDC_ALIENFXAMBIENT              109
-#define IDR_MAINFRAME                   128
 #define IDD_DIALOG_MAIN                 129
-#define IDI_ICON1                       132
 #define IDI_ALIENFXAMBIENT              132
 #define IDC_BUTTON1                     1000
 #define IDC_BUTTON2                     1001
@@ -25,7 +21,6 @@
 #define IDC_BUTTON10                    1009
 #define IDC_BUTTON11                    1010
 #define IDC_BUTTON12                    1011
-#define IDC_DEVICE                      1012
 #define IDC_LIGHTS                      1013
 #define IDC_CHECK1                      1026
 #define IDC_CHECK2                      1027
@@ -46,10 +41,7 @@
 #define IDC_BUTTON_MIN                  1042
 #define IDC_STATIC_VERSION              1043
 #define IDC_SYSLINK_HOMEPAGE            1044
-#define IDC_CHECK13                     1044
 #define IDC_CHECK_GAMMA                 1044
-#define IDC_STATIC_LAST                 1045
-#define IDC_BUTTON13                    1046
 #define IDC_BUTTON_RESET                1046
 #define IDC_STATIC                      -1
 

@@ -410,7 +410,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
 	HWND low_cut = GetDlgItem(hDlg, IDC_EDIT_LOWCUT);
 	HWND hi_cut = GetDlgItem(hDlg, IDC_EDIT_HIGHCUT);
-	HWND hdecay = GetDlgItem(hDlg, IDC_EDIT_DECAY);
 	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
 	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
 	mapping* map = NULL;
@@ -430,7 +429,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		ReloadLightList(light_list);
 
-		SetDlgItemInt(hDlg, IDC_EDIT_DECAY, config->res, false);
 		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		//TBM_SETTICFREQ
