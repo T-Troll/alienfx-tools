@@ -18,14 +18,7 @@ public:
 	void start();
 	int getBarsNum();
 	double getYScale();
-	void setYScale(double newS);
 	void refresh();
-	void setCurrentPower(double po);
-	void setShortPower(double po);
-	void setLongPower(double po);
-	void setCurrentAvgFreq(int af);
-	void setShortAvgFreq(int af);
-	void setLongAvgFreq(int af);
 	void ShowError(char* T);
 	void SetAudioObject(WSAudioIn* wsa);
 

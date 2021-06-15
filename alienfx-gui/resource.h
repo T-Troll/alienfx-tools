@@ -73,12 +73,13 @@
 #define IDC_REMOVEPROFILE               1033
 #define IDC_BUTTON_CM6                  1034
 #define IDC_PROFILES                    1034
+#define IDC_BATTDIM2                    1034
+#define IDC_POWER_DIM                   1034
 #define IDC_ADDPROFILE                  1035
 #define IDC_BATTMONITOR                 1036
 #define IDC_BATTPROFILE                 1037
 #define IDC_AWCC                        1038
 #define IDC_BUTTON_TESTCOLOR            1039
-#define IDC_AWCC2                       1039
 #define IDC_ESIFTEMP                    1039
 #define IDC_TYPE1                       1040
 #define IDC_SYSLINK_HOMEPAGE            1043

@@ -9,46 +9,39 @@
 #include <math.h>
 #include "resource_config.h"
 #include <string>
-//#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 #include "FXHelper.h"
 #include <algorithm>
 
 #pragma comment(lib, "winmm.lib")
+#pragma comment(lib,"Version.lib")
 
-
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
 int bars;
 int* freq;
 int nCmdShow;
 double y_scale;
 HFONT g_hfFont;
-char*** rms;
-int rmsI;
-double power;
-double short_term_power;
-double long_term_power;
-int avg_freq;
-int short_term_avg_freq;
-int long_term_avg_freq;
+
 bool axis_draw = true;
 
 ConfigHandler* config = NULL;
 FXHelper* afx = NULL;
 WSAudioIn* audio = NULL;
 
-HINSTANCE ghInstance;
+HINSTANCE ghInstance = NULL;
+
+HWND dlg = NULL;
 
 NOTIFYICONDATA niData;
 
-// default constructor
 Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf, FXHelper *fxproc)
 {
 
 	nCmdShow=mainCmdShow;
 	bars = conf->numbars;
 	y_scale = conf->res;
-	rmsI=1;
 	g_hfFont = NULL;
 	g_bOpaque = TRUE;
 	g_rgbText = RGB(255, 255, 255);
@@ -58,52 +51,19 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 	config = conf;
 	afx = fxproc;
 
-	strcpy_s(g_szClassName,14,"myWindowClass");
-	for (int i=0; i<16; i++)
-		 g_rgbCustom[i]=0;
-
-	wc.cbSize		 = sizeof(WNDCLASSEX);
-	wc.style		 = CS_VREDRAW | CS_HREDRAW;
-	wc.lpfnWndProc	 = WndProc;
-	wc.cbClsExtra	 = 0;
-	wc.cbWndExtra	 = 0;
-	wc.hInstance	 = hInstance;
-	ghInstance = hInstance;
-	//wc.hIcon		 = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hCursor		 = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-	//wc.hbrBackground = (HBRUSH) GetStockObject (WHITE_BRUSH) ;
-	wc.lpszMenuName = MAKEINTRESOURCE(IDR_MYMENU);
-	wc.lpszClassName = g_szClassName;
-	//wc.hIconSm		 = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIEN));
-	wc.hIconSm = (HICON)LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_ALIEN), IMAGE_ICON, 16, 16, 0);
 	
+	ghInstance = hInstance;
 
-	if(!RegisterClassEx(&wc))
-	{
-		MessageBox(NULL, "Window Registration Failed!", "Error!",
-			MB_ICONEXCLAMATION | MB_OK);
-	}
+	dlg = CreateDialogParam(hInstance,
+		MAKEINTRESOURCE(IDD_DIALOG_CONFIG),
+		NULL,
+		(DLGPROC)DialogConfigStatic, 0);
+	if (!dlg) return;
 
-	hwnd = CreateWindowEx(
-		WS_EX_CLIENTEDGE,
-		g_szClassName,
-		"AlienFX Haptics",
-		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 600,
-		NULL, NULL, hInstance, NULL);
+	SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIEN)));
+	SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIEN), IMAGE_ICON, 16, 16, 0));
 
-	if(hwnd == NULL)
-	{
-		MessageBox(NULL, "Window Creation Failed!", "Error!",
-			MB_ICONEXCLAMATION | MB_OK);
-	}
-
-	if (config->inpType)
-		CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
-	else
-		CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
+	ShowWindow(dlg, nCmdShow);
 }
 
 
@@ -111,7 +71,7 @@ void Graphics::start(){
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
 
-	while(GetMessage(&Msg, NULL, 0, 0) > 0)
+	while(GetMessage(&Msg, NULL, 0, 0) != 0)
 	{
 		TranslateMessage(&Msg);
 		DispatchMessage(&Msg);
@@ -122,34 +82,24 @@ int Graphics:: getBarsNum(){
 	return bars;
 }
 
-double Graphics:: getYScale(){
+double Graphics::getYScale() {
 	return y_scale;
 }
 
-void Graphics::setYScale(double newS) {
-	y_scale = newS;
-}
-void Graphics::refresh(){
-	RedrawWindow(hwnd, 0, 0, RDW_INTERNALPAINT );
-}
-void Graphics::setCurrentPower(double po){
-	power=po;
-}
-void Graphics::setShortPower(double po){
-	short_term_power=po;
-}
-void Graphics::setLongPower(double po){
-	long_term_power=po;
-}
+void DrawFreq(HDC hdc, LPRECT rcClientP);
 
-void Graphics::setCurrentAvgFreq(int af){
-	avg_freq=af;
-}
-void Graphics::setShortAvgFreq(int af){
-	short_term_avg_freq=af;
-}
-void Graphics::setLongAvgFreq(int af){
-	long_term_avg_freq=af;
+void Graphics::refresh(){
+
+	HWND hysto = GetDlgItem(dlg, IDC_VIEW_LEVELS);
+	RECT levels_rect;
+	GetClientRect(hysto, &levels_rect);
+
+	HBRUSH hb = CreateSolidBrush(RGB(0, 0, 0));
+
+	FillRect(GetDC(hysto), &levels_rect, hb);
+	DeleteObject(hb);
+
+	DrawFreq(GetDC(hysto), &levels_rect);
 }
 
 void Graphics::ShowError(char* T)
@@ -168,6 +118,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	char szSize[100]; //freq axis
 
 	HWND hwnd = WindowFromDC(hdc);
+
 	if (!IsIconic(hwnd)) {
 
 		//setting collors:
@@ -180,25 +131,25 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 
 		if (axis_draw) {
 			//draw x axis:
-			MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
-			LineTo(hdc, rcClientP->right - 50, rcClientP->bottom - 21);
-			LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 26);
-			MoveToEx(hdc, rcClientP->right - 50, rcClientP->bottom - 21, (LPPOINT)NULL);
-			LineTo(hdc, rcClientP->right - 55, rcClientP->bottom - 16);
-			TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
+			MoveToEx(hdc, 10, rcClientP->bottom - 21, (LPPOINT)NULL);
+			LineTo(hdc, rcClientP->right - 10, rcClientP->bottom - 21);
+			LineTo(hdc, rcClientP->right - 15, rcClientP->bottom - 26);
+			MoveToEx(hdc, rcClientP->right - 10, rcClientP->bottom - 21, (LPPOINT)NULL);
+			LineTo(hdc, rcClientP->right - 15, rcClientP->bottom - 16);
+			//TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
 
 			//draw y axis:
-			MoveToEx(hdc, 40, rcClientP->bottom - 21, (LPPOINT)NULL);
-			LineTo(hdc, 40, 30);
-			LineTo(hdc, 45, 35);
-			MoveToEx(hdc, 40, 30, (LPPOINT)NULL);
-			LineTo(hdc, 35, 35);
-			TextOut(hdc, 15, 10, "[Power]", 7);
+			MoveToEx(hdc, 10, rcClientP->bottom - 21, (LPPOINT)NULL);
+			LineTo(hdc, 10, 10);
+			LineTo(hdc, 15, 15);
+			MoveToEx(hdc, 10, 10, (LPPOINT)NULL);
+			LineTo(hdc, 5, 15);
+			//TextOut(hdc, 15, 10, "[Power]", 7);
 			//wsprintf(szSize, "%6d", (int)y_scale);
 			//TextOut(hdc, 150, 10, szSize, 6);
-			TextOut(hdc, 10, 40, "255", 3);
-			TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
-			TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
+			//TextOut(hdc, 10, 40, "255", 3);
+			//TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
+			//TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
 			//axis_draw = false;
 			int oldvalue = (-1);
 			double coeff = 22 / (log(22.0));
@@ -206,16 +157,16 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 				int frq = int(22 - round((log(22.0 - i) * coeff)));
 				if (frq > oldvalue) {
 					wsprintf(szSize, "%2d", frq);
-					TextOut(hdc, ((rcClientP->right - 100) * i) / 22 + 50, rcClientP->bottom - 20, szSize, 2);
+					TextOut(hdc, ((rcClientP->right - 20) * i) / 22 + 10, rcClientP->bottom - 20, szSize, 2);
 					oldvalue = frq;
 				}
 			}
 		}
 
 		for (i = 0; i < bars; i++) {
-			rectop = ((255 - freq[i]) * (rcClientP->bottom - 30)) / 255;
-			if (rectop < 50) rectop = 50;
-			Rectangle(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop, ((rcClientP->right - 120) * (i + 1)) / bars - 2 + 50, rcClientP->bottom - 30);
+			rectop = ((255 - freq[i]) * (rcClientP->bottom - 21)) / 255;
+			if (rectop < 10) rectop = 10;
+			Rectangle(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop, ((rcClientP->right - 20) * (i + 1)) / bars - 2 + 10, rcClientP->bottom - 21);
 			//wsprintf(szSize, "%3d", freq[i]);
 			//TextOut(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop - 15, szSize, 3);
 		}
@@ -224,7 +175,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 
 
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+/*LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	INT_PTR dlg;
 
@@ -251,7 +202,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					config->Save();
 					break;
 				case ID_PARAMETERS_SETTINGS:
-					dlg=DialogBox/*CreateDialog*/(GetModuleHandle(NULL),         /// instance handle
+					dlg=DialogBox(GetModuleHandle(NULL),         /// instance handle
 						MAKEINTRESOURCE(IDD_DIALOG_CONFIG),    /// dialog box template
 						hwnd,                    /// handle to parent
 						(DLGPROC)DialogConfigStatic);
@@ -328,6 +279,67 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
 	return 0;
+}*/
+
+// Message handler for about box.
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG: {
+		HRSRC hResInfo;
+		DWORD dwSize;
+		HGLOBAL hResData;
+		LPVOID pRes, pResCopy;
+		UINT uLen;
+		VS_FIXEDFILEINFO* lpFfi;
+
+		HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
+
+		hResInfo = FindResource(ghInstance, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
+		dwSize = SizeofResource(ghInstance, hResInfo);
+		hResData = LoadResource(ghInstance, hResInfo);
+		pRes = LockResource(hResData);
+		pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
+		CopyMemory(pResCopy, pRes, dwSize);
+		FreeResource(hResData);
+
+		VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+		char buf[255];
+
+		DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
+		DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
+
+		sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
+
+		SetWindowText(version_text, buf);
+
+		LocalFree(pResCopy);
+		return (INT_PTR)TRUE;
+	}
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	case WM_NOTIFY:
+		switch (LOWORD(wParam)) {
+		case IDC_SYSLINK_HOMEPAGE:
+			switch (((LPNMHDR)lParam)->code)
+			{
+
+			case NM_CLICK:
+			case NM_RETURN:
+				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
+				break;
+			} break;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
 }
 
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
@@ -347,8 +359,8 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 }
 
 bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
-	CHOOSECOLOR cc;                 // common dialog box structure 
-	static COLORREF acrCustClr[16]; // array of custom colors 
+	CHOOSECOLOR cc;                 
+	static COLORREF acrCustClr[16];
 	bool ret;
 	// Initialize CHOOSECOLOR 
 	ZeroMemory(&cc, sizeof(cc));
@@ -383,7 +395,7 @@ void ReloadLightList(HWND light_list) {
 	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 	for (int i = 0; i < lights; i++) {
 		AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(i);
-		if (afx->LocateDev(lgh.devid)) {
+		if (afx->LocateDev(lgh.devid) && !lgh.flags) {
 			int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
 			SendMessage(light_list, LB_SETITEMDATA, pos, i);
 		}
@@ -396,8 +408,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 	HWND freq_list = GetDlgItem(hDlg, IDC_FREQ);
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
-	HWND from_color = GetDlgItem(hDlg, IDC_FROMCOLOR);
-	HWND to_color = GetDlgItem(hDlg, IDC_TOCOLOR);
 	HWND low_cut = GetDlgItem(hDlg, IDC_EDIT_LOWCUT);
 	HWND hi_cut = GetDlgItem(hDlg, IDC_EDIT_HIGHCUT);
 	HWND hdecay = GetDlgItem(hDlg, IDC_EDIT_DECAY);
@@ -426,6 +436,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		//TBM_SETTICFREQ
 		SendMessage(hLowSlider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(hHiSlider, TBM_SETTICFREQ, 16, 0);
+
 	}
 	break;
 
@@ -437,12 +448,24 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		map = FindMapping(lid);
 		switch (LOWORD(wParam))
 		{
-		case IDOK: case IDCANCEL: case IDCLOSE:
-		{
+		case ID_INPUT_DEFAULTOUTPUTDEVICE:
+			config->inpType = 0;
+			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_UNCHECKED);
+			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
+			audio->RestartDevice(0);
 			config->Save();
-			EndDialog(hDlg, IDOK);
-		}
-		break;
+			break;
+		case ID_INPUT_DEFAULTINPUTDEVICE:
+			config->inpType = 1;
+			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
+			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_UNCHECKED);
+			audio->RestartDevice(1);
+			config->Save();
+			break;
+		case ID_FILE_EXIT: case IDOK: PostMessage(hDlg, WM_CLOSE, 0, 0); break;
+		case ID_HELP_ABOUT: // about dialogue here
+			DialogBox(ghInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
+			break;
 		case IDC_RESET: {
 			switch (HIWORD(wParam))
 			{
@@ -451,10 +474,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					MB_YESNO | MB_ICONWARNING) == IDYES) {
 					config->mappings.clear();
 					// clear colors...
-					SendMessage(from_color, IPM_SETADDRESS, 0, 0);
-					RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					SendMessage(to_color, IPM_SETADDRESS, 0, 0);
-					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 					RedrawButton(hDlg, IDC_BUTTON_LPC, 0, 0, 0);
 					RedrawButton(hDlg, IDC_BUTTON_HPC, 0, 0, 0);
 					//  clear cuts....
@@ -467,6 +486,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					// clear selections
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_SETCURSEL, -1, 0);
+
 				}
 			} break;
 			}
@@ -497,12 +517,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 				RedrawWindow(freq_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				// load colors...
-				unsigned clrmap = MAKEIPADDRESS(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue, map->colorfrom.cs.brightness);
-				SendMessage(from_color, IPM_SETADDRESS, 0, clrmap);
-				RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
-				SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
-				RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
 				RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
 				// load cuts...
@@ -572,9 +586,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				if (map != NULL) {
 					SetColor(hDlg, IDC_BUTTON_LPC, &map->colorfrom.cs.red,
 						&map->colorfrom.cs.green, &map->colorfrom.cs.blue);
-					unsigned clrmap = MAKEIPADDRESS(map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue, map->colorfrom.cs.brightness);
-					SendMessage(from_color, IPM_SETADDRESS, 0, clrmap);
-					RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				}
 			} break;
 		} break;
@@ -585,9 +596,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				if (map != NULL) {
 					SetColor(hDlg, IDC_BUTTON_HPC, &map->colorto.cs.red,
 						&map->colorto.cs.green, &map->colorto.cs.blue);
-					unsigned clrmap = MAKEIPADDRESS(map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue, map->colorto.cs.brightness);
-					SendMessage(to_color, IPM_SETADDRESS, 0, clrmap);
-					RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				}
 			} break;
 			} break;
@@ -599,38 +607,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				ReloadLightList(light_list);
 			} break;
 			} break;
-		case IDC_FROMCOLOR: { // should update light data
-			switch (HIWORD(wParam))
-			{
-			case EN_KILLFOCUS:/*EN_CHANGE:*/ {
-				if (map != NULL) {
-					unsigned clrmap = 0;
-					SendMessage(from_color, IPM_GETADDRESS, 0, (LPARAM) &clrmap);
-					map->colorfrom.cs.red = FIRST_IPADDRESS(clrmap);
-					map->colorfrom.cs.green = SECOND_IPADDRESS(clrmap);
-					map->colorfrom.cs.blue = THIRD_IPADDRESS(clrmap);
-					map->colorfrom.cs.brightness = FOURTH_IPADDRESS(clrmap);
-					RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
-				}
-			} break;
-			}
-		} break;
-		case IDC_TOCOLOR: { // the same
-			switch (HIWORD(wParam))
-			{
-			case EN_KILLFOCUS:/*EN_CHANGE:*/ {
-				if (map != NULL) {
-					unsigned clrmap = 0;
-					SendMessage(to_color, IPM_GETADDRESS, 0, (LPARAM) &clrmap);
-					map->colorto.cs.red = FIRST_IPADDRESS(clrmap);
-					map->colorto.cs.green = SECOND_IPADDRESS(clrmap);
-					map->colorto.cs.blue = THIRD_IPADDRESS(clrmap);
-					map->colorto.cs.brightness = FOURTH_IPADDRESS(clrmap);
-					RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
-				}
-			} break;
-			}
-		} break;
 		case IDC_BUTTON_REMOVE: {
 			switch (HIWORD(wParam))
 			{
@@ -642,10 +618,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 						if (Iter->devid == lgh.devid && Iter->lightid == lgh.lightid) {
 							config->mappings.erase(Iter);
 							// clear colors...
-							SendMessage(from_color, IPM_SETADDRESS, 0, 0);
-							RedrawWindow(from_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-							SendMessage(to_color, IPM_SETADDRESS, 0, 0);
-							RedrawWindow(to_color, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 							RedrawButton(hDlg, IDC_BUTTON_LPC, 0, 0, 0);
 							RedrawButton(hDlg, IDC_BUTTON_HPC, 0, 0, 0);
 							//  clear cuts....
@@ -665,8 +637,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 		} break;
 		}
-	}
-	break;
+	} break;
 	case WM_HSCROLL: {
 		int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
 		int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
@@ -692,6 +663,63 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		} break;
 		}
 	} break;
+	case WM_SIZE:
+		if (wParam == SIZE_MINIMIZED) {
+			// go to tray...
+
+			ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+			niData.cbSize = sizeof(NOTIFYICONDATA);
+			niData.uID = IDI_ALIEN;
+			niData.uFlags = NIF_ICON | NIF_MESSAGE;
+			niData.hIcon =
+				(HICON)LoadImage(GetModuleHandle(NULL),
+					MAKEINTRESOURCE(IDI_ALIEN),
+					IMAGE_ICON,
+					GetSystemMetrics(SM_CXSMICON),
+					GetSystemMetrics(SM_CYSMICON),
+					LR_DEFAULTCOLOR);
+			niData.hWnd = hDlg;
+			niData.uCallbackMessage = WM_APP + 1;
+			Shell_NotifyIcon(NIM_ADD, &niData);
+			ShowWindow(hDlg, SW_HIDE);
+		} break;
+	case WM_APP + 1: {
+		switch (lParam)
+		{
+		case WM_LBUTTONDBLCLK:
+		case WM_LBUTTONUP:
+			ShowWindow(hDlg, SW_RESTORE);
+			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+			Shell_NotifyIcon(NIM_DELETE, &niData);
+			break;
+		case WM_RBUTTONUP:
+		case WM_CONTEXTMENU:
+			PostMessage(hDlg, WM_CLOSE, 0, 0);
+			break;
+		}
+		break;
+	} break;
+	case WM_DRAWITEM:
+		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
+			RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, 0, 0, 0);
+			break;
+		case IDC_VIEW_LEVELS:
+			HWND hysto = GetDlgItem(dlg, IDC_VIEW_LEVELS);
+			RECT levels_rect;
+			GetClientRect(hysto, &levels_rect);
+
+			HBRUSH hb = CreateSolidBrush(RGB(0, 0, 0));
+
+			FillRect(GetDC(hysto), &levels_rect, hb);
+			DeleteObject(hb);
+
+			DrawFreq(GetDC(hysto), &levels_rect);
+		}
+		break;
+	case WM_CLOSE: config->Save(); DestroyWindow(hDlg); break;
+	case WM_DESTROY: Shell_NotifyIcon(NIM_DELETE, &niData); PostQuitMessage(0); break;
 	default: return false;
 	}
 

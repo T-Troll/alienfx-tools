@@ -26,7 +26,7 @@ const int NUMPTS = 2048;// 44100 / 15;
 
 DWORD WINAPI resample(LPVOID lpParam);
 
-bool tdone = false;
+int tdone = 0;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine, int nCmdShow)
@@ -44,24 +44,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Graphika = new Graphics(hInstance ,nCmdShow, freq, &conf, FXproc);
 	dftG = new DFT_gosu(NUMPTS, Graphika->getBarsNum() , Graphika->getYScale() , freq);
 
-	DWORD (*callbackfunc)(LPVOID) = resample;
-
 	int rate;
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-	WSAudioIn wsa(rate, NUMPTS, conf.inpType, Graphika, callbackfunc);
+	WSAudioIn wsa(rate, NUMPTS, conf.inpType, Graphika, resample);
 	dftG->setSampleRate(rate);
 	wsa.startSampling();
 
 	Graphika->start();
-	tdone = 1;
-	Sleep(200);
 	wsa.stopSampling();
+	while(!tdone)
+		Sleep(20);
 
-	//killing dft:
 	dftG->kill();
+	FXproc->FadeToBlack();
 
 	free(freq);
+	delete FXproc;
+	delete dftG;
+	delete Graphika;
 
 	return 1;
 }
@@ -69,16 +70,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 DWORD WINAPI resample(LPVOID lpParam)
 {
-	if (tdone) {
-		FXproc->FadeToBlack(); return 0;
-	}
+	tdone = 0;
 	double* waveDouble = (double*)lpParam;
-
-	//dftG->setYscale(Graphika->getYScale());
 
 	dftG->calc(waveDouble);
 
 	Graphika->refresh();
 	FXproc->Refresh(Graphika->getBarsNum());
+	tdone = 1;
 	return 0;
 }

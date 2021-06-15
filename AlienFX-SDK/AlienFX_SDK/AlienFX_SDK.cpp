@@ -759,7 +759,7 @@ namespace AlienFX_SDK
 				OutputDebugString(buff);
 			}
 #endif*/
-			return status == ALIENFX_NEW_READY || status == ALIENFX_NEW_WAITUPDATE;
+			return status == 0 || status == ALIENFX_NEW_READY || status == ALIENFX_NEW_WAITUPDATE;
 		} break;
 		case API_V2: case API_V1: {
 			status = AlienfxWaitForBusy();

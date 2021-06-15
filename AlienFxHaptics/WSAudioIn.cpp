@@ -229,13 +229,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					if (updHandle)
 						GetExitCodeThread(updHandle, &exitCode);
 					if (exitCode != STILL_ACTIVE) {
-						updHandle = CreateThread(
-							NULL,              // default security
-							0,                 // default stack size
-							mFunction,        // name of the thread function
-							waveD,
-							0,                 // default startup flags
-							&dwThreadID);
+						updHandle = CreateThread(NULL, 0, mFunction, waveD, 0, &dwThreadID);
 					}
 #ifdef _DEBUG
 					else {

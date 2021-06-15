@@ -980,10 +980,10 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
         map->r = savedColor.r;
         map->g = savedColor.g;
         map->b = savedColor.b;
-        RedrawButton(hDlg, id, map->r, map->g, map->b);
         fxhl->RefreshState();
     } else
         runLightsRefresh = false;
+    RedrawButton(hDlg, id, map->r, map->g, map->b);
     return ret;
 }
 
@@ -1068,7 +1068,7 @@ int UpdateLightList(HWND light_list) {
     return pos;
 }
 
-int UpdateLightListC(HWND light_list, int pid) {
+int UpdateLightListC(HWND light_list, int pid, int lid) {
 
     int pos = -1;
     size_t lights = fxhl->afx_dev.GetMappings()->size();
@@ -1078,6 +1078,8 @@ int UpdateLightListC(HWND light_list, int pid) {
         if (pid == lgh.devid) { // && fxhl->LocateDev(lgh.devid)) {
             pos = (int)SendMessage(light_list, CB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
             SendMessage(light_list, CB_SETITEMDATA, pos, i);
+            if (lid == lgh.lightid)
+                SendMessage(light_list, CB_SETCURSEL, pos, 0);
         }
     }
     RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
@@ -1552,8 +1554,6 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             }
             break;
         }
-        //if (map != NULL)
-        //   fxhl->Refresh();
     } break;
     case WM_DRAWITEM:
         switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
@@ -1670,7 +1670,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 conf->lastActive = eDid;
             }
 
-            UpdateLightListC(light_list, eDid);
+            UpdateLightListC(light_list, eDid, -1);
 
             BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();
             if (status && status != 0xff)
@@ -1692,7 +1692,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             case CBN_SELCHANGE: {
                 //fxhl->afx_dev->AlienFXChangeDevice(did);
                 conf->lastActive = did;
-                UpdateLightListC(light_list, did);
+                UpdateLightListC(light_list, did, -1);
                 if (fxhl->LocateDev(did)->AlienfxGetDeviceStatus())
                     SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
                 else
@@ -1777,7 +1777,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             dev.name = buffer;
             fxhl->afx_dev.GetMappings()->push_back(dev);
             fxhl->afx_dev.SaveMappings();
-            UpdateLightListC(light_list, eDid);
+            eLid = cid;
+            lItem = UpdateLightListC(light_list, eDid, cid);
+            SetDlgItemInt(hDlg, IDC_LIGHTID, cid, false);
+            CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
         } break;
         case IDC_BUTTON_REML:
             if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
@@ -1806,7 +1809,15 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     }
                 fxhl->afx_dev.SaveMappings();
                 conf->Save();
-                UpdateLightListC(light_list, eDid);
+                if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
+                    fxhl->ResetPower(did);
+                    MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning!",
+                        MB_OK);
+                    CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
+                }
+                UpdateLightListC(light_list, eDid, -1);
+                SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
+                eLid = -1; lItem = -1;
             }
             break;
         case IDC_BUTTON_RESETCOLOR:
@@ -1846,13 +1857,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         } break;
         case IDC_ISPOWERBUTTON:
             if (lid != -1) {
-                unsigned flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-                fxhl->afx_dev.SetFlags(did, lid, flags);
-                // remove power button config from chip if unchecked
-                if (!flags) {
+                bool flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
+                if (flags)
+                    if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning!",
+                    MB_YESNO | MB_ICONWARNING) == IDYES) {
+                        fxhl->afx_dev.SetFlags(did, lid, flags);
+                    } else
+                        CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
+                else {
+                    // remove power button config from chip config if unchecked
                     fxhl->ResetPower(did);
                     MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system!", "Warning!",
                         MB_OK);
+                    fxhl->afx_dev.SetFlags(did, lid, flags);
                 }
                 fxhl->Refresh(true);
             }
