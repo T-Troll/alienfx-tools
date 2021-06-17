@@ -89,5 +89,6 @@ public:
 	int Save();
 	static bool sortMappings(lightset i, lightset j);
 	void updateProfileByID(int id, std::string name, std::string app, DWORD flags);
+	profile* FindProfile(int id);
 };
 

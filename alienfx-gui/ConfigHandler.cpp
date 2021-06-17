@@ -81,6 +81,16 @@ void ConfigHandler::updateProfileByID(int id, std::string name, std::string app,
     profiles.push_back(prof);
 }
 
+profile* ConfigHandler::FindProfile(int id) {
+    profile* prof = NULL;
+    for (int i = 0; i < profiles.size(); i++)
+        if (profiles[i].id == id) {
+            prof = &profiles[i];
+            break;
+        }
+    return prof;
+}
+
 int ConfigHandler::Load() {
     int size = 4, size_c = 4*16;
 
@@ -559,7 +569,7 @@ int ConfigHandler::Save() {
         4 * 16
     );
     // set current profile mappings to current set!
-    profiles[activeProfile].lightsets = active_set;
+    FindProfile(activeProfile)->lightsets = active_set;
     // clear old profiles - check for clean ram (debug!)
     if (profiles.size() > 0) {
         RegDeleteTreeA(hKey1, "Profiles");

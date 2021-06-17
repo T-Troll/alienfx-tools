@@ -1709,7 +1709,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
                 // store profile...
-                conf->profiles[conf->activeProfile].lightsets = conf->active_set;
+                eve->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
                 // delete from all profiles...
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++) {
@@ -1722,7 +1722,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         }
                 }
                 // reset active mappings
-                conf->active_set = conf->profiles[conf->activeProfile].lightsets;
+                conf->active_set = eve->FindProfile(conf->activeProfile)->lightsets;
                 std::vector <AlienFX_SDK::mapping>* mapps = fxhl->afx_dev.GetMappings();
                 for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
                     Iter != mapps->end(); Iter++)
@@ -1747,7 +1747,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
                 // store profile...
-                conf->profiles[conf->activeProfile].lightsets = conf->active_set;
+                eve->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
                 // delete from all profiles...
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++) {
@@ -1760,7 +1760,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         }
                 }
                 // reset active mappings
-                conf->active_set = conf->profiles[conf->activeProfile].lightsets;
+                conf->active_set = eve->FindProfile(conf->activeProfile)->lightsets;
             }
             break;
         case IDC_BUTTON_TESTCOLOR: {
