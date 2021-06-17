@@ -86,11 +86,12 @@ public:
 	HRESULT get_frame(IDXGISurface1** out_surface, uint32_t timeout);
 	void release_frame();
 	bool is_primary();
+
 private:
-	CComPtr<ID3D11Device> m_device;
-	CComPtr<ID3D11DeviceContext> m_device_context;
-	CComPtr<IDXGIOutput1> m_output;
-	CComPtr<IDXGIOutputDuplication> m_dxgi_output_dup;
+	CComQIPtr<ID3D11Device> m_device;
+	CComQIPtr<ID3D11DeviceContext> m_device_context; // all 4 was CComPtr
+	CComQIPtr<IDXGIOutput1> m_output;
+	CComQIPtr<IDXGIOutputDuplication> m_dxgi_output_dup;
 };
 
 class DXGIManager {

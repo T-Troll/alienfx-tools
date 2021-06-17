@@ -148,7 +148,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>Default</ConformanceMode>
@@ -157,8 +157,13 @@
       </AdditionalIncludeDirectories>
       <DebugInformationFormat>None</DebugInformationFormat>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <IntelJCCErratum>true</IntelJCCErratum>
+      <StringPooling>true</StringPooling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <Optimization>MinSpace</Optimization>
+      <OmitFramePointers>true</OmitFramePointers>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -167,6 +172,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalLibraryDirectories>./opencv/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>./opencv/lib/zlib.lib;./opencv/lib/opencv_core440.lib;./opencv/lib/opencv_imgproc440.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>

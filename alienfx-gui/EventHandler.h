@@ -18,8 +18,8 @@ public:
 	EventHandler(ConfigHandler* config, FXHelper* fx);
 	~EventHandler();
 
-	bool stop = false;
-	bool stopProf = false;
+	//bool stop = false;
+	//bool stopProf = false;
 	FXHelper* fxh = NULL;
 	ConfigHandler* conf = NULL;
 

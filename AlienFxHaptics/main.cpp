@@ -24,10 +24,6 @@ FXHelper* FXproc;
 
 const int NUMPTS = 2048;// 44100 / 15;
 
-DWORD WINAPI resample(LPVOID lpParam);
-
-int tdone = 0;
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine, int nCmdShow)
 {
@@ -47,14 +43,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	int rate;
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-	WSAudioIn wsa(rate, NUMPTS, conf.inpType, Graphika, resample);
+	WSAudioIn wsa(rate, NUMPTS, conf.inpType, Graphika, FXproc, dftG);
 	dftG->setSampleRate(rate);
 	wsa.startSampling();
 
 	Graphika->start();
 	wsa.stopSampling();
-	while(!tdone)
-		Sleep(20);
 
 	dftG->kill();
 	FXproc->FadeToBlack();
@@ -65,18 +59,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	delete Graphika;
 
 	return 1;
-}
-
-
-DWORD WINAPI resample(LPVOID lpParam)
-{
-	tdone = 0;
-	double* waveDouble = (double*)lpParam;
-
-	dftG->calc(waveDouble);
-
-	Graphika->refresh();
-	FXproc->Refresh(Graphika->getBarsNum());
-	tdone = 1;
-	return 0;
 }

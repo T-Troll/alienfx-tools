@@ -9,7 +9,7 @@ ConfigHandler::ConfigHandler() {
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey1,
         &dwDisposition);
@@ -18,17 +18,16 @@ ConfigHandler::ConfigHandler() {
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey2,
         &dwDisposition);
-    //RegCreateKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", &hKey2);
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxgui\\Events"),
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey3,
         &dwDisposition);
@@ -37,7 +36,7 @@ ConfigHandler::ConfigHandler() {
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey4,
         &dwDisposition);
@@ -411,7 +410,7 @@ int ConfigHandler::Save() {
         RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)pathBuffer, strlen(pathBuffer)+1);
     }
     else {
-        // remove key.
+        // set to zero string (can't remove without admin rights)
         RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)&"", 1);
     }
 

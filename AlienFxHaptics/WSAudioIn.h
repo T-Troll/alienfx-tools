@@ -4,13 +4,12 @@
 #include <windows.h>
 #include <Audioclient.h>
 #include <Mmdeviceapi.h>
-//#include "Graphics.h"
 
 class WSAudioIn
 {
 public:
 
-	WSAudioIn(int& rate, int N, int type, void* gr, DWORD(*func)(LPVOID));
+	WSAudioIn(int& rate, int N, int type, void* gr, void* fx, void* dft);
 	~WSAudioIn();
 	void startSampling();
 	void stopSampling();

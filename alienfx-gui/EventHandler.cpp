@@ -10,7 +10,7 @@
 DWORD WINAPI CEventProc(LPVOID);
 DWORD WINAPI CProfileProc(LPVOID);
 
-HANDLE dwHandle = 0, dwProfile = 0;
+HANDLE dwHandle = 0, dwProfile = 0, stopEvents = 0, stopProfile = 0;
 DWORD dwThreadID;
 
 void EventHandler::ChangePowerState()
@@ -47,7 +47,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 {
     if (conf->offWithScreen) {
         conf->stateOn = conf->lightsOn && state;
-        fxh->Refresh(true);// State(true);
+        fxh->Refresh(true);
     }
 }
 
@@ -87,19 +87,13 @@ void EventHandler::SwitchActiveProfile(int newID)
 void EventHandler::StartEvents()
 {
     if (!dwHandle && conf->monState) {
-        fxh->RefreshMon();// RefreshState();
-        // start threas with this as a param
+        fxh->RefreshMon();
+        // start thread...
 #ifdef _DEBUG
         OutputDebugString("Event thread start.\n");
 #endif
-        this->stop = false;
-        dwHandle = CreateThread(
-            NULL,              // default security
-            0,                 // default stack size
-            CEventProc,        // name of the thread function
-            this,
-            0,                 // default startup flags
-            &dwThreadID);
+        stopEvents = CreateEvent(NULL, true, false, NULL);
+        dwHandle = CreateThread( NULL, 0, CEventProc, this, 0, &dwThreadID);
     }
 }
 
@@ -110,13 +104,10 @@ void EventHandler::StopEvents()
 #ifdef _DEBUG
         OutputDebugString("Event thread stop.\n");
 #endif
-        this->stop = true; 
-        GetExitCodeThread(dwHandle, &exitCode);
-        while (exitCode == STILL_ACTIVE) {
-            Sleep(50);
-            GetExitCodeThread(dwHandle, &exitCode);
-        }
+        SetEvent(stopEvents);
+        WaitForSingleObject(dwHandle, 1000);
         CloseHandle(dwHandle);
+        CloseHandle(stopEvents);
         dwHandle = 0;
         fxh->Refresh(true);
     }
@@ -125,18 +116,12 @@ void EventHandler::StopEvents()
 void EventHandler::StartProfiles()
 {
     DWORD dwThreadID;
-    this->stopProf = false;
     if (dwProfile == 0 && conf->enableProf) {
 #ifdef _DEBUG
         OutputDebugString("Profile thread starting.\n");
 #endif
-        dwProfile = CreateThread(
-            NULL,              // default security
-            0,                 // default stack size
-            CProfileProc,        // name of the thread function
-            this,
-            0,                 // default startup flags
-            &dwThreadID);
+        stopProfile = CreateEvent(NULL, true, false, NULL);
+        dwProfile = CreateThread( NULL, 0, CProfileProc, this, 0, &dwThreadID);
     }
 }
 
@@ -147,13 +132,10 @@ void EventHandler::StopProfiles()
 #ifdef _DEBUG
         OutputDebugString("Profile thread stop.\n");
 #endif
-        this->stopProf = true;
-        GetExitCodeThread(dwProfile, &exitCode);
-        while (exitCode == STILL_ACTIVE) {
-            Sleep(50);
-            GetExitCodeThread(dwProfile, &exitCode);
-        }
+        SetEvent(stopProfile);
+        WaitForSingleObject(dwProfile, 1000);
         CloseHandle(dwProfile);
+        CloseHandle(stopProfile);
         dwProfile = 0;
     }
 }
@@ -194,7 +176,7 @@ DWORD CProfileProc(LPVOID param) {
     
     unsigned int i;
 
-    while (!src->stopProf) {
+    while (WaitForSingleObject(stopProfile, 50) == WAIT_TIMEOUT) {
         unsigned newp = src->conf->activeProfile;
         bool notDefault = false;
 
@@ -216,7 +198,7 @@ DWORD CProfileProc(LPVOID param) {
 
             for (int j = 0; j < src->conf->profiles.size(); j++)
                 if (src->conf->profiles[j].triggerapp == std::string(szProcessName)) {
-                    // found trigger
+                    // active app is belong to profile!
                     newp = src->conf->profiles[j].id;
                     notDefault = true;
                     break;
@@ -271,7 +253,6 @@ DWORD WINAPI CEventProc(LPVOID param)
     
     LPCTSTR COUNTER_PATH_CPU = "\\Processor(_Total)\\% Processor Time",
         COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
-        //COUNTER_PATH_RAM = "\\Memory\\Avaliable MBytes",
         COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
         COUNTER_PATH_HOT = "\\Thermal Zone Information(*)\\Temperature",
         COUNTER_PATH_HOT2 = "\\EsifDeviceInformation(*)\\Temperature",
@@ -290,7 +271,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 
     long maxnet = 1;
 
-    //PDH_FMT_COUNTERVALUE_ITEM gpuArray[300] = { 0 };
     long maxgpuarray = 10, maxnetarray = 10, maxtemparray = 10;
     PDH_FMT_COUNTERVALUE_ITEM* gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
     PDH_FMT_COUNTERVALUE_ITEM* netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
@@ -335,9 +315,9 @@ DWORD WINAPI CEventProc(LPVOID param)
         0,
         &hTempCounter2);
 
-    while (!src->stop) {
+    while (WaitForSingleObject(stopEvents, 150) == WAIT_TIMEOUT) {
         // wait a little...
-        Sleep(150);
+        //Sleep(150);
 
         // get indicators...
         PdhCollectQueryData(hQuery);

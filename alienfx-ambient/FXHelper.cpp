@@ -50,7 +50,7 @@ int FXHelper::Refresh(UCHAR* img)
 		unsigned r = 0, g = 0, b = 0, size = (unsigned) map.map.size();
 		if (dev && !afx_dev.GetFlags(map.devid, map.lightid) && size > 0) {
 			for (unsigned j = 0; j < size; j++) {
-				r += img[3 * map.map[j]+2];
+				r += img[3 * map.map[j] + 2];
 				g += img[3 * map.map[j] + 1];
 				b += img[3 * map.map[j]];
 			}

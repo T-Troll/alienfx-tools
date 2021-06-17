@@ -111,7 +111,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				// counter
 				double coeff = 0.0, ccut = Iter->eve[2].fs.b.cut;
 				switch (Iter->eve[2].source) {
-				case 0: if (/*!force &&*/ valid && (lCPU == cCPU || lCPU < ccut && cCPU < ccut)) continue; coeff = cCPU; break;
+				case 0: if (valid && (lCPU == cCPU || lCPU < ccut && cCPU < ccut)) continue; coeff = cCPU; break;
 				case 1: if (valid && (lRAM == cRAM || lRAM < ccut && cRAM < ccut)) continue; coeff = cRAM; break;
 				case 2: if (valid && (lHDD == cHDD || lHDD < ccut && cHDD < ccut)) continue; coeff = cHDD; break;
 				case 3: if (valid && (lGPU == cGPU || lGPU < ccut && cGPU < ccut)) continue; coeff = cGPU; break;

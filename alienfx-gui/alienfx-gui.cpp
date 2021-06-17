@@ -27,16 +27,10 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 NOTIFYICONDATA niData;
 
-// Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-HWND                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+HWND InitInstance(HINSTANCE, int);
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -237,11 +231,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_ALIENFXGUI, szWindowClass, MAX_LOADSTRING);
-    //MyRegisterClass(hInstance);
-
     conf = new ConfigHandler();
     conf->Load();
     fxhl = new FXHelper(conf);
@@ -262,9 +251,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         // Perform application initialization:
         if (!(mDlg = InitInstance(hInstance, nCmdShow)))
-        {
             return FALSE;
-        }
 
         //register global hotkeys...
         RegisterHotKey(
@@ -299,10 +286,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         MSG msg;
         // Main message loop:
         while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-            if (!TranslateAccelerator(
-                mDlg,      // handle to receiving window 
-                hAccelTable,        // handle to active accelerator table 
-                &msg))         // message data 
+            if (!TranslateAccelerator(mDlg, hAccelTable, &msg))
             {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
@@ -330,9 +314,9 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     HWND dlg;
 
-    dlg = CreateDialogParam(hInstance,//GetModuleHandle(NULL),         /// instance handle
-        MAKEINTRESOURCE(IDD_MAINWINDOW),    /// dialog box template
-        NULL,                    /// handle to parent
+    dlg = CreateDialogParam(hInstance,
+        MAKEINTRESOURCE(IDD_MAINWINDOW),
+        NULL,
         (DLGPROC)DialogConfigStatic, 0);
     if (!dlg) return NULL;
 
@@ -426,7 +410,6 @@ DLGTEMPLATE* DoLockDlgRes(LPCTSTR lpszResName)
 {
     HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG);
 
-    // Note that g_hInst is the global instance handle
     HGLOBAL hglb = LoadResource(hInst, hrsrc);
     return (DLGTEMPLATE*)LockResource(hglb);
 }
@@ -469,8 +452,6 @@ VOID OnSelChanged(HWND hwndDlg)
             (pHdr->rcDisplay.right - pHdr->rcDisplay.left), //- cxMargin - (GetSystemMetrics(SM_CXDLGFRAME)) + 1,
             (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top), //- /*cyMargin - */(GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION) + 3,
             SWP_SHOWWINDOW);
-    //ShowWindow(pHdr->hwndDisplay, SW_SHOW);
-    //SetActiveWindow(pHdr->hwndDisplay);
     return;
 }
 
@@ -492,8 +473,6 @@ void ReloadProfileList(HWND hDlg) {
     }
 
     EnableWindow(profile_list, !conf->enableProf);
-
-    //OnSelChanged(tab_list);
 }
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -573,12 +552,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         {
         case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
         {
-            //eve->StopEvents();
             Shell_NotifyIcon(NIM_DELETE, &niData);
             EndDialog(hDlg, IDOK);
             DestroyWindow(hDlg);
         } break;
-        case IDM_ABOUT: // about dialogue here
+        case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
             break;
         case IDC_BUTTON_MINIMIZE:
@@ -663,22 +641,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg,       // handle to window
-                HWND_TOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
-            SetWindowPos(hDlg,       // handle to window
-                HWND_NOTOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
+            SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+            SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             break;
         case WM_RBUTTONUP: case WM_CONTEXTMENU: {
             POINT lpClickPoint;
@@ -725,7 +689,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         switch (GetMenuItemID(menu, idx)) {
         case ID_TRAYMENU_EXIT:
         {
-            //eve->StopEvents();
             Shell_NotifyIcon(NIM_DELETE, &niData);
             EndDialog(hDlg, IDOK);
             DestroyWindow(hDlg);
@@ -754,23 +717,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_RESTORE:
             ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg,       // handle to window
-                HWND_TOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
-            SetWindowPos(hDlg,       // handle to window
-                HWND_NOTOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
-            //Shell_NotifyIcon(NIM_DELETE, &niData);
+            SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+            SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             break;
         case ID_TRAYMENU_PROFILE_SELECTED: {
             if (!conf->enableProf && idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
@@ -812,6 +760,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             }
         } break;
         case PBT_APMSUSPEND:
+            // Sleep initiated.
 #ifdef _DEBUG
             OutputDebugString("Sleep/hibernate initiated\n");
 #endif
@@ -826,12 +775,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
         OutputDebugString("Shutdown initiated\n");
 #endif
-        eve->StopProfiles();
-        eve->StopEvents();
-        //fxhl->Refresh(true);
+        //Shell_NotifyIcon(NIM_DELETE, &niData);
         EndDialog(hDlg, IDOK);
         DestroyWindow(hDlg);
-        return true;
         break;
     case WM_HOTKEY:
         switch (wParam) {
@@ -924,7 +870,6 @@ UINT_PTR Lpcchookproc(
     LPARAM lParam
 ) {
     DRAWITEMSTRUCT* item = 0;
-    //HWND r = GetDlgItem(hDlg, 706);
     UINT r = 0, g = 0, b = 0;
 
     switch (message)
@@ -947,7 +892,7 @@ UINT_PTR Lpcchookproc(
 }
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
-    CHOOSECOLOR cc;                 // common dialog box structure 
+    CHOOSECOLOR cc;      
     bool ret;
 
     AlienFX_SDK::afx_act savedColor = *map;
@@ -966,13 +911,7 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 
     mod = map;
     runLightsRefresh = true;
-    crRefresh = CreateThread(
-        NULL,              // default security
-        0,                 // default stack size
-        CColorRefreshProc,        // name of the thread function
-        mmap,
-        0,                 // default startup flags
-        &crThreadID);
+    crRefresh = CreateThread(NULL, 0, CColorRefreshProc, mmap, 0, &crThreadID);
 
     if (!(ret = ChooseColor(&cc)))
     {
@@ -1009,7 +948,7 @@ void RebuildEffectList(HWND eff_list, lightset* mmap) {
     HIMAGELIST hSmall;
     hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
         GetSystemMetrics(SM_CYSMICON),
-        ILC_COLOR32/*ILC_MASK*/, 1, 1);
+        ILC_COLOR32, 1, 1);
     for (int i = 0; i < mmap->eve[0].map.size(); i++) {
         UINT* picData = (UINT*)malloc(GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON) * sizeof(UINT));
         for (int j = 0; j < GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON); j++)
@@ -1097,8 +1036,6 @@ HWND CreateToolTip(HWND hwndParent)
     SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-    // Set up "tool" information. In this case, the "tool" is the entire parent window.
-
     TOOLINFO ti = { 0 };
     ti.cbSize = sizeof(TOOLINFO);
     ti.uFlags = TTF_SUBCLASS;
@@ -1108,7 +1045,6 @@ HWND CreateToolTip(HWND hwndParent)
 
     GetClientRect(hwndParent, &ti.rect);
 
-    // Associate the tooltip with the "tool" window.
     SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
     return hwndTT;
 }
@@ -1117,7 +1053,6 @@ char tBuff[4], lBuff[4];
 HWND sTip = 0, lTip = 0;
 
 void SetSlider(HWND tt, char* buff, int value) {
-    //HWND tt = (HWND)SendMessage(sControl, TBM_GETTOOLTIPS, 0, 0);
     TOOLINFO ti = { 0 };
     ti.cbSize = sizeof(ti);
     ti.lpszText = buff;
@@ -1132,7 +1067,6 @@ void SetSlider(HWND tt, char* buff, int value) {
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
-    //int pid = fxhl->afx_dev->GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS),
         eff_list = GetDlgItem(hDlg, IDC_EFFECTS_LIST),
         s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
@@ -1176,9 +1110,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         if (eItem != (-1)) {
             SendMessage(light_list, LB_SETCURSEL, eItem, 0);
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-            //lightset* mmap = FindMapping((int)SendMessage(light_list, LB_GETITEMDATA, eItem, 0));
-            //if (mmap != NULL)
-            //    RebuildEffectList(eff_list, mmap);
         }
     } break;
     case WM_COMMAND: {
@@ -1203,7 +1134,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     newmap.lightid = lgh.lightid;
                     newmap.eve[0].fs.b.flags = 1;
                     newmap.eve[0].map.push_back(act);
-                    if (lgh.flags)//fxhl->afx_dev.GetFlags(pid, lid))
+                    if (lgh.flags)
                         newmap.eve[0].map.push_back(act);
                     newmap.eve[1].map.push_back(act);
                     newmap.eve[1].map.push_back(act);
@@ -1243,7 +1174,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     mmap->eve[0].map[effID].type = lType1;
                     RebuildEffectList(eff_list, mmap);
                     fxhl->RefreshOne(mmap, true, true);
-                    //fxhl->RefreshState(true);
                 }
             }
             break;
@@ -1255,7 +1185,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->eve[0].map[effID]);
                     RebuildEffectList(eff_list, mmap);
                     fxhl->RefreshOne(mmap, true, true);
-                    //fxhl->RefreshState();
                 }
             } break;
             } break;
@@ -1264,7 +1193,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 AlienFX_SDK::afx_act act = mmap->eve[0].map.back();
                 mmap->eve[0].map.push_back(act);
                 RebuildEffectList(eff_list, mmap);
-                //fxhl->RefreshState(true);
                 fxhl->RefreshOne(mmap, true, true);
             }
             break;
@@ -1287,7 +1215,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 }
                 RebuildEffectList(eff_list, mmap);
                 fxhl->RefreshOne(mmap, true, true);
-                //fxhl->RefreshState(true);
             }
             break;
         case IDC_BUTTON_SETALL:
@@ -1323,7 +1250,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     mmap->eve[0].map[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                     SetSlider(lTip, lBuff, mmap->eve[0].map[0].time);
                 }
-                //fxhl->Refresh();
                 fxhl->RefreshOne(mmap, true, true);
             }
         break;
@@ -1377,7 +1303,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    //int pid = fxhl->afx_dev->GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
         mode_light = GetDlgItem(hDlg, IDC_CHECK_NOEVENT),
         mode_power = GetDlgItem(hDlg, IDC_CHECK_POWER),
@@ -1610,7 +1535,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 {
     lightset* map = NULL;
     unsigned i;
-    //int pid;// = fxhl->afx_dev->GetPID();
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
         dev_list = GetDlgItem(hDlg, IDC_DEVICES),
         light_id = GetDlgItem(hDlg, IDC_LIGHTID);
@@ -1690,7 +1614,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             switch (HIWORD(wParam))
             {
             case CBN_SELCHANGE: {
-                //fxhl->afx_dev->AlienFXChangeDevice(did);
                 conf->lastActive = did;
                 UpdateLightListC(light_list, did, -1);
                 if (fxhl->LocateDev(did)->AlienfxGetDeviceStatus())
@@ -1809,7 +1732,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     }
                 fxhl->afx_dev.SaveMappings();
                 conf->Save();
-                if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
+                if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
                     fxhl->ResetPower(did);
                     MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning!",
                         MB_OK);
@@ -1865,10 +1788,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     } else
                         CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
                 else {
-                    // remove power button config from chip config if unchecked
-                    fxhl->ResetPower(did);
-                    MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system!", "Warning!",
-                        MB_OK);
+                    // remove power button config from chip config if unchecked and confirmed
+                    if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning!",
+                        MB_YESNO | MB_ICONWARNING) == IDYES)
+                        fxhl->ResetPower(did);
                     fxhl->afx_dev.SetFlags(did, lid, flags);
                 }
                 fxhl->Refresh(true);

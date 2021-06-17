@@ -1,6 +1,8 @@
 #include "WSAudioIn.h"
 #include <math.h>
 #include "Graphics.h"
+#include "FXHelper.h"
+#include "DFT_gosu.h"
 
 //void CALLBACK WSwaveInProc(HWAVEIN hWaveIn, UINT message, DWORD dwInstance, DWORD wParam, DWORD lParam);
 DWORD WINAPI WSwaveInProc(LPVOID);
@@ -15,22 +17,24 @@ const IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
 REFERENCE_TIME hnsRequestedDuration = 0;
 
 int NUMSAM;
-bool done = false, isDone = false;
 double* waveD;
 int nChannel;
 int bytePerSample;
 int blockAlign;
 
-HANDLE hEvent = 0;
+HANDLE hEvent = 0, stopEvent = 0, updateEvent = 0, dwHandle = 0;
 
-DWORD(*mFunction)(LPVOID);
+DWORD WINAPI resample(LPVOID lpParam);
 
 Graphics* gHandle;
+FXHelper* fxh;
+DFT_gosu* dftGG;
 
-WSAudioIn::WSAudioIn(int &rate_e, int N, int type, void* gr, DWORD(*func)(LPVOID))
+WSAudioIn::WSAudioIn(int &rate_e, int N, int type, void* gr, void* fx, void* dft)
 {
 	NUMSAM = N;
-	mFunction = func;
+	fxh = (FXHelper*) fx;
+	dftGG = (DFT_gosu*) dft;
 	waveD = (double*)malloc(NUMSAM * sizeof(double));
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	gHandle = (Graphics *) gr;
@@ -48,26 +52,21 @@ WSAudioIn::~WSAudioIn()
 void WSAudioIn::startSampling()
 {
 	DWORD dwThreadID;
-	done = false;
-	isDone = false;
 	// creating listener thread...
 	if (pAudioClient && rate > 0) {
-		CreateThread(
-			NULL,              // default security
-			0,                 // default stack size
-			WSwaveInProc,        // name of the thread function
-			pCaptureClient,
-			0,                 // default startup flags
-			&dwThreadID);
+		stopEvent = CreateEvent(NULL, true, false, NULL);
+		updateEvent = CreateEvent(NULL, true, false, NULL);
+		dwHandle = CreateThread( NULL, 0, WSwaveInProc, pCaptureClient, 0, &dwThreadID);
 		pAudioClient->Start();
 	}
 }
 
 void WSAudioIn::stopSampling()
 {
-	done = true;
 	if (rate > 0) {
-		while (!isDone) Sleep(20);
+		SetEvent(stopEvent);
+		SetEvent(hEvent);
+		WaitForSingleObject(dwHandle, 10000);
 		pAudioClient->Stop();
 	}
 }
@@ -178,6 +177,7 @@ void WSAudioIn::release()
 		pCaptureClient->Release();
 	pAudioClient->Release();
 	inpDev->Release();
+	CloseHandle(hEvent);
 }
 
 IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
@@ -209,14 +209,15 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
 	int ret;
 
-	while (!done) {
-		while (!done && (ret = WaitForSingleObject(
-			hEvent, // event handle
-			1000)) == WAIT_OBJECT_0)
+	updHandle = CreateThread(NULL, 0, resample, waveD, 0, &dwThreadID);
+
+	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
+		switch (ret = WaitForSingleObject(hEvent, 1000))
 		{
+		case WAIT_OBJECT_0:
 			// got new buffer....
 			pCapCli->GetNextPacketSize(&packetLength);
-			while (!done && packetLength != 0) {
+			while (packetLength != 0) {
 				int ret = pCapCli->GetBuffer(
 					(BYTE**)&pData,
 					&numFramesAvailable,
@@ -225,17 +226,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) {
 					FillMemory(waveD, NUMSAM * sizeof(double), 0);
 					//buffer full, send to process.
-					DWORD exitCode = 0;
-					if (updHandle)
-						GetExitCodeThread(updHandle, &exitCode);
-					if (exitCode != STILL_ACTIVE) {
-						updHandle = CreateThread(NULL, 0, mFunction, waveD, 0, &dwThreadID);
-					}
-#ifdef _DEBUG
-					else {
-						OutputDebugString("Update in process, skipping!\n");
-					}
-#endif
+					SetEvent(updateEvent);
 					//reset arrayPos
 					arrayPos = 0;
 					shift = 0;
@@ -243,11 +234,11 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					pCapCli->GetNextPacketSize(&packetLength);
 					continue;
 				}
-				for (UINT i = 0; i < numFramesAvailable ; i++) {
+				for (UINT i = 0; i < numFramesAvailable; i++) {
 					INT64 finVal = 0;
 					for (int k = 0; k < nChannel; k++) {
 						INT32 val = 0;
-						for (int j = bytesPerChannel - 1; j >=0 ; j--) {
+						for (int j = bytesPerChannel - 1; j >= 0; j--) {
 							val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
 						}
 						finVal += val;// +((maxLevel + 1) / 2);
@@ -256,24 +247,8 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					waveT[arrayPos + i - shift] = (double)(finVal / nChannel) / maxLevel / NUMSAM;// / (pow(256, bytesPerChannel) - 1);
 					if (arrayPos + i == NUMSAM - 1) {
 						//buffer full, send to process.
-						DWORD exitCode = 0;
-						if (updHandle)
-							GetExitCodeThread(updHandle, &exitCode);
-						if (exitCode != STILL_ACTIVE) {
-							memcpy(waveD, waveT, NUMSAM * sizeof(double));
-							updHandle = CreateThread(
-								NULL,              // default security
-								0,                 // default stack size
-								mFunction,        // name of the thread function
-								waveD,
-								0,                 // default startup flags
-								&dwThreadID);
-						}
-#ifdef _DEBUG
-						else {
-							OutputDebugString("Update in process, skipping!\n");
-						}
-#endif
+						memcpy(waveD, waveT, NUMSAM * sizeof(double));
+						SetEvent(updateEvent);
 						//reset arrayPos
 						arrayPos = 0;
 						shift = i;
@@ -283,33 +258,39 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 				arrayPos += numFramesAvailable - shift;
 				pCapCli->GetNextPacketSize(&packetLength);
 			}
-		}
-		if (ret == WAIT_TIMEOUT) { // no buffer data for 1 sec...
+			break;
+		case WAIT_TIMEOUT: // no buffer data for 1 sec...
 			FillMemory(waveD, NUMSAM * sizeof(double), 0);
 			//buffer full, send to process.
-			DWORD exitCode = 0;
-			if (updHandle)
-				GetExitCodeThread(updHandle, &exitCode);
-			if (exitCode != STILL_ACTIVE) {
-				updHandle = CreateThread(
-					NULL,              // default security
-					0,                 // default stack size
-					mFunction,        // name of the thread function
-					waveD,
-					0,                 // default startup flags
-					&dwThreadID);
-			}
-#ifdef _DEBUG
-			else {
-				OutputDebugString("Update in process, skipping!\n");
-			}
-#endif
+			SetEvent(updateEvent);
 			//reset arrayPos
 			arrayPos = 0;
 			shift = 0;
+			break;
 		}
 	}
+	WaitForSingleObject(updHandle, 1000);
+	CloseHandle(updHandle);
 	free(waveT);
-	isDone = true;
+	return 0;
+}
+
+DWORD WINAPI resample(LPVOID lpParam)
+{
+	double* waveDouble = (double*)lpParam;
+	int count = 0;
+
+	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
+		if (WaitForSingleObject(updateEvent, 100) == WAIT_OBJECT_0) {
+			dftGG->calc(waveDouble);
+			if (count == 10) {
+				gHandle->refresh();
+				count = 0;
+			}
+			else count++;
+			fxh->Refresh(gHandle->getBarsNum());
+		}
+	}
+
 	return 0;
 }

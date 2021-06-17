@@ -261,7 +261,6 @@ namespace AlienFX_SDK
 				}
 			}
 		}
-		//OutputDebugString(flag);
 		return pid;
 	}
 
@@ -662,16 +661,20 @@ namespace AlienFX_SDK
 				Loop();
 			}
 			// Now (default) color set, if needed...
-			/*Buffer[2] = 0x21; Buffer[4] = 4; Buffer[6] = 0x61;
+			Buffer[2] = 0x21; Buffer[4] = 4; Buffer[6] = 0x61;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
 			Buffer[4] = 1;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
-			// TODO: color set here...
+			// Default color set here...
+			for (int i = 0; i < mappings.size(); i++) {
+				if (mappings[i].devid == pid && !mappings[i].flags)
+					SetColor(mappings[i].lightid, 0, 0, 0);
+			}
 			Buffer[4] = 2;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();*/
+			Loop();
 			Buffer[4] = 6;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
@@ -752,13 +755,6 @@ namespace AlienFX_SDK
 		switch (length) {
 		case API_V3: {
 			status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-/*#ifdef _DEBUG
-			if (status != ALIENFX_NEW_READY && status != ALIENFX_NEW_WAITUPDATE) {
-				WCHAR buff[2048];
-				wsprintf(buff, L"Status: %d\n", status);
-				OutputDebugString(buff);
-			}
-#endif*/
 			return status == 0 || status == ALIENFX_NEW_READY || status == ALIENFX_NEW_WAITUPDATE;
 		} break;
 		case API_V2: case API_V1: {
@@ -766,11 +762,8 @@ namespace AlienFX_SDK
 
 			if (status == ALIENFX_DEVICE_RESET)
 			{
-				Sleep(1000);
-
+				Sleep(100);
 				return false;
-				//AlienfxReinit();
-
 			}
 			else if (status != ALIENFX_BUSY)
 			{
@@ -781,8 +774,7 @@ namespace AlienFX_SDK
 			status = AlienfxWaitForReady();
 			if (status == ALIENFX_DEVICE_RESET)
 			{
-				Sleep(1000);
-				//AlienfxReinit();
+				Sleep(100);
 
 				return false;
 			}
@@ -795,8 +787,7 @@ namespace AlienFX_SDK
 					status = AlienfxWaitForReady();
 					if (status == ALIENFX_DEVICE_RESET)
 					{
-						Sleep(1000);
-						//AlienfxReinit();
+						Sleep(100);
 						return false;
 					}
 				}
@@ -873,11 +864,10 @@ namespace AlienFX_SDK
 			0,
 			NULL,
 			REG_OPTION_NON_VOLATILE,
-			KEY_ALL_ACCESS,//KEY_WRITE,
+			KEY_ALL_ACCESS,
 			NULL,
 			&hKey1,
 			&dwDisposition);
-		//int size = 4;
 
 		unsigned vindex = 0; mapping map; devmap dev;
 		char name[255], inarray[255];
@@ -930,23 +920,13 @@ namespace AlienFX_SDK
 		size_t numdevs = devices.size();
 		size_t numlights = mappings.size();
 		if (numdevs == 0) return;
-		/*RegCreateKeyEx(HKEY_CURRENT_USER,
-			TEXT("SOFTWARE"),
-			0,
-			NULL,
-			REG_OPTION_NON_VOLATILE,
-			KEY_ALL_ACCESS,//KEY_WRITE,
-			NULL,
-			&hKey1,
-			&dwDisposition);
-		RegDeleteTreeA(hKey1, "Alienfx_SDK");
-		RegCloseKey(hKey1);*/
+		
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
 			0,
 			NULL,
 			REG_OPTION_NON_VOLATILE,
-			KEY_ALL_ACCESS,//KEY_WRITE,
+			KEY_ALL_ACCESS,
 			NULL,
 			&hKey1,
 			&dwDisposition);

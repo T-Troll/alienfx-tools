@@ -77,7 +77,7 @@ int ConfigHandler::Load() {
         (LPDWORD)&size);
     if (ret != ERROR_SUCCESS)
         gammaCorrection = 1;
-    if (!divider) divider = 8;
+    if (!divider || divider > 32) divider = 16;
     unsigned vindex = 0, inarray[12*4];
     char name[256];
     ret = 0;

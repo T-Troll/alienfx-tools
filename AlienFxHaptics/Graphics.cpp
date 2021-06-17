@@ -90,16 +90,18 @@ void DrawFreq(HDC hdc, LPRECT rcClientP);
 
 void Graphics::refresh(){
 
-	HWND hysto = GetDlgItem(dlg, IDC_VIEW_LEVELS);
-	RECT levels_rect;
-	GetClientRect(hysto, &levels_rect);
+	if (!IsIconic(dlg)) {
+		HWND hysto = GetDlgItem(dlg, IDC_VIEW_LEVELS);
+		RECT levels_rect;
+		GetClientRect(hysto, &levels_rect);
 
-	HBRUSH hb = CreateSolidBrush(RGB(0, 0, 0));
+		HBRUSH hb = CreateSolidBrush(RGB(0, 0, 0));
 
-	FillRect(GetDC(hysto), &levels_rect, hb);
-	DeleteObject(hb);
+		FillRect(GetDC(hysto), &levels_rect, hb);
+		DeleteObject(hb);
 
-	DrawFreq(GetDC(hysto), &levels_rect);
+		DrawFreq(GetDC(hysto), &levels_rect);
+	}
 }
 
 void Graphics::ShowError(char* T)
@@ -117,169 +119,56 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	int i, rectop;
 	char szSize[100]; //freq axis
 
-	HWND hwnd = WindowFromDC(hdc);
+	//setting collors:
+	SetDCBrushColor(hdc, RGB(255, 255, 255));
+	SetDCPenColor(hdc, RGB(255, 255, 39));
+	SetTextColor(hdc, RGB(255, 255, 255));
+	SelectObject(hdc, GetStockObject(DC_BRUSH));
+	SelectObject(hdc, GetStockObject(DC_PEN));
+	SetBkMode(hdc, TRANSPARENT);
 
-	if (!IsIconic(hwnd)) {
+	if (axis_draw) {
+		//draw x axis:
+		MoveToEx(hdc, 10, rcClientP->bottom - 21, (LPPOINT)NULL);
+		LineTo(hdc, rcClientP->right - 10, rcClientP->bottom - 21);
+		LineTo(hdc, rcClientP->right - 15, rcClientP->bottom - 26);
+		MoveToEx(hdc, rcClientP->right - 10, rcClientP->bottom - 21, (LPPOINT)NULL);
+		LineTo(hdc, rcClientP->right - 15, rcClientP->bottom - 16);
+		//TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
 
-		//setting collors:
-		SetDCBrushColor(hdc, RGB(255, 255, 255));
-		SetDCPenColor(hdc, RGB(255, 255, 39));
-		SetTextColor(hdc, RGB(255, 255, 255));
-		SelectObject(hdc, GetStockObject(DC_BRUSH));
-		SelectObject(hdc, GetStockObject(DC_PEN));
-		SetBkMode(hdc, TRANSPARENT);
-
-		if (axis_draw) {
-			//draw x axis:
-			MoveToEx(hdc, 10, rcClientP->bottom - 21, (LPPOINT)NULL);
-			LineTo(hdc, rcClientP->right - 10, rcClientP->bottom - 21);
-			LineTo(hdc, rcClientP->right - 15, rcClientP->bottom - 26);
-			MoveToEx(hdc, rcClientP->right - 10, rcClientP->bottom - 21, (LPPOINT)NULL);
-			LineTo(hdc, rcClientP->right - 15, rcClientP->bottom - 16);
-			//TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
-
-			//draw y axis:
-			MoveToEx(hdc, 10, rcClientP->bottom - 21, (LPPOINT)NULL);
-			LineTo(hdc, 10, 10);
-			LineTo(hdc, 15, 15);
-			MoveToEx(hdc, 10, 10, (LPPOINT)NULL);
-			LineTo(hdc, 5, 15);
-			//TextOut(hdc, 15, 10, "[Power]", 7);
-			//wsprintf(szSize, "%6d", (int)y_scale);
-			//TextOut(hdc, 150, 10, szSize, 6);
-			//TextOut(hdc, 10, 40, "255", 3);
-			//TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
-			//TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
-			//axis_draw = false;
-			int oldvalue = (-1);
-			double coeff = 22 / (log(22.0));
-			for (i = 0; i <= 22; i++) {
-				int frq = int(22 - round((log(22.0 - i) * coeff)));
-				if (frq > oldvalue) {
-					wsprintf(szSize, "%2d", frq);
-					TextOut(hdc, ((rcClientP->right - 20) * i) / 22 + 10, rcClientP->bottom - 20, szSize, 2);
-					oldvalue = frq;
-				}
+		//draw y axis:
+		MoveToEx(hdc, 10, rcClientP->bottom - 21, (LPPOINT)NULL);
+		LineTo(hdc, 10, 10);
+		LineTo(hdc, 15, 15);
+		MoveToEx(hdc, 10, 10, (LPPOINT)NULL);
+		LineTo(hdc, 5, 15);
+		//TextOut(hdc, 15, 10, "[Power]", 7);
+		//wsprintf(szSize, "%6d", (int)y_scale);
+		//TextOut(hdc, 150, 10, szSize, 6);
+		//TextOut(hdc, 10, 40, "255", 3);
+		//TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
+		//TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
+		//axis_draw = false;
+		int oldvalue = (-1);
+		double coeff = 22 / (log(22.0));
+		for (i = 0; i <= 22; i++) {
+			int frq = int(22 - round((log(22.0 - i) * coeff)));
+			if (frq > oldvalue) {
+				wsprintf(szSize, "%2d", frq);
+				TextOut(hdc, ((rcClientP->right - 20) * i) / 22 + 10, rcClientP->bottom - 20, szSize, 2);
+				oldvalue = frq;
 			}
 		}
+	}
 
-		for (i = 0; i < bars; i++) {
-			rectop = ((255 - freq[i]) * (rcClientP->bottom - 21)) / 255;
-			if (rectop < 10) rectop = 10;
-			Rectangle(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop, ((rcClientP->right - 20) * (i + 1)) / bars - 2 + 10, rcClientP->bottom - 21);
-			//wsprintf(szSize, "%3d", freq[i]);
-			//TextOut(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop - 15, szSize, 3);
-		}
+	for (i = 0; i < bars; i++) {
+		rectop = ((255 - freq[i]) * (rcClientP->bottom - 21)) / 255;
+		if (rectop < 10) rectop = 10;
+		Rectangle(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop, ((rcClientP->right - 20) * (i + 1)) / bars - 2 + 10, rcClientP->bottom - 21);
+		//wsprintf(szSize, "%3d", freq[i]);
+		//TextOut(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop - 15, szSize, 3);
 	}
 } 
-
-
-
-/*LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	INT_PTR dlg;
-
-	switch(msg)
-	{
-		case WM_COMMAND:
-			switch(LOWORD(wParam))
-			{
-				case ID_FILE_EXIT:
-					PostMessage(hwnd, WM_CLOSE, 0, 0);
-				break;
-				case ID_INPUT_DEFAULTOUTPUTDEVICE:
-					config->inpType = 0;
-					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_UNCHECKED);
-					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
-					audio->RestartDevice(0);
-					config->Save();
-					break;
-				case ID_INPUT_DEFAULTINPUTDEVICE:
-					config->inpType = 1;
-					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
-					CheckMenuItem(GetMenu(hwnd), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_UNCHECKED);
-					audio->RestartDevice(1);
-					config->Save();
-					break;
-				case ID_PARAMETERS_SETTINGS:
-					dlg=DialogBox(GetModuleHandle(NULL),         /// instance handle
-						MAKEINTRESOURCE(IDD_DIALOG_CONFIG),    /// dialog box template
-						hwnd,                    /// handle to parent
-						(DLGPROC)DialogConfigStatic);
-				break;
-			}
-		break;
-		case WM_CLOSE:
-			Shell_NotifyIcon(NIM_DELETE, &niData);
-			DestroyWindow(hwnd);
-		break;
-		case WM_PAINT:
-		{
-			RECT rcClient;
-
-			HDC hdc = GetDC(hwnd);
-			GetClientRect(hwnd, &rcClient);
-
-			HBRUSH hb = CreateSolidBrush(RGB(0,0,0)); 
-			
-			FillRect(hdc, &rcClient, hb);
-			DeleteObject(hb);
-
-			DrawFreq(hdc, &rcClient);
-
-			ReleaseDC(hwnd, hdc);
-
-			RedrawWindow(hwnd, 0, 0, RDW_VALIDATE );
-		}
-		break;
-		case WM_DESTROY:
-			DeleteObject(g_hfFont);
-
-			PostQuitMessage(0);
-		break;
-		case WM_SIZE:
-			if (wParam == SIZE_MINIMIZED) {
-				// go to tray...
-
-				ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-				niData.cbSize = sizeof(NOTIFYICONDATA);
-				niData.uID = IDI_ALIEN;
-				niData.uFlags = NIF_ICON | NIF_MESSAGE;
-				niData.hIcon =
-					(HICON)LoadImage(GetModuleHandle(NULL),
-						MAKEINTRESOURCE(IDI_ALIEN),
-						IMAGE_ICON,
-						GetSystemMetrics(SM_CXSMICON),
-						GetSystemMetrics(SM_CYSMICON),
-						LR_DEFAULTCOLOR);
-				niData.hWnd = hwnd;
-				niData.uCallbackMessage = WM_APP + 1;
-				Shell_NotifyIcon(NIM_ADD, &niData);
-				ShowWindow(hwnd, SW_HIDE);
-			} break;
-		case WM_APP + 1: {
-			switch (lParam)
-			{
-			case WM_LBUTTONDBLCLK:
-			case WM_LBUTTONUP:
-				ShowWindow(hwnd, SW_RESTORE);
-				SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-				SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-				Shell_NotifyIcon(NIM_DELETE, &niData);
-			break;
-			case WM_RBUTTONUP:
-			case WM_CONTEXTMENU:
-				Shell_NotifyIcon(NIM_DELETE, &niData);
-				DestroyWindow(hwnd);
-				break;
-			}
-			break;
-		} break;
-		default:
-			return DefWindowProc(hwnd, msg, wParam, lParam);
-	}
-	return 0;
-}*/
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -716,8 +605,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			DrawFreq(GetDC(hysto), &levels_rect);
 		}
 		break;
-	case WM_CLOSE: config->Save(); DestroyWindow(hDlg); break;
-	case WM_DESTROY: Shell_NotifyIcon(NIM_DELETE, &niData); PostQuitMessage(0); break;
+	case WM_CLOSE: DestroyWindow(hDlg); break;
+	case WM_DESTROY: config->Save(); Shell_NotifyIcon(NIM_DELETE, &niData); DestroyWindow(hDlg); PostQuitMessage(0); break;
 	default: return false;
 	}
 

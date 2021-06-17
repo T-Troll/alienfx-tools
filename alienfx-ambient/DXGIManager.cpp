@@ -99,10 +99,11 @@ HRESULT DuplicatedOutput::get_frame(IDXGISurface1** out_surface, uint32_t timeou
 	// Configure the description to make the texture readable
 	texture_desc.Usage = D3D11_USAGE_STAGING;
 	texture_desc.BindFlags = 0;
+	//texture_desc.MipLevels = 1; // !!!
 	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	texture_desc.MiscFlags = 0;
 
-	ID3D11Texture2D* readable_texture;
+	ID3D11Texture2D* readable_texture = NULL;
 	TRY_RETURN(m_device->CreateTexture2D(&texture_desc, NULL, &readable_texture));
 
 	// Lower priorities causes stuff to be needlessly copied from gpu to ram, causing huge
@@ -149,10 +150,6 @@ DXGIManager::~DXGIManager() {
 	free(m_frame_buf);
 }
 
-void DXGIManager::set_capture_source(uint16_t cs) {
-	m_capture_source = cs;
-	refresh_output();
-}
 uint16_t DXGIManager::get_capture_source() {
 	return m_capture_source;
 }
@@ -162,6 +159,12 @@ void DXGIManager::set_timeout(uint32_t timeout) {
 }
 
 void DXGIManager::setup() {
+	refresh_output();
+}
+
+void DXGIManager::set_capture_source(UINT16 cs)
+{
+	m_capture_source = cs;
 	refresh_output();
 }
 
@@ -186,9 +189,9 @@ void DXGIManager::gather_output_duplications() {
 		}
 
 		// Creating device for each adapter that has the output
-		CComPtr<ID3D11Device> d3d11_device;
-		CComPtr<ID3D11DeviceContext> device_context;
-		D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_9_1;
+		CComQIPtr<ID3D11Device> d3d11_device; // CComPtr
+		CComQIPtr<ID3D11DeviceContext> device_context; // CComPtr
+		D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_11_1;// D3D_FEATURE_LEVEL_9_1;
 		TRY_PANIC(D3D11CreateDevice(adapter,
 			D3D_DRIVER_TYPE_UNKNOWN,
 			NULL, 0, NULL, 0,
@@ -196,6 +199,7 @@ void DXGIManager::gather_output_duplications() {
 			&d3d11_device,
 			&feature_level,
 			&device_context));
+
 
 		for (CComQIPtr<IDXGIOutput1> output : outputs) { // CComQIPtr
 			CComQIPtr<IDXGIDevice1> dxgi_device = d3d11_device; //CComQIPtr
@@ -205,11 +209,13 @@ void DXGIManager::gather_output_duplications() {
 				continue;
 			}
 
-			m_out_dups.push_back(
-				DuplicatedOutput(d3d11_device,
+				m_out_dups.push_back(DuplicatedOutput(d3d11_device,
 					device_context,
 					output,
 					duplicated_output));
+
+			if (m_out_dups.size() > 2)
+				int i = 0;
 		}
 	}
 }
@@ -223,7 +229,7 @@ bool DXGIManager::refresh_output() {
 		gather_output_duplications();
 		m_output_duplication = get_output_duplication();
 		if (m_output_duplication == NULL) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(400));
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		} else {
 			return true;
 		}
@@ -258,6 +264,12 @@ RECT DXGIManager::get_output_rect() {
 
 CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size) {
 	IDXGISurface1* frame_surface;
+
+	/*if (m_output_duplication == NULL) {
+		refresh_output();
+		return CR_FAIL;
+	}*/
+
 	HRESULT hr = m_output_duplication->get_frame(&frame_surface, m_timeout);
 
 	if (hr == DXGI_ERROR_ACCESS_LOST) {
@@ -271,7 +283,7 @@ CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size)
 		return CR_ACCESS_DENIED;
 	} else if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
 		return CR_TIMEOUT;
-	} else if (FAILED(hr)) {
+	} else if (FAILED(hr)) { // || m_output_duplication == NULL) {
 		// Sometimes when modes are changed or something, AcquireNextFrame complains about
 		// DXGI_ERROR_INVALID_CALL, the previous frame was not released. This is not the
 		// case though, and to accomodate for the change in modes we refresh outputs.
@@ -318,7 +330,7 @@ CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size)
 				mapped_surface.pBits + row_n * mapped_surface.Pitch,
 				out_row_size);
 		}
-	} else if (output_desc.Rotation != DXGI_MODE_ROTATION_UNSPECIFIED) {
+	} else /*if (output_desc.Rotation != DXGI_MODE_ROTATION_UNSPECIFIED)*/ {
 		auto& ofsetter = ofsetters[output_desc.Rotation - 2]; // 90deg = 2 -> 0
 		PIXEL* src_pixels = (PIXEL*)mapped_surface.pBits;
 		PIXEL* dest_pixels = (PIXEL*)m_frame_buf;
@@ -339,27 +351,29 @@ CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size)
 }
 
 void DXGIManager::clear_output_duplications() {
-	m_output_duplication = NULL;
+	//delete m_output_duplication;
 	m_out_dups.clear();
+	//m_output_duplication = NULL;
 }
 
 // If there are no output duplications, or specified monitor is not found, return NULL
 DuplicatedOutput* DXGIManager::get_output_duplication() {
 	size_t n_out_dups = m_out_dups.size();
 	if (n_out_dups != 0) {
-		if (n_out_dups > m_capture_source)
-			return &m_out_dups[m_capture_source];
+		if (m_capture_source > 0 && n_out_dups > m_capture_source) {
+				return &m_out_dups[m_capture_source];
+		}
 		else
-			return &m_out_dups[0];
-		/*if (m_capture_source == 0 || n_out_dups < m_capture_source) { // Find the primary output
+			//return &m_out_dups[0]; - primary monitor
+		//if (m_capture_source == 0 || n_out_dups < m_capture_source) { // Find the primary output
 			for (size_t i = 0; i < n_out_dups; i++) {
 				if (m_out_dups[i].is_primary()) {
 					return &m_out_dups[i];
 				}
 			}
-		} else {
-			return &m_out_dups[m_capture_source - 1];
-		}*/
+		//} else {
+		//	return &m_out_dups[m_capture_source - 1];
+		//}
 	}
 	return NULL;
 }

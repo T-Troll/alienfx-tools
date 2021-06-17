@@ -91,7 +91,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             //}
         }
 
-        cap->Stop();
+        //cap->Stop();
         conf->Save();
     }
     delete cap;
@@ -146,25 +146,29 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
         HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
 
-        hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-        dwSize = SizeofResource(hInst, hResInfo);
-        hResData = LoadResource(hInst, hResInfo);
-        pRes = LockResource(hResData);
-        pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-        CopyMemory(pResCopy, pRes, dwSize);
-        FreeResource(hResData);
+        if (hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION)) {
+            dwSize = SizeofResource(hInst, hResInfo);
+            if (hResData = LoadResource(hInst, hResInfo)) {
+                pRes = LockResource(hResData);
+                pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
+                CopyMemory(pResCopy, pRes, dwSize);
+                FreeResource(hResData);
 
-        VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-        char buf[255];
+                VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+                char buf[255];
 
-        DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-        DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
+                DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
+                DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
 
-        sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
+                sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
 
-        Static_SetText(version_text, buf);
+                Static_SetText(version_text, buf);
 
-        LocalFree(pResCopy);
+                LocalFree(pResCopy);
+            }
+        }
+
+        
         return (INT_PTR)TRUE;
     }
     case WM_COMMAND:
@@ -217,10 +221,51 @@ int UpdateLightList(HWND light_list) {
     return pos;
 }
 
+HWND CreateToolTip(HWND hwndParent)
+{
+    // Create a tooltip.
+    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        hwndParent, NULL, hInst, NULL);
+
+    SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+    TOOLINFO ti = { 0 };
+    ti.cbSize = sizeof(TOOLINFO);
+    ti.uFlags = TTF_SUBCLASS;
+    ti.hwnd = hwndParent;
+    ti.hinst = hInst;
+    ti.lpszText = (LPSTR)"0";
+
+    GetClientRect(hwndParent, &ti.rect);
+
+    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+    return hwndTT;
+}
+
+char sBuff[4], lBuff[4];
+HWND sTip = 0, lTip = 0;
+
+void SetSlider(HWND tt, char* buff, int value) {
+    TOOLINFO ti = { 0 };
+    ti.cbSize = sizeof(ti);
+    ti.lpszText = buff;
+    if (tt) {
+        int nTools = SendMessage(tt, TTM_GETTOOLCOUNT, 0, 0);
+        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+        _itoa_s(value, buff, 4, 10);
+        ti.lpszText = buff;
+        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+    }
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND divider = GetDlgItem(hDlg, IDC_EDIT_DIVIDER);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
+    HWND divSlider = GetDlgItem(hDlg, IDC_SLIDER_DIV);
     mapping* map = NULL;
 
     switch (message)
@@ -241,9 +286,19 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
         }
         CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection ? BST_CHECKED : BST_UNCHECKED);
+        
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 256));
         SendMessage(brSlider, TBM_SETPOS, true, conf->shift);
-        SendMessage(brSlider, TBM_SETTICFREQ, 32, 0);
+        SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
+
+        SendMessage(divSlider, TBM_SETRANGE, true, MAKELPARAM(1, 32));
+        SendMessage(divSlider, TBM_SETPOS, true, conf->divider);
+        SendMessage(divSlider, TBM_SETTICFREQ, 2, 0);
+
+        sTip = CreateToolTip(brSlider);
+        lTip = CreateToolTip(divSlider);
+        SetSlider(sTip, sBuff, conf->shift);
+        SetSlider(lTip, lBuff, conf->divider);
     } break;
     case WM_COMMAND:
     {
@@ -253,7 +308,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         {
         case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
         {
-            cap->Stop();
+            //cap->Stop();
             Shell_NotifyIcon(NIM_DELETE, &niData);
             DestroyWindow(hDlg); 
         } break;
@@ -430,12 +485,27 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == brSlider) {
                 conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
-            }
+                SetSlider(sTip, sBuff, conf->shift);
+            } else 
+                if ((HWND)lParam == divSlider) {
+                    conf->divider = (DWORD)SendMessage(divSlider, TBM_GETPOS, 0, 0);
+                    SetSlider(lTip, lBuff, conf->divider);
+                }
             break;
+        default: 
+            if ((HWND)lParam == brSlider) {
+                //conf->shift = (DWORD)SendMessage(brSlider, TBM_GETPOS, 0, 0);
+                SetSlider(sTip, sBuff, SendMessage(brSlider, TBM_GETPOS, 0, 0));
+            }
+            else
+                if ((HWND)lParam == divSlider) {
+                    //conf->divider = (DWORD)SendMessage(divSlider, TBM_GETPOS, 0, 0);
+                    SetSlider(lTip, lBuff, SendMessage(divSlider, TBM_GETPOS, 0, 0));
+                }
         }
         break;
-    case WM_CLOSE: cap->Stop(); DestroyWindow(hDlg); break;
-    case WM_DESTROY: PostQuitMessage(0); break;
+    case WM_CLOSE: DestroyWindow(hDlg); break;
+    case WM_DESTROY: cap->Stop(); PostQuitMessage(0); break;
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC: case PBT_APMPOWERSTATUSCHANGE:
@@ -450,9 +520,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 if (sParams->Data[0] == 0) {
                     cap->Stop();
                     fxhl->FadeToBlack();
-                }
-                else
+                } else
                     cap->Restart();
+            }
+            if (sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS) {
+                cap->Restart();
             }
             break;
         }
