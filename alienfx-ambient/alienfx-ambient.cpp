@@ -263,7 +263,6 @@ void SetSlider(HWND tt, char* buff, int value) {
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
-    HWND divider = GetDlgItem(hDlg, IDC_EDIT_DIVIDER);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
     HWND divSlider = GetDlgItem(hDlg, IDC_SLIDER_DIV);
     mapping* map = NULL;
@@ -274,8 +273,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     {
         UpdateLightList(light_list);
 
-        // divider....
-        SetDlgItemInt(hDlg, IDC_EDIT_DIVIDER, conf->divider, false);
         // Mode...
         if (conf->mode) {
             CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
@@ -371,13 +368,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 }
             } break;
             }
-        } break;
-        case IDC_EDIT_DIVIDER:
-            switch (HIWORD(wParam)) {
-            case EN_UPDATE: {
-                conf->divider = GetDlgItemInt(hDlg, IDC_EDIT_DIVIDER, NULL, false);
-                if (conf->divider <= 0) conf->divider = 1;
-            } break;
         } break;
         case IDC_RADIO_PRIMARY:
             switch (HIWORD(wParam)) {

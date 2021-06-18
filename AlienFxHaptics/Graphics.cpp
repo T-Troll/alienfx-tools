@@ -320,9 +320,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		//TBM_SETTICFREQ
+
 		SendMessage(hLowSlider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(hHiSlider, TBM_SETTICFREQ, 16, 0);
+
+		CheckMenuItem(GetMenu(hDlg), config->inpType ? ID_INPUT_DEFAULTINPUTDEVICE : ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 
 	}
 	break;

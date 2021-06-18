@@ -51,21 +51,11 @@ void EventHandler::ChangeScreenState(DWORD state)
     }
 }
 
-profile* EventHandler::FindProfile(int id) {
-    profile* prof = NULL;
-    for (int i = 0; i < conf->profiles.size(); i++)
-        if (conf->profiles[i].id == id) {
-            prof = &conf->profiles[i];
-            break;
-        }
-    return prof;
-}
-
 void EventHandler::SwitchActiveProfile(int newID)
 {
     if (newID != conf->activeProfile) {
-        profile* newP = FindProfile(newID),
-            * oldP = FindProfile(conf->activeProfile);
+        profile* newP = conf->FindProfile(newID),
+            * oldP = conf->FindProfile(conf->activeProfile);
         if (newP != NULL) {
             StopEvents();
             if (oldP != NULL)
@@ -176,7 +166,7 @@ DWORD CProfileProc(LPVOID param) {
     
     unsigned int i;
 
-    while (WaitForSingleObject(stopProfile, 50) == WAIT_TIMEOUT) {
+    while (WaitForSingleObject(stopProfile, 100) == WAIT_TIMEOUT) {
         unsigned newp = src->conf->activeProfile;
         bool notDefault = false;
 
@@ -315,9 +305,7 @@ DWORD WINAPI CEventProc(LPVOID param)
         0,
         &hTempCounter2);
 
-    while (WaitForSingleObject(stopEvents, 150) == WAIT_TIMEOUT) {
-        // wait a little...
-        //Sleep(150);
+    while (WaitForSingleObject(stopEvents, 200) == WAIT_TIMEOUT) {
 
         // get indicators...
         PdhCollectQueryData(hQuery);

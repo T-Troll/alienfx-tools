@@ -231,8 +231,6 @@ DWORD WINAPI CInProc(LPVOID param)
 
 			if (memcmp(imgz, oldimg, sizeof(oldimg)) != 0) {
 				ReleaseSemaphore(uiEvent, 2, NULL);
-				//uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, &uiThread);
-				//lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, &cuThread);
 				memcpy(oldimg, imgz, sizeof(oldimg));
 			}
 		}
@@ -242,13 +240,14 @@ DWORD WINAPI CInProc(LPVOID param)
 		sprintf_s(buff, 2047, "Update at %fs\n", (nextTick - lastTick) / 1000.0);
 		OutputDebugString(buff);
 #endif
-		if (nextTick - lastTick < 100) {
-			wait_time = 100 - (DWORD)(nextTick - lastTick);
+		if (nextTick - lastTick < 50) {
+			wait_time = 50 - (DWORD)(nextTick - lastTick);
 		}
 		else
 			wait_time = 0;
 		lastTick = nextTick;
 	}
+	ReleaseSemaphore(uiEvent, 2, NULL);
 	WaitForSingleObject(uiHandle, 1000);
 	WaitForSingleObject(lightHandle, 1000);
 	CloseHandle(uiHandle);
@@ -262,14 +261,14 @@ DWORD WINAPI CDlgProc(LPVOID param)
 	UCHAR  imgz[12 * 3];
 	RECT rect;
 	HBRUSH Brush = NULL;
-	ULONGLONG lastTick = GetTickCount64(), nextTick = 0;
+	ULONGLONG lastTick = 0, nextTick = 0;
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		if (WaitForSingleObject(uiEvent, 100) == WAIT_OBJECT_0 && !IsIconic(hDlg)) {
+		if (WaitForSingleObject(uiEvent, 500) == WAIT_OBJECT_0 && !IsIconic(hDlg)) {
 			//#ifdef _DEBUG
 			//			OutputDebugString("UI update...\n");
 			//#endif
 			nextTick = GetTickCount64();
-			if (nextTick - lastTick > 200) {
+			if (nextTick - lastTick > 250) {
 				memcpy(imgz, (UCHAR*)param, sizeof(imgz));
 				for (int i = 0; i < 12; i++) {
 					HWND tl = GetDlgItem(hDlg, IDC_BUTTON1 + i);
@@ -300,7 +299,7 @@ DWORD WINAPI CDlgProc(LPVOID param)
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT)
-		if (WaitForSingleObject(uiEvent, 100) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(uiEvent, 500) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //			OutputDebugString("Light update...\n");
 //#endif

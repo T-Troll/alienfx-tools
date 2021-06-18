@@ -335,7 +335,7 @@ int ConfigHandler::Load() {
                         break;
                     }
             }
-            else {
+            /*else {
                 ret2 = sscanf_s((char*)name, "%d-%d-%d", &map.devid, &map.lightid, &profid);
                 if (ret2 == 3) {
                     AlienFX_SDK::afx_act action, action2;
@@ -367,7 +367,7 @@ int ConfigHandler::Load() {
                             break;
                         }
                 }
-            }
+            }*/
             vindex++;
         }
     } while (ret == ERROR_SUCCESS);

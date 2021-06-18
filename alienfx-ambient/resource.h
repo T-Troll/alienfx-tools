@@ -36,14 +36,12 @@
 #define IDC_CHECK12                     1037
 #define IDC_RADIO_PRIMARY               1038
 #define IDC_RADIO_SECONDARY             1039
-#define IDC_EDIT_DIVIDER                1040
 #define IDC_SLIDER_BR                   1041
 #define IDC_BUTTON_MIN                  1042
 #define IDC_STATIC_VERSION              1043
 #define IDC_SYSLINK_HOMEPAGE            1044
 #define IDC_CHECK_GAMMA                 1044
 #define IDC_BUTTON_RESET                1046
-#define IDC_SLIDER1                     1047
 #define IDC_SLIDER_DIV                  1047
 #define IDC_STATIC                      -1
 

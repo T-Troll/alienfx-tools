@@ -7,7 +7,6 @@ class EventHandler
 public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state);
-	profile* FindProfile(int id);
 	void SwitchActiveProfile(int newID);
 	void StartEvents();
 	void StopEvents();

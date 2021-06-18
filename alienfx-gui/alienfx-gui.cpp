@@ -456,12 +456,11 @@ VOID OnSelChanged(HWND hwndDlg)
 }
 
 int pRid = -1, pRitem = -1;
-bool isProfileEdited = false;
 
 void ReloadProfileList(HWND hDlg) {
-    if (hDlg == NULL) hDlg = mDlg;
-    HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
-        profile_list = GetDlgItem(hDlg, IDC_PROFILES);
+    if (hDlg == NULL) 
+        hDlg = mDlg;
+    HWND profile_list = GetDlgItem(hDlg, IDC_PROFILES);
     SendMessage(profile_list, CB_RESETCONTENT, 0, 0);
     for (int i = 0; i < conf->profiles.size(); i++) {
         int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
@@ -611,7 +610,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             case CBN_SELCHANGE: {
                 eve->SwitchActiveProfile(prid);
                 pRitem = pbItem; pRid = prid;
-                OnSelChanged(tab_list);
+                //OnSelChanged(tab_list);
             } break;
             }
         } break;
@@ -643,6 +642,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_RESTORE);
             SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+            if (pRid != conf->activeProfile)
+                ReloadProfileList(hDlg);
             break;
         case WM_RBUTTONUP: case WM_CONTEXTMENU: {
             POINT lpClickPoint;
@@ -655,7 +656,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             mi.cbSize = sizeof(mi);
             mi.fMask = MIM_STYLE;
             mi.dwStyle = MNS_NOTIFYBYPOS;
-            //SetMenuInfo(pMenu, &mi);
             SetMenuInfo(tMenu, &mi);
             MENUITEMINFO mInfo;
             mInfo.cbSize = sizeof(MENUITEMINFO);
@@ -706,7 +706,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case ID_TRAYMENU_MONITORING:
             conf->enableMon = !conf->enableMon;
-            conf->monState = eve->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
+            conf->monState = conf->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
             eve->ToggleEvents();
             break;
         case ID_TRAYMENU_PROFILESWITCH:
@@ -719,12 +719,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_RESTORE);
             SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+            if (pRid != conf->activeProfile)
+                ReloadProfileList(hDlg);
             break;
         case ID_TRAYMENU_PROFILE_SELECTED: {
             if (!conf->enableProf && idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
                 eve->SwitchActiveProfile(conf->profiles[idx].id);
                 ReloadProfileList(hDlg);
-                OnSelChanged(tab_list);
+                //OnSelChanged(tab_list);
             }
         } break;
         }
@@ -1623,8 +1625,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 eLid = -1; lItem = -1; eDid = did; dItem = dbItem;
             } break;
             case CBN_EDITCHANGE:
-                char buffer[256];
-                GetWindowTextA(dev_list, buffer, 256);
+                char buffer[MAX_PATH];
+                GetWindowTextA(dev_list, buffer, MAX_PATH);
                 for (i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
                     if (fxhl->afx_dev.GetDevices()->at(i).devid == eDid) {
                         fxhl->afx_dev.GetDevices()->at(i).name = buffer;
@@ -1657,8 +1659,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 eLid = lid; lItem = lbItem;
             } break;
             case CBN_EDITCHANGE:
-                char buffer[256];
-                GetWindowTextA(light_list, buffer, 256);
+                char buffer[MAX_PATH];
+                GetWindowTextA(light_list, buffer, MAX_PATH);
                 for (i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
                     AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
                     if (lgh.devid == did &&
@@ -1678,7 +1680,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             }
             break;
         case IDC_BUTTON_ADDL: {
-            char buffer[255];
+            char buffer[MAX_PATH];
             int cid = GetDlgItemInt(hDlg, IDC_LIGHTID, NULL, false);
             // let's check if we have the same ID, need to use max+1 in this case
             unsigned maxID = 0; bool haveID = false;
@@ -1696,7 +1698,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             AlienFX_SDK::mapping dev;
             dev.devid = eDid;
             dev.lightid = cid;
-            sprintf_s(buffer, 255, "Light #%d", cid);
+            sprintf_s(buffer, MAX_PATH, "Light #%d", cid);
             dev.name = buffer;
             fxhl->afx_dev.GetMappings()->push_back(dev);
             fxhl->afx_dev.SaveMappings();
@@ -1709,7 +1711,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
                 // store profile...
-                eve->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
+                conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
                 // delete from all profiles...
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++) {
@@ -1722,7 +1724,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         }
                 }
                 // reset active mappings
-                conf->active_set = eve->FindProfile(conf->activeProfile)->lightsets;
+                conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
                 std::vector <AlienFX_SDK::mapping>* mapps = fxhl->afx_dev.GetMappings();
                 for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
                     Iter != mapps->end(); Iter++)
@@ -1747,7 +1749,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
                 // store profile...
-                eve->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
+                conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
                 // delete from all profiles...
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++) {
@@ -1760,7 +1762,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         }
                 }
                 // reset active mappings
-                conf->active_set = eve->FindProfile(conf->activeProfile)->lightsets;
+                conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
             }
             break;
         case IDC_BUTTON_TESTCOLOR: {
@@ -1865,7 +1867,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     {
         int pbItem = (int)SendMessage(profile_list, CB_GETCURSEL, 0, 0);
         int prid = (int)SendMessage(profile_list, CB_GETITEMDATA, pbItem, 0);
-        profile* prof = eve->FindProfile(prid);
+        profile* prof = conf->FindProfile(prid);
         
         switch (LOWORD(wParam))
         {
@@ -1884,17 +1886,17 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                 }
             } break;
             case CBN_EDITCHANGE:
-                prof = eve->FindProfile(pCid);
+                prof = conf->FindProfile(pCid);
                 if (prof != NULL) {
-                    char* buffer = (char *) calloc(32767, sizeof(char));
-                    GetWindowTextA(profile_list, buffer, 32767);
+                    char* buffer = new char[MAX_PATH];
+                    GetWindowTextA(profile_list, buffer, MAX_PATH);
                     prof->name = buffer;
                     SendMessage(profile_list, CB_DELETESTRING, pCitem, 0);
                     SendMessage(profile_list, CB_INSERTSTRING, pCitem, (LPARAM)(prof->name.c_str()));
                     SendMessage(profile_list, CB_SETITEMDATA, pCitem, pCid);
                     if (pCid == conf->activeProfile)
                         ReloadProfileList(NULL);
-                    free(buffer);
+                    delete[] buffer;
                 }
                 break;
             case CBN_KILLFOCUS:
@@ -1919,29 +1921,36 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             ReloadProfileList(NULL);
         } break;
         case IDC_REMOVEPROFILE: {
-            profile* prof = eve->FindProfile(pCid);
+            //profile* prof = conf->FindProfile(pCid);
             if (prof != NULL && !(prof->flags & 0x1) && conf->profiles.size() > 1 && 
                 MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning!",
                 MB_YESNO | MB_ICONWARNING) == IDYES) { // can't delete last profile!
+                // is this active profile? Switch needed!
+                if (conf->activeProfile == prid) {
+                    // switch to default profile..
+                    eve->SwitchActiveProfile(conf->defaultProfile);
+                }
+                // Now remove profile....
                 for (std::vector <profile>::iterator Iter = conf->profiles.begin();
                     Iter != conf->profiles.end(); Iter++)
-                    if (Iter->id == pCid) {
+                    if (Iter->id == prid) {
                         conf->profiles.erase(Iter);
                         break;
                     }
-                // now check about profile switch needed
-                if (conf->activeProfile == pCid) {
-                    // switch to default profile..
-                    eve->SwitchActiveProfile(conf->defaultProfile);
-                    pCitem = ReloadProfileCombo(hDlg, conf->activeProfile);
-                }
-                else {
-                    pCitem = ReloadProfileCombo(hDlg, conf->activeProfile);
-                    pCid = conf->activeProfile;
-                }
+                pCitem = ReloadProfileCombo(hDlg, conf->activeProfile);
+                pCid = conf->activeProfile;
                 ReloadProfileList(NULL);
             }
         } break;
+        case IDC_BUT_PROFRESET:
+            if (prof != NULL && MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning!",
+                MB_YESNO | MB_ICONWARNING) == IDYES) {
+                prof->lightsets.clear();
+                if (prof->id == conf->activeProfile) {
+                    conf->active_set.clear();
+                }
+            }
+            break;
         case IDC_APP_RESET:
             if (prof != NULL) {
                 prof->triggerapp = "";
@@ -1952,7 +1961,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             if (prof != NULL) {
                 // fileopen dialogue...
                 OPENFILENAMEA fstruct;
-                char appName[MAX_PATH];
+                char* appName = new char[MAX_PATH];
                 ZeroMemory(&fstruct, sizeof(OPENFILENAMEA));
                 fstruct.lStructSize = sizeof(OPENFILENAMEA);
                 fstruct.hwndOwner = hDlg;
@@ -1966,13 +1975,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                     SendMessage(app_list, LB_RESETCONTENT, 0, 0);
                     SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(prof->triggerapp.c_str()));
                 }
+                delete[] appName;
             }
         } break;
         case IDC_CHECK_DEFPROFILE:
             if (prof != NULL) {
                 bool nflags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
                 if (nflags) {
-                    profile* old_def = eve->FindProfile(conf->defaultProfile);
+                    profile* old_def = conf->FindProfile(conf->defaultProfile);
                     if (old_def != NULL)
                         old_def->flags = old_def->flags & 0xfe;
                     prof->flags = prof->flags | 0x1;
@@ -2065,7 +2075,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             break;
         case IDC_BATTMONITOR:
             conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-            conf->monState = eve->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
+            conf->monState = conf->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
             eve->ToggleEvents();
             break;
         case IDC_BATTPROFILE:
@@ -2076,7 +2086,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             break;
         case IDC_CHECK_LON:
             conf->stateOn = conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-            //fxhl->Refresh(true);
             eve->ToggleEvents();
             break;
         case IDC_CHECK_DIM:

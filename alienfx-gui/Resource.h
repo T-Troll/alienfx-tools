@@ -99,6 +99,8 @@
 #define IDC_CHECK_PROFDIM               1071
 #define IDC_COMBO_PROFILES              1072
 #define IDC_CHECK_FOREGROUND            1073
+#define IDC_BUTTON1                     1075
+#define IDC_BUT_PROFRESET               1076
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -123,7 +125,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1073
+#define _APS_NEXT_CONTROL_VALUE         1077
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

@@ -55,7 +55,6 @@ void WSAudioIn::startSampling()
 	// creating listener thread...
 	if (pAudioClient && rate > 0) {
 		stopEvent = CreateEvent(NULL, true, false, NULL);
-		updateEvent = CreateEvent(NULL, true, false, NULL);
 		dwHandle = CreateThread( NULL, 0, WSwaveInProc, pCaptureClient, 0, &dwThreadID);
 		pAudioClient->Start();
 	}
@@ -66,8 +65,9 @@ void WSAudioIn::stopSampling()
 	if (rate > 0) {
 		SetEvent(stopEvent);
 		SetEvent(hEvent);
-		WaitForSingleObject(dwHandle, 10000);
 		pAudioClient->Stop();
+		WaitForSingleObject(dwHandle, 10000);
+		ResetEvent(stopEvent);
 	}
 }
 
@@ -177,7 +177,7 @@ void WSAudioIn::release()
 		pCaptureClient->Release();
 	pAudioClient->Release();
 	inpDev->Release();
-	CloseHandle(hEvent);
+
 }
 
 IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
@@ -210,6 +210,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	int ret;
 
 	updHandle = CreateThread(NULL, 0, resample, waveD, 0, &dwThreadID);
+	updateEvent = CreateEvent(NULL, true, false, NULL);
 
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
 		switch (ret = WaitForSingleObject(hEvent, 1000))
