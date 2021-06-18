@@ -22,9 +22,9 @@ Device checked: `Alienware m15R1-R4` (API v3), `Alienware m17R1` (API v3), `Alie
 - Hardware light effects morph, breathing, spectrum, rainbow doesn't supported for older (v1, v2) devices.
 - Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
-- <b>WARNING!</b> I strongly reccomend to stop AWCCService if you plan to use gui, haptics or ambient application. Keep it working can provide unexpected results, espectially if you handle Power Button in gui app.
+- <b>WARNING!</b> Strongly reccomended to stop AWCCService if you plan to use gui, haptics or ambient application. Keep it working can provide unexpected results, espectially if you handle Power Button in gui app.
 - <b>WARNING!</b> Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezed, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or until lights turn off), then start it back.
-- <b>WARNING!</b> Ah the Hybrid graphics (Intel+Nvidia) notebooks, there are well-known bug in DirectX which can prevent `alienfx-ambient` from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not works at default setting in this case.
+- <b>WARNING!</b> There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `alienfx-ambient` from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not works at default setting in this case.
 
 ## Installation
 Download latest release archive from [here](https://github.com/T-Troll/alienfx-tools/releases).<br>
