@@ -22,7 +22,7 @@ HWND hDlg;
 ConfigHandler* config;
 FXHelper* fxh;
 
-UCHAR  imgz[12 * 3];
+UCHAR  imgz[12 * 3] = { 0 }, imgui[12 * 3] = { 0 };
 
 DXGIManager* dxgi_manager = NULL;
 
@@ -58,6 +58,7 @@ void CaptureHelper::Start(DWORD delay)
 	if (dwHandle == 0) {
 		stopEvent = CreateEvent(NULL, true, false, NULL);
 		dwHandle = CreateThread( NULL, 0, CInProc, (LPVOID)&delay, 0, &dwThreadID);
+		CreateProcess()
 	}
 }
 
@@ -65,7 +66,7 @@ void CaptureHelper::Stop()
 {
 	if (dwHandle != 0) {
 		SetEvent(stopEvent);
-		WaitForSingleObject(dwHandle, 10000);
+		WaitForSingleObject(dwHandle, 5000);
 		CloseHandle(dwHandle);
 		CloseHandle(stopEvent);
 		dwHandle = 0;
@@ -114,7 +115,6 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 
 	// to find dominant color, I just average all points belonging to foreground
 	Mat dominantColor = cv::Mat::zeros(1, 3, CV_32FC1);
-	//dominantColor = cv::Mat::zeros(1, 3, CV_32FC1);
 
 	int idx = 0; //int fgIdx = 0;
 	for (int j = 0; j < inImage.rows; j++)
@@ -136,12 +136,9 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 
 	dominantColor /= numFGPts;
 
-	// convert to uchar so that it can be used directly for visualization
-	//cv::Mat dColor;// (1, 3, CV_8UC1);
+	dominantColor.convertTo(dominantColor, CV_8UC1);
 
-	dominantColor.convertTo(dominantColor/*dColor*/, CV_8UC1);
-
-	return dominantColor;// dColor;
+	return dominantColor;
 }
 
 // Commented part is for multi-thread processing, but single-thread working faster!
@@ -168,8 +165,8 @@ DWORD WINAPI ColorProc(LPVOID inp) {
 	return 0;
 }*/
 
-void FillColors(Mat* src, UCHAR* imgz) {
-	uint w = src->cols / 4, h = src->rows / 3;
+void FillColors(Mat& src, UCHAR* imgz) {
+	uint w = src.cols / 4, h = src.rows / 3;
 	Mat cPos, hPts;
 	Mat ptsLabel, kCenters, dColor;
 	//HANDLE pThread[12];
@@ -178,7 +175,7 @@ void FillColors(Mat* src, UCHAR* imgz) {
 	for (uint dy = 0; dy < 3; dy++)
 		for (uint dx = 0; dx < 4; dx++) {
 			uint ptr = (dy * 4 + dx) * 3;
-			cPos = src->rowRange(dy * h, (dy + 1) * h)
+			cPos = src.rowRange(dy * h, (dy + 1) * h)
 				.colRange(dx * w, (dx + 1) * w);
 			/*callData[dy][dx].src = cPos;
 			callData[dy][dx].dst = imgz + ptr;
@@ -200,10 +197,10 @@ DWORD WINAPI CInProc(LPVOID param)
 {
 	UINT w, h;
 	UCHAR* img = NULL;
-	UCHAR  oldimg[12 * 3] = { 0 };
+	UCHAR* imgo[12 * 3] = { 0 };
 
 	size_t buf_size;
-	ULONGLONG lastTick = GetTickCount64();
+	ULONGLONG lastTick = 0;
 
 	DWORD uiThread, cuThread, wait_time = *((DWORD *) param);
 	HANDLE uiHandle = 0, lightHandle = 0;
@@ -221,32 +218,31 @@ DWORD WINAPI CInProc(LPVOID param)
 		UINT div = 34 - config->divider;
 		// Resize & calc
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img != NULL) {
-			Mat* src = new Mat(h, w, CV_8UC4, img);
-			cv::resize(*src, *src, //Size(w / div, h / div),
-				Size(8 * div, 6 * div), 0, 0, INTER_NEAREST);// INTER_AREA);// 
-			//cv::cvtColor(*src, *src, 1 /*CV_RGBA2RGB*/);
+			Mat src = Mat(h, w, CV_8UC4, img);
+			cv::resize(src, src, Size(16 * div, 12 * div), 0, 0, INTER_NEAREST);// INTER_AREA);// 
 
 			FillColors(src, imgz);
-			delete src;
+			//delete src;
 
-			if (memcmp(imgz, oldimg, sizeof(oldimg)) != 0) {
+			if (memcmp(imgz, imgo, sizeof(imgo)) != 0) {
 				ReleaseSemaphore(uiEvent, 2, NULL);
-				memcpy(oldimg, imgz, sizeof(oldimg));
+				memcpy(imgo, imgz, sizeof(imgo));
 			}
 		}
-		ULONGLONG nextTick = GetTickCount64();
-#ifdef _DEBUG
-		char buff[2048];
-		sprintf_s(buff, 2047, "Update at %fs\n", (nextTick - lastTick) / 1000.0);
-		OutputDebugString(buff);
-#endif
-		if (nextTick - lastTick < 50) {
-			wait_time = 50 - (DWORD)(nextTick - lastTick);
-		}
-		else
-			wait_time = 0;
-		lastTick = nextTick;
+		//ULONGLONG nextTick = GetTickCount64();
+//#ifdef _DEBUG
+//		char buff[2048];
+//		sprintf_s(buff, 2047, "Update at %fs\n", (nextTick - lastTick) / 1000.0);
+//		OutputDebugString(buff);
+//#endif
+		//if (nextTick - lastTick < 50) {
+		//	wait_time = 50 - (DWORD)(nextTick - lastTick);
+		//}
+		//else
+		wait_time = 50;
+//		lastTick = nextTick;
 	}
+
 	ReleaseSemaphore(uiEvent, 2, NULL);
 	WaitForSingleObject(uiHandle, 1000);
 	WaitForSingleObject(lightHandle, 1000);
@@ -258,37 +254,16 @@ DWORD WINAPI CInProc(LPVOID param)
 
 DWORD WINAPI CDlgProc(LPVOID param)
 {
-	UCHAR  imgz[12 * 3];
-	RECT rect;
-	HBRUSH Brush = NULL;
 	ULONGLONG lastTick = 0, nextTick = 0;
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		if (WaitForSingleObject(uiEvent, 500) == WAIT_OBJECT_0 && !IsIconic(hDlg)) {
-			//#ifdef _DEBUG
-			//			OutputDebugString("UI update...\n");
-			//#endif
+		if (WaitForSingleObject(uiEvent, 700) == WAIT_OBJECT_0 && !IsIconic(hDlg)) {
+//#ifdef _DEBUG
+//	OutputDebugString("UI update...\n");
+//#endif
 			nextTick = GetTickCount64();
-			if (nextTick - lastTick > 250) {
-				memcpy(imgz, (UCHAR*)param, sizeof(imgz));
-				for (int i = 0; i < 12; i++) {
-					HWND tl = GetDlgItem(hDlg, IDC_BUTTON1 + i);
-					HWND cBid = GetDlgItem(hDlg, IDC_CHECK1 + i);
-					GetWindowRect(tl, &rect);
-					HDC cnt = GetWindowDC(tl);
-					rect.bottom -= rect.top;
-					rect.right -= rect.left;
-					rect.top = rect.left = 0;
-					// BGR!
-					Brush = CreateSolidBrush(RGB(imgz[i * 3 + 2], imgz[i * 3 + 1], imgz[i * 3]));
-					FillRect(cnt, &rect, Brush);
-					DeleteObject(Brush);
-					UINT state = IsDlgButtonChecked(hDlg, IDC_CHECK1 + i);
-					if ((state & BST_CHECKED))
-						DrawEdge(cnt, &rect, EDGE_SUNKEN, BF_RECT);
-					else
-						DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
-					RedrawWindow(cBid, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				}
+			if (nextTick - lastTick > 200) {
+				memcpy(imgui, (UCHAR*)param, sizeof(imgz));
+				SendMessage(hDlg, WM_PAINT, 0, (LPARAM)imgui);
 				lastTick = nextTick;
 			}
 		}
@@ -299,7 +274,7 @@ DWORD WINAPI CDlgProc(LPVOID param)
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT)
-		if (WaitForSingleObject(uiEvent, 500) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(uiEvent, 700) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //			OutputDebugString("Light update...\n");
 //#endif

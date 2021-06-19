@@ -62,7 +62,7 @@ namespace AlienFX_SDK
 	public:
 
 		bool isInitialized = false;
-		HANDLE devHandle;
+		HANDLE devHandle = NULL;
 		int length = 9;
 		bool inSet = false;
 		ULONGLONG lastPowerCall = 0;

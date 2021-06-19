@@ -494,6 +494,34 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 }
         }
         break;
+    case WM_PAINT:
+        if (lParam != NULL) {
+            // repaint buttons from lparam
+            RECT rect;
+            HBRUSH Brush = NULL;
+            UCHAR* imgui = (UCHAR*)lParam;
+            for (int i = 0; i < 12; i++) {
+                HWND tl = GetDlgItem(hDlg, IDC_BUTTON1 + i);
+                HWND cBid = GetDlgItem(hDlg, IDC_CHECK1 + i);
+                GetWindowRect(tl, &rect);
+                HDC cnt = GetWindowDC(tl);
+                rect.bottom -= rect.top;
+                rect.right -= rect.left;
+                rect.top = rect.left = 0;
+                // BGR!
+                Brush = CreateSolidBrush(RGB(imgui[i * 3 + 2], imgui[i * 3 + 1], imgui[i * 3]));
+                FillRect(cnt, &rect, Brush);
+                DeleteObject(Brush);
+                UINT state = IsDlgButtonChecked(hDlg, IDC_CHECK1 + i);
+                if ((state & BST_CHECKED))
+                    DrawEdge(cnt, &rect, EDGE_SUNKEN, BF_RECT);
+                else
+                    DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
+                RedrawWindow(cBid, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+            }
+        }
+        return false;
+        break;
     case WM_CLOSE: DestroyWindow(hDlg); break;
     case WM_DESTROY: cap->Stop(); PostQuitMessage(0); break;
     case WM_POWERBROADCAST:

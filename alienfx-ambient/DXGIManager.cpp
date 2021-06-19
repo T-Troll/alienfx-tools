@@ -191,7 +191,7 @@ void DXGIManager::gather_output_duplications() {
 		// Creating device for each adapter that has the output
 		CComQIPtr<ID3D11Device> d3d11_device; // CComPtr
 		CComQIPtr<ID3D11DeviceContext> device_context; // CComPtr
-		D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_11_1;// D3D_FEATURE_LEVEL_9_1;
+		D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_9_1;
 		TRY_PANIC(D3D11CreateDevice(adapter,
 			D3D_DRIVER_TYPE_UNKNOWN,
 			NULL, 0, NULL, 0,
@@ -214,8 +214,8 @@ void DXGIManager::gather_output_duplications() {
 					output,
 					duplicated_output));
 
-			if (m_out_dups.size() > 2)
-				int i = 0;
+			//if (m_out_dups.size() > 2)
+			//	int i = 0;
 		}
 	}
 }
@@ -240,8 +240,8 @@ bool DXGIManager::refresh_output() {
 // Returns whether new allocation was made
 bool DXGIManager::update_buffer_allocation() {
 	RECT output_rect = get_output_rect();
-	size_t output_width = output_rect.right - output_rect.left;
-	size_t output_height = output_rect.bottom - output_rect.top;
+	size_t output_width = (size_t) output_rect.right - output_rect.left;
+	size_t output_height = (size_t) output_rect.bottom - output_rect.top;
 	size_t buf_size = output_width * output_height * PIXEL_SIZE;
 	if (m_frame_buf_size != buf_size) {
 		m_frame_buf_size = buf_size;
@@ -265,10 +265,10 @@ RECT DXGIManager::get_output_rect() {
 CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size) {
 	IDXGISurface1* frame_surface;
 
-	/*if (m_output_duplication == NULL) {
+	if (m_output_duplication == NULL) {
 		refresh_output();
 		return CR_FAIL;
-	}*/
+	}
 
 	HRESULT hr = m_output_duplication->get_frame(&frame_surface, m_timeout);
 
@@ -300,8 +300,8 @@ CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size)
 
 	DXGI_OUTPUT_DESC output_desc = m_output_duplication->get_desc();
 	RECT output_rect = output_desc.DesktopCoordinates;
-	size_t output_width = output_rect.right - output_rect.left;
-	size_t output_height = output_rect.bottom - output_rect.top;
+	size_t output_width = (size_t)output_rect.right - output_rect.left;
+	size_t output_height = (size_t)output_rect.bottom - output_rect.top;
 	// Set origin of `output_rect` to (0, 0)
 	OffsetRect(&output_rect, -output_rect.left, -output_rect.top);
 

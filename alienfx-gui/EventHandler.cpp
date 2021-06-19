@@ -64,6 +64,7 @@ void EventHandler::SwitchActiveProfile(int newID)
             conf->activeProfile = newID;
             conf->monState = newP->flags & 0x2 ? 0 : conf->enableMon;
             conf->stateDimmed = newP->flags & 0x4;
+            fxh->Refresh(true);
             StartEvents();
     #ifdef _DEBUG
             char buff[2048];
