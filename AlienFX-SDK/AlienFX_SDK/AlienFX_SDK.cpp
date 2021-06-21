@@ -725,12 +725,11 @@ namespace AlienFX_SDK
 	BYTE Functions::AlienfxWaitForReady()
 	{
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-		for (int i = 0; i < 10 && (status != ALIENFX_READY && status != ALIENFX_NEW_READY); i++)
+		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_READY && status != ALIENFX_NEW_READY; i++)
 		{
 			if (status == ALIENFX_DEVICE_RESET)
 				return status;
 			Sleep(5);
-			status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
 		}
 		return status;
 	}
@@ -739,12 +738,11 @@ namespace AlienFX_SDK
 	{
 
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-		for (int i = 0; i < 10 && status != ALIENFX_BUSY && status != ALIENFX_NEW_BUSY; i++)
+		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_BUSY && status != ALIENFX_NEW_BUSY; i++)
 		{
 			if (status == ALIENFX_DEVICE_RESET)
 				return status;
 			Sleep(5);
-			status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
 		}
 		return status;
 	}
@@ -754,50 +752,21 @@ namespace AlienFX_SDK
 		int status;
 		switch (length) {
 		case API_V3: {
-			status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
+			status = AlienfxGetDeviceStatus();
 			return status == 0 || status == ALIENFX_NEW_READY || status == ALIENFX_NEW_WAITUPDATE;
 		} break;
 		case API_V2: case API_V1: {
-			status = AlienfxWaitForBusy();
-
-			if (status == ALIENFX_DEVICE_RESET)
-			{
-				Sleep(100);
-				return false;
+			switch (AlienfxGetDeviceStatus()) {
+			case ALIENFX_READY:
+				return true; break;
+			case ALIENFX_BUSY:
+				Reset(0x04);
+				return AlienfxWaitForReady() == ALIENFX_READY;
+			case ALIENFX_DEVICE_RESET:
+				return AlienfxWaitForReady() == ALIENFX_READY;
+				break;
 			}
-			else if (status != ALIENFX_BUSY)
-			{
-				Sleep(50);
-			}
-			Reset(0x04);
-
-			status = AlienfxWaitForReady();
-			if (status == ALIENFX_DEVICE_RESET)
-			{
-				Sleep(100);
-
-				return false;
-			}
-			else if (status != ALIENFX_READY)
-			{
-				if (status == ALIENFX_BUSY)
-				{
-					Reset(0x04);
-
-					status = AlienfxWaitForReady();
-					if (status == ALIENFX_DEVICE_RESET)
-					{
-						Sleep(100);
-						return false;
-					}
-				}
-				else
-				{
-					Sleep(50);
-
-					return false;
-				}
-			}
+			return false;
 		} break;
 		}
 		return true;

@@ -78,7 +78,7 @@ void FXHelper::FillDevs()
 		int pid = dev->AlienFXInitialize(dev->vid, devList[i]);
 		if (pid != -1) {
 			devs.push_back(dev);
-			dev->Reset(false);
+			dev->Reset(true);
 		}
 	}
 }

@@ -15,7 +15,7 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 8;
-	cout << "alienfx-probe v1.1.7" << endl;
+	cout << "alienfx-probe v2.2.3" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
@@ -58,9 +58,9 @@ int main(int argc, char* argv[])
 				cout << " Connected." << endl;
 				char name[256], *outName;
 				int count;
+				afx_dev->Reset(true);
 				for (count = 0; count < 5 && !afx_dev->IsDeviceReady(); count++)
 					Sleep(20);
-				afx_dev->Reset(false);
 				cout << "Enter device name or id: ";
 				std::cin.getline(name, 255);
 				if (isdigit(name[0]) && res == (-1)) {

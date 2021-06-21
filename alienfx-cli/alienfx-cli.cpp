@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 	bool low_level = true;
 	UINT sleepy = 0;
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v2.0.2" << endl;
+	cerr << "alienfx-cli v2.2.3" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -56,8 +56,9 @@ int main(int argc, char* argv[])
 	{
 		for (int rcount = 0; rcount < 10 && !afx_dev->IsDeviceReady(); rcount++)
 			Sleep(20);
-		if (!afx_dev->IsDeviceReady())
-			afx_dev->Reset(0);
+		if (!afx_dev->IsDeviceReady()) {
+			afx_dev->Reset(true);
+		}
 		afx_dev->LoadMappings();
 	}
 	else {
@@ -189,8 +190,10 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "reset") {
-			if (low_level)
-				afx_dev->Reset(1);
+			if (low_level) {
+				afx_dev->Reset(false);
+				afx_dev->Reset(true);
+			}
 			else
 				lfxUtil.Reset();
 			continue;

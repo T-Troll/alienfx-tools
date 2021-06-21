@@ -54,7 +54,7 @@ The following commands are available:
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `set-dev=<devID>` Switch active device to this ID (low-level only).
 - `Update` Updates light status (for looped commands or old devices).
-- `Reset` Reset device state.
+- `Reset` Reset current device.
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's avaliable.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
@@ -82,9 +82,9 @@ How it works
 This application get shot of screen (privary or secondary), then divide it to several zones.
 <br>For each zone, dominant color calculated (you can see it at the button in app interface).
 <br>For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.
-<br>You can also select which screen to grab - primary or secondary, if you have more, then one. You can also press "Reset" button to re-initialize screen capturing and lights list.
-<br>"Divider" parameter defines how many pixels in the row will be skipped - working with full-screen image sometimes very slow. Increasing this value decrease CPU load, but decrease dominant color extraction presision as well. Default value is 8, ok for 4k screen with i7 CPU, you can increase it if update lights wit a delay, or decrease if it works ok for you.
-<br>"Brightness" slider dimming the overall lights brigtness - use it for better fit you current monitor brightness.
+<br>You can also select which screen to grab - primary or secondary, if you have more, then one. You can also press "Reset Devices and Capture" button to re-initialize screen capturing and lights list.
+<br>"Quality" slider defines how many pixels will be skipped at analysis - working with full-screen image is very slow. Increasing this value decrease CPU load, but decrease dominant color extraction presision as well. Default value is 16, ok for i7 CPU, you can decrease it if lights updates are slow, or increase if it works ok for you.
+<br>"Dimming" slider decreases the overall lights brigtness - use it for better fit you current monitor brightness.
 <br>"Gamma Correction" checkbox enables visual color gamma correction, make them more close to screen one.
 
 ## alienfx-gui Usage

@@ -83,6 +83,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>./opencv/include;$(IncludePath)</IncludePath>
     <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -139,10 +140,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>./opencv/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>./opencv/lib/zlibd.lib;./opencv/lib/opencv_core440d.lib;./opencv/lib/opencv_imgproc440d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <Profile>false</Profile>
+      <Profile>true</Profile>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+      <AdditionalManifestFiles>$(SolutionDir)\.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -176,7 +178,7 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
+      <EnableDpiAwareness>false</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>

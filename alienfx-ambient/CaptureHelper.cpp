@@ -15,8 +15,6 @@ DWORD WINAPI CDlgProc(LPVOID);
 DWORD WINAPI CFXProc(LPVOID);
 DWORD WINAPI ColorProc(LPVOID);
 
-//bool inWork = true;
-
 HWND hDlg;
 
 ConfigHandler* config;
@@ -26,13 +24,13 @@ UCHAR  imgz[12 * 3] = { 0 }, imgui[12 * 3] = { 0 };
 
 DXGIManager* dxgi_manager = NULL;
 
+HANDLE stopEvent, uiEvent, lhEvent;
+
 CaptureHelper::CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh)
 {
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     dxgi_manager = new DXGIManager();
-	//dxgi_manager->setup();
-	dxgi_manager->set_timeout(50);
-	//SetCaptureScreen(conf->mode);
+	dxgi_manager->set_timeout(100);
 
 	hDlg = dlg;
 	config = conf;
@@ -51,14 +49,11 @@ void CaptureHelper::SetCaptureScreen(int mode) {
 	Start(200);
 }
 
-HANDLE stopEvent;
-
 void CaptureHelper::Start(DWORD delay)
 {
 	if (dwHandle == 0) {
 		stopEvent = CreateEvent(NULL, true, false, NULL);
-		dwHandle = CreateThread( NULL, 0, CInProc, (LPVOID)&delay, 0, &dwThreadID);
-		CreateProcess()
+		dwHandle = CreateThread( NULL, 0, CInProc, (LPVOID) delay, 0, &dwThreadID);
 	}
 }
 
@@ -80,19 +75,18 @@ void CaptureHelper::Restart() {
 	//Start();
 }
 
-cv::Mat extractHPts(const cv::Mat* inImage)
+Mat extractHPts(const Mat& inImage)
 {
 	// container for storing Hue Points
-	cv::Mat listOfHPts(inImage->cols * inImage->rows, 1, CV_32FC1);
-	//listOfHPts = cv::Mat::zeros(inImage.cols * inImage.rows, 1, CV_32FC1);
+	Mat listOfHPts(inImage.cols * inImage.rows, 1, CV_32FC1);
 	Mat res[4];
-	split(*inImage, res);
-	res[0].reshape(1, inImage->cols * inImage->rows).convertTo(listOfHPts, CV_32FC1);
+	split(inImage, res);
+	res[0].reshape(1, inImage.cols * inImage.rows).convertTo(listOfHPts, CV_32FC1);
 	return listOfHPts;
 }
 
 // function for extracting dominant color from foreground pixels
-cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
+Mat getDominantColor(const Mat& inImage, const Mat& ptsLabel)
 {
 	// first we determine which cluster is foreground
 	// assuming the our object of interest is the biggest object in the image region
@@ -114,9 +108,12 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 		numFGPts = (int) sumLabel.at<float>(0, 0);
 
 	// to find dominant color, I just average all points belonging to foreground
-	Mat dominantColor = cv::Mat::zeros(1, 3, CV_32FC1);
+	Mat dominantColor(1,3, CV_32FC1);// = cv::Mat::zeros(1, 3, CV_32FC1);
 
-	int idx = 0; //int fgIdx = 0;
+	int idx = 0;
+	dominantColor.at<float>(0, 0) = 0;
+	dominantColor.at<float>(0, 1) = 0;
+	dominantColor.at<float>(0, 2) = 0;
 	for (int j = 0; j < inImage.rows; j++)
 	{
 		for (int i = 0; i < inImage.cols; i++)
@@ -129,104 +126,140 @@ cv::Mat getDominantColor(const cv::Mat& inImage, const cv::Mat& ptsLabel)
 				dominantColor.at<float>(0, 1) += (tempVec[1]);
 				dominantColor.at<float>(0, 2) += (tempVec[2]);
 
-				//fgIdx++;
 			}
 		}
 	}
 
 	dominantColor /= numFGPts;
 
-	dominantColor.convertTo(dominantColor, CV_8UC1);
+	Mat cColor;
 
-	return dominantColor;
+	dominantColor.convertTo(cColor, CV_8UC1);
+
+	return cColor;
 }
 
-// Commented part is for multi-thread processing, but single-thread working faster!
-/*struct procData {
-	Mat src;
+struct procData {
+	//Mat* src;
+	int dx, dy;
 	UCHAR* dst;
-	bool done;
+	HANDLE pEvent;
+	HANDLE pfEvent;
 };
 
-uint fcount = 0;
+static procData callData[3][4];
+uint w = 2, h = 2;
+HANDLE pThread[12] = { 0 };
+HANDLE pfEvent[12] = { 0 };
+Mat srcImage;
 
 DWORD WINAPI ColorProc(LPVOID inp) {
 	procData* src = (procData*) inp;
-	Mat hPts;
-	hPts = extractHPts(src->src);
-	Mat ptsLabel, kCenters;
-	cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
+	uint idx = src->dy * 4 + src->dx;
+	//uint w = src->src->cols / 4, h = src->src->rows / 3;
+	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
+		if (WaitForSingleObject(src->pEvent, 200) == WAIT_OBJECT_0) {
+			Mat cPos = srcImage.rowRange(src->dy * h, (src->dy + 1) * h)
+				.colRange(src->dx * w, (src->dx + 1) * w);
+			Mat hPts;
+			hPts = extractHPts(cPos);// src->src);
+			Mat ptsLabel, kCenters;
+			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 100, 0.001)), 3, cv::KMEANS_PP_CENTERS, kCenters); // 1000, 0.00001, 5
 
-	Mat dColor;
-	dColor = getDominantColor(src->src, ptsLabel);
-	src->dst[0] = dColor.ptr<UCHAR>()[0];
-	src->dst[1] = dColor.ptr<UCHAR>()[1];
-	src->dst[2] = dColor.ptr<UCHAR>()[2];
+			Mat dColor;
+			dColor = getDominantColor(cPos/*src->src*/, ptsLabel);
+			const UCHAR* finMat = dColor.ptr();
+			src->dst[0] = finMat[0];
+			src->dst[1] = finMat[1];
+			src->dst[2] = finMat[2];
+			SetEvent(pfEvent[idx]);
+		}
+	}
+	CloseHandle(pfEvent[idx]);
+	pfEvent[idx] = 0;
 	return 0;
-}*/
+}
 
 void FillColors(Mat& src, UCHAR* imgz) {
-	uint w = src.cols / 4, h = src.rows / 3;
-	Mat cPos, hPts;
-	Mat ptsLabel, kCenters, dColor;
-	//HANDLE pThread[12];
-	//DWORD tId;
-	//procData callData[3][4];
+	w = src.cols / 4, h = src.rows / 3;
+	//Mat cPos, hPts;
+	//Mat ptsLabel, kCenters, dColor;
+
+	DWORD tId;
+	srcImage = src;
 	for (uint dy = 0; dy < 3; dy++)
 		for (uint dx = 0; dx < 4; dx++) {
-			uint ptr = (dy * 4 + dx) * 3;
-			cPos = src.rowRange(dy * h, (dy + 1) * h)
-				.colRange(dx * w, (dx + 1) * w);
-			/*callData[dy][dx].src = cPos;
-			callData[dy][dx].dst = imgz + ptr;
-			callData[dy][dx].done = false;
-			pThread[dy * 4 + dx] = CreateThread( NULL, 4*1024*1024, ColorProc, &callData[dy][dx], 0, &tId);*/
-			hPts = extractHPts(&cPos);
+			//cPos = src.rowRange(dy * h, (dy + 1) * h)
+			//	.colRange(dx * w, (dx + 1) * w);
+			if (!pfEvent[dy * 4 + dx]) {
+				uint ptr = (dy * 4 + dx);// *3;
+				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
+				callData[dy][dx].dst = imgz + ptr * 3;
+				//callData[dy][dx].src = &src;
+				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
+				pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
+				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorProc, &callData[dy][dx], 0, &tId);
+			}
+			else {
+				//callData[dy][dx].src = &src;
+				SetEvent(callData[dy][dx].pEvent);
+			}
+			/*hPts = extractHPts(cPos);
 			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
 			dColor = getDominantColor(cPos, ptsLabel);
 			imgz[ptr] = dColor.ptr<UCHAR>()[0];
 			imgz[ptr + 1] = dColor.ptr<UCHAR>()[1];
-			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];
+			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];*/
 		}
-	//WaitForMultipleObjects(12, pThread, true, 3000);
+	WaitForMultipleObjects(12, pfEvent, true, 3000);
 }
-
-HANDLE uiEvent = 0;
 
 DWORD WINAPI CInProc(LPVOID param)
 {
-	UINT w, h;
 	UCHAR* img = NULL;
 	UCHAR* imgo[12 * 3] = { 0 };
 
 	size_t buf_size;
 	ULONGLONG lastTick = 0;
 
-	DWORD uiThread, cuThread, wait_time = *((DWORD *) param);
+	DWORD uiThread, cuThread, wait_time = (DWORD) param;
 	HANDLE uiHandle = 0, lightHandle = 0;
 
-	uiEvent = CreateSemaphore(NULL, 0, 2, NULL);
+	uiEvent = CreateEvent(NULL, false, false, NULL);// CreateSemaphore(NULL, 0, 2, NULL);
+	lhEvent = CreateEvent(NULL, false, false, NULL);
 
 	RECT dimensions = dxgi_manager->get_output_rect();
-	w = dimensions.right - dimensions.left;
-	h = dimensions.bottom - dimensions.top;
+	UINT w = dimensions.right - dimensions.left;
+	UINT h = dimensions.bottom - dimensions.top;
+
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
 	uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, &uiThread);
 	lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, &cuThread);
 
-	while(WaitForSingleObject(stopEvent, wait_time) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(stopEvent, wait_time) == WAIT_TIMEOUT) {
 		UINT div = 34 - config->divider;
 		// Resize & calc
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img != NULL) {
-			Mat src = Mat(h, w, CV_8UC4, img);
-			cv::resize(src, src, Size(16 * div, 12 * div), 0, 0, INTER_NEAREST);// INTER_AREA);// 
+			if (w && h) {
+				Mat src = Mat(h, w, CV_8UC4, img);
+				cv::resize(src, src, Size(16 * div, 12 * div), 0, 0, INTER_NEAREST);// INTER_AREA);// 
 
-			FillColors(src, imgz);
-			//delete src;
+				FillColors(src, imgz);
 
-			if (memcmp(imgz, imgo, sizeof(imgo)) != 0) {
-				ReleaseSemaphore(uiEvent, 2, NULL);
-				memcpy(imgo, imgz, sizeof(imgo));
+				if (memcmp(imgz, imgo, 36) != 0) {
+					//ReleaseSemaphore(uiEvent, 2, NULL);
+					SetEvent(lhEvent);
+					SetEvent(uiEvent);
+					memcpy(imgo, imgz, sizeof(imgo));
+				}
+			}
+			else {
+				dxgi_manager->refresh_output();
+				Sleep(200);
+				dimensions = dxgi_manager->get_output_rect();
+				w = dimensions.right - dimensions.left;
+				h = dimensions.bottom - dimensions.top;
 			}
 		}
 		//ULONGLONG nextTick = GetTickCount64();
@@ -239,11 +272,11 @@ DWORD WINAPI CInProc(LPVOID param)
 		//	wait_time = 50 - (DWORD)(nextTick - lastTick);
 		//}
 		//else
-		wait_time = 50;
-//		lastTick = nextTick;
+			wait_time = 50;
+		//lastTick = nextTick;
 	}
 
-	ReleaseSemaphore(uiEvent, 2, NULL);
+	//ReleaseSemaphore(uiEvent, 2, NULL);
 	WaitForSingleObject(uiHandle, 1000);
 	WaitForSingleObject(lightHandle, 1000);
 	CloseHandle(uiHandle);
@@ -254,18 +287,15 @@ DWORD WINAPI CInProc(LPVOID param)
 
 DWORD WINAPI CDlgProc(LPVOID param)
 {
-	ULONGLONG lastTick = 0, nextTick = 0;
-	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		if (WaitForSingleObject(uiEvent, 700) == WAIT_OBJECT_0 && !IsIconic(hDlg)) {
+	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+	while (WaitForSingleObject(stopEvent, 150) == WAIT_TIMEOUT) {
+		if (!IsIconic(hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //	OutputDebugString("UI update...\n");
 //#endif
-			nextTick = GetTickCount64();
-			if (nextTick - lastTick > 200) {
-				memcpy(imgui, (UCHAR*)param, sizeof(imgz));
-				SendMessage(hDlg, WM_PAINT, 0, (LPARAM)imgui);
-				lastTick = nextTick;
-			}
+			memcpy(imgui, (UCHAR*)param, sizeof(imgz));
+			SendMessage(hDlg, WM_PAINT, 0, (LPARAM)imgui);
+			WaitForSingleObject(stopEvent, 150);
 		}
 	}
 	return 0;
@@ -273,8 +303,9 @@ DWORD WINAPI CDlgProc(LPVOID param)
 
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
+	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT)
-		if (WaitForSingleObject(uiEvent, 700) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(lhEvent, 200) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //			OutputDebugString("Light update...\n");
 //#endif

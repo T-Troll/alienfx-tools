@@ -35,7 +35,7 @@ void FXHelper::FillDevs()
 		int pid = dev->AlienFXInitialize(dev->vid, devList[i]);
 		if (pid != -1) {
 			devs.push_back(dev);
-			dev->Reset(false);
+			dev->Reset(true);
 		}
 	}
 }
@@ -198,12 +198,15 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 	}
 	if (dev != NULL) {
 		bool devReady = false;
-		for (int wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
+		int wcount;
+		for (wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
 			Sleep(20);
 		if (!devReady) {
 #ifdef _DEBUG
 			if (force)
 				OutputDebugString("Forced light update skipped!\n");
+			else
+				OutputDebugString("Light update skipped!\n");
 #endif
 			return false;
 		}
@@ -307,7 +310,8 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 			&& config->lightsOn && config->stateOn) return true;
 	}
 	ret = SetLight(map->devid, map->lightid, lFlags, actions, force);
-	if (update) UpdateColors(map->devid);
+	if (update) 
+		UpdateColors(map->devid);
 	return ret;
 }
 

@@ -269,8 +269,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
     switch (message)
     {
+    case WM_NCCREATE:
+    {
+        EnableNonClientDpiScaling(hDlg);
+        SetDialogDpiChangeBehavior(hDlg, DDC_DEFAULT, DDC_DEFAULT);
+        return (DefWindowProc(hDlg, message, wParam, lParam));
+    } break;
+    case WM_DPICHANGED:
+    {
+        LPRECT lpRect = (LPRECT)lParam;
+        SetWindowPos(hDlg, nullptr, lpRect->left, lpRect->top, lpRect->right - lpRect->left, lpRect->bottom - lpRect->top, SWP_NOZORDER | SWP_NOACTIVATE);
+        return 0;
+    }
     case WM_INITDIALOG:
     {
+        EnableNonClientDpiScaling(hDlg);
+        SetDialogDpiChangeBehavior(hDlg, DDC_DEFAULT, DDC_DEFAULT);
+
         UpdateLightList(light_list);
 
         // Mode...
@@ -284,18 +299,18 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         }
         CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection ? BST_CHECKED : BST_UNCHECKED);
         
-        SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 256));
+        SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(brSlider, TBM_SETPOS, true, conf->shift);
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
 
-        SendMessage(divSlider, TBM_SETRANGE, true, MAKELPARAM(1, 32));
-        SendMessage(divSlider, TBM_SETPOS, true, conf->divider);
+        SendMessage(divSlider, TBM_SETRANGE, true, MAKELPARAM(0, 32));
+        SendMessage(divSlider, TBM_SETPOS, true, 32-conf->divider);
         SendMessage(divSlider, TBM_SETTICFREQ, 2, 0);
 
         sTip = CreateToolTip(brSlider);
         lTip = CreateToolTip(divSlider);
         SetSlider(sTip, sBuff, conf->shift);
-        SetSlider(lTip, lBuff, conf->divider);
+        SetSlider(lTip, lBuff, 32-conf->divider);
     } break;
     case WM_COMMAND:
     {
@@ -443,23 +458,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg,       // handle to window
-                HWND_TOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
-            SetWindowPos(hDlg,       // handle to window
-                HWND_NOTOPMOST,  // placement-order handle
-                0,     // horizontal position
-                0,      // vertical position
-                0,  // width
-                0, // height
-                SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE// window-positioning options
-            );
             Shell_NotifyIcon(NIM_DELETE, &niData);
+            SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+            SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             break;
             case WM_RBUTTONUP:
             case WM_CONTEXTMENU:
@@ -478,8 +479,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 SetSlider(sTip, sBuff, conf->shift);
             } else 
                 if ((HWND)lParam == divSlider) {
-                    conf->divider = (DWORD)SendMessage(divSlider, TBM_GETPOS, 0, 0);
-                    SetSlider(lTip, lBuff, conf->divider);
+                    conf->divider = 32 - (DWORD)SendMessage(divSlider, TBM_GETPOS, 0, 0);
+                    SetSlider(lTip, lBuff, 32 - conf->divider);
                 }
             break;
         default: 

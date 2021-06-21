@@ -836,35 +836,28 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 }
 
 AlienFX_SDK::afx_act* mod;
-ULONGLONG lastColorCall = 0;
-bool runLightsRefresh = false;
+
+HANDLE stopColorRefresh = 0;
 
 DWORD CColorRefreshProc(LPVOID param) {
     AlienFX_SDK::afx_act last;
-    ULONGLONG cColorCall = 0;
-    lastColorCall = GetTickCount64();
     lightset* mmap = (lightset*)param;
     last.r = mod->r;
     last.g = mod->g;
     last.b = mod->b;
-    while (runLightsRefresh) {
+    while (WaitForSingleObject(stopColorRefresh, 250)) {
         if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
-            cColorCall = GetTickCount64();
-            if (cColorCall - lastColorCall > 350) {
-                // set colors...
-                last.r = mod->r;
-                last.g = mod->g;
-                last.b = mod->b;
-                //fxhl->RefreshState();
-                if (mmap != NULL) fxhl->RefreshOne(mmap, true);
-                lastColorCall = GetTickCount64();
-            }
+            // set colors...
+            last.r = mod->r;
+            last.g = mod->g;
+            last.b = mod->b;
+            if (mmap != NULL) 
+                fxhl->RefreshOne(mmap, true, true);
         }
-        else
-            Sleep(100);
     }
     return 0;
 }
+
 UINT_PTR Lpcchookproc(
     HWND hDlg,
     UINT message,
@@ -912,18 +905,22 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
     cc.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK;
 
     mod = map;
-    runLightsRefresh = true;
+    stopColorRefresh = CreateEvent(NULL, false, false, NULL);
     crRefresh = CreateThread(NULL, 0, CColorRefreshProc, mmap, 0, &crThreadID);
 
-    if (!(ret = ChooseColor(&cc)))
+    ret = ChooseColor(&cc);
+    SetEvent(stopColorRefresh);
+    WaitForSingleObject(crRefresh, 300);
+    CloseHandle(crRefresh);
+    CloseHandle(stopColorRefresh);
+
+    if (!ret)
     {
-        runLightsRefresh = false;
         map->r = savedColor.r;
         map->g = savedColor.g;
         map->b = savedColor.b;
         fxhl->RefreshState();
-    } else
-        runLightsRefresh = false;
+    }
     RedrawButton(hDlg, id, map->r, map->g, map->b);
     return ret;
 }
