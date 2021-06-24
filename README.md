@@ -102,6 +102,9 @@ How it works
 "Monitoring" tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
 "Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings. NB: If you want to add new light, type light ID into LightID box. If this ID already present in list, it will be overrided to first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
 "Profiles" tab control profile settings, like selecting defalult profile, per-profile monitoring control and automatic switch to this profile then the defined application run.<br>
+Each frofile can have settings and application for trigger it. The settinggs are:
+- "Default profile" - Default profile is the one used if "Profile autoswitch" enabled, but running applications doesn't fits any other profile. There are can be only one Default profile, and it can't be deleted.
+- "Disable monitoring" - 
 "Settings" tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings:<br>
 - "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
 - "Turn off lights then screen off" - Fade all lights to black then system screen off (default - off).
@@ -149,6 +152,7 @@ Status Led:
 - Network activity - Switch light if any network traffic detected (across all adapters).
 - System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
 - Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
+- Low battery - Status avtivated then battery below level defined by slider.
 <br>"Blink" checkbox switch triggered value to blink between on-off colors 4 times per sec.
 
 <br><b>WARNING:</b> All color effects stop working if you enable any Event monitoring.
