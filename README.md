@@ -100,11 +100,34 @@ How it works
 ```
 "Color" tab is set hardware color mode for light. This setting will remains even if you exit application.<br>
 "Monitoring" tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
+Monitoring events avaliable:<br>
+System Load:
+- CPU Load - CPU load color mix from 0% ("calm") to 100% ("Active")
+- RAM Load - The same for used RAM percentage
+- GPU Load - The same for utilized GPU percentage (top one across GPUs if more, then one present into the system).
+- HDD Load - It's not exactly a load, but IDLE time. If idle - it's "calm", 100% busy - active, and mix between.
+- Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
+- Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
+- Battery level - Battery charge level in percent (100=dischagred, 0=full).
+<br>You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.
+
+Status Led:
+- Disk activity - Switch light every disk activity event (HDD IDLE above zero).
+- Network activity - Switch light if any network traffic detected (across all adapters).
+- System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
+- Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
+- Low battery - Switch light if battery charge below level defined by slider.
+<br>"Blink" checkbox switch triggered value to blink between on-off colors 4 times per sec.
+
 "Devices and lights" tab is an extended GUI for `alienfx-probe`, providing device and lights control, names modification, light testing and some other hardware-related settings. NB: If you want to add new light, type light ID into LightID box. If this ID already present in list, it will be overrided to first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
-"Profiles" tab control profile settings, like selecting defalult profile, per-profile monitoring control and automatic switch to this profile then the defined application run.<br>
+"Profiles" tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.<br>
 Each frofile can have settings and application for trigger it. The settinggs are:
+- "Application" - Defines application executable for trigger profile switch if "Profile autoswitch" enabled.
 - "Default profile" - Default profile is the one used if "Profile autoswitch" enabled, but running applications doesn't fits any other profile. There are can be only one Default profile, and it can't be deleted.
-- "Disable monitoring" - 
+- "Disable monitoring" - Then profile activated, monitoring functions are disabled, despite of global setting.
+- "Dim lights" - Then profile activated, all lights are dimmed to common amount.
+- "Only then active" - If "Profile autoswitch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
+
 "Settings" tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings:<br>
 - "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
 - "Turn off lights then screen off" - Fade all lights to black then system screen off (default - off).
@@ -118,7 +141,7 @@ Each frofile can have settings and application for trigger it. The settinggs are
 - "Start with Windows" - Start application at Windows start. It will not work if application request run as admin level (see below) (default - off).
 - "Start minimized" - Hide application window in system tray after start.
 - "Enable monitoring" - Application start to monitor system metrics (CPU/GPU/RAM load, etc) and refresh lights according to it (default - on).
-- "Profile autoswitch" - Switch between prfiles avaliable automatically, according of applications start and finish. This also block manual profile selection (default - off).
+- "Profile autoswitch" - Switch between profiles avaliable automatically, according of applications start and finish. This also block manual profile selection (default - off).
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" priviledge (default - off).
 - "Esif temperature" - Read hardware device temperature counters. If disabled, only system-wide ones will be read. It's useful for some Dell (not Alienware) systems. but also provide a lot of component temperature readings. It will require "Run as administrator" priviledge (default - off).
 
@@ -135,25 +158,6 @@ Other shortcuts (only then application active):
 - ALT+s - switch to "Settings" tab
 - ALT+r - refresh all lights
 - ALT+? - about app
-
-Monitoring events avaliable:<br>
-System Load:
-- CPU Load - CPU load color mix from 0% ("calm") to 100% ("Active")
-- RAM Load - The same for used RAM percentage
-- GPU Load - The same for utilized GPU percentage (top one across GPUs if more, then one present into the system).
-- HDD Load - It's not exactly a load, but IDLE time. If idle - it's "calm", 100% busy - active, and mix between.
-- Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
-- Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
-- Battery level - Battery charge level in percent (0=dischagred, 100=full).
-<br>You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.
-
-Status Led:
-- Disk activity - Switch light every disk activity event (HDD IDLE above zero).
-- Network activity - Switch light if any network traffic detected (across all adapters).
-- System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
-- Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
-- Low battery - Status avtivated then battery below level defined by slider.
-<br>"Blink" checkbox switch triggered value to blink between on-off colors 4 times per sec.
 
 <br><b>WARNING:</b> All color effects stop working if you enable any Event monitoring.
 
