@@ -63,7 +63,7 @@ The following commands are available:
 <br>Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For low-level api V3, it also support `breath, spectrum, rainbow`.
 
 ## alienfx-haptics Usage
-Run `alienfx-haptics.exe`. Set the colors for lights and itís mapping to respond the frequency.
+Run `alienfx-haptics.exe`. Set the colors for lights and it‚Äôs mapping to respond the frequency.
 <br>Keep app running or minimize, then start player or game of choice.
 ```
 How it works
@@ -72,10 +72,10 @@ This application get audio stream from default output or input device (you can s
 <br>After that, spectrum powers grouped into 20 groups using octave scale.
 <br>For each light found into the system, you can define group(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.
 <br>It's also possible to compress diapason if group always not so or so high powered - use low-level and high-level sliders. Low-level slider define minimum power to react (all below will be treated as zero), and Hi-level slider defines maximum level (all above will be treated as maximum).
-<br>îClearî button set all colors to black and sliders to default value.
-<br>îRefreshî button rescan all lights into the system (itís useful if you connect/disconnect new light device) and restart audio capture stream (in case you switch or remove audio device).
-<br>îRemoveî button remove all lights settings across all lights. Use with care!
-<br>îMinimizeî button (or top menu minimize) will hide application into the system tray. Left-click the tray icon to open it back, right-click it to close application.
+<br>‚ÄùClear‚Äù button set all colors to black and sliders to default value.
+<br>‚ÄùRefresh‚Äù button rescan all lights into the system (it‚Äôs useful if you connect/disconnect new light device) and restart audio capture stream (in case you switch or remove audio device).
+<br>‚ÄùRemove‚Äù button remove all lights settings across all lights. Use with care!
+<br>‚ÄùMinimize‚Äù button (or top menu minimize) will hide application into the system tray. Left-click the tray icon to open it back, right-click it to close application.
 
 ## alienfx-ambient Usage
 Run `alienfx-ambient.exe`. At first launch, set screen zones mapping to lights and parameters.
@@ -90,8 +90,8 @@ This application get shot of screen (primary or secondary), then divide it to se
 <br>"Quality" slider defines how many pixels will be skipped at analysis - working with full-screen image is very slow. Increasing this value decrease CPU load, but decrease dominant color extraction precision as well. Default value is 16, ok for i7 CPU, you can decrease it if lights updates are slow (or CPU usage is so high), or increase if it works ok for you.
 <br>"Dimming" slider decreases the overall lights brightness - use it for better fit you current monitor brightness.
 <br>"Gamma Correction" checkbox enables visual color gamma correction, make them more close to screen one.
-<br>îRestart devices and captureî button is used to refresh light list according to devices found into the systems, as well as restart screen capture process.
-<br>îMinimizeî button (or top menu minimize) will hide application into the system tray. Left-click the tray icon to open it back, right-click it to close application.
+<br>‚ÄùRestart devices and capture‚Äù button is used to refresh light list according to devices found into the systems, as well as restart screen capture process.
+<br>‚ÄùMinimize‚Äù button (or top menu minimize) will hide application into the system tray. Left-click the tray icon to open it back, right-click it to close application.
 
 ## alienfx-gui Usage
 Run `alienfx-gui.exe`.<br>
@@ -103,18 +103,18 @@ Tray menu (right-click on tray button) avaliable all the time for some fast swit
 How it works
 ```
 `"Color"` tab is set hardware colors and effects for light. This setting will remains even if you exit application.<br>
-Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph ñ 2, Spectrum ñ 7) to work correctly.<br>
-Use ìEffectsî list to add/remove/select effect. For each effect, you can define its color, effect mode, speed (how fast to change the color), and length (how long it plays).<br>
+Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph ‚Äì 2, Spectrum ‚Äì 7) to work correctly.<br>
+Use ‚ÄúEffects‚Äù list to add/remove/select effect. For each effect, you can define its color, effect mode, speed (how fast to change the color), and length (how long it plays).<br>
 Available effect modes are:<br>
-- Color ñ Stay at solid color defined.
-- Pulse ñ Switch between defined color and black.
-- Morph ñ Morph light from previous color to current one. (for devices with APIv3 and higher)
-- Breath ñ Morph light from black to current color. (for devices with APIv3 and higher)
-- Spectrum ñ Like a morph, but up to 9 colors can be defined. (for devices with APIv3 and higher)
-- Rainbow ñ Like a Color, but can use up to 9 colors. (for devices with APIv3 and higher)
+- Color ‚Äì Stay at solid color defined.
+- Pulse ‚Äì Switch between defined color and black.
+- Morph ‚Äì Morph light from previous color to current one. (for devices with APIv3 and higher)
+- Breath ‚Äì Morph light from black to current color. (for devices with APIv3 and higher)
+- Spectrum ‚Äì Like a morph, but up to 9 colors can be defined. (for devices with APIv3 and higher)
+- Rainbow ‚Äì Like a Color, but can use up to 9 colors. (for devices with APIv3 and higher)
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.<br>
-ìSet Allî button copy current light effects to all lights into the list (itís useful if you need to have all lights into the same color and mode).<br>
+‚ÄúSet All‚Äù button copy current light effects to all lights into the list (it‚Äôs useful if you need to have all lights into the same color and mode).<br>
 
 `"Monitoring"` tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.<br>
 If "Use color settings as default" is active first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be used for "active" situation, if it's not active - both colors will taken from "Monitoring" tab fields.<br>
@@ -140,7 +140,13 @@ Status Led:
 You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and system overheat event. In this case Status color always override System one then triggered, as well as both override Power one.<br>
 
 `"Devices and lights"` tab is an extended GUI for `alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.<br>
-NB: If you want to add new light, type light ID into LightID box. If this ID already present in list, it will be changed to the first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
+"Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.<br>
+"Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.<br>
+"Lights" list shows all lights defined for selected device. Use ‚ÄúAdd‚Äù/‚ÄùRemove‚Äù buttons to add new light or remove selected one.<br>
+NB: If you want to add new light, type light ID into LightID box before pressing ‚ÄúAdd‚Äù button. If this ID already present in list or absent, it will be changed to the first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.<br>
+"Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.<br>
+"Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.<br>
+Selected light changes it color to the one defined by "Test color" button, and fade to black then unselected.
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.<br>
 Each profile can have settings and application for trigger it. The settings are:
@@ -181,7 +187,7 @@ Other shortcuts (only then application active):
 - ALT+r - refresh all lights
 - ALT+? - about app
 
-<br><b>WARNING:</b> All color effects stop working if you enable any Event monitoring. Itís a hardware bug ñ any light update operation restart all effects.
+<br><b>WARNING:</b> All color effects stop working if you enable any Event monitoring. It‚Äôs a hardware bug ‚Äì any light update operation restart all effects.
 
 ## Tools Used
 * Visual Studio Community 2019
