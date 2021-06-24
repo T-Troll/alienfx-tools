@@ -24,7 +24,7 @@ private:
 	ISimpleAudioVolume* pAudioVolume = NULL;
 	float originalVolume;
 
-	//Graphics* gHandle;
+	//Graphics* gHandle = NULL;
 
 	WAVEFORMATEX* pwfx, *suggest;
 

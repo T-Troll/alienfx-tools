@@ -53,7 +53,7 @@ void WSAudioIn::startSampling()
 {
 	DWORD dwThreadID;
 	// creating listener thread...
-	if (pAudioClient && rate > 0) {
+	if (pAudioClient && !dwHandle) {
 		stopEvent = CreateEvent(NULL, true, false, NULL);
 		dwHandle = CreateThread( NULL, 0, WSwaveInProc, pCaptureClient, 0, &dwThreadID);
 		pAudioClient->Start();
@@ -62,12 +62,14 @@ void WSAudioIn::startSampling()
 
 void WSAudioIn::stopSampling()
 {
-	if (rate > 0) {
+	if (dwHandle) {
 		SetEvent(stopEvent);
 		SetEvent(hEvent);
 		pAudioClient->Stop();
 		WaitForSingleObject(dwHandle, 10000);
 		ResetEvent(stopEvent);
+		CloseHandle(dwHandle);
+		dwHandle = NULL;
 	}
 }
 
@@ -209,8 +211,8 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
 	int ret;
 
-	updHandle = CreateThread(NULL, 0, resample, waveD, 0, &dwThreadID);
 	updateEvent = CreateEvent(NULL, true, false, NULL);
+	updHandle = CreateThread(NULL, 0, resample, waveD, 0, &dwThreadID);
 
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
 		switch (ret = WaitForSingleObject(hEvent, 1000))
@@ -270,6 +272,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 			break;
 		}
 	}
+	SetEvent(updateEvent);
 	WaitForSingleObject(updHandle, 1000);
 	CloseHandle(updHandle);
 	free(waveT);
@@ -285,7 +288,8 @@ DWORD WINAPI resample(LPVOID lpParam)
 		if (WaitForSingleObject(updateEvent, 100) == WAIT_OBJECT_0) {
 			dftGG->calc(waveDouble);
 			if (count == 10) {
-				gHandle->refresh();
+				//gHandle->refresh();
+				SendMessage(gHandle->dlg, WM_PAINT, 0, 0);
 				count = 0;
 			}
 			else count++;

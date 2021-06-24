@@ -49,7 +49,6 @@ void FXHelper::TestLight(int did, int id)
 {
 	AlienFX_SDK::Functions* dev = LocateDev(did);
 	if (dev != NULL) {
-
 		int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
 			g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
 			b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
@@ -78,7 +77,6 @@ void FXHelper::ResetPower(int did)
 
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
 {
-
 #ifdef _DEBUG
 	//char buff[2048];
 	//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
@@ -117,12 +115,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 3: if (valid && (lGPU == cGPU || lGPU < ccut && cGPU < ccut)) continue; coeff = cGPU; break;
 				case 4: if (valid && (lNET == cNet || lNET < ccut && cNet < ccut)) continue; coeff = cNet; break;
 				case 5: if (valid && (lTemp == cTemp || lTemp < ccut && cTemp < ccut)) continue; coeff = cTemp; break;
-				case 6: if (valid && (lBatt == cBatt || lBatt < ccut && cBatt < ccut)) continue; coeff = cBatt; break;
+				case 6: if (valid && (lBatt == cBatt || lBatt > ccut && cBatt > ccut)) continue; coeff = 100-cBatt; break;
 				}
 				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
-				fin.r = (BYTE) (fin.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
-				fin.g = (BYTE) (fin.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
-				fin.b = (BYTE) (fin.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
+				fin.r = (BYTE)(fin.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
+				fin.g = (BYTE)(fin.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
+				fin.b = (BYTE)(fin.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
 			}
 			if (Iter->eve[3].fs.b.flags) {
 				// indicator
@@ -133,18 +131,21 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 1: if (!tNet && valid && !blink) continue; indi = cNet; break;
 				case 2: if (valid && !blink &&
 					((lTemp <= ccut && cTemp <= ccut) ||
-						(cTemp > ccut && lTemp > ccut))) continue; 
+						(cTemp > ccut && lTemp > ccut))) continue;
 					indi = cTemp - ccut; break;
 				case 3: if (valid && !blink &&
-					((lRAM <= ccut && cRAM <= ccut) || (lRAM > ccut && cRAM > ccut))) continue; 
+					((lRAM <= ccut && cRAM <= ccut) || (lRAM > ccut && cRAM > ccut))) continue;
 					indi = cRAM - ccut; break;
+				case 4: if (valid && !blink &&
+					((lBatt >= ccut && cBatt >= ccut) || (lBatt < ccut && cBatt < ccut))) continue;
+					indi = ccut - cBatt; break;
 				}
-				fin = indi > 0 ? 
-						blink ?
-							bStage ? 
-								Iter->eve[3].map[1] : fin 
-							: Iter->eve[3].map[1]
-						: fin;
+				fin = indi > 0 ?
+					blink ?
+					bStage ?
+					Iter->eve[3].map[1] : fin
+					: Iter->eve[3].map[1]
+					: fin;
 			}
 			wasChanged = true;
 			std::vector<AlienFX_SDK::afx_act> actions;
@@ -205,8 +206,8 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 #ifdef _DEBUG
 			if (force)
 				OutputDebugString("Forced light update skipped!\n");
-			else
-				OutputDebugString("Light update skipped!\n");
+			//else
+			//	OutputDebugString("Light update skipped!\n");
 #endif
 			return false;
 		}
@@ -310,9 +311,7 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 			&& config->lightsOn && config->stateOn) return true;
 	}
 	ret = SetLight(map->devid, map->lightid, lFlags, actions, force);
-	if (update) 
+	if (update)
 		UpdateColors(map->devid);
 	return ret;
 }
-
-

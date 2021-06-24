@@ -22,7 +22,6 @@ int bars;
 int* freq;
 int nCmdShow;
 double y_scale;
-HFONT g_hfFont;
 
 bool axis_draw = true;
 
@@ -32,8 +31,6 @@ WSAudioIn* audio = NULL;
 
 HINSTANCE ghInstance = NULL;
 
-HWND dlg = NULL;
-
 NOTIFYICONDATA niData;
 
 Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf, FXHelper *fxproc)
@@ -42,16 +39,11 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 	nCmdShow=mainCmdShow;
 	bars = conf->numbars;
 	y_scale = conf->res;
-	g_hfFont = NULL;
-	g_bOpaque = TRUE;
-	g_rgbText = RGB(255, 255, 255);
-	g_rgbBackground = RGB(0, 0, 0);
 	freq=freqp;
 
 	config = conf;
 	afx = fxproc;
 
-	
 	ghInstance = hInstance;
 
 	dlg = CreateDialogParam(hInstance,
@@ -63,13 +55,13 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 	SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIEN)));
 	SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIEN), IMAGE_ICON, 16, 16, 0));
 
-	ShowWindow(dlg, nCmdShow);
+	//ShowWindow(dlg, nCmdShow);
 }
 
 
 void Graphics::start(){
-	ShowWindow(hwnd, nCmdShow);
-	UpdateWindow(hwnd);
+	ShowWindow(dlg, nCmdShow);
+	UpdateWindow(dlg);
 
 	while(GetMessage(&Msg, NULL, 0, 0) != 0)
 	{
@@ -106,7 +98,7 @@ void Graphics::refresh(){
 
 void Graphics::ShowError(char* T)
 {
-	MessageBox(hwnd, T, "Error!", MB_OK);
+	MessageBox(dlg, T, "Error!", MB_OK);
 }
 
 void Graphics::SetAudioObject(WSAudioIn* wsa)
@@ -166,7 +158,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 		if (rectop < 10) rectop = 10;
 		Rectangle(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop, ((rcClientP->right - 20) * (i + 1)) / bars - 2 + 10, rcClientP->bottom - 21);
 		//wsprintf(szSize, "%3d", freq[i]);
-		//TextOut(hdc, ((rcClientP->right - 120) * i) / bars + 50, rectop - 15, szSize, 3);
+		//TextOut(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop - 15, szSize, 3);
 	}
 } 
 
@@ -264,8 +256,8 @@ bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
 		*r = cc.rgbResult & 0xff;
 		*g = cc.rgbResult >> 8 & 0xff;
 		*b = cc.rgbResult >> 16 & 0xff;
-		RedrawButton(hDlg, id, *r, *g, *b);
 	}
+	RedrawButton(hDlg, id, *r, *g, *b);
 	return ret;
 }
 
@@ -292,13 +284,50 @@ void ReloadLightList(HWND light_list) {
 	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
+HWND CreateToolTip(HWND hwndParent)
+{
+	// Create a tooltip.
+	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		hwndParent, NULL, ghInstance, NULL);
+
+	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+		SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+	TOOLINFO ti = { 0 };
+	ti.cbSize = sizeof(TOOLINFO);
+	ti.uFlags = TTF_SUBCLASS;
+	ti.hwnd = hwndParent;
+	ti.hinst = ghInstance;
+	ti.lpszText = (LPSTR)"0";
+
+	GetClientRect(hwndParent, &ti.rect);
+
+	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+	return hwndTT;
+}
+
+char sBuff[4], lBuff[4];
+HWND sTip = 0, lTip = 0;
+
+void SetSlider(HWND tt, char* buff, int value) {
+	TOOLINFO ti = { 0 };
+	ti.cbSize = sizeof(ti);
+	ti.lpszText = buff;
+	if (tt) {
+		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+		_itoa_s(value, buff, 4, 10);
+		ti.lpszText = buff;
+		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+	}
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 
 	HWND freq_list = GetDlgItem(hDlg, IDC_FREQ);
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
-	HWND low_cut = GetDlgItem(hDlg, IDC_EDIT_LOWCUT);
-	HWND hi_cut = GetDlgItem(hDlg, IDC_EDIT_HIGHCUT);
 	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
 	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
 	mapping* map = NULL;
@@ -323,6 +352,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		SendMessage(hLowSlider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(hHiSlider, TBM_SETTICFREQ, 16, 0);
+
+		sTip = CreateToolTip(hLowSlider);
+		lTip = CreateToolTip(hHiSlider);
 
 		CheckMenuItem(GetMenu(hDlg), config->inpType ? ID_INPUT_DEFAULTINPUTDEVICE : ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 
@@ -366,12 +398,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					RedrawButton(hDlg, IDC_BUTTON_LPC, 0, 0, 0);
 					RedrawButton(hDlg, IDC_BUTTON_HPC, 0, 0, 0);
 					//  clear cuts....
-					SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
-					SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
-					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 					SendMessage(hLowSlider, TBM_SETPOS, true, 0);
 					SendMessage(hHiSlider, TBM_SETPOS, true, 255);
+					SetSlider(sTip, sBuff, 0);
+					SetSlider(lTip, lBuff, 255);
 					// clear selections
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_SETCURSEL, -1, 0);
@@ -409,12 +439,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
 				RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
 				// load cuts...
-				SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, map->lowcut, false);
-				SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, map->hicut, false);
-				RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-				RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 				SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
+				SetSlider(sTip, sBuff, map->lowcut);
+				SetSlider(lTip, lBuff, map->hicut);
 			}
 			break;
 		}
@@ -444,30 +472,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 			} break;
 			}
-		} break;
-		case IDC_EDIT_LOWCUT:
-			switch (HIWORD(wParam)) {
-			case EN_UPDATE: {
-				// update lo-cut
-				if (map != NULL) {
-					map->lowcut = GetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, NULL, false);
-					map->lowcut = map->lowcut < 256 ? map->lowcut : 255;
-					SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
-				}
-			} break;
-			} break;
-		case IDC_EDIT_HIGHCUT:
-			switch (HIWORD(wParam)) {
-			case EN_UPDATE: {
-				// update lo-cut
-				if (map != NULL) {
-					map->hicut = GetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, NULL, false);
-					map->hicut = map->hicut < 256 ? map->hicut : 255;
-					SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
-				}
-			} break;
-			} break;
-		
+		} break;		
 		case IDC_BUTTON_LPC:
 			switch (HIWORD(wParam))
 			{
@@ -496,6 +501,27 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				ReloadLightList(light_list);
 			} break;
 			} break;
+		case IDC_MINIMIZE:
+			switch (HIWORD(wParam))
+			{
+			case BN_CLICKED: {
+				ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+				niData.cbSize = sizeof(NOTIFYICONDATA);
+				niData.uID = IDI_ALIEN;
+				niData.uFlags = NIF_ICON | NIF_MESSAGE;
+				niData.hIcon =
+					(HICON)LoadImage(GetModuleHandle(NULL),
+						MAKEINTRESOURCE(IDI_ALIEN),
+						IMAGE_ICON,
+						GetSystemMetrics(SM_CXSMICON),
+						GetSystemMetrics(SM_CYSMICON),
+						LR_DEFAULTCOLOR);
+				niData.hWnd = hDlg;
+				niData.uCallbackMessage = WM_APP + 1;
+				Shell_NotifyIcon(NIM_ADD, &niData);
+				ShowWindow(hDlg, SW_HIDE);
+			} break;
+			} break;
 		case IDC_BUTTON_REMOVE: {
 			switch (HIWORD(wParam))
 			{
@@ -510,12 +536,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 							RedrawButton(hDlg, IDC_BUTTON_LPC, 0, 0, 0);
 							RedrawButton(hDlg, IDC_BUTTON_HPC, 0, 0, 0);
 							//  clear cuts....
-							SetDlgItemInt(hDlg, IDC_EDIT_LOWCUT, 0, false);
-							SetDlgItemInt(hDlg, IDC_EDIT_HIGHCUT, 255, false);
-							RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-							RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 							SendMessage(hLowSlider, TBM_SETPOS, true, 0);
 							SendMessage(hHiSlider, TBM_SETPOS, true, 255);
+							SetSlider(sTip, sBuff, 0);
+							SetSlider(lTip, lBuff, 255);
 							// clear selections
 							SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 							SendMessage(light_list, LB_SETCURSEL, -1, 0);
@@ -536,17 +560,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (map != NULL) {
 				if ((HWND)lParam == hLowSlider) {
 					map->lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
-					TCHAR locut[6];
-					sprintf_s(locut, 5, "%d", map->lowcut);
-					SendMessage(low_cut, WM_SETTEXT, 0, (LPARAM)locut);
-					RedrawWindow(low_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					SetSlider(sTip, sBuff, map->lowcut);
 				}
 				if ((HWND)lParam == hHiSlider) {
 					map->hicut = (UCHAR) SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
-					TCHAR locut[6];
-					sprintf_s(locut, 5, "%d", map->hicut);
-					SendMessage(hi_cut, WM_SETTEXT, 0, (LPARAM)locut);
-					RedrawWindow(hi_cut, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+					SetSlider(lTip, lBuff, map->hicut);
 				}
 			}
 		} break;
@@ -595,7 +613,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, 0, 0, 0);
 			break;
 		case IDC_VIEW_LEVELS:
-			HWND hysto = GetDlgItem(dlg, IDC_VIEW_LEVELS);
+			HWND hysto = GetDlgItem(hDlg, IDC_VIEW_LEVELS);
+			if (hysto) {
+				RECT levels_rect;
+				GetClientRect(hysto, &levels_rect);
+
+				HBRUSH hb = CreateSolidBrush(RGB(0, 0, 0));
+
+				FillRect(GetDC(hysto), &levels_rect, hb);
+				DeleteObject(hb);
+
+				DrawFreq(GetDC(hysto), &levels_rect);
+			}
+		}
+		break;
+	case WM_PAINT: {
+		HWND hysto = GetDlgItem(hDlg, IDC_VIEW_LEVELS);
+		if (hysto) {
 			RECT levels_rect;
 			GetClientRect(hysto, &levels_rect);
 
@@ -606,7 +640,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 			DrawFreq(GetDC(hysto), &levels_rect);
 		}
-		break;
+		return false;
+	} break;
 	case WM_CLOSE: DestroyWindow(hDlg); break;
 	case WM_DESTROY: config->Save(); Shell_NotifyIcon(NIM_DELETE, &niData); DestroyWindow(hDlg); PostQuitMessage(0); break;
 	default: return false;

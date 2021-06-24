@@ -21,6 +21,7 @@
 #define IDS_TYPE_BREATH                 116
 #define IDS_TYPE_SPECTRUM               117
 #define IDS_TYPE_RAINBOW                118
+#define IDS_A_LOWBATT                   119
 #define IDD_MAINWINDOW                  129
 #define IDI_ALIENFXGUI                  132
 #define IDD_DIALOG_COLORS               133

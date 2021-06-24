@@ -4,7 +4,6 @@
 #include <Windows.h>
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
-
 struct ColorComp
 {
 	unsigned char blue;
@@ -91,4 +90,3 @@ public:
 	void updateProfileByID(int id, std::string name, std::string app, DWORD flags);
 	profile* FindProfile(int id);
 };
-

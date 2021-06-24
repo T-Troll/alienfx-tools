@@ -90,9 +90,9 @@ void DFT_gosu::calc(double *x1)
 	double coeff = peak > 0.00001 ? 256.0 / peak : 0.0;// (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
 
 #ifdef _DEBUG
-	char buff[2048];
-	sprintf_s(buff, 2047, "Peak:%f, Coeff:%f, Min:%f, Max:%f, P(1):%f, P(2):%f\n", peak, coeff, minP, maxP, x2[0], x2[1]);
-	OutputDebugString(buff);
+	//char buff[2048];
+	//sprintf_s(buff, 2047, "Peak:%f, Coeff:%f, Min:%f, Max:%f, P(1):%f, P(2):%f\n", peak, coeff, minP, maxP, x2[0], x2[1]);
+	//OutputDebugString(buff);
 #endif
 
 	// Normalize

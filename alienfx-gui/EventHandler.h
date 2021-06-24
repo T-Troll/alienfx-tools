@@ -3,7 +3,6 @@
 #include "FXHelper.h"
 class EventHandler
 {
-
 public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state);
@@ -24,4 +23,3 @@ public:
 
 	long maxNet = 1;
 };
-

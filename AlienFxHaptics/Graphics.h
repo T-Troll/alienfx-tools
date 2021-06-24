@@ -21,21 +21,10 @@ public:
 	void refresh();
 	void ShowError(char* T);
 	void SetAudioObject(WSAudioIn* wsa);
+	HWND dlg = NULL;
 
 private:
-	WNDCLASSEX wc;
 	MSG Msg;
-
-	char g_szClassName[14];
-	
-	BOOL g_bOpaque;
-	COLORREF g_rgbText;
-	COLORREF g_rgbBackground;
-
-	COLORREF g_rgbCustom[16];
-
-	HWND hwnd;
-
 };
 
 #endif

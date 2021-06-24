@@ -253,7 +253,6 @@ void SetSlider(HWND tt, char* buff, int value) {
     ti.cbSize = sizeof(ti);
     ti.lpszText = buff;
     if (tt) {
-        int nTools = SendMessage(tt, TTM_GETTOOLCOUNT, 0, 0);
         SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
         _itoa_s(value, buff, 4, 10);
         ti.lpszText = buff;
@@ -269,7 +268,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
     switch (message)
     {
-    case WM_NCCREATE:
+    /*case WM_NCCREATE:
     {
         EnableNonClientDpiScaling(hDlg);
         SetDialogDpiChangeBehavior(hDlg, DDC_DEFAULT, DDC_DEFAULT);
@@ -280,11 +279,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         LPRECT lpRect = (LPRECT)lParam;
         SetWindowPos(hDlg, nullptr, lpRect->left, lpRect->top, lpRect->right - lpRect->left, lpRect->bottom - lpRect->top, SWP_NOZORDER | SWP_NOACTIVATE);
         return 0;
-    }
+    }*/
     case WM_INITDIALOG:
     {
-        EnableNonClientDpiScaling(hDlg);
-        SetDialogDpiChangeBehavior(hDlg, DDC_DEFAULT, DDC_DEFAULT);
 
         UpdateLightList(light_list);
 
