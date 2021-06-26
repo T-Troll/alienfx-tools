@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+using namespace std;
+
 namespace AlienFX_SDK
 
 {	
@@ -68,8 +70,8 @@ namespace AlienFX_SDK
 		ULONGLONG lastPowerCall = 0;
 
 		// Name mappings for lights
-		std::vector <mapping> mappings;
-		std::vector <devmap> devices;
+		vector <mapping> mappings;
+		vector <devmap> devices;
 
 		int pid = -1;
 		int version = -1;
@@ -79,7 +81,7 @@ namespace AlienFX_SDK
 		const static int vid2 = 0x0d62; // DARFON per-key RGB keyboard - m1X R2, R3. 
 
 		// Enum alienware devices
-		std::vector<int> AlienFXEnumDevices(int vid);
+		vector<int> AlienFXEnumDevices(int vid);
 		//returns PID
 		int AlienFXInitialize(int vid);
 
@@ -134,11 +136,15 @@ namespace AlienFX_SDK
 		 void SaveMappings();
 
 		// get saved devices names
-		 std::vector<devmap>* GetDevices();
+		 vector<devmap>* GetDevices();
 
 		// get saved light names
-		 std::vector <mapping>* GetMappings();
+		 vector <mapping>* GetMappings();
 
+		// find mapping by dev/light it...
+		 //mapping* GetMappingById(int devID, int LightID);
+
+		// add new light name into the list
 		 void AddMapping(int devID, int lightID, char* name, int flags);
 
 		// get saved light names

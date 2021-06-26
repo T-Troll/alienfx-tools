@@ -91,6 +91,16 @@ profile* ConfigHandler::FindProfile(int id) {
 	return prof;
 }
 
+int ConfigHandler::FindProfileByApp(std::string appName, bool active)
+{
+	for (int j = 0; j < profiles.size(); j++)
+		if (profiles[j].triggerapp == appName && (active || !(profiles[j].flags & PROF_ACTIVE))) {
+			// app is belong to profile!
+			return profiles[j].id;
+		}
+	return -1;
+}
+
 int ConfigHandler::Load() {
 	int size = 4, size_c = 4 * 16;
 
@@ -585,10 +595,10 @@ int ConfigHandler::Save() {
 	}
 #ifdef _DEBUG
 	else
-		OutputDebugString("Attempt to save empy profiles!\n");
+		OutputDebugString("Attempt to save empty profiles!\n");
 #endif
 	// clear old events - check for zero events (debug!)
-	if (active_set.size() > 0) {
+//	if (active_set.size() > 0) {
 		RegDeleteTreeA(hKey1, "Events");
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfxgui\\Events"),
@@ -599,11 +609,11 @@ int ConfigHandler::Save() {
 			NULL,
 			&hKey3,
 			&dwDisposition);
-	}
-#ifdef _DEBUG
-	else
-		OutputDebugString("Attempt to save empy mappings!\n");
-#endif
+//	}
+//#ifdef _DEBUG
+//	else
+//		OutputDebugString("Attempt to save empy mappings!\n");
+//#endif
 
 	for (int j = 0; j < profiles.size(); j++) {
 		sprintf_s((char*)name, 255, "Profile-%d", profiles[j].id);

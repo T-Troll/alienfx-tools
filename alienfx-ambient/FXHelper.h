@@ -2,11 +2,6 @@
 #include "ConfigHandler.h"
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
 
-struct UpdateData {
-	Colorcode color;
-	unsigned devid, lightid;
-};
-
 class FXHelper
 {
 private:
@@ -22,6 +17,5 @@ public:
 	~FXHelper();
 	int Refresh(UCHAR* img);
 	void FadeToBlack();
-	
 };
 

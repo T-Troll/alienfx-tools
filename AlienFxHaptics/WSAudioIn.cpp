@@ -4,7 +4,6 @@
 #include "FXHelper.h"
 #include "DFT_gosu.h"
 
-//void CALLBACK WSwaveInProc(HWAVEIN hWaveIn, UINT message, DWORD dwInstance, DWORD wParam, DWORD lParam);
 DWORD WINAPI WSwaveInProc(LPVOID);
 
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
@@ -26,7 +25,7 @@ HANDLE hEvent = 0, stopEvent = 0, updateEvent = 0, dwHandle = 0;
 
 DWORD WINAPI resample(LPVOID lpParam);
 
-Graphics* gHandle;
+HWND hDlg;
 FXHelper* fxh;
 DFT_gosu* dftGG;
 
@@ -35,10 +34,11 @@ WSAudioIn::WSAudioIn(int &rate_e, int N, int type, void* gr, void* fx, void* dft
 	NUMSAM = N;
 	fxh = (FXHelper*) fx;
 	dftGG = (DFT_gosu*) dft;
+	gHandle = (Graphics*) gr;
 	waveD = (double*)malloc(NUMSAM * sizeof(double));
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	gHandle = (Graphics *) gr;
-	gHandle->SetAudioObject(this);
+	hDlg = ((Graphics*)gHandle)->GetDlg();
+	((Graphics*)gHandle)->SetAudioObject(this);
 	rate = init(type);
 	rate_e = rate;
 }
@@ -65,11 +65,11 @@ void WSAudioIn::stopSampling()
 	if (dwHandle) {
 		SetEvent(stopEvent);
 		SetEvent(hEvent);
-		pAudioClient->Stop();
 		WaitForSingleObject(dwHandle, 10000);
+		pAudioClient->Stop();
 		ResetEvent(stopEvent);
 		CloseHandle(dwHandle);
-		dwHandle = NULL;
+		dwHandle = 0;
 	}
 }
 
@@ -90,12 +90,12 @@ int WSAudioIn::init(int type)
 	else
 		inpDev = GetDefaultMultimediaDevice(eCapture);
 	if (!inpDev)
-		gHandle->ShowError("Input Device not found!");
+		((Graphics*)gHandle)->ShowError("Input Device not found!");
 	//open it for render...
 	inpDev->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
 
 	if (!pAudioClient) {
-		gHandle->ShowError("Can't access input device!");
+		((Graphics*)gHandle)->ShowError("Can't access input device!");
 	}
 
 	pAudioClient->GetMixFormat(&pwfx);
@@ -150,7 +150,7 @@ int WSAudioIn::init(int type)
 			AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
 			hnsRequestedDuration, 0, pwfx, NULL);
 	if (ret) {
-		gHandle->ShowError("Input device doesn't support any suitable format!");
+		((Graphics*)gHandle)->ShowError("Input device doesn't support any suitable format!");
 		return 0;
 	}
 	//ret = pAudioClient->GetService(IID_IAudioClockAdjustment,
@@ -289,11 +289,11 @@ DWORD WINAPI resample(LPVOID lpParam)
 			dftGG->calc(waveDouble);
 			if (count == 10) {
 				//gHandle->refresh();
-				SendMessage(gHandle->dlg, WM_PAINT, 0, 0);
+				SendMessage(hDlg, WM_PAINT, 0, 0);
 				count = 0;
 			}
 			else count++;
-			fxh->Refresh(gHandle->getBarsNum());
+			fxh->Refresh();
 		}
 	}
 

@@ -59,12 +59,16 @@ void FXHelper::TestLight(int did, int id)
 		if (!dev_ready) return;
 
 		if (id != lastTest) {
-			if (lastTest >= 0)
+			if (lastTest >= 0) {
 				dev->SetColor(lastTest, 0, 0, 0);
+				dev->UpdateColors();
+			}
 			lastTest = id;
 		}
-		dev->SetColor(id, r, g, b);
-		dev->UpdateColors();
+		if (id != -1) {
+			dev->SetColor(id, r, g, b);
+			dev->UpdateColors();
+		}
 	}
 }
 
@@ -256,15 +260,13 @@ void FXHelper::RefreshMon()
 
 int FXHelper::Refresh(bool forced)
 {
-	std::vector <lightset>::iterator Iter;
-
 #ifdef _DEBUG
 	if (forced)
 		OutputDebugString("Forced Refresh initiated...\n");
 #endif
 
-	for (Iter = config->active_set.begin(); Iter != config->active_set.end(); Iter++) {
-		Iter->valid = RefreshOne(&(*Iter), forced);
+	for (int i =0; i < config->active_set.size(); i++) {
+		config->active_set[i].valid = RefreshOne(&config->active_set[i], forced);
 	}
 	UpdateColors();
 	return 0;

@@ -28,12 +28,10 @@ class ConfigHandler
 private:
 	HKEY   hKey1 = NULL, hKey2 = NULL;
 public:
-	DWORD maxcolors = 12;
 	DWORD mode = 0;
 	DWORD divider = 16;
 	DWORD shift = 40;
 	DWORD gammaCorrection = 1;
-	DWORD lastActive = 0;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();

@@ -9,8 +9,26 @@
 DWORD WINAPI CEventProc(LPVOID);
 DWORD WINAPI CProfileProc(LPVOID);
 
-HANDLE dwHandle = 0, dwProfile = 0, stopEvents = 0, stopProfile = 0;
-DWORD dwThreadID;
+HANDLE stopEvents = 0, stopProfile = 0;
+
+ConfigHandler* config = NULL;
+EventHandler* even = NULL;
+
+EventHandler::EventHandler(ConfigHandler* confi, FXHelper* fx)
+{
+	config = confi;
+	this->conf = config;
+	even = this;
+	fxh = fx;
+	StartProfiles();
+	StartEvents();
+}
+
+EventHandler::~EventHandler()
+{
+	StopProfiles();
+	StopEvents();
+}
 
 void EventHandler::ChangePowerState()
 {
@@ -52,6 +70,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::SwitchActiveProfile(int newID)
 {
+	if (newID < 0) newID = conf->defaultProfile;
 	if (newID != conf->activeProfile) {
 		profile* newP = conf->FindProfile(newID),
 			* oldP = conf->FindProfile(conf->activeProfile);
@@ -63,8 +82,7 @@ void EventHandler::SwitchActiveProfile(int newID)
 			conf->activeProfile = newID;
 			conf->monState = newP->flags & 0x2 ? 0 : conf->enableMon;
 			conf->stateDimmed = newP->flags & 0x4;
-			fxh->Refresh(true);
-			StartEvents();
+			ToggleEvents();
 #ifdef _DEBUG
 			char buff[2048];
 			sprintf_s(buff, 2047, "Profile switched to #%d (\"%s\")\n", newP->id, newP->name.c_str());
@@ -72,10 +90,13 @@ void EventHandler::SwitchActiveProfile(int newID)
 #endif
 		}
 	}
+	
+	return;
 }
 
 void EventHandler::StartEvents()
 {
+	DWORD dwThreadID;
 	if (!dwHandle && conf->monState) {
 		fxh->RefreshMon();
 		// start thread...
@@ -102,39 +123,13 @@ void EventHandler::StopEvents()
 	}
 }
 
-void EventHandler::StartProfiles()
-{
-	DWORD dwThreadID;
-	if (dwProfile == 0 && conf->enableProf) {
-#ifdef _DEBUG
-		OutputDebugString("Profile thread starting.\n");
-#endif
-		stopProfile = CreateEvent(NULL, true, false, NULL);
-		dwProfile = CreateThread(NULL, 0, CProfileProc, this, 0, &dwThreadID);
-	}
-}
-
-void EventHandler::StopProfiles()
-{
-	if (dwProfile) {
-#ifdef _DEBUG
-		OutputDebugString("Profile thread stop.\n");
-#endif
-		SetEvent(stopProfile);
-		WaitForSingleObject(dwProfile, 1000);
-		CloseHandle(dwProfile);
-		CloseHandle(stopProfile);
-		dwProfile = 0;
-	}
-}
-
 void EventHandler::ToggleEvents()
 {
-	if (conf->monState && conf->stateOn)
+	if (conf->monState && conf->stateOn) {
+		fxh->Refresh();
 		if (!dwHandle)
 			StartEvents();
-		else
-			fxh->Refresh();
+	}
 	else
 		if (!conf->monState || !conf->stateOn)
 			if (dwHandle)
@@ -143,26 +138,160 @@ void EventHandler::ToggleEvents()
 				fxh->Refresh(true);
 }
 
-EventHandler::EventHandler(ConfigHandler* config, FXHelper* fx)
-{
-	conf = config;
-	fxh = fx;
-	StartProfiles();
-	StartEvents();
+int ScanTaskList() {
+	DWORD aProcesses[1024], cbNeeded, cProcesses;
+	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+	int newp = -1;
+
+	if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
+	{
+		HMODULE hMod;
+		cProcesses = cbNeeded / sizeof(DWORD);
+		for (UINT i = 0; i < cProcesses; i++)
+		{
+			if (aProcesses[i] != 0)
+			{
+				HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+					PROCESS_VM_READ,
+					FALSE, aProcesses[i]);
+				if (NULL != hProcess)
+				{
+					if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
+						&cbNeeded))
+					{
+						GetModuleFileNameEx(hProcess, hMod, szProcessName, MAX_PATH);
+						// is it related to profile?
+						newp = config->FindProfileByApp(std::string(szProcessName));
+						if (newp >=0)
+							return newp;
+					}
+				}
+			}
+		}
+	}
+	return -1;
 }
 
-EventHandler::~EventHandler()
-{
-	StopProfiles();
-	StopEvents();
+// Create - Check process ID, switch if found and no foreground active.
+// Foreground - Check process ID, switch if found
+// Close - Check process list, switch if found. Switch to dewfault if not.
+
+VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
+	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+	DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
+	DWORD prcId = 0;
+	int newp = -1;
+
+	GUITHREADINFO activeThread;
+	activeThread.cbSize = sizeof(GUITHREADINFO);
+
+	GetGUIThreadInfo(NULL, &activeThread);
+
+	if (activeThread.hwndActive != 0) {
+		// is it related to profile?
+		DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
+		DWORD prcId = 0;
+		GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
+		HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+			PROCESS_VM_READ,
+			FALSE, prcId);
+		QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
+#ifdef _DEBUG
+		char buff[2048];
+		sprintf_s(buff, 2047, "Active app switched to %s\n", szProcessName);
+		OutputDebugString(buff);
+#endif
+		config->foregroundProfile = newp = config->FindProfileByApp(std::string(szProcessName), true);
+		if (newp < 0) {
+			newp = ScanTaskList();
+#ifdef _DEBUG
+			char buff[2048];
+			sprintf_s(buff, 2047, "Active app unknown, switching to ID=%d\n", newp);
+			OutputDebugString(buff);
+#endif
+		}
+		even->SwitchActiveProfile(newp);
+	}
 }
 
-DWORD CProfileProc(LPVOID param) {
+VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
+	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+	DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
+	DWORD prcId = 0;
+	int newp = -1;
+
+	HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
+		FALSE, dwEventThread);
+	if (hThread) {
+		prcId = GetProcessIdOfThread(hThread);
+		if (prcId) {
+			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+				PROCESS_VM_READ,
+				FALSE, prcId);
+			QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
+
+			switch (dwEvent) {
+			case EVENT_OBJECT_CREATE:
+				if (config->foregroundProfile < 0) {
+#ifdef _DEBUG
+					char buff[2048];
+					sprintf_s(buff, 2047, "Switching to %s\n", szProcessName);
+					OutputDebugString(buff);
+#endif
+					newp = config->FindProfileByApp(std::string(szProcessName));
+					even->SwitchActiveProfile(newp);
+				}
+				break;
+			case EVENT_OBJECT_DESTROY:
+				if (config->foregroundProfile < 0 && config->FindProfileByApp(std::string(szProcessName)) == config->activeProfile) {
+					newp = ScanTaskList();
+#ifdef _DEBUG
+					char buff[2048];
+					sprintf_s(buff, 2047, "Switching by close to ID=%d\n", newp);
+					OutputDebugString(buff);
+#endif
+					even->SwitchActiveProfile(newp);
+				}
+				break;
+			}
+		}
+	}
+}
+
+void EventHandler::StartProfiles()
+{
+	if (hEvent == 0 && conf->enableProf) {
+#ifdef _DEBUG
+		OutputDebugString("Profile hooks starting.\n");
+#endif
+		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
+			EVENT_SYSTEM_FOREGROUND, NULL,
+			CForegroundProc, 0, 0,
+			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+		cEvent = SetWinEventHook(EVENT_OBJECT_CREATE,
+			EVENT_OBJECT_DESTROY, NULL,
+			CCreateProc, 0, 0,
+			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+	}
+}
+
+void EventHandler::StopProfiles()
+{
+	if (hEvent) {
+#ifdef _DEBUG
+		OutputDebugString("Profile hooks stop.\n");
+#endif
+		UnhookWinEvent(cEvent);
+		UnhookWinEvent(hEvent);
+		hEvent = 0;
+		cEvent = 0;
+	}
+}
+
+/*DWORD CProfileProc(LPVOID param) {
 	EventHandler* src = (EventHandler*)param;
 	DWORD aProcesses[1024], cbNeeded, cProcesses;
 	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
-
-	unsigned int i;
 
 	while (WaitForSingleObject(stopProfile, 100) == WAIT_TIMEOUT) {
 		unsigned newp = src->conf->activeProfile;
@@ -171,7 +300,6 @@ DWORD CProfileProc(LPVOID param) {
 		GUITHREADINFO activeThread;
 		activeThread.cbSize = sizeof(GUITHREADINFO);
 
-		Sleep(100);
 		GetGUIThreadInfo(NULL, &activeThread);
 
 		if (activeThread.hwndActive != 0) {
@@ -197,7 +325,7 @@ DWORD CProfileProc(LPVOID param) {
 		{
 			HMODULE hMod;
 			cProcesses = cbNeeded / sizeof(DWORD);
-			for (i = 0; i < cProcesses && !notDefault; i++)
+			for (UINT i = 0; i < cProcesses && !notDefault; i++)
 			{
 				if (aProcesses[i] != 0)
 				{
@@ -232,7 +360,7 @@ DWORD CProfileProc(LPVOID param) {
 			src->SwitchActiveProfile(src->conf->defaultProfile);
 	}
 	return 0;
-}
+}*/
 
 DWORD WINAPI CEventProc(LPVOID param)
 {
@@ -302,7 +430,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		0,
 		&hTempCounter2);
 
-	while (WaitForSingleObject(stopEvents, 200) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(stopEvents, 150) == WAIT_TIMEOUT) {
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;

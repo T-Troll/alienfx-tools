@@ -1,19 +1,12 @@
 #include "CaptureHelper.h"
-#include <WinNT.h>
-#include "resource.h"
 #include <opencv2/imgproc.hpp>
-//#include <opencv2/imgproc/types_c.h>
-#include <windowsx.h>
-
 #include "DXGIManager.hpp"
 
 using namespace cv;
-using namespace std;
 
 DWORD WINAPI CInProc(LPVOID);
 DWORD WINAPI CDlgProc(LPVOID);
 DWORD WINAPI CFXProc(LPVOID);
-DWORD WINAPI ColorProc(LPVOID);
 
 HWND hDlg;
 
@@ -51,6 +44,7 @@ void CaptureHelper::SetCaptureScreen(int mode) {
 
 void CaptureHelper::Start(DWORD delay)
 {
+	DWORD dwThreadID;
 	if (dwHandle == 0) {
 		stopEvent = CreateEvent(NULL, true, false, NULL);
 		dwHandle = CreateThread( NULL, 0, CInProc, (LPVOID) delay, 0, &dwThreadID);
@@ -70,9 +64,7 @@ void CaptureHelper::Stop()
 }
 
 void CaptureHelper::Restart() {
-	//Stop();	
 	SetCaptureScreen(config->mode);
-	//Start();
 }
 
 Mat extractHPts(const Mat& inImage)
@@ -140,7 +132,6 @@ Mat getDominantColor(const Mat& inImage, const Mat& ptsLabel)
 }
 
 struct procData {
-	//Mat* src;
 	int dx, dy;
 	UCHAR* dst;
 	HANDLE pEvent;
@@ -156,7 +147,6 @@ Mat srcImage;
 DWORD WINAPI ColorProc(LPVOID inp) {
 	procData* src = (procData*) inp;
 	uint idx = src->dy * 4 + src->dx;
-	//uint w = src->src->cols / 4, h = src->src->rows / 3;
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
 		if (WaitForSingleObject(src->pEvent, 200) == WAIT_OBJECT_0) {
 			Mat cPos = srcImage.rowRange(src->dy * h, (src->dy + 1) * h)
@@ -195,13 +185,11 @@ void FillColors(Mat& src, UCHAR* imgz) {
 				uint ptr = (dy * 4 + dx);// *3;
 				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
 				callData[dy][dx].dst = imgz + ptr * 3;
-				//callData[dy][dx].src = &src;
 				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
 				pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
 				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorProc, &callData[dy][dx], 0, &tId);
 			}
 			else {
-				//callData[dy][dx].src = &src;
 				SetEvent(callData[dy][dx].pEvent);
 			}
 			/*hPts = extractHPts(cPos);
@@ -225,7 +213,7 @@ DWORD WINAPI CInProc(LPVOID param)
 	DWORD uiThread, cuThread, wait_time = (DWORD) param;
 	HANDLE uiHandle = 0, lightHandle = 0;
 
-	uiEvent = CreateEvent(NULL, false, false, NULL);// CreateSemaphore(NULL, 0, 2, NULL);
+	uiEvent = CreateEvent(NULL, false, false, NULL);
 	lhEvent = CreateEvent(NULL, false, false, NULL);
 
 	RECT dimensions = dxgi_manager->get_output_rect();
@@ -248,7 +236,6 @@ DWORD WINAPI CInProc(LPVOID param)
 				FillColors(src, imgz);
 
 				if (memcmp(imgz, imgo, 36) != 0) {
-					//ReleaseSemaphore(uiEvent, 2, NULL);
 					SetEvent(lhEvent);
 					SetEvent(uiEvent);
 					memcpy(imgo, imgz, sizeof(imgo));
@@ -262,21 +249,10 @@ DWORD WINAPI CInProc(LPVOID param)
 				h = dimensions.bottom - dimensions.top;
 			}
 		}
-		//ULONGLONG nextTick = GetTickCount64();
-//#ifdef _DEBUG
-//		char buff[2048];
-//		sprintf_s(buff, 2047, "Update at %fs\n", (nextTick - lastTick) / 1000.0);
-//		OutputDebugString(buff);
-//#endif
-		//if (nextTick - lastTick < 50) {
-		//	wait_time = 50 - (DWORD)(nextTick - lastTick);
-		//}
-		//else
-			wait_time = 50;
-		//lastTick = nextTick;
+
+		wait_time = 50;
 	}
 
-	//ReleaseSemaphore(uiEvent, 2, NULL);
 	WaitForSingleObject(uiHandle, 1000);
 	WaitForSingleObject(lightHandle, 1000);
 	CloseHandle(uiHandle);
@@ -288,14 +264,13 @@ DWORD WINAPI CInProc(LPVOID param)
 DWORD WINAPI CDlgProc(LPVOID param)
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-	while (WaitForSingleObject(stopEvent, 150) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(stopEvent, 200) == WAIT_TIMEOUT) {
 		if (!IsIconic(hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //	OutputDebugString("UI update...\n");
 //#endif
 			memcpy(imgui, (UCHAR*)param, sizeof(imgz));
 			SendMessage(hDlg, WM_PAINT, 0, (LPARAM)imgui);
-			WaitForSingleObject(stopEvent, 150);
 		}
 	}
 	return 0;

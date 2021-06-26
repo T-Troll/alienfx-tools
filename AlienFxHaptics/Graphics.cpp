@@ -2,13 +2,7 @@
 #include "Graphics.h"
 #include <windows.h>
 #include <Commctrl.h>
-#include <mmsystem.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <conio.h>
-#include <math.h>
 #include "resource_config.h"
-#include <string>
 #include "FXHelper.h"
 #include <algorithm>
 
@@ -18,7 +12,7 @@
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-int bars;
+//int bars;
 int* freq;
 int nCmdShow;
 double y_scale;
@@ -37,7 +31,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 {
 
 	nCmdShow=mainCmdShow;
-	bars = conf->numbars;
+	//bars = conf->numbars;
 	y_scale = conf->res;
 	freq=freqp;
 
@@ -68,10 +62,6 @@ void Graphics::start(){
 		TranslateMessage(&Msg);
 		DispatchMessage(&Msg);
 	}
-}
-
-int Graphics:: getBarsNum(){
-	return bars;
 }
 
 double Graphics::getYScale() {
@@ -106,9 +96,14 @@ void Graphics::SetAudioObject(WSAudioIn* wsa)
 	audio = wsa;
 }
 
+HWND Graphics::GetDlg()
+{
+	return dlg;
+}
+
 void DrawFreq(HDC hdc, LPRECT rcClientP)
 {
-	int i, rectop;
+	unsigned i, rectop;
 	char szSize[100]; //freq axis
 
 	//setting collors:
@@ -153,10 +148,10 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 		}
 	}
 
-	for (i = 0; i < bars; i++) {
+	for (i = 0; i < config->numbars; i++) {
 		rectop = ((255 - freq[i]) * (rcClientP->bottom - 21)) / 255;
 		if (rectop < 10) rectop = 10;
-		Rectangle(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop, ((rcClientP->right - 20) * (i + 1)) / bars - 2 + 10, rcClientP->bottom - 21);
+		Rectangle(hdc, ((rcClientP->right - 20) * i) / config->numbars + 10, rectop, ((rcClientP->right - 20) * (i + 1)) / config->numbars - 2 + 10, rcClientP->bottom - 21);
 		//wsprintf(szSize, "%3d", freq[i]);
 		//TextOut(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop - 15, szSize, 3);
 	}

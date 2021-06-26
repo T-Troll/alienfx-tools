@@ -964,6 +964,14 @@ namespace AlienFX_SDK
 		return &mappings;
 	}
 
+	/*mapping* Functions::GetMappingById(int devID, int lightID)
+	{
+		for (unsigned i = 0; i < mappings.size(); i++)
+			if (mappings[i].devid == devID && mappings[i].lightid == lightID)
+				return &mappings[i];
+		return nullptr;
+	}*/
+
 	int Functions::GetFlags(int devid, int lightid)
 	{
 		for (int i = 0; i < mappings.size(); i++)

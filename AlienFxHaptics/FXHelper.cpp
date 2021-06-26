@@ -3,8 +3,6 @@
 FXHelper::FXHelper(int* freqp, ConfigHandler* conf) {
 	freq = freqp;
 	config = conf;
-	done = 0;
-	stopped = 0;
 	afx_dev.LoadMappings();
 	FillDevs();
 	FadeToBlack();
@@ -18,7 +16,7 @@ FXHelper::~FXHelper() {
 	}
 };
 
-int FXHelper::Refresh(int numbars)
+int FXHelper::Refresh()
 {
 	for (unsigned i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];

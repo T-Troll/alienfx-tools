@@ -1,8 +1,13 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <Windows.h>
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
+
+// Profile flags pattern
+#define PROF_DEFAULT 0x1
+#define PROF_NOMONITORING 0x2
+#define PROF_DIMMED 0x4
+#define PROF_ACTIVE 0x8
 
 struct ColorComp
 {
@@ -68,8 +73,9 @@ public:
 	DWORD enableProf = 0;
 	DWORD monState = 1;
 	DWORD offPowerButton = 0;
-	DWORD activeProfile = 0;
+	DWORD activeProfile = -1;
 	DWORD defaultProfile = 0;
+	DWORD foregroundProfile = -1;
 	DWORD awcc_disable = 0;
 	DWORD esif_temp = 0;
 	DWORD block_power = 0;
@@ -89,4 +95,5 @@ public:
 	static bool sortMappings(lightset i, lightset j);
 	void updateProfileByID(int id, std::string name, std::string app, DWORD flags);
 	profile* FindProfile(int id);
+	int FindProfileByApp(std::string appName, bool active = false);
 };

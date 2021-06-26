@@ -1,7 +1,6 @@
 // alienfx-ambient.cpp : Defines the entry point for the application.
 //
 
-#include "framework.h"
 #include "alienfx-ambient.h"
 #include "CaptureHelper.h"
 #include "ConfigHandler.h"
@@ -33,7 +32,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 NOTIFYICONDATA niData;
 
 // Forward declarations of functions included in this code module:
@@ -42,14 +40,12 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+    _In_opt_ HINSTANCE hPrevInstance,
+    _In_ LPWSTR    lpCmdLine,
+    _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
-    // TODO: Place code here.
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -61,44 +57,37 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     conf->Load();
     fxhl = new FXHelper(conf);
 
-    if (!(hDlg=InitInstance (hInstance, nCmdShow)))
+    if (!(hDlg = InitInstance(hInstance, nCmdShow)))
     {
         return FALSE;
     }
 
     cap = new CaptureHelper(hDlg, conf, fxhl);
-    //HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXAMBIENT));
 
     if (cap->isDirty) {
         // no capture device detected!
         MessageBox(NULL, "Can't capture you screen! Do you have DirectX installed?", "Error",
             MB_OK | MB_ICONSTOP);
-        
     }
     else {
 
-        MSG msg; //bool ret;
+        MSG msg;
 
         RegisterPowerSettingNotification(hDlg, &GUID_MONITOR_POWER_ON, 0);
 
-        //cap->Start();
-
         // Main message loop:
         while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-            //if (!IsDialogMessage(hDlg, &msg)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-            //}
         }
 
-        //cap->Stop();
         conf->Save();
     }
     delete cap;
     delete fxhl;
     delete conf;
 
-    return 0;// (int)msg.wParam;
+    return 1;
 }
 
 //
@@ -268,18 +257,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
     switch (message)
     {
-    /*case WM_NCCREATE:
-    {
-        EnableNonClientDpiScaling(hDlg);
-        SetDialogDpiChangeBehavior(hDlg, DDC_DEFAULT, DDC_DEFAULT);
-        return (DefWindowProc(hDlg, message, wParam, lParam));
-    } break;
-    case WM_DPICHANGED:
-    {
-        LPRECT lpRect = (LPRECT)lParam;
-        SetWindowPos(hDlg, nullptr, lpRect->left, lpRect->top, lpRect->right - lpRect->left, lpRect->bottom - lpRect->top, SWP_NOZORDER | SWP_NOACTIVATE);
-        return 0;
-    }*/
     case WM_INITDIALOG:
     {
 

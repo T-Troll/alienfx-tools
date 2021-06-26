@@ -1,13 +1,6 @@
-#include <iostream>
-#include <iomanip>
 #include "DFT_gosu.h"
-#include <windows.h>
-#include <mmsystem.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include<conio.h>
+#include <limits.h>
 #include <math.h>
-using namespace std;
 
 #ifndef PI
 #define PI 3.141592653589793238462643383279502884197169399375
@@ -19,8 +12,6 @@ DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 	NUMPTS = m;
 	y_scale = yscale;
 	RECTSNUM = xscale;
-	done=0;
-	stopped = 0;
 	spectrum=output;
 
 	x2 = (double*)malloc(NUMPTS * sizeof(double));
@@ -51,16 +42,13 @@ DFT_gosu::~DFT_gosu()
 // calculate DFT of the signal x1, and calculate relevant parameters
 void DFT_gosu::calc(double *x1)
 {
-	if (done == 1) {
-		return;
-	}
 
 	for (int n = 0; n < NUMPTS; n++) {
 		padded_in[n] = (kiss_fft_scalar) (x1[n] * blackman[n]);
 	}
 	kiss_fftr(kiss_cfg, padded_in, padded_out);
 
-	double minP = MAXINT, maxP = 0;
+	double minP = INT_MAX, maxP = 0;
 	double mult = 1.3394/* sqrt3(2)*/, f = 1.0;
 	int idx = 2;
 	for (int n = 0; n < RECTSNUM; n++) {
@@ -102,23 +90,3 @@ void DFT_gosu::calc(double *x1)
 
 	return;
 } // end function calc
-
-void DFT_gosu::kill()
-{
-	done=1;
-}
-
-void DFT_gosu::setXscale(int x)
-{
-	RECTSNUM=x;
-}
-
-void DFT_gosu::setYscale(double y)
-{
-	y_scale=y;
-}
-
-double DFT_gosu::getYscale()
-{
-	return y_scale;
-}

@@ -3,6 +3,9 @@
 #include "FXHelper.h"
 class EventHandler
 {
+private:
+	HANDLE dwHandle = 0;
+	HWINEVENTHOOK hEvent = 0, cEvent = 0;
 public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state);
@@ -16,8 +19,6 @@ public:
 	EventHandler(ConfigHandler* config, FXHelper* fx);
 	~EventHandler();
 
-	//bool stop = false;
-	//bool stopProf = false;
 	FXHelper* fxh = NULL;
 	ConfigHandler* conf = NULL;
 

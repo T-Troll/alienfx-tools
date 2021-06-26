@@ -22,25 +22,14 @@ private:
 	IAudioCaptureClient* pCaptureClient = NULL;
 	IAudioClockAdjustment* pRateClient = NULL;
 	ISimpleAudioVolume* pAudioVolume = NULL;
-	float originalVolume;
 
-	//Graphics* gHandle = NULL;
+	WAVEFORMATEX* pwfx;
 
-	WAVEFORMATEX* pwfx, *suggest;
+	void* gHandle;
 
-	BYTE* byteArray;
-	unsigned byteArrayLength;
 	int rate;
 
-	UINT32 bufferFrameCount;
-
-	bool silentNullBuffer;
-
 	HANDLE hWakeUp;
-	//HANDLE hEvent;
-
-	//double* waveDouble; // a pointer to a double array to store the results in
-	//void(*pt2Function)(double*);
 
 	IMMDevice* GetDefaultMultimediaDevice(EDataFlow DevType);
 };

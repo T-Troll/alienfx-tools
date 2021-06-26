@@ -1,9 +1,4 @@
 #include <windows.h>
-#include <mmsystem.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <conio.h>
-#include <math.h>
 #include "Graphics.h"
 #include "DFT_gosu.h"
 #include "ConfigHandler.h"
@@ -14,9 +9,6 @@
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
-double** cosarg;
-double** sinarg;
 
 Graphics* Graphika;
 DFT_gosu* dftG;
@@ -38,7 +30,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	FXproc = new FXHelper(freq, &conf);
 	Graphika = new Graphics(hInstance ,nCmdShow, freq, &conf, FXproc);
-	dftG = new DFT_gosu(NUMPTS, Graphika->getBarsNum() , Graphika->getYScale() , freq);
+	dftG = new DFT_gosu(NUMPTS, conf.numbars, Graphika->getYScale() , freq);
 
 	int rate;
 
@@ -50,12 +42,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Graphika->start();
 	wsa.stopSampling();
 
-	dftG->kill();
 	FXproc->FadeToBlack();
 
-	free(freq);
 	delete FXproc;
 	delete dftG;
+
+	free(freq);
 	delete Graphika;
 
 	return 1;

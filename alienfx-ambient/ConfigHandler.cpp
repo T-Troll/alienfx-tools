@@ -32,16 +32,6 @@ int ConfigHandler::Load() {
 
     RegGetValue(hKey1,
         NULL,
-        TEXT("MaxColors"),
-        RRF_RT_DWORD | RRF_ZEROONFAILURE,
-        NULL,
-        &maxcolors,
-        (LPDWORD) &size);
-    if (!maxcolors) { // no key
-        maxcolors = 12;
-    }
-    RegGetValue(hKey1,
-        NULL,
         TEXT("Shift"),
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
@@ -60,13 +50,6 @@ int ConfigHandler::Load() {
         RRF_RT_DWORD | RRF_ZEROONFAILURE,
         NULL,
         &divider,
-        (LPDWORD)&size);
-    RegGetValue(hKey1,
-        NULL,
-        TEXT("LastActive"),
-        RRF_RT_DWORD | RRF_ZEROONFAILURE,
-        NULL,
-        &lastActive,
         (LPDWORD)&size);
     unsigned ret = RegGetValue(hKey1,
         NULL,
@@ -115,14 +98,6 @@ int ConfigHandler::Save() {
 
     RegSetValueEx(
         hKey1,
-        TEXT("MaxColors"),
-        0,
-        REG_DWORD,
-        (BYTE *) &maxcolors,
-        4
-    );
-    RegSetValueEx(
-        hKey1,
         TEXT("Shift"),
         0,
         REG_DWORD,
@@ -151,14 +126,6 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE*)&gammaCorrection,
-        4
-    );
-    RegSetValueEx(
-        hKey1,
-        TEXT("LastActive"),
-        0,
-        REG_DWORD,
-        (BYTE*)&lastActive,
         4
     );
     for (int i = 0; i < mappings.size(); i++) {
