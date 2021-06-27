@@ -9,7 +9,7 @@ private:
 	ConfigHandler *config;
 	std::vector<int> devList;
 public:
-	AlienFX_SDK::Functions afx_dev;
+	AlienFX_SDK::Mappings afx_dev;
 	std::vector<AlienFX_SDK::Functions*> devs;
 	AlienFX_SDK::Functions* LocateDev(int pid);
 	void FillDevs();

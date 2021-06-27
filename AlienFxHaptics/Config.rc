@@ -51,7 +51,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,5,0
+ FILEVERSION 2,2,5,1
  PRODUCTVERSION 2,2,5,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -68,7 +68,7 @@ BEGIN
         BLOCK "040004b0"
         BEGIN
             VALUE "FileDescription", "AlienFX Haptics"
-            VALUE "FileVersion", "2.2.5.0"
+            VALUE "FileVersion", "2.2.5.1"
             VALUE "InternalName", "alienfx-haptics.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "alienfx-haptics.exe"

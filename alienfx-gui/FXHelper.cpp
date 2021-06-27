@@ -32,7 +32,7 @@ void FXHelper::FillDevs()
 	}
 	for (int i = 0; i < devList.size(); i++) {
 		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
-		int pid = dev->AlienFXInitialize(dev->vid, devList[i]);
+		int pid = dev->AlienFXInitialize(AlienFX_SDK::vid, devList[i]);
 		if (pid != -1) {
 			devs.push_back(dev);
 			dev->Reset(true);
@@ -41,7 +41,7 @@ void FXHelper::FillDevs()
 }
 
 std::vector<int> FXHelper::GetDevList() {
-	std::vector<int> devList = afx_dev.AlienFXEnumDevices(afx_dev.vid);
+	std::vector<int> devList = afx_dev.AlienFXEnumDevices(AlienFX_SDK::vid);
 	return devList;
 }
 

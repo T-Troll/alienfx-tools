@@ -40,8 +40,9 @@ int main(int argc, char* argv[])
 {
 	bool low_level = true;
 	UINT sleepy = 0;
+	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v2.2.3" << endl;
+	cerr << "alienfx-cli v2.2.5.1" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -49,8 +50,8 @@ int main(int argc, char* argv[])
 	}
 
 	int res = -1; 
-	vector<int> devs = afx_dev->AlienFXEnumDevices(afx_dev->vid);
-	int isInit = afx_dev->AlienFXInitialize(afx_dev->vid);
+	vector<int> devs = afx_map->AlienFXEnumDevices(AlienFX_SDK::vid);
+	int isInit = afx_dev->AlienFXInitialize(AlienFX_SDK::vid);
 	//std::cout << "PID: " << std::hex << isInit << std::endl;
 	if (isInit != -1)
 	{
@@ -59,7 +60,7 @@ int main(int argc, char* argv[])
 		if (!afx_dev->IsDeviceReady()) {
 			afx_dev->Reset(true);
 		}
-		afx_dev->LoadMappings();
+		afx_map->LoadMappings();
 	}
 	else {
 		cerr << "No low-level device found!" << endl;
@@ -122,9 +123,9 @@ int main(int argc, char* argv[])
 				for (int i = 0; i < devs.size(); i++) {
 					cout << "Device ID#" << devs[i];
 					int dn;
-					for (dn = 0; dn < afx_dev->GetDevices()->size(); dn++) {
-						if (devs[i] == afx_dev->GetDevices()->at(i).devid) {
-							cout << " - " << afx_dev->GetDevices()->at(i).name;
+					for (dn = 0; dn < afx_map->GetDevices()->size(); dn++) {
+						if (devs[i] == afx_map->GetDevices()->at(i).devid) {
+							cout << " - " << afx_map->GetDevices()->at(i).name;
 							if (devs[i] == afx_dev->GetPID()) {
 								cout << " (Active, V" << afx_dev->GetVersion() << ")";
 							}
@@ -132,12 +133,12 @@ int main(int argc, char* argv[])
 						}
 					}
 					cout << endl;
-					for (int k = 0; k < afx_dev->GetMappings()->size(); k++) {
-						if (afx_dev->GetDevices()->at(i).devid ==
-							afx_dev->GetMappings()->at(k).devid) {
-							cout << "  Light ID#" << afx_dev->GetMappings()->at(k).lightid
-								<< " - " << afx_dev->GetMappings()->at(k).name;
-							if (afx_dev->GetMappings()->at(k).flags)
+					for (int k = 0; k < afx_map->GetMappings()->size(); k++) {
+						if (afx_map->GetDevices()->at(i).devid ==
+							afx_map->GetMappings()->at(k).devid) {
+							cout << "  Light ID#" << afx_map->GetMappings()->at(k).lightid
+								<< " - " << afx_map->GetMappings()->at(k).name;
+							if (afx_map->GetMappings()->at(k).flags)
 								cout << " (Power button)";
 							cout << endl;
 						}
@@ -220,10 +221,10 @@ int main(int argc, char* argv[])
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
-				for (int i = 0; i < afx_dev->GetMappings()->size(); i++) {
-					if (afx_dev->GetMappings()->at(i).devid == isInit &&
-						!afx_dev->GetMappings()->at(i).flags)
-						afx_dev->SetColor(afx_dev->GetMappings()->at(i).lightid,
+				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
+					if (afx_map->GetMappings()->at(i).devid == isInit &&
+						!afx_map->GetMappings()->at(i).flags)
+						afx_dev->SetColor(afx_map->GetMappings()->at(i).lightid,
 							color.cs.red, color.cs.green, color.cs.blue);
 				}
 				afx_dev->UpdateColors();

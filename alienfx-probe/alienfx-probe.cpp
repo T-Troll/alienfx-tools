@@ -15,15 +15,16 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 8;
-	cout << "alienfx-probe v2.2.3" << endl;
+	cout << "alienfx-probe v2.2.5.1" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
 	cout << "Probing low-level access... ";
 	vector<int> pids;
+	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
 	//afx_dev->LoadMappings();
-	pids = afx_dev->AlienFXEnumDevices(afx_dev->vid);
+	pids = afx_map->AlienFXEnumDevices(AlienFX_SDK::vid);
 	if (pids.size() > 0) {
 		cout << "Found " << pids.size() << " device(s)" << endl;
 		cout << "Probing Dell SDK... ";
@@ -73,7 +74,7 @@ int main(int argc, char* argv[])
 				AlienFX_SDK::devmap devs;
 				devs.devid = pids[cdev];
 				devs.name = outName;
-				afx_dev->GetDevices()->push_back(devs);
+				afx_map->GetDevices()->push_back(devs);
 				// How many lights to check?
 				if (argc > 1) // we have number of lights...
 					numlights = atoi(argv[1]);
@@ -99,8 +100,8 @@ int main(int argc, char* argv[])
 						map.devid = pids[cdev];
 						map.lightid = i;
 						map.name = std::string(outName);
-						afx_dev->GetMappings()->push_back(map);
-						afx_dev->SaveMappings();
+						afx_map->GetMappings()->push_back(map);
+						afx_map->SaveMappings();
 					}
 					else {
 						cout << "Skipped. ";
@@ -111,7 +112,7 @@ int main(int argc, char* argv[])
 					Sleep(100);
 				}
 				// now store config...
-				afx_dev->SaveMappings();
+				afx_map->SaveMappings();
 			}
 			else {
 				cerr << " Device didn't answer!" << endl;

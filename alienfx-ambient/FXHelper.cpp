@@ -23,7 +23,7 @@ AlienFX_SDK::Functions* FXHelper::LocateDev(int pid)
 }
 void FXHelper::FillDevs()
 {
-	devList = afx_dev.AlienFXEnumDevices(afx_dev.vid);
+	devList = afx_dev.AlienFXEnumDevices(AlienFX_SDK::vid);
 	if (devs.size() > 0) {
 		for (int i = 0; i < devs.size(); i++)
 			devs[i]->AlienFXClose();
@@ -31,7 +31,7 @@ void FXHelper::FillDevs()
 	}
 	for (int i = 0; i < devList.size(); i++) {
 		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
-		int pid = dev->AlienFXInitialize(dev->vid, devList[i]);
+		int pid = dev->AlienFXInitialize(AlienFX_SDK::vid, devList[i]);
 		if (pid != -1) {
 			devs.push_back(dev);
 			dev->Reset(true);

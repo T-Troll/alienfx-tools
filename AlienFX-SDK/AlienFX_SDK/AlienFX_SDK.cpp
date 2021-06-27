@@ -12,28 +12,12 @@ extern "C" {
 #pragma comment(lib, "setupapi.lib")
 #pragma comment(lib, "hid.lib")
 
-#define ALIENFX_DEVICE_RESET 0x06
-#define ALIENFX_READY 0x10
-#define ALIENFX_BUSY 0x11
-#define ALIENFX_UNKNOWN_COMMAND 0x12
-// new statuses for apiv3 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
-#define ALIENFX_NEW_READY 33
-#define ALIENFX_NEW_BUSY 34
-#define ALIENFX_NEW_WAITCOLOR 35
-#define ALIENFX_NEW_WAITUPDATE 36
-
-// Length by API version:
-#define API_V4 65
-#define API_V3 34
-#define API_V2 12
-#define API_V1 8
-
 #define POWER_DELAY 300
 
 namespace AlienFX_SDK
 {
 
-	std::vector<int> Functions::AlienFXEnumDevices(int vid)
+	std::vector<int> Mappings::AlienFXEnumDevices(int vid)
 	{
 		std::vector<int> pids;
 		GUID guid;
@@ -167,7 +151,7 @@ namespace AlienFX_SDK
 						if (attributes->VendorID == vid)
 						{
 							// Is it Darfon? Then set 64 bytes length.
-							if (vid == AlienFX_SDK::Functions::vid2)
+							if (vid == vid2)
 								length = API_V4;
 							else
 								// I use Version to detect is it old device or new, i have version = 0 for old, and version = 512 for new
@@ -245,7 +229,7 @@ namespace AlienFX_SDK
 						{
 							// Check API version...
 							// Is it Darfon? Then set 64 bytes length.
-							if (vid == AlienFX_SDK::Functions::vid2)
+							if (vid == vid2)
 								length = API_V4;
 							else
 								if (attributes->VersionNumber > 511)
@@ -661,7 +645,7 @@ namespace AlienFX_SDK
 				Loop();
 			}
 			// Now (default) color set, if needed...
-			Buffer[2] = 0x21; Buffer[4] = 4; Buffer[6] = 0x61;
+			/*Buffer[2] = 0x21; Buffer[4] = 4; Buffer[6] = 0x61;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
 			Buffer[4] = 1;
@@ -674,7 +658,8 @@ namespace AlienFX_SDK
 			}
 			Buffer[4] = 2;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
+			Loop();*/
+			// Close set
 			Buffer[4] = 6;
 			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, Buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			Loop();
@@ -777,8 +762,6 @@ namespace AlienFX_SDK
 		bool result = false;
 		if (devHandle != NULL)
 		{
-			mappings.clear();
-			devices.clear();
 			result = CloseHandle(devHandle);
 		}
 		return result;
@@ -798,7 +781,12 @@ namespace AlienFX_SDK
 		return false;
 	}
 
-	void Functions::AddMapping(int devID, int lightID, char* name, int flags) {
+	Mappings::~Mappings () {
+		mappings.clear();
+		devices.clear();
+	}
+
+	void Mappings::AddMapping(int devID, int lightID, char* name, int flags) {
 		mapping map;
 		int i = 0;
 		for (i = 0; i < mappings.size(); i++) {
@@ -821,7 +809,7 @@ namespace AlienFX_SDK
 		}
 	}
 
-	void Functions::LoadMappings() {
+	void Mappings::LoadMappings() {
 		DWORD  dwDisposition;
 		HKEY   hKey1;
 
@@ -883,7 +871,7 @@ namespace AlienFX_SDK
 		RegCloseKey(hKey1);
 	}
 
-	void Functions::SaveMappings() {
+	void Mappings::SaveMappings() {
 		DWORD  dwDisposition;
 		HKEY   hKey1;
 		size_t numdevs = devices.size();
@@ -959,7 +947,7 @@ namespace AlienFX_SDK
 		RegCloseKey(hKey1);
 	}
 
-	std::vector<mapping>* Functions::GetMappings()
+	std::vector<mapping>* Mappings::GetMappings()
 	{
 		return &mappings;
 	}
@@ -972,7 +960,7 @@ namespace AlienFX_SDK
 		return nullptr;
 	}*/
 
-	int Functions::GetFlags(int devid, int lightid)
+	int Mappings::GetFlags(int devid, int lightid)
 	{
 		for (int i = 0; i < mappings.size(); i++)
 			if (mappings[i].devid == devid && mappings[i].lightid == lightid)
@@ -980,7 +968,7 @@ namespace AlienFX_SDK
 		return -1;
 	}
 
-	void Functions::SetFlags(int devid, int lightid, int flags)
+	void Mappings::SetFlags(int devid, int lightid, int flags)
 	{
 		for (int i = 0; i < mappings.size(); i++)
 			if (mappings[i].devid == devid && mappings[i].lightid == lightid) {
@@ -989,7 +977,7 @@ namespace AlienFX_SDK
 			}
 	}
 
-	std::vector<devmap>* Functions::GetDevices()
+	std::vector<devmap>* Mappings::GetDevices()
 	{
 		return &devices;
 	}

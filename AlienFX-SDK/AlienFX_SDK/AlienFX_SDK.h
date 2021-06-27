@@ -8,6 +8,22 @@ using namespace std;
 namespace AlienFX_SDK
 
 {	
+	// Old alieware device statuses
+	#define ALIENFX_DEVICE_RESET 0x06
+	#define ALIENFX_READY 0x10
+	#define ALIENFX_BUSY 0x11
+	#define ALIENFX_UNKNOWN_COMMAND 0x12
+	// new statuses for apiv3 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
+	#define ALIENFX_NEW_READY 33
+	#define ALIENFX_NEW_BUSY 34
+	#define ALIENFX_NEW_WAITCOLOR 35
+	#define ALIENFX_NEW_WAITUPDATE 36
+
+	// Length by API version:
+	#define API_V4 65
+	#define API_V3 34
+	#define API_V2 12
+	#define API_V1 8
 
 	struct mapping {
 		unsigned devid = 0;
@@ -59,9 +75,13 @@ namespace AlienFX_SDK
 		AlienFX_A_NoAction = 7
 	};
 
+	//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
+	const static int vid = 0x187c;
+	const static int vid2 = 0x0d62; // DARFON per-key RGB keyboard - m1X R2, R3. 
+
 	class Functions
 	{
-	public:
+	private:
 
 		bool isInitialized = false;
 		HANDLE devHandle = NULL;
@@ -69,19 +89,11 @@ namespace AlienFX_SDK
 		bool inSet = false;
 		ULONGLONG lastPowerCall = 0;
 
-		// Name mappings for lights
-		vector <mapping> mappings;
-		vector <devmap> devices;
-
 		int pid = -1;
 		int version = -1;
 
-		//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
-		const static int vid = 0x187c;
-		const static int vid2 = 0x0d62; // DARFON per-key RGB keyboard - m1X R2, R3. 
+	public:
 
-		// Enum alienware devices
-		vector<int> AlienFXEnumDevices(int vid);
 		//returns PID
 		int AlienFXInitialize(int vid);
 
@@ -129,35 +141,48 @@ namespace AlienFX_SDK
 		// Apply changes and update colors
 		bool UpdateColors();
 
-		// load light names from registry
-		 void LoadMappings();
-
-		// save light names into registry
-		 void SaveMappings();
-
-		// get saved devices names
-		 vector<devmap>* GetDevices();
-
-		// get saved light names
-		 vector <mapping>* GetMappings();
-
-		// find mapping by dev/light it...
-		 //mapping* GetMappingById(int devID, int LightID);
-
-		// add new light name into the list
-		 void AddMapping(int devID, int lightID, char* name, int flags);
-
-		// get saved light names
-		 int GetFlags(int devid, int lightid);
-
-		// get saved light names
-		 void SetFlags(int devid, int lightid, int flags);
-
 		// get PID in use
 		 int GetPID();
 
 		// get version for current device
 		 int GetVersion();
+	};
+
+	class Mappings {
+	private:
+		// Name mappings for lights
+		vector <mapping> mappings;
+		vector <devmap> devices;
+	public:
+
+		~Mappings();
+
+		// Enum alienware devices
+		vector<int> AlienFXEnumDevices(int vid);
+
+		// load light names from registry
+		void LoadMappings();
+
+		// save light names into registry
+		void SaveMappings();
+
+		// get saved devices names
+		vector<devmap>* GetDevices();
+
+		// get saved light names
+		vector <mapping>* GetMappings();
+
+		// find mapping by dev/light it...
+		//mapping* GetMappingById(int devID, int LightID);
+
+		// add new light name into the list
+		void AddMapping(int devID, int lightID, char* name, int flags);
+
+		// get saved light names
+		int GetFlags(int devid, int lightid);
+
+		// get saved light names
+		void SetFlags(int devid, int lightid, int flags);
 	};
 
 }

@@ -23,7 +23,7 @@ private:
 	long lCPU = 0, lRAM = 0, lHDD = 0, lGPU = 0, lNET = 0, lTemp = 0, lBatt = 100;
 	bool bStage = false;
 public:
-	AlienFX_SDK::Functions afx_dev;
+	AlienFX_SDK::Mappings afx_dev;
 	std::vector<AlienFX_SDK::Functions*> devs;
 	FXHelper(ConfigHandler* conf);
 	~FXHelper();
