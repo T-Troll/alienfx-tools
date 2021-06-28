@@ -90,7 +90,13 @@ void EventHandler::SwitchActiveProfile(int newID)
 #endif
 		}
 	}
-	
+#ifdef _DEBUG
+	else {
+		char buff[2048];
+		sprintf_s (buff, 2047, "Same profile #%d, skipping switch.\n", newID);
+		OutputDebugString (buff);
+	}
+#endif
 	return;
 }
 
@@ -129,6 +135,8 @@ void EventHandler::ToggleEvents()
 		fxh->Refresh();
 		if (!dwHandle)
 			StartEvents();
+		else
+			fxh->RefreshMon();
 	}
 	else
 		if (!conf->monState || !conf->stateOn)
@@ -177,7 +185,7 @@ int ScanTaskList() {
 // Close - Check process list, switch if found. Switch to dewfault if not.
 
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+	TCHAR szProcessName[MAX_PATH] =TEXT ("<unknown>");
 	DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
 	DWORD prcId = 0;
 	int newp = -1;
@@ -192,7 +200,7 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 		DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
 		DWORD prcId = 0;
 		GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
-		HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
 			PROCESS_VM_READ,
 			FALSE, prcId);
 		QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
@@ -264,6 +272,10 @@ void EventHandler::StartProfiles()
 #ifdef _DEBUG
 		OutputDebugString("Profile hooks starting.\n");
 #endif
+		// Need to switch if already running....
+		int newp = ScanTaskList();
+		even->SwitchActiveProfile(newp);
+
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 			EVENT_SYSTEM_FOREGROUND, NULL,
 			CForegroundProc, 0, 0,
