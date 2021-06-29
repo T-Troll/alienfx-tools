@@ -4,7 +4,7 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 - alienfx-cli - Make changes and check status of your AlienFX/LightFX lights from the command line.
 - AlienFX Universal haptics - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights - Visualize screen picture as ambient light (from desktop, game, video player).
-- AlienFX GUI Editor - Light weighted light control tool (AWCC alternative). It only control lights, but can do a way more tricks then AWCC.
+- AlienFX GUI Editor - Light weighted light control tool (AWCC alternative). You can change lights color according to system monitoring values (CPU/GPU load, temperatures, etc), active or running application, AC or battery power and a lot more.
 
 ## Requirements
 - Alienware light device present into the system and have USBHID driver active.
@@ -104,14 +104,14 @@ How it works
 ```
 `"Color"` tab is set hardware colors and effects for light. This setting will remains even if you exit application.  
 Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph – 2, Spectrum – 7) to work correctly.  
-Use “Effects” list to add/remove/select effect. For each effect, you can define its color, effect mode, speed (how fast to change the color), and length (how long it plays).  
+Use "Effects" list to add/remove/select effect. For each effect, you can define its color, effect mode, speed (how fast to change the color), and length (how long it plays).  
 Available effect modes are:
-- Color – Stay at solid color defined.
-- Pulse – Switch between defined color and black.
-- Morph – Morph light from previous color to current one. (for devices with APIv3 and higher)
-- Breath – Morph light from black to current color. (for devices with APIv3 and higher)
-- Spectrum – Like a morph, but up to 9 colors can be defined. (for devices with APIv3 and higher)
-- Rainbow – Like a Color, but can use up to 9 colors. (for devices with APIv3 and higher)
+- Color - Stay at solid color defined.
+- Pulse - Switch between defined color and black.
+- Morph - Morph light from previous color to current one. (for devices with APIv3 and higher)
+- Breath - Morph light from black to current color. (for devices with APIv3 and higher)
+- Spectrum - Like a morph, but up to 9 colors can be defined. (for devices with APIv3 and higher)
+- Rainbow - Like a Color, but can use up to 9 colors. (for devices with APIv3 and higher)
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.  
 “Set All” button copy current light effects to all lights into the list (it’s useful if you need to have all lights into the same color and mode).  
@@ -176,6 +176,7 @@ Each profile can have settings and application for trigger it. The settings are:
 Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights
+- CTRL+SHIFT+F10 - enable/disable system state monitoring
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
 
 Other shortcuts (only then application active):
