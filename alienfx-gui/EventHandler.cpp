@@ -57,11 +57,19 @@ void EventHandler::ChangePowerState()
 			break;
 		}
 	}
-	if (!sameState) fxh->RefreshState();
+	if (!sameState) {
+#ifdef _DEBUG
+		OutputDebugString("Power state changed\n");
+#endif
+		fxh->RefreshState();
+	}
 }
 
 void EventHandler::ChangeScreenState(DWORD state)
 {
+#ifdef _DEBUG
+	OutputDebugString("Display state changed\n");
+#endif
 	if (conf->offWithScreen) {
 		if (state == 2) {
 			// Dim display

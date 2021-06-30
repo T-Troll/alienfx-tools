@@ -712,20 +712,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
 			eve->ToggleEvents();
+			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 			conf->dimmed = !conf->dimmed;
 			fxhl->RefreshState(true);
+			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING:
 			conf->enableMon = !conf->enableMon;
-			//conf->monState = conf->FindProfile(conf->activeProfile)->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			eve->ToggleEvents();
+			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
 			ReloadProfileList(hDlg);
+			OnSelChanged(tab_list);
 			eve->StartProfiles();
 			break;
 		case ID_TRAYMENU_RESTORE:
@@ -754,15 +757,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->FillDevs();
 			if (fxhl->devs.size() > 0) {
 				eve->ChangePowerState();
-				//eve->ToggleEvents();
 				eve->StartProfiles();
 			}
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
 			// ac/batt change
-#ifdef _DEBUG
-			OutputDebugString("Power state changed\n");
-#endif
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
@@ -770,9 +769,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (sParams->PowerSetting == GUID_MONITOR_POWER_ON || sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE
 				|| sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS) {
 				eve->ChangeScreenState(sParams->Data[0]);
-#ifdef _DEBUG
-				OutputDebugString("Monitor state changed\n");
-#endif
 			}
 		} break;
 		case PBT_APMSUSPEND:
@@ -781,17 +777,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OutputDebugString("Sleep/hibernate initiated\n");
 #endif
 			eve->StopProfiles();
-			//eve->StopEvents();
-			return true;
 			break;
 		}
 		break;
-	case WM_QUERYENDSESSION: //case WM_ENDSESSION:
+	case WM_QUERYENDSESSION:
 		// Shutdown/restart scheduled....
 #ifdef _DEBUG
 		OutputDebugString("Shutdown initiated\n");
 #endif
-		//Shell_NotifyIcon(NIM_DELETE, &niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
 		break;
@@ -824,7 +817,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case 4: // mon
 			conf->enableMon = !conf->enableMon;
-			//conf->monState = conf->FindProfile(conf->activeProfile)->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			eve->ToggleEvents();
 			break;
 		default: return false;
@@ -851,7 +843,6 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 	FillRect(cnt, &rect, Brush);
 	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
-	//RedrawWindow(tl, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 DWORD CColorRefreshProc(LPVOID param) {
@@ -2041,14 +2032,14 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		if (conf->startMinimized) CheckDlgButton(hDlg, IDC_STARTM, BST_CHECKED);
 		if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
 		if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
-		if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_BATTSCREENOFF, BST_CHECKED);
-		if (conf->enableMon) CheckDlgButton(hDlg, IDC_BATTMONITOR, BST_CHECKED);
+		if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_SCREENOFF, BST_CHECKED);
+		if (conf->enableMon) CheckDlgButton(hDlg, IDC_BUT_MONITOR, BST_CHECKED);
 		if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
 		if (conf->dimmed) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
 		if (conf->dimPowerButton) CheckDlgButton(hDlg, IDC_POWER_DIM, BST_CHECKED);
 		if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
 		if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
-		if (conf->enableProf) CheckDlgButton(hDlg, IDC_BATTPROFILE, BST_CHECKED);
+		if (conf->enableProf) CheckDlgButton(hDlg, IDC_BUT_PROFILESWITCH, BST_CHECKED);
 		if (conf->awcc_disable) CheckDlgButton(hDlg, IDC_AWCC, BST_CHECKED);
 		if (conf->esif_temp) CheckDlgButton(hDlg, IDC_ESIFTEMP, BST_CHECKED);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -2076,12 +2067,11 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_SCREENOFF:
 			conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
-		case IDC_BATTMONITOR:
+		case IDC_BUT_MONITOR:
 			conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			//conf->monState = conf->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
 			eve->ToggleEvents();
 			break;
-		case IDC_BATTPROFILE:
+		case IDC_BUT_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			ReloadProfileList(NULL);
