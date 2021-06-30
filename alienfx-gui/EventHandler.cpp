@@ -142,6 +142,7 @@ void EventHandler::StopEvents()
 
 void EventHandler::ToggleEvents()
 {
+	config->SetStates();
 	if (conf->monState && conf->stateOn) {
 		fxh->Refresh();
 		if (!dwHandle)
@@ -344,80 +345,6 @@ void EventHandler::StopProfiles()
 	}
 }
 
-/*DWORD CProfileProc(LPVOID param) {
-	EventHandler* src = (EventHandler*)param;
-	DWORD aProcesses[1024], cbNeeded, cProcesses;
-	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
-
-	while (WaitForSingleObject(stopProfile, 100) == WAIT_TIMEOUT) {
-		unsigned newp = src->conf->activeProfile;
-		bool notDefault = false;
-
-		GUITHREADINFO activeThread;
-		activeThread.cbSize = sizeof(GUITHREADINFO);
-
-		GetGUIThreadInfo(NULL, &activeThread);
-
-		if (activeThread.hwndActive != 0) {
-			// is it related to profile?
-			DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
-			DWORD prcId = 0;
-			GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
-			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-				PROCESS_VM_READ,
-				FALSE, prcId);
-			QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
-
-			for (int j = 0; j < src->conf->profiles.size(); j++)
-				if (src->conf->profiles[j].triggerapp == std::string(szProcessName)) {
-					// active app is belong to profile!
-					newp = src->conf->profiles[j].id;
-					notDefault = true;
-					break;
-				}
-		}
-
-		if (!notDefault && EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
-		{
-			HMODULE hMod;
-			cProcesses = cbNeeded / sizeof(DWORD);
-			for (UINT i = 0; i < cProcesses && !notDefault; i++)
-			{
-				if (aProcesses[i] != 0)
-				{
-					HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-						PROCESS_VM_READ,
-						FALSE, aProcesses[i]);
-					if (NULL != hProcess)
-					{
-						if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
-							&cbNeeded))
-						{
-							GetModuleFileNameEx(hProcess, hMod, szProcessName, MAX_PATH);
-							// is it related to profile?
-							for (int j = 0; j < src->conf->profiles.size(); j++)
-								if (!(src->conf->profiles[j].flags & 0x8) && src->conf->profiles[j].triggerapp == std::string(szProcessName)) {
-									// found trigger
-									newp = src->conf->profiles[j].id;
-									notDefault = true;
-									break;
-								}
-						}
-					}
-				}
-			}
-		}
-		// do we need to switch?
-		if (notDefault) {
-			src->SwitchActiveProfile(newp);
-		}
-		else
-			// switch for default profile....
-			src->SwitchActiveProfile(src->conf->defaultProfile);
-	}
-	return 0;
-}*/
-
 DWORD WINAPI CEventProc(LPVOID param)
 {
 	EventHandler* src = (EventHandler*)param;
@@ -618,6 +545,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, (long)totalNet, cHDDVal.longValue, maxTemp, state.BatteryLifePercent);
 	}
+
+	delete[] gpuArray; delete[] netArray; delete[] tempArray;
 
 cleanup:
 
