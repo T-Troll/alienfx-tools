@@ -67,6 +67,7 @@
 #define IDC_BATTSCREENOFF               1033
 #define IDC_BUTTON_CM5                  1033
 #define IDC_REMOVEPROFILE               1033
+#define IDC_SCREENOFF                   1033
 #define IDC_BUTTON_CM6                  1034
 #define IDC_PROFILES                    1034
 #define IDC_POWER_DIM                   1034
