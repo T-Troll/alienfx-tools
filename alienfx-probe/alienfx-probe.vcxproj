@@ -148,9 +148,6 @@
     <ClCompile Include="alienfx-probe.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\alienfx-cli\alienfx-cli.vcxproj">
-      <Project>{ff6119ea-878f-4e7b-9fcd-8410a5d3fbf8}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
       <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
     </ProjectReference>
