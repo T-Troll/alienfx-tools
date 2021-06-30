@@ -35,7 +35,7 @@ void EventHandler::ChangePowerState()
 	SYSTEM_POWER_STATUS state;
 	GetSystemPowerStatus(&state);
 	bool sameState = true;
-	if (state.ACLineStatus) {
+	if (config->statePower = state.ACLineStatus) {
 		// AC line
 		switch (state.BatteryFlag) {
 		case 8: // charging
@@ -63,8 +63,19 @@ void EventHandler::ChangePowerState()
 void EventHandler::ChangeScreenState(DWORD state)
 {
 	if (conf->offWithScreen) {
-		conf->stateOn = conf->lightsOn && state;
+		if (state == 2) {
+			// Dim display
+			conf->dimmedScreen = true;
+			conf->stateScreen = true;
+		}
+		else {
+			conf->stateScreen = state;
+			conf->dimmedScreen = false;
+		}
 		fxh->Refresh(true);
+	} else {
+		conf->dimmedScreen = true;
+		conf->stateScreen = true;
 	}
 }
 
@@ -80,8 +91,8 @@ void EventHandler::SwitchActiveProfile(int newID)
 				oldP->lightsets = conf->active_set;
 			conf->active_set = newP->lightsets;
 			conf->activeProfile = newID;
-			conf->monState = newP->flags & 0x2 ? 0 : conf->enableMon;
-			conf->stateDimmed = newP->flags & 0x4;
+			conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
+			conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
 			ToggleEvents();
 #ifdef _DEBUG
 			char buff[2048];
@@ -147,19 +158,27 @@ void EventHandler::ToggleEvents()
 }
 
 int ScanTaskList() {
-	DWORD aProcesses[1024], cbNeeded, cProcesses;
-	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+	DWORD maxProcess=256, maxFileName=MAX_PATH, cbNeeded, cProcesses, cFileName = maxFileName;
+	DWORD* aProcesses = new DWORD[maxProcess];
+	TCHAR* szProcessName=new TCHAR[maxFileName];
+	szProcessName[0]=0;
+	//=TEXT ("<unknown>");
 	int newp = -1;
 
-	if (EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
+	if (EnumProcesses(aProcesses, maxProcess * sizeof(DWORD), &cbNeeded))
 	{
+		while ((cProcesses = cbNeeded/sizeof(DWORD))==maxProcess) {
+			maxProcess=maxProcess<<1;
+			delete[] aProcesses;
+			aProcesses=new DWORD[maxProcess];
+			EnumProcesses(aProcesses, maxProcess * sizeof(DWORD), &cbNeeded);
+		}
 		HMODULE hMod;
-		cProcesses = cbNeeded / sizeof(DWORD);
 		for (UINT i = 0; i < cProcesses; i++)
 		{
 			if (aProcesses[i] != 0)
 			{
-				HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+				HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
 					PROCESS_VM_READ,
 					FALSE, aProcesses[i]);
 				if (NULL != hProcess)
@@ -167,17 +186,24 @@ int ScanTaskList() {
 					if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
 						&cbNeeded))
 					{
-						GetModuleFileNameEx(hProcess, hMod, szProcessName, MAX_PATH);
+						cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, maxFileName);
+						while (maxFileName==cFileName) {
+							maxFileName=maxFileName<<1;
+							delete[] szProcessName;
+							szProcessName=new TCHAR[maxFileName];
+							cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, maxFileName);
+						}
 						// is it related to profile?
-						newp = config->FindProfileByApp(std::string(szProcessName));
-						if (newp >=0)
-							return newp;
+						if ((newp = config->FindProfileByApp(std::string(szProcessName))) >=0)
+							break;
 					}
 				}
 			}
 		}
 	}
-	return -1;
+	delete[] szProcessName;
+	delete[] aProcesses;
+	return newp;
 }
 
 // Create - Check process ID, switch if found and no foreground active.
@@ -185,9 +211,12 @@ int ScanTaskList() {
 // Close - Check process list, switch if found. Switch to dewfault if not.
 
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	TCHAR szProcessName[MAX_PATH] =TEXT ("<unknown>");
-	DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
+	
+	DWORD nameSize = MAX_PATH, cFileName = nameSize, cbNeeded;
+	TCHAR* szProcessName=new TCHAR[nameSize];
+	szProcessName[0]=0;
 	DWORD prcId = 0;
+	HMODULE hMod;
 	int newp = -1;
 
 	GUITHREADINFO activeThread;
@@ -197,13 +226,19 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 
 	if (activeThread.hwndActive != 0) {
 		// is it related to profile?
-		DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
-		DWORD prcId = 0;
 		GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
 			PROCESS_VM_READ,
 			FALSE, prcId);
-		QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
+		//QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
+		EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded);
+		cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, nameSize);
+		while (nameSize==cFileName) {
+			nameSize=nameSize<<1;
+			delete[] szProcessName;
+			szProcessName=new TCHAR[nameSize];
+			cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, nameSize);
+		}
 #ifdef _DEBUG
 		char buff[2048];
 		sprintf_s(buff, 2047, "Active app switched to %s\n", szProcessName);
@@ -220,11 +255,14 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 		}
 		even->SwitchActiveProfile(newp);
 	}
+	delete[] szProcessName;
 }
 
 VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
-	DWORD nameSize = sizeof(szProcessName) / sizeof(TCHAR);
+	DWORD nameSize = MAX_PATH, cFileName = nameSize, cbNeeded;
+	TCHAR* szProcessName=new TCHAR[nameSize];
+	szProcessName[0]=0;
+	HMODULE hMod;
 	DWORD prcId = 0;
 	int newp = -1;
 
@@ -236,7 +274,14 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
 				PROCESS_VM_READ,
 				FALSE, prcId);
-			QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
+			EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded);
+			cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, nameSize);
+			while (nameSize==cFileName) {
+				nameSize=nameSize<<1;
+				delete[] szProcessName;
+				szProcessName=new TCHAR[nameSize];
+				cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, nameSize);
+			}
 
 			switch (dwEvent) {
 			case EVENT_OBJECT_CREATE:
@@ -246,8 +291,7 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 					sprintf_s(buff, 2047, "Switching to %s\n", szProcessName);
 					OutputDebugString(buff);
 #endif
-					newp = config->FindProfileByApp(std::string(szProcessName));
-					even->SwitchActiveProfile(newp);
+					even->SwitchActiveProfile(config->FindProfileByApp(std::string(szProcessName)));
 				}
 				break;
 			case EVENT_OBJECT_DESTROY:
@@ -264,6 +308,7 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 			}
 		}
 	}
+	delete[] szProcessName;
 }
 
 void EventHandler::StartProfiles()
@@ -273,8 +318,7 @@ void EventHandler::StartProfiles()
 		OutputDebugString("Profile hooks starting.\n");
 #endif
 		// Need to switch if already running....
-		int newp = ScanTaskList();
-		even->SwitchActiveProfile(newp);
+		even->SwitchActiveProfile(ScanTaskList());
 
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 			EVENT_SYSTEM_FOREGROUND, NULL,

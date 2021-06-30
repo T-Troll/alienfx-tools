@@ -187,18 +187,17 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 	AlienFX_SDK::Functions* dev = LocateDev(did);
 
 	for (int i = 0; i < actions.size(); i++) {
-		if (!power || (power && config->dimPowerButton))
-			if (config->dimmed || config->stateDimmed ||
-				(config->dimmedBatt && (activeMode & (MODE_BAT | MODE_LOW)))) {
-				actions[i].r = (actions[i].r * delta) >> 8;
-				actions[i].g = (actions[i].g * delta) >> 8;
-				actions[i].b = (actions[i].b * delta) >> 8;
-			}
 		// gamma-correction...
 		if (config->gammaCorrection) {
 			actions[i].r = (actions[i].r * actions[i].r) >> 8;
 			actions[i].g = (actions[i].g * actions[i].g) >> 8;
 			actions[i].b = (actions[i].b * actions[i].b) >> 8;
+		}
+		// Dimming...
+		if (config->stateDimmed && (!power || config->dimPowerButton)) {
+			actions[i].r = (actions[i].r * delta) >> 8;
+			actions[i].g = (actions[i].g * delta) >> 8;
+			actions[i].b = (actions[i].b * delta) >> 8;
 		}
 	}
 	if (dev != NULL) {
@@ -215,14 +214,14 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 #endif
 			return false;
 		}
-		if (power && actions.size() > 1) {
-			if (!config->block_power) {
+		if (power) {
+			if (!config->block_power && actions.size() > 1) {
 #ifdef _DEBUG
 				//char buff[2048];
 				//sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
 				//OutputDebugString(buff);
 #endif
-				if (config->lightsOn && config->stateOn || !config->offPowerButton)
+				if (config->stateOn || !config->offPowerButton)
 					ret = dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 						actions[1].r, actions[1].g, actions[1].b, force);
 				else
@@ -230,7 +229,7 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 			}
 		}
 		else
-			if (config->lightsOn && config->stateOn) {
+			if (config->stateOn) {
 				if (actions[0].type == 0)
 					dev->SetColor(id, actions[0].r, actions[0].g, actions[0].b);
 				else {
@@ -254,6 +253,7 @@ void FXHelper::RefreshState(bool force)
 
 void FXHelper::RefreshMon()
 {
+	config->SetStates();
 	if (config->enableMon)
 		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, true);
 }
@@ -264,7 +264,7 @@ int FXHelper::Refresh(bool forced)
 	if (forced)
 		OutputDebugString("Forced Refresh initiated...\n");
 #endif
-
+	config->SetStates();
 	for (int i =0; i < config->active_set.size(); i++) {
 		config->active_set[i].valid = RefreshOne(&config->active_set[i], forced);
 	}

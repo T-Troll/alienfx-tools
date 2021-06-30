@@ -269,8 +269,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (conf->esif_temp)
 			EvaluteToAdmin();
 
-		if (!conf->enableMon)
-			fxhl->Refresh(true);
+		//if (!conf->enableMon)
+		//	fxhl->Refresh(true);
 
 		eve = new EventHandler(conf, fxhl);
 
@@ -293,6 +293,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			2,
 			MOD_CONTROL | MOD_SHIFT,
 			VK_F11
+		);
+
+		RegisterHotKey(
+			mDlg,
+			4,
+			MOD_CONTROL | MOD_SHIFT,
+			VK_F10
 		);
 
 		RegisterHotKey(
@@ -703,7 +710,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->RefreshState(true);
 			break;
 		case ID_TRAYMENU_LIGHTSON:
-			conf->stateOn = conf->lightsOn = !conf->lightsOn;
+			conf->lightsOn = !conf->lightsOn;
 			eve->ToggleEvents();
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
@@ -712,7 +719,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case ID_TRAYMENU_MONITORING:
 			conf->enableMon = !conf->enableMon;
-			conf->monState = conf->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
+			//conf->monState = conf->FindProfile(conf->activeProfile)->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			eve->ToggleEvents();
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
@@ -747,7 +754,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->FillDevs();
 			if (fxhl->devs.size() > 0) {
 				eve->ChangePowerState();
-				eve->StartEvents();
+				//eve->ToggleEvents();
 				eve->StartProfiles();
 			}
 		} break;
@@ -760,7 +767,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case PBT_POWERSETTINGCHANGE: {
 			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
-			if (sParams->PowerSetting == GUID_MONITOR_POWER_ON || sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE) {
+			if (sParams->PowerSetting == GUID_MONITOR_POWER_ON || sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE
+				|| sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS) {
 				eve->ChangeScreenState(sParams->Data[0]);
 #ifdef _DEBUG
 				OutputDebugString("Monitor state changed\n");
@@ -773,7 +781,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OutputDebugString("Sleep/hibernate initiated\n");
 #endif
 			eve->StopProfiles();
-			eve->StopEvents();
+			//eve->StopEvents();
 			return true;
 			break;
 		}
@@ -790,7 +798,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_HOTKEY:
 		switch (wParam) {
 		case 1: // on/off
-			conf->stateOn = conf->lightsOn = !conf->lightsOn;
+			conf->lightsOn = !conf->lightsOn;
 			eve->ToggleEvents();
 			break;
 		case 2: // dim
@@ -800,7 +808,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case 3: // off-dim-full circle
 			if (conf->lightsOn) {
 				if (conf->dimmed) {
-					conf->stateOn = conf->lightsOn = !conf->lightsOn;
+					conf->lightsOn = !conf->lightsOn;
 					conf->dimmed = !conf->dimmed;
 					eve->ToggleEvents();
 				}
@@ -810,9 +818,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 			}
 			else {
-				conf->stateOn = conf->lightsOn = !conf->lightsOn;
+				conf->lightsOn = !conf->lightsOn;
 				eve->ToggleEvents();
 			}
+			break;
+		case 4: // mon
+			conf->enableMon = !conf->enableMon;
+			//conf->monState = conf->FindProfile(conf->activeProfile)->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
+			eve->ToggleEvents();
 			break;
 		default: return false;
 		}
@@ -2060,12 +2073,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->dimmedBatt = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			fxhl->RefreshState();
 			break;
-		case IDC_BATTSCREENOFF:
+		case IDC_SCREENOFF:
 			conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
 		case IDC_BATTMONITOR:
 			conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			conf->monState = conf->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
+			//conf->monState = conf->FindProfile(conf->activeProfile)->flags & 0x2 ? 0 : conf->enableMon;
 			eve->ToggleEvents();
 			break;
 		case IDC_BATTPROFILE:
@@ -2075,7 +2088,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			eve->StartProfiles();
 			break;
 		case IDC_CHECK_LON:
-			conf->stateOn = conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			eve->ToggleEvents();
 			break;
 		case IDC_CHECK_DIM:

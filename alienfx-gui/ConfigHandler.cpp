@@ -101,6 +101,18 @@ int ConfigHandler::FindProfileByApp(std::string appName, bool active)
 	return -1;
 }
 
+void ConfigHandler::SetStates() {
+	// monitoring state....
+	monState = FindProfile(activeProfile)->flags & PROF_NOMONITORING ? false : enableMon;
+	// Lighs on state...
+	stateOn = lightsOn && stateScreen;
+	// Dim state...
+	stateDimmed = dimmed || 
+		dimmedScreen ||
+		FindProfile(activeProfile)->flags & PROF_DIMMED ||
+		(dimmedBatt && !statePower);
+}
+
 int ConfigHandler::Load() {
 	int size = 4, size_c = 4 * 16;
 
