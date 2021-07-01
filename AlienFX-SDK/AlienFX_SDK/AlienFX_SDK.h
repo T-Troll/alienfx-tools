@@ -20,7 +20,8 @@ namespace AlienFX_SDK
 	#define ALIENFX_NEW_WAITUPDATE 36
 
 	// Length by API version:
-	#define API_V4 65
+    //#define API_V42 64
+	//#define API_V4 65
 	#define API_V3 34
 	#define API_V2 12
 	#define API_V1 8
@@ -77,7 +78,9 @@ namespace AlienFX_SDK
 
 	//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
 	const static int vid = 0x187c;
+#ifdef API_V4
 	const static int vid2 = 0x0d62; // DARFON per-key RGB keyboard - m1X R2, R3. 
+#endif
 
 	class Functions
 	{
@@ -85,15 +88,17 @@ namespace AlienFX_SDK
 
 		bool isInitialized = false;
 		HANDLE devHandle = NULL;
-		int length = 9;
+		//int length = 9;
 		bool inSet = false;
 		ULONGLONG lastPowerCall = 0;
+
+		//byte buffer[65] = {0};
 
 		int pid = -1;
 		int version = -1;
 
 	public:
-
+		int length = 9;
 		//returns PID
 		int AlienFXInitialize(int vid);
 

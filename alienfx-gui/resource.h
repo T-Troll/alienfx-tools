@@ -64,7 +64,6 @@
 #define IDC_SLIDER_DIMMING              1032
 #define IDC_BUTTON_CM4                  1032
 #define IDC_BUTTON_SETALL               1033
-#define IDC_BATTSCREENOFF               1033
 #define IDC_BUTTON_CM5                  1033
 #define IDC_REMOVEPROFILE               1033
 #define IDC_SCREENOFF                   1033
@@ -73,7 +72,9 @@
 #define IDC_POWER_DIM                   1034
 #define IDC_ADDPROFILE                  1035
 #define IDC_BATTMONITOR                 1036
+#define IDC_BUT_MONITOR                 1036
 #define IDC_BATTPROFILE                 1037
+#define IDC_BUT_PROFILESWITCH           1037
 #define IDC_AWCC                        1038
 #define IDC_BUTTON_TESTCOLOR            1039
 #define IDC_ESIFTEMP                    1039
@@ -101,7 +102,6 @@
 #define IDC_CHECK_PROFDIM               1071
 #define IDC_COMBO_PROFILES              1072
 #define IDC_CHECK_FOREGROUND            1073
-#define IDC_BUTTON1                     1075
 #define IDC_BUT_PROFRESET               1076
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
