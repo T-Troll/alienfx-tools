@@ -278,9 +278,10 @@ DWORD WINAPI CDlgProc(LPVOID param)
 
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
+	HANDLE waitArray[2] = {lhEvent, stopEvent};
 	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT)
-		if (WaitForSingleObject(lhEvent, 200) == WAIT_OBJECT_0) {
+		if (WaitForMultipleObjects(2, waitArray, false, 200) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //			OutputDebugString("Light update...\n");
 //#endif

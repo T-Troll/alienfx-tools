@@ -94,13 +94,14 @@ void EventHandler::SwitchActiveProfile(int newID)
 		profile* newP = conf->FindProfile(newID),
 			* oldP = conf->FindProfile(conf->activeProfile);
 		if (newP != NULL) {
-			StopEvents();
+			PauseEvents();
 			if (oldP != NULL)
 				oldP->lightsets = conf->active_set;
-			conf->active_set = newP->lightsets;
 			conf->activeProfile = newID;
 			conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
+			conf->active_set = newP->lightsets;
+			ResumeEvents();
 			ToggleEvents();
 #ifdef _DEBUG
 			char buff[2048];
@@ -146,6 +147,16 @@ void EventHandler::StopEvents()
 		dwHandle = 0;
 		fxh->Refresh(true);
 	}
+}
+
+void EventHandler::PauseEvents() {
+	if (dwHandle)
+		SuspendThread(dwHandle);
+}
+
+void EventHandler::ResumeEvents() {
+	if (dwHandle)
+		ResumeThread(dwHandle);
 }
 
 void EventHandler::ToggleEvents()
@@ -357,7 +368,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 {
 	EventHandler* src = (EventHandler*)param;
 
-	LPCTSTR COUNTER_PATH_CPU = "\\Processor(_Total)\\% Processor Time",
+	LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
 		COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
 		COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
 		COUNTER_PATH_HOT = "\\Thermal Zone Information(*)\\Temperature",
@@ -381,6 +392,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 	PDH_FMT_COUNTERVALUE_ITEM* gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
 	PDH_FMT_COUNTERVALUE_ITEM* netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
 	PDH_FMT_COUNTERVALUE_ITEM* tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
+
+	// Set data source...
+	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
 
 	// Open a query object.
 	pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
@@ -480,7 +494,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		if (pdhStatus != ERROR_SUCCESS) {
 			if (pdhStatus == PDH_MORE_DATA) {
 				maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-				delete gpuArray;
+				delete[] gpuArray;
 				gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
 			}
 			gpuCount = 0;
@@ -504,7 +518,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		if (pdhStatus != ERROR_SUCCESS) {
 			if (pdhStatus == PDH_MORE_DATA) {
 				maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-				delete tempArray;
+				delete[] tempArray;
 				tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
 			}
 			tempCount = 0;
@@ -531,7 +545,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			if (pdhStatus != ERROR_SUCCESS) {
 				if (pdhStatus == PDH_MORE_DATA) {
 					maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-					delete tempArray;
+					delete[] tempArray;
 					tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
 				}
 				tempCount = 0;

@@ -12,10 +12,8 @@
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-//int bars;
 int* freq;
 int nCmdShow;
-double y_scale;
 
 bool axis_draw = true;
 
@@ -31,8 +29,7 @@ Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandl
 {
 
 	nCmdShow=mainCmdShow;
-	//bars = conf->numbars;
-	y_scale = conf->res;
+
 	freq=freqp;
 
 	config = conf;
@@ -64,27 +61,7 @@ void Graphics::start(){
 	}
 }
 
-double Graphics::getYScale() {
-	return y_scale;
-}
-
 void DrawFreq(HDC hdc, LPRECT rcClientP);
-
-void Graphics::refresh(){
-
-	if (!IsIconic(dlg)) {
-		HWND hysto = GetDlgItem(dlg, IDC_VIEW_LEVELS);
-		RECT levels_rect;
-		GetClientRect(hysto, &levels_rect);
-
-		HBRUSH hb = CreateSolidBrush(RGB(0, 0, 0));
-
-		FillRect(GetDC(hysto), &levels_rect, hb);
-		DeleteObject(hb);
-
-		DrawFreq(GetDC(hysto), &levels_rect);
-	}
-}
 
 void Graphics::ShowError(char* T)
 {
@@ -105,6 +82,8 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 {
 	unsigned i, rectop;
 	char szSize[100]; //freq axis
+	RECT graphZone;
+	graphZone = *rcClientP;
 
 	//setting collors:
 	SetDCBrushColor(hdc, RGB(255, 255, 255));
@@ -114,7 +93,7 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 	SelectObject(hdc, GetStockObject(DC_PEN));
 	SetBkMode(hdc, TRANSPARENT);
 
-	if (axis_draw) {
+	if (config->showAxis) {
 		//draw x axis:
 		MoveToEx(hdc, 10, rcClientP->bottom - 21, (LPPOINT)NULL);
 		LineTo(hdc, rcClientP->right - 10, rcClientP->bottom - 21);
@@ -146,14 +125,21 @@ void DrawFreq(HDC hdc, LPRECT rcClientP)
 				oldvalue = frq;
 			}
 		}
+		graphZone.top = 10;
+		graphZone.bottom -= 21;
+		graphZone.left = 10;
+		graphZone.right -= 20;
+	} else {
+		graphZone.top = 2;
+		graphZone.left = 1;
+		graphZone.bottom--;
 	}
-
 	for (i = 0; i < config->numbars; i++) {
-		rectop = ((255 - freq[i]) * (rcClientP->bottom - 21)) / 255;
-		if (rectop < 10) rectop = 10;
-		Rectangle(hdc, ((rcClientP->right - 20) * i) / config->numbars + 10, rectop, ((rcClientP->right - 20) * (i + 1)) / config->numbars - 2 + 10, rcClientP->bottom - 21);
+		rectop = (255 - freq[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
+		//if (rectop < 10) rectop = 10;
+		Rectangle(hdc, (graphZone.right * i) / config->numbars + graphZone.left, rectop, (graphZone.right * (i + 1)) / config->numbars - 2 + graphZone.left, graphZone.bottom);
 		//wsprintf(szSize, "%3d", freq[i]);
-		//TextOut(hdc, ((rcClientP->right - 20) * i) / bars + 10, rectop - 15, szSize, 3);
+		//TextOut(hdc, ((rcClientP->right - 20) * i) / config->numbars + 10, rectop - 15, szSize, 3);
 	}
 } 
 
@@ -353,6 +339,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		CheckMenuItem(GetMenu(hDlg), config->inpType ? ID_INPUT_DEFAULTINPUTDEVICE : ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 
+		CheckDlgButton(hDlg, IDC_SHOWAXIS, config->showAxis ? BST_CHECKED : BST_UNCHECKED);
+
 	}
 	break;
 
@@ -369,14 +357,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_UNCHECKED);
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 			audio->RestartDevice(0);
-			config->Save();
+			//config->Save();
 			break;
 		case ID_INPUT_DEFAULTINPUTDEVICE:
 			config->inpType = 1;
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_UNCHECKED);
 			audio->RestartDevice(1);
-			config->Save();
+			//config->Save();
 			break;
 		case ID_FILE_EXIT: case IDOK: PostMessage(hDlg, WM_CLOSE, 0, 0); break;
 		case ID_HELP_ABOUT: // about dialogue here
@@ -544,6 +532,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			} break;
 			}
 		} break;
+		case IDC_SHOWAXIS:
+		{
+			config->showAxis = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
+			SendMessage(hDlg, WM_PAINT, 0, 0);
+		} break;
 		}
 	} break;
 	case WM_HSCROLL: {
@@ -597,6 +590,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case WM_RBUTTONUP:
 		case WM_CONTEXTMENU:
+			Shell_NotifyIcon(NIM_DELETE, &niData); 
 			PostMessage(hDlg, WM_CLOSE, 0, 0);
 			break;
 		}
@@ -638,7 +632,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		return false;
 	} break;
 	case WM_CLOSE: DestroyWindow(hDlg); break;
-	case WM_DESTROY: config->Save(); Shell_NotifyIcon(NIM_DELETE, &niData); DestroyWindow(hDlg); PostQuitMessage(0); break;
+	case WM_DESTROY: PostQuitMessage(0); break;
 	default: return false;
 	}
 

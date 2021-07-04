@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include <Setupapi.h>
-#include <codecvt>
-#include <locale>
+//#include <codecvt>
+//#include <locale>
 #include "AlienFX_SDK.h"  
 #include <iostream>
 extern "C" {
@@ -11,8 +11,6 @@ extern "C" {
 
 #pragma comment(lib, "setupapi.lib")
 #pragma comment(lib, "hid.lib")
-
-#define POWER_DELAY 300
 
 namespace AlienFX_SDK
 {
@@ -34,19 +32,19 @@ namespace AlienFX_SDK
 
 #ifdef API_V4
 	struct com_apiv4 {
-		byte reset[3] = {0x00, 0xcc, 0x96};
-		byte colorSel[19] = {0x00, 0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x01};
-		byte colorSet[9] = {0x00, 0xcc, 0x8c, 0x02, 0x00, 0x00, 0x00, 0x00, 0xff};
-		byte update[4] = {0x00, 0xcc, 0x8c, 0x13};
-		byte setPower[7] = {0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b};
-		byte status;
+		byte reset[3] = { 0xcc, 0xcc, 0x96};
+		byte colorSel[19] = {0xcc, 0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+		byte colorSet[11] = {0xcc, 0xcc, 0x8c, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff};
+		byte loop[4] = {0xcc, 0xcc, 0x8c, 0x13};
+		byte update[5] = {0xcc, 0xcc, 0x8b, 0x01, 0x59};
+		//byte setPower[7] = {0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b};
+		//byte status;
 	} COMMV4;
 #endif
 
-	std::vector<int> Mappings::AlienFXEnumDevices(int vid)
+	vector<pair<DWORD,DWORD>> Mappings::AlienFXEnumDevices()
 	{
-		std::vector<int> pids;
+		vector<pair<DWORD,DWORD>> pids;
 		GUID guid;
 		bool flag = false;
 		HANDLE tdevHandle;
@@ -100,18 +98,20 @@ namespace AlienFX_SDK
 					attributes->Size = sizeof(HIDD_ATTRIBUTES);
 					if (HidD_GetAttributes(tdevHandle, attributes.get()))
 					{
-
-						if (vid == 0 || attributes->VendorID == vid)
-						{
+						for (unsigned i = 0; i < sizeof(vids)/4; i++) {
+							if (attributes->VendorID == vids[i]) {
 #ifdef _DEBUG
-							wchar_t buff[2048];
-							swprintf_s(buff, 2047, L"VID: %#x, PID: %#x, Version: %d, Length: %d\n",
-								attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
-							OutputDebugString(buff);
-							//std::cout << std::hex << "VID:" << attributes->VendorID << ",PID:" << attributes->ProductID 
-							//	<< ",Ver:" << attributes->VersionNumber << ",Len:" << attributes->Size << std::endl;
+								wchar_t buff[2048];
+								swprintf_s(buff, 2047, L"Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+										   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
+								OutputDebugString(buff);
 #endif
-							pids.push_back(attributes->ProductID);
+								pair<DWORD, DWORD> dev;
+								dev.first = attributes->VendorID;
+								dev.second = attributes->ProductID;
+								pids.push_back(dev);
+								break;
+							}
 						}
 					}
 				}
@@ -121,86 +121,7 @@ namespace AlienFX_SDK
 		return pids;
 	}
 
-	//Use this method to scan for devices that uses same vid
-	int Functions::AlienFXInitialize(int vid)
-	{
-		pid = -1;
-		GUID guid;
-		bool flag = false;
-
-		HidD_GetHidGuid(&guid);
-		HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-		if (hDevInfo == INVALID_HANDLE_VALUE)
-		{
-			//std::cout << "Couldn't get guid";
-			return pid;
-		}
-		unsigned int dw = 0;
-		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
-
-		unsigned int lastError = 0;
-		while (!flag)
-		{
-			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
-			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
-			{
-				lastError = GetLastError();
-				return pid;
-			}
-			dw++;
-			DWORD dwRequiredSize = 0;
-			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
-			{
-				//std::cout << "Getting the needed buffer size failed";
-				return pid;
-			}
-			//std::cout << "Required size is " << dwRequiredSize << std::endl;
-			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-			{
-				//std::cout << "Last error is not ERROR_INSUFFICIENT_BUFFER";
-				return pid;
-			}
-			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
-			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
-			{
-				std::wstring devicePath = deviceInterfaceDetailData->DevicePath;
-				//OutputDebugString(devicePath.c_str());
-				devHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-
-				if (devHandle != INVALID_HANDLE_VALUE)
-				{
-					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
-					attributes->Size = sizeof(HIDD_ATTRIBUTES);
-					if (HidD_GetAttributes(devHandle, attributes.get()))
-					{
-
-						if (attributes->VendorID == vid)
-						{
-							// Is it Darfon? Then set 64 bytes length.
-#ifdef API_V4
-							if (vid == vid2)
-								length = API_V4;
-							else
-#endif
-								// I use Version to detect is it old device or new, i have version = 0 for old, and version = 512 for new
-								if (attributes->VersionNumber > 511)
-									length = API_V3;
-								else
-									length = attributes->Size;
-							pid = attributes->ProductID;
-							version = attributes->VersionNumber;
-							flag = true;
-						}
-					}
-				}
-			}
-		}
-		//OutputDebugString(flag);
-		return pid;
-	}
-
-	//Use this method for general devices
+	//Use this method for general devices pid = -1 for full scan
 	int Functions::AlienFXInitialize(int vid, int pidd)
 	{
 		GUID guid;
@@ -254,22 +175,38 @@ namespace AlienFX_SDK
 					if (HidD_GetAttributes(devHandle, attributes.get()))
 					{
 
-						if (((attributes->VendorID == vid) && (attributes->ProductID == pidd)))
+						if (((attributes->VendorID == vid) && (pidd == -1 || attributes->ProductID == pidd)))
 						{
 							// Check API version...
 #ifdef API_V4
 							// Is it Darfon? Then set 64 bytes length.
-							if (vid == vid2)
-								length = API_V4;
+							if (vid == vids[1]) {
+								length = API_L_V4;
+								version = API_V4;
+							}
 							else
 #endif
-								if (attributes->VersionNumber > 511)
-									length = API_V3;
-								else
+								if (attributes->VersionNumber > 511) {
+									length = API_L_V3;
+									version = API_V3;
+								}
+								else {
 									length = attributes->Size;
-							version = attributes->VersionNumber;
-							pid = pidd;
+									if (attributes->ProductID > 0x529)
+										version = API_V25;
+									else
+										version = API_V2;
+								}
+							this->vid = attributes->VendorID;
+							pid = attributes->ProductID;
 							flag = true;
+#ifdef _DEBUG
+							wchar_t buff[2048];
+							swprintf_s(buff, 2047, L"Init: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+									   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
+							OutputDebugString(buff);
+							cout << buff;
+#endif
 						}
 					}
 
@@ -281,56 +218,72 @@ namespace AlienFX_SDK
 
 	void Functions::Loop()
 	{
-		size_t BytesWritten;
-		byte* buffer = new byte[length];
+		//size_t BytesWritten;
+		//byte* buffer = new byte[length];
+		byte buffer[MAX_BUFFERSIZE];
 		ZeroMemory(buffer, length);
 		switch (length) {
-		case API_V3: {
+#ifdef API_V4
+		case API_L_V4:
+			memcpy(buffer, COMMV4.loop, sizeof(COMMV4.loop));
+			HidD_SetOutputReport(devHandle, buffer, length);
+			break;
+#endif
+		//case API_L_V3: {
 			// m15 require Input report as a confirmation, not output. 
 			// WARNING!!! In latest firmware, this can provide up to 10sec(!) slowdown, so i disable status read. It works without it as well.
 			// DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, BufferN, length, (DWORD*)&BytesWritten, NULL);
 			// std::cout << "Status: 0x" << std::hex << (int) BufferN[2] << std::endl;
-		} break;
-		case API_V2: case API_V1: {
+		//} break;
+		case API_L_V2: case API_L_V1: {
 			memcpy(buffer, COMMV2.loop, sizeof(COMMV2.loop));
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 		} break;
 		}
 	}
 
 	bool Functions::Reset(int status)
 	{
-		size_t BytesWritten;
+		//size_t BytesWritten;
 		bool result = false;
 
-		byte* buffer = new byte[length];
+		//byte* buffer = new byte[length];
+		byte buffer[MAX_BUFFERSIZE];
 		ZeroMemory(buffer, length);
 		switch (length) {
 #ifdef API_V4
-		case API_V42:
-		{
-			memcpy(buffer, COMMV4.reset+1, sizeof(COMMV4.reset)-1);
-			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*) &BytesWritten, NULL);
-			Loop();
-		} break;
-		case API_V4: {
+		case API_L_V4: {
 			memcpy(buffer, COMMV4.reset, sizeof(COMMV4.reset));
-			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			Loop();
+			//result = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			result = HidD_SetFeature(devHandle, buffer, length);
+			cout << "IO result is ";
+			switch (GetLastError()) {
+			case 0: cout << "Ok."; break;
+			case 1: cout << "Incorrect function"; break;
+			case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
+			case ERROR_MORE_DATA: cout << "More data remains!"; break;
+			default: cout << "Unknown (" << GetLastError() << ")";
+			}
+			cout <<  endl;
 		} break;
 #endif
-		case API_V3: {
+		case API_L_V3: {
 			memcpy(buffer, COMMV3.reset, sizeof(COMMV3.reset));
-			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			//result = HidD_SetOutputReport(devHandle, buffer, length);
+			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, NULL, NULL);
+			//cout << "IO result is " << GetLastError() << endl;
 		} break;
-		case API_V2: case API_V1: {
+		case API_L_V2: case API_L_V1: {
 			memcpy(buffer, COMMV2.reset, sizeof(COMMV2.reset));
 			if (status)
 				buffer[2] = 0x04;
 			else
 				buffer[2] = 0x03;
+			// ???? Do i need it?
 			AlienfxWaitForBusy();
-			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			result = HidD_SetOutputReport(devHandle, buffer, length);
+			//result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			AlienfxWaitForReady();
 		} break;
 		}
@@ -341,40 +294,48 @@ namespace AlienFX_SDK
 
 	bool Functions::UpdateColors()
 	{
-		size_t BytesWritten;
-		//bool res = false;
-		byte* buffer = new byte[length];
-		ZeroMemory(buffer, length);
-		switch (length) {
+		//size_t BytesWritten;
+		bool res = false;
+		//if (inSet) {
+			//byte* buffer = new byte[length];
+			byte buffer[MAX_BUFFERSIZE];
+			ZeroMemory(buffer, length);
+			switch (length) {
 #ifdef API_V4
-		case API_V4: {
-			if (inSet) {
+			case API_L_V4:
+			{
 				memcpy(buffer, COMMV4.update, sizeof(COMMV4.update));
+				res = HidD_SetFeature(devHandle, buffer, length);
+				//return DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*) &BytesWritten, NULL);
 			}
-		}
 #endif
-		case API_V3: {
-			if (inSet) {
+			case API_L_V3:
+			{
 				memcpy(buffer, COMMV3.update, sizeof(COMMV3.update));
-				inSet = false;
+				res = HidD_SetOutputReport(devHandle, buffer, length);
+				//return DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*) &BytesWritten, NULL);
+			} break;
+			case API_L_V2: case API_L_V1:
+			{
+				memcpy(buffer, COMMV2.update, sizeof(COMMV2.update));
+				res = HidD_SetOutputReport(devHandle, buffer, length);
+				//return DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*) &BytesWritten, NULL);
+			} break;
+			default: return false;
 			}
-		} break;
-		case API_V2: case API_V1: {
-			memcpy(buffer, COMMV2.update, sizeof(COMMV2.update));
-		} break;
-		default: return false;
-		}
-		//std::cout << "Update!" << std::endl;
-		return DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			//std::cout << "Update!" << std::endl;
+			inSet = false;
+			Sleep(5); // Fix for ultra-fast updates, or next command will fail sometimes.
+			return res;
+				//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, NULL, NULL);
+				//HidD_SetOutputReport(devHandle, buffer, length);
+		//}
+		return false;
 	}
 
-	/* leftTop, left, leftmidlde, rightMiddle, right, backLogo, frontLogo, leftTop, rightTop, rightBottom, Power, touchPad */ 
-	static int mask8[] = { 13, 0x8, 0x4, 0x1, 0x2, 0, 0x20, 0x40, 0x1000, 0x400, 0x2000, 0x800, 0x20, 13, 0x80 },
-		mask12[] = { 0x40, 0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40, 0x280, 0xf7810, 0x800, 0x20, 13, 0x80 };
-
-	bool Functions::SetColor(int index, int r, int g, int b)
+	bool Functions::SetColor(unsigned index, byte r, byte g, byte b)
 	{
-		size_t BytesWritten;
+		//size_t BytesWritten;
 		bool val = false;
 		// API v4 command - 11,12,13 and 14,15,16 is RGB
 		// API v4 command - 4 is index
@@ -384,35 +345,57 @@ namespace AlienFX_SDK
 		/// Buffer2[6-33] - LightID (index, not mask) - it can be COUNT of them.
 		if (!inSet)
 			Reset(1);
-		byte* buffer = new byte[length];
+		//byte* buffer = new byte[length];
+		byte buffer[MAX_BUFFERSIZE];
 		ZeroMemory(buffer, length);
-		switch (length) {
+		switch (version) {
 #ifdef API_V4
 		case API_V4: {
 			memcpy(buffer, COMMV4.colorSel, sizeof(COMMV4.colorSel));
 			buffer[11] = buffer[14] = r;
 			buffer[12] = buffer[15] = g;
 			buffer[13] = buffer[16] = b;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			HidD_SetFeature(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV4.colorSet, sizeof(COMMV4.colorSet));
 			buffer[4] = index;
+			//HidD_SetOutputReport(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			//ZeroMemory(buffer, length);
+			//memcpy(buffer, COMMV4.colorAfterSet, sizeof(COMMV4.colorAfterSet));
+			return HidD_SetOutputReport(devHandle, buffer, length);
+			//return DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 		} break;
 #endif
 		case API_V3: {
 			memcpy(buffer, COMMV3.colorSel, sizeof(COMMV3.colorSel));
 			buffer[6] = index;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, NULL, NULL);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV3.colorSet, sizeof(COMMV3.colorSet));
 			buffer[8] = r;
 			buffer[9] = g;
 			buffer[10] = b;
 		} break;
-		case API_V2: {
-			int location = mask12[index];
+		case API_V25:
+		{
+			int location = index < 14 ? mask12[index] : 0;
 			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
-			buffer[2] = index;
+			buffer[2] = (byte)index;
+			buffer[3] = (location & 0xFF0000) >> 16;
+			buffer[4] = (location & 0x00FF00) >> 8;
+			buffer[5] = (location & 0x0000FF);
+			buffer[6] = r;
+			buffer[7] = g;
+			buffer[8] = b;
+
+		} break;
+		case API_V2: {
+			int location = index < 14 ? mask12[index] : 0;
+			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
+			buffer[2] = (byte)index;
 			buffer[3] = (location & 0xFF0000) >> 16;
 			buffer[4] = (location & 0x00FF00) >> 8;
 			buffer[5] = (location & 0x0000FF);
@@ -429,7 +412,7 @@ namespace AlienFX_SDK
 			}
 		} break;
 		case API_V1: {
-			int location = mask8[index];
+			int location = index < 14 ?mask8[index] : 0;
 			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
 			buffer[2] = index;
 			buffer[3] = (location & 0xFF0000) >> 16;
@@ -460,35 +443,40 @@ namespace AlienFX_SDK
 		} break;
 		default: return false;
 		}
-		val = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+		val = HidD_SetOutputReport(devHandle, buffer, length);
+		//val = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, NULL, NULL);
 		Loop();
 		return val;
 	}
 
 	bool Functions::SetMultiColor(int numLights, UCHAR* lights, int r, int g, int b)
 	{
-		size_t BytesWritten; bool val = false;
+		//size_t BytesWritten; 
+		bool val = false;
 		/// We need to issue 2 commands - light_select and color_set.... this for light_select
 		/// Buffer2[5] - Count of lights need to be set
 		/// Buffer2[6-33] - LightID (index, not mask).
-		byte* buffer = new byte[length];
+		//byte* buffer = new byte[length];
+		byte buffer[MAX_BUFFERSIZE];
 		switch (length) {
-		case API_V3: {
+		case API_L_V3: {
 			if (!inSet) Reset(false);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV3.colorSel, sizeof(COMMV3.colorSel));
 			buffer[5] = numLights;
 			for (int nc = 0; nc < numLights; nc++)
 				buffer[6 + nc] = lights[nc];
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV3.colorSet, sizeof(COMMV3.colorSet));
 			buffer[8] = r;
 			buffer[9] = g;
 			buffer[10] = b;
-			val = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			val = HidD_SetOutputReport(devHandle, buffer, length);
+				//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 		} break;
-		case API_V2: case API_V1: {
+		case API_L_V2: case API_L_V1: {
 			for (int nc = 0; nc < numLights; nc++)
 				val = SetColor(lights[nc], r, g, b);
 		} break;
@@ -499,23 +487,25 @@ namespace AlienFX_SDK
 	bool Functions::SetAction(int index, std::vector<afx_act> act)
 		//int action, int time, int tempo, int Red, int Green, int Blue, int action2, int time2, int tempo2, int Red2, int Green2, int Blue2)
 	{
-		size_t BytesWritten;
+		//size_t BytesWritten;
 		bool res = false;
 		// Buffer[3], [11] - action type ( 0 - light, 1 - pulse, 2 - morph)
 		// Buffer[4], [12] - how long phase keeps
 		// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph, 0x82 - spectrum, 0xac - rainbow
 		// Buffer[7], [15] - tempo (0xfa - steady)
 		// Buffer[8-10]    - rgb
-		byte* buffer = new byte[length];
+		//byte* buffer = new byte[length];
+		byte buffer[MAX_BUFFERSIZE];
 		switch (length) {
-		case API_V3: { // only supported at new devices
+		case API_L_V3: { // only supported at new devices
 			if (!inSet) Reset(false);
 			int bPos = 3;
 			if (act.size() > 0) {
 				ZeroMemory(buffer, length);
 				memcpy(buffer, COMMV3.colorSel, sizeof(COMMV3.colorSel));
 				buffer[6] = index;
-				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);			
+				HidD_SetOutputReport(devHandle, buffer, length);
+				//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);			
 				for (int ca = 0; ca < act.size(); ca++) {
 					ZeroMemory(buffer, length);
 					memcpy(buffer, COMMV3.colorSet, sizeof(COMMV3.colorSet));
@@ -539,24 +529,26 @@ namespace AlienFX_SDK
 					}
 					bPos += 8;
 					if (bPos == 27) {
-						res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+						res = HidD_SetOutputReport(devHandle, buffer, length);
+							//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 						bPos = 3;
 					}
 				}
 				if (bPos != 3) {
-					res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+					res = HidD_SetOutputReport(devHandle, buffer, length);
+						//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				}
 			}
 			return res;
 		} break;
-		case API_V2: {
+		case API_L_V2: {
 			res = SetColor(index, act[0].r, act[0].g, act[0].b);
 			// But here trick for Pulse!
 			switch (act[0].type) {
 			case 1: SetColor(index, act[0].r, act[0].g, act[0].b); break;
 			}
 		} break;
-		case API_V1: {
+		case API_L_V1: {
 			// can't set action for old, just use color. 
 			res = SetColor(index, act[0].r, act[0].g, act[0].b);
 		} break;
@@ -566,31 +558,29 @@ namespace AlienFX_SDK
 
 	bool Functions::SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force)
 	{
-		size_t BytesWritten;
+		//size_t BytesWritten;
 		switch (length) {
-		case API_V3: { // only supported at new devices
+		case API_L_V3: { // only supported at new devices
 			// this function can be called not early then 250ms after last call!
-			ULONGLONG cPowerCall = GetTickCount64();
+			//ULONGLONG cPowerCall = GetTickCount64();
 #ifdef _DEBUG
 			if (force)
 				OutputDebugString(TEXT("Forced power button update!\n"));
 #endif
-			if (cPowerCall - lastPowerCall < POWER_DELAY)
-				if (force) {
+			//if (cPowerCall - lastPowerCall < POWER_DELAY)
+			//	if (force) {
 #ifdef _DEBUG
-					OutputDebugString(TEXT("Forced power button update waiting...\n"));
+			//		OutputDebugString(TEXT("Forced power button update waiting...\n"));
 #endif
-					Sleep(lastPowerCall + POWER_DELAY - cPowerCall);
-				}
-				else {
+			//		Sleep(lastPowerCall + POWER_DELAY - cPowerCall);
+			//	}
+			//	else {
 #ifdef _DEBUG
-					OutputDebugString(TEXT("Power button update skipped!\n"));
+			//		OutputDebugString(TEXT("Power button update skipped!\n"));
 #endif
-					return false;
-				}
-			// Need to flush query...
-			if (inSet) UpdateColors();
-			if (AlienfxGetDeviceStatus() != ALIENFX_NEW_READY) {
+			//		return false;
+			//	}
+			if (!IsDeviceReady()) {
 #ifdef _DEBUG
 				if (force)
 					OutputDebugString(TEXT("Forced power update - device still not ready\n"));
@@ -599,18 +589,23 @@ namespace AlienFX_SDK
 #endif
 				return false;
 			}
+			// Need to flush query...
+			if (inSet) UpdateColors();
 			inSet = true;
 			// Now set....
-			byte* buffer = new byte[length];
+			//byte* buffer = new byte[length];
+			byte buffer[MAX_BUFFERSIZE];
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV3.setPower, sizeof(COMMV3.setPower));
 			for (BYTE cid = 0x5b; cid < 0x61; cid++) {
 				// Init query...
 				buffer[6] = cid;
 				buffer[4] = 4;
-				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				HidD_SetOutputReport(devHandle, buffer, length);
+				//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				buffer[4] = 1;
-				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				HidD_SetOutputReport(devHandle, buffer, length);
+				//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				// Now set color by type...
 				std::vector<afx_act> act;
 				switch (cid) {
@@ -643,7 +638,8 @@ namespace AlienFX_SDK
 				}
 				// And finish
 				buffer[4] = 2;
-				DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+				HidD_SetOutputReport(devHandle, buffer, length);
+				//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			}
 			// Now (default) color set, if needed...
 			/*Buffer[2] = 0x21; Buffer[4] = 4; Buffer[6] = 0x61;
@@ -662,37 +658,64 @@ namespace AlienFX_SDK
 			Loop();*/
 			// Close set
 			buffer[4] = 6;
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			lastPowerCall = GetTickCount64();
+			HidD_SetOutputReport(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			//lastPowerCall = GetTickCount64();
+			Sleep(50);
+			// Let's try to wait until system ready...
+			if (force)
+				for (UINT counter = 0; !IsDeviceReady() && counter < 10; counter++) Sleep(20);
 			Reset(false);
 		} break;
-		case API_V2: case API_V1: {
+		case API_L_V2: case API_L_V1: {
 			// can't set action for old, just use color
 			SetColor(index, Red, Green, Blue);
 		} break;
 		}
 		return true;
 	}
-	int ReadStatus;
+	//int ReadStatus;
 
 	BYTE Functions::AlienfxGetDeviceStatus()
 	{
 		if (pid == -1) return 0;
-		size_t BytesWritten;
+		//size_t BytesWritten;
 		byte ret = 0;
-		byte* buffer = new byte[length];
+		//byte* buffer = new byte[length];
+		byte buffer[MAX_BUFFERSIZE];
 		ZeroMemory(buffer, length);
 		switch (length) {
-		case API_V3: {
-			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, (DWORD*)&BytesWritten, NULL))
+#ifdef API_V4
+		case API_L_V4:
+		{
+			buffer[0] = 0xcc;
+			if (HidD_GetFeature(devHandle, buffer, length)) //DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, (DWORD*) &BytesWritten, NULL))
+				ret = buffer[2];
+			cout << "IO result is ";
+			switch (GetLastError()) {
+			case 0: cout << "Ok."; break;
+			case 1: cout << "Incorrect function"; break;
+			case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
+			case ERROR_MORE_DATA: cout << "More data remains!"; break;
+			default: cout << "Unknown (" << GetLastError() << ")";
+			}
+			cout <<  endl;
+			cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
+		} break;
+#endif
+		case API_L_V3: {
+			if (HidD_GetInputReport(devHandle, buffer, length))
+				//DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, NULL, NULL))
 				ret = buffer[2];
 		} break;
-		case API_V2: case API_V1: {
+		case API_L_V2: case API_L_V1: {
 			memcpy(buffer, COMMV2.status, sizeof(COMMV2.status));
-			DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 
 			buffer[0] = 0x01;
-			DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, NULL, 0, buffer, length, (DWORD*)&BytesWritten, NULL);
+			HidD_GetInputReport(devHandle, buffer, length);
+			//DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, NULL, 0, buffer, length, (DWORD*)&BytesWritten, NULL);
 
 			if (buffer[0] == 0x01)
 				ret = 0x06;
@@ -710,9 +733,9 @@ namespace AlienFX_SDK
 	BYTE Functions::AlienfxWaitForReady()
 	{
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_READY && status != ALIENFX_NEW_READY; i++)
+		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_V2_READY && status != ALIENFX_V3_READY; i++)
 		{
-			if (status == ALIENFX_DEVICE_RESET)
+			if (status == ALIENFX_V2_RESET)
 				return status;
 			Sleep(5);
 		}
@@ -723,9 +746,9 @@ namespace AlienFX_SDK
 	{
 
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_BUSY && status != ALIENFX_NEW_BUSY; i++)
+		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_V2_BUSY && status != ALIENFX_V3_BUSY; i++)
 		{
-			if (status == ALIENFX_DEVICE_RESET)
+			if (status == ALIENFX_V2_RESET)
 				return status;
 			Sleep(5);
 		}
@@ -736,23 +759,25 @@ namespace AlienFX_SDK
 	{
 		int status;
 		switch (length) {
-		case API_V3: {
+#ifdef API_V4
+		case API_V4:
 			status = AlienfxGetDeviceStatus();
-			return status == 0 || status == ALIENFX_NEW_READY || status == ALIENFX_NEW_WAITUPDATE;
-		} break;
-		case API_V2: case API_V1: {
+			return status == 1 || status == 0x96;
+#endif
+		case API_L_V3:
+			status = AlienfxGetDeviceStatus();
+			return status == 0 || status == ALIENFX_V3_READY || status == ALIENFX_V3_WAITUPDATE;
+		case API_L_V2: case API_L_V1:
 			switch (AlienfxGetDeviceStatus()) {
-			case ALIENFX_READY:
-				return true; break;
-			case ALIENFX_BUSY:
+			case ALIENFX_V2_READY:
+				return true;
+			case ALIENFX_V2_BUSY:
 				Reset(0x04);
-				return AlienfxWaitForReady() == ALIENFX_READY;
-			case ALIENFX_DEVICE_RESET:
-				return AlienfxWaitForReady() == ALIENFX_READY;
-				break;
+				return AlienfxWaitForReady() == ALIENFX_V2_READY;
+			case ALIENFX_V2_RESET:
+				return AlienfxWaitForReady() == ALIENFX_V2_READY;
 			}
 			return false;
-		} break;
 		}
 		return true;
 	}
@@ -767,12 +792,12 @@ namespace AlienFX_SDK
 		return result;
 	}
 
-	bool Functions::AlienFXChangeDevice(int npid)
+	bool Functions::AlienFXChangeDevice(int nvid, int npid)
 	{
 		int res;
 		if (pid != (-1) && devHandle != NULL)
 				CloseHandle(devHandle);
-		res = AlienFXInitialize(vid, npid);
+		res = AlienFXInitialize(nvid, npid);
 		if (res != (-1)) {
 			pid = npid;
 			Reset(false);
@@ -843,22 +868,22 @@ namespace AlienFX_SDK
 			);
 			// get id(s)...
 			if (ret == ERROR_SUCCESS) {
-				int lID = 0, dID = 0;
-				unsigned ret2 = sscanf_s((char*)name, "%d-%d", &dID, &lID);
-				if (ret2 == 2) {
+				DWORD lID = 0, dID = 0;
+				//unsigned ret2 = sscanf_s((char*)name, "%d-%d", &dID, &lID);
+				if (sscanf_s((char*)name, "%d-%d", &dID, &lID) == 2) {
 					// light name
 					AddMapping(dID, lID, inarray, 0);
 				}
 				else {
 					// device flags?
-					ret2 = sscanf_s((char*)name, "Flags%d-%d", &dID, &lID);
-					if (ret2 == 2) {
+					//ret2 = sscanf_s((char*)name, "Flags%d-%d", &dID, &lID);
+					if (sscanf_s((char*)name, "Flags%d-%d", &dID, &lID) == 2) {
 						AddMapping(dID, lID, NULL, *(unsigned *)inarray);
 					}
 					else {
 						// device name?
-						ret2 = sscanf_s((char*)name, "Dev#%d", &dev.devid);
-						if (ret2 == 1) {
+						//ret2 = sscanf_s((char*)name, "Dev#%d", &dev.devid);
+						if (sscanf_s((char*)name, "Dev#%d", &dev.devid) == 1) {
 							std::string devname(inarray);
 							dev.name = devname;
 							devices.push_back(dev);
@@ -991,11 +1016,11 @@ namespace AlienFX_SDK
 	{
 		switch (length) {
 #ifdef API_V4
-		case API_V4: return 4; break;
+		case API_L_V4: return 4; break;
 #endif
-		case API_V3: return 3; break;
-		case API_V2: return 2; break;
-		case API_V1: return 1; break;
+		case API_L_V3: return 3; break;
+		case API_L_V2: return 2; break;
+		case API_L_V1: return 1; break;
 			default: return -1;
 		}
 		return length;

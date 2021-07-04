@@ -22,9 +22,9 @@ AlienFX_SDK::Functions* FXHelper::LocateDev(int pid)
 			return devs[i];
 	return nullptr;
 }
-void FXHelper::FillDevs()
+size_t FXHelper::FillDevs()
 {
-	devList = GetDevList();
+	vector<pair<DWORD,DWORD>> devList = afx_dev.AlienFXEnumDevices();
 	if (devs.size() > 0) {
 		for (int i = 0; i < devs.size(); i++)
 			devs[i]->AlienFXClose();
@@ -32,18 +32,19 @@ void FXHelper::FillDevs()
 	}
 	for (int i = 0; i < devList.size(); i++) {
 		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
-		int pid = dev->AlienFXInitialize(AlienFX_SDK::vid, devList[i]);
+		int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
 		if (pid != -1) {
 			devs.push_back(dev);
 			dev->Reset(true);
 		}
 	}
+	return devs.size();
 }
 
-std::vector<int> FXHelper::GetDevList() {
-	std::vector<int> devList = afx_dev.AlienFXEnumDevices(AlienFX_SDK::vid);
-	return devList;
-}
+//vector<pair<DWORD,DWORD>> FXHelper::GetDevList() {
+//	vector<pair<DWORD,DWORD>> devList = afx_dev.AlienFXEnumDevices();
+//	return devList;
+//}
 
 void FXHelper::TestLight(int did, int id)
 {
@@ -201,31 +202,39 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 		}
 	}
 	if (dev != NULL) {
-		bool devReady = false;
+		bool devReady = dev->IsDeviceReady();// false;
 		int wcount;
-		for (wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
-			Sleep(20);
-		if (!devReady) {
+		//for (wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
+		//	Sleep(20);
+		if (!force && !devReady) {
 #ifdef _DEBUG
-			if (force)
-				OutputDebugString("Forced light update skipped!\n");
-			//else
-			//	OutputDebugString("Light update skipped!\n");
+		//	if (force)
+		//		OutputDebugString("Forced light update skipped!\n");
+		//	else
+		//		OutputDebugString("Light update skipped!\n");
 #endif
 			return false;
 		}
 		if (power) {
 			if (!config->block_power && actions.size() > 1) {
 #ifdef _DEBUG
-				//char buff[2048];
-				//sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
-				//OutputDebugString(buff);
+				char buff[2048];
+				sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
+				OutputDebugString(buff);
+				ULONGLONG startTime = GetTickCount64();
 #endif
 				if (config->stateOn || !config->offPowerButton)
 					ret = dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 						actions[1].r, actions[1].g, actions[1].b, force);
 				else
 					ret = dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0, force);
+#ifdef _DEBUG
+				//while (!dev->IsDeviceReady()) Sleep(5);
+				startTime = GetTickCount64() - startTime;
+				//char buff[2048];
+				sprintf_s(buff, 2047, "System ready after power button set in %d ms\n", startTime);
+				OutputDebugString(buff);
+#endif
 			}
 		}
 		else
@@ -310,7 +319,7 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 			}
 		}
 		if ((map->eve[2].fs.b.flags || map->eve[3].fs.b.flags)
-			&& config->lightsOn && config->stateOn) return true;
+			&& config->lightsOn && config->stateOn) return map->valid;
 	}
 	ret = SetLight(map->devid, map->lightid, lFlags, actions, force);
 	if (update)

@@ -13,18 +13,26 @@ namespace
 
 using namespace std;
 
+pair<DWORD,DWORD>* LocateDev(vector<pair<DWORD,DWORD>> *devs, int pid)
+{
+	for (int i = 0; i < devs->size(); i++)
+		if (devs->at(i).second == pid)
+			return &devs->at(i);
+	return NULL;
+}
+
 void printUsage() 
 {
 	cerr << "Usage: alienfx-cli [command=option,option,option] ... [command=option,option,option] [loop]" << endl
 		<< "Commands:\tOptions:" << endl
 		<< "set-all\t\tr,g,b[,br] - set all device lights." << endl
-		<< "set-one\t\tdev,light,r,g,b[,br] - set one light." << endl
+		<< "set-one\t\tpid,light,r,g,b[,br] - set one light." << endl
 		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
-		<< "set-action\tdev,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action." << endl
+		<< "set-action\tpid,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action." << endl
 		<< "set-zone-action\tzone,action,r,g,b[,br,r,g,b[,br]] - set all zone lights and enable it's action." << endl
 		<< "set-power\tlight,r,g,b,r2,g2,b2 - set power button colors (low-level only)." << endl
 		<< "set-tempo\ttempo - set light action tempo (in milliseconds)." << endl
-		<< "set-dev\t\tdevID - set active device for low-level." << endl
+		<< "set-dev\t\tpid - set active device for low-level." << endl
 		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
 		<< "high-level\tswitch to high-level SDK (Alienware LightFX)." << endl
 		<< "status\t\tshows devices and lights id's, names and statuses." << endl
@@ -42,7 +50,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v2.2.5.1" << endl;
+	cerr << "alienfx-cli v2.3.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -50,8 +58,8 @@ int main(int argc, char* argv[])
 	}
 
 	int res = -1; 
-	vector<int> devs = afx_map->AlienFXEnumDevices(AlienFX_SDK::vid);
-	int isInit = afx_dev->AlienFXInitialize(AlienFX_SDK::vid);
+	vector<pair<DWORD,DWORD>> devs = afx_map->AlienFXEnumDevices();
+	int isInit = afx_dev->AlienFXInitialize(AlienFX_SDK::vids[0]);
 	//std::cout << "PID: " << std::hex << isInit << std::endl;
 	if (isInit != -1)
 	{
@@ -121,12 +129,12 @@ int main(int argc, char* argv[])
 			if (low_level) {
 				// vector<int> devs = afx_dev->AlienFXEnumDevices(afx_dev->vid);
 				for (int i = 0; i < devs.size(); i++) {
-					cout << "Device ID#" << devs[i];
+					cout << "Device VID#" << devs[i].first << ", PID#" << devs[i].second;
 					int dn;
 					for (dn = 0; dn < afx_map->GetDevices()->size(); dn++) {
-						if (devs[i] == afx_map->GetDevices()->at(i).devid) {
+						if (devs[i].second == afx_map->GetDevices()->at(i).devid) {
 							cout << " - " << afx_map->GetDevices()->at(i).name;
-							if (devs[i] == afx_dev->GetPID()) {
+							if (devs[i].second == afx_dev->GetPID()) {
 								cout << " (Active, V" << afx_dev->GetVersion() << ")";
 							}
 							break;
@@ -175,10 +183,10 @@ int main(int argc, char* argv[])
 				if (newDev == afx_dev->GetPID())
 					continue;
 				for (int i = 0; i < devs.size(); i++)
-					if (devs[i] == newDev) {
+					if (devs[i].second == newDev) {
 						afx_dev->UpdateColors();
 						afx_dev->AlienFXClose();
-						isInit = afx_dev->AlienFXChangeDevice(newDev);
+						isInit = afx_dev->AlienFXChangeDevice(devs[i].first, devs[i].second);
 						if (isInit) {
 							isInit = newDev;
 						} else { 
@@ -250,10 +258,11 @@ int main(int argc, char* argv[])
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
-				if (devid != isInit && devid != 0 && devid != afx_dev->GetPID()) {
+				if (devid != 0 && devid != afx_dev->GetPID()) {
 					afx_dev->UpdateColors();
 					afx_dev->AlienFXClose();
-					afx_dev->AlienFXChangeDevice(devid);
+					pair<DWORD, DWORD>* dev = LocateDev(&devs, devid);
+					afx_dev->AlienFXChangeDevice(dev->first, dev->second);
 				}
 				afx_dev->SetColor(atoi(args.at(1).c_str()),
 					color.cs.blue, color.cs.green, color.cs.red);
@@ -373,10 +382,11 @@ int main(int argc, char* argv[])
 				argPos += 5;
 			}
 			if (low_level) {
-				if (devid != isInit && devid != 0 && devid != afx_dev->GetPID()) {
+				if (devid != 0 && devid != afx_dev->GetPID()) {
 					afx_dev->UpdateColors();
 					afx_dev->AlienFXClose();
-					afx_dev->AlienFXChangeDevice(devid);
+					pair<DWORD, DWORD>* dev = LocateDev(&devs, devid);
+					afx_dev->AlienFXChangeDevice(dev->first, dev->second);
 				}
 				afx_dev->SetAction(atoi(args.at(1).c_str()), act);
 			}

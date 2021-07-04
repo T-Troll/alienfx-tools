@@ -52,7 +52,7 @@ FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
 
-HWND mDlg;
+HWND mDlg = 0;
 
 // Dialogues data....
 // Common:
@@ -94,8 +94,11 @@ DWORD EvaluteToAdmin() {
 			}
 			else
 			{
-				conf->Save();
-				_exit(1);  // Quit itself
+				if (mDlg) {
+					conf->Save();
+					SendMessage(mDlg, WM_CLOSE, 0, 0);
+				} else
+					_exit(1);  // Quit itself
 			}
 		}
 		return dwError;
@@ -263,7 +266,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf->Load();
 	fxhl = new FXHelper(conf);
 
-	if (fxhl->GetDevList().size() > 0) {
+	if (fxhl->devs.size() > 0) {
 		conf->wasAWCC = DoStopService(true);
 
 		if (conf->esif_temp)
@@ -565,9 +568,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		{
 		case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
 		{
-			Shell_NotifyIcon(NIM_DELETE, &niData);
-			EndDialog(hDlg, IDOK);
-			DestroyWindow(hDlg);
+			SendMessage(hDlg, WM_CLOSE, 0, 0);
+			//Shell_NotifyIcon(NIM_DELETE, &niData);
+			//EndDialog(hDlg, IDOK);
+			//DestroyWindow(hDlg);
 		} break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
@@ -702,9 +706,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (GetMenuItemID(menu, idx)) {
 		case ID_TRAYMENU_EXIT:
 		{
-			Shell_NotifyIcon(NIM_DELETE, &niData);
-			EndDialog(hDlg, IDOK);
-			DestroyWindow(hDlg);
+			SendMessage(hDlg, WM_CLOSE, 0, 0);
 		} break;
 		case ID_TRAYMENU_REFRESH:
 			fxhl->RefreshState(true);
@@ -754,8 +756,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
 			OutputDebugString("Resume from Sleep/hibernate initiated\n");
 #endif
-			fxhl->FillDevs();
-			if (fxhl->devs.size() > 0) {
+			if (fxhl->FillDevs() > 0) {
 				eve->ChangePowerState();
 				eve->StartProfiles();
 			}
@@ -785,8 +786,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
 		OutputDebugString("Shutdown initiated\n");
 #endif
-		EndDialog(hDlg, IDOK);
-		DestroyWindow(hDlg);
+		SendMessage(hDlg, WM_CLOSE, 0, 0);
 		break;
 	case WM_HOTKEY:
 		switch (wParam) {
@@ -821,6 +821,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		default: return false;
 		}
+		break;
+	case WM_CLOSE:
+		Shell_NotifyIcon(NIM_DELETE, &niData);
+		EndDialog(hDlg, IDOK);
+		DestroyWindow(hDlg);
+		return 0;
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0); break;
@@ -1227,7 +1233,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					if (!fxhl->afx_dev.GetMappings()->at(lid).flags && mmap->eve[0].map.size() < 9) {
 						AlienFX_SDK::afx_act act = mmap->eve[0].map[effID];
 						mmap->eve[0].map.push_back(act);
-						effID = mmap->eve[0].map.size() - 1;
+						effID = (int)mmap->eve[0].map.size() - 1;
 					}
 				RebuildEffectList(hDlg, mmap);
 				fxhl->RefreshOne(mmap, true, true);
@@ -1568,17 +1574,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		// First, reset all light devices and re-sscan!
 		eve->StopProfiles();
-		eve->StopEvents();
-		fxhl->FillDevs();
-		eve->StartEvents();
+		eve->PauseEvents();// StopEvents();
+		size_t numdev = fxhl->FillDevs();
+		size_t numharddev = fxhl->afx_dev.GetDevices()->size();
+		size_t lights = fxhl->afx_dev.GetMappings()->size();
+		eve->ResumeEvents();// StartEvents();
 		eve->StartProfiles();
 		// Now check current device list..
-		size_t lights = fxhl->afx_dev.GetMappings()->size();
-		size_t numdev = fxhl->GetDevList().size();
-		size_t numharddev = fxhl->afx_dev.GetDevices()->size();
 		int cpid = (-1), pos = (-1);
 		for (UINT i = 0; i < numdev; i++) {
-			cpid = fxhl->GetDevList().at(i);
+			cpid = fxhl->devs[i]->GetPID();
 			int j;
 			for (j = 0; j < numharddev; j++) {
 				if (cpid == fxhl->afx_dev.GetDevices()->at(j).devid) {
@@ -1613,7 +1618,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		if (numdev > 0) {
 			if (eDid == -1) { // no selection, let's try to select dev#0
 				dItem = 0;
-				eDid = fxhl->GetDevList().at(0);
+				eDid = fxhl->devs[0]->GetPID();
 				SendMessage(dev_list, CB_SETCURSEL, 0, (LPARAM)0);
 				conf->lastActive = eDid;
 			}
@@ -1659,7 +1664,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case CBN_SELCHANGE: {
 				SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
 				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(did, lid) ? BST_CHECKED : BST_UNCHECKED);
-				eve->StopEvents();
+				eve->PauseEvents();// StopEvents();
 				// highlight to check....
 				fxhl->TestLight(did, lid);
 				eLid = lid; lItem = lbItem;
@@ -1680,7 +1685,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 				break;
 			case CBN_KILLFOCUS:
-				eve->ToggleEvents();
+				fxhl->RefreshState();
+				eve->ResumeEvents();// ToggleEvents();
 				fxhl->afx_dev.SaveMappings();
 				break;
 			}
@@ -1804,7 +1810,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			eve->StopProfiles();
 			eve->StopEvents();
 			fxhl->FillDevs();
-			AlienFX_SDK::Functions* dev = fxhl->LocateDev(did);
+			AlienFX_SDK::Functions* dev = fxhl->LocateDev(eDid);
 			if (dev)
 				UpdateLightListC(hDlg, eDid, eLid);
 			eve->StartEvents();

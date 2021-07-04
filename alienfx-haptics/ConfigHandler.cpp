@@ -22,8 +22,10 @@ ConfigHandler::ConfigHandler() {
         NULL,
         &hKey2,
         &dwDisposition);
+    Load();
 }
 ConfigHandler::~ConfigHandler() {
+    Save();
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
     //RegCloseKey(hKey3);
@@ -42,6 +44,13 @@ int ConfigHandler::Load() {
     if (!numbars) { // no key
         numbars = 20;
     }
+    RegGetValue(hKey1,
+                NULL,
+                TEXT("Axis"),
+                RRF_RT_DWORD | RRF_ZEROONFAILURE,
+                NULL,
+                &showAxis,
+                (LPDWORD) &size);
     RegGetValue(hKey1,
         NULL,
         TEXT("Power"),
@@ -110,6 +119,14 @@ int ConfigHandler::Save() {
         0,
         REG_DWORD,
         (BYTE *) &numbars,
+        4
+    );
+    RegSetValueEx(
+        hKey1,
+        TEXT("Axis"),
+        0,
+        REG_DWORD,
+        (BYTE *) &showAxis,
         4
     );
     RegSetValueEx(

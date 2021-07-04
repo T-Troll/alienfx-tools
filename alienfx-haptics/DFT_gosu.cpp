@@ -10,29 +10,29 @@
 DFT_gosu::DFT_gosu(int m,int xscale ,double yscale, int* output)
 {
 	NUMPTS = m;
-	y_scale = yscale;
+	//y_scale = yscale;
 	RECTSNUM = xscale;
 	spectrum=output;
 
-	x2 = (double*)malloc(NUMPTS * sizeof(double));
-	blackman = (double*)malloc(NUMPTS * sizeof(double));
+	x2 = new double[NUMPTS];// (double*) malloc(NUMPTS * sizeof(double));
+	blackman = new double[NUMPTS];// (double*) malloc(NUMPTS * sizeof(double));
 	//hanning = (double*)malloc(NUMPTS * sizeof(double));
-	padded_in = (kiss_fft_scalar*)malloc(NUMPTS * sizeof(kiss_fft_scalar));
+	kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
+	padded_in = (kiss_fft_scalar*) malloc(NUMPTS * sizeof(kiss_fft_scalar));
 	padded_out = (kiss_fft_cpx*)malloc(NUMPTS * sizeof(kiss_fft_cpx));
 	// Preparing data...
 	for (int i = 0; i < NUMPTS; i++) {
 		double p = (double)i / double(NUMPTS - 1);
 		blackman[i] = (0.42 - 0.5 * cos(2 * PI * p) + 0.8 * cos(4 * PI * p));
-		double inv = 1 / (double)NUMPTS;
+		//double inv = 1 / (double)NUMPTS;
 		//hanning[i] = sqrt(cos((PI * inv) * (i - (double)(NUMPTS - 1) / 2)));
 	}
-	kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
 }
 
 DFT_gosu::~DFT_gosu()
 {
-	free(x2);
-	free(blackman);
+	delete[] x2;
+	delete[] blackman;
 	//free(hanning);
 	free(padded_in);
 	free(padded_out);
@@ -40,7 +40,7 @@ DFT_gosu::~DFT_gosu()
 }
 
 // calculate DFT of the signal x1, and calculate relevant parameters
-void DFT_gosu::calc(double *x1)
+int* DFT_gosu::calc(double *x1)
 {
 
 	for (int n = 0; n < NUMPTS; n++) {
@@ -69,13 +69,13 @@ void DFT_gosu::calc(double *x1)
 
 	}
 
-	if (peak < maxP)
-		peak = (peak < maxP - 2 * minP) ? maxP : peak + 2 * minP; // 2* y_scale
+	if (peak > maxP)
+		peak = (maxP < peak - peak/16) ? peak - peak/256 : peak;
 	else
-		peak = (peak > minP) ? peak - peak / 16 : peak; // y_scale
-	peak = (peak > minP) ? peak : minP;
+		peak = maxP;
+	peak = (peak < minP) ? minP : peak;
 
-	double coeff = peak > 0.00001 ? 256.0 / peak : 0.0;// (peak - minP > 0) ? 256.0 / (peak - minP) : 0.0;
+	double coeff = peak > 0.00001 ? 255.0 / peak : 0.0;
 
 #ifdef _DEBUG
 	//char buff[2048];
@@ -85,8 +85,8 @@ void DFT_gosu::calc(double *x1)
 
 	// Normalize
 	for (int n = 0; n < RECTSNUM; n++) {
-		spectrum[n] = (int) ((x2[n] - minP) * coeff);
+		spectrum[n] = x2[n] * coeff;
 	}
 
-	return;
+	return spectrum;
 } // end function calc

@@ -15,16 +15,16 @@ namespace
 int main(int argc, char* argv[])
 {
 	int numlights = 8;
-	cout << "alienfx-probe v2.2.5.1" << endl;
+	cout << "alienfx-probe v2.3.0" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
 	cout << "Probing low-level access... ";
-	vector<int> pids;
+	vector<pair<DWORD,DWORD>> pids;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
 	//afx_dev->LoadMappings();
-	pids = afx_map->AlienFXEnumDevices(AlienFX_SDK::vid);
+	pids = afx_map->AlienFXEnumDevices();
 	if (pids.size() > 0) {
 		cout << "Found " << pids.size() << " device(s)" << endl;
 		cout << "Probing Dell SDK... ";
@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
 		}
 
 		for (int cdev = 0; cdev < pids.size(); cdev++) {
-			cout << "Probing device PID 0x..." << std::hex << pids[cdev];
-			int isInit = afx_dev->AlienFXChangeDevice(pids[cdev]);
+			cout << "Probing device VID 0x" << std::hex << pids[cdev].first << ", PID 0x" << std::hex << pids[cdev].second;
+			int isInit = afx_dev->AlienFXChangeDevice(pids[cdev].first, pids[cdev].second);
 			if (isInit != -1)
 			{
 				cout << " Connected." << endl;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 				}
 				cout << "Final name is " << outName << endl;
 				AlienFX_SDK::devmap devs;
-				devs.devid = pids[cdev];
+				devs.devid = pids[cdev].second;
 				devs.name = outName;
 				afx_map->GetDevices()->push_back(devs);
 				// How many lights to check?
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 						cout << "Final name is " << outName << ", ";
 						// Store value...
 						AlienFX_SDK::mapping map;
-						map.devid = pids[cdev];
+						map.devid = pids[cdev].second;
 						map.lightid = i;
 						map.name = std::string(outName);
 						afx_map->GetMappings()->push_back(map);

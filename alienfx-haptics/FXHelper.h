@@ -8,16 +8,18 @@ private:
 	int* freq;
 	ConfigHandler *config;
 	std::vector<int> devList;
+	void UpdateColors();
+	std::vector<AlienFX_SDK::Functions*> devs;
+
 public:
 	AlienFX_SDK::Mappings afx_dev;
-	std::vector<AlienFX_SDK::Functions*> devs;
 	AlienFX_SDK::Functions* LocateDev(int pid);
 	void FillDevs();
-	void UpdateColors();
-	FXHelper(int* freqp, ConfigHandler* conf);
+
+	FXHelper(ConfigHandler* conf);
 	~FXHelper();
 
-	int Refresh();
+	void Refresh(int* freq);
 	void FadeToBlack();
 
 };

@@ -121,12 +121,9 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="kiss_fft.c" />
     <ClCompile Include="kiss_fft.cpp" />
-    <ClCompile Include="tools\kfc.c" />
     <ClCompile Include="tools\kiss_fastfir.c" />
     <ClCompile Include="tools\kiss_fftnd.c" />
-    <ClCompile Include="tools\kiss_fftr.c" />
     <ClCompile Include="tools\kiss_fftr.cpp" />
   </ItemGroup>
   <ItemGroup>

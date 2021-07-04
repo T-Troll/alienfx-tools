@@ -11,8 +11,6 @@ class Graphics {
 public:
 	Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf, FXHelper *fxproc);
 	void start();
-	double getYScale();
-	void refresh();
 	void ShowError(char* T);
 	void SetAudioObject(WSAudioIn* wsa);
 	HWND GetDlg();

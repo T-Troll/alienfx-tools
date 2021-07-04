@@ -9,12 +9,12 @@ class WSAudioIn
 {
 public:
 
-	WSAudioIn(int& rate, int N, int type, void* gr, void* fx, void* dft);
+	WSAudioIn(int N, int type, void* gr, void* fx, void* dft);
 	~WSAudioIn();
 	void startSampling();
 	void stopSampling();
 	void RestartDevice(int type);
-	int init(int type);
+	int  init(int type);
 	void release();
 private:
 	IMMDevice* inpDev;

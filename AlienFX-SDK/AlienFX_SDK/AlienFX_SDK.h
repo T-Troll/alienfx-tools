@@ -9,32 +9,44 @@ namespace AlienFX_SDK
 
 {	
 	// Old alieware device statuses
-	#define ALIENFX_DEVICE_RESET 0x06
-	#define ALIENFX_READY 0x10
-	#define ALIENFX_BUSY 0x11
-	#define ALIENFX_UNKNOWN_COMMAND 0x12
+	#define ALIENFX_V2_RESET 0x06
+	#define ALIENFX_V2_READY 0x10
+	#define ALIENFX_V2_BUSY 0x11
+	#define ALIENFX_V2_UNKNOWN 0x12
 	// new statuses for apiv3 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
-	#define ALIENFX_NEW_READY 33
-	#define ALIENFX_NEW_BUSY 34
-	#define ALIENFX_NEW_WAITCOLOR 35
-	#define ALIENFX_NEW_WAITUPDATE 36
+	#define ALIENFX_V3_READY 33
+	#define ALIENFX_V3_BUSY 34
+	#define ALIENFX_V3_WAITCOLOR 35
+	#define ALIENFX_V3_WAITUPDATE 36
+
+	// API versions:
+	#define API_V1  0
+	#define API_V2  1
+	#define API_V25 2
+	#define API_V3  3
+	//#define API_V4  4
 
 	// Length by API version:
-    //#define API_V42 64
-	//#define API_V4 65
-	#define API_V3 34
-	#define API_V2 12
-	#define API_V1 8
+	#define API_L_V4 65
+	#define API_L_V3 34
+	#define API_L_V2 12
+	#define API_L_V1 8
+
+	// delay for power button update
+    //#define POWER_DELAY 300
+
+	// Maximal buffer size across all device types
+    #define MAX_BUFFERSIZE 65
 
 	struct mapping {
-		unsigned devid = 0;
-		unsigned lightid = 0;
-		unsigned flags = 0;
+		DWORD devid = 0;
+		DWORD lightid = 0;
+		DWORD flags = 0;
 		std::string name;
 	};
 
 	struct devmap {
-		unsigned devid = 0;
+		DWORD devid = 0;
 		std::string name;
 	};
 
@@ -47,7 +59,7 @@ namespace AlienFX_SDK
 		BYTE b = 0;
 	};
 
-	enum Index
+	/*enum Index
 	{
 		AlienFX_leftZone = 1, // 2 for m15
 		AlienFX_leftMiddleZone = 2, // 3 for m15
@@ -62,7 +74,22 @@ namespace AlienFX_SDK
 		AlienFX_TouchPad = 11,
 		AlienFX_AlienBackLogo = 12, // 0 for m15
 		AlienFX_Power = 13 // 1 for m15
-	};
+	};*/
+	/*
+	int leftZone = 0x100;// 0x8;
+	int leftMiddleZone = 0x8;// 0x4;
+	int rightZone = 0x2;// 0x1;
+	int rightMiddleZone = 0x4;// 0x2;
+	int Macro = 0x1;// 0;
+	int AlienFrontLogo = 0x20;// 0x40;
+	int LeftPanelTop = 0x40;// 0x1000;
+	int LeftPanelBottom = 0x280;// 0x400;
+	int RightPanelTop = 0xf7810;// 0x2000;
+	int RightPanelBottom = 0x800;
+	int AlienBackLogo = 0x20;
+	int Power = 13;
+	int TouchPad = 0x80;
+	*/
 	
 	enum Action
 	{
@@ -77,38 +104,36 @@ namespace AlienFX_SDK
 	};
 
 	//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
-	const static int vid = 0x187c;
-#ifdef API_V4
-	const static int vid2 = 0x0d62; // DARFON per-key RGB keyboard - m1X R2, R3. 
-#endif
+	const static DWORD vids[2] = {0x187c, 0x0d62};
+
+	/* ????, left, leftmidlde, rightMiddle, right, backLogo, frontLogo, leftTop, rightTop, rightBottom, Power, touchPad */ 
+	static int mask8[] = {   13,   0x8, 0x4, 0x1, 0x2,   0, 0x40, 0x1000,  0x400,  0x2000, 0x800, 0x20, 13, 0x80 },
+		      mask12[] = { 0x40, 0x100, 0x8, 0x4, 0x2, 0x1, 0x20,   0x40,  0x280, 0xf7810, 0x800, 0x20, 13, 0x80 };
 
 	class Functions
 	{
 	private:
 
-		bool isInitialized = false;
 		HANDLE devHandle = NULL;
-		//int length = 9;
 		bool inSet = false;
 		ULONGLONG lastPowerCall = 0;
 
-		//byte buffer[65] = {0};
+		//byte buffer[65];
 
+		int vid = -1;
 		int pid = -1;
 		int version = -1;
 
 	public:
-		int length = 9;
+		int length = -1;
 		//returns PID
-		int AlienFXInitialize(int vid);
-
-		int AlienFXInitialize(int vid, int pid);
+		int AlienFXInitialize(int vid, int pid = -1);
 
 		//De-init
 		bool AlienFXClose();
 
 		// Switch to other AlienFX device
-		bool AlienFXChangeDevice(int pid);
+		bool AlienFXChangeDevice(int vid, int pid);
 
 		//Enable/Disable all lights (or just prepare to set)
 		bool Reset(int status);
@@ -117,7 +142,7 @@ namespace AlienFX_SDK
 
 		bool IsDeviceReady();
 
-		bool SetColor(int index, int Red, int Green, int Blue);
+		bool SetColor(unsigned index, byte r, byte g, byte b);
 
 		// Set multipy lights to the same color. This only works for new API devices, and emulated at old ones.
 		// numLights - how many lights need to be set
@@ -163,7 +188,7 @@ namespace AlienFX_SDK
 		~Mappings();
 
 		// Enum alienware devices
-		vector<int> AlienFXEnumDevices(int vid);
+		vector<pair<DWORD,DWORD>> AlienFXEnumDevices();
 
 		// load light names from registry
 		void LoadMappings();

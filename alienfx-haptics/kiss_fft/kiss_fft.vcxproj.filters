@@ -18,22 +18,13 @@
     <ClCompile Include="kiss_fft.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kiss_fft.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tools\kiss_fftr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\kfc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tools\kiss_fastfir.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tools\kiss_fftnd.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\kiss_fftr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

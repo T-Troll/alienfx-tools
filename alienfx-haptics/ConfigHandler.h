@@ -31,10 +31,11 @@ class ConfigHandler
 private:
 	HKEY   hKey1, hKey2;
 public:
-	DWORD numbars;
-	DWORD res;
-	DWORD inpType;
+	DWORD numbars = 20;
+	DWORD res = 0;
+	DWORD inpType = 0;
 	DWORD lastActive = 0;
+	DWORD showAxis = 1;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();

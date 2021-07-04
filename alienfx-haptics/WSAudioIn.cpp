@@ -29,7 +29,7 @@ HWND hDlg;
 FXHelper* fxh;
 DFT_gosu* dftGG;
 
-WSAudioIn::WSAudioIn(int &rate_e, int N, int type, void* gr, void* fx, void* dft)
+WSAudioIn::WSAudioIn(int N, int type, void* gr, void* fx, void* dft)
 {
 	NUMSAM = N;
 	fxh = (FXHelper*) fx;
@@ -40,7 +40,7 @@ WSAudioIn::WSAudioIn(int &rate_e, int N, int type, void* gr, void* fx, void* dft
 	hDlg = ((Graphics*)gHandle)->GetDlg();
 	((Graphics*)gHandle)->SetAudioObject(this);
 	rate = init(type);
-	rate_e = rate;
+	dftGG->setSampleRate(rate);
 }
 
 WSAudioIn::~WSAudioIn()
@@ -64,8 +64,8 @@ void WSAudioIn::stopSampling()
 {
 	if (dwHandle) {
 		SetEvent(stopEvent);
-		SetEvent(hEvent);
-		WaitForSingleObject(dwHandle, 10000);
+		//SetEvent(hEvent);
+		WaitForSingleObject(dwHandle, 6000);
 		pAudioClient->Stop();
 		ResetEvent(stopEvent);
 		CloseHandle(dwHandle);
@@ -77,8 +77,10 @@ void WSAudioIn::RestartDevice(int type)
 {
 	release();
 	
-	if (init(type))
+	if (rate = init(type)) {
+		dftGG->setSampleRate(rate);
 		startSampling();
+	}
 }
 
 int WSAudioIn::init(int type)
@@ -206,7 +208,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	UINT bytesPerChannel = bytePerSample;// / nChannel;
 	BYTE* pData;
 	DWORD flags;
-	double* waveT = (double*)malloc(NUMSAM * sizeof(double));
+	double* waveT = new double[NUMSAM];
 	UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
 	int ret;
@@ -214,10 +216,12 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	updateEvent = CreateEvent(NULL, true, false, NULL);
 	updHandle = CreateThread(NULL, 0, resample, waveD, 0, &dwThreadID);
 
+	HANDLE hArray[2] = {stopEvent, hEvent};
+
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		switch (ret = WaitForSingleObject(hEvent, 1000))
+		switch (ret = WaitForMultipleObjects(2, hArray, false, 500))
 		{
-		case WAIT_OBJECT_0:
+		case WAIT_OBJECT_0+1:
 			// got new buffer....
 			pCapCli->GetNextPacketSize(&packetLength);
 			while (packetLength != 0) {
@@ -272,28 +276,28 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 			break;
 		}
 	}
-	SetEvent(updateEvent);
-	WaitForSingleObject(updHandle, 1000);
+	WaitForSingleObject(updHandle, 6000);
 	CloseHandle(updHandle);
-	free(waveT);
+	delete[] waveT;
 	return 0;
 }
 
 DWORD WINAPI resample(LPVOID lpParam)
 {
 	double* waveDouble = (double*)lpParam;
-	int count = 0;
+
+	HANDLE waitArray[2] = {updateEvent, stopEvent};
+
+	ULONGLONG lastTick = 0, currentTick  = 0;
 
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		if (WaitForSingleObject(updateEvent, 100) == WAIT_OBJECT_0) {
-			dftGG->calc(waveDouble);
-			if (count == 10) {
-				//gHandle->refresh();
+		if (WaitForMultipleObjects(2, waitArray, false, 100) == WAIT_OBJECT_0) {
+			fxh->Refresh(dftGG->calc(waveDouble));
+			currentTick = GetTickCount64();
+			if (!IsIconic(hDlg) && currentTick - lastTick > 50) {
 				SendMessage(hDlg, WM_PAINT, 0, 0);
-				count = 0;
+				lastTick = currentTick;
 			}
-			else count++;
-			fxh->Refresh();
 		}
 	}
 

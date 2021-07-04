@@ -439,7 +439,7 @@ int ConfigHandler::Save() {
 	if (startWindows) {
 		char pathBuffer[2048];
 		GetModuleFileNameA(NULL, pathBuffer, 2047);
-		RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)pathBuffer, strlen(pathBuffer) + 1);
+		RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)pathBuffer, (DWORD)strlen(pathBuffer) + 1);
 	}
 	else {
 		// set to zero string (can't remove without admin rights)
@@ -635,7 +635,7 @@ int ConfigHandler::Save() {
 			0,
 			REG_SZ,
 			(BYTE*)profiles[j].name.c_str(),
-			profiles[j].name.length()
+			(DWORD)profiles[j].name.length()
 		);
 		sprintf_s((char*)name, 255, "Profile-flags-%d", profiles[j].id);
 		RegSetValueExA(
@@ -653,7 +653,7 @@ int ConfigHandler::Save() {
 			0,
 			REG_SZ,
 			(BYTE*)profiles[j].triggerapp.c_str(),
-			profiles[j].triggerapp.length()
+			(DWORD)profiles[j].triggerapp.length()
 		);
 		for (int i = 0; i < profiles[j].lightsets.size(); i++) {
 			//preparing name
@@ -684,7 +684,7 @@ int ConfigHandler::Save() {
 				0,
 				REG_BINARY,
 				(BYTE*)out,
-				size
+				(DWORD)size
 			);
 			free(out);
 		}

@@ -22,21 +22,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	int* freq;
 	
-	freq=(int*)malloc(21*sizeof(int));
-	memset(freq, 0, 21 * sizeof(int));
-
 	ConfigHandler conf;
-	conf.Load();
 
-	FXproc = new FXHelper(freq, &conf);
+	FXproc = new FXHelper(&conf);
+	freq = new int[conf.numbars];
+	ZeroMemory(freq, conf.numbars * sizeof(int));
 	Graphika = new Graphics(hInstance ,nCmdShow, freq, &conf, FXproc);
-	dftG = new DFT_gosu(NUMPTS, conf.numbars, Graphika->getYScale() , freq);
 
-	int rate;
+	dftG = new DFT_gosu(NUMPTS, conf.numbars, conf.res , freq);
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-	WSAudioIn wsa(rate, NUMPTS, conf.inpType, Graphika, FXproc, dftG);
-	dftG->setSampleRate(rate);
+	WSAudioIn wsa(NUMPTS, conf.inpType, Graphika, FXproc, dftG);
 	wsa.startSampling();
 
 	Graphika->start();
@@ -47,7 +43,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	delete FXproc;
 	delete dftG;
 
-	free(freq);
+	delete[] freq;
 	delete Graphika;
 
 	return 1;
