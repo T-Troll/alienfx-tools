@@ -94,14 +94,13 @@ void EventHandler::SwitchActiveProfile(int newID)
 		profile* newP = conf->FindProfile(newID),
 			* oldP = conf->FindProfile(conf->activeProfile);
 		if (newP != NULL) {
-			PauseEvents();
+			StopEvents();
 			if (oldP != NULL)
 				oldP->lightsets = conf->active_set;
 			conf->activeProfile = newID;
 			conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
 			conf->active_set = newP->lightsets;
-			ResumeEvents();
 			ToggleEvents();
 #ifdef _DEBUG
 			char buff[2048];
