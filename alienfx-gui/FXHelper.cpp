@@ -219,8 +219,8 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 			if (!config->block_power && actions.size() > 1) {
 #ifdef _DEBUG
 				char buff[2048];
-				sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
-				OutputDebugString(buff);
+				//sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
+				//OutputDebugString(buff);
 				ULONGLONG startTime = GetTickCount64();
 #endif
 				if (config->stateOn || !config->offPowerButton)

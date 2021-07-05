@@ -19,7 +19,10 @@ namespace AlienFX_SDK
 		byte loop[2] = {0x02, 0x04};
 		byte color[2] = {0x02, 0x03};
 		byte update[2] = {0x02, 0x05};
+		byte setMorph[2] = {0x02, 0x01};
+		byte setPower[2] = {0x02, 0x02};
 		byte status[2] = {0x02 ,0x06};
+		// Unknown: 0x2, 0x8, 0xXX - seems like group, before and after each color set until update; 0x2, 0x9; 0x2, 0x2 (power?)
 	} COMMV2;
 
 	struct com_apiv3 {
@@ -32,7 +35,7 @@ namespace AlienFX_SDK
 
 #ifdef API_V4
 	struct com_apiv4 {
-		byte reset[3] = { 0xcc, 0xcc, 0x96};
+		byte reset[3] = { 0xcc, 0xcc, 0x94};
 		byte colorSel[19] = {0xcc, 0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 		byte colorSet[11] = {0xcc, 0xcc, 0x8c, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff};
 		byte loop[4] = {0xcc, 0xcc, 0x8c, 0x13};
@@ -42,83 +45,32 @@ namespace AlienFX_SDK
 	} COMMV4;
 #endif
 
-	vector<pair<DWORD,DWORD>> Mappings::AlienFXEnumDevices()
-	{
-		vector<pair<DWORD,DWORD>> pids;
-		GUID guid;
-		bool flag = false;
-		HANDLE tdevHandle;
-
-		HidD_GetHidGuid(&guid);
-		HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-		if (hDevInfo == INVALID_HANDLE_VALUE)
-		{
-			//std::cout << "Couldn't get guid";
-			return pids;
+	void Functions::SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2) {
+		int mask = 0;
+		buffer[2] = (byte)index+1;
+		switch (version) {
+		case API_V25: 
+			mask = index < 12 ? mask12_8[index] : 0;
+			buffer[6] = r1;
+			buffer[7] = g1;
+			buffer[8] = b1;
+			buffer[9] = r2;
+			buffer[10] = g2;
+			buffer[11] = b2;
+			break;
+		case API_V2: 
+			mask = index < 12 ? mask12_4[index] : 0;
+			buffer[6] = (r1 & 0xf0) | ((g1 & 0xf0) >> 4); // 4-bit color!
+			buffer[7] = b1;
+			buffer[8] = (r2 & 0xf0) | ((g2 & 0xf0) >> 4); // 4-bit color!
+			buffer[9] = b2;
+			break;
 		}
-		unsigned int dw = 0;
-		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
 
-		unsigned int lastError = 0;
-		while (!flag)
-		{
-			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
-			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
-			{
-				lastError = GetLastError();
-				flag = true;
-				continue;
-			}
-			dw++;
-			DWORD dwRequiredSize = 0;
-			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
-			{
-				//std::cout << "Getting the needed buffer size failed";
-				//return pids;
-				continue;
-			}
-			//std::cout << "Required size is " << dwRequiredSize << std::endl;
-			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-			{
-				//std::cout << "Last error is not ERROR_INSUFFICIENT_BUFFER";
-				//return pid;
-				continue;
-			}
-			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
-			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
-			{
-				std::wstring devicePath = deviceInterfaceDetailData->DevicePath;
-				//OutputDebugString(devicePath.c_str());
-				tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-
-				if (tdevHandle != INVALID_HANDLE_VALUE)
-				{
-					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
-					attributes->Size = sizeof(HIDD_ATTRIBUTES);
-					if (HidD_GetAttributes(tdevHandle, attributes.get()))
-					{
-						for (unsigned i = 0; i < sizeof(vids)/4; i++) {
-							if (attributes->VendorID == vids[i]) {
-#ifdef _DEBUG
-								wchar_t buff[2048];
-								swprintf_s(buff, 2047, L"Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
-										   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
-								OutputDebugString(buff);
-#endif
-								pair<DWORD, DWORD> dev;
-								dev.first = attributes->VendorID;
-								dev.second = attributes->ProductID;
-								pids.push_back(dev);
-								break;
-							}
-						}
-					}
-				}
-				CloseHandle(tdevHandle);
-			}
-		}
-		return pids;
+		buffer[3] = (mask & 0xFF0000) >> 16;
+		buffer[4] = (mask & 0x00FF00) >> 8;
+		buffer[5] = (mask & 0x0000FF);
+		return;
 	}
 
 	//Use this method for general devices pid = -1 for full scan
@@ -257,6 +209,7 @@ namespace AlienFX_SDK
 			memcpy(buffer, COMMV4.reset, sizeof(COMMV4.reset));
 			//result = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			result = HidD_SetFeature(devHandle, buffer, length);
+#ifdef _DEBUG
 			cout << "IO result is ";
 			switch (GetLastError()) {
 			case 0: cout << "Ok."; break;
@@ -266,12 +219,25 @@ namespace AlienFX_SDK
 			default: cout << "Unknown (" << GetLastError() << ")";
 			}
 			cout <<  endl;
+#endif
+			result = HidD_SetOutputReport(devHandle, buffer, length);
+#ifdef _DEBUG
+			cout << "IO result is ";
+			switch (GetLastError()) {
+			case 0: cout << "Ok."; break;
+			case 1: cout << "Incorrect function"; break;
+			case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
+			case ERROR_MORE_DATA: cout << "More data remains!"; break;
+			default: cout << "Unknown (" << GetLastError() << ")";
+			}
+			cout <<  endl;
+#endif
 		} break;
 #endif
 		case API_L_V3: {
 			memcpy(buffer, COMMV3.reset, sizeof(COMMV3.reset));
-			//result = HidD_SetOutputReport(devHandle, buffer, length);
-			result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, NULL, NULL);
+			result = HidD_SetOutputReport(devHandle, buffer, length);
+			//result = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, NULL, NULL);
 			//cout << "IO result is " << GetLastError() << endl;
 		} break;
 		case API_L_V2: case API_L_V1: {
@@ -348,9 +314,9 @@ namespace AlienFX_SDK
 		//byte* buffer = new byte[length];
 		byte buffer[MAX_BUFFERSIZE];
 		ZeroMemory(buffer, length);
-		switch (version) {
+		switch (length) {
 #ifdef API_V4
-		case API_V4: {
+		case API_L_V4: {
 			memcpy(buffer, COMMV4.colorSel, sizeof(COMMV4.colorSel));
 			buffer[11] = buffer[14] = r;
 			buffer[12] = buffer[15] = g;
@@ -368,7 +334,7 @@ namespace AlienFX_SDK
 			//return DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 		} break;
 #endif
-		case API_V3: {
+		case API_L_V3: {
 			memcpy(buffer, COMMV3.colorSel, sizeof(COMMV3.colorSel));
 			buffer[6] = index;
 			HidD_SetOutputReport(devHandle, buffer, length);
@@ -379,42 +345,21 @@ namespace AlienFX_SDK
 			buffer[9] = g;
 			buffer[10] = b;
 		} break;
-		case API_V25:
+		case API_L_V2:
 		{
-			int location = index < 14 ? mask12[index] : 0;
 			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
-			buffer[2] = (byte)index;
-			buffer[3] = (location & 0xFF0000) >> 16;
-			buffer[4] = (location & 0x00FF00) >> 8;
-			buffer[5] = (location & 0x0000FF);
-			buffer[6] = r;
-			buffer[7] = g;
-			buffer[8] = b;
+			SetMaskAndColor(index, buffer, r, g, b);
+
+			//if (index == 0)
+			//{
+			//	buffer[1] = 0x02;
+			//}
 
 		} break;
-		case API_V2: {
-			int location = index < 14 ? mask12[index] : 0;
+		case API_L_V1: {
+			int location = index < 13 ?mask8[index] : 0;
 			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
-			buffer[2] = (byte)index;
-			buffer[3] = (location & 0xFF0000) >> 16;
-			buffer[4] = (location & 0x00FF00) >> 8;
-			buffer[5] = (location & 0x0000FF);
-			buffer[6] = (r & 0xf0) | ((g & 0xf0) >> 4); // 4-bit color!
-			buffer[7] = b;
-
-			if (index == 0)
-			{
-				buffer[1] = 0x01;
-				buffer[2] = (byte)index;
-				buffer[3] = 00;
-				buffer[4] = 01;
-				buffer[5] = 00;
-			}
-		} break;
-		case API_V1: {
-			int location = index < 14 ?mask8[index] : 0;
-			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
-			buffer[2] = index;
+			buffer[2] = index + 1;
 			buffer[3] = (location & 0xFF0000) >> 16;
 			buffer[4] = (location & 0x00FF00) >> 8;
 			buffer[5] = (location & 0x0000FF);
@@ -425,19 +370,11 @@ namespace AlienFX_SDK
 			if (index == 5)
 			{
 				buffer[1] = 0x83;
-				buffer[2] = (byte)index;
-				buffer[3] = 00;
-				buffer[4] = 00;
-				buffer[5] = 00;
 			}
 
-			if (index == 11)
+			if (index == 0)
 			{
 				buffer[1] = 0x01;
-				buffer[2] = (byte)index;
-				buffer[3] = 00;
-				buffer[4] = 01;
-				buffer[5] = 00;
 			}
 
 		} break;
@@ -496,12 +433,13 @@ namespace AlienFX_SDK
 		// Buffer[8-10]    - rgb
 		//byte* buffer = new byte[length];
 		byte buffer[MAX_BUFFERSIZE];
-		switch (length) {
-		case API_L_V3: { // only supported at new devices
-			if (!inSet) Reset(false);
-			int bPos = 3;
-			if (act.size() > 0) {
-				ZeroMemory(buffer, length);
+		ZeroMemory(buffer, length);
+		if (act.size() > 0) {
+			switch (length) {
+			case API_L_V3:
+			{ // only supported at new devices
+				if (!inSet) Reset(false);
+				int bPos = 3;
 				memcpy(buffer, COMMV3.colorSel, sizeof(COMMV3.colorSel));
 				buffer[6] = index;
 				HidD_SetOutputReport(devHandle, buffer, length);
@@ -530,28 +468,50 @@ namespace AlienFX_SDK
 					bPos += 8;
 					if (bPos == 27) {
 						res = HidD_SetOutputReport(devHandle, buffer, length);
-							//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+						//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 						bPos = 3;
 					}
 				}
 				if (bPos != 3) {
 					res = HidD_SetOutputReport(devHandle, buffer, length);
-						//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+					//DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 				}
+				return res;
+			} break;
+			case API_L_V2:
+			{
+				switch (act[0].type) {
+				case AlienFX_A_Color: res = SetColor(index, act[0].r, act[0].g, act[0].b); break;
+				case AlienFX_A_Pulse:
+					res = SetColor(index, act[0].r, act[0].g, act[0].b);
+					if (act.size() > 1)
+						res = SetColor(index, act[1].r, act[1].g, act[1].b);
+					break;
+				case AlienFX_A_Morph:
+				{
+					if (!inSet) Reset(1);
+					memcpy(buffer, COMMV2.setMorph, sizeof(COMMV2.setMorph));
+					if (act.size() > 1)
+						SetMaskAndColor(index, buffer, act[0].r, act[0].g, act[0].b, act[1].r, act[1].g, act[1].b);
+					else
+						SetMaskAndColor(index, buffer, act[0].r, act[0].g, act[0].b);
+					HidD_SetOutputReport(devHandle, buffer, length);
+					if (act.size() > 1)
+						SetMaskAndColor(index, buffer, act[1].r, act[1].g, act[1].b, act[0].r, act[0].g, act[0].b);
+					else
+						SetMaskAndColor(index, buffer, 0, 0, 0, act[0].r, act[0].g, act[0].b);
+					res = HidD_SetOutputReport(devHandle, buffer, length);
+					Loop();
+				} break;
+				default: res = SetColor(index, act[0].r, act[0].g, act[0].b);
+				}
+			} break;
+			case API_L_V1:
+			{
+				// can't set action for old, just use color. 
+				res = SetColor(index, act[0].r, act[0].g, act[0].b);
+			} break;
 			}
-			return res;
-		} break;
-		case API_L_V2: {
-			res = SetColor(index, act[0].r, act[0].g, act[0].b);
-			// But here trick for Pulse!
-			switch (act[0].type) {
-			case 1: SetColor(index, act[0].r, act[0].g, act[0].b); break;
-			}
-		} break;
-		case API_L_V1: {
-			// can't set action for old, just use color. 
-			res = SetColor(index, act[0].r, act[0].g, act[0].b);
-		} break;
 		}
 		return res;
 	}
@@ -559,6 +519,8 @@ namespace AlienFX_SDK
 	bool Functions::SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force)
 	{
 		//size_t BytesWritten;
+		byte buffer[MAX_BUFFERSIZE];
+		ZeroMemory(buffer, length);
 		switch (length) {
 		case API_L_V3: { // only supported at new devices
 			// this function can be called not early then 250ms after last call!
@@ -593,9 +555,6 @@ namespace AlienFX_SDK
 			if (inSet) UpdateColors();
 			inSet = true;
 			// Now set....
-			//byte* buffer = new byte[length];
-			byte buffer[MAX_BUFFERSIZE];
-			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV3.setPower, sizeof(COMMV3.setPower));
 			for (BYTE cid = 0x5b; cid < 0x61; cid++) {
 				// Init query...
@@ -667,14 +626,47 @@ namespace AlienFX_SDK
 				for (UINT counter = 0; !IsDeviceReady() && counter < 10; counter++) Sleep(20);
 			Reset(false);
 		} break;
-		case API_L_V2: case API_L_V1: {
+		case API_L_V2:
+		{;
+			if (!inSet) Reset(1);
+			memcpy(buffer, COMMV2.setMorph, sizeof(COMMV2.setMorph));
+			SetMaskAndColor(index, buffer, Red, Green, Blue);
+			// neeed to set colors 6 times - 1-2 and 2-1
+			HidD_SetOutputReport(devHandle, buffer, length);
+			SetMaskAndColor(index, buffer, 0, 0, 0, Red, Green, Blue);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			Loop();
+			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
+			SetMaskAndColor(index, buffer, Red, Green, Blue);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			Loop();
+			memcpy(buffer, COMMV2.setMorph, sizeof(COMMV2.setMorph));
+			SetMaskAndColor(index, buffer, Red, Green, Blue, Red2, Green2, Blue2);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			SetMaskAndColor(index, buffer, Red2, Green2, Blue2, Red, Green, Blue);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			Loop();
+			SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			SetMaskAndColor(index, buffer, 0, 0, 0, Red2, Green2, Blue2);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			Loop();
+			memcpy(buffer, COMMV2.color, sizeof(COMMV2.color));
+			SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
+			HidD_SetOutputReport(devHandle, buffer, length);
+			Loop();
+			//memcpy(buffer, COMMV2.setPower, sizeof(COMMV2.setPower));
+			//SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
+			//HidD_SetOutputReport(devHandle, buffer, length);
+			//Loop();
+		} break;
+		case API_L_V1:
 			// can't set action for old, just use color
 			SetColor(index, Red, Green, Blue);
-		} break;
+		break;
 		}
 		return true;
 	}
-	//int ReadStatus;
 
 	BYTE Functions::AlienfxGetDeviceStatus()
 	{
@@ -691,6 +683,7 @@ namespace AlienFX_SDK
 			buffer[0] = 0xcc;
 			if (HidD_GetFeature(devHandle, buffer, length)) //DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, (DWORD*) &BytesWritten, NULL))
 				ret = buffer[2];
+#ifdef _DEBUG
 			cout << "IO result is ";
 			switch (GetLastError()) {
 			case 0: cout << "Ok."; break;
@@ -701,6 +694,7 @@ namespace AlienFX_SDK
 			}
 			cout <<  endl;
 			cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
+#endif
 		} break;
 #endif
 		case API_L_V3: {
@@ -810,6 +804,85 @@ namespace AlienFX_SDK
 		mappings.clear();
 		devices.clear();
 	}
+
+	vector<pair<DWORD,DWORD>> Mappings::AlienFXEnumDevices()
+	{
+		vector<pair<DWORD,DWORD>> pids;
+		GUID guid;
+		bool flag = false;
+		HANDLE tdevHandle;
+
+		HidD_GetHidGuid(&guid);
+		HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+		if (hDevInfo == INVALID_HANDLE_VALUE)
+		{
+			//std::cout << "Couldn't get guid";
+			return pids;
+		}
+		unsigned int dw = 0;
+		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
+
+		unsigned int lastError = 0;
+		while (!flag)
+		{
+			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
+			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
+			{
+				lastError = GetLastError();
+				flag = true;
+				continue;
+			}
+			dw++;
+			DWORD dwRequiredSize = 0;
+			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
+			{
+				//std::cout << "Getting the needed buffer size failed";
+				//return pids;
+				continue;
+			}
+			//std::cout << "Required size is " << dwRequiredSize << std::endl;
+			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+			{
+				//std::cout << "Last error is not ERROR_INSUFFICIENT_BUFFER";
+				//return pid;
+				continue;
+			}
+			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
+			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
+			{
+				std::wstring devicePath = deviceInterfaceDetailData->DevicePath;
+				//OutputDebugString(devicePath.c_str());
+				tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+
+				if (tdevHandle != INVALID_HANDLE_VALUE)
+				{
+					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
+					attributes->Size = sizeof(HIDD_ATTRIBUTES);
+					if (HidD_GetAttributes(tdevHandle, attributes.get()))
+					{
+						for (unsigned i = 0; i < sizeof(vids)/4; i++) {
+							if (attributes->VendorID == vids[i]) {
+#ifdef _DEBUG
+								wchar_t buff[2048];
+								swprintf_s(buff, 2047, L"Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+										   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
+								OutputDebugString(buff);
+#endif
+								pair<DWORD, DWORD> dev;
+								dev.first = attributes->VendorID;
+								dev.second = attributes->ProductID;
+								pids.push_back(dev);
+								break;
+							}
+						}
+					}
+				}
+				CloseHandle(tdevHandle);
+			}
+		}
+		return pids;
+	}	
 
 	void Mappings::AddMapping(int devID, int lightID, char* name, int flags) {
 		mapping map;

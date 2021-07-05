@@ -1649,12 +1649,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					if (fxhl->afx_dev.GetDevices()->at(i).devid == eDid) {
 						fxhl->afx_dev.GetDevices()->at(i).name = buffer;
 						fxhl->afx_dev.SaveMappings();
+						SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
+						SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
+						SendMessage(dev_list, CB_SETITEMDATA, dItem, (LPARAM)eDid);
 						break;
 					}
 				}
-				SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
-				SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM)(buffer));
-				SendMessage(dev_list, CB_SETITEMDATA, dItem, (LPARAM)eDid);
 				break;
 			}
 		} break;
@@ -1673,10 +1673,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				char buffer[MAX_PATH];
 				GetWindowTextA(light_list, buffer, MAX_PATH);
 				for (UINT i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
-					AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-					if (lgh.devid == did &&
-						lgh.lightid == eLid) {
-						lgh.name = buffer;
+					AlienFX_SDK::mapping* lgh = &(fxhl->afx_dev.GetMappings()->at(i));
+					if (lgh->devid == did &&
+						lgh->lightid == eLid) {
+						lgh->name = buffer;
+						fxhl->afx_dev.SaveMappings();
 						SendMessage(light_list, CB_DELETESTRING, lItem, 0);
 						SendMessage(light_list, CB_INSERTSTRING, lItem, (LPARAM)buffer);
 						SendMessage(light_list, CB_SETITEMDATA, lItem, eLid);
