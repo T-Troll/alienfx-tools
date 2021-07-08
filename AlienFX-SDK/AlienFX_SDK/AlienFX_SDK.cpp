@@ -15,33 +15,52 @@ extern "C" {
 namespace AlienFX_SDK
 {
 	struct com_apiv1_apiv2 {
-		byte reset[2] = {0x02 ,0x07};
-		byte loop[2] = {0x02, 0x04};
-		byte color[2] = {0x02, 0x03};
-		byte update[2] = {0x02, 0x05};
-		byte setMorph[2] = {0x02, 0x01};
-		byte setPower[2] = {0x02, 0x02};
-		byte status[2] = {0x02 ,0x06};
+		const byte reset[2] = {0x02 ,0x07};
+		const byte loop[2] = {0x02, 0x04};
+		const byte color[2] = {0x02, 0x03};
+		const byte update[2] = {0x02, 0x05};
+		const byte setMorph[2] = {0x02, 0x01};
+		const byte setPower[2] = {0x02, 0x02};
+		const byte status[2] = {0x02 ,0x06};
 		// Unknown: 0x2, 0x8, 0xXX - seems like group, before and after each color set until update; 0x2, 0x9; 0x2, 0x2 (power?)
 	} COMMV2;
 
 	struct com_apiv3 {
-		byte reset[7] = {0x00, 0x03 ,0x21 ,0x00 ,0x01 ,0xff ,0xff};
-		byte colorSel[6] = {0x00, 0x03 ,0x23 ,0x01 ,0x00 ,0x01};
-		byte colorSet[8] = {0x00, 0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa};
-		byte update[7] = {0x00, 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0xff};
-		byte setPower[7] = {0x00, 0x03 ,0x22 ,0x00, 0x04, 0x00, 0x5b};
+		const byte reset[7] = {0x00, 0x03 ,0x21 ,0x00 ,0x01 ,0xff ,0xff};
+		const byte colorSel[6] = {0x00, 0x03 ,0x23 ,0x01 ,0x00 ,0x01};
+		const byte colorSet[8] = {0x00, 0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa};
+		const byte update[7] = {0x00, 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0xff};
+		const byte setPower[7] = {0x00, 0x03 ,0x22 ,0x00, 0x04, 0x00, 0x5b};
 	} COMMV3;
 
 #ifdef API_V4
 	struct com_apiv4 {
-		byte reset[3] = { 0xcc, 0xcc, 0x94};
-		byte colorSel[19] = {0xcc, 0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
-		byte colorSet[11] = {0xcc, 0xcc, 0x8c, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff};
-		byte loop[4] = {0xcc, 0xcc, 0x8c, 0x13};
-		byte update[5] = {0xcc, 0xcc, 0x8b, 0x01, 0x59};
-		//byte setPower[7] = {0x00, 0x03 ,0x22 ,0x00 ,0x04 ,0x00 ,0x5b};
-		//byte status;
+		const byte reset[2] = { 0xcc, 0x94 };
+		byte status[2] = {0xcc, 0x99};
+		byte colorSel5[33] = {0xcc,0x8c,05,00,00,00,00,00,00,00,00,00,00,00,00,00,
+			                    00,  00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,
+			                    01};
+		                     //{0xcc,0x8c,05,00,01,01,01,01,01,01,01,01,01,01,01,01,
+			                    //01,  01,01,01,00,00,00,00,01,01,01,01,01,01,01,01,
+			                    //01,  01,01,01,01,01,00,01,00,00,00,00,01,00,01,01,
+			                    //01,  01,01,01,01,01,01,01,01,01,01,01,00,00,00,01};
+		byte colorSel6[3] = {0xcc,0x8c,0x6};
+		                     //{0xcc,0x8c,06,00,00,01,01,01,01,01,01,01,01,01,01,01,
+			                    //01,  01,01,00,00,00,00,00,00,01,01,01,01,01,01,01,
+			                    //01,  01,01,01,01,00,01,00,00,00,00,00,01,01,00,01,
+			                    //01,  01,00,00,00,00,01,01,01,01,01,01};
+		byte colorSel7[20] = {0xcc,0x8c,0x7};
+		                     //{0xcc,0x8c,07,00,00,00,00,00,00,00,00,00,00,00,00,00,
+			                    //00,  01,01,01};
+		byte colorSel[18] = //{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0xff, 0x00, 0x00, 0xff,
+		                    // 0x00, 0x00, 0x01};
+							//{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0xf0, 0xf0, 0x00, 
+							// 0xf0, 0xf0, 0x01};
+							{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0xff, 0x00, 0x00, 
+							 0xff, 0x00, 0x01};
+		byte colorSet[4] = {0xcc, 0x8c, 0x02, 0x00 };
+		byte loop[3] = {0xcc, 0x8c, 0x13};
+		byte update[4] = {0xcc, 0x8b, 0x01, 0xff}; // fe
 	} COMMV4;
 #endif
 
@@ -130,35 +149,46 @@ namespace AlienFX_SDK
 						if (((attributes->VendorID == vid) && (pidd == -1 || attributes->ProductID == pidd)))
 						{
 							// Check API version...
-#ifdef API_V4
-							// Is it Darfon? Then set 64 bytes length.
-							if (vid == vids[1]) {
-								length = API_L_V4;
-								version = API_V4;
-							}
-							else
+							PHIDP_PREPARSED_DATA prep_caps;
+							HIDP_CAPS caps;
+							HidD_GetPreparsedData(devHandle, &prep_caps);
+							HidP_GetCaps(prep_caps, &caps);
+							HidD_FreePreparsedData(prep_caps);
+
+							if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
+#ifdef _DEBUG
+								cout << dec << "Output Report Length " << caps.OutputReportByteLength
+									<< ", Input Report Length " << caps.InputReportByteLength
+									<< ", Feature Report Length " << caps.FeatureReportByteLength
+									<< endl;
+								cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage << endl;
+								cout << dec << "Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
 #endif
-								if (attributes->VersionNumber > 511) {
-									length = API_L_V3;
-									version = API_V3;
-								}
-								else {
-									length = attributes->Size;
+								// Yes, now so easy...
+								switch (caps.OutputReportByteLength) {
+								case 0: length = caps.FeatureReportByteLength;
+									break;
+								case 9: length = attributes->Size;
 									if (attributes->ProductID > 0x529)
 										version = API_V25;
 									else
 										version = API_V2;
+									break;
+								default: length = caps.OutputReportByteLength;
 								}
-							this->vid = attributes->VendorID;
-							pid = attributes->ProductID;
-							flag = true;
+
+								this->vid = attributes->VendorID;
+								pid = attributes->ProductID;
+								flag = true;
 #ifdef _DEBUG
-							wchar_t buff[2048];
-							swprintf_s(buff, 2047, L"Init: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
-									   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
-							OutputDebugString(buff);
-							cout << buff;
+								wchar_t buff[2048];
+								swprintf_s(buff, 2047, L"Init: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+										   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, length);
+								OutputDebugString(buff);
+								cout << "Attributes - length: " << attributes->Size << ", version: " << attributes->VersionNumber << endl;
+								wprintf(L"Path: %s\n%s", devicePath.c_str(), buff);
 #endif
+							}
 						}
 					}
 
@@ -178,7 +208,7 @@ namespace AlienFX_SDK
 #ifdef API_V4
 		case API_L_V4:
 			memcpy(buffer, COMMV4.loop, sizeof(COMMV4.loop));
-			HidD_SetOutputReport(devHandle, buffer, length);
+			HidD_SetFeature(devHandle, buffer, length);
 			break;
 #endif
 		//case API_L_V3: {
@@ -206,32 +236,10 @@ namespace AlienFX_SDK
 		switch (length) {
 #ifdef API_V4
 		case API_L_V4: {
+			// DEBUG!
 			memcpy(buffer, COMMV4.reset, sizeof(COMMV4.reset));
 			//result = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 			result = HidD_SetFeature(devHandle, buffer, length);
-#ifdef _DEBUG
-			cout << "IO result is ";
-			switch (GetLastError()) {
-			case 0: cout << "Ok."; break;
-			case 1: cout << "Incorrect function"; break;
-			case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
-			case ERROR_MORE_DATA: cout << "More data remains!"; break;
-			default: cout << "Unknown (" << GetLastError() << ")";
-			}
-			cout <<  endl;
-#endif
-			result = HidD_SetOutputReport(devHandle, buffer, length);
-#ifdef _DEBUG
-			cout << "IO result is ";
-			switch (GetLastError()) {
-			case 0: cout << "Ok."; break;
-			case 1: cout << "Incorrect function"; break;
-			case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
-			case ERROR_MORE_DATA: cout << "More data remains!"; break;
-			default: cout << "Unknown (" << GetLastError() << ")";
-			}
-			cout <<  endl;
-#endif
 		} break;
 #endif
 		case API_L_V3: {
@@ -264,8 +272,7 @@ namespace AlienFX_SDK
 		bool res = false;
 		//if (inSet) {
 			//byte* buffer = new byte[length];
-			byte buffer[MAX_BUFFERSIZE];
-			ZeroMemory(buffer, length);
+		byte buffer[MAX_BUFFERSIZE] = {0};
 			switch (length) {
 #ifdef API_V4
 			case API_L_V4:
@@ -273,7 +280,19 @@ namespace AlienFX_SDK
 				memcpy(buffer, COMMV4.update, sizeof(COMMV4.update));
 				res = HidD_SetFeature(devHandle, buffer, length);
 				//return DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*) &BytesWritten, NULL);
-			}
+#ifdef _DEBUG
+				//cout << "Update IO result is ";
+				//switch (GetLastError()) {
+				//case 0: cout << "Ok."; break;
+				//case 1: cout << "Incorrect function"; break;
+				//case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
+				//case ERROR_MORE_DATA: cout << "More data remains!"; break;
+				//default: cout << "Unknown (" << GetLastError() << ")";
+				//}
+				//cout <<  endl;
+				//cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
+#endif
+			} break;
 #endif
 			case API_L_V3:
 			{
@@ -304,7 +323,7 @@ namespace AlienFX_SDK
 		//size_t BytesWritten;
 		bool val = false;
 		// API v4 command - 11,12,13 and 14,15,16 is RGB
-		// API v4 command - 4 is index
+		// API v4 command - 4 is index, 5,6,7 is RGB, then circle (8,9,10,11 etc)
 		/// API v3 - Buffer[8,9,10] = rgb
 		/// But we need to issue 2 commands - light_select and color_set.... this for light_select
 		/// Buffer2[5] - Count of lights need to be set
@@ -312,25 +331,55 @@ namespace AlienFX_SDK
 		if (!inSet)
 			Reset(1);
 		//byte* buffer = new byte[length];
-		byte buffer[MAX_BUFFERSIZE];
-		ZeroMemory(buffer, length);
+		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (length) {
 #ifdef API_V4
 		case API_L_V4: {
-			memcpy(buffer, COMMV4.colorSel, sizeof(COMMV4.colorSel));
-			buffer[11] = buffer[14] = r;
-			buffer[12] = buffer[15] = g;
-			buffer[13] = buffer[16] = b;
-			HidD_SetFeature(devHandle, buffer, length);
-			//DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+			//memcpy(buffer, COMMV4.colorSel5, sizeof(COMMV4.colorSel5));
+			//HidD_SetFeature(devHandle, buffer, length);
+			//ZeroMemory(buffer, length);
+			//memcpy(buffer, COMMV4.colorSel6, sizeof(COMMV4.colorSel6));
+			//HidD_SetFeature(devHandle, buffer, length);
+			//ZeroMemory(buffer, length);
+			//memcpy(buffer, COMMV4.colorSel7, sizeof(COMMV4.colorSel7));
+			//HidD_SetFeature(devHandle, buffer, length);
+			//ZeroMemory(buffer, length);
+			//memcpy(buffer, COMMV4.colorSel, sizeof(COMMV4.colorSel));
+			//HidD_SetFeature(devHandle, buffer, length);
+//			//DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
+//#ifdef _DEBUG
+			//cout << "Color pre-set IO result is ";
+			//switch (GetLastError()) {
+			//case 0: cout << "Ok."; break;
+			//case 1: cout << "Incorrect function"; break;
+			//case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
+			//case ERROR_MORE_DATA: cout << "More data remains!"; break;
+			//default: cout << "Unknown (" << GetLastError() << ")";
+			//}
+//			//cout <<  endl;
+//			//cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
+//#endif
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV4.colorSet, sizeof(COMMV4.colorSet));
 			buffer[4] = index;
-			//HidD_SetOutputReport(devHandle, buffer, length);
-			//DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
-			//ZeroMemory(buffer, length);
-			//memcpy(buffer, COMMV4.colorAfterSet, sizeof(COMMV4.colorAfterSet));
-			return HidD_SetOutputReport(devHandle, buffer, length);
+			buffer[5] = r;
+			buffer[6] = g;
+			buffer[7] = b;
+			int ret = HidD_SetFeature(devHandle, buffer, length);
+#ifdef _DEBUG
+			//cout << "Color Set IO result is ";
+			//switch (GetLastError()) {
+			//case 0: cout << "Ok."; break;
+			//case 1: cout << "Incorrect function"; break;
+			//case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
+			//case ERROR_MORE_DATA: cout << "More data remains!"; break;
+			//default: cout << "Unknown (" << GetLastError() << ")";
+			//}
+			//cout <<  endl;
+			//cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
+#endif
+			Loop();
+			return ret;
 			//return DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, NULL, 0, (DWORD*)&BytesWritten, NULL);
 		} break;
 #endif
@@ -394,11 +443,10 @@ namespace AlienFX_SDK
 		/// Buffer2[5] - Count of lights need to be set
 		/// Buffer2[6-33] - LightID (index, not mask).
 		//byte* buffer = new byte[length];
-		byte buffer[MAX_BUFFERSIZE];
 		switch (length) {
 		case API_L_V3: {
 			if (!inSet) Reset(false);
-			ZeroMemory(buffer, length);
+			byte buffer[MAX_BUFFERSIZE] = {0};
 			memcpy(buffer, COMMV3.colorSel, sizeof(COMMV3.colorSel));
 			buffer[5] = numLights;
 			for (int nc = 0; nc < numLights; nc++)
@@ -432,8 +480,7 @@ namespace AlienFX_SDK
 		// Buffer[7], [15] - tempo (0xfa - steady)
 		// Buffer[8-10]    - rgb
 		//byte* buffer = new byte[length];
-		byte buffer[MAX_BUFFERSIZE];
-		ZeroMemory(buffer, length);
+		byte buffer[MAX_BUFFERSIZE] = {0};
 		if (act.size() > 0) {
 			switch (length) {
 			case API_L_V3:
@@ -519,8 +566,7 @@ namespace AlienFX_SDK
 	bool Functions::SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force)
 	{
 		//size_t BytesWritten;
-		byte buffer[MAX_BUFFERSIZE];
-		ZeroMemory(buffer, length);
+		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (length) {
 		case API_L_V3: { // only supported at new devices
 			// this function can be called not early then 250ms after last call!
@@ -623,7 +669,7 @@ namespace AlienFX_SDK
 			Sleep(50);
 			// Let's try to wait until system ready...
 			if (force)
-				for (UINT counter = 0; !IsDeviceReady() && counter < 10; counter++) Sleep(20);
+				for (UINT counter = 0; !IsDeviceReady() && counter < 15; counter++) Sleep(20);
 			Reset(false);
 		} break;
 		case API_L_V2:
@@ -674,26 +720,27 @@ namespace AlienFX_SDK
 		//size_t BytesWritten;
 		byte ret = 0;
 		//byte* buffer = new byte[length];
-		byte buffer[MAX_BUFFERSIZE];
-		ZeroMemory(buffer, length);
+		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (length) {
 #ifdef API_V4
 		case API_L_V4:
 		{
+			//memcpy(buffer, COMMV4.status, sizeof(COMMV4.status));
+			//HidD_SetOutputReport(devHandle, buffer, length);
 			buffer[0] = 0xcc;
 			if (HidD_GetFeature(devHandle, buffer, length)) //DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, (DWORD*) &BytesWritten, NULL))
 				ret = buffer[2];
 #ifdef _DEBUG
-			cout << "IO result is ";
-			switch (GetLastError()) {
-			case 0: cout << "Ok."; break;
-			case 1: cout << "Incorrect function"; break;
-			case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
-			case ERROR_MORE_DATA: cout << "More data remains!"; break;
-			default: cout << "Unknown (" << GetLastError() << ")";
-			}
-			cout <<  endl;
-			cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
+			//cout << "IO result is ";
+			//switch (GetLastError()) {
+			//case 0: cout << "Ok."; break;
+			//case 1: cout << "Incorrect function"; break;
+			//case ERROR_INSUFFICIENT_BUFFER: cout << "Buffer too small!"; break;
+			//case ERROR_MORE_DATA: cout << "More data remains!"; break;
+			//default: cout << "Unknown (" << GetLastError() << ")";
+			//}
+			//cout <<  endl;
+			//cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
 #endif
 		} break;
 #endif
@@ -863,17 +910,27 @@ namespace AlienFX_SDK
 					{
 						for (unsigned i = 0; i < sizeof(vids)/4; i++) {
 							if (attributes->VendorID == vids[i]) {
+
+								PHIDP_PREPARSED_DATA prep_caps;
+								HIDP_CAPS caps;
+								HidD_GetPreparsedData(tdevHandle, &prep_caps);
+								HidP_GetCaps(prep_caps, &caps);
+								HidD_FreePreparsedData(prep_caps);
+
+								if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
 #ifdef _DEBUG
-								wchar_t buff[2048];
-								swprintf_s(buff, 2047, L"Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
-										   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
-								OutputDebugString(buff);
+									wchar_t buff[2048];
+									swprintf_s(buff, 2047, L"Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+											   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
+									OutputDebugString(buff);
+									wprintf(L"%s", buff);
 #endif
-								pair<DWORD, DWORD> dev;
-								dev.first = attributes->VendorID;
-								dev.second = attributes->ProductID;
-								pids.push_back(dev);
-								break;
+									pair<DWORD, DWORD> dev;
+									dev.first = attributes->VendorID;
+									dev.second = attributes->ProductID;
+									pids.push_back(dev);
+									break;
+								}
 							}
 						}
 					}

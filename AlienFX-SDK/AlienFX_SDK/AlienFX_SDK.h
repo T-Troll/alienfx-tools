@@ -24,10 +24,10 @@ namespace AlienFX_SDK
 	#define API_V2  1
 	#define API_V25 2
 	#define API_V3  3
-	//#define API_V4  4
+	#define API_V4  4
 
 	// Length by API version:
-	#define API_L_V4 65
+	#define API_L_V4 64
 	#define API_L_V3 34
 	#define API_L_V2 12
 	#define API_L_V1 8

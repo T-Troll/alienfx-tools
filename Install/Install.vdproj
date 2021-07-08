@@ -39,12 +39,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_69248106B85A4ED0B15762CB8146445E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_8533FAE6D43944078DAC051060E0DCFF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -73,6 +67,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
         "Release"
         {
@@ -89,6 +91,22 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
+            }
         }
     }
     "Deployable"
@@ -130,26 +148,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_69248106B85A4ED0B15762CB8146445E"
-            {
-            "SourcePath" = "8:..\\alienfx-gui\\alien.ico"
-            "TargetName" = "8:alien.ico"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
         }
         "FileType"
         {
@@ -158,7 +156,7 @@
         {
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_77CCC7F3944A4B009D9231F8B41DFD6D"
             {
-            "DefaultLocation" = "8:[ProgramFilesFolder]\\[ProductName]"
+            "DefaultLocation" = "8:[ProgramFiles64Folder]\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
@@ -188,6 +186,17 @@
             "Property" = "8:ProgramMenuFolder"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_A84FD7F9318443A388193688867B14F6"
+                    {
+                    "Name" = "8:AlienFX Tools"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_B47F791C315D43A6960421460B385730"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -206,15 +215,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{ED8B668F-47AB-445C-9AFE-106100315227}"
-        "PackageCode" = "8:{E34C979F-0EFF-4611-84A7-38E8DBF829AE}"
+        "ProductCode" = "8:{4C089BC6-AC49-48B7-BC33-55D9278E0834}"
+        "PackageCode" = "8:{6C0EB3AE-8C99-42FA-BF5D-A92DC628899F}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:2.3.1"
+        "ProductVersion" = "8:2.3.2"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -224,8 +233,8 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:A set of tool to control RGB lights for Alienware/Dell systems."
         "ARPURLINFOABOUT" = "8:https://github.com/T-Troll/alienfx-tools"
-        "ARPPRODUCTICON" = "8:_69248106B85A4ED0B15762CB8146445E"
-        "ARPIconIndex" = "3:0"
+        "ARPPRODUCTICON" = "8:_8533FAE6D43944078DAC051060E0DCFF"
+        "ARPIconIndex" = "3:132"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
         "TargetPlatform" = "3:1"
@@ -271,6 +280,48 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_300B7E745ACA425A8DA04D6C274BC643"
+            {
+            "Name" = "8:AlienFX Audio haptics"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:118"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_CF2105F3B70749ABA35E620EB7D9B1FC"
+            "Folder" = "8:_A84FD7F9318443A388193688867B14F6"
+            "WorkingFolder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Icon" = "8:_CF2105F3B70749ABA35E620EB7D9B1FC"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_569E6EDD81FD4344AA6D0897E23A9892"
+            {
+            "Name" = "8:AlienFX Light contol"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:132"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_8533FAE6D43944078DAC051060E0DCFF"
+            "Folder" = "8:_A84FD7F9318443A388193688867B14F6"
+            "WorkingFolder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Icon" = "8:_8533FAE6D43944078DAC051060E0DCFF"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_8578EF40E52F48988E6827B6F5DE4BA3"
+            {
+            "Name" = "8:AlienFX Ambient light"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:132"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_396F696E40FE45559E40908163600D54"
+            "Folder" = "8:_A84FD7F9318443A388193688867B14F6"
+            "WorkingFolder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Icon" = "8:_396F696E40FE45559E40908163600D54"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {
@@ -375,28 +426,6 @@
             "Attributes" = "3:1"
                 "Dialogs"
                 {
-                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_79C3E97CB55142AFBA31663945B8AB9C"
-                    {
-                    "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
-                    "UseDynamicProperties" = "11:TRUE"
-                    "IsDependency" = "11:FALSE"
-                    "SourcePath" = "8:<VsdDialogDir>\\VsdAdminConfirmDlg.wid"
-                        "Properties"
-                        {
-                            "BannerBitmap"
-                            {
-                            "Name" = "8:BannerBitmap"
-                            "DisplayName" = "8:#1001"
-                            "Description" = "8:#1101"
-                            "Type" = "3:8"
-                            "ContextData" = "8:Bitmap"
-                            "Attributes" = "3:4"
-                            "Setting" = "3:1"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                        }
-                    }
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_CC52E10E264346BEA7F55259B3188FC7"
                     {
                     "Sequence" = "3:200"
@@ -419,54 +448,6 @@
                             }
                         }
                     }
-                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_D8FC5C4068F145ABA2BABFFD660B8DF6"
-                    {
-                    "Sequence" = "3:100"
-                    "DisplayName" = "8:Welcome"
-                    "UseDynamicProperties" = "11:TRUE"
-                    "IsDependency" = "11:FALSE"
-                    "SourcePath" = "8:<VsdDialogDir>\\VsdAdminWelcomeDlg.wid"
-                        "Properties"
-                        {
-                            "BannerBitmap"
-                            {
-                            "Name" = "8:BannerBitmap"
-                            "DisplayName" = "8:#1001"
-                            "Description" = "8:#1101"
-                            "Type" = "3:8"
-                            "ContextData" = "8:Bitmap"
-                            "Attributes" = "3:4"
-                            "Setting" = "3:1"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                            "CopyrightWarning"
-                            {
-                            "Name" = "8:CopyrightWarning"
-                            "DisplayName" = "8:#1002"
-                            "Description" = "8:#1102"
-                            "Type" = "3:3"
-                            "ContextData" = "8:"
-                            "Attributes" = "3:0"
-                            "Setting" = "3:2"
-                            "Value" = "8:"
-                            "DefaultValue" = "8:#1202"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                            "Welcome"
-                            {
-                            "Name" = "8:Welcome"
-                            "DisplayName" = "8:#1003"
-                            "Description" = "8:#1103"
-                            "Type" = "3:3"
-                            "ContextData" = "8:"
-                            "Attributes" = "3:0"
-                            "Setting" = "3:1"
-                            "Value" = "8:#1203"
-                            "DefaultValue" = "8:#1203"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                        }
-                    }
                 }
             }
             "{2479F3F5-0309-486D-8047-8187E2CE5BA0}:_93E31C56DAB14EF895688B43B8EA67A2"
@@ -482,76 +463,6 @@
             "Attributes" = "3:1"
                 "Dialogs"
                 {
-                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_77AB2B71D7FD46A68E98634721C9B687"
-                    {
-                    "Sequence" = "3:100"
-                    "DisplayName" = "8:Welcome"
-                    "UseDynamicProperties" = "11:TRUE"
-                    "IsDependency" = "11:FALSE"
-                    "SourcePath" = "8:<VsdDialogDir>\\VsdWelcomeDlg.wid"
-                        "Properties"
-                        {
-                            "BannerBitmap"
-                            {
-                            "Name" = "8:BannerBitmap"
-                            "DisplayName" = "8:#1001"
-                            "Description" = "8:#1101"
-                            "Type" = "3:8"
-                            "ContextData" = "8:Bitmap"
-                            "Attributes" = "3:4"
-                            "Setting" = "3:1"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                            "CopyrightWarning"
-                            {
-                            "Name" = "8:CopyrightWarning"
-                            "DisplayName" = "8:#1002"
-                            "Description" = "8:#1102"
-                            "Type" = "3:3"
-                            "ContextData" = "8:"
-                            "Attributes" = "3:0"
-                            "Setting" = "3:2"
-                            "Value" = "8:"
-                            "DefaultValue" = "8:#1202"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                            "Welcome"
-                            {
-                            "Name" = "8:Welcome"
-                            "DisplayName" = "8:#1003"
-                            "Description" = "8:#1103"
-                            "Type" = "3:3"
-                            "ContextData" = "8:"
-                            "Attributes" = "3:0"
-                            "Setting" = "3:1"
-                            "Value" = "8:#1203"
-                            "DefaultValue" = "8:#1203"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                        }
-                    }
-                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_8C95B9A9EAF34FF2B5A1EED4FA1D97A1"
-                    {
-                    "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
-                    "UseDynamicProperties" = "11:TRUE"
-                    "IsDependency" = "11:FALSE"
-                    "SourcePath" = "8:<VsdDialogDir>\\VsdConfirmDlg.wid"
-                        "Properties"
-                        {
-                            "BannerBitmap"
-                            {
-                            "Name" = "8:BannerBitmap"
-                            "DisplayName" = "8:#1001"
-                            "Description" = "8:#1101"
-                            "Type" = "3:8"
-                            "ContextData" = "8:Bitmap"
-                            "Attributes" = "3:4"
-                            "Setting" = "3:1"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                        }
-                    }
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_EC3F44A1EE1F4950923643B9553C1EA6"
                     {
                     "Sequence" = "3:200"

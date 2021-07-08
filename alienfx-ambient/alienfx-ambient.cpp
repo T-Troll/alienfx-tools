@@ -201,7 +201,7 @@ int UpdateLightList(HWND light_list) {
     SendMessage(light_list, LB_RESETCONTENT, 0, 0);
     for (int i = 0; i < lights; i++) {
         AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-        if (fxhl->LocateDev(lgh.devid)) {
+        if (fxhl->LocateDev(lgh.devid) && !lgh.flags) {
             pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
             SendMessage(light_list, LB_SETITEMDATA, pos, i);
         }
