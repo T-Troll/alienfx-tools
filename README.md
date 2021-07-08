@@ -12,7 +12,15 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 10 (binary files for x64 only, but you can compile project for x86 as well).
 
-Device checked: `Alienware m15R1-R4` (API v3), `Alienware m17R1` (API v3), `Alienware M13R2` (API v2), `Dell G5` (API v3), `Alienware M14x` (API v1) (should work with any Alienware device with API v1 or later, per-button light keyboard devices and some external devices like mouses doesn't supported now).
+## Devices tested: 
+- `Alienware m15R1-R4` (API v3)
+- `Alienware m17R1` (API v3) 
+- `Alienware M13R2` (API v2)
+- `Alienware M17R5` (API v2.5)
+- `Dell G5/G5SE` (API v3)
+- `Alienware M14x` (API v1)
+
+Tools should work with any Alienware device with API v1 or later, per-button light keyboard devices and some external devices like mouses doesn't supported yet.
 
 ## Known issues
 - Per-button light keyboard devices (API v4, 64 bytes command) does not supported (i'm working on it). But you still can control other lights (logo, power).
