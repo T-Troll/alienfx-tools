@@ -71,9 +71,7 @@
 #define IDC_PROFILES                    1034
 #define IDC_POWER_DIM                   1034
 #define IDC_ADDPROFILE                  1035
-#define IDC_BATTMONITOR                 1036
 #define IDC_BUT_MONITOR                 1036
-#define IDC_BATTPROFILE                 1037
 #define IDC_BUT_PROFILESWITCH           1037
 #define IDC_AWCC                        1038
 #define IDC_BUTTON_TESTCOLOR            1039
@@ -100,9 +98,11 @@
 #define IDC_BUT_ADD_EFFECT              1068
 #define IDC_BUTT_REMOVE_EFFECT          1069
 #define IDC_CHECK_PROFDIM               1071
-#define IDC_COMBO_PROFILES              1072
 #define IDC_CHECK_FOREGROUND            1073
 #define IDC_BUT_PROFRESET               1076
+#define IDC_LIST_PROFILES               1077
+#define IDC_LIST1                       1079
+#define IDC_LIST_LIGHTS                 1079
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -127,7 +127,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1077
+#define _APS_NEXT_CONTROL_VALUE         1080
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

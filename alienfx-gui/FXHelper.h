@@ -1,12 +1,6 @@
 #pragma once
 #include "ConfigHandler.h"
 
-struct UpdateData {
-	Colorcode color;
-	unsigned devid, lightid;
-	ULONGLONG lastUpdate;
-};
-
 // Power modes: AC = 0, Battery = 1, Charge = 2, Low Battery = 4
 #define MODE_AC		0
 #define MODE_BAT	1
@@ -39,4 +33,5 @@ public:
 	bool SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void RefreshState(bool force = false);
 	void RefreshMon();
+	void ChangeState(bool newState);
 };

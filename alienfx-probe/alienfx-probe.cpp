@@ -14,8 +14,8 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	int numlights = 8;
-	cout << "alienfx-probe v2.3.0" << endl;
+	int numlights = 12;
+	cout << "alienfx-probe v2.4.0" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 
@@ -78,22 +78,26 @@ int main(int argc, char* argv[])
 				// How many lights to check?
 				if (argc > 1) // we have number of lights...
 					numlights = atoi(argv[1]);
+				else
+					if (pids[cdev].first == AlienFX_SDK::vids[1])
+						// RGB keyboard;
+						numlights = 0x88;
 				// Let's probe low-level lights....
 				for (int i = 0; i < numlights; i++) {
 					//int j = 0;
-					cout << "Testing light #" << i << "(enter name or ID, ENTER for skip): ";
+					cout << "Testing light #" << i << "(enter name, ENTER for skip): ";
 					afx_dev->SetColor(i, 0, 255, 0);
 					afx_dev->UpdateColors();
 					Sleep(100);
 					std::cin.getline(name, 255);
 					if (name[0] != 0) {
 						//not skipped
-						if (isdigit(name[0]) && res == (-1)) {
-							outName = lfxUtil.GetLightInfo(0, atoi(name))->desc;
-						}
-						else {
+						//if (isdigit(name[0]) && res == (-1)) {
+						//	outName = lfxUtil.GetLightInfo(0, atoi(name))->desc;
+						//}
+						//else {
 							outName = name;
-						}
+						//}
 						cout << "Final name is " << outName << ", ";
 						// Store value...
 						AlienFX_SDK::mapping map;

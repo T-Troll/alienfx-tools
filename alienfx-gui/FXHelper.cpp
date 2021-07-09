@@ -35,16 +35,11 @@ size_t FXHelper::FillDevs()
 		int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
 		if (pid != -1) {
 			devs.push_back(dev);
-			dev->Reset(true);
+			dev->ToggleState(config->lightsOn, afx_dev.GetMappings(), config->offPowerButton);
 		}
 	}
 	return devs.size();
 }
-
-//vector<pair<DWORD,DWORD>> FXHelper::GetDevList() {
-//	vector<pair<DWORD,DWORD>> devList = afx_dev.AlienFXEnumDevices();
-//	return devList;
-//}
 
 void FXHelper::TestLight(int did, int id)
 {
@@ -203,7 +198,7 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 	}
 	if (dev != NULL) {
 		bool devReady = dev->IsDeviceReady();// false;
-		int wcount;
+		//int wcount;
 		//for (wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
 		//	Sleep(20);
 		if (!force && !devReady) {
@@ -226,8 +221,8 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 				if (config->stateOn || !config->offPowerButton)
 					ret = dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 						actions[1].r, actions[1].g, actions[1].b, force);
-				else
-					ret = dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0, force);
+				//else
+				//	ret = dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0, force);
 #ifdef _DEBUG
 				//while (!dev->IsDeviceReady()) Sleep(5);
 				startTime = GetTickCount64() - startTime;
@@ -245,9 +240,9 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 					dev->SetAction(id, actions);
 				}
 			}
-			else {
-				dev->SetColor(id, 0, 0, 0);
-			}
+			//else {
+			//	dev->SetColor(id, 0, 0, 0);
+			//}
 	}
 	else
 		return false;
@@ -265,6 +260,12 @@ void FXHelper::RefreshMon()
 	config->SetStates();
 	if (config->enableMon)
 		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, true);
+}
+
+void FXHelper::ChangeState(bool newState) {
+	for (int i = 0; i < devs.size(); i++) {
+		devs[i]->ToggleState(newState, afx_dev.GetMappings(), config->offPowerButton);
+	}
 }
 
 int FXHelper::Refresh(bool forced)

@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v2.3.0" << endl;
+	cerr << "alienfx-cli v2.4.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -142,8 +142,7 @@ int main(int argc, char* argv[])
 					}
 					cout << endl;
 					for (int k = 0; k < afx_map->GetMappings()->size(); k++) {
-						if (afx_map->GetDevices()->at(i).devid ==
-							afx_map->GetMappings()->at(k).devid) {
+						if (devs[i].second == afx_map->GetMappings()->at(k).devid) {
 							cout << "  Light ID#" << afx_map->GetMappings()->at(k).lightid
 								<< " - " << afx_map->GetMappings()->at(k).name;
 							if (afx_map->GetMappings()->at(k).flags)

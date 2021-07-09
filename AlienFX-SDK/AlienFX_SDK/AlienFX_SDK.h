@@ -18,6 +18,10 @@ namespace AlienFX_SDK
 	#define ALIENFX_V3_BUSY 34
 	#define ALIENFX_V3_WAITCOLOR 35
 	#define ALIENFX_V3_WAITUPDATE 36
+    #define ALIENFX_V3_WASON 38
+	// apiv4
+    #define ALIENFX_V4_STARTCOMMAND 0x8c
+    #define ALIENFX_V4_INCOMMAND 0xcc
 
 	// API versions:
 	#define API_V1  0
@@ -117,19 +121,21 @@ namespace AlienFX_SDK
 	private:
 
 		HANDLE devHandle = NULL;
-		bool inSet = false;
-		ULONGLONG lastPowerCall = 0;
+		//bool inSet = false;
+		//ULONGLONG lastPowerCall = 0;
 
 		//byte buffer[65];
 
 		int vid = -1;
 		int pid = -1;
+		int length = -1;
 		int version = -1;
 
 		void SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
 
 	public:
-		int length = -1;
+
+		bool inSet = false;
 		//returns PID
 		int AlienFXInitialize(int vid, int pid = -1);
 
@@ -164,6 +170,8 @@ namespace AlienFX_SDK
 		// Set action for Power button
 		// For now, settings as a default of AWCC, but it possible to do it more complex
 		bool SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force = false);
+
+		bool ToggleState(bool newState, vector <mapping>* mappings, bool power);
 
 		// return current device state
 		BYTE AlienfxGetDeviceStatus();

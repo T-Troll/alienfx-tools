@@ -12,8 +12,6 @@ public:
 	void SwitchActiveProfile(int newID);
 	void StartEvents();
 	void StopEvents();
-	void PauseEvents();
-	void ResumeEvents();
 	void StartProfiles();
 	void StopProfiles();
 	void ToggleEvents();

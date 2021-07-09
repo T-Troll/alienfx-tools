@@ -70,7 +70,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 #ifdef _DEBUG
 	OutputDebugString("Display state changed\n");
 #endif
-	if (conf->offWithScreen) {
+	if (conf->lightsOn && conf->offWithScreen) {
 		if (state == 2) {
 			// Dim display
 			conf->dimmedScreen = true;
@@ -80,7 +80,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 			conf->stateScreen = state;
 			conf->dimmedScreen = false;
 		}
-		fxh->Refresh(true);
+		fxh->ChangeState(conf->stateScreen);
 	} else {
 		conf->dimmedScreen = true;
 		conf->stateScreen = true;
@@ -101,6 +101,7 @@ void EventHandler::SwitchActiveProfile(int newID)
 			conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
 			conf->active_set = newP->lightsets;
+			fxh->Refresh(true);
 			ToggleEvents();
 #ifdef _DEBUG
 			char buff[2048];
@@ -148,32 +149,39 @@ void EventHandler::StopEvents()
 	}
 }
 
-void EventHandler::PauseEvents() {
-	if (dwHandle)
-		SuspendThread(dwHandle);
-}
-
-void EventHandler::ResumeEvents() {
-	if (dwHandle)
-		ResumeThread(dwHandle);
-}
-
 void EventHandler::ToggleEvents()
 {
 	config->SetStates();
-	if (conf->monState && conf->stateOn) {
-		fxh->Refresh();
-		if (!dwHandle)
-			StartEvents();
-		else
-			fxh->RefreshMon();
-	}
-	else
-		if (!conf->monState || !conf->stateOn)
+	if (conf->stateOn) {
+		if (conf->monState) {
+			if (!dwHandle) {
+				fxh->Refresh(true);
+				StartEvents();
+			} else {
+				fxh->RefreshState();
+			}
+		} else {
 			if (dwHandle)
 				StopEvents();
 			else
 				fxh->Refresh(true);
+		}
+	}
+	//if (conf->monState && conf->stateOn) {
+	//	//fxh->Refresh(false);
+	//	if (!dwHandle)
+	//		StartEvents();
+	//	//else
+	//	//	fxh->RefreshMon();
+	//}
+	//else
+	//	if (!conf->monState && conf->stateOn) {
+	//		if (dwHandle)
+	//			StopEvents();
+	//		else
+	//			fxh->Refresh(true);
+	//	} //else
+	//		//fxh->ChangeState(conf->stateOn);
 }
 
 int ScanTaskList() {
@@ -258,19 +266,19 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 			szProcessName=new TCHAR[nameSize];
 			cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, nameSize);
 		}
-#ifdef _DEBUG
-		char buff[2048];
-		sprintf_s(buff, 2047, "Active app switched to %s\n", szProcessName);
-		OutputDebugString(buff);
-#endif
+//#ifdef _DEBUG
+//		char buff[2048];
+//		sprintf_s(buff, 2047, "Active app switched to %s\n", szProcessName);
+//		OutputDebugString(buff);
+//#endif
 		config->foregroundProfile = newp = config->FindProfileByApp(std::string(szProcessName), true);
 		if (newp < 0) {
 			newp = ScanTaskList();
-#ifdef _DEBUG
-			char buff[2048];
-			sprintf_s(buff, 2047, "Active app unknown, switching to ID=%d\n", newp);
-			OutputDebugString(buff);
-#endif
+//#ifdef _DEBUG
+//			char buff[2048];
+//			sprintf_s(buff, 2047, "Active app unknown, switching to ID=%d\n", newp);
+//			OutputDebugString(buff);
+//#endif
 		}
 		even->SwitchActiveProfile(newp);
 	}

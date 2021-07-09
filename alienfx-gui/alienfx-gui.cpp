@@ -63,14 +63,14 @@ char tBuff[4], lBuff[4]; // tooltips
 HWND sTip = 0, lTip = 0;
 
 // ConfigStatic:
-int tabSel = (-1);
+int tabSel = -1;
 
 // Colors
 int effID = -1;
 int eItem = -1;
 
 // Devices
-int eLid = -1, eDid = -1, lItem = -1 , dItem = -1;
+int eLid = -1, eDid = -1, dItem = -1;
 
 // Profiles
 int pCid = -1;
@@ -331,6 +331,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 		delete eve;
+		fxhl->ChangeState(conf->lightsOn);
 
 		if (conf->wasAWCC) DoStopService(false);
 	}
@@ -709,16 +710,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
 		} break;
 		case ID_TRAYMENU_REFRESH:
-			fxhl->RefreshState(true);
+			fxhl->RefreshState();
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
-			eve->ToggleEvents();
+			fxhl->ChangeState(conf->lightsOn);
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 			conf->dimmed = !conf->dimmed;
-			fxhl->RefreshState(true);
+			fxhl->RefreshState();
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING:
@@ -758,6 +759,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #endif
 			if (fxhl->FillDevs() > 0) {
 				eve->ChangePowerState();
+				conf->stateScreen = true;
+				fxhl->ChangeState(conf->lightsOn);
+				fxhl->RefreshState();
+				eve->ToggleEvents();
 				eve->StartProfiles();
 			}
 		} break;
@@ -766,7 +771,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
-			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*)lParam;
+			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*) lParam;
 			if (sParams->PowerSetting == GUID_MONITOR_POWER_ON || sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE
 				|| sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS) {
 				eve->ChangeScreenState(sParams->Data[0]);
@@ -777,7 +782,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
 			OutputDebugString("Sleep/hibernate initiated\n");
 #endif
+			conf->stateScreen = true;
+			fxhl->ChangeState(conf->lightsOn);
+			fxhl->RefreshState();
 			eve->StopProfiles();
+			eve->StopEvents();
 			break;
 		}
 		break;
@@ -786,33 +795,38 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
 		OutputDebugString("Shutdown initiated\n");
 #endif
+		conf->Save();
+		//eve->StopProfiles();
+		//eve->StopEvents();
 		SendMessage(hDlg, WM_CLOSE, 0, 0);
+		return true;
 		break;
 	case WM_HOTKEY:
 		switch (wParam) {
 		case 1: // on/off
 			conf->lightsOn = !conf->lightsOn;
-			eve->ToggleEvents();
+			fxhl->ChangeState(conf->lightsOn);
 			break;
 		case 2: // dim
 			conf->dimmed = !conf->dimmed;
-			fxhl->RefreshState(true);
+			fxhl->RefreshState();
 			break;
 		case 3: // off-dim-full circle
 			if (conf->lightsOn) {
 				if (conf->dimmed) {
-					conf->lightsOn = !conf->lightsOn;
-					conf->dimmed = !conf->dimmed;
-					eve->ToggleEvents();
+					conf->lightsOn = false;
+					conf->dimmed = false;
+					fxhl->ChangeState(conf->lightsOn);
 				}
 				else {
 					conf->dimmed = !conf->dimmed;
-					fxhl->RefreshState(true);
+					fxhl->RefreshState();
 				}
 			}
 			else {
-				conf->lightsOn = !conf->lightsOn;
-				eve->ToggleEvents();
+				conf->lightsOn = true;
+				fxhl->ChangeState(conf->lightsOn);
+				fxhl->RefreshState();
 			}
 			break;
 		case 4: // mon
@@ -822,7 +836,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		default: return false;
 		}
 		break;
-	case WM_CLOSE:
+	case WM_CLOSE: case WM_ENDSESSION:
 		Shell_NotifyIcon(NIM_DELETE, &niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
@@ -995,6 +1009,11 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		 type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
 	// Populate effects list...
 	ListView_DeleteAllItems(eff_list);
+	LVCOLUMNA lCol;
+	lCol.mask = LVCF_WIDTH;
+	ListView_GetColumn(eff_list, 0, & lCol);
+	if (lCol.cx < 0)
+		ListView_InsertColumn(eff_list, 0, &lCol);
 	if (mmap) {
 		HIMAGELIST hSmall;
 		hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
@@ -1060,6 +1079,9 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		EnableWindow(l1_slider, false);
 		RedrawButton(hDlg, IDC_BUTTON_C1, 0, 0, 0);
 	}
+	RECT csize;
+	GetClientRect(eff_list, &csize);
+	ListView_SetColumnWidth(eff_list, 0, csize.right - csize.left);
 }
 
 int UpdateLightList(HWND light_list) {
@@ -1077,12 +1099,17 @@ int UpdateLightList(HWND light_list) {
 	return pos;
 }
 
-int UpdateLightListC(HWND hDlg, int pid, int lid) {
-	int pos = -1;
+void UpdateLightListC(HWND hDlg, int pid, int lid) {
+	//int pos = -1;
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
 	HWND light_list = GetDlgItem(hDlg, IDC_LIST_LIGHTS); 
 
 	ListView_DeleteAllItems(light_list);
+	LVCOLUMNA lCol;
+	lCol.mask = LVCF_WIDTH;
+	ListView_GetColumn(light_list, 0, & lCol);
+	if (lCol.cx < 0)
+		ListView_InsertColumn(light_list, 0, &lCol);
 	for (int i = 0; i < lights; i++) {
 		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
 		if (pid == lgh.devid) { // && fxhl->LocateDev(lgh.devid)) {
@@ -1098,17 +1125,20 @@ int UpdateLightListC(HWND hDlg, int pid, int lid) {
 				lItem.state = LVIS_SELECTED;
 				SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
 				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(pid, lid) ? BST_CHECKED : BST_UNCHECKED);
-				pos = i;
+				//pos = i;
 			}
 			ListView_InsertItem(light_list, &lItem);
 		}
 	}
+	RECT csize;
+	GetClientRect(light_list, &csize);
+	ListView_SetColumnWidth(light_list, 0, csize.right - csize.left);
 	BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();
 	if (status && status != 0xff)
 		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
 	else
 		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
-	return pos;
+	//return pos;
 }
 
 lightset* CreateMapping(int lid) {
@@ -1575,8 +1605,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND //light_list = GetDlgItem(hDlg, IDC_LIGHTS_S),
-		light_view = GetDlgItem(hDlg, IDC_LIST_LIGHTS),
+	HWND light_view = GetDlgItem(hDlg, IDC_LIST_LIGHTS),
 		dev_list = GetDlgItem(hDlg, IDC_DEVICES),
 		light_id = GetDlgItem(hDlg, IDC_LIGHTID);
 	switch (message)
@@ -1585,11 +1614,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		// First, reset all light devices and re-sscan!
 		eve->StopProfiles();
-		eve->PauseEvents();// StopEvents();
+		eve->StopEvents();
 		size_t numdev = fxhl->FillDevs();
 		size_t numharddev = fxhl->afx_dev.GetDevices()->size();
 		size_t lights = fxhl->afx_dev.GetMappings()->size();
-		eve->ResumeEvents();// StartEvents();
+		eve->StartEvents();
 		eve->StartProfiles();
 		// Now check current device list..
 		int cpid = (-1), pos = (-1);
@@ -1624,7 +1653,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 		}
 
-		eLid = -1; lItem = -1;
+		eLid = -1;
 
 		if (numdev > 0) {
 			if (eDid == -1) { // no selection, let's try to select dev#0
@@ -1648,7 +1677,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case CBN_SELCHANGE: {
 				conf->lastActive = did;
 				UpdateLightListC(hDlg, did, -1);
-				eLid = lItem = -1; eDid = did; dItem = dbItem;
+				eLid = -1;
+				eDid = did; dItem = dbItem;
 			} break;
 			case CBN_EDITCHANGE:
 				char buffer[MAX_PATH];
@@ -1690,7 +1720,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fxhl->afx_dev.GetMappings()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			eLid = cid;
-			lItem = UpdateLightListC(hDlg, eDid, cid);
+			UpdateLightListC(hDlg, eDid, cid);
 			fxhl->TestLight(eDid, cid);
 		} break;
 		case IDC_BUTTON_REML:
@@ -1707,12 +1737,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// reset active mappings
 				conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
 				std::vector <AlienFX_SDK::mapping>* mapps = fxhl->afx_dev.GetMappings();
+				int nLid = -1;
 				for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
-					Iter != mapps->end(); Iter++)
+					 Iter != mapps->end(); Iter++)
 					if (Iter->devid == eDid && Iter->lightid == eLid) {
 						mapps->erase(Iter);
 						break;
-					}
+					} else nLid = Iter->lightid;
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
 				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
@@ -1721,18 +1752,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						MB_OK);
 					CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 				}
-				lItem--;
-				if (lItem >= 0) {
-					LVITEMA iItem;
-					iItem.mask = LVIF_PARAM;
-					iItem.iItem = lItem;
-					ListView_GetItem(light_view, &iItem);
-					eLid = iItem.lParam;
-				}
-				else {
-					eLid = -1;
+				if (nLid < 0) {
 					SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
 				}
+				eLid = nLid;
 				UpdateLightListC(hDlg, eDid, eLid);
 				fxhl->TestLight(eDid, eLid);
 			}
@@ -1820,7 +1843,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				eLid = lItem.lParam;
 				SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
 				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) ? BST_CHECKED : BST_UNCHECKED);
-				eve->PauseEvents();// StopEvents();
+				eve->StopEvents();
 				// highlight to check....
 				fxhl->TestLight(eDid, eLid);
 			} break;
@@ -1841,15 +1864,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				} 
 				SetDlgItemInt(hDlg, IDC_LIGHTID, sItem->item.lParam, false);
 				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, sItem->item.lParam) ? BST_CHECKED : BST_UNCHECKED);
-				eve->PauseEvents();
+				eve->StopEvents();
 				// StopEvents();
 				// highlight to check....
 				fxhl->TestLight(eDid, sItem->item.lParam);
 				return false;
 			} break;
 			case NM_KILLFOCUS:
-				fxhl->RefreshState();
-				eve->ResumeEvents();// ToggleEvents();
+				eve->ToggleEvents();
 				fxhl->afx_dev.SaveMappings();
 				break;
 			}
@@ -1865,11 +1887,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	return true;
 }
 
-int ReloadProfileView(HWND hDlg, int cID) {
-	int rpos = -1;
+void ReloadProfileView(HWND hDlg, int cID) {
+	//int rpos = -1;
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 	ListView_DeleteAllItems(profile_list);
+	LVCOLUMNA lCol;
+	lCol.mask = LVCF_WIDTH;
+	ListView_GetColumn(profile_list, 0, & lCol);
+	if (lCol.cx < 0)
+		ListView_InsertColumn(profile_list, 0, &lCol);
 	for (int i = 0; i < conf->profiles.size(); i++) {
 			LVITEMA lItem; 
 			lItem.mask = LVIF_TEXT | LVIF_PARAM;
@@ -1887,11 +1914,14 @@ int ReloadProfileView(HWND hDlg, int cID) {
 				CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, conf->profiles[i].flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
 				SendMessage(app_list, LB_RESETCONTENT, 0, 0);
 				SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].triggerapp.c_str()));
-				rpos = i;
+				//rpos = i;
 			}
 			ListView_InsertItem(profile_list, &lItem);
 	}
-	return rpos;
+	RECT csize;
+	GetClientRect(profile_list, &csize);
+	ListView_SetColumnWidth(profile_list, 0, csize.right - csize.left - 1);
+	//return rpos;
 }
 
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -1938,15 +1968,17 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					eve->SwitchActiveProfile(conf->defaultProfile);
 				}
 				// Now remove profile....
+				int nCid = conf->activeProfile;
 				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 					Iter != conf->profiles.end(); Iter++)
 					if (Iter->id == pCid) { //prid) {
 						conf->profiles.erase(Iter);
 						break;
-					}
+					} else
+						nCid = Iter->id;
 
-				ReloadProfileView(hDlg, conf->activeProfile);
-				pCid = conf->activeProfile;
+				ReloadProfileView(hDlg, nCid);
+				pCid = nCid;
 				ReloadProfileList(NULL);
 			}
 			else
@@ -2140,7 +2172,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_LON:
 			conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			eve->ToggleEvents();
+			fxhl->ChangeState(conf->lightsOn);
 			break;
 		case IDC_CHECK_DIM:
 			conf->dimmed = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
