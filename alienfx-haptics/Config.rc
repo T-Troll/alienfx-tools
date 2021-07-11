@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,3,0,0
- PRODUCTVERSION 2,4,0,0
+ FILEVERSION 3,0,0,0
+ PRODUCTVERSION 3,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040004b0"
         BEGIN
             VALUE "FileDescription", "AlienFX Haptics"
-            VALUE "FileVersion", "2.3.0.0"
+            VALUE "FileVersion", "3.0.0.0"
             VALUE "InternalName", "alienfx-haptics.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "alienfx-haptics.exe"
             VALUE "ProductName", "AlienFX Tools"
-            VALUE "ProductVersion", "2.4.0.0"
+            VALUE "ProductVersion", "3.0.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -165,12 +165,12 @@ BEGIN
     CONTROL         "HPC",IDC_BUTTON_HPC,"Button",BS_OWNERDRAW | WS_TABSTOP,48,136,36,16
     PUSHBUTTON      "Clear",IDC_BUTTON_REMOVE,90,136,36,33
     PUSHBUTTON      "Refresh",IDC_BUTTON_REFRESH,309,144,46,14
-    CONTROL         "Button2",IDC_VIEW_LEVELS,"Button",BS_OWNERDRAW,7,11,214,114
     LTEXT           "Levels",IDC_STATIC,7,1,21,8
     PUSHBUTTON      "Minimize",IDC_MINIMIZE,367,144,44,14
     GROUPBOX        "Colors and cuts",IDC_STATIC,7,127,214,48
     CONTROL         "",IDC_SLIDER_HICUT,"msctls_trackbar32",TBS_AUTOTICKS | TBS_TOP | WS_TABSTOP,12,153,78,15,WS_EX_TRANSPARENT
     CONTROL         "Show Axis",IDC_SHOWAXIS,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | BS_RIGHT | WS_TABSTOP,172,1,49,8
+    CONTROL         "",IDC_LEVELS,"Static",SS_OWNERDRAW | WS_DISABLED,7,11,214,114
 END
 
 

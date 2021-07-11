@@ -8,39 +8,37 @@ using namespace std;
 namespace AlienFX_SDK
 
 {	
-	// Old alieware device statuses
+	// Old alieware device statuses v1-v3
 	#define ALIENFX_V2_RESET 0x06
 	#define ALIENFX_V2_READY 0x10
 	#define ALIENFX_V2_BUSY 0x11
 	#define ALIENFX_V2_UNKNOWN 0x12
-	// new statuses for apiv3 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
-	#define ALIENFX_V3_READY 33
-	#define ALIENFX_V3_BUSY 34
-	#define ALIENFX_V3_WAITCOLOR 35
-	#define ALIENFX_V3_WAITUPDATE 36
-    #define ALIENFX_V3_WASON 38
-	// apiv4
-    #define ALIENFX_V4_STARTCOMMAND 0x8c
-    #define ALIENFX_V4_INCOMMAND 0xcc
-
-	// API versions:
-	#define API_V1  0
-	#define API_V2  1
-	#define API_V25 2
-	#define API_V3  3
-	#define API_V4  4
+	// new statuses for apiv4 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
+	#define ALIENFX_V4_READY 33
+	#define ALIENFX_V4_BUSY 34
+	#define ALIENFX_V4_WAITCOLOR 35
+	#define ALIENFX_V4_WAITUPDATE 36
+    #define ALIENFX_V4_WASON 38
+	// apiv5
+    #define ALIENFX_V5_STARTCOMMAND 0x8c
+    #define ALIENFX_V5_INCOMMAND 0xcc
 
 	// Length by API version:
-	#define API_L_V4 64
-	#define API_L_V3 34
-	#define API_L_V2 12
+	#define API_L_V5 64
+	#define API_L_V4 34
+	#define API_L_V3 12
+    #define API_L_V2 9
 	#define API_L_V1 8
 
+	// Mapping flags:
+    #define ALIENFX_FLAG_POWER 1
+    #define ALIENFX_FLAG_INACTIVE 2
+
 	// delay for power button update
-    //#define POWER_DELAY 300
+    #define POWER_DELAY 450
 
 	// Maximal buffer size across all device types
-    #define MAX_BUFFERSIZE 65
+    #define MAX_BUFFERSIZE 64
 
 	struct mapping {
 		DWORD devid = 0;
@@ -111,9 +109,11 @@ namespace AlienFX_SDK
 	const static DWORD vids[2] = {0x187c, 0x0d62};
 
 	/* ????, left, leftmidlde, rightMiddle, right, backLogo, frontLogo, leftTop, rightTop, rightBottom, Power, touchPad */ 
-	static int mask8[] = {  0x100, 0x8, 0x4, 0x1, 0x2,    0, 0x40,0x1000, 0x400,0x2000,  0x800,   0x80, 0x20},
-		    mask12_4[] = {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40, 0x200, 0x080, 0x280,    0xf,    0x0},
-		    mask12_8[] = {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40,  0x80, 0x400, 0x800, 0x1000, 0x2000};
+	const static int masks[][13] = {{  0x100, 0x8, 0x4, 0x1, 0x2,    0, 0x40,0x1000, 0x400,0x2000,  0x800,   0x80, 0x20},
+							   {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40, 0x200, 0x080, 0x280,    0xf,    0x0,  0x0},
+							   {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40,  0x80, 0x400, 0x800, 0x1000, 0x2000,  0x0}};
+		    //mask12_4[] = {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40, 0x200, 0x080, 0x280,    0xf,    0x0},
+		    //mask12_8[] = {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40,  0x80, 0x400, 0x800, 0x1000, 0x2000};
 	                       //0      1    2    3    4    5     6       7       8      9     10      11     12
 
 	class Functions
@@ -122,9 +122,7 @@ namespace AlienFX_SDK
 
 		HANDLE devHandle = NULL;
 		//bool inSet = false;
-		//ULONGLONG lastPowerCall = 0;
-
-		//byte buffer[65];
+		ULONGLONG lastPowerCall = 0;
 
 		int vid = -1;
 		int pid = -1;

@@ -86,14 +86,17 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		OutputDebugString("Forced Counter update initiated...\n");
 #endif
 
-	if (config->autoRefresh) Refresh();
+	if (config->autoRefresh) {
+		Refresh();
+		force = true;
+	}
 
 	std::vector <lightset>::iterator Iter;
 	bStage = !bStage;
 	int lFlags = 0;
 	bool wasChanged = false;
 	if (force) {
-		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = -1; lTemp = -1; lBatt = 101;
+		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = 101; lTemp = 101; lBatt = 101;
 	}
 	bool tHDD = (lHDD && !cHDD) || (!lHDD && cHDD),
 		tNet = (lNET && !cNet) || (!lNET && cNet);
@@ -170,9 +173,11 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 
 void FXHelper::UpdateColors(int did)
 {
-	for (int i = 0; i < devs.size(); i++)
-		if (did == -1 || did == devs[i]->GetPID())
-			devs[i]->UpdateColors();
+	if (config->stateOn) {
+		for (int i = 0; i < devs.size(); i++)
+			if (did == -1 || did == devs[i]->GetPID())
+				devs[i]->UpdateColors();
+	}
 }
 
 bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::afx_act> actions, bool force)
@@ -218,7 +223,7 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 				//OutputDebugString(buff);
 				ULONGLONG startTime = GetTickCount64();
 #endif
-				if (config->stateOn || !config->offPowerButton)
+				if (config->stateOn)// || !config->offPowerButton)
 					ret = dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
 						actions[1].r, actions[1].g, actions[1].b, force);
 				//else
@@ -227,7 +232,7 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 				//while (!dev->IsDeviceReady()) Sleep(5);
 				startTime = GetTickCount64() - startTime;
 				//char buff[2048];
-				sprintf_s(buff, 2047, "System ready after power button set in %d ms\n", startTime);
+				sprintf_s(buff, 2047, "System ready after power button set in %lld ms\n", startTime);
 				OutputDebugString(buff);
 #endif
 			}
@@ -240,7 +245,8 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 					dev->SetAction(id, actions);
 				}
 			}
-			//else {
+			//else 
+			//if (!config->offPowerButton){
 			//	dev->SetColor(id, 0, 0, 0);
 			//}
 	}
@@ -264,7 +270,10 @@ void FXHelper::RefreshMon()
 
 void FXHelper::ChangeState(bool newState) {
 	for (int i = 0; i < devs.size(); i++) {
-		devs[i]->ToggleState(newState, afx_dev.GetMappings(), config->offPowerButton);
+		//if (devs[i]->GetVersion() > 3 || config->offPowerButton)
+			devs[i]->ToggleState(newState, afx_dev.GetMappings(), config->offPowerButton);
+		if (newState && devs[i]->GetVersion() < 4)
+			RefreshState();
 	}
 }
 

@@ -264,7 +264,7 @@ DWORD WINAPI CInProc(LPVOID param)
 DWORD WINAPI CDlgProc(LPVOID param)
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-	while (WaitForSingleObject(stopEvent, 200) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(stopEvent, 50) == WAIT_TIMEOUT) {
 		if (!IsIconic(hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //	OutputDebugString("UI update...\n");

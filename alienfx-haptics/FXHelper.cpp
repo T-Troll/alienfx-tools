@@ -75,7 +75,7 @@ void FXHelper::FillDevs()
 		int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
 		if (pid != -1) {
 			devs.push_back(dev);
-			dev->Reset(true);
+			dev->ToggleState(true, afx_dev.GetMappings(), false);
 		}
 	}
 }

@@ -12,22 +12,28 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 10 (binary files for x64 only, but you can compile project for x86 as well).
 
-## Devices tested: 
-- `Alienware m15R1-R4` (API v3)
-- `Alienware m17R1` (API v3) 
+## Devices tested:
+- `Alienware m15R3-R4` Per-key keyboard lights (API v4 + API v5)
+- `Alienware m15R1-R4` 4-zone keyboard ligths (API v4)
+- `Alienware m17R1` (API v4) 
+- `Dell G5/G5SE` (API v4)
+- `Alienware M17R5` (API v3)
 - `Alienware M13R2` (API v2)
-- `Alienware M17R5` (API v2.5)
-- `Dell G5/G5SE` (API v3)
 - `Alienware M14x` (API v1)
 
-Tools should work with any Alienware device with API v1 or later, per-button light keyboard devices and some external devices like mouses doesn't supported yet.
+This tools can also support other Dell/Alienware devices:
+- APIv1 - 8-bytes command, 24-bit color,
+- APIv2 - 9-bytes command, 12-bit color,
+- APIv3 - 12-bytes command, 24-bit color,
+- APIv4 - 34-bytes command, 24-bit color,
+- APIv5 - 64-bytes command, 24-bit color (DARFON OEM keyboards).
+
+External mouses, keyboards and monitors are not supported yet, feel free to open an issue if you want to add support for it, but be ready to help with testing!
 
 ## Known issues
-- Per-button light keyboard devices (API v4, 64 bytes command) does not supported (i'm working on it). But you still can control other lights (logo, power).
-- External devices (mouse, display) not supported - they have different vendor ID (i'm working on it).
 - Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.
 - `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).
-- Hardware light effects morph, breathing, spectrum, rainbow doesn't supported for older (v1, v2) devices.
+- Hardware light effects breathing, spectrum, rainbow doesn't supported for older (v1-v3) devices.
 - Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use gui, haptics or ambient application. Keep it working can provide unexpected results, especially if you handle Power Button in gui app.
@@ -35,16 +41,10 @@ Tools should work with any Alienware device with API v1 or later, per-button lig
 - **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `alienfx-ambient` from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
 
 ## Installation
-Download latest release archive from [here](https://github.com/T-Troll/alienfx-tools/releases).  
-Unpack the archive to any directory of your choise.  
-After unpack, run `alienfx-probe` or `alienfx-gui` to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not work correctly wihout this operation).  
+Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
+Unpack the archive to any directory of your choise or just run installer.  
+After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not work correctly wihout this operation).  
 Run any tool you need from this folder!
-
-## alienfx-probe Usage
-`alienfx-probe.exe` is a probe for light IDs of the low-level DSK, and it assign names for them (similar to alienfx-led-tester, but wider device support) as well.  
-Then run, it shows some info, then switch lights to green one-by-one and prompt to enter devices and lights name (you can enter name or ID from high-level SDK - it's also shown as a part of info). Then the name is set, light switched to blue. If you didn't see which light is changed, just press ENTER to skip it.  
-It's check 16 first lights into the system by default, but you can change this value runnning `alienfx-probe.exe [number of lights]`.  
-The purpose of this app is to check low-level API and to prepare light names for other apps, this names are stored and will be used in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
 
 ## alienfx-cli Usage
 Run `alienfx-cli.exe` with a command and any options for that command. `alienfx-cli` uses low-level (USB driver) access by default, but you can switch to high-level SDK (Alienware LightFX) issuing `high-level` command. 
@@ -61,6 +61,8 @@ The following commands are available:
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `set-dev=<pid>` Switch active device to this PID (low-level only).
+- `lightson` Turn all current device lights on.
+- `lightsoff` Turn all current device lights off.
 - `Update` Updates light status (for looped commands or old devices).
 - `Reset` Reset current device.
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
@@ -68,7 +70,7 @@ The following commands are available:
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 
 Supported Zones: `left, right, top, bottom, front, rear`  
-Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For low-level api V3, it also support `breath, spectrum, rainbow`.
+Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For api v4 devices, `breath, spectrum, rainbow` also supported.
 
 ## alienfx-haptics Usage
 Run `alienfx-haptics.exe`. Set the colors for lights and it’s mapping to respond the frequency.  
@@ -80,10 +82,11 @@ This application get audio stream from default output or input device (you can s
 After that, spectrum powers grouped into 20 groups using octave scale.  
 For each light found into the system, you can define group(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
 It's also possible to compress diapason if group always not so or so high powered - use low-level and high-level sliders. Low-level slider define minimum power to react (all below will be treated as zero), and Hi-level slider defines maximum level (all above will be treated as maximum).  
-”Clear” button set all colors to black and sliders to default value.  
-”Refresh” button rescan all lights into the system (it’s useful if you connect/disconnect new light device) and restart audio capture stream (in case you switch or remove audio device).  
-”Remove” button remove all lights settings across all lights. Use with care!  
-”Minimize” button (or top menu minimize) will hide application into the system tray. Left-click the tray icon to open it back, right-click it to close application.
+"Clear” button set all colors to black and sliders to default value.  
+"Refresh” button rescan all lights into the system (it’s useful if you connect/disconnect new light device) and restart audio capture stream (in case you switch or remove audio device).  
+"Remove" button remove all lights settings across all lights. Use with care!  
+"Minimize" button (or top menu minimize) will hide application into the system tray. Left-click the tray icon to open it back, right-click it to close application.  
+"Axis" checkbox enable axis lines and marks at sound visualisation window.
 
 ## alienfx-ambient Usage
 Run `alienfx-ambient.exe`. At first launch, set screen zones mapping to lights and parameters.  
@@ -116,10 +119,10 @@ Use "Effects" list to add/remove/select effect. For each effect, you can define 
 Available effect modes are:
 - Color - Stay at solid color defined.
 - Pulse - Switch between defined color and black.
-- Morph - Morph light from previous color to current one. (for devices with APIv3 and higher)
-- Breath - Morph light from black to current color. (for devices with APIv3 and higher)
-- Spectrum - Like a morph, but up to 9 colors can be defined. (for devices with APIv3 and higher)
-- Rainbow - Like a Color, but can use up to 9 colors. (for devices with APIv3 and higher)
+- Morph - Morph light from previous color to current one.
+- Breath - Morph light from black to current color. (for devices with APIv4)
+- Spectrum - Like a morph, but up to 9 colors can be defined. (for devices with APIv4)
+- Rainbow - Like a Color, but can use up to 9 colors. (for devices with APIv4)
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.  
 “Set All” button copy current light effects to all lights into the list (it’s useful if you need to have all lights into the same color and mode).  
@@ -151,12 +154,14 @@ You can mix different monitoring type at once, f.e. different colors for same li
 "Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
 "Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.  
 "Lights" list shows all lights defined for selected device. Use “Add”/”Remove” buttons to add new light or remove selected one.  
-NB: If you want to add new light, type light ID into LightID box before pressing “Add” button. If this ID already present in list or absent, it will be changed to the first unused ID. Don't try to enter light name at this stage, it's always set to default for easy recognition, change it later for desired one.  
+NB: If you want to add new light, type light ID into LightID box **before** pressing “Add” button. If this ID already present in list or absent, it will be changed to the first unused ID.  
+Doubleclick or press Enter on selected light to edit it's name.  
 "Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.  
 "Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
 Selected light changes it color to the one defined by "Test color" button, and fade to black then unselected.
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.  
+You can doubleclick or press Enter on selected profile into the list to edit it's name.  
 Each profile can have settings and application for trigger it. The settings are:
 - "Application" - Defines application executable for trigger profile switch if "Profile auto switch" enabled.
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fits any other profile. There is can be only one Default profile, and it can't be deleted.
@@ -198,6 +203,13 @@ Other shortcuts (only then application active):
 
 **WARNING:** All color effects stop working if you enable any Event monitoring. It’s a hardware bug – any light update operation restart all effects.
 
+## alienfx-probe Usage
+`alienfx-probe.exe` is a simple CLI interface for assigning names for devices and lights into low-level DSK (similar to alienfx-led-tester, but with wider devices support).  
+Then run, it shows some info, switch lights to green one-by-one and prompt to enter devices and lights name.  
+Then the name is set, light switched to blue. If you didn't see which light is changed, just press ENTER to skip it.  
+It's check 13 first lights (or 136 for keyboard devices) by default, but you can change this value runnning `alienfx-probe.exe [number of lights]`.  
+This names are stored and will be used in `alienfx-haptics` and `alienfx-ambient` as a light names for UI.
+
 ## Tools Used
 * Visual Studio Community 2019
 
@@ -212,4 +224,5 @@ Spectrum Analyzer UI is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://gi
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
 Dominant light extraction math based on [OpenCV](https://github.com/opencv/opencv) library.  
+Per-Key RGB devices testing and support by [rirozizo](https://github.com/rirozizo).  
 Special thanks to [PhSHu](https://github.com/PhSMu) for ideas, testing and artwork.

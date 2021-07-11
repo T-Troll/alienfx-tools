@@ -14,8 +14,8 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	int numlights = 12;
-	cout << "alienfx-probe v2.4.0" << endl;
+	int numlights = 13;
+	cout << "alienfx-probe v3.0.0" << endl;
 	cout << "For each light please enter LightFX SDK light ID or light name if ID is not available" << endl
 		<< "Tested light become green, and turned off after testing." << endl
 		<< "Just press Enter if no visible light at this ID to skip it." << endl; 

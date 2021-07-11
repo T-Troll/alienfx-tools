@@ -710,7 +710,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
 		} break;
 		case ID_TRAYMENU_REFRESH:
-			fxhl->RefreshState();
+			fxhl->RefreshState(true);
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
@@ -719,7 +719,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 			conf->dimmed = !conf->dimmed;
-			fxhl->RefreshState();
+			fxhl->RefreshState(true);
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING:
@@ -863,6 +863,7 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 	FillRect(cnt, &rect, Brush);
 	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
+	ReleaseDC(tl, cnt);
 }
 
 DWORD CColorRefreshProc(LPVOID param) {
@@ -1234,10 +1235,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			{
 			case LBN_SELCHANGE:
 				eItem = lbItem;
-				if (mmap && fxhl->afx_dev.GetMappings()->at(lid).flags && mmap->eve[0].map.size() < 2) {
-					AlienFX_SDK::afx_act act;
-					mmap->eve[0].map.push_back(act);
-				}
 				effID = 0;
 				RebuildEffectList(hDlg, mmap);
 				break;
@@ -1302,10 +1299,26 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (mmap != NULL &&
 					MessageBox(hDlg, "Do you really want to set all lights to this settings?", "Warning!",
 						MB_YESNO | MB_ICONWARNING) == IDYES) {
-					for (int i = 0; i < conf->active_set.size(); i++)
-						if (!fxhl->afx_dev.GetFlags(conf->active_set[i].devid, conf->active_set[i].lightid)) {
-							conf->active_set[i].eve[0] = mmap->eve[0];
+					event light = mmap->eve[0];
+					for (int i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
+						AlienFX_SDK::mapping map = fxhl->afx_dev.GetMappings()->at(i);
+						if (!map.flags && fxhl->LocateDev(map.devid)) {
+							int j;
+							for (j = 0; j < conf->active_set.size(); j++)
+								if (conf->active_set[j].devid == map.devid &&
+									conf->active_set[j].lightid == map.lightid) {
+									// change mapping
+									conf->active_set[j].eve[0] = light;
+									break;
+								}
+							if (j == conf->active_set.size()) {
+								// create new mapping
+								lightset* newmap = CreateMapping(i);
+								newmap->eve[0] = light;
+								conf->active_set.push_back(*mmap);
+							}
 						}
+					}
 					fxhl->RefreshState(true);
 				}
 			} break;
@@ -1347,7 +1360,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_EFFECTS_LIST:
-			if (((NMHDR*)lParam)->code == NM_CLICK) {
+			switch (((NMHDR*) lParam)->code) {
+			case NM_CLICK:
+			{
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
 				// Select other color....
 				effID = sItem->iItem;
@@ -1355,6 +1370,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (mmap != NULL) {
 					RebuildEffectList(hDlg, mmap);
 				}
+			} break;
 			}
 			break;
 		}
@@ -1612,7 +1628,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 	case WM_INITDIALOG:
 	{
-		// First, reset all light devices and re-sscan!
+		// First, reset all light devices and re-scan!
 		eve->StopProfiles();
 		eve->StopEvents();
 		size_t numdev = fxhl->FillDevs();
@@ -1732,7 +1748,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 					Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
-					RemoveMapping(&Iter->lightsets, did, eLid);
+					RemoveMapping(&Iter->lightsets, eDid, eLid);
 				}
 				// reset active mappings
 				conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
@@ -1769,7 +1785,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 					Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
-					RemoveMapping(&Iter->lightsets, did, eLid);
+					RemoveMapping(&Iter->lightsets, eDid, eLid);
 				}
 				// reset active mappings
 				conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
@@ -1840,7 +1856,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				lItem.mask = LVIF_PARAM;
 				lItem.iItem = sItem->iItem;
 				ListView_GetItem(light_view, &lItem);
-				eLid = lItem.lParam;
+				eLid = (int)lItem.lParam;
 				SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
 				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) ? BST_CHECKED : BST_UNCHECKED);
 				eve->StopEvents();
@@ -1862,12 +1878,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						}
 					}
 				} 
-				SetDlgItemInt(hDlg, IDC_LIGHTID, sItem->item.lParam, false);
-				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, sItem->item.lParam) ? BST_CHECKED : BST_UNCHECKED);
+				SetDlgItemInt(hDlg, IDC_LIGHTID, (UINT)sItem->item.lParam, false);
+				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, (int)sItem->item.lParam) ? BST_CHECKED : BST_UNCHECKED);
 				eve->StopEvents();
 				// StopEvents();
 				// highlight to check....
-				fxhl->TestLight(eDid, sItem->item.lParam);
+				fxhl->TestLight(eDid, (int)sItem->item.lParam);
 				return false;
 			} break;
 			case NM_KILLFOCUS:
@@ -2081,7 +2097,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				lItem.mask = LVIF_PARAM;
 				lItem.iItem = sItem->iItem;
 				ListView_GetItem(p_list, &lItem);
-				pCid = lItem.lParam;
+				pCid = (int)lItem.lParam;
 				profile* prof = conf->FindProfile(pCid);
 				if (prof) {
 					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
@@ -2095,7 +2111,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case LVN_ENDLABELEDIT:
 			{
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*) lParam;
-				profile* prof = conf->FindProfile(sItem->item.lParam);
+				profile* prof = conf->FindProfile((int)sItem->item.lParam);
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
 					ListView_SetItem(p_list, &sItem->item);

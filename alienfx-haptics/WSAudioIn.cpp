@@ -3,6 +3,7 @@
 #include "Graphics.h"
 #include "FXHelper.h"
 #include "DFT_gosu.h"
+#include "resource_config.h"
 
 DWORD WINAPI WSwaveInProc(LPVOID);
 
@@ -35,7 +36,7 @@ WSAudioIn::WSAudioIn(int N, int type, void* gr, void* fx, void* dft)
 	fxh = (FXHelper*) fx;
 	dftGG = (DFT_gosu*) dft;
 	gHandle = (Graphics*) gr;
-	waveD = (double*)malloc(NUMSAM * sizeof(double));
+	waveD = new double[NUMSAM];
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	hDlg = ((Graphics*)gHandle)->GetDlg();
 	((Graphics*)gHandle)->SetAudioObject(this);
@@ -46,7 +47,7 @@ WSAudioIn::WSAudioIn(int N, int type, void* gr, void* fx, void* dft)
 WSAudioIn::~WSAudioIn()
 {
 	release();
-	free(waveD);
+	delete[] waveD;
 }
 
 void WSAudioIn::startSampling()
@@ -223,10 +224,11 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 		{
 		case WAIT_OBJECT_0+1:
 			// got new buffer....
+			// = 0;
 			pCapCli->GetNextPacketSize(&packetLength);
 			while (packetLength != 0) {
 				int ret = pCapCli->GetBuffer(
-					(BYTE**)&pData,
+					(BYTE**) &pData,
 					&numFramesAvailable,
 					&flags, NULL, NULL);
 				shift = 0;
@@ -237,32 +239,30 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					//reset arrayPos
 					arrayPos = 0;
 					shift = 0;
-					pCapCli->ReleaseBuffer(numFramesAvailable);
-					pCapCli->GetNextPacketSize(&packetLength);
-					continue;
-				}
-				for (UINT i = 0; i < numFramesAvailable; i++) {
-					INT64 finVal = 0;
-					for (int k = 0; k < nChannel; k++) {
-						INT32 val = 0;
-						for (int j = bytesPerChannel - 1; j >= 0; j--) {
-							val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
+				} else {
+					for (UINT i = 0; i < numFramesAvailable; i++) {
+						INT64 finVal = 0;
+						for (int k = 0; k < nChannel; k++) {
+							INT32 val = 0;
+							for (int j = bytesPerChannel - 1; j >= 0; j--) {
+								val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
+							}
+							finVal += val;// +((maxLevel + 1) / 2);
 						}
-						finVal += val;// +((maxLevel + 1) / 2);
+						//double val = pData[4 * i] + pData[4 * i + 1] * 256;
+						waveT[arrayPos + i - shift] = (double) (finVal / nChannel) / maxLevel / NUMSAM;// / (pow(256, bytesPerChannel) - 1);
+						if (arrayPos + i - shift == NUMSAM - 1) {
+							//buffer full, send to process.
+							memcpy(waveD, waveT, NUMSAM * sizeof(double));
+							SetEvent(updateEvent);
+							//reset arrayPos
+							arrayPos = 0;
+							shift = i - shift;
+						}
 					}
-					//double val = pData[4 * i] + pData[4 * i + 1] * 256;
-					waveT[arrayPos + i - shift] = (double)(finVal / nChannel) / maxLevel / NUMSAM;// / (pow(256, bytesPerChannel) - 1);
-					if (arrayPos + i == NUMSAM - 1) {
-						//buffer full, send to process.
-						memcpy(waveD, waveT, NUMSAM * sizeof(double));
-						SetEvent(updateEvent);
-						//reset arrayPos
-						arrayPos = 0;
-						shift = i;
-					}
+					arrayPos += numFramesAvailable - shift;
 				}
 				pCapCli->ReleaseBuffer(numFramesAvailable);
-				arrayPos += numFramesAvailable - shift;
 				pCapCli->GetNextPacketSize(&packetLength);
 			}
 			break;
@@ -290,12 +290,16 @@ DWORD WINAPI resample(LPVOID lpParam)
 
 	ULONGLONG lastTick = 0, currentTick  = 0;
 
+	int* freqs = NULL;
+
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
 		if (WaitForMultipleObjects(2, waitArray, false, 100) == WAIT_OBJECT_0) {
-			fxh->Refresh(dftGG->calc(waveDouble));
+			freqs = dftGG->calc(waveDouble);
+			fxh->Refresh(freqs);
 			currentTick = GetTickCount64();
-			if (!IsIconic(hDlg) && currentTick - lastTick > 50) {
-				SendMessage(hDlg, WM_PAINT, 0, 0);
+			if (!IsIconic(hDlg) && currentTick - lastTick > 20) {
+				//SendMessage(GetDlgItem(hDlg, IDC_LEVELS), WM_PAINT, 0, 0);
+				DrawFreq(hDlg, freqs);
 				lastTick = currentTick;
 			}
 		}

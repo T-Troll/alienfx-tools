@@ -493,6 +493,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 else
                     DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
                 RedrawWindow(cBid, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+                ReleaseDC(tl, cnt);
             }
         }
         return false;

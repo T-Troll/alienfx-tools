@@ -36,12 +36,14 @@ void printUsage()
 		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
 		<< "high-level\tswitch to high-level SDK (Alienware LightFX)." << endl
 		<< "status\t\tshows devices and lights id's, names and statuses." << endl
+		<< "lightson\tturn all current device lights on." << endl
+		<< "lightsoff\tturn all current device lights off." << endl
 		<< "update\t\tupdates light status (for looped commands or old devices)." << endl
 		<< "reset\t\treset device state." << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
 		<< "Zones:\tleft, right, top, bottom, front, rear." << endl
 		<< "Actions:color (disable action), pulse, morph (you need 2 colors)," << endl
-		<< "\t(only for low-level v3) breath, spectrum (up to 9 colors), rainbow (up to 9 colors)." << endl;
+		<< "\t(only for low-level v4) breath, spectrum, rainbow (up to 9 colors each)." << endl;
 }
 
 int main(int argc, char* argv[])
@@ -50,7 +52,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v2.4.0" << endl;
+	cerr << "alienfx-cli v3.0.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -199,7 +201,6 @@ int main(int argc, char* argv[])
 		}
 		if (command == "reset") {
 			if (low_level) {
-				afx_dev->Reset(false);
 				afx_dev->Reset(true);
 			}
 			else
@@ -211,6 +212,16 @@ int main(int argc, char* argv[])
 				afx_dev->UpdateColors();
 			else
 				lfxUtil.Update();
+			continue;
+		}
+		if (command == "lightson") {
+			if (low_level)
+				afx_dev->ToggleState(true, afx_map->GetMappings(), false);
+			continue;
+		}
+		if (command == "lightsoff") {
+			if (low_level)
+				afx_dev->ToggleState(false, afx_map->GetMappings(), false);
 			continue;
 		}
 		if (command == "set-all") {
