@@ -21,9 +21,6 @@
     <ClInclude Include="AlienFX_SDK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AlienFX_SDK.cpp">

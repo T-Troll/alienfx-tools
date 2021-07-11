@@ -15,10 +15,8 @@
 #define IDC_BUTTON_HPC                  1016
 #define IDC_BUTTON_REMOVE               1017
 #define IDC_BUTTON_REFRESH              1018
-#define IDC_VIEW_LEVELS                 1019
 #define IDC_MINIMIZE                    1021
 #define IDC_SHOWAXIS                    1022
-#define IDC_LEVELS_2                    1025
 #define IDC_LEVELS                      1025
 #define IDC_STATIC_VERSION              1043
 #define IDC_SYSLINK_HOMEPAGE            1044

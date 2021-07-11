@@ -1498,60 +1498,18 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			case LBN_SELCHANGE:
 				eItem = lbItem;
 				UpdateMonitoringInfo(hDlg, map);
-				/*lightset newmap;
-				if (!map) {
-					map = &newmap;
-					AlienFX_SDK::afx_act act;
-					newmap.eve[0].map.push_back(act);
-					newmap.eve[1].map.push_back(act);
-					newmap.eve[1].map.push_back(act);
-					newmap.eve[2].map.push_back(act);
-					newmap.eve[2].map.push_back(act);
-					newmap.eve[3].map.push_back(act);
-					newmap.eve[3].map.push_back(act);
-				}
-				for (int i = 0; i < 4; i++) {
-					CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, map->eve[i].fs.b.flags ? BST_CHECKED : BST_UNCHECKED);
-
-					if (i > 0) {
-						if (map->eve[0].fs.b.flags) {
-							RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[0].map[0].r,
-								map->eve[0].map[0].g, map->eve[0].map[0].b);
-							//EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_CM1 + i), false);
-						}
-						else {
-							RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[i].map[0].r,
-								map->eve[i].map[0].g, map->eve[i].map[0].b);
-							//EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_CM1 + i), true);
-						}
-						RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, map->eve[i].map[1].r,
-							map->eve[i].map[1].g, map->eve[i].map[1].b);
-					}
-				}
-
-				// Alarms
-				CheckDlgButton(hDlg, IDC_STATUS_BLINK, map->eve[3].fs.b.proc ? BST_CHECKED : BST_UNCHECKED);
-				SendMessage(s2_slider, TBM_SETPOS, true, map->eve[3].fs.b.cut);
-				SetSlider(lTip, lBuff, map->eve[3].fs.b.cut);
-
-				// Events
-				SendMessage(s1_slider, TBM_SETPOS, true, map->eve[2].fs.b.cut);
-				SetSlider(sTip, tBuff, map->eve[2].fs.b.cut);
-
-				SendMessage(list_counter, CB_SETCURSEL, map->eve[2].source, 0);
-				SendMessage(list_status, CB_SETCURSEL, map->eve[3].source, 0);*/
 				break;
 			} break;
 		case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
 			int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
-			if (map) {
+			if (lid != -1) {
+				if (!map) {
+					map = CreateMapping(lid);
+				}
 				map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				fxhl->RefreshMon();
+				//UpdateMonitoringInfo(hDlg, map);
 			}
-			else {
-				map = CreateMapping(lid);
-			}
-			UpdateMonitoringInfo(hDlg, map);
 		} break;
 		case IDC_STATUS_BLINK:
 			if (map != NULL)
