@@ -540,7 +540,7 @@ namespace AlienFX_SDK
 			case API_L_V3: case API_L_V2:
 			{
 				if (!inSet) Reset(1);
-				for (int ca = 0; ca < act.size(); ca++) {
+				for (size_t ca = 0; ca < act.size(); ca++) {
 					switch (act[ca].type) {
 					case AlienFX_A_Color: res = SetColor(index, act[ca].r, act[ca].g, act[ca].b); ca = act.size();  break;
 					case AlienFX_A_Pulse:
@@ -1067,10 +1067,6 @@ namespace AlienFX_SDK
 		return pids;
 	}	
 
-	vector<group>* Mappings::GetGroups() {
-		return &groups;
-	}
-
 	void Mappings::AddMapping(int devID, int lightID, char* name, int flags) {
 		mapping map;
 		int i = 0;
@@ -1094,22 +1090,12 @@ namespace AlienFX_SDK
 		}
 	}
 
-	void Mappings::AddGroup(int gID, string name, unsigned* lights, int lcount) {
-		group newGroup;
-		newGroup.gid = gID;
-		newGroup.name = name;
-		for (int i = 0; i < lcount; i++)
-			newGroup.lights;
-		groups.push_back(newGroup);
-	}
-
 	void Mappings::LoadMappings() {
 		DWORD  dwDisposition;
 		HKEY   hKey1;
 
 		devices.clear();
 		mappings.clear();
-		groups.clear();
 
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
@@ -1124,8 +1110,7 @@ namespace AlienFX_SDK
 		unsigned vindex = 0; 
 		mapping map; 
 		devmap dev;
-		group grp;
-		char name[255], inarray[255], gname[255];
+		char name[255], inarray[255];
 		unsigned ret = 0;
 		do {
 			DWORD len = 255, lend = 255;
@@ -1159,15 +1144,6 @@ namespace AlienFX_SDK
 					devices.push_back(dev);
 					continue;
 				}
-				//if (sscanf_s((char*)name, "Light %d-%d-%s\n", &dID, &lID, gname) == 3) {
-				//	// light flags
-				//	AddMapping(dID, lID, gname, *(unsigned *)inarray);
-				//	continue;
-				//}
-				//if (sscanf_s((char*) name, "Group#%d-%s", &dID, gname) == 2) {
-				//	// Group
-				//	AddGroup(dID, string(gname), (unsigned*) inarray, lend/sizeof(unsigned));
-				//}
 			}
 		} while (ret == ERROR_SUCCESS);
 		RegCloseKey(hKey1);
