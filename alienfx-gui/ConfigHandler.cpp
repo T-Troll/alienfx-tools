@@ -357,39 +357,6 @@ int ConfigHandler::Load() {
 						break;
 					}
 			}
-			/*else {
-				ret2 = sscanf_s((char*)name, "%d-%d-%d", &map.devid, &map.lightid, &profid);
-				if (ret2 == 3) {
-					AlienFX_SDK::afx_act action, action2;
-					unsigned* inar = (unsigned*)inarray;
-					Colorcode ccd;
-					for (int i = 0; i < 4; i++) {
-						map.eve[i].fs.s = inar[i * 10];
-						map.eve[i].source = inar[i * 10 + 1];
-						action.type = inar[i * 10 + 2];
-						action2.type = inar[i * 10 + 3];
-						ccd.ci = inar[i * 10 + 4];
-						action.r = ccd.cs.red;
-						action.g = ccd.cs.green;
-						action.b = ccd.cs.blue;
-						ccd.ci = inar[i * 10 + 5];
-						action2.r = ccd.cs.red;
-						action2.g = ccd.cs.green;
-						action2.b = ccd.cs.blue;
-						action.tempo = inar[i * 10 + 6];
-						action2.tempo = inar[i * 10 + 7];
-						action.time = inar[i * 10 + 8];
-						action2.time = inar[i * 10 + 9];
-						map.eve[i].map.push_back(action);
-						map.eve[i].map.push_back(action2);
-					}
-					for (int i = 0; i < profiles.size(); i++)
-						if (profiles[i].id == profid) {
-							profiles[i].lightsets.push_back(map);
-							break;
-						}
-				}
-			}*/
 			vindex++;
 		}
 	} while (ret == ERROR_SUCCESS);
@@ -452,7 +419,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&startWindows,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -460,7 +427,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&startMinimized,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -468,7 +435,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&autoRefresh,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -476,7 +443,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&lightsOn,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -484,7 +451,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&enableMon,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -492,7 +459,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&offWithScreen,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -500,7 +467,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&dimmed,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -508,7 +475,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&dimPowerButton,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -516,7 +483,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&dimmedBatt,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -524,7 +491,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&offPowerButton,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -532,7 +499,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&dimmingPower,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -540,7 +507,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&activeProfile,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -548,7 +515,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&gammaCorrection,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -556,7 +523,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&enableProf,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -564,7 +531,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&awcc_disable,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -572,7 +539,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&esif_temp,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -580,7 +547,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&lastActive,
-		4
+		sizeof(DWORD)
 	);
 	RegSetValueEx(
 		hKey1,
@@ -588,7 +555,7 @@ int ConfigHandler::Save() {
 		0,
 		REG_BINARY,
 		(BYTE*)customColors,
-		4 * 16
+		sizeof(DWORD) * 16
 	);
 	// set current profile mappings to current set!
 	FindProfile(activeProfile)->lightsets = active_set;

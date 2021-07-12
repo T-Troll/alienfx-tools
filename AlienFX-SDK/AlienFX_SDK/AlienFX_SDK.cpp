@@ -537,10 +537,10 @@ namespace AlienFX_SDK
 				}
 				return res;
 			} break;
-			case API_L_V3: case API_L_V2:
+			case API_L_V3: case API_L_V2: case API_L_V1:
 			{
 				if (!inSet) Reset(1);
-				for (int ca = 0; ca < act.size(); ca++) {
+				for (size_t ca = 0; ca < act.size(); ca++) {
 					switch (act[ca].type) {
 					case AlienFX_A_Color: res = SetColor(index, act[ca].r, act[ca].g, act[ca].b); ca = act.size();  break;
 					case AlienFX_A_Pulse:
@@ -562,11 +562,6 @@ namespace AlienFX_SDK
 					default: res = SetColor(index, act[0].r, act[0].g, act[0].b);
 					}
 				}
-			} break;
-			case API_L_V1:
-			{
-				// can't set action for old, just use color. 
-				res = SetColor(index, act[0].r, act[0].g, act[0].b);
 			} break;
 			}
 		}
@@ -591,7 +586,7 @@ namespace AlienFX_SDK
 #ifdef _DEBUG
 					OutputDebugString(TEXT("Forced power button update waiting...\n"));
 #endif
-					Sleep(lastPowerCall + POWER_DELAY - cPowerCall);
+					Sleep(long(lastPowerCall + POWER_DELAY - cPowerCall));
 				}
 				else {
 #ifdef _DEBUG
@@ -974,6 +969,7 @@ namespace AlienFX_SDK
 	}
 
 	Mappings::~Mappings () {
+		groups.clear();
 		mappings.clear();
 		devices.clear();
 	}
@@ -1067,26 +1063,42 @@ namespace AlienFX_SDK
 		return pids;
 	}	
 
-	void Mappings::AddMapping(int devID, int lightID, char* name, int flags) {
-		mapping map;
+	mapping* Mappings::GetMappingById(int devID, int LightID) {
 		int i = 0;
-		for (i = 0; i < mappings.size(); i++) {
-			if (mappings[i].devid == devID && mappings[i].lightid == lightID) {
-				if (name != NULL)
-					mappings[i].name = name;
-				else
-					mappings[i].flags = flags;
-				break;
-			}
+		for (i = 0; i < mappings.size(); i++)
+			if (mappings[i].devid == devID && mappings[i].lightid == LightID)
+				return &mappings[i];
+		return nullptr;
+	}
+
+	vector<group>* Mappings::GetGroups() {
+		return &groups;
+	}
+
+	void Mappings::AddMapping(int devID, int lightID, char* name, int flags) {
+		mapping* map;
+		if (!(map = GetMappingById(devID, lightID))) {
+			map = new mapping;
+			map->lightid = lightID;
+			map->devid = devID;
+			mappings.push_back(*map);
+			delete map;
+			map = &mappings[mappings.size() - 1];
 		}
-		if (i == mappings.size()) {
-			// add new mapping
-			map.devid = devID; map.lightid = lightID;
-			if (name != NULL)
-				map.name = name;
-			else
-				map.flags = flags;
-			mappings.push_back(map);
+		if (name != NULL)
+			map->name = name;
+		if (flags != -1)
+			map->flags = flags;
+	}
+
+	void Mappings::AddGroup(int gID, char* name, int lightNum, DWORD* lightlist) {
+		mapping* map;
+		group nGroup;
+		nGroup.gid = gID;
+		nGroup.name = string(name);
+		for (int i = 0; i < lightNum; i+=2) {
+			if (map = GetMappingById(lightlist[i], lightlist[i + 1]))
+				nGroup.lights.push_back(map);
 		}
 	}
 
@@ -1108,7 +1120,7 @@ namespace AlienFX_SDK
 			&dwDisposition);
 
 		unsigned vindex = 0; mapping map; devmap dev;
-		char name[255], inarray[255];
+		char kName[255], name[255], inarray[255];
 		unsigned ret = 0;
 		do {
 			DWORD len = 255, lend = 255;
@@ -1128,7 +1140,7 @@ namespace AlienFX_SDK
 				//unsigned ret2 = sscanf_s((char*)name, "%d-%d", &dID, &lID);
 				if (sscanf_s((char*)name, "%d-%d", &dID, &lID) == 2) {
 					// light name
-					AddMapping(dID, lID, inarray, 0);
+					AddMapping(dID, lID, inarray, -1);
 				}
 				else {
 					// device flags?
@@ -1149,14 +1161,46 @@ namespace AlienFX_SDK
 				vindex++;
 			}
 		} while (ret == ERROR_SUCCESS);
+		vindex = 0;
+		do {
+			ret = RegEnumKeyA(hKey1, vindex, kName, 255);
+			vindex++;
+			if (ret == ERROR_SUCCESS) {
+				DWORD lID = 0, dID = 0;
+				//HKEY keyName, keyFlags;
+				if (sscanf_s((char*) kName, "Light%d-%d", &dID, &lID) == 2) {
+					DWORD nameLen = 255, flags;
+					RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
+					nameLen = sizeof(DWORD);
+					RegGetValueA(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &flags, &nameLen);
+					AddMapping(dID, lID, name, flags);
+				}
+			}
+		} while (ret == ERROR_SUCCESS);
+		vindex = 0;
+		do {
+			ret = RegEnumKeyA(hKey1, vindex, kName, 255);
+			vindex++;
+			if (ret == ERROR_SUCCESS) {
+				DWORD gID = 0;
+				if (sscanf_s((char*) kName, "Group%d", &gID) == 1) {
+					DWORD nameLen = 255, maps[1024];
+					RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
+					nameLen = 1024*sizeof(DWORD);
+					RegGetValueA(hKey1, kName, "Lights", RRF_RT_REG_DWORD, 0, &maps, &nameLen);
+					AddGroup(gID, name, nameLen, maps);
+				}
+			}
+		} while (ret == ERROR_SUCCESS);
 		RegCloseKey(hKey1);
 	}
 
 	void Mappings::SaveMappings() {
 		DWORD  dwDisposition;
-		HKEY   hKey1;
+		HKEY   hKey1, hKeyS;
 		size_t numdevs = devices.size();
 		size_t numlights = mappings.size();
+		size_t numGroups = groups.size();
 		if (numdevs == 0) return;
 		
 		RegCreateKeyEx(HKEY_CURRENT_USER,
@@ -1186,25 +1230,77 @@ namespace AlienFX_SDK
 
 		for (int i = 0; i < numlights; i++) {
 			//preparing name
-			sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+			//sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+
+			//RegSetValueExA(
+			//	hKey1,
+			//	name,
+			//	0,
+			//	REG_SZ,
+			//	(BYTE*)mappings[i].name.c_str(),
+			//	(DWORD)mappings[i].name.size()
+			//);
+			//sprintf_s((char*)name, 255, "Flags%d-%d", mappings[i].devid, mappings[i].lightid);
+
+			//RegSetValueExA(
+			//	hKey1,
+			//	name,
+			//	0,
+			//	REG_DWORD,
+			//	(BYTE*)&mappings[i].flags,
+			//	4
+			//);
+			// new format
+			sprintf_s((char*)name, 255, "Light%d-%d", mappings[i].devid, mappings[i].lightid);
+
+			RegCreateKeyA(hKey1, name, &hKeyS);
 
 			RegSetValueExA(
-				hKey1,
-				name,
+				hKeyS,
+				"Name",
 				0,
 				REG_SZ,
 				(BYTE*)mappings[i].name.c_str(),
 				(DWORD)mappings[i].name.size()
 			);
-			sprintf_s((char*)name, 255, "Flags%d-%d", mappings[i].devid, mappings[i].lightid);
 
 			RegSetValueExA(
-				hKey1,
-				name,
+				hKeyS,
+				"Flags",
 				0,
 				REG_DWORD,
 				(BYTE*)&mappings[i].flags,
-				4
+				sizeof(DWORD)
+			);
+
+		}
+
+		DWORD grLights[1024];
+		for (int i = 0; i < numGroups; i++) {
+			sprintf_s((char*)name, 255, "Group%d", groups[i].gid);
+
+			RegCreateKeyA(hKey1, name, &hKeyS);
+
+			RegSetValueExA(
+				hKeyS,
+				"Name",
+				0,
+				REG_SZ,
+				(BYTE*)groups[i].name.c_str(),
+				(DWORD)groups[i].name.size()
+			);
+
+			for (int j = 0; j < groups[i].lights.size(); j++) {
+				grLights[j * 2] = groups[i].lights[j]->devid;
+				grLights[j * 2 +1] = groups[i].lights[j]->lightid;
+			}
+			RegSetValueExA(
+				hKeyS,
+				"Lights",
+				0,
+				REG_BINARY,
+				(BYTE*) grLights,
+				2 * groups[i].lights.size() * sizeof(DWORD)
 			);
 		}
 
@@ -1215,11 +1311,14 @@ namespace AlienFX_SDK
 			int j;
 			for (j = 0; j < numlights && (mappings[i].devid != oldMappings[j].devid ||
 				mappings[i].lightid != oldMappings[j].lightid); j++);
+			    // Later, remove old mappings here!
 			if (j == numlights) { // no mapping found, delete...
 				sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
 				RegDeleteValueA(hKey1, name);
 				sprintf_s((char*)name, 255, "Flags%d-%d", mappings[i].devid, mappings[i].lightid);
 				RegDeleteValueA(hKey1, name);
+				sprintf_s((char*)name, 255, "Light%d-%d", mappings[i].devid, mappings[i].lightid);
+				RegDeleteKeyA(hKey1, name);
 			}
 		}
 

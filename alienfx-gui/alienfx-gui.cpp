@@ -15,6 +15,7 @@
 #include "FXHelper.h"
 #include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
 #include "EventHandler.h"
+#include "toolkit.h"
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -70,7 +71,7 @@ int effID = -1;
 int eItem = -1;
 
 // Devices
-int eLid = -1, eDid = -1, dItem = -1;
+int eLid = -1, eDid = -1, dItem = -1, gLid = -1;
 
 // Profiles
 int pCid = -1;
@@ -1085,20 +1086,22 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 	ListView_SetColumnWidth(eff_list, 0, csize.right - csize.left);
 }
 
-int UpdateLightList(HWND light_list) {
-	int pos = -1;
-	size_t lights = fxhl->afx_dev.GetMappings()->size();
-	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
-	for (int i = 0; i < lights; i++) {
-		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-		if (fxhl->LocateDev(lgh.devid)) {
-			pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-			SendMessage(light_list, LB_SETITEMDATA, pos, i);
-		}
-	}
-	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-	return pos;
-}
+
+//extern int UpdateLightList<FXHelper>(HWND light_list);
+//int UpdateLightList(HWND light_list) {
+//	int pos = -1;
+//	size_t lights = fxhl->afx_dev.GetMappings()->size();
+//	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+//	for (int i = 0; i < lights; i++) {
+//		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
+//		if (fxhl->LocateDev(lgh.devid)) {
+//			pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
+//			SendMessage(light_list, LB_SETITEMDATA, pos, i);
+//		}
+//	}
+//	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+//	return pos;
+//}
 
 void UpdateLightListC(HWND hDlg, int pid, int lid) {
 	//int pos = -1;
@@ -1191,7 +1194,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 	case WM_INITDIALOG:
 	{
-		if (UpdateLightList(light_list) < 0) {
+		if (UpdateLightList<FXHelper>(light_list, fxhl) < 0) {
 			// no lights, switch to setup
 			HWND tab_list = GetParent(hDlg);
 			TabCtrl_SetCurSel(tab_list, 2);
@@ -1439,7 +1442,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 	case WM_INITDIALOG:
 	{
-		if (UpdateLightList(light_list) < 0) {
+		if (UpdateLightList<FXHelper>(light_list, fxhl) < 0) {
 			HWND tab_list = GetParent(hDlg);
 			TabCtrl_SetCurSel(tab_list, 2);
 			OnSelChanged(tab_list);
@@ -1619,9 +1622,40 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	return true;
 }
 
+void UpdateGroupList(HWND hDlg, int gid) {
+	size_t lights = fxhl->afx_dev.GetGroups()->size();
+	HWND group_list = GetDlgItem(hDlg, IDC_LIST_GROUPS); 
+
+	ListView_DeleteAllItems(group_list);
+	LVCOLUMNA lCol;
+	lCol.mask = LVCF_WIDTH;
+	ListView_GetColumn(group_list, 0, & lCol);
+	if (lCol.cx < 0)
+		ListView_InsertColumn(group_list, 0, &lCol);
+	for (int i = 0; i < lights; i++) {
+		AlienFX_SDK::group lgh = fxhl->afx_dev.GetGroups()->at(i);
+					LVITEMA lItem; 
+			lItem.mask = LVIF_TEXT | LVIF_PARAM;
+			lItem.iItem = i;
+			lItem.iImage = 0;
+			lItem.iSubItem = 0;
+			lItem.lParam = lgh.gid;
+			lItem.pszText = (char*)lgh.name.c_str();
+			if (gid == lgh.gid) {
+				lItem.mask |= LVIF_STATE;
+				lItem.state = LVIS_SELECTED;
+			}
+			ListView_InsertItem(group_list, &lItem);
+	}
+	RECT csize;
+	GetClientRect(group_list, &csize);
+	ListView_SetColumnWidth(group_list, 0, csize.right - csize.left);
+}
+
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND light_view = GetDlgItem(hDlg, IDC_LIST_LIGHTS),
+		group_view = GetDlgItem(hDlg, IDC_LIST_GROUPS),
 		dev_list = GetDlgItem(hDlg, IDC_DEVICES),
 		light_id = GetDlgItem(hDlg, IDC_LIGHTID);
 	switch (message)
@@ -1669,7 +1703,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 		}
 
-		eLid = -1;
+		eLid = -1; gLid = -1;
 
 		if (numdev > 0) {
 			if (eDid == -1) { // no selection, let's try to select dev#0
@@ -1680,6 +1714,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 
 			UpdateLightListC(hDlg, eDid, -1);
+			UpdateGroupList(hDlg, -1);
 		}
 	} break;
 	case WM_COMMAND: {
@@ -1738,6 +1773,24 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			eLid = cid;
 			UpdateLightListC(hDlg, eDid, cid);
 			fxhl->TestLight(eDid, cid);
+		} break;
+		case IDC_BUTTON_ADDG: {
+			char buffer[MAX_PATH];
+			unsigned maxID = 0xf0000;
+			size_t lights = fxhl->afx_dev.GetGroups()->size();
+			for (int i = 0; i < lights; i++) {
+				AlienFX_SDK::group* lgh = &(fxhl->afx_dev.GetGroups()->at(i));
+				if (lgh->gid > maxID)
+					maxID = lgh->gid;
+			}
+			AlienFX_SDK::group dev;
+			dev.gid = maxID;
+			sprintf_s(buffer, MAX_PATH, "Group #%d", maxID & 0xffff);
+			dev.name = buffer;
+			fxhl->afx_dev.GetGroups()->push_back(dev);
+			fxhl->afx_dev.SaveMappings();
+			gLid = maxID;
+			UpdateGroupList(hDlg, gLid);
 		} break;
 		case IDC_BUTTON_REML:
 			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
@@ -1889,6 +1942,56 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case NM_KILLFOCUS:
 				eve->ToggleEvents();
 				fxhl->afx_dev.SaveMappings();
+				break;
+			}
+			break;
+		case IDC_LIST_GROUPS:
+			switch (((NMHDR*) lParam)->code) {
+			case LVN_ITEMACTIVATE: {
+				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
+				ListView_EditLabel(group_view, sItem->iItem);
+			} break;
+
+			case NM_CLICK:
+			{
+				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
+				// Select other item...
+				LVITEMA lItem;
+				lItem.mask = LVIF_PARAM;
+				lItem.iItem = sItem->iItem;
+				ListView_GetItem(group_view, &lItem);
+				gLid = (int)lItem.lParam;
+				//SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
+				//CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) ? BST_CHECKED : BST_UNCHECKED);
+				//eve->StopEvents();
+				// highlight to check....
+				//fxhl->TestLight(eDid, eLid);
+			} break;
+			case LVN_ENDLABELEDIT:
+			{
+				NMLVDISPINFO* sItem = (NMLVDISPINFO*) lParam;
+				if (sItem->item.pszText) {
+					for (UINT i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
+						AlienFX_SDK::group* lgh = &(fxhl->afx_dev.GetGroups()->at(i));
+						if (lgh->gid == sItem->item.lParam) {
+							lgh->name = sItem->item.pszText;
+							ListView_SetItem(group_view, &sItem->item);
+							fxhl->afx_dev.SaveMappings();
+							break;
+						}
+					}
+				} 
+				//SetDlgItemInt(hDlg, IDC_LIGHTID, (UINT)sItem->item.lParam, false);
+				//CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, (int)sItem->item.lParam) ? BST_CHECKED : BST_UNCHECKED);
+				//eve->StopEvents();
+				// StopEvents();
+				// highlight to check....
+				fxhl->TestLight(eDid, (int)sItem->item.lParam);
+				return false;
+			} break;
+			case NM_KILLFOCUS:
+				//eve->ToggleEvents();
+				//fxhl->afx_dev.SaveMappings();
 				break;
 			}
 			break;

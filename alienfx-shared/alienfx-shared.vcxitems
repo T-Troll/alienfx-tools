@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{cad8b749-037a-4c37-ac11-67f69cb97b77}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFX2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFXConfigurator.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFXDecl.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFXUtil.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)toolkit.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)LFXUtil.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)toolkit.cpp" />
+  </ItemGroup>
+</Project>

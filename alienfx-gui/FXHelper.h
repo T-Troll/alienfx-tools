@@ -1,5 +1,6 @@
 #pragma once
 #include "ConfigHandler.h"
+#include "toolkit.h"
 
 // Power modes: AC = 0, Battery = 1, Charge = 2, Low Battery = 4
 #define MODE_AC		0
@@ -7,22 +8,21 @@
 #define MODE_CHARGE	2
 #define MODE_LOW	4
 
-class FXHelper
+class FXHelper: public FXH<ConfigHandler>
 {
 private:
-	ConfigHandler* config;
+	//ConfigHandler* config;
 	int activeMode = -1;
 	int lastTest = -1;
-	vector<pair<DWORD,DWORD>> devList;
 	long lCPU = 0, lRAM = 0, lHDD = 0, lGPU = 0, lNET = 0, lTemp = 0, lBatt = 100;
 	bool bStage = false;
 public:
-	AlienFX_SDK::Mappings afx_dev;
-	std::vector<AlienFX_SDK::Functions*> devs;
-	FXHelper(ConfigHandler* conf);
-	~FXHelper();
-	AlienFX_SDK::Functions* LocateDev(int pid);
-	size_t FillDevs();
+	//AlienFX_SDK::Mappings afx_dev;
+	//std::vector<AlienFX_SDK::Functions*> devs;
+	//FXHelper(ConfigHandler* conf);
+	//~FXHelper();
+	//AlienFX_SDK::Functions* LocateDev(int pid);
+	//size_t FillDevs();
 	int Refresh(bool force = false);
 	bool RefreshOne(lightset* map, bool force = false, bool update = false);
 	bool SetMode(int mode);

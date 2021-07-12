@@ -18,8 +18,5 @@
     <ClCompile Include="alienfx-probe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\alienfx-cli\LFXUtil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
