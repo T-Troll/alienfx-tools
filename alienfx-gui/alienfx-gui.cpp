@@ -1303,19 +1303,14 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					for (int i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
 						AlienFX_SDK::mapping map = fxhl->afx_dev.GetMappings()->at(i);
 						if (!map.flags && fxhl->LocateDev(map.devid)) {
-							int j;
-							for (j = 0; j < conf->active_set.size(); j++)
-								if (conf->active_set[j].devid == map.devid &&
-									conf->active_set[j].lightid == map.lightid) {
-									// change mapping
-									conf->active_set[j].eve[0] = light;
-									break;
-								}
-							if (j == conf->active_set.size()) {
+							lightset* actmap = FindMapping(i);
+							if (actmap)
+								actmap->eve[0] = light;
+							else {
 								// create new mapping
 								lightset* newmap = CreateMapping(i);
 								newmap->eve[0] = light;
-								conf->active_set.push_back(*mmap);
+								conf->active_set.push_back(*newmap);
 							}
 						}
 					}

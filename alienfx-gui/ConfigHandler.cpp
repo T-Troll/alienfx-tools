@@ -336,7 +336,7 @@ int ConfigHandler::Load() {
 		if (ret == ERROR_SUCCESS) {
 			unsigned profid;
 			unsigned ret2 = sscanf_s((char*)name, "Set-%d-%d-%d", &map.devid, &map.lightid, &profid);
-			if (ret2 == 3) {
+			if (ret2 == 3 && map.lightid > 0 && map.lightid < 256) { // incorrect mapping patch
 				BYTE* inPos = inarray;
 				for (int i = 0; i < 4; i++) {
 					map.eve[i].fs.s = *((int*)inPos);
