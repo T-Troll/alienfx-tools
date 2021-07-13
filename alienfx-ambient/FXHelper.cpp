@@ -1,45 +1,5 @@
 #include "FXHelper.h"
 
-FXHelper::FXHelper(ConfigHandler* conf) {
-	config = conf;
-	afx_dev.LoadMappings();
-	FillDevs();
-};
-FXHelper::~FXHelper() {
-	FadeToBlack();
-	if (devList.size() > 0) {
-		for (int i = 0; i < devs.size(); i++)
-			devs[i]->AlienFXClose();
-		devs.clear();
-	}
-};
-
-AlienFX_SDK::Functions* FXHelper::LocateDev(int pid)
-{
-	for (int i = 0; i < devs.size(); i++)
-		if (devs[i]->GetPID() == pid)
-			return devs[i];
-	return nullptr;
-}
-
-void FXHelper::FillDevs()
-{
-	vector<pair<DWORD,DWORD>> devList = afx_dev.AlienFXEnumDevices();
-	if (devs.size() > 0) {
-		for (int i = 0; i < devs.size(); i++)
-			devs[i]->AlienFXClose();
-		devs.clear();
-	}
-	for (int i = 0; i < devList.size(); i++) {
-		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
-		int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
-		if (pid != -1) {
-			devs.push_back(dev);
-			dev->ToggleState(true, afx_dev.GetMappings(), false);
-		}
-	}
-}
-
 int FXHelper::Refresh(UCHAR* img)
 {
 	unsigned i = 0;
@@ -67,6 +27,7 @@ int FXHelper::Refresh(UCHAR* img)
 				fin.cs.green = ((int)fin.cs.green * fin.cs.green) >> 8;
 				fin.cs.blue = ((int)fin.cs.blue * fin.cs.blue) >> 8;
 			}
+			// TODO: expand group!
 			if (dev->IsDeviceReady())
 				dev->SetColor(map.lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
 
@@ -81,17 +42,15 @@ void FXHelper::FadeToBlack()
 	for (int i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		AlienFX_SDK::Functions* dev = LocateDev(map.devid);
-		Colorcode fin = { 0 };
-		unsigned r = 0, g = 0, b = 0, size = (unsigned)map.map.size();
-		if (dev && afx_dev.GetFlags(map.devid, map.lightid) == 0 && dev->IsDeviceReady()) {
+		if (dev && !afx_dev.GetFlags(map.devid, map.lightid) && dev->IsDeviceReady()) {
 			dev->SetColor(map.lightid, 0, 0, 0);
 		}
 	}
 	UpdateColors();
 }
 
-void FXHelper::UpdateColors()
-{
-	for (int i = 0; i < devs.size(); i++)
-		devs[i]->UpdateColors();
-}
+//void FXHelper::UpdateColors()
+//{
+//	for (int i = 0; i < devs.size(); i++)
+//		devs[i]->UpdateColors();
+//}

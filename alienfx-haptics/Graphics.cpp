@@ -1,13 +1,12 @@
 #define _WIN32_WINNT 0x500
 #include "Graphics.h"
 #include <windows.h>
-#include <Commctrl.h>
 #include "resource_config.h"
 #include "FXHelper.h"
 #include <algorithm>
+#include "toolkit.h"
 
 #pragma comment(lib, "winmm.lib")
-#pragma comment(lib,"Version.lib")
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
@@ -215,23 +214,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
-	RECT rect;
-	HBRUSH Brush = NULL;
-	HWND tl = GetDlgItem(hDlg, id);
-	GetWindowRect(tl, &rect);
-	HDC cnt = GetWindowDC(tl);
-	rect.bottom -= rect.top;
-	rect.right -= rect.left;
-	rect.top = rect.left = 0;
-	// BGR!
-	Brush = CreateSolidBrush(RGB(r, g, b));
-	FillRect(cnt, &rect, Brush);
-	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
-	DeleteObject(Brush);
-	ReleaseDC(tl, cnt);
-}
-
 bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
 	CHOOSECOLOR cc;                 
 	static COLORREF acrCustClr[16];
@@ -264,57 +246,8 @@ mapping* FindMapping(int lid) {
 	return NULL;
 }
 
-void ReloadLightList(HWND light_list) {
-	size_t lights = afx->afx_dev.GetMappings()->size();
-	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
-	for (int i = 0; i < lights; i++) {
-		AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(i);
-		if (afx->LocateDev(lgh.devid) && !lgh.flags) {
-			int pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-			SendMessage(light_list, LB_SETITEMDATA, pos, i);
-		}
-	}
-	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-}
-
-HWND CreateToolTip(HWND hwndParent)
-{
-	// Create a tooltip.
-	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-		hwndParent, NULL, ghInstance, NULL);
-
-	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-		SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-	TOOLINFO ti = { 0 };
-	ti.cbSize = sizeof(TOOLINFO);
-	ti.uFlags = TTF_SUBCLASS;
-	ti.hwnd = hwndParent;
-	ti.hinst = ghInstance;
-	ti.lpszText = (LPSTR)"0";
-
-	GetClientRect(hwndParent, &ti.rect);
-
-	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-	return hwndTT;
-}
-
 char sBuff[4], lBuff[4];
 HWND sTip = 0, lTip = 0;
-
-void SetSlider(HWND tt, char* buff, int value) {
-	TOOLINFO ti = { 0 };
-	ti.cbSize = sizeof(ti);
-	ti.lpszText = buff;
-	if (tt) {
-		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-		_itoa_s(value, buff, 4, 10);
-		ti.lpszText = buff;
-		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-	}
-}
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -338,7 +271,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
 		}
 
-		ReloadLightList(light_list);
+		UpdateLightList<FXHelper>(light_list, afx, 3);
 
 		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -369,14 +302,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_UNCHECKED);
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 			audio->RestartDevice(0);
-			//config->Save();
 			break;
 		case ID_INPUT_DEFAULTINPUTDEVICE:
 			config->inpType = 1;
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_UNCHECKED);
 			audio->RestartDevice(1);
-			//config->Save();
 			break;
 		case ID_FILE_EXIT: case IDOK: PostMessage(hDlg, WM_CLOSE, 0, 0); break;
 		case ID_HELP_ABOUT: // about dialogue here
@@ -412,6 +343,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				// check in config - do we have mappings?
 				if (map == NULL) {
 					mapping newmap;
+					// TODO: mapping for group!
 					AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
 					newmap.devid = lgh.devid;
 					newmap.lightid = lgh.lightid;
@@ -492,8 +424,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				afx->FillDevs();
-				ReloadLightList(light_list);
+				afx->FillDevs(true, false);
+				UpdateLightList<FXHelper>(light_list, afx, 3);
 			} break;
 			} break;
 		case IDC_MINIMIZE:

@@ -32,6 +32,8 @@ public:
 	DWORD divider = 16;
 	DWORD shift = 40;
 	DWORD gammaCorrection = 1;
+	DWORD stateOn = 1;
+	DWORD offPowerButton = 0;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();

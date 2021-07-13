@@ -565,7 +565,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="ConfigHandler.h" />
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="FXHelper.h" />

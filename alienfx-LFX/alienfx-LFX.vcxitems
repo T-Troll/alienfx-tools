@@ -3,7 +3,7 @@
   <PropertyGroup Label="Globals">
     <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <HasSharedItems>true</HasSharedItems>
-    <ItemsProjectGuid>{cad8b749-037a-4c37-ac11-67f69cb97b77}</ItemsProjectGuid>
+    <ItemsProjectGuid>{cc4108ae-d644-45f9-95aa-67940d0fbeda}</ItemsProjectGuid>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -14,9 +14,12 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)toolkit.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFX2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFXConfigurator.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFXDecl.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)LFXUtil.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)toolkit.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)LFXUtil.cpp" />
   </ItemGroup>
 </Project>

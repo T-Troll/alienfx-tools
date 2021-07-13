@@ -219,10 +219,14 @@ namespace AlienFX_SDK
 		// get saved light names
 		vector <mapping>* GetMappings();
 
+		// get defined groups
 		vector <group>* GetGroups();
 
 		// find mapping by dev/light it...
 		mapping* GetMappingById(int devID, int LightID);
+
+		// find mapping by dev/light it...
+		group* GetGroupById(int gid);
 
 		// add new light name into the list
 		void AddMapping(int devID, int lightID, char* name, int flags);

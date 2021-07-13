@@ -1,45 +1,5 @@
 #include "FXHelper.h"
 
-//FXHelper::FXHelper(ConfigHandler* conf) {
-//	config = conf;
-//	afx_dev.LoadMappings();
-//	FillDevs();
-//};
-//FXHelper::~FXHelper() {
-//	afx_dev.SaveMappings();
-//	if (devList.size() > 0) {
-//		for (int i = 0; i < devs.size(); i++)
-//			devs[i]->AlienFXClose();
-//		devs.clear();
-//	}
-//}
-//
-//AlienFX_SDK::Functions* FXHelper::LocateDev(int pid)
-//{
-//	for (int i = 0; i < devs.size(); i++)
-//		if (devs[i]->GetPID() == pid)
-//			return devs[i];
-//	return nullptr;
-//}
-//size_t FXHelper::FillDevs()
-//{
-//	vector<pair<DWORD,DWORD>> devList = afx_dev.AlienFXEnumDevices();
-//	if (devs.size() > 0) {
-//		for (int i = 0; i < devs.size(); i++)
-//			devs[i]->AlienFXClose();
-//		devs.clear();
-//	}
-//	for (int i = 0; i < devList.size(); i++) {
-//		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
-//		int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
-//		if (pid != -1) {
-//			devs.push_back(dev);
-//			dev->ToggleState(config->lightsOn, afx_dev.GetMappings(), config->offPowerButton);
-//		}
-//	}
-//	return devs.size();
-//}
-
 void FXHelper::TestLight(int did, int id)
 {
 	AlienFX_SDK::Functions* dev = LocateDev(did);
@@ -162,6 +122,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				}
 			else
 				actions.push_back(fin);
+			// TODO: expand groups here!
 			Iter->valid = SetLight(Iter->devid, Iter->lightid, lFlags, actions, force);
 		}
 	if (wasChanged) {
@@ -189,6 +150,7 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 	for (int i = 0; i < actions.size(); i++) {
 		// gamma-correction...
 		if (config->gammaCorrection) {
+			// TODO - fix max=254 (>>8 not right, 255 in fact)
 			actions[i].r = (actions[i].r * actions[i].r) >> 8;
 			actions[i].g = (actions[i].g * actions[i].g) >> 8;
 			actions[i].b = (actions[i].b * actions[i].b) >> 8;
@@ -201,11 +163,11 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 		}
 	}
 	if (dev != NULL) {
-		bool devReady = dev->IsDeviceReady();// false;
-		//int wcount;
-		//for (wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
-		//	Sleep(20);
-		if (!force && !devReady) {
+		bool devReady = false;// = dev->IsDeviceReady();// false;
+		int wcount;
+		for (wcount = 0; wcount < 20 && !(devReady = dev->IsDeviceReady()) && force; wcount++)
+			Sleep(20);
+		if (!devReady) {
 #ifdef _DEBUG
 		//	if (force)
 		//		OutputDebugString("Forced light update skipped!\n");
@@ -217,10 +179,10 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 		if (power) {
 			if (!config->block_power && actions.size() > 1) {
 #ifdef _DEBUG
-				char buff[2048];
+				//char buff[2048];
 				//sprintf_s(buff, 2047, "Set power button to: %d,%d,%d\n", actions[0].r, actions[0].g, actions[0].b);
 				//OutputDebugString(buff);
-				ULONGLONG startTime = GetTickCount64();
+				//ULONGLONG startTime = GetTickCount64();
 #endif
 				if (config->stateOn)// || !config->offPowerButton)
 					ret = dev->SetPowerAction(id, actions[0].r, actions[0].g, actions[0].b,
@@ -229,19 +191,19 @@ bool FXHelper::SetLight(int did, int id, bool power, std::vector<AlienFX_SDK::af
 				//	ret = dev->SetPowerAction(id, 0, 0, 0, 0, 0, 0, force);
 #ifdef _DEBUG
 				//while (!dev->IsDeviceReady()) Sleep(5);
-				startTime = GetTickCount64() - startTime;
+				//startTime = GetTickCount64() - startTime;
 				//char buff[2048];
-				sprintf_s(buff, 2047, "System ready after power button set in %lld ms\n", startTime);
-				OutputDebugString(buff);
+				//sprintf_s(buff, 2047, "System ready after power button set in %lld ms\n", startTime);
+				//OutputDebugString(buff);
 #endif
 			}
 		}
 		else
 			if (config->stateOn) {
 				if (actions[0].type == 0)
-					dev->SetColor(id, actions[0].r, actions[0].g, actions[0].b);
+					ret = dev->SetColor(id, actions[0].r, actions[0].g, actions[0].b);
 				else {
-					dev->SetAction(id, actions);
+					ret = dev->SetAction(id, actions);
 				}
 			}
 			//else 
@@ -299,12 +261,10 @@ bool FXHelper::SetMode(int mode)
 
 bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 {
-	int lFlags = 0;
-	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	bool ret = false;
 
+	std::vector<AlienFX_SDK::afx_act> actions; AlienFX_SDK::afx_act action;
 	actions = map->eve[0].map;
-	lFlags = afx_dev.GetFlags(map->devid, map->lightid);
 	if (config->monState && !force) {
 		if (map->eve[1].fs.b.flags) {
 			// use power event;
@@ -330,8 +290,22 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 		if ((map->eve[2].fs.b.flags || map->eve[3].fs.b.flags)
 			&& config->lightsOn && config->stateOn) return map->valid;
 	}
-	ret = SetLight(map->devid, map->lightid, lFlags, actions, force);
-	if (update)
-		UpdateColors(map->devid);
+	if (!map->devid) {
+		// Group here!
+		AlienFX_SDK::group* grp = afx_dev.GetGroupById(map->lightid);
+		if (grp) {
+			for (int i = 0; i < grp->lights.size(); i++) {
+				int lFlags = afx_dev.GetFlags(grp->lights[i]->devid, grp->lights[i]->lightid);
+				ret = SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, lFlags, actions, force);
+			}
+			if (update)
+				UpdateColors();
+		}
+	} else {
+		int lFlags = afx_dev.GetFlags(map->devid, map->lightid);
+		ret = SetLight(map->devid, map->lightid, lFlags, actions, force);
+		if (update)
+			UpdateColors(map->devid);
+	}
 	return ret;
 }

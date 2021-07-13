@@ -23,6 +23,7 @@ public:
 	//~FXHelper();
 	//AlienFX_SDK::Functions* LocateDev(int pid);
 	//size_t FillDevs();
+	using FXH::FXH;
 	int Refresh(bool force = false);
 	bool RefreshOne(lightset* map, bool force = false, bool update = false);
 	bool SetMode(int mode);
