@@ -1133,7 +1133,8 @@ void UpdateLightListC(HWND hDlg, int pid, int lid) {
 	}
 	RECT csize;
 	GetClientRect(light_list, &csize);
-	ListView_SetColumnWidth(light_list, 0, csize.right - csize.left);
+	int width = (csize.right - csize.left) < 100 ? 100 : csize.right - csize.left;
+	ListView_SetColumnWidth(light_list, 0, width);
 	BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();
 	if (status && status != 0xff)
 		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
