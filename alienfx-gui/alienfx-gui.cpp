@@ -947,7 +947,7 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 		map->r = savedColor.r;
 		map->g = savedColor.g;
 		map->b = savedColor.b;
-		fxhl->RefreshState();
+		fxhl->RefreshOne(mmap, true, true);
 	}
 	RedrawButton(hDlg, id, map->r, map->g, map->b);
 	return ret;
@@ -1253,10 +1253,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				if (mmap != NULL) {
+				if (lid != -1) {
+					if (!mmap) {
+						// have selection, but no effect - let's create one!
+						mmap = CreateMapping(lid);
+						effID = 0;
+					}
 					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->eve[0].map[effID]);
 					RebuildEffectList(hDlg, mmap);
-					fxhl->RefreshOne(mmap, true, true);
+					//fxhl->RefreshOne(mmap, true, true);
 				}
 			} break;
 			} break;
@@ -1310,7 +1315,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 								// create new mapping
 								lightset* newmap = CreateMapping(i);
 								newmap->eve[0] = light;
-								conf->active_set.push_back(*newmap);
 							}
 						}
 					}
