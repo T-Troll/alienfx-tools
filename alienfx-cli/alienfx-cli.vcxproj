@@ -55,6 +55,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="..\alienfx-LFX\alienfx-LFX.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -162,16 +163,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="alienfx-cli.h" />
-    <ClInclude Include="LFX2.h" />
-    <ClInclude Include="LFXConfigurator.h" />
-    <ClInclude Include="LFXDecl.h" />
-    <ClInclude Include="LFXUtil.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfx-cli.cpp" />
-    <ClCompile Include="LFXUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">

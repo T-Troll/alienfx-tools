@@ -21,9 +21,6 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alienfx-ambient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CaptureHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -23,6 +23,7 @@ struct mapping {
 	Colorcode colorto;
 	unsigned char lowcut;
 	unsigned char hicut;
+	unsigned flags;
 	std::vector<unsigned char> map;
 };
 
@@ -36,6 +37,8 @@ public:
 	DWORD inpType = 0;
 	DWORD lastActive = 0;
 	DWORD showAxis = 1;
+	DWORD stateOn = 1;
+	DWORD offPowerButton = 0;
 	std::vector<mapping> mappings;
 
 	ConfigHandler();

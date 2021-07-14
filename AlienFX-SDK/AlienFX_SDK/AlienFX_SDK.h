@@ -52,6 +52,12 @@ namespace AlienFX_SDK
 		std::string name;
 	};
 
+	struct group {
+		DWORD gid = 0;
+		std::string name;
+		vector<mapping*> lights;
+	};
+
 	struct afx_act {
 		BYTE type = 0;
 		BYTE time = 0;
@@ -193,6 +199,7 @@ namespace AlienFX_SDK
 		// Name mappings for lights
 		vector <mapping> mappings;
 		vector <devmap> devices;
+		vector <group> groups;
 	public:
 
 		~Mappings();
@@ -210,10 +217,21 @@ namespace AlienFX_SDK
 		vector<devmap>* GetDevices();
 
 		// get saved light names
-		vector<mapping>* GetMappings();
+		vector <mapping>* GetMappings();
+
+		// get defined groups
+		vector <group>* GetGroups();
+
+		// find mapping by dev/light it...
+		mapping* GetMappingById(int devID, int LightID);
+
+		// find mapping by dev/light it...
+		group* GetGroupById(int gid);
 
 		// add new light name into the list
 		void AddMapping(int devID, int lightID, char* name, int flags);
+
+		void AddGroup(int gID, char* name, int lightNum, DWORD* lightlist);
 
 		// get saved light names
 		int GetFlags(int devid, int lightid);

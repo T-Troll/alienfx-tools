@@ -2,9 +2,9 @@
 //
 
 #include <iostream>
-#include <vector>
+//#include <vector>
 #include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
-#include "../alienfx-cli/LFXUtil.h"
+#include "LFXUtil.h"
 
 using namespace std;
 namespace

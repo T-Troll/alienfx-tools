@@ -1,5 +1,5 @@
 #include "CaptureHelper.h"
-#include <opencv2/imgproc.hpp>
+#include "opencv2/imgproc.hpp"
 #include "DXGIManager.hpp"
 
 using namespace cv;

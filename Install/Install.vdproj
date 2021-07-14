@@ -46,7 +46,7 @@
         "Entry"
         {
         "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
-        "OwnerKey" = "8:_396F696E40FE45559E40908163600D54"
+        "OwnerKey" = "8:_CF2105F3B70749ABA35E620EB7D9B1FC"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -58,7 +58,7 @@
         "Entry"
         {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
-        "OwnerKey" = "8:_396F696E40FE45559E40908163600D54"
+        "OwnerKey" = "8:_CF2105F3B70749ABA35E620EB7D9B1FC"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -69,14 +69,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
-        "OwnerKey" = "8:_396F696E40FE45559E40908163600D54"
+        "MsmKey" = "8:_E62E3EC8F5681811CD45B0147079B24F"
+        "OwnerKey" = "8:_CF2105F3B70749ABA35E620EB7D9B1FC"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_FE510A127E1B3283F303BA235B3D1001"
-        "OwnerKey" = "8:_396F696E40FE45559E40908163600D54"
+        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
+        "OwnerKey" = "8:_CF2105F3B70749ABA35E620EB7D9B1FC"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -246,10 +246,10 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ECA7B10455E9FEA298D65C36BC39D1CE"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E62E3EC8F5681811CD45B0147079B24F"
             {
-            "SourcePath" = "8:HID.DLL"
-            "TargetName" = "8:HID.DLL"
+            "SourcePath" = "8:COMDLG32.dll"
+            "TargetName" = "8:COMDLG32.dll"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
             "Condition" = "8:"
@@ -266,10 +266,10 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FE510A127E1B3283F303BA235B3D1001"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ECA7B10455E9FEA298D65C36BC39D1CE"
             {
-            "SourcePath" = "8:dxgi.dll"
-            "TargetName" = "8:dxgi.dll"
+            "SourcePath" = "8:HID.DLL"
+            "TargetName" = "8:HID.DLL"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
             "Condition" = "8:"
@@ -353,8 +353,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{07CD6C40-1CFD-4487-8C18-FE276417DDD3}"
-        "PackageCode" = "8:{01E70742-6732-4E6C-8FB3-B5243D2917CC}"
+        "ProductCode" = "8:{FCB018BA-A496-4FCB-A7AC-327F8EA6DD29}"
+        "PackageCode" = "8:{4D8FE327-8AE3-4C1D-9BFE-7ACBBC47AB70}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

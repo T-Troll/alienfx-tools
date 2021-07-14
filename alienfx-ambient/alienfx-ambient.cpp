@@ -1,25 +1,15 @@
 // alienfx-ambient.cpp : Defines the entry point for the application.
 //
 
-#include "alienfx-ambient.h"
+#include <windows.h>
+#include <windowsx.h>
+#include <algorithm>
+#include "resource.h"
 #include "CaptureHelper.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
-#include <windowsx.h>
-#include <CommCtrl.h>
-#include <Commdlg.h>
-#include <shellapi.h>
-#include "..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.h"
-#include <algorithm>
-
-#pragma comment(linker, \
-  "\"/manifestdependency:type='Win32' "\
-  "name='Microsoft.Windows.Common-Controls' "\
-  "version='6.0.0.0' "\
-  "processorArchitecture='*' "\
-  "publicKeyToken='6595b64144ccf1df' "\
-  "language='*'\"")
-#pragma comment(lib,"Version.lib")
+#include "AlienFX_SDK.h"
+#include "toolkit.h"
 
 #define MAX_LOADSTRING 100
 
@@ -30,7 +20,6 @@ ConfigHandler* conf;
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Global Variables:
-HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 NOTIFYICONDATA niData;
 
@@ -83,6 +72,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         conf->Save();
     }
+
+    fxhl->FadeToBlack();
     delete cap;
     delete fxhl;
     delete conf;
@@ -90,16 +81,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return 1;
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
@@ -186,68 +167,25 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 mapping* FindMapping(int lid) {
     if (lid != -1) {
-        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-        for (int i = 0; i < conf->mappings.size(); i++)
-            if (conf->mappings[i].devid == lgh.devid && conf->mappings[i].lightid == lgh.lightid)
-                return &conf->mappings[i];
+        if (lid > 0xffff) {
+            // group
+            for (int i = 0; i < conf->mappings.size(); i++)
+                if (conf->mappings[i].devid == 0 && conf->mappings[i].lightid == lid) {
+                    return &conf->mappings[i];
+                }
+        } else {
+            // mapping
+            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+            for (int i = 0; i < conf->mappings.size(); i++)
+                if (conf->mappings[i].devid == lgh.devid && conf->mappings[i].lightid == lgh.lightid)
+                    return &conf->mappings[i];
+        }
     }
     return NULL;
 }
 
-int UpdateLightList(HWND light_list) {
-
-    int pos = -1;
-    size_t lights = fxhl->afx_dev.GetMappings()->size();
-    SendMessage(light_list, LB_RESETCONTENT, 0, 0);
-    for (int i = 0; i < lights; i++) {
-        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-        if (fxhl->LocateDev(lgh.devid) && !lgh.flags) {
-            pos = (int)SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM)(lgh.name.c_str()));
-            SendMessage(light_list, LB_SETITEMDATA, pos, i);
-        }
-    }
-    RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-    return pos;
-}
-
-HWND CreateToolTip(HWND hwndParent)
-{
-    // Create a tooltip.
-    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-        hwndParent, NULL, hInst, NULL);
-
-    SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-    TOOLINFO ti = { 0 };
-    ti.cbSize = sizeof(TOOLINFO);
-    ti.uFlags = TTF_SUBCLASS;
-    ti.hwnd = hwndParent;
-    ti.hinst = hInst;
-    ti.lpszText = (LPSTR)"0";
-
-    GetClientRect(hwndParent, &ti.rect);
-
-    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-    return hwndTT;
-}
-
 char sBuff[4], lBuff[4];
 HWND sTip = 0, lTip = 0;
-
-void SetSlider(HWND tt, char* buff, int value) {
-    TOOLINFO ti = { 0 };
-    ti.cbSize = sizeof(ti);
-    ti.lpszText = buff;
-    if (tt) {
-        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-        _itoa_s(value, buff, 4, 10);
-        ti.lpszText = buff;
-        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-    }
-}
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
@@ -260,7 +198,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_INITDIALOG:
     {
 
-        UpdateLightList(light_list);
+        UpdateLightList<FXHelper>(light_list, fxhl, 3);
 
         // Mode...
         if (conf->mode) {
@@ -309,9 +247,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 map = FindMapping(lid);
                 if (map == NULL) {
                     mapping newmap;
-                    AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-                    newmap.devid = lgh.devid;
-                    newmap.lightid = lgh.lightid;
+                    if (lid > 0xffff) {
+                        // group
+                        newmap.devid = 0;
+                        newmap.lightid = lid;
+                    } else {
+                        // light
+                        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+                        newmap.devid = lgh.devid;
+                        newmap.lightid = lgh.lightid;
+                    }
                     conf->mappings.push_back(newmap);
                     std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
                     map = FindMapping(lid);
@@ -400,8 +345,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_HIDE);
             break;
         case IDC_BUTTON_RESET:
-            fxhl->FillDevs();
-            UpdateLightList(light_list);
+            fxhl->FillDevs(true, false);
+            UpdateLightList<FXHelper>(light_list, fxhl, 3);
             cap->Restart();
             break;
         default: return false;

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
+#include "AlienFX_SDK.h"
 
 // Profile flags pattern
 #define PROF_DEFAULT 0x1

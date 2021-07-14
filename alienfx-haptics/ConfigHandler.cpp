@@ -92,17 +92,29 @@ int ConfigHandler::Load() {
         );
         // get id(s)...
         if (ret == ERROR_SUCCESS) {
-            unsigned ret2 = sscanf_s(name, "%d-%d", &map.devid, &map.lightid);
-            if (ret2 == 2) {
+            vindex++;
+            if (sscanf_s(name, "%u-%u", &map.devid, &map.lightid) == 2) {
                 map.colorfrom.ci = inarray[0];
                 map.colorto.ci = inarray[1];
                 map.lowcut = inarray[2];
                 map.hicut = inarray[3];
+                map.flags = 0;
                 for (unsigned i = 4; i < (lend / 4); i++)
                     map.map.push_back(inarray[i]);
                 mappings.push_back(map);
+                continue;
             }
-            vindex++;
+            if (sscanf_s(name, "Map%u-%u", &map.devid, &map.lightid) == 2) {
+                map.colorfrom.ci = inarray[0];
+                map.colorto.ci = inarray[1];
+                map.lowcut = inarray[2];
+                map.hicut = inarray[3];
+                map.flags = inarray[4];
+                for (unsigned i = 5; i < (lend / 4); i++)
+                    map.map.push_back(inarray[i]);
+                mappings.push_back(map);
+                continue;
+            }
         }
     } while (ret == ERROR_SUCCESS);
     std::sort(mappings.begin(), mappings.end(), sortMappings);
@@ -110,7 +122,7 @@ int ConfigHandler::Load() {
 }
 int ConfigHandler::Save() {
     char name[256];
-    unsigned out[30];
+    unsigned out[50];
     DWORD dwDisposition;
 
     RegSetValueEx(
@@ -165,17 +177,18 @@ int ConfigHandler::Save() {
         &dwDisposition);
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
-        sprintf_s(name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+        sprintf_s(name, 255, "Map%d-%d", mappings[i].devid, mappings[i].lightid);
         //preparing binary....
         out[0] = mappings[i].colorfrom.ci;
         out[1] = mappings[i].colorto.ci;
         out[2] = mappings[i].lowcut;
         out[3] = mappings[i].hicut;
+        out[4] = mappings[i].flags;
         int j, size;
         for (j = 0; j < mappings[i].map.size(); j++) {
-            out[j + 4] = mappings[i].map[j];
+            out[j + 5] = mappings[i].map[j];
         }
-        size = (j + 4) * sizeof(unsigned);
+        size = (j + 5) * sizeof(unsigned);
         RegSetValueExA(
             hKey2,
             name,
