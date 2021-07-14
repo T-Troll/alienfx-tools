@@ -66,12 +66,14 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {
 			int mIndex = (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER) && Iter->eve[0].map.size() > 1 && activeMode != MODE_AC && activeMode != MODE_CHARGE ? 1 : 0;
 			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map[mIndex] : Iter->eve[2].fs.b.flags ?
-				Iter->eve[2].map[0] : Iter->eve[3].map[0];
+				Iter->eve[2].map[0] : Iter->eve[3].map[0], from = fin;
 			fin.type = 0;
 			bool valid = force ? false : Iter->valid;
 			double coeff = 0.0;
+			bool gauge = false;
 			if (Iter->eve[2].fs.b.flags) {
 				// counter
+				gauge = Iter->eve[2].fs.b.proc;
 				double ccut = Iter->eve[2].fs.b.cut;
 				switch (Iter->eve[2].source) {
 				case 0: if (valid && (lCPU == cCPU || lCPU < ccut && cCPU < ccut)) continue; coeff = cCPU; break;
@@ -83,9 +85,9 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 6: if (valid && (lBatt == cBatt || lBatt > ccut && cBatt > ccut)) continue; coeff = 100-cBatt; break;
 				}
 				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
-				fin.r = (BYTE)(fin.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
-				fin.g = (BYTE)(fin.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
-				fin.b = (BYTE)(fin.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
+				fin.r = (BYTE)(from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
+				fin.g = (BYTE)(from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
+				fin.b = (BYTE)(from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
 			}
 			if (Iter->eve[3].fs.b.flags) {
 				// indicator
@@ -130,7 +132,26 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				if (grp)
 					for (int i = 0; i < grp->lights.size(); i++) {
 						int lFlags = afx_dev.GetFlags(grp->lights[i]->devid, grp->lights[i]->lightid) & ALIENFX_FLAG_POWER;
-						SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, lFlags, actions, &(*Iter), force);
+						if (!lFlags)
+							if (gauge) {
+								// set as gauge...
+								actions.clear();
+								if (((double) i) / grp->lights.size() < coeff) {
+									if (((double) i + 1) / grp->lights.size() < coeff) {
+										actions.push_back(Iter->eve[2].map[1]);
+									} else {
+										// recalc...
+										double newCoeff = (coeff - ((double) i) / grp->lights.size()) * grp->lights.size();
+										fin.r = (BYTE)(from.r * (1 - newCoeff) + Iter->eve[2].map[1].r * newCoeff);
+										fin.g = (BYTE)(from.g * (1 - newCoeff) + Iter->eve[2].map[1].g * newCoeff);
+										fin.b = (BYTE)(from.b * (1 - newCoeff) + Iter->eve[2].map[1].b * newCoeff);
+										actions.push_back(fin);
+									}
+								} else
+									actions.push_back(from);
+
+							}
+							SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, lFlags, actions, &(*Iter), force);
 					}
 			} else
 				Iter->valid = SetLight(Iter->devid, Iter->lightid, afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER, actions, &(*Iter), force);

@@ -1353,7 +1353,7 @@ namespace AlienFX_SDK
 		for (int i = 0; i < mappings.size(); i++)
 			if (mappings[i].devid == devid && mappings[i].lightid == lightid)
 				return mappings[i].flags;
-		return -1;
+		return 0;
 	}
 
 	void Mappings::SetFlags(int devid, int lightid, int flags)

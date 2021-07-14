@@ -29,13 +29,19 @@ void FXHelper::Refresh(int * freq)
 						if (dev && dev->IsDeviceReady()) {
 							if (map.flags) {
 								// gauge
-								if (((double) i) / grp->lights.size() < power)
-									if (((double) i+1) / grp->lights.size() < power)
-										dev->SetColor(grp->lights[i]->lightid, map.colorto.cs.red, map.colorto.cs.green, map.colorto.cs.blue);
-									else
+								if (((double) i) / grp->lights.size() < power) {
+									if (((double) i + 1) / grp->lights.size() < power)
+										dev->SetColor(grp->lights[i]->lightid, to.cs.red, to.cs.green, to.cs.blue);
+									else {
+										// recalc...
+										double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
+										fin.cs.red = (unsigned char)((1.0 - newPower) * from.cs.red + newPower * to.cs.red);
+										fin.cs.green = (unsigned char)((1.0 - newPower) * from.cs.green + newPower * to.cs.green);
+										fin.cs.blue = (unsigned char)((1.0 - newPower) * from.cs.blue + newPower * to.cs.blue);
 										dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
-								else
-									dev->SetColor(grp->lights[i]->lightid, map.colorfrom.cs.red, map.colorfrom.cs.green, map.colorfrom.cs.blue);
+									}
+								} else
+									dev->SetColor(grp->lights[i]->lightid, from.cs.red, from.cs.green, from.cs.blue);
 							} else {
 								dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
 							}

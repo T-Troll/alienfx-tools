@@ -424,7 +424,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		0,
 		&hTempCounter2);
 
-	while (WaitForSingleObject(src->stopEvents, 150) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(src->stopEvents, 100) == WAIT_TIMEOUT) {
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;

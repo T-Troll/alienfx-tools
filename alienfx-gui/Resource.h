@@ -48,7 +48,6 @@
 #define IDC_STARTW                      1016
 #define IDC_STARTM                      1017
 #define IDC_AUTOREFRESH                 1018
-#define IDC_LIGHTS_S                    1019
 #define IDC_BUTTON_REFRESH              1021
 #define IDC_BUTTON_MINIMIZE             1022
 #define IDC_LIGHTS_E                    1023
@@ -105,13 +104,12 @@
 #define IDC_LIST_PROFILES               1077
 #define IDC_LIST_LIGHTS                 1079
 #define IDC_CHECK_INDICATOR             1080
-#define IDC_COMBO_GROUPS                1082
 #define IDC_GROUPS                      1082
-#define IDC_LIST1                       1083
 #define IDC_LIST_INGROUP                1083
 #define IDC_BUT_ADDTOG                  1084
-#define IDC_BUT_DELGROMG                1085
+#define IDC_CHECK1                      1084
 #define IDC_BUT_DELFROMG                1085
+#define IDC_GAUGE                       1085
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -136,7 +134,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1085
+#define _APS_NEXT_CONTROL_VALUE         1086
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

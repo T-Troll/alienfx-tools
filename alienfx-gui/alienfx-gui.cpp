@@ -1232,7 +1232,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (effID == mmap->eve[0].map.size())
 					effID--;
 				// remove mapping if no colors!
-				if (fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER || !mmap->eve[0].map.empty()) {
+				if (fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER || mmap->eve[0].map.empty()) {
 					RemoveMapping(&conf->active_set, mmap->devid, mmap->lightid);
 					RebuildEffectList(hDlg, NULL);
 					effID = -1;
@@ -1453,13 +1453,11 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			} break;
 		case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
 			int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
-			if (map) {
-				map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				fxhl->RefreshMon();
-			}
-			else {
+			if (!map) {
 				map = CreateMapping(lid);
 			}
+			map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			fxhl->RefreshMon();
 			UpdateMonitoringInfo(hDlg, map);
 		} break;
 		case IDC_STATUS_BLINK:
@@ -1467,8 +1465,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				map->eve[3].fs.b.proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
 		case IDC_GAUGE:
-			if (map != NULL)
+			if (map != NULL) {
 				map->eve[2].fs.b.proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				fxhl->RefreshMon();
+			}
 			break;
 		case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
 			if (map && HIWORD(wParam) == BN_CLICKED) {
@@ -1961,7 +1961,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 }
 
 void ReloadProfileView(HWND hDlg, int cID) {
-	//int rpos = -1;
+	int rpos = 0;
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 	ListView_DeleteAllItems(profile_list);
@@ -1987,12 +1987,13 @@ void ReloadProfileView(HWND hDlg, int cID) {
 				CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, conf->profiles[i].flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
 				SendMessage(app_list, LB_RESETCONTENT, 0, 0);
 				SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].triggerapp.c_str()));
-				//rpos = i;
+				rpos = i;
 			}
 			ListView_InsertItem(profile_list, &lItem);
 	}
 	RECT csize;
 	GetClientRect(profile_list, &csize);
+	ListView_EnsureVisible(profile_list, rpos, false);
 	ListView_SetColumnWidth(profile_list, 0, csize.right - csize.left - 1);
 	//return rpos;
 }
