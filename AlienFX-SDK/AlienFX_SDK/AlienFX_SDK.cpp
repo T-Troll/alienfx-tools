@@ -601,6 +601,7 @@ namespace AlienFX_SDK
 				else
 					OutputDebugString(TEXT("Power update - device still not ready\n"));
 #endif
+				lastPowerCall = GetTickCount64();
 				return false;
 			}
 			// Need to flush query...
@@ -788,28 +789,6 @@ namespace AlienFX_SDK
 			if (newState)
 				buffer[4] = 0xfe;
 			return HidD_SetFeature(devHandle, buffer, length);
-			//memcpy(buffer, COMMV5.colorSel5, sizeof(COMMV5.colorSel5));
-			//if (!newState)
-			//	ZeroMemory(buffer + 3, sizeof(COMMV5.colorSel5) - 3);
-			//HidD_SetFeature(devHandle, buffer, length);
-			//
-			//ZeroMemory(buffer, length);
-			//memcpy(buffer, COMMV5.colorSel6, sizeof(COMMV5.colorSel6));
-			//if (!newState)
-			//	ZeroMemory(buffer + 3, sizeof(COMMV5.colorSel6) - 3);
-			//HidD_SetFeature(devHandle, buffer, length);
-
-			//ZeroMemory(buffer, length);
-			//memcpy(buffer, COMMV5.colorSel7, sizeof(COMMV5.colorSel7));
-			//if (!newState)
-			//	ZeroMemory(buffer + 3, sizeof(COMMV5.colorSel7) - 3);
-			//HidD_SetFeature(devHandle, buffer, length);
-
-			//ZeroMemory(buffer, length);
-			//memcpy(buffer, COMMV5.colorSet, sizeof(COMMV5.colorSet));
-			//HidD_SetFeature(devHandle, buffer, length);
-			//Loop();
-			//UpdateColors();
 		} break;
 		case API_L_V4:
 		{
@@ -834,7 +813,20 @@ namespace AlienFX_SDK
 			return HidD_SetOutputReport(devHandle, buffer, length);
 			//AlienfxGetDeviceStatus();
 		} break;
-		case API_L_V3: case API_L_V1: case API_L_V2: return Reset(newState); break;
+		case API_L_V3: case API_L_V1: case API_L_V2:
+			if (power)
+				return Reset(newState);
+			else
+				if (!newState) {
+					for (int i = 0; i < mappings->size(); i++) {
+						mapping cur = mappings->at(i);
+						if (cur.devid == pid && !cur.flags) {
+							SetColor(cur.lightid, 0, 0, 0);
+						}
+					}
+					UpdateColors();
+				}
+			break;
 		}
 		return false;
 	}
@@ -928,6 +920,11 @@ namespace AlienFX_SDK
 			return status == ALIENFX_V5_STARTCOMMAND || status == ALIENFX_V5_INCOMMAND;
 		case API_L_V4:
 			status = AlienfxGetDeviceStatus();
+//#ifdef _DEBUG
+//			wchar_t buff[2048];
+//			swprintf_s(buff, 2047, L"Last device status: %d\n", status);
+//			OutputDebugString(buff);
+//#endif
 			return status == 0 || status == ALIENFX_V4_READY || status == ALIENFX_V4_WAITUPDATE || status == ALIENFX_V4_WASON;
 		case API_L_V2: case API_L_V1:
 			switch (AlienfxGetDeviceStatus()) {

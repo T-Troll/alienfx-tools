@@ -5,6 +5,7 @@ class EventHandler
 {
 private:
 	HANDLE dwHandle = 0;
+
 	HWINEVENTHOOK hEvent = 0, cEvent = 0;
 public:
 	void ChangePowerState();
@@ -21,6 +22,7 @@ public:
 
 	FXHelper* fxh = NULL;
 	ConfigHandler* conf = NULL;
+	HANDLE stopEvents = NULL;
 
 	long maxNet = 1;
 };

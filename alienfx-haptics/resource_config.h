@@ -20,6 +20,8 @@
 #define IDC_SHOWAXIS                    1022
 #define IDC_LEVELS_2                    1025
 #define IDC_LEVELS                      1025
+#define IDC_CHECK1                      1026
+#define IDC_GAUGE                       1026
 #define IDC_STATIC_VERSION              1043
 #define IDC_SYSLINK_HOMEPAGE            1044
 #define ID_FILE_EXIT                    9001
@@ -34,7 +36,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40002
-#define _APS_NEXT_CONTROL_VALUE         1026
+#define _APS_NEXT_CONTROL_VALUE         1027
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

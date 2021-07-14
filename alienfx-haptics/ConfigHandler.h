@@ -23,6 +23,7 @@ struct mapping {
 	Colorcode colorto;
 	unsigned char lowcut;
 	unsigned char hicut;
+	unsigned flags;
 	std::vector<unsigned char> map;
 };
 

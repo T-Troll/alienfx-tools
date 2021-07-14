@@ -238,10 +238,19 @@ bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
 
 mapping* FindMapping(int lid) {
 	if (lid != -1) {
-		AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
-		for (int i = 0; i < config->mappings.size(); i++)
-			if (config->mappings[i].devid == lgh.devid && config->mappings[i].lightid == lgh.lightid)
-				return &config->mappings[i];
+		if (lid > 0xffff) {
+			// group
+			for (int i = 0; i < config->mappings.size(); i++)
+				if (config->mappings[i].devid == 0 && config->mappings[i].lightid == lid) {
+					return &config->mappings[i];
+				}
+		} else {
+			// mapping
+			AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
+			for (int i = 0; i < config->mappings.size(); i++)
+				if (config->mappings[i].devid == lgh.devid && config->mappings[i].lightid == lgh.lightid)
+					return &config->mappings[i];
+		}
 	}
 	return NULL;
 }
@@ -343,14 +352,21 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				// check in config - do we have mappings?
 				if (map == NULL) {
 					mapping newmap;
-					// TODO: mapping for group!
-					AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
-					newmap.devid = lgh.devid;
-					newmap.lightid = lgh.lightid;
+					if (lid > 0xffff) {
+						// group
+						newmap.devid = 0;
+						newmap.lightid = lid;
+					} else {
+						// light
+						AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
+						newmap.devid = lgh.devid;
+						newmap.lightid = lgh.lightid;
+					}
 					newmap.colorfrom.ci = 0;
 					newmap.colorto.ci = 0;
 					newmap.lowcut = 0;
 					newmap.hicut = 255;
+					newmap.flags = 0;
 					config->mappings.push_back(newmap);
 					std::sort(config->mappings.begin(), config->mappings.end(), ConfigHandler::sortMappings);
 					map = FindMapping(lid);
@@ -370,6 +386,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
 				SetSlider(sTip, sBuff, map->lowcut);
 				SetSlider(lTip, lBuff, map->hicut);
+				CheckDlgButton(hDlg, IDC_GAUGE, map->flags ? BST_CHECKED : BST_UNCHECKED);
 			}
 			break;
 		}
@@ -428,6 +445,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				UpdateLightList<FXHelper>(light_list, afx, 3);
 			} break;
 			} break;
+		case IDC_GAUGE:
+		{
+			if (map)
+				map->flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
+		} break;
 		case IDC_MINIMIZE:
 			switch (HIWORD(wParam))
 			{

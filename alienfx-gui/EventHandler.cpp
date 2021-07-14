@@ -9,15 +9,12 @@
 DWORD WINAPI CEventProc(LPVOID);
 DWORD WINAPI CProfileProc(LPVOID);
 
-HANDLE stopEvents = 0, stopProfile = 0;
-
-ConfigHandler* config = NULL;
 EventHandler* even = NULL;
 
 EventHandler::EventHandler(ConfigHandler* confi, FXHelper* fx)
 {
-	config = confi;
-	this->conf = config;
+	//config = confi;
+	this->conf = confi;
 	even = this;
 	fxh = fx;
 	StartProfiles();
@@ -35,7 +32,7 @@ void EventHandler::ChangePowerState()
 	SYSTEM_POWER_STATUS state;
 	GetSystemPowerStatus(&state);
 	bool sameState = true;
-	if (config->statePower = state.ACLineStatus) {
+	if (conf->statePower = state.ACLineStatus) {
 		// AC line
 		switch (state.BatteryFlag) {
 		case 8: // charging
@@ -151,7 +148,7 @@ void EventHandler::StopEvents()
 
 void EventHandler::ToggleEvents()
 {
-	config->SetStates();
+	conf->SetStates();
 	if (conf->stateOn) {
 		if (conf->monState) {
 			if (!dwHandle) {
@@ -167,21 +164,6 @@ void EventHandler::ToggleEvents()
 				fxh->Refresh(true);
 		}
 	}
-	//if (conf->monState && conf->stateOn) {
-	//	//fxh->Refresh(false);
-	//	if (!dwHandle)
-	//		StartEvents();
-	//	//else
-	//	//	fxh->RefreshMon();
-	//}
-	//else
-	//	if (!conf->monState && conf->stateOn) {
-	//		if (dwHandle)
-	//			StopEvents();
-	//		else
-	//			fxh->Refresh(true);
-	//	} //else
-	//		//fxh->ChangeState(conf->stateOn);
 }
 
 int ScanTaskList() {
@@ -221,7 +203,7 @@ int ScanTaskList() {
 							cFileName = GetModuleFileNameEx(hProcess, hMod, szProcessName, maxFileName);
 						}
 						// is it related to profile?
-						if ((newp = config->FindProfileByApp(std::string(szProcessName))) >=0)
+						if ((newp = even->conf->FindProfileByApp(std::string(szProcessName))) >=0)
 							break;
 					}
 				}
@@ -271,7 +253,7 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 //		sprintf_s(buff, 2047, "Active app switched to %s\n", szProcessName);
 //		OutputDebugString(buff);
 //#endif
-		config->foregroundProfile = newp = config->FindProfileByApp(std::string(szProcessName), true);
+		even->conf->foregroundProfile = newp = even->conf->FindProfileByApp(std::string(szProcessName), true);
 		if (newp < 0) {
 			newp = ScanTaskList();
 //#ifdef _DEBUG
@@ -312,17 +294,17 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 
 			switch (dwEvent) {
 			case EVENT_OBJECT_CREATE:
-				if (config->foregroundProfile < 0) {
+				if (even->conf->foregroundProfile < 0) {
 #ifdef _DEBUG
 					char buff[2048];
 					sprintf_s(buff, 2047, "Switching to %s\n", szProcessName);
 					OutputDebugString(buff);
 #endif
-					even->SwitchActiveProfile(config->FindProfileByApp(std::string(szProcessName)));
+					even->SwitchActiveProfile(even->conf->FindProfileByApp(std::string(szProcessName)));
 				}
 				break;
 			case EVENT_OBJECT_DESTROY:
-				if (config->foregroundProfile < 0 && config->FindProfileByApp(std::string(szProcessName)) == config->activeProfile) {
+				if (even->conf->foregroundProfile < 0 && even->conf->FindProfileByApp(std::string(szProcessName)) == even->conf->activeProfile) {
 					newp = ScanTaskList();
 #ifdef _DEBUG
 					char buff[2048];
@@ -442,7 +424,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		0,
 		&hTempCounter2);
 
-	while (WaitForSingleObject(stopEvents, 150) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(src->stopEvents, 150) == WAIT_TIMEOUT) {
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;

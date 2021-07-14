@@ -41,7 +41,7 @@ void printUsage()
 		<< "update\t\tupdates light status (for looped commands or old devices)." << endl
 		<< "reset\t\treset device state." << endl
 		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
-		<< "Zones:\tleft, right, top, bottom, front, rear." << endl
+		<< "Zones:\tleft, right, top, bottom, front, rear (high-level) or ID of the Group (low-level)." << endl
 		<< "Actions:color (disable action), pulse, morph (you need 2 colors)," << endl
 		<< "\t(only for low-level v4) breath, spectrum, rainbow (up to 9 colors each)." << endl;
 }
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v3.0.0" << endl;
+	cerr << "alienfx-cli v3.1.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -153,6 +153,11 @@ int main(int argc, char* argv[])
 						}
 					}
 				}
+				// now groups...
+				for (int i = 0; i < afx_map->GetGroups()->size(); i++)
+					cout << "Group #" << (afx_map->GetGroups()->at(i).gid & 0xffff)
+					<< " - " << afx_map->GetGroups()->at(i).name
+					<< " (" << afx_map->GetGroups()->at(i).lights.size() << " lights)" << endl;
 			}
 			else {
 				lfxUtil.GetStatus();
@@ -313,7 +318,16 @@ int main(int argc, char* argv[])
 			color.cs.blue = atoi(args.at(3).c_str());
 			color.cs.brightness = args.size() > 4 ? atoi(args.at(4).c_str()) : 255;
 			if (low_level) {
-				cerr << "Low level API doesn not support zones!" << endl;
+				zoneCode = atoi(args.at(0).c_str()) | 0x10000;
+				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
+				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
+				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
+				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
+				if (grp) {
+					for (int i = 0; i < grp->lights.size(); i++)
+						if (grp->lights[i]->devid == afx_dev->GetPID())
+							afx_dev->SetColor(grp->lights[i]->lightid, color.cs.red, color.cs.green, color.cs.blue);
+				}
 			}
 			else {
 				lfxUtil.SetLFXColor(zoneCode, color.ci);
@@ -415,12 +429,6 @@ int main(int argc, char* argv[])
 				cerr << "set-zone-action: Incorrect arguments" << endl;
 				continue;
 			}
-			unsigned actionCode = LFX_ACTION_COLOR;
-			if (args.at(1) == "pulse")
-				actionCode = LFX_ACTION_PULSE;
-			else if (args.at(1) == "morph")
-				actionCode = LFX_ACTION_MORPH;
-			static ColorU color, color2;
 			unsigned zoneCode = LFX_ALL;
 			if (args.at(0) == "left") {
 				zoneCode = LFX_ALL_LEFT;
@@ -440,21 +448,56 @@ int main(int argc, char* argv[])
 			if (args.at(0) == "rear") {
 				zoneCode = LFX_ALL_REAR;
 			}
-			color.cs.red = atoi(args.at(2).c_str());
-			color.cs.green = atoi(args.at(3).c_str());
-			color.cs.blue = atoi(args.at(4).c_str());
-			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
-			if (args.size() > 8) {
-				color2.cs.red = atoi(args.at(6).c_str());
-				color2.cs.green = atoi(args.at(7).c_str());
-				color2.cs.blue = atoi(args.at(8).c_str());
-				color2.cs.brightness = args.size() > 9 ? atoi(args.at(9).c_str()) : 255;
+			unsigned actionCode = LFX_ACTION_COLOR;
+			std::vector<AlienFX_SDK::afx_act> act;
+			std::vector<ColorU> clrs;
+			int argPos = 2;
+			while (argPos < args.size()) {
+				AlienFX_SDK::afx_act c_act;
+				ColorU c;
+				if (args.at(argPos) == "pulse") {
+					actionCode = LFX_ACTION_PULSE;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Pulse;
+				}
+				else if (args.at(argPos) == "morph") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Morph;
+				}
+				else if (args.at(argPos) == "breath") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Breathing;
+				}
+				else if (args.at(argPos) == "spectrum") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Spectrum;
+				}
+				else if (args.at(argPos) == "rainbow") {
+					actionCode = LFX_ACTION_MORPH;
+					c_act.type = AlienFX_SDK::Action::AlienFX_A_Rainbow;
+				}
+				c.cs.blue = c_act.r = atoi(args.at(argPos+1).c_str());
+				c.cs.green = c_act.g = atoi(args.at(argPos + 2).c_str());
+				c.cs.red = c_act.b = atoi(args.at(argPos + 3).c_str());
+				c.cs.brightness = argPos + 4 < args.size() ? atoi(args.at(argPos + 4).c_str()) : 255;
+				c_act.tempo = 7;
+				c_act.time = sleepy;
+				c_act.r = (c_act.r * c.cs.brightness) >> 8;
+				c_act.g = (c_act.g * c.cs.brightness) >> 8;
+				c_act.b = (c_act.b * c.cs.brightness) >> 8;
+				act.push_back(c_act);
+				clrs.push_back(c);
+				argPos += 5;
 			}
 			if (low_level) {
-				cerr << "Low level API doesn not support zones!" << endl;
+					AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
+					if (grp) {
+						for (int i = 0; i < grp->lights.size(); i++)
+							if (grp->lights[i]->devid == afx_dev->GetPID())
+								afx_dev->SetAction(grp->lights[i]->lightid, act);
+					}
 			}
 			else {
-				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, color.ci, color2.ci);
+				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, clrs[0].ci, clrs[1].ci);
 				lfxUtil.Update();
 			}
 			continue;

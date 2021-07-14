@@ -3,9 +3,6 @@
 
 #include <windows.h>
 #include <windowsx.h>
-//#include <CommCtrl.h>
-//#include <Commdlg.h>
-//#include <shellapi.h>
 #include <algorithm>
 #include "resource.h"
 #include "CaptureHelper.h"
@@ -13,15 +10,6 @@
 #include "FXHelper.h"
 #include "AlienFX_SDK.h"
 #include "toolkit.h"
-
-//#pragma comment(linker, \
-//  "\"/manifestdependency:type='Win32' "\
-//  "name='Microsoft.Windows.Common-Controls' "\
-//  "version='6.0.0.0' "\
-//  "processorArchitecture='*' "\
-//  "publicKeyToken='6595b64144ccf1df' "\
-//  "language='*'\"")
-//#pragma comment(lib,"Version.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -32,7 +20,6 @@ ConfigHandler* conf;
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Global Variables:
-//HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 NOTIFYICONDATA niData;
 
@@ -180,10 +167,19 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 mapping* FindMapping(int lid) {
     if (lid != -1) {
-        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-        for (int i = 0; i < conf->mappings.size(); i++)
-            if (conf->mappings[i].devid == lgh.devid && conf->mappings[i].lightid == lgh.lightid)
-                return &conf->mappings[i];
+        if (lid > 0xffff) {
+            // group
+            for (int i = 0; i < conf->mappings.size(); i++)
+                if (conf->mappings[i].devid == 0 && conf->mappings[i].lightid == lid) {
+                    return &conf->mappings[i];
+                }
+        } else {
+            // mapping
+            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+            for (int i = 0; i < conf->mappings.size(); i++)
+                if (conf->mappings[i].devid == lgh.devid && conf->mappings[i].lightid == lgh.lightid)
+                    return &conf->mappings[i];
+        }
     }
     return NULL;
 }
@@ -251,10 +247,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 map = FindMapping(lid);
                 if (map == NULL) {
                     mapping newmap;
-                    // TODO: create for group
-                    AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-                    newmap.devid = lgh.devid;
-                    newmap.lightid = lgh.lightid;
+                    if (lid > 0xffff) {
+                        // group
+                        newmap.devid = 0;
+                        newmap.lightid = lid;
+                    } else {
+                        // light
+                        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+                        newmap.devid = lgh.devid;
+                        newmap.lightid = lgh.lightid;
+                    }
                     conf->mappings.push_back(newmap);
                     std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
                     map = FindMapping(lid);
