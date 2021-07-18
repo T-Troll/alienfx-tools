@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v3.1.0" << endl;
+	cerr << "alienfx-cli v3.1.1" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -147,8 +147,10 @@ int main(int argc, char* argv[])
 						if (devs[i].second == afx_map->GetMappings()->at(k).devid) {
 							cout << "  Light ID#" << afx_map->GetMappings()->at(k).lightid
 								<< " - " << afx_map->GetMappings()->at(k).name;
-							if (afx_map->GetMappings()->at(k).flags)
+							if (afx_map->GetMappings()->at(k).flags & ALIENFX_FLAG_POWER)
 								cout << " (Power button)";
+							if (afx_map->GetMappings()->at(k).flags & ALIENFX_FLAG_INACTIVE)
+								cout << " (Indicator)";
 							cout << endl;
 						}
 					}
@@ -247,7 +249,7 @@ int main(int argc, char* argv[])
 				vector<UCHAR> lights;
 				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
 					if (afx_map->GetMappings()->at(i).devid == isInit &&
-						!afx_map->GetMappings()->at(i).flags)
+						!(afx_map->GetMappings()->at(i).flags & ALIENFX_FLAG_POWER))
 						lights.push_back((UCHAR)afx_map->GetMappings()->at(i).lightid);
 						//afx_dev->SetColor(afx_map->GetMappings()->at(i).lightid,
 						//	color.cs.red, color.cs.green, color.cs.blue);

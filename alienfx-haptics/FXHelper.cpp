@@ -51,17 +51,20 @@ void FXHelper::Refresh(int * freq)
 								} else
 									//dev->SetColor(grp->lights[i]->lightid, from.cs.red, from.cs.green, from.cs.blue);
 									lSets.push_back(l_from);
+								fullSets.push_back(lSets);
 							} //else {
 								//dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
 							//}
 							lIDs.push_back((UCHAR)grp->lights[i]->lightid);
-							fullSets.push_back(lSets);
 						}
 					}
 					if (grp->lights.size()) {
 						AlienFX_SDK::Functions* dev = LocateDev(grp->lights.front()->devid);
 						if (dev && dev->IsDeviceReady())
-							dev->SetMultiColor((int)lIDs.size(), lIDs.data(), fullSets);
+							if (map.flags)
+								dev->SetMultiColor((int) lIDs.size(), lIDs.data(), fullSets);
+							else
+								dev->SetMultiLights((int) lIDs.size(), lIDs.data(), l_fin.r, l_fin.r, l_fin.b);
 					}
 				}
 			} else {

@@ -1250,7 +1250,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					event light = mmap->eve[0];
 					for (int i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
 						AlienFX_SDK::mapping map = fxhl->afx_dev.GetMappings()->at(i);
-						if (!map.flags /*&& fxhl->LocateDev(map.devid)*/) {
+						if (!(map.flags && ALIENFX_FLAG_POWER)) {
 							lightset* actmap = FindMapping(i);
 							if (actmap)
 								actmap->eve[0] = light;
@@ -1308,9 +1308,13 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
 				// Select other color....
 				effID = sItem->iItem;
-				lightset* mmap = FindMapping(lid);
-				if (mmap != NULL) {
-					RebuildEffectList(hDlg, mmap);
+				if (effID != -1) {
+					lightset* mmap = FindMapping(lid);
+					if (mmap != NULL) {
+						RebuildEffectList(hDlg, mmap);
+					}
+				} else {
+					effID = 0;
 				}
 			} break;
 			}
@@ -1847,7 +1851,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning!",
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// store profile...
-				//conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
 				// delete from all profiles...
 				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 					Iter != conf->profiles.end(); Iter++) {
@@ -1901,16 +1904,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fxhl->afx_dev.SetFlags(did, eLid, flags);
 		} break;
 		case IDC_BUTTON_DEVRESET: {
-			//eve->StopProfiles();
-			//eve->StopEvents();
 			fxhl->UnblockUpdates(false);
 			fxhl->FillDevs(conf->stateOn, conf->offPowerButton);
 			fxhl->UnblockUpdates(true);
 			AlienFX_SDK::Functions* dev = fxhl->LocateDev(eDid);
 			if (dev)
 				UpdateLightsList(hDlg, eDid, eLid);
-			//eve->StartEvents();
-			//eve->StartProfiles();
 		} break;
 		default: return false;
 		}
@@ -1928,18 +1927,25 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
 				// Select other item...
+				if (sItem->iItem != -1) {
 				LVITEMA lItem;
 				lItem.mask = LVIF_PARAM;
 				lItem.iItem = sItem->iItem;
 				ListView_GetItem(light_view, &lItem);
 				eLid = (int)lItem.lParam;
-				SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
-				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-				CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
-				//eve->StopEvents();
-				fxhl->UnblockUpdates(false);
-				// highlight to check....
-				fxhl->TestLight(eDid, eLid);
+					SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
+					CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
+					//eve->StopEvents();
+					fxhl->UnblockUpdates(false);
+					// highlight to check....
+					fxhl->TestLight(eDid, eLid);
+				} else {
+					SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
+					CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
+					eLid = -1;
+				}
 			} break;
 			case LVN_ENDLABELEDIT:
 			{
@@ -2048,12 +2054,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			sprintf_s(buf, 128, "Profile %d", vacID);
 			profile prof = {vacID, 0, "", buf};
-			//prof.id = vacID;
-			//prof.name = buf;
-			//prof.lightsets = *conf->active_set;
 			conf->profiles.push_back(prof);
 			conf->profiles.back().lightsets = *conf->active_set;
-			//conf->active_set = &(conf->FindProfile(conf->activeProfile)->lightsets);
 			ReloadProfileView(hDlg, vacID);
 			pCid = vacID;
 			ReloadProfileList(NULL);
@@ -2178,19 +2180,28 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			{
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
 				// Select other item...
-				LVITEMA lItem;
-				lItem.mask = LVIF_PARAM;
-				lItem.iItem = sItem->iItem;
-				ListView_GetItem(p_list, &lItem);
-				pCid = (int)lItem.lParam;
-				profile* prof = conf->FindProfile(pCid);
-				if (prof) {
-					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
+				if (sItem->iItem != -1) {
+					LVITEMA lItem;
+					lItem.mask = LVIF_PARAM;
+					lItem.iItem = sItem->iItem;
+					ListView_GetItem(p_list, &lItem);
+					pCid = (int) lItem.lParam;
+					profile* prof = conf->FindProfile(pCid);
+					if (prof) {
+						CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
+						SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+						SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM) (prof->triggerapp.c_str()));
+					}
+				} else {
+					pCid = -1;
+					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
 					SendMessage(app_list, LB_RESETCONTENT, 0, 0);
-					SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM) (prof->triggerapp.c_str()));
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
