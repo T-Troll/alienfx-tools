@@ -1,9 +1,7 @@
 #include "WSAudioIn.h"
-#include <math.h>
 #include "Graphics.h"
 #include "FXHelper.h"
 #include "DFT_gosu.h"
-#include "resource_config.h"
 
 DWORD WINAPI WSwaveInProc(LPVOID);
 
@@ -247,10 +245,9 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 							for (int j = bytesPerChannel - 1; j >= 0; j--) {
 								val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
 							}
-							finVal += val;// +((maxLevel + 1) / 2);
+							finVal += val;
 						}
-						//double val = pData[4 * i] + pData[4 * i + 1] * 256;
-						waveT[arrayPos + i - shift] = (double) (finVal / nChannel) / maxLevel / NUMSAM;// / (pow(256, bytesPerChannel) - 1);
+						waveT[arrayPos + i - shift] = (double) (finVal / nChannel) / maxLevel / NUMSAM;
 						if (arrayPos + i - shift == NUMSAM - 1) {
 							//buffer full, send to process.
 							memcpy(waveD, waveT, NUMSAM * sizeof(double));
@@ -298,7 +295,6 @@ DWORD WINAPI resample(LPVOID lpParam)
 			fxh->Refresh(freqs);
 			currentTick = GetTickCount64();
 			if (!IsIconic(hDlg) && currentTick - lastTick > 20) {
-				//SendMessage(GetDlgItem(hDlg, IDC_LEVELS), WM_PAINT, 0, 0);
 				DrawFreq(hDlg, freqs);
 				lastTick = currentTick;
 			}

@@ -1,6 +1,3 @@
-// alienfx-ambient.cpp : Defines the entry point for the application.
-//
-
 #include <windows.h>
 #include <windowsx.h>
 #include <algorithm>
@@ -11,7 +8,7 @@
 #include "AlienFX_SDK.h"
 #include "toolkit.h"
 
-#define MAX_LOADSTRING 100
+//#define MAX_LOADSTRING 100
 
 FXHelper* fxhl;
 CaptureHelper* cap;
@@ -20,7 +17,7 @@ ConfigHandler* conf;
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Global Variables:
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
+//WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 NOTIFYICONDATA niData;
 
 // Forward declarations of functions included in this code module:
@@ -37,7 +34,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+    //LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 
     // Perform application initialization:
     HWND hDlg;
@@ -261,14 +258,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                     std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
                     map = FindMapping(lid);
                 }
-                // load zones....
-                UINT bid = IDC_CHECK1;
-                // clear checks...
-                for (int i = 0; i < 12; i++) {
-                    CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
-                }
-                for (int j = 0; j < map->map.size(); j++) {
-                    CheckDlgButton(hDlg, bid+map->map[j], BST_CHECKED);
+                if (map) {
+                    // load zones....
+                    UINT bid = IDC_CHECK1;
+                    // clear checks...
+                    for (int i = 0; i < 12; i++) {
+                        CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
+                    }
+                    for (int j = 0; j < map->map.size(); j++) {
+                        CheckDlgButton(hDlg, bid + map->map[j], BST_CHECKED);
+                    }
                 }
             } break;
         } break;
@@ -279,10 +278,26 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             case BN_CLICKED: {
                 UINT id = LOWORD(wParam) - IDC_BUTTON1;
                 UINT bid = IDC_CHECK1 + id;
-                map = FindMapping(lid);
-                if (map != NULL) {
+                if (lid >= 0) {
+                    map = FindMapping(lid);
+                    if (!map) {
+                        mapping newmap;
+                        if (lid > 0xffff) {
+                            // group
+                            newmap.devid = 0;
+                            newmap.lightid = lid;
+                        } else {
+                            // light
+                            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+                            newmap.devid = lgh.devid;
+                            newmap.lightid = lgh.lightid;
+                        }
+                        conf->mappings.push_back(newmap);
+                        std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                        map = FindMapping(lid);
+                    }
                     // add mapping
-                    std::vector <unsigned char>::iterator Iter = map->map.begin();
+                    vector <unsigned char>::iterator Iter = map->map.begin();
                     int i = 0;
                     for (i = 0; i < map->map.size(); i++)
                         if (map->map[i] == id)
@@ -294,9 +309,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                         // new mapping, add and select
                         map->map.push_back(id);
                         CheckDlgButton(hDlg, bid, BST_CHECKED);
-                    }
-                    else {
+                    } else {
                         map->map.erase(Iter);
+                        if (!map->map.size()) {
+                            // delete mapping!
+                            vector<mapping>::iterator mIter;
+                            for (mIter = conf->mappings.begin(); mIter != conf->mappings.end(); mIter++)
+                                if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
+                                    conf->mappings.erase(mIter);
+                                    break;
+                                }
+                        }
                         CheckDlgButton(hDlg, bid, BST_UNCHECKED);
                     }
                 }
@@ -404,13 +427,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         default: 
             if ((HWND)lParam == brSlider) {
-                //conf->shift = (DWORD)SendMessage(brSlider, TBM_GETPOS, 0, 0);
-                SetSlider(sTip, sBuff, SendMessage(brSlider, TBM_GETPOS, 0, 0));
+                SetSlider(sTip, sBuff, (int)SendMessage(brSlider, TBM_GETPOS, 0, 0));
             }
             else
                 if ((HWND)lParam == divSlider) {
-                    //conf->divider = (DWORD)SendMessage(divSlider, TBM_GETPOS, 0, 0);
-                    SetSlider(lTip, lBuff, SendMessage(divSlider, TBM_GETPOS, 0, 0));
+                    SetSlider(lTip, lBuff, (int)SendMessage(divSlider, TBM_GETPOS, 0, 0));
                 }
         }
         break;

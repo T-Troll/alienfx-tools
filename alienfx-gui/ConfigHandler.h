@@ -43,7 +43,7 @@ struct lightset {
 	unsigned devid = 0;
 	unsigned lightid = 0;
 	event	 eve[4];
-	bool valid = false;
+	AlienFX_SDK::afx_act lastColor;
 };
 
 struct profile {
@@ -82,10 +82,11 @@ public:
 	DWORD gammaCorrection = 1;
 	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
 	DWORD lastActive = 0;
+	DWORD monDelay = 200;
 	bool wasAWCC = false;
 	Colorcode testColor;
 	COLORREF customColors[16] = { 0 };
-	std::vector<lightset> active_set;
+	std::vector<lightset>* active_set;
 	std::vector<profile> profiles;
 
 	ConfigHandler();

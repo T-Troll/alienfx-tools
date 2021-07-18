@@ -6,7 +6,7 @@
 class DFT_gosu {
 
 public:
-	DFT_gosu(int m,int xscale ,double yscale, int* output); // default constructor
+	DFT_gosu(int m,int xscale ,double yscale, int* output);
 	~DFT_gosu();
 	int* calc(double *x1); 
 	void setSampleRate(int rate) { sampleRate = rate; };
@@ -14,7 +14,6 @@ public:
 protected:
 	double *x2;
 	int NUMPTS;
-	//double y_scale;
 	int RECTSNUM;
 	int sampleRate = 44100;
 	int* spectrum;

@@ -3,20 +3,6 @@
 #include <Windows.h>
 
 
-struct ColorComp
-{
-	unsigned char blue;
-	unsigned char green;
-	unsigned char red;
-	unsigned char brightness;
-};
-
-union Colorcode
-{
-	struct ColorComp cs;
-	unsigned int ci;
-};
-
 struct mapping {
 	unsigned devid = 0;
 	unsigned lightid = 0;

@@ -10,7 +10,7 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 - Alienware light device present into the system and have USBHID driver active.
 - `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35).
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
-- Windows 10 (binary files for x64 only, but you can compile project for x86 as well).
+- Windows 10+ (binary files for x64 only, but you can compile project for x86 as well).
 
 ## Devices tested:
 - `Alienware m15R3-R4` Per-key keyboard lights (API v4 + API v5)
@@ -32,9 +32,8 @@ External mouses, keyboards and monitors are not supported yet, feel free to open
 
 ## Known issues
 - Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.
-- `alienfx-cli` `set-zone` and `set-zone-action` commands not supported with low-level SDK (no zones defined).
 - Hardware light effects breathing, spectrum, rainbow doesn't supported for older (v1-v3) devices.
-- Hardware light effects can't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
+- Hardware light effects didn't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use gui, haptics or ambient application. Keep it working can provide unexpected results, especially if you handle Power Button in gui app.
 - **WARNING!** Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezes, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or until lights turn off), then start it back.
@@ -55,21 +54,21 @@ The following commands are available:
 - `status` Showing AlienFX device IDs and their lights IDs and status. Output is different for low- and high- level SDKs.
 - `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red. NB: For low-level, it requires lights setup using `alienfx-probe`/-gui to work correctly!
 - `set-one=<dev-id>,<light-id>,r,g,b[,br]` Set one light to color provided. Check light IDs using `status` command first. Ex: `set-one=0,1,0,0,255` - set light #2 at the device #1 to blue color. For low-level SDK, current active device will be used if devID=0, otherwise it switch to device with PID provided.
-- `set-zone=<zone>,r,g,b[,br]` Set zone (see possible zones list below) light to color provided. This command only works with high-level API.
+- `set-zone=<zone>,r,g,b[,br]` Set zone (see possible zones list below) light to color provided.
 - `set-action=<dev-id>,<light-id>,<action>,r,g,b[,br[,<action>,r,g,b,br]]` Set light to color provided and enable action. You can define up to 9 actions in this command, but only first 1 or 2 will be used for high-level API and for older devices. For low-level SDK, current active device will be used if devID=0, otherwise it switch to device with PID provided.
-- `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action. This command only works with high-level API.
+- `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `set-dev=<pid>` Switch active device to this PID (low-level only).
 - `lightson` Turn all current device lights on.
 - `lightsoff` Turn all current device lights off.
-- `Update` Updates light status (for looped commands or old devices).
-- `Reset` Reset current device.
+- `update` Updates light status (for looped commands or old devices).
+- `reset` Reset current device.
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's available.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 
-Supported Zones: `left, right, top, bottom, front, rear`  
+Supported Zones: `left, right, top, bottom, front, rear` for high-level, any group ID (see in `status`) for low-level. 
 Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For api v4 devices, `breath, spectrum, rainbow` also supported.
 
 ## alienfx-haptics Usage
@@ -82,7 +81,8 @@ This application get audio stream from default output or input device (you can s
 After that, spectrum powers grouped into 20 groups using octave scale.  
 For each light found into the system, you can define group(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
 It's also possible to compress diapason if group always not so or so high powered - use low-level and high-level sliders. Low-level slider define minimum power to react (all below will be treated as zero), and Hi-level slider defines maximum level (all above will be treated as maximum).  
-"Clear” button set all colors to black and sliders to default value.  
+"Clear” button set all colors to black and sliders to default value.
+"Gauge" checkbox - change behavour for groups only. If Gauge on, all lights in group works as a peak indicator (hi-color below power level, low-color above power level, mixed in between).
 "Refresh” button rescan all lights into the system (it’s useful if you connect/disconnect new light device) and restart audio capture stream (in case you switch or remove audio device).  
 "Remove" button remove all lights settings across all lights. Use with care!  
 "Minimize" button (or top menu minimize) will hide application into the system tray. Left-click the tray icon to open it back, right-click it to close application.  
@@ -139,6 +139,7 @@ System Load:
 - Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
 - Battery level - Battery charge level in percent (100=discharged, 0=full).  
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.
+"Gauge" checkbox changes behavour for groups only. If Gauge on, all lights in group works as a level indicator (100% color below indicator value, 0% color above indicator value, mixed in between.
 
 Status Led:
 - Disk activity - Switch light every disk activity event (HDD IDLE above zero).
@@ -156,8 +157,11 @@ You can mix different monitoring type at once, f.e. different colors for same li
 "Lights" list shows all lights defined for selected device. Use “Add”/”Remove” buttons to add new light or remove selected one.  
 NB: If you want to add new light, type light ID into LightID box **before** pressing “Add” button. If this ID already present in list or absent, it will be changed to the first unused ID.  
 Doubleclick or press Enter on selected light to edit it's name.  
+"Groups" dropdown define group of lights. Each group can be selected and set at "Color" and "Monitoring" pages as a one light. Press [+] and [-] buttons to add/remove group, use dropdown to select it or change it name.  
+If you have a group selected, "Group lights" list present the list of lights assigned to this group. Use [-->] and [<--] buttons to add and remove light from the group.  
 "Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.  
 "Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
+"Indicator" checkbox is for indicator lights (hdd, capslock, wifi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
 Selected light changes it color to the one defined by "Test color" button, and fade to black then unselected.
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.  
@@ -201,7 +205,7 @@ Other shortcuts (only then application active):
 - ALT+r - refresh all lights
 - ALT+? - about app
 
-**WARNING:** All color effects stop working if you enable any Event monitoring. It’s a hardware bug – any light update operation restart all effects.
+**WARNING:** All hardware color effects stop working if you enable any Event monitoring. It’s a hardware bug – any light update operation restart all effects.  
 
 ## alienfx-probe Usage
 `alienfx-probe.exe` is a simple CLI interface for assigning names for devices and lights into low-level DSK (similar to alienfx-led-tester, but with wider devices support).  

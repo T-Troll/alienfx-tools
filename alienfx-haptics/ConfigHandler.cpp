@@ -3,13 +3,12 @@
 
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
-    //TCHAR  szData[] = TEXT("USR:SOFTWARE\\Alienfxhaptics\\Settings");
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxhaptics"),
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey1,
         &dwDisposition);
@@ -18,7 +17,7 @@ ConfigHandler::ConfigHandler() {
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey2,
         &dwDisposition);
@@ -28,7 +27,6 @@ ConfigHandler::~ConfigHandler() {
     Save();
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
-    //RegCloseKey(hKey3);
 }
 
 int ConfigHandler::Load() {
@@ -171,7 +169,7 @@ int ConfigHandler::Save() {
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey2,
         &dwDisposition);

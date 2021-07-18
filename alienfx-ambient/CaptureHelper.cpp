@@ -172,15 +172,11 @@ DWORD WINAPI ColorProc(LPVOID inp) {
 
 void FillColors(Mat& src, UCHAR* imgz) {
 	w = src.cols / 4, h = src.rows / 3;
-	//Mat cPos, hPts;
-	//Mat ptsLabel, kCenters, dColor;
 
 	DWORD tId;
 	srcImage = src;
 	for (uint dy = 0; dy < 3; dy++)
 		for (uint dx = 0; dx < 4; dx++) {
-			//cPos = src.rowRange(dy * h, (dy + 1) * h)
-			//	.colRange(dx * w, (dx + 1) * w);
 			if (!pfEvent[dy * 4 + dx]) {
 				uint ptr = (dy * 4 + dx);// *3;
 				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
@@ -192,12 +188,6 @@ void FillColors(Mat& src, UCHAR* imgz) {
 			else {
 				SetEvent(callData[dy][dx].pEvent);
 			}
-			/*hPts = extractHPts(cPos);
-			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 1000, 0.00001)), 5, cv::KMEANS_PP_CENTERS, kCenters);
-			dColor = getDominantColor(cPos, ptsLabel);
-			imgz[ptr] = dColor.ptr<UCHAR>()[0];
-			imgz[ptr + 1] = dColor.ptr<UCHAR>()[1];
-			imgz[ptr + 2] = dColor.ptr<UCHAR>()[2];*/
 		}
 	WaitForMultipleObjects(12, pfEvent, true, 3000);
 }

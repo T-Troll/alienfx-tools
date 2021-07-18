@@ -1,11 +1,11 @@
 #pragma once
 #ifndef Graphics_H
 #define Graphics_H
-#include <windows.h>
+//#include <windows.h>
 #include "ConfigHandler.h"
 #include "WSAudioIn.h"
 #include "FXHelper.h"
-#pragma comment(lib, "winmm.lib")
+//#pragma comment(lib, "winmm.lib")
 
 void DrawFreq(HWND hDlg, int* freq);
 

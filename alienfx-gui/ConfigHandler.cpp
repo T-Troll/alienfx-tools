@@ -69,15 +69,15 @@ void ConfigHandler::updateProfileByID(int id, std::string name, std::string app,
 			return;
 		}
 	}
-	profile prof;
+	profile prof = {id, flags, app, name};
 	// update data...
-	prof.id = id;
-	if (name != "")
-		prof.name = name;
-	if (app != "")
-		prof.triggerapp = app;
-	if (flags != -1)
-		prof.flags = flags;
+	//prof.id = id;
+	//if (name != "")
+	//	prof.name = name;
+	//if (app != "")
+	//	prof.triggerapp = app;
+	//if (flags != -1)
+	//	prof.flags = flags;
 	profiles.push_back(prof);
 }
 
@@ -336,11 +336,11 @@ int ConfigHandler::Load() {
 		if (ret == ERROR_SUCCESS) {
 			unsigned profid;
 			unsigned ret2 = sscanf_s((char*)name, "Set-%d-%d-%d", &map.devid, &map.lightid, &profid);
-			if (ret2 == 3 && map.lightid > 0 && map.lightid < 256) { // incorrect mapping patch
+			if (ret2 == 3) { // incorrect mapping patch
 				BYTE* inPos = inarray;
 				for (int i = 0; i < 4; i++) {
-					map.eve[i].fs.s = *((int*)inPos);
-					inPos += 4;
+					map.eve[i].fs.s = *((DWORD*)inPos);
+					inPos += sizeof(DWORD);
 					map.eve[i].source = *inPos;
 					inPos++;
 					BYTE mapSize = *inPos;
@@ -376,19 +376,16 @@ int ConfigHandler::Load() {
 	}
 	else {
 		// need new profile
-		profile prof;
-		prof.id = 0;
-		prof.flags = 1;
-		prof.name = "Default";
-		std::sort(active_set.begin(), active_set.end(), ConfigHandler::sortMappings);
-		prof.lightsets = active_set;
+		profile prof = {0, 1, "", "Default"};
 		profiles.push_back(prof);
+		active_set = &(profiles.back().lightsets);
+		std::sort(active_set->begin(), active_set->end(), ConfigHandler::sortMappings);
 	}
 	if (profiles.size() == 1) {
 		profiles[0].flags = profiles[0].flags | 0x1;
 		defaultProfile = activeProfile = profiles[0].id;
 	}
-	active_set = profiles[activeFound].lightsets;
+	active_set = &profiles[activeFound].lightsets;
 	if (profiles[activeFound].flags & 0x2)
 		monState = 0;
 	if (profiles[activeFound].flags & 0x4)
@@ -558,7 +555,7 @@ int ConfigHandler::Save() {
 		sizeof(DWORD) * 16
 	);
 	// set current profile mappings to current set!
-	FindProfile(activeProfile)->lightsets = active_set;
+	//FindProfile(activeProfile)->lightsets = active_set;
 	// clear old profiles - check for clean ram (debug!)
 	if (profiles.size() > 0) {
 		RegDeleteTreeA(hKey1, "Profiles");

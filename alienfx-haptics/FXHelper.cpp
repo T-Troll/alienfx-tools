@@ -23,30 +23,47 @@ void FXHelper::Refresh(int * freq)
 			if (map.lightid > 0xffff) {
 				// group
 				AlienFX_SDK::group* grp = afx_dev.GetGroupById(map.lightid);
-				if (grp)
+				if (grp) {
+					vector<UCHAR> lIDs; vector<AlienFX_SDK::afx_act> lSets;
+					vector<vector<AlienFX_SDK::afx_act>> fullSets;
+					AlienFX_SDK::afx_act l_from = {0,0,0,from.cs.red,from.cs.green, from.cs.blue},
+						l_to = {0,0,0,to.cs.red,to.cs.green, to.cs.blue},
+						l_fin = {0,0,0,fin.cs.red,fin.cs.green, fin.cs.blue};
+					lSets.push_back(l_fin);
 					for (int i = 0; i < grp->lights.size(); i++) {
-						AlienFX_SDK::Functions* dev = LocateDev(grp->lights[i]->devid);
-						if (dev && dev->IsDeviceReady()) {
+						if (grp->lights[i]->devid == grp->lights.front()->devid) {
 							if (map.flags) {
 								// gauge
+								lSets.clear();
 								if (((double) i) / grp->lights.size() < power) {
 									if (((double) i + 1) / grp->lights.size() < power)
-										dev->SetColor(grp->lights[i]->lightid, to.cs.red, to.cs.green, to.cs.blue);
+										//dev->SetColor(grp->lights[i]->lightid, to.cs.red, to.cs.green, to.cs.blue);
+										lSets.push_back(l_to);
 									else {
 										// recalc...
 										double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
-										fin.cs.red = (unsigned char)((1.0 - newPower) * from.cs.red + newPower * to.cs.red);
-										fin.cs.green = (unsigned char)((1.0 - newPower) * from.cs.green + newPower * to.cs.green);
-										fin.cs.blue = (unsigned char)((1.0 - newPower) * from.cs.blue + newPower * to.cs.blue);
-										dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
+										l_fin.r = (unsigned char) ((1.0 - newPower) * from.cs.red + newPower * to.cs.red);
+										l_fin.g = (unsigned char) ((1.0 - newPower) * from.cs.green + newPower * to.cs.green);
+										l_fin.b = (unsigned char) ((1.0 - newPower) * from.cs.blue + newPower * to.cs.blue);
+										//dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
+										lSets.push_back(l_fin);
 									}
 								} else
-									dev->SetColor(grp->lights[i]->lightid, from.cs.red, from.cs.green, from.cs.blue);
-							} else {
-								dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
-							}
+									//dev->SetColor(grp->lights[i]->lightid, from.cs.red, from.cs.green, from.cs.blue);
+									lSets.push_back(l_from);
+							} //else {
+								//dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
+							//}
+							lIDs.push_back((UCHAR)grp->lights[i]->lightid);
+							fullSets.push_back(lSets);
 						}
 					}
+					if (grp->lights.size()) {
+						AlienFX_SDK::Functions* dev = LocateDev(grp->lights.front()->devid);
+						if (dev && dev->IsDeviceReady())
+							dev->SetMultiColor((int)lIDs.size(), lIDs.data(), fullSets);
+					}
+				}
 			} else {
 				AlienFX_SDK::Functions* dev = LocateDev(map.devid);
 				if (dev && dev->IsDeviceReady())

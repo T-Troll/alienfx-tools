@@ -1,9 +1,9 @@
 #define _WIN32_WINNT 0x500
 #include "Graphics.h"
 #include <windows.h>
+#include <algorithm>
 #include "resource_config.h"
 #include "FXHelper.h"
-#include <algorithm>
 #include "toolkit.h"
 
 #pragma comment(lib, "winmm.lib")
@@ -350,7 +350,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			{
 			case LBN_SELCHANGE: {
 				// check in config - do we have mappings?
-				if (map == NULL) {
+				if (!map) {
 					mapping newmap;
 					if (lid > 0xffff) {
 						// group
@@ -377,7 +377,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				for (int j = 0; j < map->map.size(); j++) {
 					SendMessage(freq_list, LB_SETSEL, TRUE, map->map[j]);
 				}
-				RedrawWindow(freq_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+				//RedrawWindow(freq_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
 				// load colors...
 				RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
 				RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
@@ -475,9 +475,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				if (map != NULL) {
+				if (map) {
 					std::vector <mapping>::iterator Iter;
-					AlienFX_SDK::mapping lgh = afx->afx_dev.GetMappings()->at(lid);
+					AlienFX_SDK::mapping lgh;
+					if (lid > 0xffff)
+						// group
+						lgh = {0, (DWORD)lid, 0};
+					else
+						// light
+						lgh = afx->afx_dev.GetMappings()->at(lid);
 					for (Iter = config->mappings.begin(); Iter != config->mappings.end(); Iter++)
 						if (Iter->devid == lgh.devid && Iter->lightid == lgh.lightid) {
 							config->mappings.erase(Iter);
@@ -565,8 +571,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*) lParam)->CtlID) {
 		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
-			RedrawButton(hDlg, ((DRAWITEMSTRUCT*) lParam)->CtlID, 0, 0, 0);
+		{
+			int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
+			int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+			if (lid > 0) {
+				mapping* map = FindMapping(lid);
+				if (map)
+					if (((DRAWITEMSTRUCT*) lParam)->CtlID == IDC_BUTTON_LPC)
+						RedrawButton(hDlg, ((DRAWITEMSTRUCT*) lParam)->CtlID, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
+					else
+						RedrawButton(hDlg, ((DRAWITEMSTRUCT*) lParam)->CtlID, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
+			} else
+				RedrawButton(hDlg, ((DRAWITEMSTRUCT*) lParam)->CtlID, 0, 0, 0);
 			return 0;
+		}
 		case IDC_LEVELS:
 			DrawFreq(hDlg, freq);
 			return 0;

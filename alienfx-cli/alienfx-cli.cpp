@@ -244,12 +244,15 @@ int main(int argc, char* argv[])
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
+				vector<UCHAR> lights;
 				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
 					if (afx_map->GetMappings()->at(i).devid == isInit &&
 						!afx_map->GetMappings()->at(i).flags)
-						afx_dev->SetColor(afx_map->GetMappings()->at(i).lightid,
-							color.cs.red, color.cs.green, color.cs.blue);
+						lights.push_back((UCHAR)afx_map->GetMappings()->at(i).lightid);
+						//afx_dev->SetColor(afx_map->GetMappings()->at(i).lightid,
+						//	color.cs.red, color.cs.green, color.cs.blue);
 				}
+				afx_dev->SetMultiLights((int)lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
 				afx_dev->UpdateColors();
 			}
 			else {
@@ -324,9 +327,13 @@ int main(int argc, char* argv[])
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
 				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
 				if (grp) {
+					vector<UCHAR> lights;
 					for (int i = 0; i < grp->lights.size(); i++)
 						if (grp->lights[i]->devid == afx_dev->GetPID())
-							afx_dev->SetColor(grp->lights[i]->lightid, color.cs.red, color.cs.green, color.cs.blue);
+							lights.push_back((UCHAR)afx_map->GetMappings()->at(i).lightid);
+							//afx_dev->SetColor(grp->lights[i]->lightid, color.cs.red, color.cs.green, color.cs.blue);
+					afx_dev->SetMultiLights((int)lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
+					afx_dev->UpdateColors();
 				}
 			}
 			else {

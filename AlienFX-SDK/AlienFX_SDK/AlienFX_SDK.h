@@ -133,14 +133,16 @@ namespace AlienFX_SDK
 		int vid = -1;
 		int pid = -1;
 		int length = -1;
-		int version = -1;
+		//int version = -1;
 
+		// support function for mask-based devices (v1-v3)
 		void SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
 
 	public:
 
 		bool inSet = false;
-		//returns PID
+		// Initialize device
+		// Returns PID of device used. if pid argument is -1, first device found into the system will be used.
 		int AlienFXInitialize(int vid, int pid = -1);
 
 		//De-init
@@ -154,14 +156,20 @@ namespace AlienFX_SDK
 
 		void Loop();
 
-		bool IsDeviceReady();
+		BYTE IsDeviceReady();
 
 		bool SetColor(unsigned index, byte r, byte g, byte b);
 
 		// Set multipy lights to the same color. This only works for new API devices, and emulated at old ones.
 		// numLights - how many lights need to be set
 		// lights - pointer to array of light IDs need to be set.
-		bool SetMultiColor(int numLights, UCHAR* lights, int r, int g, int b);
+		bool SetMultiLights(int numLights, UCHAR* lights, int r, int g, int b);
+
+		// Set multipy lights to different color.
+		// size - how many lights
+		// lights - pointer to array of light IDs need to be set (should be "size")
+		// act - array of light colors set (should be "size)
+		bool SetMultiColor(int size, UCHAR* lights, std::vector<vector<afx_act>> act);
 
 		// Set color to action
 		// action - action type (see enum above)
@@ -175,6 +183,10 @@ namespace AlienFX_SDK
 		// For now, settings as a default of AWCC, but it possible to do it more complex
 		bool SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force = false);
 
+		// Hardware enable/disable lights
+		// newState - on/off
+		// mappings - needed to keep some lights on
+		// power - if true, power and indicator lights will be set on/off too
 		bool ToggleState(bool newState, vector <mapping>* mappings, bool power);
 
 		// return current device state
@@ -188,10 +200,10 @@ namespace AlienFX_SDK
 		bool UpdateColors();
 
 		// get PID in use
-		 int GetPID();
+		int GetPID();
 
 		// get version for current device
-		 int GetVersion();
+		int GetVersion();
 	};
 
 	class Mappings {

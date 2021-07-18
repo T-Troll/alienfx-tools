@@ -1,10 +1,10 @@
 #include <pdh.h>
 #include <pdhmsg.h>
+#include <Psapi.h>
 #pragma comment(lib, "pdh.lib")
 
 #include "EventHandler.h"
-#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
-#include <Psapi.h>
+#include "AlienFX_SDK.h"
 
 DWORD WINAPI CEventProc(LPVOID);
 DWORD WINAPI CProfileProc(LPVOID);
@@ -13,7 +13,6 @@ EventHandler* even = NULL;
 
 EventHandler::EventHandler(ConfigHandler* confi, FXHelper* fx)
 {
-	//config = confi;
 	this->conf = confi;
 	even = this;
 	fxh = fx;
@@ -64,9 +63,6 @@ void EventHandler::ChangePowerState()
 
 void EventHandler::ChangeScreenState(DWORD state)
 {
-#ifdef _DEBUG
-	OutputDebugString("Display state changed\n");
-#endif
 	if (conf->lightsOn && conf->offWithScreen) {
 		if (state == 2) {
 			// Dim display
@@ -77,6 +73,9 @@ void EventHandler::ChangeScreenState(DWORD state)
 			conf->stateScreen = state;
 			conf->dimmedScreen = false;
 		}
+#ifdef _DEBUG
+		OutputDebugString("Display state changed\n");
+#endif
 		fxh->ChangeState(conf->stateScreen);
 	} else {
 		conf->dimmedScreen = true;
@@ -88,17 +87,12 @@ void EventHandler::SwitchActiveProfile(int newID)
 {
 	if (newID < 0) newID = conf->defaultProfile;
 	if (newID != conf->activeProfile) {
-		profile* newP = conf->FindProfile(newID),
-			* oldP = conf->FindProfile(conf->activeProfile);
+		profile* newP = conf->FindProfile(newID);
 		if (newP != NULL) {
-			StopEvents();
-			if (oldP != NULL)
-				oldP->lightsets = conf->active_set;
 			conf->activeProfile = newID;
 			conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
-			conf->active_set = newP->lightsets;
-			fxh->Refresh(true);
+			conf->active_set = &newP->lightsets;
 			ToggleEvents();
 #ifdef _DEBUG
 			char buff[2048];
@@ -152,7 +146,7 @@ void EventHandler::ToggleEvents()
 	if (conf->stateOn) {
 		if (conf->monState) {
 			if (!dwHandle) {
-				fxh->Refresh(true);
+				fxh->Refresh();
 				StartEvents();
 			} else {
 				fxh->RefreshState();
@@ -424,7 +418,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		0,
 		&hTempCounter2);
 
-	while (WaitForSingleObject(src->stopEvents, 100) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(src->stopEvents, src->conf->monDelay) == WAIT_TIMEOUT) {
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;

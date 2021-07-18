@@ -6,7 +6,7 @@ int FXHelper::Refresh(UCHAR* img)
 	unsigned shift = 256 - config->shift;
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
-		Colorcode fin = { 0 };
+		AlienFX_SDK::afx_act fin;
 		unsigned r = 0, g = 0, b = 0, size = (unsigned) map.map.size();
 		if (size > 0) {
 			for (unsigned j = 0; j < size; j++) {
@@ -16,29 +16,39 @@ int FXHelper::Refresh(UCHAR* img)
 			}
 
 			// Brightness correction...
-			fin.cs.red = (r * shift) / (256 * size);
-			fin.cs.green = (g * shift) / (256 * size);
-			fin.cs.blue = (b *shift) / (256 * size);
+			fin.r = (r * shift) / (256 * size);
+			fin.g = (g * shift) / (256 * size);
+			fin.b = (b *shift) / (256 * size);
 
 			// Gamma correction...
 			if (config->gammaCorrection) {
-				fin.cs.red = ((int)fin.cs.red * fin.cs.red) >> 8;
-				fin.cs.green = ((int)fin.cs.green * fin.cs.green) >> 8;
-				fin.cs.blue = ((int)fin.cs.blue * fin.cs.blue) >> 8;
+				fin.r = ((int)fin.r * fin.r) >> 8;
+				fin.g = ((int)fin.g * fin.g) >> 8;
+				fin.b = ((int)fin.g * fin.b) >> 8;
 			}
 			if (map.lightid > 0xffff) {
 				// group
 				AlienFX_SDK::group* grp = afx_dev.GetGroupById(map.lightid);
-				if (grp)
+				if (grp) {
+					vector<UCHAR> lIDs; vector<AlienFX_SDK::afx_act> lSets;
+					vector<vector<AlienFX_SDK::afx_act>> fullSets;
+					lSets.push_back(fin);
 					for (int i = 0; i < grp->lights.size(); i++) {
-						AlienFX_SDK::Functions* dev = LocateDev(grp->lights[i]->devid);
-						if (dev && dev->IsDeviceReady())
-							dev->SetColor(grp->lights[i]->lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
+						if (grp->lights[i]->devid == grp->lights.front()->devid) {
+							lIDs.push_back((UCHAR)grp->lights[i]->lightid);
+							fullSets.push_back(lSets);
+						}
 					}
+					if (grp->lights.size()) {
+						AlienFX_SDK::Functions* dev = LocateDev(grp->lights.front()->devid);
+						if (dev && dev->IsDeviceReady())
+							dev->SetMultiColor((int)lIDs.size(), lIDs.data(), fullSets);
+					}
+				}
 			} else {
 				AlienFX_SDK::Functions* dev = LocateDev(map.devid);
 				if (dev && dev->IsDeviceReady())
-					dev->SetColor(map.lightid, fin.cs.red, fin.cs.green, fin.cs.blue);
+					dev->SetColor(map.lightid, fin.r, fin.g, fin.b);
 			}
 		}
 	}
@@ -58,8 +68,3 @@ void FXHelper::FadeToBlack()
 	UpdateColors();
 }
 
-//void FXHelper::UpdateColors()
-//{
-//	for (int i = 0; i < devs.size(); i++)
-//		devs[i]->UpdateColors();
-//}

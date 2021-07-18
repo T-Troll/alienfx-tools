@@ -1,11 +1,7 @@
-// alienfx-gui.cpp : Defines the entry point for the application.
-//
-
 #include "alienfx-gui.h"
 #include <Windows.h>
 #include <windowsx.h>
 #include <Shlobj.h>
-#include <psapi.h>
 #include <ColorDlg.h>
 #include <algorithm>
 #include "toolkit.h"
@@ -16,9 +12,7 @@
 
 #pragma comment(lib,"comctl32.lib")
 
-
 // defines and structures...
-#define MAX_LOADSTRING 100
 #define C_PAGES 5
 
 typedef struct tag_dlghdr {
@@ -29,8 +23,6 @@ typedef struct tag_dlghdr {
 } DLGHDR;
 
 // Global Variables:
-//HINSTANCE hInst;
-
 NOTIFYICONDATA niData;
 
 HWND InitInstance(HINSTANCE, int);
@@ -107,7 +99,6 @@ bool DoStopService(bool kind) {
 	ULONGLONG dwStartTime = GetTickCount64();
 	DWORD dwBytesNeeded;
 	DWORD dwTimeout = 10000; // 10-second time-out
-	//DWORD dwWaitTime;
 
 	// Get a handle to the SCM database.
 
@@ -270,9 +261,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			EvaluteToAdmin();
 
 		fxhl->Start();
-
-		//if (!conf->enableMon)
-		//	fxhl->Refresh(true);
 
 		eve = new EventHandler(conf, fxhl);
 
@@ -785,7 +773,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #endif
 			conf->stateScreen = true;
 			fxhl->ChangeState(conf->lightsOn);
-			fxhl->RefreshState();
+			//fxhl->RefreshState();
 			eve->StopProfiles();
 			eve->StopEvents();
 			break;
@@ -939,19 +927,19 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 
 lightset* FindMapping(int mid)
 {
-	if (mid >= 0) {
+	if (!(mid < 0)) {
 		if (mid > 0xffff) {
 			// group
-			for (int i = 0; i < conf->active_set.size(); i++)
-				if (conf->active_set[i].devid == 0 && conf->active_set[i].lightid == mid) {
-					return &conf->active_set[i];
+			for (int i = 0; i < conf->active_set->size(); i++)
+				if (conf->active_set->at(i).devid == 0 && conf->active_set->at(i).lightid == mid) {
+					return &conf->active_set->at(i);
 				}
 		} else {
 			// mapping
 			AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(mid);
-			for (int i = 0; i < conf->active_set.size(); i++)
-				if (conf->active_set[i].devid == lgh.devid && conf->active_set[i].lightid == lgh.lightid) {
-					return &conf->active_set[i];
+			for (int i = 0; i < conf->active_set->size(); i++)
+				if (conf->active_set->at(i).devid == lgh.devid && conf->active_set->at(i).lightid == lgh.lightid) {
+					return &conf->active_set->at(i);
 				}
 		}
 	}
@@ -1017,10 +1005,10 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		if (effID >= ListView_GetItemCount(eff_list))
 			effID = ListView_GetItemCount(eff_list) - 1;
 		ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
-		bool flag = !fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid);
+		bool flag = !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER);
 		EnableWindow(type_c1, flag);
-		EnableWindow(s1_slider, flag);
-		EnableWindow(l1_slider, flag);
+		EnableWindow(s1_slider, true);// flag);
+		EnableWindow(l1_slider, true);// flag);
 		// Set data
 		SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
 		RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
@@ -1035,9 +1023,11 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		EnableWindow(l1_slider, false);
 		RedrawButton(hDlg, IDC_BUTTON_C1, 0, 0, 0);
 	}
-	RECT csize;
-	GetClientRect(eff_list, &csize);
-	ListView_SetColumnWidth(eff_list, 0, csize.right - csize.left);
+	//RECT csize;
+	//GetClientRect(eff_list, &csize);
+	//ListView_SetColumnWidth(eff_list, 0, csize.right - csize.left);
+	ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE);// width);
+	ListView_EnsureVisible(eff_list, effID, false);
 }
 
 void UpdateLightsList(HWND hDlg, int pid, int lid) {
@@ -1072,11 +1062,10 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 			ListView_InsertItem(light_list, &lItem);
 		}
 	}
-	RECT csize;
-	GetClientRect(light_list, &csize);
-	int width = (csize.right - csize.left) < 100 ? 100 : csize.right - csize.left;
-	ListView_SetColumnWidth(light_list, 0, width);
-	ListView_SetColumnWidth(light_list, 0, csize.right - csize.left);
+	//RECT csize;
+	//GetClientRect(light_list, &csize);
+	//int width = (csize.right - csize.left) < 100 ? 100 : csize.right - csize.left;
+	ListView_SetColumnWidth(light_list, 0, LVSCW_AUTOSIZE);// width);
 	ListView_EnsureVisible(light_list, pos, false);
 	BYTE status = fxhl->LocateDev(eDid)->AlienfxGetDeviceStatus();
 	if (status && status != 0xff)
@@ -1090,7 +1079,6 @@ lightset* CreateMapping(int lid) {
 	// create new mapping..
 	lightset newmap;
 	AlienFX_SDK::afx_act act;
-	// find light data for it...
 	if (lid > 0xffff) {
 		// group
 		//AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(lid);
@@ -1101,8 +1089,11 @@ lightset* CreateMapping(int lid) {
 		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
 		newmap.devid = lgh.devid;
 		newmap.lightid = lgh.lightid;
-		if (lgh.flags)
+		if (lgh.flags & ALIENFX_FLAG_POWER) {
+			act.time = 3;
+			act.tempo = 0x64;
 			newmap.eve[0].map.push_back(act);
+		}
 	}
 	newmap.eve[0].fs.b.flags = 1;
 	newmap.eve[0].map.push_back(act);
@@ -1114,8 +1105,8 @@ lightset* CreateMapping(int lid) {
 	newmap.eve[3].map.push_back(act);
 	newmap.eve[3].map.push_back(act);
 	newmap.eve[3].fs.b.cut = 90;
-	conf->active_set.push_back(newmap);
-	std::sort(conf->active_set.begin(), conf->active_set.end(), ConfigHandler::sortMappings);
+	conf->active_set->push_back(newmap);
+	std::sort(conf->active_set->begin(), conf->active_set->end(), ConfigHandler::sortMappings);
 	return FindMapping(lid);
 }
 
@@ -1240,7 +1231,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					effID--;
 				// remove mapping if no colors!
 				if (fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER || mmap->eve[0].map.empty()) {
-					RemoveMapping(&conf->active_set, mmap->devid, mmap->lightid);
+					RemoveMapping(conf->active_set, mmap->devid, mmap->lightid);
 					RebuildEffectList(hDlg, NULL);
 					effID = -1;
 				} else {
@@ -1259,7 +1250,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					event light = mmap->eve[0];
 					for (int i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
 						AlienFX_SDK::mapping map = fxhl->afx_dev.GetMappings()->at(i);
-						if (!map.flags && fxhl->LocateDev(map.devid)) {
+						if (!map.flags /*&& fxhl->LocateDev(map.devid)*/) {
 							lightset* actmap = FindMapping(i);
 							if (actmap)
 								actmap->eve[0] = light;
@@ -1300,7 +1291,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			AlienFX_SDK::afx_act c;
 			if (eItem != -1) {
 				lightset* map = FindMapping(lid);
-				if (map != NULL) {
+				if (map) {
 					c = map->eve[0].map[effID];
 				}
 			}
@@ -1452,14 +1443,18 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				UpdateMonitoringInfo(hDlg, map);
 				break;
 			} break;
-		case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS: {
+		case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS:
+		{
 			int eid = LOWORD(wParam) - IDC_CHECK_NOEVENT;
-			if (!map) {
-				map = CreateMapping(lid);
-			}
-			map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			fxhl->RefreshMon();
-			UpdateMonitoringInfo(hDlg, map);
+			if (!(lid < 0)) {
+				if (!map) {
+					map = CreateMapping(lid);
+				}
+				map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				fxhl->RefreshMon();
+				UpdateMonitoringInfo(hDlg, map);
+			} else
+				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 		} break;
 		case IDC_STATUS_BLINK:
 			if (map != NULL)
@@ -1559,12 +1554,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		// First, reset all light devices and re-scan!
 		eve->StopProfiles();
-		eve->StopEvents();
+		//eve->StopEvents();
+		fxhl->UnblockUpdates(false);
 		size_t numdev = fxhl->FillDevs(conf->stateOn, conf->offPowerButton),
 		       numharddev = fxhl->afx_dev.GetDevices()->size(),
 		       lights = fxhl->afx_dev.GetMappings()->size(),
 			   numgroups = fxhl->afx_dev.GetGroups()->size();
-		eve->StartEvents();
+		fxhl->UnblockUpdates(true);
+		//eve->StartEvents();
 		eve->StartProfiles();
 		// Now check current device list..
 		int cpid = (-1), pos = (-1);
@@ -1612,17 +1609,22 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 
 		// now fill groups....
-		if (gLid < 0 && numgroups > 0)
-			gLid = fxhl->afx_dev.GetGroups()->at(0).gid;
-		for (UINT i = 0; i < numgroups; i++) {
-			pos = (int)SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM)(fxhl->afx_dev.GetGroups()->at(i).name.c_str()));
-			SendMessage(groups_list, CB_SETITEMDATA, pos, (LPARAM)fxhl->afx_dev.GetGroups()->at(i).gid);
-			if (fxhl->afx_dev.GetGroups()->at(i).gid == gLid) {
-				SendMessage(groups_list, CB_SETCURSEL, pos, (LPARAM) 0);
-				gItem = pos;
+		if (numgroups > 0) {
+			if (gLid < 0)
+				gLid = fxhl->afx_dev.GetGroups()->at(0).gid;
+			for (UINT i = 0; i < numgroups; i++) {
+				pos = (int) SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM) (fxhl->afx_dev.GetGroups()->at(i).name.c_str()));
+				SendMessage(groups_list, CB_SETITEMDATA, pos, (LPARAM) fxhl->afx_dev.GetGroups()->at(i).gid);
+				if (fxhl->afx_dev.GetGroups()->at(i).gid == gLid) {
+					SendMessage(groups_list, CB_SETCURSEL, pos, (LPARAM) 0);
+					gItem = pos;
+				}
 			}
+			UpdateGroupLights(glights_list, gLid);
+		} else {
+			EnableWindow(groups_list, false);
+			EnableWindow(glights_list, false);
 		}
-		UpdateGroupLights(glights_list,gLid);
 	} break;
 	case WM_COMMAND: {
 		int dbItem = (int)SendMessage(dev_list, CB_GETCURSEL, 0, 0);
@@ -1721,10 +1723,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				fxhl->afx_dev.GetGroups()->push_back(dev);
 				fxhl->afx_dev.SaveMappings();
 				gLid = maxID;
-				int pos = SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM)(buffer));
+				int pos = (int) SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM)(buffer));
 				SendMessage(groups_list, CB_SETITEMDATA, pos, (LPARAM)gLid);
 				SendMessage(groups_list, CB_SETCURSEL, pos, (LPARAM) 0);
 				gItem = pos;
+				EnableWindow(groups_list, true);
+				EnableWindow(glights_list, true);
 				UpdateGroupLights(glights_list,gLid);
 		} break;
 		case IDC_BUTTON_REMG: {
@@ -1736,7 +1740,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						break;
 					}
 				// store profile...
-				conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
+				//conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
 				// delete from all profiles...
 				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 					 Iter != conf->profiles.end(); Iter++) {
@@ -1744,26 +1748,39 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					RemoveMapping(&Iter->lightsets, 0, gLid);
 				}
 				// reset active mappings
-				conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
+				//conf->active_set = &conf->FindProfile(conf->activeProfile)->lightsets;
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
 				SendMessage(groups_list, CB_DELETESTRING, gItem, 0);
 				if (fxhl->afx_dev.GetGroups()->size() > 0) {
 					gLid = fxhl->afx_dev.GetGroups()->at(0).gid;
 					gItem = 0;
-					SendMessage(groups_list, CB_SETCURSEL, 0, 0);
 				} else {
 					gLid = -1;
 					gItem = -1;
+					EnableWindow(groups_list, false);
+					EnableWindow(glights_list, false);
 				}
-				UpdateGroupLights(glights_list,gLid);
+				SendMessage(groups_list, CB_SETCURSEL, 0, 0);
+				UpdateGroupLights(glights_list, gLid);
 			}
 		} break;
 		case IDC_BUTTON_REML:
-			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all profiles?", "Warning!",
+			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning!",
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// store profile...
-				conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
+				//conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
+				// delete from all groups...
+				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
+					AlienFX_SDK::group* grp = &fxhl->afx_dev.GetGroups()->at(i);
+					for (vector<AlienFX_SDK::mapping*>::iterator gIter = grp->lights.begin();
+						 gIter < grp->lights.end(); gIter++)
+						if ((*gIter)->devid == eDid && (*gIter)->lightid == eLid) {
+							grp->lights.erase(gIter);
+							UpdateGroupLights(glights_list,gLid);
+							break;
+						}
+				}
 				// delete from all profiles...
 				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 					Iter != conf->profiles.end(); Iter++) {
@@ -1771,7 +1788,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					RemoveMapping(&Iter->lightsets, eDid, eLid);
 				}
 				// reset active mappings
-				conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
+				//conf->active_set = &conf->FindProfile(conf->activeProfile)->lightsets;
 				std::vector <AlienFX_SDK::mapping>* mapps = fxhl->afx_dev.GetMappings();
 				int nLid = -1;
 				for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
@@ -1830,7 +1847,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning!",
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// store profile...
-				conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
+				//conf->FindProfile(conf->activeProfile)->lightsets = conf->active_set;
 				// delete from all profiles...
 				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 					Iter != conf->profiles.end(); Iter++) {
@@ -1838,7 +1855,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					RemoveMapping(&Iter->lightsets, eDid, eLid);
 				}
 				// reset active mappings
-				conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
+				//conf->active_set = conf->FindProfile(conf->activeProfile)->lightsets;
 			}
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
@@ -1852,8 +1869,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			conf->testColor.cs.blue = c.b;
 			if (eLid != -1) {
 				eve->StopEvents();
-				SetFocus(light_view);
 				fxhl->TestLight(did, eLid);
+				SetFocus(light_view);
 			}
 		} break;
 		case IDC_ISPOWERBUTTON:
@@ -1884,14 +1901,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fxhl->afx_dev.SetFlags(did, eLid, flags);
 		} break;
 		case IDC_BUTTON_DEVRESET: {
-			eve->StopProfiles();
-			eve->StopEvents();
+			//eve->StopProfiles();
+			//eve->StopEvents();
+			fxhl->UnblockUpdates(false);
 			fxhl->FillDevs(conf->stateOn, conf->offPowerButton);
+			fxhl->UnblockUpdates(true);
 			AlienFX_SDK::Functions* dev = fxhl->LocateDev(eDid);
 			if (dev)
 				UpdateLightsList(hDlg, eDid, eLid);
-			eve->StartEvents();
-			eve->StartProfiles();
+			//eve->StartEvents();
+			//eve->StartProfiles();
 		} break;
 		default: return false;
 		}
@@ -1917,7 +1936,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
 				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
 				CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
-				eve->StopEvents();
+				//eve->StopEvents();
+				fxhl->UnblockUpdates(false);
 				// highlight to check....
 				fxhl->TestLight(eDid, eLid);
 			} break;
@@ -1931,6 +1951,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							lgh->lightid == sItem->item.lParam) {
 							lgh->name = sItem->item.pszText;
 							ListView_SetItem(light_view, &sItem->item);
+							ListView_SetColumnWidth(light_view, 0, LVSCW_AUTOSIZE);
 							fxhl->afx_dev.SaveMappings();
 							break;
 						}
@@ -1945,8 +1966,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				return false;
 			} break;
 			case NM_KILLFOCUS:
-				eve->ToggleEvents();
+				//eve->ToggleEvents();
 				fxhl->afx_dev.SaveMappings();
+				fxhl->UnblockUpdates(true);
+				fxhl->RefreshState();
 				break;
 			}
 			break;
@@ -1992,10 +2015,10 @@ void ReloadProfileView(HWND hDlg, int cID) {
 			}
 			ListView_InsertItem(profile_list, &lItem);
 	}
-	RECT csize;
-	GetClientRect(profile_list, &csize);
+	//RECT csize;
+	//GetClientRect(profile_list, &csize);
+	ListView_SetColumnWidth(profile_list, 0, LVSCW_AUTOSIZE);// csize.right - csize.left - 1);
 	ListView_EnsureVisible(profile_list, rpos, false);
-	ListView_SetColumnWidth(profile_list, 0, csize.right - csize.left - 1);
 	//return rpos;
 }
 
@@ -2019,42 +2042,45 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		{
 		case IDC_ADDPROFILE: {
 			char buf[128]; unsigned vacID = 0;
-			profile prof;
 			for (int i = 0; i < conf->profiles.size(); i++)
 				if (vacID == conf->profiles[i].id) {
 					vacID++; i = -1;
 				}
 			sprintf_s(buf, 128, "Profile %d", vacID);
-			prof.id = vacID;
-			prof.name = buf;
-			prof.lightsets = conf->active_set;
+			profile prof = {vacID, 0, "", buf};
+			//prof.id = vacID;
+			//prof.name = buf;
+			//prof.lightsets = *conf->active_set;
 			conf->profiles.push_back(prof);
+			conf->profiles.back().lightsets = *conf->active_set;
+			//conf->active_set = &(conf->FindProfile(conf->activeProfile)->lightsets);
 			ReloadProfileView(hDlg, vacID);
 			pCid = vacID;
 			ReloadProfileList(NULL);
 		} break;
 		case IDC_REMOVEPROFILE: {
-			if (prof != NULL && !(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1 &&
-				MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning!",
-					MB_YESNO | MB_ICONWARNING) == IDYES) { 
+			if (prof != NULL && !(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
+				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning!",
+							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// is this active profile? Switch needed!
-				if (conf->activeProfile == pCid) {
-					// switch to default profile..
-					eve->SwitchActiveProfile(conf->defaultProfile);
+					if (conf->activeProfile == pCid) {
+						// switch to default profile..
+						eve->SwitchActiveProfile(conf->defaultProfile);
+					}
+					// Now remove profile....
+					int nCid = conf->activeProfile;
+					for (std::vector <profile>::iterator Iter = conf->profiles.begin();
+						 Iter != conf->profiles.end(); Iter++)
+						if (Iter->id == pCid) { //prid) {
+							conf->profiles.erase(Iter);
+							break;
+						} else
+							nCid = Iter->id;
+						conf->active_set = &(conf->FindProfile(conf->activeProfile)->lightsets);
+						ReloadProfileView(hDlg, nCid);
+						pCid = nCid;
+						ReloadProfileList(NULL);
 				}
-				// Now remove profile....
-				int nCid = conf->activeProfile;
-				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
-					Iter != conf->profiles.end(); Iter++)
-					if (Iter->id == pCid) { //prid) {
-						conf->profiles.erase(Iter);
-						break;
-					} else
-						nCid = Iter->id;
-
-				ReloadProfileView(hDlg, nCid);
-				pCid = nCid;
-				ReloadProfileList(NULL);
 			}
 			else
 				MessageBox(hDlg, "Can't delete last or default profile!", "Error!",
@@ -2064,9 +2090,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof != NULL && MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning!",
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				prof->lightsets.clear();
-				if (prof->id == conf->activeProfile) {
-					conf->active_set.clear();
-				}
+				//if (prof->id == conf->activeProfile) {
+				//	conf->active_set.clear();
+				//}
 			}
 			break;
 		case IDC_APP_RESET:
@@ -2174,6 +2200,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
 					ListView_SetItem(p_list, &sItem->item);
+					ListView_SetColumnWidth(p_list, 0, LVSCW_AUTOSIZE);
+					ReloadProfileList(NULL);
 					return true;
 				} else 
 					return false;
