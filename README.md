@@ -1,7 +1,7 @@
 # Alienfx tools
 Main goal of this project is to create a bunch of light weighted tools for Alienware AlienFX/Dell LightFX controls:
 - alienfx-probe - Looking up for low-level devices, shows it's IDs, then check it and define device and light names.
-- alienfx-cli - Make changes and check status of your AlienFX/LightFX lights from the command line.
+- alienfx-cli - Make changes and check status of your AlienFX lights from the CLI (command line interface).
 - AlienFX Universal haptics - Visualize any sound around you (microphone, audio player, game, movie).
 - AlienFX Ambient lights - Visualize screen picture as ambient light (from desktop, game, video player).
 - AlienFX GUI Editor - Light weighted light control tool (AWCC alternative). You can change lights color according to system monitoring values (CPU/GPU load, temperatures, etc), active or running application, AC or battery power and a lot more.
