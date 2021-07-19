@@ -747,10 +747,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OutputDebugString("Resume from Sleep/hibernate initiated\n");
 #endif
 			if (fxhl->FillDevs(conf->stateOn, conf->offPowerButton) > 0) {
+				fxhl->UnblockUpdates(true);
 				eve->ChangePowerState();
 				conf->stateScreen = true;
-				fxhl->ChangeState(conf->lightsOn);
-				fxhl->RefreshState();
+				//fxhl->RefreshState();
 				eve->ToggleEvents();
 				eve->StartProfiles();
 			}
@@ -773,22 +773,24 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #endif
 			conf->stateScreen = true;
 			fxhl->ChangeState(conf->lightsOn);
-			//fxhl->RefreshState();
 			eve->StopProfiles();
 			eve->StopEvents();
+			fxhl->UnblockUpdates(false);
 			break;
 		}
 		break;
 	case WM_QUERYENDSESSION:
+		return true;
+	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
 #ifdef _DEBUG
 		OutputDebugString("Shutdown initiated\n");
 #endif
 		conf->Save();
-		//eve->StopProfiles();
-		//eve->StopEvents();
-		SendMessage(hDlg, WM_CLOSE, 0, 0);
-		return true;
+		eve->StopProfiles();
+		eve->StopEvents();
+		fxhl->UnblockUpdates(false);
+		return 0;
 		break;
 	case WM_HOTKEY:
 		switch (wParam) {
@@ -825,7 +827,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		default: return false;
 		}
 		break;
-	case WM_CLOSE: case WM_ENDSESSION:
+	case WM_CLOSE:
 		Shell_NotifyIcon(NIM_DELETE, &niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
@@ -964,36 +966,36 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 			GetSystemMetrics(SM_CYSMICON),
 			ILC_COLOR32, 1, 1);
 		for (int i = 0; i < mmap->eve[0].map.size(); i++) {
-			UINT* picData = (UINT*)malloc(GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON) * sizeof(UINT));
-			for (int j = 0; j < GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON); j++)
-				picData[j] = RGB(mmap->eve[0].map[i].b, mmap->eve[0].map[i].g, mmap->eve[0].map[i].r);
+			COLORREF* picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
+			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), RGB(mmap->eve[0].map[i].b, mmap->eve[0].map[i].g, mmap->eve[0].map[i].r));
 			HBITMAP colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
 				1, 32, picData);
-			free(picData);
+			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);
-			LVITEMA lItem; char efName[100];
+			DeleteObject(colorBox);
+			LVITEMA lItem; char efName[16];
 			lItem.mask = LVIF_TEXT | LVIF_IMAGE;
 			lItem.iItem = i;
 			lItem.iImage = i;
 			lItem.iSubItem = 0;
 			switch (mmap->eve[0].map[i].type) {
 			case AlienFX_SDK::AlienFX_A_Color:
-				LoadString(hInst, IDS_TYPE_COLOR, efName, 100);
+				LoadString(hInst, IDS_TYPE_COLOR, efName, 16);
 				break;
 			case AlienFX_SDK::AlienFX_A_Pulse:
-				LoadString(hInst, IDS_TYPE_PULSE, efName, 100);
+				LoadString(hInst, IDS_TYPE_PULSE, efName, 16);
 				break;
 			case AlienFX_SDK::AlienFX_A_Morph:
-				LoadString(hInst, IDS_TYPE_MORPH, efName, 100);
+				LoadString(hInst, IDS_TYPE_MORPH, efName, 16);
 				break;
 			case AlienFX_SDK::AlienFX_A_Spectrum:
-				LoadString(hInst, IDS_TYPE_SPECTRUM, efName, 100);
+				LoadString(hInst, IDS_TYPE_SPECTRUM, efName, 16);
 				break;
 			case AlienFX_SDK::AlienFX_A_Breathing:
-				LoadString(hInst, IDS_TYPE_BREATH, efName, 100);
+				LoadString(hInst, IDS_TYPE_BREATH, efName, 16);
 				break;
 			case AlienFX_SDK::AlienFX_A_Rainbow:
-				LoadString(hInst, IDS_TYPE_RAINBOW, efName, 100);
+				LoadString(hInst, IDS_TYPE_RAINBOW, efName, 16);
 				break;
 			}
 			lItem.pszText = efName;

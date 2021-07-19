@@ -107,7 +107,6 @@
 #define IDC_GROUPS                      1082
 #define IDC_LIST_INGROUP                1083
 #define IDC_BUT_ADDTOG                  1084
-#define IDC_CHECK1                      1084
 #define IDC_BUT_DELFROMG                1085
 #define IDC_GAUGE                       1085
 #define ID_TRAYMENU_RESTORE             32772
@@ -134,7 +133,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1086
+#define _APS_NEXT_CONTROL_VALUE         1087
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

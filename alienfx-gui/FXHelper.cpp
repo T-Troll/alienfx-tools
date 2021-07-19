@@ -62,7 +62,11 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		tNet = (lNET && !cNet) || (!lNET && cNet);
 
 	std::vector<AlienFX_SDK::afx_act> actions;
-	vector<lightset> active = config->FindProfile(config->activeProfile)->lightsets;
+	
+	profile* cprof = config->FindProfile(config->activeProfile);
+	if (!cprof)
+		return;
+	vector<lightset> active = cprof->lightsets;
 
 	for (Iter = active.begin(); Iter != active.end(); Iter++)
 		if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {

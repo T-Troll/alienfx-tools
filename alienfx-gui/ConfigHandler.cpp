@@ -55,7 +55,7 @@ ConfigHandler::~ConfigHandler() {
 
 bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
 
-void ConfigHandler::updateProfileByID(int id, std::string name, std::string app, DWORD flags) {
+void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags) {
 	for (std::vector <profile>::iterator Iter = profiles.begin();
 		Iter != profiles.end(); Iter++) {
 		if (Iter->id == id) {
@@ -70,14 +70,6 @@ void ConfigHandler::updateProfileByID(int id, std::string name, std::string app,
 		}
 	}
 	profile prof = {id, flags, app, name};
-	// update data...
-	//prof.id = id;
-	//if (name != "")
-	//	prof.name = name;
-	//if (app != "")
-	//	prof.triggerapp = app;
-	//if (flags != -1)
-	//	prof.flags = flags;
 	profiles.push_back(prof);
 }
 

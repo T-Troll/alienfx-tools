@@ -94,7 +94,7 @@ public:
 	int Load();
 	int Save();
 	static bool sortMappings(lightset i, lightset j);
-	void updateProfileByID(int id, std::string name, std::string app, DWORD flags);
+	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
 	profile* FindProfile(int id);
 	int FindProfileByApp(std::string appName, bool active = false);
 	void SetStates();

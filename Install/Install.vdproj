@@ -353,15 +353,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{8749D660-743D-4893-9AC3-DBAF404F6B3E}"
-        "PackageCode" = "8:{32006EEA-F19B-4D79-8719-B8A1021B7794}"
+        "ProductCode" = "8:{0903FFA6-E2EB-48C4-9DF5-DE9E69549A81}"
+        "PackageCode" = "8:{BA4FFB73-B1D4-4E32-A175-A4BAD59DEF6F}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:3.1.1"
+        "ProductVersion" = "8:3.1.1.1"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -721,7 +721,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1AA38565231A40689F298FEBA8022EB6"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -750,7 +750,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_396F696E40FE45559E40908163600D54"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-ambient.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-ambient.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -779,7 +779,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_6607431E0DEA45F19A1C6F6A3DAFFAA0"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-probe.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-probe.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -808,7 +808,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8533FAE6D43944078DAC051060E0DCFF"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -836,7 +836,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_CF2105F3B70749ABA35E620EB7D9B1FC"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-haptics.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-haptics.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
