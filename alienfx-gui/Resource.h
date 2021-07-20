@@ -64,10 +64,13 @@
 #define IDC_BUTTON_REMG                 1031
 #define IDC_SLIDER_DIMMING              1032
 #define IDC_BUTTON_CM4                  1032
+#define IDC_BUT_GRP_UP                  1032
 #define IDC_BUTTON_SETALL               1033
 #define IDC_BUTTON_CM5                  1033
 #define IDC_REMOVEPROFILE               1033
 #define IDC_SCREENOFF                   1033
+#define IDC_BUTTON_REMG2                1033
+#define IDC_BUT_GRP_DOWN                1033
 #define IDC_BUTTON_CM6                  1034
 #define IDC_PROFILES                    1034
 #define IDC_POWER_DIM                   1034
@@ -117,13 +120,14 @@
 #define ID_ACC_COLOR                    32777
 #define ID_ACC_EVENTS                   32778
 #define ID_ACC_SETTINGS                 32779
-#define ID_ACC_REFRESH                  32783
 #define ID_TRAYMENU_MONITORING          32785
 #define ID_ACC_DEVICES                  32786
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
 #define ID_ACC_PROFILES                 32790
 #define ID_TRAYMENU_PROFILE_SELECTED    32791
+#define ID_TEST                         32792
+#define ID_FILE                         32793
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -132,8 +136,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
-#define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1087
+#define _APS_NEXT_COMMAND_VALUE         32797
+#define _APS_NEXT_CONTROL_VALUE         1088
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

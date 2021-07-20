@@ -1538,7 +1538,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	return true;
 }
 
-int UpdateGroupLights(HWND light_list, int gID) {
+int UpdateGroupLights(HWND light_list, int gID, int sel) {
 	int pos = -1;
 	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 	AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gID);
@@ -1547,6 +1547,7 @@ int UpdateGroupLights(HWND light_list, int gID) {
 			pos = (int) SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM) (grp->lights[i]->name.c_str()));
 			SendMessage(light_list, LB_SETITEMDATA, pos, i);
 		}
+		SendMessage(light_list, LB_SETCURSEL, sel, 0);
 	}
 	return pos;
 }
@@ -1630,7 +1631,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					gItem = pos;
 				}
 			}
-			UpdateGroupLights(glights_list, gLid);
+			UpdateGroupLights(glights_list, gLid,0);
 		} else {
 			EnableWindow(groups_list, false);
 			EnableWindow(glights_list, false);
@@ -1642,6 +1643,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		int gbItem = (int)SendMessage(groups_list, CB_GETCURSEL, 0, 0);
 		int gid = (int)SendMessage(groups_list, CB_GETITEMDATA, gbItem, 0);
 		int glItem = (int)SendMessage(glights_list, LB_GETCURSEL, 0, 0);
+		AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gid);
 		switch (LOWORD(wParam))
 		{
 		case IDC_DEVICES: {
@@ -1675,7 +1677,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 			case CBN_SELCHANGE: {
 				gLid = gid; gItem = gbItem;
-				UpdateGroupLights(glights_list, gid);
+				UpdateGroupLights(glights_list, gid,0);
 			} break;
 			case CBN_EDITCHANGE:
 				char buffer[MAX_PATH];
@@ -1691,6 +1693,20 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				break;
 			}
 		} break;
+		case IDC_BUT_GRP_UP:
+			if (grp && glItem > 0) {
+				auto gIter = grp->lights.begin();
+				iter_swap(gIter + glItem, gIter + glItem -1);
+				UpdateGroupLights(glights_list,gLid, glItem-1);
+			}
+			break;
+		case IDC_BUT_GRP_DOWN:
+			if (grp && glItem < grp->lights.size() - 1 ) {
+				auto gIter = grp->lights.begin();
+				iter_swap(gIter + glItem, gIter + glItem +1);
+				UpdateGroupLights(glights_list,gLid, glItem+1);
+			}
+			break;
 		case IDC_BUTTON_ADDL: {
 			char buffer[MAX_PATH];
 			int cid = GetDlgItemInt(hDlg, IDC_LIGHTID, NULL, false);
@@ -1739,7 +1755,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				gItem = pos;
 				EnableWindow(groups_list, true);
 				EnableWindow(glights_list, true);
-				UpdateGroupLights(glights_list,gLid);
+				UpdateGroupLights(glights_list,gLid,0);
 		} break;
 		case IDC_BUTTON_REMG: {
 			if (gLid > 0) {
@@ -1772,7 +1788,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					EnableWindow(glights_list, false);
 				}
 				SendMessage(groups_list, CB_SETCURSEL, 0, 0);
-				UpdateGroupLights(glights_list, gLid);
+				UpdateGroupLights(glights_list, gLid,0);
 			}
 		} break;
 		case IDC_BUTTON_REML:
@@ -1787,7 +1803,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						 gIter < grp->lights.end(); gIter++)
 						if ((*gIter)->devid == eDid && (*gIter)->lightid == eLid) {
 							grp->lights.erase(gIter);
-							UpdateGroupLights(glights_list,gLid);
+							UpdateGroupLights(glights_list,gLid, 0);
 							break;
 						}
 				}
@@ -1824,33 +1840,33 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_ADDTOG:
-			if (gLid > 0 && eLid >= 0) {
-				AlienFX_SDK::group* cgrp = fxhl->afx_dev.GetGroupById(gLid);
-				if (cgrp) {
+			if (grp && eLid >= 0) {
+				//AlienFX_SDK::group* cgrp = fxhl->afx_dev.GetGroupById(gLid);
+				//if (cgrp) {
 					AlienFX_SDK::mapping* clight = fxhl->afx_dev.GetMappingById(eDid, eLid);
 					if (clight) {
 						// TODO: check if light into the groups already!
 						bool nothislight = true;
-						for (int i = 0; i < cgrp->lights.size(); i++)
-							if (cgrp->lights[i] == clight) {
+						for (int i = 0; i < grp->lights.size(); i++)
+							if (grp->lights[i] == clight) {
 								nothislight = false;
 								break;
 							}
 						if (nothislight)
-							cgrp->lights.push_back(clight);
+							grp->lights.push_back(clight);
 					}
-				}
-				UpdateGroupLights(glights_list,gLid);
+				//}
+				UpdateGroupLights(glights_list,gLid, grp->lights.size()-1);
 			}
 			break;
 		case IDC_BUT_DELFROMG:
-			if (gLid > 0 && glItem >= 0) {
-				AlienFX_SDK::group* cgrp = fxhl->afx_dev.GetGroupById(gLid);
-				if (cgrp && glItem < cgrp->lights.size()) {
-					std::vector <AlienFX_SDK::mapping*>::iterator Iter = cgrp->lights.begin() + glItem;
-					cgrp->lights.erase(Iter);
+			if (grp && glItem >= 0) {
+				//AlienFX_SDK::group* cgrp = fxhl->afx_dev.GetGroupById(gLid);
+				if (grp && glItem < grp->lights.size()) {
+					std::vector <AlienFX_SDK::mapping*>::iterator Iter = grp->lights.begin() + glItem;
+					grp->lights.erase(Iter);
 				}
-				UpdateGroupLights(glights_list,gLid);
+				UpdateGroupLights(glights_list, gLid, --glItem);
 			}
 			break;
 		case IDC_BUTTON_RESETCOLOR:
