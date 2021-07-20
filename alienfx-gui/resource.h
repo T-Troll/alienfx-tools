@@ -107,7 +107,6 @@
 #define IDC_GROUPS                      1082
 #define IDC_LIST_INGROUP                1083
 #define IDC_BUT_ADDTOG                  1084
-#define IDC_CHECK1                      1084
 #define IDC_BUT_DELFROMG                1085
 #define IDC_GAUGE                       1085
 #define ID_TRAYMENU_RESTORE             32772
@@ -118,13 +117,14 @@
 #define ID_ACC_COLOR                    32777
 #define ID_ACC_EVENTS                   32778
 #define ID_ACC_SETTINGS                 32779
-#define ID_ACC_REFRESH                  32783
 #define ID_TRAYMENU_MONITORING          32785
 #define ID_ACC_DEVICES                  32786
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
 #define ID_ACC_PROFILES                 32790
 #define ID_TRAYMENU_PROFILE_SELECTED    32791
+#define ID_TEST                         32792
+#define ID_FILE                         32793
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -133,8 +133,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
-#define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1086
+#define _APS_NEXT_COMMAND_VALUE         32797
+#define _APS_NEXT_CONTROL_VALUE         1087
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

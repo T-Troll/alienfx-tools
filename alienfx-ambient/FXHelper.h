@@ -8,5 +8,6 @@ public:
 	using FXH::FXH;
 	int Refresh(UCHAR* img);
 	void FadeToBlack();
+	void ChangeState();
 };
 

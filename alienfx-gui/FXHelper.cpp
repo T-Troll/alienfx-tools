@@ -225,10 +225,12 @@ void FXHelper::RefreshMon()
 		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, true);
 }
 
-void FXHelper::ChangeState(bool newState) {
+void FXHelper::ChangeState() {
+	config->SetStates();
+	byte bright = (byte) (config->stateOn ? config->stateDimmed ? 255 - config->dimmingPower : 255 : 0);
 	for (int i = 0; i < devs.size(); i++) {
-		devs[i]->ToggleState(newState, afx_dev.GetMappings(), config->offPowerButton);
-		if (newState && devs[i]->GetVersion() < 4)
+		devs[i]->ToggleState(bright, afx_dev.GetMappings(), config->offPowerButton);
+		if (config->stateOn && devs[i]->GetVersion() < 4)
 			RefreshState();
 	}
 }
@@ -451,7 +453,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							action.b = (action.b * action.b) >> 8;
 						}
 						// Dimming...
-						if (src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
+						// Only for v1-v3 devices!
+						if (src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton) && dev->GetVersion() < 4) {
 							action.r = (action.r * delta) >> 8;
 							action.g = (action.g * delta) >> 8;
 							action.b = (action.b * delta) >> 8;

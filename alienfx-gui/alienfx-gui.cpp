@@ -319,7 +319,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		delete eve;
 		fxhl->Stop();
-		fxhl->ChangeState(conf->lightsOn);
+		fxhl->ChangeState();
 		fxhl->afx_dev.SaveMappings();
 
 		if (conf->wasAWCC) DoStopService(false);
@@ -703,12 +703,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
-			fxhl->ChangeState(conf->lightsOn);
+			fxhl->ChangeState();
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 			conf->dimmed = !conf->dimmed;
-			fxhl->RefreshState(true);
+			//fxhl->RefreshState(true);
+			fxhl->ChangeState();
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING:
@@ -772,7 +773,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OutputDebugString("Sleep/hibernate initiated\n");
 #endif
 			conf->stateScreen = true;
-			fxhl->ChangeState(conf->lightsOn);
+			fxhl->ChangeState();
 			eve->StopProfiles();
 			eve->StopEvents();
 			fxhl->UnblockUpdates(false);
@@ -796,29 +797,32 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (wParam) {
 		case 1: // on/off
 			conf->lightsOn = !conf->lightsOn;
-			fxhl->ChangeState(conf->lightsOn);
+			fxhl->ChangeState();
 			break;
 		case 2: // dim
 			conf->dimmed = !conf->dimmed;
-			fxhl->RefreshState();
+			//fxhl->RefreshState();
+			fxhl->ChangeState();
 			break;
 		case 3: // off-dim-full circle
 			if (conf->lightsOn) {
 				if (conf->dimmed) {
 					conf->lightsOn = false;
 					conf->dimmed = false;
-					fxhl->ChangeState(conf->lightsOn);
+					//fxhl->ChangeState();
 				}
 				else {
-					conf->dimmed = !conf->dimmed;
-					fxhl->RefreshState();
+					conf->dimmed = true;
+					//fxhl->RefreshState();
+					//fxhl->ChangeState();
 				}
 			}
 			else {
 				conf->lightsOn = true;
-				fxhl->ChangeState(conf->lightsOn);
-				fxhl->RefreshState();
+				//fxhl->ChangeState();
+				//fxhl->RefreshState();
 			}
+			fxhl->ChangeState();
 			break;
 		case 4: // mon
 			conf->enableMon = !conf->enableMon;
@@ -2288,11 +2292,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_LON:
 			conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			fxhl->ChangeState(conf->lightsOn);
+			fxhl->ChangeState();
 			break;
 		case IDC_CHECK_DIM:
 			conf->dimmed = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			fxhl->RefreshState();
+			//fxhl->RefreshState();
+			fxhl->ChangeState();
 			break;
 		case IDC_CHECK_GAMMA:
 			conf->gammaCorrection = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
@@ -2300,11 +2305,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			fxhl->RefreshState();
+			//fxhl->RefreshState();
+			fxhl->ChangeState();
 			break;
 		case IDC_POWER_DIM:
 			conf->dimPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			fxhl->RefreshState();
+			//fxhl->RefreshState();
+			fxhl->ChangeState();
 			break;
 		case IDC_AWCC:
 			conf->awcc_disable = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
@@ -2329,7 +2336,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip, tBuff, conf->dimmingPower);
 			}
-			fxhl->RefreshState();
+			//fxhl->RefreshState();
+			fxhl->ChangeState();
 		} break;
 		} break;
 	default: return false;

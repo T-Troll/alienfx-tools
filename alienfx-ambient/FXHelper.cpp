@@ -1,9 +1,14 @@
 #include "FXHelper.h"
 
+struct devset {
+	WORD did;
+	vector<UCHAR> lIDs;
+};
+
 int FXHelper::Refresh(UCHAR* img)
 {
 	unsigned i = 0;
-	unsigned shift = 256 - config->shift;
+	unsigned shift = 255 - config->shift;
 	for (i = 0; i < config->mappings.size(); i++) {
 		mapping map = config->mappings[i];
 		AlienFX_SDK::afx_act fin;
@@ -16,39 +21,57 @@ int FXHelper::Refresh(UCHAR* img)
 			}
 
 			// Brightness correction...
-			fin.r = (r * shift) / (256 * size);
-			fin.g = (g * shift) / (256 * size);
-			fin.b = (b *shift) / (256 * size);
+			fin.r = r / size;
+			fin.g = g / size;
+			fin.b = b / size;
 
 			// Gamma correction...
 			if (config->gammaCorrection) {
 				fin.r = ((int)fin.r * fin.r) >> 8;
 				fin.g = ((int)fin.g * fin.g) >> 8;
-				fin.b = ((int)fin.g * fin.b) >> 8;
+				fin.b = ((int)fin.b * fin.b) >> 8;
 			}
 			if (map.lightid > 0xffff) {
 				// group
 				AlienFX_SDK::group* grp = afx_dev.GetGroupById(map.lightid);
 				if (grp) {
-					vector<UCHAR> lIDs; vector<AlienFX_SDK::afx_act> lSets;
-					vector<vector<AlienFX_SDK::afx_act>> fullSets;
-					lSets.push_back(fin);
+					vector<devset> devsets;
 					for (int i = 0; i < grp->lights.size(); i++) {
-						if (grp->lights[i]->devid == grp->lights.front()->devid) {
-							lIDs.push_back((UCHAR)grp->lights[i]->lightid);
-							fullSets.push_back(lSets);
+						// do we have devset?
+						int dind;
+						for (dind = 0; dind < devsets.size(); dind++)
+							if (grp->lights[i]->devid == devsets[dind].did)
+								break;
+						if (dind == devsets.size()) {
+							// need new set...
+							devset nset = {(WORD)grp->lights[i]->devid};
+							devsets.push_back(nset);
 						}
+						devsets[dind].lIDs.push_back((UCHAR)grp->lights[i]->lightid);
 					}
 					if (grp->lights.size()) {
-						AlienFX_SDK::Functions* dev = LocateDev(grp->lights.front()->devid);
-						if (dev && dev->IsDeviceReady())
-							dev->SetMultiColor((int)lIDs.size(), lIDs.data(), fullSets);
+						for (int dind = 0; dind < devsets.size(); dind++) {
+							AlienFX_SDK::Functions* dev = LocateDev(devsets[dind].did);
+							if (dev && dev->IsDeviceReady())
+								if (dev->GetVersion() < 4) {
+									fin.r = (r * shift) >> 8;
+									fin.g = (g * shift) >> 8;
+									fin.b = (b * shift) >> 8;
+								}
+							dev->SetMultiLights((int) devsets[dind].lIDs.size(), devsets[dind].lIDs.data(), fin.r, fin.g, fin.b);
+						}
 					}
 				}
 			} else {
 				AlienFX_SDK::Functions* dev = LocateDev(map.devid);
-				if (dev && dev->IsDeviceReady())
+				if (dev && dev->IsDeviceReady()) {
+					if (dev->GetVersion() < 4) {
+						fin.r = (r * shift) >> 8;
+						fin.g = (g * shift) >> 8;
+						fin.b = (b * shift) >> 8;
+					}
 					dev->SetColor(map.lightid, fin.r, fin.g, fin.b);
+				}
 			}
 		}
 	}
@@ -66,5 +89,12 @@ void FXHelper::FadeToBlack()
 		}
 	}
 	UpdateColors();
+}
+
+void FXHelper::ChangeState() {
+	byte bright = (byte) (255 - config->shift);
+	for (int i = 0; i < devs.size(); i++) {
+		devs[i]->ToggleState(bright, afx_dev.GetMappings(), false);
+	}
 }
 

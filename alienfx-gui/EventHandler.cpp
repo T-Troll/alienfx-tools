@@ -57,6 +57,7 @@ void EventHandler::ChangePowerState()
 #ifdef _DEBUG
 		OutputDebugString("Power state changed\n");
 #endif
+		fxh->ChangeState();
 		fxh->RefreshState();
 	}
 }
@@ -76,9 +77,9 @@ void EventHandler::ChangeScreenState(DWORD state)
 #ifdef _DEBUG
 		OutputDebugString("Display state changed\n");
 #endif
-		fxh->ChangeState(conf->stateScreen);
+		fxh->ChangeState();
 	} else {
-		conf->dimmedScreen = true;
+		conf->dimmedScreen = false;
 		conf->stateScreen = true;
 	}
 }
@@ -90,9 +91,10 @@ void EventHandler::SwitchActiveProfile(int newID)
 		profile* newP = conf->FindProfile(newID);
 		if (newP != NULL) {
 			conf->activeProfile = newID;
-			conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
-			conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
+			//conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
+			//conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
 			conf->active_set = &newP->lightsets;
+			fxh->ChangeState();
 			ToggleEvents();
 #ifdef _DEBUG
 			char buff[2048];

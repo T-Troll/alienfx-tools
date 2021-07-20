@@ -70,6 +70,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         conf->Save();
     }
 
+    fxhl->ChangeState();
     fxhl->FadeToBlack();
     delete cap;
     delete fxhl;
@@ -368,6 +369,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             ShowWindow(hDlg, SW_HIDE);
             break;
         case IDC_BUTTON_RESET:
+            cap->Stop();
             fxhl->FillDevs(true, false);
             UpdateLightList<FXHelper>(light_list, fxhl, 3);
             cap->Restart();
@@ -419,10 +421,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             if ((HWND)lParam == brSlider) {
                 conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
                 SetSlider(sTip, sBuff, conf->shift);
+                fxhl->ChangeState();
             } else 
                 if ((HWND)lParam == divSlider) {
                     conf->divider = 32 - (DWORD)SendMessage(divSlider, TBM_GETPOS, 0, 0);
                     SetSlider(lTip, lBuff, 32 - conf->divider);
+                    fxhl->ChangeState();
                 }
             break;
         default: 

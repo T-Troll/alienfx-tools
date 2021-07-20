@@ -33,6 +33,7 @@ void printUsage()
 		<< "set-power\tlight,r,g,b,r2,g2,b2 - set power button colors (low-level only)." << endl
 		<< "set-tempo\ttempo - set light action tempo (in milliseconds)." << endl
 		<< "set-dev\t\tpid - set active device for low-level." << endl
+		<< "set-dim\t\tbr - set active device dim level." << endl
 		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
 		<< "high-level\tswitch to high-level SDK (Alienware LightFX)." << endl
 		<< "status\t\tshows devices and lights id's, names and statuses." << endl
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v3.1.1" << endl;
+	cerr << "alienfx-cli v3.1.2" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -221,14 +222,20 @@ int main(int argc, char* argv[])
 				lfxUtil.Update();
 			continue;
 		}
+		if (command == "set-dim") {
+			byte dim = atoi(args.at(0).c_str());
+			if (low_level)
+				afx_dev->ToggleState(dim, afx_map->GetMappings(), false);
+			continue;
+		}
 		if (command == "lightson") {
 			if (low_level)
-				afx_dev->ToggleState(true, afx_map->GetMappings(), false);
+				afx_dev->ToggleState(255, afx_map->GetMappings(), false);
 			continue;
 		}
 		if (command == "lightsoff") {
 			if (low_level)
-				afx_dev->ToggleState(false, afx_map->GetMappings(), false);
+				afx_dev->ToggleState(0, afx_map->GetMappings(), false);
 			continue;
 		}
 		if (command == "set-all") {

@@ -35,6 +35,7 @@ namespace AlienFX_SDK
 		const byte prepareTurn[4] = {0x00, 0x03, 0x20, 0x2};
 		const byte turnOn[3] = {0x00, 0x03, 0x26};
 		// 4 = 0x64 - off, 0x41 - dim, 0 - on, 6 - number, 7...31 - IDs (like colorSel)
+		// Uknown command codes : 0x20 0x2
 	} COMMV4;
 
 	static struct COMMV5 {
@@ -780,7 +781,7 @@ namespace AlienFX_SDK
 		return true;
 	}
 
-	bool Functions::ToggleState(bool newState, vector<mapping>* mappings, bool power) {
+	bool Functions::ToggleState(BYTE brightness, vector<mapping>* mappings, bool power) {
 
 		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (length) {
@@ -795,8 +796,9 @@ namespace AlienFX_SDK
 			HidD_SetFeature(devHandle, buffer, length);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV5.turnOnSet, sizeof(COMMV5.turnOnSet));
-			if (newState)
-				buffer[4] = 0xfe;
+			//if (newState)
+			//	buffer[4] = 0xfe;
+			buffer[4] = brightness; // 00..ff
 			return HidD_SetFeature(devHandle, buffer, length);
 		} break;
 		case API_L_V4:
@@ -806,8 +808,9 @@ namespace AlienFX_SDK
 			HidD_SetOutputReport(devHandle, buffer, length);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV4.turnOn, sizeof(COMMV4.turnOn));
-			if (!newState)
-				buffer[3] = 0x64;
+			//if (!newState)
+			//	buffer[3] = 0x64;
+			buffer[3] = 0x64 - (brightness >> 2); // 00..64
 			byte pos = 6, pindex = 0;
 			for (int i = 0; i < mappings->size(); i++) {
 				mapping cur = mappings->at(i);
@@ -822,9 +825,9 @@ namespace AlienFX_SDK
 		} break;
 		case API_L_V3: case API_L_V1: case API_L_V2:
 			if (power)
-				return Reset(newState);
+				return Reset(brightness);
 			else
-				if (!newState) {
+				if (!brightness) {
 					for (int i = 0; i < mappings->size(); i++) {
 						mapping cur = mappings->at(i);
 						if (cur.devid == pid && !cur.flags) {

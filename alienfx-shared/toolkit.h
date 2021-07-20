@@ -76,7 +76,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 				int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
 				if (pid != -1) {
 					devs.push_back(dev);
-					dev->ToggleState(state, afx_dev.GetMappings(), power);
+					dev->ToggleState(state?255:0, afx_dev.GetMappings(), power);
 				}
 			}
 			return devs.size();

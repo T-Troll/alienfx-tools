@@ -56,7 +56,7 @@ public:
 	bool SetLight(int did, int id, std::vector<AlienFX_SDK::afx_act> actions, DWORD from);
 	void RefreshState(bool force = false);
 	void RefreshMon();
-	void ChangeState(bool newState);
+	void ChangeState();
 	void UnblockUpdates(bool newState);
 	ConfigHandler* GetConfig() { return config; };
 };

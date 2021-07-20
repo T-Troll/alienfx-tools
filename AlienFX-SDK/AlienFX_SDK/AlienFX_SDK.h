@@ -188,7 +188,7 @@ namespace AlienFX_SDK
 		// newState - on/off
 		// mappings - needed to keep some lights on
 		// power - if true, power and indicator lights will be set on/off too
-		bool ToggleState(bool newState, vector <mapping>* mappings, bool power);
+		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
 
 		// return current device state
 		BYTE AlienfxGetDeviceStatus();

@@ -18,7 +18,6 @@
 #define IDC_MINIMIZE                    1021
 #define IDC_SHOWAXIS                    1022
 #define IDC_LEVELS                      1025
-#define IDC_CHECK1                      1026
 #define IDC_GAUGE                       1026
 #define IDC_STATIC_VERSION              1043
 #define IDC_SYSLINK_HOMEPAGE            1044

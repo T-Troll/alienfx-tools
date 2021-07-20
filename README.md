@@ -60,6 +60,7 @@ The following commands are available:
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `set-dev=<pid>` Switch active device to this PID (low-level only).
+- `set-dim=<brigtness>` Set active device hardware brightness (dimming) level (from 0 to 255, low-level only).
 - `lightson` Turn all current device lights on.
 - `lightsoff` Turn all current device lights off.
 - `update` Updates light status (for looped commands or old devices).
@@ -128,9 +129,16 @@ Please keep in mind, mixing different event modes for one light can provide unex
 “Set All” button copy current light effects to all lights into the list (it’s useful if you need to have all lights into the same color and mode).  
 
 `"Monitoring"` tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.  
-If "Use color settings as default" is active first color from "Color" tab will be used for "calm" situation, and the second color from "Monitoring" tab will be used for "active" situation, if it's not active - both colors will taken from "Monitoring" tab fields.  
-Monitoring events available:  
-System Load:
+There are some different monitoring types avaliable:  
+
+"Light for color and monitoring"  
+If this mode is active, selected light will use colors from "Color" tab as initial monitoring color. If this mode disabled, light will use color from "Monitoring" tab, and also will stop update if monitoring off.  
+
+"Power State"  
+Light acts as software power button, and reflect current power mode - AC, battery, charge, low battery level.  
+
+"Performance"  
+Light acts like a performance indicator, reflecting system parameters:
 - CPU Load - CPU load color mix from 0% ("calm") to 100% ("Active")
 - RAM Load - The same for used RAM percentage
 - GPU Load - The same for utilized GPU percentage (top one across GPUs if more, then one present into the system).
@@ -141,7 +149,8 @@ System Load:
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.
 "Gauge" checkbox changes behavour for groups only. If Gauge on, all lights in group works as a level indicator (100% color below indicator value, 0% color above indicator value, mixed in between.
 
-Status Led:
+"Event"  
+Light switches between colors if system event occures:
 - Disk activity - Switch light every disk activity event (HDD IDLE above zero).
 - Network activity - Switch light if any network traffic detected (across all adapters).
 - System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
@@ -175,12 +184,12 @@ Each profile can have settings and application for trigger it. The settings are:
 
 `"Settings"` tab is for application/global lights settings control - states, behavior, dimming, as well as application settings:
 - "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
-- "Turn off/dim lights then screen off" - Dim/Fade to black lights then system screen dimmed/off (default - off).
-- "Off power button too" - Hardware Power button light follows the system state. Power light will be always on if disabled (default - off).
-- "Autorefresh" - All lights will be refreshed 6 times per second. It's useful if you have AWCC running, but still want to control lights (default - off).
+- "Lights follow screen state" - Dim/Fade to black lights then system screen dimmed/off (default - off).
+- "Power/indicator lights too" - Lights, marked as Power Button or Indicator follows the system state. Such lights will be always on if disabled (default - off).
+- "Auto refresh lights" - All lights will be refreshed 6 times per second. It's useful if you have AWCC running, but still want to control lights (default - off).
 - "Color Gamma correction" - Enables color correction to make them looks close to screen one. It keep original AWCC colors if disabled (default - on).
 - "Dim lights" - Dim system lights brightness. It's useful for night/battery scenario (default - off).
-- "Dim Power button" - Power button follows system dim state. Power button will always have full brightness if disabled (default - off).
+- "Dim Power/Indicator lights too" - Lights, marked as Power Button or Indicator follows dim state. Such lights will be always at full brightness if disabled (default - off).
 - "Dim lights on battery" - Automatically dim lights if system running at battery power, decreasing energy usage (default - on).
 - "Dimming power" - Amount of the brightness decrease then dimmed. Values can be from 0 to 255, default is 92.
 - "Start with Windows" - Start application at Windows start. It will not work if application request run as admin level (see below) (default - off).
@@ -197,13 +206,16 @@ Keyboard shortcuts (any time):
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
 
 Other shortcuts (only then application active):
-- ALT+c - switch to "Colors" tab
-- ALT+m - switch to "Monitoring" tab
-- ALT+d - switch to "Devices and Lights" tab
-- ALT+p - switch to "Profiles" tab
-- ALT+s - switch to "Settings" tab
+- ALT+1 - switch to "Colors" tab
+- ALT+2 - switch to "Monitoring" tab
+- ALT+3 - switch to "Devices and Lights" tab
+- ALT+4 - switch to "Profiles" tab
+- ALT+5 - switch to "Settings" tab
 - ALT+r - refresh all lights
+- ALT+m - minimize app window
+- ALT+s - save configuration
 - ALT+? - about app
+- ALT+x - quit
 
 **WARNING:** All hardware color effects stop working if you enable any Event monitoring. It’s a hardware bug – any light update operation restart all effects.  
 

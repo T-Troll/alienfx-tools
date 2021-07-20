@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,1,1,0
- PRODUCTVERSION 3,1,1,0
+ FILEVERSION 3,1,2,0
+ PRODUCTVERSION 3,1,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040004b0"
         BEGIN
             VALUE "FileDescription", "AlienFX Haptics"
-            VALUE "FileVersion", "3.1.1.0"
+            VALUE "FileVersion", "3.1.2.0"
             VALUE "InternalName", "alienfx-haptics.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "alienfx-haptics.exe"
             VALUE "ProductName", "AlienFX Tools"
-            VALUE "ProductVersion", "3.1.1.0"
+            VALUE "ProductVersion", "3.1.2.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -151,22 +151,22 @@ CAPTION "AlienFX Haptics"
 MENU IDR_MYMENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "Exit",1,367,161,44,14
+    DEFPUSHBUTTON   "Exit",1,367,160,44,14
     LISTBOX         IDC_FREQ,229,11,63,163,LBS_MULTIPLESEL | LBS_NOINTEGRALHEIGHT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
-    LISTBOX         IDC_LIGHTS,309,11,102,120,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_LIGHTS,309,11,102,125,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Frequency",IDC_STATIC,229,1,34,8
     LTEXT           "Lights",IDC_STATIC,310,1,20,8
-    PUSHBUTTON      "Reset",IDC_RESET,309,161,46,14
+    PUSHBUTTON      "Reset",IDC_RESET,309,160,46,14
     RTEXT           "Low-level",IDC_STATIC,180,138,34,8,NOT WS_GROUP,WS_EX_TRANSPARENT
     LTEXT           "Hi-level",IDC_STATIC,18,138,24,8,NOT WS_GROUP,WS_EX_TRANSPARENT
-    CTEXT           "<<",IDC_STATIC,293,11,15,120,SS_CENTERIMAGE
+    CTEXT           "<<",IDC_STATIC,293,11,15,125,SS_CENTERIMAGE
     CONTROL         "",IDC_SLIDER_LOWCUT,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,126,153,92,15,WS_EX_TRANSPARENT
     CONTROL         "LPC",IDC_BUTTON_LPC,"Button",BS_OWNERDRAW | WS_TABSTOP,132,136,36,16
     CONTROL         "HPC",IDC_BUTTON_HPC,"Button",BS_OWNERDRAW | WS_TABSTOP,48,136,36,16
     PUSHBUTTON      "Clear",IDC_BUTTON_REMOVE,90,136,36,21
-    PUSHBUTTON      "Refresh",IDC_BUTTON_REFRESH,309,144,46,14
+    PUSHBUTTON      "Refresh",IDC_BUTTON_REFRESH,309,143,46,14
     LTEXT           "Levels",IDC_STATIC,7,1,21,8
-    PUSHBUTTON      "Minimize",IDC_MINIMIZE,367,144,44,14
+    PUSHBUTTON      "Minimize",IDC_MINIMIZE,367,143,44,14
     GROUPBOX        "Colors and cuts",IDC_STATIC,7,127,214,48
     CONTROL         "",IDC_SLIDER_HICUT,"msctls_trackbar32",TBS_AUTOTICKS | TBS_TOP | WS_TABSTOP,12,153,78,15,WS_EX_TRANSPARENT
     CONTROL         "Show Axis",IDC_SHOWAXIS,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | BS_RIGHT | WS_TABSTOP,172,1,49,8
@@ -203,19 +203,13 @@ IDI_ALIEN               ICON                    "icon2.ico"
 
 IDR_MYMENU MENU
 BEGIN
-    POPUP "&File"
-    BEGIN
-        MENUITEM "E&xit",                       ID_FILE_EXIT
-    END
+    MENUITEM "E&xit",                       ID_FILE_EXIT
     POPUP "&Input"
     BEGIN
         MENUITEM "Default &Output device",      ID_INPUT_DEFAULTOUTPUTDEVICE
         MENUITEM "Default &Input device",       ID_INPUT_DEFAULTINPUTDEVICE
     END
-    POPUP "&Help"
-    BEGIN
-        MENUITEM "&About",                      ID_HELP_ABOUT
-    END
+    MENUITEM "&About",                      ID_HELP_ABOUT
 END
 
 #endif    // English (United States) resources
