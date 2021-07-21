@@ -22,7 +22,7 @@ namespace AlienFX_SDK
 		const byte status[2] = {0x02 ,0x06};
 		const byte saveGroup[2] = {0x02, 0x08};
 		const byte save[2] = {0x02, 0x09};
-		const byte apply[3] = {0x02, 0x1d, 0x03};
+		//const byte apply[3] = {0x02, 0x1d, 0x03};
 		//const byte setSpeed[2] = {0x02, 0x0e};
 		// save group codes saveGroup[2]: 
 		// 0x1 - lights
@@ -33,7 +33,6 @@ namespace AlienFX_SDK
 		// 0x8 - batt critical (morph batt-0)
 		// 0x9 - batt down (pulse batt-0)
 		// what is the mask 0x8000?
-		// what is the command 1d 03?
 
 	} COMMV1;
 
