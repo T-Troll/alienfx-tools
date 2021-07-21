@@ -66,38 +66,6 @@ namespace AlienFX_SDK
 		BYTE g = 0;
 		BYTE b = 0;
 	};
-
-	/*enum Index
-	{
-		AlienFX_leftZone = 1, // 2 for m15
-		AlienFX_leftMiddleZone = 2, // 3 for m15
-		AlienFX_rightZone = 3, // 5 for m15
-		AlienFX_rightMiddleZone = 4, // same for m15
-		AlienFX_Macro = 5,
-		AlienFX_AlienFrontLogo = 6, // ?? for m15
-		AlienFX_LeftPanelTop = 7,
-		AlienFX_LeftPanelBottom = 8,
-		AlienFX_RightPanelTop = 9,
-		AlienFX_RightPanelBottom = 10,
-		AlienFX_TouchPad = 11,
-		AlienFX_AlienBackLogo = 12, // 0 for m15
-		AlienFX_Power = 13 // 1 for m15
-	};*/
-	/*
-	int leftZone = 0x100;// 0x8;
-	int leftMiddleZone = 0x8;// 0x4;
-	int rightZone = 0x2;// 0x1;
-	int rightMiddleZone = 0x4;// 0x2;
-	int Macro = 0x1;// 0;
-	int AlienFrontLogo = 0x20;// 0x40;
-	int LeftPanelTop = 0x40;// 0x1000;
-	int LeftPanelBottom = 0x280;// 0x400;
-	int RightPanelTop = 0xf7810;// 0x2000;
-	int RightPanelBottom = 0x800;
-	int AlienBackLogo = 0x20;
-	int Power = 13;
-	int TouchPad = 0x80;
-	*/
 	
 	enum Action
 	{
@@ -128,7 +96,7 @@ namespace AlienFX_SDK
 
 		HANDLE devHandle = NULL;
 		//bool inSet = false;
-		ULONGLONG lastPowerCall = 0;
+		//ULONGLONG lastPowerCall = 0;
 
 		int vid = -1;
 		int pid = -1;

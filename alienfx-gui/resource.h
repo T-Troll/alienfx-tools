@@ -64,10 +64,13 @@
 #define IDC_BUTTON_REMG                 1031
 #define IDC_SLIDER_DIMMING              1032
 #define IDC_BUTTON_CM4                  1032
+#define IDC_BUT_GRP_UP                  1032
 #define IDC_BUTTON_SETALL               1033
 #define IDC_BUTTON_CM5                  1033
 #define IDC_REMOVEPROFILE               1033
 #define IDC_SCREENOFF                   1033
+#define IDC_BUTTON_REMG2                1033
+#define IDC_BUT_GRP_DOWN                1033
 #define IDC_BUTTON_CM6                  1034
 #define IDC_PROFILES                    1034
 #define IDC_POWER_DIM                   1034
@@ -134,7 +137,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32797
-#define _APS_NEXT_CONTROL_VALUE         1087
+#define _APS_NEXT_CONTROL_VALUE         1088
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif
