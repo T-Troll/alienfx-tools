@@ -145,8 +145,9 @@ Light acts like a performance indicator, reflecting system parameters:
 - HDD Load - It's not exactly a load, but IDLE time. If idle - it's "calm", 100% busy - active, and mix between.
 - Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
 - Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
-- Battery level - Battery charge level in percent (100=discharged, 0=full).  
-You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.
+- Battery level - Battery charge level in percent (100=discharged, 0=full).
+  
+You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.  
 "Gauge" checkbox changes behavour for groups only. If Gauge on, all lights in group works as a level indicator (100% color below indicator value, 0% color above indicator value, mixed in between.
 
 "Event"  
@@ -155,10 +156,11 @@ Light switches between colors if system event occures:
 - Network activity - Switch light if any network traffic detected (across all adapters).
 - System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
 - Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
-- Low battery - Switch light if battery charged below the level defined by slider.  
-"Blink" checkbox switch triggered value to blink between on-off colors 4 times per sec.
+- Low battery - Switch light if battery charged below the level defined by slider.
+  
+"Blink" checkbox switch triggered value to blink between on-off colors 6 times per sec.
 
-You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and system overheat event. In this case Status color always override System one then triggered, as well as both override Power one.
+You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and system overheat event. In this case Event color always override Performance one then triggered, as well as both override Power state one.
 
 `"Devices and lights"` tab is an extended GUI for `alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
 "Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
