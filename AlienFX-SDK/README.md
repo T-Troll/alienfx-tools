@@ -8,6 +8,21 @@ Please checkout Sample App for reference.
 
 **Currently tested on AW13/R2, AW13/R3, AWM14x, AW15R2/R3, AW17R3/R4, AWm15/R1, AWm17/R1, Dell G5, but should be working with all alienware laptops.**
 
+### Supported device API versions:
+- 9 bytes 8 bit/color, reportID 2 control (v1)
+- 9 bytes 4 bit/color, reportID 2 control (v2)
+- 12 bytes 8 bit/color, reportID 2 control (v3)
+- 34 bytes 8 bit/color, reportID 0 control (v4)
+- 64 bytes 8 bit/color, featureID 0xcc control (v5)
+
+### Supported hardware features:
+- Support multiply devices detection and handling
+- Support user-provided device, light or group (zone) names
+- Change light color
+- Change multiply lights color
+- Change light hardware effect (except APIv5)
+- Change multiply lights hardware effects (except APIv5, emulation at APIv1-v3)
+
 ### Initialization
 ```C++
 
@@ -15,10 +30,27 @@ Please checkout Sample App for reference.
 int vid = 0x187c;
   
 //Returns PID value if init is successful or -1 if failed. Takes Vendor ID as argument.
-int isInit = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::vid);
+int pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::vid);
 
 ```
 
+or:
+```C++
+// let's create informational object for the system
+AlienFX_SDK::Mappings info_object;
+
+// Load devices, lights and group names if any
+info_object.LoadMappings();
+
+// Let's scan devices into the system... - it's return in pairs VID-PID.
+vector<pair<DWORD,DWORD>> device_list;
+device_list = info_object.AlienFXEnumDevices();
+
+// now let's init first of them
+int pid = AlienFX_SDK::Functions::AlienFXInitialize(device_list[0].first, device_list[0].second);
+
+
+```
 
 ### Set Color
 ```C++
@@ -27,8 +59,8 @@ bool result = AlienFX_SDK::Functions::IsDeviceReady();
 std::cout << "\nReady: " << result; 
 
 //Takes index of the location you want to update as first argument and Red, Green and Blue values for others.
-AlienFX_SDK::Functions::SetColor(AlienFX_SDK::Index::AlienFX_leftZone, 225, 134, 245);
-AlienFX_SDK::Functions::SetColor(AlienFX_SDK::Index::AlienFX_rightZone, 25, 114, 245);
+AlienFX_SDK::Functions::SetColor(3, 225, 134, 245);
+AlienFX_SDK::Functions::SetColor(6, 25, 114, 245);
 
 //This is important to apply the updated color changes. Should only be called once after you're done with new colors.
 AlienFX_SDK::Functions::UpdateColors();

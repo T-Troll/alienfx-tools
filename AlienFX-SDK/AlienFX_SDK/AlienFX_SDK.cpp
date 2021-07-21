@@ -802,6 +802,7 @@ namespace AlienFX_SDK
 			HidD_SetOutputReport(devHandle, buffer, length);
 			Loop();
 			UpdateColors();
+			Reset(true);
 
 			delete[] buf_presave; delete[] buf_save;
 		} break;
