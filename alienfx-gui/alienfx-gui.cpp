@@ -23,7 +23,7 @@ typedef struct tag_dlghdr {
 } DLGHDR;
 
 // Global Variables:
-NOTIFYICONDATA niData;
+
 
 HWND InitInstance(HINSTANCE, int);
 
@@ -410,8 +410,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDC_SYSLINK_HOMEPAGE:
 			switch (((LPNMHDR)lParam)->code)
 			{
-			case NM_CLICK:          // Fall through to the next case.
-
+			case NM_CLICK:
 			case NM_RETURN:
 				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
 				break;
@@ -537,20 +536,45 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		OnSelChanged(tab_list);
 
 		// tray icon...
-		ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-		niData.cbSize = sizeof(NOTIFYICONDATA);
-		niData.uID = IDI_ALIENFXGUI;
-		niData.uFlags = NIF_ICON | NIF_MESSAGE;
-		niData.hIcon =
+		//ZeroMemory(&conf->niData, sizeof(NOTIFYICONDATA));
+		conf->niData.cbSize = sizeof(NOTIFYICONDATA);
+		conf->niData.uID = IDI_ALIENFXGUI;
+		conf->niData.uFlags = NIF_ICON | NIF_MESSAGE;
+		//strcpy_s(conf->niData.szTip, "AlienFX GUI");
+		if (conf->lightsOn)
+			if (conf->dimmed)
+				conf->niData.hIcon =
+					(HICON)LoadImage(GetModuleHandle(NULL),
+						MAKEINTRESOURCE(IDI_ALIENFX_DIM),
+						IMAGE_ICON,
+						GetSystemMetrics(SM_CXSMICON),
+						GetSystemMetrics(SM_CYSMICON),
+						LR_DEFAULTCOLOR);
+			else
+				conf->niData.hIcon =
+				(HICON)LoadImage(GetModuleHandle(NULL),
+									MAKEINTRESOURCE(IDI_ALIENFX_ON),
+									IMAGE_ICON,
+									GetSystemMetrics(SM_CXSMICON),
+									GetSystemMetrics(SM_CYSMICON),
+									LR_DEFAULTCOLOR);
+		else
+			conf->niData.hIcon =
 			(HICON)LoadImage(GetModuleHandle(NULL),
-				MAKEINTRESOURCE(IDI_ALIENFXGUI),
-				IMAGE_ICON,
-				GetSystemMetrics(SM_CXSMICON),
-				GetSystemMetrics(SM_CYSMICON),
-				LR_DEFAULTCOLOR);
-		niData.hWnd = hDlg;
-		niData.uCallbackMessage = WM_APP + 1;
-		Shell_NotifyIcon(NIM_ADD, &niData);
+							 MAKEINTRESOURCE(IDI_ALIENFX_OFF),
+							 IMAGE_ICON,
+							 GetSystemMetrics(SM_CXSMICON),
+							 GetSystemMetrics(SM_CYSMICON),
+							 LR_DEFAULTCOLOR);
+		conf->niData.hWnd = hDlg;
+		conf->niData.uCallbackMessage = WM_APP + 1;
+		while (!Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
+#ifdef _DEBUG
+			OutputDebugString("Icon issue!\n");
+#endif			
+			Sleep(50);
+		}
+		conf->SetStates();
 	} break;
 	case WM_COMMAND:
 	{
@@ -559,28 +583,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
 		{
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
-			//Shell_NotifyIcon(NIM_DELETE, &niData);
-			//EndDialog(hDlg, IDOK);
-			//DestroyWindow(hDlg);
 		} break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
 		case IDC_BUTTON_MINIMIZE:
-			ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-			niData.cbSize = sizeof(NOTIFYICONDATA);
-			niData.uID = IDI_ALIENFXGUI;
-			niData.uFlags = NIF_ICON | NIF_MESSAGE;
-			niData.hIcon =
-				(HICON)LoadImage(GetModuleHandle(NULL),
-					MAKEINTRESOURCE(IDI_ALIENFXGUI),
-					IMAGE_ICON,
-					GetSystemMetrics(SM_CXSMICON),
-					GetSystemMetrics(SM_CYSMICON),
-					LR_DEFAULTCOLOR);
-			niData.hWnd = hDlg;
-			niData.uCallbackMessage = WM_APP + 1;
-			Shell_NotifyIcon(NIM_ADD, &niData);
+			Shell_NotifyIcon(NIM_ADD, &conf->niData);
 			ShowWindow(hDlg, SW_HIDE);
 			break;
 		case IDC_BUTTON_REFRESH:
@@ -832,7 +840,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 		break;
 	case WM_CLOSE:
-		Shell_NotifyIcon(NIM_DELETE, &niData);
+		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
 		return 0;
@@ -2287,8 +2295,20 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->autoRefresh = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
 		case IDC_STARTW:
+		{
 			conf->startWindows = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			break;
+			char pathBuffer[2048];
+			string shellcomm;
+			if (conf->startWindows) {
+				GetModuleFileNameA(NULL, pathBuffer, 2047);
+				shellcomm = "Register-ScheduledTask -force -RunLevel Highest -TaskName \"AlienFX-GUI\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -execute \""
+				 + string(pathBuffer) + "\")";
+				ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
+			} else {
+				shellcomm = "/delete /F /TN \"Alienfx-GUI\"";
+				ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
+			}
+		} break;
 		case IDC_BATTDIM:
 			conf->dimmedBatt = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			fxhl->RefreshState();

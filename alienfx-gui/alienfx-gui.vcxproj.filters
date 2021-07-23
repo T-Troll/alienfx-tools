@@ -54,5 +54,17 @@
     <Image Include="alien.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="icon1.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="alien_on.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="alien_off.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="alien_dim.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

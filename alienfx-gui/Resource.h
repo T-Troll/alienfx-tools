@@ -33,6 +33,10 @@
 #define IDD_DIALOG_DEVICES              143
 #define IDS_TYPE_MORPH                  144
 #define IDD_DIALOG_PROFILES             144
+#define IDI_ALIENFX_ON                  147
+#define IDI_ALIENFX_OFF                 148
+#define IDI_ICON1                       149
+#define IDI_ALIENFX_DIM                 149
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001
 #define IDC_BUTTON_C1                   1005
@@ -69,7 +73,6 @@
 #define IDC_BUTTON_CM5                  1033
 #define IDC_REMOVEPROFILE               1033
 #define IDC_SCREENOFF                   1033
-#define IDC_BUTTON_REMG2                1033
 #define IDC_BUT_GRP_DOWN                1033
 #define IDC_BUTTON_CM6                  1034
 #define IDC_PROFILES                    1034
@@ -126,8 +129,6 @@
 #define ID_TRAYMENU_PROFILES            32789
 #define ID_ACC_PROFILES                 32790
 #define ID_TRAYMENU_PROFILE_SELECTED    32791
-#define ID_TEST                         32792
-#define ID_FILE                         32793
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -135,7 +136,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        146
+#define _APS_NEXT_RESOURCE_VALUE        150
 #define _APS_NEXT_COMMAND_VALUE         32797
 #define _APS_NEXT_CONTROL_VALUE         1088
 #define _APS_NEXT_SYMED_VALUE           112

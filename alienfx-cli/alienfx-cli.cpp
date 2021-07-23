@@ -49,11 +49,11 @@ void printUsage()
 
 int main(int argc, char* argv[])
 {
-	bool low_level = true;
+	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v3.1.2" << endl;
+	cerr << "alienfx-cli v3.1.3" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -62,25 +62,47 @@ int main(int argc, char* argv[])
 
 	int res = -1; 
 	vector<pair<DWORD,DWORD>> devs = afx_map->AlienFXEnumDevices();
-	int isInit = afx_dev->AlienFXInitialize(AlienFX_SDK::vids[0]);
-	//std::cout << "PID: " << std::hex << isInit << std::endl;
-	if (isInit != -1)
+	int pid = -1;
+
+	if (devs.size() > 0)
 	{
-		for (int rcount = 0; rcount < 10 && !afx_dev->IsDeviceReady(); rcount++)
-			Sleep(20);
-		if (!afx_dev->IsDeviceReady()) {
-			afx_dev->Reset(true);
+		pid = afx_dev->AlienFXInitialize(devs[0].first, devs[0].second);
+		if (pid > 0) {
+			for (int rcount = 0; rcount < 10 && !afx_dev->IsDeviceReady(); rcount++)
+				Sleep(20);
+			if (!afx_dev->IsDeviceReady()) {
+				afx_dev->Reset(true);
+			}
+			afx_map->LoadMappings();
+			cout << "Low-level device ready" << endl;
+			have_low = true;
+			devType = 1;
 		}
-		afx_map->LoadMappings();
 	}
 	else {
-		cerr << "No low-level device found!" << endl;
+		cerr << "No low-level devices found, trying high-level..." << endl;
+	}
+	if (res = lfxUtil.InitLFX() != -1) {
+		switch (res) {
+		case 0: cerr << "Dell library DLL not found (no library?)!" << endl; break;
+		case 1: cerr << "Can't init Dell library!" << endl; break;
+		case 2: cerr << "No high-level devices found!" << endl; break;
+		default: cerr << "Dell library unknown error!" << endl; break;
+		}
+	}
+	else {
+		cout << "Dell API ready" << endl;
+		have_high = true;
+		if (!have_low)
+			devType = 0;
+	}
+	if (devType == -1) {
+		cout << "Both low-levl and high-level devices not found, exiting!" << endl;
 		return 1;
 	}
 	const char* command = argv[1];
 	for (int cc = 1; cc < argc; cc++) {
-		if (low_level && cc > 1) {
-			//cerr << "Sleep " << sleepy << endl;
+		if (devType > 0 && cc > 1) {
 			Sleep(sleepy);
 		}
 		else
@@ -101,36 +123,28 @@ int main(int argc, char* argv[])
 		}
 		//cerr << "Executing " << command << " with " << values << endl;
 		if (command == "low-level") {
-			low_level = true;
+			if (have_low)
+				devType = 1;
 			continue;
 		}
 		if (command == "high-level") {
-			if (res == (-1))
-				res = lfxUtil.InitLFX();
-				if (res != -1) {
-					switch (res) {
-					case 0: cerr << "Dell library DLL not found (no library?)!" << endl; break;
-					case 1: cerr << "Can't init Dell library!" << endl; break;
-					case 2: cerr << "No high-level devices found!" << endl; break;
-					default: cerr << "Dell library unknown error!" << endl; break;
-					}
-					low_level = true;
-				}
-				else
-					low_level = false;
+			if (have_high)
+				devType = 0;
 			continue;
 		}
 		if (command == "loop") {
 			cc = 1;
-			if (low_level)
-				afx_dev->UpdateColors();
-			else
-				lfxUtil.Update();
+			switch (devType) {
+			case 1:
+				afx_dev->UpdateColors(); break;
+			case 0:
+				lfxUtil.Update(); break;
+			}
 			continue;
 		}
 		if (command == "status") {
-			if (low_level) {
-				// vector<int> devs = afx_dev->AlienFXEnumDevices(afx_dev->vid);
+			switch (devType) {
+			case 1:
 				for (int i = 0; i < devs.size(); i++) {
 					cout << "Device VID#" << devs[i].first << ", PID#" << devs[i].second;
 					int dn;
@@ -161,9 +175,9 @@ int main(int argc, char* argv[])
 					cout << "Group #" << (afx_map->GetGroups()->at(i).gid & 0xffff)
 					<< " - " << afx_map->GetGroups()->at(i).name
 					<< " (" << afx_map->GetGroups()->at(i).lights.size() << " lights)" << endl;
-			}
-			else {
-				lfxUtil.GetStatus();
+				break;
+			case 0:
+				lfxUtil.GetStatus(); break;
 			}
 			continue;
 		}
@@ -172,13 +186,16 @@ int main(int argc, char* argv[])
 				cerr << "set-tempo: Incorrect argument" << endl;
 				continue;
 			}
-			if (low_level) {
+			switch (devType) {
+			case 1:
 				sleepy = atoi(args.at(0).c_str());
-			}
-			else {
+				break;
+			case 0:
+			{
 				unsigned tempo = atoi(args.at(0).c_str());
 				lfxUtil.SetTempo(tempo);
 				lfxUtil.Update();
+			} break;
 			}
 			continue;
 		}
@@ -187,7 +204,7 @@ int main(int argc, char* argv[])
 				cerr << "set-dev: Incorrect argument" << endl;
 				continue;
 			}
-			if (low_level) {
+			if (devType) {
 				int newDev = atoi(args.at(0).c_str());
 				if (newDev == afx_dev->GetPID())
 					continue;
@@ -195,10 +212,8 @@ int main(int argc, char* argv[])
 					if (devs[i].second == newDev) {
 						afx_dev->UpdateColors();
 						afx_dev->AlienFXClose();
-						isInit = afx_dev->AlienFXChangeDevice(devs[i].first, devs[i].second);
-						if (isInit) {
-							isInit = newDev;
-						} else { 
+						pid = afx_dev->AlienFXChangeDevice(devs[i].first, devs[i].second);
+						if (pid < 0) {
 							cerr << "Can't init device ID#" << newDev << ", exiting!" << endl;
 							return 1;
 						}
@@ -208,33 +223,36 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "reset") {
-			if (low_level) {
-				afx_dev->Reset(true);
+			switch (devType) {
+			case 1:
+				afx_dev->Reset(true); break;
+			case 0:
+				lfxUtil.Reset(); break;
 			}
-			else
-				lfxUtil.Reset();
 			continue;
 		}
 		if (command == "update") {
-			if (low_level)
-				afx_dev->UpdateColors();
-			else
-				lfxUtil.Update();
+			switch (devType) {
+			case 1:
+				afx_dev->UpdateColors(); break;
+			case 0:
+				lfxUtil.Update(); break;
+			}
 			continue;
 		}
 		if (command == "set-dim") {
 			byte dim = atoi(args.at(0).c_str());
-			if (low_level)
+			if (devType)
 				afx_dev->ToggleState(dim, afx_map->GetMappings(), false);
 			continue;
 		}
 		if (command == "lightson") {
-			if (low_level)
+			if (devType)
 				afx_dev->ToggleState(255, afx_map->GetMappings(), false);
 			continue;
 		}
 		if (command == "lightsoff") {
-			if (low_level)
+			if (devType)
 				afx_dev->ToggleState(0, afx_map->GetMappings(), false);
 			continue;
 		}
@@ -249,24 +267,25 @@ int main(int argc, char* argv[])
 			color.cs.green = atoi(args.at(1).c_str());
 			color.cs.blue = atoi(args.at(2).c_str());
 			color.cs.brightness = args.size() > 3 ? atoi(args.at(3).c_str()) : 255;
-			if (low_level) {
+			switch (devType) {
+			case 1:
+			{
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
 				vector<UCHAR> lights;
 				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
-					if (afx_map->GetMappings()->at(i).devid == isInit &&
+					if (afx_map->GetMappings()->at(i).devid == pid &&
 						!(afx_map->GetMappings()->at(i).flags & ALIENFX_FLAG_POWER))
-						lights.push_back((UCHAR)afx_map->GetMappings()->at(i).lightid);
-						//afx_dev->SetColor(afx_map->GetMappings()->at(i).lightid,
-						//	color.cs.red, color.cs.green, color.cs.blue);
+						lights.push_back((UCHAR) afx_map->GetMappings()->at(i).lightid);
 				}
-				afx_dev->SetMultiLights((int)lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
+				afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
 				afx_dev->UpdateColors();
-			}
-			else {
+			} break;
+			case 0:
 				lfxUtil.SetLFXColor(zoneCode, color.ci);
 				lfxUtil.Update();
+				break;
 			}
 			continue;
 		}
@@ -281,7 +300,9 @@ int main(int argc, char* argv[])
 			color.cs.green = atoi(args.at(3).c_str());
 			color.cs.blue = atoi(args.at(2).c_str());
 			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
-			if (low_level) {
+			switch (devType) {
+			case 1:
+			{
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
@@ -292,11 +313,12 @@ int main(int argc, char* argv[])
 					afx_dev->AlienFXChangeDevice(dev->first, dev->second);
 				}
 				afx_dev->SetColor(atoi(args.at(1).c_str()),
-					color.cs.blue, color.cs.green, color.cs.red);
-			}
-			else {
+								  color.cs.blue, color.cs.green, color.cs.red);
+			} break;
+			case 0:
 				lfxUtil.SetOneLFXColor(devid, atoi(args.at(1).c_str()), &color.ci);
 				lfxUtil.Update();
+				break;
 			}
 			continue;
 		}
@@ -305,31 +327,15 @@ int main(int argc, char* argv[])
 				cerr << "set-zone: Incorrect arguments" << endl;
 				continue;
 			}
-			unsigned zoneCode = LFX_ALL;
-			if (args.at(0) == "left") {
-				zoneCode = LFX_ALL_LEFT;
-			}
-			if (args.at(0) == "right") {
-				zoneCode = LFX_ALL_RIGHT;
-			}
-			if (args.at(0) == "top") {
-				zoneCode = LFX_ALL_UPPER;
-			}
-			if (args.at(0) == "bottom") {
-				zoneCode = LFX_ALL_LOWER;
-			}
-			if (args.at(0) == "front") {
-				zoneCode = LFX_ALL_FRONT;
-			}
-			if (args.at(0) == "rear") {
-				zoneCode = LFX_ALL_REAR;
-			}
 			static ColorU color;
+			unsigned zoneCode = LFX_ALL;
 			color.cs.red = atoi(args.at(1).c_str());
 			color.cs.green = atoi(args.at(2).c_str());
 			color.cs.blue = atoi(args.at(3).c_str());
 			color.cs.brightness = args.size() > 4 ? atoi(args.at(4).c_str()) : 255;
-			if (low_level) {
+			switch (devType) {
+			case 1:
+			{
 				zoneCode = atoi(args.at(0).c_str()) | 0x10000;
 				color.cs.red = (color.cs.red * color.cs.brightness) >> 8;
 				color.cs.green = (color.cs.green * color.cs.brightness) >> 8;
@@ -339,15 +345,34 @@ int main(int argc, char* argv[])
 					vector<UCHAR> lights;
 					for (int i = 0; i < grp->lights.size(); i++)
 						if (grp->lights[i]->devid == afx_dev->GetPID())
-							lights.push_back((UCHAR)afx_map->GetMappings()->at(i).lightid);
-							//afx_dev->SetColor(grp->lights[i]->lightid, color.cs.red, color.cs.green, color.cs.blue);
-					afx_dev->SetMultiLights((int)lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
+							lights.push_back((UCHAR) afx_map->GetMappings()->at(i).lightid);
+					afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
 					afx_dev->UpdateColors();
 				}
-			}
-			else {
+			} break;
+			case 0:
+			{
+				if (args.at(0) == "left") {
+					zoneCode = LFX_ALL_LEFT;
+				}
+				if (args.at(0) == "right") {
+					zoneCode = LFX_ALL_RIGHT;
+				}
+				if (args.at(0) == "top") {
+					zoneCode = LFX_ALL_UPPER;
+				}
+				if (args.at(0) == "bottom") {
+					zoneCode = LFX_ALL_LOWER;
+				}
+				if (args.at(0) == "front") {
+					zoneCode = LFX_ALL_FRONT;
+				}
+				if (args.at(0) == "rear") {
+					zoneCode = LFX_ALL_REAR;
+				}
 				lfxUtil.SetLFXColor(zoneCode, color.ci);
 				lfxUtil.Update();
+			} break;
 			}
 			continue;
 		}
@@ -360,12 +385,10 @@ int main(int argc, char* argv[])
 			color.cs.red = atoi(args.at(1).c_str());
 			color.cs.green = atoi(args.at(2).c_str());
 			color.cs.blue = atoi(args.at(3).c_str());
-			//color.cs.brightness = 255;
 			color2.cs.red = atoi(args.at(4).c_str());
 			color2.cs.green = atoi(args.at(5).c_str());
 			color2.cs.blue = atoi(args.at(6).c_str());
-			//color2.cs.brightness = 255;
-			if (low_level) {
+			if (devType) {
 				afx_dev->SetPowerAction(atoi(args.at(0).c_str()),
 					color.cs.red, color.cs.green, color.cs.blue,
 					color2.cs.red, color2.cs.green, color2.cs.blue, true);
@@ -421,7 +444,8 @@ int main(int argc, char* argv[])
 				clrs.push_back(c);
 				argPos += 5;
 			}
-			if (low_level) {
+			switch (devType) {
+			case 1:
 				if (devid != 0 && devid != afx_dev->GetPID()) {
 					afx_dev->UpdateColors();
 					afx_dev->AlienFXClose();
@@ -429,14 +453,15 @@ int main(int argc, char* argv[])
 					afx_dev->AlienFXChangeDevice(dev->first, dev->second);
 				}
 				afx_dev->SetAction(atoi(args.at(1).c_str()), act);
-			}
-			else {
+				break;
+			case 0:
 				if (clrs.size() < 2) {
 					ColorU c;
 					clrs.push_back(c);
 				}
 				lfxUtil.SetLFXAction(actionCode, devid, atoi(args.at(1).c_str()), &clrs[0].ci, &clrs[1].ci);
 				lfxUtil.Update();
+				break;
 			}
 			continue;
 		}
@@ -504,29 +529,32 @@ int main(int argc, char* argv[])
 				clrs.push_back(c);
 				argPos += 5;
 			}
-			if (low_level) {
-					AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
-					if (grp) {
-						for (int i = 0; i < grp->lights.size(); i++)
-							if (grp->lights[i]->devid == afx_dev->GetPID())
-								afx_dev->SetAction(grp->lights[i]->lightid, act);
-					}
-			}
-			else {
+			switch (devType) {
+			case 1:
+			{
+				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
+				if (grp) {
+					for (int i = 0; i < grp->lights.size(); i++)
+						if (grp->lights[i]->devid == afx_dev->GetPID())
+							afx_dev->SetAction(grp->lights[i]->lightid, act);
+				}
+			} break;
+			case 0:
 				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, clrs[0].ci, clrs[1].ci);
 				lfxUtil.Update();
+				break;
 			}
 			continue;
 		}
 		cerr << "Unknown command: " << command << endl;
 	}
 	cout << "Done." << endl;
-	if (isInit != -1)
+	if (have_low)
 		afx_dev->UpdateColors();
 		afx_dev->AlienFXClose();
-	if (res != -1) 
+	if (have_high) 
 		lfxUtil.Release();
 	delete afx_dev;
-    return 1;
+    return 0;
 }
 

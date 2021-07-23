@@ -466,7 +466,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		if (maxnet < totalNet) maxnet = totalNet;
 		//if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
-		totalNet = (totalNet * 100) / maxnet;
+		totalNet = totalNet > 0 ? (totalNet * 100) / maxnet > 0 ? (totalNet * 100) / maxnet : 1 : 0;
 
 		pdhStatus = PdhGetFormattedCounterArray(
 			hGPUCounter,

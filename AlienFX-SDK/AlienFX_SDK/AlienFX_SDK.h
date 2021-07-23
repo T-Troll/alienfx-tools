@@ -158,6 +158,8 @@ namespace AlienFX_SDK
 		// power - if true, power and indicator lights will be set on/off too
 		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
 
+		bool SetGlobalEffects(vector<mapping>* mappings, byte effType, byte effType2, afx_act act1, afx_act act2);
+
 		// return current device state
 		BYTE AlienfxGetDeviceStatus();
 

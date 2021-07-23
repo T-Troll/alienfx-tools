@@ -51,22 +51,26 @@ namespace AlienFX_SDK
 
 	static struct COMMV5 {
 		// Start command block
-		const byte reset[2] = { 0xcc, 0x94 };
-		// request status - doesn/t used
-		byte status[2] = {0xcc, 0x93};
+		const byte reset[2] = {0xcc, 0x94};
+		const byte status[2] = {0xcc, 0x93};
+		const byte colorSet[4] = {0xcc, 0x8c, 0x02, 0x00 };
+		const byte loop[3] = {0xcc, 0x8c, 0x13};
+		const byte update[4] = {0xcc, 0x8b, 0x01, 0xff}; // fe, 59
+		// Seems like row masks: 8c 01 XX - 01, 02, 05, 08, 09, 0e
+		// And other masks: 8c XX - 05, 06, 07 (3 in each)
 		// first 3 rows bitmask map
-		byte colorSel5[64] = {0xcc,0x8c,05,00,01,01,01,01,01,01,01,01,01,01,01,01,
-			                    01,  01,01,01,00,00,00,00,01,01,01,01,01,01,01,01,
-			                    01,  01,01,01,01,01,00,01,00,00,00,00,01,00,01,01,
-			                    01,  01,01,01,01,01,01,01,01,01,01,01,00,00,00,01};
+		//byte colorSel5[64] = {0xcc,0x8c,05,00,01,01,01,01,01,01,01,01,01,01,01,01,
+		//	                    01,  01,01,01,00,00,00,00,01,01,01,01,01,01,01,01,
+		//	                    01,  01,01,01,01,01,00,01,00,00,00,00,01,00,01,01,
+		//	                    01,  01,01,01,01,01,01,01,01,01,01,01,00,00,00,01};
 		//// secnd 4 rows bitmask map
-		byte colorSel6[60] = {0xcc,0x8c,06,00,00,01,01,01,01,01,01,01,01,01,01,01,
-			                    01,  01,01,00,00,00,00,00,00,01,01,01,01,01,01,01,
-			                    01,  01,01,01,01,00,01,00,00,00,00,00,01,01,00,01,
-			                    01,  01,00,00,00,00,01,01,01,01,01,01};
+		//byte colorSel6[60] = {0xcc,0x8c,06,00,00,01,01,01,01,01,01,01,01,01,01,01,
+		//	                    01,  01,01,00,00,00,00,00,00,01,01,01,01,01,01,01,
+		//	                    01,  01,01,01,01,00,01,00,00,00,00,00,01,01,00,01,
+		//	                    01,  01,00,00,00,00,01,01,01,01,01,01};
 		//// special row bitmask map
-		byte colorSel7[20] = {0xcc,0x8c,07,00,00,00,00,00,00,00,00,00,00,00,00,00,
-			                    00,  01,01,01};
+		//byte colorSel7[20] = {0xcc,0x8c,07,00,00,00,00,00,00,00,00,00,00,00,00,00,
+		//	                    00,  01,01,01};
 		//// Unclear, effects?
 		//byte colorSel[18] = //{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0xff, 0x00, 0x00, 0xff,
 		//                    // 0x00, 0x00, 0x01};
@@ -74,9 +78,6 @@ namespace AlienFX_SDK
 		//					// 0xf0, 0xf0, 0x01};
 		//					{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0xff, 0x00, 0x00, 
 		//					 0xff, 0x00, 0x01};
-		const byte colorSet[4] = {0xcc, 0x8c, 0x02, 0x00 };
-		const byte loop[3] = {0xcc, 0x8c, 0x13};
-		const byte update[4] = {0xcc, 0x8b, 0x01, 0xff}; // fe, 59
 		const byte turnOnInit[56] = 
 		                     {0xcc,0x79,0x7b,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 			                  0xff,0xff,0xff,0xff,0xff,0xff,0x7c,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
@@ -84,6 +85,8 @@ namespace AlienFX_SDK
 			                  0xff,0xff,0x00,0xff,0xff,0xff,0x00,0x77};
 		const byte turnOnInit2[3] = {0xcc,0x79,0x88};
 		const byte turnOnSet[4] = {0xcc,0x83,0x38,0x9c};
+		// [2],[3]=type, [9]=?, [10..12]=RGB1, [13..15]=RGB2, [16]=?
+		const byte setEffect[9] = {0xcc,0x80,0x02,0x07,0x00,0x00,0x01,0x01,0x01};// , 0x00, 0x00, 0xff, 0xff, 0x00, 0xff, 0xff, 0x05
 	} COMMV5;
 
 	void Functions::SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2) {
@@ -819,8 +822,10 @@ namespace AlienFX_SDK
 		switch (length) {
 		case API_L_V5:
 		{
-			if (inSet) UpdateColors();
-			Reset(true);
+			if (inSet) { // not sure... Maybe reset mandatory.
+				UpdateColors();
+				Reset(true);
+			}
 			memcpy(buffer, COMMV5.turnOnInit, sizeof(COMMV5.turnOnInit));
 			HidD_SetFeature(devHandle, buffer, length);
 			ZeroMemory(buffer, length);
@@ -828,8 +833,6 @@ namespace AlienFX_SDK
 			HidD_SetFeature(devHandle, buffer, length);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV5.turnOnSet, sizeof(COMMV5.turnOnSet));
-			//if (newState)
-			//	buffer[4] = 0xfe;
 			buffer[4] = brightness; // 00..ff
 			return HidD_SetFeature(devHandle, buffer, length);
 		} break;
@@ -840,8 +843,6 @@ namespace AlienFX_SDK
 			HidD_SetOutputReport(devHandle, buffer, length);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV4.turnOn, sizeof(COMMV4.turnOn));
-			//if (!newState)
-			//	buffer[3] = 0x64;
 			buffer[3] = 0x64 - (brightness >> 2); // 00..64
 			byte pos = 6, pindex = 0;
 			for (int i = 0; i < mappings->size(); i++) {
@@ -873,6 +874,36 @@ namespace AlienFX_SDK
 		return false;
 	}
 
+	bool Functions::SetGlobalEffects(vector<mapping>* mappings, byte effType, byte effType2, afx_act act1, afx_act act2) {
+		byte buffer[MAX_BUFFERSIZE] = {0};
+		switch (length) {
+		case API_L_V5:
+		{
+			if (!inSet) Reset(true);
+			memcpy(buffer, COMMV5.setEffect, sizeof(COMMV5.setEffect));
+			// [2],[3]=type, [9]=?, [10..12]=RGB1, [13..15]=RGB2, [16]=?
+			buffer[2] = effType;
+			buffer[3] = effType2;
+			// ???? 0 or 1 (for color). Stable?
+			buffer[9] = 0;
+			// colors...
+			buffer[10] = act1.r;
+			buffer[11] = act1.g;
+			buffer[12] = act1.b;
+			buffer[13] = act2.r;
+			buffer[14] = act2.g;
+			buffer[15] = act2.b;
+			// ???? 0 for rainbow, 1 for breath, 5 for color.
+			buffer[16] = 0x1;
+			HidD_SetFeature(devHandle, buffer, length);
+			UpdateColors();
+			return true;
+		} break;
+		default: return true;
+		}
+		return false;
+	}
+
 	BYTE Functions::AlienfxGetDeviceStatus()
 	{
 		if (pid == -1) return 0;
@@ -881,8 +912,8 @@ namespace AlienFX_SDK
 		switch (length) {
 		case API_L_V5:
 		{
-			memcpy(buffer, COMMV5.status, sizeof(COMMV5.status));
-			HidD_SetOutputReport(devHandle, buffer, length);
+			//memcpy(buffer, COMMV5.status, sizeof(COMMV5.status));
+			//HidD_SetOutputReport(devHandle, buffer, length);
 			buffer[0] = 0xcc;
 			if (HidD_GetFeature(devHandle, buffer, length))
 				ret = buffer[2];
@@ -896,7 +927,7 @@ namespace AlienFX_SDK
 			//default: cout << "Unknown (" << GetLastError() << ")";
 			//}
 			//cout <<  endl;
-			//cout << "Data: " << buffer[0] << "," << buffer[1] << "," << buffer[2] << endl;
+			cout << "Status data: " << hex << buffer[2] << "," << buffer[14] << "," << buffer[15] << endl;
 #endif
 		} break;
 		case API_L_V4: {
@@ -1060,7 +1091,7 @@ namespace AlienFX_SDK
 					attributes->Size = sizeof(HIDD_ATTRIBUTES);
 					if (HidD_GetAttributes(tdevHandle, attributes.get()))
 					{
-						for (unsigned i = 0; i < sizeof(vids)/4; i++) {
+						for (unsigned i = 0; i < sizeof(vids)/sizeof(DWORD); i++) {
 							if (attributes->VendorID == vids[i]) {
 
 								PHIDP_PREPARSED_DATA prep_caps;

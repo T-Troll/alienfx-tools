@@ -1,4 +1,5 @@
 #include "ConfigHandler.h"
+#include "resource.h"
 #include <algorithm>
 
 ConfigHandler::ConfigHandler() {
@@ -94,6 +95,7 @@ int ConfigHandler::FindProfileByApp(std::string appName, bool active)
 }
 
 void ConfigHandler::SetStates() {
+	DWORD oldStateOn = stateOn, oldStateDim = stateDimmed;
 	// monitoring state....
 	monState = FindProfile(activeProfile)->flags & PROF_NOMONITORING ? false : enableMon;
 	// Lighs on state...
@@ -103,6 +105,37 @@ void ConfigHandler::SetStates() {
 		dimmedScreen ||
 		FindProfile(activeProfile)->flags & PROF_DIMMED ||
 		(dimmedBatt && !statePower);
+	if (oldStateOn != stateOn || oldStateDim != stateDimmed) {
+		// change tray icon...
+		if (stateOn) {
+			if (stateDimmed) {
+				niData.hIcon =
+					(HICON)LoadImage(GetModuleHandle(NULL),
+									 MAKEINTRESOURCE(IDI_ALIENFX_DIM),
+									 IMAGE_ICON,
+									 GetSystemMetrics(SM_CXSMICON),
+									 GetSystemMetrics(SM_CYSMICON),
+									 LR_DEFAULTCOLOR);
+			} else {
+				niData.hIcon =
+					(HICON)LoadImage(GetModuleHandle(NULL),
+									 MAKEINTRESOURCE(IDI_ALIENFX_ON),
+									 IMAGE_ICON,
+									 GetSystemMetrics(SM_CXSMICON),
+									 GetSystemMetrics(SM_CYSMICON),
+									 LR_DEFAULTCOLOR);
+			}
+		} else {
+			niData.hIcon =
+				(HICON) LoadImage(GetModuleHandle(NULL),
+								  MAKEINTRESOURCE(IDI_ALIENFX_OFF),
+								  IMAGE_ICON,
+								  GetSystemMetrics(SM_CXSMICON),
+								  GetSystemMetrics(SM_CYSMICON),
+								  LR_DEFAULTCOLOR);
+		}
+		Shell_NotifyIcon(NIM_MODIFY, &niData);
+	}
 }
 
 int ConfigHandler::Load() {
@@ -392,14 +425,11 @@ int ConfigHandler::Save() {
 
 	if (!conf_loaded) return 0; // do not save clear config!
 
-	if (startWindows) {
-		char pathBuffer[2048];
-		GetModuleFileNameA(NULL, pathBuffer, 2047);
-		RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)pathBuffer, (DWORD)strlen(pathBuffer) + 1);
-	}
-	else {
-		// set to zero string (can't remove without admin rights)
-		RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)&"", 1);
+	if (RegGetValue(hKey2, NULL, "Alienfx GUI", RRF_RT_ANY, NULL, NULL, NULL) == ERROR_SUCCESS) {
+		// remove old start key
+		RegDeleteValue(hKey2, "Alienfx GUI");
+		startWindows = 0;
+		//RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)&"", 1);
 	}
 
 	RegSetValueEx(

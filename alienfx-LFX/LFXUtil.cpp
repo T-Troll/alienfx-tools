@@ -40,12 +40,12 @@ namespace LFXUtil
 	int LFXUtilC::InitLFX()
 	{
 		if (initialized)
-			return -1;// ResultT(true, _T("Already initialized"));
+			return -1;
 
 		// Dell is stupid and forces us to manually load the DLL and bind its functions
 		hLibrary = LoadLibrary(_T(LFX_DLL_NAME));
 		if (!hLibrary)
-			return 0;// ResultT(false, _T("LoadLibrary() failed"));
+			return 0;
 
 		_LFX_Initialize = (LFX2INITIALIZE)GetProcAddress(hLibrary, LFX_DLL_INITIALIZE);
 		_LFX_Release = (LFX2RELEASE)GetProcAddress(hLibrary, LFX_DLL_RELEASE);
@@ -70,12 +70,12 @@ namespace LFXUtil
 		int res = _LFX_Initialize();
 
 		if (res == LFX_FAILURE)
-			return 1;// ResultT(false, _T("_LFX_Initialize() failed"));
+			return 1;
 		if (res == LFX_ERROR_NODEVS)
 			return 2;
 
 		initialized = true;
-		return -1;// ResultT(true, _T("InitFX() success"));
+		return -1;
 	}
 
 	void LFXUtilC::Release()
@@ -86,7 +86,7 @@ namespace LFXUtil
 	int LFXUtilC::Update()
 	{
 		if (_LFX_Update() != LFX_SUCCESS)
-			return 0;// ResultT(false, _T("_LFX_Update() failed"));
+			return 0;
 
 		return 1;
 	}
@@ -120,8 +120,8 @@ namespace LFXUtil
 	int LFXUtilC::SetLFXColor(unsigned zone, unsigned color)
 	{
 		if (_LFX_Light(zone, color) != LFX_SUCCESS)
-			return 0;// ResultT(false, _T("_LFX_Light() failed"));
-		return 1;// ResultT(true, _T("SetLFXColor() success"));
+			return 0;
+		return 1;
 	}
 
 	int LFXUtilC::SetLFXZoneAction(unsigned action, unsigned zone, unsigned color, unsigned color2)
@@ -129,59 +129,28 @@ namespace LFXUtil
 		// Set all lights to color
 
 		if (_LFX_ActionColorEx(zone, action, color, color2) != LFX_SUCCESS)
-			return 0;// ResultT(false, _T("_LFX_Light() failed"));
+			return 0;
 
-		return 1;// ResultT(true, _T("SetLFXColor() success"));
+		return 1;
 	}
 
 	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned *color)
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
-		// abort if initialization fails
-		//const ResultT& result(InitLFX());
-		//if (!result.first)
-		//	return result;
-
-		// Reset the state machine and await light settings
-		//if (_LFX_Reset() != LFX_SUCCESS)
-		//	return ResultT(false, _T("_LFX_Reset() failed"));
-
-		// Set one light to color
-		/*static LFX_COLOR color;
-		color.red = red;
-		color.green = green;
-		color.blue = blue;
-		color.brightness = br;*/
+		
 		if (_LFX_SetLightColor(dev, light, (PLFX_COLOR)color) != LFX_SUCCESS)
-			return 0;// ResultT(false, _T("_LFX_Light() failed"));
+			return 0;
 
-		// Update the state machine, which causes the physical color change
-		//if (_LFX_Update() != LFX_SUCCESS)
-		//	return 0;//ResultT(false, _T("_LFX_Update() failed"));
-
-		return 1;//ResultT(true, _T("SetLFXColor() success"));
+		return 1;
 	}
 
 	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned *color, unsigned *color2) {
-		/*static LFX_COLOR color, color2;
-		color.red = red;
-		color.green = green;
-		color.blue = blue;
-		color.brightness = br;
-		color2.red = r2;
-		color2.green = g2;
-		color2.blue = b2;
-		color2.brightness = br2;*/
 
 		if (_LFX_SetLightActionColorEx(dev, light, action, (PLFX_COLOR)color, (PLFX_COLOR)color2) != LFX_SUCCESS)
-			return 0;//ResultT(false, _T("_LFX_Light() failed"));
+			return 0;
 
-		// Update the state machine, which causes the physical color change
-		//if (_LFX_Update() != LFX_SUCCESS)
-		//	return 0;//ResultT(false, _T("_LFX_Update() failed"));
-
-		return 0;//ResultT(true, _T("SetLFXColor() success"));
+		return 0;
 
 	}
 
@@ -191,10 +160,9 @@ namespace LFXUtil
 		char vdesc[256];
 
 		if (_LFX_GetVersion(vdesc, 256) == 0)
-			std::cout << "API version " << vdesc << " detected\n";
+			std::cout << "Dell API version " << vdesc << " detected\n";
 		else {
-			std::cout << "Old API detected";
-//			return 0;//ResultT(false, _T("No API detected"));
+			std::cout << "Old Dell API detected\n";
 		}
 
 		Update();
@@ -244,15 +212,14 @@ namespace LFXUtil
 
 		}
 
-		return 1;//ResultT(true, _T("Ok"));
+		return 1;
 	}
 
 	int LFXUtilC::FillInfo()
 	{
 
 		_LFX_GetNumDevices(&numDev);
-		//std::cout << "Devices found: " << numDev << "\n";
-
+		
 		for (unsigned i = 0; i < numDev; i++) {
 			deviceinfo d;
 			_LFX_GetDeviceDescription(i, d.desc, 256, &d.type);
@@ -275,7 +242,7 @@ namespace LFXUtil
 
 		}
 
-		return 1;//ResultT(true, _T("Ok"));
+		return 1;
 	}
 
 	deviceinfo *LFXUtilC::GetDevInfo(unsigned id) {

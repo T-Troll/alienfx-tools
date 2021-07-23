@@ -89,6 +89,8 @@ public:
 	std::vector<lightset>* active_set;
 	std::vector<profile> profiles;
 
+	NOTIFYICONDATA niData = {0};
+
 	ConfigHandler();
 	~ConfigHandler();
 	int Load();
