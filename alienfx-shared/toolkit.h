@@ -1,12 +1,7 @@
 #pragma once
 #include <wtypes.h>
-#include "AlienFX_SDK.h"
 #include <CommCtrl.h>
-
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-#pragma comment(lib,"Version.lib")
+#include "AlienFX_SDK.h"
 
 //namespace AlienFX_TOOLS
 //{

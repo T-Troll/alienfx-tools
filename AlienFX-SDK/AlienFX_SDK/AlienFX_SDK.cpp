@@ -906,7 +906,7 @@ namespace AlienFX_SDK
 
 	BYTE Functions::AlienfxGetDeviceStatus()
 	{
-		if (pid == -1) return 0;
+		//if (pid == -1) return 0;
 		byte ret = 0;
 		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (length) {
@@ -914,7 +914,7 @@ namespace AlienFX_SDK
 		{
 			//memcpy(buffer, COMMV5.status, sizeof(COMMV5.status));
 			//HidD_SetOutputReport(devHandle, buffer, length);
-			buffer[0] = 0xcc;
+			//buffer[0] = 0xcc;
 			if (HidD_GetFeature(devHandle, buffer, length))
 				ret = buffer[2];
 #ifdef _DEBUG
@@ -927,7 +927,7 @@ namespace AlienFX_SDK
 			//default: cout << "Unknown (" << GetLastError() << ")";
 			//}
 			//cout <<  endl;
-			cout << "Status data: " << hex << buffer[2] << "," << buffer[14] << "," << buffer[15] << endl;
+			cout << "Status data: " << hex << (int)buffer[2] << "," << (int)buffer[14] << "," << (int)buffer[15] << endl;
 #endif
 		} break;
 		case API_L_V4: {

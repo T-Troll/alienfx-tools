@@ -10,6 +10,10 @@
 #include "AlienFX_SDK.h"
 #include "EventHandler.h"
 
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#pragma comment(lib,"Version.lib")
 #pragma comment(lib,"comctl32.lib")
 
 // defines and structures...
@@ -969,27 +973,32 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 	ListView_DeleteAllItems(eff_list);
 	LVCOLUMNA lCol;
 	lCol.mask = LVCF_WIDTH;
-	ListView_GetColumn(eff_list, 0, & lCol);
-	if (lCol.cx < 0)
-		ListView_InsertColumn(eff_list, 0, &lCol);
+	lCol.cx = 100;
+	char bfr[2048];
+	sprintf_s(bfr, "Column %d pix\n", lCol.cx);
+	OutputDebugString(bfr);
+	ListView_DeleteColumn(eff_list, 0);
+	ListView_InsertColumn(eff_list, 0, &lCol);
 	if (mmap) {
+		LVITEMA lItem{}; char efName[16] = {0};
+		lItem.mask = LVIF_TEXT | LVIF_IMAGE;
+		lItem.iSubItem = 0;
 		HIMAGELIST hSmall;
+		COLORREF* picData = NULL;
+		HBITMAP colorBox = NULL;
 		hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
 			GetSystemMetrics(SM_CYSMICON),
 			ILC_COLOR32, 1, 1);
 		for (int i = 0; i < mmap->eve[0].map.size(); i++) {
-			COLORREF* picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
+			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
 			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), RGB(mmap->eve[0].map[i].b, mmap->eve[0].map[i].g, mmap->eve[0].map[i].r));
-			HBITMAP colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
 				1, 32, picData);
 			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);
 			DeleteObject(colorBox);
-			LVITEMA lItem; char efName[16];
-			lItem.mask = LVIF_TEXT | LVIF_IMAGE;
 			lItem.iItem = i;
 			lItem.iImage = i;
-			lItem.iSubItem = 0;
 			switch (mmap->eve[0].map[i].type) {
 			case AlienFX_SDK::AlienFX_A_Color:
 				LoadString(hInst, IDS_TYPE_COLOR, efName, 16);
@@ -1018,6 +1027,7 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		// Set selection...
 		if (effID >= ListView_GetItemCount(eff_list))
 			effID = ListView_GetItemCount(eff_list) - 1;
+		UpdateWindow(eff_list);
 		ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
 		bool flag = !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER);
 		EnableWindow(type_c1, flag);
@@ -1037,9 +1047,6 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		EnableWindow(l1_slider, false);
 		RedrawButton(hDlg, IDC_BUTTON_C1, 0, 0, 0);
 	}
-	//RECT csize;
-	//GetClientRect(eff_list, &csize);
-	//ListView_SetColumnWidth(eff_list, 0, csize.right - csize.left);
 	ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
 }
@@ -1052,9 +1059,9 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	ListView_DeleteAllItems(light_list);
 	LVCOLUMNA lCol;
 	lCol.mask = LVCF_WIDTH;
-	ListView_GetColumn(light_list, 0, & lCol);
-	if (lCol.cx < 0)
-		ListView_InsertColumn(light_list, 0, &lCol);
+	lCol.cx = 100;
+	ListView_DeleteColumn(light_list, 0);
+	ListView_InsertColumn(light_list, 0, &lCol);
 	for (int i = 0; i < lights; i++) {
 		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
 		if (pid == lgh.devid) { // && fxhl->LocateDev(lgh.devid)) {
@@ -1864,7 +1871,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							grp->lights.push_back(clight);
 					}
 				//}
-				UpdateGroupLights(glights_list,gLid, grp->lights.size()-1);
+				UpdateGroupLights(glights_list,gLid, (int)grp->lights.size()-1);
 			}
 			break;
 		case IDC_BUT_DELFROMG:
@@ -2027,9 +2034,9 @@ void ReloadProfileView(HWND hDlg, int cID) {
 	ListView_DeleteAllItems(profile_list);
 	LVCOLUMNA lCol;
 	lCol.mask = LVCF_WIDTH;
-	ListView_GetColumn(profile_list, 0, & lCol);
-	if (lCol.cx < 0)
-		ListView_InsertColumn(profile_list, 0, &lCol);
+	lCol.cx = 100;
+	ListView_DeleteColumn(profile_list, 0);
+	ListView_InsertColumn(profile_list, 0, &lCol);
 	for (int i = 0; i < conf->profiles.size(); i++) {
 			LVITEMA lItem; 
 			lItem.mask = LVIF_TEXT | LVIF_PARAM;
