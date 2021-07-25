@@ -95,7 +95,7 @@ int ConfigHandler::FindProfileByApp(std::string appName, bool active)
 }
 
 void ConfigHandler::SetStates() {
-	DWORD oldStateOn = stateOn, oldStateDim = stateDimmed;
+	bool oldStateOn = stateOn, oldStateDim = stateDimmed;
 	// monitoring state....
 	monState = FindProfile(activeProfile)->flags & PROF_NOMONITORING ? false : enableMon;
 	// Lighs on state...

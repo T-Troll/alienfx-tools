@@ -85,7 +85,7 @@ int* DFT_gosu::calc(double *x1)
 
 	// Normalize
 	for (int n = 0; n < RECTSNUM; n++) {
-		spectrum[n] = x2[n] * coeff;
+		spectrum[n] = (int)(x2[n] * coeff);
 	}
 
 	return spectrum;

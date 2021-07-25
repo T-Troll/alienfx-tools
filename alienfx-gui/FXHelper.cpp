@@ -15,14 +15,14 @@ void FXHelper::TestLight(int did, int id)
 		for (vector<AlienFX_SDK::mapping>::iterator lIter = afx_dev.GetMappings()->begin();
 			 lIter != afx_dev.GetMappings()->end(); lIter++)
 			if (lIter->devid == did && lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
-				opLights.push_back(lIter->lightid);
+				opLights.push_back((UCHAR)lIter->lightid);
 
 		bool dev_ready = false;
 		for (int c_count = 0; c_count < 20 && !(dev_ready = dev->IsDeviceReady()); c_count++)
 			Sleep(20);
 		if (!dev_ready) return;
 
-		dev->SetMultiLights(opLights.size(), opLights.data(), 0, 0, 0);
+		dev->SetMultiLights((int)opLights.size(), opLights.data(), 0, 0, 0);
 		if (id != -1)
 			dev->SetColor(id, r, g, b);
 		dev->UpdateColors();

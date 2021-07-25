@@ -1871,7 +1871,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_ADDTOG:
 			if (grp && eLid >= 0) {
 				//AlienFX_SDK::group* cgrp = fxhl->afx_dev.GetGroupById(gLid);
-				//if (cgrp) {
+				if (grp) {
 					AlienFX_SDK::mapping* clight = fxhl->afx_dev.GetMappingById(eDid, eLid);
 					if (clight) {
 						// TODO: check if light into the groups already!
@@ -1884,7 +1884,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						if (nothislight)
 							grp->lights.push_back(clight);
 					}
-				//}
+				}
 				UpdateGroupLights(glights_list,gLid, (int)grp->lights.size()-1);
 			}
 			break;
@@ -1922,9 +1922,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			conf->testColor.cs.green = c.g;
 			conf->testColor.cs.blue = c.b;
 			if (eLid != -1) {
-				eve->StopProfiles();
-				eve->StopEvents();
-				fxhl->UnblockUpdates(false);
 				fxhl->TestLight(did, eLid);
 				SetFocus(light_view);
 			}
@@ -1932,22 +1929,22 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_ISPOWERBUTTON:
 			if (eLid != -1) {
 				int flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ;
-if (flags)
-if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning!",
-			   MB_YESNO | MB_ICONWARNING) == IDYES) {
-	flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
-	fxhl->afx_dev.SetFlags(did, eLid, flags);
-} else
-CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
-else {
-	// remove power button config from chip config if unchecked and confirmed
-	if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning!",
-				   MB_YESNO | MB_ICONWARNING) == IDYES)
-		fxhl->ResetPower(did);
-	flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
-	fxhl->afx_dev.SetFlags(did, eLid, flags);
-}
-fxhl->Refresh(true);
+				if (flags)
+					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning!",
+						   MB_YESNO | MB_ICONWARNING) == IDYES) {
+						flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
+						fxhl->afx_dev.SetFlags(did, eLid, flags);
+					} else
+						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
+				else {
+					// remove power button config from chip config if unchecked and confirmed
+					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning!",
+								   MB_YESNO | MB_ICONWARNING) == IDYES)
+						fxhl->ResetPower(did);
+					flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
+					fxhl->afx_dev.SetFlags(did, eLid, flags);
+				}
+				//fxhl->Refresh(true);
 			}
 			break;
 		case IDC_CHECK_INDICATOR:
@@ -1984,19 +1981,19 @@ fxhl->Refresh(true);
 				if (lPoint->uNewState & LVIS_FOCUSED) {
 					// Select other item...
 					if (lPoint->iItem != -1) {
-						eLid = lPoint->lParam;
+						eLid = (int)lPoint->lParam;
 						SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
 						//fxhl->UnblockUpdates(false);
 						// highlight to check....
-						fxhl->TestLight(eDid, eLid);
 					} else {
 						SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
 						eLid = -1;
 					}
+					fxhl->TestLight(eDid, eLid);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -2038,8 +2035,10 @@ fxhl->Refresh(true);
 		break;
 	case WM_CLOSE: case WM_DESTROY:
 	{
-		fxhl->UnblockUpdates(true);
-		fxhl->RefreshState();
+		if (!fxhl->unblockUpdates) {
+			fxhl->UnblockUpdates(true);
+			fxhl->RefreshState();
+		}
 	} break;
 	case WM_SIZE:
 		if (fxhl->unblockUpdates)
