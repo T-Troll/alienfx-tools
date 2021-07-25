@@ -35,7 +35,7 @@ External mouses, keyboards and monitors are not supported yet, feel free to open
 - Hardware light effects breathing, spectrum, rainbow doesn't supported for older (APIv1-v3) devices.
 - Hardware light effects didn't work with software light effects at the same time for APIv4 (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` will not handle colors, and `alienfx-gui` can't handle GPU load for it correctly.
-- Using hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will stop or switch to "Devices" tab with visible delay.
+- Using hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to "Devices" tab or quit with visible delay.
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use `alienfx-gui` application with "Power Button"-related features. Keep it working can provide unexpected results up to light system freeze (for APIv4).
 - **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `alienfx-ambient` from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
 - **WARNING!** In rare case light system freeze, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
