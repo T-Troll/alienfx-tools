@@ -7,7 +7,7 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 - AlienFX GUI Editor - Light weighted light control tool (AWCC alternative). You can change lights color according to system monitoring values (CPU/GPU load, temperatures, etc), active or running application, AC or battery power and a lot more.
 
 ## Requirements
-- Alienware light device present into the system and have USBHID driver active.
+- Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
 - `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35).
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - Windows 10+ (binary files for x64 only, but you can compile project for x86 as well).
@@ -16,7 +16,7 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 - `Alienware m15R3-R4` Per-key keyboard lights (API v4 + API v5)
 - `Alienware m15R1-R4` 4-zone keyboard ligths (API v4)
 - `Alienware m17R1` (API v4) 
-- `Dell G5/G5SE` (API v4)
+- `Dell G7/G5/G5SE` (API v4)
 - `Alienware M17R5` (API v3)
 - `Alienware M13R2` (API v2)
 - `Alienware M14x` (API v1)
@@ -31,13 +31,14 @@ This tools can also support other Dell/Alienware devices:
 External mouses, keyboards and monitors are not supported yet, feel free to open an issue if you want to add support for it, but be ready to help with testing!
 
 ## Known issues
-- Some High-level (Dell) SDK functions doesn't work as designed. This may be fixed in upcoming AWCC updates.
-- Hardware light effects breathing, spectrum, rainbow doesn't supported for older (v1-v3) devices.
-- Hardware light effects didn't work with software light effects at the same time (hardware bug, "Update" command stop all effects).
-- DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` didn't work, and `alienfx-gui` can't handle GPU load for it correctly.
-- **WARNING!** Strongly recommended to stop AWCCService if you plan to use gui, haptics or ambient application. Keep it working can provide unexpected results, especially if you handle Power Button in gui app.
-- **WARNING!** Using hardware power button, especially for events, can provide hardware light system freeze in rare situations! If lights are freezes, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 sec (or until lights turn off), then start it back.
+- Some High-level (Dell) SDK functions can not work as designed. This may be fixed in upcoming AWCC updates. It's not an `alienfx-cli` bug.
+- Hardware light effects breathing, spectrum, rainbow doesn't supported for older (APIv1-v3) devices.
+- Hardware light effects didn't work with software light effects at the same time for APIv4 (hardware bug, "Update" command stop all effects).
+- DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` will not handle colors, and `alienfx-gui` can't handle GPU load for it correctly.
+- Using hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will stop or switch to "Devices" tab with visible delay.
+- **WARNING!** Strongly recommended to stop AWCCService if you plan to use `alienfx-gui` application with "Power Button"-related features. Keep it working can provide unexpected results up to light system freeze (for APIv4).
 - **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `alienfx-ambient` from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
+- **WARNING!** In rare case light system freeze, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
 
 ## Installation
 Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
@@ -60,7 +61,7 @@ The following commands are available:
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
 - `set-dev=<pid>` Switch active device to this PID (low-level only).
-- `set-dim=<brigtness>` Set active device hardware brightness (dimming) level (from 0 to 255, low-level only).
+- `set-dim=<brigtness>` Set active device hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only).
 - `lightson` Turn all current device lights on.
 - `lightsoff` Turn all current device lights off.
 - `update` Updates light status (for looped commands or old devices).
@@ -70,7 +71,7 @@ The following commands are available:
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 
 Supported Zones: `left, right, top, bottom, front, rear` for high-level, any group ID (see in `status`) for low-level. 
-Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For api v4 devices, `breath, spectrum, rainbow` also supported.
+Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For APIv4 devices, `breath, spectrum, rainbow` also supported. APIv5 not supported.
 
 ## alienfx-haptics Usage
 Run `alienfx-haptics.exe`. Set the colors for lights and it’s mapping to respond the frequency.  
