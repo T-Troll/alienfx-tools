@@ -33,15 +33,15 @@ class FXHelper: public FXH<ConfigHandler>
 {
 private:
 	int activeMode = -1;
-	int lastTest = -1;
+	//int lastTest = -1;
 	long lCPU = 0, lRAM = 0, lHDD = 0, lGPU = 0, lNET = 0, lTemp = 0, lBatt = 100;
 	bool blinkStage = false;
-	bool unblockUpdates = true;
 	HANDLE updateThread = NULL;
 public:
 	using FXH::FXH;
 	void Start();
 	void Stop();
+	bool unblockUpdates = true;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
 	deque<LightQueryElement> lightQuery;

@@ -29,7 +29,7 @@
 	}
 
 	extern HINSTANCE hInst;
-	HWND CreateToolTip(HWND hwndParent);
+	HWND CreateToolTip(HWND hwndParent, HWND old);
 	void SetSlider(HWND tt, char* buff, int value);
 	void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 
@@ -62,8 +62,10 @@
 		size_t FillDevs(bool state, bool power) {
 			vector<pair<DWORD, DWORD>> devList = afx_dev.AlienFXEnumDevices();
 			if (devs.size() > 0) {
-				for (int i = 0; i < devs.size(); i++)
+				for (int i = 0; i < devs.size(); i++) {
 					devs[i]->AlienFXClose();
+					delete devs[i];
+				}
 				devs.clear();
 			}
 			for (int i = 0; i < devList.size(); i++) {

@@ -22,17 +22,19 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 	ReleaseDC(tl, cnt);
 }
 
-HWND CreateToolTip(HWND hwndParent)
+HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 {
 	// Create a tooltip.
+	if (oldTip) {
+		DestroyWindow(oldTip);
+	} 
 	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-								 WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-								 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-								 hwndParent, NULL, hInst, NULL);
+							WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+							CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+							hwndParent, NULL, hInst, NULL);
 
 	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
 				 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
 	TOOLINFO ti = { 0 };
 	ti.cbSize = sizeof(TOOLINFO);
 	ti.uFlags = TTF_SUBCLASS;

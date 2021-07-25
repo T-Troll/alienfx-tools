@@ -292,8 +292,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		SendMessage(hLowSlider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(hHiSlider, TBM_SETTICFREQ, 16, 0);
 
-		sTip = CreateToolTip(hLowSlider);
-		lTip = CreateToolTip(hHiSlider);
+		sTip = CreateToolTip(hLowSlider, sTip);
+		lTip = CreateToolTip(hHiSlider, lTip);
 
 		CheckMenuItem(GetMenu(hDlg), config->inpType ? ID_INPUT_DEFAULTINPUTDEVICE : ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
 

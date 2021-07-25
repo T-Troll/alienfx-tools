@@ -138,28 +138,29 @@ namespace AlienFX_SDK
 		unsigned int dw = 0;
 		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
 
-		unsigned int lastError = 0;
+		//unsigned int lastError = 0;
 		while (!flag)
 		{
 			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
 			{
-				lastError = GetLastError();
-				return pid;
+				//lastError = GetLastError();
+				flag = true;
+				continue;
 			}
 			dw++;
 			DWORD dwRequiredSize = 0;
 			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
 			{
 				//std::cout << "Getting the needed buffer size failed";
-				return pid;
+				continue;
 			}
 			//std::cout << "Required size is " << dwRequiredSize << std::endl;
-			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-			{
-				//std::cout << "Last error is not ERROR_INSUFFICIENT_BUFFER";
-				return pid;
-			}
+			//if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+			//{
+			//	//std::cout << "Last error is not ERROR_INSUFFICIENT_BUFFER";
+			//	return pid;
+			//}
 			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
 			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
@@ -197,12 +198,7 @@ namespace AlienFX_SDK
 								switch (caps.OutputReportByteLength) {
 								case 0: length = caps.FeatureReportByteLength;
 									break;
-								//case 9: length = caps.OutputReportByteLength; //length = attributes->Size;
-								//	if (attributes->ProductID > 0x529)
-								//		version = API_V25;
-								//	else
-								//		version = API_V2;
-								//	break;
+								// attributes->version between v1 and v2!
 								default: length = caps.OutputReportByteLength;
 								}
 
@@ -217,13 +213,17 @@ namespace AlienFX_SDK
 								cout << "Attributes - length: " << attributes->Size << ", version: " << attributes->VersionNumber << endl;
 								wprintf(L"Path: %s\n%s", devicePath.c_str(), buff);
 #endif
-							}
-						}
-					}
+							} else
+								CloseHandle(devHandle);
+						} else
+							CloseHandle(devHandle);
+					} else
+						CloseHandle(devHandle);
 
 				}
 			}
 		}
+		SetupDiDestroyDeviceInfoList(hDevInfo);
 		return pid;
 	}
 
@@ -1058,13 +1058,13 @@ namespace AlienFX_SDK
 		unsigned int dw = 0;
 		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
 
-		unsigned int lastError = 0;
+		//unsigned int lastError = 0;
 		while (!flag)
 		{
 			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
 			{
-				lastError = GetLastError();
+				//lastError = GetLastError();
 				flag = true;
 				continue;
 			}
@@ -1074,10 +1074,10 @@ namespace AlienFX_SDK
 			{
 				continue;
 			}
-			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-			{
-				continue;
-			}
+			//if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+			//{
+			//	continue;
+			//}
 			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
 			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
@@ -1117,10 +1117,11 @@ namespace AlienFX_SDK
 							}
 						}
 					}
+					CloseHandle(tdevHandle);
 				}
-				CloseHandle(tdevHandle);
 			}
 		}
+		SetupDiDestroyDeviceInfoList(hDevInfo);
 		return pids;
 	}	
 

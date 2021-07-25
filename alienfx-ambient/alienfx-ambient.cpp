@@ -221,8 +221,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         SendMessage(divSlider, TBM_SETPOS, true, 32-conf->divider);
         SendMessage(divSlider, TBM_SETTICFREQ, 2, 0);
 
-        sTip = CreateToolTip(brSlider);
-        lTip = CreateToolTip(divSlider);
+        sTip = CreateToolTip(brSlider, sTip);
+        lTip = CreateToolTip(divSlider, lTip);
         SetSlider(sTip, sBuff, conf->shift);
         SetSlider(lTip, lBuff, 32-conf->divider);
     } break;

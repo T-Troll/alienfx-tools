@@ -10,22 +10,23 @@ void FXHelper::TestLight(int did, int id)
 			g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
 			b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
 
+		vector<UCHAR> opLights;
+
+		for (vector<AlienFX_SDK::mapping>::iterator lIter = afx_dev.GetMappings()->begin();
+			 lIter != afx_dev.GetMappings()->end(); lIter++)
+			if (lIter->devid == did && lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
+				opLights.push_back(lIter->lightid);
+
 		bool dev_ready = false;
 		for (int c_count = 0; c_count < 20 && !(dev_ready = dev->IsDeviceReady()); c_count++)
 			Sleep(20);
 		if (!dev_ready) return;
 
-		if (id != lastTest) {
-			if (lastTest >= 0) {
-				dev->SetColor(lastTest, 0, 0, 0);
-				dev->UpdateColors();
-			}
-			lastTest = id;
-		}
-		if (id != -1) {
+		dev->SetMultiLights(opLights.size(), opLights.data(), 0, 0, 0);
+		if (id != -1)
 			dev->SetColor(id, r, g, b);
-			dev->UpdateColors();
-		}
+		dev->UpdateColors();
+
 	}
 }
 
@@ -174,10 +175,10 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 
 void FXHelper::UpdateColors(int did)
 {
-	if (unblockUpdates) {
+	if (unblockUpdates && config->stateOn) {
 		LightQueryElement newBlock = {did, 0, 0, true};// , actions};
 		lightQuery.push_back(newBlock);
-		//SetEvent(haveNewElement);
+		SetEvent(haveNewElement);
 	}
 }
 
@@ -190,7 +191,6 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, D
 		if (did && newBlock.actsize) {
 			modifyQuery.lock();
 			lightQuery.push_back(newBlock);
-			//lightQuery.back().actions = move(actions);
 			modifyQuery.unlock();
 			//#ifdef _DEBUG
 			//		if (lightQuery.back().actions.size() == 0) {
@@ -237,11 +237,16 @@ void FXHelper::ChangeState() {
 
 void FXHelper::UnblockUpdates(bool newState) {
 	unblockUpdates = newState;
+	if (!unblockUpdates) {
 #ifdef _DEBUG
-		OutputDebugString("Lights pause/resume!\n");
+		OutputDebugString("Lights pause on!\n");
 #endif
-	if (!unblockUpdates)
 		while (updateThread && !lightQuery.empty()) Sleep(20);
+	} 
+#ifdef _DEBUG
+	else
+		OutputDebugString("Lights pause off!\n");
+#endif
 }
 
 void FXHelper::Start() {
@@ -300,7 +305,7 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 	vector<AlienFX_SDK::afx_act> actions;
 	AlienFX_SDK::afx_act action;
 
-	if (!config->stateOn)
+	if (!config->stateOn || !map)
 		return false;
 
 	if (map->eve[0].fs.b.flags) {
@@ -364,9 +369,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	vector<deviceQuery> devs_query;
 
 	while (WaitForMultipleObjects(2, waitArray, false, 200) != WAIT_OBJECT_0) {
-	//while (WaitForSingleObject(src->stopQuery, 20) == WAIT_TIMEOUT) {
-		//if (WaitForSingleObject(src->haveNewElement, 100) == WAIT_OBJECT_0)
-		//	if (!src->lightQuery.empty()) {
 		while (!src->lightQuery.empty()) {
 			int maxQlights = (int)src->afx_dev.GetMappings()->size() * 5;
 			if (!wasDelay && src->lightQuery.size() > maxQlights) {

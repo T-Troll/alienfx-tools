@@ -63,6 +63,7 @@ int eItem = -1;
 int eLid = -1, 
     eDid = -1, dItem = -1, 
 	gLid = -1, gItem = -1;
+//bool inLightEdit = false;
 
 // Profiles
 int pCid = -1;
@@ -592,7 +593,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
 		case IDC_BUTTON_MINIMIZE:
-			Shell_NotifyIcon(NIM_ADD, &conf->niData);
+			if (!fxhl->unblockUpdates) {
+				fxhl->UnblockUpdates(true);
+				fxhl->RefreshState();
+			}
+			//Shell_NotifyIcon(NIM_ADD, &conf->niData);
 			ShowWindow(hDlg, SW_HIDE);
 			break;
 		case IDC_BUTTON_REFRESH:
@@ -651,6 +656,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_SIZE:
 		if (wParam == SIZE_MINIMIZED) {
 			// go to tray...
+			if (!fxhl->unblockUpdates) {
+				fxhl->UnblockUpdates(true);
+				fxhl->RefreshState();
+			}
 			ShowWindow(hDlg, SW_HIDE);
 		} break;
 	case WM_APP + 1: {
@@ -974,16 +983,13 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 	LVCOLUMNA lCol;
 	lCol.mask = LVCF_WIDTH;
 	lCol.cx = 100;
-	char bfr[2048];
-	sprintf_s(bfr, "Column %d pix\n", lCol.cx);
-	OutputDebugString(bfr);
 	ListView_DeleteColumn(eff_list, 0);
 	ListView_InsertColumn(eff_list, 0, &lCol);
 	if (mmap) {
 		LVITEMA lItem{}; char efName[16] = {0};
 		lItem.mask = LVIF_TEXT | LVIF_IMAGE;
 		lItem.iSubItem = 0;
-		HIMAGELIST hSmall;
+		HIMAGELIST hSmall, hOld;
 		COLORREF* picData = NULL;
 		HBITMAP colorBox = NULL;
 		hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
@@ -1022,17 +1028,20 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 			lItem.pszText = efName;
 			ListView_InsertItem(eff_list, &lItem);
 		}
+		hOld = ListView_GetImageList(eff_list, LVSIL_SMALL);
+		if (hOld) {
+			ImageList_Destroy(hOld);
+		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
+		//ImageList_Destroy(hSmall);
 
 		// Set selection...
 		if (effID >= ListView_GetItemCount(eff_list))
 			effID = ListView_GetItemCount(eff_list) - 1;
-		UpdateWindow(eff_list);
 		ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
-		bool flag = !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER);
-		EnableWindow(type_c1, flag);
-		EnableWindow(s1_slider, true);// flag);
-		EnableWindow(l1_slider, true);// flag);
+		EnableWindow(type_c1, !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER));
+		EnableWindow(s1_slider, true);
+		EnableWindow(l1_slider, true);
 		// Set data
 		SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
 		RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
@@ -1182,8 +1191,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		//TBM_SETTICFREQ
 		SendMessage(s1_slider, TBM_SETTICFREQ, 32, 0);
 		SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
-		sTip = CreateToolTip(s1_slider);
-		lTip = CreateToolTip(l1_slider);
+		sTip = CreateToolTip(s1_slider, sTip);
+		lTip = CreateToolTip(l1_slider, lTip);
 		// Restore selection....
 		if (eItem != (-1)) {
 			SendMessage(light_list, LB_SETCURSEL, eItem, 0);
@@ -1225,7 +1234,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					}
 					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->eve[0].map[effID]);
 					RebuildEffectList(hDlg, mmap);
-					//fxhl->RefreshOne(mmap, true, true);
 				}
 			} break;
 			} break;
@@ -1324,18 +1332,27 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_EFFECTS_LIST:
 			switch (((NMHDR*) lParam)->code) {
-			case NM_CLICK:
+			case LVN_ITEMCHANGED:
 			{
-				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
-				// Select other color....
-				effID = sItem->iItem;
-				if (effID != -1) {
-					lightset* mmap = FindMapping(lid);
-					if (mmap != NULL) {
-						RebuildEffectList(hDlg, mmap);
+				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
+				if (lPoint->uNewState & LVIS_FOCUSED) {
+					// Select other item...
+					if (lPoint->iItem != -1) {
+						// Select other color....
+						effID = lPoint->iItem;
+						lightset* mmap = FindMapping(lid);
+						if (mmap != NULL) {
+							// Set data
+							SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
+							RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
+							SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
+							SetSlider(sTip, tBuff, mmap->eve[0].map[effID].tempo);
+							SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
+							SetSlider(lTip, lBuff, mmap->eve[0].map[effID].time);
+						}
+					} else {
+						effID = 0;
 					}
-				} else {
-					effID = 0;
 				}
 			} break;
 			}
@@ -1447,8 +1464,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		//TBM_SETTICFREQ
 		SendMessage(s1_slider, TBM_SETTICFREQ, 10, 0);
 		SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
-		sTip = CreateToolTip(s1_slider);
-		lTip = CreateToolTip(s2_slider);
+		sTip = CreateToolTip(s1_slider, sTip);
+		lTip = CreateToolTip(s2_slider, lTip);
 
 		if (eItem != (-1)) {
 			SendMessage(light_list, LB_SETCURSEL, eItem, 0);
@@ -1579,16 +1596,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		// First, reset all light devices and re-scan!
-		eve->StopProfiles();
-		//eve->StopEvents();
 		fxhl->UnblockUpdates(false);
 		size_t numdev = fxhl->FillDevs(conf->stateOn, conf->offPowerButton),
-		       numharddev = fxhl->afx_dev.GetDevices()->size(),
-		       lights = fxhl->afx_dev.GetMappings()->size(),
-			   numgroups = fxhl->afx_dev.GetGroups()->size();
-		fxhl->UnblockUpdates(true);
-		//eve->StartEvents();
-		eve->StartProfiles();
+			numharddev = fxhl->afx_dev.GetDevices()->size(),
+			lights = fxhl->afx_dev.GetMappings()->size(),
+			numgroups = fxhl->afx_dev.GetGroups()->size();
+		//fxhl->UnblockUpdates(true);
 		// Now check current device list..
 		int cpid = (-1), pos = (-1);
 		for (UINT i = 0; i < numdev; i++) {
@@ -1630,7 +1643,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				SendMessage(dev_list, CB_SETCURSEL, 0, (LPARAM)0);
 				conf->lastActive = eDid;
 			}
-
+			fxhl->TestLight(eDid, -1);
 			UpdateLightsList(hDlg, eDid, -1);
 		}
 
@@ -1666,6 +1679,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 			case CBN_SELCHANGE: {
 				conf->lastActive = did;
+				fxhl->TestLight(did, -1);
 				UpdateLightsList(hDlg, did, -1);
 				eLid = -1;
 				eDid = did; dItem = dbItem;
@@ -1908,7 +1922,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			conf->testColor.cs.green = c.g;
 			conf->testColor.cs.blue = c.b;
 			if (eLid != -1) {
+				eve->StopProfiles();
 				eve->StopEvents();
+				fxhl->UnblockUpdates(false);
 				fxhl->TestLight(did, eLid);
 				SetFocus(light_view);
 			}
@@ -1916,23 +1932,22 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_ISPOWERBUTTON:
 			if (eLid != -1) {
 				int flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ;
-				if (flags)
-					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning!",
-						MB_YESNO | MB_ICONWARNING) == IDYES) {
-						flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
-						fxhl->afx_dev.SetFlags(did, eLid, flags);
-					}
-					else
-						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
-				else {
-					// remove power button config from chip config if unchecked and confirmed
-					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning!",
-						MB_YESNO | MB_ICONWARNING) == IDYES)
-						fxhl->ResetPower(did);
-					flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
-					fxhl->afx_dev.SetFlags(did, eLid, flags);
-				}
-				fxhl->Refresh(true);
+if (flags)
+if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning!",
+			   MB_YESNO | MB_ICONWARNING) == IDYES) {
+	flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
+	fxhl->afx_dev.SetFlags(did, eLid, flags);
+} else
+CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
+else {
+	// remove power button config from chip config if unchecked and confirmed
+	if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning!",
+				   MB_YESNO | MB_ICONWARNING) == IDYES)
+		fxhl->ResetPower(did);
+	flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
+	fxhl->afx_dev.SetFlags(did, eLid, flags);
+}
+fxhl->Refresh(true);
 			}
 			break;
 		case IDC_CHECK_INDICATOR:
@@ -1940,10 +1955,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			int flags = (fxhl->afx_dev.GetFlags(did, eLid) & 0x1) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
 			fxhl->afx_dev.SetFlags(did, eLid, flags);
 		} break;
-		case IDC_BUTTON_DEVRESET: {
-			fxhl->UnblockUpdates(false);
+		case IDC_BUTTON_DEVRESET:
+		{
+			//fxhl->UnblockUpdates(false);
 			fxhl->FillDevs(conf->stateOn, conf->offPowerButton);
-			fxhl->UnblockUpdates(true);
+			//fxhl->UnblockUpdates(true);
 			AlienFX_SDK::Functions* dev = fxhl->LocateDev(eDid);
 			if (dev)
 				UpdateLightsList(hDlg, eDid, eLid);
@@ -1952,40 +1968,40 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 	} break;
 	case WM_NOTIFY:
-		switch (((NMHDR*)lParam)->idFrom) {
+		switch (((NMHDR*) lParam)->idFrom) {
 		case IDC_LIST_LIGHTS:
 			switch (((NMHDR*) lParam)->code) {
-			case LVN_ITEMACTIVATE: {
+			case LVN_ITEMACTIVATE:
+			{
+				//inLightEdit = true;
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
 				ListView_EditLabel(light_view, sItem->iItem);
 			} break;
 
-			case NM_CLICK:
+			case LVN_ITEMCHANGED:
 			{
-				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
-				// Select other item...
-				if (sItem->iItem != -1) {
-				LVITEMA lItem;
-				lItem.mask = LVIF_PARAM;
-				lItem.iItem = sItem->iItem;
-				ListView_GetItem(light_view, &lItem);
-				eLid = (int)lItem.lParam;
-					SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
-					CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
-					//eve->StopEvents();
-					fxhl->UnblockUpdates(false);
-					// highlight to check....
-					fxhl->TestLight(eDid, eLid);
-				} else {
-					SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
-					CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
-					eLid = -1;
+				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
+				if (lPoint->uNewState & LVIS_FOCUSED) {
+					// Select other item...
+					if (lPoint->iItem != -1) {
+						eLid = lPoint->lParam;
+						SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
+						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
+						//fxhl->UnblockUpdates(false);
+						// highlight to check....
+						fxhl->TestLight(eDid, eLid);
+					} else {
+						SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
+						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
+						eLid = -1;
+					}
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
 			{
+				//inLightEdit = false;
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*) lParam;
 				if (sItem->item.pszText) {
 					for (UINT i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
@@ -1999,21 +2015,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							break;
 						}
 					}
-				} 
-				SetDlgItemInt(hDlg, IDC_LIGHTID, (UINT)sItem->item.lParam, false);
-				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, (int)sItem->item.lParam) ? BST_CHECKED : BST_UNCHECKED);
-				eve->StopEvents();
-				// StopEvents();
-				// highlight to check....
-				fxhl->TestLight(eDid, (int)sItem->item.lParam);
+				}
+				SetDlgItemInt(hDlg, IDC_LIGHTID, (UINT) sItem->item.lParam, false);
+				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, (int) sItem->item.lParam) ? BST_CHECKED : BST_UNCHECKED);
 				return false;
 			} break;
-			case NM_KILLFOCUS:
-				//eve->ToggleEvents();
-				fxhl->afx_dev.SaveMappings();
-				fxhl->UnblockUpdates(true);
-				fxhl->RefreshState();
-				break;
+			//case NM_KILLFOCUS:
+			//	if (!inLightEdit) {
+			//		fxhl->UnblockUpdates(true);
+			//		//eve->ToggleEvents();
+			//		//eve->StartProfiles();
+			//		fxhl->afx_dev.SaveMappings();
+			//	}
+			//	break;
 			}
 			break;
 		}
@@ -2021,6 +2035,15 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_DRAWITEM:
 		if (((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_BUTTON_TESTCOLOR)
 			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.cs.red, conf->testColor.cs.green, conf->testColor.cs.blue);
+		break;
+	case WM_CLOSE: case WM_DESTROY:
+	{
+		fxhl->UnblockUpdates(true);
+		fxhl->RefreshState();
+	} break;
+	case WM_SIZE:
+		if (fxhl->unblockUpdates)
+			fxhl->UnblockUpdates(false);
 		break;
 	default: return false;
 	}
@@ -2213,32 +2236,30 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				ListView_EditLabel(p_list, sItem->iItem);
 			} break;
 
-			case NM_CLICK:
+			case LVN_ITEMCHANGED:
 			{
-				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
-				// Select other item...
-				if (sItem->iItem != -1) {
-					LVITEMA lItem;
-					lItem.mask = LVIF_PARAM;
-					lItem.iItem = sItem->iItem;
-					ListView_GetItem(p_list, &lItem);
-					pCid = (int) lItem.lParam;
-					profile* prof = conf->FindProfile(pCid);
-					if (prof) {
-						CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
+				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
+				if (lPoint->uNewState & LVIS_FOCUSED) {
+					// Select other item...
+					if (lPoint->iItem != -1) {
+						pCid = (int) lPoint->lParam;
+						profile* prof = conf->FindProfile(pCid);
+						if (prof) {
+							CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
+							CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
+							CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
+							CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
+							SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+							SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM) (prof->triggerapp.c_str()));
+						}
+					} else {
+						pCid = -1;
+						CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
 						SendMessage(app_list, LB_RESETCONTENT, 0, 0);
-						SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM) (prof->triggerapp.c_str()));
 					}
-				} else {
-					pCid = -1;
-					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
-					CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
-					SendMessage(app_list, LB_RESETCONTENT, 0, 0);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -2289,7 +2310,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
-		sTip = CreateToolTip(dim_slider);
+		sTip = CreateToolTip(dim_slider, sTip);
 		SetSlider(sTip, tBuff, conf->dimmingPower);
 	} break;
 	case WM_COMMAND: {
