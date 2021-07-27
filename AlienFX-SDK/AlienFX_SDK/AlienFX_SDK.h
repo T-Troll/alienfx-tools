@@ -21,6 +21,7 @@ namespace AlienFX_SDK
     #define ALIENFX_V4_WASON 38
 	// apiv5
     #define ALIENFX_V5_STARTCOMMAND 0x8c
+    #define ALIENFX_V5_WAITUPDATE 0x80
     #define ALIENFX_V5_INCOMMAND 0xcc
 
 	// Length by API version:
@@ -121,7 +122,7 @@ namespace AlienFX_SDK
 		bool AlienFXChangeDevice(int vid, int pid);
 
 		//Enable/Disable all lights (or just prepare to set)
-		bool Reset(int status);
+		bool Reset();
 
 		void Loop();
 
@@ -138,7 +139,8 @@ namespace AlienFX_SDK
 		// size - how many lights
 		// lights - pointer to array of light IDs need to be set (should be "size")
 		// act - array of light colors set (should be "size)
-		bool SetMultiColor(int size, UCHAR* lights, std::vector<vector<afx_act>> act);
+		// store - need to save solors into device memory (v1-v3)
+		bool SetMultiColor(int size, UCHAR* lights, std::vector<vector<afx_act>> act, bool store = false);
 
 		// Set color to action
 		// action - action type (see enum above)
@@ -150,7 +152,8 @@ namespace AlienFX_SDK
 
 		// Set action for Power button
 		// For now, settings as a default of AWCC, but it possible to do it more complex
-		bool SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2, bool force = false);
+		bool SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2,
+							int size=0, UCHAR* lights=nullptr, std::vector<vector<afx_act>>* act=nullptr);
 
 		// Hardware enable/disable lights
 		// newState - on/off
@@ -158,7 +161,7 @@ namespace AlienFX_SDK
 		// power - if true, power and indicator lights will be set on/off too
 		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
 
-		bool SetGlobalEffects(vector<mapping>* mappings, byte effType, byte effType2, afx_act act1, afx_act act2);
+		bool SetGlobalEffects(byte effType, int tempo, afx_act act1, afx_act act2);
 
 		// return current device state
 		BYTE AlienfxGetDeviceStatus();

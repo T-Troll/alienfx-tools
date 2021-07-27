@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v3.1.3" << endl;
+	cerr << "alienfx-cli v3.2.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
 			for (int rcount = 0; rcount < 10 && !afx_dev->IsDeviceReady(); rcount++)
 				Sleep(20);
 			if (!afx_dev->IsDeviceReady()) {
-				afx_dev->Reset(true);
+				afx_dev->Reset();
 			}
 			afx_map->LoadMappings();
 			cout << "Low-level device ready" << endl;
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
 		if (command == "reset") {
 			switch (devType) {
 			case 1:
-				afx_dev->Reset(true); break;
+				afx_dev->Reset(); break;
 			case 0:
 				lfxUtil.Reset(); break;
 			}
@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
 			if (devType) {
 				afx_dev->SetPowerAction(atoi(args.at(0).c_str()),
 					color.cs.red, color.cs.green, color.cs.blue,
-					color2.cs.red, color2.cs.green, color2.cs.blue, true);
+					color2.cs.red, color2.cs.green, color2.cs.blue);
 			}
 			else {
 				cerr << "High-level API doesn't support set-power!" << endl;

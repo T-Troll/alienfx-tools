@@ -275,6 +275,36 @@ int ConfigHandler::Load() {
 		(LPDWORD)&size);
 	if (ret != ERROR_SUCCESS)
 		dimmingPower = 92;
+	RegGetValue(hKey1,
+				NULL,
+				TEXT("GlobalEffect"),
+				RRF_RT_DWORD | RRF_ZEROONFAILURE,
+				NULL,
+				&globalEffect,
+				(LPDWORD)&size);
+	ret = RegGetValue(hKey1,
+					  NULL,
+					  TEXT("GlobalTempo"),
+					  RRF_RT_DWORD | RRF_ZEROONFAILURE,
+					  NULL,
+					  &globalDelay,
+					  (LPDWORD)&size);
+	if (ret != ERROR_SUCCESS)
+		globalDelay = 127;
+	RegGetValue(hKey1,
+				NULL,
+				TEXT("EffectColor1"),
+				RRF_RT_DWORD | RRF_ZEROONFAILURE,
+				NULL,
+				&effColor1.ci,
+				(LPDWORD)&size);
+	RegGetValue(hKey1,
+				NULL,
+				TEXT("EffectColor2"),
+				RRF_RT_DWORD | RRF_ZEROONFAILURE,
+				NULL,
+				&effColor2.ci,
+				(LPDWORD)&size);
 
 	unsigned vindex = 0;
 	BYTE inarray[380];
@@ -575,6 +605,38 @@ int ConfigHandler::Save() {
 		REG_BINARY,
 		(BYTE*)customColors,
 		sizeof(DWORD) * 16
+	);
+	RegSetValueEx(
+		hKey1,
+		TEXT("GlobalEffect"),
+		0,
+		REG_DWORD,
+		(BYTE*)&globalEffect,
+		sizeof(DWORD)
+	);
+	RegSetValueEx(
+		hKey1,
+		TEXT("GlobalTempo"),
+		0,
+		REG_DWORD,
+		(BYTE*)&globalDelay,
+		sizeof(DWORD)
+	);
+	RegSetValueEx(
+		hKey1,
+		TEXT("EffectColor1"),
+		0,
+		REG_DWORD,
+		(BYTE*)&effColor1.ci,
+		sizeof(DWORD)
+	);
+	RegSetValueEx(
+		hKey1,
+		TEXT("EffectColor2"),
+		0,
+		REG_DWORD,
+		(BYTE*)&effColor2.ci,
+		sizeof(DWORD)
 	);
 	// set current profile mappings to current set!
 	//FindProfile(activeProfile)->lightsets = active_set;

@@ -11,9 +11,9 @@
 #define MODE_LOW	4
 
 // Operation flags
-#define LIGHTS_SET       0
-#define LIGHTS_SET_POWER 1
-#define LIGHTS_UPDATE    2
+//#define LIGHTS_SET       0
+//#define LIGHTS_SET_POWER 1
+//#define LIGHTS_UPDATE    2
 
 struct LightQueryElement {
 	int did = 0;
@@ -51,12 +51,13 @@ public:
 	bool SetMode(int mode);
 	void TestLight(int did, int id);
 	void ResetPower(int did);
-	void UpdateColors(int did = -1);
+	void UpdateColors(int did = -1, bool force = false);
 	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force = false);
-	bool SetLight(int did, int id, std::vector<AlienFX_SDK::afx_act> actions, DWORD from);
+	bool SetLight(int did, int id, std::vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void RefreshState(bool force = false);
 	void RefreshMon();
 	void ChangeState();
+	void UpdateGlobalEffect();
 	void UnblockUpdates(bool newState);
 	ConfigHandler* GetConfig() { return config; };
 };

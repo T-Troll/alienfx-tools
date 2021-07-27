@@ -168,12 +168,14 @@ You can mix different monitoring type at once, f.e. different colors for same li
 "Lights" list shows all lights defined for selected device. Use “Add”/”Remove” buttons to add new light or remove selected one.  
 NB: If you want to add new light, type light ID into LightID box **before** pressing “Add” button. If this ID already present in list or absent, it will be changed to the first unused ID.  
 Doubleclick or press Enter on selected light to edit it's name.  
-"Groups" dropdown define group of lights. Each group can be selected and set at "Color" and "Monitoring" pages as a one light. Press [+] and [-] buttons to add/remove group, use dropdown to select it or change it name.  
-If you have a group selected, "Group lights" list present the list of lights assigned to this group. Use [-->] and [<--] buttons to add and remove light from the group.  
 "Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.  
 "Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
 "Indicator" checkbox is for indicator lights (hdd, capslock, wifi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
 Selected light changes it color to the one defined by "Test color" button, and fade to black then unselected.
+
+`"Groups"` tab provides control for light groups. Each group can be selected and set at "Color" and "Monitoring" pages as a one light.  
+Press [+] and [-] buttons to add/remove group, use dropdown to select it or change it name.  
+If you have a group selected, "Group lights" list present the list of lights assigned to this group. Use [-->] and [<--] buttons to add and remove light from the group.  
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.  
 You can doubleclick or press Enter on selected profile into the list to edit it's name.  
@@ -200,6 +202,8 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Profile auto switch" - Switch between profiles available automatically, according of applications start and finish. This also block manual profile selection (default - off).
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Esif temperature" - Read hardware device temperature counters. If disabled, only system-wide ones will be read. It's useful for some Dell and Alienware systems, but also provide a lot of component temperature readings. It will require "Run as administrator" privilege (default - off).
+
+"Global effects" block provide global control for light effects for current device. It's only work for APIv5 devices, provide some cool animations across all keys. 
 
 Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
