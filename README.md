@@ -33,7 +33,7 @@ External mouses, keyboards and monitors are not supported yet, feel free to open
 ## Known issues
 - Some High-level (Dell) SDK functions can not work as designed. This may be fixed in upcoming AWCC updates. It's not an `alienfx-cli` bug.
 - Hardware light effects breathing, spectrum, rainbow doesn't supported for older (APIv1-v3) devices.
-- Hardware light effects didn't work with software light effects at the same time for APIv4 (hardware bug, "Update" command stop all effects).
+- Hardware light effects (and global effect) didn't work with software light effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects).
 - DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` will not handle colors, and `alienfx-gui` can't handle GPU load for it correctly.
 - Using hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to "Devices" tab or quit with visible delay.
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use `alienfx-gui` application with "Power Button"-related features. Keep it working can provide unexpected results up to light system freeze (for APIv4).
