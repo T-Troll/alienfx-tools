@@ -289,8 +289,8 @@ int ConfigHandler::Load() {
 					  NULL,
 					  &globalDelay,
 					  (LPDWORD)&size);
-	if (ret != ERROR_SUCCESS)
-		globalDelay = 127;
+	if (ret != ERROR_SUCCESS || globalDelay > 0xa)
+		globalDelay = 5;
 	RegGetValue(hKey1,
 				NULL,
 				TEXT("EffectColor1"),

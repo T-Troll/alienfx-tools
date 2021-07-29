@@ -33,6 +33,7 @@
 #define IDD_DIALOG_DEVICES              143
 #define IDS_TYPE_MORPH                  144
 #define IDD_DIALOG_PROFILES             144
+#define IDD_DIALOG_GROUPS               145
 #define IDI_ALIENFX_ON                  147
 #define IDI_ALIENFX_OFF                 148
 #define IDI_ICON1                       149
@@ -84,6 +85,8 @@
 #define IDC_BUTTON_TESTCOLOR            1039
 #define IDC_ESIFTEMP                    1039
 #define IDC_TYPE1                       1040
+#define IDC_BUTTON_EFFCLR1              1040
+#define IDC_BUTTON_EFFCLR2              1041
 #define IDC_SYSLINK_HOMEPAGE            1043
 #define IDC_ISPOWERBUTTON               1044
 #define IDC_MINPVALUE                   1045
@@ -115,6 +118,8 @@
 #define IDC_BUT_ADDTOG                  1084
 #define IDC_BUT_DELFROMG                1085
 #define IDC_GAUGE                       1085
+#define IDC_GLOBAL_EFFECT               1088
+#define IDC_SLIDER_TEMPO                1089
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -138,7 +143,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        150
 #define _APS_NEXT_COMMAND_VALUE         32797
-#define _APS_NEXT_CONTROL_VALUE         1088
+#define _APS_NEXT_CONTROL_VALUE         1090
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

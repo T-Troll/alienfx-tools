@@ -6,7 +6,7 @@ This SDK not only fixes up its issue and performs better but is written from scr
 
 Please checkout Sample App for reference.
 
-**Currently tested on AW13/R2, AW13/R3, AWM14x, AW15R2/R3, AW17R3/R4, AWm15/R1, AWm17/R1, Dell G5, but should be working with all alienware laptops.**
+**Currently tested on AW13/R2, AW13/R3, AWM14x, AW15R2/R3, AW17R3/R4, AWm15/R1-R4, AWm17/R1, Dell G5/G7, but should work at any alienware laptop.**
 
 ### Supported device API versions:
 - 9 bytes 8 bit/color, reportID 2 control (v1)
@@ -15,6 +15,8 @@ Please checkout Sample App for reference.
 - 34 bytes 8 bit/color, reportID 0 control (v4)
 - 64 bytes 8 bit/color, featureID 0xcc control (v5)
 
+Some notebooks have 2 devices - APIv4 (for logo, power button, etc) and APIv5 for keyboard.
+
 ### Supported hardware features:
 - Support multiply devices detection and handling
 - Support user-provided device, light or group (zone) names
@@ -22,6 +24,8 @@ Please checkout Sample App for reference.
 - Change multiply lights color
 - Change light hardware effect (except APIv5)
 - Change multiply lights hardware effects (except APIv5, emulation at APIv1-v3)
+- Hardware-backed global light off/on/dim
+- Global hardware effects (APIv5)
 
 ### Initialization
 ```C++
@@ -29,7 +33,7 @@ Please checkout Sample App for reference.
 //This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
 int vid = 0x187c;
   
-//Returns PID value if init is successful or -1 if failed. Takes Vendor ID as argument.
+//Returns PID value if init is successful or -1 if failed. Takes Vendor ID as argument. If more, then one device present first one returned.
 int pid = AlienFX_SDK::Functions::AlienFXInitialize(AlienFX_SDK::vid);
 
 ```
@@ -65,12 +69,12 @@ AlienFX_SDK::Functions::SetColor(6, 25, 114, 245);
 //This is important to apply the updated color changes. Should only be called once after you're done with new colors.
 AlienFX_SDK::Functions::UpdateColors();
 ```
-### Probe app
-In [Releases](https://github.com/T-Troll/AlienFX-SDK/releases), you can find simple probe app - it shows DeviceID, DeviceVersion, then tries to switch lights to green position-by-position. Don't forget to share it's results for you gear!
+### Test app
+After buildng, you can find simple probe app `AlienFXDeviceTester` - it shows information about device found into the system. If device supported, it reveals SDK type and version.
 
 ### Projects using this SDK
 
-[Project Aurora](https://github.com/antonpup/Aurora).
+[Project Aurora](https://github.com/antonpup/Aurora).  
 [Project AlienFx-tools](https://github.com/T-Troll/alienfx-tools).
 
 ##### Special Thanks

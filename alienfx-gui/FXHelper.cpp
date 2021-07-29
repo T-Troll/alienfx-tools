@@ -59,8 +59,8 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = 101; lTemp = 101; lBatt = 101;
 	}
 
-	bool tHDD = (lHDD && !cHDD) || (!lHDD && cHDD),
-		tNet = (lNET && !cNet) || (!lNET && cNet);
+	//bool tHDD = (lHDD && !cHDD) || (!lHDD && cHDD),
+	//	tNet = (lNET && !cNet) || (!lNET && cNet);
 
 	std::vector<AlienFX_SDK::afx_act> actions;
 	
@@ -71,63 +71,69 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 
 	for (Iter = active.begin(); Iter != active.end(); Iter++)
 		if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {
-			int mIndex = (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER) && Iter->eve[0].map.size() > 1 && activeMode != MODE_AC && activeMode != MODE_CHARGE ? 1 : 0;
-			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? Iter->eve[0].map[mIndex] : Iter->eve[2].fs.b.flags ?
-				Iter->eve[2].map[0] : Iter->eve[3].map[0], from = fin;
+			int mIndex = (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER) && Iter->eve[0].map.size() > 1 
+				&& activeMode != MODE_AC && activeMode != MODE_CHARGE ? 1 : 0;
+			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? 
+				                            Iter->eve[0].map[mIndex] : 
+				                            Iter->eve[2].fs.b.flags ?
+				                                Iter->eve[2].map[0] : 
+				                                Iter->eve[3].map[0],
+				from = fin;
 			fin.type = 0;
 			double coeff = 0.0;
-			bool gauge = false;
+			bool diffC = false, diffI = false;
+			long lVal = 0, cVal = 0;
 			if (Iter->eve[2].fs.b.flags) {
 				// counter
-				gauge = Iter->eve[2].fs.b.proc;
 				double ccut = Iter->eve[2].fs.b.cut;
+				//long lVal = 0, cVal = 0;
 				switch (Iter->eve[2].source) {
-				case 0: if ((lCPU == cCPU || lCPU < ccut && cCPU < ccut)) continue; coeff = cCPU; break;
-				case 1: if ((lRAM == cRAM || lRAM < ccut && cRAM < ccut)) continue; coeff = cRAM; break;
-				case 2: if ((lHDD == cHDD || lHDD < ccut && cHDD < ccut)) continue; coeff = cHDD; break;
-				case 3: if ((lGPU == cGPU || lGPU < ccut && cGPU < ccut)) continue; coeff = cGPU; break;
-				case 4: if ((lNET == cNet || lNET < ccut && cNet < ccut)) continue; coeff = cNet; break;
-				case 5: if ((lTemp == cTemp || lTemp < ccut && cTemp < ccut)) continue; coeff = cTemp; break;
-				case 6: if ((lBatt == cBatt || lBatt > ccut && cBatt > ccut)) continue; coeff = 100-cBatt; break;
+				case 0: lVal = lCPU; cVal = cCPU; break;
+				case 1: lVal = lRAM; cVal = cRAM; break;
+				case 2: lVal = lHDD; cVal = cHDD; break;
+				case 3: lVal = lGPU; cVal = cGPU; break;
+				case 4: lVal = lNET; cVal = cNet; break;
+				case 5: lVal = lTemp; cVal = cTemp; break;
+				case 6: lVal = lBatt; cVal = cBatt; break;
 				}
-				coeff = coeff > ccut ? (coeff - ccut) / (100.0 - ccut) : 0.0;
-				fin.r = (BYTE)(from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
-				fin.g = (BYTE)(from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
-				fin.b = (BYTE)(from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
+
+				if (lVal != cVal && (lVal > ccut || cVal > ccut)) {
+					diffC = true;
+					coeff = cVal > ccut ? (cVal - ccut) / (100.0 - ccut) : 0.0;
+					fin.r = (BYTE) (from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
+					fin.g = (BYTE) (from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
+					fin.b = (BYTE) (from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
+				}
 			}
 			if (Iter->eve[3].fs.b.flags) {
 				// indicator
 				long indi = 0, ccut = Iter->eve[3].fs.b.cut;
 				bool blink = Iter->eve[3].fs.b.proc;
 				switch (Iter->eve[3].source) {
-				case 0: if (!tHDD && !blink) continue; 
-					indi = cHDD; break;
-				case 1: if (!tNet && !blink) continue; 
-					indi = cNet; break;
-				case 2: if (!blink &&
-					((lTemp <= ccut && cTemp <= ccut) ||
-						(cTemp > ccut && lTemp > ccut))) continue;
-					indi = cTemp - ccut; break;
-				case 3: if (!blink &&
-					((lRAM <= ccut && cRAM <= ccut) || (lRAM > ccut && cRAM > ccut))) continue;
-					indi = cRAM - ccut; break;
-				case 4: if (!blink &&
-					((lBatt >= ccut && cBatt >= ccut) || (lBatt < ccut && cBatt < ccut))) continue;
-					indi = ccut - cBatt; break;
+				case 0: lVal = lHDD; cVal = cHDD; break;
+				case 1: lVal = lNET; cVal = cNet; break; 
+				case 2: lVal = lTemp - ccut; cVal = cTemp - ccut; break; //ccut!
+				case 3: lVal = lRAM - ccut; cVal = cRAM - ccut; break; //ccut!
+				case 4: lVal = lBatt - ccut; cVal = cBatt - ccut; break; //ccut!
 				}
-				fin = indi > 0 ?
-					blink ?
-					blinkStage ?
-					Iter->eve[3].map[1] : fin
-					: Iter->eve[3].map[1]
-					: fin;
+
+				if (cVal > 0 || (lVal > 0 && !(cVal > 0))) {
+					if (cVal > 0) {
+						diffC = false;
+						if (!(lVal > 0) || blink)
+							diffI = true;
+						if (!blink || (blink && blinkStage))
+							fin = Iter->eve[3].map[1];
+					} else {
+						diffI = !diffC;
+					}
+				}
 			}
-			//if (!force && (Iter->lastColor.r == fin.r && Iter->lastColor.g == fin.g && Iter->lastColor.b == fin.b))
-			//	continue;
+
+			// check for change.
+			if (!diffC && !diffI)
+				continue;
 			wasChanged = true;
-			//Iter->lastColor.r = fin.r;
-			//Iter->lastColor.g = fin.g;
-			//Iter->lastColor.b = fin.b;
 
 			if (Iter->devid) {
 				if (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER)
@@ -149,11 +155,11 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				if (grp)
 					for (int i = 0; i < grp->lights.size(); i++) {
 						if (!(afx_dev.GetFlags(grp->lights[i]->devid, grp->lights[i]->lightid) & ALIENFX_FLAG_POWER)) {
-							if (gauge) {
+							if (Iter->eve[2].fs.b.proc && !(diffI && cVal > 0)) {
 								// set as gauge...
 								if (((double) i) / grp->lights.size() < coeff) {
 									if (((double) i + 1) / grp->lights.size() < coeff) {
-										actions.front() = (Iter->eve[2].map[1]);
+										actions.front() = Iter->eve[2].map[1];
 									} else {
 										// recalc...
 										double newCoeff = (coeff - ((double) i) / grp->lights.size()) * grp->lights.size();
@@ -196,13 +202,6 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 			modifyQuery.lock();
 			lightQuery.push_back(newBlock);
 			modifyQuery.unlock();
-			//#ifdef _DEBUG
-			//		if (lightQuery.back().actions.size() == 0) {
-			//			char buff[2048];
-			//			sprintf_s(buff, 2047, "ERROR! Welcome to compiler bug - (%d %d) is corrupted!\n", did, id);
-			//			OutputDebugString(buff);
-			//		}
-			//#endif
 			SetEvent(haveNewElement);
 		} else {
 #ifdef _DEBUG
@@ -239,8 +238,9 @@ void FXHelper::ChangeState() {
 	}
 }
 
-void FXHelper::UpdateGlobalEffect() {
-	AlienFX_SDK::Functions* dev = LocateDev(config->lastActive);
+void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
+	if (!dev)
+		dev = LocateDev(config->lastActive);
 	if (dev) {
 		AlienFX_SDK::afx_act c1 = {0,0,0,config->effColor1.cs.red, config->effColor1.cs.green, config->effColor1.cs.blue},
 			c2 = {0,0,0,config->effColor2.cs.red, config->effColor2.cs.green, config->effColor2.cs.blue};
@@ -438,6 +438,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 #endif
 									dev->SetMultiColor((int)lights.size(), lights.data(), acts, current.flags);
 									dev->UpdateColors();
+									src->UpdateGlobalEffect(dev);
 								} //else
 									//dev->Reset(true);
 							}

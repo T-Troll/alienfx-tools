@@ -708,7 +708,7 @@ namespace AlienFX_SDK
 			if (!inSet) Reset();
 			//now prepare buffers, we need 2 more for PreSave/Save
 			byte* buf_presave = new byte[length],
-				*buf_save = new byte[length];
+				* buf_save = new byte[length];
 			ZeroMemory(buf_presave, length);
 			ZeroMemory(buf_save, length);
 			memcpy(buf_presave, COMMV1.saveGroup, sizeof(COMMV1.saveGroup));
@@ -723,14 +723,18 @@ namespace AlienFX_SDK
 				if (lights[nc] != index) {
 					HidD_SetOutputReport(devHandle, buf_presave, length);
 					SetAction(lights[nc], act->at(nc));
+					//HidD_SetOutputReport(devHandle, buf_presave, length);
+					//Loop();
 				}
 			}
 			//SetMaskAndColor(index, buffer, Red, Green, Blue);
 			//HidD_SetOutputReport(devHandle, buffer, length);
 			//Loop();
-			HidD_SetOutputReport(devHandle, buf_save, length);
-			Reset();
-
+			if (size > 0) {
+				HidD_SetOutputReport(devHandle, buf_save, length);
+				Reset();
+			}
+	
 			if (index >= 0) {
 				DWORD invMask = ~((1 << index));// | 0x8000); // what is 8000? Macro?
 			// 08 02 - standby
@@ -771,7 +775,7 @@ namespace AlienFX_SDK
 				HidD_SetOutputReport(devHandle, buf_save, length);
 				Reset();
 				// 08 06 - charge
-				buf_presave[2] = 0x2;
+				buf_presave[2] = 0x6;
 				buffer[1] = 0x1;
 				buffer[2] = 0x1;
 				SetMaskAndColor(index, buffer, Red, Green, Blue, Red2, Green2, Blue2);
@@ -785,44 +789,45 @@ namespace AlienFX_SDK
 				Loop();
 				HidD_SetOutputReport(devHandle, buf_save, length);
 				Reset();
-				// 08 07 - ??? batt critical?
-				//buf_presave[2] = 0x7;
-				//buffer[1] = 0x1;
-				//buffer[2] = 0x1;
-				//SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
-				//AlienfxWaitForReady();
-				//HidD_SetOutputReport(devHandle, buf_presave, length);
-				//HidD_SetOutputReport(devHandle, buffer, length);
+				// 08 07 - Battery
+				buf_presave[2] = 0x7;
+				buffer[1] = 0x3;
+				buffer[2] = 0x1;
+				SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
+				AlienfxWaitForReady();
+				HidD_SetOutputReport(devHandle, buf_presave, length);
+				HidD_SetOutputReport(devHandle, buffer, length);
 				//SetMaskAndColor(index, buffer, 0, 0, 0, Red2, Green2, Blue2);
 				//HidD_SetOutputReport(devHandle, buf_presave, length);
 				//HidD_SetOutputReport(devHandle, buffer, length);
-				//HidD_SetOutputReport(devHandle, buf_presave, length);
-				//Loop();
-				//HidD_SetOutputReport(devHandle, buf_presave, length);
-				//// now inverse mask... let's constant.
-				//ZeroMemory(buffer, length);
-				//memcpy(buffer, COMMV1.color, sizeof(COMMV1.color));
-				//buffer[2] = 0x2;
-				//buffer[3] = (byte) ((invMask & 0xFF0000) >> 16);
-				//buffer[4] = (byte) ((invMask & 0x00FF00) >> 8);
-				//buffer[5] = (byte) (invMask & 0x0000FF);
-				//HidD_SetOutputReport(devHandle, buffer, length);
-				//HidD_SetOutputReport(devHandle, buf_presave, length);
-				//Loop();
-				//HidD_SetOutputReport(devHandle, buf_save, length);
-				//Reset();
-				// 08 08 - battery
-				buf_presave[2] = 0x8;
-				SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
-				buffer[2] = 0x1;
-				AlienfxWaitForReady();
 				HidD_SetOutputReport(devHandle, buf_presave, length);
+				Loop();
+				HidD_SetOutputReport(devHandle, buf_presave, length);
+				// now inverse mask... let's constant.
+				ZeroMemory(buffer, length);
+				memcpy(buffer, COMMV1.color, sizeof(COMMV1.color));
+				buffer[2] = 0x2;
+				buffer[3] = (byte) ((invMask & 0xFF0000) >> 16);
+				buffer[4] = (byte) ((invMask & 0x00FF00) >> 8);
+				buffer[5] = (byte) (invMask & 0x0000FF);
 				HidD_SetOutputReport(devHandle, buffer, length);
 				HidD_SetOutputReport(devHandle, buf_presave, length);
 				Loop();
 				HidD_SetOutputReport(devHandle, buf_save, length);
 				Reset();
-				// 08 09 - ???
+				// 08 08 - battery
+				//buf_presave[2] = 0x8;
+				//SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
+				//buffer[1] = 0x3;
+				//buffer[2] = 0x1;
+				//AlienfxWaitForReady();
+				//HidD_SetOutputReport(devHandle, buf_presave, length);
+				//HidD_SetOutputReport(devHandle, buffer, length);
+				//HidD_SetOutputReport(devHandle, buf_presave, length);
+				//Loop();
+				//HidD_SetOutputReport(devHandle, buf_save, length);
+				//Reset();
+				// 08 09 - batt critical
 				buf_presave[2] = 0x9;
 				buffer[1] = 0x2;
 				AlienfxWaitForReady();
@@ -837,13 +842,14 @@ namespace AlienFX_SDK
 				//buffer[2] = 1;
 				//buffer[3] = buffer[4] = buffer[5] = buffer[6] = buffer[7] = buffer[8] = 0;
 				// fix for immediate change
+				buffer[1] = 3;
 				SetMaskAndColor(index, buffer, Red, Green, Blue);
 				AlienfxWaitForReady();
 				HidD_SetOutputReport(devHandle, buffer, length);
 				Loop();
-				//ZeroMemory(buffer, length);
-				//memcpy(buffer, COMMV1.apply, sizeof(COMMV1.apply));
-				//HidD_SetOutputReport(devHandle, buffer, length);
+				////ZeroMemory(buffer, length);
+				////memcpy(buffer, COMMV1.apply, sizeof(COMMV1.apply));
+				////HidD_SetOutputReport(devHandle, buffer, length);
 				UpdateColors();
 				Reset();
 				AlienfxWaitForReady();
@@ -911,18 +917,6 @@ namespace AlienFX_SDK
 
 			res = HidD_SetOutputReport(devHandle, buffer, length);
 			AlienfxWaitForReady();
-			//if (power)
-			//	return Reset(brightness);
-			//else
-			//	if (!brightness) {
-			//		for (int i = 0; i < mappings->size(); i++) {
-			//			mapping cur = mappings->at(i);
-			//			if (cur.devid == pid && !cur.flags) {
-			//				SetColor(cur.lightid, 0, 0, 0);
-			//			}
-			//		}
-			//		UpdateColors();
-			//	}
 			return res;
 		} break;
 		}
@@ -951,7 +945,7 @@ namespace AlienFX_SDK
 			*/
 			buffer[2] = effType;
 			// 0-f
-			buffer[3] = (BYTE) (tempo >> 4);
+			buffer[3] = (BYTE) tempo;
 			// ???? 0 or 1 (for color). Stable?
 			buffer[9] = 0;
 			// colors...
@@ -967,19 +961,6 @@ namespace AlienFX_SDK
 			UpdateColors();
 			return true;
 		} break;
-		//case API_L_V1: case API_L_V2: case API_L_V3:
-		//{
-		//	// can only set tempo.
-		//	// 0-fff
-		//	tempo = tempo << 4;
-		//	memcpy(buffer, COMMV1.setTempo, sizeof(COMMV1.setTempo));
-		//	buffer[2] = (byte) ((tempo & 0xff00) >> 8);
-		//	buffer[3] = (byte) (tempo & 0xff);
-		//	if (!inSet) Reset();
-		//	HidD_SetOutputReport(devHandle, buffer, length);
-		//	UpdateColors();
-		//	return true;
-		//} break;
 		default: return true;
 		}
 		return false;
@@ -987,7 +968,6 @@ namespace AlienFX_SDK
 
 	BYTE Functions::AlienfxGetDeviceStatus()
 	{
-		//if (pid == -1) return 0;
 		byte ret = 0;
 		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (length) {
@@ -1134,13 +1114,11 @@ namespace AlienFX_SDK
 		unsigned int dw = 0;
 		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
 
-		//unsigned int lastError = 0;
 		while (!flag)
 		{
 			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
 			{
-				//lastError = GetLastError();
 				flag = true;
 				continue;
 			}
@@ -1150,10 +1128,6 @@ namespace AlienFX_SDK
 			{
 				continue;
 			}
-			//if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-			//{
-			//	continue;
-			//}
 			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
 			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 			if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))

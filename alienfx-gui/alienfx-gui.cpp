@@ -266,7 +266,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (conf->esif_temp)
 			EvaluteToAdmin();
 
-		fxhl->UpdateGlobalEffect();
 		fxhl->Start();
 
 		eve = new EventHandler(conf, fxhl);
@@ -1908,15 +1907,28 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	return true;
 }
 
-int UpdateLightListG(HWND light_list) {
+int UpdateLightListG(HWND light_list, AlienFX_SDK::group* grp) {
 	int pos = -1;
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
 	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 	for (int i = 0; i < lights; i++) {
 		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
 		if (fxhl->LocateDev(lgh.devid)) {
-			pos = (int) SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM) (lgh.name.c_str()));
-			//SendMessage(light_list, LB_SETITEMDATA, pos, i);
+			if (grp) {
+				int gl = 0;
+				for (gl=0; gl < grp->lights.size(); gl++) {
+					if (grp->lights.at(gl)->devid == lgh.devid &&
+						grp->lights.at(gl)->lightid == lgh.lightid)
+						break;
+				}
+				if (gl == grp->lights.size()) {
+					pos = ListBox_AddString(light_list, lgh.name.c_str());
+					ListBox_SetItemData(light_list, pos, i);
+				}
+			} else {
+				pos = ListBox_AddString(light_list, lgh.name.c_str());
+				ListBox_SetItemData(light_list, pos, i);
+			}
 		}
 	}
 	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
@@ -1932,8 +1944,8 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_INITDIALOG:
 	{
 		int pos = -1;
+		AlienFX_SDK::group* grp = NULL;
 		size_t numgroups = fxhl->afx_dev.GetGroups()->size();
-		UpdateLightListG(light_list);
 		if (numgroups > 0) {
 			if (gLid < 0)
 				gLid = fxhl->afx_dev.GetGroups()->at(0).gid;
@@ -1943,6 +1955,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				if (fxhl->afx_dev.GetGroups()->at(i).gid == gLid) {
 					SendMessage(groups_list, CB_SETCURSEL, pos, (LPARAM) 0);
 					gItem = pos;
+					grp = &fxhl->afx_dev.GetGroups()->at(i);
 				}
 			}
 			UpdateGroupLights(glights_list, gLid, 0);
@@ -1950,6 +1963,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			EnableWindow(groups_list, false);
 			EnableWindow(glights_list, false);
 		}
+		UpdateLightListG(light_list, grp);
 	} break;
 	case WM_COMMAND:
 	{
@@ -1964,6 +1978,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			case CBN_SELCHANGE: {
 				gLid = gid; gItem = gbItem;
 				UpdateGroupLights(glights_list, gid,0);
+				UpdateLightListG(light_list, grp);
 			} break;
 			case CBN_EDITCHANGE:
 				char buffer[MAX_PATH];
@@ -2016,6 +2031,8 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			EnableWindow(groups_list, true);
 			EnableWindow(glights_list, true);
 			UpdateGroupLights(glights_list,gLid,0);
+			grp = &fxhl->afx_dev.GetGroups()->back();
+			UpdateLightListG(light_list, grp);
 		} break;
 		case IDC_BUTTON_REMG: {
 			if (gLid > 0) {
@@ -2037,6 +2054,8 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				if (fxhl->afx_dev.GetGroups()->size() > 0) {
 					gLid = fxhl->afx_dev.GetGroups()->at(0).gid;
 					gItem = 0;
+					grp = &fxhl->afx_dev.GetGroups()->front();
+					UpdateLightListG(light_list, grp);
 				} else {
 					gLid = -1;
 					gItem = -1;
@@ -2054,20 +2073,20 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				int* selLights = new int[numSelLights];
 				ListBox_GetSelItems(light_list, numSelLights, selLights);
 				for (int i = 0; i < numSelLights; i++) {
-					AlienFX_SDK::mapping* clight = &fxhl->afx_dev.GetMappings()->at(selLights[i]);
+					AlienFX_SDK::mapping* clight = &fxhl->afx_dev.GetMappings()->at(ListBox_GetItemData(light_list, selLights[i]));
 					if (clight) {
-						bool nothislight = true;
+						/*bool nothislight = true;
 						for (int i = 0; i < grp->lights.size(); i++)
 							if (grp->lights[i] == clight) {
 								nothislight = false;
 								break;
 							}
-						if (nothislight)
+						if (nothislight)*/
 							grp->lights.push_back(clight);
 					}
 				}
 				UpdateGroupLights(glights_list, gLid, (int) grp->lights.size() - 1);
-				UpdateLightListG(light_list);
+				UpdateLightListG(light_list, grp);
 			}
 		} break;
 		case IDC_BUT_DELFROMG:
@@ -2077,6 +2096,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 					grp->lights.erase(Iter);
 				}
 				UpdateGroupLights(glights_list, gLid, --glItem);
+				UpdateLightListG(light_list, grp);
 			}
 			break;
 		}
@@ -2371,9 +2391,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		ComboBox_SetItemData(eff_list, 8, 11);
 		ComboBox_SetCurSel(eff_list, conf->globalEffect);
 		// now sliders...
-		SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
 		//TBM_SETTICFREQ
-		SendMessage(eff_tempo, TBM_SETTICFREQ, 32, 0);
+		SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
 		SendMessage(eff_tempo, TBM_SETPOS, true, conf->globalDelay);
 		sTip = CreateToolTip(eff_tempo, sTip);
 		SetSlider(lTip, lBuff, conf->globalDelay);

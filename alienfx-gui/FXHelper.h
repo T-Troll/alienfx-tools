@@ -57,7 +57,7 @@ public:
 	void RefreshState(bool force = false);
 	void RefreshMon();
 	void ChangeState();
-	void UpdateGlobalEffect();
+	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
 	void UnblockUpdates(bool newState);
 	ConfigHandler* GetConfig() { return config; };
 };

@@ -360,7 +360,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
 		COUNTER_PATH_HOT = "\\Thermal Zone Information(*)\\Temperature",
 		COUNTER_PATH_HOT2 = "\\EsifDeviceInformation(*)\\Temperature",
-		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Disk Time";
+		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time";
 
 	HQUERY hQuery = NULL;
 	HLOG hLog = NULL;
@@ -545,14 +545,15 @@ DWORD WINAPI CEventProc(LPVOID param)
 			}
 		}
 
-		if (maxTemp > 100) maxTemp = 100;
-
 		GlobalMemoryStatusEx(&memStat);
 		GetSystemPowerStatus(&state);
 
-		if (state.BatteryLifePercent > 100) state.BatteryLifePercent = 100;
+		// Leveling...
+		maxTemp = min(100, max(0, maxTemp));
+		long battLife = min(100, max(0, state.BatteryLifePercent));
+		long hddLoad = max(0, 99 - cHDDVal.longValue);
 
-		src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, (long)totalNet, cHDDVal.longValue, maxTemp, state.BatteryLifePercent);
+		src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, (long)totalNet, hddLoad, maxTemp, battLife);
 	}
 
 	delete[] gpuArray; delete[] netArray; delete[] tempArray;
