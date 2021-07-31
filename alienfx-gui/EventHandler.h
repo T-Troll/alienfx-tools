@@ -24,5 +24,7 @@ public:
 	ConfigHandler* conf = NULL;
 	HANDLE stopEvents = NULL;
 
+	mutex modifyProfile;
+
 	long maxNet = 1;
 };

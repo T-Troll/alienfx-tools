@@ -230,12 +230,14 @@ void FXHelper::RefreshMon()
 
 void FXHelper::ChangeState() {
 	config->SetStates();
+	UnblockUpdates(false);
 	byte bright = (byte) (config->stateOn ? config->stateDimmed ? 255 - config->dimmingPower : 255 : 0);
 	for (int i = 0; i < devs.size(); i++) {
 		devs[i]->ToggleState(bright, afx_dev.GetMappings(), config->offPowerButton);
 		if (config->stateOn && devs[i]->GetVersion() < 4)
 			RefreshState();
 	}
+	UnblockUpdates(true);
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
@@ -464,13 +466,13 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// gamma-correction...
 						if (src->GetConfig()->gammaCorrection) {
 							// TODO - fix max=254 (>>8 not right, 255 in fact)
-							action.r = (action.r * action.r) >> 8;
-							action.g = (action.g * action.g) >> 8;
-							action.b = (action.b * action.b) >> 8;
+							action.r = (action.r * action.r) / 255;
+							action.g = (action.g * action.g) / 255;
+							action.b = (action.b * action.b) / 255;
 						}
 						// Dimming...
 						// Only for v1-v3 devices!
-						if (src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton) && dev->GetVersion() < 4) {
+						if (dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
 							action.r = (action.r * delta) >> 8;
 							action.g = (action.g * delta) >> 8;
 							action.b = (action.b * delta) >> 8;

@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include <Setupapi.h>
-//#include <codecvt>
-//#include <locale>
 #include "AlienFX_SDK.h"  
 #include <iostream>
 extern "C" {
@@ -890,7 +888,7 @@ namespace AlienFX_SDK
 			HidD_SetOutputReport(devHandle, buffer, length);
 			ZeroMemory(buffer, length);
 			memcpy(buffer, COMMV4.turnOn, sizeof(COMMV4.turnOn));
-			buffer[3] = 0x64 - (brightness >> 2); // 00..64
+			buffer[3] = 0x64 - (((UINT)brightness) * 0x64 / 0xff); // 00..64
 			byte pos = 6, pindex = 0;
 			for (int i = 0; i < mappings->size(); i++) {
 				mapping cur = mappings->at(i);

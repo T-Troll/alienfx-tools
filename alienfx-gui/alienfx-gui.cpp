@@ -835,18 +835,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				if (conf->dimmed) {
 					conf->lightsOn = false;
 					conf->dimmed = false;
-					//fxhl->ChangeState();
 				}
 				else {
 					conf->dimmed = true;
-					//fxhl->RefreshState();
-					//fxhl->ChangeState();
 				}
 			}
 			else {
 				conf->lightsOn = true;
-				//fxhl->ChangeState();
-				//fxhl->RefreshState();
 			}
 			fxhl->ChangeState();
 			break;

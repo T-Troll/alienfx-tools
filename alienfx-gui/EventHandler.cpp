@@ -90,10 +90,12 @@ void EventHandler::SwitchActiveProfile(int newID)
 	if (newID != conf->activeProfile) {
 		profile* newP = conf->FindProfile(newID);
 		if (newP != NULL) {
+			modifyProfile.lock();
 			conf->activeProfile = newID;
 			//conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			//conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
 			conf->active_set = &newP->lightsets;
+			modifyProfile.unlock();
 			fxh->ChangeState();
 			ToggleEvents();
 #ifdef _DEBUG
@@ -151,7 +153,7 @@ void EventHandler::ToggleEvents()
 				fxh->Refresh();
 				StartEvents();
 			} else {
-				fxh->RefreshState();
+				fxh->RefreshState(true);
 			}
 		} else {
 			if (dwHandle)
@@ -553,7 +555,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 		long battLife = min(100, max(0, state.BatteryLifePercent));
 		long hddLoad = max(0, 99 - cHDDVal.longValue);
 
+		src->modifyProfile.lock();
 		src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, (long)totalNet, hddLoad, maxTemp, battLife);
+		src->modifyProfile.unlock();
 	}
 
 	delete[] gpuArray; delete[] netArray; delete[] tempArray;
