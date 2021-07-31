@@ -8,9 +8,9 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 
 ## Requirements
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
-- `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35).
+- `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other tools doesn't require it, so you need it in case if you plan to use Anbient only.
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
-- Windows 10+ (binary files for x64 only, but you can compile project for x86 as well).
+- Windows 10+ (binary files for 64-bit only, but you can compile project for 32-bit as well). Windows 7 NOT supported, 8 and 8.1 will lost some functionality.
 
 ## Devices tested:
 - `Alienware m15R3-R4` Per-key keyboard lights (API v4 + API v5)
@@ -227,7 +227,7 @@ Other shortcuts (only then application active):
 **WARNING:** All hardware color effects stop working if you enable any Event monitoring. It’s a hardware bug – any light update operation restart all effects.  
 
 ## alienfx-probe Usage
-`alienfx-probe.exe` is a simple CLI interface for assigning names for devices and lights into low-level DSK (similar to alienfx-led-tester, but with wider devices support).  
+`alienfx-probe.exe` is a simple CLI interface for check all devices present into the system, assigning names for devices and lights for low-level DSK (similar to alienfx-led-tester, but with wider devices support).  
 Then run, it shows some info, switch lights to green one-by-one and prompt to enter devices and lights name.  
 Then the name is set, light switched to blue. If you didn't see which light is changed, just press ENTER to skip it.  
 It's check 13 first lights (or 136 for keyboard devices) by default, but you can change this value runnning `alienfx-probe.exe [number of lights]`.  
@@ -242,10 +242,10 @@ MIT. You can use these tools for any non-commercial or commercial use, modify it
 ## Credits
 Functionality idea and code, new devices support, haptic and ambient algorithms by T-Troll.  
 Low-level SDK based on Gurjot95's [AlienFX_SDK](https://github.com/Gurjot95/AlienFX-SDK).  
-API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).  
-Spectrum Analyzer UI is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
+High-level API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).  
+Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
 Dominant light extraction math based on [OpenCV](https://github.com/opencv/opencv) library.  
 Per-Key RGB devices testing and support by [rirozizo](https://github.com/rirozizo).  
-Special thanks to [PhSHu](https://github.com/PhSMu) for ideas, testing and artwork.
+Special thanks to [PhSMu](https://github.com/PhSMu) for ideas, testing and artwork.
