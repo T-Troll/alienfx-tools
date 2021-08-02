@@ -117,7 +117,7 @@ void EventHandler::SwitchActiveProfile(int newID)
 
 void EventHandler::StartEvents()
 {
-	DWORD dwThreadID;
+	//DWORD dwThreadID;
 	if (!dwHandle && conf->monState) {
 		fxh->RefreshMon();
 		// start thread...
@@ -125,7 +125,7 @@ void EventHandler::StartEvents()
 		OutputDebugString("Event thread start.\n");
 #endif
 		stopEvents = CreateEvent(NULL, true, false, NULL);
-		dwHandle = CreateThread(NULL, 0, CEventProc, this, 0, &dwThreadID);
+		dwHandle = CreateThread(NULL, 0, CEventProc, this, 0, NULL);
 	}
 }
 

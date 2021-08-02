@@ -44,6 +44,11 @@ ConfigHandler::ConfigHandler() {
 
 	testColor.ci = 0;
 	testColor.cs.green = 255;
+
+	niData.cbSize = sizeof(NOTIFYICONDATA);
+	niData.uID = IDI_ALIENFXGUI;
+	niData.uFlags = NIF_ICON | NIF_MESSAGE;
+	niData.uCallbackMessage = WM_APP + 1;
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -106,35 +111,39 @@ void ConfigHandler::SetStates() {
 		FindProfile(activeProfile)->flags & PROF_DIMMED ||
 		(dimmedBatt && !statePower);
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed) {
-		// change tray icon...
-		if (stateOn) {
-			if (stateDimmed) {
-				niData.hIcon =
-					(HICON)LoadImage(GetModuleHandle(NULL),
-									 MAKEINTRESOURCE(IDI_ALIENFX_DIM),
-									 IMAGE_ICON,
-									 GetSystemMetrics(SM_CXSMICON),
-									 GetSystemMetrics(SM_CYSMICON),
-									 LR_DEFAULTCOLOR);
-			} else {
-				niData.hIcon =
-					(HICON)LoadImage(GetModuleHandle(NULL),
-									 MAKEINTRESOURCE(IDI_ALIENFX_ON),
-									 IMAGE_ICON,
-									 GetSystemMetrics(SM_CXSMICON),
-									 GetSystemMetrics(SM_CYSMICON),
-									 LR_DEFAULTCOLOR);
-			}
+		SetIconState();
+		Shell_NotifyIcon(NIM_MODIFY, &niData);
+	}
+}
+
+void ConfigHandler::SetIconState() {
+	// change tray icon...
+	if (stateOn) {
+		if (stateDimmed) {
+			niData.hIcon =
+				(HICON)LoadImage(GetModuleHandle(NULL),
+								 MAKEINTRESOURCE(IDI_ALIENFX_DIM),
+								 IMAGE_ICON,
+								 GetSystemMetrics(SM_CXSMICON),
+								 GetSystemMetrics(SM_CYSMICON),
+								 LR_DEFAULTCOLOR);
 		} else {
 			niData.hIcon =
-				(HICON) LoadImage(GetModuleHandle(NULL),
-								  MAKEINTRESOURCE(IDI_ALIENFX_OFF),
-								  IMAGE_ICON,
-								  GetSystemMetrics(SM_CXSMICON),
-								  GetSystemMetrics(SM_CYSMICON),
-								  LR_DEFAULTCOLOR);
+				(HICON)LoadImage(GetModuleHandle(NULL),
+								 MAKEINTRESOURCE(IDI_ALIENFX_ON),
+								 IMAGE_ICON,
+								 GetSystemMetrics(SM_CXSMICON),
+								 GetSystemMetrics(SM_CYSMICON),
+								 LR_DEFAULTCOLOR);
 		}
-		Shell_NotifyIcon(NIM_MODIFY, &niData);
+	} else {
+		niData.hIcon =
+			(HICON) LoadImage(GetModuleHandle(NULL),
+							  MAKEINTRESOURCE(IDI_ALIENFX_OFF),
+							  IMAGE_ICON,
+							  GetSystemMetrics(SM_CXSMICON),
+							  GetSystemMetrics(SM_CYSMICON),
+							  LR_DEFAULTCOLOR);
 	}
 }
 

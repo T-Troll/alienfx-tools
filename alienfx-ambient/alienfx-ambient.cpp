@@ -109,38 +109,9 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG: {
-        HRSRC hResInfo;
-        DWORD dwSize;
-        HGLOBAL hResData;
-        LPVOID pRes, pResCopy;
-        UINT uLen;
-        VS_FIXEDFILEINFO* lpFfi;
-
         HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
+        Static_SetText(version_text, ("Version: " + GetAppVersion()).c_str());
 
-        if (hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION)) {
-            dwSize = SizeofResource(hInst, hResInfo);
-            if (hResData = LoadResource(hInst, hResInfo)) {
-                pRes = LockResource(hResData);
-                pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-                CopyMemory(pResCopy, pRes, dwSize);
-                FreeResource(hResData);
-
-                VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-                char buf[255];
-
-                DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-                DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
-
-                sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
-
-                Static_SetText(version_text, buf);
-
-                LocalFree(pResCopy);
-            }
-        }
-
-        
         return (INT_PTR)TRUE;
     }
     case WM_COMMAND:
@@ -225,6 +196,24 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         lTip = CreateToolTip(divSlider, lTip);
         SetSlider(sTip, sBuff, conf->shift);
         SetSlider(lTip, lBuff, 32-conf->divider);
+
+        // tray icon
+        ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+        niData.cbSize = sizeof(NOTIFYICONDATA);
+        niData.uID = IDI_ALIENFXAMBIENT;
+        niData.uFlags = NIF_ICON | NIF_MESSAGE;
+        niData.hIcon =
+            (HICON)LoadImage(GetModuleHandle(NULL),
+                             MAKEINTRESOURCE(IDI_ALIENFXAMBIENT),
+                             IMAGE_ICON,
+                             GetSystemMetrics(SM_CXSMICON),
+                             GetSystemMetrics(SM_CYSMICON),
+                             LR_DEFAULTCOLOR);
+        niData.hWnd = hDlg;
+        niData.uCallbackMessage = WM_APP + 1;
+        Shell_NotifyIcon(NIM_ADD, &niData);
+        // check update....
+        CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
     } break;
     case WM_COMMAND:
     {
@@ -234,8 +223,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         {
         case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
         {
-            //cap->Stop();
-            Shell_NotifyIcon(NIM_DELETE, &niData);
             DestroyWindow(hDlg); 
         } break;
         case IDM_ABOUT: // about dialogue here
@@ -356,20 +343,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDC_BUTTON_MIN:
             // go to tray...
-            ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-            niData.cbSize = sizeof(NOTIFYICONDATA);
-            niData.uID = IDI_ALIENFXAMBIENT;
-            niData.uFlags = NIF_ICON | NIF_MESSAGE;
-            niData.hIcon =
-                (HICON)LoadImage(GetModuleHandle(NULL),
-                    MAKEINTRESOURCE(IDI_ALIENFXAMBIENT),
-                    IMAGE_ICON,
-                    GetSystemMetrics(SM_CXSMICON),
-                    GetSystemMetrics(SM_CYSMICON),
-                    LR_DEFAULTCOLOR);
-            niData.hWnd = hDlg;
-            niData.uCallbackMessage = WM_APP + 1;
-            Shell_NotifyIcon(NIM_ADD, &niData);
             ShowWindow(hDlg, SW_HIDE);
             break;
         case IDC_BUTTON_RESET:
@@ -384,20 +357,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
     case WM_SIZE:
         if (wParam == SIZE_MINIMIZED) {
             // go to tray...
-            ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-            niData.cbSize = sizeof(NOTIFYICONDATA);
-            niData.uID = IDI_ALIENFXAMBIENT;
-            niData.uFlags = NIF_ICON | NIF_MESSAGE;
-            niData.hIcon =
-                (HICON)LoadImage(GetModuleHandle(NULL),
-                    MAKEINTRESOURCE(IDI_ALIENFXAMBIENT),
-                    IMAGE_ICON,
-                    GetSystemMetrics(SM_CXSMICON),
-                    GetSystemMetrics(SM_CYSMICON),
-                    LR_DEFAULTCOLOR);
-            niData.hWnd = hDlg;
-            niData.uCallbackMessage = WM_APP + 1;
-            Shell_NotifyIcon(NIM_ADD, &niData);
             ShowWindow(hDlg, SW_HIDE);
         } break;
     case WM_APP + 1: {
@@ -406,14 +365,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
-            Shell_NotifyIcon(NIM_DELETE, &niData);
             SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             break;
             case WM_RBUTTONUP:
             case WM_CONTEXTMENU:
-                cap->Stop();
-                Shell_NotifyIcon(NIM_DELETE, &niData);
                 DestroyWindow(hDlg);
                 break;
         }
@@ -473,7 +429,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         return false;
         break;
     case WM_CLOSE: DestroyWindow(hDlg); break;
-    case WM_DESTROY: cap->Stop(); PostQuitMessage(0); break;
+    case WM_DESTROY: 
+        cap->Stop(); 
+        Shell_NotifyIcon(NIM_DELETE, &niData); 
+        PostQuitMessage(0); 
+        break;
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC: case PBT_APMPOWERSTATUSCHANGE:

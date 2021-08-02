@@ -164,34 +164,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-		HRSRC hResInfo;
-		DWORD dwSize;
-		HGLOBAL hResData;
-		LPVOID pRes, pResCopy;
-		UINT uLen;
-		VS_FIXEDFILEINFO* lpFfi;
 
 		HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
+		SetWindowText(version_text, ("Version: " + GetAppVersion()).c_str());
 
-		hResInfo = FindResource(ghInstance, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-		dwSize = SizeofResource(ghInstance, hResInfo);
-		hResData = LoadResource(ghInstance, hResInfo);
-		pRes = LockResource(hResData);
-		pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-		CopyMemory(pResCopy, pRes, dwSize);
-		FreeResource(hResData);
-
-		VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-		char buf[255];
-
-		DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-		DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
-
-		sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
-
-		SetWindowText(version_text, buf);
-
-		LocalFree(pResCopy);
 		return (INT_PTR)TRUE;
 	}
 	case WM_COMMAND:
@@ -299,6 +275,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		CheckDlgButton(hDlg, IDC_SHOWAXIS, config->showAxis ? BST_CHECKED : BST_UNCHECKED);
 
+		// Tray icon...
+		ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+		niData.cbSize = sizeof(NOTIFYICONDATA);
+		niData.uID = IDI_ALIEN;
+		niData.uFlags = NIF_ICON | NIF_MESSAGE;
+		niData.hIcon =
+			(HICON)LoadImage(GetModuleHandle(NULL),
+							 MAKEINTRESOURCE(IDI_ALIEN),
+							 IMAGE_ICON,
+							 GetSystemMetrics(SM_CXSMICON),
+							 GetSystemMetrics(SM_CYSMICON),
+							 LR_DEFAULTCOLOR);
+		niData.hWnd = hDlg;
+		niData.uCallbackMessage = WM_APP + 1;
+		Shell_NotifyIcon(NIM_ADD, &niData);
+		// check update....
+		CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
 	}
 	break;
 
@@ -458,20 +451,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-				niData.cbSize = sizeof(NOTIFYICONDATA);
-				niData.uID = IDI_ALIEN;
-				niData.uFlags = NIF_ICON | NIF_MESSAGE;
-				niData.hIcon =
-					(HICON)LoadImage(GetModuleHandle(NULL),
-						MAKEINTRESOURCE(IDI_ALIEN),
-						IMAGE_ICON,
-						GetSystemMetrics(SM_CXSMICON),
-						GetSystemMetrics(SM_CYSMICON),
-						LR_DEFAULTCOLOR);
-				niData.hWnd = hDlg;
-				niData.uCallbackMessage = WM_APP + 1;
-				Shell_NotifyIcon(NIM_ADD, &niData);
 				ShowWindow(hDlg, SW_HIDE);
 			} break;
 			} break;
@@ -537,21 +516,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_SIZE:
 		if (wParam == SIZE_MINIMIZED) {
 			// go to tray...
-
-			ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-			niData.cbSize = sizeof(NOTIFYICONDATA);
-			niData.uID = IDI_ALIEN;
-			niData.uFlags = NIF_ICON | NIF_MESSAGE;
-			niData.hIcon =
-				(HICON)LoadImage(GetModuleHandle(NULL),
-					MAKEINTRESOURCE(IDI_ALIEN),
-					IMAGE_ICON,
-					GetSystemMetrics(SM_CXSMICON),
-					GetSystemMetrics(SM_CYSMICON),
-					LR_DEFAULTCOLOR);
-			niData.hWnd = hDlg;
-			niData.uCallbackMessage = WM_APP + 1;
-			Shell_NotifyIcon(NIM_ADD, &niData);
 			ShowWindow(hDlg, SW_HIDE);
 		} break;
 	case WM_APP + 1: {
@@ -562,11 +526,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ShowWindow(hDlg, SW_RESTORE);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			Shell_NotifyIcon(NIM_DELETE, &niData);
 			break;
 		case WM_RBUTTONUP:
 		case WM_CONTEXTMENU:
-			Shell_NotifyIcon(NIM_DELETE, &niData); 
 			PostMessage(hDlg, WM_CLOSE, 0, 0);
 			break;
 		}
@@ -595,7 +557,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 		break;
 	case WM_CLOSE: DestroyWindow(hDlg); break;
-	case WM_DESTROY: PostQuitMessage(0); break;
+	case WM_DESTROY: 
+		Shell_NotifyIcon(NIM_DELETE, &niData); 
+		PostQuitMessage(0); 
+		break;
 	default: return false;
 	}
 

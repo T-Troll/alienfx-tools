@@ -102,4 +102,5 @@ public:
 	profile* FindProfile(int id);
 	int FindProfileByApp(std::string appName, bool active = false);
 	void SetStates();
+	void SetIconState();
 };

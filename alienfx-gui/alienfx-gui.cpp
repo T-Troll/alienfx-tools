@@ -55,6 +55,7 @@ HWND sTip = 0, lTip = 0;
 
 // ConfigStatic:
 int tabSel = -1;
+UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // Colors
 int effID = -1;
@@ -367,39 +368,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-		HRSRC hResInfo;
-		DWORD dwSize;
-		HGLOBAL hResData;
-		LPVOID pRes, pResCopy;
-		UINT uLen;
-		VS_FIXEDFILEINFO* lpFfi;
 
 		HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
 
-		hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-		if (hResInfo) {
-			dwSize = SizeofResource(hInst, hResInfo);
-			hResData = LoadResource(hInst, hResInfo);
-			if (hResData) {
-				pRes = LockResource(hResData);
-				pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-				if (pResCopy) {
-					CopyMemory(pResCopy, pRes, dwSize);
+		Static_SetText(version_text, ("Version: " + GetAppVersion()).c_str());
 
-					VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-					char buf[255];
-
-					DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-					DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
-
-					sprintf_s(buf, 255, "Version: %d.%d.%d.%d", HIWORD(dwFileVersionMS), LOWORD(dwFileVersionMS), HIWORD(dwFileVersionLS), LOWORD(dwFileVersionLS));
-
-					Static_SetText(version_text, buf);
-					LocalFree(pResCopy);
-				}
-				FreeResource(hResData);
-			}
-		}
 		return (INT_PTR)TRUE;
 	} break;
 	case WM_COMMAND:
@@ -493,6 +466,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
 
+	if (message == newTaskBar) {
+		// Started/restarted explorer...
+		Shell_NotifyIcon(NIM_ADD, &conf->niData);
+		CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+		return true;
+	}
+
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -534,56 +514,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		// Calculate the display rectangle.
 		CopyRect(&pHdr->rcDisplay, &rcTab);
-		TabCtrl_AdjustRect(pHdr->hwndTab, FALSE, &pHdr->rcDisplay);
+		//TabCtrl_AdjustRect(pHdr->hwndTab, true, &pHdr->rcDisplay);// &rcTab);
 
 		//OffsetRect(&pHdr->rcDisplay, GetSystemMetrics(SM_CXDLGFRAME)-pHdr->rcDisplay.left - 2, -GetSystemMetrics(SM_CYDLGFRAME) - 2);// +GetSystemMetrics(SM_CYMENUSIZE));// GetSystemMetrics(SM_CXDLGFRAME), GetSystemMetrics(SM_CYDLGFRAME) + GetSystemMetrics(SM_CYCAPTION));// GetSystemMetrics(SM_CYCAPTION) - pHdr->rcDisplay.top);
-		pHdr->rcDisplay.left = 1;
-		pHdr->rcDisplay.top -= 1; // GetSystemMetrics(SM_CYDLGFRAME);
-		pHdr->rcDisplay.right += 1; // GetSystemMetrics(SM_CXDLGFRAME);// +1;
-		pHdr->rcDisplay.bottom += 2;// 2 * GetSystemMetrics(SM_CYDLGFRAME) - 1;
+		pHdr->rcDisplay.left = GetSystemMetrics(SM_CXBORDER); // 1
+		pHdr->rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER); //1; // GetSystemMetrics(SM_CYDLGFRAME);
+		pHdr->rcDisplay.right -= 2*GetSystemMetrics(SM_CXBORDER) + 1; //1; // GetSystemMetrics(SM_CXDLGFRAME);// +1;
+		pHdr->rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1; //2;// 2 * GetSystemMetrics(SM_CYDLGFRAME) - 1;
 
 		ReloadProfileList(hDlg);
 		OnSelChanged(tab_list);
 
-		// tray icon...
-		//ZeroMemory(&conf->niData, sizeof(NOTIFYICONDATA));
-		conf->niData.cbSize = sizeof(NOTIFYICONDATA);
-		conf->niData.uID = IDI_ALIENFXGUI;
-		conf->niData.uFlags = NIF_ICON | NIF_MESSAGE;
-		//strcpy_s(conf->niData.szTip, "AlienFX GUI");
-		if (conf->lightsOn)
-			if (conf->dimmed)
-				conf->niData.hIcon =
-					(HICON)LoadImage(GetModuleHandle(NULL),
-						MAKEINTRESOURCE(IDI_ALIENFX_DIM),
-						IMAGE_ICON,
-						GetSystemMetrics(SM_CXSMICON),
-						GetSystemMetrics(SM_CYSMICON),
-						LR_DEFAULTCOLOR);
-			else
-				conf->niData.hIcon =
-				(HICON)LoadImage(GetModuleHandle(NULL),
-									MAKEINTRESOURCE(IDI_ALIENFX_ON),
-									IMAGE_ICON,
-									GetSystemMetrics(SM_CXSMICON),
-									GetSystemMetrics(SM_CYSMICON),
-									LR_DEFAULTCOLOR);
-		else
-			conf->niData.hIcon =
-			(HICON)LoadImage(GetModuleHandle(NULL),
-							 MAKEINTRESOURCE(IDI_ALIENFX_OFF),
-							 IMAGE_ICON,
-							 GetSystemMetrics(SM_CXSMICON),
-							 GetSystemMetrics(SM_CYSMICON),
-							 LR_DEFAULTCOLOR);
 		conf->niData.hWnd = hDlg;
-		conf->niData.uCallbackMessage = WM_APP + 1;
-		while (!Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
-#ifdef _DEBUG
-			OutputDebugString("Icon issue!\n");
-#endif			
-			Sleep(50);
-		}
+		conf->SetIconState();
+		Shell_NotifyIcon(NIM_ADD, &conf->niData);
+
+		// check update....
+		CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		conf->SetStates();
 	} break;
 	case WM_COMMAND:
@@ -602,7 +549,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				fxhl->UnblockUpdates(true);
 				fxhl->RefreshState();
 			}
-			//Shell_NotifyIcon(NIM_ADD, &conf->niData);
 			ShowWindow(hDlg, SW_HIDE);
 			break;
 		case IDC_BUTTON_REFRESH:
@@ -712,6 +658,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (conf->enableProf) CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, MF_CHECKED);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
+		} break;
+		case NIN_BALLOONUSERCLICK:
+		{
+			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
 		} break;
 		}
 		break;
@@ -1883,6 +1833,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				return false;
 			} break;
 			}
+			break;
+		}
+		break;
+	case WM_DRAWITEM:
+		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+		case IDC_BUTTON_TESTCOLOR:
+			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.cs.red, conf->testColor.cs.green, conf->testColor.cs.blue);
 			break;
 		}
 		break;
