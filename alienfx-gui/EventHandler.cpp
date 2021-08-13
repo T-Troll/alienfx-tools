@@ -91,6 +91,7 @@ void EventHandler::SwitchActiveProfile(int newID)
 		profile* newP = conf->FindProfile(newID);
 		if (newP != NULL) {
 			modifyProfile.lock();
+			//fxh->Flush();
 			conf->activeProfile = newID;
 			//conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
 			//conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;

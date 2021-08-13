@@ -30,7 +30,7 @@
 
 	extern HINSTANCE hInst;
 	HWND CreateToolTip(HWND hwndParent, HWND old);
-	void SetSlider(HWND tt, char* buff, int value);
+	void SetSlider(HWND tt, int value);
 	void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 	string GetAppVersion();
 	DWORD WINAPI CUpdateCheck(LPVOID);

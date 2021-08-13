@@ -250,6 +250,21 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 	}
 }
 
+void FXHelper::Flush() {
+#ifdef _DEBUG
+	OutputDebugString("Flushing light query...\n");
+#endif
+	unblockUpdates = false;
+	modifyQuery.lock();
+	deque<LightQueryElement>::iterator qIter;
+	for (qIter = lightQuery.begin(); qIter != lightQuery.end() && !qIter->update; qIter++);
+	if (qIter != lightQuery.end())
+		// flush the rest of query
+		lightQuery.erase(qIter, lightQuery.end());
+	modifyQuery.unlock();
+	while (updateThread && !lightQuery.empty()) Sleep(20);
+}
+
 void FXHelper::UnblockUpdates(bool newState) {
 	unblockUpdates = newState;
 	if (!unblockUpdates) {

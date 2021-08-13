@@ -157,7 +157,6 @@ mapping* FindMapping(int lid) {
     return NULL;
 }
 
-char sBuff[4], lBuff[4];
 HWND sTip = 0, lTip = 0;
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -194,8 +193,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
         sTip = CreateToolTip(brSlider, sTip);
         lTip = CreateToolTip(divSlider, lTip);
-        SetSlider(sTip, sBuff, conf->shift);
-        SetSlider(lTip, lBuff, 32-conf->divider);
+        SetSlider(sTip, conf->shift);
+        SetSlider(lTip, 32-conf->divider);
 
         // tray icon
         ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
@@ -380,22 +379,22 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == brSlider) {
                 conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
-                SetSlider(sTip, sBuff, conf->shift);
+                SetSlider(sTip, conf->shift);
                 fxhl->ChangeState();
             } else 
                 if ((HWND)lParam == divSlider) {
                     conf->divider = 32 - (DWORD)SendMessage(divSlider, TBM_GETPOS, 0, 0);
-                    SetSlider(lTip, lBuff, 32 - conf->divider);
+                    SetSlider(lTip, 32 - conf->divider);
                     fxhl->ChangeState();
                 }
             break;
         default: 
             if ((HWND)lParam == brSlider) {
-                SetSlider(sTip, sBuff, (int)SendMessage(brSlider, TBM_GETPOS, 0, 0));
+                SetSlider(sTip, (int)SendMessage(brSlider, TBM_GETPOS, 0, 0));
             }
             else
                 if ((HWND)lParam == divSlider) {
-                    SetSlider(lTip, lBuff, (int)SendMessage(divSlider, TBM_GETPOS, 0, 0));
+                    SetSlider(lTip, (int)SendMessage(divSlider, TBM_GETPOS, 0, 0));
                 }
         }
         break;

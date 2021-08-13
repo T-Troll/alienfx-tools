@@ -49,16 +49,16 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 	return hwndTT;
 }
 
-void SetSlider(HWND tt, char* buff, int value) {
-	TOOLINFO ti = { 0 };
+void SetSlider(HWND tt, int value) {
+		TOOLINFO ti = { 0 };
 	ti.cbSize = sizeof(ti);
-	ti.lpszText = (LPTSTR)buff;
 	if (tt) {
-		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-		_itoa_s(value, buff, 4, 10);
-		ti.lpszText = (LPTSTR)buff;
-		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM) &ti);
+		string toolTip = to_string(value);
+		ti.lpszText = (LPTSTR) toolTip.c_str();
+		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM) &ti);
 	}
+
 }
 
 string GetAppVersion() {

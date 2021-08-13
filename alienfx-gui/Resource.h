@@ -36,7 +36,6 @@
 #define IDD_DIALOG_GROUPS               145
 #define IDI_ALIENFX_ON                  147
 #define IDI_ALIENFX_OFF                 148
-#define IDI_ICON1                       149
 #define IDI_ALIENFX_DIM                 149
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001

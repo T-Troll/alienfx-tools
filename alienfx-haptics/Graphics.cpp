@@ -86,12 +86,20 @@ void DrawFreq(HWND hDlg, int* freq)
 
 	HWND hysto = GetDlgItem(hDlg, IDC_LEVELS);
 
-	HDC hdc = GetDC(hysto);
-
 	if (hysto) {
 		RECT levels_rect, graphZone;
 		GetClientRect(hysto, &levels_rect);
 		graphZone = levels_rect;
+
+		HDC hdc_r = GetDC(hysto);
+
+		// Double buff...
+		HDC hdc = CreateCompatibleDC(hdc_r);
+		HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, graphZone.right - graphZone.left, graphZone.bottom - graphZone.top);
+
+		SetBkMode(hdc, TRANSPARENT);
+
+		HGDIOBJ hOld = SelectObject(hdc, hbmMem);
 
 		//setting colors:
 		//SetDCBrushColor(hdc, RGB(255, 255, 255));
@@ -100,11 +108,6 @@ void DrawFreq(HWND hDlg, int* freq)
 		//SelectObject(hdc, GetStockObject(DC_BRUSH));
 		SelectObject(hdc, GetStockObject(WHITE_PEN));
 		SetBkMode(hdc, TRANSPARENT);
-
-		// clear background...
-		HBRUSH hb = CreateSolidBrush(RGB(0, 0, 0));
-		FillRect(hdc, &levels_rect, hb);
-		DeleteObject(hb);
 
 		if (config->showAxis) {
 			//draw x axis:
@@ -153,8 +156,17 @@ void DrawFreq(HWND hDlg, int* freq)
 			//wsprintf(szSize, "%3d", freq[i]);
 			//TextOut(hdc, ((rcClientP->right - 20) * i) / config->numbars + 10, rectop - 15, szSize, 3);
 		}
+
+		BitBlt(hdc_r, 0, 0, levels_rect.right - levels_rect.left, levels_rect.bottom - levels_rect.top, hdc, 0, 0, SRCCOPY);
+
+		// Free-up the off-screen DC
+		SelectObject(hdc, hOld);
+
+		DeleteObject(hbmMem);
+		DeleteDC(hdc);
+		ReleaseDC(hysto, hdc_r);
+		DeleteDC(hdc_r);
 	}
-	ReleaseDC(hysto, hdc);
 } 
 
 // Message handler for about box.
@@ -235,7 +247,6 @@ mapping* FindMapping(int lid) {
 	return NULL;
 }
 
-char sBuff[4], lBuff[4];
 HWND sTip = 0, lTip = 0;
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -332,8 +343,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					//  clear cuts....
 					SendMessage(hLowSlider, TBM_SETPOS, true, 0);
 					SendMessage(hHiSlider, TBM_SETPOS, true, 255);
-					SetSlider(sTip, sBuff, 0);
-					SetSlider(lTip, lBuff, 255);
+					SetSlider(sTip, 0);
+					SetSlider(lTip, 255);
 					// clear selections
 					SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 					SendMessage(light_list, LB_SETCURSEL, -1, 0);
@@ -381,8 +392,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				// load cuts...
 				SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 				SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
-				SetSlider(sTip, sBuff, map->lowcut);
-				SetSlider(lTip, lBuff, map->hicut);
+				SetSlider(sTip, map->lowcut);
+				SetSlider(lTip, map->hicut);
 				CheckDlgButton(hDlg, IDC_GAUGE, map->flags ? BST_CHECKED : BST_UNCHECKED);
 			}
 			break;
@@ -476,8 +487,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 							//  clear cuts....
 							SendMessage(hLowSlider, TBM_SETPOS, true, 0);
 							SendMessage(hHiSlider, TBM_SETPOS, true, 255);
-							SetSlider(sTip, sBuff, 0);
-							SetSlider(lTip, lBuff, 255);
+							SetSlider(sTip, 0);
+							SetSlider(lTip, 255);
 							// clear selections
 							SendMessage(freq_list, LB_SETSEL, FALSE, -1);
 							SendMessage(light_list, LB_SETCURSEL, -1, 0);
@@ -503,11 +514,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (map != NULL) {
 				if ((HWND)lParam == hLowSlider) {
 					map->lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
-					SetSlider(sTip, sBuff, map->lowcut);
+					SetSlider(sTip, map->lowcut);
 				}
 				if ((HWND)lParam == hHiSlider) {
 					map->hicut = (UCHAR) SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
-					SetSlider(lTip, lBuff, map->hicut);
+					SetSlider(lTip, map->hicut);
 				}
 			}
 		} break;
