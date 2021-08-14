@@ -115,6 +115,7 @@ Tray menu (right-click on tray button) avaliable all the time for some fast swit
 ```
 How it works
 ```
+
 `"Color"` tab is set hardware colors and effects for light. This setting will remains even if you exit application.  
 Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph – 2, Spectrum – 7) to work correctly.  
 Use "Effects" list to add/remove/select effect. For each effect, you can define its color, effect mode, speed (how fast to change the color), and length (how long it plays).  
@@ -160,7 +161,6 @@ Light switches between colors if system event occures:
 - Low battery - Switch light if battery charged below the level defined by slider.
   
 "Blink" checkbox switch triggered value to blink between on-off colors 6 times per sec.
-
 You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and system overheat event. In this case Event color always override Performance one then triggered, as well as both override Power state one.
 
 `"Devices and lights"` tab is an extended GUI for `alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
@@ -173,6 +173,9 @@ Doubleclick or press Enter on selected light to edit it's name.
 "Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
 "Indicator" checkbox is for indicator lights (hdd, capslock, wifi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
 Selected light changes it color to the one defined by "Test color" button, and fade to black then unselected.
+
+"Load Mappings" button loads pre-defined lights map (if exist) for you gear. Map files is a simple .csv defining all devices, it's names, lights and it's types and names. Useful for first start.  
+"Save Mappings" button save current active devices and their lights into .csv file. Please, send me this file if you device is not into pre-defined mappings list yet, i'll add it.
 
 `"Groups"` tab provides control for light groups. Each group can be selected and set at "Color" and "Monitoring" pages as a one light.  
 Press [+] and [-] buttons to add/remove group, use dropdown to select it or change it name.  

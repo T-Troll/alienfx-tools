@@ -89,7 +89,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		int gbItem = (int)SendMessage(groups_list, CB_GETCURSEL, 0, 0);
 		int gid = (int)SendMessage(groups_list, CB_GETITEMDATA, gbItem, 0);
 		int glItem = (int)SendMessage(glights_list, LB_GETCURSEL, 0, 0);
-		AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gid);
+		AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gLid);
 		switch (LOWORD(wParam)) {
 		case IDC_GROUPS: {
 			switch (HIWORD(wParam))

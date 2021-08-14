@@ -22,6 +22,14 @@
 #define IDS_TYPE_SPECTRUM               117
 #define IDS_TYPE_RAINBOW                118
 #define IDS_A_LOWBATT                   119
+#define IDS_HOMEPAGE                    120
+#define IDS_UPDATEPAGE                  121
+#define IDS_TAB_COLOR                   122
+#define IDS_TAB_EVENTS                  123
+#define IDS_TAB_DEVICES                 124
+#define IDS_TAB_GROUPS                  125
+#define IDS_TAB_PROFILES                126
+#define IDS_TAB_SETTINGS                127
 #define IDD_MAINWINDOW                  129
 #define IDI_ALIENFXGUI                  132
 #define IDD_DIALOG_COLORS               133
@@ -36,7 +44,6 @@
 #define IDD_DIALOG_GROUPS               145
 #define IDI_ALIENFX_ON                  147
 #define IDI_ALIENFX_OFF                 148
-#define IDI_ICON1                       149
 #define IDI_ALIENFX_DIM                 149
 #define IDC_TAB_MAIN                    1000
 #define IDC_LIGHTS                      1001
@@ -120,6 +127,8 @@
 #define IDC_GAUGE                       1085
 #define IDC_GLOBAL_EFFECT               1088
 #define IDC_SLIDER_TEMPO                1089
+#define IDC_BUT_LOADMAP                 1090
+#define IDC_BUT_SAVEMAP                 1091
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -143,7 +152,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        150
 #define _APS_NEXT_COMMAND_VALUE         32797
-#define _APS_NEXT_CONTROL_VALUE         1090
+#define _APS_NEXT_CONTROL_VALUE         1091
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

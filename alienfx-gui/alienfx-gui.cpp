@@ -4,7 +4,6 @@
 #include <Shlobj.h>
 #include <ColorDlg.h>
 #include <algorithm>
-#include "toolkit.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 #include "AlienFX_SDK.h"
@@ -16,18 +15,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"Version.lib")
 #pragma comment(lib,"comctl32.lib")
 
-// defines and structures...
-#define C_PAGES 6
-
-typedef struct tag_dlghdr {
-	HWND hwndTab;       // tab control
-	HWND hwndDisplay;   // current child dialog box
-	RECT rcDisplay;     // display rectangle for the tab control
-	DLGTEMPLATE* apRes[C_PAGES];
-} DLGHDR;
-
 // Global Variables:
-
 
 HWND InitInstance(HINSTANCE, int);
 
@@ -349,7 +337,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return dlg;
 }
 
-// Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
@@ -379,8 +366,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 			case NM_CLICK:
 			case NM_RETURN:
-				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
-				break;
+			{
+				char hurl[MAX_PATH];
+				LoadString(hInst, IDS_HOMEPAGE, hurl, MAX_PATH);
+				ShellExecute(NULL, "open", hurl, NULL, NULL, SW_SHOWNORMAL);
+			} break;
 			} break;
 		}
 		break;
@@ -479,21 +469,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		pHdr->apRes[5] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
 
 		TCITEM tie;
+		char nBuf[64] = {0};
 
 		tie.mask = TCIF_TEXT;
 		tie.iImage = -1;
-		tie.pszText = (LPSTR)"Colors";
-		SendMessage(tab_list, TCM_INSERTITEM, 0, (LPARAM)&tie);
-		tie.pszText = (LPSTR)"Monitoring";
-		SendMessage(tab_list, TCM_INSERTITEM, 1, (LPARAM)&tie);
-		tie.pszText = (LPSTR)"Devices and Lights";
-		SendMessage(tab_list, TCM_INSERTITEM, 2, (LPARAM)&tie);
-		tie.pszText = (LPSTR)"Groups";
-		SendMessage(tab_list, TCM_INSERTITEM, 3, (LPARAM)&tie);
-		tie.pszText = (LPSTR)"Profiles";
-		SendMessage(tab_list, TCM_INSERTITEM, 4, (LPARAM)&tie);
-		tie.pszText = (LPSTR)"Settings";
-		SendMessage(tab_list, TCM_INSERTITEM, 5, (LPARAM)&tie);
+		tie.pszText = nBuf;
+
+		for (int i = 0; i < C_PAGES; i++) {
+			LoadString(hInst, IDS_TAB_COLOR + i, tie.pszText, 64);
+			SendMessage(tab_list, TCM_INSERTITEM, i, (LPARAM)&tie);
+		}
 
 		SetRectEmpty(&rcTab);
 
@@ -534,7 +519,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case IDC_BUTTON_MINIMIZE:
 			if (!fxhl->unblockUpdates) {
-				fxhl->UnblockUpdates(true);
+				fxhl->UnblockUpdates(true, true);
 				fxhl->RefreshState();
 			}
 			ShowWindow(hDlg, SW_HIDE);
@@ -596,7 +581,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		if (wParam == SIZE_MINIMIZED) {
 			// go to tray...
 			if (!fxhl->unblockUpdates) {
-				fxhl->UnblockUpdates(true);
+				fxhl->UnblockUpdates(true, true);
 				fxhl->RefreshState();
 			}
 			ShowWindow(hDlg, SW_HIDE);
@@ -649,7 +634,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		} break;
 		case NIN_BALLOONUSERCLICK:
 		{
-			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
+			char uurl[MAX_PATH];
+			LoadString(hInst, IDS_UPDATEPAGE, uurl, MAX_PATH);
+			ShellExecute(NULL, "open", uurl, NULL, NULL, SW_SHOWNORMAL);
 		} break;
 		}
 		break;

@@ -234,8 +234,11 @@ void FXHelper::ChangeState() {
 	byte bright = (byte) (config->stateOn ? config->stateDimmed ? 255 - config->dimmingPower : 255 : 0);
 	for (int i = 0; i < devs.size(); i++) {
 		devs[i]->ToggleState(bright, afx_dev.GetMappings(), config->offPowerButton);
-		if (config->stateOn && devs[i]->GetVersion() < 4)
+		if (config->stateOn && devs[i]->GetVersion() < 4) {
+			UnblockUpdates(true);
 			RefreshState();
+			UnblockUpdates(false);
+		}
 	}
 	UnblockUpdates(true);
 }
@@ -265,18 +268,22 @@ void FXHelper::Flush() {
 	while (updateThread && !lightQuery.empty()) Sleep(20);
 }
 
-void FXHelper::UnblockUpdates(bool newState) {
-	unblockUpdates = newState;
-	if (!unblockUpdates) {
+void FXHelper::UnblockUpdates(bool newState, bool lock) {
+	if (lock)
+		updateLock = !newState;
+	if (!updateLock || lock) {
+		unblockUpdates = newState;
+		if (!unblockUpdates) {
 #ifdef _DEBUG
-		OutputDebugString("Lights pause on!\n");
+			OutputDebugString("Lights pause on!\n");
 #endif
-		while (updateThread && !lightQuery.empty()) Sleep(20);
-	} 
+			while (updateThread && !lightQuery.empty()) Sleep(20);
+		}
 #ifdef _DEBUG
-	else
-		OutputDebugString("Lights pause off!\n");
+		else
+			OutputDebugString("Lights pause off!\n");
 #endif
+	}
 }
 
 void FXHelper::Start() {
@@ -296,7 +303,7 @@ void FXHelper::Stop() {
 #ifdef _DEBUG
 		OutputDebugString("Light updates stopped.\n");
 #endif
-		UnblockUpdates(false);
+		UnblockUpdates(false, true);
 		SetEvent(stopQuery);
 		WaitForSingleObject(updateThread, 10000);
 		lightQuery.clear();
@@ -415,6 +422,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 			src->lightQuery.pop_front();
 			src->modifyQuery.unlock();
+
 			//#ifdef _DEBUG
 			//				char buff[2048];
 			//				sprintf_s(buff, 2047, "New light update: (%d,%d),u=%d (%ld remains)...\n", current.did, current.lid, current.update, src->lightQuery.size());
@@ -458,11 +466,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 									src->UpdateGlobalEffect(dev);
 								} //else
 									//dev->Reset(true);
+								devQ->dev_query.clear();
+								lights.clear();
+								acts.clear();
 							}
-
-							devQ->dev_query.clear();
-							lights.clear();
-							acts.clear();
 						}
 					}
 					if (current.did == -1)

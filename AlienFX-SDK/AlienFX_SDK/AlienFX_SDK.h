@@ -42,6 +42,7 @@ namespace AlienFX_SDK
     #define MAX_BUFFERSIZE 64
 
 	struct mapping {
+		DWORD vid = 0;
 		DWORD devid = 0;
 		DWORD lightid = 0;
 		DWORD flags = 0;
@@ -49,6 +50,7 @@ namespace AlienFX_SDK
 	};
 
 	struct devmap {
+		DWORD vid = 0;
 		DWORD devid = 0;
 		std::string name;
 	};
@@ -176,6 +178,9 @@ namespace AlienFX_SDK
 		// get PID in use
 		int GetPID();
 
+		// get VID in use
+		int GetVid();
+
 		// get version for current device
 		int GetVersion();
 	};
@@ -207,6 +212,8 @@ namespace AlienFX_SDK
 
 		// get defined groups
 		vector <group>* GetGroups();
+
+		devmap* GetDeviceById(int devID, int vid = 0);
 
 		// find mapping by dev/light it...
 		mapping* GetMappingById(int devID, int LightID);

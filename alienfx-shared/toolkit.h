@@ -34,6 +34,7 @@
 	void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 	string GetAppVersion();
 	DWORD WINAPI CUpdateCheck(LPVOID);
+	INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 	template<class CONF>
 	class FXH {

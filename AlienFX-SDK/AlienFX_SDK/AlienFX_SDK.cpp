@@ -1173,6 +1173,20 @@ namespace AlienFX_SDK
 		return pids;
 	}	
 
+	devmap* Mappings::GetDeviceById(int devID, int vid) {
+		for (int i = 0; i < devices.size(); i++)
+			if (devices[i].devid == devID)
+				// vid check, if any
+				if (vid && devices[i].vid)
+					if (vid == devices[i].vid)
+						return &devices[i];
+					else
+						return nullptr;
+				else
+					return &devices[i];
+		return nullptr;
+	}
+
 	mapping* Mappings::GetMappingById(int devID, int LightID) {
 		for (int i = 0; i < mappings.size(); i++)
 			if (mappings[i].devid == devID && mappings[i].lightid == LightID)
@@ -1266,8 +1280,17 @@ namespace AlienFX_SDK
 					AddMapping(dID, lID, NULL, *(unsigned *)inarray);
 					continue;
 				}
+				// New devID format
+				if (sscanf_s((char*)name, "Dev#%d_%d", &dev.vid, &dev.devid) == 2) {
+					std::string devname(inarray);
+					dev.name = devname;
+					devices.push_back(dev);
+					continue;
+				}
+				// old devID format
 				if (sscanf_s((char*)name, "Dev#%d", &dev.devid) == 1) {
 					std::string devname(inarray);
+					dev.vid = 0;
 					dev.name = devname;
 					devices.push_back(dev);
 					continue;
@@ -1314,6 +1337,9 @@ namespace AlienFX_SDK
 		size_t numlights = mappings.size();
 		size_t numGroups = groups.size();
 		if (numdevs == 0) return;
+
+		// Remove all maps!
+		RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"));
 		
 		RegCreateKeyEx(HKEY_CURRENT_USER,
 			TEXT("SOFTWARE\\Alienfx_SDK"),
@@ -1328,7 +1354,7 @@ namespace AlienFX_SDK
 
 		for (int i = 0; i < numdevs; i++) {
 			//preparing name
-			sprintf_s(name, 255, "Dev#%d", devices[i].devid);
+			sprintf_s(name, 255, "Dev#%d_%d", devices[i].vid, devices[i].devid);
 
 			RegSetValueExA(
 				hKey1,
@@ -1363,6 +1389,7 @@ namespace AlienFX_SDK
 				(BYTE*)&mappings[i].flags,
 				sizeof(DWORD)
 			);
+			RegCloseKey(hKeyS);
 
 		}
 
@@ -1393,38 +1420,8 @@ namespace AlienFX_SDK
 				(BYTE*) grLights,
 				2 * (DWORD)groups[i].lights.size() * sizeof(DWORD)
 			);
+			RegCloseKey(hKeyS);
 		}
-
-		std::vector <mapping> oldMappings = mappings;
-		std::vector <group> oldGroups = groups;
-		LoadMappings();
-		// remove non-existing mappings and groups...
-		for (int i = 0; i < mappings.size(); i++) {
-			int j;
-			sprintf_s((char*) name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
-			RegDeleteValueA(hKey1, name);
-			sprintf_s((char*) name, 255, "Flags%d-%d", mappings[i].devid, mappings[i].lightid);
-			RegDeleteValueA(hKey1, name);
-			for (j = 0; j < oldMappings.size() && (mappings[i].devid != oldMappings[j].devid ||
-												   mappings[i].lightid != oldMappings[j].lightid); j++);
-
-			if (j == oldMappings.size()) { // no mapping found, delete...
-				sprintf_s((char*)name, 255, "Light%d-%d", mappings[i].devid, mappings[i].lightid);
-				RegDeleteKeyA(hKey1, name);
-			}
-		}
-		for (int i = 0; i < groups.size(); i++) {
-			int j;
-			for (j = 0; j < oldGroups.size() && groups[i].gid != oldGroups[j].gid; j++);
-			// Later, remove old mappings here!
-			if (j == oldGroups.size()) { // no group found, delete...
-				sprintf_s((char*)name, 255, "Group%d", groups[i].gid);
-				RegDeleteKeyA(hKey1, name);
-			}
-		}
-
-		mappings = oldMappings;
-		groups = oldGroups;
 
 		RegCloseKey(hKey1);
 	}
@@ -1459,6 +1456,10 @@ namespace AlienFX_SDK
 	int Functions::GetPID()
 	{
 		return pid;
+	}
+
+	int Functions::GetVid() {
+		return vid;
 	}
 
 	int Functions::GetVersion()

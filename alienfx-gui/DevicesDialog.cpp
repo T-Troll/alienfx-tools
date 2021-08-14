@@ -4,6 +4,7 @@
 #include "ConfigHandler.h"
 #include "toolkit.h"
 #include <windowsx.h>
+#include <fstream>
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
@@ -56,6 +57,54 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
 }
 
+void UpdateDeviceList(HWND hDlg) {
+	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICES);
+	//size_t lights = fxhl->afx_dev.GetMappings()->size();
+	// Now check current device list..
+	int pos = (-1);
+	ComboBox_ResetContent(dev_list);
+	for (UINT i = 0; i < fxhl->devs.size(); i++) {
+		//cpid = fxhl->devs[i]->GetPID();
+		AlienFX_SDK::devmap* cDev = fxhl->afx_dev.GetDeviceById(fxhl->devs[i]->GetPID(), fxhl->devs[i]->GetVid());
+		if (cDev) {
+			if (!cDev->vid)
+				cDev->vid = fxhl->devs[i]->GetVid();
+			pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(cDev->name.c_str()));
+			SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cDev->devid);
+		} else {
+			// no name
+			string devName = "Device #" + to_string(fxhl->devs[i]->GetVid()) + "_" + to_string(fxhl->devs[i]->GetPID());
+			pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
+			SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)fxhl->devs[i]->GetPID());
+			// need to add device mapping...
+			AlienFX_SDK::devmap newDev;
+			newDev.vid = fxhl->devs[i]->GetVid();
+			newDev.devid = fxhl->devs[i]->GetPID();
+			newDev.name = devName;
+			fxhl->afx_dev.GetDevices()->push_back(newDev);
+			fxhl->afx_dev.SaveMappings();
+		}
+		if (fxhl->devs[i]->GetPID() == conf->lastActive) {
+			// select this device.
+			SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
+			eDid = fxhl->devs[i]->GetPID(); dItem = pos;
+		}
+	}
+
+	eLid = -1;
+
+	if (fxhl->devs.size() > 0) {
+		if (eDid == -1) { // no selection, let's try to select dev#0
+			dItem = 0;
+			eDid = fxhl->devs[0]->GetPID();
+			SendMessage(dev_list, CB_SETCURSEL, 0, (LPARAM)0);
+			conf->lastActive = eDid;
+		}
+		fxhl->TestLight(eDid, -1);
+		UpdateLightsList(hDlg, eDid, -1);
+	}
+}
+
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND light_view = GetDlgItem(hDlg, IDC_LIST_LIGHTS),
@@ -66,58 +115,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		// First, reset all light devices and re-scan!
-		fxhl->UnblockUpdates(false);
-		size_t numdev = fxhl->FillDevs(conf->stateOn, conf->offPowerButton),
-			numharddev = fxhl->afx_dev.GetDevices()->size(),
-			lights = fxhl->afx_dev.GetMappings()->size();
-		// Now check current device list..
-		int cpid = (-1), pos = (-1);
-		for (UINT i = 0; i < numdev; i++) {
-			cpid = fxhl->devs[i]->GetPID();
-			int j;
-			for (j = 0; j < numharddev; j++) {
-				if (cpid == fxhl->afx_dev.GetDevices()->at(j).devid) {
-					pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(fxhl->afx_dev.GetDevices()->at(j).name.c_str()));
-					SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
-					break;
-				}
-			}
-			if (j == numharddev) {
-				// no name
-				char devName[256];
-				sprintf_s(devName, 255, "Device #%X", cpid);
-				pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName));
-				SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cpid);
-				// need to add device mapping...
-				AlienFX_SDK::devmap newDev;
-				newDev.devid = cpid;
-				newDev.name = devName;
-				fxhl->afx_dev.GetDevices()->push_back(newDev);
-				fxhl->afx_dev.SaveMappings();
-			}
-			if (cpid == conf->lastActive) {
-				// select this device.
-				SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-				eDid = cpid; dItem = pos;
-			}
-		}
-
-		eLid = -1;
-
-		if (numdev > 0) {
-			if (eDid == -1) { // no selection, let's try to select dev#0
-				dItem = 0;
-				eDid = fxhl->devs[0]->GetPID();
-				SendMessage(dev_list, CB_SETCURSEL, 0, (LPARAM)0);
-				conf->lastActive = eDid;
-			}
-			fxhl->TestLight(eDid, -1);
-			UpdateLightsList(hDlg, eDid, -1);
-		}
+		fxhl->UnblockUpdates(false, true);
+		fxhl->FillDevs(conf->stateOn, conf->offPowerButton);
+		UpdateDeviceList(hDlg);
 	} break;
 	case WM_COMMAND: {
 		int dbItem = ComboBox_GetCurSel(dev_list);
-		int did = ComboBox_GetItemData(dev_list, dbItem);
+		int did = (int)ComboBox_GetItemData(dev_list, dbItem);
 		switch (LOWORD(wParam))
 		{
 		case IDC_DEVICES:
@@ -296,6 +300,118 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (dev)
 				UpdateLightsList(hDlg, eDid, eLid);
 		} break;
+		case IDC_BUT_LOADMAP:
+		{
+			// Load device and light mappings
+			OPENFILENAMEA fstruct = {0};
+			char* appName = new char[32767];
+			strcpy_s(appName, MAX_PATH, ".\\Mappings\\Default.csv");
+			fstruct.lStructSize = sizeof(OPENFILENAMEA);
+			fstruct.hwndOwner = hDlg;
+			fstruct.hInstance = hInst;
+			fstruct.lpstrFile = appName;
+			fstruct.nMaxFile = 32767;
+			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
+			fstruct.lpstrCustomFilter = NULL;
+			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
+			if (GetOpenFileNameA(&fstruct)) {
+				// Now load mappings...
+				ifstream file(appName);
+				if (file.good()) {
+					// read and parse...
+					string line;
+					AlienFX_SDK::devmap tDev = {(DWORD) 0, (DWORD) 0, string("")};
+					AlienFX_SDK::mapping tMap;
+					while (!file.eof()) {
+						vector<string> fields;
+						size_t pos = 0, posOld = 0;
+						getline(file, line);
+						if (line != "") {
+							while ((pos = line.find("','", pos)) != string::npos) {
+								posOld = posOld > 0 ? posOld + 2 : 1;
+								fields.push_back(line.substr(posOld, pos - posOld));
+								++pos;
+								posOld = pos;
+							}
+							fields.push_back(line.substr(posOld + 2, line.size() - posOld - 3));
+							switch (atoi(fields[0].c_str())) {
+							case 0: // device line
+								tDev.vid = atoi(fields[1].c_str());
+								tDev.devid = atoi(fields[2].c_str());
+								tDev.name = fields[3];
+								// add to devs.
+								if (!fxhl->afx_dev.GetDeviceById(tDev.devid, tDev.vid))
+									fxhl->afx_dev.GetDevices()->push_back(tDev);
+								else {
+									fxhl->afx_dev.GetDeviceById(tDev.devid, tDev.vid)->vid = tDev.vid;
+									fxhl->afx_dev.GetDeviceById(tDev.devid, tDev.vid)->name = tDev.name;
+								}
+								break;
+							case 1: // lights line
+								if (tDev.devid) {
+									tMap.vid = tDev.vid;
+									tMap.devid = tDev.devid;
+									tMap.lightid = atoi(fields[1].c_str());
+									tMap.flags = atoi(fields[2].c_str());
+									tMap.name = fields[3];
+									// add to maps
+									AlienFX_SDK::mapping* oMap = fxhl->afx_dev.GetMappingById(tMap.devid, tMap.lightid);
+									if (oMap) {
+										oMap->vid = tMap.vid;
+										oMap->name = tMap.name;
+										oMap->flags = tMap.flags;
+									} else {
+										fxhl->afx_dev.GetMappings()->push_back(tMap);
+									}
+								}
+								break;
+								//default: // wrong line, skip
+							}
+						}
+					}
+					// reload lists...
+					UpdateDeviceList(hDlg);
+				}
+				file.close();
+			}
+			delete[] appName;
+		} break;
+		case IDC_BUT_SAVEMAP:
+		{
+			// Save device and ligh mappings
+			OPENFILENAMEA fstruct = {0};
+			char* appName = new char[32767];
+			strcpy_s(appName, MAX_PATH, ".\\Mappings\\Current.csv");
+			fstruct.lStructSize = sizeof(OPENFILENAMEA);
+			fstruct.hwndOwner = hDlg;
+			fstruct.hInstance = hInst;
+			fstruct.lpstrFile = appName;
+			fstruct.nMaxFile = 32767;
+			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
+			fstruct.lpstrCustomFilter = NULL;
+			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
+			if (GetSaveFileNameA(&fstruct)) {
+				// Now save mappings...
+				// appName
+				ofstream file(appName);
+				for (int i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
+					AlienFX_SDK::devmap* cDev = &fxhl->afx_dev.GetDevices()->at(i);
+					/// Only connected devices stored!
+					AlienFX_SDK::Functions* dev = NULL;
+					if (dev = fxhl->LocateDev(cDev->devid)) {
+						file << "'0','" << dev->GetVid() << "','" << dev->GetPID() << "','" << cDev->name << "'" << endl;
+						for (int j = 0; j < fxhl->afx_dev.GetMappings()->size(); j++) {
+							AlienFX_SDK::mapping* cMap = &fxhl->afx_dev.GetMappings()->at(j);
+							if (cMap->devid == dev->GetPID()) {
+								file << "'1','" << cMap->lightid << "','" << cMap->flags << "','" << cMap->name << "'" << endl;
+							}
+						}
+					}
+				}
+				file.close();
+			}
+			delete[] appName;
+		} break;
 		default: return false;
 		}
 	} break;
@@ -365,14 +481,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_CLOSE: case WM_DESTROY:
 	{
-		if (!fxhl->unblockUpdates) {
-			fxhl->UnblockUpdates(true);
+		//if (!fxhl->unblockUpdates) {
+			fxhl->UnblockUpdates(true, true);
 			fxhl->RefreshState();
-		}
+		//}
 	} break;
 	case WM_SIZE:
-		if (fxhl->unblockUpdates)
-			fxhl->UnblockUpdates(false);
+		//if (fxhl->unblockUpdates)
+			fxhl->UnblockUpdates(false, true);
 		break;
 	default: return false;
 	}

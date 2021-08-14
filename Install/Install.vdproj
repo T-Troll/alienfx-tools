@@ -172,6 +172,17 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_D9021EF3C470457791B74019E0124ED4"
+                    {
+                    "Name" = "8:Mappings"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_08ADCCADE7A44814A22E98081706A420"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
             "{1525181F-901A-416C-8A58-119130FE478E}:_9D65AA047B29441ABA11E3E8A21423E3"
@@ -224,7 +235,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
         "ProductCode" = "8:{17A4D38C-1E3B-4945-90FC-C1F05FF74E1B}"
-        "PackageCode" = "8:{0B18BC9D-5DE5-42C2-8B6E-6C58D59159CC}"
+        "PackageCode" = "8:{36082348-90A5-494F-880E-07C90FDEC5F9}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -591,7 +602,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1AA38565231A40689F298FEBA8022EB6"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -620,7 +631,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_396F696E40FE45559E40908163600D54"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-ambient.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-ambient.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -649,7 +660,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_6607431E0DEA45F19A1C6F6A3DAFFAA0"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-probe.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-probe.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -678,7 +689,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8533FAE6D43944078DAC051060E0DCFF"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-gui.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -707,7 +718,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_CF2105F3B70749ABA35E620EB7D9B1FC"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-haptics.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-haptics.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -732,6 +743,34 @@
                 "ExcludeFilters"
                 {
                 "ExcludeFilter" = "8:*.dll"
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_DCB21C816D2A47F487BF73564C737934"
+            {
+            "SourcePath" = "8:"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_D9021EF3C470457791B74019E0124ED4"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:ContentFiles"
+            "OutputProjectGuid" = "8:{E47811D5-E492-4B51-AD9A-A9B00939E3EC}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
                 }
             }
         }

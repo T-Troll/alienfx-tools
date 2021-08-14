@@ -37,15 +37,18 @@ private:
 	long lCPU = 0, lRAM = 0, lHDD = 0, lGPU = 0, lNET = 0, lTemp = 0, lBatt = 100;
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
+	bool updateLock = false;
 public:
 	using FXH::FXH;
-	void Start();
-	void Stop();
-	bool unblockUpdates = true;
+
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
 	deque<LightQueryElement> lightQuery;
 	mutex modifyQuery;
+	bool unblockUpdates = true;
+
+	void Start();
+	void Stop();
 	int Refresh(bool force = false);
 	bool RefreshOne(lightset* map, bool force = false, bool update = false);
 	bool SetMode(int mode);
@@ -59,6 +62,6 @@ public:
 	void Flush();
 	void ChangeState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
-	void UnblockUpdates(bool newState);
+	void UnblockUpdates(bool newState, bool lock = false);
 	ConfigHandler* GetConfig() { return config; };
 };
