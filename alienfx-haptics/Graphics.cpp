@@ -263,12 +263,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_INITDIALOG:
 	{
 		double coeff = 22030 / log(21);
-		char frqname[55]; int prevfreq = 20;
+		int prevfreq = 20;
 		for (int i = 1; i < 21; i++) {
 			int frq = 22050 - (int) round((log(21-i) * coeff));
-			sprintf_s(frqname, 55, "%d-%dHz", prevfreq, frq);
+			string frqname = to_string(prevfreq) + "-" + to_string(frq) + "Hz";
+			//sprintf_s(frqname, 55, "%d-%dHz", prevfreq, frq);
 			prevfreq = frq;
-			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname);
+			SendMessage(freq_list, LB_ADDSTRING, 0, (LPARAM)frqname.c_str());
 		}
 
 		UpdateLightList<FXHelper>(light_list, afx, 3);

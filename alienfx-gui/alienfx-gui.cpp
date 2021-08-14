@@ -4,6 +4,7 @@
 #include <Shlobj.h>
 #include <ColorDlg.h>
 #include <algorithm>
+#include "resource.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 #include "AlienFX_SDK.h"
@@ -16,6 +17,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"comctl32.lib")
 
 // Global Variables:
+//HINSTANCE hInst;
 
 HWND InitInstance(HINSTANCE, int);
 
@@ -329,6 +331,8 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 		(DLGPROC)DialogConfigStatic, 0);
 	if (!dlg) return NULL;
 
+	hInst = hInstance;
+
 	SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
 	SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
 
@@ -344,9 +348,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_INITDIALOG: {
 
-		HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
-
-		Static_SetText(version_text, ("Version: " + GetAppVersion()).c_str());
+		Static_SetText(GetDlgItem(hDlg, IDC_STATIC_VERSION), ("Version: " + GetAppVersion()).c_str());
 
 		return (INT_PTR)TRUE;
 	} break;

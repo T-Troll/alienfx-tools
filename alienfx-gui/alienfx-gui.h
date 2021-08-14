@@ -1,6 +1,5 @@
 #pragma once
 
-#include "resource.h"
 #include "toolkit.h"
 
 // defines and structures...

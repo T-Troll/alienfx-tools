@@ -1,5 +1,8 @@
 #include "ConfigHandler.h"
 #include <algorithm>
+#include <string>
+
+using namespace std;
 
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
@@ -93,7 +96,7 @@ int ConfigHandler::Load() {
 	return 0;
 }
 int ConfigHandler::Save() {
-    char name[256];
+    //char name[256];
     unsigned out[12*4];
 
     RegSetValueEx(
@@ -130,7 +133,7 @@ int ConfigHandler::Save() {
     );
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
-        sprintf_s((char*)name, 255, "%d-%d", mappings[i].devid, mappings[i].lightid);
+        string name = to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
         //preparing binary....
         UINT j, size = (UINT) mappings[i].map.size();
         if (size > 0) {
@@ -140,7 +143,7 @@ int ConfigHandler::Save() {
             size *= sizeof(unsigned);
             RegSetValueExA(
                 hKey2,
-                name,
+                name.c_str(),
                 0,
                 REG_BINARY,
                 (BYTE*)out,

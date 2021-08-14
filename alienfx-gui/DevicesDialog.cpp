@@ -172,7 +172,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 		} break;
 		case IDC_BUTTON_ADDL: {
-			char buffer[MAX_PATH];
 			int cid = GetDlgItemInt(hDlg, IDC_LIGHTID, NULL, false);
 			// let's check if we have the same ID, need to use max+1 in this case
 			unsigned maxID = 0;
@@ -189,8 +188,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			AlienFX_SDK::mapping dev;
 			dev.devid = eDid;
 			dev.lightid = cid;
-			sprintf_s(buffer, MAX_PATH, "Light #%d", cid);
-			dev.name = buffer;
+			dev.name = "Light #" + to_string(cid); 
 			fxhl->afx_dev.GetMappings()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			eLid = cid;
@@ -304,12 +302,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// Load device and light mappings
 			OPENFILENAMEA fstruct = {0};
-			char* appName = new char[32767];
-			strcpy_s(appName, MAX_PATH, ".\\Mappings\\Default.csv");
+			string appName = ".\\Mappings\\Default.csv";
+			appName.reserve(4096);
 			fstruct.lStructSize = sizeof(OPENFILENAMEA);
 			fstruct.hwndOwner = hDlg;
 			fstruct.hInstance = hInst;
-			fstruct.lpstrFile = appName;
+			fstruct.lpstrFile = (LPSTR) appName.c_str();
 			fstruct.nMaxFile = 32767;
 			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
 			fstruct.lpstrCustomFilter = NULL;
@@ -374,18 +372,17 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 				file.close();
 			}
-			delete[] appName;
 		} break;
 		case IDC_BUT_SAVEMAP:
 		{
 			// Save device and ligh mappings
 			OPENFILENAMEA fstruct = {0};
-			char* appName = new char[32767];
-			strcpy_s(appName, MAX_PATH, ".\\Mappings\\Current.csv");
+			string appName = ".\\Mappings\\Current.csv";
+			appName.reserve(4096);
 			fstruct.lStructSize = sizeof(OPENFILENAMEA);
 			fstruct.hwndOwner = hDlg;
 			fstruct.hInstance = hInst;
-			fstruct.lpstrFile = appName;
+			fstruct.lpstrFile = (LPSTR) appName.c_str();
 			fstruct.nMaxFile = 32767;
 			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
 			fstruct.lpstrCustomFilter = NULL;
@@ -394,23 +391,24 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// Now save mappings...
 				// appName
 				ofstream file(appName);
-				for (int i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
-					AlienFX_SDK::devmap* cDev = &fxhl->afx_dev.GetDevices()->at(i);
-					/// Only connected devices stored!
-					AlienFX_SDK::Functions* dev = NULL;
-					if (dev = fxhl->LocateDev(cDev->devid)) {
-						file << "'0','" << dev->GetVid() << "','" << dev->GetPID() << "','" << cDev->name << "'" << endl;
-						for (int j = 0; j < fxhl->afx_dev.GetMappings()->size(); j++) {
-							AlienFX_SDK::mapping* cMap = &fxhl->afx_dev.GetMappings()->at(j);
-							if (cMap->devid == dev->GetPID()) {
-								file << "'1','" << cMap->lightid << "','" << cMap->flags << "','" << cMap->name << "'" << endl;
+				if (file.good()) {
+					for (int i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
+						AlienFX_SDK::devmap* cDev = &fxhl->afx_dev.GetDevices()->at(i);
+						/// Only connected devices stored!
+						AlienFX_SDK::Functions* dev = NULL;
+						if (dev = fxhl->LocateDev(cDev->devid)) {
+							file << "'0','" << dev->GetVid() << "','" << dev->GetPID() << "','" << cDev->name << "'" << endl;
+							for (int j = 0; j < fxhl->afx_dev.GetMappings()->size(); j++) {
+								AlienFX_SDK::mapping* cMap = &fxhl->afx_dev.GetMappings()->at(j);
+								if (cMap->devid == dev->GetPID()) {
+									file << "'1','" << cMap->lightid << "','" << cMap->flags << "','" << cMap->name << "'" << endl;
+								}
 							}
 						}
 					}
 				}
 				file.close();
 			}
-			delete[] appName;
 		} break;
 		default: return false;
 		}

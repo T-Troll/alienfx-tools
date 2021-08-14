@@ -1350,15 +1350,15 @@ namespace AlienFX_SDK
 			NULL,
 			&hKey1,
 			&dwDisposition);
-		char name[1024];
+		//char name[1024];
 
 		for (int i = 0; i < numdevs; i++) {
 			//preparing name
-			sprintf_s(name, 255, "Dev#%d_%d", devices[i].vid, devices[i].devid);
+			string name = "Dev#" + to_string(devices[i].vid) + "_" + to_string(devices[i].devid);
 
 			RegSetValueExA(
 				hKey1,
-				name,
+				name.c_str(),
 				0,
 				REG_SZ,
 				(BYTE*)devices[i].name.c_str(),
@@ -1368,9 +1368,9 @@ namespace AlienFX_SDK
 
 		for (int i = 0; i < numlights; i++) {
 			// new format
-			sprintf_s((char*)name, 255, "Light%d-%d", mappings[i].devid, mappings[i].lightid);
+			string name = "Light" + to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
 
-			RegCreateKeyA(hKey1, name, &hKeyS);
+			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
 
 			RegSetValueExA(
 				hKeyS,
@@ -1393,11 +1393,10 @@ namespace AlienFX_SDK
 
 		}
 
-		DWORD grLights[1024];
 		for (int i = 0; i < numGroups; i++) {
-			sprintf_s((char*)name, 255, "Group%d", groups[i].gid);
+			string name = "Group" + to_string(groups[i].gid);
 
-			RegCreateKeyA(hKey1, name, &hKeyS);
+			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
 
 			RegSetValueExA(
 				hKeyS,
@@ -1407,6 +1406,8 @@ namespace AlienFX_SDK
 				(BYTE*)groups[i].name.c_str(),
 				(DWORD)groups[i].name.size()
 			);
+
+			DWORD* grLights = new DWORD[groups[i].lights.size()*2];
 
 			for (int j = 0; j < groups[i].lights.size(); j++) {
 				grLights[j * 2] = groups[i].lights[j]->devid;
@@ -1420,6 +1421,8 @@ namespace AlienFX_SDK
 				(BYTE*) grLights,
 				2 * (DWORD)groups[i].lights.size() * sizeof(DWORD)
 			);
+
+			delete[] grLights;
 			RegCloseKey(hKeyS);
 		}
 

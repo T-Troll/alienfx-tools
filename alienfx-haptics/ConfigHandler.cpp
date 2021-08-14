@@ -1,5 +1,8 @@
 #include "ConfigHandler.h"
 #include <algorithm>
+#include <string>
+
+using namespace std;
 
 ConfigHandler::ConfigHandler() {
     DWORD  dwDisposition;
@@ -119,8 +122,8 @@ int ConfigHandler::Load() {
 	return 0;
 }
 int ConfigHandler::Save() {
-    char name[256];
-    unsigned out[50];
+    //char name[256];
+    //unsigned out[50];
     DWORD dwDisposition;
 
     RegSetValueEx(
@@ -175,21 +178,23 @@ int ConfigHandler::Save() {
         &dwDisposition);
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
-        sprintf_s(name, 255, "Map%d-%d", mappings[i].devid, mappings[i].lightid);
+        string name = "Map" + to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
+        //sprintf_s(name, 255, "Map%d-%d", mappings[i].devid, mappings[i].lightid);
         //preparing binary....
+        unsigned* out = new unsigned[mappings[i].map.size() + 5];
         out[0] = mappings[i].colorfrom.ci;
         out[1] = mappings[i].colorto.ci;
         out[2] = mappings[i].lowcut;
         out[3] = mappings[i].hicut;
         out[4] = mappings[i].flags;
-        int j, size;
-        for (j = 0; j < mappings[i].map.size(); j++) {
+
+        for (int j = 0; j < mappings[i].map.size(); j++) {
             out[j + 5] = mappings[i].map[j];
         }
-        size = (j + 5) * sizeof(unsigned);
+        int size = (mappings[i].map.size() + 5) * sizeof(unsigned);
         RegSetValueExA(
             hKey2,
-            name,
+            name.c_str(),
             0,
             REG_BINARY,
             (BYTE*)out,

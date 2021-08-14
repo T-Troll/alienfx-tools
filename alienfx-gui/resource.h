@@ -11,7 +11,6 @@
 #define IDS_HDD                         106
 #define IDS_NET                         107
 #define IDS_GPU                         108
-#define IDC_ALIENFXGUI                  109
 #define IDS_TEMP                        110
 #define IDS_BATT                        111
 #define IDS_A_HDD                       112
@@ -42,6 +41,7 @@
 #define IDS_TYPE_MORPH                  144
 #define IDD_DIALOG_PROFILES             144
 #define IDD_DIALOG_GROUPS               145
+#define IDC_ALIENFXGUI                  146
 #define IDI_ALIENFX_ON                  147
 #define IDI_ALIENFX_OFF                 148
 #define IDI_ALIENFX_DIM                 149
@@ -129,6 +129,7 @@
 #define IDC_SLIDER_TEMPO                1089
 #define IDC_BUT_LOADMAP                 1090
 #define IDC_BUT_SAVEMAP                 1091
+#define IDC_ABOUT_ICON                  1091
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -152,7 +153,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        150
 #define _APS_NEXT_COMMAND_VALUE         32797
-#define _APS_NEXT_CONTROL_VALUE         1091
+#define _APS_NEXT_CONTROL_VALUE         1092
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

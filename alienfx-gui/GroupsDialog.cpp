@@ -128,7 +128,6 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			}
 			break;
 		case IDC_BUTTON_ADDG: {
-			char buffer[MAX_PATH];
 			unsigned maxID = 0x10000;
 			size_t lights = fxhl->afx_dev.GetGroups()->size();
 			for (int i = 0; i < lights; i++) {
@@ -136,14 +135,13 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				if (lgh->gid >= maxID)
 					maxID = lgh->gid + 1;
 			}
-			AlienFX_SDK::group dev;
-			dev.gid = maxID;
-			sprintf_s(buffer, MAX_PATH, "Group #%d", maxID & 0xffff);
-			dev.name = buffer;
+			AlienFX_SDK::group dev = {maxID, "Group #" + to_string(maxID & 0xffff)};
+			//dev.gid = maxID;
+			//dev.name = "Group #" + to_string(maxID & 0xffff);
 			fxhl->afx_dev.GetGroups()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			gLid = maxID;
-			int pos = (int) SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM)(buffer));
+			int pos = (int) SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM)dev.name.c_str());
 			SendMessage(groups_list, CB_SETITEMDATA, pos, (LPARAM)gLid);
 			SendMessage(groups_list, CB_SETCURSEL, pos, (LPARAM) 0);
 			gItem = pos;

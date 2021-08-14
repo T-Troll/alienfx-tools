@@ -70,12 +70,12 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		switch (LOWORD(wParam))
 		{
 		case IDC_ADDPROFILE: {
-			char buf[128]; unsigned vacID = 0;
+			unsigned vacID = 0;
 			for (int i = 0; i < conf->profiles.size(); i++)
 				if (vacID == conf->profiles[i].id) {
 					vacID++; i = -1;
 				}
-			sprintf_s(buf, 128, "Profile %d", vacID);
+			string buf = "Profile " + to_string(vacID);
 			profile prof = {vacID, 0, "", buf};
 			conf->profiles.push_back(prof);
 			conf->profiles.back().lightsets = *conf->active_set;
@@ -130,13 +130,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof != NULL) {
 				// fileopen dialogue...
 				OPENFILENAMEA fstruct;
-				char* appName = new char[32767];
-				strcpy_s(appName, MAX_PATH, prof->triggerapp.c_str());
+				string appName = prof->triggerapp;
+				appName.reserve(4096);
 				ZeroMemory(&fstruct, sizeof(OPENFILENAMEA));
 				fstruct.lStructSize = sizeof(OPENFILENAMEA);
 				fstruct.hwndOwner = hDlg;
 				fstruct.hInstance = hInst;
-				fstruct.lpstrFile = appName;
+				fstruct.lpstrFile = (LPSTR) appName.c_str();
 				fstruct.nMaxFile = 32767;
 				fstruct.lpstrFilter = "Applications (*.exe)\0*.exe\0\0";
 				fstruct.lpstrCustomFilter = NULL;
@@ -146,7 +146,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					SendMessage(app_list, LB_RESETCONTENT, 0, 0);
 					SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(prof->triggerapp.c_str()));
 				}
-				delete[] appName;
 			}
 		} break;
 		case IDC_CHECK_DEFPROFILE:

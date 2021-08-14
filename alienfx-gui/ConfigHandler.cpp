@@ -458,7 +458,7 @@ int ConfigHandler::Load() {
 	return 0;
 }
 int ConfigHandler::Save() {
-	char name[256];
+	//char name[256];
 	BYTE* out;
 	DWORD dwDisposition;
 
@@ -666,47 +666,41 @@ int ConfigHandler::Save() {
 	else
 		OutputDebugString("Attempt to save empty profiles!\n");
 #endif
-	// clear old events - check for zero events (debug!)
-//	if (active_set.size() > 0) {
-		RegDeleteTreeA(hKey1, "Events");
-		RegCreateKeyEx(HKEY_CURRENT_USER,
-			TEXT("SOFTWARE\\Alienfxgui\\Events"),
-			0,
-			NULL,
-			REG_OPTION_NON_VOLATILE,
-			KEY_ALL_ACCESS,//KEY_WRITE,
-			NULL,
-			&hKey3,
-			&dwDisposition);
-//	}
-//#ifdef _DEBUG
-//	else
-//		OutputDebugString("Attempt to save empy mappings!\n");
-//#endif
+
+	RegDeleteTreeA(hKey1, "Events");
+	RegCreateKeyEx(HKEY_CURRENT_USER,
+		TEXT("SOFTWARE\\Alienfxgui\\Events"),
+		0,
+		NULL,
+		REG_OPTION_NON_VOLATILE,
+		KEY_ALL_ACCESS,//KEY_WRITE,
+		NULL,
+		&hKey3,
+		&dwDisposition);
 
 	for (int j = 0; j < profiles.size(); j++) {
-		sprintf_s((char*)name, 255, "Profile-%d", profiles[j].id);
+		string name = "Profile-" + to_string(profiles[j].id);
 		RegSetValueExA(
 			hKey4,
-			name,
+			name.c_str(),
 			0,
 			REG_SZ,
 			(BYTE*)profiles[j].name.c_str(),
 			(DWORD)profiles[j].name.length()
 		);
-		sprintf_s((char*)name, 255, "Profile-flags-%d", profiles[j].id);
+		name = "Profile-flags-" + to_string(profiles[j].id);
 		RegSetValueExA(
 			hKey4,
-			name,
+			name.c_str(),
 			0,
 			REG_DWORD,
 			(BYTE*)&profiles[j].flags,
 			sizeof(DWORD)
 		);
-		sprintf_s((char*)name, 255, "Profile-app-%d-0", profiles[j].id);
+		name = "Profile-app-" + to_string(profiles[j].id) + "-0";
 		RegSetValueExA(
 			hKey4,
-			name,
+			name.c_str(),
 			0,
 			REG_SZ,
 			(BYTE*)profiles[j].triggerapp.c_str(),
@@ -715,7 +709,7 @@ int ConfigHandler::Save() {
 		for (int i = 0; i < profiles[j].lightsets.size(); i++) {
 			//preparing name
 			lightset cur = profiles[j].lightsets[i];
-			sprintf_s((char*)name, 255, "Set-%d-%d-%d", cur.devid, cur.lightid, profiles[j].id);
+			name = "Set-" + to_string(cur.devid) + "-" + to_string(cur.lightid) + "-" + to_string(profiles[j].id);
 			//preparing binary....
 			size_t size = 6 * 4;// (UINT)mappings[i].map.size();
 			for (int j = 0; j < 4; j++)
@@ -737,7 +731,7 @@ int ConfigHandler::Save() {
 			}
 			RegSetValueExA(
 				hKey3,
-				name,
+				name.c_str(),
 				0,
 				REG_BINARY,
 				(BYTE*)out,
