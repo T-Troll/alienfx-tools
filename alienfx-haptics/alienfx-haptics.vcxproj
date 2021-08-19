@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E5234A07-D191-420E-AF6B-344C4557FAAE}</ProjectGuid>
-    <RootNamespace>Spectrum</RootNamespace>
+    <RootNamespace>alienfx-haptics</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>alienfx-haptics</ProjectName>
   </PropertyGroup>
@@ -140,7 +140,6 @@
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
       <SupportJustMyCode>true</SupportJustMyCode>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <MinimalRebuild>false</MinimalRebuild>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
@@ -186,7 +185,6 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>

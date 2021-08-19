@@ -370,6 +370,5 @@ ASALocalRun/
 
 
 # End of https://www.gitignore.io/api/windows,visualstudio,visualstudiocode
-/AlienFX-SDK/AlienFX Sample App
 /alienfx-gui/alien_org.ico
-/.vs.old
+
