@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ShowAllFiles>false</ShowAllFiles>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <RemoteDebuggerCommand>c:/work/afx-tools/$(ProjectName)</RemoteDebuggerCommand>
+    <RemoteDebuggerWorkingDirectory>c:/work/afx-tools/</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>\\TTROLL-AW2</RemoteDebuggerServerName>
+    <RemoteDebuggerConnection>RemoteWithoutAuthentication</RemoteDebuggerConnection>
+    <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
+    <RemoteDebuggerAttach>false</RemoteDebuggerAttach>
+    <DeploymentDirectory>\\TTROLL-AW2\afx-tools</DeploymentDirectory>
+    <RemoteDebuggerDeployCppRuntime>false</RemoteDebuggerDeployCppRuntime>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <RemoteDebuggerCommand>c:/work/afx-tools/$(TargetFileName)</RemoteDebuggerCommand>
+    <RemoteDebuggerWorkingDirectory>c:/work/afx-tools/</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>TTROLL-AW2</RemoteDebuggerServerName>
+    <RemoteDebuggerConnection>RemoteWithoutAuthentication</RemoteDebuggerConnection>
+    <DeploymentDirectory>\\TTROLL-AW2\afx-tools</DeploymentDirectory>
+    <RemoteDebuggerDeployDebugCppRuntime>false</RemoteDebuggerDeployDebugCppRuntime>
+  </PropertyGroup>
+</Project>

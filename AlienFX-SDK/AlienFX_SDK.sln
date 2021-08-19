@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFX_SDK", "AlienFX_SDK\AlienFX_SDK.vcxproj", "{90879993-7449-4A28-972E-7228D4C4D0A8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFX Sample App", "AlienFX Sample App\AlienFX Sample App.vcxproj", "{6EE228D4-8280-4FB2-897C-D95F79F32221}"
+	ProjectSection(ProjectDependencies) = postProject
+		{90879993-7449-4A28-972E-7228D4C4D0A8} = {90879993-7449-4A28-972E-7228D4C4D0A8}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFXDeviceTester", "AlienFXDeviceTester\AlienFXDeviceTester.vcxproj", "{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Debug|x64.ActiveCfg = Debug|x64
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Debug|x64.Build.0 = Debug|x64
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Debug|x86.ActiveCfg = Debug|Win32
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Debug|x86.Build.0 = Debug|Win32
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Release|x64.ActiveCfg = Release|x64
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Release|x64.Build.0 = Release|x64
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Release|x86.ActiveCfg = Release|Win32
+		{90879993-7449-4A28-972E-7228D4C4D0A8}.Release|x86.Build.0 = Release|Win32
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Debug|x64.ActiveCfg = Debug|x64
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Debug|x64.Build.0 = Debug|x64
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Debug|x64.Deploy.0 = Debug|x64
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Debug|x86.ActiveCfg = Debug|Win32
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Debug|x86.Build.0 = Debug|Win32
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Release|x64.ActiveCfg = Debug|x64
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Release|x64.Build.0 = Debug|x64
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Release|x64.Deploy.0 = Debug|x64
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Release|x86.ActiveCfg = Release|Win32
+		{6EE228D4-8280-4FB2-897C-D95F79F32221}.Release|x86.Build.0 = Release|Win32
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Debug|x64.ActiveCfg = Debug|x64
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Debug|x64.Build.0 = Debug|x64
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Debug|x86.ActiveCfg = Debug|Win32
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Debug|x86.Build.0 = Debug|Win32
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Release|x64.ActiveCfg = Release|x64
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Release|x64.Build.0 = Release|x64
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Release|x86.ActiveCfg = Release|Win32
+		{685645DC-A6FB-47C6-A1BB-DEED0D1B465C}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B023555A-9E2F-4CB1-9393-E0ACB6A280A6}
+	EndGlobalSection
+EndGlobal
