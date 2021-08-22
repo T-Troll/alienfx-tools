@@ -1,14 +1,15 @@
 # Alienfx tools
 Main goal of this project is to create a bunch of light weighted tools for Alienware systems lights and fans control:
 - [AlienFX GUI Editor](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights, fans, temperatures, power settings and a lot more.
-- AlienFX Universal haptics - Visualize any sound around you (microphone, audio player, game, movie).
-- AlienFX Ambient lights - Visualize screen picture as ambient light (from desktop, game, video player).
-- alienfx-cli - Make changes and check status of your AlienFX lights from the CLI (command line interface).
-- alienfx-probe - CLI application to probe devices and lights and name it for using into other applications.
+- [AlienFX Universal haptics](/Doc/alienfx-haptics.md) - Visualize any sound around you (microphone, audio player, game, movie).
+- [AlienFX Ambient lights](/Doc/alienfx-ambient.md) - Visualize screen picture as ambient light (from desktop, game, video player).
+- [alienfx-cli](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command line interface).
+- [alienfx-probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name it for using into other applications.
 
 Some additional tools added from my other [`Alienfan-tools`](https://github.com/T-Troll/alienfan-tools) project:
 - Alienfan GUI control - simple fan and power control utility. Set you fan parameters according to any system temperature sensor, switch system power modes...
 - Alienfan CLI - Command line interface tool for control fans and power from command line.
+Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools/readme.md)
 
 ## Requirements
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
