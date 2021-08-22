@@ -314,6 +314,13 @@ int ConfigHandler::Load() {
 				NULL,
 				&effColor2.ci,
 				(LPDWORD)&size);
+	RegGetValue(hKey1,
+				NULL,
+				TEXT("FanControl"),
+				RRF_RT_DWORD | RRF_ZEROONFAILURE,
+				NULL,
+				&fanControl,
+				(LPDWORD)&size);
 
 	unsigned vindex = 0;
 	BYTE inarray[380];
@@ -645,6 +652,14 @@ int ConfigHandler::Save() {
 		0,
 		REG_DWORD,
 		(BYTE*)&effColor2.ci,
+		sizeof(DWORD)
+	);
+	RegSetValueEx(
+		hKey1,
+		TEXT("FanControl"),
+		0,
+		REG_DWORD,
+		(BYTE*)&fanControl,
 		sizeof(DWORD)
 	);
 	// set current profile mappings to current set!

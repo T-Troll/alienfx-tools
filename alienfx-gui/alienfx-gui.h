@@ -3,7 +3,7 @@
 #include "toolkit.h"
 
 // defines and structures...
-#define C_PAGES 6
+#define C_PAGES 7
 
 typedef struct tag_dlghdr {
 	HWND hwndTab;       // tab control

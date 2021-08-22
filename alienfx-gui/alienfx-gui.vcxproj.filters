@@ -54,6 +54,15 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\alienfan-tools\alienfan-gui\MonHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FanDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfx-gui.cpp">
@@ -86,6 +95,15 @@
     <ClCompile Include="SettingsDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\alienfan-tools\alienfan-gui\MonHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FanDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="alienfx-gui.rc">
@@ -113,5 +131,6 @@
     <None Include="Mappings\Alienware m15R4 RGB.csv">
       <Filter>Mappings</Filter>
     </None>
+    <None Include="..\x64\Release\HwAcc\HwAcc.sys" />
   </ItemGroup>
 </Project>

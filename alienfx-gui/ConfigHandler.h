@@ -88,6 +88,8 @@ public:
 	COLORREF customColors[16] = {0};
 	DWORD globalEffect = 0;
 	DWORD globalDelay = 127;
+	DWORD fanControl = 0;
+
 	std::vector<lightset>* active_set;
 	std::vector<profile> profiles;
 

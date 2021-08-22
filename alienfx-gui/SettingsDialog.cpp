@@ -4,17 +4,24 @@
 #include "FXHelper.h"
 #include "ConfigHandler.h"
 #include "EventHandler.h"
+#include "alienfan-SDK.h"
+#include "../alienfan-tools/alienfan-gui/MonHelper.h"
 #include "toolkit.h"
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 void ReloadProfileList(HWND hDlg);
 DWORD EvaluteToAdmin();
 bool DoStopService(bool kind);
+string UnpackDriver();
 
 extern FXHelper* fxhl;
 extern ConfigHandler* conf;
 extern EventHandler* eve;
 extern HWND sTip, lTip;
+extern AlienFan_SDK::Control* acpi;
+extern MonHelper* mon;
+extern ConfigHelper* fan_conf;
+extern string drvName;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -40,6 +47,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		if (conf->enableProf) CheckDlgButton(hDlg, IDC_BUT_PROFILESWITCH, BST_CHECKED);
 		if (conf->awcc_disable) CheckDlgButton(hDlg, IDC_AWCC, BST_CHECKED);
 		if (conf->esif_temp) CheckDlgButton(hDlg, IDC_ESIFTEMP, BST_CHECKED);
+		if (conf->fanControl) CheckDlgButton(hDlg, IDC_FANCONTROL, BST_CHECKED);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -182,6 +190,47 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->esif_temp = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			if (conf->esif_temp)
 				EvaluteToAdmin(); // Check admin rights!
+			break;
+		case IDC_FANCONTROL:
+			conf->fanControl = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			if (conf->fanControl && MessageBox(NULL, "Fan control require system setup and supported hardware.\nDo you want to enable it?", "Warning!",
+											   MB_YESNO | MB_ICONWARNING) == IDYES) {
+				EvaluteToAdmin();
+				drvName = UnpackDriver();
+				acpi = new AlienFan_SDK::Control();
+				if (!acpi->Probe()) {
+					// Error handling here, change system settings, and exit
+					if (acpi->wrongEnvironment)
+						if (MessageBox(NULL, "Wrong system setup detected.\nYou need to disable \"Secure boot\" in BIOS and change system setting.\nDo you want this applicathon change settings for you enable? ", "Eeror!",
+									   MB_YESNO | MB_ICONWARNING) == IDYES) {
+							string shellcom = "/set testsigning on";
+							ShellExecute(NULL, "runas", "bcdedit", shellcom.c_str(), NULL, SW_HIDE);
+							MessageBox(NULL, "System settings modified. Please restart you system end enable fan control again.", "Information",
+									   MB_OK | MB_ICONHAND);
+						}
+					else
+						MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
+									MB_OK | MB_ICONHAND);
+					delete acpi;
+					acpi = NULL;
+					conf->fanControl = false;
+					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
+				} else {
+					mon = new MonHelper(NULL, NULL, fan_conf, acpi);
+					mon->Start();
+				}
+			} else {
+				// Stop all services
+				mon->Stop();
+				delete mon;
+				delete acpi;
+				acpi = NULL;
+				if (MessageBox(NULL, "Do you want to restore system settings?", "Warning!",
+							   MB_YESNO | MB_ICONWARNING) == IDYES) {
+					string shellcom = "/set testsigning off";
+					ShellExecute(NULL, "runas", "bcdedit", shellcom.c_str(), NULL, SW_HIDE);
+				}
+			}
 			break;
 		default: return false;
 		}

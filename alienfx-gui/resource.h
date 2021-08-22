@@ -28,27 +28,35 @@
 #define IDS_TAB_DEVICES                 124
 #define IDS_TAB_GROUPS                  125
 #define IDS_TAB_PROFILES                126
-#define IDS_TAB_SETTINGS                127
+#define IDS_TAB_FANS                    127
+#define IDS_TAB_SETTINGS                128
 #define IDD_MAINWINDOW                  129
 #define IDI_ALIENFXGUI                  132
 #define IDD_DIALOG_COLORS               133
 #define IDD_DIALOG_EVENTS               134
-#define IDD_DIALOG_SETTINGS             135
-#define IDR_MENU_TRAY                   136
+#define IDD_DIALOG_DEVICES              135
+#define IDD_DIALOG_GROUPS               136
+#define IDD_DIALOG_PROFILES             137
+#define IDD_DIALOG_FAN                  138
+#define IDD_DIALOG_SETTINGS             139
+#define IDR_MENU_TRAY                   140
 #define IDS_TYPE_COLOR                  142
 #define IDS_TYPE_PULSE                  143
-#define IDD_DIALOG_DEVICES              143
 #define IDS_TYPE_MORPH                  144
-#define IDD_DIALOG_PROFILES             144
-#define IDD_DIALOG_GROUPS               145
 #define IDC_ALIENFXGUI                  146
 #define IDI_ALIENFX_ON                  147
 #define IDI_ALIENFX_OFF                 148
 #define IDI_ALIENFX_DIM                 149
+#define IDR_DRIVER1                     151
+#define IDR_DRIVER                      151
 #define IDC_TAB_MAIN                    1000
+#define IDC_COMBO_POWER                 1000
 #define IDC_LIGHTS                      1001
+#define IDC_TEMP_LIST                   1002
+#define IDC_FAN_LIST                    1003
 #define IDC_BUTTON_C1                   1005
 #define IDC_SPEED1                      1007
+#define IDC_BUT_RESET                   1007
 #define IDC_LENGTH1                     1009
 #define IDC_CHECK_NOEVENT               1009
 #define IDC_CHECK_POWER                 1010
@@ -94,6 +102,7 @@
 #define IDC_TYPE1                       1040
 #define IDC_BUTTON_EFFCLR1              1040
 #define IDC_BUTTON_EFFCLR2              1041
+#define IDC_FANCONTROL                  1042
 #define IDC_SYSLINK_HOMEPAGE            1043
 #define IDC_ISPOWERBUTTON               1044
 #define IDC_MINPVALUE                   1045
@@ -129,7 +138,6 @@
 #define IDC_SLIDER_TEMPO                1089
 #define IDC_BUT_LOADMAP                 1090
 #define IDC_BUT_SAVEMAP                 1091
-#define IDC_ABOUT_ICON                  1091
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -151,7 +159,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        150
+#define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32797
 #define _APS_NEXT_CONTROL_VALUE         1092
 #define _APS_NEXT_SYMED_VALUE           112

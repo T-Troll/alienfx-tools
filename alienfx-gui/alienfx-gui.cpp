@@ -9,6 +9,9 @@
 #include "FXHelper.h"
 #include "AlienFX_SDK.h"
 #include "EventHandler.h"
+#include "alienfan-SDK.h"
+#include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
+#include "../alienfan-tools/alienfan-gui/MonHelper.h"
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -28,10 +31,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 BOOL CALLBACK TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
+
+// Fan control data
+AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
+ConfigHelper* fan_conf = NULL;                      // Config...
+MonHelper* mon = NULL;                          // Monitoring & changer object
+HWND fanWindow = NULL;
+string drvName = "";
 
 HWND mDlg = 0;
 
@@ -226,6 +237,39 @@ bool DoStopService(bool kind) {
 	return true;
 }
 
+string UnpackDriver() {
+	// Unpack driver file, if not exist...
+	char currentPath[MAX_PATH];
+	GetModuleFileName(NULL, currentPath, MAX_PATH);
+	string name = currentPath;
+	name.resize(name.find_last_of("\\"));
+	name+= "\\HwAcc.sys";
+	HANDLE hndFile = CreateFile(
+		name.c_str(),
+		GENERIC_WRITE,
+		0,
+		NULL,
+		CREATE_NEW,
+		0,
+		NULL
+	);
+
+	if (hndFile != INVALID_HANDLE_VALUE ) {
+		// No driver file, create one...
+		HRSRC driverInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DRIVER), "Driver");
+		if (driverInfo) {
+			HGLOBAL driverHandle = LoadResource(NULL, driverInfo);
+			BYTE* driverBin = (BYTE*) LockResource(driverHandle);
+			DWORD writeBytes = SizeofResource(NULL, driverInfo);
+			WriteFile(hndFile, driverBin, writeBytes, &writeBytes, NULL);
+			UnlockResource(driverHandle);
+		}
+		CloseHandle(hndFile);
+	} else
+		return TEXT("");
+	return name;
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -238,6 +282,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf->Load();
 	conf->SetStates();
 	fxhl = new FXHelper(conf);
+
+	fan_conf = new ConfigHelper();
+	fan_conf->Load();
+
+	if (conf->fanControl) {
+		drvName = UnpackDriver();
+		acpi = new AlienFan_SDK::Control();
+		if (acpi->Probe()) {
+			mon = new MonHelper(NULL, NULL, fan_conf, acpi);
+		} else {
+			acpi->UnloadService();
+			delete acpi;
+			acpi = NULL;
+			conf->fanControl = false;
+		}
+	}
 
 	if (fxhl->devs.size() > 0) {
 		conf->wasAWCC = DoStopService(true);
@@ -314,6 +374,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		MessageBox(NULL, "No Alienware light devices detected, exiting!", "Fatal error",
 			MB_OK | MB_ICONSTOP);
 	}
+
+	if (conf->fanControl) {
+		mon->Stop();
+		delete mon;
+		delete acpi;
+	}
+
+	if (drvName != "") {
+		DeleteFile(drvName.c_str());
+	}
+
+	fan_conf->Save();
+	delete fan_conf;
 
 	delete fxhl;
 	delete conf;
@@ -410,7 +483,8 @@ VOID OnSelChanged(HWND hwndDlg)
 	case 2: tdl = (DLGPROC)TabDevicesDialog; break;
 	case 3: tdl = (DLGPROC)TabGroupsDialog; break;
 	case 4: tdl = (DLGPROC)TabProfilesDialog; break;
-	case 5: tdl = (DLGPROC)TabSettingsDialog; break;
+	case 5: tdl = (DLGPROC)TabFanDialog; break;
+	case 6: tdl = (DLGPROC)TabSettingsDialog; break;
 	default: tdl = (DLGPROC)TabColorDialog;
 	}
 	HWND newDisplay = CreateDialogIndirect(hInst,
@@ -463,12 +537,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		pHdr->hwndTab = tab_list;
 
-		pHdr->apRes[0] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_COLORS));
-		pHdr->apRes[1] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_EVENTS));
-		pHdr->apRes[2] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_DEVICES));
-		pHdr->apRes[3] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_GROUPS));
-		pHdr->apRes[4] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_PROFILES));
-		pHdr->apRes[5] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
+		//pHdr->apRes[0] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_COLORS));
+		//pHdr->apRes[1] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_EVENTS));
+		//pHdr->apRes[2] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_DEVICES));
+		//pHdr->apRes[3] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_GROUPS));
+		//pHdr->apRes[4] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_PROFILES));
+		//pHdr->apRes[5] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
 
 		TCITEM tie;
 		char nBuf[64] = {0};
@@ -478,6 +552,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		tie.pszText = nBuf;
 
 		for (int i = 0; i < C_PAGES; i++) {
+			pHdr->apRes[i] = DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
 			LoadString(hInst, IDS_TAB_COLOR + i, tie.pszText, 64);
 			SendMessage(tab_list, TCM_INSERTITEM, i, (LPARAM)&tie);
 		}
@@ -588,6 +663,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 			ShowWindow(hDlg, SW_HIDE);
 		} break;
+	case WM_MOVE:
+	{
+		if (fanWindow) {
+			// Reposition child...
+			RECT cDlg;
+			GetWindowRect(hDlg, &cDlg);
+			SetWindowPos(fanWindow, NULL, cDlg.right, cDlg.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOACTIVATE);
+		}
+	} break;
 	case WM_APP + 1: {
 		switch (lParam)
 		{
@@ -708,6 +792,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				eve->ToggleEvents();
 				eve->StartProfiles();
 			}
+			if (conf->fanControl)
+				mon->Start();
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
 			// ac/batt change
@@ -730,6 +816,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->StopProfiles();
 			eve->StopEvents();
 			fxhl->UnblockUpdates(false);
+			if (conf->fanControl)
+				mon->Stop();
 			break;
 		}
 		break;

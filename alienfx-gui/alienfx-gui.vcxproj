@@ -567,12 +567,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigHelper.h" />
+    <ClInclude Include="..\alienfan-tools\alienfan-gui\MonHelper.h" />
     <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="ColorDialog.h" />
     <ClInclude Include="ConfigHandler.h" />
     <ClInclude Include="DevicesDialog.h" />
     <ClInclude Include="EventDialog.h" />
     <ClInclude Include="EventHandler.h" />
+    <ClInclude Include="FanDialog.h" />
     <ClInclude Include="FXHelper.h" />
     <ClInclude Include="GroupsDialog.h" />
     <ClInclude Include="ProfilesDialog.h" />
@@ -581,12 +584,15 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigHelper.cpp" />
+    <ClCompile Include="..\alienfan-tools\alienfan-gui\MonHelper.cpp" />
     <ClCompile Include="alienfx-gui.cpp" />
     <ClCompile Include="ColorDialog.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="DevicesDialog.cpp" />
     <ClCompile Include="EventDialog.cpp" />
     <ClCompile Include="EventHandler.cpp" />
+    <ClCompile Include="FanDialog.cpp" />
     <ClCompile Include="FXHelper.cpp" />
     <ClCompile Include="GroupsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
@@ -602,6 +608,7 @@
     <Image Include="alien_on.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\x64\Release\HwAcc\HwAcc.sys" />
     <None Include="Mappings\Alienware m15R1 no-rgb.csv">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
@@ -628,6 +635,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\alienfan-tools\alienfan-SDK\alienfan-SDK.vcxproj">
+      <Project>{41343b7c-6c9f-4ad4-9d27-050b3d76290d}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
       <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
     </ProjectReference>
