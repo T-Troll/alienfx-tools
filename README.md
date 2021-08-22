@@ -9,21 +9,32 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 Some additional tools added from my other [`Alienfan-tools`](https://github.com/T-Troll/alienfan-tools) project:
 - Alienfan GUI control - simple fan and power control utility. Set you fan parameters according to any system temperature sensor, switch system power modes...
 - Alienfan CLI - Command line interface tool for control fans and power from command line.
-Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools/readme.md)
+Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
 ## Requirements
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
-- `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other tools doesn't require it, so you need it in case if you plan to use Anbient only.
+- Windows 10 v1706 or later (binary files for 64-bit only, but you can compile project for 32-bit as well). Windows 7 NOT supported, 8 and 8.1 will lost some functionality.
+
+## Installation
+- Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
+- (Optional) `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other tools doesn't require it, so you need it in case if you plan to use Anbient only.
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
-- Windows 10+ (binary files for 64-bit only, but you can compile project for 32-bit as well). Windows 7 NOT supported, 8 and 8.1 will lost some functionality.
+- (Optional) If you plan to use `alienfx-gui` fan control or any of Aliefan tools, you need to alter system settings (i have no driver sign certificate for now):
+  - Go into you system BIOS and disable "Secure boot" option.
+  - From Administrator command line, issue `bcdedit /set testsigning on` command, then reboot.  
+  (Applications can do this step automatically after start/enable fan control).
+- Unpack the archive to any directory of your choise or just run installer.  
+- After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
+
+Run any tool you need from this folder or start menu!
 
 ## Devices tested:
 - `Alienware m15R3-R4` Per-key keyboard lights (API v4 + API v5)
 - `Alienware m15R1-R4` 4-zone keyboard ligths (API v4)
 - `Alienware m17R1` (API v4) 
 - `Dell G7/G5/G5SE` (API v4)
-- `Alienware M17R5` (API v3)
-- `Alienware M13R2` (API v2)
+- `Alienware 17R5` (API v3)
+- `Alienware 13R2` (API v2)
 - `Alienware M14x` (API v1)
 
 This tools can also support other Dell/Alienware devices:
@@ -32,6 +43,8 @@ This tools can also support other Dell/Alienware devices:
 - APIv3 - 12-bytes command, 24-bit color,
 - APIv4 - 34-bytes command, 24-bit color,
 - APIv5 - 64-bytes command, 24-bit color (DARFON OEM keyboards).
+
+For fan/power control, any Alienware notebook starting from m15R1/m17R1 or later supported now.
 
 External mouses, keyboards and monitors are not supported yet, feel free to open an issue if you want to add support for it, but be ready to help with testing!
 
@@ -44,12 +57,6 @@ External mouses, keyboards and monitors are not supported yet, feel free to open
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use `alienfx-gui` application with "Power Button"-related features. Keep it working can provide unexpected results up to light system freeze (for APIv4).
 - **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `alienfx-ambient` from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
 - **WARNING!** In rare case light system freeze, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
-
-## Installation
-Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
-Unpack the archive to any directory of your choise or just run installer.  
-After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (`alienfx-ambient` and `alienfx-haptics` will not work correctly wihout this operation).  
-Run any tool you need from this folder!
 
 ## How to build from source code
 
