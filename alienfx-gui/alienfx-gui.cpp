@@ -291,6 +291,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->Probe()) {
 			mon = new MonHelper(NULL, NULL, fan_conf, acpi);
+			if (fan_conf->lastPowerStage >= 0)
+				acpi->SetPower(fan_conf->lastPowerStage);
+			if (fan_conf->lastGPUPower >= 0)
+				acpi->SetGPU(fan_conf->lastGPUPower);
 		} else {
 			acpi->UnloadService();
 			delete acpi;
@@ -595,11 +599,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
 		case IDC_BUTTON_MINIMIZE:
-			if (!fxhl->unblockUpdates) {
-				fxhl->UnblockUpdates(true, true);
-				fxhl->RefreshState();
-			}
-			ShowWindow(hDlg, SW_HIDE);
+			SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 			break;
 		case IDC_BUTTON_REFRESH:
 			fxhl->RefreshState(true);

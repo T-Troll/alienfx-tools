@@ -102,12 +102,13 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Dim lights" - Then profile activated, all lights are dimmed to common amount.
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
 
-`"Fans" tab is UI for control system fans and temperature sensors.  
+`"Fans"` tab is UI for control system fans and temperature sensors.  
 **WARNING** It will only avaliable if system configured for using low-level driver and enabled in "Settings" tab! Read "Requrements" in main readme.md for details!  
 
 First, take a look at "Power mode" dropdown - it can control system pre-defined power modes. For manual fan control switch it to "Manual".  
 "Temperature sensors" list present all hardware sensors found at you motheboard (some SSD sensors can absent into this list), and their current temperature values.
-"Fans" list present all fans found into the system and their current RPMs.
+"Fans" list present all fans found into the system and their current RPMs.  
+"GPU limit" slider define top maximal GPU board power limit shift. 0 (left) is no limit, 4 (right) - maximal limit. This feature only supported at some notebooks, and real limit can vary. You can use this slider to keep more power at CPU or extend battery life.
 
 Additional "Fan curve" window at the right shows currently selected fan temperature/boost curve, as well as current boost.  
 

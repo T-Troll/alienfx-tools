@@ -63,6 +63,7 @@
 #define IDC_CHECK_PERF                  1011
 #define IDC_CHECK_STATUS                1012
 #define IDC_COUNTERLIST                 1013
+#define IDC_SLIDER_GPU                  1013
 #define IDC_STATUSLIST                  1014
 #define IDC_DEVICES                     1015
 #define IDC_STARTW                      1016

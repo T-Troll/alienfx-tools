@@ -69,8 +69,7 @@ void ReloadFanView(HWND hDlg, int cID) {
 
 void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 {
-    HWND curve = fanWindow;// GetDlgItem(pDlg, IDC_FAN_CURVE);
-                           //HWND rpm = GetDlgItem(pDlg, IDC_FAN_RPM);
+    HWND curve = fanWindow;
 
     if (curve) {
         RECT clirect, graphZone;
@@ -217,7 +216,8 @@ void ReloadTempView(HWND hDlg, int cID) {
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER);
+    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
+        power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU);
     if (message == newTaskBar) {
         // Started/restarted explorer...
         Shell_NotifyIcon(NIM_ADD, &fan_conf->niData);
@@ -250,6 +250,11 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             mon->dlg = hDlg;
             mon->fDlg = fanWindow;
             mon->Start();
+
+            SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
+            SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
+            SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastGPUPower);
+
         } else {
             HWND tab_list = GetParent(hDlg);
             TabCtrl_SetCurSel(tab_list, 6);
@@ -378,6 +383,15 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         }
         break;
+    case WM_HSCROLL:
+        switch (LOWORD(wParam)) {
+        case TB_THUMBPOSITION: case TB_ENDTRACK: {
+            if ((HWND)lParam == power_gpu) {
+                fan_conf->lastGPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                acpi->SetGPU(fan_conf->lastGPUPower);
+            }
+        } break;
+        } break;
     case WM_CLOSE: case WM_DESTROY:
         // TODO: close curve window
         DestroyWindow(fanWindow);
