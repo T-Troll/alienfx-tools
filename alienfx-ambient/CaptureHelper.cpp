@@ -1,8 +1,8 @@
 #include "CaptureHelper.h"
-#include "opencv2/imgproc.hpp"
+//#include "opencv2/imgproc.hpp"
 #include "DXGIManager.hpp"
 
-using namespace cv;
+//using namespace cv;
 
 DWORD WINAPI CInProc(LPVOID);
 DWORD WINAPI CDlgProc(LPVOID);
@@ -67,69 +67,69 @@ void CaptureHelper::Restart() {
 	SetCaptureScreen(config->mode);
 }
 
-Mat extractHPts(const Mat& inImage)
-{
-	// container for storing Hue Points
-	Mat listOfHPts(inImage.cols * inImage.rows, 1, CV_32FC1);
-	Mat res[4];
-	split(inImage, res);
-	res[0].reshape(1, inImage.cols * inImage.rows).convertTo(listOfHPts, CV_32FC1);
-	return listOfHPts;
-}
-
-// function for extracting dominant color from foreground pixels
-Mat getDominantColor(const Mat& inImage, const Mat& ptsLabel)
-{
-	// first we determine which cluster is foreground
-	// assuming the our object of interest is the biggest object in the image region
-
-	Mat fPtsLabel, sumLabel;
-	ptsLabel.convertTo(fPtsLabel, CV_32FC1);
-
-	reduce(fPtsLabel, sumLabel, 0, 0/*CV_REDUCE_SUM*/, CV_32FC1);
-
-	int numFGPts = 0;
-
-	if (sumLabel.at<float>(0, 0) < ptsLabel.rows / 2)
-	{
-		// invert the 0's and 1's where 1s represent foreground
-		fPtsLabel = (fPtsLabel - 1) * (-1);
-		numFGPts = fPtsLabel.rows - (int) sumLabel.at<float>(0, 0);
-	}
-	else
-		numFGPts = (int) sumLabel.at<float>(0, 0);
-
-	// to find dominant color, I just average all points belonging to foreground
-	Mat dominantColor(1,3, CV_32FC1);// = cv::Mat::zeros(1, 3, CV_32FC1);
-
-	int idx = 0;
-	dominantColor.at<float>(0, 0) = 0;
-	dominantColor.at<float>(0, 1) = 0;
-	dominantColor.at<float>(0, 2) = 0;
-	for (int j = 0; j < inImage.rows; j++)
-	{
-		for (int i = 0; i < inImage.cols; i++)
-		{
-			if (fPtsLabel.at<float>(idx++, 0) == 1)
-			{
-				cv::Vec4b tempVec; //!!
-				tempVec = inImage.at<cv::Vec4b>(j, i);
-				dominantColor.at<float>(0, 0) += (tempVec[0]);
-				dominantColor.at<float>(0, 1) += (tempVec[1]);
-				dominantColor.at<float>(0, 2) += (tempVec[2]);
-
-			}
-		}
-	}
-
-	dominantColor /= numFGPts;
-
-	Mat cColor;
-
-	dominantColor.convertTo(cColor, CV_8UC1);
-
-	return cColor;
-}
+//Mat extractHPts(const Mat& inImage)
+//{
+//	// container for storing Hue Points
+//	Mat listOfHPts(inImage.cols * inImage.rows, 1, CV_32FC1);
+//	Mat res[4];
+//	split(inImage, res);
+//	res[0].reshape(1, inImage.cols * inImage.rows).convertTo(listOfHPts, CV_32FC1);
+//	return listOfHPts;
+//}
+//
+//// function for extracting dominant color from foreground pixels
+//Mat getDominantColor(const Mat& inImage, const Mat& ptsLabel)
+//{
+//	// first we determine which cluster is foreground
+//	// assuming the our object of interest is the biggest object in the image region
+//
+//	Mat fPtsLabel, sumLabel;
+//	ptsLabel.convertTo(fPtsLabel, CV_32FC1);
+//
+//	reduce(fPtsLabel, sumLabel, 0, 0/*CV_REDUCE_SUM*/, CV_32FC1);
+//
+//	int numFGPts = 0;
+//
+//	if (sumLabel.at<float>(0, 0) < ptsLabel.rows / 2)
+//	{
+//		// invert the 0's and 1's where 1s represent foreground
+//		fPtsLabel = (fPtsLabel - 1) * (-1);
+//		numFGPts = fPtsLabel.rows - (int) sumLabel.at<float>(0, 0);
+//	}
+//	else
+//		numFGPts = (int) sumLabel.at<float>(0, 0);
+//
+//	// to find dominant color, I just average all points belonging to foreground
+//	Mat dominantColor(1,3, CV_32FC1);// = cv::Mat::zeros(1, 3, CV_32FC1);
+//
+//	int idx = 0;
+//	dominantColor.at<float>(0, 0) = 0;
+//	dominantColor.at<float>(0, 1) = 0;
+//	dominantColor.at<float>(0, 2) = 0;
+//	for (int j = 0; j < inImage.rows; j++)
+//	{
+//		for (int i = 0; i < inImage.cols; i++)
+//		{
+//			if (fPtsLabel.at<float>(idx++, 0) == 1)
+//			{
+//				cv::Vec4b tempVec; //!!
+//				tempVec = inImage.at<cv::Vec4b>(j, i);
+//				dominantColor.at<float>(0, 0) += (tempVec[0]);
+//				dominantColor.at<float>(0, 1) += (tempVec[1]);
+//				dominantColor.at<float>(0, 2) += (tempVec[2]);
+//
+//			}
+//		}
+//	}
+//
+//	dominantColor /= numFGPts;
+//
+//	Mat cColor;
+//
+//	dominantColor.convertTo(cColor, CV_8UC1);
+//
+//	return cColor;
+//}
 
 struct procData {
 	int dx, dy;
@@ -139,51 +139,101 @@ struct procData {
 };
 
 static procData callData[3][4];
-uint w = 2, h = 2;
+UINT w = 2, h = 2, ww = 1, hh = 1, stride = w * 4, divider = 1;
 HANDLE pThread[12] = { 0 };
 HANDLE pfEvent[12] = { 0 };
-Mat srcImage;
+//Mat srcImage;
+UCHAR* scrImg = NULL;
 
-DWORD WINAPI ColorProc(LPVOID inp) {
+//DWORD WINAPI ColorProc(LPVOID inp) {
+//	procData* src = (procData*) inp;
+//	uint idx = src->dy * 4 + src->dx;
+//	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
+//		if (WaitForSingleObject(src->pEvent, 200) == WAIT_OBJECT_0) {
+//			Mat cPos = srcImage.rowRange(src->dy * h, (src->dy + 1) * h)
+//				.colRange(src->dx * w, (src->dx + 1) * w);
+//			Mat hPts;
+//			hPts = extractHPts(cPos);// src->src);
+//			Mat ptsLabel, kCenters;
+//			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 100, 0.001)), 3, cv::KMEANS_PP_CENTERS, kCenters); // 1000, 0.00001, 5
+//
+//			Mat dColor;
+//			dColor = getDominantColor(cPos/*src->src*/, ptsLabel);
+//			const UCHAR* finMat = dColor.ptr();
+//			src->dst[0] = finMat[0];
+//			src->dst[1] = finMat[1];
+//			src->dst[2] = finMat[2];
+//			SetEvent(pfEvent[idx]);
+//		}
+//	}
+//	CloseHandle(pfEvent[idx]);
+//	pfEvent[idx] = 0;
+//	return 0;
+//}
+
+DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
-	uint idx = src->dy * 4 + src->dx;
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
 		if (WaitForSingleObject(src->pEvent, 200) == WAIT_OBJECT_0) {
-			Mat cPos = srcImage.rowRange(src->dy * h, (src->dy + 1) * h)
-				.colRange(src->dx * w, (src->dx + 1) * w);
-			Mat hPts;
-			hPts = extractHPts(cPos);// src->src);
-			Mat ptsLabel, kCenters;
-			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 100, 0.001)), 3, cv::KMEANS_PP_CENTERS, kCenters); // 1000, 0.00001, 5
-
-			Mat dColor;
-			dColor = getDominantColor(cPos/*src->src*/, ptsLabel);
-			const UCHAR* finMat = dColor.ptr();
-			src->dst[0] = finMat[0];
-			src->dst[1] = finMat[1];
-			src->dst[2] = finMat[2];
-			SetEvent(pfEvent[idx]);
+			UINT idx = src->dy * hh * stride + src->dx * ww * 4;//src->dy * 4 + src->dx;
+			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64)hh*ww / (divider*divider);
+			for (int y = 0; y < hh; y+=divider) { 
+				UINT pos = idx + y * stride;
+				for (int x = 0; x < ww; x+=divider) {
+					r += scrImg[pos];
+					g += scrImg[pos + 1];
+					b += scrImg[pos + 2];
+					pos += 4;
+				}
+			}
+			r /= div;
+			g /= div;
+			b /= div;
+			src->dst[0] = r;
+			src->dst[1] = g;
+			src->dst[2] = b;
+			SetEvent(pfEvent[src->dy * 4 + src->dx]);
 		}
 	}
-	CloseHandle(pfEvent[idx]);
-	pfEvent[idx] = 0;
+	CloseHandle(pfEvent[src->dy * 4 + src->dx]);
+	pfEvent[src->dy * 4 + src->dx] = 0;
 	return 0;
 }
 
-void FillColors(Mat& src, UCHAR* imgz) {
-	w = src.cols / 4, h = src.rows / 3;
+//void FillColors(Mat& src, UCHAR* imgz) {
+//	w = src.cols / 4, h = src.rows / 3;
+//
+//	DWORD tId;
+//	srcImage = src;
+//	for (uint dy = 0; dy < 3; dy++)
+//		for (uint dx = 0; dx < 4; dx++) {
+//			if (!pfEvent[dy * 4 + dx]) {
+//				uint ptr = (dy * 4 + dx);// *3;
+//				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
+//				callData[dy][dx].dst = imgz + ptr * 3;
+//				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
+//				pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
+//				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorProc, &callData[dy][dx], 0, &tId);
+//			}
+//			else {
+//				SetEvent(callData[dy][dx].pEvent);
+//			}
+//		}
+//	WaitForMultipleObjects(12, pfEvent, true, 3000);
+//}
 
-	DWORD tId;
-	srcImage = src;
-	for (uint dy = 0; dy < 3; dy++)
-		for (uint dx = 0; dx < 4; dx++) {
+void FindColors(UCHAR* src, UCHAR* imgz) {
+	scrImg = src;
+	for (UINT dy = 0; dy < 3; dy++)
+		for (UINT dx = 0; dx < 4; dx++) {
 			if (!pfEvent[dy * 4 + dx]) {
-				uint ptr = (dy * 4 + dx);// *3;
+				UINT ptr = (dy * 4 + dx);// *3;
 				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
 				callData[dy][dx].dst = imgz + ptr * 3;
 				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
+				//ColorCalc(&callData[dy][dx]);
 				pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
-				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorProc, &callData[dy][dx], 0, &tId);
+				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
 			}
 			else {
 				SetEvent(callData[dy][dx].pEvent);
@@ -207,8 +257,11 @@ DWORD WINAPI CInProc(LPVOID param)
 	lhEvent = CreateEvent(NULL, false, false, NULL);
 
 	RECT dimensions = dxgi_manager->get_output_rect();
-	UINT w = dimensions.right - dimensions.left;
-	UINT h = dimensions.bottom - dimensions.top;
+	w = dimensions.right - dimensions.left;
+	h = dimensions.bottom - dimensions.top;
+
+	ww = w / 4; hh = h / 3;
+	stride = w * 4;
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
@@ -216,14 +269,15 @@ DWORD WINAPI CInProc(LPVOID param)
 	lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, &cuThread);
 
 	while (WaitForSingleObject(stopEvent, wait_time) == WAIT_TIMEOUT) {
-		UINT div = 34 - config->divider;
+		//divider = 9 - (config->divider >> 2);
 		// Resize & calc
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img != NULL) {
 			if (w && h) {
-				Mat src = Mat(h, w, CV_8UC4, img);
-				cv::resize(src, src, Size(16 * div, 12 * div), 0, 0, INTER_NEAREST);// INTER_AREA);// 
+				//Mat src = Mat(h, w, CV_8UC4, img);
+				//cv::resize(src, src, Size(16 * div, 12 * div), 0, 0, INTER_NEAREST);// INTER_AREA);// 
 
-				FillColors(src, imgz);
+				//FillColors(src, imgz);
+				FindColors(img, imgz);
 
 				if (memcmp(imgz, imgo, 36) != 0) {
 					SetEvent(lhEvent);
@@ -237,6 +291,8 @@ DWORD WINAPI CInProc(LPVOID param)
 				dimensions = dxgi_manager->get_output_rect();
 				w = dimensions.right - dimensions.left;
 				h = dimensions.bottom - dimensions.top;
+				ww = w / 4; hh = h / 3;
+				stride = w * 4;
 			}
 		}
 

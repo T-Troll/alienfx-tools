@@ -42,7 +42,7 @@ AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
 ConfigHelper* fan_conf = NULL;                      // Config...
 MonHelper* mon = NULL;                          // Monitoring & changer object
 HWND fanWindow = NULL;
-string drvName = "";
+//string drvName = "";
 
 HWND mDlg = 0;
 
@@ -80,6 +80,9 @@ DWORD EvaluteToAdmin() {
 			{
 				if (mDlg) {
 					conf->Save();
+					fan_conf->Save();
+					if (acpi)
+						delete acpi;
 					SendMessage(mDlg, WM_CLOSE, 0, 0);
 				} else
 					_exit(1);  // Quit itself
@@ -237,38 +240,38 @@ bool DoStopService(bool kind) {
 	return true;
 }
 
-string UnpackDriver() {
-	// Unpack driver file, if not exist...
-	char currentPath[MAX_PATH];
-	GetModuleFileName(NULL, currentPath, MAX_PATH);
-	string name = currentPath;
-	name.resize(name.find_last_of("\\"));
-	name+= "\\HwAcc.sys";
-	HANDLE hndFile = CreateFile(
-		name.c_str(),
-		GENERIC_WRITE,
-		0,
-		NULL,
-		CREATE_NEW,
-		0,
-		NULL
-	);
-
-	if (hndFile != INVALID_HANDLE_VALUE ) {
-		// No driver file, create one...
-		HRSRC driverInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DRIVER), "Driver");
-		if (driverInfo) {
-			HGLOBAL driverHandle = LoadResource(NULL, driverInfo);
-			BYTE* driverBin = (BYTE*) LockResource(driverHandle);
-			DWORD writeBytes = SizeofResource(NULL, driverInfo);
-			WriteFile(hndFile, driverBin, writeBytes, &writeBytes, NULL);
-			UnlockResource(driverHandle);
-		}
-		CloseHandle(hndFile);
-	} else
-		return TEXT("");
-	return name;
-}
+//string UnpackDriver() {
+//	// Unpack driver file, if not exist...
+//	char currentPath[MAX_PATH];
+//	GetModuleFileName(NULL, currentPath, MAX_PATH);
+//	string name = currentPath;
+//	name.resize(name.find_last_of("\\"));
+//	name+= "\\HwAcc.sys";
+//	HANDLE hndFile = CreateFile(
+//		name.c_str(),
+//		GENERIC_WRITE,
+//		0,
+//		NULL,
+//		CREATE_NEW,
+//		0,
+//		NULL
+//	);
+//
+//	if (hndFile != INVALID_HANDLE_VALUE ) {
+//		// No driver file, create one...
+//		HRSRC driverInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DRIVER), "Driver");
+//		if (driverInfo) {
+//			HGLOBAL driverHandle = LoadResource(NULL, driverInfo);
+//			BYTE* driverBin = (BYTE*) LockResource(driverHandle);
+//			DWORD writeBytes = SizeofResource(NULL, driverInfo);
+//			WriteFile(hndFile, driverBin, writeBytes, &writeBytes, NULL);
+//			UnlockResource(driverHandle);
+//		}
+//		CloseHandle(hndFile);
+//	} else
+//		return TEXT("");
+//	return name;
+//}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -287,7 +290,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	fan_conf->Load();
 
 	if (conf->fanControl) {
-		drvName = UnpackDriver();
+		//drvName = UnpackDriver();
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->Probe()) {
 			mon = new MonHelper(NULL, NULL, fan_conf, acpi);
@@ -385,9 +388,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		delete acpi;
 	}
 
-	if (drvName != "") {
+	/*if (drvName != "") {
 		DeleteFile(drvName.c_str());
-	}
+	}*/
 
 	fan_conf->Save();
 	delete fan_conf;

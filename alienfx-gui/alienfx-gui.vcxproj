@@ -608,7 +608,6 @@
     <Image Include="alien_on.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\x64\Release\HwAcc\HwAcc.sys" />
     <None Include="Mappings\Alienware m15R1 no-rgb.csv">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>

@@ -131,6 +131,5 @@
     <None Include="Mappings\Alienware m15R4 RGB.csv">
       <Filter>Mappings</Filter>
     </None>
-    <None Include="..\x64\Release\HwAcc\HwAcc.sys" />
   </ItemGroup>
 </Project>

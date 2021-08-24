@@ -48,7 +48,6 @@
 #define IDI_ALIENFX_OFF                 148
 #define IDI_ALIENFX_DIM                 149
 #define IDR_DRIVER1                     151
-#define IDR_DRIVER                      151
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_LIGHTS                      1001

@@ -81,6 +81,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_8BD54ECA5F1F4A93AB50408023C9F6C4"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
         "OwnerKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
         "MsmSig" = "8:_UNDEFINED"
@@ -532,15 +538,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{2F620FC4-E03F-4327-85FA-ACFF7533F6A2}"
-        "PackageCode" = "8:{F3BB40AE-4EE5-465E-8467-6993B1BD0390}"
+        "ProductCode" = "8:{CE1AA995-F98D-4263-B3FE-7C4C95237677}"
+        "PackageCode" = "8:{DE51EA2E-E0CB-4D1E-AE1F-337E345C1E1F}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:4.0.1"
+        "ProductVersion" = "8:4.0.2"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -1053,6 +1059,34 @@
                 "ExcludeFilters"
                 {
                 "ExcludeFilter" = "8:*.dll"
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8BD54ECA5F1F4A93AB50408023C9F6C4"
+            {
+            "SourcePath" = "8:..\\x64\\Release\\HwAcc.sys"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
                 }
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_A5006B6E23FC4C4F9295F32F8953E3D7"
