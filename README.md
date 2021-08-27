@@ -8,7 +8,7 @@ Main goal of this project is to create a bunch of light weighted tools for Alien
 
 Some additional tools added from my other [`Alienfan-tools`](https://github.com/T-Troll/alienfan-tools) project:
 - Alienfan GUI control - simple fan and power control utility. Set you fan parameters according to any system temperature sensor, switch system power modes...
-- Alienfan CLI - Command line interface tool for control fans and power from command line.
+- Alienfan CLI - Command line interface tool for control fans and power from command line.  
 Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
 ## Requirements
