@@ -7,6 +7,8 @@ private:
 	HANDLE dwHandle = 0;
 
 	HWINEVENTHOOK hEvent = 0, cEvent = 0;
+
+	ConfigHelper* fan_conf;
 public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state);
@@ -17,7 +19,7 @@ public:
 	void StopProfiles();
 	void ToggleEvents();
 
-	EventHandler(ConfigHandler* config, FXHelper* fx);
+	EventHandler(ConfigHandler*, ConfigHelper*, FXHelper*);
 	~EventHandler();
 
 	FXHelper* fxh = NULL;

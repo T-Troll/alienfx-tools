@@ -11,7 +11,7 @@ What it **can nott** do in compare to AWCC?
 
 But what it can do, instead?
 - Control AlienFX lights. Any way you can imagine:
-  - Set the chains of effects to every light, or
+  - Set the chain of effects to every light, or
   - Set the light to react any system event - CPU load, temperature, HDD access - name it.
   - Group the lights any way you wish and control group not as one light only, but as a gauge of LEDs.
   - It fast!
@@ -101,6 +101,7 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Disable monitoring" - Then profile activated, monitoring functions are disabled, despite of global setting.
 - "Dim lights" - Then profile activated, all lights are dimmed to common amount.
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
+- "Fan settings" - If selected, profile also keep fan control settings and restore it then activated. 
 
 `"Fans"` tab is UI for control system fans and temperature sensors.  
 **WARNING** It will only avaliable if system configured for using low-level driver and enabled in "Settings" tab! Read "Requrements" in main readme.md for details!  

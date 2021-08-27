@@ -1,27 +1,10 @@
-#include "SettingsDialog.h"
+#include "alienfx-gui.h"
 #include <windowsx.h>
-#include "resource.h"
-#include "FXHelper.h"
-#include "ConfigHandler.h"
-#include "EventHandler.h"
-#include "alienfan-SDK.h"
-#include "../alienfan-tools/alienfan-gui/MonHelper.h"
-#include "toolkit.h"
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 void ReloadProfileList(HWND hDlg);
 DWORD EvaluteToAdmin();
 bool DoStopService(bool kind);
-//string UnpackDriver();
-
-extern FXHelper* fxhl;
-extern ConfigHandler* conf;
-extern EventHandler* eve;
-extern HWND sTip, lTip;
-extern AlienFan_SDK::Control* acpi;
-extern MonHelper* mon;
-extern ConfigHelper* fan_conf;
-//extern string drvName;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {

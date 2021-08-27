@@ -14,6 +14,11 @@ Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 ## Requirements
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
 - Windows 10 v1706 or later (binary files for 64-bit only, but you can compile project for 32-bit as well). Windows 7 NOT supported, 8 and 8.1 will lost some functionality.
+- `alienfan-gui` and `alienfan-cli` always require Administrator rights to work (kernel driver needs to be installed to communicate with hardware).
+- Other apps does not require Administrator rights, except `alienfx-gui` in some cases:
+  - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privilegy)
+  - "Esif temperature" selected (access to ESIF values blocked from user account)
+  - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
 
 ## Installation
 - Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  

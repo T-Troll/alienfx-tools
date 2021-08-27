@@ -1,17 +1,8 @@
-#include "ProfilesDialog.h"
-#include "resource.h"
-#include "FXHelper.h"
-#include "ConfigHandler.h"
-#include "EventHandler.h"
-#include "toolkit.h"
+#include "alienfx-gui.h"
 #include <windowsx.h>
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 void ReloadProfileList(HWND hDlg);
-
-extern FXHelper* fxhl;
-extern ConfigHandler* conf;
-extern EventHandler* eve;
 
 int pCid = -1;
 
@@ -41,6 +32,7 @@ void ReloadProfileView(HWND hDlg, int cID) {
 			CheckDlgButton(hDlg, IDC_CHECK_NOMON, conf->profiles[i].flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, conf->profiles[i].flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, conf->profiles[i].flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, conf->profiles[i].flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
 			SendMessage(app_list, LB_RESETCONTENT, 0, 0);
 			SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].triggerapp.c_str()));
 			rpos = i;
@@ -115,9 +107,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof != NULL && MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning!",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				prof->lightsets.clear();
-				//if (prof->id == conf->activeProfile) {
-				//	conf->active_set.clear();
-				//}
 			}
 			break;
 		case IDC_APP_RESET:
@@ -186,6 +175,19 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof != NULL) {
 				prof->flags = (prof->flags & ~PROF_ACTIVE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 3;
 			}
+			break;
+		case IDC_CHECK_FANPROFILE:
+			// Store fan profile too
+			if (prof != NULL) {
+				prof->flags = (prof->flags & ~PROF_FANS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 4;
+				if (prof->flags & PROF_FANS) {
+					// add current fan profile...
+					prof->fansets = fan_conf->tempControls;
+				} else {
+					// remove current fan profile...
+					prof->fansets.clear();
+				}
+			} 
 			break;
 		}
 	} break;

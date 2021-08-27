@@ -1,14 +1,7 @@
-#include "GroupsDialog.h"
-#include "resource.h"
-#include "FXHelper.h"
-#include "ConfigHandler.h"
-#include "toolkit.h"
+#include "alienfx-gui.h"
 #include <windowsx.h>
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-
-extern FXHelper* fxhl;
-extern ConfigHandler* conf;
 
 int	gLid = -1, gItem = -1;
 

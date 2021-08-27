@@ -1,17 +1,9 @@
-#include "DevicesDialog.h"
-#include "resource.h"
-#include "FXHelper.h"
-#include "ConfigHandler.h"
-#include "toolkit.h"
+#include "alienfx-gui.h"
 #include <windowsx.h>
 #include <fstream>
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-
-extern FXHelper* fxhl;
-extern ConfigHandler* conf;
-extern HWND sTip, lTip;
 
 int eLid = -1, eDid = -1, dItem = -1;
 

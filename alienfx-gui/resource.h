@@ -138,6 +138,8 @@
 #define IDC_SLIDER_TEMPO                1089
 #define IDC_BUT_LOADMAP                 1090
 #define IDC_BUT_SAVEMAP                 1091
+#define IDC_CHECK1                      1092
+#define IDC_CHECK_FANPROFILE            1092
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -161,7 +163,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32797
-#define _APS_NEXT_CONTROL_VALUE         1092
+#define _APS_NEXT_CONTROL_VALUE         1093
 #define _APS_NEXT_SYMED_VALUE           112
 #endif
 #endif

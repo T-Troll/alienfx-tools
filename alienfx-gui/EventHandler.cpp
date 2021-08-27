@@ -11,11 +11,17 @@ DWORD WINAPI CProfileProc(LPVOID);
 
 EventHandler* even = NULL;
 
-EventHandler::EventHandler(ConfigHandler* confi, FXHelper* fx)
+EventHandler::EventHandler(ConfigHandler* confi, ConfigHelper* f_confi, FXHelper* fx)
 {
-	this->conf = confi;
+	conf = confi;
+	fan_conf = f_confi;
 	even = this;
 	fxh = fx;
+
+	profile* prof = conf->FindProfile(conf->activeProfile);
+	if (prof && prof->flags & PROF_FANS)
+		fan_conf->tempControls = prof->fansets;
+
 	StartProfiles();
 	StartEvents();
 }
@@ -93,9 +99,9 @@ void EventHandler::SwitchActiveProfile(int newID)
 			modifyProfile.lock();
 			//fxh->Flush();
 			conf->activeProfile = newID;
-			//conf->monState = newP->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
-			//conf->stateDimmed = newP->flags & PROF_DIMMED ? 1 : conf->stateDimmed;
 			conf->active_set = &newP->lightsets;
+			if (newP->flags & PROF_FANS)
+				fan_conf->tempControls = newP->fansets;
 			modifyProfile.unlock();
 			fxh->ChangeState();
 			ToggleEvents();

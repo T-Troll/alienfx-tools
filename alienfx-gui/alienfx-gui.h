@@ -1,6 +1,14 @@
 #pragma once
 
 #include "toolkit.h"
+#include "resource.h"
+#include "ConfigHandler.h"
+#include "FXHelper.h"
+#include "AlienFX_SDK.h"
+#include "EventHandler.h"
+#include "../alienfan-tools/alienfan-SDK/alienfan-SDK.h"
+#include "../alienfan-tools/alienfan-gui/MonHelper.h"
+#include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 
 // defines and structures...
 #define C_PAGES 7
@@ -11,5 +19,15 @@ typedef struct tag_dlghdr {
 	RECT rcDisplay;     // display rectangle for the tab control
 	DLGTEMPLATE* apRes[C_PAGES];
 } DLGHDR;
+
+extern FXHelper* fxhl;
+extern ConfigHandler* conf;
+extern EventHandler* eve;
+extern HWND sTip, lTip;
+extern AlienFan_SDK::Control* acpi;
+extern MonHelper* mon;
+extern ConfigHelper* fan_conf;
+
+extern HWND sTip, lTip;
 
 

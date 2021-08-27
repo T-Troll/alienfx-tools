@@ -1,17 +1,10 @@
-#include "EventDialog.h"
-#include "resource.h"
-#include "FXHelper.h"
-#include "ConfigHandler.h"
-#include "toolkit.h"
+#include "alienfx-gui.h"
 
 VOID OnSelChanged(HWND hwndDlg);
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 lightset* CreateMapping(int lid);
 lightset* FindMapping(int mid);
 
-extern FXHelper* fxhl;
-extern ConfigHandler* conf;
-extern HWND sTip, lTip;
 extern int eItem;
 
 void UpdateMonitoringInfo(HWND hDlg, lightset* map) {

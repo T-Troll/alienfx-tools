@@ -79,6 +79,29 @@ void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string
 	profiles.push_back(prof);
 }
 
+void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp) {
+	for (std::vector <profile>::iterator Iter = profiles.begin();
+		 Iter != profiles.end(); Iter++) {
+		if (Iter->id == id) {
+			// check sensor....
+			for (int i = 0; i < Iter->fansets.size(); i++)
+				if (Iter->fansets[i].sensorIndex == senID) {
+					Iter->fansets[i].fans.push_back(*temp);
+					return;
+				}
+			temp_block temp_b = {senID};
+			temp_b.fans.push_back(*temp);
+			Iter->fansets.push_back(temp_b);
+			return;
+		}
+	}
+	profile prof = {id};
+	temp_block temp_b = {senID};
+	temp_b.fans.push_back(*temp);
+	prof.fansets.push_back(temp_b);
+	profiles.push_back(prof);
+}
+
 profile* ConfigHandler::FindProfile(int id) {
 	profile* prof = NULL;
 	for (int i = 0; i < profiles.size(); i++)
@@ -342,7 +365,6 @@ int ConfigHandler::Load() {
 		unsigned ret2 = sscanf_s((char*)name, "Profile-%d", &pid);
 		if (ret == ERROR_SUCCESS && ret2 == 1) {
 			char* profname = new char[lend];
-			profname[0] = 0;
 			ret = RegEnumValueA(
 				hKey4,
 				vindex,
@@ -374,7 +396,6 @@ int ConfigHandler::Load() {
 		ret2 = sscanf_s((char*)name, "Profile-app-%d-%d", &pid, &appid);
 		if (ret == ERROR_SUCCESS && ret2 == 2) {
 			char* profname = new char[lend];
-			profname[0] = 0;
 			ret = RegEnumValueA(
 				hKey4,
 				vindex,
@@ -387,6 +408,27 @@ int ConfigHandler::Load() {
 			);
 			updateProfileByID(pid, "", profname, -1);
 			delete[] profname;
+		}
+		int senid, fanid;
+		ret2 = sscanf_s((char*)name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid);
+		if (ret == ERROR_SUCCESS && ret2 == 3) {
+			// add fans...
+			byte* fanset = new byte[lend];
+			fan_block fan = {fanid};
+			ret = RegEnumValueA(
+				hKey4,
+				vindex,
+				name,
+				&len,
+				NULL,
+				NULL,
+				(LPBYTE)fanset,
+				&lend
+			);
+			for (int i = 0; i < lend; i += 2) {
+				fan.points.push_back({fanset[i], fanset[i + 1]});
+			}
+			updateProfileFansByID(pid, senid, &fan);
 		}
 		vindex++;
 	} while (ret == ERROR_SUCCESS);
@@ -753,6 +795,29 @@ int ConfigHandler::Save() {
 				(DWORD)size
 			);
 			free(out);
+		}
+		// Fans....
+		if (profiles[j].fansets.size()) {
+			for (int i = 0; i < profiles[j].fansets.size(); i++) {
+				for (int k = 0; k < profiles[j].fansets[i].fans.size(); k++) {
+					name = "Profile-fans-" + to_string(profiles[j].id) + "-" + to_string(profiles[j].fansets[i].sensorIndex) + "-" + to_string(profiles[j].fansets[i].fans[k].fanIndex);
+					byte* outdata = new byte[profiles[j].fansets[i].fans[k].points.size() * 2];
+					for (int l = 0; l < profiles[j].fansets[i].fans[k].points.size(); l++) {
+						outdata[2 * l] = (byte) profiles[j].fansets[i].fans[k].points[l].temp;
+						outdata[(2 * l) + 1] = (byte) profiles[j].fansets[i].fans[k].points[l].boost;
+					}
+
+					RegSetValueExA(
+						hKey4,
+						name.c_str(),
+						0,
+						REG_BINARY,
+						(BYTE*) outdata,
+						(DWORD) profiles[j].fansets[i].fans[k].points.size() * 2
+					);
+					delete[] outdata;
+				}
+			}
 		}
 	}
 	return 0;

@@ -4,11 +4,6 @@
 #include <Shlobj.h>
 #include <ColorDlg.h>
 #include <algorithm>
-#include "resource.h"
-#include "ConfigHandler.h"
-#include "FXHelper.h"
-#include "AlienFX_SDK.h"
-#include "EventHandler.h"
 #include "alienfan-SDK.h"
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 #include "../alienfan-tools/alienfan-gui/MonHelper.h"
@@ -290,6 +285,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	fan_conf->Load();
 
 	if (conf->fanControl) {
+		EvaluteToAdmin();
 		//drvName = UnpackDriver();
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->Probe()) {
@@ -299,6 +295,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			if (fan_conf->lastGPUPower >= 0)
 				acpi->SetGPU(fan_conf->lastGPUPower);
 		} else {
+			MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
+					   MB_OK | MB_ICONHAND);
 			acpi->UnloadService();
 			delete acpi;
 			acpi = NULL;
@@ -314,7 +312,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		fxhl->Start();
 
-		eve = new EventHandler(conf, fxhl);
+		eve = new EventHandler(conf, fan_conf, fxhl);
 
 		eve->ChangePowerState();
 

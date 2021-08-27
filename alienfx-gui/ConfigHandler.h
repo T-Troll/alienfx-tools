@@ -2,12 +2,14 @@
 #include <vector>
 #include <string>
 #include "AlienFX_SDK.h"
+#include "..\alienfan-tools\alienfan-gui\ConfigHelper.h"
 
 // Profile flags pattern
 #define PROF_DEFAULT 0x1
 #define PROF_NOMONITORING 0x2
 #define PROF_DIMMED 0x4
 #define PROF_ACTIVE 0x8
+#define PROF_FANS 0x10
 
 struct ColorComp
 {
@@ -52,6 +54,7 @@ struct profile {
 	std::string triggerapp;
 	std::string name;
 	std::vector<lightset> lightsets;
+	vector<temp_block> fansets;
 };
 
 class ConfigHandler
@@ -101,6 +104,7 @@ public:
 	int Save();
 	static bool sortMappings(lightset i, lightset j);
 	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
+	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp);
 	profile* FindProfile(int id);
 	int FindProfileByApp(std::string appName, bool active = false);
 	void SetStates();
