@@ -182,10 +182,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				prof->flags = (prof->flags & ~PROF_FANS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 4;
 				if (prof->flags & PROF_FANS) {
 					// add current fan profile...
-					prof->fansets = fan_conf->tempControls;
-				} else {
-					// remove current fan profile...
-					prof->fansets.clear();
+					prof->fansets = fan_conf->prof;
 				}
 			} 
 			break;

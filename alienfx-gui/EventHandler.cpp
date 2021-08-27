@@ -18,9 +18,11 @@ EventHandler::EventHandler(ConfigHandler* confi, ConfigHelper* f_confi, FXHelper
 	even = this;
 	fxh = fx;
 
-	profile* prof = conf->FindProfile(conf->activeProfile);
-	if (prof && prof->flags & PROF_FANS)
-		fan_conf->tempControls = prof->fansets;
+	//profile* prof = conf->FindProfile(conf->activeProfile);
+	//if (prof && prof->flags & PROF_FANS)
+	//	fan_conf->lastProf = &prof->fansets;
+	//else
+	//	fan_conf->lastProf = &fan_conf->prof;
 
 	StartProfiles();
 	StartEvents();
@@ -101,7 +103,9 @@ void EventHandler::SwitchActiveProfile(int newID)
 			conf->activeProfile = newID;
 			conf->active_set = &newP->lightsets;
 			if (newP->flags & PROF_FANS)
-				fan_conf->tempControls = newP->fansets;
+				fan_conf->lastProf = &newP->fansets;
+			else
+				fan_conf->lastProf = &fan_conf->prof;
 			modifyProfile.unlock();
 			fxh->ChangeState();
 			ToggleEvents();

@@ -1,6 +1,6 @@
 #include "alienfx-gui.h"
 #include <windowsx.h>
-#include <fstream>
+//#include <sstream>
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
@@ -306,21 +306,37 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
 			if (GetOpenFileNameA(&fstruct)) {
 				// Now load mappings...
-				ifstream file(appName);
-				if (file.good()) {
+				HANDLE file = CreateFile(
+					appName.c_str(), 
+					GENERIC_READ,
+					FILE_SHARE_READ,
+					NULL,
+					OPEN_EXISTING,
+					0,
+					NULL
+				);
+				if (file != INVALID_HANDLE_VALUE) {
 					// read and parse...
+					size_t linePos = 0, oldLinePos = 0;
+					size_t filesize = GetFileSize(file, NULL);
+					byte* filebuf = new byte[filesize+1];
+					ReadFile(file, (LPVOID) filebuf, filesize, NULL, NULL);
+					filebuf[filesize] = 0;
+					string content = (char *) filebuf;
+					delete[] filebuf;
 					string line;
 					AlienFX_SDK::devmap tDev = {(DWORD) 0, (DWORD) 0, string("")};
 					AlienFX_SDK::mapping tMap;
-					while (!file.eof()) {
+					while ((linePos = content.find_first_of("\r\n", oldLinePos)) != string::npos) {
 						vector<string> fields;
 						size_t pos = 0, posOld = 1;
-						getline(file, line);
+						line = content.substr(oldLinePos, linePos - oldLinePos);
+						oldLinePos = linePos + 2;
 						if (line != "") {
-							while ((pos = line.find("','", pos)) != string::npos) {
+							while ((pos = line.find("','", posOld)) != string::npos) {
 								fields.push_back(line.substr(posOld, pos - posOld));
-								pos+=3;
-								posOld = pos;
+								//pos+=3;
+								posOld = pos + 3;
 							}
 							fields.push_back(line.substr(posOld, line.size() - posOld - 1));
 							switch (atoi(fields[0].c_str())) {
@@ -360,8 +376,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					}
 					// reload lists...
 					UpdateDeviceList(hDlg);
+					CloseHandle(file);
 				}
-				file.close();
 			}
 		} break;
 		case IDC_BUT_SAVEMAP:
@@ -380,25 +396,35 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
 			if (GetSaveFileNameA(&fstruct)) {
 				// Now save mappings...
-				// appName
-				ofstream file(appName);
-				if (file.good()) {
+				HANDLE file = CreateFile(appName.c_str(),
+										 GENERIC_WRITE,
+										 0,
+										 NULL,
+										 CREATE_ALWAYS,
+										 0,
+										 NULL );
+				if (file != INVALID_HANDLE_VALUE) {
 					for (int i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
 						AlienFX_SDK::devmap* cDev = &fxhl->afx_dev.GetDevices()->at(i);
 						/// Only connected devices stored!
 						AlienFX_SDK::Functions* dev = NULL;
 						if (dev = fxhl->LocateDev(cDev->devid)) {
-							file << "'0','" << dev->GetVid() << "','" << dev->GetPID() << "','" << cDev->name << "'" << endl;
+							DWORD writeBytes;
+							string line = "'0','" + to_string(dev->GetVid()) + "','" 
+								+ to_string(dev->GetPID()) + "','" + cDev->name + "'\r\n";
+							WriteFile(file, line.c_str(), line.size(), &writeBytes, NULL);
 							for (int j = 0; j < fxhl->afx_dev.GetMappings()->size(); j++) {
 								AlienFX_SDK::mapping* cMap = &fxhl->afx_dev.GetMappings()->at(j);
 								if (cMap->devid == dev->GetPID()) {
-									file << "'1','" << cMap->lightid << "','" << cMap->flags << "','" << cMap->name << "'" << endl;
+									line = "'1','" + to_string(cMap->lightid) + "','"
+										+ to_string(cMap->flags) + "','" + cMap->name + "'\r\n";
+									WriteFile(file, line.c_str(), line.size(), &writeBytes, NULL);
 								}
 							}
 						}
 					}
+					CloseHandle(file);
 				}
-				file.close();
 			}
 		} break;
 		default: return false;

@@ -284,16 +284,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	fan_conf = new ConfigHelper();
 	fan_conf->Load();
 
+	profile* prof;
+
+	if ((prof = conf->FindProfile(conf->activeProfile)) && prof->flags & PROF_FANS)
+		fan_conf->lastProf = &prof->fansets;
+
 	if (conf->fanControl) {
 		EvaluteToAdmin();
 		//drvName = UnpackDriver();
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->Probe()) {
 			mon = new MonHelper(NULL, NULL, fan_conf, acpi);
-			if (fan_conf->lastPowerStage >= 0)
-				acpi->SetPower(fan_conf->lastPowerStage);
-			if (fan_conf->lastGPUPower >= 0)
-				acpi->SetGPU(fan_conf->lastGPUPower);
+			if (fan_conf->lastProf->powerStage >= 0)
+				acpi->SetPower(fan_conf->lastProf->powerStage);
+			if (fan_conf->lastProf->GPUPower >= 0)
+				acpi->SetGPU(fan_conf->lastProf->GPUPower);
 		} else {
 			MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
 					   MB_OK | MB_ICONHAND);

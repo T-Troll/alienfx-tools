@@ -54,7 +54,7 @@ struct profile {
 	std::string triggerapp;
 	std::string name;
 	std::vector<lightset> lightsets;
-	vector<temp_block> fansets;
+	fan_profile fansets;
 };
 
 class ConfigHandler

@@ -62,44 +62,40 @@ ConfigHandler::~ConfigHandler() {
 bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
 
 void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags) {
-	for (std::vector <profile>::iterator Iter = profiles.begin();
-		Iter != profiles.end(); Iter++) {
-		if (Iter->id == id) {
-			// update profile..
-			if (name != "")
-				Iter->name = name;
-			if (app != "")
-				Iter->triggerapp = app;
-			if (flags != -1)
-				Iter->flags = flags;
-			return;
-		}
+	profile* prof = FindProfile(id);
+	if (prof) {
+		// update profile..
+		if (name != "")
+			prof->name = name;
+		if (app != "")
+			prof->triggerapp = app;
+		if (flags != -1)
+			prof->flags = flags;
+		return;
 	}
-	profile prof = {id, flags, app, name};
-	profiles.push_back(prof);
+	prof = new profile{id, flags, app, name};
+	profiles.push_back(*prof);
 }
 
 void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp) {
-	for (std::vector <profile>::iterator Iter = profiles.begin();
-		 Iter != profiles.end(); Iter++) {
-		if (Iter->id == id) {
-			// check sensor....
-			for (int i = 0; i < Iter->fansets.size(); i++)
-				if (Iter->fansets[i].sensorIndex == senID) {
-					Iter->fansets[i].fans.push_back(*temp);
-					return;
-				}
-			temp_block temp_b = {senID};
-			temp_b.fans.push_back(*temp);
-			Iter->fansets.push_back(temp_b);
-			return;
-		}
+
+	profile* prof = FindProfile(id);
+	if (prof) {
+		for (int i = 0; i < prof->fansets.fanControls.size(); i++)
+			if (prof->fansets.fanControls[i].sensorIndex == senID) {
+				prof->fansets.fanControls[i].fans.push_back(*temp);
+				return;
+			}
+		temp_block temp_b = {(short)senID};
+		temp_b.fans.push_back(*temp);
+		prof->fansets.fanControls.push_back(temp_b);
+		return;
 	}
-	profile prof = {id};
-	temp_block temp_b = {senID};
+	prof = new profile{id};
+	temp_block temp_b = {(short)senID};
 	temp_b.fans.push_back(*temp);
-	prof.fansets.push_back(temp_b);
-	profiles.push_back(prof);
+	prof->fansets.fanControls.push_back(temp_b);
+	profiles.push_back(*prof);
 }
 
 profile* ConfigHandler::FindProfile(int id) {
@@ -364,7 +360,7 @@ int ConfigHandler::Load() {
 		lend++; len = 255;
 		unsigned ret2 = sscanf_s((char*)name, "Profile-%d", &pid);
 		if (ret == ERROR_SUCCESS && ret2 == 1) {
-			char* profname = new char[lend];
+			char* profname = new char[lend] {0};
 			ret = RegEnumValueA(
 				hKey4,
 				vindex,
@@ -395,7 +391,7 @@ int ConfigHandler::Load() {
 		}
 		ret2 = sscanf_s((char*)name, "Profile-app-%d-%d", &pid, &appid);
 		if (ret == ERROR_SUCCESS && ret2 == 2) {
-			char* profname = new char[lend];
+			char* profname = new char[lend] {0};
 			ret = RegEnumValueA(
 				hKey4,
 				vindex,
@@ -414,7 +410,7 @@ int ConfigHandler::Load() {
 		if (ret == ERROR_SUCCESS && ret2 == 3) {
 			// add fans...
 			byte* fanset = new byte[lend];
-			fan_block fan = {fanid};
+			fan_block fan = {(short)fanid};
 			ret = RegEnumValueA(
 				hKey4,
 				vindex,
@@ -425,10 +421,26 @@ int ConfigHandler::Load() {
 				(LPBYTE)fanset,
 				&lend
 			);
-			for (int i = 0; i < lend; i += 2) {
+			for (unsigned i = 0; i < lend; i += 2) {
 				fan.points.push_back({fanset[i], fanset[i + 1]});
 			}
 			updateProfileFansByID(pid, senid, &fan);
+		}
+		ret2 = sscanf_s((char*)name, "Profile-power-%d", &pid);
+		if (ret == ERROR_SUCCESS && ret2 == 1) {
+			profile* prof = FindProfile(pid);
+			if (prof) {
+				DWORD pValue = 0;
+				RegGetValue(hKey4,
+							NULL,
+							name,
+							RRF_RT_DWORD | RRF_ZEROONFAILURE,
+							NULL,
+							&pValue,
+							(LPDWORD)&size);
+				prof->fansets.powerStage = LOWORD(pValue);
+				prof->fansets.GPUPower = HIWORD(pValue);
+			}
 		}
 		vindex++;
 	} while (ret == ERROR_SUCCESS);
@@ -704,9 +716,6 @@ int ConfigHandler::Save() {
 		(BYTE*)&fanControl,
 		sizeof(DWORD)
 	);
-	// set current profile mappings to current set!
-	//FindProfile(activeProfile)->lightsets = active_set;
-	// clear old profiles - check for clean ram (debug!)
 	if (profiles.size() > 0) {
 		RegDeleteTreeA(hKey1, "Profiles");
 		RegCreateKeyEx(HKEY_CURRENT_USER,
@@ -754,15 +763,17 @@ int ConfigHandler::Save() {
 			(BYTE*)&profiles[j].flags,
 			sizeof(DWORD)
 		);
-		name = "Profile-app-" + to_string(profiles[j].id) + "-0";
-		RegSetValueExA(
-			hKey4,
-			name.c_str(),
-			0,
-			REG_SZ,
-			(BYTE*)profiles[j].triggerapp.c_str(),
-			(DWORD)profiles[j].triggerapp.length()
-		);
+		if (!profiles[j].triggerapp.empty()) {
+			name = "Profile-app-" + to_string(profiles[j].id) + "-0";
+			RegSetValueExA(
+				hKey4,
+				name.c_str(),
+				0,
+				REG_SZ,
+				(BYTE*) profiles[j].triggerapp.c_str(),
+				(DWORD) profiles[j].triggerapp.length()
+			);
+		}
 		for (int i = 0; i < profiles[j].lightsets.size(); i++) {
 			//preparing name
 			lightset cur = profiles[j].lightsets[i];
@@ -797,14 +808,28 @@ int ConfigHandler::Save() {
 			free(out);
 		}
 		// Fans....
-		if (profiles[j].fansets.size()) {
-			for (int i = 0; i < profiles[j].fansets.size(); i++) {
-				for (int k = 0; k < profiles[j].fansets[i].fans.size(); k++) {
-					name = "Profile-fans-" + to_string(profiles[j].id) + "-" + to_string(profiles[j].fansets[i].sensorIndex) + "-" + to_string(profiles[j].fansets[i].fans[k].fanIndex);
-					byte* outdata = new byte[profiles[j].fansets[i].fans[k].points.size() * 2];
-					for (int l = 0; l < profiles[j].fansets[i].fans[k].points.size(); l++) {
-						outdata[2 * l] = (byte) profiles[j].fansets[i].fans[k].points[l].temp;
-						outdata[(2 * l) + 1] = (byte) profiles[j].fansets[i].fans[k].points[l].boost;
+		if (profiles[j].flags & PROF_FANS) {
+			// save powers..
+			name = "Profile-power-" + to_string(profiles[j].id);
+			DWORD pvalue = MAKELONG(profiles[j].fansets.powerStage, profiles[j].fansets.GPUPower);
+			RegSetValueExA(
+				hKey4,
+				name.c_str(),
+				0,
+				REG_DWORD,
+				(BYTE*)&pvalue,
+				sizeof(DWORD)
+			);
+			// save fans...
+			for (int i = 0; i < profiles[j].fansets.fanControls.size(); i++) {
+				temp_block* sens = &profiles[j].fansets.fanControls[i];
+				for (int k = 0; k < sens->fans.size(); k++) {
+					fan_block* fans = &sens->fans[k];
+					name = "Profile-fans-" + to_string(profiles[j].id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
+					byte* outdata = new byte[fans->points.size() * 2];
+					for (int l = 0; l < fans->points.size(); l++) {
+						outdata[2 * l] = (byte) fans->points[l].temp;
+						outdata[(2 * l) + 1] = (byte) fans->points[l].boost;
 					}
 
 					RegSetValueExA(
@@ -813,7 +838,7 @@ int ConfigHandler::Save() {
 						0,
 						REG_BINARY,
 						(BYTE*) outdata,
-						(DWORD) profiles[j].fansets[i].fans[k].points.size() * 2
+						(DWORD) fans->points.size() * 2
 					);
 					delete[] outdata;
 				}
