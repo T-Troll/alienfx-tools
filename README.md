@@ -88,6 +88,5 @@ High-level API code and cli app is based on Kalbert312's [alienfx-cli](https://g
 Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
-Dominant light extraction math based on [OpenCV](https://github.com/opencv/opencv) library.  
 Per-Key RGB devices testing and a lot of support by [rirozizo](https://github.com/rirozizo).  
 Special thanks to [PhSMu](https://github.com/PhSMu) for ideas, testing and artwork.
