@@ -34,6 +34,7 @@ Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 Run any tool you need from this folder or start menu!
 
 ## Devices tested:
+- `Alienware Area51m-R2` Per-key keyboard lights (API v4 + API v5)
 - `Alienware m15R3-R4` Per-key keyboard lights (API v4 + API v5)
 - `Alienware m15R1-R4` 4-zone keyboard ligths (API v4)
 - `Alienware m17R1` (API v4) 
