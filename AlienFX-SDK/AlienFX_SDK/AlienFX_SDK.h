@@ -5,6 +5,8 @@
 
 using namespace std;
 
+#define byte BYTE
+
 namespace AlienFX_SDK
 
 {	

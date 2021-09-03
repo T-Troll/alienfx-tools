@@ -294,17 +294,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// Load device and light mappings
 			OPENFILENAMEA fstruct = {0};
-			string appName = ".\\Mappings\\Default.csv";
+			string appName = "Default.csv";
 			appName.reserve(4096);
 			fstruct.lStructSize = sizeof(OPENFILENAMEA);
 			fstruct.hwndOwner = hDlg;
 			fstruct.hInstance = hInst;
 			fstruct.lpstrFile = (LPSTR) appName.c_str();
-			fstruct.nMaxFile = 32767;
+			fstruct.nMaxFile = 4096;
+			fstruct.lpstrInitialDir = ".\\Mappings";
 			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
 			fstruct.lpstrCustomFilter = NULL;
-			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
-			if (GetOpenFileNameA(&fstruct)) {
+			fstruct.Flags = OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
+			if (GetOpenFileName(&fstruct)) {
 				// Now load mappings...
 				HANDLE file = CreateFile(
 					appName.c_str(), 
@@ -318,7 +319,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if (file != INVALID_HANDLE_VALUE) {
 					// read and parse...
 					size_t linePos = 0, oldLinePos = 0;
-					size_t filesize = GetFileSize(file, NULL);
+					DWORD filesize = GetFileSize(file, NULL);
 					byte* filebuf = new byte[filesize+1];
 					ReadFile(file, (LPVOID) filebuf, filesize, NULL, NULL);
 					filebuf[filesize] = 0;
@@ -327,7 +328,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					string line;
 					AlienFX_SDK::devmap tDev = {(DWORD) 0, (DWORD) 0, string("")};
 					AlienFX_SDK::mapping tMap;
-					while ((linePos = content.find_first_of("\r\n", oldLinePos)) != string::npos) {
+					while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 						vector<string> fields;
 						size_t pos = 0, posOld = 1;
 						line = content.substr(oldLinePos, linePos - oldLinePos);
@@ -341,8 +342,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							fields.push_back(line.substr(posOld, line.size() - posOld - 1));
 							switch (atoi(fields[0].c_str())) {
 							case 0: // device line
-								tDev.vid = atoi(fields[1].c_str());
-								tDev.devid = atoi(fields[2].c_str());
+								tDev.vid = atol(fields[1].c_str());
+								tDev.devid = atol(fields[2].c_str());
 								tDev.name = fields[3];
 								// add to devs.
 								if (!fxhl->afx_dev.GetDeviceById(tDev.devid, tDev.vid))
@@ -356,8 +357,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 								if (tDev.devid) {
 									tMap.vid = tDev.vid;
 									tMap.devid = tDev.devid;
-									tMap.lightid = atoi(fields[1].c_str());
-									tMap.flags = atoi(fields[2].c_str());
+									tMap.lightid = atol(fields[1].c_str());
+									tMap.flags = atol(fields[2].c_str());
 									tMap.name = fields[3];
 									// add to maps
 									AlienFX_SDK::mapping* oMap = fxhl->afx_dev.GetMappingById(tMap.devid, tMap.lightid);
@@ -384,17 +385,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// Save device and ligh mappings
 			OPENFILENAMEA fstruct = {0};
-			string appName = ".\\Mappings\\Current.csv";
+			string appName = "Current.csv";
 			appName.reserve(4096);
 			fstruct.lStructSize = sizeof(OPENFILENAMEA);
 			fstruct.hwndOwner = hDlg;
 			fstruct.hInstance = hInst;
 			fstruct.lpstrFile = (LPSTR) appName.c_str();
-			fstruct.nMaxFile = 32767;
+			fstruct.lpstrInitialDir = ".\\Mappings";
+			fstruct.nMaxFile = 4096;
+			fstruct.nFilterIndex= 1;
 			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
 			fstruct.lpstrCustomFilter = NULL;
-			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
-			if (GetSaveFileNameA(&fstruct)) {
+			fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT | OFN_PATHMUSTEXIST;
+			if (GetSaveFileName(&fstruct)) {
 				// Now save mappings...
 				HANDLE file = CreateFile(appName.c_str(),
 										 GENERIC_WRITE,
@@ -412,13 +415,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							DWORD writeBytes;
 							string line = "'0','" + to_string(dev->GetVid()) + "','" 
 								+ to_string(dev->GetPID()) + "','" + cDev->name + "'\r\n";
-							WriteFile(file, line.c_str(), line.size(), &writeBytes, NULL);
+							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 							for (int j = 0; j < fxhl->afx_dev.GetMappings()->size(); j++) {
 								AlienFX_SDK::mapping* cMap = &fxhl->afx_dev.GetMappings()->at(j);
 								if (cMap->devid == dev->GetPID()) {
 									line = "'1','" + to_string(cMap->lightid) + "','"
 										+ to_string(cMap->flags) + "','" + cMap->name + "'\r\n";
-									WriteFile(file, line.c_str(), line.size(), &writeBytes, NULL);
+									WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 								}
 							}
 						}

@@ -1,9 +1,10 @@
 # Alienfx tools
-Main goal of this project is to create a bunch of light weighted tools for Alienware systems lights and fans control:
+AWCC don't needed anymore - here are light weighted tools for Alienware systems lights,fans,power profile control:
 - [AlienFX GUI Editor](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights, fans, temperatures, power settings and a lot more.
 - [AlienFX Universal haptics](/Doc/alienfx-haptics.md) - Visualize any sound around you (microphone, audio player, game, movie).
 - [AlienFX Ambient lights](/Doc/alienfx-ambient.md) - Visualize screen picture as ambient light (from desktop, game, video player).
 - [alienfx-cli](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command line interface).
+- [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Support all Dell's API functions using low-level SDK.
 - [alienfx-probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name it for using into other applications.
 
 Some additional tools added from my other [`Alienfan-tools`](https://github.com/T-Troll/alienfan-tools) project:
@@ -22,7 +23,8 @@ Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
 ## Installation
 - Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
-- (Optional) `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other tools doesn't require it, so you need it in case if you plan to use Anbient only.
+- (Optional) `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other tools doesn't require it, so you need it in case if you plan to use Ambient only.
+- (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
 - (Optional) If you plan to use `alienfx-gui` fan control or any of Aliefan tools, you need to alter system settings (i have no driver sign certificate for now):
   - Go into you system BIOS and disable "Secure boot" option.

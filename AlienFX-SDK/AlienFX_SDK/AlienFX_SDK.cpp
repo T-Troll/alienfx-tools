@@ -1,3 +1,4 @@
+#define WIN32_LEAN_AND_MEAN
 #include "AlienFX_SDK.h"
 #include <Setupapi.h>
 #include <iostream>

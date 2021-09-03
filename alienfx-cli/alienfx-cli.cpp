@@ -1,5 +1,6 @@
+#define WIN32_LEAN_AND_MEAN
 #include <iostream>
-#include <windows.h>
+//#include <windows.h>
 
 #include "stdafx.h"
 #include "LFXUtil.h"
@@ -53,7 +54,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v3.2.0" << endl;
+	cerr << "alienfx-cli v4.1.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -342,12 +343,17 @@ int main(int argc, char* argv[])
 				color.cs.blue = (color.cs.blue * color.cs.brightness) >> 8;
 				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
 				if (grp) {
-					vector<UCHAR> lights;
-					for (int i = 0; i < grp->lights.size(); i++)
-						if (grp->lights[i]->devid == afx_dev->GetPID())
-							lights.push_back((UCHAR) afx_map->GetMappings()->at(i).lightid);
-					afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
-					afx_dev->UpdateColors();
+					int oldPid = afx_dev->GetPID(), oldVid = afx_dev->GetVid();
+					for (int j = 0; j < devs.size(); j++) {
+						vector<UCHAR> lights;
+						afx_dev->AlienFXChangeDevice(devs[j].first, devs[j].second);
+						for (int i = 0; i < grp->lights.size(); i++)
+							if (grp->lights[i]->devid == afx_dev->GetPID())
+								lights.push_back((UCHAR) afx_map->GetMappings()->at(i).lightid);
+						afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
+						afx_dev->UpdateColors();
+					}
+					afx_dev->AlienFXChangeDevice(oldVid, oldPid);
 				}
 			} break;
 			case 0:
@@ -534,9 +540,15 @@ int main(int argc, char* argv[])
 			{
 				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
 				if (grp) {
-					for (int i = 0; i < grp->lights.size(); i++)
-						if (grp->lights[i]->devid == afx_dev->GetPID())
-							afx_dev->SetAction(grp->lights[i]->lightid, act);
+					int oldPid = afx_dev->GetPID(), oldVid = afx_dev->GetVid();
+					for (int j = 0; j < devs.size(); j++) {
+						afx_dev->AlienFXChangeDevice(devs[j].first, devs[j].second);
+						for (int i = 0; i < grp->lights.size(); i++)
+							if (grp->lights[i]->devid == afx_dev->GetPID())
+								afx_dev->SetAction(grp->lights[i]->lightid, act);
+						afx_dev->UpdateColors();
+					}
+					afx_dev->AlienFXChangeDevice(oldVid, oldPid);
 				}
 			} break;
 			case 0:
