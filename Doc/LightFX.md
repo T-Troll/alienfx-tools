@@ -21,5 +21,5 @@ This library support 100% of LightFX v2 functions and data structures, but with 
 - No only 3 default action types (color, pulse, breath), but also additional 4 types supported for APIv4.
 
 ## Known issues
-- Current light state and it's posiion can't be retrieved correctly for now (will be always zero).
+- Current light state and it's position can't be retrieved correctly for now (will be always zero).
 - Default color set do the same like common one (but it's deprecated in LightFX). I plan to store color as default later on.
