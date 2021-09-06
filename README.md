@@ -14,8 +14,8 @@ Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
 ## Requirements
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
-- Windows 10 v1706 or later (binary files for 64-bit only, but you can compile project for 32-bit as well). Windows 7 NOT supported, 8 and 8.1 will lost some functionality.
-- `alienfan-gui` and `alienfan-cli` always require Administrator rights to work (kernel driver needs to be installed to communicate with hardware).
+- Windows 10 v1803 or later (binary files for 64-bit only, but you can compile project for 32-bit as well).
+- `alienfan-gui` and `alienfan-cli` always require Administrator rights to work (for communication with hardware).
 - Other apps does not require Administrator rights, except `alienfx-gui` in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privilegy)
   - "Esif temperature" selected (access to ESIF values blocked from user account)
@@ -25,11 +25,8 @@ Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 - Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
 - (Optional) `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other tools doesn't require it, so you need it in case if you plan to use Ambient only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
-- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version 
-- (Optional) If you plan to use `alienfx-gui` fan control or any of Aliefan tools, you need to alter system settings (i have no driver sign certificate for now):
-  - Go into you system BIOS and disable "Secure boot" option.
-  - From Administrator command line, issue `bcdedit /set testsigning on` command, then reboot.  
-  (Applications can do this step automatically after start/enable fan control).
+- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, any of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version. 
+- (Optional) If you plan to use `alienfx-gui` fan control or any of Aliefan tools, check [alienfan readme](https://github.com/T-Troll/alienfan-tools) for possible configuration alternatives.
 - Unpack the archive to any directory of your choise or just run installer.  
 - After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
 

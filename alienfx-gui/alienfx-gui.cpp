@@ -78,9 +78,10 @@ DWORD EvaluteToAdmin() {
 					fan_conf->Save();
 					if (acpi)
 						delete acpi;
-					SendMessage(mDlg, WM_CLOSE, 0, 0);
-				} else
-					_exit(1);  // Quit itself
+					Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+					EndDialog(mDlg, 1);
+				}
+				_exit(1);  // Quit itself
 			}
 		}
 		return dwError;
@@ -235,38 +236,59 @@ bool DoStopService(bool kind) {
 	return true;
 }
 
-//string UnpackDriver() {
-//	// Unpack driver file, if not exist...
-//	char currentPath[MAX_PATH];
-//	GetModuleFileName(NULL, currentPath, MAX_PATH);
-//	string name = currentPath;
-//	name.resize(name.find_last_of("\\"));
-//	name+= "\\HwAcc.sys";
-//	HANDLE hndFile = CreateFile(
-//		name.c_str(),
-//		GENERIC_WRITE,
-//		0,
-//		NULL,
-//		CREATE_NEW,
-//		0,
-//		NULL
-//	);
-//
-//	if (hndFile != INVALID_HANDLE_VALUE ) {
-//		// No driver file, create one...
-//		HRSRC driverInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DRIVER), "Driver");
-//		if (driverInfo) {
-//			HGLOBAL driverHandle = LoadResource(NULL, driverInfo);
-//			BYTE* driverBin = (BYTE*) LockResource(driverHandle);
-//			DWORD writeBytes = SizeofResource(NULL, driverInfo);
-//			WriteFile(hndFile, driverBin, writeBytes, &writeBytes, NULL);
-//			UnlockResource(driverHandle);
-//		}
-//		CloseHandle(hndFile);
-//	} else
-//		return TEXT("");
-//	return name;
-//}
+AlienFan_SDK::Control *InitAcpi() {
+	AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
+
+	if (!cAcpi->IsActivated()) {  //!!!!!!
+		// Driver can't start, let's do kernel hack...
+		delete cAcpi;
+		char currentPath[MAX_PATH];
+		GetModuleFileName(NULL, currentPath, MAX_PATH);
+		string cpath = currentPath;
+		cpath.resize(cpath.find_last_of("\\"));
+		string shellcom = "-prv 6 -scv 3 -drvn HwAcc -map \"" + cpath + "\\HwAcc.sys\"",
+			shellapp = "\"" + cpath + "\\KDU\\kdu.exe\"";
+
+		SHELLEXECUTEINFO shBlk = {0};
+		shBlk.cbSize = sizeof(SHELLEXECUTEINFO);
+		shBlk.fMask = SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NO_CONSOLE;
+		shBlk.lpFile = shellapp.c_str();
+		shBlk.lpParameters = shellcom.c_str();
+		shBlk.lpVerb = "runas";
+		shBlk.nShow = SW_HIDE;
+
+		if (ShellExecuteEx(&shBlk)) {
+			WaitForSingleObject(shBlk.hProcess, INFINITE);
+			CloseHandle(shBlk.hProcess);
+			cAcpi = new AlienFan_SDK::Control();
+		} else {
+			cAcpi = NULL;
+		}
+	}
+
+	return cAcpi;
+}
+
+DWORD WINAPI TFanInit(LPVOID param) {
+	EvaluteToAdmin();
+	acpi = InitAcpi();
+	if (acpi && acpi->Probe()) {
+		mon = new MonHelper(NULL, NULL, fan_conf, acpi);
+		if (fan_conf->lastProf->powerStage >= 0)
+			acpi->SetPower(fan_conf->lastProf->powerStage);
+		if (fan_conf->lastProf->GPUPower >= 0)
+			acpi->SetGPU(fan_conf->lastProf->GPUPower);
+	} else {
+		MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
+					MB_OK | MB_ICONHAND);
+		if (acpi) {
+			delete acpi;
+			acpi = NULL;
+		}
+		conf->fanControl = false;
+	}
+	return 0;
+}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -289,25 +311,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if ((prof = conf->FindProfile(conf->activeProfile)) && prof->flags & PROF_FANS)
 		fan_conf->lastProf = &prof->fansets;
 
-	if (conf->fanControl) {
-		EvaluteToAdmin();
-		//drvName = UnpackDriver();
-		acpi = new AlienFan_SDK::Control();
-		if (acpi->Probe()) {
-			mon = new MonHelper(NULL, NULL, fan_conf, acpi);
-			if (fan_conf->lastProf->powerStage >= 0)
-				acpi->SetPower(fan_conf->lastProf->powerStage);
-			if (fan_conf->lastProf->GPUPower >= 0)
-				acpi->SetGPU(fan_conf->lastProf->GPUPower);
-		} else {
-			MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
-					   MB_OK | MB_ICONHAND);
-			acpi->UnloadService();
-			delete acpi;
-			acpi = NULL;
-			conf->fanControl = false;
-		}
-	}
+	// check fans...
+	if (conf->fanControl)
+		CreateThread(NULL, 0, TFanInit, 0, 0, NULL);
 
 	if (fxhl->devs.size() > 0) {
 		conf->wasAWCC = DoStopService(true);
@@ -534,6 +540,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		// Started/restarted explorer...
 		Shell_NotifyIcon(NIM_ADD, &conf->niData);
 		CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+
 		return true;
 	}
 
@@ -546,13 +553,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		SetWindowLongPtr(tab_list, GWLP_USERDATA, (LONG_PTR)pHdr);
 
 		pHdr->hwndTab = tab_list;
-
-		//pHdr->apRes[0] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_COLORS));
-		//pHdr->apRes[1] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_EVENTS));
-		//pHdr->apRes[2] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_DEVICES));
-		//pHdr->apRes[3] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_GROUPS));
-		//pHdr->apRes[4] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_PROFILES));
-		//pHdr->apRes[5] = DoLockDlgRes(MAKEINTRESOURCE(IDD_DIALOG_SETTINGS));
 
 		TCITEM tie;
 		char nBuf[64] = {0};
@@ -587,10 +587,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		conf->niData.hWnd = hDlg;
 		conf->SetIconState();
-		Shell_NotifyIcon(NIM_ADD, &conf->niData);
+		
+		if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
 
-		// check update....
-		CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+			// check update....
+			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+
+		} else {
+			MessageBox(NULL, "TrayIcon fails!", "Error",
+					   MB_OK | MB_ICONHAND);
+		}
 		conf->SetStates();
 	} break;
 	case WM_COMMAND:

@@ -2,11 +2,10 @@
 
 `alienfx-gui` is AWCC in 500kb. Not 500Mb!  
 
-What it **can nott** do in compare to AWCC?
+What it **can not** do in compare to AWCC?
 - No overclocking. Anyway, ThrottleStop or XTU do the job better.
 - No audio control. Being honest, never use it in AWCC.
 - No huge picture or animations, interface is as minimalistic as possible.
-- No Dell LightFX support (but i can emulate it, if needed).
 - No services and drivers which send you usage data in Dell, consume RAM and slow down system.
 
 But what it can do, instead?
@@ -17,6 +16,7 @@ But what it can do, instead?
   - It fast!
 - Control system fans. Instead of AWCC, fan control are dynamic, so you can boost them any way you want. Or unboost.
 - Can have a profile for any application you run, switching not only light sets, but, for example, dim lights or only switch if application in foreground.
+- Fast, less buggy and robust LightFX support (emulation).
 
 ## Usage
 Run `alienfx-gui.exe`.  
@@ -29,6 +29,7 @@ How it works
 ```
 
 `"Color"` tab is set hardware colors and effects for light. This setting will remains even if you exit application.  
+
 Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph – 2, Spectrum – 7) to work correctly.  
 Use "Effects" list to add/remove/select effect. For each effect, you can define its color, effect mode, speed (how fast to change the color), and length (how long it plays).  
 Available effect modes are:
@@ -64,8 +65,7 @@ Light acts like a performance indicator, reflecting system parameters:
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.  
 "Gauge" checkbox changes behavour for groups only. If Gauge on, all lights in group works as a level indicator (100% color below indicator value, 0% color above indicator value, mixed in between.
 
-"Event"  
-Light switches between colors if system event occures:
+"Event" - Light switches between colors if system event occures:
 - Disk activity - Switch light every disk activity event (HDD IDLE above zero).
 - Network activity - Switch light if any network traffic detected (across all adapters).
 - System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
@@ -76,6 +76,7 @@ Light switches between colors if system event occures:
 You can mix different monitoring type at once, f.e. different colors for same light for both CPU load and system overheat event. In this case Event color always override Performance one then triggered, as well as both override Power state one.
 
 `"Devices"` tab is an extended GUI for `alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
+
 "Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
 "Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.  
 "Lights" list shows all lights defined for selected device. Use “Add”/”Remove” buttons to add new light or remove selected one.  
@@ -94,6 +95,7 @@ Press [+] and [-] buttons to add/remove group, use dropdown to select it or chan
 If you have a group selected, "Group lights" list present the list of lights assigned to this group. Use [-->] and [<--] buttons to add and remove light from the group.  
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.  
+
 You can doubleclick or press Enter on selected profile into the list to edit it's name.  
 Each profile can have settings and application for trigger it. The settings are:
 - "Application" - Defines application executable for trigger profile switch if "Profile auto switch" enabled.
@@ -104,7 +106,6 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated. 
 
 `"Fans"` tab is UI for control system fans and temperature sensors.  
-**WARNING** It will only avaliable if system configured for using low-level driver and enabled in "Settings" tab! Read "Requrements" in main readme.md for details!  
 
 First, take a look at "Power mode" dropdown - it can control system pre-defined power modes. For manual fan control switch it to "Manual".  
 "Temperature sensors" list present all hardware sensors found at you motheboard (some SSD sensors can absent into this list), and their current temperature values.
@@ -144,6 +145,7 @@ Please keep in mind:
 - "Profile auto switch" - Switch between profiles available automatically, according of applications start and finish. This also block manual profile selection (default - off).
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Esif temperature" - Read hardware device temperature counters. If disabled, only system-wide ones will be read. It's useful for some Dell and Alienware systems, but also provide a lot of component temperature readings. It will require "Run as administrator" privilege (default - off).
+- "Enable fan control" - Enables all fan control functionality, if possible.
 
 "Global effects" block provide global control for light effects for current device. It's only work for APIv5 devices, provide some cool animations across all keys. 
 

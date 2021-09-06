@@ -203,17 +203,11 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
         power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU);
-    if (message == newTaskBar) {
-        // Started/restarted explorer...
-        Shell_NotifyIcon(NIM_ADD, &fan_conf->niData);
-        CreateThread(NULL, 0, CUpdateCheck, &fan_conf->niData, 0, NULL);
-        return true;
-    }
 
     switch (message) {
     case WM_INITDIALOG:
     {
-        if (acpi) {
+        if (acpi && acpi->IsActivated()) {
 
             ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
             ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
