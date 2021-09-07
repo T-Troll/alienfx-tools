@@ -371,4 +371,4 @@ ASALocalRun/
 
 # End of https://www.gitignore.io/api/windows,visualstudio,visualstudiocode
 /alienfx-gui/alien_org.ico
-
+/alienfan-tools

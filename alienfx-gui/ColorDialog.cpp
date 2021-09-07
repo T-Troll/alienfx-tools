@@ -16,6 +16,10 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
 		type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
 	ListView_DeleteAllItems(eff_list);
+	HIMAGELIST hOld = ListView_GetImageList(eff_list, LVSIL_SMALL);
+	if (hOld) {
+		ImageList_Destroy(hOld);
+	}
 	ListView_SetExtendedListViewStyle(eff_list, LVS_EX_FULLROWSELECT);
 	LVCOLUMNA lCol;
 	lCol.mask = LVCF_WIDTH;
@@ -26,10 +30,9 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		LVITEMA lItem{}; char efName[16] = {0};
 		lItem.mask = LVIF_TEXT | LVIF_IMAGE;
 		lItem.iSubItem = 0;
-		HIMAGELIST hSmall, hOld;
 		COLORREF* picData = NULL;
 		HBITMAP colorBox = NULL;
-		hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
+		HIMAGELIST hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
 								  GetSystemMetrics(SM_CYSMICON),
 								  ILC_COLOR32, 1, 1);
 		for (int i = 0; i < mmap->eve[0].map.size(); i++) {
@@ -64,10 +67,6 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 			}
 			lItem.pszText = efName;
 			ListView_InsertItem(eff_list, &lItem);
-		}
-		hOld = ListView_GetImageList(eff_list, LVSIL_SMALL);
-		if (hOld) {
-			ImageList_Destroy(hOld);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
 		//ImageList_Destroy(hSmall);
