@@ -49,8 +49,9 @@ This tools can also support other Dell/Alienware devices:
 - APIv4 - 34-bytes command, 24-bit color,
 - APIv5 - 64-bytes command, 24-bit color (DARFON OEM keyboards).
 
-For fan/power control, any Alienware notebook starting from m15R1/m17R1 or later supported now.
+For fan/power control, any Alienware notebook starting from m15R1/m17R1 or later supported. I have unconfirmed reports `Alienware Area51m R2` and `Dell G-series` also supported.
 
+`Alienware desktops` should works as well, except `Aurora R7` (different interface).
 External mouses, keyboards and monitors are not supported yet, feel free to open an issue if you want to add support for it, but be ready to help with testing!
 
 ## Known issues
@@ -71,7 +72,7 @@ Pre-requisites:
 
 Build process:
 - Clone repository
-- Clone alienfan-tools repository into `alienfan-tools` folder from [here](https://github.com/T-Troll/alienfan-tools)
+<s>- Clone alienfan-tools repository into `alienfan-tools` folder from [here](https://github.com/T-Troll/alienfan-tools)</s>
 - Open solution into you Visual Studio, build.
 
 ## Tools Used
