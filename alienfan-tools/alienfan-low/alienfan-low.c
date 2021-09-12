@@ -591,7 +591,7 @@ APIENTRY
 CloseAcpiDevice(
     __in HANDLE hDriver
 ) {
-    if (hDriver)
+    if (hDriver && hDriver != INVALID_HANDLE_VALUE)
         CloseHandle(hDriver);
     hDriver = NULL;
 }

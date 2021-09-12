@@ -1,6 +1,6 @@
 # alienfan-tools
 Utilities for fan and power control for Alienware notebooks trough direct calls into ACPI BIOS.  
-This is the side step from my [alienfx-tools](https://github.com/T-Troll/alienfx-tools) project, dedicated to fan and power control subsystem, and will be integrated into it later on.
+This is the side step from my [alienfx-tools](https://github.com/T-Troll/alienfx-tools) project, dedicated to fan and power control subsystem.
 
 Tools avaliable:
 - `alienfan-cli` - simple fan control command line utility
@@ -32,7 +32,7 @@ NB: You should have hwacc.sys into the same folder.
 - Notebooks: `Alienware m15/17R1` or later, `Alienware Area51m-R1` or later.
 - Should work, but not tested completely: `Alienware Area51m R2`, `Dell G-series`
 - Desktops: <s>`Alienware Aurora R7` or later (with issues, need more testing).</s> Sorry, not supported now (different function mapping).
-- Only Intel CPU and NVidia GPU supported. AMD/Radeon need other commands.
+- Only <s>Intel CPU and</s> NVidia GPU supported. Radeon need other commands.
 
 ### Tested gear:
 - `Alienware m15R1`: 
@@ -43,6 +43,9 @@ NB: You should have hwacc.sys into the same folder.
   - 5 power modes (unlocked 45W, 105W(!), 105W, 105W, 45W)
   - 4 GPU modes... But do nothing, just return "OK"
   - 7 Temperature sensors
+- `Dell G15`:
+  - 2 power modes (but only one can be selected)
+  - 2 Temperature sensors
 
 ## `alienfan-gui` usage
 
@@ -122,6 +125,7 @@ NB: for both `direct` commands, all values are not decimal, but hex (like c8, a3
   - [ ] Older Alienware (need to repair my old one to check)
   - [x] Area 51 (need ACPI dump from it)
   - [x] Dell G3/G5 (non-AMD)
+  - [x] Dell G15 (AMD)
   - [ ] Desktops (work in progress)
 - [x] SDK lib for easy sharing
 - [x] Driver file embedding into app

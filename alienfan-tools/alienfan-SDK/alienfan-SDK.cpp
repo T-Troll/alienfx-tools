@@ -21,19 +21,21 @@ namespace AlienFan_SDK {
 		if (!activated) {
 			// We don't, so let's try to start it!
 			TCHAR  driverLocation[MAX_PATH] = {0};
+		    wrongEnvironment = true;
 			if (GetServiceName(driverLocation, MAX_PATH)) {
-				scManager = OpenSCManager(
+				if (scManager = OpenSCManager(
 					NULL,                   // local machine
 					NULL,                   // local database
 					SC_MANAGER_ALL_ACCESS   // access required
-				);
-				InstallService(scManager, driverLocation);
-				if (DemandService(scManager)) {
-					activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
-				} else wrongEnvironment = true;
-			} else wrongEnvironment = true;
-		} else
-			haveService = true;
+				)) {
+					InstallService(scManager, driverLocation);
+					if (DemandService(scManager)) {
+						activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
+						wrongEnvironment = !activated;
+					}
+				}
+			}
+		}
 	}
 	Control::~Control() {
 		sensors.clear();
@@ -44,12 +46,12 @@ namespace AlienFan_SDK {
 	}
 
 	void Control::UnloadService() {
-		if (!haveService && acc != INVALID_HANDLE_VALUE && acc) {
+		if (scManager) {
+			CloseAcpiDevice(acc);
 			StopService(scManager);
 			RemoveService(scManager);
 			CloseServiceHandle(scManager);
 		}
-		acc = NULL;
 	}
 
 	int Control::RunMainCommand(short com, byte sub, byte value1, byte value2) {
@@ -57,13 +59,10 @@ namespace AlienFan_SDK {
 			PACPI_EVAL_OUTPUT_BUFFER res = NULL;
 			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
 			BYTE operand[4] = {sub, value1, value2, 0};
-			//UINT operand = ((UINT) arg2) << 16 | (UINT) arg1 << 8 | sub;
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, operand);
-			//res = (ACPI_EVAL_OUTPUT_BUFFER *) EvalAcpiMethodArgs(acc, "\\_SB.AMW1.WMAX", acpiargs, (PVOID*)&res);
-		    //EvalAcpiNSArgOutput(mainCommand, acpiargs);
-			if (EvalAcpiMethodArgs(acc, "\\_SB.AMW1.WMAX", acpiargs, (PVOID *) &res)) {
+			if (EvalAcpiMethodArgs(acc, devs[aDev].mainCommand/*"\\_SB.AMW1.WMAX"*/, acpiargs, (PVOID *) &res)) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -81,7 +80,6 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0x100);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, (UCHAR*)&packed);
-			//res = (ACPI_EVAL_OUTPUT_BUFFER*) EvalAcpiNSArgOutput(gpuCommand, acpiargs);
 			if (EvalAcpiMethodArgs(acc, "\\_SB.PCI0.PEG0.PEGP.GPS", acpiargs, (PVOID *) &res)) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
@@ -96,60 +94,65 @@ namespace AlienFan_SDK {
 		char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR";//TEXT("\\____SB_PCI0LPCBEC0_SEN1_STR");
 		if (activated) {
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+			sensors.clear();
+			fans.clear();
+			powers.clear();
+			// Check device type...
+			// Notebooks...
 			aDev = 0;
-			if (RunMainCommand(devs[aDev].getFanID.com, devs[aDev].getFanID.sub, 0x32) == 1) {
-				// Alienware device detected!
-				// ToDo: Now check device type
-				sensors.clear();
-				fans.clear();
-				powers.clear();
-				// check how many fans we have...
-				USHORT fanID = 0x32;
-				while (RunMainCommand(devs[aDev].getFanID.com, devs[aDev].getFanID.sub, (BYTE) fanID) == 1) {
-					fans.push_back(fanID);
-					fanID++;
-				}
-				// check how many power states...
-				BYTE startIndex = 4, powerID = 0;
-				powers.push_back(0);
-				while ((powerID = RunMainCommand(devs[aDev].getPowerID.com, devs[aDev].getPowerID.sub, startIndex)) != 0xff) {
-					powers.push_back(powerID);
-					startIndex++;
-				}
-				ALIENFAN_SEN_INFO cur;
-				// Scan term sensors for fans...
-				for (int i = 0; i < fans.size(); i++) {
-					USHORT tempIndex;
-					if ((tempIndex = RunMainCommand(devs[aDev].getZoneSensorID.com, devs[aDev].getZoneSensorID.sub, (byte)fans[i])) != -1) {
-						cur.senIndex = tempIndex;
-						cur.isFromAWC = true;
-						switch (i) {
-						case 0:
+			for (int i = 1; i < 5; i++) {
+				devs[0].mainCommand[8] = i + '0';
+				if (RunMainCommand(devs[0].getFanID.com, devs[0].getFanID.sub, 0x32) == 1) {
+					// Alienware notebook device detected!
+				    // check how many fans we have...
+					USHORT fanID = 0x32;
+					while (RunMainCommand(devs[aDev].getFanID.com, devs[aDev].getFanID.sub, (BYTE) fanID) == 1) {
+						fans.push_back(fanID);
+						fanID++;
+					}
+					// check how many power states...
+					BYTE startIndex = 4, powerID = 0xa0;
+					powers.push_back(0);
+					while ((powerID = RunMainCommand(devs[aDev].getPowerID.com, devs[aDev].getPowerID.sub, startIndex)) != 0xff && powerID) {
+						powers.push_back(powerID);
+						startIndex++;
+					}
+					ALIENFAN_SEN_INFO cur;
+					// Scan term sensors for fans...
+					for (int i = 0; i < fans.size(); i++) {
+						USHORT tempIndex;
+						if ((tempIndex = RunMainCommand(devs[aDev].getZoneSensorID.com, devs[aDev].getZoneSensorID.sub, (byte) fans[i])) != -1 && tempIndex) {
+							cur.senIndex = tempIndex;
+							cur.isFromAWC = true;
+							switch (i) {
+							case 0:
 							cur.name = "CPU Internal Thermistor"; break;
-						case 1:
+							case 1:
 							cur.name = "GPU Internal Thermistor"; break;
-						default:
+							default:
 							cur.name = "FAN#" + to_string(i) + " sensor"; break;
+							}
+							sensors.push_back(cur);
 						}
-						sensors.push_back(cur);
 					}
-				}
-				for (int i = 0; i < 10; i++) {
-					tempNamePattern[22] = i + '0';
-					if (EvalAcpiMethod(acc, tempNamePattern, (PVOID*)&resName)) {
-						char* c_name = new char[1 + resName->Argument[0].DataLength];
-						wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR*) resName->Argument[0].Data, resName->Argument[0].DataLength);
-						string senName = c_name;
-						delete[] c_name;
-						cur.senIndex = i;
-						cur.name = senName;
-						cur.isFromAWC = false;
-						sensors.push_back(cur);
-						free(resName);
+					for (int i = 0; i < 10; i++) {
+						tempNamePattern[22] = i + '0';
+						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName)) {
+							char *c_name = new char[1 + resName->Argument[0].DataLength];
+							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
+							string senName = c_name;
+							delete[] c_name;
+							cur.senIndex = i;
+							cur.name = senName;
+							cur.isFromAWC = false;
+							sensors.push_back(cur);
+							free(resName);
+						}
 					}
+					return true;
 				}
-				return true;
 			}
+			aDev = -1;
 		}
 		return false;
 	}
@@ -179,7 +182,7 @@ namespace AlienFan_SDK {
 				PACPI_EVAL_OUTPUT_BUFFER res = NULL;
 				tempValuePattern[22] = sensors[TempID].senIndex + '0';
 				if (EvalAcpiMethod(acc, tempValuePattern, (PVOID *) &res)) {
-					int res_int = res->Argument[0].Argument;
+					int res_int = (res->Argument[0].Argument - 0xaac) / 0xa;
 					free(res);
 					return res_int;
 				}
@@ -188,7 +191,7 @@ namespace AlienFan_SDK {
 		return -1;
 	}
 	int Control::Unlock() {
-		return RunMainCommand(devs[aDev].setPower.com, devs[aDev].setPower.sub);
+		return SetPower(0);
 	}
 	int Control::SetPower(int level) {
 		if (level < powers.size())

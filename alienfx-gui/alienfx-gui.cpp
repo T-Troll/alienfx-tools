@@ -270,21 +270,24 @@ AlienFan_SDK::Control *InitAcpi() {
 }
 
 DWORD WINAPI TFanInit(LPVOID param) {
-	EvaluteToAdmin();
 	acpi = InitAcpi();
-	if (acpi && acpi->Probe()) {
-		mon = new MonHelper(NULL, NULL, fan_conf, acpi);
-		if (fan_conf->lastProf->powerStage >= 0)
-			acpi->SetPower(fan_conf->lastProf->powerStage);
-		if (fan_conf->lastProf->GPUPower >= 0)
-			acpi->SetGPU(fan_conf->lastProf->GPUPower);
-	} else {
-		MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
-					MB_OK | MB_ICONHAND);
-		if (acpi) {
+	if (acpi) {
+		if (acpi->Probe()) {
+			mon = new MonHelper(NULL, NULL, fan_conf, acpi);
+			if (fan_conf->lastProf->powerStage >= 0)
+				acpi->SetPower(fan_conf->lastProf->powerStage);
+			if (fan_conf->lastProf->GPUPower >= 0)
+				acpi->SetGPU(fan_conf->lastProf->GPUPower);
+		} else {
+			MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
+					   MB_OK | MB_ICONHAND);
 			delete acpi;
 			acpi = NULL;
+			conf->fanControl = false;
 		}
+	} else {
+		MessageBox(NULL, "Can't install fan driver, fan control will be disabled!", "Error",
+					MB_OK | MB_ICONHAND);
 		conf->fanControl = false;
 	}
 	return 0;
@@ -312,8 +315,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		fan_conf->lastProf = &prof->fansets;
 
 	// check fans...
-	if (conf->fanControl)
+	if (conf->fanControl) {
+		EvaluteToAdmin();
 		CreateThread(NULL, 0, TFanInit, 0, 0, NULL);
+	}
 
 	if (fxhl->devs.size() > 0) {
 		conf->wasAWCC = DoStopService(true);

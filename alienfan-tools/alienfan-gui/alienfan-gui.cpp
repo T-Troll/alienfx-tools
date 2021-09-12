@@ -92,41 +92,46 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     acpi = InitAcpi();
 
-    if (acpi && acpi->Probe()) {
+    if (acpi) {
+        if (acpi->Probe()) {
 
-        // Perform application initialization:
-        HWND mDlg;
-        if (!(mDlg = InitInstance(hInstance, nCmdShow))) {
-            return FALSE;
-        }
+            // Perform application initialization:
+            HWND mDlg;
+            if (!(mDlg = InitInstance(hInstance, nCmdShow))) {
+                return FALSE;
+            }
 
-        // minimize if needed
-        if (fan_conf->startMinimized)
-            SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
+            // minimize if needed
+            if (fan_conf->startMinimized)
+                SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 
-        if (fan_conf->lastProf->powerStage >= 0)
-            acpi->SetPower(fan_conf->lastProf->powerStage);
-        if (fan_conf->lastProf->GPUPower >= 0)
-            acpi->SetGPU(fan_conf->lastProf->GPUPower);
+            if (fan_conf->lastProf->powerStage >= 0)
+                acpi->SetPower(fan_conf->lastProf->powerStage);
 
-        mon = new MonHelper(mDlg, fanWindow, fan_conf, acpi);
+            if (fan_conf->lastProf->GPUPower >= 0)
+                acpi->SetGPU(fan_conf->lastProf->GPUPower);
 
-        HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
+            mon = new MonHelper(mDlg, fanWindow, fan_conf, acpi);
 
-        // Main message loop:
-        while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
+            HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
 
-        delete mon;
+            // Main message loop:
+            while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
 
+            delete mon;
+        } else
+            MessageBox(NULL, "Supported hardware not detected!", "Fatal error",
+                       MB_OK | MB_ICONSTOP);
     } else {
-        MessageBox(NULL, "No supported hardware detected or access denied.", "Fatal error",
+        MessageBox(NULL, "Can't install driver, check system configuration!", "Fatal error",
                    MB_OK | MB_ICONSTOP);
     }
 
-    delete acpi;
+    if (acpi)
+        delete acpi;
     delete fan_conf;
 
     return (int) msg.wParam;
