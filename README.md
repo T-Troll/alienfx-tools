@@ -13,7 +13,7 @@ Some additional tools added from my other [`Alienfan-tools`](https://github.com/
 Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
 ## Disclaimer
-**Antiviruses will detect virus into package**.  
+Starting from the release 4.2.1, **Antiviruses will detect virus into project package**.  
 It's not a virus, in fact, but the kernel hack for load driver. If you don't like it:
   - Remove kdl.dll and drv64.dll from package (or you antivirus do so).
   - Use "Test mode" instalation method (see Requirements).
