@@ -57,6 +57,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LightFX", "LightFX\LightFX.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-low", "alienfan-tools\alienfan-low\alienfan-low.vcxproj", "{CC889C0D-369A-46F0-87B2-956DA96DDEFD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tanikaze", "alienfan-tools\KDL\Tanikaze\Tanikaze.vcxproj", "{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "alienfan-tools\KDL\Hamakaze\KDU.vcxproj", "{46C8FB0F-C8BF-4932-B84C-A10B38904728}"
+	ProjectSection(ProjectDependencies) = postProject
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E} = {072F189A-CEA9-4CA8-A0FA-1257A7524A8E}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfx-LFX\alienfx-LFX.vcxitems*{4ecafbb9-b7b9-4bc3-9c42-1882a68edac8}*SharedItemsImports = 4
@@ -270,6 +277,26 @@ Global
 		{CC889C0D-369A-46F0-87B2-956DA96DDEFD}.Release|x86.ActiveCfg = Release|Win32
 		{CC889C0D-369A-46F0-87B2-956DA96DDEFD}.Release|x86.Build.0 = Release|Win32
 		{CC889C0D-369A-46F0-87B2-956DA96DDEFD}.Release|x86.Deploy.0 = Release|Win32
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|ARM.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|ARM64.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x64.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x64.Build.0 = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x86.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|ARM.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|ARM64.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x64.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x64.Build.0 = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x86.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|ARM.ActiveCfg = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|ARM64.ActiveCfg = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x64.ActiveCfg = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x64.Build.0 = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x86.ActiveCfg = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|ARM.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|ARM64.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.Build.0 = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

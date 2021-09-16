@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.31515.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-cli", "alienfan-cli\alienfan-tools.vcxproj", "{D6AD2E10-F61C-43F1-87EA-E77DEA12DD42}"
+	ProjectSection(ProjectDependencies) = postProject
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728} = {46C8FB0F-C8BF-4932-B84C-A10B38904728}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HwAcc", "HwAcc\HwAcc.vcxproj", "{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}"
 EndProject
@@ -21,6 +24,13 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-low", "alienfan-low\alienfan-low.vcxproj", "{CC889C0D-369A-46F0-87B2-956DA96DDEFD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-test", "alienfan-test\alienfan-test.vcxproj", "{285C1D1F-C244-4136-B033-F2CE7538EEF8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "KDL\Hamakaze\KDU.vcxproj", "{46C8FB0F-C8BF-4932-B84C-A10B38904728}"
+	ProjectSection(ProjectDependencies) = postProject
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E} = {072F189A-CEA9-4CA8-A0FA-1257A7524A8E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tanikaze", "KDL\Tanikaze\Tanikaze.vcxproj", "{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,8 +62,8 @@ Global
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|ARM64.ActiveCfg = Debug|ARM64
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|ARM64.Build.0 = Debug|ARM64
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|ARM64.Deploy.0 = Debug|ARM64
-		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.ActiveCfg = Debug|x64
-		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.Build.0 = Debug|x64
+		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.ActiveCfg = Release|x64
+		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.Build.0 = Release|x64
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x86.ActiveCfg = Debug|Win32
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x86.Build.0 = Debug|Win32
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Release|ARM.ActiveCfg = Release|ARM
@@ -138,6 +148,26 @@ Global
 		{285C1D1F-C244-4136-B033-F2CE7538EEF8}.Release|x64.Build.0 = Release|x64
 		{285C1D1F-C244-4136-B033-F2CE7538EEF8}.Release|x86.ActiveCfg = Release|Win32
 		{285C1D1F-C244-4136-B033-F2CE7538EEF8}.Release|x86.Build.0 = Release|Win32
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|ARM.ActiveCfg = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|ARM64.ActiveCfg = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x64.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x64.Build.0 = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x86.ActiveCfg = Debug|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|ARM.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|ARM64.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.ActiveCfg = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.Build.0 = Release|x64
+		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x86.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|ARM.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|ARM64.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x64.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x64.Build.0 = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x86.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|ARM.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|ARM64.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x64.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x64.Build.0 = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

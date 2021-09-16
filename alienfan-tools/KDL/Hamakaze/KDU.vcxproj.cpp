@@ -1,0 +1,255 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="minirtl">
+      <UniqueIdentifier>{f7a995c4-ab5e-4da5-8c67-b786e28b68e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\idrv">
+      <UniqueIdentifier>{62c72812-4f0a-4b4e-a30d-4f7eee638cc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hde">
+      <UniqueIdentifier>{3ec0ce53-a8de-4985-b6d0-dc01135c1d91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ntos">
+      <UniqueIdentifier>{1df1a36e-45d4-430a-a401-9415b50be4bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tinyaes">
+      <UniqueIdentifier>{c53b77e9-0d5d-4eb3-91d8-1b71f16abd1d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="sup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="drvmap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kduprov.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="victim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\nal.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\rtcore.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="hde\hde64.c">
+      <Filter>hde</Filter>
+    </ClCompile>
+    <ClCompile Include="pagewalk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\mapmem.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\atszio.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\winio.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\winring0.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="dsefix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\phymem.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="shellcode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\lha.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\tinyaes\aes.c">
+      <Filter>tinyaes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_filename.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcat.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcmp.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcmpi.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcpy.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strend.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strlen.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strncpy.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\cmdline.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\strtou64.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\strtoul.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\u64tohex.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\directio64.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KDL.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="drvmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wdksup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kduprov.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="victim.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="consts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\nal.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\rtcore.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="hde\hde64.h">
+      <Filter>hde</Filter>
+    </ClInclude>
+    <ClInclude Include="pagewalk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\mapmem.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\atszio.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\winio.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\winring0.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="dsefix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kduplist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\phymem.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="shellcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\lha.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\tinyaes\aes.h">
+      <Filter>tinyaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\ntos\halamd64.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\ntos\ntos.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\_filename.h">
+      <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\cmdline.h">
+      <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\minirtl.h">
+      <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\rtltypes.h">
+      <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\directio64.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="KDL.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\274.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\SB_SMBUS_SDK.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -56,8 +56,8 @@ DWORD WINAPI CMonProc(LPVOID param) {
 		// update values.....
 		bool visible = IsWindowVisible(src->dlg);// IsIconic(src->dlg);
 
-		if (src->acpi->GetPower() != src->conf->lastProf->powerStage)
-			src->acpi->SetPower(src->conf->lastProf->powerStage);
+		/*if (src->acpi->GetPower() != src->conf->lastProf->powerStage)
+			src->acpi->SetPower(src->conf->lastProf->powerStage);*/
 
 		// temps..
 		for (int i = 0; i < src->acpi->HowManySensors(); i++) {

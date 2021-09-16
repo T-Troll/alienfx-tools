@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "alienfan-SDK.h"
-#include <shellapi.h>
+#include "kdl.h"
 
 using namespace std;
 
@@ -13,24 +13,13 @@ AlienFan_SDK::Control *InitAcpi() {
     if (!cAcpi->IsActivated()) {
         // Driver can't start, let's do kernel hack...
         delete cAcpi;
-        char currentPath[MAX_PATH];
-        GetModuleFileName(NULL, currentPath, MAX_PATH);
-        string cpath = currentPath;
-        cpath.resize(cpath.find_last_of("\\"));
-        string shellcom = "-prv 6 -scv 3 -drvn HwAcc -map \"" + cpath + "\\HwAcc.sys\"",
-            shellapp = "\"" + cpath + "\\KDU\\kdu.exe\"";
+        wchar_t currentPath[MAX_PATH];
+        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
+        wstring cpath = currentPath;
+        cpath.resize(cpath.find_last_of(L"\\"));
+        cpath += L"\\HwAcc.sys";
 
-        SHELLEXECUTEINFO shBlk = {0};
-        shBlk.cbSize = sizeof(SHELLEXECUTEINFO);
-        shBlk.fMask = SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NO_CONSOLE;
-        shBlk.lpFile = shellapp.c_str();
-        shBlk.lpParameters = shellcom.c_str();
-        shBlk.lpVerb = "runas";
-        shBlk.nShow = SW_HIDE;
-
-        if (ShellExecuteEx(&shBlk)) {
-            WaitForSingleObject(shBlk.hProcess, INFINITE);
-            CloseHandle(shBlk.hProcess);
+        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
             cAcpi = new AlienFan_SDK::Control();
         } else {
             cAcpi = NULL;
@@ -52,6 +41,7 @@ power=<value>\t\t\tSet TDP to this level\n\
 gpu=<value>\t\t\tSet GPU power limit\n\
 getfans\t\t\t\tShow current fan boost level (0..100 - in percent)\n\
 setfans=<fan1>[,<fan2>]\t\tSet fans boost level (0..100 - in percent)\n\
+setfandirect=<fanid>,<value>\tSet fan with selected ID to given value\n\
 direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tPower level can be in 0..N - according to power states detected\n\
@@ -62,7 +52,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    std::cout << "AlienFan-cli v1.1.1.0\n";
+    std::cout << "AlienFan-cli v1.2.0\n";
 
     AlienFan_SDK::Control *acpi = InitAcpi();
 
@@ -71,7 +61,7 @@ int main(int argc, char* argv[])
     if (acpi && acpi->IsActivated()) {
 
         if (supported = acpi->Probe()) {
-            cout << "Supported hardware detected, " << acpi->HowManyFans() << " fans, "
+            cout << "Supported hardware v" << acpi->GetVersion() << " detected, " << acpi->HowManyFans() << " fans, "
                 << acpi->sensors.size() << " sensors, " << acpi->HowManyPower() << " power states." << endl;
         }
         else {
@@ -136,7 +126,7 @@ int main(int argc, char* argv[])
                     }
                     BYTE unlockStage = atoi(args[0].c_str());
                     if (unlockStage < acpi->HowManyPower()) {
-                        if (acpi->SetPower(unlockStage) >= 0)
+                        if (acpi->SetPower(unlockStage) != acpi->GetErrorCode())
                             cout << "Power set to " << (int) unlockStage << endl;
                         else
                             cout << "Power set failed!" << endl;
@@ -177,19 +167,40 @@ int main(int argc, char* argv[])
                 }
                 if (command == "setfans" && supported) {
                     if (args.size() < acpi->HowManyFans()) {
-                        cout << "Setfans: incorrect arguments (should be " << acpi->HowManyFans() << ")" << endl;
+                        cout << "Setfans: incorrect arguments (should be " << acpi->HowManyFans() << " of them)" << endl;
                         continue;
                     }
                     int prms = 0;
                     for (int i = 0; i < acpi->HowManyFans(); i++) {
                         BYTE boost = atoi(args[i].c_str());
-                        if (acpi->SetFanValue(i, boost))
-                            cout << "Fan#" << i << " set to " << (int) boost << endl;
+                        if (boost < 101) {
+                            if (acpi->SetFanValue(i, boost) >= 0)
+                                cout << "Fan#" << i << " set to " << (int) boost << endl;
+                            else {
+                                cout << "Set fan level failed!" << endl;
+                                break;
+                            }
+                        } else
+                            cout << "Incorrect boost value for Fan#" << i << endl;
+                    }
+                    continue;
+                }
+                if (command == "setfandirect") {
+                    if (args.size() < 2) {
+                        cout << "Setfandirect: incorrect arguments (should be 2)" << endl;
+                        continue;
+                    }
+                    byte fanID = atoi(args[0].c_str()),
+                        boost = atoi(args[1].c_str());
+                    if (fanID < acpi->HowManyFans()) {
+                        if (acpi->SetFanValue(fanID, boost, true) >= 0)
+                            cout << "Fan#" << (int)fanID << " set to " << (int) boost << endl;
                         else {
                             cout << "Set fan level failed!" << endl;
                             break;
                         }
-                    }
+                    } else
+                        cout << "Setfandirect: incorrect fan id (should be in 0.." << acpi->HowManyFans() << ")" << endl;
                     continue;
                 }
                 if (command == "direct") {
@@ -198,14 +209,15 @@ int main(int argc, char* argv[])
                         cout << "Direct: incorrect arguments (should be 2 or 3)" << endl;
                         continue;
                     }
-                    USHORT command = (USHORT) strtol(args[0].c_str(), NULL, 16);
-                    byte subcommand = (byte) strtol(args[1].c_str(), NULL, 16),
-                        value1 = 0, value2 = 0;
+                    AlienFan_SDK::ALIENFAN_COMMAND comm;
+                    comm.com = (USHORT) strtoul(args[0].c_str(), NULL, 16);
+                    comm.sub = (byte) strtoul(args[1].c_str(), NULL, 16);
+                    byte value1 = 0, value2 = 0;
                     if (args.size() > 2)
                         value1 = (byte) strtol(args[2].c_str(), NULL, 16);
                     if (args.size() > 3)
                         value2 = (byte) strtol(args[3].c_str(), NULL, 16);
-                    if ((res = acpi->RunMainCommand(command, subcommand, value1, value2)) >= 0)
+                    if ((res = acpi->RunMainCommand(comm, value1, value2)) != acpi->GetErrorCode())
                         cout << "Direct call result: " << res << endl;
                     else {
                         cout << "Direct call failed!" << endl;
@@ -219,9 +231,9 @@ int main(int argc, char* argv[])
                         cout << "DirectGPU: incorrect arguments (should be 2)" << endl;
                         continue;
                     }
-                    USHORT command = (USHORT) strtol(args[0].c_str(), NULL, 16);// atoi(args[0].c_str());
-                    DWORD subcommand = strtol(args[1].c_str(), NULL, 16);// atoi(args[1].c_str());
-                    if ((res = acpi->RunGPUCommand(command, subcommand)) >= 0)
+                    USHORT command = (USHORT) strtoul(args[0].c_str(), NULL, 16);// atoi(args[0].c_str());
+                    DWORD subcommand = strtoul(args[1].c_str(), NULL, 16);// atoi(args[1].c_str());
+                    if ((res = acpi->RunGPUCommand(command, subcommand)) != acpi->GetErrorCode())
                         cout << "DirectGPU call result: " << res << endl;
                     else {
                         cout << "DirectGPU call failed!" << endl;

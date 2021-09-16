@@ -634,6 +634,9 @@
     <ProjectReference Include="..\alienfan-tools\alienfan-SDK\alienfan-SDK.vcxproj">
       <Project>{41343b7c-6c9f-4ad4-9d27-050b3d76290d}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\alienfan-tools\KDL\Hamakaze\KDU.vcxproj">
+      <Project>{46c8fb0f-c8bf-4932-b84c-a10b38904728}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
       <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
     </ProjectReference>

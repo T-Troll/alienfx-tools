@@ -8,7 +8,7 @@
 #include <CommCtrl.h>
 #include <string>
 #include <wininet.h>
-//#include <shlobj_core.h>
+#include "KDL.h"
 #include "alienfan-SDK.h"
 #include "ConfigHelper.h"
 #include "MonHelper.h"
@@ -50,24 +50,13 @@ AlienFan_SDK::Control *InitAcpi() {
     if (!cAcpi->IsActivated()) {
         // Driver can't start, let's do kernel hack...
         delete cAcpi;
-        char currentPath[MAX_PATH];
-        GetModuleFileName(NULL, currentPath, MAX_PATH);
-        string cpath = currentPath;
-        cpath.resize(cpath.find_last_of("\\"));
-        string shellcom = "-prv 6 -scv 3 -drvn HwAcc -map \"" + cpath + "\\HwAcc.sys\"",
-            shellapp = "\"" + cpath + "\\KDU\\kdu.exe\"";
+        wchar_t currentPath[MAX_PATH];
+        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
+        wstring cpath = currentPath;
+        cpath.resize(cpath.find_last_of(L"\\"));
+        cpath += L"\\HwAcc.sys";
 
-        SHELLEXECUTEINFO shBlk = {0};
-        shBlk.cbSize = sizeof(SHELLEXECUTEINFO);
-        shBlk.fMask = SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NO_CONSOLE;
-        shBlk.lpFile = shellapp.c_str();
-        shBlk.lpParameters = shellcom.c_str();
-        shBlk.lpVerb = "runas";
-        shBlk.nShow = SW_HIDE;
-
-        if (ShellExecuteEx(&shBlk)) {
-            WaitForSingleObject(shBlk.hProcess, INFINITE);
-            CloseHandle(shBlk.hProcess);
+        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
             cAcpi = new AlienFan_SDK::Control();
         } else {
             cAcpi = NULL;

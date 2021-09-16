@@ -22,10 +22,16 @@ namespace AlienFan_SDK {
 	};
 
 	struct ALIENFAN_DEVICE {
-		char mainCommand[15];
-		ALIENFAN_COMMAND getFanID;
+		char mainCommand[32];
+		int  errorCode;
+		bool pwmfans;
+		byte minPwm;
+		byte controlID;
+		ALIENFAN_COMMAND probe;
+	};
+
+	struct ALIENFAN_CONTROL {
 		ALIENFAN_COMMAND getPowerID;
-		ALIENFAN_COMMAND getZoneSensorID;
 		ALIENFAN_COMMAND getFanRPM;
 		ALIENFAN_COMMAND getFanBoost;
 		ALIENFAN_COMMAND setFanBoost;
@@ -35,12 +41,10 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND setGPUPower;
 	};
 
-	static ALIENFAN_DEVICE devs[2] = {
-		{ // m15/m17
-			"\\_SB.AMW1.WMAX", // main command
-			0x13,   1, // FanID
+    #define NUM_DEVICES 3
+
+	static const ALIENFAN_CONTROL dev_controls[1] = {
 			0x14,   3, // PowerID
-			0x13,   2, // ZoneSensor ID
 			0x14,   5, // RPM
 			0x14, 0xc, // Boost
 			0x15,   2, // Set boost
@@ -48,8 +52,31 @@ namespace AlienFan_SDK {
 			0x14, 0xb, // Get Power (value, not index!)
 			0x15,   1, // Set Power
 			0x13,   4  // GPU power
+	};
+
+	static const ALIENFAN_DEVICE devs[3] = {
+		{ // Alienware m15/m17
+			"\\_SB.AMW1.WMAX", // main command
+			       -1, // Error code
+				false, // Not PWM
+			      100, // max. boost
+				    0, // controlID
+			0x14,   1, // Probe command
 		}, 
-		{ "", 0 }
+		{ // Dell G15
+			"\\_SB.AMW3.WMAX", // main command
+		            0, // Error code
+		         true, // PWM fans
+		           40, // Max. boost
+		    0x14,   1, // Probe command
+	    },
+		{ // Dell G5
+			"\\_SB.AMWW.WMAX", // main command
+					0, // Error code
+		        false, // Not PWM
+				   40, // Max. boost
+			0x14,   1, // Probe command
+		}
 	};
 
 	class Control {
@@ -57,7 +84,6 @@ namespace AlienFan_SDK {
 		HANDLE acc = NULL;
 		short aDev = -1;
 		bool activated = false;
-		//bool haveService = false;
 		SC_HANDLE scManager = NULL;
 	public:
 		Control();
@@ -73,11 +99,11 @@ namespace AlienFan_SDK {
 		// Get RPM for the fan index fanID at fans[]
 		int GetFanRPM(int fanID);
 
-		// Get boost value for the fan index fanID at fans[]
+		// Get boost value for the fan index fanID at fans[]. If isPwm true, count from pwm to percent.
 		int GetFanValue(int fanID);
 
-		// Set boost value for the fan index fanID at fans[] (0..100)
-		bool SetFanValue(int fanID, byte value);
+		// Set boost value for the fan index fanID at fans[] (0..100). If isPwm true, count from pwm to percent.
+		int SetFanValue(int fanID, byte value, bool force = false);
 
 		// Get temperature value for the sensor index TanID at sensors[]
 		int GetTempValue(int TempID);
@@ -100,6 +126,9 @@ namespace AlienFan_SDK {
 		// True if driver activated and ready, false if not
 		bool IsActivated();
 
+		// Error code for selected device
+		int GetErrorCode();
+
 		// Return number of fans into fans[] detected at Probe()
 		int HowManyFans();
 
@@ -109,8 +138,11 @@ namespace AlienFan_SDK {
 		// Return number of temperature sensors into sensors[] detected at Probe()
 		int HowManySensors();
 
+		// Return internal module version
+		int GetVersion();
+
 		// Call ACPI system control method with given parameters - see ALIENFAN_DEVICE for details
-		int RunMainCommand(short com, byte sub, byte value1 = 0, byte value2 = 0);
+		int RunMainCommand(ALIENFAN_COMMAND com, byte value1 = 0, byte value2 = 0);
 
 		// Call ACPI GPU control method with given parameters - see ALIENFAN_DEVICE for details
 		int RunGPUCommand(short com, DWORD packed);

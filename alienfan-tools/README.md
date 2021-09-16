@@ -6,7 +6,10 @@ Tools avaliable:
 - `alienfan-cli` - simple fan control command line utility
 - `alienfan-gui` - Fan control GUI application
 
-## Disclamer
+## Disclaimer
+- **Antiviruses will detect virus into package**. It's not a virus, in fact, but the kernel hack for load driver. If you don't like it:
+  - Remove kdl.dll and drv64.dll from package (or you antivirus do so).
+  - Use "Test mode" instalation method.
 - This tools utilize low-level ACPI functions access, it can provide BSOD at start if supported ACPI bus not found! Use with care, at you own risk!
 
 ## Known issues
@@ -30,21 +33,25 @@ NB: You should have hwacc.sys into the same folder.
 
 ## Supported hardware
 - Notebooks: `Alienware m15/17R1` or later, `Alienware Area51m-R1` or later.
-- Should work, but not tested completely: `Alienware Area51m R2`, `Dell G-series`
+- Should work, but not tested completely: `Alienware Area51m R2`
 - Desktops: <s>`Alienware Aurora R7` or later (with issues, need more testing).</s> Sorry, not supported now (different function mapping).
-- Only <s>Intel CPU and</s> NVidia GPU supported. Radeon need other commands.
+- GPU power control support only NVidia GPU. Radeon need other commands i don't know for now.
 
 ### Tested gear:
 - `Alienware m15R1`: 
-  - 5 power modes (unlocked 60W, 60W, 75W, 45W with 65W GPU lock, 45W with 90W GPU lock)
+  - 5 Power modes (unlocked 60W, 60W, 75W, 45W with 65W GPU lock, 45W with 90W GPU lock)
   - 4 GPU modes (90W...65W limit)
   - 7 temperature sensors
 - `Alienware m15R4`:
-  - 5 power modes (unlocked 45W, 105W(!), 105W, 105W, 45W)
+  - 5 Power modes (unlocked 45W, 105W(!), 105W, 105W, 45W)
   - 4 GPU modes... But do nothing, just return "OK"
   - 7 Temperature sensors
 - `Dell G15`:
-  - 2 power modes (but only one can be selected)
+  - 2 Power modes (but only one can be selected)
+  - 2 Temperature sensors
+  - PWM control
+- `Dell G5 SE` (AMD)
+  - 4 Power modes (one secret, but you can select it)
   - 2 Temperature sensors
 
 ## `alienfan-gui` usage
@@ -95,6 +102,7 @@ Avaliable commands:
 - `power=<value>` - Set system-defined power level. Possible levels autodetected from ACPI, see message at app start 
 - `gpu=<value>` - Set GPU power limit. Possible values from 0 (no limit) to 4 (max. limit).
 - `getfans` - Show current fan RPMs boost
+- `setfandirect=<fanID>,<value>` - Set one fan to exact boost value. If fan is PWM-controlled, it will be direct PWM value.
 - `setfans=<fan1>,<fan2>...` - Set fans RPM boost level (0..100 - in percent). Fan1 is for CPU fan, Fan2 for GPU one. Number of arguments should be the same as number of fans application detect
 - `direct=<id>,<subid>[,val,val]` - Issue direct Alienware interface command (see below)  
 - `directgpu=<id>,<value>` - Issue direct GPU interface command (see below)
@@ -125,6 +133,7 @@ NB: for both `direct` commands, all values are not decimal, but hex (like c8, a3
   - [ ] Older Alienware (need to repair my old one to check)
   - [x] Area 51 (need ACPI dump from it)
   - [x] Dell G3/G5 (non-AMD)
+  - [x] Dell G5 SE (AMD)
   - [x] Dell G15 (AMD)
   - [ ] Desktops (work in progress)
 - [x] SDK lib for easy sharing
@@ -133,7 +142,7 @@ NB: for both `direct` commands, all values are not decimal, but hex (like c8, a3
 - [X] Temp-RPM curves and indirect RPM control
 - [x] CPU power limit control
 - [x] GPU power contol
-- [ ] Direct fan RPM control for R1
+- [x] Direct fan RPM control (for G15 only for now)
 - [ ] Dynamic power distribution (CPU/GPU boost)
 - [x] `alienfx-gui` integration
 

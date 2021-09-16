@@ -12,6 +12,12 @@ Some additional tools added from my other [`Alienfan-tools`](https://github.com/
 - Alienfan CLI - Command line interface tool for control fans and power from command line.  
 Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
+## Disclaimer
+**Antiviruses will detect virus into package**.  
+It's not a virus, in fact, but the kernel hack for load driver. If you don't like it:
+  - Remove kdl.dll and drv64.dll from package (or you antivirus do so).
+  - Use "Test mode" instalation method (see Requirements).
+
 ## Requirements
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
 - Windows 10 v1803 or later (binary files for 64-bit only, but you can compile project for 32-bit as well).
