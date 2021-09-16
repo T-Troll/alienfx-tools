@@ -16,7 +16,7 @@ Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 Starting from the release 4.2.1, **Antiviruses will detect virus into project package**.  
 It's not a virus, in fact, but the kernel hack for load driver. If you don't like it:
   - Remove kdl.dll and drv64.dll from package (or you antivirus do so).
-  - Use "Test mode" instalation method (see Requirements).
+  - Use "Test mode" instalation method (see Installation).
 
 ## Requirements
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
