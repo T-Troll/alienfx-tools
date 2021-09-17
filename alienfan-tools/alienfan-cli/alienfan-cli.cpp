@@ -52,7 +52,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    std::cout << "AlienFan-cli v1.2.0\n";
+    std::cout << "AlienFan-cli v1.2.0.1\n";
 
     AlienFan_SDK::Control *acpi = InitAcpi();
 

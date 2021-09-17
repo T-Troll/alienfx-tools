@@ -92,7 +92,7 @@ namespace AlienFan_SDK {
 
 	bool Control::Probe() {
 		// Additional temp sensor name pattern
-		char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR";//TEXT("\\____SB_PCI0LPCBEC0_SEN1_STR");
+		char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR";
 		if (activated) {
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 			sensors.clear();

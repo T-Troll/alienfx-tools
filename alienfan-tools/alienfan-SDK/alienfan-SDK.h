@@ -68,13 +68,15 @@ namespace AlienFan_SDK {
 		            0, // Error code
 		         true, // PWM fans
 		           40, // Max. boost
+				    0, // controlID
 		    0x14,   1, // Probe command
 	    },
-		{ // Dell G5
+		{ // Dell G5 SE
 			"\\_SB.AMWW.WMAX", // main command
 					0, // Error code
 		        false, // Not PWM
 				   40, // Max. boost
+				    0, // controlID
 			0x14,   1, // Probe command
 		}
 	};
