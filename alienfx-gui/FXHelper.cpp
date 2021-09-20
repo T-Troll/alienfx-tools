@@ -37,7 +37,7 @@ void FXHelper::ResetPower(int did)
 		dev->SetPowerAction(63, 0, 0, 0, 0, 0, 0);
 }
 
-void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, bool force)
+void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, long cFan, bool force)
 {
 #ifdef _DEBUG
 	//char buff[2048];
@@ -56,7 +56,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	blinkStage = !blinkStage;
 	bool wasChanged = false;
 	if (force) {
-		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = 101; lTemp = 101; lBatt = 101;
+		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = 101; lTemp = 101; lBatt = 101, cFan = 101;
 	}
 
 	//bool tHDD = (lHDD && !cHDD) || (!lHDD && cHDD),
@@ -95,6 +95,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				case 4: lVal = lNET; cVal = cNet; break;
 				case 5: lVal = lTemp; cVal = cTemp; break;
 				case 6: lVal = lBatt; cVal = cBatt; break;
+				case 7: lVal = lFan; cVal = cFan; break;
 				}
 
 				if (lVal != cVal && (lVal > ccut || cVal > ccut)) {
@@ -179,7 +180,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		}
 	if (wasChanged) {
 		UpdateColors();
-		lCPU = cCPU; lRAM = cRAM; lHDD = cHDD; lGPU = cGPU; lNET = cNet; lTemp = cTemp; lBatt = cBatt;
+		lCPU = cCPU; lRAM = cRAM; lHDD = cHDD; lGPU = cGPU; lNET = cNet; lTemp = cTemp; lBatt = cBatt; lFan = cFan;
 	}
 }
 
@@ -225,7 +226,7 @@ void FXHelper::RefreshMon()
 {
 	config->SetStates();
 	if (config->enableMon)
-		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, true);
+		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, lFan, true);
 }
 
 void FXHelper::ChangeState() {

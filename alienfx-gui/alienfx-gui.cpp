@@ -268,6 +268,7 @@ DWORD WINAPI TFanInit(LPVOID param) {
 				acpi->SetPower(fan_conf->lastProf->powerStage);
 			if (fan_conf->lastProf->GPUPower >= 0)
 				acpi->SetGPU(fan_conf->lastProf->GPUPower);
+			eve->SetFanMon(mon);
 		} else {
 			MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
 					   MB_OK | MB_ICONHAND);

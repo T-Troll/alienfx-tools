@@ -11,6 +11,7 @@
 #define IDS_HDD                         106
 #define IDS_NET                         107
 #define IDS_GPU                         108
+#define IDS_FANS                        109
 #define IDS_TEMP                        110
 #define IDS_BATT                        111
 #define IDS_A_HDD                       112
@@ -138,7 +139,6 @@
 #define IDC_SLIDER_TEMPO                1089
 #define IDC_BUT_LOADMAP                 1090
 #define IDC_BUT_SAVEMAP                 1091
-#define IDC_CHECK1                      1092
 #define IDC_CHECK_FANPROFILE            1092
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773

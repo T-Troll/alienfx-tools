@@ -67,7 +67,7 @@ namespace AlienFan_SDK {
 			"\\_SB.AMW3.WMAX", // main command
 		            0, // Error code
 		         true, // PWM fans
-		           40, // Max. boost
+		          160, // Max. boost
 				    0, // controlID
 		    0x14,   1, // Probe command
 	    },

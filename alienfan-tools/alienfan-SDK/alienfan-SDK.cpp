@@ -169,16 +169,19 @@ namespace AlienFan_SDK {
 	}
 	int Control::GetFanValue(int fanID) {
 		if (fanID < fans.size()) {
-			int finalValue = devs[aDev].pwmfans ? 
-				(255 - RunMainCommand(dev_controls[devs[aDev].controlID].getFanBoost, (byte) fans[fanID])) * 100 / (255 - devs[aDev].minPwm) :
-				RunMainCommand(dev_controls[devs[aDev].controlID].getFanBoost, (byte) fans[fanID]);
+			int value = RunMainCommand(dev_controls[devs[aDev].controlID].getFanBoost, (byte) fans[fanID]),
+				finalValue = devs[aDev].pwmfans ? 
+				//(255 - RunMainCommand(dev_controls[devs[aDev].controlID].getFanBoost, (byte) fans[fanID])) * 100 / (255 - devs[aDev].minPwm) :
+				value * 100 / devs[aDev].minPwm :
+				value;
 			return finalValue;
 		}
 		return -1;
 	}
 	int Control::SetFanValue(int fanID, byte value, bool force) {
 		if (fanID < fans.size()) {
-			int finalValue = devs[aDev].pwmfans && ! force ? 255 - (255 - devs[aDev].minPwm) * value / 100 : value;
+			int finalValue = devs[aDev].pwmfans && !force ? (int)value * devs[aDev].minPwm / 100 : value;
+				//255 - (255 - devs[aDev].minPwm) * value / 100 : value;
 			return RunMainCommand(dev_controls[devs[aDev].controlID].setFanBoost, (byte) fans[fanID], finalValue) != devs[aDev].errorCode;
 		}
 		return -1;
