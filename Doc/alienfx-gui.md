@@ -61,6 +61,7 @@ Light acts like a performance indicator, reflecting system parameters:
 - Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
 - Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
 - Battery level - Battery charge level in percent (100=discharged, 0=full).
+- Max. Fan RPM - Maximal RPM (in percent of maximal) across al system fans. This indicator will only work if "Fan control" enabled.
   
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.  
 "Gauge" checkbox changes behavour for groups only. If Gauge on, all lights in group works as a level indicator (100% color below indicator value, 0% color above indicator value, mixed in between.
