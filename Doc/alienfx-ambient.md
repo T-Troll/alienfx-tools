@@ -1,6 +1,6 @@
 # alienfx-ambient 
 
-![alienfx-ambient](/img/ambient.png?raw=true)
+![alienfx-ambient](/doc/img/ambient.png?raw=true)
 
 `alienfx-ambient` is an ambient color visualisator.  
 The screen is divided at 12 zones, and you can set up any of AlienFX lights follow the ambient color of the selected zones.  
