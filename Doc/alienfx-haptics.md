@@ -1,6 +1,6 @@
 # Alienfx-haptics
 
-![alienfx-haptics](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/haptics.png)
+![alienfx-haptics](/Doc/img/haptics.png?raw=true)
 
 `alienfx-haptics` is a viualisation system for any sound playing - it can both use microphone or system sound device.  
 You AlienFX lights can react to any sound the way to set them up!

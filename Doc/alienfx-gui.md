@@ -27,7 +27,7 @@ Tray menu (right-click on tray button) available all the time for some fast swit
 ```
 How it works
 ```
-![Color tab](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/gui-color.png)
+![Color tab](/Doc/img/gui-color.png?raw=true)
 
 `"Colour"` tab is set hardware colours and effects for light. This setting will remain even if you exit application.  
 
@@ -44,7 +44,7 @@ Available effect modes are:
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.  
 “Set All” button copies current light effects to all lights into the list (it’s useful if you need to have all lights into the same colour and mode).  
 
-![Monitoring tab](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/gui-monitoring.png)
+![Monitoring tab](/Doc/img/gui-monitoring.png?raw=true)
 
 `"Monitoring"` tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.  
 There are some different monitoring types available:  
@@ -79,7 +79,7 @@ You can use "Minimal value" slider to define zone of no reaction - for example, 
 "Blink" checkbox switch triggered value to blink between on-off colours 6 times per sec.
 You can mix different monitoring type at once, f.e. different colours for same light for both CPU load and system overheat event. In this case Event colour always override Performance one then triggered, as well as both override Power state one.
 
-![Devices tab](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/gui-devices.png)
+![Devices tab](/Doc/img/gui-devices.png?raw=true)
 
 `"Devices"` tab is an extended GUI for `Alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
 
@@ -96,13 +96,13 @@ Selected light changes it colours to the one defined by "Test colour" button, an
 "Load Mappings" button loads pre-defined lights map (if exist) for you gear. Map files is a simple .csv defining all devices, its names, lights and its types and names. Useful for first start.  
 "Save Mappings" button save current active devices and their lights into .csv file. Please, send me this file if your device is not into pre-defined mappings list yet, I’ll add it.
 
-![Groups tab](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/gui-groups.png)
+![Groups tab](/Doc/img/gui-groups.png?raw=true)
 
 `"Groups"` tab provides control for light groups. Each group can be selected and set at "Colour" and "Monitoring" pages as a one light.  
 Press [+] and [-] buttons to add/remove group, use dropdown to select it or change its name.  
 If you have a group selected, "Group lights" list present the list of lights assigned to this group. Use [-->] and [<--] buttons to add and remove light from the group.  
 
-![Profiles tab](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/gui-profiles.png)
+![Profiles tab](/Doc/img/gui-profiles.png?raw=true)
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.  
 
@@ -115,7 +115,7 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated. 
 
-![Fans tab](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/gui-fans.png)
+![Fans tab](/Doc/img/gui-fans.png?raw=true)
 
 `"Fans"` tab is UI for control system fans and temperature sensors.  
 
@@ -141,7 +141,7 @@ Please keep in mind:
 - If you move first or last point, it will keep its temperature after button release - but you can set other boost level for it.
 - Then fan controlled by more, then one sensor, boost will be set to the maximal value across them. 
 
-![Settings tab](https://github.com/T-Troll/alienfx-tools/tree/master/Doc/img/gui-settings.png)
+![Settings tab](/Doc/img/gui-settings.png?raw=true)
 
 `"Settings"` tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings:
 - "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
