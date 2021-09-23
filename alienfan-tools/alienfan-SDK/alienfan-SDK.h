@@ -41,10 +41,10 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND setGPUPower;
 	};
 
-    #define NUM_DEVICES 3
+    #define NUM_DEVICES 4
 
-	static const ALIENFAN_CONTROL dev_controls[1] = {
-			0x14,   3, // PowerID
+	static const ALIENFAN_CONTROL dev_controls[2] = {
+		{   0x14,   3, // PowerID
 			0x14,   5, // RPM
 			0x14, 0xc, // Boost
 			0x15,   2, // Set boost
@@ -52,9 +52,20 @@ namespace AlienFan_SDK {
 			0x14, 0xb, // Get Power (value, not index!)
 			0x15,   1, // Set Power
 			0x13,   4  // GPU power
+		},
+		{
+			0x10,   3, // PowerID
+			0x10,   5, // RPM
+			0x10, 0xc, // Boost
+			0x11,   2, // Set boost
+			0x10,   4, // Temp
+			0x10, 0xb, // Get Power (value, not index!)
+			0x11,   1, // Set Power
+			   0,   0  // GPU power
+        }
 	};
 
-	static const ALIENFAN_DEVICE devs[3] = {
+	static const ALIENFAN_DEVICE devs[4] = {
 		{ // Alienware m15/m17
 			"\\_SB.AMW1.WMAX", // main command
 			       -1, // Error code
@@ -67,7 +78,7 @@ namespace AlienFan_SDK {
 			"\\_SB.AMW3.WMAX", // main command
 		            0, // Error code
 		         true, // PWM fans
-		          160, // Max. boost
+		          150, // Max. boost
 				    0, // controlID
 		    0x14,   1, // Probe command
 	    },
@@ -78,6 +89,14 @@ namespace AlienFan_SDK {
 				   40, // Max. boost
 				    0, // controlID
 			0x14,   1, // Probe command
+		},
+		{ // Aurora R7
+			"\\_SB.AMW1.WMAX", // main command
+				   -1, // Error code
+				false, // Not PWM
+				  100, // Max. boost
+					1, // controlID
+			0x10,   1, // Probe command
 		}
 	};
 

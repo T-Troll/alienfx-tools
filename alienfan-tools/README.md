@@ -34,8 +34,8 @@ NB: You should have hwacc.sys into the same folder.
 ## Supported hardware
 - Notebooks: `Alienware m15/17R1` or later, `Alienware Area51m-R1` or later.
 - Should work, but not tested completely: `Alienware Area51m R2`
-- Desktops: <s>`Alienware Aurora R7` or later (with issues, need more testing).</s> Sorry, not supported now (different function mapping).
-- GPU power control support only NVidia GPU. Radeon need other commands i don't know for now.
+- Desktops: `Alienware Aurora R7` or later (GPU control not supported yet).
+- GPU power control support NVidia GPU only. Radeon GPU need other commands i don't know for now.
 
 ### Tested gear:
 - `Alienware m15R1`: 
@@ -46,7 +46,7 @@ NB: You should have hwacc.sys into the same folder.
   - 5 Power modes (unlocked 45W, 105W(!), 105W, 105W, 45W)
   - 4 GPU modes... But do nothing, just return "OK"
   - 7 Temperature sensors
-- `Dell G15`:
+- `Dell G5 15`:
   - 2 Power modes (but only one can be selected)
   - 2 Temperature sensors
   - PWM control
@@ -131,19 +131,18 @@ NB: for both `direct` commands, all values are not decimal, but hex (like c8, a3
 - [ ] Additional hardware support (thanks for ACPI dumps, provided by `alienfx-tools` community!):
   - [x] Alienware m15/m17 (any release)
   - [ ] Older Alienware (need to repair my old one to check)
-  - [x] Area 51 (need ACPI dump from it)
+  - [x] Area 51m
   - [x] Dell G3/G5 (non-AMD)
   - [x] Dell G5 SE (AMD)
-  - [x] Dell G15 (AMD)
-  - [ ] Desktops (work in progress)
+  - [x] Dell G5 15 (AMD)
+  - [x] Desktops (Aurora R7 and later)
 - [x] SDK lib for easy sharing
-- [x] Driver file embedding into app
 - [X] GUI 
 - [X] Temp-RPM curves and indirect RPM control
 - [x] CPU power limit control
-- [x] GPU power contol
+- [x] GPU power limit contol
 - [x] Direct fan RPM control (for G15 only for now)
-- [ ] Dynamic power distribution (CPU/GPU boost)
+- [ ] Dynamic power distribution (CPU/GPU power share distribution)
 - [x] `alienfx-gui` integration
 
 ## Tools Used
