@@ -55,7 +55,7 @@
 			}
 		};
 		AlienFX_SDK::Mappings afx_dev;
-		std::vector<AlienFX_SDK::Functions*> devs;
+		std::vector<AlienFX_SDK::Functions * > devs;
 		AlienFX_SDK::Functions* LocateDev(int pid) {
 			for (int i = 0; i < devs.size(); i++)
 				if (devs[i]->GetPID() == pid)
@@ -77,7 +77,8 @@
 				if (pid != -1) {
 					devs.push_back(dev);
 					dev->ToggleState(state?255:0, afx_dev.GetMappings(), power);
-				}
+				} else
+					delete dev;
 			}
 			return devs.size();
 		};

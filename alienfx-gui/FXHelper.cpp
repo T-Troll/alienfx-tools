@@ -287,6 +287,21 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 	}
 }
 
+size_t FXHelper::FillAllDevs(bool state, bool power, HANDLE acc) {
+	size_t res = FillDevs(state, power);
+	if (acc) {
+		// add ACPI device...
+		AlienFX_SDK::Functions *dev = new AlienFX_SDK::Functions();
+		int pid = dev->AlienFXInitialize(acc);
+		if (pid != -1) {
+			devs.push_back(dev);
+			//dev->ToggleState(state ? 255 : 0, afx_dev.GetMappings(), power);
+		} else
+			delete dev;
+	}
+	return res;
+}
+
 void FXHelper::Start() {
 	if (!updateThread) {
 #ifdef _DEBUG

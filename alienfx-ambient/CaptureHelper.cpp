@@ -39,15 +39,15 @@ CaptureHelper::~CaptureHelper()
 void CaptureHelper::SetCaptureScreen(int mode) {
 	Stop();
 	dxgi_manager->set_capture_source(mode);
-	Start(200);
+	Start();
 }
 
-void CaptureHelper::Start(DWORD delay)
+void CaptureHelper::Start()
 {
 	DWORD dwThreadID;
 	if (dwHandle == 0) {
 		stopEvent = CreateEvent(NULL, true, false, NULL);
-		dwHandle = CreateThread( NULL, 0, CInProc, (LPVOID) delay, 0, &dwThreadID);
+		dwHandle = CreateThread( NULL, 0, CInProc, NULL, 0, &dwThreadID);
 	}
 }
 
@@ -142,34 +142,7 @@ static procData callData[3][4];
 UINT w = 2, h = 2, ww = 1, hh = 1, stride = w * 4, divider = 1;
 HANDLE pThread[12] = { 0 };
 HANDLE pfEvent[12] = { 0 };
-//Mat srcImage;
 UCHAR* scrImg = NULL;
-
-//DWORD WINAPI ColorProc(LPVOID inp) {
-//	procData* src = (procData*) inp;
-//	uint idx = src->dy * 4 + src->dx;
-//	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-//		if (WaitForSingleObject(src->pEvent, 200) == WAIT_OBJECT_0) {
-//			Mat cPos = srcImage.rowRange(src->dy * h, (src->dy + 1) * h)
-//				.colRange(src->dx * w, (src->dx + 1) * w);
-//			Mat hPts;
-//			hPts = extractHPts(cPos);// src->src);
-//			Mat ptsLabel, kCenters;
-//			cv::kmeans(hPts, 2, ptsLabel, cv::TermCriteria(cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 100, 0.001)), 3, cv::KMEANS_PP_CENTERS, kCenters); // 1000, 0.00001, 5
-//
-//			Mat dColor;
-//			dColor = getDominantColor(cPos/*src->src*/, ptsLabel);
-//			const UCHAR* finMat = dColor.ptr();
-//			src->dst[0] = finMat[0];
-//			src->dst[1] = finMat[1];
-//			src->dst[2] = finMat[2];
-//			SetEvent(pfEvent[idx]);
-//		}
-//	}
-//	CloseHandle(pfEvent[idx]);
-//	pfEvent[idx] = 0;
-//	return 0;
-//}
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
@@ -177,9 +150,9 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 		if (WaitForSingleObject(src->pEvent, 200) == WAIT_OBJECT_0) {
 			UINT idx = src->dy * hh * stride + src->dx * ww * 4;//src->dy * 4 + src->dx;
 			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64)hh*ww / (divider*divider);
-			for (int y = 0; y < hh; y+=divider) { 
+			for (UINT y = 0; y < hh; y+=divider) { 
 				UINT pos = idx + y * stride;
-				for (int x = 0; x < ww; x+=divider) {
+				for (UINT x = 0; x < ww; x+=divider) {
 					r += scrImg[pos];
 					g += scrImg[pos + 1];
 					b += scrImg[pos + 2];
@@ -189,9 +162,9 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 			r /= div;
 			g /= div;
 			b /= div;
-			src->dst[0] = r;
-			src->dst[1] = g;
-			src->dst[2] = b;
+			src->dst[0] = (UCHAR) r;
+			src->dst[1] = (UCHAR) g;
+			src->dst[2] = (UCHAR) b;
 			SetEvent(pfEvent[src->dy * 4 + src->dx]);
 		}
 	}
@@ -200,58 +173,38 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	return 0;
 }
 
-//void FillColors(Mat& src, UCHAR* imgz) {
-//	w = src.cols / 4, h = src.rows / 3;
-//
-//	DWORD tId;
-//	srcImage = src;
-//	for (uint dy = 0; dy < 3; dy++)
-//		for (uint dx = 0; dx < 4; dx++) {
-//			if (!pfEvent[dy * 4 + dx]) {
-//				uint ptr = (dy * 4 + dx);// *3;
-//				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
-//				callData[dy][dx].dst = imgz + ptr * 3;
-//				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
-//				pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
-//				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorProc, &callData[dy][dx], 0, &tId);
-//			}
-//			else {
-//				SetEvent(callData[dy][dx].pEvent);
-//			}
-//		}
-//	WaitForMultipleObjects(12, pfEvent, true, 3000);
-//}
-
 void FindColors(UCHAR* src, UCHAR* imgz) {
 	scrImg = src;
 	for (UINT dy = 0; dy < 3; dy++)
 		for (UINT dx = 0; dx < 4; dx++) {
-			if (!pfEvent[dy * 4 + dx]) {
+			//ColorCalc(&callData[dy][dx]);
+			if (callData[dy][dx].pEvent) {
+				SetEvent(callData[dy][dx].pEvent);
+			} else {
 				UINT ptr = (dy * 4 + dx);// *3;
 				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
 				callData[dy][dx].dst = imgz + ptr * 3;
 				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
-				//ColorCalc(&callData[dy][dx]);
 				pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
 				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
-			}
-			else {
-				SetEvent(callData[dy][dx].pEvent);
 			}
 		}
 	WaitForMultipleObjects(12, pfEvent, true, 3000);
 }
 
+#define GRIDSIZE 36 // 4x3 x 3
+
 DWORD WINAPI CInProc(LPVOID param)
 {
 	UCHAR* img = NULL;
-	UCHAR* imgo[12 * 3] = { 0 };
+	UCHAR* imgo[GRIDSIZE] = { 0 };
 
 	size_t buf_size;
 	ULONGLONG lastTick = 0;
 
-	DWORD uiThread, cuThread, wait_time = (DWORD) param;
-	HANDLE uiHandle = 0, lightHandle = 0;
+	DWORD uiThread, cuThread, wait_time = 200;
+	HANDLE uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, &uiThread),
+		lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, &cuThread);
 
 	uiEvent = CreateEvent(NULL, false, false, NULL);
 	lhEvent = CreateEvent(NULL, false, false, NULL);
@@ -265,24 +218,17 @@ DWORD WINAPI CInProc(LPVOID param)
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
-	uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, &uiThread);
-	lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, &cuThread);
-
 	while (WaitForSingleObject(stopEvent, wait_time) == WAIT_TIMEOUT) {
 		//divider = 9 - (config->divider >> 2);
 		// Resize & calc
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img != NULL) {
 			if (w && h) {
-				//Mat src = Mat(h, w, CV_8UC4, img);
-				//cv::resize(src, src, Size(16 * div, 12 * div), 0, 0, INTER_NEAREST);// INTER_AREA);// 
-
-				//FillColors(src, imgz);
 				FindColors(img, imgz);
 
-				if (memcmp(imgz, imgo, 36) != 0) {
+				if (memcmp(imgz, imgo, GRIDSIZE) != 0) {
 					SetEvent(lhEvent);
 					SetEvent(uiEvent);
-					memcpy(imgo, imgz, sizeof(imgo));
+					memcpy(imgo, imgz, GRIDSIZE);
 				}
 			}
 			else {

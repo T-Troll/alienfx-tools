@@ -12,6 +12,13 @@ Tools avaliable:
   - Use "Test mode" instalation method.
 - This tools utilize low-level ACPI functions access, it can provide BSOD at start if supported ACPI bus not found! Use with care, at you own risk!
 
+## How it works?
+Instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tools does not use direct EC (Embed controller) access and data modification.  
+My tools utilize propietary Alienware function calls inside ACPI BIOS instead (the same as AWCC).
+- It's more safe - BIOS still monitor fans and have no risk fans will be stopped at full load.
+- It's more universal - Most Alienware systems have the same interface.
+- In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control at all.
+
 ## Known issues
 - ACPI driver can hang into stopping state. Run `alienfan-cli` without parameters to reset it.
 - Fan PRMs boost is quite fast, but if you lower boost, it took some time to slow down fans. 
@@ -55,6 +62,8 @@ NB: You should have hwacc.sys into the same folder.
   - 2 Temperature sensors
 
 ## `alienfan-gui` usage
+
+![alienfan-gui](/img/alienfan.png?raw=true)
 
 GUI application for fan control.  
 Then you start it, you will see 3 main windows - Temperaturs (with current reading), Fans (with checkboxes and current RPM) and Fan curve (graph).  

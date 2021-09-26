@@ -176,4 +176,19 @@ namespace AlienFan_SDK {
 		// true if driver connection fails, as well as start driver attempt fails. Indicates you have not enough rights or system not configured correctly.
 		bool wrongEnvironment = false;
 	};
+
+	class Lights {
+	private:
+		Control *acpi = NULL;
+		bool inCommand = false;
+		bool activated = false;
+	public:
+		Lights(Control *ac);
+		bool Reset();
+		bool Prepare();
+		bool Update();
+		bool SetColor(byte id, byte r, byte g, byte b);
+		bool SetMode(byte mode, bool onoff);
+		bool IsActivated();
+	};
 }

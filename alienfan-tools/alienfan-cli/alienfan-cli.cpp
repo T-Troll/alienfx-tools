@@ -3,34 +3,35 @@
 #include <iostream>
 #include <vector>
 #include "alienfan-SDK.h"
-#include "kdl.h"
+#include "alienfan-low.h"
+//#include "kdl.h"
 
 using namespace std;
 
-AlienFan_SDK::Control *InitAcpi() {
-    AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
-
-    if (!cAcpi->IsActivated()) {
-        // Driver can't start, let's do kernel hack...
-        delete cAcpi;
-        wchar_t currentPath[MAX_PATH];
-        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
-        wstring cpath = currentPath;
-        cpath.resize(cpath.find_last_of(L"\\"));
-        cpath += L"\\HwAcc.sys";
-
-        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-            cAcpi = new AlienFan_SDK::Control();
-        } else {
-            cAcpi = NULL;
-        }
-    }
-
-    return cAcpi;
-}
+//AlienFan_SDK::Control *InitAcpi() {
+//    AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
+//
+//    if (!cAcpi->IsActivated()) {
+//        // Driver can't start, let's do kernel hack...
+//        delete cAcpi;
+//        wchar_t currentPath[MAX_PATH];
+//        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
+//        wstring cpath = currentPath;
+//        cpath.resize(cpath.find_last_of(L"\\"));
+//        cpath += L"\\HwAcc.sys";
+//
+//        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
+//            cAcpi = new AlienFan_SDK::Control();
+//        } else {
+//            cAcpi = NULL;
+//        }
+//    }
+//
+//    return cAcpi;
+//}
 
 void Usage() {
-    cout << "Usage: alienfan - cli[command[=value{,value}][command...]]\n\
+    cout << "Usage: alienfan-cli [command[=value{,value}] [command...]]\n\
 Avaliable commands: \n\
 usage, help\t\t\tShow this usage\n\
 rpm\t\t\t\tShow fan(s) RPMs\n\
@@ -42,6 +43,9 @@ gpu=<value>\t\t\tSet GPU power limit\n\
 getfans\t\t\t\tShow current fan boost level (0..100 - in percent)\n\
 setfans=<fan1>[,<fan2>]\t\tSet fans boost level (0..100 - in percent)\n\
 setfandirect=<fanid>,<value>\tSet fan with selected ID to given value\n\
+resetcolor\t\t\tReset color system\n\
+setcolorset=<mask>,r,g,b\tSet light(s) defined by mask to color\n\
+setcolormode=<mode>,<flag>\tSet light system mode\n\
 direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tPower level can be in 0..N - according to power states detected\n\
@@ -52,17 +56,25 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    std::cout << "AlienFan-cli v1.2.2.0\n";
+    std::cout << "AlienFan-cli v1.3.0.0\n";
 
-    AlienFan_SDK::Control *acpi = InitAcpi();
+    AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
     bool supported = false;
 
-    if (acpi && acpi->IsActivated()) {
+    if (acpi->IsActivated()) {
+
+        AlienFan_SDK::Lights *lights = new AlienFan_SDK::Lights(acpi);
 
         if (supported = acpi->Probe()) {
             cout << "Supported hardware v" << acpi->GetVersion() << " detected, " << acpi->HowManyFans() << " fans, "
-                << acpi->sensors.size() << " sensors, " << acpi->HowManyPower() << " power states." << endl;
+                << acpi->sensors.size() << " sensors, " << acpi->HowManyPower() << " power states."
+                << " Light control: ";
+            if (lights->IsActivated())
+                cout << "enabled";
+            else
+                cout << "disabled";
+            cout << endl;
         }
         else {
             cout << "Supported hardware not found!" << endl;
@@ -241,16 +253,57 @@ int main(int argc, char* argv[])
                     }
                     continue;
                 }
+
+                if (command == "resetcolor" && lights->IsActivated()) { // Reset color system for Aurora
+                    if (lights->Reset())
+                        cout << "Lights reset complete" << endl;
+                    else
+                        cout << "Lights reset failed" << endl;
+                    continue;
+                }
+                if (command == "setcolor" && lights->IsActivated()) { // Set light color for Aurora
+                    if (args.size() < 4) {
+                        cout << "SetColor: incorrect arguments (should be mask,r,g,b)" << endl;
+                        continue;
+                    }
+                    byte mask = atoi(args[0].c_str()),
+                        r = atoi(args[1].c_str()),
+                        g = atoi(args[2].c_str()),
+                        b = atoi(args[3].c_str());
+                    if (lights->SetColor(mask, r, g, b))
+                        cout << "SetColor complete." << endl;
+                    else
+                        cout << "SetColor failed." << endl;
+                    lights->Update();
+                    continue;
+                }
+                if (command == "setcolormode" && lights->IsActivated()) { // set effect (?) for Aurora
+                    if (args.size() < 4) {
+                        cout << "SetColorMode: incorrect arguments (should be mode,(0..1))" << endl;
+                        continue;
+                    }
+                    byte num = atoi(args[0].c_str()),
+                        mode = atoi(args[1].c_str());
+                    if (lights->SetMode(num, mode)) {
+                        cout << "SetColorMode complete." << endl;
+                    } else
+                        cout << "SetColorMode failed." << endl;
+                    lights->Update();
+                    continue;
+                }
                 //if (command == "test") { // pseudo block for tes modules
                 //    continue;
                 //}
                 cout << "Unknown command - " << command << ", use \"usage\" or \"help\" for information" << endl;
             }
         }
+
+        delete lights;
+
     } else {
         cout << "System configuration issue - see readme.md for details!" << endl;
     }
-    if (acpi)
-        delete acpi;
+
+    delete acpi;
 
 }

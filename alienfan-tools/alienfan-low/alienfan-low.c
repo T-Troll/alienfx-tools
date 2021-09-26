@@ -426,38 +426,25 @@ FALSE           - Failed to get service full path
     DWORD       PropertyRegDataType;
     DWORD       RequiedSize;
 
+    BOOL res = FALSE;
+
     hdev = SetupDiGetClassDevsEx (NULL, Name, NULL, DIGCF_ALLCLASSES, NULL, NULL, NULL);
 
     if (hdev != INVALID_HANDLE_VALUE) {
-        if (TRUE) {
-            ZeroMemory (&devdata, sizeof (devdata));
-            devdata.cbSize = sizeof (devdata);      
-            if (SetupDiEnumDeviceInfo (hdev, Idx, &devdata)) {      
-                if (SetupDiGetDeviceInstanceId (hdev, & devdata, &DevInstanceId[0], 200, NULL)) {
-                    CopyMemory (DevInstanceId1, DevInstanceId, 201);
-                    if (SetupDiGetDeviceRegistryProperty (hdev, & devdata, 0xE, 
-                                                          &PropertyRegDataType, &PropertyBuffer[0],0x400, &RequiedSize)) {
-                        //printf (PropertyBuffer);                 
-                        //printf ("\n");
-                    } else {
-                        //printf ("Failed to call SetupDiGetDeviceRegistryProperty\n");
-                    }
-                } else {
-                    //printf ("Failed to call SetupDiGetDeviceInstanceId\n");
+        ZeroMemory (&devdata, sizeof (devdata));
+        devdata.cbSize = sizeof (devdata);      
+        if (SetupDiEnumDeviceInfo(hdev, Idx, &devdata)) {
+            if (SetupDiGetDeviceInstanceId(hdev, &devdata, &DevInstanceId[0], 200, NULL)) {
+                CopyMemory(DevInstanceId1, DevInstanceId, 201);
+                if (SetupDiGetDeviceRegistryProperty(hdev, &devdata, 0xE,
+                                                     &PropertyRegDataType, &PropertyBuffer[0], 0x400, &RequiedSize)) {
+                    res = TRUE;
                 }
-            } else {
-                SetupDiDestroyDeviceInfoList (hdev);    
-                //printf ("Failed to call SetupDiEnumDeviceInfo\n");
-                return FALSE;
-            }       
-            SetupDiDestroyDeviceInfoList (hdev);    
+            }
         }
-    } else {
-
-        //printf ("Failed to call SetupDiGetClassDevsEx\n");
-        return FALSE;
+        SetupDiDestroyDeviceInfoList (hdev);    
     }
-    return TRUE;
+    return res;
 }
 
 BOOLEAN
@@ -473,9 +460,6 @@ EvalAcpiMethod(
     ACPI_EVAL_INPUT_BUFFER_EX      pMethodWithoutInputEx = {0};
     ACPI_EVAL_OUTPUT_BUFFER         outbuf;
     PACPI_EVAL_OUTPUT_BUFFER        ActualData;
-
-    //pMethodWithoutInputEx = (PACPI_EVAL_INPUT_BUFFER_EX)  malloc (sizeof (ACPI_EVAL_INPUT_BUFFER_EX));
-		//(ACPI_EVAL_INPUT_BUFFER_EX*)ExAllocatePoolWithTag(0, sizeof(ACPI_EVAL_INPUT_BUFFER_EX), MY_TAG);
 
 	pMethodWithoutInputEx.Signature = ACPI_EVAL_INPUT_BUFFER_SIGNATURE_EX;
     strcpy_s(pMethodWithoutInputEx.MethodName, 255, puNameSeg);
@@ -513,12 +497,11 @@ EvalAcpiMethod(
                     if (ActualData->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
                         (*outputBuffer) = NULL;
                     }
-                    //return TRUE;
                 }
             }
         }
     }
-    //free(pMethodWithoutInputEx);
+
     return (BOOLEAN) IoctlResult;
 }
 
@@ -577,7 +560,6 @@ EvalAcpiMethodArgs(
                     if (ActualData->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
                         (*outputBuffer) = NULL;
                     }
-                    //return TRUE;
                 }
             }
         }
@@ -640,9 +622,7 @@ FALSE       - Failed to open acpi driver
     Idx = 0;    
 
     while (GetAcpiDevice (_T("ACPI_HAL"), PropertyBuffer, Idx)) {           
-        //if (Idx >= 1) {
-        //    //break;
-        //}
+
         Idx ++;
 
         //if (sizeof(TCHAR) == sizeof(WCHAR)) {
@@ -654,9 +634,6 @@ FALSE       - Failed to open acpi driver
         //}
 
         acpi.uAcpiDeviceNameLength = (ULONG)strlen (acpi.pAcpiDeviceName);
-
-        //TCHAR base[256] = _T("\\\\?\\GLOBALROOT");
-        //wcscat(base, pChar);
 
         hDriver = CreateFile(
             _T("\\\\.\\HwAcc"), //_T("\\\\?\\GLOBALROOT\\Device\\HWACC0"),

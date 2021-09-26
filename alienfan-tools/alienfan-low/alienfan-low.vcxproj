@@ -39,11 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alienfan-low.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HwAcc\HwAcc.vcxproj">
-      <Project>{5d74f1ca-7a53-4cbc-adc4-e484814c4c6a}</Project>
-    </ProjectReference>
+    <ClInclude Include="Ioctl.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CC889C0D-369A-46F0-87B2-956DA96DDEFD}</ProjectGuid>

@@ -8,7 +8,7 @@ public:
 	CaptureHelper(HWND dlg, ConfigHandler* conf, FXHelper* fhh);
 	~CaptureHelper();
 	void SetCaptureScreen(int mode);
-	void Start(DWORD delay = 0);
+	void Start();
 	void Stop();
 	void Restart();
 	bool isDirty = false;

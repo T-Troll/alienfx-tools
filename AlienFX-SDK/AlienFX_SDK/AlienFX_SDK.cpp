@@ -5,6 +5,8 @@
 extern "C" {
 #include <hidclass.h>
 #include <hidsdi.h>
+#include <acpiioct.h>
+#include "alienfan-low.h"
 }
 
 #pragma comment(lib, "setupapi.lib")
@@ -221,6 +223,17 @@ namespace AlienFX_SDK
 		return pid;
 	}
 
+	int Functions::AlienFXInitialize(HANDLE acc) {
+		if (acc && acc != INVALID_HANDLE_VALUE) {
+			devHandle = acc;
+			vid = pid = length = API_L_ACPI;
+			if (Reset()) {
+				return pid;
+			}
+		}
+		return -1;
+	}
+
 	void Functions::Loop()
 	{
 		byte buffer[MAX_BUFFERSIZE];
@@ -248,11 +261,10 @@ namespace AlienFX_SDK
 	{
 		bool result = false;
 
-		byte buffer[MAX_BUFFERSIZE];
-		ZeroMemory(buffer, length);
+		byte buffer[MAX_BUFFERSIZE] = {0};
+
 		switch (length) {
 		case API_L_V5: {
-			// DEBUG!
 			memcpy(buffer, COMMV5.reset, sizeof(COMMV5.reset));
 			result = HidD_SetFeature(devHandle, buffer, length);
 		} break;
@@ -270,6 +282,15 @@ namespace AlienFX_SDK
 			AlienfxWaitForReady();
 			chain = 1;
 		} break;
+		case API_L_ACPI:
+		{
+			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+			if (!inSet && EvalAcpiMethod(devHandle, "\\_SB.AMW1.ICPC", (PVOID *) &resName)) {
+				free(resName);
+				result = true;
+			}
+		} break;
+		default: return false;
 		}
 		inSet = true;
 		//std::cout << "Reset!" << std::endl;
@@ -297,6 +318,14 @@ namespace AlienFX_SDK
 				memcpy(buffer, COMMV1.update, sizeof(COMMV1.update));
 				res = HidD_SetOutputReport(devHandle, buffer, length);
 				chain = 1;
+			} break;
+			case API_L_ACPI:
+			{
+				PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+				if (EvalAcpiMethod(devHandle, "\\_SB.AMW1.RCPC", (PVOID *) &resName)) {
+					free(resName);
+					res = true;
+				}
 			} break;
 			default: return false;
 			}
@@ -357,6 +386,20 @@ namespace AlienFX_SDK
 				buffer[1] = 0x83;
 			}
 
+		} break;
+		case API_L_ACPI:
+		{
+			unsigned mask = 1 << index;
+			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
+			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, r);
+			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, g);
+			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, b);
+			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, mask);
+			if (EvalAcpiMethodArgs(devHandle, "\\_SB.AMW1.SETC", acpiargs, (PVOID *) &resName)) {
+				free(resName);
+				return true;
+			}
 		} break;
 		default: return false;
 		}
@@ -512,6 +555,12 @@ namespace AlienFX_SDK
 				val = SetAction(lights[nc], act[nc]);
 			}
 		} break;
+		case API_L_ACPI:
+		{
+			for (int nc = 0; nc < size; nc++) {
+				val = SetColor(lights[nc], act[nc][0].r, act[nc][0].g, act[nc][0].b);
+			}
+		} break;
 		}
 		return val;
 	}
@@ -604,11 +653,12 @@ namespace AlienFX_SDK
 							res = HidD_SetOutputReport(devHandle, buffer, length);
 						}
 					} break;
-					default: res = SetColor(index, act[0].r, act[0].g, act[0].b);
+					//default: res = SetColor(index, act[0].r, act[0].g, act[0].b);
 					}
 				}
 				Loop();
 			} break;
+			default: res = SetColor(index, act[0].r, act[0].g, act[0].b);
 			}
 		}
 		return res;
@@ -1056,6 +1106,8 @@ namespace AlienFX_SDK
 				return AlienfxWaitForReady() == ALIENFX_V2_READY;
 			}
 			return 0;
+		case API_L_ACPI:
+		    return !inSet;
 		}
 		return 1;
 	}
@@ -1063,19 +1115,22 @@ namespace AlienFX_SDK
 	bool Functions::AlienFXClose()
 	{
 		bool result = false;
-		if (devHandle != NULL)
+		if (length != API_L_ACPI && devHandle != NULL)
 		{
 			result = CloseHandle(devHandle);
 		}
 		return result;
 	}
 
-	bool Functions::AlienFXChangeDevice(int nvid, int npid)
+	bool Functions::AlienFXChangeDevice(int nvid, int npid, HANDLE acc)
 	{
 		int res;
-		if (pid != (-1) && devHandle != NULL)
+		if (pid != (-1) && length != API_L_ACPI && devHandle != NULL)
 				CloseHandle(devHandle);
-		res = AlienFXInitialize(nvid, npid);
+		if (nvid == API_L_ACPI)
+			res = AlienFXInitialize(acc);
+		else
+			res = AlienFXInitialize(nvid, npid);
 		if (res != (-1)) {
 			pid = npid;
 			Reset();

@@ -3,17 +3,10 @@
 
 #include "alienfan-SDK.h"
 #include "alienfan-low.h"
+#include "KDL.h"
 #include <iostream>
 
 namespace AlienFan_SDK {
-
-	// One string to rule them all!
-	// AMW interface com - 3 parameters (not used, com, buffer).
-	//TCHAR* mainCommand = (TCHAR*) TEXT("\\____SB_AMW1WMAX");
-
-	// GPU control interface
-	//TCHAR* gpuCommand = (TCHAR*) TEXT("\\____SB_PCI0PEG0PEGPGPS_");
-	// arg0 not used, arg1 always 0x100, arg2 is command, arg3 is DWORD mask.
 
 	Control::Control() {
 
@@ -33,7 +26,23 @@ namespace AlienFan_SDK {
 					if (DemandService(scManager)) {
 						activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 						wrongEnvironment = !activated;
+					} else {
+						RemoveService(scManager);
+						CloseServiceHandle(scManager);
+						scManager = NULL;
 					}
+				}
+			}
+			if (wrongEnvironment) {
+				// Let's try to load driver via kernel hack....
+				wchar_t currentPath[MAX_PATH];
+				GetModuleFileNameW(NULL, currentPath, MAX_PATH);
+				wstring cpath = currentPath;
+				cpath.resize(cpath.find_last_of(L"\\"));
+				cpath += L"\\HwAcc.sys";
+
+				if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
+					activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 				}
 			}
 		}
@@ -52,6 +61,7 @@ namespace AlienFan_SDK {
 			StopService(scManager);
 			RemoveService(scManager);
 			CloseServiceHandle(scManager);
+			scManager = NULL;
 		}
 	}
 
@@ -254,5 +264,73 @@ namespace AlienFan_SDK {
 	}
 	int Control::GetVersion() {
 		return aDev + 1;
+	}
+	Lights::Lights(Control *ac) {
+		acpi = ac;
+		// Probe lights...
+		if (Prepare())
+			activated = true;
+	}
+	bool Lights::Reset() {
+		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+		if (!inCommand)
+			Prepare();
+		if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SRST", (PVOID *) &resName)) {
+			free(resName);
+			Update();
+			return true;
+		}
+		return false;
+	}
+	bool Lights::Prepare() {
+		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+		if (!inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.ICPC", (PVOID *) &resName)) {
+			free(resName);
+			inCommand = true;
+			return true;
+		}
+		return false;
+	}
+	bool Lights::Update() {
+		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+		if (inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.RCPC", (PVOID *) &resName)) {
+			free(resName);
+			inCommand = false;
+			return true;
+		}
+		return false;
+	}
+	bool Lights::SetColor(byte id, byte r, byte g, byte b) {
+		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+		PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
+		if (!inCommand) {
+			Prepare();
+		}
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, r);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, g);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, b);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, id);
+		if (EvalAcpiMethodArgs(acpi->GetHandle(), "\\_SB.AMW1.SETC", acpiargs, (PVOID *) &resName)) {
+			free(resName);
+			return true;
+		}
+		return false;
+	}
+	bool Lights::SetMode(byte mode, bool onoff) {
+		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+		PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
+		if (!inCommand) {
+			Prepare();
+		}
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, mode);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, onoff);
+		if (EvalAcpiMethodArgs(acpi->GetHandle(), "\\_SB.AMW1.SETB", acpiargs, (PVOID *) &resName)) {
+			free(resName);
+			return true;
+		}
+		return false;
+	}
+	bool Lights::IsActivated() {
+		return activated;
 	}
 }

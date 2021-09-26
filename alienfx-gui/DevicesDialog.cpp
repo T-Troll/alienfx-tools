@@ -108,7 +108,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		// First, reset all light devices and re-scan!
 		fxhl->UnblockUpdates(false, true);
-		fxhl->FillDevs(conf->stateOn, conf->offPowerButton);
+		fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
 		UpdateDeviceList(hDlg);
 	} break;
 	case WM_COMMAND: {
@@ -284,7 +284,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_DEVRESET:
 		{
 			//fxhl->UnblockUpdates(false);
-			fxhl->FillDevs(conf->stateOn, conf->offPowerButton);
+			fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
 			//fxhl->UnblockUpdates(true);
 			AlienFX_SDK::Functions* dev = fxhl->LocateDev(eDid);
 			if (dev)

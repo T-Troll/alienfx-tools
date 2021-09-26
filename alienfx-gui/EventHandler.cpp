@@ -11,10 +11,10 @@ DWORD WINAPI CProfileProc(LPVOID);
 
 EventHandler* even = NULL;
 
-EventHandler::EventHandler(ConfigHandler* confi, ConfigHelper* f_confi, FXHelper* fx)
+EventHandler::EventHandler(ConfigHandler* confi, MonHelper* f_confi, FXHelper* fx)
 {
 	conf = confi;
-	fan_conf = f_confi;
+	mon = f_confi;
 	even = this;
 	fxh = fx;
 
@@ -102,10 +102,12 @@ void EventHandler::SwitchActiveProfile(int newID)
 			//fxh->Flush();
 			conf->activeProfile = newID;
 			conf->active_set = &newP->lightsets;
-			if (newP->flags & PROF_FANS)
-				fan_conf->lastProf = &newP->fansets;
-			else
-				fan_conf->lastProf = &fan_conf->prof;
+			if (mon) {
+				if (newP->flags & PROF_FANS)
+					mon->conf->lastProf = &newP->fansets;
+				else
+					mon->conf->lastProf = &mon->conf->prof;
+			}
 			modifyProfile.unlock();
 			fxh->ChangeState();
 			ToggleEvents();
@@ -173,10 +175,6 @@ void EventHandler::ToggleEvents()
 				fxh->Refresh(true);
 		}
 	}
-}
-
-void EventHandler::SetFanMon(MonHelper *fmon) {
-	fan_mon = fmon;
 }
 
 int ScanTaskList() {
@@ -531,15 +529,15 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		// Getting maximum temp...
 		long maxTemp = 0, maxRpm = 0;
-		if (src->conf->fanControl && src->fan_mon) { 
+		if (src->conf->fanControl && src->mon) { 
 			// Let's get temperatures from fan sensors
-			for (unsigned i = 0; i < src->fan_mon->senValues.size(); i++)
-				if (maxTemp < src->fan_mon->senValues[i])
-					maxTemp = src->fan_mon->senValues[i];
+			for (unsigned i = 0; i < src->mon->senValues.size(); i++)
+				if (maxTemp < src->mon->senValues[i])
+					maxTemp = src->mon->senValues[i];
 			// And also fan RPMs
-			for (unsigned i = 0; i < src->fan_mon->fanValues.size(); i++)
-				if (maxRpm < src->fan_mon->fanValues[i])
-					maxRpm = src->fan_mon->fanValues[i];
+			for (unsigned i = 0; i < src->mon->fanValues.size(); i++)
+				if (maxRpm < src->mon->fanValues[i])
+					maxRpm = src->mon->fanValues[i];
 			if (maxRpm > max_rpm)
 				max_rpm = maxRpm;
 		} else {

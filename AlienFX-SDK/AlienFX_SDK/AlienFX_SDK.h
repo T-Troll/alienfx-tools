@@ -27,6 +27,7 @@ namespace AlienFX_SDK
     #define ALIENFX_V5_INCOMMAND 0xcc
 
 	// Length by API version:
+    #define API_L_ACPI 128
 	#define API_L_V5 64
 	#define API_L_V4 34
 	#define API_L_V3 12
@@ -87,14 +88,6 @@ namespace AlienFX_SDK
 	//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
 	const static DWORD vids[2] = {0x187c, 0x0d62};
 
-	/* ????, left, leftmidlde, rightMiddle, right, backLogo, frontLogo, leftTop, rightTop, rightBottom, Power, touchPad */ 
-	//const static int masks[][13] = {{  0x100, 0x8, 0x4, 0x1, 0x2,    0, 0x40,0x1000, 0x400,0x2000,  0x800,   0x80, 0x20},
-	//						        {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40, 0x200, 0x080, 0x400,  0x680,    0xf,  0x0},
-	//						        {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40,  0x80, 0x400, 0x800, 0x1000, 0x2000,  0x0}};
-		    //mask12_4[] = {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40, 0x200, 0x080, 0x280,    0xf,    0x0},
-		    //mask12_8[] = {  0x100, 0x8, 0x4, 0x2, 0x1, 0x20, 0x40,  0x80, 0x400, 0x800, 0x1000, 0x2000};
-	                       //0      1    2    3    4    5     6       7       8      9     10      11     12
-
 	class Functions
 	{
 	private:
@@ -119,11 +112,15 @@ namespace AlienFX_SDK
 		// Returns PID of device used. if pid argument is -1, first device found into the system will be used.
 		int AlienFXInitialize(int vid, int pid = -1);
 
+		// Another init function, for Aurora ACPI init.
+		// acc is a handle to low-level ACPI driver (hwacc.sys) - see alienfan project.
+		int AlienFXInitialize(HANDLE acc);
+
 		//De-init
 		bool AlienFXClose();
 
 		// Switch to other AlienFX device
-		bool AlienFXChangeDevice(int vid, int pid);
+		bool AlienFXChangeDevice(int vid, int pid, HANDLE acc = NULL);
 
 		//Enable/Disable all lights (or just prepare to set)
 		bool Reset();

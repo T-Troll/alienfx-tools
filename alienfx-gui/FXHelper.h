@@ -47,6 +47,8 @@ public:
 	mutex modifyQuery;
 	bool unblockUpdates = true;
 
+	size_t FillAllDevs(bool state, bool power, HANDLE acc);
+
 	void Start();
 	void Stop();
 	int Refresh(bool force = false);

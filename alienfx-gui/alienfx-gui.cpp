@@ -5,7 +5,7 @@
 #include <ColorDlg.h>
 #include <algorithm>
 #include "alienfan-SDK.h"
-#include "KDL.h"
+//#include "KDL.h"
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 #include "../alienfan-tools/alienfan-gui/MonHelper.h"
 
@@ -35,7 +35,8 @@ EventHandler* eve;
 
 // Fan control data
 AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
-ConfigHelper* fan_conf = NULL;                      // Config...
+AlienFan_SDK::Lights* acpl = NULL;              // ACPI lights object
+ConfigHelper* fan_conf = NULL;                  // Config...
 MonHelper* mon = NULL;                          // Monitoring & changer object
 HWND fanWindow = NULL;
 //string drvName = "";
@@ -237,53 +238,6 @@ bool DoStopService(bool kind) {
 	return true;
 }
 
-AlienFan_SDK::Control *InitAcpi() {
-	AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
-
-	if (!cAcpi->IsActivated()) {
-		// Driver can't start, let's do kernel hack...
-		delete cAcpi;
-		wchar_t currentPath[MAX_PATH];
-		GetModuleFileNameW(NULL, currentPath, MAX_PATH);
-		wstring cpath = currentPath;
-		cpath.resize(cpath.find_last_of(L"\\"));
-		cpath += L"\\HwAcc.sys";
-
-		if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-			cAcpi = new AlienFan_SDK::Control();
-		} else {
-			cAcpi = NULL;
-		}
-	}
-
-	return cAcpi;
-}
-
-DWORD WINAPI TFanInit(LPVOID param) {
-	acpi = InitAcpi();
-	if (acpi) {
-		if (acpi->Probe()) {
-			mon = new MonHelper(NULL, NULL, fan_conf, acpi);
-			if (fan_conf->lastProf->powerStage >= 0)
-				acpi->SetPower(fan_conf->lastProf->powerStage);
-			if (fan_conf->lastProf->GPUPower >= 0)
-				acpi->SetGPU(fan_conf->lastProf->GPUPower);
-			eve->SetFanMon(mon);
-		} else {
-			MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
-					   MB_OK | MB_ICONHAND);
-			delete acpi;
-			acpi = NULL;
-			conf->fanControl = false;
-		}
-	} else {
-		MessageBox(NULL, "Can't install fan driver, fan control will be disabled!", "Error",
-					MB_OK | MB_ICONHAND);
-		conf->fanControl = false;
-	}
-	return 0;
-}
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -295,7 +249,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf = new ConfigHandler();
 	conf->Load();
 	conf->SetStates();
-	fxhl = new FXHelper(conf);
 
 	fan_conf = new ConfigHelper();
 	fan_conf->Load();
@@ -308,8 +261,36 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// check fans...
 	if (conf->fanControl) {
 		EvaluteToAdmin();
-		CreateThread(NULL, 0, TFanInit, 0, 0, NULL);
+		acpi = new AlienFan_SDK::Control();
+		if (acpi->IsActivated()) {
+			if (acpi->Probe()) {
+				mon = new MonHelper(NULL, NULL, fan_conf, acpi);
+				if (fan_conf->lastProf->powerStage >= 0)
+					acpi->SetPower(fan_conf->lastProf->powerStage);
+				if (fan_conf->lastProf->GPUPower >= 0)
+					acpi->SetGPU(fan_conf->lastProf->GPUPower);
+				// Now light device...
+				acpl = new AlienFan_SDK::Lights(acpi);
+			} else {
+				MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
+						   MB_OK | MB_ICONHAND);
+				delete acpi;
+				acpi = NULL;
+				conf->fanControl = false;
+			}
+		} else {
+			MessageBox(NULL, "Can't install fan driver, fan control will be disabled!", "Error",
+					   MB_OK | MB_ICONHAND);
+			delete acpi;
+			acpi = NULL;
+			conf->fanControl = false;
+		}
 	}
+
+	fxhl = new FXHelper(conf);
+
+	// now add ACPI....
+	fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
 
 	if (fxhl->devs.size() > 0) {
 		conf->wasAWCC = DoStopService(true);
@@ -319,11 +300,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		fxhl->Start();
 
-		eve = new EventHandler(conf, fan_conf, fxhl);
+		eve = new EventHandler(conf, mon, fxhl);
 
 		eve->ChangePowerState();
 
-		// Perform application initialization:
 		if (!(mDlg = InitInstance(hInstance, nCmdShow)))
 			return FALSE;
 
@@ -390,12 +370,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (conf->fanControl) {
 		mon->Stop();
 		delete mon;
+		delete acpl;
 		delete acpi;
 	}
-
-	/*if (drvName != "") {
-		DeleteFile(drvName.c_str());
-	}*/
 
 	fan_conf->Save();
 	delete fan_conf;
@@ -792,7 +769,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #ifdef _DEBUG
 			OutputDebugString("Resume from Sleep/hibernate initiated\n");
 #endif
-			if (fxhl->FillDevs(conf->stateOn, conf->offPowerButton) > 0) {
+			if (fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL) > 0) {
 				fxhl->UnblockUpdates(true);
 				eve->ChangePowerState();
 				conf->stateScreen = true;

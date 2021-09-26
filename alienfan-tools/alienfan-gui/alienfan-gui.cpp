@@ -8,7 +8,7 @@
 #include <CommCtrl.h>
 #include <string>
 #include <wininet.h>
-#include "KDL.h"
+//#include "KDL.h"
 #include "alienfan-SDK.h"
 #include "ConfigHelper.h"
 #include "MonHelper.h"
@@ -44,27 +44,27 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
-AlienFan_SDK::Control *InitAcpi() {
-    AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
-
-    if (!cAcpi->IsActivated()) {
-        // Driver can't start, let's do kernel hack...
-        delete cAcpi;
-        wchar_t currentPath[MAX_PATH];
-        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
-        wstring cpath = currentPath;
-        cpath.resize(cpath.find_last_of(L"\\"));
-        cpath += L"\\HwAcc.sys";
-
-        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-            cAcpi = new AlienFan_SDK::Control();
-        } else {
-            cAcpi = NULL;
-        }
-    }
-
-    return cAcpi;
-}
+//AlienFan_SDK::Control *InitAcpi() {
+//    AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
+//
+//    if (!cAcpi->IsActivated()) {
+//        // Driver can't start, let's do kernel hack...
+//        delete cAcpi;
+//        wchar_t currentPath[MAX_PATH];
+//        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
+//        wstring cpath = currentPath;
+//        cpath.resize(cpath.find_last_of(L"\\"));
+//        cpath += L"\\HwAcc.sys";
+//
+//        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
+//            cAcpi = new AlienFan_SDK::Control();
+//        } else {
+//            cAcpi = NULL;
+//        }
+//    }
+//
+//    return cAcpi;
+//}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -79,9 +79,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     fan_conf = new ConfigHelper();
     fan_conf->Load();
 
-    acpi = InitAcpi();
+    acpi = new AlienFan_SDK::Control();
 
-    if (acpi) {
+    if (acpi->IsActivated()) {
         if (acpi->Probe()) {
 
             // Perform application initialization:
@@ -119,8 +119,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                    MB_OK | MB_ICONSTOP);
     }
 
-    if (acpi)
-        delete acpi;
+    delete acpi;
     delete fan_conf;
 
     return (int) msg.wParam;

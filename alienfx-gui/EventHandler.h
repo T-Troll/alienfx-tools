@@ -9,8 +9,6 @@ private:
 
 	HWINEVENTHOOK hEvent = 0, cEvent = 0;
 
-	ConfigHelper* fan_conf = NULL;
-
 public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state);
@@ -20,15 +18,13 @@ public:
 	void StartProfiles();
 	void StopProfiles();
 	void ToggleEvents();
-	void SetFanMon(MonHelper *fmon);
 
-	EventHandler(ConfigHandler*, ConfigHelper*, FXHelper*);
+	EventHandler(ConfigHandler*, MonHelper*, FXHelper*);
 	~EventHandler();
 
 	FXHelper* fxh = NULL;
 	ConfigHandler* conf = NULL;
-	MonHelper *fan_mon = NULL;
-
+	MonHelper *mon = NULL;
 	HANDLE stopEvents = NULL;
 
 	mutex modifyProfile;

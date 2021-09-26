@@ -5,7 +5,6 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 void ReloadProfileList(HWND hDlg);
 DWORD EvaluteToAdmin();
 bool DoStopService(bool kind);
-AlienFan_SDK::Control *InitAcpi();
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -179,15 +178,15 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->fanControl = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			if (conf->fanControl) {
 				EvaluteToAdmin();
-				acpi = InitAcpi();
-				if (acpi && acpi->Probe()) {
+				acpi = new AlienFan_SDK::Control();
+				if (acpi->IsActivated() && acpi->Probe()) {
 					mon = new MonHelper(NULL, NULL, fan_conf, acpi);
 					mon->Start();
-					eve->SetFanMon(mon);
+					eve->mon = mon;
 				} else {
 					MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
 								MB_OK | MB_ICONHAND);
-					if (acpi) delete acpi;
+					delete acpi;
 					acpi = NULL;
 					conf->fanControl = false;
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
@@ -195,20 +194,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			} else {
 				// Stop all services
 				if (acpi && acpi->IsActivated()) {
+					eve->mon = NULL;
 					mon->Stop();
-					eve->SetFanMon(NULL);
 					delete mon;
 				}
-				if (acpi)
-					delete acpi;
+				delete acpi;
 				acpi = NULL;
-				//if (MessageBox(NULL, "Do you want to restore system settings?", "Warning!",
-				//			   MB_YESNO | MB_ICONWARNING) == IDYES) {
-				//	string shellcom = "/set testsigning off";
-				//	ShellExecute(NULL, "runas", "bcdedit", shellcom.c_str(), NULL, SW_HIDE);
-				//	MessageBox(NULL, "System settings restored. Please restart you system.", "Information",
-				//			   MB_OK | MB_ICONHAND);
-				//}
 			}
 			break;
 		default: return false;

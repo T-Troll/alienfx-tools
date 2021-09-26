@@ -23,5 +23,8 @@
     <ClInclude Include="alienfan-low.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Ioctl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
