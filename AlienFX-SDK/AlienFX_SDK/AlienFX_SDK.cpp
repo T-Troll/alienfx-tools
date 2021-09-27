@@ -631,11 +631,6 @@ namespace AlienFX_SDK
 				memcpy(buffer, COMMV1.color, sizeof(COMMV1.color));
 				for (size_t ca = 0; ca < act.size(); ca++) {
 					switch (act[ca].type) {
-					case AlienFX_A_Color: 
-						buffer[1] = 0x3;
-						SetMaskAndColor(index, buffer, act[ca].r, act[ca].g, act[ca].b);
-						res = HidD_SetOutputReport(devHandle, buffer, length);
-						break;
 					case AlienFX_A_Pulse:
 					{
 						buffer[1] = 0x2;
@@ -653,7 +648,12 @@ namespace AlienFX_SDK
 							res = HidD_SetOutputReport(devHandle, buffer, length);
 						}
 					} break;
-					//default: res = SetColor(index, act[0].r, act[0].g, act[0].b);
+					default:
+					{ //case AlienFX_A_Color:
+						buffer[1] = 0x3;
+						SetMaskAndColor(index, buffer, act[ca].r, act[ca].g, act[ca].b);
+						res = HidD_SetOutputReport(devHandle, buffer, length);
+					} //break;
 					}
 				}
 				Loop();
