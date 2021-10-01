@@ -5,7 +5,7 @@ DWORD WINAPI CInProc(LPVOID);
 DWORD WINAPI CDlgProc(LPVOID);
 DWORD WINAPI CFXProc(LPVOID);
 
-HWND hDlg;
+//HWND hDlg;
 
 ConfigAmbient* config;
 FXHelper* fxh;
@@ -16,9 +16,8 @@ DXGIManager* dxgi_manager = NULL;
 
 HANDLE stopEvent, uiEvent, lhEvent;
 
-CaptureHelper::CaptureHelper(HWND dlg, ConfigAmbient* conf, FXHelper* fhh)
+CaptureHelper::CaptureHelper(ConfigAmbient* conf, FXHelper* fhh)
 {
-	hDlg = dlg;
 	config = conf;
 	fxh = fhh;
 
@@ -76,7 +75,7 @@ struct procData {
 };
 
 static procData callData[3][4];
-UINT w = 2, h = 2, ww = 1, hh = 1, stride = w * 4, divider = 1;
+UINT w = 2, h = 2, ww = 1, hh = 1, stride = w * 4 , divider = 1;
 HANDLE pThread[12] = { 0 };
 HANDLE pfEvent[12] = { 0 };
 UCHAR* scrImg = NULL;
@@ -84,12 +83,12 @@ UCHAR* scrImg = NULL;
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
 	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		if (WaitForSingleObject(src->pEvent, 200) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(src->pEvent, 50) == WAIT_OBJECT_0) {
 			UINT idx = src->dy * hh * stride + src->dx * ww * 4;//src->dy * 4 + src->dx;
-			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64)hh*ww / (divider*divider);
-			for (UINT y = 0; y < hh; y+=divider) { 
+			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64) hh * ww;// / (divider * divider);
+			for (UINT y = 0; y < hh; y += divider) { 
 				UINT pos = idx + y * stride;
-				for (UINT x = 0; x < ww; x+=divider) {
+				for (UINT x = 0; x < ww; x += divider) {
 					r += scrImg[pos];
 					g += scrImg[pos + 1];
 					b += scrImg[pos + 2];
@@ -115,7 +114,7 @@ void FindColors(UCHAR* src, UCHAR* imgz) {
 	for (UINT dy = 0; dy < 3; dy++)
 		for (UINT dx = 0; dx < 4; dx++) {
 			//ColorCalc(&callData[dy][dx]);
-			if (callData[dy][dx].pEvent) {
+			if (pfEvent[dy * 4 + dx]) {
 				SetEvent(callData[dy][dx].pEvent);
 			} else {
 				UINT ptr = (dy * 4 + dx);// *3;
@@ -194,12 +193,12 @@ DWORD WINAPI CDlgProc(LPVOID param)
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while (WaitForSingleObject(stopEvent, 50) == WAIT_TIMEOUT) {
-		if (!IsIconic(hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
+		if (!IsIconic(config->hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //	OutputDebugString("UI update...\n");
 //#endif
 			memcpy(imgui, (UCHAR*)param, sizeof(imgz));
-			SendMessage(hDlg, WM_PAINT, 0, (LPARAM)imgui);
+			SendMessage(config->hDlg, WM_PAINT, 0, (LPARAM)imgui);
 		}
 	}
 	return 0;
@@ -215,7 +214,7 @@ DWORD WINAPI CFXProc(LPVOID param) {
 //			OutputDebugString("Light update...\n");
 //#endif
 			memcpy(imgz, (UCHAR*)param, sizeof(imgz));
-			fxh->Refresh(imgz);
+			fxh->RefreshAmbient(imgz);
 		}
 	return 0;
 }

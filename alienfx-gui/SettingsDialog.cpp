@@ -21,9 +21,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
 		if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
 		if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_SCREENOFF, BST_CHECKED);
-		if (conf->enableMon) CheckDlgButton(hDlg, IDC_BUT_MONITOR, BST_CHECKED);
+		//if (conf->IsMonitoring()) CheckDlgButton(hDlg, IDC_BUT_MONITOR, BST_CHECKED);
 		if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
-		if (conf->dimmed) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
+		//if (conf->IsDimmed()) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
 		if (conf->dimPowerButton) CheckDlgButton(hDlg, IDC_POWER_DIM, BST_CHECKED);
 		if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
 		if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
@@ -128,10 +128,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_SCREENOFF:
 			conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
-		case IDC_BUT_MONITOR:
-			conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+		/*case IDC_BUT_MONITOR:
+			conf->SetMonitoring((IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED));
 			eve->ToggleEvents();
-			break;
+			break;*/
 		case IDC_BUT_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
@@ -142,23 +142,21 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			fxhl->ChangeState();
 			break;
-		case IDC_CHECK_DIM:
-			conf->dimmed = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			//fxhl->RefreshState();
-			fxhl->ChangeState();
-			break;
+		//case IDC_CHECK_DIM:
+		//	conf->SetDimmed((IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED));
+		//	//fxhl->RefreshState();
+		//	fxhl->ChangeState();
+		//	break;
 		case IDC_CHECK_GAMMA:
 			conf->gammaCorrection = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			fxhl->RefreshState();
 			break;
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			//fxhl->RefreshState();
 			fxhl->ChangeState();
 			break;
 		case IDC_POWER_DIM:
 			conf->dimPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			//fxhl->RefreshState();
 			fxhl->ChangeState();
 			break;
 		case IDC_AWCC:
@@ -180,8 +178,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				EvaluteToAdmin();
 				acpi = new AlienFan_SDK::Control();
 				if (acpi->IsActivated() && acpi->Probe()) {
-					mon = new MonHelper(NULL, NULL, fan_conf, acpi);
-					mon->Start();
+					conf->fan_conf = new ConfigHelper();
+					conf->fan_conf->Load();
+					mon = new MonHelper(NULL, NULL, conf->fan_conf, acpi);
 					eve->mon = mon;
 				} else {
 					MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
@@ -195,7 +194,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				// Stop all services
 				if (acpi && acpi->IsActivated()) {
 					eve->mon = NULL;
-					mon->Stop();
 					delete mon;
 				}
 				delete acpi;

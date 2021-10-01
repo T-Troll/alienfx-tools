@@ -155,10 +155,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof != NULL) {
 				prof->flags = (prof->flags & ~PROF_NOMONITORING) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
 				if (prof->id == conf->activeProfile) {
-					DWORD oldState = conf->monState;
-					conf->monState = prof->flags & PROF_NOMONITORING ? 0 : conf->enableMon;
-					if (oldState != conf->monState)
-						eve->ToggleEvents();
+					eve->ToggleEvents();
 				}
 			}
 			break;
@@ -182,7 +179,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				prof->flags = (prof->flags & ~PROF_FANS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 4;
 				if (prof->flags & PROF_FANS) {
 					// add current fan profile...
-					prof->fansets = fan_conf->prof;
+					prof->fansets = conf->fan_conf->prof;
 				}
 			} 
 			break;

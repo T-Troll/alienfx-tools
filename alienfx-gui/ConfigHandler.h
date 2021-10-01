@@ -3,6 +3,7 @@
 #include <string>
 #include "AlienFX_SDK.h"
 #include "..\alienfan-tools\alienfan-gui\ConfigHelper.h"
+#include "ConfigAmbient.h"
 
 // Profile flags pattern
 #define PROF_DEFAULT 0x1
@@ -45,7 +46,6 @@ struct lightset {
 	unsigned devid = 0;
 	unsigned lightid = 0;
 	event	 eve[4];
-	//AlienFX_SDK::afx_act lastColor;
 };
 
 struct profile {
@@ -68,13 +68,11 @@ public:
 	DWORD autoRefresh = 0;
 	DWORD lightsOn = 1;
 	DWORD offWithScreen = 0;
-	DWORD dimmed = 0;
 	DWORD dimmedBatt = 1;
 	DWORD dimPowerButton = 0;
 	DWORD dimmingPower = 92;
-	DWORD enableMon = 1;
 	DWORD enableProf = 0;
-	DWORD monState = 1;
+	//DWORD monState = 1;
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = -1;
 	DWORD defaultProfile = 0;
@@ -92,6 +90,11 @@ public:
 	DWORD globalEffect = 0;
 	DWORD globalDelay = 127;
 	DWORD fanControl = 0;
+	DWORD effectMode = 0;
+
+	// 3rd-party config blocks
+	ConfigHelper *fan_conf = NULL;
+	ConfigAmbient *amb_conf = NULL;
 
 	std::vector<lightset>* active_set;
 	std::vector<profile> profiles;
@@ -102,11 +105,15 @@ public:
 	~ConfigHandler();
 	int Load();
 	int Save();
-	static bool sortMappings(lightset i, lightset j);
+	//static bool sortMappings(lightset i, lightset j);
 	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
 	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp);
 	profile* FindProfile(int id);
 	int FindProfileByApp(std::string appName, bool active = false);
 	void SetStates();
 	void SetIconState();
+	bool IsDimmed();
+	bool IsMonitoring();
+	void SetDimmed(bool);
+	void SetMonitoring(bool);
 };

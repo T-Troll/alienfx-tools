@@ -1,8 +1,8 @@
 #pragma once
-#include "ConfigHandler.h"
+#include "ConfigAmbient.h"
 #include "toolkit.h"
 
-class FXHelper: public FXH<ConfigHandler>
+class FXHelper: public FXH<ConfigAmbient>
 {
 public:
 	using FXH::FXH;

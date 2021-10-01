@@ -75,34 +75,34 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		// Set counter list...
 		char buffer[32];
 		LoadString(hInst, IDS_CPU, buffer, 32);
-		SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_RAM, buffer, 32);
-		SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_HDD, buffer, 32);
-		SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_GPU, buffer, 32);
-		SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_NET, buffer, 32);
-		SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_TEMP, buffer, 32);
-		SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_BATT, buffer, 32);
-		SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_counter, buffer);
 		if (conf->fanControl) {
 			LoadString(hInst, IDS_FANS, buffer, 32);
-			SendMessage(list_counter, CB_ADDSTRING, 0, (LPARAM) buffer);
+			ComboBox_AddString(list_counter, buffer);
 		}
 		// Set indicator list
 		LoadString(hInst, IDS_A_HDD, buffer, 32);
-		SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_status, buffer);
 		LoadString(hInst, IDS_A_NET, buffer, 32);
-		SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_status, buffer);
 		LoadString(hInst, IDS_A_HOT, buffer, 32);
-		SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_status, buffer);
 		LoadString(hInst, IDS_A_OOM, buffer, 32);
-		SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_status, buffer);
 		LoadString(hInst, IDS_A_LOWBATT, buffer, 32);
-		SendMessage(list_status, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(list_status, buffer);
 		// Set sliders
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 99));
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 99));

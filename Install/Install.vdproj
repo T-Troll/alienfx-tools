@@ -27,6 +27,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_1375B50A6DC9C5B6B588529FB724B677"
+        "OwnerKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -75,6 +81,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
+        "OwnerKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8533FAE6D43944078DAC051060E0DCFF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -83,6 +95,12 @@
         {
         "MsmKey" = "8:_8BD54ECA5F1F4A93AB50408023C9F6C4"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
+        "OwnerKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -117,8 +135,26 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
+        "OwnerKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
+        "OwnerKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_F531AEA8DF1F4306933CABB0BA61FBC4"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FE510A127E1B3283F303BA235B3D1001"
+        "OwnerKey" = "8:_149C67C205CB4B42B87DF5CD12019ADE"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -248,6 +284,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1375B50A6DC9C5B6B588529FB724B677"
+            {
+            "SourcePath" = "8:d3d11.dll"
+            "TargetName" = "8:d3d11.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3A39EE52589D4B6D89064EA1960FA182"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-haptics.md"
@@ -308,6 +364,46 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_83763AF12CFE41FE16B491DE99592F8F"
+            {
+            "SourcePath" = "8:VERSION.dll"
+            "TargetName" = "8:VERSION.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8F3090BEFD2084C54DFF0BFAD98DA84F"
+            {
+            "SourcePath" = "8:SETUPAPI.dll"
+            "TargetName" = "8:SETUPAPI.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BB31155FD3104084B4DDEFB1602E8AEC"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-ambient.md"
@@ -328,6 +424,46 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E57C9B0CB5862DCB6BAC31D289B34509"
+            {
+            "SourcePath" = "8:WININET.dll"
+            "TargetName" = "8:WININET.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ECA7B10455E9FEA298D65C36BC39D1CE"
+            {
+            "SourcePath" = "8:HID.DLL"
+            "TargetName" = "8:HID.DLL"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F531AEA8DF1F4306933CABB0BA61FBC4"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-probe.md"
@@ -346,6 +482,26 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FE510A127E1B3283F303BA235B3D1001"
+            {
+            "SourcePath" = "8:dxgi.dll"
+            "TargetName" = "8:dxgi.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
         }
@@ -438,7 +594,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
         "ProductCode" = "8:{D80D2D98-5B4E-4BAD-A7CC-FEB5DA6E8F02}"
-        "PackageCode" = "8:{45874F7D-221B-47FE-9628-D3FB1065E147}"
+        "PackageCode" = "8:{1ECCEB98-BA2D-45B4-8E5B-93E957166C58}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

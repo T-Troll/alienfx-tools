@@ -53,13 +53,17 @@ ConfigHandler::ConfigHandler() {
 
 ConfigHandler::~ConfigHandler() {
 	Save();
+	if (fan_conf) {
+		delete fan_conf;
+	}
+	delete amb_conf;
 	RegCloseKey(hKey1);
 	RegCloseKey(hKey2);
 	RegCloseKey(hKey3);
 	RegCloseKey(hKey4);
 }
 
-bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
+//bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
 
 void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags) {
 	profile* prof = FindProfile(id);
@@ -120,12 +124,10 @@ int ConfigHandler::FindProfileByApp(std::string appName, bool active)
 
 void ConfigHandler::SetStates() {
 	bool oldStateOn = stateOn, oldStateDim = stateDimmed;
-	// monitoring state....
-	monState = FindProfile(activeProfile)->flags & PROF_NOMONITORING ? false : enableMon;
 	// Lighs on state...
 	stateOn = lightsOn && stateScreen;
 	// Dim state...
-	stateDimmed = dimmed || 
+	stateDimmed = IsDimmed() ||
 		dimmedScreen ||
 		FindProfile(activeProfile)->flags & PROF_DIMMED ||
 		(dimmedBatt && !statePower);
@@ -166,6 +168,28 @@ void ConfigHandler::SetIconState() {
 	}
 }
 
+bool ConfigHandler::IsDimmed() {
+	return FindProfile(activeProfile)->flags & PROF_DIMMED;
+}
+
+bool ConfigHandler::IsMonitoring() {
+	return !(FindProfile(activeProfile)->flags & PROF_NOMONITORING);
+}
+
+void ConfigHandler::SetDimmed(bool dimmed) {
+	if (dimmed)
+		FindProfile(activeProfile)->flags |= PROF_DIMMED;
+	else
+		FindProfile(activeProfile)->flags &= 0xff - PROF_DIMMED;
+}
+
+void ConfigHandler::SetMonitoring(bool monison) {
+	if (monison)
+		FindProfile(activeProfile)->flags &= 0xff - PROF_NOMONITORING;
+	else
+		FindProfile(activeProfile)->flags |= PROF_NOMONITORING;
+}
+
 int ConfigHandler::Load() {
 	int size = 4, size_c = 4 * 16;
 
@@ -199,15 +223,15 @@ int ConfigHandler::Load() {
 		(LPDWORD)&size);
 	if (ret != ERROR_SUCCESS)
 		lightsOn = 1;
-	ret = RegGetValue(hKey1,
-		NULL,
-		TEXT("Monitoring"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&enableMon,
-		(LPDWORD)&size);
-	if (ret != ERROR_SUCCESS)
-		enableMon = 1;
+	//ret = RegGetValue(hKey1,
+	//	NULL,
+	//	TEXT("Monitoring"),
+	//	RRF_RT_DWORD | RRF_ZEROONFAILURE,
+	//	NULL,
+	//	&enableMon,
+	//	(LPDWORD)&size);
+	//if (ret != ERROR_SUCCESS)
+	//	enableMon = 1;
 	ret = RegGetValue(hKey1,
 		NULL,
 		TEXT("GammaCorrection"),
@@ -240,10 +264,10 @@ int ConfigHandler::Load() {
 		(LPDWORD)&size);
 	RegGetValue(hKey1,
 		NULL,
-		TEXT("Dimmed"),
+		TEXT("EffectMode"),
 		RRF_RT_DWORD | RRF_ZEROONFAILURE,
 		NULL,
-		&dimmed,
+		&effectMode,
 		(LPDWORD)&size);
 	RegGetValue(hKey1,
 		NULL,
@@ -485,17 +509,14 @@ int ConfigHandler::Load() {
 			vindex++;
 		}
 	} while (ret == ERROR_SUCCESS);
-	stateDimmed = dimmed;
-	stateOn = lightsOn;
-	monState = enableMon;
 	// set active profile...
 	int activeFound = 0;
 	if (profiles.size() > 0) {
 		for (int i = 0; i < profiles.size(); i++) {
-			std::sort(profiles[i].lightsets.begin(), profiles[i].lightsets.end(), ConfigHandler::sortMappings);
+			//std::sort(profiles[i].lightsets.begin(), profiles[i].lightsets.end(), ConfigHandler::sortMappings);
 			if (profiles[i].id == activeProfile)
 				activeFound = i;
-			if (profiles[i].flags & 0x1)
+			if (profiles[i].flags & PROF_DEFAULT)
 				defaultProfile = profiles[i].id;
 		}
 	}
@@ -504,18 +525,28 @@ int ConfigHandler::Load() {
 		profile prof = {0, 1, "", "Default"};
 		profiles.push_back(prof);
 		active_set = &(profiles.back().lightsets);
-		std::sort(active_set->begin(), active_set->end(), ConfigHandler::sortMappings);
+		//std::sort(active_set->begin(), active_set->end(), ConfigHandler::sortMappings);
 	}
 	if (profiles.size() == 1) {
-		profiles[0].flags = profiles[0].flags | 0x1;
+		profiles[0].flags = profiles[0].flags | PROF_DEFAULT;
 		defaultProfile = activeProfile = profiles[0].id;
 	}
 	active_set = &profiles[activeFound].lightsets;
-	if (profiles[activeFound].flags & 0x2)
-		monState = 0;
-	if (profiles[activeFound].flags & 0x4)
-		stateDimmed = 1;
+	stateDimmed = IsDimmed();
+	stateOn = lightsOn;
+	//monState = !(FindProfile(activeProfile)->flags & PROF_NOMONITORING);
+	//if (profiles[activeFound].flags & 0x2)
+	//	monState = 0;
+	//if (profiles[activeFound].flags & 0x4)
+	//	stateDimmed = 1;
 	conf_loaded = true;
+
+	if (fanControl) {
+		fan_conf = new ConfigHelper();
+		fan_conf->Load();
+	}
+	amb_conf = new ConfigAmbient();
+
 	return 0;
 }
 int ConfigHandler::Save() {
@@ -524,6 +555,11 @@ int ConfigHandler::Save() {
 	DWORD dwDisposition;
 
 	if (!conf_loaded) return 0; // do not save clear config!
+
+	if (fan_conf) {
+		fan_conf->Save();
+	}
+	amb_conf->Save();
 
 	if (RegGetValue(hKey2, NULL, "Alienfx GUI", RRF_RT_ANY, NULL, NULL, NULL) == ERROR_SUCCESS) {
 		// remove old start key
@@ -564,14 +600,14 @@ int ConfigHandler::Save() {
 		(BYTE*)&lightsOn,
 		sizeof(DWORD)
 	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("Monitoring"),
-		0,
-		REG_DWORD,
-		(BYTE*)&enableMon,
-		sizeof(DWORD)
-	);
+	//RegSetValueEx(
+	//	hKey1,
+	//	TEXT("Monitoring"),
+	//	0,
+	//	REG_DWORD,
+	//	(BYTE*)&enableMon,
+	//	sizeof(DWORD)
+	//);
 	RegSetValueEx(
 		hKey1,
 		TEXT("OffWithScreen"),
@@ -582,10 +618,10 @@ int ConfigHandler::Save() {
 	);
 	RegSetValueEx(
 		hKey1,
-		TEXT("Dimmed"),
+		TEXT("EffectMode"),
 		0,
 		REG_DWORD,
-		(BYTE*)&dimmed,
+		(BYTE*)&effectMode,
 		sizeof(DWORD)
 	);
 	RegSetValueEx(

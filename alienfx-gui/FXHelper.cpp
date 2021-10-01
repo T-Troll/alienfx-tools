@@ -62,7 +62,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	//bool tHDD = (lHDD && !cHDD) || (!lHDD && cHDD),
 	//	tNet = (lNET && !cNet) || (!lNET && cNet);
 
-	std::vector<AlienFX_SDK::afx_act> actions;
+	vector<AlienFX_SDK::afx_act> actions;
 	
 	profile* cprof = config->FindProfile(config->activeProfile);
 	if (!cprof)
@@ -225,7 +225,7 @@ void FXHelper::RefreshState(bool force)
 void FXHelper::RefreshMon()
 {
 	config->SetStates();
-	if (config->enableMon)
+	if (config->IsMonitoring())
 		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, lFan, true);
 }
 
@@ -365,7 +365,7 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 		actions = map->eve[0].map;
 	}
 
-	if (config->monState && !force) {
+	if (config->IsMonitoring() && !force) {
 		if (map->eve[1].fs.b.flags) {
 			// use power event;
 			if (!map->eve[0].fs.b.flags)
@@ -411,6 +411,44 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 	}
 	//map->lastColor = actions[0];
 	return true;
+}
+
+int FXHelper::RefreshAmbient(UCHAR *img) {
+	unsigned i = 0;
+	unsigned shift = 255 - config->amb_conf->shift;
+
+	for (i = 0; i < config->amb_conf->mappings.size(); i++) {
+		mapping map = config->amb_conf->mappings[i];
+		vector<AlienFX_SDK::afx_act> actions;
+		AlienFX_SDK::afx_act fin = {0};
+		unsigned r = 0, g = 0, b = 0, size = (unsigned) map.map.size();
+		if (size > 0) {
+			for (unsigned j = 0; j < size; j++) {
+				r += img[3 * map.map[j] + 2];
+				g += img[3 * map.map[j] + 1];
+				b += img[3 * map.map[j]];
+			}
+
+			// Multilights correction...
+			fin.r = ((r * shift) / size) >> 8;
+			fin.g = ((g * shift) / size) >> 8;
+			fin.b = ((b * shift) / size) >> 8;
+
+			actions.push_back(fin);
+			if (map.lightid > 0xffff) {
+				AlienFX_SDK::group *grp = afx_dev.GetGroupById(map.lightid);
+				if (grp && grp->lights.size()) {
+					for (int i = 0; i < grp->lights.size(); i++) {
+						SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, actions);
+					}
+				}
+			} else {
+				SetLight(map.devid, map.lightid, actions);
+			}
+		}
+	}
+	UpdateColors();
+	return 0;
 }
 
 DWORD WINAPI CLightsProc(LPVOID param) {

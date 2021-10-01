@@ -1,11 +1,10 @@
 #define WIN32_LEAN_AND_MEAN
 #include <iostream>
-//#include <windows.h>
 
 #include "stdafx.h"
 #include "LFXUtil.h"
 #include "LFXDecl.h"
-#include "../AlienFX-SDK/AlienFX_SDK/AlienFX_SDK.h"
+#include "AlienFX_SDK.h"
 
 namespace 
 {
@@ -14,13 +13,13 @@ namespace
 
 using namespace std;
 
-pair<DWORD,DWORD>* LocateDev(vector<pair<DWORD,DWORD>> *devs, int pid)
-{
-	for (int i = 0; i < devs->size(); i++)
-		if (devs->at(i).second == pid)
-			return &devs->at(i);
-	return NULL;
-}
+//pair<DWORD,DWORD>* LocateDev(vector<pair<DWORD,DWORD>> *devs, int pid)
+//{
+//	for (int i = 0; i < devs->size(); i++)
+//		if (devs->at(i).second == pid)
+//			return &devs->at(i);
+//	return NULL;
+//}
 
 void printUsage() 
 {
@@ -54,7 +53,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 	AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 	AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-	cerr << "alienfx-cli v4.1.0" << endl;
+	cerr << "alienfx-cli v4.3.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -209,17 +208,18 @@ int main(int argc, char* argv[])
 				int newDev = atoi(args.at(0).c_str());
 				if (newDev == afx_dev->GetPID())
 					continue;
-				for (int i = 0; i < devs.size(); i++)
-					if (devs[i].second == newDev) {
-						afx_dev->UpdateColors();
-						afx_dev->AlienFXClose();
-						pid = afx_dev->AlienFXChangeDevice(devs[i].first, devs[i].second);
+				pid = afx_dev->AlienFXChangeDevice(0, newDev);// devs[i].first, devs[i].second);
+				//for (int i = 0; i < devs.size(); i++)
+				//	if (devs[i].second == newDev) {
+				//		afx_dev->UpdateColors();
+				//		afx_dev->AlienFXClose();
+				//		pid = afx_dev->AlienFXChangeDevice(devs[i].first, devs[i].second);
 						if (pid < 0) {
 							cerr << "Can't init device ID#" << newDev << ", exiting!" << endl;
-							return 1;
+							continue;
 						}
-						break;
-					}
+					//	break;
+					//}
 			}
 			continue;
 		}
@@ -310,8 +310,8 @@ int main(int argc, char* argv[])
 				if (devid != 0 && devid != afx_dev->GetPID()) {
 					afx_dev->UpdateColors();
 					afx_dev->AlienFXClose();
-					pair<DWORD, DWORD>* dev = LocateDev(&devs, devid);
-					afx_dev->AlienFXChangeDevice(dev->first, dev->second);
+					//pair<DWORD, DWORD>* dev = LocateDev(&devs, devid);
+					afx_dev->AlienFXChangeDevice(0, devid);// dev->first, dev->second);
 				}
 				afx_dev->SetColor(atoi(args.at(1).c_str()),
 								  color.cs.blue, color.cs.green, color.cs.red);
@@ -455,8 +455,8 @@ int main(int argc, char* argv[])
 				if (devid != 0 && devid != afx_dev->GetPID()) {
 					afx_dev->UpdateColors();
 					afx_dev->AlienFXClose();
-					pair<DWORD, DWORD>* dev = LocateDev(&devs, devid);
-					afx_dev->AlienFXChangeDevice(dev->first, dev->second);
+					//pair<DWORD, DWORD>* dev = LocateDev(&devs, devid);
+					afx_dev->AlienFXChangeDevice(0, devid);// dev->first, dev->second);
 				}
 				afx_dev->SetAction(atoi(args.at(1).c_str()), act);
 				break;

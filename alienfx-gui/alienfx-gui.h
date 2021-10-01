@@ -6,12 +6,13 @@
 #include "FXHelper.h"
 #include "AlienFX_SDK.h"
 #include "EventHandler.h"
+#include "CaptureHelper.h"
 #include "../alienfan-tools/alienfan-SDK/alienfan-SDK.h"
 #include "../alienfan-tools/alienfan-gui/MonHelper.h"
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 
 // defines and structures...
-#define C_PAGES 7
+#define C_PAGES 8
 
 typedef struct tag_dlghdr {
 	HWND hwndTab;       // tab control
@@ -26,7 +27,6 @@ extern EventHandler* eve;
 extern HWND sTip, lTip;
 extern AlienFan_SDK::Control* acpi;
 extern MonHelper* mon;
-extern ConfigHelper* fan_conf;
 
 extern HWND sTip, lTip;
 

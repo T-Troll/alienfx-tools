@@ -5,7 +5,6 @@
 #include <ColorDlg.h>
 #include <algorithm>
 #include "alienfan-SDK.h"
-//#include "KDL.h"
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 #include "../alienfan-tools/alienfan-gui/MonHelper.h"
 
@@ -28,18 +27,17 @@ BOOL CALLBACK TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
+CaptureHelper *capt;
 
 // Fan control data
 AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
-AlienFan_SDK::Lights* acpl = NULL;              // ACPI lights object
-ConfigHelper* fan_conf = NULL;                  // Config...
 MonHelper* mon = NULL;                          // Monitoring & changer object
 HWND fanWindow = NULL;
-//string drvName = "";
 
 HWND mDlg = 0;
 
@@ -77,7 +75,7 @@ DWORD EvaluteToAdmin() {
 			{
 				if (mDlg) {
 					conf->Save();
-					fan_conf->Save();
+					//fan_conf->Save();
 					if (acpi)
 						delete acpi;
 					Shell_NotifyIcon(NIM_DELETE, &conf->niData);
@@ -250,13 +248,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf->Load();
 	conf->SetStates();
 
-	fan_conf = new ConfigHelper();
-	fan_conf->Load();
-
 	profile* prof;
 
 	if ((prof = conf->FindProfile(conf->activeProfile)) && prof->flags & PROF_FANS)
-		fan_conf->lastProf = &prof->fansets;
+		conf->fan_conf->lastProf = &prof->fansets;
 
 	// check fans...
 	if (conf->fanControl) {
@@ -264,13 +259,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->IsActivated()) {
 			if (acpi->Probe()) {
-				mon = new MonHelper(NULL, NULL, fan_conf, acpi);
-				if (fan_conf->lastProf->powerStage >= 0)
-					acpi->SetPower(fan_conf->lastProf->powerStage);
-				if (fan_conf->lastProf->GPUPower >= 0)
-					acpi->SetGPU(fan_conf->lastProf->GPUPower);
-				// Now light device...
-				acpl = new AlienFan_SDK::Lights(acpi);
+				if (conf->fan_conf->lastProf->powerStage >= 0)
+					acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+				if (conf->fan_conf->lastProf->GPUPower >= 0)
+					acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+				mon = new MonHelper(NULL, NULL, conf->fan_conf, acpi);
 			} else {
 				MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
 						   MB_OK | MB_ICONHAND);
@@ -301,7 +294,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		fxhl->Start();
 
 		eve = new EventHandler(conf, mon, fxhl);
-
 		eve->ChangePowerState();
 
 		if (!(mDlg = InitInstance(hInstance, nCmdShow)))
@@ -356,7 +348,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		delete eve;
 		fxhl->Stop();
-		//fxhl->ChangeState();
 		fxhl->afx_dev.SaveMappings();
 
 		if (conf->wasAWCC) DoStopService(false);
@@ -368,14 +359,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	if (conf->fanControl) {
-		mon->Stop();
 		delete mon;
-		delete acpl;
 		delete acpi;
 	}
-
-	fan_conf->Save();
-	delete fan_conf;
 
 	delete fxhl;
 	delete conf;
@@ -474,6 +460,7 @@ VOID OnSelChanged(HWND hwndDlg)
 	case 4: tdl = (DLGPROC)TabProfilesDialog; break;
 	case 5: tdl = (DLGPROC)TabFanDialog; break;
 	case 6: tdl = (DLGPROC)TabSettingsDialog; break;
+	case 7: tdl = (DLGPROC)TabAmbientDialog; break;
 	default: tdl = (DLGPROC)TabColorDialog;
 	}
 	HWND newDisplay = CreateDialogIndirect(hInst,
@@ -507,7 +494,8 @@ void ReloadProfileList(HWND hDlg) {
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
-		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
+		profile_list = GetDlgItem(hDlg, IDC_PROFILES),
+		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE);
 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
@@ -556,6 +544,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		pHdr->rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1; //2;// 2 * GetSystemMetrics(SM_CYDLGFRAME) - 1;
 
 		ReloadProfileList(hDlg);
+
+		ComboBox_AddString(mode_list, "Monitoring");
+		ComboBox_AddString(mode_list, "Ambient");
+		ComboBox_AddString(mode_list, "Haptics");
+		ComboBox_SetCurSel(mode_list, conf->effectMode);
+
 		OnSelChanged(tab_list);
 
 		conf->niData.hWnd = hDlg;
@@ -613,6 +607,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			TabCtrl_SetCurSel(tab_list, 4);
 			OnSelChanged(tab_list);
 			break;
+		case IDC_EFFECT_MODE:
+		{
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				eve->ChangeEffectMode(ComboBox_GetCurSel(mode_list));
+			} break;
+			}
+		} break;
 		case IDC_PROFILES: {
 			int pbItem = (int)SendMessage(profile_list, CB_GETCURSEL, 0, 0);
 			int prid = (int)SendMessage(profile_list, CB_GETITEMDATA, pbItem, 0);
@@ -697,8 +700,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			GetCursorPos(&lpClickPoint);
 			SetForegroundWindow(hDlg);
 			if (conf->lightsOn) CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, MF_CHECKED);
-			if (conf->dimmed) CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, MF_CHECKED);
-			if (conf->enableMon) CheckMenuItem(tMenu, ID_TRAYMENU_MONITORING, MF_CHECKED);
+			if (conf->IsDimmed()) CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, MF_CHECKED);
+			if (conf->IsMonitoring()) CheckMenuItem(tMenu, ID_TRAYMENU_MONITORING, MF_CHECKED);
 			if (conf->enableProf) CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, MF_CHECKED);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
@@ -729,13 +732,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
-			conf->dimmed = !conf->dimmed;
+			//conf->dimmed = !conf->dimmed;
+		    conf->SetDimmed(!conf->IsDimmed());
 			//fxhl->RefreshState(true);
 			fxhl->ChangeState();
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING:
-			conf->enableMon = !conf->enableMon;
+			//conf->enableMon = !conf->enableMon;
+		    conf->SetMonitoring(!conf->IsMonitoring());
 			eve->ToggleEvents();
 			OnSelChanged(tab_list);
 			break;
@@ -799,7 +804,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			conf->stateScreen = true;
 			fxhl->ChangeState();
 			eve->StopProfiles();
-			eve->StopEvents();
+			eve->StopEffects();
 			fxhl->UnblockUpdates(false);
 			if (conf->fanControl)
 				mon->Stop();
@@ -808,6 +813,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		break;
 	case WM_QUERYENDSESSION:
 		return true;
+	case WM_DISPLAYCHANGE:
+		// Monitor configuration changed
+	    if (eve->capt) eve->capt->Restart();
+	break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
 #ifdef _DEBUG
@@ -815,7 +824,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 #endif
 		conf->Save();
 		eve->StopProfiles();
-		eve->StopEvents();
+		eve->StopEffects();
 		fxhl->UnblockUpdates(false);
 		return 0;
 		break;
@@ -826,18 +835,19 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->ChangeState();
 			break;
 		case 2: // dim
-			conf->dimmed = !conf->dimmed;
+			//conf->dimmed = !conf->dimmed;
+		    conf->SetDimmed(!conf->IsDimmed());
 			//fxhl->RefreshState();
 			fxhl->ChangeState();
 			break;
 		case 3: // off-dim-full circle
 			if (conf->lightsOn) {
-				if (conf->dimmed) {
+				if (conf->IsDimmed()) {
 					conf->lightsOn = false;
-					conf->dimmed = false;
+					conf->SetDimmed(false);
 				}
 				else {
-					conf->dimmed = true;
+					conf->SetDimmed(true);
 				}
 			}
 			else {
@@ -846,7 +856,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->ChangeState();
 			break;
 		case 4: // mon
-			conf->enableMon = !conf->enableMon;
+		    conf->SetMonitoring(!conf->IsMonitoring());
+			//conf->enableMon = !conf->enableMon;
 			eve->ToggleEvents();
 			break;
 		default: return false;
@@ -999,7 +1010,7 @@ lightset* CreateMapping(int lid) {
 	newmap.eve[3].map.push_back(act);
 	newmap.eve[3].fs.b.cut = 90;
 	conf->active_set->push_back(newmap);
-	std::sort(conf->active_set->begin(), conf->active_set->end(), ConfigHandler::sortMappings);
+	//std::sort(conf->active_set->begin(), conf->active_set->end(), ConfigHandler::sortMappings);
 	return FindMapping(lid);
 }
 

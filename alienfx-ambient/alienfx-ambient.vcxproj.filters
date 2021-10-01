@@ -24,7 +24,7 @@
     <ClInclude Include="CaptureHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConfigHandler.h">
+    <ClInclude Include="ConfigAmbient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FXHelper.h">
@@ -41,7 +41,7 @@
     <ClCompile Include="CaptureHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigHandler.cpp">
+    <ClCompile Include="ConfigAmbient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FXHelper.cpp">

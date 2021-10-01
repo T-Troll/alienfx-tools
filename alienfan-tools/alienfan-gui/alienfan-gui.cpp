@@ -44,28 +44,6 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
-//AlienFan_SDK::Control *InitAcpi() {
-//    AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
-//
-//    if (!cAcpi->IsActivated()) {
-//        // Driver can't start, let's do kernel hack...
-//        delete cAcpi;
-//        wchar_t currentPath[MAX_PATH];
-//        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
-//        wstring cpath = currentPath;
-//        cpath.resize(cpath.find_last_of(L"\\"));
-//        cpath += L"\\HwAcc.sys";
-//
-//        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-//            cAcpi = new AlienFan_SDK::Control();
-//        } else {
-//            cAcpi = NULL;
-//        }
-//    }
-//
-//    return cAcpi;
-//}
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -183,12 +161,9 @@ void SetTooltip(HWND tt, int x, int y) {
 
 void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 {
-    HWND curve = fanWindow;// GetDlgItem(pDlg, IDC_FAN_CURVE);
-    //HWND rpm = GetDlgItem(pDlg, IDC_FAN_RPM);
-
-    if (curve) {
+    if (fanWindow) {
         RECT clirect, graphZone;
-        GetClientRect(curve, &clirect);
+        GetClientRect(fanWindow, &clirect);
         graphZone = clirect;
         clirect.right -= 1;
         clirect.bottom -= 1;
@@ -204,7 +179,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
             break;
         }
 
-        HDC hdc_r = GetDC(curve);
+        HDC hdc_r = GetDC(fanWindow);
 
         // Double buff...
         HDC hdc = CreateCompatibleDC(hdc_r);
@@ -252,7 +227,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
                 mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
                 Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                 string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + ")";
-                SetWindowText(curve, rpmText.c_str());
+                SetWindowText(fanWindow, rpmText.c_str());
             }
         }
 
@@ -263,7 +238,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 
         DeleteObject(hbmMem);
         DeleteDC(hdc);
-        ReleaseDC(curve, hdc_r);
+        ReleaseDC(fanWindow, hdc_r);
         DeleteDC(hdc_r);
     }
 } 

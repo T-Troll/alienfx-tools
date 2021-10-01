@@ -18,20 +18,22 @@ EventHandler::EventHandler(ConfigHandler* confi, MonHelper* f_confi, FXHelper* f
 	even = this;
 	fxh = fx;
 
-	//profile* prof = conf->FindProfile(conf->activeProfile);
-	//if (prof && prof->flags & PROF_FANS)
-	//	fan_conf->lastProf = &prof->fansets;
-	//else
-	//	fan_conf->lastProf = &fan_conf->prof;
-
 	StartProfiles();
-	StartEvents();
+
+	if (conf->IsMonitoring()) {
+		switch (conf->effectMode) {
+		case 0: StartEvents(); break;
+		case 1: capt = new CaptureHelper(conf->amb_conf, fxh); break;
+			// case 2: haptics
+		}
+	}
 }
 
 EventHandler::~EventHandler()
 {
 	StopProfiles();
 	StopEvents();
+	fxh->Refresh(true);
 }
 
 void EventHandler::ChangePowerState()
@@ -85,11 +87,11 @@ void EventHandler::ChangeScreenState(DWORD state)
 #ifdef _DEBUG
 		OutputDebugString("Display state changed\n");
 #endif
-		fxh->ChangeState();
 	} else {
 		conf->dimmedScreen = false;
 		conf->stateScreen = true;
 	}
+	fxh->ChangeState();
 }
 
 void EventHandler::SwitchActiveProfile(int newID)
@@ -131,7 +133,7 @@ void EventHandler::SwitchActiveProfile(int newID)
 void EventHandler::StartEvents()
 {
 	//DWORD dwThreadID;
-	if (!dwHandle && conf->monState) {
+	if (!dwHandle) {
 		fxh->RefreshMon();
 		// start thread...
 #ifdef _DEBUG
@@ -161,18 +163,65 @@ void EventHandler::ToggleEvents()
 {
 	conf->SetStates();
 	if (conf->stateOn) {
-		if (conf->monState) {
-			if (!dwHandle) {
-				fxh->Refresh();
-				StartEvents();
-			} else {
+		if (conf->IsMonitoring()) {
+			switch (conf->effectMode) {
+			case 0: if (!dwHandle) {
+				fxh->Refresh(); StartEvents();
+			} else
 				fxh->RefreshState(true);
+			break;
+			case 1: 
+			    fxh->Refresh(true);
+				if (!capt) capt = new CaptureHelper(conf->amb_conf, fxh); 
+			break;
+				// case 2: haptics
 			}
 		} else {
+			switch (conf->effectMode) {
+			case 0:	
 			if (dwHandle)
 				StopEvents();
 			else
 				fxh->Refresh(true);
+			break;
+			case 1: 
+			    if (capt) {
+				   delete capt; capt = NULL;
+			    }
+				fxh->Refresh(true);
+				break;
+				// case 2: haptics
+			}
+		}
+	}
+}
+
+void EventHandler::ChangeEffectMode(int newMode) {
+	if (newMode != conf->effectMode) {
+		// disable old mode...
+		StopEffects();
+		conf->effectMode = newMode;
+		StartEffects();
+	}
+}
+
+void EventHandler::StopEffects() {
+	switch (conf->effectMode) {
+	case 0:	StopEvents(); break;
+	case 1: if (capt) {
+		delete capt; capt = NULL;
+	} break;
+		// case 2: haptics
+	}
+}
+
+void EventHandler::StartEffects() {
+	if (conf->IsMonitoring()) {
+		// start new mode...
+		switch (conf->effectMode) {
+		case 0: fxh->Refresh(true); StartEvents(); break;
+		case 1: if (!capt) capt = new CaptureHelper(conf->amb_conf, fxh); break;
+			// case 2: haptics
 		}
 	}
 }

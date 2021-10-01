@@ -24,7 +24,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigHandler.cpp">
+    <ClCompile Include="ConfigHaptics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FXHelper.cpp">
@@ -44,7 +44,7 @@
     <ClInclude Include="resource_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConfigHandler.h">
+    <ClInclude Include="ConfigHaptics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FXHelper.h">

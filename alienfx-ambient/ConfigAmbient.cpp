@@ -1,10 +1,10 @@
-#include "ConfigHandler.h"
+#include "ConfigAmbient.h"
 #include <algorithm>
 #include <string>
 
 using namespace std;
 
-ConfigHandler::ConfigHandler() {
+ConfigAmbient::ConfigAmbient() {
     DWORD  dwDisposition;
 
     RegCreateKeyEx(HKEY_CURRENT_USER,
@@ -25,12 +25,14 @@ ConfigHandler::ConfigHandler() {
         NULL,
         &hKey2,
         &dwDisposition);
+    Load();
 }
-ConfigHandler::~ConfigHandler() {
+ConfigAmbient::~ConfigAmbient() {
+    Save();
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
 }
-int ConfigHandler::Load() {
+int ConfigAmbient::Load() {
     int size = 4;
 
     RegGetValue(hKey1,
@@ -95,7 +97,7 @@ int ConfigHandler::Load() {
     std::sort(mappings.begin(), mappings.end(), sortMappings);
 	return 0;
 }
-int ConfigHandler::Save() {
+int ConfigAmbient::Save() {
     //char name[256];
     unsigned out[12*4];
 
@@ -154,7 +156,7 @@ int ConfigHandler::Save() {
 	return 0;
 }
 
-bool ConfigHandler::sortMappings(mapping i, mapping j)
+bool ConfigAmbient::sortMappings(mapping i, mapping j)
 {
     return i.lightid < j.lightid;
 }

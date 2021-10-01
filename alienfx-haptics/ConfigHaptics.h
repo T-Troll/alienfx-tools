@@ -27,7 +27,7 @@ struct mapping {
 	std::vector<unsigned char> map;
 };
 
-class ConfigHandler
+class ConfigHaptics
 {
 private:
 	HKEY   hKey1, hKey2;
@@ -41,10 +41,10 @@ public:
 	DWORD offPowerButton = 0;
 	std::vector<mapping> mappings;
 
-	ConfigHandler();
-	~ConfigHandler();
+	ConfigHaptics();
+	~ConfigHaptics();
 	int Load();
 	int Save();
-	static bool ConfigHandler::sortMappings(mapping i, mapping j);
+	static bool ConfigHaptics::sortMappings(mapping i, mapping j);
 };
 

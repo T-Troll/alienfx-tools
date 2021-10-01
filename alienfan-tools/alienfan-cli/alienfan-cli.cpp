@@ -8,28 +8,6 @@
 
 using namespace std;
 
-//AlienFan_SDK::Control *InitAcpi() {
-//    AlienFan_SDK::Control *cAcpi = new AlienFan_SDK::Control();
-//
-//    if (!cAcpi->IsActivated()) {
-//        // Driver can't start, let's do kernel hack...
-//        delete cAcpi;
-//        wchar_t currentPath[MAX_PATH];
-//        GetModuleFileNameW(NULL, currentPath, MAX_PATH);
-//        wstring cpath = currentPath;
-//        cpath.resize(cpath.find_last_of(L"\\"));
-//        cpath += L"\\HwAcc.sys";
-//
-//        if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-//            cAcpi = new AlienFan_SDK::Control();
-//        } else {
-//            cAcpi = NULL;
-//        }
-//    }
-//
-//    return cAcpi;
-//}
-
 void Usage() {
     cout << "Usage: alienfan-cli [command[=value{,value}] [command...]]\n\
 Avaliable commands: \n\
@@ -44,7 +22,7 @@ getfans\t\t\t\tShow current fan boost level (0..100 - in percent)\n\
 setfans=<fan1>[,<fan2>]\t\tSet fans boost level (0..100 - in percent)\n\
 setfandirect=<fanid>,<value>\tSet fan with selected ID to given value\n\
 resetcolor\t\t\tReset color system\n\
-setcolorset=<mask>,r,g,b\tSet light(s) defined by mask to color\n\
+setcolor=<mask>,r,g,b\tSet light(s) defined by mask to color\n\
 setcolormode=<mode>,<flag>\tSet light system mode\n\
 direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\

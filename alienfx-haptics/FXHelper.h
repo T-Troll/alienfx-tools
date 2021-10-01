@@ -1,8 +1,8 @@
 #pragma once
-#include "ConfigHandler.h"
+#include "ConfigHaptics.h"
 #include "toolkit.h"
 
-class FXHelper: public FXH<ConfigHandler>
+class FXHelper: public FXH<ConfigHaptics>
 {
 private:
 	int* freq;

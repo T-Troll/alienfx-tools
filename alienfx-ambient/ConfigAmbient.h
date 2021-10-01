@@ -9,7 +9,7 @@ struct mapping {
 	std::vector<unsigned char> map;
 };
 
-class ConfigHandler
+class ConfigAmbient
 {
 private:
 	HKEY   hKey1 = NULL, hKey2 = NULL;
@@ -22,8 +22,8 @@ public:
 	DWORD offPowerButton = 0;
 	std::vector<mapping> mappings;
 
-	ConfigHandler();
-	~ConfigHandler();
+	ConfigAmbient();
+	~ConfigAmbient();
 	int Load();
 	int Save();
 	static bool sortMappings(mapping i, mapping j);

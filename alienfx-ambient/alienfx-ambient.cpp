@@ -3,7 +3,7 @@
 #include <algorithm>
 #include "resource.h"
 #include "CaptureHelper.h"
-#include "ConfigHandler.h"
+#include "ConfigAmbient.h"
 #include "FXHelper.h"
 #include "AlienFX_SDK.h"
 #include "toolkit.h"
@@ -16,9 +16,9 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 FXHelper* fxhl;
 CaptureHelper* cap;
-ConfigHandler* conf;
+ConfigAmbient* conf;
 
-BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK AmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Global Variables:
 //WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
@@ -43,8 +43,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Perform application initialization:
     HWND hDlg;
 
-    conf = new ConfigHandler();
-    conf->Load();
+    conf = new ConfigAmbient();
     fxhl = new FXHelper(conf);
 
     if (!(hDlg = InitInstance(hInstance, nCmdShow)))
@@ -71,7 +70,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
 
-        conf->Save();
     }
 
     fxhl->ChangeState();
@@ -91,7 +89,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
    dlg = CreateDialogParam(hInstance,//GetModuleHandle(NULL),         /// instance handle
     	MAKEINTRESOURCE(IDD_DIALOG_MAIN),    /// dialog box template
     	NULL,                    /// handle to parent
-    	(DLGPROC)DialogConfigStatic, 0);
+    	(DLGPROC)AmbientDialog, 0);
    if (!dlg) return NULL;
 
    SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXAMBIENT)));
@@ -159,7 +157,7 @@ mapping* FindMapping(int lid) {
 
 HWND sTip = 0, lTip = 0;
 
-BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+BOOL CALLBACK AmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
     HWND divSlider = GetDlgItem(hDlg, IDC_SLIDER_DIV);
@@ -246,7 +244,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                         newmap.lightid = lgh.lightid;
                     }
                     conf->mappings.push_back(newmap);
-                    std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                    std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
                     map = FindMapping(lid);
                 }
                 if (map) {
@@ -284,7 +282,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                             newmap.lightid = lgh.lightid;
                         }
                         conf->mappings.push_back(newmap);
-                        std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigHandler::sortMappings);
+                        std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
                         map = FindMapping(lid);
                     }
                     // add mapping
@@ -429,7 +427,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         break;
     case WM_CLOSE: DestroyWindow(hDlg); break;
     case WM_DESTROY: 
-        cap->Stop(); 
         Shell_NotifyIcon(NIM_DELETE, &niData); 
         PostQuitMessage(0); 
         break;

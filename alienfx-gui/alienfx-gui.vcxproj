@@ -150,7 +150,6 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
-    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -455,10 +454,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>Default</ConformanceMode>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -478,7 +478,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>Default</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -567,9 +567,12 @@
     <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigHelper.h" />
     <ClInclude Include="..\alienfan-tools\alienfan-gui\MonHelper.h" />
     <ClInclude Include="alienfx-gui.h" />
+    <ClInclude Include="CaptureHelper.h" />
     <ClInclude Include="ColorDialog.h" />
+    <ClInclude Include="ConfigAmbient.h" />
     <ClInclude Include="ConfigHandler.h" />
     <ClInclude Include="DevicesDialog.h" />
+    <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="EventDialog.h" />
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="FanDialog.h" />
@@ -584,9 +587,13 @@
     <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigHelper.cpp" />
     <ClCompile Include="..\alienfan-tools\alienfan-gui\MonHelper.cpp" />
     <ClCompile Include="alienfx-gui.cpp" />
+    <ClCompile Include="AmbientDialog.cpp" />
+    <ClCompile Include="CaptureHelper.cpp" />
     <ClCompile Include="ColorDialog.cpp" />
+    <ClCompile Include="ConfigAmbient.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="DevicesDialog.cpp" />
+    <ClCompile Include="DXGIManager.cpp" />
     <ClCompile Include="EventDialog.cpp" />
     <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="FanDialog.cpp" />

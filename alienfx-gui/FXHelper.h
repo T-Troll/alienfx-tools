@@ -61,9 +61,11 @@ public:
 	bool SetLight(int did, int id, std::vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void RefreshState(bool force = false);
 	void RefreshMon();
+	int RefreshAmbient(UCHAR *img);
 	void Flush();
 	void ChangeState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
 	void UnblockUpdates(bool newState, bool lock = false);
+
 	ConfigHandler* GetConfig() { return config; };
 };

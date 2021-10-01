@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "Graphics.h"
 #include "DFT_gosu.h"
-#include "ConfigHandler.h"
+//#include "ConfigHandler.h"
 #include "FXHelper.h"
 #include "WSAudioIn.h"
 
@@ -17,7 +17,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	int* freq;
 	
-	ConfigHandler conf;
+	ConfigHaptics conf;
 
 	FXproc = new FXHelper(&conf);
 	freq = new int[conf.numbars];
@@ -26,7 +26,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	dftG = new DFT_gosu(NUMPTS, conf.numbars, conf.res , freq);
 
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	WSAudioIn wsa(NUMPTS, conf.inpType, Graphika, FXproc, dftG);
 	wsa.startSampling();
 

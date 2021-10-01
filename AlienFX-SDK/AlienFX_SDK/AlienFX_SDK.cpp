@@ -172,7 +172,7 @@ namespace AlienFX_SDK
 					if (HidD_GetAttributes(devHandle, attributes.get()))
 					{
 
-						if (((attributes->VendorID == vid) && (pidd == -1 || attributes->ProductID == pidd)))
+						if (((!vid || attributes->VendorID == vid) && (pidd == -1 || attributes->ProductID == pidd)))
 						{
 							// Check API version...
 							PHIDP_PREPARSED_DATA prep_caps;
@@ -740,7 +740,11 @@ namespace AlienFX_SDK
 			buffer[4] = 6;
 			HidD_SetOutputReport(devHandle, buffer, length);
 			BYTE res = 0;
-			while ((res = IsDeviceReady()) && res != 255) Sleep(50);
+			int count = 0;
+			while ((res = IsDeviceReady()) && res != 255 && count < 10) {
+				Sleep(50);
+				count++;
+			}
 			while (!IsDeviceReady()) Sleep(100);
 			Reset();
 			inSet = false;

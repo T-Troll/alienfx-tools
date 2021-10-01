@@ -1,5 +1,5 @@
 # alienfan-tools
-Utilities for fan and power control for Alienware notebooks trough direct calls into ACPI BIOS.  
+Utilities for fan and power, and sometimes lights control for Alienware and Dell G-series devices trough direct calls into ACPI BIOS.  
 This is the side step from my [alienfx-tools](https://github.com/T-Troll/alienfx-tools) project, dedicated to fan and power control subsystem.
 
 Tools avaliable:
@@ -113,6 +113,9 @@ Avaliable commands:
 - `getfans` - Show current fan RPMs boost
 - `setfandirect=<fanID>,<value>` - Set one fan to exact boost value. If fan is PWM-controlled, it will be direct PWM value.
 - `setfans=<fan1>,<fan2>...` - Set fans RPM boost level (0..100 - in percent). Fan1 is for CPU fan, Fan2 for GPU one. Number of arguments should be the same as number of fans application detect
+- `resetcolor` - Reset color system
+- `setcolor=<mask>,r,g,b` - Set light(s) defined by mask to color
+- `setcolormode=<mode>,<flag>` - Set light system mode
 - `direct=<id>,<subid>[,val,val]` - Issue direct Alienware interface command (see below)  
 - `directgpu=<id>,<value>` - Issue direct GPU interface command (see below)
 
@@ -162,8 +165,8 @@ MIT. You can use these tools for any non-commercial or commercial use, modify it
 
 ## Credits
 Idea, code and hardware support by T-Troll.  
-ACPI SDK and driver based on kdshk's [WindowsHwAccess](https://github.com/kdshk/WindowsHwAccess).  
-Kernel loading hack by hfiref0x's [KDU](https://github.com/hfiref0x/KDU)  
+ACPI driver based on kdshk's [WindowsHwAccess](https://github.com/kdshk/WindowsHwAccess).  
+Kernel loading hack based on hfiref0x's [KDU](https://github.com/hfiref0x/KDU)  
 Special thanks to [DavidLapous](https://github.com/DavidLapous) for inspiration and advices!
 
 

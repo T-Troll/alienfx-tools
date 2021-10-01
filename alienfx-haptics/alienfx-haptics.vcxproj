@@ -204,7 +204,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ConfigHandler.cpp" />
+    <ClCompile Include="ConfigHaptics.cpp" />
     <ClCompile Include="DFT_gosu.cpp" />
     <ClCompile Include="FXHelper.cpp" />
     <ClCompile Include="Graphics.cpp" />
@@ -212,7 +212,7 @@
     <ClCompile Include="WSAudioIn.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConfigHandler.h" />
+    <ClInclude Include="ConfigHaptics.h" />
     <ClInclude Include="DFT_gosu.h" />
     <ClInclude Include="FXHelper.h" />
     <ClInclude Include="Graphics.h" />

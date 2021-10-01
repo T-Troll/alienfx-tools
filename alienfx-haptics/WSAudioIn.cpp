@@ -37,6 +37,7 @@ WSAudioIn::WSAudioIn(int N, int type, void* gr, void* fx, void* dft)
 	waveD = new double[NUMSAM];
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	hDlg = ((Graphics*)gHandle)->GetDlg();
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	((Graphics*)gHandle)->SetAudioObject(this);
 	rate = init(type);
 	dftGG->setSampleRate(rate);
@@ -46,6 +47,7 @@ WSAudioIn::~WSAudioIn()
 {
 	release();
 	delete[] waveD;
+	CoUninitialize();
 }
 
 void WSAudioIn::startSampling()

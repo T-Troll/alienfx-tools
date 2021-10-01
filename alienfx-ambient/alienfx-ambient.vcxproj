@@ -44,7 +44,6 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
-    <CLRSupport>false</CLRSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -84,11 +83,9 @@
     <LinkIncremental>true</LinkIncremental>
     <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <EmbedManifest>true</EmbedManifest>
-    <IncludePath>.\opencv\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>./opencv/include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -136,8 +133,6 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>./opencv/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>./opencv/lib/zlibd.lib;./opencv/lib/opencv_core440d.lib;./opencv/lib/opencv_imgproc440d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>false</Profile>
     </Link>
     <Manifest>
@@ -169,8 +164,6 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>./opencv/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>./opencv/lib/zlib.lib;./opencv/lib/opencv_core440.lib;./opencv/lib/opencv_imgproc440.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
@@ -180,7 +173,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CaptureHelper.h" />
-    <ClInclude Include="ConfigHandler.h" />
+    <ClInclude Include="ConfigAmbient.h" />
     <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="FXHelper.h" />
     <ClInclude Include="Resource.h" />
@@ -189,7 +182,7 @@
   <ItemGroup>
     <ClCompile Include="alienfx-ambient.cpp" />
     <ClCompile Include="CaptureHelper.cpp" />
-    <ClCompile Include="ConfigHandler.cpp" />
+    <ClCompile Include="ConfigAmbient.cpp" />
     <ClCompile Include="DXGIManager.cpp" />
     <ClCompile Include="FXHelper.cpp" />
   </ItemGroup>

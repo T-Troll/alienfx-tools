@@ -1,6 +1,5 @@
 #include "alienfx-gui.h"
 #include <windowsx.h>
-//#include <sstream>
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);

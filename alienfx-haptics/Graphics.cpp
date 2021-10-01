@@ -20,7 +20,7 @@ int nCmdShow;
 
 bool axis_draw = true;
 
-ConfigHandler* config = NULL;
+ConfigHaptics* config = NULL;
 FXHelper* afx = NULL;
 WSAudioIn* audio = NULL;
 
@@ -28,7 +28,7 @@ HINSTANCE ghInstance = NULL;
 
 NOTIFYICONDATA niData;
 
-Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHandler *conf, FXHelper *fxproc)
+Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHaptics *conf, FXHelper *fxproc)
 {
 
 	nCmdShow=mainCmdShow;
@@ -377,7 +377,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					newmap.hicut = 255;
 					newmap.flags = 0;
 					config->mappings.push_back(newmap);
-					std::sort(config->mappings.begin(), config->mappings.end(), ConfigHandler::sortMappings);
+					std::sort(config->mappings.begin(), config->mappings.end(), ConfigHaptics::sortMappings);
 					map = FindMapping(lid);
 				}
 				// load freq....

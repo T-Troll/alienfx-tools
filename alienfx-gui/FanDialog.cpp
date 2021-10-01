@@ -68,11 +68,12 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
                 LineTo(hdc, clirect.right, cy);
             }
 
-        if (fan_conf->lastSelectedFan != -1) {
+        if (conf->fan_conf->lastSelectedFan != -1) {
             // curve...
             temp_block* sen = NULL;
             fan_block* fan = NULL;
-            if ((sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor)) && (fan = fan_conf->FindFanBlock(sen, fan_conf->lastSelectedFan))) {
+            if ((sen = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor)) && 
+                (fan = conf->fan_conf->FindFanBlock(sen, conf->fan_conf->lastSelectedFan))) {
                 // draw fan curve
                 SetDCPenColor(hdc, RGB(0, 255, 0));
                 SelectObject(hdc, GetStockObject(DC_PEN));
@@ -90,10 +91,10 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
                 SelectObject(hdc, GetStockObject(DC_PEN));
                 SelectObject(hdc, GetStockObject(DC_BRUSH));
                 POINT mark;
-                mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
-                mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
+                mark.x = acpi->GetTempValue(conf->fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
+                mark.y = (100 - acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
                 Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-                string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + ")";
+                string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) + ")";
                 SetWindowText(curve, rpmText.c_str());
             }
         }
@@ -111,7 +112,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 } 
 
 void ReloadFanView(HWND hDlg, int cID) {
-    temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+    temp_block* sen = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor);
     HWND list = GetDlgItem(hDlg, IDC_FAN_LIST);
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
@@ -136,10 +137,10 @@ void ReloadFanView(HWND hDlg, int cID) {
             DrawFan();
         }
         ListView_InsertItem(list, &lItem);
-        if (sen && fan_conf->FindFanBlock(sen, i)) {
-            fan_conf->lastSelectedSensor = -1;
+        if (sen && conf->fan_conf->FindFanBlock(sen, i)) {
+            conf->fan_conf->lastSelectedSensor = -1;
             ListView_SetCheckState(list, i, true);
-            fan_conf->lastSelectedSensor = sen->sensorIndex;
+            conf->fan_conf->lastSelectedSensor = sen->sensorIndex;
         }
     }
 
@@ -209,16 +210,16 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         if (acpi && acpi->IsActivated()) {
 
-            ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
-            ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
-            ReloadFanView(hDlg, fan_conf->lastSelectedFan);
+            ReloadPowerList(hDlg, conf->fan_conf->lastProf->powerStage);
+            ReloadTempView(hDlg, conf->fan_conf->lastSelectedSensor);
+            ReloadFanView(hDlg, conf->fan_conf->lastSelectedFan);
 
             // So open fan control window...
             RECT cDlg, mwRect;
             GetWindowRect(GetParent(hDlg), &cDlg);
             GetWindowRect(mDlg, &mwRect);
             int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
-            string wName = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + ")";
+            string wName = "Fan curve (boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) + ")";
             fanWindow = CreateWindow("STATIC", wName.c_str(), WS_CAPTION | WS_POPUP,//WS_OVERLAPPED,
                                      mwRect.right, mwRect.top, wh, wh,
                                      hDlg, NULL, hInst, 0);
@@ -232,7 +233,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
             SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
             SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
-            SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
+            SendMessage(power_gpu, TBM_SETPOS, true, conf->fan_conf->lastProf->GPUPower);
 
         } else {
             HWND tab_list = GetParent(hDlg);
@@ -254,17 +255,17 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                fan_conf->lastProf->powerStage = pid;
+                conf->fan_conf->lastProf->powerStage = pid;
                 acpi->SetPower(pid);
-                fan_conf->Save();
+                conf->fan_conf->Save();
             } break;
             }
         } break;
         case IDC_BUT_RESET:
         {
-            temp_block* cur = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+            temp_block* cur = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor);
             if (cur) {
-                fan_block* fan = fan_conf->FindFanBlock(cur, fan_conf->lastSelectedFan);
+                fan_block* fan = conf->fan_conf->FindFanBlock(cur, conf->fan_conf->lastSelectedFan);
                 if (fan) {
                     fan->points.clear();
                     fan->points.push_back({0,0});
@@ -286,20 +287,20 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     // Select other item...
                     if (lPoint->iItem != -1) {
                         // Select other fan....
-                        fan_conf->lastSelectedFan = lPoint->iItem;
+                        conf->fan_conf->lastSelectedFan = lPoint->iItem;
                         // Redraw fans
                         DrawFan();
                     }
                 }
                 if (lPoint->uNewState & 0x2000) { // checked, 0x1000 - unchecked
-                    if (fan_conf->lastSelectedSensor != -1) {
-                        temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+                    if (conf->fan_conf->lastSelectedSensor != -1) {
+                        temp_block* sen = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor);
                         if (!sen) { // add new sensor block
                             sen = new temp_block;
-                            sen->sensorIndex = (short) fan_conf->lastSelectedSensor;
-                            fan_conf->lastProf->fanControls.push_back(*sen);
+                            sen->sensorIndex = (short) conf->fan_conf->lastSelectedSensor;
+                            conf->fan_conf->lastProf->fanControls.push_back(*sen);
                             delete sen;
-                            sen = &fan_conf->lastProf->fanControls.back();
+                            sen = &conf->fan_conf->lastProf->fanControls.back();
                         }
                         fan_block cFan = {(short) lPoint->iItem};
                         cFan.points.push_back({0,0});
@@ -309,8 +310,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     }
                 }
                 if (lPoint->uNewState & 0x1000 && lPoint->uOldState && 0x2000) { // unchecked
-                    if (fan_conf->lastSelectedSensor != -1) {
-                        temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+                    if (conf->fan_conf->lastSelectedSensor != -1) {
+                        temp_block* sen = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor);
                         if (sen) { // remove sensor block
                             for (vector<fan_block>::iterator iFan = sen->fans.begin();
                                  iFan < sen->fans.end(); iFan++)
@@ -319,10 +320,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                                     break;
                                 }
                             if (!sen->fans.size()) // remove sensor block!
-                                for (vector<temp_block>::iterator iSen = fan_conf->lastProf->fanControls.begin();
-                                     iSen < fan_conf->lastProf->fanControls.end(); iSen++)
+                                for (vector<temp_block>::iterator iSen = conf->fan_conf->lastProf->fanControls.begin();
+                                     iSen < conf->fan_conf->lastProf->fanControls.end(); iSen++)
                                     if (iSen->sensorIndex == sen->sensorIndex) {
-                                        fan_conf->lastProf->fanControls.erase(iSen);
+                                        conf->fan_conf->lastProf->fanControls.erase(iSen);
                                         break;
                                     }
                         }
@@ -341,9 +342,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     // Select other item...
                     if (lPoint->iItem != -1) {
                         // Select other fan....
-                        fan_conf->lastSelectedSensor = lPoint->iItem;
+                        conf->fan_conf->lastSelectedSensor = lPoint->iItem;
                         // Redraw fans
-                        ReloadFanView(hDlg, fan_conf->lastSelectedFan);
+                        ReloadFanView(hDlg, conf->fan_conf->lastSelectedFan);
                         DrawFan();
                     }
                 }
@@ -356,8 +357,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         switch (LOWORD(wParam)) {
         case TB_THUMBPOSITION: case TB_ENDTRACK: {
             if ((HWND)lParam == power_gpu) {
-                fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                acpi->SetGPU(fan_conf->lastProf->GPUPower);
+                conf->fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
             }
         } break;
         } break;
@@ -374,7 +375,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    fan_block* cFan = fan_conf->FindFanBlock(fan_conf->FindSensor(fan_conf->lastSelectedSensor), fan_conf->lastSelectedFan);
+    fan_block* cFan = conf->fan_conf->FindFanBlock(conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor), conf->fan_conf->lastSelectedFan);
     RECT cArea;
     GetClientRect(hDlg, &cArea);
     cArea.right -= 1;
@@ -438,7 +439,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             cFan->points.front().temp = 0;
             cFan->points.back().temp = 100;
             DrawFan();
-            fan_conf->Save();
+            conf->fan_conf->Save();
         }
         SetFocus(GetParent(hDlg));
     } break;
@@ -456,7 +457,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
             DrawFan();
-            fan_conf->Save();
+            conf->fan_conf->Save();
         }
         SetFocus(GetParent(hDlg));
     } break;

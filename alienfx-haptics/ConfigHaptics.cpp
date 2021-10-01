@@ -1,10 +1,10 @@
-#include "ConfigHandler.h"
+#include "ConfigHaptics.h"
 #include <algorithm>
 #include <string>
 
 using namespace std;
 
-ConfigHandler::ConfigHandler() {
+ConfigHaptics::ConfigHaptics() {
     DWORD  dwDisposition;
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxhaptics"),
@@ -26,13 +26,13 @@ ConfigHandler::ConfigHandler() {
         &dwDisposition);
     Load();
 }
-ConfigHandler::~ConfigHandler() {
+ConfigHaptics::~ConfigHaptics() {
     Save();
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
 }
 
-int ConfigHandler::Load() {
+int ConfigHaptics::Load() {
     int size = 4;
 
     RegGetValue(hKey1,
@@ -121,7 +121,7 @@ int ConfigHandler::Load() {
     std::sort(mappings.begin(), mappings.end(), sortMappings);
 	return 0;
 }
-int ConfigHandler::Save() {
+int ConfigHaptics::Save() {
     //char name[256];
     //unsigned out[50];
     DWORD dwDisposition;
@@ -204,7 +204,7 @@ int ConfigHandler::Save() {
 	return 0;
 }
 
-bool ConfigHandler::sortMappings(mapping i, mapping j)
+bool ConfigHaptics::sortMappings(mapping i, mapping j)
 {
     return i.lightid < j.lightid;
 }
