@@ -33,13 +33,11 @@ private:
 	HKEY   hKey1, hKey2;
 public:
 	DWORD numbars = 20;
-	DWORD numpts = 4096;
-	//DWORD res = 0;
+	DWORD numpts = 2048;
 	DWORD inpType = 0;
-	//DWORD lastActive = 0;
 	DWORD showAxis = 1;
-	DWORD stateOn = 1;
-	DWORD offPowerButton = 0;
+	//DWORD stateOn = 1;
+	//DWORD offPowerButton = 0;
 	std::vector<haptics_map> mappings;
 
 	ConfigHaptics();

@@ -53,10 +53,9 @@ ConfigHandler::ConfigHandler() {
 
 ConfigHandler::~ConfigHandler() {
 	Save();
-	if (fan_conf) {
-		delete fan_conf;
-	}
-	delete amb_conf;
+	if (fan_conf) delete fan_conf;
+	if (amb_conf) delete amb_conf;
+	if (hap_conf) delete hap_conf;
 	RegCloseKey(hKey1);
 	RegCloseKey(hKey2);
 	RegCloseKey(hKey3);
@@ -546,6 +545,7 @@ int ConfigHandler::Load() {
 		fan_conf->Load();
 	}
 	amb_conf = new ConfigAmbient();
+	hap_conf = new ConfigHaptics();
 
 	return 0;
 }
@@ -554,12 +554,11 @@ int ConfigHandler::Save() {
 	BYTE* out;
 	DWORD dwDisposition;
 
-	if (!conf_loaded) return 0; // do not save clear config!
+	//if (!conf_loaded) return 0; // do not save clear config!
 
-	if (fan_conf) {
-		fan_conf->Save();
-	}
-	amb_conf->Save();
+	if (fan_conf) fan_conf->Save();
+	if (amb_conf) amb_conf->Save();
+	if (hap_conf) hap_conf->Save();
 
 	if (RegGetValue(hKey2, NULL, "Alienfx GUI", RRF_RT_ANY, NULL, NULL, NULL) == ERROR_SUCCESS) {
 		// remove old start key
@@ -820,7 +819,7 @@ int ConfigHandler::Save() {
 				size += cur.eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
 			out = (BYTE*)malloc(size);
 			BYTE* outPos = out;
-			Colorcode ccd;
+			//Colorcode ccd;
 			for (int j = 0; j < 4; j++) {
 				*((int*)outPos) = cur.eve[j].fs.s;
 				outPos += 4;

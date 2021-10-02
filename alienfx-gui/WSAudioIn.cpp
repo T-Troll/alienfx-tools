@@ -1,9 +1,10 @@
 #include "WSAudioIn.h"
-#include "Graphics.h"
+#include "HapticsDialog.h"
 #include "FXHelper.h"
 #include "DFT_gosu.h"
 
 DWORD WINAPI WSwaveInProc(LPVOID);
+DWORD WINAPI resample(LPVOID lpParam);
 
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
@@ -20,18 +21,16 @@ int nChannel;
 int bytePerSample;
 int blockAlign;
 
-HANDLE hEvent = 0, stopEvent = 0, updateEvent = 0, dwHandle = 0;
-
-DWORD WINAPI resample(LPVOID lpParam);
+HANDLE hEvent = 0, astopEvent = 0, updateEvent = 0;
 
 HWND hDlg = NULL;
-FXHelper* fxh;
+FXHelper* fxha;
 DFT_gosu* dftGG;
 
 WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper *fx)
 {
 	NUMSAM = cf->numpts;
-	fxh = fx;
+	fxha = fx;
 	//gHandle = gr;
 	waveD = new double[cf->numpts];
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -41,6 +40,7 @@ WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper *fx)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	rate = init(cf->inpType);
 	dftGG->setSampleRate(rate);
+	startSampling();
 }
 
 WSAudioIn::~WSAudioIn()
@@ -53,11 +53,11 @@ WSAudioIn::~WSAudioIn()
 
 void WSAudioIn::startSampling()
 {
-	DWORD dwThreadID;
 	// creating listener thread...
 	if (pAudioClient && !dwHandle) {
-		stopEvent = CreateEvent(NULL, true, false, NULL);
-		dwHandle = CreateThread( NULL, 0, WSwaveInProc, pCaptureClient, 0, &dwThreadID);
+		//fxha->UnblockUpdates(false, true);
+		astopEvent = CreateEvent(NULL, true, false, NULL);
+		dwHandle = CreateThread( NULL, 0, WSwaveInProc, pCaptureClient, 0, NULL);
 		pAudioClient->Start();
 	}
 }
@@ -65,11 +65,12 @@ void WSAudioIn::startSampling()
 void WSAudioIn::stopSampling()
 {
 	if (dwHandle) {
-		SetEvent(stopEvent);
+		SetEvent(astopEvent);
 		//SetEvent(hEvent);
 		WaitForSingleObject(dwHandle, 6000);
 		pAudioClient->Stop();
-		ResetEvent(stopEvent);
+		ResetEvent(astopEvent);
+		//fxha->UnblockUpdates(true, true);
 		CloseHandle(dwHandle);
 		dwHandle = 0;
 	}
@@ -217,15 +218,15 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	double* waveT = new double[NUMSAM];
 	UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
-	int ret;
+	bool trun = true;
 
 	updateEvent = CreateEvent(NULL, false, false, NULL);
 	updHandle = CreateThread(NULL, 0, resample, waveD, 0, &dwThreadID);
 
-	HANDLE hArray[2] = {stopEvent, hEvent};
+	HANDLE hArray[2] = {astopEvent, hEvent};
 
-	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		switch (ret = WaitForMultipleObjects(2, hArray, false, 500))
+	while (trun) {
+		switch (WaitForMultipleObjects(2, hArray, false, 500))
 		{
 		case WAIT_OBJECT_0+1:
 			// got new buffer....
@@ -278,6 +279,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 			arrayPos = 0;
 			shift = 0;
 			break;
+		case WAIT_OBJECT_0: trun = false; break;
 		}
 	}
 	WaitForSingleObject(updHandle, 6000);
@@ -290,21 +292,26 @@ DWORD WINAPI resample(LPVOID lpParam)
 {
 	double* waveDouble = (double*)lpParam;
 
-	HANDLE waitArray[2] = {updateEvent, stopEvent};
-
+	HANDLE waitArray[2] = {updateEvent, astopEvent};
 	//ULONGLONG lastTick = 0, currentTick  = 0;
-
 	int* freqs = NULL;
+	bool trun = true;
 
-	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
-		if (WaitForMultipleObjects(2, waitArray, false, 100) == WAIT_OBJECT_0) {
-			freqs = dftGG->calc(waveDouble);
-			fxh->Refresh(freqs);
+	while (trun) {
+		switch (WaitForMultipleObjects(2, waitArray, false, 100)) {
+		case WAIT_OBJECT_0:
+			//freqs = dftGG->calc(waveDouble);
 			//currentTick = GetTickCount64();
-			if (hDlg && !IsIconic(hDlg) /*&& currentTick - lastTick > 20*/) {
-				DrawFreq(hDlg, freqs);
+			//if (currentTick - lastTick > 50) {
+				freqs = dftGG->calc(waveDouble);
+				fxha->RefreshHaptics(freqs);
+				if (hDlg && !IsIconic(GetParent(GetParent(hDlg))) /*&& currentTick - lastTick > 20*/) {
+					DrawFreq(hDlg, freqs);
+				}
 				//lastTick = currentTick;
-			}
+			//}
+		    break;
+		case WAIT_OBJECT_0 + 1: trun = false;
 		}
 	}
 

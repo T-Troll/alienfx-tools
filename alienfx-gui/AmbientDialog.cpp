@@ -1,5 +1,9 @@
 #include "alienfx-gui.h"
-#include <windowsx.h>
+//#include <windowsx.h>
+
+VOID OnSelChanged(HWND hwndDlg);
+
+extern int eItem;
 
 mapping *FindMapping(int lid) {
     if (lid != -1) {
@@ -29,16 +33,19 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     case WM_INITDIALOG:
     {
 
-        UpdateLightList<FXHelper>(light_list, fxhl, 3);
+        //UpdateLightList<FXHelper>(light_list, fxhl, 3);
+        if (UpdateLightList<FXHelper>(light_list, fxhl, 3) < 0) {
+            // no lights, switch to setup
+            HWND tab_list = GetParent(hDlg);
+            TabCtrl_SetCurSel(tab_list, 6);
+            OnSelChanged(tab_list);
+            return false;
+        }
 
         // Mode...
-        if (conf->amb_conf->mode) {
-            CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
-            CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_CHECKED);
-        } else {
-            CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
-            CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
-        }
+        CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_conf->mode ? BST_UNCHECKED : BST_CHECKED);
+        CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, conf->amb_conf->mode ? BST_CHECKED : BST_UNCHECKED);
+
         CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection ? BST_CHECKED : BST_UNCHECKED);
 
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -49,6 +56,11 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         SetSlider(sTip, conf->amb_conf->shift);
 
         conf->amb_conf->hDlg = hDlg;
+
+        //if (eItem != (-1)) {
+        //    ListBox_SetCurSel(light_list, eItem);
+        //    SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
+        //}
 
     } break;
     case WM_COMMAND:

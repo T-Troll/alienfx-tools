@@ -29,11 +29,11 @@ private:
 
 	WAVEFORMATEX* pwfx;
 
-	//void* gHandle;
+	HANDLE dwHandle = 0;
 
 	int rate;
 
-	HANDLE hWakeUp;
+	//HANDLE hWakeUp;
 
 	IMMDevice* GetDefaultMultimediaDevice(EDataFlow DevType);
 };

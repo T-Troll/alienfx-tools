@@ -179,12 +179,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 			}
 		}
 	if (wasChanged) {
-		UpdateColors();
+		QueryUpdate();
 		lCPU = cCPU; lRAM = cRAM; lHDD = cHDD; lGPU = cGPU; lNET = cNet; lTemp = cTemp; lBatt = cBatt; lFan = cFan;
 	}
 }
 
-void FXHelper::UpdateColors(int did, bool force)
+void FXHelper::QueryUpdate(int did, bool force)
 {
 	if (unblockUpdates && config->stateOn) {
 		LightQueryElement newBlock = {did, 0, force, true};// , actions};
@@ -342,7 +342,7 @@ int FXHelper::Refresh(bool forced)
 	for (int i =0; i < config->active_set->size(); i++) {
 		RefreshOne(&config->active_set->at(i), forced);
 	}
-	UpdateColors(-1, forced);
+	QueryUpdate(-1, forced);
 	return 0;
 }
 
@@ -402,12 +402,12 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 				SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, actions, force);
 			}
 			if (grp->lights.size() > 0 && update)
-				UpdateColors();
+				QueryUpdate();
 		}
 	} else {
 		SetLight(map->devid, map->lightid, actions, force);
 		if (update)
-			UpdateColors(map->devid, true);
+			QueryUpdate(map->devid, true);
 	}
 	//map->lastColor = actions[0];
 	return true;
@@ -447,8 +447,152 @@ int FXHelper::RefreshAmbient(UCHAR *img) {
 			}
 		}
 	}
-	UpdateColors();
+	QueryUpdate(-1, false);
 	return 0;
+}
+
+struct devset {
+	WORD did;
+	vector<UCHAR> lIDs;
+	vector<vector<AlienFX_SDK::afx_act>> fullSets;
+};
+
+void FXHelper::RefreshHaptics(int *freq) {
+	if (config->stateOn) {
+		//UnblockUpdates(false, true);
+		//for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
+		//	haptics_map map = config->hap_conf->mappings[i];
+		//	if (!map.map.empty()) {
+		//		double power = 0.0;
+		//		AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.cs.red,map.colorfrom.cs.green, map.colorfrom.cs.blue},
+		//			to = {0,0,0,map.colorto.cs.red,map.colorto.cs.green, map.colorto.cs.blue},
+		//			fin = {0};
+		//		// here need to check less bars...
+		//		for (int j = 0; j < map.map.size(); j++)
+		//			power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
+		//		if (map.map.size() > 1)
+		//			power = power / (map.map.size() * (map.hicut - map.lowcut));
+		//		fin.r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
+		//		fin.g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
+		//		fin.b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
+		//		//Don't need gamma?
+		//		fin.r = (fin.r * fin.r) >> 8;
+		//		fin.g = (fin.g * fin.g) >> 8;
+		//		fin.b = (fin.b * fin.b) >> 8;
+		//		if (map.lightid > 0xffff) {
+		//			// group
+		//			AlienFX_SDK::group *grp = afx_dev.GetGroupById(map.lightid);
+		//			if (grp) {
+		//				vector<AlienFX_SDK::afx_act> lSets;
+		//				vector<devset> devsets;
+		//				lSets.push_back(fin);
+		//				for (int i = 0; i < grp->lights.size(); i++) {
+		//					int dind;
+		//					for (dind = 0; dind < devsets.size(); dind++)
+		//						if (grp->lights[i]->devid == devsets[dind].did)
+		//							break;
+		//					if (dind == devsets.size()) {
+		//						// need new set...
+		//						devset nset = {(WORD) grp->lights[i]->devid};
+		//						devsets.push_back(nset);
+		//					}
+		//					if (map.flags) {
+		//						// gauge
+		//						lSets.clear();
+		//						if (((double) i) / grp->lights.size() < power) {
+		//							if (((double) i + 1) / grp->lights.size() < power)
+		//								lSets.push_back(to);
+		//							else {
+		//								// recalc...
+		//								double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
+		//								fin.r = (unsigned char) ((1.0 - newPower) * from.r + newPower * to.r);
+		//								fin.g = (unsigned char) ((1.0 - newPower) * from.g + newPower * to.g);
+		//								fin.b = (unsigned char) ((1.0 - newPower) * from.b + newPower * to.b);
+		//								fin.r = (fin.r * fin.r) >> 8;
+		//								fin.g = (fin.g * fin.g) >> 8;
+		//								fin.b = (fin.b * fin.b) >> 8;
+		//								lSets.push_back(fin);
+		//							}
+		//						} else
+		//							lSets.push_back(from);
+		//						devsets[dind].fullSets.push_back(lSets);
+		//					}
+		//					devsets[dind].lIDs.push_back((UCHAR) grp->lights[i]->lightid);
+		//				}
+		//				if (grp->lights.size()) {
+		//					for (int dind = 0; dind < devsets.size(); dind++) {
+		//						AlienFX_SDK::Functions *dev = LocateDev(devsets[dind].did);
+		//						if (dev && dev->IsDeviceReady())
+		//							if (map.flags)
+		//								dev->SetMultiColor((int) devsets[dind].lIDs.size(), devsets[dind].lIDs.data(), devsets[dind].fullSets);
+		//							else
+		//								dev->SetMultiLights((int) devsets[dind].lIDs.size(), devsets[dind].lIDs.data(), fin.r, fin.r, fin.b);
+		//					}
+		//				}
+		//			}
+		//		} else {
+		//			AlienFX_SDK::Functions *dev = LocateDev(map.devid);
+		//			if (dev && dev->IsDeviceReady())
+		//				dev->SetColor(map.lightid, fin.r, fin.g, fin.b);
+		//		}
+		//	}
+		//}
+		//for (int i = 0; i < devs.size(); i++)
+		//	devs[i]->UpdateColors();
+		//UnblockUpdates(true, true);
+
+		for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
+			haptics_map map = config->hap_conf->mappings[i];
+			vector<AlienFX_SDK::afx_act> actions;
+			if (!map.map.empty()) {
+				double power = 0.0;
+				AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.cs.red,map.colorfrom.cs.green, map.colorfrom.cs.blue},
+					to = {0,0,0,map.colorto.cs.red,map.colorto.cs.green, map.colorto.cs.blue},
+					fin = {0};
+				// here need to check less bars...
+				for (int j = 0; j < map.map.size(); j++)
+					power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
+				if (map.map.size() > 1)
+					power = power / (map.map.size() * (map.hicut - map.lowcut));
+				fin.r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
+				fin.g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
+				fin.b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
+
+				actions.push_back(fin);
+
+				if (map.lightid > 0xffff) {
+					// group
+					AlienFX_SDK::group *grp = afx_dev.GetGroupById(map.lightid);
+					if (grp && grp->lights.size()) {
+						for (int i = 0; i < grp->lights.size(); i++) {
+							if (map.flags) {
+								// gauge
+								if (((double) i) / grp->lights.size() < power) {
+									if (((double) i + 1) / grp->lights.size() < power)
+										actions[0] = to;
+									else {
+										// recalc...
+										double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
+										fin.r = (unsigned char) ((1.0 - newPower) * from.r + newPower * to.r);
+										fin.g = (unsigned char) ((1.0 - newPower) * from.g + newPower * to.g);
+										fin.b = (unsigned char) ((1.0 - newPower) * from.b + newPower * to.b);
+										actions[0] = (fin);
+									}
+								} else
+									actions[0] = from;
+							} else {
+								actions[0] = fin;
+							}
+							SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, actions);
+						}
+					}
+				} else {
+					SetLight(map.devid, map.lightid, actions);
+				}
+			}
+		}
+		QueryUpdate(-1, false);
+	}
 }
 
 DWORD WINAPI CLightsProc(LPVOID param) {
@@ -459,6 +603,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	HANDLE waitArray[2] = {src->stopQuery, src->haveNewElement};
 	vector<deviceQuery> devs_query;
 
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+
 	while (WaitForMultipleObjects(2, waitArray, false, 200) != WAIT_OBJECT_0) {
 		while (!src->lightQuery.empty()) {
 			int maxQlights = (int)src->afx_dev.GetMappings()->size() * 5;
@@ -467,16 +613,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				wasDelay = true;
 #ifdef _DEBUG
 				char buff[2048];
-				sprintf_s(buff, 2047, "Query so big, delay increased to %d ms!\n", src->GetConfig()->monDelay);
+				sprintf_s(buff, 2047, "Query so big (%d), delay increased to %d ms!\n", (int) src->lightQuery.size(), src->GetConfig()->monDelay);
 				OutputDebugString(buff);
 #endif
 			}
 			src->modifyQuery.lock();
-			current = src->lightQuery.front();
+
+			if (&src->lightQuery.front())
+				current = src->lightQuery.front();
 
 			src->lightQuery.pop_front();
 			src->modifyQuery.unlock();
 
+			// Bugfix
 			//#ifdef _DEBUG
 			//				char buff[2048];
 			//				sprintf_s(buff, 2047, "New light update: (%d,%d),u=%d (%ld remains)...\n", current.did, current.lid, current.update, src->lightQuery.size());
@@ -532,11 +681,13 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				//src->lightQuery.pop_front();
 			} else {
 				// set light
-				const unsigned delta = 256 - src->GetConfig()->dimmingPower;
-				vector<AlienFX_SDK::afx_act> actions;// = current.actions;
+				//const unsigned delta = 256 - src->GetConfig()->dimmingPower;
+				//vector<AlienFX_SDK::afx_act> actions;// = current.actions;
 				AlienFX_SDK::Functions* dev = src->LocateDev(current.did);
-				byte flags = src->afx_dev.GetFlags(current.did, current.lid);
+				//byte flags = src->afx_dev.GetFlags(current.did, current.lid);
 				if (dev) {
+					vector<AlienFX_SDK::afx_act> actions;// = current.actions;
+					byte flags = src->afx_dev.GetFlags(current.did, current.lid);
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::afx_act action = current.actions[i];
 						// gamma-correction...
@@ -549,6 +700,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// Dimming...
 						// Only for v1-v3 devices!
 						if (dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
+							unsigned delta = 256 - src->GetConfig()->dimmingPower;
 							action.r = (action.r * delta) >> 8;
 							action.g = (action.g * delta) >> 8;
 							action.b = (action.b * delta) >> 8;

@@ -1,6 +1,7 @@
 #pragma once
 #include "ConfigHandler.h"
 #include "CaptureHelper.h"
+#include "WSAudioIn.h"
 #include "..\\alienfan-tools\alienfan-gui\MonHelper.h"
 #include "FXHelper.h"
 class EventHandler
@@ -22,7 +23,7 @@ public:
 	void ToggleEvents();
 	void ChangeEffectMode(int);
 	void StopEffects();
-	void StartEffects();
+	void StartEffects(bool force = false);
 
 	EventHandler(ConfigHandler*, MonHelper*, FXHelper*);
 	~EventHandler();
@@ -31,6 +32,7 @@ public:
 	ConfigHandler* conf = NULL;
 	MonHelper *mon = NULL;
 	CaptureHelper *capt = NULL;
+	WSAudioIn *audio = NULL;
 
 	HANDLE stopEvents = NULL;
 

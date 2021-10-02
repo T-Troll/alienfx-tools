@@ -5,6 +5,9 @@
 
 //namespace AlienFX_TOOLS
 //{
+
+extern bool isNewVersion;
+
     template<typename FX>
 	static int UpdateLightList(HWND light_list, FX* fxhl, int flag = 0) {
 		int pos = -1;

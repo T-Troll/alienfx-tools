@@ -191,7 +191,7 @@ int ConfigHaptics::Save() {
         for (int j = 0; j < mappings[i].map.size(); j++) {
             out[j + 5] = mappings[i].map[j];
         }
-        int size = (mappings[i].map.size() + 5) * sizeof(unsigned);
+        int size = (int)(mappings[i].map.size() + 5) * sizeof(unsigned);
         RegSetValueExA(
             hKey2,
             name.c_str(),

@@ -1,4 +1,4 @@
-# Alienfx-gui
+# AlienFX Control (ex-Alienfx-gui)
 
 `Alienfx-gui` is AWCC in 500kb. Not 500Mb!  
 
@@ -195,15 +195,11 @@ Keyboard shortcuts (any time):
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
 
 Other shortcuts (only then application active):
-- ALT+1 - switch to "Colours" tab
-- ALT+2 - switch to "Monitoring" tab
-- ALT+3 - switch to "Devices and Lights" tab
-- ALT+4 - switch to "Profiles" tab
-- ALT+5 - switch to "Settings" tab
+- ALT+1..ALT+8 - switch to corresponding tab (from left to right)
 - ALT+r - refresh all lights
 - ALT+m - minimize app window
 - ALT+s - save configuration
 - ALT+? - about app
 - ALT+x - quit
 
-**WARNING:** All hardware colour effects stop working if you enable any Event monitoring. It’s a hardware bug – any light update operation restarts all effects.  
+**WARNING:** All hardware colour effects stop working if you enable any Software effect. It’s a hardware bug – any light update operation restarts all effects.  

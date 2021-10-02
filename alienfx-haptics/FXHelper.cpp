@@ -9,7 +9,7 @@ struct devset {
 void FXHelper::Refresh(int * freq)
 {
 	for (unsigned i = 0; i < config->mappings.size(); i++) {
-		mapping map = config->mappings[i];
+		haptics_map map = config->mappings[i];
 		if (!map.map.empty()) {
 			double power = 0.0;
 			AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.cs.red,map.colorfrom.cs.green, map.colorfrom.cs.blue},
@@ -88,7 +88,7 @@ void FXHelper::Refresh(int * freq)
 void FXHelper::FadeToBlack()
 {
 	for (int i = 0; i < config->mappings.size(); i++) {
-		mapping map = config->mappings[i];
+		haptics_map map = config->mappings[i];
 		AlienFX_SDK::Functions* dev = LocateDev(map.devid);
 		if (dev && afx_dev.GetFlags(map.devid, map.lightid) == 0 && dev->IsDeviceReady()) {
 			dev->SetColor(map.lightid, 0, 0, 0);

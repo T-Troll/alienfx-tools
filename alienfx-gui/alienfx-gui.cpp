@@ -28,6 +28,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
 ConfigHandler* conf;
@@ -285,7 +286,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// now add ACPI....
 	fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
 
-	if (fxhl->devs.size() > 0) {
+	if (fxhl->devs.size() > 0 || MessageBox(NULL, "No Alienware light devices detected!\nDo you want to continue?", "Error",
+											MB_YESNO | MB_ICONWARNING) == IDYES) {
 		conf->wasAWCC = DoStopService(true);
 
 		if (conf->esif_temp)
@@ -351,11 +353,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		fxhl->afx_dev.SaveMappings();
 
 		if (conf->wasAWCC) DoStopService(false);
-	}
-	else {
-		// no fx device detected!
-		MessageBox(NULL, "No Alienware light devices detected, exiting!", "Fatal error",
-			MB_OK | MB_ICONSTOP);
 	}
 
 	if (conf->fanControl) {
@@ -455,12 +452,13 @@ VOID OnSelChanged(HWND hwndDlg)
 	switch (tabSel) {
 	case 0: tdl = (DLGPROC)TabColorDialog; break;
 	case 1: tdl = (DLGPROC)TabEventsDialog; break;
-	case 2: tdl = (DLGPROC)TabDevicesDialog; break;
-	case 3: tdl = (DLGPROC)TabGroupsDialog; break;
-	case 4: tdl = (DLGPROC)TabProfilesDialog; break;
-	case 5: tdl = (DLGPROC)TabFanDialog; break;
-	case 6: tdl = (DLGPROC)TabSettingsDialog; break;
-	case 7: tdl = (DLGPROC)TabAmbientDialog; break;
+	case 2: tdl = (DLGPROC) TabAmbientDialog; break;
+	case 3: tdl = (DLGPROC) TabHapticsDialog; break;
+	case 4: tdl = (DLGPROC) TabGroupsDialog; break;
+	case 5: tdl = (DLGPROC) TabProfilesDialog; break;
+	case 6: tdl = (DLGPROC)TabDevicesDialog; break;
+	case 7: tdl = (DLGPROC)TabFanDialog; break;
+	case 8: tdl = (DLGPROC)TabSettingsDialog; break;
 	default: tdl = (DLGPROC)TabColorDialog;
 	}
 	HWND newDisplay = CreateDialogIndirect(hInst,
@@ -548,6 +546,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		ComboBox_AddString(mode_list, "Monitoring");
 		ComboBox_AddString(mode_list, "Ambient");
 		ComboBox_AddString(mode_list, "Haptics");
+		ComboBox_AddString(mode_list, "Off");
 		ComboBox_SetCurSel(mode_list, conf->effectMode);
 
 		OnSelChanged(tab_list);
@@ -586,6 +585,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDC_BUTTON_SAVE:
 			fxhl->afx_dev.SaveMappings();
 			conf->Save();
+			conf->niData.uFlags |= NIF_INFO;
+			strcpy_s(conf->niData.szInfoTitle, "Configuration saved!");
+			strcpy_s(conf->niData.szInfo, "Configuration saved succesdully.");
+			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+			conf->niData.uFlags &= ~NIF_INFO;
 			break;
 		case ID_ACC_COLOR:
 			TabCtrl_SetCurSel(tab_list, 0);
@@ -595,16 +599,32 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			TabCtrl_SetCurSel(tab_list, 1);
 			OnSelChanged(tab_list);
 			break;
-		case ID_ACC_DEVICES:
+		case ID_ACC_AMBIENT:
 			TabCtrl_SetCurSel(tab_list, 2);
 			OnSelChanged(tab_list);
-			break;
-		case ID_ACC_PROFILES:
+		break;
+		case ID_ACC_HAPTICS:
 			TabCtrl_SetCurSel(tab_list, 3);
 			OnSelChanged(tab_list);
 			break;
-		case ID_ACC_SETTINGS:
+		case ID_ACC_GROUPS:
 			TabCtrl_SetCurSel(tab_list, 4);
+			OnSelChanged(tab_list);
+			break;
+		case ID_ACC_DEVICES:
+			TabCtrl_SetCurSel(tab_list, 6);
+			OnSelChanged(tab_list);
+			break;
+		case ID_ACC_PROFILES:
+			TabCtrl_SetCurSel(tab_list, 5);
+			OnSelChanged(tab_list);
+			break;
+		case ID_ACC_FANS:
+			TabCtrl_SetCurSel(tab_list, 7);
+			OnSelChanged(tab_list);
+			break;
+		case ID_ACC_SETTINGS:
+			TabCtrl_SetCurSel(tab_list, 8);
 			OnSelChanged(tab_list);
 			break;
 		case IDC_EFFECT_MODE:
@@ -651,15 +671,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 			ShowWindow(hDlg, SW_HIDE);
 		} break;
-	case WM_MOVE:
-	{
-		if (fanWindow) {
-			// Reposition child...
-			RECT cDlg;
-			GetWindowRect(hDlg, &cDlg);
-			SetWindowPos(fanWindow, NULL, cDlg.right, cDlg.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOACTIVATE);
-		}
-	} break;
 	case WM_APP + 1: {
 		switch (lParam)
 		{
@@ -697,20 +708,37 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED | MF_STRING, 0, "&Profiles...");
 			else
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR)pMenu, "&Profiles...");
+			// add effects menu...
+			pMenu = CreatePopupMenu();
+			mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
+			mInfo.dwTypeData = "Monitoring";
+			InsertMenuItem(pMenu, 0, false, &mInfo);
+			mInfo.dwTypeData = "Ambient";
+			InsertMenuItem(pMenu, 0, false, &mInfo);
+			mInfo.dwTypeData = "Haptics";
+			InsertMenuItem(pMenu, 0, false, &mInfo);
+			mInfo.dwTypeData = "Off";
+			InsertMenuItem(pMenu, 0, false, &mInfo);
+			CheckMenuItem(pMenu, conf->effectMode, MF_BYPOSITION | MF_CHECKED);
+			ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR)pMenu, "&Effects...");
+
 			GetCursorPos(&lpClickPoint);
 			SetForegroundWindow(hDlg);
 			if (conf->lightsOn) CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, MF_CHECKED);
 			if (conf->IsDimmed()) CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, MF_CHECKED);
-			if (conf->IsMonitoring()) CheckMenuItem(tMenu, ID_TRAYMENU_MONITORING, MF_CHECKED);
+			//if (conf->IsMonitoring()) CheckMenuItem(tMenu, ID_TRAYMENU_MONITORING, MF_CHECKED);
 			if (conf->enableProf) CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, MF_CHECKED);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
 		case NIN_BALLOONUSERCLICK:
 		{
-			char uurl[MAX_PATH];
-			LoadString(hInst, IDS_UPDATEPAGE, uurl, MAX_PATH);
-			ShellExecute(NULL, "open", uurl, NULL, NULL, SW_SHOWNORMAL);
+			if (isNewVersion) {
+				char uurl[MAX_PATH];
+				LoadString(hInst, IDS_UPDATEPAGE, uurl, MAX_PATH);
+				ShellExecute(NULL, "open", uurl, NULL, NULL, SW_SHOWNORMAL);
+				isNewVersion = false;
+			}
 		} break;
 		}
 		break;
@@ -732,17 +760,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
-			//conf->dimmed = !conf->dimmed;
 		    conf->SetDimmed(!conf->IsDimmed());
-			//fxhl->RefreshState(true);
 			fxhl->ChangeState();
 			OnSelChanged(tab_list);
 			break;
-		case ID_TRAYMENU_MONITORING:
-			//conf->enableMon = !conf->enableMon;
-		    conf->SetMonitoring(!conf->IsMonitoring());
-			eve->ToggleEvents();
-			OnSelChanged(tab_list);
+		case ID_TRAYMENU_MONITORING_SELECTED:
+			eve->ChangeEffectMode(idx);
+			ListBox_SetCurSel(mode_list, idx);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
@@ -778,7 +802,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				fxhl->UnblockUpdates(true);
 				eve->ChangePowerState();
 				conf->stateScreen = true;
-				//fxhl->RefreshState();
 				eve->ToggleEvents();
 				eve->StartProfiles();
 			}
@@ -835,9 +858,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->ChangeState();
 			break;
 		case 2: // dim
-			//conf->dimmed = !conf->dimmed;
 		    conf->SetDimmed(!conf->IsDimmed());
-			//fxhl->RefreshState();
 			fxhl->ChangeState();
 			break;
 		case 3: // off-dim-full circle
@@ -857,7 +878,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case 4: // mon
 		    conf->SetMonitoring(!conf->IsMonitoring());
-			//conf->enableMon = !conf->enableMon;
 			eve->ToggleEvents();
 			break;
 		default: return false;
@@ -969,11 +989,13 @@ lightset* FindMapping(int mid)
 				}
 		} else {
 			// mapping
-			AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(mid);
-			for (int i = 0; i < conf->active_set->size(); i++)
-				if (conf->active_set->at(i).devid == lgh.devid && conf->active_set->at(i).lightid == lgh.lightid) {
-					return &conf->active_set->at(i);
-				}
+			if (fxhl->afx_dev.GetMappings()->size() > mid) {
+				AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(mid);
+				for (int i = 0; i < conf->active_set->size(); i++)
+					if (conf->active_set->at(i).devid == lgh.devid && conf->active_set->at(i).lightid == lgh.lightid) {
+						return &conf->active_set->at(i);
+					}
+			}
 		}
 	}
 	return nullptr;
@@ -985,7 +1007,6 @@ lightset* CreateMapping(int lid) {
 	AlienFX_SDK::afx_act act;
 	if (lid > 0xffff) {
 		// group
-		//AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(lid);
 		newmap.devid = 0;
 		newmap.lightid = lid;
 	} else {

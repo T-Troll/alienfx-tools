@@ -4,6 +4,7 @@
 #include "AlienFX_SDK.h"
 #include "..\alienfan-tools\alienfan-gui\ConfigHelper.h"
 #include "ConfigAmbient.h"
+#include "ConfigHaptics.h"
 
 // Profile flags pattern
 #define PROF_DEFAULT 0x1
@@ -12,19 +13,19 @@
 #define PROF_ACTIVE 0x8
 #define PROF_FANS 0x10
 
-struct ColorComp
-{
-	unsigned char blue;
-	unsigned char green;
-	unsigned char red;
-	unsigned char brightness;
-};
-
-union Colorcode
-{
-	struct ColorComp cs;
-	unsigned int ci = 0;
-};
+//struct ColorComp
+//{
+//	unsigned char blue;
+//	unsigned char green;
+//	unsigned char red;
+//	unsigned char brightness;
+//};
+//
+//union Colorcode
+//{
+//	struct ColorComp cs;
+//	unsigned int ci = 0;
+//};
 
 union FlagSet {
 	struct {
@@ -95,6 +96,7 @@ public:
 	// 3rd-party config blocks
 	ConfigHelper *fan_conf = NULL;
 	ConfigAmbient *amb_conf = NULL;
+	ConfigHaptics *hap_conf = NULL;
 
 	std::vector<lightset>* active_set;
 	std::vector<profile> profiles;

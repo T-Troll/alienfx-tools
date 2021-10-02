@@ -12,7 +12,7 @@
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 
 // defines and structures...
-#define C_PAGES 8
+#define C_PAGES 9
 
 typedef struct tag_dlghdr {
 	HWND hwndTab;       // tab control

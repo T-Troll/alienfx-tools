@@ -571,7 +571,9 @@
     <ClInclude Include="ColorDialog.h" />
     <ClInclude Include="ConfigAmbient.h" />
     <ClInclude Include="ConfigHandler.h" />
+    <ClInclude Include="ConfigHaptics.h" />
     <ClInclude Include="DevicesDialog.h" />
+    <ClInclude Include="DFT_gosu.h" />
     <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="EventDialog.h" />
     <ClInclude Include="EventHandler.h" />
@@ -582,6 +584,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SettingsDialog.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="WSAudioIn.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigHelper.cpp" />
@@ -592,15 +595,19 @@
     <ClCompile Include="ColorDialog.cpp" />
     <ClCompile Include="ConfigAmbient.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
+    <ClCompile Include="ConfigHaptics.cpp" />
     <ClCompile Include="DevicesDialog.cpp" />
+    <ClCompile Include="DFT_gosu.cpp" />
     <ClCompile Include="DXGIManager.cpp" />
     <ClCompile Include="EventDialog.cpp" />
     <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="FanDialog.cpp" />
     <ClCompile Include="FXHelper.cpp" />
     <ClCompile Include="GroupsDialog.cpp" />
+    <ClCompile Include="HapticsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
+    <ClCompile Include="WSAudioIn.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="alienfx-gui.rc" />
@@ -640,6 +647,9 @@
   <ItemGroup>
     <ProjectReference Include="..\alienfan-tools\alienfan-SDK\alienfan-SDK.vcxproj">
       <Project>{41343b7c-6c9f-4ad4-9d27-050b3d76290d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\alienfx-haptics\kiss_fft\kiss_fft.vcxproj">
+      <Project>{e6f98b66-1c66-4afd-8a48-faa1022f8196}</Project>
     </ProjectReference>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
       <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>

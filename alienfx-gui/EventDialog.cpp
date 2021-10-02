@@ -67,7 +67,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 		if (UpdateLightList<FXHelper>(light_list, fxhl) < 0) {
 			HWND tab_list = GetParent(hDlg);
-			TabCtrl_SetCurSel(tab_list, 2);
+			TabCtrl_SetCurSel(tab_list, 6);
 			OnSelChanged(tab_list);
 			return false;
 		}
@@ -113,8 +113,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		lTip = CreateToolTip(s2_slider, lTip);
 
 		if (eItem != (-1)) {
-			SendMessage(light_list, LB_SETCURSEL, eItem, 0);
-			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)hDlg);
+			ListBox_SetCurSel(light_list, eItem);
+			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
 		}
 	} break;
 	case WM_COMMAND: {

@@ -114,24 +114,24 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		if (UpdateLightList<FXHelper>(light_list, fxhl) < 0) {
 			// no lights, switch to setup
 			HWND tab_list = GetParent(hDlg);
-			TabCtrl_SetCurSel(tab_list, 2);
+			TabCtrl_SetCurSel(tab_list, 6);
 			OnSelChanged(tab_list);
 			return false;
 		}
 		// Set types list...
 		char buffer[100];
 		LoadString(hInst, IDS_TYPE_COLOR, buffer, 100);
-		SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(type_c1, buffer);
 		LoadString(hInst, IDS_TYPE_PULSE, buffer, 100);
-		SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(type_c1, buffer);
 		LoadString(hInst, IDS_TYPE_MORPH, buffer, 100);
-		SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(type_c1, buffer);
 		LoadString(hInst, IDS_TYPE_BREATH, buffer, 100);
-		SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(type_c1, buffer);
 		LoadString(hInst, IDS_TYPE_SPECTRUM, buffer, 100);
-		SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(type_c1, buffer);
 		LoadString(hInst, IDS_TYPE_RAINBOW, buffer, 100);
-		SendMessage(type_c1, CB_ADDSTRING, 0, (LPARAM)buffer);
+		ComboBox_AddString(type_c1, buffer);
 		// now sliders...
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -142,7 +142,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		lTip = CreateToolTip(l1_slider, lTip);
 		// Restore selection....
 		if (eItem != (-1)) {
-			SendMessage(light_list, LB_SETCURSEL, eItem, 0);
+			ListBox_SetCurSel(light_list, eItem);
 			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
 		}
 	} break;

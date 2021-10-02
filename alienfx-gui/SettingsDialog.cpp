@@ -128,10 +128,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_SCREENOFF:
 			conf->offWithScreen = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
-		/*case IDC_BUT_MONITOR:
-			conf->SetMonitoring((IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED));
-			eve->ToggleEvents();
-			break;*/
 		case IDC_BUT_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
@@ -142,11 +138,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->lightsOn = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			fxhl->ChangeState();
 			break;
-		//case IDC_CHECK_DIM:
-		//	conf->SetDimmed((IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED));
-		//	//fxhl->RefreshState();
-		//	fxhl->ChangeState();
-		//	break;
 		case IDC_CHECK_GAMMA:
 			conf->gammaCorrection = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			fxhl->RefreshState();

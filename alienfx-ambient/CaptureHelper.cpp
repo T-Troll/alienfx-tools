@@ -115,7 +115,7 @@ void FindColors(UCHAR* src, UCHAR* imgz) {
 	for (UINT dy = 0; dy < 3; dy++)
 		for (UINT dx = 0; dx < 4; dx++) {
 			//ColorCalc(&callData[dy][dx]);
-			if (callData[dy][dx].pEvent) {
+			if (pfEvent[dy * 4 + dx]) {
 				SetEvent(callData[dy][dx].pEvent);
 			} else {
 				UINT ptr = (dy * 4 + dx);// *3;

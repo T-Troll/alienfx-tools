@@ -5,6 +5,7 @@
 //namespace AlienFX_TOOLS
 //{
 HINSTANCE hInst;
+bool isNewVersion = false;
 
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 	RECT rect;
@@ -124,6 +125,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 					strcpy_s(niData->szInfo, ("Version " + res + " released at GitHub.").c_str());
 					Shell_NotifyIcon(NIM_MODIFY, niData);
 					niData->uFlags &= ~NIF_INFO;
+					isNewVersion = true;
 				}
 			}
 			InternetCloseHandle(req);

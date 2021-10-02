@@ -15,10 +15,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-int* freq;
-int nCmdShow;
-
-bool axis_draw = true;
+//int* freq;
 
 ConfigHaptics* config = NULL;
 FXHelper* afx = NULL;
@@ -28,33 +25,36 @@ HINSTANCE ghInstance = NULL;
 
 NOTIFYICONDATA niData;
 
-Graphics::Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHaptics *conf, FXHelper *fxproc)
+Graphics::Graphics(HINSTANCE hInstance, ConfigHaptics *conf, FXHelper *fxproc, WSAudioIn* aud)
 {
 
-	nCmdShow=mainCmdShow;
+	//nCmdShow=mainCmdShow;
 
-	freq=freqp;
+	//freq = new int[conf->numbars]{0};
 
 	config = conf;
 	afx = fxproc;
+	audio = aud;
 
 	ghInstance = hInstance;
 
-	dlg = CreateDialogParam(hInstance,
+	if (!(dlg = CreateDialogParam(hInstance,
 		MAKEINTRESOURCE(IDD_DIALOG_CONFIG),
 		NULL,
-		(DLGPROC)DialogConfigStatic, 0);
-	if (!dlg) return;
+		(DLGPROC)DialogConfigStatic, 0)))
+		return;
 
 	SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIEN)));
 	SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIEN), IMAGE_ICON, 16, 16, 0));
 
-	//ShowWindow(dlg, nCmdShow);
 }
 
+//Graphics::~Graphics() {
+//	delete[] freq;
+//}
 
 void Graphics::start(){
-	ShowWindow(dlg, nCmdShow);
+	ShowWindow(dlg, SW_SHOW);
 	UpdateWindow(dlg);
 
 	while(GetMessage(&Msg, NULL, 0, 0) != 0)
@@ -64,20 +64,24 @@ void Graphics::start(){
 	}
 }
 
-void Graphics::ShowError(char* T)
-{
-	MessageBox(dlg, T, "Error!", MB_OK);
-}
+//void Graphics::ShowError(char* T)
+//{
+//	MessageBox(dlg, T, "Error!", MB_OK);
+//}
+//
+//void Graphics::SetAudioObject(WSAudioIn* wsa)
+//{
+//	audio = wsa;
+//}
 
-void Graphics::SetAudioObject(WSAudioIn* wsa)
-{
-	audio = wsa;
-}
-
-HWND Graphics::GetDlg()
-{
-	return dlg;
-}
+//HWND Graphics::GetDlg()
+//{
+//	return dlg;
+//}
+//
+//int *Graphics::GetFreq() {
+//	return freq;
+//}
 
 void DrawFreq(HWND hDlg, int* freq)
 {
@@ -150,12 +154,13 @@ void DrawFreq(HWND hDlg, int* freq)
 			graphZone.left = 1;
 			graphZone.bottom--;
 		}
-		for (i = 0; i < config->numbars; i++) {
-			rectop = (255 - freq[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
-			Rectangle(hdc, (graphZone.right * i) / config->numbars + graphZone.left, rectop, (graphZone.right * (i + 1)) / config->numbars - 2 + graphZone.left, graphZone.bottom);
-			//wsprintf(szSize, "%3d", freq[i]);
-			//TextOut(hdc, ((rcClientP->right - 20) * i) / config->numbars + 10, rectop - 15, szSize, 3);
-		}
+		if (freq)
+			for (i = 0; i < config->numbars; i++) {
+				rectop = (255 - freq[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
+				Rectangle(hdc, (graphZone.right * i) / config->numbars + graphZone.left, rectop, (graphZone.right * (i + 1)) / config->numbars - 2 + graphZone.left, graphZone.bottom);
+				//wsprintf(szSize, "%3d", freq[i]);
+				//TextOut(hdc, ((rcClientP->right - 20) * i) / config->numbars + 10, rectop - 15, szSize, 3);
+			}
 
 		BitBlt(hdc_r, 0, 0, levels_rect.right - levels_rect.left, levels_rect.bottom - levels_rect.top, hdc, 0, 0, SRCCOPY);
 
@@ -228,7 +233,7 @@ bool SetColor(HWND hDlg, int id, BYTE* r, BYTE* g, BYTE* b) {
 	return ret;
 }
 
-mapping* FindMapping(int lid) {
+haptics_map* FindMapping(int lid) {
 	if (lid != -1) {
 		if (lid > 0xffff) {
 			// group
@@ -256,7 +261,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
 	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
 	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
-	mapping* map = NULL;
+	haptics_map* map = NULL;
 
 	switch (message)
 	{
@@ -304,6 +309,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		Shell_NotifyIcon(NIM_ADD, &niData);
 		// check update....
 		CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
+		if (audio)
+			audio->SetDlg(hDlg);
 	}
 	break;
 
@@ -319,13 +326,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			config->inpType = 0;
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_UNCHECKED);
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_CHECKED);
-			audio->RestartDevice(0);
+			if (audio)
+				audio->RestartDevice(0);
 			break;
 		case ID_INPUT_DEFAULTINPUTDEVICE:
 			config->inpType = 1;
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTINPUTDEVICE, MF_CHECKED);
 			CheckMenuItem(GetMenu(hDlg), ID_INPUT_DEFAULTOUTPUTDEVICE, MF_UNCHECKED);
-			audio->RestartDevice(1);
+			if (audio)
+				audio->RestartDevice(1);
 			break;
 		case ID_FILE_EXIT: case IDOK: PostMessage(hDlg, WM_CLOSE, 0, 0); break;
 		case ID_HELP_ABOUT: // about dialogue here
@@ -360,7 +369,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case LBN_SELCHANGE: {
 				// check in config - do we have mappings?
 				if (!map) {
-					mapping newmap;
+					haptics_map newmap;
 					if (lid > 0xffff) {
 						// group
 						newmap.devid = 0;
@@ -377,7 +386,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					newmap.hicut = 255;
 					newmap.flags = 0;
 					config->mappings.push_back(newmap);
-					std::sort(config->mappings.begin(), config->mappings.end(), ConfigHaptics::sortMappings);
+					//std::sort(config->mappings.begin(), config->mappings.end(), ConfigHaptics::sortMappings);
 					map = FindMapping(lid);
 				}
 				// load freq....
@@ -471,7 +480,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			{
 			case BN_CLICKED: {
 				if (map) {
-					std::vector <mapping>::iterator Iter;
+					std::vector <haptics_map>::iterator Iter;
 					AlienFX_SDK::mapping lgh;
 					if (lid > 0xffff)
 						// group
@@ -553,7 +562,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0);
 			int lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
 			if (lid > 0) {
-				mapping* map = FindMapping(lid);
+				haptics_map* map = FindMapping(lid);
 				if (map)
 					if (((DRAWITEMSTRUCT*) lParam)->CtlID == IDC_BUTTON_LPC)
 						RedrawButton(hDlg, ((DRAWITEMSTRUCT*) lParam)->CtlID, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
@@ -564,7 +573,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			return 0;
 		}
 		case IDC_LEVELS:
-			DrawFreq(hDlg, freq);
+			DrawFreq(hDlg, NULL);
 			return 0;
 		}
 		break;

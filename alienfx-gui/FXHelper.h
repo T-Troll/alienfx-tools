@@ -56,12 +56,13 @@ public:
 	bool SetMode(int mode);
 	void TestLight(int did, int id);
 	void ResetPower(int did);
-	void UpdateColors(int did = -1, bool force = false);
+	void QueryUpdate(int did = -1, bool force = false);
 	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, long cFan, bool force = false);
 	bool SetLight(int did, int id, std::vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void RefreshState(bool force = false);
 	void RefreshMon();
 	int RefreshAmbient(UCHAR *img);
+	void RefreshHaptics(int *freq);
 	void Flush();
 	void ChangeState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);

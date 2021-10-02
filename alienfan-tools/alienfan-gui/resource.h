@@ -19,6 +19,7 @@
 #define IDC_STATIC_VERSION              1009
 #define IDC_SYSLINK_HOMEPAGE            1010
 #define IDC_SLIDER_GPU                  1013
+#define IDC_STATIC_BOOST                1014
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDC_STATIC                      -1
@@ -30,7 +31,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32780
-#define _APS_NEXT_CONTROL_VALUE         1014
+#define _APS_NEXT_CONTROL_VALUE         1016
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

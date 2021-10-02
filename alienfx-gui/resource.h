@@ -26,24 +26,24 @@
 #define IDS_UPDATEPAGE                  121
 #define IDS_TAB_COLOR                   122
 #define IDS_TAB_EVENTS                  123
-#define IDS_TAB_DEVICES                 124
-#define IDS_TAB_GROUPS                  125
-#define IDS_TAB_PROFILES                126
-#define IDS_TAB_FANS                    127
-#define IDS_TAB_SETTINGS                128
-#define IDS_TAB_AMBIENT                 129
-#define IDS_TAB_HAPTICS                 130
+#define IDS_TAB_AMBIENT                 124
+#define IDS_TAB_HAPTICS                 125
+#define IDS_TAB_GROUPS                  126
+#define IDS_TAB_PROFILES                127
+#define IDS_TAB_DEVICES                 128
+#define IDS_TAB_FANS                    129
+#define IDS_TAB_SETTINGS                130
 #define IDD_MAINWINDOW                  131
 #define IDI_ALIENFXGUI                  132
 #define IDD_DIALOG_COLORS               133
 #define IDD_DIALOG_EVENTS               134
-#define IDD_DIALOG_DEVICES              135
-#define IDD_DIALOG_GROUPS               136
-#define IDD_DIALOG_PROFILES             137
-#define IDD_DIALOG_FAN                  138
-#define IDD_DIALOG_SETTINGS             139
-#define IDD_DIALOG_AMBIENT              140
-#define IDR_MENU_TRAY                   141
+#define IDD_DIALOG_AMBIENT              135
+#define IDD_DIALOG_HAPTICS              136
+#define IDD_DIALOG_GROUPS               137
+#define IDD_DIALOG_PROFILES             138
+#define IDD_DIALOG_DEVICES              139
+#define IDD_DIALOG_FAN                  140
+#define IDD_DIALOG_SETTINGS             141
 #define IDS_TYPE_COLOR                  142
 #define IDS_TYPE_PULSE                  143
 #define IDS_TYPE_MORPH                  144
@@ -51,15 +51,17 @@
 #define IDI_ALIENFX_ON                  147
 #define IDI_ALIENFX_OFF                 148
 #define IDI_ALIENFX_DIM                 149
+#define IDR_MENU_TRAY                   150
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_BUTTON1                     1000
-#define IDC_LIGHTS                      1013
+#define IDC_BUTTON2                     1001
 #define IDC_TEMP_LIST                   1002
 #define IDC_BUTTON3                     1002
 #define IDC_FAN_LIST                    1003
 #define IDC_BUTTON4                     1003
 #define IDC_BUTTON5                     1004
+#define IDC_FREQ                        1004
 #define IDC_BUTTON_C1                   1005
 #define IDC_BUTTON6                     1005
 #define IDC_BUTTON7                     1006
@@ -70,23 +72,31 @@
 #define IDC_LENGTH1                     1009
 #define IDC_CHECK_NOEVENT               1009
 #define IDC_BUTTON10                    1009
+#define IDC_RESET                       1009
 #define IDC_CHECK_POWER                 1010
 #define IDC_BUTTON11                    1010
 #define IDC_CHECK_PERF                  1011
 #define IDC_BUTTON12                    1011
 #define IDC_CHECK_STATUS                1012
+#define IDC_LIGHTS                      1013
 #define IDC_COUNTERLIST                 1013
 #define IDC_SLIDER_GPU                  1013
-#define IDC_BUTTON2                     1001
 #define IDC_STATUSLIST                  1014
+#define IDC_SLIDER_LOWCUT               1014
 #define IDC_DEVICES                     1015
+#define IDC_BUTTON_LPC                  1015
 #define IDC_STARTW                      1016
+#define IDC_BUTTON_HPC                  1016
 #define IDC_STARTM                      1017
+#define IDC_BUTTON_REMOVE               1017
 #define IDC_AUTOREFRESH                 1018
+#define IDC_SLIDER_HICUT                1018
 #define IDC_BUTTON_REFRESH              1021
 #define IDC_BUTTON_MINIMIZE             1022
 #define IDC_LIGHTS_E                    1023
+#define IDC_SHOWAXIS                    1023
 #define IDC_BUTTON_SAVE                 1024
+#define IDC_LEVELS                      1025
 #define IDC_LIGHTID                     1026
 #define IDC_CHECK1                      1026
 #define IDC_BUTTON_ADDL                 1027
@@ -169,6 +179,10 @@
 #define IDC_BUT_SAVEMAP                 1091
 #define IDC_CHECK_FANPROFILE            1092
 #define IDC_EFFECT_MODE                 1093
+#define IDC_RADIO_OUTPUT                1094
+#define IDC_RADIO_INPUT                 1095
+#define IDC_FAN_CURVE                   1096
+#define IDC_STATIC_BOOST                1097
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -183,6 +197,11 @@
 #define ID_TRAYMENU_PROFILES            32789
 #define ID_ACC_PROFILES                 32790
 #define ID_TRAYMENU_PROFILE_SELECTED    32791
+#define ID_TRAYMENU_MONITORING_SELECTED 32792
+#define ID_ACC_AMBIENT                  32797
+#define ID_ACC_HAPTICS                  32798
+#define ID_ACC_FANS                     32799
+#define ID_ACC_GROUPS                   32800
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -190,9 +209,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        153
-#define _APS_NEXT_COMMAND_VALUE         32797
-#define _APS_NEXT_CONTROL_VALUE         1094
-#define _APS_NEXT_SYMED_VALUE           112
+#define _APS_NEXT_RESOURCE_VALUE        154
+#define _APS_NEXT_COMMAND_VALUE         32802
+#define _APS_NEXT_CONTROL_VALUE         1098
+#define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

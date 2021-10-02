@@ -12,11 +12,12 @@ void DrawFreq(HWND hDlg, int* freq);
 class Graphics {
 
 public:
-	Graphics(HINSTANCE hInstance, int mainCmdShow, int* freqp, ConfigHaptics *conf, FXHelper *fxproc);
+	Graphics(HINSTANCE hInstance, ConfigHaptics *conf, FXHelper *fxproc, WSAudioIn *aud);
+	//~Graphics();
 	void start();
-	void ShowError(char* T);
-	void SetAudioObject(WSAudioIn* wsa);
-	HWND GetDlg();
+	//void ShowError(char* T);
+	//void SetAudioObject(WSAudioIn* wsa);
+	//HWND GetDlg();
 
 private:
 	MSG Msg;

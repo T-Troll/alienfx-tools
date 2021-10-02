@@ -191,9 +191,10 @@ DWORD WINAPI CInProc(LPVOID param)
 
 DWORD WINAPI CDlgProc(LPVOID param)
 {
-	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 	while (WaitForSingleObject(stopEvent, 50) == WAIT_TIMEOUT) {
-		if (!IsIconic(config->hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
+		if (!IsIconic(GetParent(config->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //	OutputDebugString("UI update...\n");
 //#endif
@@ -207,14 +208,19 @@ DWORD WINAPI CDlgProc(LPVOID param)
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
 	HANDLE waitArray[2] = {lhEvent, stopEvent};
-	SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT)
-		if (WaitForMultipleObjects(2, waitArray, false, 200) == WAIT_OBJECT_0) {
-//#ifdef _DEBUG
-//			OutputDebugString("Light update...\n");
-//#endif
-			memcpy(imgz, (UCHAR*)param, sizeof(imgz));
+	bool trun = true;
+	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+	while (trun) {
+		switch (WaitForMultipleObjects(2, waitArray, false, 200)) {
+		case WAIT_OBJECT_0:
+			//#ifdef _DEBUG
+			//			OutputDebugString("Light update...\n");
+			//#endif
+			memcpy(imgz, (UCHAR *) param, sizeof(imgz));
 			fxh->RefreshAmbient(imgz);
+			break;
+		case WAIT_OBJECT_0 + 1: trun = false; break;
 		}
+	}
 	return 0;
 }

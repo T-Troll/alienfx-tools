@@ -9,7 +9,7 @@ VOID OnSelChanged(HWND hwndDlg);
 
 fan_point* lastFanPoint = NULL;
 
-INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 
 void SetTooltip(HWND tt, int x, int y) {
     TOOLINFO ti = { 0 };
@@ -94,8 +94,8 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
                 mark.x = acpi->GetTempValue(conf->fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
                 mark.y = (100 - acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
                 Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-                string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) + ")";
-                SetWindowText(curve, rpmText.c_str());
+                string rpmText = "Boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan));
+                SetWindowText(GetDlgItem(GetParent(curve), IDC_STATIC_BOOST), rpmText.c_str());
             }
         }
 
@@ -215,17 +215,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ReloadFanView(hDlg, conf->fan_conf->lastSelectedFan);
 
             // So open fan control window...
-            RECT cDlg, mwRect;
-            GetWindowRect(GetParent(hDlg), &cDlg);
-            GetWindowRect(mDlg, &mwRect);
-            int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
-            string wName = "Fan curve (boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) + ")";
-            fanWindow = CreateWindow("STATIC", wName.c_str(), WS_CAPTION | WS_POPUP,//WS_OVERLAPPED,
-                                     mwRect.right, mwRect.top, wh, wh,
-                                     hDlg, NULL, hInst, 0);
+            fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
             SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
             sTip = CreateToolTip(fanWindow, NULL);
-            ShowWindow(fanWindow, SW_SHOWNA);
+
             mon->Stop();
             mon->dlg = hDlg;
             mon->fDlg = fanWindow;
@@ -237,7 +230,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         } else {
             HWND tab_list = GetParent(hDlg);
-            TabCtrl_SetCurSel(tab_list, 6);
+            TabCtrl_SetCurSel(tab_list, 8);
             OnSelChanged(tab_list);
             return false;
         }
@@ -364,8 +357,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
     case WM_CLOSE: case WM_DESTROY:
         // Close curve window
-        DestroyWindow(fanWindow);
         fanWindow = NULL;
+        mon->fDlg = fanWindow;
         break;
     }
     return 0;

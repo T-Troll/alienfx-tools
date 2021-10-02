@@ -72,6 +72,15 @@
     <ClInclude Include="DXGIManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConfigHaptics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DFT_gosu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WSAudioIn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfx-gui.cpp">
@@ -123,6 +132,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AmbientDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HapticsDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigHaptics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DFT_gosu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WSAudioIn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

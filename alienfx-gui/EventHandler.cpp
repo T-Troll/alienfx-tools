@@ -19,20 +19,13 @@ EventHandler::EventHandler(ConfigHandler* confi, MonHelper* f_confi, FXHelper* f
 	fxh = fx;
 
 	StartProfiles();
-
-	if (conf->IsMonitoring()) {
-		switch (conf->effectMode) {
-		case 0: StartEvents(); break;
-		case 1: capt = new CaptureHelper(conf->amb_conf, fxh); break;
-			// case 2: haptics
-		}
-	}
+	StartEffects();
 }
 
 EventHandler::~EventHandler()
 {
 	StopProfiles();
-	StopEvents();
+	StopEffects();
 	fxh->Refresh(true);
 }
 
@@ -164,34 +157,9 @@ void EventHandler::ToggleEvents()
 	conf->SetStates();
 	if (conf->stateOn) {
 		if (conf->IsMonitoring()) {
-			switch (conf->effectMode) {
-			case 0: if (!dwHandle) {
-				fxh->Refresh(); StartEvents();
-			} else
-				fxh->RefreshState(true);
-			break;
-			case 1: 
-			    fxh->Refresh(true);
-				if (!capt) capt = new CaptureHelper(conf->amb_conf, fxh); 
-			break;
-				// case 2: haptics
-			}
+			StartEffects(true);
 		} else {
-			switch (conf->effectMode) {
-			case 0:	
-			if (dwHandle)
-				StopEvents();
-			else
-				fxh->Refresh(true);
-			break;
-			case 1: 
-			    if (capt) {
-				   delete capt; capt = NULL;
-			    }
-				fxh->Refresh(true);
-				break;
-				// case 2: haptics
-			}
+			StopEffects();
 		}
 	}
 }
@@ -207,21 +175,36 @@ void EventHandler::ChangeEffectMode(int newMode) {
 
 void EventHandler::StopEffects() {
 	switch (conf->effectMode) {
-	case 0:	StopEvents(); break;
+	case 0:	if (dwHandle) StopEvents(); else fxh->Refresh(true); break;
 	case 1: if (capt) {
 		delete capt; capt = NULL;
+		fxh->Refresh(true);
 	} break;
-		// case 2: haptics
+	case 2: if (audio) {
+		delete audio; audio = NULL;
+		fxh->Refresh(true);
+	} break;
+	case 3: fxh->Refresh(true); break;
 	}
 }
 
-void EventHandler::StartEffects() {
+void EventHandler::StartEffects(bool force) {
 	if (conf->IsMonitoring()) {
 		// start new mode...
 		switch (conf->effectMode) {
-		case 0: fxh->Refresh(true); StartEvents(); break;
-		case 1: if (!capt) capt = new CaptureHelper(conf->amb_conf, fxh); break;
-			// case 2: haptics
+		case 0: if (force)
+			fxh->RefreshState(true); 
+			StartEvents(); 
+			break;
+		case 1: if (force) fxh->Refresh(true); 
+			if (!capt) capt = new CaptureHelper(conf->amb_conf, fxh); 
+			break;
+		case 2: if (force) fxh->Refresh(true); 
+			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh); 
+			break;
+		case 3: if (force)
+			fxh->Refresh(true);
+			break;
 		}
 	}
 }

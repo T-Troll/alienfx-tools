@@ -47,6 +47,7 @@ int* DFT_gosu::calc(double *x1)
 	for (int n = 0; n < NUMPTS; n++) {
 		padded_in[n] = (kiss_fft_scalar) (x1[n] * blackman[n]);
 	}
+
 	kiss_fftr(kiss_cfg, padded_in, padded_out);
 
 	double minP = INT_MAX, maxP = 0;
@@ -56,7 +57,7 @@ int* DFT_gosu::calc(double *x1)
 		double v = 0;
 		for (int m = 0; m < f; m++) {
 			if (idx < NUMPTS/2)
-				v = v + sqrt(padded_out[idx+1].r * padded_out[idx+1].r + padded_out[idx+1].i * padded_out[idx+1].i);
+				v+= sqrt(padded_out[idx+1].r * padded_out[idx+1].r + padded_out[idx+1].i * padded_out[idx+1].i);
 			idx++;
 		}
 
