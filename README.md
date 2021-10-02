@@ -1,8 +1,8 @@
 # Alienfx tools
 AWCC don't needed anymore - here are light weighted tools for Alienware systems lights,fans,power profile control:
-- [AlienFX GUI Editor](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights, fans, temperatures, power settings and a lot more.
-- [AlienFX Universal haptics](/Doc/alienfx-haptics.md) - Visualize any sound around you (microphone, audio player, game, movie).
-- [AlienFX Ambient lights](/Doc/alienfx-ambient.md) - Visualize screen picture as ambient light (from desktop, game, video player).
+- [AlienFX Control](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights, fans, temperatures, power settings and a lot more.
+- <s>[AlienFX Universal haptics](/Doc/alienfx-haptics.md) - Visualize any sound around you (microphone, audio player, game, movie).
+- [AlienFX Ambient lights](/Doc/alienfx-ambient.md) - Visualize screen picture as ambient light (from desktop, game, video player).</s> (now part of AlienFX Control)
 - [alienfx-cli](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command line interface).
 - [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Support all Dell's API functions using low-level SDK.
 - [alienfx-probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name it for using into other applications.
@@ -13,7 +13,7 @@ Some additional tools added from my other [`Alienfan-tools`](https://github.com/
 Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
 ## Disclaimer
-Starting from the release 4.2.1, **Antiviruses will detect virus into project package**.  
+Starting from the release 4.2.1, **Antiviruses can detect virus into project package**.  
 It's not a virus, in fact, but the kernel hack for load driver. If you don't like it:
   - Remove kdl.dll and drv64.dll from package (or you antivirus do so).
   - Use "Test mode" instalation method (see Installation).
@@ -22,14 +22,14 @@ It's not a virus, in fact, but the kernel hack for load driver. If you don't lik
 - Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
 - Windows 10 v1803 or later (binary files for 64-bit only, but you can compile project for 32-bit as well).
 - `alienfan-gui` and `alienfan-cli` always require Administrator rights to work (for communication with hardware).
-- Other apps does not require Administrator rights, except `alienfx-gui` in some cases:
+- `alienfx-gui` requre Administrator rights in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privilegy)
   - "Esif temperature" selected (access to ESIF values blocked from user account)
   - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
 
 ## Installation
 - Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
-- (Optional) `alienfx-ambient` uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other tools doesn't require it, so you need it in case if you plan to use Ambient only.
+- (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes doesn't require it, so you need it in case if you plan to use `Ambient` effects only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, any of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version. 
 - (Optional) If you plan to use `alienfx-gui` fan control or any of Aliefan tools, check [alienfan readme](https://github.com/T-Troll/alienfan-tools) for possible configuration alternatives.
@@ -64,10 +64,10 @@ External mouses, keyboards and monitors are not supported yet, feel free to open
 - Some High-level (Dell) SDK functions can not work as designed. This may be fixed in upcoming AWCC updates. It's not an `alienfx-cli` bug.
 - Hardware light effects breathing, spectrum, rainbow doesn't supported for older (APIv1-v3) devices.
 - Hardware light effects (and global effect) didn't work with software light effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
-- DirectX12 games didn't allow to access GPU or frame, so `alienfx-ambient` will not handle colors, and `alienfx-gui` can't handle GPU load for it correctly.
+- DirectX12 games didn't allow to access GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
 - Using hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to "Devices" tab or quit with visible delay.
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use `alienfx-gui` application with "Power Button"-related features. Keep it working can provide unexpected results up to light system freeze (for APIv4).
-- **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `alienfx-ambient` from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
+- **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `Ambient` effect from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
 - **WARNING!** In rare case light system freeze, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
 
 ## How to build from source code
@@ -78,7 +78,6 @@ Pre-requisites:
 
 Build process:
 - Clone repository
-<s>- Clone alienfan-tools repository into `alienfan-tools` folder from [here](https://github.com/T-Troll/alienfan-tools)</s>
 - Open solution into you Visual Studio, build.
 
 ## Tools Used

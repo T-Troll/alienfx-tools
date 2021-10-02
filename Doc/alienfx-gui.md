@@ -13,6 +13,8 @@ But what it can do, instead?
   - Set the chain of effects to every light, or
   - Set the light to react any system event - CPU load, temperature, HDD access - name it.
   - Group the lights any way you wish and control group not as one light only, but as a gauge of LEDs.
+  - Make lights react on screen colors (Ambient lights).
+  - Make lights react on sound around (Haptics).
   - It fast!
 - Control system fans. Instead of AWCC, fan control is dynamic, so you can boost them any way you want. Or unboost.
 - Can have a profile for any application you run, switching not only light sets, but, for example, dim lights or only switch if application in foreground.
@@ -22,7 +24,11 @@ But what it can do, instead?
 Run `alienfx-gui.exe`.  
 First, use "Devices and Lights" tab to configure out devices and lights settings, if you don't run `Alienfx-probe` yet.  
 Use "Colour" tab for simple lights setup (these colours and modes will stay as default until AWCC run or modified by another app), even after reboot.  
-You can also assign event for light to react on (power state, performance indicator, or just activity light), as well as a colour for reaction at "Monitoring" tab.  
+There are 4 Software effect modes avaliable:
+ - Monitoring - Assign event for lights to react on (power state, performance indicator, or just activity light), as well as a colour for reaction at "Monitoring" tab.
+ - Ambient - Assign lights to change colors with the screen zones.
+ - Haptics - Lights will react on sound played by the system or external sounds. 
+ - Off - Disable software effects.
 Tray menu (right-click on tray button) available all the time for some fast switch functions, application hide to tray completely then minimized.  
 ```
 How it works
@@ -46,8 +52,8 @@ Please keep in mind, mixing different event modes for one light can provide unex
 
 ![Monitoring tab](/Doc/img/gui-monitoring.png?raw=true)
 
-`"Monitoring"` tab designed for system events monitoring and change lights to reflect it - like power events, system load, temperatures.  
-There are some different monitoring types available:  
+`"Monitoring"` tab designed for system events monitoring mode for Software effects and change lights to reflect it - like power events, system load, temperatures.  
+There are some different monitoring sources and modes available:  
 
 "Light for colour and monitoring"  
 If this mode is active, selected light will use colours from "Colour" tab as initial monitoring colour. If this mode disabled, light will use colour from "Monitoring" tab, and also will stop update if monitoring off.  
@@ -64,7 +70,7 @@ Light acts like a performance indicator, reflecting system parameters:
 - Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
 - Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
 - Battery level - Battery charge level in percent (100=discharged, 0=full).
-- Max. Fan RPM - Maximal RPM (in percent of maximal) across all system fans. This indicator will only work if "Fan control" is enabled.
+- Max. Fan RPM - Maximal RPM (in percent of maximum) across all system fans. This indicator will only work if "Fan control" is enabled.
   
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change colour.  
 "Gauge" checkbox changes behaviour for groups only. If Gauge on, all lights in group works as a level indicator (100% colour below indicator value, 0% colour above indicator value, mixed in between.
@@ -79,22 +85,24 @@ You can use "Minimal value" slider to define zone of no reaction - for example, 
 "Blink" checkbox switch triggered value to blink between on-off colours 6 times per sec.
 You can mix different monitoring type at once, f.e. different colours for same light for both CPU load and system overheat event. In this case Event colour always override Performance one then triggered, as well as both override Power state one.
 
-![Devices tab](/Doc/img/gui-devices.png?raw=true)
+![Ambient tab](/Doc/img/gui-ambient.png?raw=true)
 
-`"Devices"` tab is an extended GUI for `Alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
+This effect mode get shot of screen (primary or secondary), then divide it to several zones.  
+For each zone, dominant color calculated (you can see it at the button in app interface).  
+For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.  
+You can also select which screen to grab - primary or secondary, if you have more, then one.  
+"Dimming" slider decreases the overall lights brightness - use it for better fit you current monitor brightness.  
+”Reset capture” button is used to refresh light list according to devices found into the systems, as well as restart screen capture process.
 
-"Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
-"Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.  
-"Lights" list shows all lights defined for selected device. Use “Add”/”Remove” buttons to add new light or remove selected one.  
-NB: If you want to add new light, type light ID into LightID box **before** pressing “Add” button. If this ID already present in list or absent, it will be changed to the first unused ID.  
-Double-click or press Enter on selected light to edit its name.  
-"Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.  
-"Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
-"Indicator" checkbox is for indicator lights (HDD, caps lock, Wi-Fi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
-Selected light changes it colours to the one defined by "Test colour" button, and fade to black then unselected.
+![Haptics tab](/Doc/img/gui-haptics.png?raw=true)
 
-"Load Mappings" button loads pre-defined lights map (if exist) for you gear. Map files is a simple .csv defining all devices, its names, lights and its types and names. Useful for first start.  
-"Save Mappings" button save current active devices and their lights into .csv file. Please, send me this file if your device is not into pre-defined mappings list yet, I’ll add it.
+This effect mode get audio stream from default output or input device (you can select it at the "Audio Source" block), then made a real-time spectrum analysis.  
+After that, spectrum powers grouped into 20 groups using octave scale.  
+For each light found into the system, you can define group(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
+It's also possible to compress diapason if group always not so or so high powered - use low-level and high-level sliders. Low-level slider define minimum power to react (all below will be treated as zero), and Hi-level slider defines maximum level (all above will be treated as maximum).  
+"Clear” button set all colors to black and sliders to default value.
+"Gauge" checkbox - change behavour for groups only. If Gauge on, all lights in group works as a peak indicator (hi-color below power level, low-color above power level, mixed in between).  
+"Axis" checkbox enable axis lines and marks at sound visualisation window.
 
 ![Groups tab](/Doc/img/gui-groups.png?raw=true)
 
@@ -114,6 +122,23 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Dim lights" - Then profile activated, all lights are dimmed to common amount.
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated. 
+
+![Devices tab](/Doc/img/gui-devices.png?raw=true)
+
+`"Devices"` tab is an extended GUI for `Alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
+
+"Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
+"Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.  
+"Lights" list shows all lights defined for selected device. Use “Add”/”Remove” buttons to add new light or remove selected one.  
+NB: If you want to add new light, type light ID into LightID box **before** pressing “Add” button. If this ID already present in list or absent, it will be changed to the first unused ID.  
+Double-click or press Enter on selected light to edit its name.  
+"Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.  
+"Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
+"Indicator" checkbox is for indicator lights (HDD, caps lock, Wi-Fi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
+Selected light changes it colours to the one defined by "Test colour" button, and fade to black then unselected.
+
+"Load Mappings" button loads pre-defined lights map (if exist) for you gear. Map files is a simple .csv defining all devices, its names, lights and its types and names. Useful for first start.  
+"Save Mappings" button save current active devices and their lights into .csv file. Please, send me this file if your device is not into pre-defined mappings list yet, I’ll add it.
 
 ![Fans tab](/Doc/img/gui-fans.png?raw=true)
 
