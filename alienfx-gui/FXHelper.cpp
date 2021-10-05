@@ -603,6 +603,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	HANDLE waitArray[2] = {src->stopQuery, src->haveNewElement};
 	vector<deviceQuery> devs_query;
 
+	// Power button state...
+	vector<AlienFX_SDK::afx_act> pbstate;
+	pbstate.resize(2);
+
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
 	while (WaitForMultipleObjects(2, waitArray, false, 200) != WAIT_OBJECT_0) {
@@ -625,7 +629,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			src->lightQuery.pop_front();
 			src->modifyQuery.unlock();
 
-			// Bugfix
 			//#ifdef _DEBUG
 			//				char buff[2048];
 			//				sprintf_s(buff, 2047, "New light update: (%d,%d),u=%d (%ld remains)...\n", current.did, current.lid, current.update, src->lightQuery.size());
@@ -711,20 +714,33 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					if (flags & ALIENFX_FLAG_POWER) {
 						// Set power immediately!
 						if (!src->GetConfig()->block_power && current.actsize > 1) {
-#ifdef _DEBUG
-							char buff[2048];
-							sprintf_s(buff, 2047, "Setting power button to %d-%d-%d/%d-%d-%d\n",
-									  actions[0].r, actions[0].g, actions[0].b,
-									  actions[1].r, actions[1].g, actions[1].b);
-							OutputDebugString(buff);
-#endif
-							if (!current.flags)
-								dev->SetPowerAction(current.lid,
-													actions[0].r, actions[0].g, actions[0].b,
-													actions[1].r, actions[1].g, actions[1].b);
-							else
-								actions[0].type = AlienFX_SDK::AlienFX_A_Power;
 
+							// Do we have the same color?
+							if (pbstate[0].r != actions[0].r || pbstate[1].r != actions[1].r ||
+								pbstate[0].g != actions[0].g || pbstate[1].g != actions[1].g ||
+								pbstate[0].b != actions[0].b || pbstate[1].b != actions[1].b) {
+#ifdef _DEBUG
+								char buff[2048];
+								sprintf_s(buff, 2047, "Setting power button to %d-%d-%d/%d-%d-%d\n",
+										  actions[0].r, actions[0].g, actions[0].b,
+										  actions[1].r, actions[1].g, actions[1].b);
+								OutputDebugString(buff);
+#endif
+								if (!current.flags)
+									dev->SetPowerAction(current.lid,
+														actions[0].r, actions[0].g, actions[0].b,
+														actions[1].r, actions[1].g, actions[1].b);
+								else
+									actions[0].type = AlienFX_SDK::AlienFX_A_Power;
+
+								pbstate = actions;
+							} else {
+#ifdef _DEBUG
+								OutputDebugString("Setting power button skipped, same colors\n");
+#endif
+								ResetEvent(src->haveNewElement);
+								continue;
+							}
 						}
 					}
 					if (current.flags || !(flags & ALIENFX_FLAG_POWER)) {

@@ -70,7 +70,6 @@ Global
 		alienfx-shared\alienfx-shared.vcxitems*{50708a5a-1753-426c-85de-43de32500b30}*SharedItemsImports = 4
 		alienfx-shared\alienfx-shared.vcxitems*{cad8b749-037a-4c37-ac11-67f69cb97b77}*SharedItemsImports = 9
 		alienfx-LFX\alienfx-LFX.vcxitems*{cc4108ae-d644-45f9-95aa-67940d0fbeda}*SharedItemsImports = 9
-		alienfx-shared\alienfx-shared.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		alienfx-shared\alienfx-shared.vcxitems*{e5234a07-d191-420e-af6b-344c4557faae}*SharedItemsImports = 4
 		alienfx-LFX\alienfx-LFX.vcxitems*{ff6119ea-878f-4e7b-9fcd-8410a5d3fbf8}*SharedItemsImports = 4
 	EndGlobalSection

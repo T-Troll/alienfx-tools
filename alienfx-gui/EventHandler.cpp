@@ -148,64 +148,70 @@ void EventHandler::StopEvents()
 		CloseHandle(dwHandle);
 		CloseHandle(stopEvents);
 		dwHandle = 0;
-		fxh->Refresh(true);
+		//fxh->Refresh(true);
 	}
 }
 
 void EventHandler::ToggleEvents()
 {
 	conf->SetStates();
+	int newMode = conf->FindProfile(conf->activeProfile)->effmode;
 	if (conf->stateOn) {
-		if (conf->IsMonitoring()) {
-			StartEffects(true);
-		} else {
-			StopEffects();
-		}
+		//if (conf->IsMonitoring()) {
+			ChangeEffectMode(newMode);
+			//StartEffects(true);
+		//} else {
+		//	StopEffects();
+		//}
 	}
 }
 
 void EventHandler::ChangeEffectMode(int newMode) {
-	if (newMode != conf->effectMode) {
+	if (newMode != effMode) {
 		// disable old mode...
 		StopEffects();
-		conf->effectMode = newMode;
+		conf->SetEffect(newMode);
 		StartEffects();
-	}
+	} else
+		if (conf->IsMonitoring())
+			StartEffects();
+		else
+			StopEffects();
 }
 
 void EventHandler::StopEffects() {
-	switch (conf->effectMode) {
-	case 0:	if (dwHandle) StopEvents(); else fxh->Refresh(true); break;
+	switch (effMode) {
+	case 0:	StopEvents(); break;
 	case 1: if (capt) {
 		delete capt; capt = NULL;
-		fxh->Refresh(true);
 	} break;
 	case 2: if (audio) {
 		delete audio; audio = NULL;
-		fxh->Refresh(true);
 	} break;
-	case 3: fxh->Refresh(true); break;
+	//case 3: break;
 	}
+	effMode = -1;
+	fxh->Refresh(true);
 }
 
 void EventHandler::StartEffects(bool force) {
 	if (conf->IsMonitoring()) {
+		//if (force) fxh->Refresh(true);
 		// start new mode...
-		switch (conf->effectMode) {
-		case 0: if (force)
-			fxh->RefreshState(true); 
+		switch (conf->GetEffect()) {
+		case 0: 
 			StartEvents(); 
 			break;
-		case 1: if (force) fxh->Refresh(true); 
+		case 1: 
 			if (!capt) capt = new CaptureHelper(conf->amb_conf, fxh); 
 			break;
-		case 2: if (force) fxh->Refresh(true); 
+		case 2: 
 			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh); 
 			break;
-		case 3: if (force)
-			fxh->Refresh(true);
-			break;
+		//case 3: 
+		//	break;
 		}
+		effMode = conf->GetEffect();
 	}
 }
 

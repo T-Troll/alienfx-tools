@@ -1,10 +1,14 @@
 #include "alienfx-gui.h"
-#include <windowsx.h>
+//#include <windowsx.h>
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 void ReloadProfileList(HWND hDlg);
 DWORD EvaluteToAdmin();
 bool DoStopService(bool kind);
+void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+void SetSlider(HWND tt, int value);
+//static int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -21,7 +25,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
 		if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
 		if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_SCREENOFF, BST_CHECKED);
-		//if (conf->IsMonitoring()) CheckDlgButton(hDlg, IDC_BUT_MONITOR, BST_CHECKED);
+		if (conf->IsMonitoring()) CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, BST_CHECKED);
 		if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
 		//if (conf->IsDimmed()) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
 		if (conf->dimPowerButton) CheckDlgButton(hDlg, IDC_POWER_DIM, BST_CHECKED);
@@ -141,6 +145,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_GAMMA:
 			conf->gammaCorrection = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			fxhl->RefreshState();
+			break;
+		case IDC_CHECK_EFFECTS:
+			conf->enableMon = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			eve->ToggleEvents();
 			break;
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);

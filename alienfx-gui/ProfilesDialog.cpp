@@ -1,14 +1,16 @@
 #include "alienfx-gui.h"
-#include <windowsx.h>
+//#include <windowsx.h>
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 void ReloadProfileList(HWND hDlg);
+void ReloadModeList(HWND mode_list, int mode);
 
 int pCid = -1;
 
 void ReloadProfileView(HWND hDlg, int cID) {
 	int rpos = 0;
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
+		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
 		profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 	ListView_DeleteAllItems(profile_list);
 	ListView_SetExtendedListViewStyle(profile_list, LVS_EX_FULLROWSELECT);
@@ -29,12 +31,13 @@ void ReloadProfileView(HWND hDlg, int cID) {
 			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
 			CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, conf->profiles[i].flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_CHECK_NOMON, conf->profiles[i].flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
+			//CheckDlgButton(hDlg, IDC_CHECK_NOMON, conf->profiles[i].flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, conf->profiles[i].flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, conf->profiles[i].flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, conf->profiles[i].flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
-			SendMessage(app_list, LB_RESETCONTENT, 0, 0);
-			SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].triggerapp.c_str()));
+			ListBox_ResetContent(app_list);
+			ListBox_AddString(app_list, conf->profiles[i].triggerapp.c_str());
+			ListBox_SetCurSel(mode_list, conf->profiles[i].effmode);
 			rpos = i;
 		}
 		ListView_InsertItem(profile_list, &lItem);
@@ -46,12 +49,14 @@ void ReloadProfileView(HWND hDlg, int cID) {
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
+		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
 		p_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
+		ReloadModeList(mode_list, conf->FindProfile(conf->activeProfile)->effmode);
 		ReloadProfileView(hDlg, conf->activeProfile);
 		pCid = conf->activeProfile;
 	} break;
@@ -68,7 +73,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					vacID++; i = -1;
 				}
 			string buf = "Profile " + to_string(vacID);
-			profile prof = {vacID, 0, "", buf};
+			profile prof = {vacID, 0, (WORD)conf->GetEffect(), "", buf};
 			conf->profiles.push_back(prof);
 			conf->profiles.back().lightsets = *conf->active_set;
 			ReloadProfileView(hDlg, vacID);
@@ -137,6 +142,19 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			}
 		} break;
+		case IDC_COMBO_EFFMODE:
+		{
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				if (prof) {
+					prof->effmode = ComboBox_GetCurSel(mode_list);
+					if (prof->id == conf->activeProfile)
+						eve->ChangeEffectMode(prof->effmode);
+				}
+			} break;
+			}
+		} break;
 		case IDC_CHECK_DEFPROFILE:
 			if (prof != NULL) {
 				bool nflags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
@@ -151,14 +169,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 			}
 			break;
-		case IDC_CHECK_NOMON:
-			if (prof != NULL) {
-				prof->flags = (prof->flags & ~PROF_NOMONITORING) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
-				if (prof->id == conf->activeProfile) {
-					eve->ToggleEvents();
-				}
-			}
-			break;
+		//case IDC_CHECK_NOMON:
+		//	if (prof != NULL) {
+		//		prof->flags = (prof->flags & ~PROF_NOMONITORING) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
+		//		if (prof->id == conf->activeProfile) {
+		//			eve->ToggleEvents();
+		//		}
+		//	}
+		//	break;
 		case IDC_CHECK_PROFDIM:
 			if (prof != NULL) {
 				prof->flags = (prof->flags & ~PROF_DIMMED) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 2;
@@ -204,19 +222,21 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						profile* prof = conf->FindProfile(pCid);
 						if (prof) {
 							CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
-							CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
+							//CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
 							CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
 							CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
-							SendMessage(app_list, LB_RESETCONTENT, 0, 0);
-							SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM) (prof->triggerapp.c_str()));
+							ListBox_ResetContent(app_list);
+							ListBox_AddString(app_list, prof->triggerapp.c_str());
+							ComboBox_SetCurSel(mode_list, prof->effmode);
 						}
 					} else {
 						pCid = -1;
 						CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_UNCHECKED);
+						//CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
 						SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+						ComboBox_SetCurSel(mode_list, 3);
 					}
 				}
 			} break;

@@ -1,5 +1,5 @@
 #include "alienfx-gui.h"
-#include <windowsx.h>
+//#include <windowsx.h>
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 
@@ -185,13 +185,6 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				for (int i = 0; i < numSelLights; i++) {
 					AlienFX_SDK::mapping* clight = &fxhl->afx_dev.GetMappings()->at(ListBox_GetItemData(light_list, selLights[i]));
 					if (clight) {
-						/*bool nothislight = true;
-						for (int i = 0; i < grp->lights.size(); i++)
-						if (grp->lights[i] == clight) {
-						nothislight = false;
-						break;
-						}
-						if (nothislight)*/
 						grp->lights.push_back(clight);
 					}
 				}

@@ -1,5 +1,9 @@
 #include "alienfx-gui.h"
-//#include <windowsx.h>
+
+//void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+void SetSlider(HWND tt, int value);
+int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 VOID OnSelChanged(HWND hwndDlg);
 
@@ -34,7 +38,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     {
 
         //UpdateLightList<FXHelper>(light_list, fxhl, 3);
-        if (UpdateLightList<FXHelper>(light_list, fxhl, 3) < 0) {
+        if (UpdateLightList(light_list, fxhl, 3) < 0) {
             // no lights, switch to setup
             HWND tab_list = GetParent(hDlg);
             TabCtrl_SetCurSel(tab_list, 6);

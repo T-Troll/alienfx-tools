@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
-#include <Windows.h>
+//#include <Windows.h>
+#include <wtypes.h>
 #include <windowsx.h>
 #include <Shlobj.h>
 #include <ColorDlg.h>
@@ -7,15 +8,18 @@
 #include "alienfan-SDK.h"
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 #include "../alienfan-tools/alienfan-gui/MonHelper.h"
+#include <wininet.h>
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"Version.lib")
 #pragma comment(lib,"comctl32.lib")
+#pragma comment(lib,"Wininet.lib")
 
 // Global Variables:
-//HINSTANCE hInst;
+HINSTANCE hInst;
+bool isNewVersion = false;
 
 HWND InitInstance(HINSTANCE, int);
 
@@ -386,6 +390,158 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return dlg;
 }
 
+// From toolset.
+int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
+	int pos = -1;
+	size_t lights = fxhl->afx_dev.GetMappings()->size();
+	size_t groups = fxhl->afx_dev.GetGroups()->size();
+	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+	for (int i = 0; i < groups; i++) {
+		AlienFX_SDK::group grp = fxhl->afx_dev.GetGroups()->at(i);
+		string fname = grp.name + " (Group)";
+		pos = (int) SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM) (fname.c_str()));
+		SendMessage(light_list, LB_SETITEMDATA, pos, grp.gid);
+	}
+	for (int i = 0; i < lights; i++) {
+		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
+		if (fxhl->LocateDev(lgh.devid) && !(lgh.flags & flag)) {
+			pos = (int) SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM) (lgh.name.c_str()));
+			SendMessage(light_list, LB_SETITEMDATA, pos, i);
+		}
+	}
+	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+	return pos;
+}
+
+void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
+	RECT rect;
+	HBRUSH Brush = NULL;
+	HWND tl = GetDlgItem(hDlg, id);
+	GetWindowRect(tl, &rect);
+	HDC cnt = GetWindowDC(tl);
+	rect.bottom -= rect.top;
+	rect.right -= rect.left;
+	rect.top = rect.left = 0;
+	// BGR!
+	Brush = CreateSolidBrush(RGB(r, g, b));
+	FillRect(cnt, &rect, Brush);
+	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
+	DeleteObject(Brush);
+	ReleaseDC(tl, cnt);
+}
+
+HWND CreateToolTip(HWND hwndParent, HWND oldTip)
+{
+	// Create a tooltip.
+	if (oldTip) {
+		DestroyWindow(oldTip);
+	} 
+	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+								 WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+								 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+								 hwndParent, NULL, hInst, NULL);
+
+	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+				 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+	TOOLINFO ti = { 0 };
+	ti.cbSize = sizeof(TOOLINFO);
+	ti.uFlags = TTF_SUBCLASS;
+	ti.hwnd = hwndParent;
+	ti.hinst = hInst;
+	ti.lpszText = (LPTSTR)"0";
+
+	GetClientRect(hwndParent, &ti.rect);
+
+	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+	return hwndTT;
+}
+
+void SetSlider(HWND tt, int value) {
+	TOOLINFO ti = { 0 };
+	ti.cbSize = sizeof(ti);
+	if (tt) {
+		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM) &ti);
+		string toolTip = to_string(value);
+		ti.lpszText = (LPTSTR) toolTip.c_str();
+		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM) &ti);
+	}
+
+}
+
+string GetAppVersion() {
+
+	HRSRC hResInfo;
+	DWORD dwSize;
+	HGLOBAL hResData;
+	LPVOID pRes, pResCopy;
+	UINT uLen;
+	VS_FIXEDFILEINFO* lpFfi;
+
+	string res = "";
+
+	hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
+	if (hResInfo) {
+		dwSize = SizeofResource(hInst, hResInfo);
+		hResData = LoadResource(hInst, hResInfo);
+		if (hResData) {
+			pRes = LockResource(hResData);
+			pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
+			if (pResCopy) {
+				CopyMemory(pResCopy, pRes, dwSize);
+
+				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+
+				DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
+				DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
+
+				res = to_string(HIWORD(dwFileVersionMS)) + "."
+					+ to_string(LOWORD(dwFileVersionMS)) + "."
+					+ to_string(HIWORD(dwFileVersionLS)) + "."
+					+ to_string(LOWORD(dwFileVersionLS));
+
+				LocalFree(pResCopy);
+			}
+			FreeResource(hResData);
+		}
+	}
+	return res;
+}
+
+DWORD WINAPI CUpdateCheck(LPVOID lparam) {
+	NOTIFYICONDATA* niData = (NOTIFYICONDATA*) lparam;
+	HINTERNET session, req;
+	char buf[2048];
+	DWORD byteRead;
+	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
+		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
+								  NULL, 0, 0, NULL)) {
+			if (InternetReadFile(req, buf, 2047, &byteRead)) {
+				buf[byteRead] = 0;
+				string res = buf;
+				size_t pos = res.find("\"name\":"), 
+					posf = res.find("\"", pos + 8);
+				res = res.substr(pos + 8, posf - pos - 8);
+				size_t dotpos = res.find(".", 1+ res.find(".", 1 + res.find(".")));
+				if (res.find(".", 1+ res.find(".", 1 + res.find("."))) == string::npos)
+					res += ".0";
+				if (res != GetAppVersion()) {
+					// new version detected!
+					niData->uFlags |= NIF_INFO;
+					strcpy_s(niData->szInfoTitle, "Update avaliable!");
+					strcpy_s(niData->szInfo, ("Version " + res + " released at GitHub.").c_str());
+					Shell_NotifyIcon(NIM_MODIFY, niData);
+					niData->uFlags &= ~NIF_INFO;
+					isNewVersion = true;
+				}
+			}
+			InternetCloseHandle(req);
+		}
+		InternetCloseHandle(session);
+	}
+	return 0;
+}
+// End from toolset.
+
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
@@ -477,17 +633,32 @@ VOID OnSelChanged(HWND hwndDlg)
 void ReloadProfileList(HWND hDlg) {
 	if (hDlg == NULL)
 		hDlg = mDlg;
-	HWND profile_list = GetDlgItem(hDlg, IDC_PROFILES);
-	SendMessage(profile_list, CB_RESETCONTENT, 0, 0);
+	HWND profile_list = GetDlgItem(hDlg, IDC_PROFILES),
+		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE);
+	ComboBox_ResetContent(profile_list);
 	for (int i = 0; i < conf->profiles.size(); i++) {
-		int pos = (int)SendMessage(profile_list, CB_ADDSTRING, 0, (LPARAM)(conf->profiles[i].name.c_str()));
-		SendMessage(profile_list, CB_SETITEMDATA, pos, conf->profiles[i].id);
+		int pos = ComboBox_AddString(profile_list, conf->profiles[i].name.c_str());
+		ComboBox_SetItemData(profile_list, pos, conf->profiles[i].id);
 		if (conf->profiles[i].id == conf->activeProfile) {
-			SendMessage(profile_list, CB_SETCURSEL, pos, 0);
+			ComboBox_SetCurSel(profile_list, pos);
+			ComboBox_SetCurSel(mode_list, conf->profiles[i].effmode);
 		}
 	}
 
 	EnableWindow(profile_list, !conf->enableProf);
+	EnableWindow(mode_list, conf->enableMon);
+}
+
+void ReloadModeList(HWND mode_list, int mode) {
+	if (mode_list == NULL)
+		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
+	ListBox_ResetContent(mode_list);
+	ComboBox_AddString(mode_list, "Monitoring");
+	ComboBox_AddString(mode_list, "Ambient");
+	ComboBox_AddString(mode_list, "Haptics");
+	ComboBox_AddString(mode_list, "Off");
+	ComboBox_SetCurSel(mode_list, mode);
+	EnableWindow(mode_list, conf->enableMon);
 }
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -541,13 +712,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		pHdr->rcDisplay.right -= 2*GetSystemMetrics(SM_CXBORDER) + 1; //1; // GetSystemMetrics(SM_CXDLGFRAME);// +1;
 		pHdr->rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1; //2;// 2 * GetSystemMetrics(SM_CYDLGFRAME) - 1;
 
-		ReloadProfileList(hDlg);
+		ReloadModeList(mode_list, conf->GetEffect());
 
-		ComboBox_AddString(mode_list, "Monitoring");
-		ComboBox_AddString(mode_list, "Ambient");
-		ComboBox_AddString(mode_list, "Haptics");
-		ComboBox_AddString(mode_list, "Off");
-		ComboBox_SetCurSel(mode_list, conf->effectMode);
+		ReloadProfileList(hDlg);
 
 		OnSelChanged(tab_list);
 
@@ -585,6 +752,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDC_BUTTON_SAVE:
 			fxhl->afx_dev.SaveMappings();
 			conf->Save();
+			isNewVersion = false;
 			conf->niData.uFlags |= NIF_INFO;
 			strcpy_s(conf->niData.szInfoTitle, "Configuration saved!");
 			strcpy_s(conf->niData.szInfo, "Configuration saved succesdully.");
@@ -596,16 +764,22 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OnSelChanged(tab_list);
 			break;
 		case ID_ACC_EVENTS:
-			TabCtrl_SetCurSel(tab_list, 1);
-			OnSelChanged(tab_list);
+			//if (conf->effectMode == 0) {
+				TabCtrl_SetCurSel(tab_list, 1);
+				OnSelChanged(tab_list);
+			//}
 			break;
 		case ID_ACC_AMBIENT:
-			TabCtrl_SetCurSel(tab_list, 2);
-			OnSelChanged(tab_list);
+			//if (conf->effectMode == 1) {
+				TabCtrl_SetCurSel(tab_list, 2);
+				OnSelChanged(tab_list);
+			//}
 		break;
 		case ID_ACC_HAPTICS:
-			TabCtrl_SetCurSel(tab_list, 3);
-			OnSelChanged(tab_list);
+			//if (conf->effectMode == 2) {
+				TabCtrl_SetCurSel(tab_list, 3);
+				OnSelChanged(tab_list);
+			//}
 			break;
 		case ID_ACC_GROUPS:
 			TabCtrl_SetCurSel(tab_list, 4);
@@ -643,6 +817,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			{
 			case CBN_SELCHANGE: {
 				eve->SwitchActiveProfile(prid);
+				ComboBox_SetCurSel(mode_list, conf->GetEffect());
 				OnSelChanged(tab_list);
 			} break;
 			}
@@ -682,12 +857,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ReloadProfileList(hDlg);
 			OnSelChanged(tab_list);
 			break;
-		case WM_RBUTTONUP: case WM_CONTEXTMENU: {
+		case WM_RBUTTONUP: case WM_CONTEXTMENU:
+		{
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			// add profiles...
-			HMENU pMenu = CreatePopupMenu();
 			MENUINFO mi;
 			memset(&mi, 0, sizeof(mi));
 			mi.cbSize = sizeof(mi);
@@ -697,37 +871,42 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			MENUITEMINFO mInfo;
 			mInfo.cbSize = sizeof(MENUITEMINFO);
 			mInfo.fMask = MIIM_STRING | MIIM_ID;
-			mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
-			for (int i = 0; i < conf->profiles.size(); i++) {
-				mInfo.dwTypeData = (LPSTR)conf->profiles[i].name.c_str();
-				InsertMenuItem(pMenu, i, false, &mInfo);
-				if (conf->profiles[i].id == conf->activeProfile)
-					CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
+			HMENU pMenu;
+			// add profiles...
+			if (!conf->enableProf) {
+				pMenu = CreatePopupMenu();
+				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
+				for (int i = 0; i < conf->profiles.size(); i++) {
+					mInfo.dwTypeData = (LPSTR) conf->profiles[i].name.c_str();
+					InsertMenuItem(pMenu, i, false, &mInfo);
+					if (conf->profiles[i].id == conf->activeProfile)
+						CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
+				}
+				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "&Profiles...");
 			}
-			if (conf->enableProf)
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED | MF_STRING, 0, "&Profiles...");
-			else
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR)pMenu, "&Profiles...");
 			// add effects menu...
-			pMenu = CreatePopupMenu();
-			mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
-			mInfo.dwTypeData = "Monitoring";
-			InsertMenuItem(pMenu, 0, false, &mInfo);
-			mInfo.dwTypeData = "Ambient";
-			InsertMenuItem(pMenu, 0, false, &mInfo);
-			mInfo.dwTypeData = "Haptics";
-			InsertMenuItem(pMenu, 0, false, &mInfo);
-			mInfo.dwTypeData = "Off";
-			InsertMenuItem(pMenu, 0, false, &mInfo);
-			CheckMenuItem(pMenu, conf->effectMode, MF_BYPOSITION | MF_CHECKED);
-			ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR)pMenu, "&Effects...");
+			if (conf->enableMon) {
+				pMenu = CreatePopupMenu();
+				mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
+				mInfo.dwTypeData = "Monitoring";
+				InsertMenuItem(pMenu, 0, false, &mInfo);
+				mInfo.dwTypeData = "Ambient";
+				InsertMenuItem(pMenu, 1, false, &mInfo);
+				mInfo.dwTypeData = "Haptics";
+				InsertMenuItem(pMenu, 2, false, &mInfo);
+				mInfo.dwTypeData = "Off";
+				InsertMenuItem(pMenu, 3, false, &mInfo);
+				CheckMenuItem(pMenu, conf->GetEffect(), MF_BYPOSITION | MF_CHECKED);
+				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "&Effects...");
+			}
+
+			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableMon ? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, conf->lightsOn ? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, conf->IsDimmed() ? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, conf->enableProf? MF_CHECKED : MF_UNCHECKED);
 
 			GetCursorPos(&lpClickPoint);
 			SetForegroundWindow(hDlg);
-			if (conf->lightsOn) CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, MF_CHECKED);
-			if (conf->IsDimmed()) CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, MF_CHECKED);
-			//if (conf->IsMonitoring()) CheckMenuItem(tMenu, ID_TRAYMENU_MONITORING, MF_CHECKED);
-			if (conf->enableProf) CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, MF_CHECKED);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
@@ -748,9 +927,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		int idx = LOWORD(wParam);
 		switch (GetMenuItemID(menu, idx)) {
 		case ID_TRAYMENU_EXIT:
-		{
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
-		} break;
+		    break;
 		case ID_TRAYMENU_REFRESH:
 			fxhl->RefreshState(true);
 			break;
@@ -764,16 +942,21 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->ChangeState();
 			OnSelChanged(tab_list);
 			break;
+		case ID_TRAYMENU_ENABLEEFFECTS:
+			conf->enableMon = !conf->enableMon;
+			eve->ToggleEvents();
+			ReloadModeList(mode_list, conf->GetEffect());
+			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			eve->ChangeEffectMode(idx);
-			ListBox_SetCurSel(mode_list, idx);
+			ComboBox_SetCurSel(mode_list, idx);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
+			eve->StartProfiles();
 			ReloadProfileList(hDlg);
 			OnSelChanged(tab_list);
-			eve->StartProfiles();
 			break;
 		case ID_TRAYMENU_RESTORE:
 			ShowWindow(hDlg, SW_RESTORE);
@@ -876,10 +1059,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 			fxhl->ChangeState();
 			break;
-		case 4: // mon
-		    conf->SetMonitoring(!conf->IsMonitoring());
+		case 4:
+		{// mon
+			//int newMode = conf->effectMode == 3 ? 0 : conf->effectMode + 1;
+			//eve->ChangeEffectMode(newMode);
+			conf->enableMon = !conf->IsMonitoring();
+			//conf->SetMonitoring(!conf->IsMonitoring());
 			eve->ToggleEvents();
-			break;
+		} break;
 		default: return false;
 		}
 		break;

@@ -183,6 +183,8 @@
 #define IDC_RADIO_INPUT                 1095
 #define IDC_FAN_CURVE                   1096
 #define IDC_STATIC_BOOST                1097
+#define IDC_COMBO_EFFMODE               1098
+#define IDC_CHECK_EFFECTS               1099
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -202,6 +204,7 @@
 #define ID_ACC_HAPTICS                  32798
 #define ID_ACC_FANS                     32799
 #define ID_ACC_GROUPS                   32800
+#define ID_TRAYMENU_ENABLEEFFECTS       32802
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -210,8 +213,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        154
-#define _APS_NEXT_COMMAND_VALUE         32802
-#define _APS_NEXT_CONTROL_VALUE         1098
+#define _APS_NEXT_COMMAND_VALUE         32803
+#define _APS_NEXT_CONTROL_VALUE         1100
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

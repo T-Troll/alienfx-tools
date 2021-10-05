@@ -11,6 +11,8 @@ private:
 
 	HWINEVENTHOOK hEvent = 0, cEvent = 0;
 
+	int effMode = -1;
+
 	void StartEvents();
 	void StopEvents();
 

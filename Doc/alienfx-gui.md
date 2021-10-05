@@ -117,8 +117,8 @@ If you have a group selected, "Group lights" list present the list of lights ass
 You can double-click or press Enter on selected profile into the list to edit its name.  
 Each profile can have settings and application for trigger it. The settings are:
 - "Application" - Defines application executable for trigger profile switch if "Profile auto switch" enabled.
+- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off (The same as "Disable monitoring" before).
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
-- "Disable monitoring" - Then profile activated, monitoring functions are disabled, despite of global setting.
 - "Dim lights" - Then profile activated, all lights are dimmed to common amount.
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated. 
@@ -174,6 +174,7 @@ Please keep in mind:
 - "Power/indicator lights too" - Lights, marked as Power Button or Indicator follows the system state. Such lights will be always on if disabled (default - off).
 - "Auto refresh lights" - All lights will be refreshed 6 times per second. It's useful if you have AWCC running, but still want to control lights (default - off).
 - "Colour Gamma correction" - Enables colour correction to make them looks close to screen one. It keeps original AWCC colours if disabled (default - on).
+- "Enable software effects" - Global software effect switch. If it's off, effects always disabled, if it's on - effect mode defined by current profile.
 - "Dim lights" - Dim system lights brightness. It's useful for night/battery scenario (default - off).
 - "Dim Power/Indicator lights too" - Lights, marked as Power Button or Indicator follows dim state. Such lights will be always at full brightness if disabled (default - off).
 - "Dim lights on battery" - Automatically dim lights if system running at battery power, decreasing energy usage (default - on).

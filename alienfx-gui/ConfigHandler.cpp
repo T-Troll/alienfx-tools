@@ -14,15 +14,15 @@ ConfigHandler::ConfigHandler() {
 		NULL,
 		&hKey1,
 		&dwDisposition);
-	RegCreateKeyEx(HKEY_CURRENT_USER,
-		TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"),
-		0,
-		NULL,
-		REG_OPTION_NON_VOLATILE,
-		KEY_ALL_ACCESS,
-		NULL,
-		&hKey2,
-		&dwDisposition);
+	//RegCreateKeyEx(HKEY_CURRENT_USER,
+	//	TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"),
+	//	0,
+	//	NULL,
+	//	REG_OPTION_NON_VOLATILE,
+	//	KEY_ALL_ACCESS,
+	//	NULL,
+	//	&hKey2,
+	//	&dwDisposition);
 	RegCreateKeyEx(HKEY_CURRENT_USER,
 		TEXT("SOFTWARE\\Alienfxgui\\Events"),
 		0,
@@ -57,7 +57,7 @@ ConfigHandler::~ConfigHandler() {
 	if (amb_conf) delete amb_conf;
 	if (hap_conf) delete hap_conf;
 	RegCloseKey(hKey1);
-	RegCloseKey(hKey2);
+	//RegCloseKey(hKey2);
 	RegCloseKey(hKey3);
 	RegCloseKey(hKey4);
 }
@@ -72,11 +72,13 @@ void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string
 			prof->name = name;
 		if (app != "")
 			prof->triggerapp = app;
-		if (flags != -1)
-			prof->flags = flags;
+		if (flags != -1) {
+			prof->flags = LOWORD(flags);
+			prof->effmode = HIWORD(flags);
+		}
 		return;
 	}
-	prof = new profile{id, flags, app, name};
+	prof = new profile{id, LOWORD(flags), HIWORD(flags), app, name};
 	profiles.push_back(*prof);
 }
 
@@ -93,12 +95,13 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 		temp_b.fans.push_back(*temp);
 		prof->fansets.fanControls.push_back(temp_b);
 		return;
+	} else {
+		prof = new profile{id};
+		temp_block temp_b = {(short) senID};
+		temp_b.fans.push_back(*temp);
+		prof->fansets.fanControls.push_back(temp_b);
+		profiles.push_back(*prof);
 	}
-	prof = new profile{id};
-	temp_block temp_b = {(short)senID};
-	temp_b.fans.push_back(*temp);
-	prof->fansets.fanControls.push_back(temp_b);
-	profiles.push_back(*prof);
 }
 
 profile* ConfigHandler::FindProfile(int id) {
@@ -128,7 +131,7 @@ void ConfigHandler::SetStates() {
 	// Dim state...
 	stateDimmed = IsDimmed() ||
 		dimmedScreen ||
-		FindProfile(activeProfile)->flags & PROF_DIMMED ||
+		//FindProfile(activeProfile)->flags.flags & PROF_DIMMED ||
 		(dimmedBatt && !statePower);
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed) {
 		SetIconState();
@@ -172,7 +175,7 @@ bool ConfigHandler::IsDimmed() {
 }
 
 bool ConfigHandler::IsMonitoring() {
-	return !(FindProfile(activeProfile)->flags & PROF_NOMONITORING);
+	return enableMon;// || !(FindProfile(activeProfile)->flags & PROF_NOMONITORING);
 }
 
 void ConfigHandler::SetDimmed(bool dimmed) {
@@ -181,13 +184,19 @@ void ConfigHandler::SetDimmed(bool dimmed) {
 	else
 		FindProfile(activeProfile)->flags &= 0xff - PROF_DIMMED;
 }
-
-void ConfigHandler::SetMonitoring(bool monison) {
-	if (monison)
-		FindProfile(activeProfile)->flags &= 0xff - PROF_NOMONITORING;
-	else
-		FindProfile(activeProfile)->flags |= PROF_NOMONITORING;
+int ConfigHandler::GetEffect() {
+	return FindProfile(activeProfile)->effmode;
 }
+void ConfigHandler::SetEffect(int newMode) {
+	FindProfile(activeProfile)->effmode = newMode;
+}
+//
+//void ConfigHandler::SetMonitoring(bool monison) {
+//	if (monison)
+//		FindProfile(activeProfile)->flags &= 0xff - PROF_NOMONITORING;
+//	else
+//		FindProfile(activeProfile)->flags |= PROF_NOMONITORING;
+//}
 
 int ConfigHandler::Load() {
 	int size = 4, size_c = 4 * 16;
@@ -222,15 +231,15 @@ int ConfigHandler::Load() {
 		(LPDWORD)&size);
 	if (ret != ERROR_SUCCESS)
 		lightsOn = 1;
-	//ret = RegGetValue(hKey1,
-	//	NULL,
-	//	TEXT("Monitoring"),
-	//	RRF_RT_DWORD | RRF_ZEROONFAILURE,
-	//	NULL,
-	//	&enableMon,
-	//	(LPDWORD)&size);
-	//if (ret != ERROR_SUCCESS)
-	//	enableMon = 1;
+	ret = RegGetValue(hKey1,
+		NULL,
+		TEXT("Monitoring"),
+		RRF_RT_DWORD | RRF_ZEROONFAILURE,
+		NULL,
+		&enableMon,
+		(LPDWORD)&size);
+	if (ret != ERROR_SUCCESS)
+		enableMon = 1;
 	ret = RegGetValue(hKey1,
 		NULL,
 		TEXT("GammaCorrection"),
@@ -261,13 +270,13 @@ int ConfigHandler::Load() {
 		NULL,
 		&offWithScreen,
 		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("EffectMode"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&effectMode,
-		(LPDWORD)&size);
+	//RegGetValue(hKey1,
+	//	NULL,
+	//	TEXT("EffectMode"),
+	//	RRF_RT_DWORD | RRF_ZEROONFAILURE,
+	//	NULL,
+	//	&effectMode,
+	//	(LPDWORD)&size);
 	RegGetValue(hKey1,
 		NULL,
 		TEXT("DimPower"),
@@ -521,7 +530,7 @@ int ConfigHandler::Load() {
 	}
 	else {
 		// need new profile
-		profile prof = {0, 1, "", "Default"};
+		profile prof = {0, 1, 0, "", "Default"};
 		profiles.push_back(prof);
 		active_set = &(profiles.back().lightsets);
 		//std::sort(active_set->begin(), active_set->end(), ConfigHandler::sortMappings);
@@ -560,12 +569,12 @@ int ConfigHandler::Save() {
 	if (amb_conf) amb_conf->Save();
 	if (hap_conf) hap_conf->Save();
 
-	if (RegGetValue(hKey2, NULL, "Alienfx GUI", RRF_RT_ANY, NULL, NULL, NULL) == ERROR_SUCCESS) {
-		// remove old start key
-		RegDeleteValue(hKey2, "Alienfx GUI");
-		startWindows = 0;
-		//RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)&"", 1);
-	}
+	//if (RegGetValue(hKey2, NULL, "Alienfx GUI", RRF_RT_ANY, NULL, NULL, NULL) == ERROR_SUCCESS) {
+	//	// remove old start key
+	//	RegDeleteValue(hKey2, "Alienfx GUI");
+	//	startWindows = 0;
+	//	//RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)&"", 1);
+	//}
 
 	RegSetValueEx(
 		hKey1,
@@ -599,14 +608,14 @@ int ConfigHandler::Save() {
 		(BYTE*)&lightsOn,
 		sizeof(DWORD)
 	);
-	//RegSetValueEx(
-	//	hKey1,
-	//	TEXT("Monitoring"),
-	//	0,
-	//	REG_DWORD,
-	//	(BYTE*)&enableMon,
-	//	sizeof(DWORD)
-	//);
+	RegSetValueEx(
+		hKey1,
+		TEXT("Monitoring"),
+		0,
+		REG_DWORD,
+		(BYTE*)&enableMon,
+		sizeof(DWORD)
+	);
 	RegSetValueEx(
 		hKey1,
 		TEXT("OffWithScreen"),
@@ -615,14 +624,14 @@ int ConfigHandler::Save() {
 		(BYTE*)&offWithScreen,
 		sizeof(DWORD)
 	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("EffectMode"),
-		0,
-		REG_DWORD,
-		(BYTE*)&effectMode,
-		sizeof(DWORD)
-	);
+	//RegSetValueEx(
+	//	hKey1,
+	//	TEXT("EffectMode"),
+	//	0,
+	//	REG_DWORD,
+	//	(BYTE*)&effectMode,
+	//	sizeof(DWORD)
+	//);
 	RegSetValueEx(
 		hKey1,
 		TEXT("DimPower"),
@@ -790,12 +799,13 @@ int ConfigHandler::Save() {
 			(DWORD)profiles[j].name.length()
 		);
 		name = "Profile-flags-" + to_string(profiles[j].id);
+		DWORD flagset = MAKELONG(profiles[j].flags, profiles[j].effmode);
 		RegSetValueExA(
 			hKey4,
 			name.c_str(),
 			0,
 			REG_DWORD,
-			(BYTE*)&profiles[j].flags,
+			(BYTE*)&flagset, //profiles[j].flags,
 			sizeof(DWORD)
 		);
 		if (!profiles[j].triggerapp.empty()) {

@@ -6,6 +6,10 @@ extern HWND fanWindow;
 extern HWND mDlg;
 
 VOID OnSelChanged(HWND hwndDlg);
+//void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+//void SetSlider(HWND tt, int value);
+//static int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 fan_point* lastFanPoint = NULL;
 

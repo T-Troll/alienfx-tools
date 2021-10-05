@@ -1,6 +1,10 @@
 #include "alienfx-gui.h"
 
 VOID OnSelChanged(HWND hwndDlg);
+void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+void SetSlider(HWND tt, int value);
+int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 extern int eItem;
 
@@ -145,7 +149,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		if (UpdateLightList<FXHelper>(light_list, fxhl, 3) < 0) {
+		if (UpdateLightList(light_list, fxhl, 3) < 0) {
 			// no lights, switch to setup
 			HWND tab_list = GetParent(hDlg);
 			TabCtrl_SetCurSel(tab_list, 6);

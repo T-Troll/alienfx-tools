@@ -1,6 +1,9 @@
 #pragma once
 
-#include "toolkit.h"
+//#include "toolkit.h"
+//#include <windowsx.h>
+#include <wtypes.h>
+#include <CommCtrl.h>
 #include "resource.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
@@ -20,6 +23,8 @@ typedef struct tag_dlghdr {
 	RECT rcDisplay;     // display rectangle for the tab control
 	DLGTEMPLATE* apRes[C_PAGES];
 } DLGHDR;
+
+extern HINSTANCE hInst;
 
 extern FXHelper* fxhl;
 extern ConfigHandler* conf;

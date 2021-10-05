@@ -5,6 +5,10 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 lightset* CreateMapping(int lid);
 lightset* FindMapping(int mid);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
+void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+void SetSlider(HWND tt, int value);
+int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 extern int eItem;
 
@@ -111,7 +115,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 	case WM_INITDIALOG:
 	{
-		if (UpdateLightList<FXHelper>(light_list, fxhl) < 0) {
+		if (UpdateLightList(light_list, fxhl) < 0) {
 			// no lights, switch to setup
 			HWND tab_list = GetParent(hDlg);
 			TabCtrl_SetCurSel(tab_list, 6);

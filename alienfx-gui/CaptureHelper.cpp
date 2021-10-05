@@ -14,7 +14,7 @@ UCHAR  imgz[12 * 3] = { 0 }, imgui[12 * 3] = { 0 };
 
 DXGIManager* dxgi_manager = NULL;
 
-HANDLE stopEvent, uiEvent, lhEvent;
+HANDLE clrStopEvent, uiEvent, lhEvent;
 
 CaptureHelper::CaptureHelper(ConfigAmbient* conf, FXHelper* fhh)
 {
@@ -46,7 +46,7 @@ void CaptureHelper::SetCaptureScreen(int mode) {
 void CaptureHelper::Start()
 {
 	if (!dwHandle) {
-		stopEvent = CreateEvent(NULL, true, false, NULL);
+		clrStopEvent = CreateEvent(NULL, true, false, NULL);
 		dwHandle = CreateThread( NULL, 0, CInProc, NULL, 0, NULL);
 	}
 }
@@ -54,10 +54,10 @@ void CaptureHelper::Start()
 void CaptureHelper::Stop()
 {
 	if (dwHandle) {
-		SetEvent(stopEvent);
+		SetEvent(clrStopEvent);
 		WaitForSingleObject(dwHandle, 5000);
 		CloseHandle(dwHandle);
-		CloseHandle(stopEvent);
+		CloseHandle(clrStopEvent);
 		dwHandle = NULL;
 		memset(imgz, 0xff, sizeof(imgz));
 	}
@@ -82,7 +82,7 @@ UCHAR* scrImg = NULL;
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
-	while (WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(clrStopEvent, 0) == WAIT_TIMEOUT) {
 		if (WaitForSingleObject(src->pEvent, 50) == WAIT_OBJECT_0) {
 			UINT idx = src->dy * hh * stride + src->dx * ww * 4;//src->dy * 4 + src->dx;
 			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64) hh * ww;// / (divider * divider);
@@ -125,7 +125,7 @@ void FindColors(UCHAR* src, UCHAR* imgz) {
 				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
 			}
 		}
-	WaitForMultipleObjects(12, pfEvent, true, 3000);
+	WaitForMultipleObjects(12, pfEvent, true, 1000);
 }
 
 #define GRIDSIZE 36 // 4x3 x 3
@@ -154,7 +154,7 @@ DWORD WINAPI CInProc(LPVOID param)
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
-	while (WaitForSingleObject(stopEvent, wait_time) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(clrStopEvent, wait_time) == WAIT_TIMEOUT) {
 		//divider = 9 - (config->divider >> 2);
 		// Resize & calc
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img != NULL) {
@@ -193,7 +193,7 @@ DWORD WINAPI CDlgProc(LPVOID param)
 {
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-	while (WaitForSingleObject(stopEvent, 50) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		if (!IsIconic(GetParent(config->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 //#ifdef _DEBUG
 //	OutputDebugString("UI update...\n");
@@ -207,7 +207,7 @@ DWORD WINAPI CDlgProc(LPVOID param)
 
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
-	HANDLE waitArray[2] = {lhEvent, stopEvent};
+	HANDLE waitArray[2] = {lhEvent, clrStopEvent};
 	bool trun = true;
 	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while (trun) {

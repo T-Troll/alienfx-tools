@@ -8,7 +8,7 @@
 
 // Profile flags pattern
 #define PROF_DEFAULT 0x1
-#define PROF_NOMONITORING 0x2
+//#define PROF_NOMONITORING 0x2
 #define PROF_DIMMED 0x4
 #define PROF_ACTIVE 0x8
 #define PROF_FANS 0x10
@@ -51,7 +51,8 @@ struct lightset {
 
 struct profile {
 	unsigned id = 0;
-	unsigned flags = 0;
+	WORD flags = 0;
+	WORD effmode = 0;
 	std::string triggerapp;
 	std::string name;
 	std::vector<lightset> lightsets;
@@ -61,7 +62,10 @@ struct profile {
 class ConfigHandler
 {
 private:
-	HKEY hKey1 = NULL, hKey2 = NULL, hKey3 = NULL, hKey4 = NULL;
+	HKEY hKey1 = NULL, 
+		//hKey2 = NULL, 
+		hKey3 = NULL, 
+		hKey4 = NULL;
 	bool conf_loaded = false;
 public:
 	DWORD startWindows = 0;
@@ -73,7 +77,6 @@ public:
 	DWORD dimPowerButton = 0;
 	DWORD dimmingPower = 92;
 	DWORD enableProf = 0;
-	//DWORD monState = 1;
 	DWORD offPowerButton = 0;
 	DWORD activeProfile = -1;
 	DWORD defaultProfile = 0;
@@ -91,7 +94,8 @@ public:
 	DWORD globalEffect = 0;
 	DWORD globalDelay = 127;
 	DWORD fanControl = 0;
-	DWORD effectMode = 0;
+	//DWORD effectMode = 0;
+	DWORD enableMon = 1;
 
 	// 3rd-party config blocks
 	ConfigHelper *fan_conf = NULL;
@@ -117,5 +121,7 @@ public:
 	bool IsDimmed();
 	bool IsMonitoring();
 	void SetDimmed(bool);
-	void SetMonitoring(bool);
+	//void SetMonitoring(bool);
+	int  GetEffect();
+	void SetEffect(int);
 };
