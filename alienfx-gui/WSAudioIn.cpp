@@ -207,27 +207,24 @@ IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
 
 DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 {
-	DWORD dwThreadID;
 	HANDLE updHandle = 0;
 	UINT32 packetLength = 0;
 	UINT32 numFramesAvailable = 0;
 	int arrayPos = 0, shift = 0;
 	UINT bytesPerChannel = bytePerSample;// / nChannel;
 	BYTE* pData;
-	DWORD flags;
+	DWORD flags, res = 0;
 	double* waveT = new double[NUMSAM];
 	UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient* pCapCli = (IAudioCaptureClient * ) lpParam;
-	bool trun = true;
 
 	updateEvent = CreateEvent(NULL, false, false, NULL);
-	updHandle = CreateThread(NULL, 0, resample, waveD, 0, &dwThreadID);
+	updHandle = CreateThread(NULL, 0, resample, waveD, 0, NULL);
 
 	HANDLE hArray[2] = {astopEvent, hEvent};
 
-	while (trun) {
-		switch (WaitForMultipleObjects(2, hArray, false, 500))
-		{
+	while ((res = WaitForMultipleObjects(2, hArray, false, 500)) != WAIT_OBJECT_0) {
+		switch (res) {
 		case WAIT_OBJECT_0+1:
 			// got new buffer....
 			// = 0;
@@ -279,7 +276,6 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 			arrayPos = 0;
 			shift = 0;
 			break;
-		case WAIT_OBJECT_0: trun = false; break;
 		}
 	}
 	WaitForSingleObject(updHandle, 6000);
@@ -295,11 +291,10 @@ DWORD WINAPI resample(LPVOID lpParam)
 	HANDLE waitArray[2] = {updateEvent, astopEvent};
 	//ULONGLONG lastTick = 0, currentTick  = 0;
 	int* freqs = NULL;
-	bool trun = true;
+	DWORD res = 0;
 
-	while (trun) {
-		switch (WaitForMultipleObjects(2, waitArray, false, 100)) {
-		case WAIT_OBJECT_0:
+	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
+		if (res == WAIT_OBJECT_0) {
 			//freqs = dftGG->calc(waveDouble);
 			//currentTick = GetTickCount64();
 			//if (currentTick - lastTick > 50) {
@@ -310,8 +305,6 @@ DWORD WINAPI resample(LPVOID lpParam)
 				}
 				//lastTick = currentTick;
 			//}
-		    break;
-		case WAIT_OBJECT_0 + 1: trun = false;
 		}
 	}
 

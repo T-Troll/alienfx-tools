@@ -464,5 +464,5 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return true;
         break;
     }
-    return DefWindowProc(hDlg, message, wParam, lParam);
+    return 0;// DefWindowProc(hDlg, message, wParam, lParam);
 }

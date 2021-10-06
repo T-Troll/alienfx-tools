@@ -1,6 +1,7 @@
 #include <pdh.h>
 #include <pdhmsg.h>
 #include <Psapi.h>
+#include <shlwapi.h>
 #pragma comment(lib, "pdh.lib")
 
 #include "EventHandler.h"
@@ -89,6 +90,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::SwitchActiveProfile(int newID)
 {
+	if (newID != conf->foregroundProfile) conf->foregroundProfile = -1;
 	if (newID < 0) newID = conf->defaultProfile;
 	if (newID != conf->activeProfile) {
 		profile* newP = conf->FindProfile(newID);
@@ -173,10 +175,14 @@ void EventHandler::ChangeEffectMode(int newMode) {
 		conf->SetEffect(newMode);
 		StartEffects();
 	} else
-		if (conf->IsMonitoring())
+		if (conf->IsMonitoring()) {
+			fxh->Refresh(true);
 			StartEffects();
-		else
+		}
+		else {
 			StopEffects();
+			fxh->Refresh(true);
+		}
 }
 
 void EventHandler::StopEffects() {
@@ -283,7 +289,6 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 	GetGUIThreadInfo(NULL, &activeThread);
 
 	if (activeThread.hwndActive != 0) {
-		// is it related to profile?
 		GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
 			PROCESS_VM_READ,
@@ -298,21 +303,31 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 			cFileName = GetModuleFileNameEx(hProcess, NULL/*hMod*/, szProcessName, nameSize);
 		}
 		CloseHandle(hProcess);
+		PathStripPath(szProcessName);
+#ifdef _DEBUG
+		OutputDebugString("Foreground switched to ");
+		OutputDebugString(szProcessName);
+		OutputDebugString("\n");
+#endif
+		newp = even->conf->FindProfileByApp(std::string(szProcessName), true);
+
+//		if (newp >= 0 || (strcmp(szProcessName, "ShellExperienceHost.exe") && strcmp(szProcessName, "alienfx-gui.exe") 
+//						  && strcmp(szProcessName, "explorer.exe")
+////#ifdef _DEBUG
+////						  && strcmp(szProcessName, "devenv.exe")
+////#endif
+//						  )) {
+
+			if (newp < 0) {
+				newp = ScanTaskList();
+			}
+			even->conf->foregroundProfile = newp;
+			even->SwitchActiveProfile(newp);
+//		}
 //#ifdef _DEBUG
-//		char buff[2048];
-//		sprintf_s(buff, 2047, "Active app switched to %s\n", szProcessName);
-//		OutputDebugString(buff);
+//		else
+//			OutputDebugString("Forbidden app, switch blocked!\n");
 //#endif
-		even->conf->foregroundProfile = newp = even->conf->FindProfileByApp(std::string(szProcessName), true);
-		if (newp < 0) {
-			newp = ScanTaskList();
-//#ifdef _DEBUG
-//			char buff[2048];
-//			sprintf_s(buff, 2047, "Active app unknown, switching to ID=%d\n", newp);
-//			OutputDebugString(buff);
-//#endif
-		}
-		even->SwitchActiveProfile(newp);
 	}
 	delete[] szProcessName;
 }
@@ -342,27 +357,33 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 				cFileName = GetModuleFileNameEx(hProcess, NULL/*hMod*/, szProcessName, nameSize);
 			}
 			CloseHandle(hProcess);
+			PathStripPath(szProcessName);
+
 			switch (dwEvent) {
 			case EVENT_OBJECT_CREATE:
+//#ifdef _DEBUG
+//				char buff[2048];
+//				sprintf_s(buff, 2047, "Creating %s\n", szProcessName);
+//				OutputDebugString(buff);
+//#endif
 				if (even->conf->foregroundProfile < 0) {
-#ifdef _DEBUG
-					char buff[2048];
-					sprintf_s(buff, 2047, "Switching to %s\n", szProcessName);
-					OutputDebugString(buff);
-#endif
-					even->SwitchActiveProfile(even->conf->FindProfileByApp(std::string(szProcessName)));
+					even->SwitchActiveProfile(ScanTaskList());
 				}
 				break;
 			case EVENT_OBJECT_DESTROY:
-				if (even->conf->foregroundProfile < 0 && even->conf->FindProfileByApp(std::string(szProcessName)) == even->conf->activeProfile) {
-					newp = ScanTaskList();
-#ifdef _DEBUG
-					char buff[2048];
-					sprintf_s(buff, 2047, "Switching by close to ID=%d\n", newp);
-					OutputDebugString(buff);
-#endif
-					even->SwitchActiveProfile(newp);
-				}
+//#ifdef _DEBUG
+//				OutputDebugString("Destroing ");
+//				OutputDebugString(szProcessName);
+//				OutputDebugString("\n");
+//#endif
+				//if (even->conf->foregroundProfile >= 0 && even->conf->FindProfileByApp(string(szProcessName), true) == even->conf->activeProfile) {
+				//	//even->conf->foregroundProfile = -1;
+				//	even->SwitchActiveProfile(ScanTaskList());
+				//} else {
+					if (even->conf->foregroundProfile < 0) {
+						even->SwitchActiveProfile(ScanTaskList());
+					}
+				//}
 				break;
 			}
 		}

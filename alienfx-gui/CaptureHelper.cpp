@@ -82,11 +82,16 @@ UCHAR* scrImg = NULL;
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
-	while (WaitForSingleObject(clrStopEvent, 0) == WAIT_TIMEOUT) {
-		if (WaitForSingleObject(src->pEvent, 50) == WAIT_OBJECT_0) {
+	HANDLE waitArray[2] = {src->pEvent, clrStopEvent};
+	DWORD res = 0;
+
+	UINT ptr = (src->dy * 4 + src->dx);// *3;
+
+	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
+		if (res == WAIT_OBJECT_0) {
 			UINT idx = src->dy * hh * stride + src->dx * ww * 4;//src->dy * 4 + src->dx;
 			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64) hh * ww;// / (divider * divider);
-			for (UINT y = 0; y < hh; y += divider) { 
+			for (UINT y = 0; y < hh; y += divider) {
 				UINT pos = idx + y * stride;
 				for (UINT x = 0; x < ww; x += divider) {
 					r += scrImg[pos];
@@ -101,23 +106,26 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 			src->dst[0] = (UCHAR) r;
 			src->dst[1] = (UCHAR) g;
 			src->dst[2] = (UCHAR) b;
-			SetEvent(pfEvent[src->dy * 4 + src->dx]);
+			SetEvent(pfEvent[ptr]);
 		}
 	}
-	CloseHandle(pfEvent[src->dy * 4 + src->dx]);
-	pfEvent[src->dy * 4 + src->dx] = 0;
+	CloseHandle(pfEvent[ptr]);
+	CloseHandle(src->pEvent);
+	pfEvent[ptr] = 0;
+	//SetEvent(pfEvent[src->dy * 4 + src->dx]);
 	return 0;
 }
 
-void FindColors(UCHAR* src, UCHAR* imgz) {
+bool FindColors(UCHAR* src, UCHAR* imgz) {
 	scrImg = src;
 	for (UINT dy = 0; dy < 3; dy++)
 		for (UINT dx = 0; dx < 4; dx++) {
 			//ColorCalc(&callData[dy][dx]);
-			if (pfEvent[dy * 4 + dx]) {
+			UINT ptr = (dy * 4 + dx);// *3;
+			if (pfEvent[ptr]) {
+				//ResetEvent(pfEvent[dy * 4 + dx]);
 				SetEvent(callData[dy][dx].pEvent);
 			} else {
-				UINT ptr = (dy * 4 + dx);// *3;
 				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
 				callData[dy][dx].dst = imgz + ptr * 3;
 				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
@@ -125,7 +133,14 @@ void FindColors(UCHAR* src, UCHAR* imgz) {
 				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
 			}
 		}
-	WaitForMultipleObjects(12, pfEvent, true, 1000);
+	DWORD res;
+	if ((res = WaitForMultipleObjects(12, pfEvent, true, 1000)) != WAIT_OBJECT_0) {
+#ifdef _DEBUG
+		OutputDebugString((string("Color calc stuck with ") + to_string(res) + "!\n").c_str());
+#endif
+		return false;
+	}
+	return true;
 }
 
 #define GRIDSIZE 36 // 4x3 x 3
@@ -138,12 +153,13 @@ DWORD WINAPI CInProc(LPVOID param)
 	size_t buf_size;
 	ULONGLONG lastTick = 0;
 
-	DWORD uiThread, cuThread, wait_time = 200;
-	HANDLE uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, &uiThread),
-		lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, &cuThread);
+	DWORD wait_time = 200;
 
 	uiEvent = CreateEvent(NULL, false, false, NULL);
 	lhEvent = CreateEvent(NULL, false, false, NULL);
+
+	HANDLE uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, NULL),
+		lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, NULL);
 
 	RECT dimensions = dxgi_manager->get_output_rect();
 	w = dimensions.right - dimensions.left;
@@ -157,11 +173,9 @@ DWORD WINAPI CInProc(LPVOID param)
 	while (WaitForSingleObject(clrStopEvent, wait_time) == WAIT_TIMEOUT) {
 		//divider = 9 - (config->divider >> 2);
 		// Resize & calc
-		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img != NULL) {
+		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img) {
 			if (w && h) {
-				FindColors(img, imgz);
-
-				if (memcmp(imgz, imgo, GRIDSIZE) != 0) {
+				if (FindColors(img, imgz) && memcmp(imgz, imgo, GRIDSIZE)) {
 					SetEvent(lhEvent);
 					SetEvent(uiEvent);
 					memcpy(imgo, imgz, GRIDSIZE);
@@ -181,6 +195,12 @@ DWORD WINAPI CInProc(LPVOID param)
 		wait_time = 50;
 	}
 
+	WaitForMultipleObjects(12, pThread, true, 1000);
+	// close handles here!
+	for (int i = 0; i < 12; i++) {
+		CloseHandle(pThread[i]);
+		pThread[i] = 0;
+	}
 	WaitForSingleObject(uiHandle, 1000);
 	WaitForSingleObject(lightHandle, 1000);
 	CloseHandle(uiHandle);
@@ -208,18 +228,15 @@ DWORD WINAPI CDlgProc(LPVOID param)
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
 	HANDLE waitArray[2] = {lhEvent, clrStopEvent};
-	bool trun = true;
+	DWORD res = 0;
 	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-	while (trun) {
-		switch (WaitForMultipleObjects(2, waitArray, false, 200)) {
-		case WAIT_OBJECT_0:
+	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
+		if (res == WAIT_OBJECT_0) {
 			//#ifdef _DEBUG
 			//			OutputDebugString("Light update...\n");
 			//#endif
 			memcpy(imgz, (UCHAR *) param, sizeof(imgz));
 			fxh->RefreshAmbient(imgz);
-			break;
-		case WAIT_OBJECT_0 + 1: trun = false; break;
 		}
 	}
 	return 0;

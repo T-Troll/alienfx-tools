@@ -1,6 +1,7 @@
 #include "ConfigHandler.h"
 #include "resource.h"
 #include <algorithm>
+#include <Shlwapi.h>
 
 ConfigHandler::ConfigHandler() {
 	DWORD  dwDisposition;
@@ -434,6 +435,7 @@ int ConfigHandler::Load() {
 				(LPBYTE)profname,
 				&lend
 			);
+			PathStripPath(profname);
 			updateProfileByID(pid, "", profname, -1);
 			delete[] profname;
 		}

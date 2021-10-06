@@ -22,7 +22,7 @@ getfans\t\t\t\tShow current fan boost level (0..100 - in percent)\n\
 setfans=<fan1>[,<fan2>]\t\tSet fans boost level (0..100 - in percent)\n\
 setfandirect=<fanid>,<value>\tSet fan with selected ID to given value\n\
 resetcolor\t\t\tReset color system\n\
-setcolor=<mask>,r,g,b\tSet light(s) defined by mask to color\n\
+setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
 setcolormode=<mode>,<flag>\tSet light system mode\n\
 direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\

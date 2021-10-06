@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include <Shlwapi.h>
 //#include <windowsx.h>
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
@@ -124,21 +125,24 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof != NULL) {
 				// fileopen dialogue...
 				OPENFILENAMEA fstruct;
-				string appName = prof->triggerapp;
-				appName.reserve(4096);
+				//string appName = prof->triggerapp;
+				char appName[4096];
+				strcpy_s(appName, 4096, prof->triggerapp.c_str());
+				//appName.reserve(4096);
 				ZeroMemory(&fstruct, sizeof(OPENFILENAMEA));
 				fstruct.lStructSize = sizeof(OPENFILENAMEA);
 				fstruct.hwndOwner = hDlg;
 				fstruct.hInstance = hInst;
-				fstruct.lpstrFile = (LPSTR) appName.c_str();
+				fstruct.lpstrFile = (LPSTR) appName;// .c_str();
 				fstruct.nMaxFile = 32767;
 				fstruct.lpstrFilter = "Applications (*.exe)\0*.exe\0\0";
 				fstruct.lpstrCustomFilter = NULL;
 				fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
 				if (GetOpenFileNameA(&fstruct)) {
+					PathStripPath(fstruct.lpstrFile);
 					prof->triggerapp = appName;
-					SendMessage(app_list, LB_RESETCONTENT, 0, 0);
-					SendMessage(app_list, LB_ADDSTRING, 0, (LPARAM)(prof->triggerapp.c_str()));
+					ListBox_ResetContent(app_list);
+					ListBox_AddString(app_list, prof->triggerapp.c_str());
 				}
 			}
 		} break;
