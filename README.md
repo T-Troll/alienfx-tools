@@ -55,7 +55,7 @@ This tools can also support other Dell/Alienware devices:
 
 For fan/power control, any Alienware notebook starting from m15R1/m17R1 or later, as well as Dell G-Series supported. I have unconfirmed reports `Alienware Area51m R2` also supported.
 
-`Alienware desktops` should works as well, except `Aurora R7` (different interface).
+`Alienware desktops` should works as well, but you need to enable "Fan control" in settings for `Aurora R7` (and maybe other with the different interface).  
 External mouses, keyboards and monitors are not supported yet, feel free to open an issue if you want to add support for it, but be ready to help with testing!
 
 ## Known issues
