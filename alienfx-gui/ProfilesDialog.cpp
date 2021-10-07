@@ -32,7 +32,7 @@ void ReloadProfileView(HWND hDlg, int cID) {
 			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
 			CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, conf->profiles[i].flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
-			//CheckDlgButton(hDlg, IDC_CHECK_NOMON, conf->profiles[i].flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, conf->profiles[i].flags & PROF_PRIORITY ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, conf->profiles[i].flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, conf->profiles[i].flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, conf->profiles[i].flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
@@ -88,7 +88,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					// is this active profile? Switch needed!
 					if (conf->activeProfile == pCid) {
 						// switch to default profile..
-						eve->SwitchActiveProfile(conf->defaultProfile);
+						eve->SwitchActiveProfile(conf->FindProfile(conf->defaultProfile));
 					}
 					// Now remove profile....
 					int nCid = conf->activeProfile;
@@ -173,6 +173,15 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 			}
 			break;
+		case IDC_CHECK_PRIORITY:
+			if (prof != NULL) {
+				prof->flags = (prof->flags & ~PROF_PRIORITY) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
+				// rescan active profile....
+	            /*if (prof->id == conf->activeProfile) {
+					eve->ToggleEvents();
+				}*/
+			}
+			break;
 		//case IDC_CHECK_NOMON:
 		//	if (prof != NULL) {
 		//		prof->flags = (prof->flags & ~PROF_NOMONITORING) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
@@ -226,7 +235,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						profile* prof = conf->FindProfile(pCid);
 						if (prof) {
 							CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
-							//CheckDlgButton(hDlg, IDC_CHECK_NOMON, prof->flags & PROF_NOMONITORING ? BST_CHECKED : BST_UNCHECKED);
+							CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof->flags & PROF_PRIORITY ? BST_CHECKED : BST_UNCHECKED);
 							CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
 							CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
 							ListBox_ResetContent(app_list);
@@ -236,7 +245,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					} else {
 						pCid = -1;
 						CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
-						//CheckDlgButton(hDlg, IDC_CHECK_NOMON, BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
 						SendMessage(app_list, LB_RESETCONTENT, 0, 0);

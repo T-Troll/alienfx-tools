@@ -5,7 +5,12 @@ DWORD WINAPI CInProc(LPVOID);
 DWORD WINAPI CDlgProc(LPVOID);
 DWORD WINAPI CFXProc(LPVOID);
 
-//HWND hDlg;
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(_x_);
+#else
+#define DebugPrint(_x_)  
+#endif
 
 ConfigAmbient* config;
 FXHelper* fxh;
@@ -135,9 +140,7 @@ bool FindColors(UCHAR* src, UCHAR* imgz) {
 		}
 	DWORD res;
 	if ((res = WaitForMultipleObjects(12, pfEvent, true, 1000)) != WAIT_OBJECT_0) {
-#ifdef _DEBUG
-		OutputDebugString((string("Color calc stuck with ") + to_string(res) + "!\n").c_str());
-#endif
+		DebugPrint((string("Color calc stuck with ") + to_string(res) + "!\n").c_str());
 		return false;
 	}
 	return true;

@@ -368,9 +368,7 @@ ASALocalRun/
 # Local History for Visual Studio
 .localhistory/
 
-
 # End of https://www.gitignore.io/api/windows,visualstudio,visualstudiocode
 /alienfx-gui/alien_org.ico
-#/alienfan-tools
 /alienfan-tools/alienfan-lib
 /alienfan-tools/alienfan-test

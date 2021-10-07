@@ -36,15 +36,9 @@
 /x64
 /alienfan-SDK/x64
 /alienfan-gui/x64
-/alienfan-lib/x64
+/alienfan-lib
 /alienfan-low/x64
 /alienfan-test/x64
-/HwAcc/RCf05732
-/HwAcc/RCe05732
-/HwAcc/RCd05732
-/HwAcc/RCc05732
-/HwAcc/RCb05732
-/HwAcc/RCa05732
 
 /KDL/Hamakaze/output/x64
 /KDL/Tanikaze/output/x64

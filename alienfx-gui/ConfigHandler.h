@@ -7,11 +7,11 @@
 #include "ConfigHaptics.h"
 
 // Profile flags pattern
-#define PROF_DEFAULT 0x1
-//#define PROF_NOMONITORING 0x2
-#define PROF_DIMMED 0x4
-#define PROF_ACTIVE 0x8
-#define PROF_FANS 0x10
+#define PROF_DEFAULT  0x1
+#define PROF_PRIORITY 0x2 //PROF_NOMONITORING 0x2
+#define PROF_DIMMED   0x4
+#define PROF_ACTIVE   0x8
+#define PROF_FANS     0x10
 
 //struct ColorComp
 //{
@@ -115,7 +115,8 @@ public:
 	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
 	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp);
 	profile* FindProfile(int id);
-	int FindProfileByApp(std::string appName, bool active = false);
+	profile* FindProfileByApp(std::string appName, bool active = false);
+	bool IsPriorityProfile(int id);
 	void SetStates();
 	void SetIconState();
 	bool IsDimmed();

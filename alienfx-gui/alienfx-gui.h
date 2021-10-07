@@ -14,6 +14,13 @@
 #include "../alienfan-tools/alienfan-gui/MonHelper.h"
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(_x_);
+#else
+#define DebugPrint(_x_)  
+#endif
+
 // defines and structures...
 #define C_PAGES 9
 

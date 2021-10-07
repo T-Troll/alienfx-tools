@@ -119,9 +119,15 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Application" - Defines application executable for trigger profile switch if "Profile auto switch" enabled.
 - "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off (The same as "Disable monitoring" before).
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
-- "Dim lights" - Then profile activated, all lights are dimmed to common amount.
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
+- "Priority profile" - If this flag enabled, this profile will be choosen upon others. Priority profile overrides "Only then active" setting of the other profile. 
+- "Dim lights" - Then profile activated, all lights are dimmed to common amount.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated. 
+
+If application "Profile auto switch" setting is on, active profile will be selected automaticly according to this rules:
+- If running application, belongs to any profile not found - "Default" profile selected.
+- If running applications belongs to profile found and have no "Only wthen active" flag, "Priority" one will be choosen, or the random profile if no "Proirity" found.
+- If foreground application belongs to profile, and no other application belongs to Priority profile found, application-related profile will be selected, otherwise priority profile will be choosen.
 
 ![Devices tab](/Doc/img/gui-devices.png?raw=true)
 
@@ -191,8 +197,8 @@ Please keep in mind:
 
 Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
-- CTRL+SHIFT+F11 - dim/undim lights
-- CTRL+SHIFT+F10 - enable/disable system state monitoring
+- CTRL+SHIFT+F11 - dim/undim lights for current profile
+- CTRL+SHIFT+F10 - enable/disable software effects
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
 
 Other shortcuts (only then application active):
@@ -203,4 +209,4 @@ Other shortcuts (only then application active):
 - ALT+? - about app
 - ALT+x - quit
 
-**WARNING:** All hardware colour effects stop working if you enable any Software effect. It’s a hardware bug – any light update operation restarts all effects.  
+**WARNING:** All hardware colour effects stop working if you enable any software effect. It’s a hardware bug – any light update operation restarts all effects.  

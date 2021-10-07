@@ -1,5 +1,12 @@
 #include "FXHelper.h"
 
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(_x_);
+#else
+#define DebugPrint(_x_)  
+#endif
+
 DWORD WINAPI CLightsProc(LPVOID param);
 
 void FXHelper::TestLight(int did, int id)
@@ -39,13 +46,13 @@ void FXHelper::ResetPower(int did)
 
 void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, long cFan, bool force)
 {
-#ifdef _DEBUG
+
 	//char buff[2048];
 	//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
 	//OutputDebugString(buff);
-	if (force)
-		OutputDebugString("Forced Counter update initiated...\n");
-#endif
+	if (force) {
+		DebugPrint("Forced Counter update initiated...\n");
+	}
 
 	if (config->autoRefresh) {
 		Refresh();
@@ -205,11 +212,7 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 			modifyQuery.unlock();
 			SetEvent(haveNewElement);
 		} else {
-#ifdef _DEBUG
-			char buff[2048];
-			sprintf_s(buff, 2047, "ERROR! Light (%d, %d) have group, not color!\n", did, id);
-			OutputDebugString(buff);
-#endif
+			OutputDebugString((string("ERROR! Light (") + to_string(did) + ", " + to_string(id) + ") have group, not color!\n").c_str());
 			return false;
 		}
 	}
@@ -255,9 +258,9 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 }
 
 void FXHelper::Flush() {
-#ifdef _DEBUG
-	OutputDebugString("Flushing light query...\n");
-#endif
+
+	DebugPrint("Flushing light query...\n");
+
 	unblockUpdates = false;
 	modifyQuery.lock();
 	deque<LightQueryElement>::iterator qIter;
@@ -275,15 +278,11 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 	if (!updateLock || lock) {
 		unblockUpdates = newState;
 		if (!unblockUpdates) {
-#ifdef _DEBUG
-			OutputDebugString("Lights pause on!\n");
-#endif
+			DebugPrint("Lights pause on!\n");
 			while (updateThread && !lightQuery.empty()) Sleep(20);
+		} else {
+			DebugPrint("Lights pause off!\n");
 		}
-#ifdef _DEBUG
-		else
-			OutputDebugString("Lights pause off!\n");
-#endif
 	}
 }
 
@@ -304,9 +303,8 @@ size_t FXHelper::FillAllDevs(bool state, bool power, HANDLE acc) {
 
 void FXHelper::Start() {
 	if (!updateThread) {
-#ifdef _DEBUG
-		OutputDebugString("Light updates started.\n");
-#endif
+		DebugPrint("Light updates started.\n");
+
 		stopQuery = CreateEvent(NULL, true, false, NULL);
 		UnblockUpdates(true);
 		haveNewElement = CreateEvent(NULL, true, false, NULL);
@@ -316,9 +314,8 @@ void FXHelper::Start() {
 
 void FXHelper::Stop() {
 	if (updateThread) {
-#ifdef _DEBUG
-		OutputDebugString("Light updates stopped.\n");
-#endif
+		DebugPrint("Light updates stopped.\n");
+
 		UnblockUpdates(false, true);
 		SetEvent(stopQuery);
 		WaitForSingleObject(updateThread, 10000);
@@ -331,13 +328,10 @@ void FXHelper::Stop() {
 
 int FXHelper::Refresh(bool forced)
 {
-#ifdef _DEBUG
 	if (forced) {
-
-		OutputDebugString("Forced Refresh initiated...\n");
-
+		DebugPrint("Forced Refresh initiated...\n");
 	}
-#endif
+
 	config->SetStates();
 	for (int i =0; i < config->active_set->size(); i++) {
 		RefreshOne(&config->active_set->at(i), forced);
@@ -615,11 +609,12 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (!wasDelay && src->lightQuery.size() > maxQlights) {
 				src->GetConfig()->monDelay += 50;
 				wasDelay = true;
-#ifdef _DEBUG
-				char buff[2048];
-				sprintf_s(buff, 2047, "Query so big (%d), delay increased to %d ms!\n", (int) src->lightQuery.size(), src->GetConfig()->monDelay);
-				OutputDebugString(buff);
-#endif
+				OutputDebugString((string("Query so big (") +
+								   to_string((int) src->lightQuery.size()) +
+								   "), delay increased to" +
+								   to_string(src->GetConfig()->monDelay) +
+								   " ms!\n"
+								   ).c_str());
 			}
 			src->modifyQuery.lock();
 
@@ -719,13 +714,16 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							if (pbstate[0].r != actions[0].r || pbstate[1].r != actions[1].r ||
 								pbstate[0].g != actions[0].g || pbstate[1].g != actions[1].g ||
 								pbstate[0].b != actions[0].b || pbstate[1].b != actions[1].b) {
-#ifdef _DEBUG
-								char buff[2048];
-								sprintf_s(buff, 2047, "Setting power button to %d-%d-%d/%d-%d-%d\n",
-										  actions[0].r, actions[0].g, actions[0].b,
-										  actions[1].r, actions[1].g, actions[1].b);
-								OutputDebugString(buff);
-#endif
+
+								DebugPrint((string("Setting power button to " +
+												   to_string(actions[0].r) + "-" +
+												   to_string(actions[0].g) + "-" + 
+												   to_string(actions[0].b) + "/" +
+												   to_string(actions[1].r) + "-" +
+												   to_string(actions[1].g) + "-" +
+												   to_string(actions[1].b) + "-" +
+												   "\n")).c_str());
+
 								if (!current.flags)
 									dev->SetPowerAction(current.lid,
 														actions[0].r, actions[0].g, actions[0].b,
@@ -735,9 +733,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 								pbstate = actions;
 							} else {
-#ifdef _DEBUG
-								OutputDebugString("Setting power button skipped, same colors\n");
-#endif
+								DebugPrint("Setting power button skipped, same colors\n");
 								ResetEvent(src->haveNewElement);
 								continue;
 							}
@@ -764,11 +760,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		}
 		if (src->GetConfig()->monDelay > 200) {
 			src->GetConfig()->monDelay -= 10;
-#ifdef _DEBUG
-			char buff[2048];
-			sprintf_s(buff, 2047, "Query empty, delay decreased to %d ms!\n", src->GetConfig()->monDelay);
-			OutputDebugString(buff);
-#endif
+			DebugPrint((string("Query empty, delay decreased to ") + to_string(src->GetConfig()->monDelay) + " ms!\n").c_str());
 		}
 		ResetEvent(src->haveNewElement);
 	}

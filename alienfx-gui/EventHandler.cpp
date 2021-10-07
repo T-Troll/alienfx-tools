@@ -7,6 +7,13 @@
 #include "EventHandler.h"
 #include "AlienFX_SDK.h"
 
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(_x_);
+#else
+#define DebugPrint(_x_)  
+#endif
+
 DWORD WINAPI CEventProc(LPVOID);
 DWORD WINAPI CProfileProc(LPVOID);
 
@@ -58,9 +65,7 @@ void EventHandler::ChangePowerState()
 		}
 	}
 	if (!sameState) {
-#ifdef _DEBUG
-		OutputDebugString("Power state changed\n");
-#endif
+		DebugPrint("Power state changed\n");
 		fxh->ChangeState();
 		fxh->RefreshState();
 	}
@@ -78,9 +83,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 			conf->stateScreen = state;
 			conf->dimmedScreen = false;
 		}
-#ifdef _DEBUG
-		OutputDebugString("Display state changed\n");
-#endif
+		DebugPrint("Display state changed\n");
 	} else {
 		conf->dimmedScreen = false;
 		conf->stateScreen = true;
@@ -88,40 +91,29 @@ void EventHandler::ChangeScreenState(DWORD state)
 	fxh->ChangeState();
 }
 
-void EventHandler::SwitchActiveProfile(int newID)
+void EventHandler::SwitchActiveProfile(profile* newID)
 {
-	if (newID != conf->foregroundProfile) conf->foregroundProfile = -1;
-	if (newID < 0) newID = conf->defaultProfile;
-	if (newID != conf->activeProfile) {
-		profile* newP = conf->FindProfile(newID);
-		if (newP != NULL) {
+	if (!newID) newID = conf->FindProfile(conf->defaultProfile);
+	if (newID->id != conf->foregroundProfile) conf->foregroundProfile = -1;
+	if (newID->id != conf->activeProfile) {
 			modifyProfile.lock();
-			//fxh->Flush();
-			conf->activeProfile = newID;
-			conf->active_set = &newP->lightsets;
+			conf->activeProfile = newID->id;
+			conf->active_set = &newID->lightsets;
 			if (mon) {
-				if (newP->flags & PROF_FANS)
-					mon->conf->lastProf = &newP->fansets;
+				if (newID->flags & PROF_FANS)
+					mon->conf->lastProf = &newID->fansets;
 				else
 					mon->conf->lastProf = &mon->conf->prof;
 			}
 			modifyProfile.unlock();
 			fxh->ChangeState();
 			ToggleEvents();
-#ifdef _DEBUG
-			char buff[2048];
-			sprintf_s(buff, 2047, "Profile switched to #%d (\"%s\")\n", newP->id, newP->name.c_str());
-			OutputDebugString(buff);
-#endif
-		}
+
+			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
+
+	} else {
+		DebugPrint((string("Same profile \"") + newID->name + "\", skipping switch.\n").c_str());
 	}
-#ifdef _DEBUG
-	else {
-		char buff[2048];
-		sprintf_s (buff, 2047, "Same profile #%d, skipping switch.\n", newID);
-		OutputDebugString (buff);
-	}
-#endif
 	return;
 }
 
@@ -131,9 +123,9 @@ void EventHandler::StartEvents()
 	if (!dwHandle) {
 		fxh->RefreshMon();
 		// start thread...
-#ifdef _DEBUG
-		OutputDebugString("Event thread start.\n");
-#endif
+
+		DebugPrint("Event thread start.\n");
+
 		stopEvents = CreateEvent(NULL, true, false, NULL);
 		dwHandle = CreateThread(NULL, 0, CEventProc, this, 0, NULL);
 	}
@@ -142,9 +134,8 @@ void EventHandler::StartEvents()
 void EventHandler::StopEvents()
 {
 	if (dwHandle) {
-#ifdef _DEBUG
-		OutputDebugString("Event thread stop.\n");
-#endif
+		DebugPrint("Event thread stop.\n");
+
 		SetEvent(stopEvents);
 		WaitForSingleObject(dwHandle, 1000);
 		CloseHandle(dwHandle);
@@ -170,7 +161,6 @@ void EventHandler::ToggleEvents()
 
 void EventHandler::ChangeEffectMode(int newMode) {
 	if (newMode != effMode) {
-		// disable old mode...
 		StopEffects();
 		conf->SetEffect(newMode);
 		StartEffects();
@@ -200,9 +190,8 @@ void EventHandler::StopEffects() {
 	fxh->Refresh(true);
 }
 
-void EventHandler::StartEffects(bool force) {
+void EventHandler::StartEffects() {
 	if (conf->IsMonitoring()) {
-		//if (force) fxh->Refresh(true);
 		// start new mode...
 		switch (conf->GetEffect()) {
 		case 0: 
@@ -221,13 +210,12 @@ void EventHandler::StartEffects(bool force) {
 	}
 }
 
-int ScanTaskList() {
+profile* ScanTaskList() {
 	DWORD maxProcess=256, maxFileName=MAX_PATH, cbNeeded, cProcesses, cFileName = maxFileName;
 	DWORD* aProcesses = new DWORD[maxProcess];
-	TCHAR* szProcessName=new TCHAR[maxFileName];
-	szProcessName[0]=0;
-	//=TEXT ("<unknown>");
-	int newp = -1;
+	TCHAR *szProcessName = new TCHAR[maxFileName]{0};
+
+	profile* newp = NULL, *finalP = NULL;
 
 	if (EnumProcesses(aProcesses, maxProcess * sizeof(DWORD), &cbNeeded))
 	{
@@ -237,30 +225,28 @@ int ScanTaskList() {
 			aProcesses=new DWORD[maxProcess];
 			EnumProcesses(aProcesses, maxProcess * sizeof(DWORD), &cbNeeded);
 		}
-		//HMODULE hMod;
+
 		for (UINT i = 0; i < cProcesses; i++)
 		{
-			if (aProcesses[i] != 0)
+			if (aProcesses[i])
 			{
 				HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
 					PROCESS_VM_READ,
 					FALSE, aProcesses[i]);
-				if (NULL != hProcess)
+				if (hProcess)
 				{
-					//if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
-					//	&cbNeeded))
-					//{
-						cFileName = GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, maxFileName);
-						while (maxFileName==cFileName) {
-							maxFileName=maxFileName<<1;
-							delete[] szProcessName;
-							szProcessName=new TCHAR[maxFileName];
-							cFileName = GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, maxFileName);
-						}
-						// is it related to profile?
-						if ((newp = even->conf->FindProfileByApp(std::string(szProcessName))) >=0)
-							break;
-					//}
+					cFileName = GetProcessImageFileName(hProcess, szProcessName, maxFileName); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, maxFileName);
+					while (maxFileName==cFileName) {
+						maxFileName=maxFileName<<1;
+						delete[] szProcessName;
+						szProcessName=new TCHAR[maxFileName];
+						cFileName = GetProcessImageFileName(hProcess, szProcessName, maxFileName);// GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, maxFileName);
+					}
+					PathStripPath(szProcessName);
+					// is it related to profile?
+					if (newp = even->conf->FindProfileByApp(string(szProcessName)))
+						if (!finalP || !(finalP->flags & PROF_PRIORITY))
+							finalP = newp;
 					CloseHandle(hProcess);
 				}
 			}
@@ -268,12 +254,12 @@ int ScanTaskList() {
 	}
 	delete[] szProcessName;
 	delete[] aProcesses;
-	return newp;
+	return finalP;
 }
 
 // Create - Check process ID, switch if found and no foreground active.
-// Foreground - Check process ID, switch if found
-// Close - Check process list, switch if found. Switch to dewfault if not.
+// Foreground - Check process ID, switch if found, clear foreground if not.
+// Close - Check process list, switch if found and no foreground active.
 
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 	
@@ -281,7 +267,7 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 	TCHAR* szProcessName = new TCHAR[nameSize]{0};
 	DWORD prcId = 0;
 	//HMODULE hMod;
-	int newp = -1;
+	profile* newp = NULL;
 
 	GUITHREADINFO activeThread;
 	activeThread.cbSize = sizeof(GUITHREADINFO);
@@ -291,52 +277,50 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 	if (activeThread.hwndActive != 0) {
 		GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
-			PROCESS_VM_READ,
-			FALSE, prcId);
-		//QueryFullProcessImageName(hProcess, 0, szProcessName, &nameSize);
-		//EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded);
-		cFileName = GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
-		while (nameSize==cFileName) {
-			nameSize=nameSize<<1;
+									  PROCESS_VM_READ,
+									  FALSE, prcId);
+
+		cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
+		while (nameSize == cFileName) {
+			nameSize = nameSize << 1;
 			delete[] szProcessName;
-			szProcessName=new TCHAR[nameSize];
-			cFileName = GetModuleFileNameEx(hProcess, NULL/*hMod*/, szProcessName, nameSize);
+			szProcessName = new TCHAR[nameSize];
+			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL/*hMod*/, szProcessName, nameSize);
 		}
 		CloseHandle(hProcess);
 		PathStripPath(szProcessName);
-#ifdef _DEBUG
-		OutputDebugString("Foreground switched to ");
-		OutputDebugString(szProcessName);
-		OutputDebugString("\n");
-#endif
-		newp = even->conf->FindProfileByApp(std::string(szProcessName), true);
 
-//		if (newp >= 0 || (strcmp(szProcessName, "ShellExperienceHost.exe") && strcmp(szProcessName, "alienfx-gui.exe") 
-//						  && strcmp(szProcessName, "explorer.exe")
-////#ifdef _DEBUG
-////						  && strcmp(szProcessName, "devenv.exe")
-////#endif
-//						  )) {
+		DebugPrint((string("Foreground switched to ") + szProcessName + "\n").c_str());
 
-			if (newp < 0) {
-				newp = ScanTaskList();
-			}
-			even->conf->foregroundProfile = newp;
-			even->SwitchActiveProfile(newp);
-//		}
-//#ifdef _DEBUG
-//		else
-//			OutputDebugString("Forbidden app, switch blocked!\n");
-//#endif
+		newp = even->conf->FindProfileByApp(string(szProcessName), true);
+		even->conf->foregroundProfile = newp ? newp->id : -1;
+
+		//		if (newp >= 0 || (strcmp(szProcessName, "ShellExperienceHost.exe") && strcmp(szProcessName, "alienfx-gui.exe") 
+		//						  && strcmp(szProcessName, "explorer.exe")
+		////#ifdef _DEBUG
+		////						  && strcmp(szProcessName, "devenv.exe")
+		////#endif
+		//						  )) {
+
+		if (!newp) {
+			even->SwitchActiveProfile(ScanTaskList());
+		} else {
+			if (even->conf->IsPriorityProfile(newp->id) || !even->conf->IsPriorityProfile(even->conf->activeProfile))
+				even->SwitchActiveProfile(newp);
+		}
+		//		}
+		//#ifdef _DEBUG
+		//		else
+		//			OutputDebugString("Forbidden app, switch blocked!\n");
+		//#endif
 	}
 	delete[] szProcessName;
 }
 
 VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	DWORD nameSize = MAX_PATH, cFileName = nameSize;// , cbNeeded;
+	DWORD nameSize = MAX_PATH, cFileName = nameSize;
 	TCHAR* szProcessName=new TCHAR[nameSize];
 	szProcessName[0]=0;
-	//HMODULE hMod;
 	DWORD prcId = 0;
 	int newp = -1;
 
@@ -348,44 +332,39 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
 				PROCESS_VM_READ,
 				FALSE, prcId);
-			//EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded);
-			cFileName = GetModuleFileNameEx(hProcess, NULL/*hMod*/, szProcessName, nameSize);
+			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize);// GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
 			while (nameSize==cFileName) {
 				nameSize=nameSize<<1;
 				delete[] szProcessName;
 				szProcessName=new TCHAR[nameSize];
-				cFileName = GetModuleFileNameEx(hProcess, NULL/*hMod*/, szProcessName, nameSize);
+				cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
 			}
-			CloseHandle(hProcess);
+
 			PathStripPath(szProcessName);
+
+			DWORD procstatus = 0;
 
 			switch (dwEvent) {
 			case EVENT_OBJECT_CREATE:
-//#ifdef _DEBUG
-//				char buff[2048];
-//				sprintf_s(buff, 2047, "Creating %s\n", szProcessName);
-//				OutputDebugString(buff);
-//#endif
-				if (even->conf->foregroundProfile < 0) {
+
+				if (even->conf->foregroundProfile != even->conf->activeProfile &&
+					even->conf->FindProfileByApp(string(szProcessName))) {
 					even->SwitchActiveProfile(ScanTaskList());
 				}
 				break;
+
 			case EVENT_OBJECT_DESTROY:
-//#ifdef _DEBUG
-//				OutputDebugString("Destroing ");
-//				OutputDebugString(szProcessName);
-//				OutputDebugString("\n");
-//#endif
-				//if (even->conf->foregroundProfile >= 0 && even->conf->FindProfileByApp(string(szProcessName), true) == even->conf->activeProfile) {
-				//	//even->conf->foregroundProfile = -1;
-				//	even->SwitchActiveProfile(ScanTaskList());
-				//} else {
-					if (even->conf->foregroundProfile < 0) {
-						even->SwitchActiveProfile(ScanTaskList());
-					}
-				//}
+				//GetExitCodeProcess(hProcess, &procstatus);
+				//DebugPrint((string("Process (") + szProcessName + ") status " + to_string((int) procstatus) + "\n").c_str());
+				
+				if (even->conf->foregroundProfile != even->conf->activeProfile &&
+					even->conf->FindProfileByApp(string(szProcessName))) {
+					even->SwitchActiveProfile(ScanTaskList());
+				}
+
 				break;
 			}
+			CloseHandle(hProcess);
 		}
 		CloseHandle(hThread);
 	}
@@ -395,9 +374,9 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 void EventHandler::StartProfiles()
 {
 	if (hEvent == 0 && conf->enableProf) {
-#ifdef _DEBUG
-		OutputDebugString("Profile hooks starting.\n");
-#endif
+
+		DebugPrint("Profile hooks starting.\n");
+
 		// Need to switch if already running....
 		even->SwitchActiveProfile(ScanTaskList());
 
@@ -415,9 +394,9 @@ void EventHandler::StartProfiles()
 void EventHandler::StopProfiles()
 {
 	if (hEvent) {
-#ifdef _DEBUG
-		OutputDebugString("Profile hooks stop.\n");
-#endif
+
+		DebugPrint("Profile hooks stop.\n");
+
 		UnhookWinEvent(cEvent);
 		UnhookWinEvent(hEvent);
 		hEvent = 0;
@@ -463,7 +442,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 	if (pdhStatus != ERROR_SUCCESS)
 	{
-		//wprintf(L"PdhOpenQuery failed with 0x%x\n", pdhStatus);
 		goto cleanup;
 	}
 

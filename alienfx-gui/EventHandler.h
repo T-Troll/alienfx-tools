@@ -19,13 +19,13 @@ private:
 public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state);
-	void SwitchActiveProfile(int newID);
+	void SwitchActiveProfile(profile* newID);
 	void StartProfiles();
 	void StopProfiles();
 	void ToggleEvents();
 	void ChangeEffectMode(int);
 	void StopEffects();
-	void StartEffects(bool force = false);
+	void StartEffects();
 
 	EventHandler(ConfigHandler*, MonHelper*, FXHelper*);
 	~EventHandler();

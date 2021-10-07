@@ -3,6 +3,13 @@
 #include <algorithm>
 #include <Shlwapi.h>
 
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(_x_);
+#else
+#define DebugPrint(_x_)  
+#endif
+
 ConfigHandler::ConfigHandler() {
 	DWORD  dwDisposition;
 
@@ -115,14 +122,19 @@ profile* ConfigHandler::FindProfile(int id) {
 	return prof;
 }
 
-int ConfigHandler::FindProfileByApp(std::string appName, bool active)
+profile* ConfigHandler::FindProfileByApp(std::string appName, bool active)
 {
 	for (int j = 0; j < profiles.size(); j++)
 		if (profiles[j].triggerapp == appName && (active || !(profiles[j].flags & PROF_ACTIVE))) {
 			// app is belong to profile!
-			return profiles[j].id;
+			return &profiles[j];
 		}
-	return -1;
+	return NULL;
+}
+
+bool ConfigHandler::IsPriorityProfile(int id) {
+	profile *prof = FindProfile(id);
+	return prof && prof->flags & PROF_PRIORITY;
 }
 
 void ConfigHandler::SetStates() {
@@ -773,11 +785,9 @@ int ConfigHandler::Save() {
 			NULL,
 			&hKey4,
 			&dwDisposition);
+	} else {
+		DebugPrint("Attempt to save empty profiles!\n");
 	}
-#ifdef _DEBUG
-	else
-		OutputDebugString("Attempt to save empty profiles!\n");
-#endif
 
 	RegDeleteTreeA(hKey1, "Events");
 	RegCreateKeyEx(HKEY_CURRENT_USER,

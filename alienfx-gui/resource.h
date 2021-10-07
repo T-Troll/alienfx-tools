@@ -72,7 +72,6 @@
 #define IDC_LENGTH1                     1009
 #define IDC_CHECK_NOEVENT               1009
 #define IDC_BUTTON10                    1009
-#define IDC_RESET                       1009
 #define IDC_CHECK_POWER                 1010
 #define IDC_BUTTON11                    1010
 #define IDC_CHECK_PERF                  1011
@@ -155,7 +154,6 @@
 #define IDC_BUTTON_RESETCOLOR           1053
 #define IDC_LIST_APPLICATIONS           1055
 #define IDC_CHECK_DEFPROFILE            1056
-#define IDC_CHECK_NOMON                 1057
 #define IDC_DEVICE_STATUS               1058
 #define IDC_APP_RESET                   1059
 #define IDC_APP_BROWSE                  1060
@@ -185,6 +183,7 @@
 #define IDC_STATIC_BOOST                1097
 #define IDC_COMBO_EFFMODE               1098
 #define IDC_CHECK_EFFECTS               1099
+#define IDC_CHECK_PRIORITY              1100
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -205,6 +204,8 @@
 #define ID_ACC_FANS                     32799
 #define ID_ACC_GROUPS                   32800
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
+#define ID_CHECKUPDATE                  32803
+#define IDM_CHECKUPDATE                 32804
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -213,8 +214,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        154
-#define _APS_NEXT_COMMAND_VALUE         32803
-#define _APS_NEXT_CONTROL_VALUE         1100
+#define _APS_NEXT_COMMAND_VALUE         32805
+#define _APS_NEXT_CONTROL_VALUE         1101
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

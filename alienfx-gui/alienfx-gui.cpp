@@ -743,6 +743,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
+		case IDM_CHECKUPDATE:
+			// check update....
+			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+			break;
 		case IDC_BUTTON_MINIMIZE:
 			SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 			break;
@@ -816,7 +820,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
-				eve->SwitchActiveProfile(prid);
+				eve->SwitchActiveProfile(conf->FindProfile(prid));
 				ComboBox_SetCurSel(mode_list, conf->GetEffect());
 				OnSelChanged(tab_list);
 			} break;
@@ -966,8 +970,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
-			if (!conf->enableProf && idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
-				eve->SwitchActiveProfile(conf->profiles[idx].id);
+			if (/*!conf->enableProf &&*/ idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
+				eve->SwitchActiveProfile(&conf->profiles[idx]);
 				ReloadProfileList(hDlg);
 				OnSelChanged(tab_list);
 			}
@@ -978,9 +982,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (wParam) {
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hybernate
-#ifdef _DEBUG
-			OutputDebugString("Resume from Sleep/hibernate initiated\n");
-#endif
+
+			DebugPrint("Resume from Sleep/hibernate initiated\n");
+
 			if (fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL) > 0) {
 				fxhl->UnblockUpdates(true);
 				eve->ChangePowerState();
@@ -1004,9 +1008,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		} break;
 		case PBT_APMSUSPEND:
 			// Sleep initiated.
-#ifdef _DEBUG
-			OutputDebugString("Sleep/hibernate initiated\n");
-#endif
+
+			DebugPrint("Sleep/hibernate initiated\n");
+
 			conf->stateScreen = true;
 			fxhl->ChangeState();
 			eve->StopProfiles();
@@ -1025,9 +1029,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
-#ifdef _DEBUG
-		OutputDebugString("Shutdown initiated\n");
-#endif
+
+		DebugPrint("Shutdown initiated\n");
+
 		conf->Save();
 		eve->StopProfiles();
 		eve->StopEffects();
