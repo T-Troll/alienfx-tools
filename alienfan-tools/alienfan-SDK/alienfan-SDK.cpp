@@ -3,8 +3,9 @@
 
 #include "alienfan-SDK.h"
 #include "alienfan-low.h"
-#include "KDL.h"
 #include <iostream>
+
+typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 
 namespace AlienFan_SDK {
 
@@ -41,10 +42,16 @@ namespace AlienFan_SDK {
 				cpath.resize(cpath.find_last_of(L"\\"));
 				cpath += L"\\HwAcc.sys";
 
-				if (LoadKernelDriver((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-					activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
+				HMODULE kdl = LoadLibrary(L"kdl.dll");
+				if (kdl) {
+					ACPIF oacpi = (ACPIF) GetProcAddress(kdl, "LoadKernelDriver");
+					if (oacpi && oacpi((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc"))
+						activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
+					// In any case, unload dll
+					FreeLibrary(kdl);
 				}
 			}
+
 		}
 	}
 	Control::~Control() {
