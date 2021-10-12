@@ -6,9 +6,10 @@ This SDK not only fixes up its issue and performs better but is written from scr
 
 Please checkout Sample App for reference.
 
-**Currently tested on AW13/R2, AW13/R3, AWM14x, AW15R2/R3, AW17R3/R4, AWm15/R1-R4, AWm17/R1, Dell G5/G7, but should work at any alienware laptop.**
+**Currently tested on AW13/R2, AW13/R3, AWM14x, AW15R2/R3, AW17R3/R4, AWm15/R1-R4, AWm17/R1, Dell G5/G7, AWAurora/R7, but should work at any alienware laptop or desktop.**
 
 ### Supported device API versions:
+- ACPI-controlled lights - 3 lights, 8 bit/color (v0) - using this API require low-level ACPI driver and library from [Alienfan](https://github.com/T-Troll/alienfan-tools) project.
 - 9 bytes 8 bit/color, reportID 2 control (v1)
 - 9 bytes 4 bit/color, reportID 2 control (v2)
 - 12 bytes 8 bit/color, reportID 2 control (v3)
@@ -23,9 +24,9 @@ Some notebooks have 2 devices - APIv4 (for logo, power button, etc) and APIv5 fo
 - Change light color
 - Change multiply lights color
 - Change light hardware effect (except APIv5)
-- Change multiply lights hardware effects (except APIv5, emulation at APIv1-v3)
-- Hardware-backed global light off/on/dim
-- Global hardware effects (APIv5)
+- Change multiply lights hardware effects (except APIv5)
+- Hardware-backed global light off/on/dim (dim is software for APIv0-v3 and should be done by application)
+- Global hardware light effects (APIv5)
 
 ### Initialization
 ```C++

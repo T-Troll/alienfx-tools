@@ -696,7 +696,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							action.b = (action.b * action.b) / 255;
 						}
 						// Dimming...
-						// Only for v1-v3 devices!
+						// For v0-v3 devices only, v4 and v5 have hardware dimming
 						if (dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
 							unsigned delta = 256 - src->GetConfig()->dimmingPower;
 							action.r = (action.r * delta) >> 8;

@@ -105,6 +105,9 @@ namespace AlienFX_SDK
 		// support function for mask-based devices (v1-v3)
 		void SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
 
+		// Support functions for ACPI calls
+		bool SetAcpiColor(byte mask, byte r, byte g, byte b);
+
 	public:
 
 		bool inSet = false;

@@ -45,6 +45,7 @@ Run any tool you need from this folder or start menu!
 - `Alienware 17R5` (API v3)
 - `Alienware 13R2` (API v2)
 - `Alienware M14x` (API v1)
+- `Alienware Arena R7` (API v0 (ACPI))
 
 This tools can also support other Dell/Alienware devices:
 - APIv0 - ACPI-controlled lights, 3 lights, 8-bit color,
@@ -93,4 +94,5 @@ Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://githu
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
 Per-Key RGB devices testing and a lot of support by [rirozizo](https://github.com/rirozizo).  
+Aurora R7 testing by [Raoul Duke](https://github.com/raould).  
 Special thanks to [PhSMu](https://github.com/PhSMu) for ideas, testing and artwork.

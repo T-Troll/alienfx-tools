@@ -4,7 +4,6 @@
 #include <vector>
 #include "alienfan-SDK.h"
 #include "alienfan-low.h"
-//#include "kdl.h"
 
 using namespace std;
 
@@ -23,18 +22,19 @@ setfans=<fan1>[,<fan2>]\t\tSet fans boost level (0..100 - in percent)\n\
 setfandirect=<fanid>,<value>\tSet fan with selected ID to given value\n\
 resetcolor\t\t\tReset color system\n\
 setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
-setcolormode=<mode>,<flag>\tSet light system mode\n\
+setcolormode=<dim>,<flag>\tSet light system brightness and mode\n\
 direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tPower level can be in 0..N - according to power states detected\n\
 \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
 \tNumber of fan boost values should be the same as a number fans detected\n\
+\tBrighness for ACPI lights can only have 10 values - 1,3,4,6,7,9,10,12,13,15\n\
 \tAll values in \"direct\" commands should be hex, not decimal!\n";
 }
 
 int main(int argc, char* argv[])
 {
-    std::cout << "AlienFan-cli v1.3.0.0\n";
+    std::cout << "AlienFan-cli v1.3.1.0\n";
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
                     continue;
                 }
                 if (command == "setcolormode" && lights->IsActivated()) { // set effect (?) for Aurora
-                    if (args.size() < 4) {
+                    if (args.size() < 2) {
                         cout << "SetColorMode: incorrect arguments (should be mode,(0..1))" << endl;
                         continue;
                     }

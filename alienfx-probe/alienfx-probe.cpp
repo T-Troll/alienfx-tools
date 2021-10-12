@@ -18,7 +18,7 @@ namespace
 	LFXUtil::LFXUtilC lfxUtil;
 }
 
-void CheckDevices() {
+void CheckDevices(bool show_all) {
 	GUID guid;
 	bool flag = false;
 	HANDLE tdevHandle;
@@ -76,51 +76,59 @@ void CheckDevices() {
 							HidP_GetCaps(prep_caps, &caps);
 							HidD_FreePreparsedData(prep_caps);
 
-							cout.fill('0');
-							cout << hex << "===== New device VID" << setw(4) << attributes->VendorID << ", PID" << setw(4) << attributes->ProductID << " =====" << endl;
-
-							cout << dec << "Version " << attributes->VersionNumber << ", Blocksize " << attributes->Size << endl;
-
-							cout << dec << "Output Report Length " << caps.OutputReportByteLength
-								<< ", Input Report Length " << caps.InputReportByteLength
-								<< ", Feature Report Length " << caps.FeatureReportByteLength
-								<< endl;
-							cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage << endl;
-							cout << dec << "Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
-
-							cout << "+++++ Detected as: ";
-
-							switch (i) {
-							case 0: cout << "Alienware, "; break;
-							case 1: cout << "DARFON, "; break;
-							}
+							string apiver;
+							bool supported = false;
 
 							switch (caps.OutputReportByteLength) {
 							case 0:
 							{
 								switch (caps.Usage) {
-								case 0xcc: cout << "RGB, APIv5"; break;
-								default: cout << "Unknown.";
+								case 0xcc: supported = true; apiver = "RGB, APIv5"; break;
+								default: apiver = "Unknown.";
 								}
 							} break;
 							case 8:
-								cout << "APIv1";
+								supported = true; apiver =  "APIv1";
 								break;
 							case 9:
 								if (attributes->VersionNumber > 511)
-									cout << "APIv2";
+									apiver =  "APIv2";
 								else
-									cout << "APIv1";
+									apiver =  "APIv1";
+								supported = true; 
 								break;
 							case 12:
-								cout << "APIv3";
+								supported = true; apiver = "APIv3";
 								break;
 							case 34:
-								cout << "APIv4";
+								supported = true; apiver = "APIv4";
 								break;
-							default: "Unknown.";
+							default: apiver = "Unknown";
 							}
-							cout << " +++++" << endl;
+
+							if (show_all || supported) {
+
+								cout.fill('0');
+								cout << hex << "===== New device VID" << setw(4) << attributes->VendorID << ", PID" << setw(4) << attributes->ProductID << " =====" << endl;
+
+								cout << dec << "Version " << attributes->VersionNumber << ", Blocksize " << attributes->Size << endl;
+
+								cout << dec << "Output Report Length " << caps.OutputReportByteLength
+									<< ", Input Report Length " << caps.InputReportByteLength
+									<< ", Feature Report Length " << caps.FeatureReportByteLength
+									<< endl;
+								cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage << endl;
+								cout << dec << "Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
+
+								cout << "+++++ Detected as: ";
+
+								switch (i) {
+								case 0: cout << "Alienware, "; break;
+								case 1: cout << "DARFON, "; break;
+								}
+
+								cout << apiver << " +++++" << endl;
+							}
 						}
 					}
 				}
@@ -133,9 +141,10 @@ void CheckDevices() {
 int main(int argc, char* argv[])
 {
 	int numlights = 23;
-	cout << "alienfx-probe v3.2.2" << endl;
+	bool show_all = argc > 1 && string(argv[1]) == "-a";
+	cout << "alienfx-probe v5.0.4" << endl;
 	cout << "Checking USB light devices..." << endl;
-	CheckDevices();
+	CheckDevices(show_all);
 	cout << "Do you want to set devices and lights names?";
 	char answer;
 	cin >> answer;
