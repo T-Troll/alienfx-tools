@@ -43,7 +43,9 @@ public:
 	mutex modifyQuery;
 	bool unblockUpdates = true;
 
-	FXHelper() {};
+	FXHelper() {
+		config = NULL;
+	};
 	FXHelper(ConfigHandler* conf) {
 		config = conf;
 		afx_dev.LoadMappings();
@@ -63,8 +65,11 @@ public:
 				return devs[i];
 		return nullptr;
 	};
+
 	size_t FillDevs(bool state, bool power) {
 		vector<pair<DWORD, DWORD>> devList = afx_dev.AlienFXEnumDevices();
+		config->haveV5 = false;
+
 		if (devs.size() > 0) {
 			for (int i = 0; i < devs.size(); i++) {
 				devs[i]->AlienFXClose();
@@ -78,6 +83,7 @@ public:
 			if (pid != -1) {
 				devs.push_back(dev);
 				dev->ToggleState(state?255:0, afx_dev.GetMappings(), power);
+				if (dev->GetVersion() == 5) config->haveV5 = true;
 			} else
 				delete dev;
 		}

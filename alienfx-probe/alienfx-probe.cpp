@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 {
 	int numlights = 23;
 	bool show_all = argc > 1 && string(argv[1]) == "-a";
-	cout << "alienfx-probe v5.0.4" << endl;
+	cout << "alienfx-probe v5.0.5" << endl;
 	cout << "Checking USB light devices..." << endl;
 	CheckDevices(show_all);
 	cout << "Do you want to set devices and lights names?";

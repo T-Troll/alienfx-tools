@@ -13,20 +13,6 @@
 #define PROF_ACTIVE   0x8
 #define PROF_FANS     0x10
 
-//struct ColorComp
-//{
-//	unsigned char blue;
-//	unsigned char green;
-//	unsigned char red;
-//	unsigned char brightness;
-//};
-//
-//union Colorcode
-//{
-//	struct ColorComp cs;
-//	unsigned int ci = 0;
-//};
-
 union FlagSet {
 	struct {
 		BYTE flags;
@@ -94,8 +80,10 @@ public:
 	DWORD globalEffect = 0;
 	DWORD globalDelay = 127;
 	DWORD fanControl = 0;
-	//DWORD effectMode = 0;
 	DWORD enableMon = 1;
+
+	// local flags...
+	bool haveV5 = false;
 
 	// 3rd-party config blocks
 	ConfigHelper *fan_conf = NULL;

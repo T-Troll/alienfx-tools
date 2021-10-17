@@ -6,6 +6,7 @@
 #include <Mmdeviceapi.h>
 #include "ConfigHaptics.h"
 #include "FXHelper.h"
+#include "DFT_gosu.h"
 
 class WSAudioIn
 {
@@ -18,22 +19,27 @@ public:
 	void RestartDevice(int type);
 	int  init(int type);
 	void release();
-	void SetDlg(HWND hDlg);
+
+	// variables...
+	FXHelper* fxha = NULL;
+	DFT_gosu* dftGG = NULL;
+	ConfigHaptics *conf = NULL;
+	double* waveD;
+
+	IAudioCaptureClient* pCaptureClient = NULL;
+
+	WAVEFORMATEX* pwfx;
 
 private:
 	IMMDevice* inpDev;
 	IAudioClient* pAudioClient = NULL;
-	IAudioCaptureClient* pCaptureClient = NULL;
+
 	IAudioClockAdjustment* pRateClient = NULL;
 	ISimpleAudioVolume* pAudioVolume = NULL;
-
-	WAVEFORMATEX* pwfx;
 
 	HANDLE dwHandle = 0;
 
 	int rate;
-
-	//HANDLE hWakeUp;
 
 	IMMDevice* GetDefaultMultimediaDevice(EDataFlow DevType);
 };

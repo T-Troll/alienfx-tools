@@ -11,7 +11,7 @@ int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 extern int eItem;
 
-void UpdateMonitoringInfo(HWND hDlg, lightset* map) {
+void UpdateMonitoringInfo(HWND hDlg, lightset *map) {
 	HWND list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
 		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
@@ -24,8 +24,7 @@ void UpdateMonitoringInfo(HWND hDlg, lightset* map) {
 			if (map && map->eve[0].fs.b.flags) {
 				RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map->eve[0].map[0].r,
 							 map->eve[0].map[0].g, map->eve[0].map[0].b);
-			}
-			else {
+			} else {
 				RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map ? map->eve[i].map[0].r : 0,
 							 map ? map->eve[i].map[0].g : 0, map ? map->eve[i].map[0].b : 0);
 			}
@@ -35,17 +34,17 @@ void UpdateMonitoringInfo(HWND hDlg, lightset* map) {
 	}
 
 	// Alarms
-	CheckDlgButton(hDlg, IDC_STATUS_BLINK, (map?map->eve[3].fs.b.proc:0) ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s2_slider, TBM_SETPOS, true, map?map->eve[3].fs.b.cut:0);
-	SetSlider(lTip, map?map->eve[3].fs.b.cut:0);
+	CheckDlgButton(hDlg, IDC_STATUS_BLINK, (map ? map->eve[3].fs.b.proc : 0) ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(s2_slider, TBM_SETPOS, true, map ? map->eve[3].fs.b.cut : 0);
+	SetSlider(lTip, map ? map->eve[3].fs.b.cut : 0);
 
 	// Events
-	CheckDlgButton(hDlg, IDC_GAUGE, (map?map->eve[2].fs.b.proc:0) ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s1_slider, TBM_SETPOS, true, map?map->eve[2].fs.b.cut:0);
-	SetSlider(sTip, map?map->eve[2].fs.b.cut:0);
+	CheckDlgButton(hDlg, IDC_GAUGE, (map ? map->eve[2].fs.b.proc : 0) ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(s1_slider, TBM_SETPOS, true, map ? map->eve[2].fs.b.cut : 0);
+	SetSlider(sTip, map ? map->eve[2].fs.b.cut : 0);
 
-	SendMessage(list_counter, CB_SETCURSEL, map?map->eve[2].source:0, 0);
-	SendMessage(list_status, CB_SETCURSEL, map?map->eve[3].source:0, 0);
+	ComboBox_SetCurSel(list_counter, map ? map->eve[2].source : 0);
+	ComboBox_SetCurSel(list_status, map ? map->eve[3].source : 0);
 }
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -60,10 +59,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
 		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
-	int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0),
-		lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-
-	lightset* map = FindMapping(lid);
+	lightset* map = FindMapping(eItem);
 
 	switch (message)
 	{
@@ -116,12 +112,13 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		sTip = CreateToolTip(s1_slider, sTip);
 		lTip = CreateToolTip(s2_slider, lTip);
 
-		if (eItem != (-1)) {
-			ListBox_SetCurSel(light_list, eItem);
-			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
+		if (eItem >= 0) {
+			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)light_list);
 		}
+
 	} break;
 	case WM_COMMAND: {
+		int lid = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
 		int countid = (int)SendMessage(list_counter, CB_GETCURSEL, 0, 0),
 			statusid = (int)SendMessage(list_status, CB_GETCURSEL, 0, 0);
 		switch (LOWORD(wParam))
@@ -130,7 +127,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			switch (HIWORD(wParam))
 			{
 			case LBN_SELCHANGE:
-				eItem = lbItem;
+				eItem = lid;
+				map = FindMapping(eItem);
 				UpdateMonitoringInfo(hDlg, map);
 				break;
 			} break;

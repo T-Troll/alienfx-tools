@@ -79,12 +79,21 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		if (effID >= ListView_GetItemCount(eff_list))
 			effID = ListView_GetItemCount(eff_list) - 1;
 		if (effID != -1) {
+			int dev_ver = fxhl->LocateDev(mmap->devid) ? fxhl->LocateDev(mmap->devid)->GetVersion() : -1;
 			ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
-			EnableWindow(type_c1, !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER));
-			EnableWindow(s1_slider, true);
-			EnableWindow(l1_slider, true);
+			if (dev_ver > 0 && dev_ver < 5 || dev_ver == -1) {
+				// Have hardware effects
+				EnableWindow(type_c1, !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER));
+				EnableWindow(s1_slider, true);
+				EnableWindow(l1_slider, true);
+			} else {
+				// No hardware effects, color only
+				EnableWindow(type_c1, false);
+				EnableWindow(s1_slider, false);
+				EnableWindow(l1_slider, false);
+			}	
 			// Set data
-			SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
+			ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
 			RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
 			SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
 			SetSlider(sTip, mmap->eve[0].map[effID].tempo);
@@ -108,8 +117,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
 		type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
 
-	int lbItem = (int)SendMessage(light_list, LB_GETCURSEL, 0, 0),
-		lid = (int)SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+	lightset* mmap = FindMapping(eItem);
 
 	switch (message)
 	{
@@ -145,21 +153,21 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		sTip = CreateToolTip(s1_slider, sTip);
 		lTip = CreateToolTip(l1_slider, lTip);
 		// Restore selection....
-		if (eItem != (-1)) {
-			ListBox_SetCurSel(light_list, eItem);
+		if (eItem >= 0) {
 			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
 		}
 	} break;
 	case WM_COMMAND: {
-		lightset* mmap = FindMapping(lid);
+		int lid = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
 		switch (LOWORD(wParam))
 		{
 		case IDC_LIGHTS:
 			switch (HIWORD(wParam))
 			{
 			case LBN_SELCHANGE:
-				eItem = lbItem;
+				eItem = lid;// lbItem;
 				effID = 0;
+				mmap = FindMapping(lid);
 				RebuildEffectList(hDlg, mmap);
 				break;
 			} break;
@@ -251,7 +259,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_VSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
-			lightset* mmap = FindMapping(lid);
+			//lightset* mmap = FindMapping(eItem);
 			if (mmap != NULL) {
 				if ((HWND)lParam == s1_slider) {
 					mmap->eve[0].map[effID].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
@@ -269,11 +277,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_C1:
 			AlienFX_SDK::afx_act c = {0};
-			if (lbItem != -1) {
-				lightset* map = FindMapping(lid);
-				if (map && effID < map->eve[0].map.size()) {
-					c = map->eve[0].map[effID];
-				}
+			//lightset* map = FindMapping(eItem);
+			if (mmap && effID < mmap->eve[0].map.size()) {
+				c = mmap->eve[0].map[effID];
 			}
 			RedrawButton(hDlg, IDC_BUTTON_C1, c.r, c.g, c.b);
 			break;
@@ -291,7 +297,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					if (lPoint->iItem != -1) {
 						// Select other color....
 						effID = lPoint->iItem;
-						lightset* mmap = FindMapping(lid);
+						//lightset* mmap = FindMapping(eItem);
 						if (mmap != NULL) {
 							// Set data
 							SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);

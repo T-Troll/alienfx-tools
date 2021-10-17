@@ -8,7 +8,6 @@
 #include <CommCtrl.h>
 #include <string>
 #include <wininet.h>
-//#include "KDL.h"
 #include "alienfan-SDK.h"
 #include "ConfigHelper.h"
 #include "MonHelper.h"
@@ -51,6 +50,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+    UNREFERENCED_PARAMETER(nCmdShow);
 
     MSG msg = {0};
 
@@ -64,13 +64,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
             // Perform application initialization:
             HWND mDlg;
-            if (!(mDlg = InitInstance(hInstance, nCmdShow))) {
+            if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL ))) {
                 return FALSE;
             }
-
-            // minimize if needed
-            if (fan_conf->startMinimized)
-                SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 
             if (fan_conf->lastProf->powerStage >= 0)
                 acpi->SetPower(fan_conf->lastProf->powerStage);

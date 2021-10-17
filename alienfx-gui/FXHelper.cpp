@@ -13,9 +13,9 @@ void FXHelper::TestLight(int did, int id)
 {
 	AlienFX_SDK::Functions* dev = LocateDev(did);
 	if (dev != NULL) {
-		int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
-			g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
-			b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
+		//int r = (config->testColor.cs.red * config->testColor.cs.red) >> 8,
+		//	g = (config->testColor.cs.green * config->testColor.cs.green) >> 8,
+		//	b = (config->testColor.cs.blue * config->testColor.cs.blue) >> 8;
 
 		vector<UCHAR> opLights;
 
@@ -31,7 +31,7 @@ void FXHelper::TestLight(int did, int id)
 
 		dev->SetMultiLights((int)opLights.size(), opLights.data(), 0, 0, 0);
 		if (id != -1)
-			dev->SetColor(id, r, g, b);
+			dev->SetColor(id, config->testColor.cs.red, config->testColor.cs.green, config->testColor.cs.blue);
 		dev->UpdateColors();
 
 	}
@@ -212,7 +212,7 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 			modifyQuery.unlock();
 			SetEvent(haveNewElement);
 		} else {
-			OutputDebugString((string("ERROR! Light (") + to_string(did) + ", " + to_string(id) + ") have group, not color!\n").c_str());
+			DebugPrint((string("ERROR! Light (") + to_string(did) + ", " + to_string(id) + ") have group, not color!\n").c_str());
 			return false;
 		}
 	}
@@ -453,88 +453,6 @@ struct devset {
 
 void FXHelper::RefreshHaptics(int *freq) {
 	if (config->stateOn) {
-		//UnblockUpdates(false, true);
-		//for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
-		//	haptics_map map = config->hap_conf->mappings[i];
-		//	if (!map.map.empty()) {
-		//		double power = 0.0;
-		//		AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.cs.red,map.colorfrom.cs.green, map.colorfrom.cs.blue},
-		//			to = {0,0,0,map.colorto.cs.red,map.colorto.cs.green, map.colorto.cs.blue},
-		//			fin = {0};
-		//		// here need to check less bars...
-		//		for (int j = 0; j < map.map.size(); j++)
-		//			power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
-		//		if (map.map.size() > 1)
-		//			power = power / (map.map.size() * (map.hicut - map.lowcut));
-		//		fin.r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
-		//		fin.g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
-		//		fin.b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
-		//		//Don't need gamma?
-		//		fin.r = (fin.r * fin.r) >> 8;
-		//		fin.g = (fin.g * fin.g) >> 8;
-		//		fin.b = (fin.b * fin.b) >> 8;
-		//		if (map.lightid > 0xffff) {
-		//			// group
-		//			AlienFX_SDK::group *grp = afx_dev.GetGroupById(map.lightid);
-		//			if (grp) {
-		//				vector<AlienFX_SDK::afx_act> lSets;
-		//				vector<devset> devsets;
-		//				lSets.push_back(fin);
-		//				for (int i = 0; i < grp->lights.size(); i++) {
-		//					int dind;
-		//					for (dind = 0; dind < devsets.size(); dind++)
-		//						if (grp->lights[i]->devid == devsets[dind].did)
-		//							break;
-		//					if (dind == devsets.size()) {
-		//						// need new set...
-		//						devset nset = {(WORD) grp->lights[i]->devid};
-		//						devsets.push_back(nset);
-		//					}
-		//					if (map.flags) {
-		//						// gauge
-		//						lSets.clear();
-		//						if (((double) i) / grp->lights.size() < power) {
-		//							if (((double) i + 1) / grp->lights.size() < power)
-		//								lSets.push_back(to);
-		//							else {
-		//								// recalc...
-		//								double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
-		//								fin.r = (unsigned char) ((1.0 - newPower) * from.r + newPower * to.r);
-		//								fin.g = (unsigned char) ((1.0 - newPower) * from.g + newPower * to.g);
-		//								fin.b = (unsigned char) ((1.0 - newPower) * from.b + newPower * to.b);
-		//								fin.r = (fin.r * fin.r) >> 8;
-		//								fin.g = (fin.g * fin.g) >> 8;
-		//								fin.b = (fin.b * fin.b) >> 8;
-		//								lSets.push_back(fin);
-		//							}
-		//						} else
-		//							lSets.push_back(from);
-		//						devsets[dind].fullSets.push_back(lSets);
-		//					}
-		//					devsets[dind].lIDs.push_back((UCHAR) grp->lights[i]->lightid);
-		//				}
-		//				if (grp->lights.size()) {
-		//					for (int dind = 0; dind < devsets.size(); dind++) {
-		//						AlienFX_SDK::Functions *dev = LocateDev(devsets[dind].did);
-		//						if (dev && dev->IsDeviceReady())
-		//							if (map.flags)
-		//								dev->SetMultiColor((int) devsets[dind].lIDs.size(), devsets[dind].lIDs.data(), devsets[dind].fullSets);
-		//							else
-		//								dev->SetMultiLights((int) devsets[dind].lIDs.size(), devsets[dind].lIDs.data(), fin.r, fin.r, fin.b);
-		//					}
-		//				}
-		//			}
-		//		} else {
-		//			AlienFX_SDK::Functions *dev = LocateDev(map.devid);
-		//			if (dev && dev->IsDeviceReady())
-		//				dev->SetColor(map.lightid, fin.r, fin.g, fin.b);
-		//		}
-		//	}
-		//}
-		//for (int i = 0; i < devs.size(); i++)
-		//	devs[i]->UpdateColors();
-		//UnblockUpdates(true, true);
-
 		for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
 			haptics_map map = config->hap_conf->mappings[i];
 			vector<AlienFX_SDK::afx_act> actions;
@@ -609,7 +527,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (!wasDelay && src->lightQuery.size() > maxQlights) {
 				src->GetConfig()->monDelay += 50;
 				wasDelay = true;
-				OutputDebugString((string("Query so big (") +
+				DebugPrint((string("Query so big (") +
 								   to_string((int) src->lightQuery.size()) +
 								   "), delay increased to" +
 								   to_string(src->GetConfig()->monDelay) +
@@ -632,9 +550,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (current.update) {
 				// update command
 				wasDelay = false;
-				//#ifdef _DEBUG
-				//					OutputDebugString("Update:\n");
-				//#endif
+				// DebugPrint("Update:\n");
 				if (src->GetConfig()->stateOn) {
 					for (int i = 0; i < devs_query.size(); i++) {
 						AlienFX_SDK::Functions* dev = src->LocateDev(devs_query[i].devID);
@@ -654,9 +570,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 										acts.push_back(devQ->dev_query[j].second);
 									}
 								}
-								//#ifdef _DEBUG
-								//									OutputDebugString("Updating device...\n");
-								//#endif
+
+								// DebugPrint("Updating device...\n");
+
 								if (dev->IsDeviceReady()) {
 #ifdef _DEBUG
 									if (lights.size() != acts.size())
@@ -664,7 +580,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 #endif
 									dev->SetMultiColor((int)lights.size(), lights.data(), acts, current.flags);
 									dev->UpdateColors();
-									src->UpdateGlobalEffect(dev);
+									if (dev->GetVersion() == 5)
+										src->UpdateGlobalEffect(dev);
 								} //else
 									//dev->Reset(true);
 								devQ->dev_query.clear();
@@ -679,10 +596,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				//src->lightQuery.pop_front();
 			} else {
 				// set light
-				//const unsigned delta = 256 - src->GetConfig()->dimmingPower;
-				//vector<AlienFX_SDK::afx_act> actions;// = current.actions;
 				AlienFX_SDK::Functions* dev = src->LocateDev(current.did);
-				//byte flags = src->afx_dev.GetFlags(current.did, current.lid);
+
 				if (dev) {
 					vector<AlienFX_SDK::afx_act> actions;// = current.actions;
 					byte flags = src->afx_dev.GetFlags(current.did, current.lid);
@@ -690,18 +605,17 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						AlienFX_SDK::afx_act action = current.actions[i];
 						// gamma-correction...
 						if (src->GetConfig()->gammaCorrection) {
-							// TODO - fix max=254 (>>8 not right, 255 in fact)
-							action.r = (action.r * action.r) / 255;
-							action.g = (action.g * action.g) / 255;
-							action.b = (action.b * action.b) / 255;
+							action.r = ((UINT) action.r * action.r) / 255;
+							action.g = ((UINT) action.g * action.g) / 255;
+							action.b = ((UINT) action.b * action.b) / 255;
 						}
 						// Dimming...
 						// For v0-v3 devices only, v4 and v5 have hardware dimming
 						if (dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
 							unsigned delta = 256 - src->GetConfig()->dimmingPower;
-							action.r = (action.r * delta) >> 8;
-							action.g = (action.g * delta) >> 8;
-							action.b = (action.b * delta) >> 8;
+							action.r = ((UINT) action.r * delta) / 255;// >> 8;
+							action.g = ((UINT) action.g * delta) / 255;// >> 8;
+							action.b = ((UINT) action.b * delta) / 255;// >> 8;
 						}
 						actions.push_back(action);
 					}
@@ -721,40 +635,40 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 												   to_string(actions[0].b) + "/" +
 												   to_string(actions[1].r) + "-" +
 												   to_string(actions[1].g) + "-" +
-												   to_string(actions[1].b) + "-" +
+												   to_string(actions[1].b) +
 												   "\n")).c_str());
 
-								if (!current.flags)
+								pbstate = actions;
+								if (!current.flags) {
 									dev->SetPowerAction(current.lid,
 														actions[0].r, actions[0].g, actions[0].b,
 														actions[1].r, actions[1].g, actions[1].b);
+									continue;
+								}
 								else
 									actions[0].type = AlienFX_SDK::AlienFX_A_Power;
-
-								pbstate = actions;
 							} else {
 								DebugPrint("Setting power button skipped, same colors\n");
-								ResetEvent(src->haveNewElement);
 								continue;
 							}
 						}
 					}
-					if (current.flags || !(flags & ALIENFX_FLAG_POWER)) {
-						// find query....
-						int qn;
-							for (qn = 0; qn < devs_query.size(); qn++)
-								if (devs_query[qn].devID == current.did) {
-									devs_query[qn].dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
-										break;
-								}
-						if (qn == devs_query.size()) {
-							// create new query!
-							deviceQuery newQ;
-								newQ.devID = current.did;
-							newQ.dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
-							devs_query.push_back(newQ);
+
+					// fill query....
+					int qn;
+					for (qn = 0; qn < devs_query.size(); qn++)
+						if (devs_query[qn].devID == current.did) {
+							devs_query[qn].dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
+								break;
 						}
+					if (qn == devs_query.size()) {
+						// create new query!
+						deviceQuery newQ;
+						newQ.devID = current.did;
+						newQ.dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
+						devs_query.push_back(newQ);
 					}
+
 				}
 			}
 		}

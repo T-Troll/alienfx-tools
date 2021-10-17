@@ -31,7 +31,8 @@ mapping *FindMapping(int lid) {
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
-    mapping *map = NULL;
+    
+    mapping *map = FindMapping(eItem);
 
     switch (message) {
     case WM_INITDIALOG:
@@ -61,46 +62,45 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
         conf->amb_conf->hDlg = hDlg;
 
-        //if (eItem != (-1)) {
-        //    ListBox_SetCurSel(light_list, eItem);
-        //    SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-        //}
+        if (eItem >= 0) {
+            SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
+        }
 
     } break;
     case WM_COMMAND:
     {
-        int lbItem = (int) SendMessage(light_list, LB_GETCURSEL, 0, 0);
-        int lid = (int) SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
+        
         switch (LOWORD(wParam)) {
         case IDC_LIGHTS: // should reload mappings
             switch (HIWORD(wParam)) {
                 case LBN_SELCHANGE:
                 {
                     // check in config - do we have mappings?
-                    map = FindMapping(lid);
-                    if (map == NULL) {
-                        mapping newmap;
-                        if (lid > 0xffff) {
-                            // group
-                            newmap.devid = 0;
-                            newmap.lightid = lid;
-                        } else {
-                            // light
-                            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-                            newmap.devid = lgh.devid;
-                            newmap.lightid = lgh.lightid;
-                        }
-                        conf->amb_conf->mappings.push_back(newmap);
-                        //std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
-                        map = FindMapping(lid);
+                    eItem = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
+                    map = FindMapping(eItem);
+                    //if (map == NULL) {
+                    //    mapping newmap;
+                    //    if (lid > 0xffff) {
+                    //        // group
+                    //        newmap.devid = 0;
+                    //        newmap.lightid = lid;
+                    //    } else {
+                    //        // light
+                    //        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+                    //        newmap.devid = lgh.devid;
+                    //        newmap.lightid = lgh.lightid;
+                    //    }
+                    //    conf->amb_conf->mappings.push_back(newmap);
+                    //    //std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
+                    //    map = FindMapping(lid);
+                    //}
+                    UINT bid = IDC_CHECK1;
+                    // clear checks...
+                    for (int i = 0; i < 12; i++) {
+                        CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
                     }
                     if (map) {
                         // load zones....
-                        UINT bid = IDC_CHECK1;
-                        // clear checks...
-                        for (int i = 0; i < 12; i++) {
-                            CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
-                        }
                         for (int j = 0; j < map->map.size(); j++) {
                             CheckDlgButton(hDlg, bid + map->map[j], BST_CHECKED);
                         }
@@ -116,51 +116,49 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             {
                 UINT id = LOWORD(wParam) - IDC_BUTTON1;
                 UINT bid = IDC_CHECK1 + id;
-                if (lid >= 0) {
-                    map = FindMapping(lid);
-                    if (!map) {
-                        mapping newmap;
-                        if (lid > 0xffff) {
-                            // group
-                            newmap.devid = 0;
-                            newmap.lightid = lid;
-                        } else {
-                            // light
-                            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-                            newmap.devid = lgh.devid;
-                            newmap.lightid = lgh.lightid;
-                        }
-                        conf->amb_conf->mappings.push_back(newmap);
-                        //std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
-                        map = FindMapping(lid);
-                    }
-                    // add mapping
-                    vector <unsigned char>::iterator Iter = map->map.begin();
-                    int i = 0;
-                    for (i = 0; i < map->map.size(); i++)
-                        if (map->map[i] == id)
-                            break;
-                        else
-                            Iter++;
-                    HWND cBid = GetDlgItem(hDlg, bid);
-                    if (i == map->map.size()) {
-                        // new mapping, add and select
-                        map->map.push_back(id);
-                        CheckDlgButton(hDlg, bid, BST_CHECKED);
+                if (!map) {
+                    mapping newmap;
+                    if (eItem > 0xffff) {
+                        // group
+                        newmap.devid = 0;
+                        newmap.lightid = eItem;
                     } else {
-                        map->map.erase(Iter);
-                        if (!map->map.size()) {
-                            // delete mapping!
-                            vector<mapping>::iterator mIter;
-                            for (mIter = conf->amb_conf->mappings.begin(); mIter != conf->amb_conf->mappings.end(); mIter++)
-                                if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
-                                    conf->amb_conf->mappings.erase(mIter);
-                                    break;
-                                }
-                        }
-                        CheckDlgButton(hDlg, bid, BST_UNCHECKED);
+                        // light
+                        AlienFX_SDK::mapping* lgh = &fxhl->afx_dev.GetMappings()->at(eItem);
+                        newmap.devid = lgh->devid;
+                        newmap.lightid = lgh->lightid;
                     }
+                    conf->amb_conf->mappings.push_back(newmap);
+                    //std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
+                    map = FindMapping(eItem);
                 }
+                // add mapping
+                vector <unsigned char>::iterator Iter = map->map.begin();
+                int i = 0;
+                for (i = 0; i < map->map.size(); i++)
+                    if (map->map[i] == id)
+                        break;
+                    else
+                        Iter++;
+                HWND cBid = GetDlgItem(hDlg, bid);
+                if (i == map->map.size()) {
+                    // new mapping, add and select
+                    map->map.push_back(id);
+                    CheckDlgButton(hDlg, bid, BST_CHECKED);
+                } else {
+                    map->map.erase(Iter);
+                    if (!map->map.size()) {
+                        // delete mapping!
+                        vector<mapping>::iterator mIter;
+                        for (mIter = conf->amb_conf->mappings.begin(); mIter != conf->amb_conf->mappings.end(); mIter++)
+                            if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
+                                conf->amb_conf->mappings.erase(mIter);
+                                break;
+                            }
+                    }
+                    CheckDlgButton(hDlg, bid, BST_UNCHECKED);
+                }
+
             } break;
             }
         } break;
@@ -187,8 +185,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         break;
         case IDC_BUTTON_RESET:
         if (eve->capt) {
-            eve->capt->Stop();
-            //UpdateLightList<FXHelper>(light_list, fxhl, 3);
             eve->capt->Restart();
         }
         break;
@@ -201,7 +197,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         if ((HWND) lParam == brSlider) {
             conf->amb_conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
             SetSlider(sTip, conf->amb_conf->shift);
-            //fxhl->ChangeState();
         }
         break;
         default:
@@ -242,8 +237,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     case WM_CLOSE: 
     case WM_DESTROY:
         conf->amb_conf->hDlg = NULL;
-    //Shell_NotifyIcon(NIM_DELETE, &niData);
-    //PostQuitMessage(0);
     break;
     //case WM_POWERBROADCAST:
     //switch (wParam) {

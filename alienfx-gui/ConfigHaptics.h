@@ -36,8 +36,9 @@ public:
 	DWORD numpts = 2048;
 	DWORD inpType = 0;
 	DWORD showAxis = 1;
-	//DWORD stateOn = 1;
-	//DWORD offPowerButton = 0;
+
+	HWND dlg = NULL;
+
 	std::vector<haptics_map> mappings;
 
 	ConfigHaptics();

@@ -1,5 +1,4 @@
 #include "alienfx-gui.h"
-//#include <windowsx.h>
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 void ReloadProfileList(HWND hDlg);
@@ -8,7 +7,6 @@ bool DoStopService(bool kind);
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
-//static int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -27,7 +25,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_SCREENOFF, BST_CHECKED);
 		if (conf->IsMonitoring()) CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, BST_CHECKED);
 		if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
-		//if (conf->IsDimmed()) CheckDlgButton(hDlg, IDC_CHECK_DIM, BST_CHECKED);
 		if (conf->dimPowerButton) CheckDlgButton(hDlg, IDC_POWER_DIM, BST_CHECKED);
 		if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
 		if (conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
@@ -40,32 +37,39 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
 		sTip = CreateToolTip(dim_slider, sTip);
 		SetSlider(sTip, conf->dimmingPower);
-		// set effect, colors and delay
-		ComboBox_AddString(eff_list, "None");
-		ComboBox_SetItemData(eff_list, 0, 0);
-		ComboBox_AddString(eff_list, "Color");
-		ComboBox_SetItemData(eff_list, 1, 1);
-		ComboBox_AddString(eff_list, "Breathing");
-		ComboBox_SetItemData(eff_list, 2, 2);
-		ComboBox_AddString(eff_list, "Single-color Wave");
-		ComboBox_SetItemData(eff_list, 3, 3);
-		ComboBox_AddString(eff_list, "Dual-color Wave ");
-		ComboBox_SetItemData(eff_list, 4, 4);
-		ComboBox_AddString(eff_list, "Pulse");
-		ComboBox_SetItemData(eff_list, 5, 8);
-		ComboBox_AddString(eff_list, "Mixed Pulse");
-		ComboBox_SetItemData(eff_list, 6, 9);
-		ComboBox_AddString(eff_list, "Night Rider");
-		ComboBox_SetItemData(eff_list, 7, 10);
-		ComboBox_AddString(eff_list, "Lazer");
-		ComboBox_SetItemData(eff_list, 8, 11);
-		ComboBox_SetCurSel(eff_list, conf->globalEffect);
-		// now sliders...
-		SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
-		SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
-		SendMessage(eff_tempo, TBM_SETPOS, true, conf->globalDelay);
-		lTip = CreateToolTip(eff_tempo, lTip);
-		SetSlider(lTip, conf->globalDelay);
+		// set global effect, colors and delay
+		if (conf->haveV5) {
+			ComboBox_AddString(eff_list, "None");
+			ComboBox_SetItemData(eff_list, 0, 0);
+			ComboBox_AddString(eff_list, "Color");
+			ComboBox_SetItemData(eff_list, 1, 1);
+			ComboBox_AddString(eff_list, "Breathing");
+			ComboBox_SetItemData(eff_list, 2, 2);
+			ComboBox_AddString(eff_list, "Single-color Wave");
+			ComboBox_SetItemData(eff_list, 3, 3);
+			ComboBox_AddString(eff_list, "Dual-color Wave ");
+			ComboBox_SetItemData(eff_list, 4, 4);
+			ComboBox_AddString(eff_list, "Pulse");
+			ComboBox_SetItemData(eff_list, 5, 8);
+			ComboBox_AddString(eff_list, "Mixed Pulse");
+			ComboBox_SetItemData(eff_list, 6, 9);
+			ComboBox_AddString(eff_list, "Night Rider");
+			ComboBox_SetItemData(eff_list, 7, 10);
+			ComboBox_AddString(eff_list, "Lazer");
+			ComboBox_SetItemData(eff_list, 8, 11);
+			ComboBox_SetCurSel(eff_list, conf->globalEffect);
+			// now sliders...
+			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
+			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
+			SendMessage(eff_tempo, TBM_SETPOS, true, conf->globalDelay);
+			lTip = CreateToolTip(eff_tempo, lTip);
+			SetSlider(lTip, conf->globalDelay);
+		} else {
+			EnableWindow(eff_list, false);
+			EnableWindow(eff_tempo, false);
+			EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR1), false);
+			EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR2), false);
+		}
 	} break;
 	case WM_COMMAND: {
 		int eItem = ComboBox_GetCurSel(eff_list);

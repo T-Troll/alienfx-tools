@@ -144,7 +144,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
 	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
 	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
-	haptics_map *map = NULL;
+	
+	
+	haptics_map *map = FindMapping(eItem);
 
 	switch (message) {
 	case WM_INITDIALOG:
@@ -183,34 +185,30 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
 		CheckDlgButton(hDlg, IDC_SHOWAXIS, conf->hap_conf->showAxis ? BST_CHECKED : BST_UNCHECKED);
 
-		if (eve->audio)
-			eve->audio->SetDlg(hDlg);
+		conf->hap_conf->dlg = hDlg;
 
-		//if (eItem != (-1)) {
-		//	ListBox_SetCurSel(light_list, eItem);
-		//	SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-		//}
+		if (eItem >= 0) {
+			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
+		}
 	}
 	break;
 
 	case WM_COMMAND:
 	{
-		int lbItem = (int) SendMessage(light_list, LB_GETCURSEL, 0, 0);
-		int lid = (int) SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-		int fid = (int) SendMessage(freq_list, LB_GETCURSEL, 0, 0);
-		map = FindMapping(lid);
+		//int lid = ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
+		//int fid = (int) ListBox_GetItemData(freq_list, LB_GETCURSEL, 0, 0);
 		switch (LOWORD(wParam)) {
 		case IDC_RADIO_OUTPUT:
-		conf->hap_conf->inpType = 0;
-		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
-		if (eve->audio)
-			eve->audio->RestartDevice(conf->hap_conf->inpType);
+			conf->hap_conf->inpType = 0;
+			CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
+			if (eve->audio)
+				eve->audio->RestartDevice(conf->hap_conf->inpType);
 		break;
 		case IDC_RADIO_INPUT:
-		conf->hap_conf->inpType = 1;
-		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
+			conf->hap_conf->inpType = 1;
+			CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
 		if (eve->audio)
 			eve->audio->RestartDevice(conf->hap_conf->inpType);
 		break;
@@ -219,17 +217,19 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case LBN_SELCHANGE:
 		{
 			// check in config - do we have mappings?
+			eItem = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
+			map = FindMapping(eItem);
 			if (!map) {
 				haptics_map newmap;
-				if (lid > 0xffff) {
+				if (eItem > 0xffff) {
 					// group
 					newmap.devid = 0;
-					newmap.lightid = lid;
+					newmap.lightid = eItem;
 				} else {
 					// light
-					AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-					newmap.devid = lgh.devid;
-					newmap.lightid = lgh.lightid;
+					AlienFX_SDK::mapping* lgh = &fxhl->afx_dev.GetMappings()->at(eItem);
+					newmap.devid = lgh->devid;
+					newmap.lightid = lgh->lightid;
 				}
 				newmap.colorfrom.ci = 0;
 				newmap.colorto.ci = 0;
@@ -238,7 +238,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				newmap.flags = 0;
 				conf->hap_conf->mappings.push_back(newmap);
 				//std::sort(config->mappings.begin(), config->mappings.end(), ConfigHaptics::sortMappings);
-				map = FindMapping(lid);
+				map = FindMapping(eItem);
 			}
 			// load freq....
 			EnableWindow(freq_list, TRUE);
@@ -267,6 +267,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				if (map != NULL) {
 					// add mapping
+					int fid = ListBox_GetCurSel(freq_list);
 					std::vector <unsigned char>::iterator Iter = map->map.begin();
 					int i = 0;
 					for (i = 0; i < map->map.size(); i++)
@@ -347,12 +348,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	} break;
 	case WM_HSCROLL:
 	{
-		int lbItem = (int) SendMessage(light_list, LB_GETCURSEL, 0, 0);
-		int lid = (int) SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 		{
-			map = FindMapping(lid);
 			if (map != NULL) {
 				if ((HWND) lParam == hLowSlider) {
 					map->lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
@@ -367,31 +365,26 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 	} break;
 	case WM_DRAWITEM:
-	switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
-	case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
-	{
-		int lbItem = (int) SendMessage(light_list, LB_GETCURSEL, 0, 0);
-		int lid = (int) SendMessage(light_list, LB_GETITEMDATA, lbItem, 0);
-		if (lid > 0) {
-			haptics_map *map = FindMapping(lid);
+		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
+		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
+		{
 			if (map)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
 					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
 				else
 					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
-		} else
-			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, 0, 0, 0);
-		return 0;
-	}
-	case IDC_LEVELS:
-	DrawFreq(hDlg, NULL);
-	return 0;
-	}
+			else
+				RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, 0, 0, 0);
+			return 0;
+		}
+		case IDC_LEVELS:
+			DrawFreq(hDlg, NULL);
+			return 0;
+		}
 	break;
 	case WM_CLOSE: 
 	case WM_DESTROY:
-	if (eve->audio)
-		eve->audio->SetDlg(NULL);
+		conf->hap_conf->dlg = NULL;
 	break;
 	default: return false;
 	}

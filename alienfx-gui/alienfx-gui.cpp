@@ -248,6 +248,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
+	UNREFERENCED_PARAMETER(nCmdShow);
 
 	conf = new ConfigHandler();
 	conf->Load();
@@ -302,7 +303,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		eve = new EventHandler(conf, mon, fxhl);
 		eve->ChangePowerState();
 
-		if (!(mDlg = InitInstance(hInstance, nCmdShow)))
+		if (!(mDlg = InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL /*nCmdShow*/)))
 			return FALSE;
 
 		//register global hotkeys...
@@ -337,9 +338,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
-		// minimize if needed
-		if (conf->startMinimized)
-			SendMessage(mDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
 		MSG msg;
@@ -392,24 +390,31 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 // From toolset.
 int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
-	int pos = -1;
+	int pos = -1, selpos = -1;
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
 	size_t groups = fxhl->afx_dev.GetGroups()->size();
-	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+	
+	ListBox_ResetContent(light_list);
+
 	for (int i = 0; i < groups; i++) {
 		AlienFX_SDK::group grp = fxhl->afx_dev.GetGroups()->at(i);
 		string fname = grp.name + " (Group)";
-		pos = (int) SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM) (fname.c_str()));
-		SendMessage(light_list, LB_SETITEMDATA, pos, grp.gid);
+		pos = ListBox_AddString(light_list, fname.c_str());
+		ListBox_SetItemData(light_list, pos, grp.gid);
+		if (grp.gid == eItem)
+			ListBox_SetCurSel(light_list, selpos = pos);
 	}
 	for (int i = 0; i < lights; i++) {
 		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
 		if (fxhl->LocateDev(lgh.devid) && !(lgh.flags & flag)) {
-			pos = (int) SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM) (lgh.name.c_str()));
-			SendMessage(light_list, LB_SETITEMDATA, pos, i);
+			pos = ListBox_AddString(light_list, lgh.name.c_str());
+			ListBox_SetItemData(light_list, pos, i);
+			if (i == eItem)
+				ListBox_SetCurSel(light_list, selpos = pos);
 		}
 	}
-	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+	//RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
+	if (selpos < 0) eItem = -1;
 	return pos;
 }
 
@@ -617,10 +622,10 @@ VOID OnSelChanged(HWND hwndDlg)
 	case 8: tdl = (DLGPROC)TabSettingsDialog; break;
 	default: tdl = (DLGPROC)TabColorDialog;
 	}
-	HWND newDisplay = CreateDialogIndirect(hInst,
+
+	pHdr->hwndDisplay = CreateDialogIndirect(hInst,
 		(DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
-	if (pHdr->hwndDisplay == NULL)
-		pHdr->hwndDisplay = newDisplay;
+
 	if (pHdr->hwndDisplay != NULL)
 		SetWindowPos(pHdr->hwndDisplay, NULL,
 			pHdr->rcDisplay.left, pHdr->rcDisplay.top,
@@ -768,22 +773,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OnSelChanged(tab_list);
 			break;
 		case ID_ACC_EVENTS:
-			//if (conf->effectMode == 0) {
 				TabCtrl_SetCurSel(tab_list, 1);
 				OnSelChanged(tab_list);
-			//}
 			break;
 		case ID_ACC_AMBIENT:
-			//if (conf->effectMode == 1) {
 				TabCtrl_SetCurSel(tab_list, 2);
 				OnSelChanged(tab_list);
-			//}
 		break;
 		case ID_ACC_HAPTICS:
-			//if (conf->effectMode == 2) {
 				TabCtrl_SetCurSel(tab_list, 3);
 				OnSelChanged(tab_list);
-			//}
 			break;
 		case ID_ACC_GROUPS:
 			TabCtrl_SetCurSel(tab_list, 4);
@@ -811,6 +810,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case CBN_SELCHANGE:
 			{
 				eve->ChangeEffectMode(ComboBox_GetCurSel(mode_list));
+				OnSelChanged(tab_list);
 			} break;
 			}
 		} break;
@@ -914,6 +914,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
+		case NIN_BALLOONHIDE : case NIN_BALLOONTIMEOUT:
+			// ToDo: fix (doesn't work now)
+			if (!isNewVersion) {
+				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+				Shell_NotifyIcon(NIM_ADD, &conf->niData);
+			}
+			break;
 		case NIN_BALLOONUSERCLICK:
 		{
 			if (isNewVersion) {
@@ -921,7 +928,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				LoadString(hInst, IDS_UPDATEPAGE, uurl, MAX_PATH);
 				ShellExecute(NULL, "open", uurl, NULL, NULL, SW_SHOWNORMAL);
 				isNewVersion = false;
-			}
+			} 
 		} break;
 		}
 		break;
@@ -966,12 +973,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ShowWindow(hDlg, SW_RESTORE);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+			ReloadModeList(mode_list, conf->GetEffect());
 			ReloadProfileList(hDlg);
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
-			if (/*!conf->enableProf &&*/ idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
+			if (idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
 				eve->SwitchActiveProfile(&conf->profiles[idx]);
+				ComboBox_SetCurSel(mode_list, conf->GetEffect());
 				ReloadProfileList(hDlg);
 				OnSelChanged(tab_list);
 			}
@@ -1063,14 +1072,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 			fxhl->ChangeState();
 			break;
-		case 4:
-		{// mon
-			//int newMode = conf->effectMode == 3 ? 0 : conf->effectMode + 1;
-			//eve->ChangeEffectMode(newMode);
+		case 4: // effects
 			conf->enableMon = !conf->IsMonitoring();
-			//conf->SetMonitoring(!conf->IsMonitoring());
 			eve->ToggleEvents();
-		} break;
+		break;
 		default: return false;
 		}
 		break;
