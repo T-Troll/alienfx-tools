@@ -415,7 +415,7 @@ int FXHelper::RefreshAmbient(UCHAR *img) {
 		mapping map = config->amb_conf->mappings[i];
 		vector<AlienFX_SDK::afx_act> actions;
 		AlienFX_SDK::afx_act fin = {0};
-		unsigned r = 0, g = 0, b = 0, size = (unsigned) map.map.size();
+		ULONG r = 0, g = 0, b = 0, size = (ULONG) map.map.size();
 		if (size > 0) {
 			for (unsigned j = 0; j < size; j++) {
 				r += img[3 * map.map[j] + 2];
@@ -424,9 +424,9 @@ int FXHelper::RefreshAmbient(UCHAR *img) {
 			}
 
 			// Multilights correction...
-			fin.r = ((r * shift) / size) >> 8;
-			fin.g = ((g * shift) / size) >> 8;
-			fin.b = ((b * shift) / size) >> 8;
+			fin.r = (BYTE) ((r * shift) / size) / 255;
+			fin.g = (BYTE) ((g * shift) / size) / 255;
+			fin.b = (BYTE) ((b * shift) / size) / 255;
 
 			actions.push_back(fin);
 			if (map.lightid > 0xffff) {
