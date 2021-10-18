@@ -73,7 +73,7 @@ void EventHandler::ChangePowerState()
 
 void EventHandler::ChangeScreenState(DWORD state)
 {
-	if (conf->lightsOn && conf->offWithScreen) {
+	if (conf->lightsOn && (conf->offWithScreen || capt)) {
 		if (state == 2) {
 			// Dim display
 			conf->dimmedScreen = true;

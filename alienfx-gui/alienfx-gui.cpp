@@ -809,6 +809,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
+				conf->FindProfile(conf->activeProfile)->effmode = ComboBox_GetCurSel(mode_list);
 				eve->ChangeEffectMode(ComboBox_GetCurSel(mode_list));
 				OnSelChanged(tab_list);
 			} break;
@@ -959,6 +960,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ReloadModeList(mode_list, conf->GetEffect());
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
+			conf->FindProfile(conf->activeProfile)->effmode = idx;
 			eve->ChangeEffectMode(idx);
 			ComboBox_SetCurSel(mode_list, idx);
 			break;

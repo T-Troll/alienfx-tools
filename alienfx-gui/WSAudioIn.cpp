@@ -279,16 +279,11 @@ DWORD WINAPI resample(LPVOID lpParam)
 
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
-			//freqs = dftGG->calc(waveDouble);
-			//currentTick = GetTickCount64();
-			//if (currentTick - lastTick > 50) {
-				freqs = src->dftGG->calc(waveDouble);
-				src->fxha->RefreshHaptics(freqs);
-				if (src->conf->dlg && !IsIconic(GetParent(GetParent(src->conf->dlg))) /*&& currentTick - lastTick > 20*/) {
-					DrawFreq(src->conf->dlg, freqs);
-				}
-				//lastTick = currentTick;
-			//}
+			freqs = src->dftGG->calc(waveDouble);
+			src->fxha->RefreshHaptics(freqs);
+			if (src->conf->dlg && !IsIconic(GetParent(GetParent(src->conf->dlg)))) {
+				DrawFreq(src->conf->dlg, freqs);
+			}
 		}
 	}
 

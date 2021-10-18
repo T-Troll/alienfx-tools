@@ -138,9 +138,9 @@ bool FindColors(UCHAR* src, UCHAR* imgz) {
 				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
 			}
 		}
-	DWORD res;
-	if ((res = WaitForMultipleObjects(12, pfEvent, true, 1000)) != WAIT_OBJECT_0) {
-		DebugPrint((string("Color calc stuck with ") + to_string(res) + "!\n").c_str());
+
+	if (WaitForMultipleObjects(12, pfEvent, true, 500) != WAIT_OBJECT_0) {
+		DebugPrint("Color calc thread stuck!\n");
 		return false;
 	}
 	return true;
@@ -178,7 +178,7 @@ DWORD WINAPI CInProc(LPVOID param)
 		// Resize & calc
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img) {
 			if (w && h) {
-				if (FindColors(img, imgz) && memcmp(imgz, imgo, GRIDSIZE)) {
+				if (fxh->unblockUpdates && FindColors(img, imgz) && memcmp(imgz, imgo, GRIDSIZE)) {
 					SetEvent(lhEvent);
 					SetEvent(uiEvent);
 					memcpy(imgo, imgz, GRIDSIZE);

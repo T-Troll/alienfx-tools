@@ -408,14 +408,14 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 }
 
 int FXHelper::RefreshAmbient(UCHAR *img) {
-	unsigned i = 0;
-	unsigned shift = 255 - config->amb_conf->shift;
 
-	for (i = 0; i < config->amb_conf->mappings.size(); i++) {
+	UINT shift = 255 - config->amb_conf->shift;
+	vector<AlienFX_SDK::afx_act> actions;
+	actions.push_back({0});
+
+	for (UINT i = 0; i < config->amb_conf->mappings.size(); i++) {
 		mapping map = config->amb_conf->mappings[i];
-		vector<AlienFX_SDK::afx_act> actions;
-		AlienFX_SDK::afx_act fin = {0};
-		ULONG r = 0, g = 0, b = 0, size = (ULONG) map.map.size();
+		UINT r = 0, g = 0, b = 0, size = (UINT) map.map.size(), dsize = size * 255;
 		if (size > 0) {
 			for (unsigned j = 0; j < size; j++) {
 				r += img[3 * map.map[j] + 2];
@@ -423,12 +423,11 @@ int FXHelper::RefreshAmbient(UCHAR *img) {
 				b += img[3 * map.map[j]];
 			}
 
-			// Multilights correction...
-			fin.r = (BYTE) ((r * shift) / size) / 255;
-			fin.g = (BYTE) ((g * shift) / size) / 255;
-			fin.b = (BYTE) ((b * shift) / size) / 255;
+			// Multilights and brightness correction...
+			actions[0].r = (BYTE) ((r * shift) / dsize);
+			actions[0].g = (BYTE) ((g * shift) / dsize);
+			actions[0].b = (BYTE) ((b * shift) / dsize);
 
-			actions.push_back(fin);
 			if (map.lightid > 0xffff) {
 				AlienFX_SDK::group *grp = afx_dev.GetGroupById(map.lightid);
 				if (grp && grp->lights.size()) {
@@ -452,59 +451,60 @@ struct devset {
 };
 
 void FXHelper::RefreshHaptics(int *freq) {
-	if (config->stateOn) {
-		for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
-			haptics_map map = config->hap_conf->mappings[i];
-			vector<AlienFX_SDK::afx_act> actions;
-			if (!map.map.empty()) {
-				double power = 0.0;
-				AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.cs.red,map.colorfrom.cs.green, map.colorfrom.cs.blue},
-					to = {0,0,0,map.colorto.cs.red,map.colorto.cs.green, map.colorto.cs.blue},
-					fin = {0};
-				// here need to check less bars...
-				for (int j = 0; j < map.map.size(); j++)
-					power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
-				if (map.map.size() > 1)
-					power = power / (map.map.size() * (map.hicut - map.lowcut));
-				fin.r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
-				fin.g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
-				fin.b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
+	vector<AlienFX_SDK::afx_act> actions;
+	actions.push_back({0});
 
-				actions.push_back(fin);
+	for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
+		haptics_map map = config->hap_conf->mappings[i];
 
-				if (map.lightid > 0xffff) {
-					// group
-					AlienFX_SDK::group *grp = afx_dev.GetGroupById(map.lightid);
-					if (grp && grp->lights.size()) {
-						for (int i = 0; i < grp->lights.size(); i++) {
-							if (map.flags) {
-								// gauge
-								if (((double) i) / grp->lights.size() < power) {
-									if (((double) i + 1) / grp->lights.size() < power)
-										actions[0] = to;
-									else {
-										// recalc...
-										double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
-										fin.r = (unsigned char) ((1.0 - newPower) * from.r + newPower * to.r);
-										fin.g = (unsigned char) ((1.0 - newPower) * from.g + newPower * to.g);
-										fin.b = (unsigned char) ((1.0 - newPower) * from.b + newPower * to.b);
-										actions[0] = (fin);
-									}
-								} else
-									actions[0] = from;
-							} else {
-								actions[0] = fin;
-							}
-							SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, actions);
-						}
+		if (!map.map.empty() && map.hicut > map.lowcut) {
+			double power = 0.0;
+			AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.cs.red,map.colorfrom.cs.green, map.colorfrom.cs.blue},
+				to = {0,0,0,map.colorto.cs.red,map.colorto.cs.green, map.colorto.cs.blue},
+				fin = {0};
+			// here need to check less bars...
+			for (int j = 0; j < map.map.size(); j++)
+				power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
+			//if (map.map.size() > 1)
+				power = power / (map.map.size() * (map.hicut - map.lowcut));
+			fin.r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
+			fin.g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
+			fin.b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
+
+			actions[0] = fin;
+
+			if (map.lightid > 0xffff) {
+				// group
+				AlienFX_SDK::group *grp = afx_dev.GetGroupById(map.lightid);
+				if (grp && grp->lights.size()) {
+					for (int i = 0; i < grp->lights.size(); i++) {
+						if (map.flags) {
+							// gauge
+							if (((double) i) / grp->lights.size() < power) {
+								if (((double) i + 1) / grp->lights.size() < power)
+									actions[0] = to;
+								else {
+									// recalc...
+									double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
+									fin.r = (unsigned char) ((1.0 - newPower) * from.r + newPower * to.r);
+									fin.g = (unsigned char) ((1.0 - newPower) * from.g + newPower * to.g);
+									fin.b = (unsigned char) ((1.0 - newPower) * from.b + newPower * to.b);
+									actions[0] = fin;
+								}
+							} else
+								actions[0] = from;
+						} //else {
+						//	actions[0] = fin;
+						//}
+						SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, actions);
 					}
-				} else {
-					SetLight(map.devid, map.lightid, actions);
 				}
+			} else {
+				SetLight(map.devid, map.lightid, actions);
 			}
 		}
-		QueryUpdate(-1, false);
 	}
+	QueryUpdate(-1, false);
 }
 
 DWORD WINAPI CLightsProc(LPVOID param) {
