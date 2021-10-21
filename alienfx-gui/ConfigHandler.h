@@ -72,7 +72,7 @@ public:
 	DWORD block_power = 0;
 	DWORD gammaCorrection = 1;
 	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
-	DWORD lastActive = 0;
+	//DWORD lastActive = 0;
 	DWORD monDelay = 200;
 	bool wasAWCC = false;
 	Colorcode testColor, effColor1, effColor2;

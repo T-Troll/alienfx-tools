@@ -15,6 +15,11 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
 	HWND light_list = GetDlgItem(hDlg, IDC_LIST_LIGHTS); 
 
+	// clear light options...
+	SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
+	CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
+	CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
+
 	ListView_DeleteAllItems(light_list);
 	ListView_SetExtendedListViewStyle(light_list, LVS_EX_FULLROWSELECT);
 	LVCOLUMNA lCol;
@@ -23,16 +28,16 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	ListView_DeleteColumn(light_list, 0);
 	ListView_InsertColumn(light_list, 0, &lCol);
 	for (int i = 0; i < lights; i++) {
-		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-		if (pid == lgh.devid) { // && fxhl->LocateDev(lgh.devid)) {
+		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
+		if (pid == lgh->devid) { // && fxhl->LocateDev(lgh.devid)) {
 			LVITEMA lItem; 
 			lItem.mask = LVIF_TEXT | LVIF_PARAM;
 			lItem.iItem = i;
 			lItem.iImage = 0;
 			lItem.iSubItem = 0;
-			lItem.lParam = lgh.lightid;
-			lItem.pszText = (char*)lgh.name.c_str();
-			if (lid == lgh.lightid) {
+			lItem.lParam = lgh->lightid;
+			lItem.pszText = (char*)lgh->name.c_str();
+			if (lid == lgh->lightid) {
 				lItem.mask |= LVIF_STATE;
 				lItem.state = LVIS_SELECTED;
 				pos = i;
@@ -54,23 +59,21 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 
 void UpdateDeviceList(HWND hDlg) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICES);
-	//size_t lights = fxhl->afx_dev.GetMappings()->size();
 	// Now check current device list..
 	int pos = (-1);
 	ComboBox_ResetContent(dev_list);
 	for (UINT i = 0; i < fxhl->devs.size(); i++) {
-		//cpid = fxhl->devs[i]->GetPID();
 		AlienFX_SDK::devmap* cDev = fxhl->afx_dev.GetDeviceById(fxhl->devs[i]->GetPID(), fxhl->devs[i]->GetVid());
 		if (cDev) {
 			if (!cDev->vid)
 				cDev->vid = fxhl->devs[i]->GetVid();
-			pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(cDev->name.c_str()));
-			SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)cDev->devid);
+			pos = ComboBox_AddString(dev_list, cDev->name.c_str());
+			ComboBox_SetItemData(dev_list, pos, cDev->devid);
 		} else {
 			// no name
 			string devName = "Device #" + to_string(fxhl->devs[i]->GetVid()) + "_" + to_string(fxhl->devs[i]->GetPID());
-			pos = (int)SendMessage(dev_list, CB_ADDSTRING, 0, (LPARAM)(devName.c_str()));
-			SendMessage(dev_list, CB_SETITEMDATA, pos, (LPARAM)fxhl->devs[i]->GetPID());
+			pos = ComboBox_AddString(dev_list, devName.c_str());
+			ComboBox_SetItemData(dev_list, pos, fxhl->devs[i]->GetPID());
 			// need to add device mapping...
 			AlienFX_SDK::devmap newDev;
 			newDev.vid = fxhl->devs[i]->GetVid();
@@ -79,21 +82,22 @@ void UpdateDeviceList(HWND hDlg) {
 			fxhl->afx_dev.GetDevices()->push_back(newDev);
 			fxhl->afx_dev.SaveMappings();
 		}
-		if (fxhl->devs[i]->GetPID() == conf->lastActive) {
+		if (fxhl->devs[i]->GetPID() == eDid) {
 			// select this device.
-			SendMessage(dev_list, CB_SETCURSEL, pos, (LPARAM)0);
-			eDid = fxhl->devs[i]->GetPID(); dItem = pos;
+			ComboBox_SetCurSel(dev_list, pos);
+			eDid = fxhl->devs[i]->GetPID(); 
+			dItem = pos;
 		}
 	}
 
 	eLid = -1;
 
-	if (fxhl->devs.size() > 0) {
+	if (fxhl->devs.size()) {
 		if (eDid == -1) { // no selection, let's try to select dev#0
 			dItem = 0;
 			eDid = fxhl->devs[0]->GetPID();
-			SendMessage(dev_list, CB_SETCURSEL, 0, (LPARAM)0);
-			conf->lastActive = eDid;
+			ComboBox_SetCurSel(dev_list, 0);
+			//conf->lastActive = eDid;
 		}
 		fxhl->TestLight(eDid, -1);
 		UpdateLightsList(hDlg, eDid, -1);
@@ -124,30 +128,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				conf->lastActive = did;
-				fxhl->TestLight(did, -1);
-				UpdateLightsList(hDlg, did, -1);
+				//conf->lastActive = did;
 				eLid = -1;
 				eDid = did; dItem = dbItem;
-				switch (fxhl->LocateDev(eDid)->GetVersion()) {
-				case 1: case 2: case 3:
-					// unblock delay
-					EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), true);
-					break;
-				case 5:
-					// unblock effects and delay
-					EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), true);
-					EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), true);
-					EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), true);
-					EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), true);
-					break;
-				default:
-					// block effects and delay
-					EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), false);
-					EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), false);
-					EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), false);
-					EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), false);
-				}
+				fxhl->TestLight(eDid, -1);
+				UpdateLightsList(hDlg, eDid, -1);
 			} break;
 			case CBN_EDITCHANGE:
 				char buffer[MAX_PATH];
@@ -157,9 +142,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					if (fxhl->afx_dev.GetDevices()->at(i).devid == eDid) {
 						fxhl->afx_dev.GetDevices()->at(i).name = buffer;
 						fxhl->afx_dev.SaveMappings();
-						SendMessage(dev_list, CB_DELETESTRING, dItem, 0);
-						SendMessage(dev_list, CB_INSERTSTRING, dItem, (LPARAM) (buffer));
-						SendMessage(dev_list, CB_SETITEMDATA, dItem, (LPARAM) eDid);
+						ComboBox_DeleteString(dev_list, dItem);
+						ComboBox_InsertString(dev_list, dItem, buffer);
+						ComboBox_SetItemData(dev_list, dItem, eDid);
 						break;
 					}
 				}
@@ -172,7 +157,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			unsigned maxID = 0;
 			size_t lights = fxhl->afx_dev.GetMappings()->size();
 			for (int i = 0; i < lights; i++) {
-				AlienFX_SDK::mapping* lgh = &(fxhl->afx_dev.GetMappings()->at(i));
+				AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
 				if (lgh->devid == eDid) {
 					if (lgh->lightid > maxID)
 						maxID = lgh->lightid;
@@ -180,10 +165,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						cid = maxID + 1;
 				}
 			}
-			AlienFX_SDK::mapping dev;
-			dev.devid = eDid;
-			dev.lightid = cid;
-			dev.name = "Light #" + to_string(cid); 
+			AlienFX_SDK::mapping *dev = new AlienFX_SDK::mapping({0,(DWORD)eDid,(DWORD)cid,0,"Light #" + to_string(cid)});
+			/*dev->devid = eDid;
+			dev->lightid = cid;
+			dev->name = "Light #" + to_string(cid); */
 			fxhl->afx_dev.GetMappings()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			eLid = cid;
@@ -209,24 +194,21 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					// erase mappings
 					RemoveMapping(&Iter->lightsets, eDid, eLid);
 				}
-				std::vector <AlienFX_SDK::mapping>* mapps = fxhl->afx_dev.GetMappings();
+				std::vector <AlienFX_SDK::mapping*>* mapps = fxhl->afx_dev.GetMappings();
 				int nLid = -1;
-				for (std::vector <AlienFX_SDK::mapping>::iterator Iter = mapps->begin();
+				for (std::vector <AlienFX_SDK::mapping*>::iterator Iter = mapps->begin();
 					 Iter != mapps->end(); Iter++)
-					if (Iter->devid == eDid && Iter->lightid == eLid) {
+					if ((*Iter)->devid == eDid && (*Iter)->lightid == eLid) {
+						delete *Iter;
 						mapps->erase(Iter);
 						break;
-					} else nLid = Iter->lightid;
+					} else nLid = (*Iter)->lightid;
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
 				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
 					fxhl->ResetPower(did);
 					MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning!",
 							   MB_OK);
-					CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
-				}
-				if (nLid < 0) {
-					SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
 				}
 				eLid = nLid;
 				UpdateLightsList(hDlg, eDid, eLid);
@@ -276,7 +258,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
 					fxhl->afx_dev.SetFlags(did, eLid, flags);
 				}
-				//fxhl->Refresh(true);
 			}
 			break;
 		case IDC_CHECK_INDICATOR:
@@ -286,9 +267,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_BUTTON_DEVRESET:
 		{
-			//fxhl->UnblockUpdates(false);
 			fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
-			//fxhl->UnblockUpdates(true);
 			AlienFX_SDK::Functions* dev = fxhl->LocateDev(eDid);
 			if (dev)
 				UpdateLightsList(hDlg, eDid, eLid);
@@ -330,7 +309,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					delete[] filebuf;
 					string line;
 					AlienFX_SDK::devmap tDev = {(DWORD) 0, (DWORD) 0, string("")};
-					AlienFX_SDK::mapping tMap;
 					while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 						vector<string> fields;
 						size_t pos = 0, posOld = 1;
@@ -358,18 +336,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 								break;
 							case 1: // lights line
 								if (tDev.devid) {
-									tMap.vid = tDev.vid;
-									tMap.devid = tDev.devid;
-									tMap.lightid = atol(fields[1].c_str());
-									tMap.flags = atol(fields[2].c_str());
-									tMap.name = fields[3];
+									DWORD lightid = atol(fields[1].c_str()),
+										flags = atol(fields[2].c_str());
 									// add to maps
-									AlienFX_SDK::mapping* oMap = fxhl->afx_dev.GetMappingById(tMap.devid, tMap.lightid);
+									AlienFX_SDK::mapping* oMap = fxhl->afx_dev.GetMappingById(tDev.devid, lightid);
 									if (oMap) {
-										oMap->vid = tMap.vid;
-										oMap->name = tMap.name;
-										oMap->flags = tMap.flags;
+										oMap->vid = tDev.vid;
+										oMap->name = fields[3];
+										oMap->flags = flags;
 									} else {
+										AlienFX_SDK::mapping *tMap = new AlienFX_SDK::mapping({
+											tDev.vid, tDev.devid, lightid, flags, fields[3]
+										});
 										fxhl->afx_dev.GetMappings()->push_back(tMap);
 									}
 								}
@@ -379,8 +357,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						}
 					}
 					// reload lists...
-					UpdateDeviceList(hDlg);
 					CloseHandle(file);
+					UpdateDeviceList(hDlg);
+					UpdateLightsList(hDlg, eDid, -1);
 				}
 			}
 		} break;
@@ -420,7 +399,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 								+ to_string(dev->GetPID()) + "','" + cDev->name + "'\r\n";
 							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 							for (int j = 0; j < fxhl->afx_dev.GetMappings()->size(); j++) {
-								AlienFX_SDK::mapping* cMap = &fxhl->afx_dev.GetMappings()->at(j);
+								AlienFX_SDK::mapping* cMap = fxhl->afx_dev.GetMappings()->at(j);
 								if (cMap->devid == dev->GetPID()) {
 									line = "'1','" + to_string(cMap->lightid) + "','"
 										+ to_string(cMap->flags) + "','" + cMap->name + "'\r\n";
@@ -442,7 +421,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			switch (((NMHDR*) lParam)->code) {
 			case LVN_ITEMACTIVATE:
 			{
-				//inLightEdit = true;
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
 				ListView_EditLabel(light_view, sItem->iItem);
 			} break;
@@ -457,8 +435,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(eDid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
-						//fxhl->UnblockUpdates(false);
-						// highlight to check....
 					} else {
 						SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
@@ -470,11 +446,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			} break;
 			case LVN_ENDLABELEDIT:
 			{
-				//inLightEdit = false;
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*) lParam;
 				if (sItem->item.pszText) {
 					for (UINT i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
-						AlienFX_SDK::mapping* lgh = &(fxhl->afx_dev.GetMappings()->at(i));
+						AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
 						if (lgh->devid == eDid &&
 							lgh->lightid == sItem->item.lParam) {
 							lgh->name = sItem->item.pszText;
@@ -485,8 +460,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						}
 					}
 				}
-				SetDlgItemInt(hDlg, IDC_LIGHTID, (UINT) sItem->item.lParam, false);
-				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(eDid, (int) sItem->item.lParam) ? BST_CHECKED : BST_UNCHECKED);
 				return false;
 			} break;
 			}

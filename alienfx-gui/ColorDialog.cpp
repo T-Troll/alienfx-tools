@@ -237,8 +237,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					event light = mmap->eve[0];
 					for (int i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
-						AlienFX_SDK::mapping map = fxhl->afx_dev.GetMappings()->at(i);
-						if (!(map.flags && ALIENFX_FLAG_POWER)) {
+						AlienFX_SDK::mapping* map = fxhl->afx_dev.GetMappings()->at(i);
+						if (!(map->flags && ALIENFX_FLAG_POWER)) {
 							lightset* actmap = FindMapping(i);
 							if (actmap)
 								actmap->eve[0] = light;

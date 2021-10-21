@@ -878,7 +878,7 @@ namespace AlienFX_SDK {
 		return true;
 	}
 
-	bool Functions::ToggleState(BYTE brightness, vector<mapping> *mappings, bool power) {
+	bool Functions::ToggleState(BYTE brightness, vector<mapping*> *mappings, bool power) {
 		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (length) {
 		case API_L_V5:
@@ -907,10 +907,10 @@ namespace AlienFX_SDK {
 			buffer[3] = 0x64 - (((UINT) brightness) * 0x64 / 0xff); // 00..64
 			byte pos = 6, pindex = 0;
 			for (int i = 0; i < mappings->size(); i++) {
-				mapping cur = mappings->at(i);
-				if (cur.devid == pid && pos < length)
-					if (!cur.flags || power) {
-						buffer[pos] = (byte) cur.lightid;
+				mapping* cur = mappings->at(i);
+				if (cur->devid == pid && pos < length)
+					if (!cur->flags || power) {
+						buffer[pos] = (byte) cur->lightid;
 						pos++; pindex++;
 					}
 			}
@@ -936,10 +936,10 @@ namespace AlienFX_SDK {
 			if (!brightness)
 				// it should be SetMode here, but i have no testing yet.
 				for (int i = 0; i < mappings->size(); i++) {
-					mapping cur = mappings->at(i);
-					if (cur.devid == pid) {
-						if (cur.lightid || power)
-							SetColor(cur.lightid, 0, 0, 0);
+					mapping* cur = mappings->at(i);
+					if (cur->devid == pid) {
+						if (cur->lightid || power)
+							SetColor(cur->lightid, 0, 0, 0);
 					}
 				}
 			break;
@@ -1190,8 +1190,8 @@ namespace AlienFX_SDK {
 
 	mapping *Mappings::GetMappingById(int devID, int LightID) {
 		for (int i = 0; i < mappings.size(); i++)
-			if (mappings[i].devid == devID && mappings[i].lightid == LightID)
-				return &mappings[i];
+			if (mappings[i]->devid == devID && mappings[i]->lightid == LightID)
+				return mappings[i];
 		return nullptr;
 	}
 
@@ -1205,9 +1205,9 @@ namespace AlienFX_SDK {
 			map = new mapping;
 			map->lightid = lightID;
 			map->devid = devID;
-			mappings.push_back(*map);
-			delete map;
-			map = &mappings[mappings.size() - 1];
+			mappings.push_back(map);
+			//delete map;
+			//map = &mappings.back();
 		}
 		if (name != NULL)
 			map->name = name;
@@ -1369,7 +1369,7 @@ namespace AlienFX_SDK {
 
 		for (int i = 0; i < numlights; i++) {
 			// new format
-			string name = "Light" + to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
+			string name = "Light" + to_string(mappings[i]->devid) + "-" + to_string(mappings[i]->lightid);
 
 			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
 
@@ -1378,8 +1378,8 @@ namespace AlienFX_SDK {
 				"Name",
 				0,
 				REG_SZ,
-				(BYTE *) mappings[i].name.c_str(),
-				(DWORD) mappings[i].name.size()
+				(BYTE *) mappings[i]->name.c_str(),
+				(DWORD) mappings[i]->name.length()
 			);
 
 			RegSetValueExA(
@@ -1387,7 +1387,7 @@ namespace AlienFX_SDK {
 				"Flags",
 				0,
 				REG_DWORD,
-				(BYTE *) &mappings[i].flags,
+				(BYTE *) &mappings[i]->flags,
 				sizeof(DWORD)
 			);
 			RegCloseKey(hKeyS);
@@ -1429,21 +1429,21 @@ namespace AlienFX_SDK {
 		RegCloseKey(hKey1);
 	}
 
-	std::vector<mapping> *Mappings::GetMappings() {
+	std::vector<mapping*> *Mappings::GetMappings() {
 		return &mappings;
 	}
 
 	int Mappings::GetFlags(int devid, int lightid) {
 		for (int i = 0; i < mappings.size(); i++)
-			if (mappings[i].devid == devid && mappings[i].lightid == lightid)
-				return mappings[i].flags;
+			if (mappings[i]->devid == devid && mappings[i]->lightid == lightid)
+				return mappings[i]->flags;
 		return 0;
 	}
 
 	void Mappings::SetFlags(int devid, int lightid, int flags) {
 		for (int i = 0; i < mappings.size(); i++)
-			if (mappings[i].devid == devid && mappings[i].lightid == lightid) {
-				mappings[i].flags = flags;
+			if (mappings[i]->devid == devid && mappings[i]->lightid == lightid) {
+				mappings[i]->flags = flags;
 				return;
 			}
 	}

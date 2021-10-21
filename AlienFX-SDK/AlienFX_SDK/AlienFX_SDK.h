@@ -163,7 +163,7 @@ namespace AlienFX_SDK
 		// newState - on/off
 		// mappings - needed to keep some lights on
 		// power - if true, power and indicator lights will be set on/off too
-		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
+		bool ToggleState(BYTE brightness, vector <mapping*>* mappings, bool power);
 
 		bool SetGlobalEffects(byte effType, int tempo, afx_act act1, afx_act act2);
 
@@ -190,7 +190,7 @@ namespace AlienFX_SDK
 	class Mappings {
 	private:
 		// Name mappings for lights
-		vector <mapping> mappings;
+		vector <mapping*> mappings;
 		vector <devmap> devices;
 		vector <group> groups;
 	public:
@@ -210,7 +210,7 @@ namespace AlienFX_SDK
 		vector<devmap>* GetDevices();
 
 		// get saved light names
-		vector <mapping>* GetMappings();
+		vector <mapping*>* GetMappings();
 
 		// get defined groups
 		vector <group>* GetGroups();
@@ -223,9 +223,10 @@ namespace AlienFX_SDK
 		// find mapping by dev/light it...
 		group* GetGroupById(int gid);
 
-		// add new light name into the list
+		// add new light name into the list field-by-field
 		void AddMapping(int devID, int lightID, char* name, int flags);
 
+		// Add new group into the list field-by-field
 		void AddGroup(int gID, char* name, int lightNum, DWORD* lightlist);
 
 		// get saved light names

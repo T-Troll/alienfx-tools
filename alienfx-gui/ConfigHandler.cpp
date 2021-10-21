@@ -325,13 +325,13 @@ int ConfigHandler::Load() {
 		NULL,
 		customColors,
 		(LPDWORD)&size_c);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("LastActive"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&lastActive,
-		(LPDWORD)&size);
+	//RegGetValue(hKey1,
+	//	NULL,
+	//	TEXT("LastActive"),
+	//	RRF_RT_DWORD | RRF_ZEROONFAILURE,
+	//	NULL,
+	//	&lastActive,
+	//	(LPDWORD)&size);
 	RegGetValue(hKey1,
 		NULL,
 		TEXT("EsifTemp"),
@@ -718,14 +718,14 @@ int ConfigHandler::Save() {
 		(BYTE*)&esif_temp,
 		sizeof(DWORD)
 	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("LastActive"),
-		0,
-		REG_DWORD,
-		(BYTE*)&lastActive,
-		sizeof(DWORD)
-	);
+	//RegSetValueEx(
+	//	hKey1,
+	//	TEXT("LastActive"),
+	//	0,
+	//	REG_DWORD,
+	//	(BYTE*)&lastActive,
+	//	sizeof(DWORD)
+	//);
 	RegSetValueEx(
 		hKey1,
 		TEXT("CustomColors"),

@@ -19,9 +19,9 @@ mapping *FindMapping(int lid) {
                 }
         } else {
             // mapping
-            AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+            AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
             for (int i = 0; i < conf->amb_conf->mappings.size(); i++)
-                if (conf->amb_conf->mappings[i].devid == lgh.devid && conf->amb_conf->mappings[i].lightid == lgh.lightid)
+                if (conf->amb_conf->mappings[i].devid == lgh->devid && conf->amb_conf->mappings[i].lightid == lgh->lightid)
                     return &conf->amb_conf->mappings[i];
         }
     }
@@ -124,7 +124,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         newmap.lightid = eItem;
                     } else {
                         // light
-                        AlienFX_SDK::mapping* lgh = &fxhl->afx_dev.GetMappings()->at(eItem);
+                        AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
                         newmap.devid = lgh->devid;
                         newmap.lightid = lgh->lightid;
                     }

@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	cerr << "alienfx-cli v5.0.5" << endl;
+	cerr << "alienfx-cli v5.0.6" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -192,12 +192,13 @@ int main(int argc, char* argv[])
 					}
 					cout << endl;
 					for (int k = 0; k < afx_map->GetMappings()->size(); k++) {
-						if (devs[i].second == afx_map->GetMappings()->at(k).devid) {
-							cout << "  Light ID#" << afx_map->GetMappings()->at(k).lightid
-								<< " - " << afx_map->GetMappings()->at(k).name;
-							if (afx_map->GetMappings()->at(k).flags & ALIENFX_FLAG_POWER)
+						AlienFX_SDK::mapping *lgh = afx_map->GetMappings()->at(k);
+						if (devs[i].second == lgh->devid) {
+							cout << "  Light ID#" << lgh->lightid
+								<< " - " << lgh->name;
+							if (lgh->flags & ALIENFX_FLAG_POWER)
 								cout << " (Power button)";
-							if (afx_map->GetMappings()->at(k).flags & ALIENFX_FLAG_INACTIVE)
+							if (lgh->flags & ALIENFX_FLAG_INACTIVE)
 								cout << " (Indicator)";
 							cout << endl;
 						}
@@ -307,9 +308,10 @@ int main(int argc, char* argv[])
 				SetBrighness(&color.cs);
 				vector<UCHAR> lights;
 				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
-					if (afx_map->GetMappings()->at(i).devid == pid &&
-						!(afx_map->GetMappings()->at(i).flags & ALIENFX_FLAG_POWER))
-						lights.push_back((UCHAR) afx_map->GetMappings()->at(i).lightid);
+					AlienFX_SDK::mapping *lgh = afx_map->GetMappings()->at(i);
+					if (lgh->devid == pid &&
+						!(lgh->flags & ALIENFX_FLAG_POWER))
+						lights.push_back((UCHAR) lgh->lightid);
 				}
 				afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
 				afx_dev->UpdateColors();
@@ -374,9 +376,10 @@ int main(int argc, char* argv[])
 					for (int j = 0; j < devs.size(); j++) {
 						vector<UCHAR> lights;
 						afx_dev->AlienFXChangeDevice(devs[j].first, devs[j].second);
-						for (int i = 0; i < grp->lights.size(); i++)
+						for (int i = 0; i < grp->lights.size(); i++) {
 							if (grp->lights[i]->devid == afx_dev->GetPID())
-								lights.push_back((UCHAR) afx_map->GetMappings()->at(i).lightid);
+								lights.push_back((UCHAR) afx_map->GetMappings()->at(i)->lightid);
+						}
 						afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
 						afx_dev->UpdateColors();
 					}
@@ -505,9 +508,10 @@ int main(int argc, char* argv[])
 					for (int j = 0; j < devs.size(); j++) {
 						afx_dev->AlienFXChangeDevice(devs[j].first, devs[j].second);
 						for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
-							if (afx_map->GetMappings()->at(i).devid == afx_dev->GetPID() &&
-								!(afx_map->GetMappings()->at(i).flags & ALIENFX_FLAG_POWER))
-								afx_dev->SetAction(afx_map->GetMappings()->at(i).lightid, act);
+							AlienFX_SDK::mapping *lgh = afx_map->GetMappings()->at(i);
+							if (lgh->devid == afx_dev->GetPID() &&
+								!(lgh->flags & ALIENFX_FLAG_POWER))
+								afx_dev->SetAction(lgh->lightid, act);
 						}
 						afx_dev->UpdateColors();
 					}

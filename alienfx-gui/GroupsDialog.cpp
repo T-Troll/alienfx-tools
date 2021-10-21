@@ -10,23 +10,24 @@ int UpdateLightListG(HWND light_list, AlienFX_SDK::group* grp) {
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
 	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
 	for (int i = 0; i < lights; i++) {
-		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-		if (fxhl->LocateDev(lgh.devid)) {
+		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
+		if (fxhl->LocateDev(lgh->devid)) {
 			if (grp) {
 				int gl = 0;
 				for (gl=0; gl < grp->lights.size(); gl++) {
-					if (grp->lights.at(gl)->devid == lgh.devid &&
-						grp->lights.at(gl)->lightid == lgh.lightid)
+					if (grp->lights.at(gl)->devid == lgh->devid &&
+						grp->lights.at(gl)->lightid == lgh->lightid)
 						break;
 				}
-				if (gl == grp->lights.size()) {
-					pos = ListBox_AddString(light_list, lgh.name.c_str());
-					ListBox_SetItemData(light_list, pos, i);
+				if (gl < grp->lights.size()) {
+					continue;
+					//pos = ListBox_AddString(light_list, lgh->name.c_str());
+					//ListBox_SetItemData(light_list, pos, i);
 				}
-			} else {
-				pos = ListBox_AddString(light_list, lgh.name.c_str());
+			} //else {
+				pos = ListBox_AddString(light_list, lgh->name.c_str());
 				ListBox_SetItemData(light_list, pos, i);
-			}
+			//}
 		}
 	}
 	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
@@ -89,15 +90,15 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			{
 			case CBN_SELCHANGE: {
 				gLid = gid; gItem = gbItem;
-				UpdateGroupLights(glights_list, gid,0);
+				grp = fxhl->afx_dev.GetGroupById(gLid);
+				UpdateGroupLights(glights_list, gid, 0);
 				UpdateLightListG(light_list, grp);
 			} break;
 			case CBN_EDITCHANGE:
 				char buffer[MAX_PATH];
 				GetWindowTextA(groups_list, buffer, MAX_PATH);
-				AlienFX_SDK::group* cgrp = fxhl->afx_dev.GetGroupById(gLid);
-				if (cgrp) {
-					cgrp->name = buffer;
+				if (grp) {
+					grp->name = buffer;
 					fxhl->afx_dev.SaveMappings();
 					SendMessage(groups_list, CB_DELETESTRING, gItem, 0);
 					SendMessage(groups_list, CB_INSERTSTRING, gItem, (LPARAM)(buffer));
@@ -129,8 +130,6 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 					maxID = lgh->gid + 1;
 			}
 			AlienFX_SDK::group dev = {maxID, "Group #" + to_string(maxID & 0xffff)};
-			//dev.gid = maxID;
-			//dev.name = "Group #" + to_string(maxID & 0xffff);
 			fxhl->afx_dev.GetGroups()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			gLid = maxID;
@@ -153,18 +152,19 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 						break;
 					}
 				// delete from all profiles...
-				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
+				for (vector<profile>::iterator Iter = conf->profiles.begin();
 					 Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
 					RemoveMapping(&Iter->lightsets, 0, gLid);
 				}
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
-				SendMessage(groups_list, CB_DELETESTRING, gItem, 0);
+				ComboBox_DeleteString(groups_list, gItem);
 				if (fxhl->afx_dev.GetGroups()->size() > 0) {
-					gLid = fxhl->afx_dev.GetGroups()->at(0).gid;
-					gItem = 0;
-					grp = &fxhl->afx_dev.GetGroups()->front();
+					if (gItem >= fxhl->afx_dev.GetGroups()->size())
+						gItem--;
+					gLid = fxhl->afx_dev.GetGroups()->at(gItem).gid;
+					grp = &fxhl->afx_dev.GetGroups()->at(gItem);
 					UpdateLightListG(light_list, grp);
 				} else {
 					gLid = -1;
@@ -172,7 +172,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 					EnableWindow(groups_list, false);
 					EnableWindow(glights_list, false);
 				}
-				SendMessage(groups_list, CB_SETCURSEL, 0, 0);
+				ComboBox_SetCurSel(groups_list, gItem);
 				UpdateGroupLights(glights_list, gLid,0);
 			}
 		} break;
@@ -183,7 +183,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				int* selLights = new int[numSelLights];
 				ListBox_GetSelItems(light_list, numSelLights, selLights);
 				for (int i = 0; i < numSelLights; i++) {
-					AlienFX_SDK::mapping* clight = &fxhl->afx_dev.GetMappings()->at(ListBox_GetItemData(light_list, selLights[i]));
+					AlienFX_SDK::mapping* clight = fxhl->afx_dev.GetMappings()->at(ListBox_GetItemData(light_list, selLights[i]));
 					if (clight) {
 						grp->lights.push_back(clight);
 					}

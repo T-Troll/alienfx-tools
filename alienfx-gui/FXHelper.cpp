@@ -9,6 +9,50 @@
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
+FXHelper::FXHelper(ConfigHandler* conf) {
+	config = conf;
+	afx_dev.LoadMappings();
+	FillDevs(config->stateOn, config->offPowerButton);
+};
+FXHelper::~FXHelper() {
+	if (devs.size() > 0) {
+		for (int i = 0; i < devs.size(); i++)
+			devs[i]->AlienFXClose();
+		devs.clear();
+	}
+};
+
+AlienFX_SDK::Functions* FXHelper::LocateDev(int pid) {
+	for (int i = 0; i < devs.size(); i++)
+		if (devs[i]->GetPID() == pid)
+			return devs[i];
+	return nullptr;
+};
+
+size_t FXHelper::FillDevs(bool state, bool power) {
+	vector<pair<DWORD, DWORD>> devList = afx_dev.AlienFXEnumDevices();
+	config->haveV5 = false;
+
+	if (devs.size() > 0) {
+		for (int i = 0; i < devs.size(); i++) {
+			devs[i]->AlienFXClose();
+			delete devs[i];
+		}
+		devs.clear();
+	}
+	for (int i = 0; i < devList.size(); i++) {
+		AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
+		int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
+		if (pid != -1) {
+			devs.push_back(dev);
+			dev->ToggleState(state?255:0, afx_dev.GetMappings(), power);
+			if (dev->GetVersion() == 5) config->haveV5 = true;
+		} else
+			delete dev;
+	}
+	return devs.size();
+};
+
 void FXHelper::TestLight(int did, int id)
 {
 	AlienFX_SDK::Functions* dev = LocateDev(did);
@@ -19,10 +63,10 @@ void FXHelper::TestLight(int did, int id)
 
 		vector<UCHAR> opLights;
 
-		for (vector<AlienFX_SDK::mapping>::iterator lIter = afx_dev.GetMappings()->begin();
+		for (vector<AlienFX_SDK::mapping*>::iterator lIter = afx_dev.GetMappings()->begin();
 			 lIter != afx_dev.GetMappings()->end(); lIter++)
-			if (lIter->devid == did && lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
-				opLights.push_back((UCHAR)lIter->lightid);
+			if ((*lIter)->devid == did && (*lIter)->lightid != id && !((*lIter)->flags & ALIENFX_FLAG_POWER))
+				opLights.push_back((UCHAR)(*lIter)->lightid);
 
 		bool dev_ready = false;
 		for (int c_count = 0; c_count < 20 && !(dev_ready = dev->IsDeviceReady()); c_count++)
@@ -248,9 +292,16 @@ void FXHelper::ChangeState() {
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
-	if (!dev)
-		dev = LocateDev(config->lastActive);
-	if (dev) {
+	if (!dev) {
+		// let's find v5 dev...
+		for (int i = 0; i < devs.size(); i++) {
+			if (devs[i]->GetVersion() == 5) {
+				dev = devs[i];
+				break;
+			}
+		}
+	}
+	if (dev && dev->GetVersion() == 5) {
 		AlienFX_SDK::afx_act c1 = {0,0,0,config->effColor1.cs.red, config->effColor1.cs.green, config->effColor1.cs.blue},
 			c2 = {0,0,0,config->effColor2.cs.red, config->effColor2.cs.green, config->effColor2.cs.blue};
 		dev->SetGlobalEffects((byte)config->globalEffect, config->globalDelay, c1, c2);
@@ -580,8 +631,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 #endif
 									dev->SetMultiColor((int)lights.size(), lights.data(), acts, current.flags);
 									dev->UpdateColors();
-									if (dev->GetVersion() == 5)
-										src->UpdateGlobalEffect(dev);
+									src->UpdateGlobalEffect(dev);
 								} //else
 									//dev->Reset(true);
 								devQ->dev_query.clear();

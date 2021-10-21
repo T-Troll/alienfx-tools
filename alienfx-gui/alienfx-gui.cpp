@@ -405,9 +405,9 @@ int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
 			ListBox_SetCurSel(light_list, selpos = pos);
 	}
 	for (int i = 0; i < lights; i++) {
-		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(i);
-		if (fxhl->LocateDev(lgh.devid) && !(lgh.flags & flag)) {
-			pos = ListBox_AddString(light_list, lgh.name.c_str());
+		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
+		if (fxhl->LocateDev(lgh->devid) && !(lgh->flags & flag)) {
+			pos = ListBox_AddString(light_list, lgh->name.c_str());
 			ListBox_SetItemData(light_list, pos, i);
 			if (i == eItem)
 				ListBox_SetCurSel(light_list, selpos = pos);
@@ -1188,9 +1188,10 @@ lightset* FindMapping(int mid)
 		} else {
 			// mapping
 			if (fxhl->afx_dev.GetMappings()->size() > mid) {
-				AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(mid);
+				AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(mid);
 				for (int i = 0; i < conf->active_set->size(); i++)
-					if (conf->active_set->at(i).devid == lgh.devid && conf->active_set->at(i).lightid == lgh.lightid) {
+					if (conf->active_set->at(i).devid == lgh->devid && 
+						conf->active_set->at(i).lightid == lgh->lightid) {
 						return &conf->active_set->at(i);
 					}
 			}
@@ -1209,10 +1210,10 @@ lightset* CreateMapping(int lid) {
 		newmap.lightid = lid;
 	} else {
 		// light
-		AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-		newmap.devid = lgh.devid;
-		newmap.lightid = lgh.lightid;
-		if (lgh.flags & ALIENFX_FLAG_POWER) {
+		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
+		newmap.devid = lgh->devid;
+		newmap.lightid = lgh->lightid;
+		if (lgh->flags & ALIENFX_FLAG_POWER) {
 			act.time = 3;
 			act.tempo = 0x64;
 			newmap.eve[0].map.push_back(act);
@@ -1233,9 +1234,9 @@ lightset* CreateMapping(int lid) {
 	return FindMapping(lid);
 }
 
-bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid) {
+bool RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
 	// erase mappings
-	for (std::vector <lightset>::iterator mIter = lightsets->begin();
+	for (vector <lightset>::iterator mIter = lightsets->begin();
 		mIter != lightsets->end(); mIter++)
 		if (mIter->devid == did && mIter->lightid == lid) {
 			lightsets->erase(mIter);

@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 {
 	int numlights = 23;
 	bool show_all = argc > 1 && string(argv[1]) == "-a";
-	cout << "alienfx-probe v5.0.5" << endl;
+	cout << "alienfx-probe v5.0.6" << endl;
 	cout << "Checking USB light devices..." << endl;
 	CheckDevices(show_all);
 	cout << "Do you want to set devices and lights names?";
@@ -232,10 +232,8 @@ int main(int argc, char* argv[])
 							//}
 							cout << "Final name is " << outName << ", ";
 							// Store value...
-							AlienFX_SDK::mapping map;
-							map.devid = pids[cdev].second;
-							map.lightid = i;
-							map.name = std::string(outName);
+							AlienFX_SDK::mapping* map = new AlienFX_SDK::mapping(
+								{pids[cdev].first, pids[cdev].second, (DWORD)i, 0, string(outName)});
 							afx_map->GetMappings()->push_back(map);
 							afx_map->SaveMappings();
 						} else {

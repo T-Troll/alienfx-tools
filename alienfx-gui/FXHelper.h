@@ -43,53 +43,11 @@ public:
 	mutex modifyQuery;
 	bool unblockUpdates = true;
 
-	FXHelper() {
-		config = NULL;
-	};
-	FXHelper(ConfigHandler* conf) {
-		config = conf;
-		afx_dev.LoadMappings();
-		FillDevs(config->stateOn, config->offPowerButton);
-	};
-	~FXHelper() {
-		if (devs.size() > 0) {
-			for (int i = 0; i < devs.size(); i++)
-				devs[i]->AlienFXClose();
-			devs.clear();
-		}
-	};
 
-	AlienFX_SDK::Functions* LocateDev(int pid) {
-		for (int i = 0; i < devs.size(); i++)
-			if (devs[i]->GetPID() == pid)
-				return devs[i];
-		return nullptr;
-	};
-
-	size_t FillDevs(bool state, bool power) {
-		vector<pair<DWORD, DWORD>> devList = afx_dev.AlienFXEnumDevices();
-		config->haveV5 = false;
-
-		if (devs.size() > 0) {
-			for (int i = 0; i < devs.size(); i++) {
-				devs[i]->AlienFXClose();
-				delete devs[i];
-			}
-			devs.clear();
-		}
-		for (int i = 0; i < devList.size(); i++) {
-			AlienFX_SDK::Functions* dev = new AlienFX_SDK::Functions();
-			int pid = dev->AlienFXInitialize(devList[i].first, devList[i].second);
-			if (pid != -1) {
-				devs.push_back(dev);
-				dev->ToggleState(state?255:0, afx_dev.GetMappings(), power);
-				if (dev->GetVersion() == 5) config->haveV5 = true;
-			} else
-				delete dev;
-		}
-		return devs.size();
-	};
-
+	FXHelper(ConfigHandler *conf);
+	~FXHelper();
+	AlienFX_SDK::Functions *LocateDev(int pid);
+	size_t FillDevs(bool state, bool power);
 	size_t FillAllDevs(bool state, bool power, HANDLE acc);
 
 	void Start();

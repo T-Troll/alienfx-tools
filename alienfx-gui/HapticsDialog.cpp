@@ -130,9 +130,10 @@ haptics_map *FindMapping(int lid) {
 				}
 		} else {
 			// mapping
-			AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
+			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
 			for (int i = 0; i < conf->hap_conf->mappings.size(); i++)
-				if (conf->hap_conf->mappings[i].devid == lgh.devid && conf->hap_conf->mappings[i].lightid == lgh.lightid)
+				if (conf->hap_conf->mappings[i].devid == lgh->devid && 
+					conf->hap_conf->mappings[i].lightid == lgh->lightid)
 					return &conf->hap_conf->mappings[i];
 		}
 	}
@@ -227,7 +228,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					newmap.lightid = eItem;
 				} else {
 					// light
-					AlienFX_SDK::mapping* lgh = &fxhl->afx_dev.GetMappings()->at(eItem);
+					AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
 					newmap.devid = lgh->devid;
 					newmap.lightid = lgh->lightid;
 				}
