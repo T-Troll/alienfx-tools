@@ -184,6 +184,7 @@
 #define IDC_COMBO_EFFMODE               1098
 #define IDC_CHECK_EFFECTS               1099
 #define IDC_CHECK_PRIORITY              1100
+#define IDC_CHECK_EXCEPTION             1101
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -215,7 +216,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        154
 #define _APS_NEXT_COMMAND_VALUE         32805
-#define _APS_NEXT_CONTROL_VALUE         1101
+#define _APS_NEXT_CONTROL_VALUE         1102
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

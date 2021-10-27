@@ -110,6 +110,7 @@ Run `alienfan-cli [command[=value{,value}] [command...]]`. After start, it detec
 Avaliable commands:
 - `usage`, `help` - Show short help
 - `rpm` - Show current fan RPMs
+- `percent` - Show current fan RPMs in percent of maximal (not so precise on some systems)
 - `temp` - Show known temperature sensors name and value
 - `unlock` - Enable manual fan control
 - `getpower` - Print current power mode

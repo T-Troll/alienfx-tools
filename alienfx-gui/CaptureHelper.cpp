@@ -178,7 +178,7 @@ DWORD WINAPI CInProc(LPVOID param)
 		// Resize & calc
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img) {
 			if (w && h) {
-				if (fxh->unblockUpdates && FindColors(img, imgz) && memcmp(imgz, imgo, GRIDSIZE)) {
+				if (FindColors(img, imgz) && memcmp(imgz, imgo, GRIDSIZE)) {
 					SetEvent(lhEvent);
 					SetEvent(uiEvent);
 					memcpy(imgo, imgz, GRIDSIZE);
@@ -217,10 +217,8 @@ DWORD WINAPI CDlgProc(LPVOID param)
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
-		if (!IsIconic(GetParent(config->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
-//#ifdef _DEBUG
-//	OutputDebugString("UI update...\n");
-//#endif
+		if (config->hDlg && !IsIconic(GetParent(config->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
+			//DebugPrint("Ambient UI update...\n");
 			memcpy(imgui, (UCHAR*)param, sizeof(imgz));
 			SendMessage(config->hDlg, WM_PAINT, 0, (LPARAM)imgui);
 		}
@@ -235,9 +233,7 @@ DWORD WINAPI CFXProc(LPVOID param) {
 	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
-			//#ifdef _DEBUG
-			//			OutputDebugString("Light update...\n");
-			//#endif
+			//DebugPrint("Ambient light update...\n");
 			memcpy(imgz, (UCHAR *) param, sizeof(imgz));
 			fxh->RefreshAmbient(imgz);
 		}

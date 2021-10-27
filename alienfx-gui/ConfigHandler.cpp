@@ -11,7 +11,6 @@
 #endif
 
 ConfigHandler::ConfigHandler() {
-	DWORD  dwDisposition;
 
 	RegCreateKeyEx(HKEY_CURRENT_USER,
 		TEXT("SOFTWARE\\Alienfxgui"),
@@ -21,25 +20,16 @@ ConfigHandler::ConfigHandler() {
 		KEY_ALL_ACCESS,
 		NULL,
 		&hKey1,
-		&dwDisposition);
-	//RegCreateKeyEx(HKEY_CURRENT_USER,
-	//	TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"),
-	//	0,
-	//	NULL,
-	//	REG_OPTION_NON_VOLATILE,
-	//	KEY_ALL_ACCESS,
-	//	NULL,
-	//	&hKey2,
-	//	&dwDisposition);
+				   NULL);
 	RegCreateKeyEx(HKEY_CURRENT_USER,
-		TEXT("SOFTWARE\\Alienfxgui\\Events"),
-		0,
-		NULL,
-		REG_OPTION_NON_VOLATILE,
-		KEY_ALL_ACCESS,
-		NULL,
-		&hKey3,
-		&dwDisposition);
+				   TEXT("SOFTWARE\\Alienfxgui\\Events"),
+				   0,
+				   NULL,
+				   REG_OPTION_NON_VOLATILE,
+				   KEY_ALL_ACCESS,
+				   NULL,
+				   &hKey3,
+				   NULL);
 	RegCreateKeyEx(HKEY_CURRENT_USER,
 		TEXT("SOFTWARE\\Alienfxgui\\Profiles"),
 		0,
@@ -48,7 +38,7 @@ ConfigHandler::ConfigHandler() {
 		KEY_ALL_ACCESS,
 		NULL,
 		&hKey4,
-		&dwDisposition);
+				   NULL);
 
 	testColor.ci = 0;
 	testColor.cs.green = 255;
@@ -65,7 +55,6 @@ ConfigHandler::~ConfigHandler() {
 	if (amb_conf) delete amb_conf;
 	if (hap_conf) delete hap_conf;
 	RegCloseKey(hKey1);
-	//RegCloseKey(hKey2);
 	RegCloseKey(hKey3);
 	RegCloseKey(hKey4);
 }
@@ -142,10 +131,7 @@ void ConfigHandler::SetStates() {
 	// Lighs on state...
 	stateOn = lightsOn && stateScreen;
 	// Dim state...
-	stateDimmed = IsDimmed() ||
-		dimmedScreen ||
-		//FindProfile(activeProfile)->flags.flags & PROF_DIMMED ||
-		(dimmedBatt && !statePower);
+	stateDimmed = IsDimmed() || dimmedScreen || (dimmedBatt && !statePower);
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed) {
 		SetIconState();
 		Shell_NotifyIcon(NIM_MODIFY, &niData);
@@ -188,7 +174,7 @@ bool ConfigHandler::IsDimmed() {
 }
 
 bool ConfigHandler::IsMonitoring() {
-	return enableMon;// || !(FindProfile(activeProfile)->flags & PROF_NOMONITORING);
+	return enableMon;
 }
 
 void ConfigHandler::SetDimmed(bool dimmed) {
@@ -203,13 +189,6 @@ int ConfigHandler::GetEffect() {
 void ConfigHandler::SetEffect(int newMode) {
 	FindProfile(activeProfile)->effmode = newMode;
 }
-//
-//void ConfigHandler::SetMonitoring(bool monison) {
-//	if (monison)
-//		FindProfile(activeProfile)->flags &= 0xff - PROF_NOMONITORING;
-//	else
-//		FindProfile(activeProfile)->flags |= PROF_NOMONITORING;
-//}
 
 int ConfigHandler::Load() {
 	int size = 4, size_c = 4 * 16;
@@ -283,13 +262,13 @@ int ConfigHandler::Load() {
 		NULL,
 		&offWithScreen,
 		(LPDWORD)&size);
-	//RegGetValue(hKey1,
-	//	NULL,
-	//	TEXT("EffectMode"),
-	//	RRF_RT_DWORD | RRF_ZEROONFAILURE,
-	//	NULL,
-	//	&effectMode,
-	//	(LPDWORD)&size);
+	RegGetValue(hKey1,
+		NULL,
+		TEXT("NoDesktopSwitch"),
+		RRF_RT_DWORD | RRF_ZEROONFAILURE,
+		NULL,
+		&noDesktop,
+		(LPDWORD)&size);
 	RegGetValue(hKey1,
 		NULL,
 		TEXT("DimPower"),
@@ -556,11 +535,7 @@ int ConfigHandler::Load() {
 	active_set = &profiles[activeFound].lightsets;
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
-	//monState = !(FindProfile(activeProfile)->flags & PROF_NOMONITORING);
-	//if (profiles[activeFound].flags & 0x2)
-	//	monState = 0;
-	//if (profiles[activeFound].flags & 0x4)
-	//	stateDimmed = 1;
+
 	conf_loaded = true;
 
 	if (fanControl) {
@@ -573,22 +548,13 @@ int ConfigHandler::Load() {
 	return 0;
 }
 int ConfigHandler::Save() {
-	//char name[256];
+
 	BYTE* out;
 	DWORD dwDisposition;
-
-	//if (!conf_loaded) return 0; // do not save clear config!
 
 	if (fan_conf) fan_conf->Save();
 	if (amb_conf) amb_conf->Save();
 	if (hap_conf) hap_conf->Save();
-
-	//if (RegGetValue(hKey2, NULL, "Alienfx GUI", RRF_RT_ANY, NULL, NULL, NULL) == ERROR_SUCCESS) {
-	//	// remove old start key
-	//	RegDeleteValue(hKey2, "Alienfx GUI");
-	//	startWindows = 0;
-	//	//RegSetValueExA(hKey2, "Alienfx GUI", 0, REG_SZ, (BYTE*)&"", 1);
-	//}
 
 	RegSetValueEx(
 		hKey1,
@@ -638,14 +604,14 @@ int ConfigHandler::Save() {
 		(BYTE*)&offWithScreen,
 		sizeof(DWORD)
 	);
-	//RegSetValueEx(
-	//	hKey1,
-	//	TEXT("EffectMode"),
-	//	0,
-	//	REG_DWORD,
-	//	(BYTE*)&effectMode,
-	//	sizeof(DWORD)
-	//);
+	RegSetValueEx(
+		hKey1,
+		TEXT("NoDesktopSwitch"),
+		0,
+		REG_DWORD,
+		(BYTE*)&noDesktop,
+		sizeof(DWORD)
+	);
 	RegSetValueEx(
 		hKey1,
 		TEXT("DimPower"),

@@ -5,26 +5,25 @@
 using namespace std;
 
 ConfigAmbient::ConfigAmbient() {
-    DWORD  dwDisposition;
 
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxambient"),
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey1,
-        &dwDisposition);
+        NULL);
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxambient\\Mappings"),
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,//KEY_WRITE,
+        KEY_ALL_ACCESS,
         NULL,
         &hKey2,
-        &dwDisposition);
+        NULL);
     Load();
 }
 ConfigAmbient::~ConfigAmbient() {
@@ -98,7 +97,7 @@ int ConfigAmbient::Load() {
 	return 0;
 }
 int ConfigAmbient::Save() {
-    //char name[256];
+
     unsigned out[12*4];
 
     RegSetValueEx(

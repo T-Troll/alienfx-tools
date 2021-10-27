@@ -5,7 +5,6 @@
 using namespace std;
 
 ConfigHaptics::ConfigHaptics() {
-    DWORD  dwDisposition;
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxhaptics"),
         0,
@@ -14,7 +13,7 @@ ConfigHaptics::ConfigHaptics() {
         KEY_ALL_ACCESS,
         NULL,
         &hKey1,
-        &dwDisposition);
+        NULL);
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxhaptics\\Mappings"),
         0,
@@ -23,7 +22,7 @@ ConfigHaptics::ConfigHaptics() {
         KEY_ALL_ACCESS,
         NULL,
         &hKey2,
-        &dwDisposition);
+        NULL);
     Load();
 }
 ConfigHaptics::~ConfigHaptics() {
@@ -52,16 +51,6 @@ int ConfigHaptics::Load() {
                 NULL,
                 &showAxis,
                 (LPDWORD) &size);
-    //RegGetValue(hKey1,
-    //    NULL,
-    //    TEXT("Power"),
-    //    RRF_RT_DWORD | RRF_ZEROONFAILURE,
-    //    NULL,
-    //    &res,
-    //    (LPDWORD)&size);
-    //if (!res) {
-    //    res = 10000;
-    //}
     RegGetValue(hKey1,
         NULL,
         TEXT("Input"),
@@ -69,14 +58,7 @@ int ConfigHaptics::Load() {
         NULL,
         &inpType,
         (LPDWORD)&size);
-    //RegGetValue(hKey1,
-    //    NULL,
-    //    TEXT("LastActive"),
-    //    RRF_RT_DWORD | RRF_ZEROONFAILURE,
-    //    NULL,
-    //    &lastActive,
-    //    (LPDWORD)&size);
-    unsigned vindex = 0, inarray[30];
+    unsigned vindex = 0, inarray[30] = {0};
     char name[255];
     unsigned ret = 0;
     do {
@@ -122,9 +104,7 @@ int ConfigHaptics::Load() {
 	return 0;
 }
 int ConfigHaptics::Save() {
-    //char name[256];
-    //unsigned out[50];
-    DWORD dwDisposition;
+    //DWORD dwDisposition;
 
     RegSetValueEx(
         hKey1,
@@ -142,14 +122,6 @@ int ConfigHaptics::Save() {
         (BYTE *) &showAxis,
         4
     );
-    //RegSetValueEx(
-    //    hKey1,
-    //    TEXT("Power"),
-    //    0,
-    //    REG_DWORD,
-    //    (BYTE*)&res,
-    //    4
-    //);
     RegSetValueEx(
         hKey1,
         TEXT("Input"),
@@ -158,14 +130,6 @@ int ConfigHaptics::Save() {
         (BYTE*)&inpType,
         4
     );
-    //RegSetValueEx(
-    //    hKey1,
-    //    TEXT("LastActive"),
-    //    0,
-    //    REG_DWORD,
-    //    (BYTE*)&lastActive,
-    //    4
-    //);
     RegDeleteTreeA(hKey1, "Mappings");
     RegCreateKeyEx(HKEY_CURRENT_USER,
         TEXT("SOFTWARE\\Alienfxhaptics\\Mappings"),
@@ -175,31 +139,32 @@ int ConfigHaptics::Save() {
         KEY_ALL_ACCESS,
         NULL,
         &hKey2,
-        &dwDisposition);
+        NULL);// &dwDisposition);
     for (int i = 0; i < mappings.size(); i++) {
-        //preparing name
-        string name = "Map" + to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
-        //sprintf_s(name, 255, "Map%d-%d", mappings[i].devid, mappings[i].lightid);
-        //preparing binary....
-        unsigned* out = new unsigned[mappings[i].map.size() + 5];
-        out[0] = mappings[i].colorfrom.ci;
-        out[1] = mappings[i].colorto.ci;
-        out[2] = mappings[i].lowcut;
-        out[3] = mappings[i].hicut;
-        out[4] = mappings[i].flags;
+        if (mappings[i].map.size()) {
+            //preparing name
+            string name = "Map" + to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
+            //preparing binary....
+            unsigned *out = new unsigned[mappings[i].map.size() + 5];
+            out[0] = mappings[i].colorfrom.ci;
+            out[1] = mappings[i].colorto.ci;
+            out[2] = mappings[i].lowcut;
+            out[3] = mappings[i].hicut;
+            out[4] = mappings[i].flags;
 
-        for (int j = 0; j < mappings[i].map.size(); j++) {
-            out[j + 5] = mappings[i].map[j];
+            for (int j = 0; j < mappings[i].map.size(); j++) {
+                out[j + 5] = mappings[i].map[j];
+            }
+            int size = (int) (mappings[i].map.size() + 5) * sizeof(unsigned);
+            RegSetValueExA(
+                hKey2,
+                name.c_str(),
+                0,
+                REG_BINARY,
+                (BYTE *) out,
+                size
+            );
         }
-        int size = (int)(mappings[i].map.size() + 5) * sizeof(unsigned);
-        RegSetValueExA(
-            hKey2,
-            name.c_str(),
-            0,
-            REG_BINARY,
-            (BYTE*)out,
-            size
-        );
     }
 	return 0;
 }

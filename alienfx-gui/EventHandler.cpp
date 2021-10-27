@@ -141,7 +141,6 @@ void EventHandler::StopEvents()
 		CloseHandle(dwHandle);
 		CloseHandle(stopEvents);
 		dwHandle = 0;
-		//fxh->Refresh(true);
 	}
 }
 
@@ -150,12 +149,7 @@ void EventHandler::ToggleEvents()
 	conf->SetStates();
 	int newMode = conf->FindProfile(conf->activeProfile)->effmode;
 	if (conf->stateOn) {
-		//if (conf->IsMonitoring()) {
-			ChangeEffectMode(newMode);
-			//StartEffects(true);
-		//} else {
-		//	StopEffects();
-		//}
+		ChangeEffectMode(newMode);
 	}
 }
 
@@ -292,27 +286,29 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 
 		DebugPrint((string("Foreground switched to ") + szProcessName + "\n").c_str());
 
-		newp = even->conf->FindProfileByApp(string(szProcessName), true);
+		string pName = szProcessName;
+
+		newp = even->conf->FindProfileByApp(pName, true);
 		even->conf->foregroundProfile = newp ? newp->id : -1;
 
-		//		if (newp >= 0 || (strcmp(szProcessName, "ShellExperienceHost.exe") && strcmp(szProcessName, "alienfx-gui.exe") 
-		//						  && strcmp(szProcessName, "explorer.exe")
-		////#ifdef _DEBUG
-		////						  && strcmp(szProcessName, "devenv.exe")
-		////#endif
-		//						  )) {
+		if (newp || !even->conf->noDesktop || (pName != "ShellExperienceHost.exe"
+					 && pName != "alienfx-gui.exe"
+					 && pName != "explorer.exe"
+					 && pName != "SearchApp.exe"
+					#ifdef _DEBUG
+					 && pName != "devenv.exe"
+					#endif
+					 )) {
 
-		if (!newp) {
-			even->SwitchActiveProfile(ScanTaskList());
+			if (!newp) {
+				even->SwitchActiveProfile(ScanTaskList());
+			} else {
+				if (even->conf->IsPriorityProfile(newp->id) || !even->conf->IsPriorityProfile(even->conf->activeProfile))
+					even->SwitchActiveProfile(newp);
+			}
 		} else {
-			if (even->conf->IsPriorityProfile(newp->id) || !even->conf->IsPriorityProfile(even->conf->activeProfile))
-				even->SwitchActiveProfile(newp);
+			DebugPrint("Forbidden app, switch blocked!\n");
 		}
-		//		}
-		//#ifdef _DEBUG
-		//		else
-		//			OutputDebugString("Forbidden app, switch blocked!\n");
-		//#endif
 	}
 	delete[] szProcessName;
 }
@@ -438,78 +434,83 @@ DWORD WINAPI CEventProc(LPVOID param)
 	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
 
 	// Open a query object.
-	pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
-
-	if (pdhStatus != ERROR_SUCCESS)
+	if (PdhOpenQuery(NULL, 0, &hQuery) != ERROR_SUCCESS)
 	{
 		goto cleanup;
 	}
 
 	// Add one counter that will provide the data.
-	pdhStatus = PdhAddCounter(hQuery,
+	/*pdhStatus =*/ PdhAddCounter(hQuery,
 		COUNTER_PATH_CPU,
 		0,
 		&hCPUCounter);
 
-	pdhStatus = PdhAddCounter(hQuery,
+	/*pdhStatus =*/ PdhAddCounter(hQuery,
 		COUNTER_PATH_HDD,
 		0,
 		&hHDDCounter);
 
-	pdhStatus = PdhAddCounter(hQuery,
+	/*pdhStatus =*/ PdhAddCounter(hQuery,
 		COUNTER_PATH_NET,
 		0,
 		&hNETCounter);
 
-	pdhStatus = PdhAddCounter(hQuery,
+	/*pdhStatus =*/ PdhAddCounter(hQuery,
 		COUNTER_PATH_GPU,
 		0,
 		&hGPUCounter);
-	pdhStatus = PdhAddCounter(hQuery,
+	/*pdhStatus =*/ PdhAddCounter(hQuery,
 		COUNTER_PATH_HOT,
 		0,
 		&hTempCounter);
 
-	pdhStatus = PdhAddCounter(hQuery,
+	/*pdhStatus =*/ PdhAddCounter(hQuery,
 		COUNTER_PATH_HOT2,
 		0,
 		&hTempCounter2);
 
+	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
+	DWORD cType = 0,
+		netbSize = maxnetarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), netCount = 0,
+		gpubSize = maxgpuarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), gpuCount = 0,
+		tempbSize = maxtemparray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), tempCount = 0;
+
 	while (WaitForSingleObject(src->stopEvents, src->conf->monDelay) == WAIT_TIMEOUT) {
 		// get indicators...
 		PdhCollectQueryData(hQuery);
-		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
-		DWORD cType = 0,
-			netbSize = maxnetarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), netCount = 0,
-			gpubSize = maxgpuarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), gpuCount = 0,
-			tempbSize = maxtemparray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), tempCount = 0;
-		pdhStatus = PdhGetFormattedCounterValue(
+
+		/*pdhStatus =*/ PdhGetFormattedCounterValue(
 			hCPUCounter,
 			PDH_FMT_LONG,
 			&cType,
 			&cCPUVal
 		);
-		pdhStatus = PdhGetFormattedCounterValue(
+		/*pdhStatus =*/ PdhGetFormattedCounterValue(
 			hHDDCounter,
 			PDH_FMT_LONG,
 			&cType,
 			&cHDDVal
 		);
 
-		pdhStatus = PdhGetFormattedCounterArray(
+		while ((pdhStatus = PdhGetFormattedCounterArray(
 			hNETCounter,
 			PDH_FMT_LONG,
 			&netbSize,
 			&netCount,
 			netArray
-		);
+		)) == PDH_MORE_DATA) {
+			maxnetarray = netbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+			delete[] netArray;
+			netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
+			netCount = 0;
+		}
 
 		if (pdhStatus != ERROR_SUCCESS) {
-			if (pdhStatus == PDH_MORE_DATA) {
-				maxnetarray = netbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-				delete[] netArray;
-				netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
-			}
+		//	if (pdhStatus == PDH_MORE_DATA) {
+		//		maxnetarray = netbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+		//		delete[] netArray;
+		//		netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
+		//	}
 			netCount = 0;
 		}
 
@@ -519,24 +520,30 @@ DWORD WINAPI CEventProc(LPVOID param)
 			totalNet += netArray[i].FmtValue.longValue;
 		}
 
-		if (maxnet < totalNet) maxnet = totalNet;
+		if (maxnet < totalNet) 
+			maxnet = totalNet;
 		//if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
 		totalNet = totalNet > 0 ? (totalNet * 100) / maxnet > 0 ? (totalNet * 100) / maxnet : 1 : 0;
 
-		pdhStatus = PdhGetFormattedCounterArray(
+		while ((pdhStatus = PdhGetFormattedCounterArray(
 			hGPUCounter,
 			PDH_FMT_LONG,
 			&gpubSize,
 			&gpuCount,
 			gpuArray
-		);
+		)) == PDH_MORE_DATA) {
+			maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+			delete[] gpuArray;
+			gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
+			gpuCount = 0;
+		}
 
 		if (pdhStatus != ERROR_SUCCESS) {
-			if (pdhStatus == PDH_MORE_DATA) {
-				maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-				delete[] gpuArray;
-				gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
-			}
+		//	if (pdhStatus == PDH_MORE_DATA) {
+		//		maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+		//		delete[] gpuArray;
+		//		gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
+		//	}
 			gpuCount = 0;
 		}
 
@@ -547,20 +554,24 @@ DWORD WINAPI CEventProc(LPVOID param)
 				maxGPU = gpuArray[i].FmtValue.longValue;
 		}
 
-		pdhStatus = PdhGetFormattedCounterArray(
+		while ((pdhStatus = PdhGetFormattedCounterArray(
 			hTempCounter,
 			PDH_FMT_LONG,
 			&tempbSize,
 			&tempCount,
 			tempArray
-		);
+		)) == PDH_MORE_DATA) {
+			maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+			delete[] tempArray;
+			tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
+		}
 
 		if (pdhStatus != ERROR_SUCCESS) {
-			if (pdhStatus == PDH_MORE_DATA) {
-				maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-				delete[] tempArray;
-				tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
-			}
+			//if (pdhStatus == PDH_MORE_DATA) {
+			//	maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+			//	delete[] tempArray;
+			//	tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
+			//}
 			tempCount = 0;
 		}
 
@@ -587,20 +598,24 @@ DWORD WINAPI CEventProc(LPVOID param)
 		// Now other temp sensor block...
 		if (src->conf->esif_temp) {
 			tempbSize = maxtemparray * sizeof(PDH_FMT_COUNTERVALUE_ITEM); tempCount = 0;
-			pdhStatus = PdhGetFormattedCounterArray(
+			while ((pdhStatus = PdhGetFormattedCounterArray(
 				hTempCounter2,
 				PDH_FMT_LONG,
 				&tempbSize,
 				&tempCount,
 				tempArray
-			);
+			)) == PDH_MORE_DATA) {
+				maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+				delete[] tempArray;
+				tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
+			}
 
 			if (pdhStatus != ERROR_SUCCESS) {
-				if (pdhStatus == PDH_MORE_DATA) {
-					maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-					delete[] tempArray;
-					tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
-				}
+				//if (pdhStatus == PDH_MORE_DATA) {
+				//	maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+				//	delete[] tempArray;
+				//	tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
+				//}
 				tempCount = 0;
 			}
 

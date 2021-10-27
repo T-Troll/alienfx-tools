@@ -119,8 +119,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	} break;
 	case WM_COMMAND: {
 		int lid = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-		int countid = (int)SendMessage(list_counter, CB_GETCURSEL, 0, 0),
-			statusid = (int)SendMessage(list_status, CB_GETCURSEL, 0, 0);
+		int countid = (int)ComboBox_GetCurSel(list_counter),
+			statusid = (int)ComboBox_GetCurSel(list_status);
 		switch (LOWORD(wParam))
 		{
 		case IDC_LIGHTS_E: // should reload mappings

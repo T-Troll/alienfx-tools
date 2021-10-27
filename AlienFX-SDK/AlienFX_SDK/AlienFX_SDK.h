@@ -27,12 +27,13 @@ namespace AlienFX_SDK
     #define ALIENFX_V5_INCOMMAND 0xcc
 
 	// Length by API version:
-    #define API_L_ACPI 128
-	#define API_L_V5 64
-	#define API_L_V4 34
-	#define API_L_V3 12
-    #define API_L_V2 9
-	#define API_L_V1 8
+    #define API_L_ACPI 0 //128
+    #define API_L_V6 6 //64
+	#define API_L_V5 5 //64
+	#define API_L_V4 4 //34
+	#define API_L_V3 3 //12
+    #define API_L_V2 2 //9
+	#define API_L_V1 1 //8
 
 	// Mapping flags:
     #define ALIENFX_FLAG_POWER 1
@@ -85,22 +86,22 @@ namespace AlienFX_SDK
 		AlienFX_A_NoAction = 7
 	};
 
-	//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
-	const static DWORD vids[2] = {0x187c, 0x0d62};
+	//This is VIDs for different devices: Alienware (common), Darfon (RGB rekboards), Microship (monitors)
+	const static DWORD vids[3] = {0x187c, 0x0d62, 0x0424};
 
 	class Functions
 	{
 	private:
 
 		HANDLE devHandle = NULL;
-		//bool inSet = false;
-		//ULONGLONG lastPowerCall = 0;
+		bool inSet = false;
 
 		int vid = -1;
 		int pid = -1;
 		int length = -1;
 		int chain = 1;
-		//int version = -1;
+		int version = -1;
+		byte bright = 64; // for APIv6
 
 		// support function for mask-based devices (v1-v3)
 		void SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
@@ -110,7 +111,7 @@ namespace AlienFX_SDK
 
 	public:
 
-		bool inSet = false;
+		//bool inSet = false;
 		// Initialize device
 		// Returns PID of device used. if pid argument is -1, first device found into the system will be used.
 		int AlienFXInitialize(int vid, int pid = -1);

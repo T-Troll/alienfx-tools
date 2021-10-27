@@ -118,7 +118,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_APP_RESET:
 			if (prof != NULL) {
 				prof->triggerapp = "";
-				SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+				ListBox_ResetContent(app_list);
 			}
 			break;
 		case IDC_APP_BROWSE: {
@@ -195,7 +195,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				prof->flags = (prof->flags & ~PROF_DIMMED) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 2;
 				if (prof->id == conf->activeProfile) {
 					conf->stateDimmed = prof->flags & PROF_DIMMED;
-					fxhl->RefreshState();
+					fxhl->ChangeState();
+					//fxhl->RefreshState();
 				}
 			}
 			break;
@@ -248,7 +249,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
 						CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
-						SendMessage(app_list, LB_RESETCONTENT, 0, 0);
+						ListBox_ResetContent(app_list);
 						ComboBox_SetCurSel(mode_list, 3);
 					}
 				}

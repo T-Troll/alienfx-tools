@@ -33,6 +33,7 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_CONTROL {
 		ALIENFAN_COMMAND getPowerID;
 		ALIENFAN_COMMAND getFanRPM;
+		ALIENFAN_COMMAND getFanPercent;
 		ALIENFAN_COMMAND getFanBoost;
 		ALIENFAN_COMMAND setFanBoost;
 		ALIENFAN_COMMAND getTemp;
@@ -46,6 +47,7 @@ namespace AlienFan_SDK {
 	static const ALIENFAN_CONTROL dev_controls[2] = {
 		{   0x14,   3, // PowerID
 			0x14,   5, // RPM
+			0x14,   6, // Percent
 			0x14, 0xc, // Boost
 			0x15,   2, // Set boost
 			0x14,   4, // Temp
@@ -56,6 +58,7 @@ namespace AlienFan_SDK {
 		{
 			0x10,   3, // PowerID
 			0x10,   5, // RPM
+			0x10,   6, // Percent
 			0x10, 0xc, // Boost
 			0x11,   2, // Set boost
 			0x10,   4, // Temp
@@ -119,6 +122,9 @@ namespace AlienFan_SDK {
 
 		// Get RPM for the fan index fanID at fans[]
 		int GetFanRPM(int fanID);
+
+		// Get fan RPMs as a persent from 100%
+		int GetFanPercent(int fanID);
 
 		// Get boost value for the fan index fanID at fans[]. If isPwm true, count from pwm to percent.
 		int GetFanValue(int fanID);

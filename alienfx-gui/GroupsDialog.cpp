@@ -8,7 +8,7 @@ int	gLid = -1, gItem = -1;
 int UpdateLightListG(HWND light_list, AlienFX_SDK::group* grp) {
 	int pos = -1;
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
-	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+	ListBox_ResetContent(light_list);
 	for (int i = 0; i < lights; i++) {
 		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
 		if (fxhl->LocateDev(lgh->devid)) {
@@ -36,14 +36,14 @@ int UpdateLightListG(HWND light_list, AlienFX_SDK::group* grp) {
 
 int UpdateGroupLights(HWND light_list, int gID, int sel) {
 	int pos = -1;
-	SendMessage(light_list, LB_RESETCONTENT, 0, 0);
+	ListBox_ResetContent(light_list);
 	AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gID);
 	if (grp) {
 		for (int i = 0; i < grp->lights.size(); i++) {
-			pos = (int) SendMessage(light_list, LB_ADDSTRING, 0, (LPARAM) (grp->lights[i]->name.c_str()));
-			SendMessage(light_list, LB_SETITEMDATA, pos, i);
+			pos = (int) ListBox_AddString(light_list, grp->lights[i]->name.c_str());
+			ListBox_SetItemData(light_list, pos, i);
 		}
-		SendMessage(light_list, LB_SETCURSEL, sel, 0);
+		ListBox_SetCurSel(light_list, sel);
 	}
 	return pos;
 }
@@ -63,10 +63,10 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			if (gLid < 0)
 				gLid = fxhl->afx_dev.GetGroups()->at(0).gid;
 			for (UINT i = 0; i < numgroups; i++) {
-				pos = (int) SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM) (fxhl->afx_dev.GetGroups()->at(i).name.c_str()));
-				SendMessage(groups_list, CB_SETITEMDATA, pos, (LPARAM) fxhl->afx_dev.GetGroups()->at(i).gid);
+				pos = (int) ComboBox_AddString(groups_list, fxhl->afx_dev.GetGroups()->at(i).name.c_str());
+				ComboBox_SetItemData(groups_list, pos, fxhl->afx_dev.GetGroups()->at(i).gid);
 				if (fxhl->afx_dev.GetGroups()->at(i).gid == gLid) {
-					SendMessage(groups_list, CB_SETCURSEL, pos, (LPARAM) 0);
+					ComboBox_SetCurSel(groups_list, pos);
 					gItem = pos;
 					grp = &fxhl->afx_dev.GetGroups()->at(i);
 				}
@@ -80,9 +80,9 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	} break;
 	case WM_COMMAND:
 	{
-		int gbItem = (int)SendMessage(groups_list, CB_GETCURSEL, 0, 0);
-		int gid = (int)SendMessage(groups_list, CB_GETITEMDATA, gbItem, 0);
-		int glItem = (int)SendMessage(glights_list, LB_GETCURSEL, 0, 0);
+		int gbItem = (int)ComboBox_GetCurSel(groups_list);
+		int gid = (int)ComboBox_GetItemData(groups_list, gbItem);
+		int glItem = (int)ListBox_GetCurSel(glights_list);
 		AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gLid);
 		switch (LOWORD(wParam)) {
 		case IDC_GROUPS: {
@@ -100,9 +100,9 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				if (grp) {
 					grp->name = buffer;
 					fxhl->afx_dev.SaveMappings();
-					SendMessage(groups_list, CB_DELETESTRING, gItem, 0);
-					SendMessage(groups_list, CB_INSERTSTRING, gItem, (LPARAM)(buffer));
-					SendMessage(groups_list, CB_SETITEMDATA, gItem, (LPARAM)gLid);
+					ComboBox_DeleteString(groups_list, gItem);
+					ComboBox_InsertString(groups_list, gItem, buffer);
+					ComboBox_SetItemData(groups_list, gItem, gLid);
 				}
 				break;
 			}
@@ -133,9 +133,9 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			fxhl->afx_dev.GetGroups()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			gLid = maxID;
-			int pos = (int) SendMessage(groups_list, CB_ADDSTRING, 0, (LPARAM)dev.name.c_str());
-			SendMessage(groups_list, CB_SETITEMDATA, pos, (LPARAM)gLid);
-			SendMessage(groups_list, CB_SETCURSEL, pos, (LPARAM) 0);
+			int pos = (int) ComboBox_AddString(groups_list, dev.name.c_str());
+			ComboBox_SetItemData(groups_list, pos, gLid);
+			ComboBox_SetCurSel(groups_list, pos);
 			gItem = pos;
 			EnableWindow(groups_list, true);
 			EnableWindow(glights_list, true);

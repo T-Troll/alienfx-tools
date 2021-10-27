@@ -193,6 +193,11 @@ namespace AlienFan_SDK {
 			return RunMainCommand(dev_controls[devs[aDev].controlID].getFanRPM, (byte)fans[fanID]);
 		return -1;
 	}
+	int Control::GetFanPercent(int fanID) {
+		if (fanID < fans.size())
+			return RunMainCommand(dev_controls[devs[aDev].controlID].getFanPercent, (byte)fans[fanID]);
+		return -1;
+	}
 	int Control::GetFanValue(int fanID) {
 		if (fanID < fans.size()) {
 			int value = RunMainCommand(dev_controls[devs[aDev].controlID].getFanBoost, (byte) fans[fanID]),

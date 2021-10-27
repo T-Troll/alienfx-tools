@@ -219,10 +219,13 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
                 SelectObject(hdc, GetStockObject(DC_PEN));
                 SelectObject(hdc, GetStockObject(DC_BRUSH));
                 POINT mark;
+                int percent;
                 mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
                 mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
                 Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-                string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + ")";
+                string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + 
+                    ", " + to_string((percent = acpi->GetFanPercent(fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) +
+                    "%)";
                 SetWindowText(fanWindow, rpmText.c_str());
             }
         }
@@ -503,11 +506,11 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         {
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
-            ShowWindow(fanWindow, SW_RESTORE);
-            DrawFan();
             ShowWindow(hDlg, SW_RESTORE);
             SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
             SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+            ShowWindow(fanWindow, SW_RESTORE);
+            DrawFan();
             break;
         case WM_RBUTTONUP: case WM_CONTEXTMENU: {
             SendMessage(hDlg, WM_CLOSE, 0, 0);

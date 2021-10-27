@@ -174,7 +174,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		case IDC_TYPE1:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				if (mmap != NULL) {
-					int lType1 = (int)SendMessage(type_c1, CB_GETCURSEL, 0, 0);
+					int lType1 = (int)ComboBox_GetCurSel(type_c1);
 					mmap->eve[0].map[effID].type = lType1;
 					RebuildEffectList(hDlg, mmap);
 					fxhl->RefreshOne(mmap, true, true);
@@ -300,7 +300,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						//lightset* mmap = FindMapping(eItem);
 						if (mmap != NULL) {
 							// Set data
-							SendMessage(type_c1, CB_SETCURSEL, mmap->eve[0].map[effID].type, 0);
+							ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
 							RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
 							SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
 							SetSlider(sTip, mmap->eve[0].map[effID].tempo);

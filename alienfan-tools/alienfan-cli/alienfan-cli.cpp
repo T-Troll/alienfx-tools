@@ -12,6 +12,7 @@ void Usage() {
 Avaliable commands: \n\
 usage, help\t\t\tShow this usage\n\
 rpm\t\t\t\tShow fan(s) RPMs\n\
+persent\t\t\tShow fan(s) RPM in perecent of maximum\n\
 temp\t\t\t\tShow known temperature sensors values\n\
 unlock\t\t\t\tUnclock fan controls\n\
 getpower\t\t\tDisplay current power state\n\
@@ -34,7 +35,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    std::cout << "AlienFan-cli v1.3.1.0\n";
+    std::cout << "AlienFan-cli v1.3.3.0\n";
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -90,6 +91,17 @@ int main(int argc, char* argv[])
                             cout << "Fan#" << i << ": " << prms << endl;
                         else {
                             cout << "RPM reading failed!" << endl;
+                            break;
+                        }
+                    continue;
+                }
+                if (command == "percent" && supported) {
+                    int prms = 0;
+                    for (int i = 0; i < acpi->HowManyFans(); i++)
+                        if ((prms = acpi->GetFanPercent(i)) >= 0)
+                            cout << "Fan#" << i << ": " << prms << endl;
+                        else {
+                            cout << "RPM percent reading failed!" << endl;
                             break;
                         }
                     continue;

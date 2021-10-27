@@ -25,6 +25,7 @@ public:
 	DFT_gosu* dftGG = NULL;
 	ConfigHaptics *conf = NULL;
 	double* waveD;
+	int *freqs = NULL;
 
 	IAudioCaptureClient* pCaptureClient = NULL;
 

@@ -28,14 +28,10 @@ void SetTooltip(HWND tt, int x, int y) {
 
 void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 {
-    HWND curve = fanWindow;
-
-    if (curve) {
+    if (fanWindow) {
         RECT clirect, graphZone;
-        GetClientRect(curve, &clirect);
+        GetClientRect(fanWindow, &clirect);
         graphZone = clirect;
-        //clirect.left += 1;
-        //clirect.top += 1;
         clirect.right -= 1;
         clirect.bottom -= 1;
 
@@ -50,7 +46,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
             break;
         }
 
-        HDC hdc_r = GetDC(curve);
+        HDC hdc_r = GetDC(fanWindow);
 
         // Double buff...
         HDC hdc = CreateCompatibleDC(hdc_r);
@@ -95,11 +91,13 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
                 SelectObject(hdc, GetStockObject(DC_PEN));
                 SelectObject(hdc, GetStockObject(DC_BRUSH));
                 POINT mark;
+                int percent;
                 mark.x = acpi->GetTempValue(conf->fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
                 mark.y = (100 - acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
                 Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-                string rpmText = "Boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan));
-                SetWindowText(GetDlgItem(GetParent(curve), IDC_STATIC_BOOST), rpmText.c_str());
+                string rpmText = "Boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) +
+                    ", " + to_string((percent = acpi->GetFanPercent(conf->fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) + "%";
+                SetWindowText(GetDlgItem(GetParent(fanWindow), IDC_STATIC_BOOST), rpmText.c_str());
             }
         }
 
@@ -110,7 +108,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 
         DeleteObject(hbmMem);
         DeleteDC(hdc);
-        ReleaseDC(curve, hdc_r);
+        ReleaseDC(fanWindow, hdc_r);
         DeleteDC(hdc_r);
     }
 } 

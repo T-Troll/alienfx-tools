@@ -81,6 +81,7 @@ public:
 	DWORD globalDelay = 127;
 	DWORD fanControl = 0;
 	DWORD enableMon = 1;
+	DWORD noDesktop = 0;
 
 	// local flags...
 	bool haveV5 = false;

@@ -149,6 +149,11 @@
   <ItemGroup>
     <ClCompile Include="AlienFXDeviceTester.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AlienFX_SDK\AlienFX_SDK.vcxproj">
+      <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

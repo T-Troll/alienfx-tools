@@ -10,6 +10,7 @@ extern "C" {
 #include <hidclass.h>
 #include <hidsdi.h>
 }
+//#include "AlienFX_SDK.h"
 
 #pragma comment(lib, "setupapi.lib")
 #pragma comment(lib, "hid.lib")
@@ -22,7 +23,7 @@ int main()
 	bool flag = false;
 	HANDLE tdevHandle;
 	//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
-	const static DWORD vids[2] = {0x187c, 0x0d62};
+	const static DWORD vids[3] = {0x187c, 0x0d62, 0x0424};
 
 	HidD_GetHidGuid(&guid);
 	HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
@@ -93,6 +94,7 @@ int main()
 								switch (i) {
 								case 0: cout << "Alienware, "; break;
 								case 1: cout << "DARFON, "; break;
+								case 2: cout << "Microship, "; break;
 								}
 
 								switch (caps.OutputReportByteLength) {

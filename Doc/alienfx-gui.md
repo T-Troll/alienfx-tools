@@ -177,18 +177,19 @@ Please keep in mind:
 `"Settings"` tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings:
 - "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
 - "Lights follow screen state" - Dim/Fade to black lights then system screen dimmed/off (default - off).
-- "Power/indicator lights too" - Lights, marked as Power Button or Indicator follows the system state. Such lights will be always on if disabled (default - off).
+- "Keep Power/indicator on" - Lights, marked as Power Button or Indicator will be always on, or follows the system state if disabled (default - on).
 - "Auto refresh lights" - All lights will be refreshed 6 times per second. It's useful if you have AWCC running, but still want to control lights (default - off).
 - "Colour Gamma correction" - Enables colour correction to make them looks close to screen one. It keeps original AWCC colours if disabled (default - on).
 - "Enable software effects" - Global software effect switch. If it's off, effects always disabled, if it's on - effect mode defined by current profile.
 - "Dim lights" - Dim system lights brightness. It's useful for night/battery scenario (default - off).
-- "Dim Power/Indicator lights too" - Lights, marked as Power Button or Indicator follows dim state. Such lights will be always at full brightness if disabled (default - off).
+- "Dim Power/Indicator lights" - Lights, marked as Power Button or Indicator follows dim state. Such lights will be always at full brightness if disabled (default - off).
 - "Dim lights on battery" - Automatically dim lights if system running at battery power, decreasing energy usage (default - on).
 - "Dimming power" - Amount of the brightness decrease then dimmed. Values can be from 0 to 255, default is 92.
 - "Start with Windows" - Start application at Windows start. It will not work if application request run as admin level (see below) (default - off).
 - "Start minimized" - Hide application window in system tray after start.
 - "Enable monitoring" - Application start to monitor system metrics (CPU/GPU/RAM load, etc) and refresh lights according to it (default - on).
 - "Profile auto switch" - Switch between profiles available automatically, according of applications start and finish. This also block manual profile selection (default - off).
+- "Do not switch for desktop" - If enabled, profile auto switch will not change profile, if start menu/tray/desktop selected (default - off).
 - "Disable AWCC" - Application will check active Alienware Control Centre service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Esif temperature" - Read hardware device temperature counters. If disabled, only system-wide ones will be read. It's useful for some Dell and Alienware systems, but also provide a lot of component temperature readings. It will require "Run as administrator" privilege (default - off).
 - "Enable fan control" - Enables all fan control functionality, if possible.

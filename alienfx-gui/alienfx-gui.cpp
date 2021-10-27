@@ -388,7 +388,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return dlg;
 }
 
-// From toolset.
 int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
 	int pos = -1, selpos = -1;
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
@@ -545,7 +544,6 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	}
 	return 0;
 }
-// End from toolset.
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -816,8 +814,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 		} break;
 		case IDC_PROFILES: {
-			int pbItem = (int)SendMessage(profile_list, CB_GETCURSEL, 0, 0);
-			int prid = (int)SendMessage(profile_list, CB_GETITEMDATA, pbItem, 0);
+			int pbItem = (int)ComboBox_GetCurSel(profile_list);
+			int prid = (int)ComboBox_GetItemData(profile_list, pbItem);
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
@@ -888,7 +886,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 						CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
 				}
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "&Profiles...");
-			}
+			} else
+				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_STRING, NULL, ("Profile - " + conf->FindProfile(conf->activeProfile)->name).c_str());
 			// add effects menu...
 			if (conf->enableMon) {
 				pMenu = CreatePopupMenu();
