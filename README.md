@@ -1,6 +1,6 @@
 # Alienfx tools
 AWCC don't needed anymore - here are light weighted tools for Alienware systems lights,fans,power profile control:
-- [AlienFX Control](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights (including hardware and software effects), fans, temperatures, power settings and a lot more.
+- [AlienFX Control](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights (including hardware and software effects such as system parameters monitoring, ambient lights, sound haptic), fans, temperatures, power settings and a lot more.
 - [alienfx-cli](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command line interface).
 - [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Support all Dell's API functions using my low-level SDK.
 - [alienfx-probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name it for using into other applications.
