@@ -137,22 +137,21 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = 101; lTemp = 101; lBatt = 101, cFan = 101;
 	}
 
-	vector<AlienFX_SDK::afx_act> actions;
-	
 	profile* cprof = config->FindProfile(config->activeProfile);
 	if (!cprof)
 		return;
 	vector<lightset> active = cprof->lightsets;
 
-	for (Iter = active.begin(); Iter != active.end(); Iter++)
+	for (Iter = active.begin(); Iter != active.end(); Iter++) {
+		vector<AlienFX_SDK::afx_act> actions;
 		if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {
-			int mIndex = (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER) && Iter->eve[0].map.size() > 1 
+			int mIndex = (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER) && Iter->eve[0].map.size() > 1
 				&& activeMode != MODE_AC && activeMode != MODE_CHARGE ? 1 : 0;
-			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ? 
-				                            Iter->eve[0].map[mIndex] : 
-				                            Iter->eve[2].fs.b.flags ?
-				                                Iter->eve[2].map[0] : 
-				                                Iter->eve[3].map[0],
+			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ?
+				Iter->eve[0].map[mIndex] :
+				Iter->eve[2].fs.b.flags ?
+				Iter->eve[2].map[0] :
+				Iter->eve[3].map[0],
 				from = fin;
 			fin.type = 0;
 			double coeff = 0.0;
@@ -187,7 +186,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				bool blink = Iter->eve[3].fs.b.proc;
 				switch (Iter->eve[3].source) {
 				case 0: lVal = lHDD; cVal = cHDD; break;
-				case 1: lVal = lNET; cVal = cNet; break; 
+				case 1: lVal = lNET; cVal = cNet; break;
 				case 2: lVal = lTemp - ccut; cVal = cTemp - ccut; break; //ccut!
 				case 3: lVal = lRAM - ccut; cVal = cRAM - ccut; break; //ccut!
 				case 4: lVal = lBatt - ccut; cVal = cBatt - ccut; break; //ccut!
@@ -222,14 +221,14 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 						actions.push_back(fin);
 					}
 				SetLight(Iter->devid, Iter->lightid, actions);
-			}
-			else {
+			} else {
 				if (Iter->eve[2].fs.b.flags && Iter->eve[2].fs.b.proc)
 					SetGroupLight(Iter->lightid, actions, false, &from, &Iter->eve[2].map[1], coeff);
 				else
 					SetGroupLight(Iter->lightid, actions);
 			}
 		}
+	}
 	if (wasChanged) {
 		QueryUpdate();
 		lCPU = cCPU; lRAM = cRAM; lHDD = cHDD; lGPU = cGPU; lNET = cNet; lTemp = cTemp; lBatt = cBatt; lFan = cFan;
@@ -557,7 +556,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				wasDelay = true;
 				DebugPrint((string("Query so big (") +
 								   to_string((int) src->lightQuery.size()) +
-								   "), delay increased to" +
+								   "), delay increased to " +
 								   to_string(src->GetConfig()->monDelay) +
 								   " ms!\n"
 								   ).c_str());
@@ -638,7 +637,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// Dimming...
 						// For v0-v3 devices only, v4 and v5 have hardware dimming
 						if (dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
-							unsigned delta = 256 - src->GetConfig()->dimmingPower;
+							unsigned delta = 255 - src->GetConfig()->dimmingPower;
 							action.r = ((UINT) action.r * delta) / 255;// >> 8;
 							action.g = ((UINT) action.g * delta) / 255;// >> 8;
 							action.b = ((UINT) action.b * delta) / 255;// >> 8;
@@ -651,7 +650,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						if (!src->GetConfig()->block_power && current.actsize > 1) {
 
 							// Do we have the same color?
-							if (pbstate[0].r != actions[0].r || pbstate[1].r != actions[1].r ||
+							if ((current.flags && dev->GetVersion() != 4) ||
+								pbstate[0].r != actions[0].r || pbstate[1].r != actions[1].r ||
 								pbstate[0].g != actions[0].g || pbstate[1].g != actions[1].g ||
 								pbstate[0].b != actions[0].b || pbstate[1].b != actions[1].b) {
 
@@ -665,19 +665,13 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 												   "\n")).c_str());
 
 								pbstate = actions;
-								if (!current.flags) {
-									dev->SetPowerAction(current.lid,
-														actions[0].r, actions[0].g, actions[0].b,
-														actions[1].r, actions[1].g, actions[1].b);
-									continue;
-								}
-								else
-									actions[0].type = AlienFX_SDK::AlienFX_A_Power;
+								actions[0].type = AlienFX_SDK::AlienFX_A_Power;
 							} else {
 								DebugPrint("Setting power button skipped, same colors\n");
 								continue;
 							}
-						}
+						} else
+							continue;
 					}
 
 					// fill query....

@@ -915,11 +915,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
 		case NIN_BALLOONHIDE : case NIN_BALLOONTIMEOUT:
-			// ToDo: fix (doesn't work now)
-			if (!isNewVersion) {
-				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-				Shell_NotifyIcon(NIM_ADD, &conf->niData);
-			}
+			Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+			Shell_NotifyIcon(NIM_ADD, &conf->niData);
 			break;
 		case NIN_BALLOONUSERCLICK:
 		{
@@ -979,7 +976,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
-			if (idx < conf->profiles.size() && conf->profiles[idx].id != conf->activeProfile) {
+			if (/*idx < conf->profiles.size() &&*/ conf->profiles[idx].id != conf->activeProfile) {
 				eve->SwitchActiveProfile(&conf->profiles[idx]);
 				ComboBox_SetCurSel(mode_list, conf->GetEffect());
 				ReloadProfileList(hDlg);
@@ -1045,7 +1042,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		conf->Save();
 		eve->StopProfiles();
 		eve->StopEffects();
-		fxhl->UnblockUpdates(false);
+		fxhl->UnblockUpdates(false, true);
 		return 0;
 		break;
 	case WM_HOTKEY:

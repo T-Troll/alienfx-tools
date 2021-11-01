@@ -312,6 +312,19 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					}
 				}
 			} break;
+			case NM_DBLCLK:
+			{
+				// change color.
+				if (eItem != -1) {
+					if (!mmap) {
+						// have selection, but no effect - let's create one!
+						mmap = CreateMapping(eItem);
+						effID = 0;
+					}
+					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->eve[0].map[effID]);
+					RebuildEffectList(hDlg, mmap);
+				}
+			} break;
 			}
 			break;
 		}

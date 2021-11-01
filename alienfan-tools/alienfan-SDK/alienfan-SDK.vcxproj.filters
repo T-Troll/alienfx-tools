@@ -18,6 +18,9 @@
     <ClInclude Include="alienfan-SDK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="alienfan-controls.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfan-SDK.cpp">

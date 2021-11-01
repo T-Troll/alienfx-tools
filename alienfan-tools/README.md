@@ -39,10 +39,12 @@ Unpack tools into folder, run exe.
 NB: You should have hwacc.sys into the same folder.
 
 ## Supported hardware
-- Notebooks: `Alienware m15/17R1` or later, `Alienware Area51m-R1` or later.
+- Notebooks: `Alienware 13R2`, `Alienware m15/17R1` or later, `Alienware Area51m-R1` or later.
 - Should work, but not tested completely: `Alienware Area51m R2`
 - Desktops: `Alienware Aurora R7` or later (GPU control not supported yet).
 - GPU power control support NVidia GPU only. Radeon GPU need other commands i don't know for now.
+
+Send me full ACPI dump if you want to support you gear, i'll add it. 
 
 ### Tested gear:
 - `Alienware m15R1`: 
@@ -65,6 +67,10 @@ NB: You should have hwacc.sys into the same folder.
   - 3 Fans
   - 3 Temperature sensors
   - 2 Power modes
+- `Alienware 13R2`
+  - 2 Fans
+  - 8 Temperature sensors
+  - 2 Power modes (lock/unlock)
 
 ## `alienfan-gui` usage
 
@@ -146,9 +152,9 @@ NB: for both `direct` commands, all values are not decimal, but hex (like c8, a3
 ## ToDo:
 - [x] Temperature sensors reading
 - [x] Eliminate "Test mode" requirement
-- [ ] Additional hardware support (thanks for ACPI dumps, provided by `alienfx-tools` community!):
+- [x] Additional hardware support (thanks for ACPI dumps, provided by `alienfx-tools` community!):
   - [x] Alienware m15/m17 (any release)
-  - [ ] Older Alienware (need to repair my old one to check)
+  - [x] Older Alienware
   - [x] Area 51m
   - [x] Dell G3/G5 (non-AMD)
   - [x] Dell G5 SE (AMD)

@@ -163,6 +163,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="alienfan-SDK.h" />
+    <ClInclude Include="alienfan-controls.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfan-SDK.cpp" />

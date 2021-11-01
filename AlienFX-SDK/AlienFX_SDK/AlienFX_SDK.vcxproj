@@ -157,6 +157,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="alienfx-controls.h" />
     <ClInclude Include="AlienFX_SDK.h" />
   </ItemGroup>
   <ItemGroup>

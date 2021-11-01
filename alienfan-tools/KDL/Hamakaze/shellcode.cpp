@@ -1151,13 +1151,13 @@ ULONG_PTR ScResolveFunctionByName(
     ULONG_PTR Address = supGetProcAddress(KernelBase, KernelImage, Function);
     if (Address == 0) {
         
-        supPrintfEvent(kduEventError, 
-            "[!] Error, %s address cannot be found\r\n", Function);
+        //supPrintfEvent(kduEventError, 
+        //    "[!] Error, %s address cannot be found\r\n", Function);
         
         return 0;
     }
 
-    printf_s("[*] %s 0x%llX\r\n", Function, Address);
+    //printf_s("[*] %s 0x%llX\r\n", Function, Address);
     return Address;
 }
 
@@ -1634,7 +1634,7 @@ PVOID ScAllocate(
 
 #else
 
-    printf_s("[+] Resolving base shellcode import\r\n");
+    //printf_s("[+] Resolving base shellcode import\r\n");
 
     if (!ScBuildShellImport(ShellVersion,
         pvShellCode,
@@ -1643,8 +1643,8 @@ PVOID ScAllocate(
     {
         VirtualFree(pvShellCode, 0, MEM_RELEASE);
         
-        supPrintfEvent(kduEventError, 
-            "[!] Failed to resolve base shellcode import\r\n");
+        //supPrintfEvent(kduEventError, 
+        //    "[!] Failed to resolve base shellcode import\r\n");
         
         return NULL;
     }
@@ -1657,9 +1657,9 @@ PVOID ScAllocate(
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
         
-        supPrintfEvent(kduEventError, 
-            "[!] Exception during building shellcode, 0x%lX\r\n", 
-            GetExceptionCode());
+        //supPrintfEvent(kduEventError, 
+        //    "[!] Exception during building shellcode, 0x%lX\r\n", 
+        //    GetExceptionCode());
         
         return NULL;
     }

@@ -458,18 +458,21 @@ EvalAcpiMethod(
     DWORD                       ReturnedLength, LastError;
 
     ACPI_EVAL_INPUT_BUFFER_EX      pMethodWithoutInputEx = {0};
-    ACPI_EVAL_OUTPUT_BUFFER         outbuf;
-    PACPI_EVAL_OUTPUT_BUFFER        ActualData;
+    PACPI_EVAL_OUTPUT_BUFFER       outbuf;
+    PACPI_EVAL_OUTPUT_BUFFER       ActualData;
 
 	pMethodWithoutInputEx.Signature = ACPI_EVAL_INPUT_BUFFER_SIGNATURE_EX;
     strcpy_s(pMethodWithoutInputEx.MethodName, 255, puNameSeg);
+
+    outbuf = (PACPI_EVAL_OUTPUT_BUFFER) malloc(sizeof(ACPI_EVAL_OUTPUT_BUFFER));
+    //outbuf->Length = sizeof(ACPI_EVAL_OUTPUT_BUFFER);
 
     IoctlResult = DeviceIoControl(
         hDriver,           // Handle to device
         IOCTL_GPD_EVAL_ACPI_WITHOUT_DIRECT,    // IO Control code for Read
         &pMethodWithoutInputEx,        // Buffer to driver.
         sizeof(ACPI_EVAL_INPUT_BUFFER_EX), // Length of buffer in bytes.
-        &outbuf,     // Buffer from driver.
+        outbuf,     // Buffer from driver.
         sizeof(ACPI_EVAL_OUTPUT_BUFFER),
         &ReturnedLength,    // Bytes placed in DataBuffer.
         NULL                // NULL means wait till op. completes.
@@ -477,7 +480,7 @@ EvalAcpiMethod(
     if (!IoctlResult) {
         LastError = GetLastError();
         if (LastError == ERROR_MORE_DATA) {
-            ActualData = (PACPI_EVAL_OUTPUT_BUFFER) malloc(outbuf.Length);
+            ActualData = (PACPI_EVAL_OUTPUT_BUFFER) malloc(outbuf->Length);
             if (ActualData == NULL) {
                 return FALSE;
             }
@@ -487,19 +490,23 @@ EvalAcpiMethod(
                 &pMethodWithoutInputEx,        // Buffer to driver.
                 sizeof(ACPI_EVAL_INPUT_BUFFER_EX), // Length of buffer in bytes.
                 ActualData,     // Buffer from driver.
-                outbuf.Length,
+                outbuf->Length,
                 &ReturnedLength,    // Bytes placed in DataBuffer.
                 NULL                // NULL means wait till op. completes.
             );
+            free(outbuf);
             if (IoctlResult) {
                 if (outputBuffer != NULL) {
-                    (*outputBuffer) = (PVOID) ActualData;
                     if (ActualData->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
                         (*outputBuffer) = NULL;
-                    }
+                    } else
+                        (*outputBuffer) = (PVOID) ActualData;
                 }
             }
-        }
+        } else
+            free(outbuf);
+    } else {
+        (*outputBuffer) = (PVOID) outbuf;
     }
 
     return (BOOLEAN) IoctlResult;
@@ -517,7 +524,7 @@ EvalAcpiMethodArgs(
     DWORD                       ReturnedLength, LastError;
 
     PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX     pMethodEx;
-    ACPI_EVAL_OUTPUT_BUFFER                outbuf;
+    PACPI_EVAL_OUTPUT_BUFFER               outbuf;
     PACPI_EVAL_OUTPUT_BUFFER               ActualData;
 
     pMethodEx = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) pArgs;
@@ -526,13 +533,14 @@ EvalAcpiMethodArgs(
     strcpy_s(pMethodEx->MethodName, 255, (char*)puNameSeg);
     //pMethodEx->Size = sizeof(pArgs);
     //memcpy_s(pMethodEx->Argument, sizeof(pArgs), pArgs, sizeof(pArgs));
+    outbuf = (PACPI_EVAL_OUTPUT_BUFFER) malloc(sizeof(ACPI_EVAL_OUTPUT_BUFFER));
 
     IoctlResult = DeviceIoControl(
         hDriver,           // Handle to device
         IOCTL_GPD_EVAL_ACPI_WITH_DIRECT,    // IO Control code for Read
         pMethodEx,        // Buffer to driver.
         pMethodEx->Size, // Length of buffer in bytes.
-        &outbuf,     // Buffer from driver.
+        outbuf,     // Buffer from driver.
         sizeof(ACPI_EVAL_OUTPUT_BUFFER),
         &ReturnedLength,    // Bytes placed in DataBuffer.
         NULL                // NULL means wait till op. completes.
@@ -540,7 +548,7 @@ EvalAcpiMethodArgs(
     if (!IoctlResult) {
         LastError = GetLastError();
         if (LastError == ERROR_MORE_DATA) {
-            ActualData = (PACPI_EVAL_OUTPUT_BUFFER) malloc(outbuf.Length);
+            ActualData = (PACPI_EVAL_OUTPUT_BUFFER) malloc(outbuf->Length);
             if (ActualData == NULL) {
                 return FALSE;
             }
@@ -550,10 +558,11 @@ EvalAcpiMethodArgs(
                 pMethodEx,        // Buffer to driver.
                 pMethodEx->Size, // Length of buffer in bytes.
                 ActualData,     // Buffer from driver.
-                outbuf.Length,
+                outbuf->Length,
                 &ReturnedLength,    // Bytes placed in DataBuffer.
                 NULL                // NULL means wait till op. completes.
             );
+            free(outbuf);
             if (IoctlResult) {
                 if (outputBuffer != NULL) {
                     (*outputBuffer) = (PVOID) ActualData;
@@ -563,6 +572,8 @@ EvalAcpiMethodArgs(
                 }
             }
         }
+    } else {
+        (*outputBuffer) = (PVOID) outbuf;
     }
     free(pMethodEx);
     return (BOOLEAN) IoctlResult;

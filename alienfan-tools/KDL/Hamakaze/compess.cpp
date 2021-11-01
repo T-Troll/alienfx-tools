@@ -156,19 +156,19 @@ PVOID KDUDecompressResource(
 
                 if (bValidData == FALSE) {
                     
-                    supPrintfEvent(kduEventError, 
-                        "[!] Error data checksum mismatch! Header sum 0x%lx, calculated sum 0x%lx\r\n",
-                        headerSum, 
-                        calcSum);
+                    //supPrintfEvent(kduEventError, 
+                    //    "[!] Error data checksum mismatch! Header sum 0x%lx, calculated sum 0x%lx\r\n",
+                    //    headerSum, 
+                    //    calcSum);
 
                 }
             }
             else {
 
-                if (bValidData == FALSE) {
+                /*if (bValidData == FALSE) {
                     printf_s("[~] Data checksum mismatch, header sum 0x%lx, calculated sum 0x%lx, trying to continue\r\n",
                         headerSum, calcSum);
-                }
+                }*/
 
                 bValidData = TRUE; //ignore
             }
@@ -186,8 +186,8 @@ PVOID KDUDecompressResource(
         }
         else {
             
-            supPrintfEvent(kduEventError, 
-                "[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
+            //supPrintfEvent(kduEventError, 
+            //    "[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
 
         }
 

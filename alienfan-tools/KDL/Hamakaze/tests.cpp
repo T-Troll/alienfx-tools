@@ -36,11 +36,11 @@ VOID KDUTestLoad()
             TRUE);
 
         if (pvData) {
-            printf_s("[+] Provider[%lu] loaded\r\n", refProv[i].ResourceId);
+            //printf_s("[+] Provider[%lu] loaded\r\n", refProv[i].ResourceId);
             supHeapFree(pvData);
         }
         else {
-            printf_s("[+] Provider[%lu] failed to load\r\n", refProv[i].ResourceId);
+            //printf_s("[+] Provider[%lu] failed to load\r\n", refProv[i].ResourceId);
         }
 
 

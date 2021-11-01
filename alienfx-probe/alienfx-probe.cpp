@@ -206,14 +206,10 @@ int main(int argc, char* argv[])
 					devs.name = outName;
 					afx_map->GetDevices()->push_back(devs);
 					// How many lights to check?
-					if (argc > 1) // we have number of lights...
+					if (argc > 1 && string(argv[1]) != "-a") // we have number of lights...
 						numlights = atoi(argv[1]);
 					else
-						if (pids[cdev].first == AlienFX_SDK::vids[1])
-							// RGB keyboard;
-							numlights = 0x88;
-						else
-							numlights = 23;
+						numlights = pids[cdev].first == 0x0d62 ? 0x88 : 23;
 					// Let's probe low-level lights....
 					for (int i = 0; i < numlights; i++) {
 						//int j = 0;

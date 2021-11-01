@@ -1,5 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include "AlienFX_SDK.h"
+#include "alienfx-controls.h"
 #include <iostream>
 extern "C" {
 #include <hidclass.h>
@@ -11,89 +12,7 @@ extern "C" {
 
 #pragma comment(lib, "hid.lib")
 
-namespace AlienFX_SDK {
-	static struct COMMV1 {
-		const byte reset[3] = {0x02 ,0x07, 0x04};
-		const byte loop[2] = {0x02, 0x04};
-		const byte color[2] = {0x02, 0x03};
-		const byte update[2] = {0x02, 0x05};
-		const byte status[2] = {0x02 ,0x06};
-		const byte saveGroup[2] = {0x02, 0x08};
-		const byte save[2] = {0x02, 0x09};
-		//const byte apply[3] = {0x02, 0x1d, 0x03};
-		const byte setTempo[2] = {0x02, 0x0e};
-		// save group codes saveGroup[2]:
-		// 0x1 - lights
-		// 0x2 - ac charge (color, inverse mask after with index 2!) (morph ac-0, 0-ac)
-		// 0x5 - ac morph (ac-0)
-		// 0x6 - ac morph (ac-batt, batt-ac)
-		// 0x7 - batt critical (color, inverse mask after with index 2!) (morph batt-0, 0-batt)
-		// 0x8 - batt critical (morph batt-0)
-		// 0x9 - batt down (pulse batt-0)
-		// 0x2 0x0 - end storage block
-		// Reset 0x1 - power & indi, 0x2 - sleep, 0x3 - off, 0x4 - on
-	} COMMV1;
-
-	static struct COMMV4 {
-		const byte reset[7] = {0x00, 0x03 ,0x21 ,0x00 ,0x01 ,0xff ,0xff};
-		const byte colorSel[6] = {0x00, 0x03 ,0x23 ,0x01 ,0x00 ,0x01};
-		const byte colorSet[8] = {0x00, 0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa};
-		const byte update[7] = {0x00, 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0xff};
-		//{0x00, 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0x00};
-		const byte setPower[7] = {0x00, 0x03 ,0x22 ,0x00, 0x04, 0x00, 0x5b};
-		const byte prepareTurn[4] = {0x00, 0x03, 0x20, 0x2};
-		const byte turnOn[3] = {0x00, 0x03, 0x26};
-		// 4 = 0x64 - off, 0x41 - dim, 0 - on, 6 - number, 7...31 - IDs (like colorSel)
-		// Uknown command codes : 0x20 0x2
-	} COMMV4;
-
-	static struct COMMV5 {
-		// Start command block
-		const byte reset[2] = {0xcc, 0x94};
-		const byte status[2] = {0xcc, 0x93};
-		const byte colorSet[4] = {0xcc, 0x8c, 0x02, 0x00};
-		const byte loop[3] = {0xcc, 0x8c, 0x13};
-		const byte update[4] = {0xcc, 0x8b, 0x01, 0xff}; // fe, 59
-		// Seems like row masks: 8c 01 XX - 01, 02, 05, 08, 09, 0e
-		// And other masks: 8c XX - 05, 06, 07 (3 in each)
-		// first 3 rows bitmask map
-		//byte colorSel5[64] = {0xcc,0x8c,05,00,01,01,01,01,01,01,01,01,01,01,01,01,
-		//	                    01,  01,01,01,00,00,00,00,01,01,01,01,01,01,01,01,
-		//	                    01,  01,01,01,01,01,00,01,00,00,00,00,01,00,01,01,
-		//	                    01,  01,01,01,01,01,01,01,01,01,01,01,00,00,00,01};
-		//// secnd 4 rows bitmask map
-		//byte colorSel6[60] = {0xcc,0x8c,06,00,00,01,01,01,01,01,01,01,01,01,01,01,
-		//	                    01,  01,01,00,00,00,00,00,00,01,01,01,01,01,01,01,
-		//	                    01,  01,01,01,01,00,01,00,00,00,00,00,01,01,00,01,
-		//	                    01,  01,00,00,00,00,01,01,01,01,01,01};
-		//// special row bitmask map
-		//byte colorSel7[20] = {0xcc,0x8c,07,00,00,00,00,00,00,00,00,00,00,00,00,00,
-		//	                    00,  01,01,01};
-		//// Unclear, effects?
-		//byte colorSel[18] = //{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0xff, 0x00, 0x00, 0xff,
-		//                    // 0x00, 0x00, 0x01};
-		//					//{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0xf0, 0xf0, 0x00,
-		//					// 0xf0, 0xf0, 0x01};
-		//					{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0xff, 0x00, 0x00,
-		//					 0xff, 0x00, 0x01};
-		const byte turnOnInit[56] =
-		{0xcc,0x79,0x7b,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
-		 0xff,0xff,0xff,0xff,0xff,0xff,0x7c,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
-		 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x87,0xff,0xff,0xff,0x00,0xff,
-		 0xff,0xff,0x00,0xff,0xff,0xff,0x00,0x77};
-		const byte turnOnInit2[3] = {0xcc,0x79,0x88};
-		const byte turnOnSet[4] = {0xcc,0x83,0x38,0x9c};
-		// [2],[3]=type, [9]=?, [10..12]=RGB1, [13..15]=RGB2, [16]=?
-		const byte setEffect[9] = {0xcc,0x80,0x02,0x07,0x00,0x00,0x01,0x01,0x01};// , 0x00, 0x00, 0xff, 0xff, 0x00, 0xff, 0xff, 0x05
-	} COMMV5;
-
-	struct COMMV6 {
-		const byte colorSet[13] = {0x92,0x37,0x0a,0x00,0x51,0x87,0xd0,0x04,0x0,0x0,0x0,0x0,0x64};
-		//[8] - light mask
-		//[9,10,11] - RGB
-		//[12] - Brightness (0..64)
-		//[13] - ???
-	} COMMV6;
+namespace AlienFX_SDK {	
 
 	void Functions::SetMaskAndColor(int index, byte *buffer, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2) {
 		unsigned mask = 1 << index;
@@ -361,17 +280,10 @@ namespace AlienFX_SDK {
 
 	}
 
-	bool Functions::SetColor(unsigned index, byte r, byte g, byte b) {
+	bool Functions::SetColor(unsigned index, byte r, byte g, byte b, bool loop) {
 		bool val = false;
-		// API v4 command - 11,12,13 and 14,15,16 is RGB
-		// API v4 command - 4 is index, 5,6,7 is RGB, then circle (8,9,10,11 etc)
-		/// API v4 - Buffer[8,9,10] = rgb
-		/// But we need to issue 2 commands - light_select and color_set.... this for light_select
-		/// Buffer2[5] - COUNT of lights need to be set
-		/// Buffer2[6-33] - LightID (index, not mask) - it can be COUNT of them.
 		if (!inSet)
 			Reset();
-		//byte* buffer = new byte[length];
 		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (version) {
 		case API_L_V6:
@@ -429,7 +341,7 @@ namespace AlienFX_SDK {
 		default: return false;
 		}
 		val = HidD_SetOutputReport(devHandle, buffer, length);
-		Loop();
+		if (loop) Loop();
 		return val;
 	}
 
@@ -475,8 +387,6 @@ namespace AlienFX_SDK {
 		} break;
 		case API_L_V4:
 		{
-			/// Buffer[5] - Count of lights need to be set
-			/// Buffer[6-33] - LightID (index, not mask).
 			memcpy(buffer, COMMV4.colorSel, sizeof(COMMV4.colorSel));
 			buffer[5] = numLights;
 			for (int nc = 0; nc < numLights; nc++)
@@ -550,19 +460,25 @@ namespace AlienFX_SDK {
 		}break;
 		case API_L_V4:
 		{
-			if (save) {
-				int pwi;
-				for (pwi = 0; pwi < size; pwi++)
-					if (act[pwi][0].type == AlienFX_A_Power) {
-						break;
-					}
-				if (pwi < size)
-					SetPowerAction(lights[pwi], act[pwi][0].r, act[pwi][0].g, act[pwi][0].b,
-								   act[pwi][1].r, act[pwi][1].g, act[pwi][1].b,
-								   size, lights, &act);
-			}
+			//if (save) {
+			//	int pwi;
+			//	for (pwi = 0; pwi < size; pwi++)
+			//		if (act[pwi][0].type == AlienFX_A_Power) {
+			//			//SetPowerAction(lights[pwi], act[pwi][0].r, act[pwi][0].g, act[pwi][0].b,
+			//			//			   act[pwi][1].r, act[pwi][1].g, act[pwi][1].b);
+			//			break;
+			//		}
+			//	if (pwi < size)
+			//		SetPowerAction(lights[pwi], act[pwi][0].r, act[pwi][0].g, act[pwi][0].b,
+			//					   act[pwi][1].r, act[pwi][1].g, act[pwi][1].b,
+			//					   size, lights, &act);
+			//}
 			for (int nc = 0; nc < size; nc++)
-				val = SetAction(lights[nc], act[nc]);
+				if (act[nc][0].type != AlienFX_A_Power)
+					val = SetAction(lights[nc], act[nc]);
+				else
+					SetPowerAction(lights[nc], act[nc][0].r, act[nc][0].g, act[nc][0].b,
+								   act[nc][1].r, act[nc][1].g, act[nc][1].b, size);
 		} break;
 		case API_L_V1: case API_L_V2: case API_L_V3:
 		{
@@ -584,8 +500,8 @@ namespace AlienFX_SDK {
 
 			}
 			for (int nc = 0; nc < size; nc++) {
-				//HidD_SetOutputReport(devHandle, buffer, length);
-				val = SetAction(lights[nc], act[nc]);
+				if (act[nc][0].type != AlienFX_A_Power)
+					val = SetAction(lights[nc], act[nc]);
 			}
 		} break;
 		default: //case API_L_ACPI:
@@ -607,11 +523,6 @@ namespace AlienFX_SDK {
 			switch (version) {
 			case API_L_V4:
 			{
-				// Buffer[3], [11] - action type ( 0 - light, 1 - pulse, 2 - morph)
-				// Buffer[4], [12] - how long phase keeps
-				// Buffer[5], [13] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph, 0x82 - spectrum, 0xac - rainbow
-				// Buffer[7], [15] - tempo (0xfa - steady)
-				// Buffer[8-10]    - rgb
 				int bPos = 3;
 				memcpy(buffer, COMMV4.colorSel, sizeof(COMMV4.colorSel));
 				buffer[6] = index;
@@ -698,18 +609,10 @@ namespace AlienFX_SDK {
 
 	bool Functions::SetPowerAction(int index, BYTE Red, BYTE Green, BYTE Blue, BYTE Red2, BYTE Green2, BYTE Blue2,
 								   int size, UCHAR *lights, std::vector<vector<afx_act>> *act) {
-		//size_t BytesWritten;
-
 		byte buffer[MAX_BUFFERSIZE] = {0};
 		switch (version) {
 		case API_L_V4:
 		{
-			if (!IsDeviceReady()) {
-#ifdef _DEBUG
-				OutputDebugString(TEXT("Power update - device still not ready\n"));
-#endif
-				return false;
-			}
 			// Need to flush query...
 			if (inSet) UpdateColors();
 			inSet = true;
@@ -757,29 +660,36 @@ namespace AlienFX_SDK {
 				HidD_SetOutputReport(devHandle, buffer, length);
 			}
 			// Now (default) color set, if needed...
-			buffer[2] = 0x21; buffer[4] = 4; buffer[6] = 0x61;
-			HidD_SetOutputReport(devHandle, buffer, length);
-			buffer[4] = 1;
-			HidD_SetOutputReport(devHandle, buffer, length);
-			// Default color set here...
-			for (int nc = 0; nc < size; nc++)
-				if (lights[nc] != index) {
-					SetAction(lights[nc], act->at(nc));
-				}
-			buffer[4] = 2;
-			HidD_SetOutputReport(devHandle, buffer, length);
-			// Close set
-			buffer[4] = 6;
-			HidD_SetOutputReport(devHandle, buffer, length);
+			//if (size > 1) {
+			//	buffer[2] = 0x21; 
+			//	buffer[4] = 4; 
+			//	buffer[6] = 0x61;
+			//	HidD_SetOutputReport(devHandle, buffer, length);
+			//	buffer[4] = 1;
+			//	HidD_SetOutputReport(devHandle, buffer, length);
+			//	// Default color set here...
+			//	for (int nc = 0; nc < size; nc++)
+			//		if (lights[nc] != index) {
+			//			SetAction(lights[nc], act->at(nc));
+			//		}
+			//	buffer[4] = 2;
+			//	HidD_SetOutputReport(devHandle, buffer, length);
+			//	buffer[4] = 6;
+			//	HidD_SetOutputReport(devHandle, buffer, length);
+			//}
+			UpdateColors();
+
 			BYTE res = 0;
 			int count = 0;
-			while ((res = IsDeviceReady()) && res != 255 && count < 10) {
+			while ((res = IsDeviceReady()) && res != 255 && count < 20) {
 				Sleep(50);
 				count++;
 			}
 			while (!IsDeviceReady()) Sleep(100);
+			// Close set
+			//buffer[2] = 0x21; buffer[4] = 0x1; buffer[5] = 0xff; buffer[6] = 0xff;
+			//HidD_SetOutputReport(devHandle, buffer, length);
 			Reset();
-			inSet = false;
 		} break;
 		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
@@ -795,22 +705,25 @@ namespace AlienFX_SDK {
 
 			// 08 01 - load on boot
 			buf_presave[2] = 0x1;
-			AlienfxWaitForReady();
+			//AlienfxWaitForReady();
 			for (int nc = 0; nc < size; nc++) {
 				if (lights[nc] != index) {
 					HidD_SetOutputReport(devHandle, buf_presave, length);
-					SetAction(lights[nc], act->at(nc));
+					//SetAction(lights[nc], act->at(nc));
+					SetColor(lights[nc], act->at(nc)[0].r, act->at(nc)[0].g, act->at(nc)[0].b, false);
+					HidD_SetOutputReport(devHandle, buf_presave, length);
+					Loop();
 				}
 			}
 
-			if (size > 0) {
+			if (size > 1) {
 				HidD_SetOutputReport(devHandle, buf_save, length);
 				Reset();
 			}
 
 			if (index >= 0) {
 				DWORD invMask = ~((1 << index));// | 0x8000); // what is 8000? Macro?
-			// 08 02 - standby
+				// 08 02 - standby
 				buf_presave[2] = 0x2;
 				buffer[1] = 0x1;
 				buffer[2] = 0x1;
@@ -887,40 +800,45 @@ namespace AlienFX_SDK {
 				HidD_SetOutputReport(devHandle, buf_save, length);
 				Reset();
 				// 08 08 - battery
-				//buf_presave[2] = 0x8;
-				//SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
-				//buffer[1] = 0x3;
-				//buffer[2] = 0x1;
-				//AlienfxWaitForReady();
-				//HidD_SetOutputReport(devHandle, buf_presave, length);
-				//HidD_SetOutputReport(devHandle, buffer, length);
-				//HidD_SetOutputReport(devHandle, buf_presave, length);
-				//Loop();
-				//HidD_SetOutputReport(devHandle, buf_save, length);
-				//Reset();
-				// 08 09 - batt critical
-				buf_presave[2] = 0x9;
-				buffer[1] = 0x2;
-				AlienfxWaitForReady();
+				buf_presave[2] = 0x8;
+				SetMaskAndColor(index, buffer, Red2, Green2, Blue2);
+				buffer[1] = 0x3;
+				buffer[2] = 0x1;
 				HidD_SetOutputReport(devHandle, buf_presave, length);
 				HidD_SetOutputReport(devHandle, buffer, length);
 				HidD_SetOutputReport(devHandle, buf_presave, length);
 				Loop();
 				HidD_SetOutputReport(devHandle, buf_save, length);
-				AlienfxWaitForReady();
 				Reset();
-
-				// fix for immediate change
-				buffer[1] = 3;
-				SetMaskAndColor(index, buffer, Red, Green, Blue);
-				AlienfxWaitForReady();
+				// 08 09 - batt critical
+				buf_presave[2] = 0x9;
+				buffer[1] = 0x2;
+				HidD_SetOutputReport(devHandle, buf_presave, length);
 				HidD_SetOutputReport(devHandle, buffer, length);
+				HidD_SetOutputReport(devHandle, buf_presave, length);
 				Loop();
+				HidD_SetOutputReport(devHandle, buf_save, length);
+				Reset();
+			}
+				// fix for immediate change
+			for (int nc = 0; nc < size; nc++) {
+				if (lights[nc] != index) {
+					SetAction(lights[nc], act->at(nc));
+				}
+			}
+			if (size > 1) {
+				ZeroMemory(buffer, length);
+				memcpy(buffer, COMMV1.apply, sizeof(COMMV1.apply));
+				HidD_SetOutputReport(devHandle, buffer, length);
+				UpdateColors();
+			}
 
+			if (index >= 0) {
+				SetColor(index, Red, Green, Blue);
 				UpdateColors();
 				Reset();
-				AlienfxWaitForReady();
 			}
+
 			delete[] buf_presave; delete[] buf_save;
 		} break;
 		default:
@@ -1018,19 +936,6 @@ namespace AlienFX_SDK {
 		{
 			if (!inSet) Reset();
 			memcpy(buffer, COMMV5.setEffect, sizeof(COMMV5.setEffect));
-			// [2],[3]=type, [9]=?, [10..12]=RGB1, [13..15]=RGB2, [16]=?
-			/*
-			0 - color
-			1 - reset
-			2 - Breathing
-			3 - Single-color Wave
-			4 - dual color wave
-			5-7 - off?
-			8 - pulse
-			9 - mix pulse (2 colors)
-			a - night rider
-			b - lazer
-			*/
 			buffer[2] = effType;
 			// 0-f
 			buffer[3] = (BYTE) tempo;
@@ -1205,7 +1110,7 @@ namespace AlienFX_SDK {
 					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
 					attributes->Size = sizeof(HIDD_ATTRIBUTES);
 					if (HidD_GetAttributes(tdevHandle, attributes.get())) {
-						for (unsigned i = 0; i < sizeof(vids) / sizeof(DWORD); i++) {
+						for (unsigned i = 0; i < NUM_VIDS; i++) {
 							if (attributes->VendorID == vids[i]) {
 								PHIDP_PREPARSED_DATA prep_caps;
 								HIDP_CAPS caps;

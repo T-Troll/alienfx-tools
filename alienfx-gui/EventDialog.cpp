@@ -140,7 +140,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					map = CreateMapping(lid);
 				}
 				map->eve[eid].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				fxhl->RefreshMon();
+				fxhl->RefreshState();
 				UpdateMonitoringInfo(hDlg, map);
 			} else
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);

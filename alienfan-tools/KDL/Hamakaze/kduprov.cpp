@@ -63,89 +63,89 @@ PKDU_PROVIDER KDUProvGetReference()
 * Output available providers.
 *
 */
-VOID KDUProvList()
-{
-    KDU_PROVIDER* prov;
-    CONST CHAR* pszDesc;
-    ULONG provCount = KDUProvGetCount();
-
-    FUNCTION_ENTER_MSG(__FUNCTION__);
-
-    for (ULONG i = 0; i < provCount; i++) {
-        prov = &g_KDUProviders[i];
-
-        printf_s("Provider # %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
-            i,
-            prov->Desciption,
-            prov->DriverName,
-            prov->DeviceName);
-
-        //
-        // Show signer.
-        //
-        printf_s("\tSigned by: \"%ws\"\r\n",
-            prov->SignerName);
-
-        //
-        // List provider flags.
-        //
-        if (prov->SignatureWHQL)
-            printf_s("\tDriver is WHQL signed\r\n");
-        //
-        // Some Realtek drivers are digitally signed 
-        // after binary modification with wrong PE checksum as result.
-        // Note: Windows 7 will not allow their load.
-        //
-        if (prov->IgnoreChecksum)
-            printf_s("\tIgnore invalid image checksum\r\n");
-
-        //
-        // List "based" flags.
-        //
-        if (prov->DrvSourceBase != SourceBaseNone)
-        {
-            switch (prov->DrvSourceBase) {
-            case SourceBaseWinIo:
-                pszDesc = WINIO_BASE_DESC;
-                break;
-            case SourceBaseWinRing0:
-                pszDesc = WINRING0_BASE_DESC;
-                break;
-            case SourceBasePhyMem:
-                pszDesc = PHYMEM_BASE_DESC;
-                break;
-            case SourceBaseMapMem:
-                pszDesc = MAPMEM_BASE_DESC;
-                break;
-            default:
-                pszDesc = "Unknown";
-                break;
-            }
-
-            printf_s("\tBased on: %s\r\n", pszDesc);
-        }
-
-        //
-        // Minimum support Windows build.
-        //
-        printf_s("\tMinimum supported Windows build: %lu\r\n",
-            prov->MinNtBuildNumberSupport);
-
-        //
-        // Maximum support Windows build.
-        //
-        if (prov->MaxNtBuildNumberSupport == KDU_MAX_NTBUILDNUMBER) {
-            printf_s("\tMaximum Windows build undefined, no restrictions\r\n");
-        }
-        else {
-            printf_s("\tMaximum supported Windows build: %lu\r\n",
-                prov->MaxNtBuildNumberSupport);
-        }
-
-    }
-
-    FUNCTION_LEAVE_MSG(__FUNCTION__);
-}
+//VOID KDUProvList()
+//{
+//    KDU_PROVIDER* prov;
+//    CONST CHAR* pszDesc;
+//    ULONG provCount = KDUProvGetCount();
+//
+//    FUNCTION_ENTER_MSG(__FUNCTION__);
+//
+//    for (ULONG i = 0; i < provCount; i++) {
+//        prov = &g_KDUProviders[i];
+//
+//        /*printf_s("Provider # %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
+//            i,
+//            prov->Desciption,
+//            prov->DriverName,
+//            prov->DeviceName);*/
+//
+//        //
+//        // Show signer.
+//        //
+//        /*printf_s("\tSigned by: \"%ws\"\r\n",
+//            prov->SignerName);*/
+//
+//        //
+//        // List provider flags.
+//        //
+//        /*if (prov->SignatureWHQL)
+//            printf_s("\tDriver is WHQL signed\r\n");*/
+//        //
+//        // Some Realtek drivers are digitally signed 
+//        // after binary modification with wrong PE checksum as result.
+//        // Note: Windows 7 will not allow their load.
+//        //
+//        /*if (prov->IgnoreChecksum)
+//            printf_s("\tIgnore invalid image checksum\r\n");*/
+//
+//        //
+//        // List "based" flags.
+//        //
+//        if (prov->DrvSourceBase != SourceBaseNone)
+//        {
+//            switch (prov->DrvSourceBase) {
+//            case SourceBaseWinIo:
+//                pszDesc = WINIO_BASE_DESC;
+//                break;
+//            case SourceBaseWinRing0:
+//                pszDesc = WINRING0_BASE_DESC;
+//                break;
+//            case SourceBasePhyMem:
+//                pszDesc = PHYMEM_BASE_DESC;
+//                break;
+//            case SourceBaseMapMem:
+//                pszDesc = MAPMEM_BASE_DESC;
+//                break;
+//            default:
+//                pszDesc = "Unknown";
+//                break;
+//            }
+//
+//            /*printf_s("\tBased on: %s\r\n", pszDesc);*/
+//        }
+//
+//        //
+//        // Minimum support Windows build.
+//        //
+//        /*printf_s("\tMinimum supported Windows build: %lu\r\n",
+//            prov->MinNtBuildNumberSupport);*/
+//
+//        //
+//        // Maximum support Windows build.
+//        //
+//        if (prov->MaxNtBuildNumberSupport == KDU_MAX_NTBUILDNUMBER) {
+//            printf_s("\tMaximum Windows build undefined, no restrictions\r\n");
+//        }
+//        else {
+//            printf_s("\tMaximum supported Windows build: %lu\r\n",
+//                prov->MaxNtBuildNumberSupport);
+//        }
+//
+//    }
+//
+//    FUNCTION_LEAVE_MSG(__FUNCTION__);
+//}
 
 /*
 * KDUProvLoadVulnerableDriver

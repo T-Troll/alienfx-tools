@@ -26,7 +26,8 @@ namespace AlienFan_SDK {
 		int  errorCode;
 		bool pwmfans;
 		byte minPwm;
-		byte controlID;
+		bool commandControlled;
+		short controlID;
 		ALIENFAN_COMMAND probe;
 	};
 
@@ -42,73 +43,27 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND setGPUPower;
 	};
 
-    #define NUM_DEVICES 4
-
-	static const ALIENFAN_CONTROL dev_controls[2] = {
-		{   0x14,   3, // PowerID
-			0x14,   5, // RPM
-			0x14,   6, // Percent
-			0x14, 0xc, // Boost
-			0x15,   2, // Set boost
-			0x14,   4, // Temp
-			0x14, 0xb, // Get Power (value, not index!)
-			0x15,   1, // Set Power
-			0x13,   4  // GPU power
-		},
-		{
-			0x10,   3, // PowerID
-			0x10,   5, // RPM
-			0x10,   6, // Percent
-			0x10, 0xc, // Boost
-			0x11,   2, // Set boost
-			0x10,   4, // Temp
-			0x10, 0xb, // Get Power (value, not index!)
-			0x11,   1, // Set Power
-			   0,   0  // GPU power
-        }
-	};
-
-	static const ALIENFAN_DEVICE devs[4] = {
-		{ // Alienware m15/m17
-			"\\_SB.AMW1.WMAX", // main command
-			       -1, // Error code
-				false, // Not PWM
-			      100, // max. boost
-				    0, // controlID
-			0x14,   1, // Probe command
-		}, 
-		{ // Dell G15
-			"\\_SB.AMW3.WMAX", // main command
-		            0, // Error code
-		         true, // PWM fans
-		          150, // Max. boost
-				    0, // controlID
-		    0x14,   1, // Probe command
-	    },
-		{ // Dell G5 SE
-			"\\_SB.AMWW.WMAX", // main command
-					0, // Error code
-		        false, // Not PWM
-				   40, // Max. boost
-				    0, // controlID
-			0x14,   1, // Probe command
-		},
-		{ // Aurora R7
-			"\\_SB.AMW1.WMAX", // main command
-				   -1, // Error code
-				false, // Not PWM
-				  100, // Max. boost
-					1, // controlID
-			0x10,   1, // Probe command
-		}
+	struct ALIENFAN_COMMAND_CONTROL {
+		short unlock;
+		char readCom[32];
+		char writeCom[32];
+		byte numtemps;
+		char getTemp[10][32];
+		char getFanBoost[32];
+		char setFanBoost[32];
 	};
 
 	class Control {
 	private:
 		HANDLE acc = NULL;
 		short aDev = -1;
+		short cDev = -1;
 		bool activated = false;
 		SC_HANDLE scManager = NULL;
+
+		int ReadRamDirect(DWORD);
+		int WriteRamDirect(DWORD, byte);
+
 	public:
 		Control();
 		~Control();

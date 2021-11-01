@@ -478,7 +478,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     if (fan) {
                         fan->points.clear();
                         fan->points.push_back({0,0});
-                        fan->points.push_back({100,0});
+                        fan->points.push_back({100,100});
                         DrawFan();
                     }
                 }
@@ -553,7 +553,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                         fan_block cFan = {(short)lPoint->iItem};
                         cFan.points.push_back({0,0});
-                        cFan.points.push_back({100,0});
+                        cFan.points.push_back({100,100});
                         sen->fans.push_back(cFan);
                         DrawFan();
                     }

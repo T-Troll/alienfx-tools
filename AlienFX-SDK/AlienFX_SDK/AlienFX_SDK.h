@@ -1,5 +1,5 @@
 #pragma once  
-#include <windows.h>
+#include <wtypes.h>
 #include <vector>
 #include <string>
 
@@ -7,9 +7,8 @@ using namespace std;
 
 #define byte BYTE
 
-namespace AlienFX_SDK
+namespace AlienFX_SDK {	
 
-{	
 	// Old alieware device statuses v1-v3
 	#define ALIENFX_V2_RESET 0x06
 	#define ALIENFX_V2_READY 0x10
@@ -86,9 +85,6 @@ namespace AlienFX_SDK
 		AlienFX_A_NoAction = 7
 	};
 
-	//This is VIDs for different devices: Alienware (common), Darfon (RGB rekboards), Microship (monitors)
-	const static DWORD vids[3] = {0x187c, 0x0d62, 0x0424};
-
 	class Functions
 	{
 	private:
@@ -133,7 +129,7 @@ namespace AlienFX_SDK
 
 		BYTE IsDeviceReady();
 
-		bool SetColor(unsigned index, byte r, byte g, byte b);
+		bool SetColor(unsigned index, byte r, byte g, byte b, bool loop = true);
 
 		// Set multipy lights to the same color. This only works for new API devices, and emulated at old ones.
 		// numLights - how many lights need to be set
