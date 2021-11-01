@@ -134,7 +134,7 @@ namespace AlienFX_SDK {
 									length = caps.OutputReportByteLength;
 									version = 4;
 									break;
-								case 64: // TEMPORARY - Monitors
+								case 65: // TEMPORARY - Monitors
 									length = caps.OutputReportByteLength;
 									version = 6;
 									break;

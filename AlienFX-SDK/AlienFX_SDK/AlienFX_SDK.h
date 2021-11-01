@@ -42,7 +42,7 @@ namespace AlienFX_SDK {
     #define POWER_DELAY 450
 
 	// Maximal buffer size across all device types
-    #define MAX_BUFFERSIZE 64
+    #define MAX_BUFFERSIZE 65
 
 	struct mapping {
 		DWORD vid = 0;
