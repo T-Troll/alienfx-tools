@@ -1,5 +1,4 @@
 #include "alienfx-gui.h"
-//#include <Windows.h>
 #include <wtypes.h>
 #include <windowsx.h>
 #include <Shlobj.h>
@@ -9,6 +8,7 @@
 #include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 #include "../alienfan-tools/alienfan-gui/MonHelper.h"
 #include <wininet.h>
+#include <Dbt.h>
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -289,7 +289,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	fxhl = new FXHelper(conf);
 
 	// now add ACPI....
-	fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
+	fxhl->FillAllDevs(acpi);
 
 	if (fxhl->devs.size() > 0 || MessageBox(NULL, "No Alienware light devices detected!\nDo you want to continue?", "Error",
 											MB_YESNO | MB_ICONWARNING) == IDYES) {
@@ -992,7 +992,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
-			if (fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL) > 0) {
+			if (fxhl->FillAllDevs(acpi)) {
 				fxhl->UnblockUpdates(true);
 				eve->ChangePowerState();
 				conf->stateScreen = true;
@@ -1026,6 +1026,19 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (conf->fanControl)
 				mon->Stop();
 			break;
+		}
+		break;
+	case WM_DEVICECHANGE:
+		if (wParam == DBT_DEVICEARRIVAL || wParam == DBT_DEVICEREMOVECOMPLETE) {
+			// Device added or removed, need to rescan devices...
+			bool wasNotLocked = false;
+			if (!fxhl->updateLock) {
+				fxhl->UnblockUpdates(false, true);
+				wasNotLocked = true;
+			}
+			fxhl->FillAllDevs(acpi);
+			if (wasNotLocked)
+				fxhl->UnblockUpdates(true, true);
 		}
 		break;
 	case WM_QUERYENDSESSION:

@@ -1,7 +1,7 @@
 #pragma once
 #include <queue>
 #include "ConfigHandler.h"
-//#include "toolkit.h"
+#include "Alienfan-sdk.h"
 #include <mutex>
 
 // Power modes: AC = 0, Battery = 1, Charge = 2, Low Battery = 4
@@ -31,7 +31,6 @@ private:
 	long lCPU = 0, lRAM = 0, lHDD = 0, lGPU = 0, lNET = 0, lTemp = 0, lBatt = 100, lFan = 0;
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
-	bool updateLock = false;
 	ConfigHandler* config;
 
 	size_t FillDevs(bool state, bool power);
@@ -50,12 +49,12 @@ public:
 	deque<LightQueryElement> lightQuery;
 	mutex modifyQuery;
 	bool unblockUpdates = true;
-
+	bool updateLock = false;
 
 	FXHelper(ConfigHandler *conf);
 	~FXHelper();
 	AlienFX_SDK::Functions *LocateDev(int pid);
-	size_t FillAllDevs(bool state, bool power, HANDLE acc);
+	size_t FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
 	int Refresh(bool force = false);

@@ -117,6 +117,9 @@ int main()
 								case 34:
 									cout << "APIv4";
 									break;
+								case 65:
+									cout << "APIv6";
+									break;
 								default: "Unknown.";
 								}
 								cout << " +++++" << endl;

@@ -24,43 +24,49 @@ int main()
 			//	std::cout << "Reset faled with " << std::hex << GetLastError() << std::endl;
 			//	return 1;
 			//}
-			//cout << "API v" << afx_dev.GetVersion() << endl;
+			cout << "API v" << afx_dev.GetVersion() << endl;
 			//int ret = afx_dev.AlienfxGetDeviceStatus();
 			//cout << hex << "Status result " << ret << endl;
 			//afx_dev.Reset();
 			//afx_dev.AlienfxGetDeviceStatus();
-			//afx_dev.SetColor(55, 0, 0, 255);
+			cout << "Let's try to set some colors..." << endl;
+			int res = afx_dev.SetColor(0, 0, 0, 255);
+			cout << "SetColor result: " << res << endl;
+			res = afx_dev.SetColor(2, 0, 255, 255);
+			cout << "SetColor 2 result: " << res << endl;
+			afx_dev.UpdateColors();
+			cin.get();
 			//afx_dev.AlienfxGetDeviceStatus();
 			//afx_dev.UpdateColors();
 			//afx_dev.AlienfxGetDeviceStatus();
-			cout << "Let's try play with effects." << endl;
-			AlienFX_SDK::afx_act act1 = {0,0,0,255,0,0},
-				act2 = {0,0,0,0,255,0};
-			//afx_dev.SetGlobalEffects(NULL, 0x0e, 6, act1, act2); // Spectrum
-			//cout << "Is it breath now? How?" << endl;
-			//cin.get();
-			//afx_dev.SetGlobalEffects(NULL, 0x1, 0, act2, act1); // Static
-			//cout << "Is it rainbow now? How?" << endl; 
-			//cin.get();
-			//afx_dev.SetGlobalEffects(NULL, 0x2, 7, act1, act1); // Breathing
-			//cout << "Should stop effects to color. Is it?" << endl;
-			cout << "Predefined colors will be (Red, Green), default one from AWCC set" << endl;
-			for (int efftype = 0; efftype < 0x10; efftype++)
-			{
-				//for (int efflen = 0; efflen < 0x10; efflen++) {
-				int efflen = 5;
-				cout << "Set effect to (" << efftype << "," << efflen << "):" << endl;
-				afx_dev.SetGlobalEffects(efftype, efflen, act2, act1);
-				cin.get();
-			}
-			cout << "Now let's check different length for Breathing:" << endl;
-			for (int efftype = 0; efftype < 0x10; efftype++) {
-				cout << "Set effect to (2," << efftype << "):" << endl;
-				afx_dev.SetGlobalEffects(2, efftype, act2, act1);
-				cin.get();
-			}
-			int ret = afx_dev.AlienfxGetDeviceStatus();
-			cout << hex << "Status result " << ret << endl;
+			//cout << "Let's try play with effects." << endl;
+			//AlienFX_SDK::afx_act act1 = {0,0,0,255,0,0},
+			//	act2 = {0,0,0,0,255,0};
+			////afx_dev.SetGlobalEffects(NULL, 0x0e, 6, act1, act2); // Spectrum
+			////cout << "Is it breath now? How?" << endl;
+			////cin.get();
+			////afx_dev.SetGlobalEffects(NULL, 0x1, 0, act2, act1); // Static
+			////cout << "Is it rainbow now? How?" << endl; 
+			////cin.get();
+			////afx_dev.SetGlobalEffects(NULL, 0x2, 7, act1, act1); // Breathing
+			////cout << "Should stop effects to color. Is it?" << endl;
+			//cout << "Predefined colors will be (Red, Green), default one from AWCC set" << endl;
+			//for (int efftype = 0; efftype < 0x10; efftype++)
+			//{
+			//	//for (int efflen = 0; efflen < 0x10; efflen++) {
+			//	int efflen = 5;
+			//	cout << "Set effect to (" << efftype << "," << efflen << "):" << endl;
+			//	afx_dev.SetGlobalEffects(efftype, efflen, act2, act1);
+			//	cin.get();
+			//}
+			//cout << "Now let's check different length for Breathing:" << endl;
+			//for (int efftype = 0; efftype < 0x10; efftype++) {
+			//	cout << "Set effect to (2," << efftype << "):" << endl;
+			//	afx_dev.SetGlobalEffects(2, efftype, act2, act1);
+			//	cin.get();
+			//}
+			//int ret = afx_dev.AlienfxGetDeviceStatus();
+			//cout << hex << "Status result " << ret << endl;
 			//cout << "Ok, how about multi colors?" << endl;
 			//afx_dev.SetColor(23, 255, 0, 0);
 			//afx_dev.SetColor(24, 0, 255, 0);

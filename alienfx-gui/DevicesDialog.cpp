@@ -5,6 +5,8 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 
+BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
 int eLid = -1, eDid = -1, dItem = -1;
 
 void UpdateLightsList(HWND hDlg, int pid, int lid) {
@@ -54,23 +56,36 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
 }
 
-void UpdateDeviceList(HWND hDlg) {
+void UpdateDeviceList(HWND hDlg, bool isList = false) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICES);
 	// Now check current device list..
 	int pos = (-1);
-	ComboBox_ResetContent(dev_list);
+	if (isList)
+		ListBox_ResetContent(dev_list);
+	else
+		ComboBox_ResetContent(dev_list);
 	for (UINT i = 0; i < fxhl->devs.size(); i++) {
 		AlienFX_SDK::devmap* cDev = fxhl->afx_dev.GetDeviceById(fxhl->devs[i]->GetPID(), fxhl->devs[i]->GetVid());
 		if (cDev) {
 			if (!cDev->vid)
 				cDev->vid = fxhl->devs[i]->GetVid();
-			pos = ComboBox_AddString(dev_list, cDev->name.c_str());
-			ComboBox_SetItemData(dev_list, pos, cDev->devid);
+			if (isList) {
+				pos = ListBox_AddString(dev_list, cDev->name.c_str());
+				ListBox_SetItemData(dev_list, pos, cDev->devid);
+			} else {
+				pos = ComboBox_AddString(dev_list, cDev->name.c_str());
+				ComboBox_SetItemData(dev_list, pos, cDev->devid);
+			}
 		} else {
 			// no name
 			string devName = "Device #" + to_string(fxhl->devs[i]->GetVid()) + "_" + to_string(fxhl->devs[i]->GetPID());
-			pos = ComboBox_AddString(dev_list, devName.c_str());
-			ComboBox_SetItemData(dev_list, pos, fxhl->devs[i]->GetPID());
+			if (isList) {
+				pos = ListBox_AddString(dev_list, devName.c_str());
+				ListBox_SetItemData(dev_list, pos, fxhl->devs[i]->GetPID());
+			} else {
+				pos = ComboBox_AddString(dev_list, devName.c_str());
+				ComboBox_SetItemData(dev_list, pos, fxhl->devs[i]->GetPID());
+			}
 			// need to add device mapping...
 			AlienFX_SDK::devmap newDev;
 			newDev.vid = fxhl->devs[i]->GetVid();
@@ -81,7 +96,10 @@ void UpdateDeviceList(HWND hDlg) {
 		}
 		if (fxhl->devs[i]->GetPID() == eDid) {
 			// select this device.
-			ComboBox_SetCurSel(dev_list, pos);
+			if (isList)
+				ListBox_SetCurSel(dev_list, pos);
+			else
+				ComboBox_SetCurSel(dev_list, pos);
 			eDid = fxhl->devs[i]->GetPID(); 
 			dItem = pos;
 		}
@@ -90,14 +108,16 @@ void UpdateDeviceList(HWND hDlg) {
 	eLid = -1;
 
 	if (fxhl->devs.size()) {
-		if (eDid == -1) { // no selection, let's try to select dev#0
-			dItem = 0;
-			eDid = fxhl->devs[0]->GetPID();
-			ComboBox_SetCurSel(dev_list, 0);
-			//conf->lastActive = eDid;
+		if (!isList) {
+			if (eDid == -1) { // no selection, let's try to select dev#0
+				dItem = 0;
+				eDid = fxhl->devs[0]->GetPID();
+				ComboBox_SetCurSel(dev_list, 0);
+				//conf->lastActive = eDid;
+			}
+			fxhl->TestLight(eDid, -1);
+			UpdateLightsList(hDlg, eDid, -1);
 		}
-		fxhl->TestLight(eDid, -1);
-		UpdateLightsList(hDlg, eDid, -1);
 	}
 }
 
@@ -112,7 +132,20 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		// First, reset all light devices and re-scan!
 		fxhl->UnblockUpdates(false, true);
-		fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
+		//fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
+		// Do we have some lights?
+		if (!fxhl->afx_dev.GetMappings()->size() &&
+			MessageBox(
+				NULL,
+				"There is no light names defined. Do you want to detect it?",
+				"Warning",
+				MB_ICONQUESTION | MB_YESNO
+			) == IDYES) {
+			DialogBox(hInst,
+					  MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT),
+					  hDlg,
+					  (DLGPROC) DetectionDialog);
+		}
 		UpdateDeviceList(hDlg);
 	} break;
 	case WM_COMMAND: {
@@ -163,9 +196,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 			}
 			AlienFX_SDK::mapping *dev = new AlienFX_SDK::mapping({0,(DWORD)eDid,(DWORD)cid,0,"Light #" + to_string(cid)});
-			/*dev->devid = eDid;
-			dev->lightid = cid;
-			dev->name = "Light #" + to_string(cid); */
 			fxhl->afx_dev.GetMappings()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			eLid = cid;
@@ -264,13 +294,22 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_BUTTON_DEVRESET:
 		{
-			fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
+			fxhl->FillAllDevs(acpi);
 			AlienFX_SDK::Functions* dev = fxhl->LocateDev(eDid);
 			if (dev)
 				UpdateLightsList(hDlg, eDid, eLid);
 		} break;
-		case IDC_BUT_LOADMAP:
+		case IDC_BUT_DETECT:
 		{
+			// Try to detect lights from DB
+			if (DialogBox(hInst,
+						  MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT),
+						  hDlg,
+						  (DLGPROC) DetectionDialog) == IDOK)
+				UpdateDeviceList(hDlg);
+		} break;
+		case IDC_BUT_LOADMAP:
+		{	
 			// Load device and light mappings
 			OPENFILENAMEA fstruct = {0};
 			string appName = "Default.csv";
@@ -470,18 +509,178 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		}
 		break;
-	case WM_CLOSE: case WM_DESTROY:
+	case WM_DESTROY:
 	{
-		//if (!fxhl->unblockUpdates) {
-			fxhl->UnblockUpdates(true, true);
-			fxhl->RefreshState();
-		//}
+		fxhl->UnblockUpdates(true, true);
+		fxhl->RefreshState();
 	} break;
 	case WM_SIZE:
-		//if (fxhl->unblockUpdates)
-			fxhl->UnblockUpdates(false, true);
-		break;
+		fxhl->UnblockUpdates(false, true);
 	default: return false;
+	}
+	return true;
+}
+
+struct devInfo {
+	AlienFX_SDK::devmap dev;
+	vector<AlienFX_SDK::mapping> maps;
+	bool selected = false;
+};
+
+vector<devInfo> csv_devs;
+
+void UpdateSavedDevices(HWND hDlg) {
+	HWND dev_list = GetDlgItem(hDlg, IDC_LIST_SUG);
+	// Now check current device list..
+	int pos = (-1);
+	ListBox_ResetContent(dev_list);
+	pos = ListBox_AddString(dev_list, "Manual");
+	ListBox_SetCurSel(dev_list, pos);
+	ListBox_SetItemData(dev_list, pos, -1);
+	for (UINT i = 0; i < csv_devs.size(); i++) {
+		if (csv_devs[i].dev.devid == eDid) {
+				pos = ListBox_AddString(dev_list, csv_devs[i].dev.name.c_str());
+				ListBox_SetItemData(dev_list, pos, i);
+				if (csv_devs[i].selected)
+					ListBox_SetCurSel(dev_list, pos);
+		}
+	}
+}
+
+BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICES),
+		sug_list = GetDlgItem(hDlg, IDC_LIST_SUG);
+	switch (message) {
+	case WM_INITDIALOG:
+	{
+		csv_devs.clear();
+		// load csv...
+		// Load mappings...
+		HANDLE file = CreateFile(
+			".\\Mappings\\devices.csv", 
+			GENERIC_READ,
+			FILE_SHARE_READ,
+			NULL,
+			OPEN_EXISTING,
+			0,
+			NULL
+		);
+		if (file != INVALID_HANDLE_VALUE) {
+			// read and parse...
+			size_t linePos = 0, oldLinePos = 0;
+			DWORD filesize = GetFileSize(file, NULL);
+			byte* filebuf = new byte[filesize+1];
+			ReadFile(file, (LPVOID) filebuf, filesize, NULL, NULL);
+			filebuf[filesize] = 0;
+			string content = (char *) filebuf;
+			delete[] filebuf;
+			string line;
+			//AlienFX_SDK::devmap tDev = {(DWORD) 0, (DWORD) 0, string("")};
+			devInfo tDev;
+			while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
+				vector<string> fields;
+				size_t pos = 0, posOld = 1;
+				line = content.substr(oldLinePos, linePos - oldLinePos);
+				oldLinePos = linePos + 2;
+				if (line != "") {
+					while ((pos = line.find("','", posOld)) != string::npos) {
+						fields.push_back(line.substr(posOld, pos - posOld));
+						//pos+=3;
+						posOld = pos + 3;
+					}
+					fields.push_back(line.substr(posOld, line.size() - posOld - 1));
+					switch (atoi(fields[0].c_str())) {
+					case 0: // device line
+						tDev.dev.vid = atol(fields[1].c_str());
+						tDev.dev.devid = atol(fields[2].c_str());
+						tDev.dev.name = fields[3];
+						// add to devs.
+						if (fxhl->afx_dev.GetDeviceById(tDev.dev.devid, tDev.dev.vid))
+							csv_devs.push_back(tDev);
+						else
+							tDev.dev.devid = 0;
+						break;
+					case 1: // lights line
+						if (tDev.dev.devid) {
+							DWORD lightid = atol(fields[1].c_str()),
+								flags = atol(fields[2].c_str());
+							// add to maps
+							csv_devs.back().maps.push_back({tDev.dev.vid, tDev.dev.devid, lightid, flags, fields[3]});
+						}
+						break;
+						//default: // wrong line, skip
+					}
+				}
+			}
+			// reload lists...
+			CloseHandle(file);
+		}
+		// init values according to device list
+		UpdateDeviceList(hDlg, true);
+		// Now init mappings...
+		UpdateSavedDevices(hDlg);
+
+	} break;
+	case WM_COMMAND:
+	{
+		int cDevID = (int) ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list)),
+			cSugID = (int) ListBox_GetItemData(sug_list, ListBox_GetCurSel(sug_list));
+		switch (LOWORD(wParam)) {
+		case IDOK:
+		{
+			// save mappings of selected.
+			for (UINT i = 0; i < csv_devs.size(); i++) {
+				if (csv_devs[i].selected) {
+					AlienFX_SDK::devmap *cDev = fxhl->afx_dev.GetDeviceById(csv_devs[i].dev.devid, csv_devs[i].dev.vid);
+					if (cDev)
+						cDev->name = csv_devs[i].dev.name;
+					for (int j = 0; j < csv_devs[i].maps.size(); j++) {
+						AlienFX_SDK::mapping *tDev = &csv_devs[i].maps[j];
+						AlienFX_SDK::mapping *oMap = fxhl->afx_dev.GetMappingById(tDev->devid, tDev->lightid);
+						if (oMap) {
+							oMap->vid = tDev->vid;
+							oMap->name = tDev->name;
+							oMap->flags = tDev->flags;
+						} else {
+							fxhl->afx_dev.GetMappings()->push_back(tDev);
+						}
+					}
+				}
+			}
+			EndDialog(hDlg, IDOK);
+		} break;
+		case IDCANCEL:
+			EndDialog(hDlg, IDCANCEL);
+			break;
+		case IDC_DEVICES:
+		{
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				eDid = cDevID;
+				UpdateSavedDevices(hDlg);
+			} break;
+			}
+		} break;
+		case IDC_LIST_SUG:
+		{
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				// clear checkmarks...
+				for (UINT i = 0; i < csv_devs.size(); i++) {
+					if (csv_devs[i].dev.devid == eDid) {
+						csv_devs[i].selected = false;
+					}
+				}
+				if (cSugID >= 0)
+					csv_devs[cSugID].selected = true;
+			} break;
+			}
+		} break;
+		}
+	} break;
+    default: return false; // default
 	}
 	return true;
 }

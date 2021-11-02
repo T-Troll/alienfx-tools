@@ -167,13 +167,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Mappings\Alienware m15R1 no-rgb.csv">
-      <Filter>Mappings</Filter>
-    </None>
-    <None Include="Mappings\Alienware m15R4 RGB.csv">
-      <Filter>Mappings</Filter>
-    </None>
-    <None Include="Mappings\Alienware 13R2.csv">
+    <None Include="Mappings\devices.csv">
       <Filter>Mappings</Filter>
     </None>
   </ItemGroup>

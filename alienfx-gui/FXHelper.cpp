@@ -344,12 +344,12 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 	}
 }
 
-size_t FXHelper::FillAllDevs(bool state, bool power, HANDLE acc) {
-	size_t res = FillDevs(state, power);
+size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
+	size_t res = FillDevs(config->stateOn, config->offPowerButton);
 	if (acc) {
 		// add ACPI device...
 		AlienFX_SDK::Functions *dev = new AlienFX_SDK::Functions();
-		int pid = dev->AlienFXInitialize(acc);
+		int pid = dev->AlienFXInitialize(acc->GetHandle());
 		if (pid != -1) {
 			devs.push_back(dev);
 			//dev->ToggleState(state ? 255 : 0, afx_dev.GetMappings(), power);

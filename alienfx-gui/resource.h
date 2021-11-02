@@ -52,6 +52,7 @@
 #define IDI_ALIENFX_OFF                 148
 #define IDI_ALIENFX_DIM                 149
 #define IDR_MENU_TRAY                   150
+#define IDD_DIALOG_AUTODETECT           154
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_BUTTON1                     1000
@@ -185,6 +186,8 @@
 #define IDC_CHECK_EFFECTS               1099
 #define IDC_CHECK_PRIORITY              1100
 #define IDC_CHECK_EXCEPTION             1101
+#define IDC_LIST_SUG                    1103
+#define IDC_BUT_DETECT                  1104
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -214,9 +217,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        154
+#define _APS_NEXT_RESOURCE_VALUE        155
 #define _APS_NEXT_COMMAND_VALUE         32805
-#define _APS_NEXT_CONTROL_VALUE         1102
+#define _APS_NEXT_CONTROL_VALUE         1105
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

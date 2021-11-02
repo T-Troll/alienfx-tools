@@ -128,7 +128,7 @@ LoadKernelDriver(
         //
     supQueryHVCIState(&hvciEnabled, &hvciStrict, &hvciIUM);
 
-    return KDUProcessDrvMapSwitch(
+    return (BOOLEAN) KDUProcessDrvMapSwitch(
         hvciEnabled,
         osv.dwBuildNumber,
         6, // Provider number

@@ -105,14 +105,7 @@ namespace AlienFX_SDK {
 							HidD_FreePreparsedData(prep_caps);
 
 							if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
-//#ifdef _DEBUG
-//								cout << dec << "Output Report Length " << caps.OutputReportByteLength
-//									<< ", Input Report Length " << caps.InputReportByteLength
-//									<< ", Feature Report Length " << caps.FeatureReportByteLength
-//									<< endl;
-//								cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage << endl;
-//								cout << dec << "Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
-//#endif
+
 								// Yes, now so easy...
 								switch (caps.OutputReportByteLength) {
 								case 0: 

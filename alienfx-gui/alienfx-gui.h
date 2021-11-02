@@ -1,7 +1,5 @@
 #pragma once
 
-//#include "toolkit.h"
-//#include <windowsx.h>
 #include <wtypes.h>
 #include <CommCtrl.h>
 #include "resource.h"
