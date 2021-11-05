@@ -116,13 +116,15 @@ If you have a group selected, "Group lights" list present the list of lights ass
 
 You can double-click or press Enter on selected profile into the list to edit its name.  
 Each profile can have settings and application for trigger it. The settings are:
-- "Application" - Defines application executable for trigger profile switch if "Profile auto switch" enabled.
 - "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off (The same as "Disable monitoring" before).
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
-- "Priority profile" - If this flag enabled, this profile will be choosen upon others. Priority profile overrides "Only then active" setting of the other profile. 
-- "Dim lights" - Then profile activated, all lights are dimmed to common amount.
-- "Fan settings" - If selected, profile also keep fan control settings and restore it then activated. 
+- "Priority profile" - If this flag enabled, this profile will be choosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
+- "Dim lights" - Then profile activated, all lights will be dimmed.
+- "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
+
+"Trigger applications" list define application executables, which will activate selected profile if running and "Profile auto switch" is on.  
+Press "Add" button to select new application, or select one from the list and press "Remove" button to delete it.
 
 If application "Profile auto switch" setting is on, active profile will be selected automaticly according to this rules:
 - If running application, belongs to any profile not found - "Default" profile selected.
