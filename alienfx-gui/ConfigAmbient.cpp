@@ -31,57 +31,32 @@ ConfigAmbient::~ConfigAmbient() {
     RegCloseKey(hKey1);
     RegCloseKey(hKey2);
 }
+
+void ConfigAmbient::GetReg(char *name, DWORD *value, DWORD defValue) {
+    DWORD size = sizeof(DWORD);
+    if (RegGetValueA(hKey1, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+        *value = defValue;
+}
+
+void ConfigAmbient::SetReg(char *text, DWORD value) {
+    RegSetValueEx( hKey1, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
+}
+
 int ConfigAmbient::Load() {
     int size = 4;
 
-    RegGetValue(hKey1,
-        NULL,
-        TEXT("Shift"),
-        RRF_RT_DWORD | RRF_ZEROONFAILURE,
-        NULL,
-        &shift,
-        (LPDWORD)&size);
-    RegGetValue(hKey1,
-        NULL,
-        TEXT("Mode"),
-        RRF_RT_DWORD | RRF_ZEROONFAILURE,
-        NULL,
-        &mode,
-        (LPDWORD)&size);
-    RegGetValue(hKey1,
-        NULL,
-        TEXT("Divider"),
-        RRF_RT_DWORD | RRF_ZEROONFAILURE,
-        NULL,
-        &divider,
-        (LPDWORD)&size);
-    unsigned ret = RegGetValue(hKey1,
-        NULL,
-        TEXT("GammaCorrection"),
-        RRF_RT_DWORD | RRF_ZEROONFAILURE,
-        NULL,
-        &gammaCorrection,
-        (LPDWORD)&size);
-    if (ret != ERROR_SUCCESS)
-        gammaCorrection = 1;
-    if (!divider || divider > 32) divider = 16;
+    GetReg("Shift", &shift);
+    GetReg("Mode", &mode);
+    //GetReg("Divider", &divider);
+    GetReg("GammaCorrection", &gammaCorrection, 1);
+    //if (!divider || divider > 32) divider = 16;
     unsigned vindex = 0, inarray[12*4];
     char name[256];
-    ret = 0;
+    LSTATUS ret = 0;
     do {
-        DWORD len = 255, lend = 12 * 4; mapping map;
-        ret = RegEnumValueA(
-            hKey2,
-            vindex,
-            name,
-            &len,
-            NULL,
-            NULL,
-            (LPBYTE)inarray,
-            &lend
-        );
+        DWORD len = 255, lend = 12 * sizeof(DWORD); mapping map;
         // get id(s)...
-        if (ret == ERROR_SUCCESS) {
+        if ((ret = RegEnumValueA( hKey2, vindex, name, &len, NULL, NULL, (LPBYTE)inarray, &lend )) == ERROR_SUCCESS) {
             unsigned ret2 = sscanf_s(name, "%d-%d", &map.devid, &map.lightid);
             if (ret2 == 2) {
                 if (lend > 0) {
@@ -100,38 +75,10 @@ int ConfigAmbient::Save() {
 
     unsigned out[12*4];
 
-    RegSetValueEx(
-        hKey1,
-        TEXT("Shift"),
-        0,
-        REG_DWORD,
-        (BYTE*)&shift,
-        4
-    );
-    RegSetValueEx(
-        hKey1,
-        TEXT("Mode"),
-        0,
-        REG_DWORD,
-        (BYTE*)&mode,
-        4
-    );
-    RegSetValueEx(
-        hKey1,
-        TEXT("Divider"),
-        0,
-        REG_DWORD,
-        (BYTE*)&divider,
-        4
-    );
-    RegSetValueEx(
-        hKey1,
-        TEXT("GammaCorrection"),
-        0,
-        REG_DWORD,
-        (BYTE*)&gammaCorrection,
-        4
-    );
+    SetReg("Shift", shift);
+    SetReg("Mode", mode);
+    //SetReg("Divider", divider);
+    SetReg("GammaCorrection", gammaCorrection);
     for (int i = 0; i < mappings.size(); i++) {
         //preparing name
         string name = to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
@@ -142,14 +89,7 @@ int ConfigAmbient::Save() {
                 out[j] = mappings[i].map[j];
             }
             size *= sizeof(unsigned);
-            RegSetValueExA(
-                hKey2,
-                name.c_str(),
-                0,
-                REG_BINARY,
-                (BYTE*)out,
-                size
-            );
+            RegSetValueExA( hKey2, name.c_str(), 0, REG_BINARY, (BYTE*)out, size );
         }
     }
 	return 0;

@@ -1,6 +1,6 @@
 #include "alienfx-gui.h"
 
-VOID OnSelChanged(HWND hwndDlg);
+void SwitchTab(int);
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 lightset* CreateMapping(int lid);
 lightset* FindMapping(int mid);
@@ -66,9 +66,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_INITDIALOG:
 	{
 		if (UpdateLightList(light_list, fxhl) < 0) {
-			HWND tab_list = GetParent(hDlg);
-			TabCtrl_SetCurSel(tab_list, 6);
-			OnSelChanged(tab_list);
+			SwitchTab(TAB_DEVICES);
 			return false;
 		}
 

@@ -2,17 +2,14 @@
 #include <vector>
 #include <Windows.h>
 
-struct ColorComp
-{
-	unsigned char blue;
-	unsigned char green;
-	unsigned char red;
-	unsigned char brightness;
-};
-
 union Colorcode
 {
-	struct ColorComp cs;
+	struct {
+		byte b;
+		byte g;
+		byte r;
+		byte br;
+	};
 	unsigned int ci;
 };
 
@@ -31,6 +28,9 @@ class ConfigHaptics
 {
 private:
 	HKEY   hKey1, hKey2;
+
+	void GetReg(char *name, DWORD *value, DWORD defValue = 0);
+	void SetReg(char *text, DWORD value);
 public:
 	DWORD numbars = 20;
 	DWORD numpts = 2048;
@@ -43,6 +43,7 @@ public:
 
 	ConfigHaptics();
 	~ConfigHaptics();
+
 	int Load();
 	int Save();
 	//static bool ConfigHaptics::sortMappings(mapping i, mapping j);

@@ -27,6 +27,8 @@ public:
 	void StopEffects();
 	void StartEffects();
 
+	profile *ScanTaskList();
+
 	EventHandler(ConfigHandler*, MonHelper*, FXHelper*);
 	~EventHandler();
 

@@ -3,8 +3,7 @@
 #include <string>
 
 ConfigHelper::ConfigHelper() {
-	DWORD  dwDisposition;
-
+	
 	RegCreateKeyEx(HKEY_CURRENT_USER,
 				   TEXT("SOFTWARE\\Alienfan"),
 				   0,
@@ -13,7 +12,7 @@ ConfigHelper::ConfigHelper() {
 				   KEY_ALL_ACCESS,
 				   NULL,
 				   &hKey1,
-				   &dwDisposition);
+				   NULL);
 	RegCreateKeyEx(HKEY_CURRENT_USER,
 				   TEXT("SOFTWARE\\Alienfan\\Sensors"),
 				   0,
@@ -22,7 +21,7 @@ ConfigHelper::ConfigHelper() {
 				   KEY_ALL_ACCESS,
 				   NULL,
 				   &hKey2,
-				   &dwDisposition);
+				   NULL);
 
 	niData.cbSize = sizeof(NOTIFYICONDATA);
 	niData.uID = IDI_ALIENFANGUI;
@@ -66,51 +65,25 @@ fan_block* ConfigHelper::FindFanBlock(temp_block* sen, int id) {
 	return res;
 }
 
-void ConfigHelper::Load() {
-	int size = 4, size_c = 4 * 16;
+void ConfigHelper::GetReg(const char *name, DWORD *value, DWORD defValue) {
+	DWORD size = sizeof(DWORD);
+	if (RegGetValueA(hKey1, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+		*value = defValue;
+}
 
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("StartAtBoot"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&startWithWindows,
-				(LPDWORD)&size);
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("StartMinimized"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&startMinimized,
-				(LPDWORD)&size);
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("LastPowerStage"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&prof.powerStage,
-				(LPDWORD)&size);
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("LastSensor"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&lastSelectedSensor,
-				(LPDWORD)&size);
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("LastFan"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&lastSelectedFan,
-				(LPDWORD)&size);
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("LastGPU"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&prof.GPUPower,
-				(LPDWORD)&size);
+void ConfigHelper::SetReg(const char *text, DWORD value) {
+	RegSetValueEx( hKey1, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
+}
+
+void ConfigHelper::Load() {
+
+	GetReg("StartAtBoot", &startWithWindows);
+	GetReg("StartMinimized", &startMinimized);
+	GetReg("LastPowerStage", &prof.powerStage);
+	GetReg("LastSensor", &lastSelectedSensor);
+	GetReg("LastFan", &lastSelectedFan);
+	GetReg("LastGPU", &prof.GPUPower);
+
 	// Now load sensor mappings...
 	unsigned vindex = 0;
 	int ret = 0;
@@ -118,20 +91,9 @@ void ConfigHelper::Load() {
 	lastProf = &prof;
 	do {
 		DWORD len = 255, lend = 0;
-		ret = RegEnumValueA(
-			hKey2,
-			vindex,
-			name,
-			&len,
-			NULL,
-			NULL,
-			NULL,
-			&lend
-		);
-		if (ret == ERROR_SUCCESS) {
-			short sid, fid;
-			unsigned ret2 = sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid);
-			if (ret2 == 2) { // Sensor-fan block
+		if ((ret = RegEnumValueA( hKey2, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+			short sid, fid; len++;
+			if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) { // Sensor-fan block
 				temp_block* cSensor = FindSensor(sid);
 				if (!cSensor) { // Need to add new sensor block
 					cSensor = new temp_block{sid};
@@ -141,16 +103,7 @@ void ConfigHelper::Load() {
 				}
 				// Now load and add fan data..
 				byte* inarray = new byte[lend];
-				RegEnumValueA(
-					hKey2,
-					vindex,
-					name,
-					&len,
-					NULL,
-					NULL,
-					inarray,
-					&lend
-				);
+				RegEnumValueA( hKey2, vindex, name, &len, NULL, NULL, inarray, &lend );
 				fan_block cFan;
 				cFan.fanIndex = fid;
 				for (UINT i = 0; i < lend; i += 2) {
@@ -169,86 +122,32 @@ void ConfigHelper::Load() {
 
 void ConfigHelper::Save() {
 	string name;
-	DWORD dwDisposition;
 	
-	RegSetValueEx(
-		hKey1,
-		TEXT("StartAtBoot"),
-		0,
-		REG_DWORD,
-		(BYTE*)&startWithWindows,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("StartMinimized"),
-		0,
-		REG_DWORD,
-		(BYTE*)&startMinimized,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("LastPowerStage"),
-		0,
-		REG_DWORD,
-		(BYTE*)&prof.powerStage,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("LastSensor"),
-		0,
-		REG_DWORD,
-		(BYTE*)&lastSelectedSensor,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("LastFan"),
-		0,
-		REG_DWORD,
-		(BYTE*)&lastSelectedFan,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("LastGPU"),
-		0,
-		REG_DWORD,
-		(BYTE*)&prof.GPUPower,
-		sizeof(DWORD)
-	);
+	SetReg("StartAtBoot", startWithWindows);
+	SetReg("StartMinimized", startMinimized);
+	SetReg("LastPowerStage", prof.powerStage);
+	SetReg("LastSensor", lastSelectedSensor);
+	SetReg("LastFan", lastSelectedFan);
+	SetReg("LastGPU", prof.GPUPower);
+
 	if (prof.fanControls.size() > 0) {
+		// clean old data
 		RegCloseKey(hKey2);
 		RegDeleteTreeA(hKey1, "Sensors");
-		RegCreateKeyEx(HKEY_CURRENT_USER,
-					   TEXT("SOFTWARE\\Alienfan\\Sensors"),
-					   0,
-					   NULL,
-					   REG_OPTION_NON_VOLATILE,
-					   KEY_ALL_ACCESS,
-					   NULL,
-					   &hKey2,
-					   &dwDisposition);
+		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan\\Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);
 	}
+
 	for (int i = 0; i < prof.fanControls.size(); i++) {
 		for (int j = 0; j < prof.fanControls[i].fans.size(); j++) {
-			name = "Sensor-" + to_string(prof.fanControls[i].sensorIndex) + "-" + to_string(prof.fanControls[i].fans[j].fanIndex);
+			name = "Sensor-" + to_string(prof.fanControls[i].sensorIndex) + "-" 
+				+ to_string(prof.fanControls[i].fans[j].fanIndex);
 			byte* outdata = new byte[prof.fanControls[i].fans[j].points.size() * 2];
 			for (int k = 0; k < prof.fanControls[i].fans[j].points.size(); k++) {
 				outdata[2 * k] = (byte)prof.fanControls[i].fans[j].points[k].temp;
 				outdata[(2 * k)+1] = (byte)prof.fanControls[i].fans[j].points[k].boost;
 			}
 
-			RegSetValueExA(
-				hKey2,
-				name.c_str(),
-				0,
-				REG_BINARY,
-				(BYTE*) outdata,
-				(DWORD) prof.fanControls[i].fans[j].points.size() * 2
-			);
+			RegSetValueExA( hKey2, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) prof.fanControls[i].fans[j].points.size() * 2 );
 			delete[] outdata;
 		}
 	}

@@ -102,7 +102,7 @@ void FXHelper::TestLight(int did, int id)
 
 		dev->SetMultiLights((int)opLights.size(), opLights.data(), 0, 0, 0);
 		if (id != -1)
-			dev->SetColor(id, config->testColor.cs.red, config->testColor.cs.green, config->testColor.cs.blue);
+			dev->SetColor(id, config->testColor.r, config->testColor.g, config->testColor.b);
 		dev->UpdateColors();
 
 	}
@@ -274,7 +274,7 @@ void FXHelper::RefreshState(bool force)
 void FXHelper::RefreshMon()
 {
 	config->SetStates();
-	if (config->IsMonitoring())
+	if (!config->GetEffect())
 		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, lFan, true);
 }
 
@@ -308,8 +308,8 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 		}
 	}
 	if (dev && dev->GetVersion() == 5) {
-		AlienFX_SDK::afx_act c1 = {0,0,0,config->effColor1.cs.red, config->effColor1.cs.green, config->effColor1.cs.blue},
-			c2 = {0,0,0,config->effColor2.cs.red, config->effColor2.cs.green, config->effColor2.cs.blue};
+		AlienFX_SDK::afx_act c1 = {0,0,0,config->effColor1.r, config->effColor1.g, config->effColor1.b},
+			c2 = {0,0,0,config->effColor2.r, config->effColor2.g, config->effColor2.b};
 		dev->SetGlobalEffects((byte)config->globalEffect, config->globalDelay, c1, c2);
 	}
 }
@@ -420,7 +420,7 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 		actions = map->eve[0].map;
 	}
 
-	if (config->IsMonitoring() && !force) {
+	if (!config->GetEffect() && !force) {
 		if (map->eve[1].fs.b.flags) {
 			// use power event;
 			if (!map->eve[0].fs.b.flags)
@@ -505,8 +505,8 @@ void FXHelper::RefreshHaptics(int *freq) {
 
 		if (!map.map.empty() && map.hicut > map.lowcut) {
 			double power = 0.0;
-			AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.cs.red,map.colorfrom.cs.green, map.colorfrom.cs.blue},
-				to = {0,0,0,map.colorto.cs.red,map.colorto.cs.green, map.colorto.cs.blue},
+			AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.r,map.colorfrom.g, map.colorfrom.b},
+				to = {0,0,0,map.colorto.r,map.colorto.g, map.colorto.b},
 				fin = {0};
 			// here need to check less bars...
 			for (int j = 0; j < map.map.size(); j++)

@@ -159,7 +159,7 @@ void EventHandler::ChangeEffectMode(int newMode) {
 		conf->SetEffect(newMode);
 		StartEffects();
 	} else
-		if (conf->IsMonitoring()) {
+		if (conf->enableMon) {
 			fxh->Refresh(true);
 			StartEffects();
 		}
@@ -185,9 +185,9 @@ void EventHandler::StopEffects() {
 }
 
 void EventHandler::StartEffects() {
-	if (conf->IsMonitoring()) {
+	if (conf->enableMon) {
 		// start new mode...
-		switch (conf->GetEffect()) {
+		switch (effMode = conf->GetEffect()) {
 		case 0: 
 			StartEvents(); 
 			break;
@@ -200,11 +200,11 @@ void EventHandler::StartEffects() {
 		//case 3: 
 		//	break;
 		}
-		effMode = conf->GetEffect();
+		//effMode = conf->GetEffect();
 	}
 }
 
-profile* ScanTaskList() {
+profile* EventHandler::ScanTaskList() {
 	DWORD maxProcess=256, maxFileName=MAX_PATH, cbNeeded, cProcesses, cFileName = maxFileName;
 	DWORD* aProcesses = new DWORD[maxProcess];
 	TCHAR *szProcessName = new TCHAR[maxFileName]{0};
@@ -301,7 +301,7 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 					 )) {
 
 			if (!newp) {
-				even->SwitchActiveProfile(ScanTaskList());
+				even->SwitchActiveProfile(even->ScanTaskList());
 			} else {
 				if (even->conf->IsPriorityProfile(newp->id) || !even->conf->IsPriorityProfile(even->conf->activeProfile))
 					even->SwitchActiveProfile(newp);
@@ -345,7 +345,7 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 
 				if (even->conf->foregroundProfile != even->conf->activeProfile &&
 					even->conf->FindProfileByApp(string(szProcessName))) {
-					even->SwitchActiveProfile(ScanTaskList());
+					even->SwitchActiveProfile(even->ScanTaskList());
 				}
 				break;
 
@@ -355,7 +355,7 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 				
 				if (even->conf->foregroundProfile != even->conf->activeProfile &&
 					even->conf->FindProfileByApp(string(szProcessName))) {
-					even->SwitchActiveProfile(ScanTaskList());
+					even->SwitchActiveProfile(even->ScanTaskList());
 				}
 
 				break;

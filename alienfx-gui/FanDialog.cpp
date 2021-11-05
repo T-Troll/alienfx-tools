@@ -1,15 +1,11 @@
 #include "alienfx-gui.h"
 #include <windowsx.h>
 
-extern UINT newTaskBar;
 extern HWND fanWindow;
-extern HWND mDlg;
 
-VOID OnSelChanged(HWND hwndDlg);
-//void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+void SwitchTab(int);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 //void SetSlider(HWND tt, int value);
-//static int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 fan_point* lastFanPoint = NULL;
 
@@ -231,9 +227,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SendMessage(power_gpu, TBM_SETPOS, true, conf->fan_conf->lastProf->GPUPower);
 
         } else {
-            HWND tab_list = GetParent(hDlg);
-            TabCtrl_SetCurSel(tab_list, 8);
-            OnSelChanged(tab_list);
+            SwitchTab(TAB_SETTINGS);
             return false;
         }
         return true;

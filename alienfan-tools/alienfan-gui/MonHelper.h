@@ -10,6 +10,7 @@ public:
 	ConfigHelper* conf;
 	HWND dlg = NULL, fDlg = NULL;
 	HANDLE stopEvent = 0;
+	short oldPower = 0;
 	AlienFan_SDK::Control* acpi;
 	vector<int> senValues, fanValues, boostValues, boostSets;
 

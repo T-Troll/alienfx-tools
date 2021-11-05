@@ -20,12 +20,12 @@ union FlagSet {
 		BYTE proc;
 		BYTE reserved;
 	} b;
-	unsigned s = 0;
+	DWORD s = 0;
 };
 
 struct event {
 	FlagSet fs;
-	unsigned source = 0;
+	BYTE source = 0;
 	std::vector<AlienFX_SDK::afx_act> map;
 };
 
@@ -39,10 +39,11 @@ struct profile {
 	unsigned id = 0;
 	WORD flags = 0;
 	WORD effmode = 0;
-	std::string triggerapp;
-	std::string name;
-	std::vector<lightset> lightsets;
+	vector<string> triggerapp;
+	string name;
+	vector<lightset> lightsets;
 	fan_profile fansets;
+	bool ignoreDimming;
 };
 
 class ConfigHandler
@@ -53,11 +54,16 @@ private:
 		hKey3 = NULL, 
 		hKey4 = NULL;
 	bool conf_loaded = false;
+	void GetReg(char *, DWORD *, DWORD def = 0);
+	void SetReg(char *text, DWORD value);
+	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
+	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
 	DWORD autoRefresh = 0;
 	DWORD lightsOn = 1;
+	DWORD dimmed = 0;
 	DWORD offWithScreen = 0;
 	DWORD dimmedBatt = 1;
 	DWORD dimPowerButton = 0;
@@ -72,7 +78,6 @@ public:
 	DWORD block_power = 0;
 	DWORD gammaCorrection = 1;
 	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
-	//DWORD lastActive = 0;
 	DWORD monDelay = 200;
 	bool wasAWCC = false;
 	Colorcode testColor, effColor1, effColor2;
@@ -101,17 +106,13 @@ public:
 	int Load();
 	int Save();
 	//static bool sortMappings(lightset i, lightset j);
-	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
-	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp);
 	profile* FindProfile(int id);
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(int id);
 	void SetStates();
 	void SetIconState();
 	bool IsDimmed();
-	bool IsMonitoring();
-	void SetDimmed(bool);
-	//void SetMonitoring(bool);
+	void SetDimmed();
 	int  GetEffect();
 	void SetEffect(int);
 };

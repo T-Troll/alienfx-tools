@@ -1,6 +1,7 @@
 #include "alienfx-gui.h"
 
-bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
+//bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
+bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
 void ReloadProfileList(HWND hDlg);
 DWORD EvaluteToAdmin();
 bool DoStopService(bool kind);
@@ -18,21 +19,22 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 	{
 		// system settings...
-		if (conf->startWindows) CheckDlgButton(hDlg, IDC_STARTW, BST_CHECKED);
-		if (conf->startMinimized) CheckDlgButton(hDlg, IDC_STARTM, BST_CHECKED);
-		if (conf->autoRefresh) CheckDlgButton(hDlg, IDC_AUTOREFRESH, BST_CHECKED);
-		if (conf->dimmedBatt) CheckDlgButton(hDlg, IDC_BATTDIM, BST_CHECKED);
-		if (conf->offWithScreen) CheckDlgButton(hDlg, IDC_SCREENOFF, BST_CHECKED);
-		if (conf->IsMonitoring()) CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, BST_CHECKED);
-		if (conf->lightsOn) CheckDlgButton(hDlg, IDC_CHECK_LON, BST_CHECKED);
-		if (conf->dimPowerButton) CheckDlgButton(hDlg, IDC_POWER_DIM, BST_CHECKED);
-		if (conf->gammaCorrection) CheckDlgButton(hDlg, IDC_CHECK_GAMMA, BST_CHECKED);
-		if (!conf->offPowerButton) CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, BST_CHECKED);
-		if (conf->enableProf) CheckDlgButton(hDlg, IDC_BUT_PROFILESWITCH, BST_CHECKED);
-		if (conf->awcc_disable) CheckDlgButton(hDlg, IDC_AWCC, BST_CHECKED);
-		if (conf->esif_temp) CheckDlgButton(hDlg, IDC_ESIFTEMP, BST_CHECKED);
-		if (conf->fanControl) CheckDlgButton(hDlg, IDC_FANCONTROL, BST_CHECKED);
-		if (conf->noDesktop) CheckDlgButton(hDlg, IDC_CHECK_EXCEPTION, BST_CHECKED);
+		CheckDlgButton(hDlg, IDC_STARTW, conf->startWindows);
+		CheckDlgButton(hDlg, IDC_STARTM, conf->startMinimized);
+		CheckDlgButton(hDlg, IDC_AUTOREFRESH, conf->autoRefresh);
+		CheckDlgButton(hDlg, IDC_BATTDIM, conf->dimmedBatt);
+		CheckDlgButton(hDlg, IDC_SCREENOFF, conf->offWithScreen);
+		CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, conf->enableMon);
+		CheckDlgButton(hDlg, IDC_CHECK_LON, conf->lightsOn);
+		CheckDlgButton(hDlg, IDC_POWER_DIM, conf->dimPowerButton);
+		CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection);
+		CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, !conf->offPowerButton);
+		CheckDlgButton(hDlg, IDC_BUT_PROFILESWITCH, conf->enableProf);
+		CheckDlgButton(hDlg, IDC_AWCC, conf->awcc_disable);
+		CheckDlgButton(hDlg, IDC_ESIFTEMP, conf->esif_temp);
+		CheckDlgButton(hDlg, IDC_FANCONTROL, conf->fanControl);
+		CheckDlgButton(hDlg, IDC_CHECK_EXCEPTION, conf->noDesktop);
+		CheckDlgButton(hDlg, IDC_CHECK_DIM, conf->dimmed);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -88,26 +90,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_BUTTON_EFFCLR1:
 		{
-			AlienFX_SDK::afx_act c;
-			c.r = conf->effColor1.cs.red;
-			c.g = conf->effColor1.cs.green;
-			c.b = conf->effColor1.cs.blue;
-			SetColor(hDlg, IDC_BUTTON_EFFCLR1, NULL, &c);
-			conf->effColor1.cs.red = c.r;
-			conf->effColor1.cs.green = c.g;
-			conf->effColor1.cs.blue = c.b;
+			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &conf->effColor1.r, &conf->effColor1.g, &conf->effColor1.b);
 			fxhl->UpdateGlobalEffect();
 		} break;
 		case IDC_BUTTON_EFFCLR2:
 		{
-			AlienFX_SDK::afx_act c;
-			c.r = conf->effColor2.cs.red;
-			c.g = conf->effColor2.cs.green;
-			c.b = conf->effColor2.cs.blue;
-			SetColor(hDlg, IDC_BUTTON_EFFCLR2, NULL, &c);
-			conf->effColor2.cs.red = c.r;
-			conf->effColor2.cs.green = c.g;
-			conf->effColor2.cs.blue = c.b;
+			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &conf->effColor2.r, &conf->effColor2.g, &conf->effColor2.b);
 			fxhl->UpdateGlobalEffect();
 		} break;
 		case IDC_STARTM:
@@ -180,6 +168,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_EXCEPTION:
 			conf->noDesktop = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
+		case IDC_CHECK_DIM:
+			conf->dimmed = state;// IsDlgButtonChecked(hDlg, LOWORD(wParam));
+			fxhl->ChangeState();
+			break;
 		case IDC_FANCONTROL:
 			conf->fanControl = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			if (conf->fanControl) {
@@ -229,10 +221,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*) lParam)->CtlID) {
 		case IDC_BUTTON_EFFCLR1:
-			RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, conf->effColor1.cs.red, conf->effColor1.cs.green, conf->effColor1.cs.blue);
+			RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, conf->effColor1.r, conf->effColor1.g, conf->effColor1.b);
 			break;
 		case IDC_BUTTON_EFFCLR2:
-			RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, conf->effColor2.cs.red, conf->effColor2.cs.green, conf->effColor2.cs.blue);
+			RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, conf->effColor2.r, conf->effColor2.g, conf->effColor2.b);
 			break;
 		}
 		break;

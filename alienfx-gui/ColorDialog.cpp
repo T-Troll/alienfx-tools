@@ -1,6 +1,6 @@
 #include "alienfx-gui.h"
 
-VOID OnSelChanged(HWND hwndDlg);
+void SwitchTab(int);
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 lightset* CreateMapping(int lid);
 lightset* FindMapping(int mid);
@@ -117,7 +117,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
 		type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
 
-	lightset* mmap = FindMapping(eItem);
+	lightset* mmap = eItem < 0 ? NULL: FindMapping(eItem);
 
 	switch (message)
 	{
@@ -125,9 +125,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 		if (UpdateLightList(light_list, fxhl) < 0) {
 			// no lights, switch to setup
-			HWND tab_list = GetParent(hDlg);
-			TabCtrl_SetCurSel(tab_list, 6);
-			OnSelChanged(tab_list);
+			SwitchTab(TAB_DEVICES);
 			return false;
 		}
 		// Set types list...

@@ -9,6 +9,9 @@ MonHelper::MonHelper(HWND cDlg, HWND fanDlg, ConfigHelper* config, AlienFan_SDK:
 	fDlg = fanDlg;
 	conf = config;
 	acpi = acp;
+	oldPower = acpi->GetPower();
+	if (oldPower != conf->lastProf->powerStage)
+		acpi->SetPower(conf->lastProf->powerStage);
 	stopEvent = CreateEvent(NULL, false, false, NULL);
 	Start();
 }
@@ -16,6 +19,8 @@ MonHelper::MonHelper(HWND cDlg, HWND fanDlg, ConfigHelper* config, AlienFan_SDK:
 MonHelper::~MonHelper() {
 	Stop();
 	CloseHandle(stopEvent);
+	if (oldPower != conf->lastProf->powerStage)
+		acpi->SetPower(oldPower);
 }
 
 void MonHelper::Start() {
@@ -56,9 +61,6 @@ DWORD WINAPI CMonProc(LPVOID param) {
 		// update values.....
 		bool visible = IsWindowVisible(src->dlg);// IsIconic(src->dlg);
 		bool needUpdate = false;
-
-		/*if (src->acpi->GetPower() != src->conf->lastProf->powerStage)
-			src->acpi->SetPower(src->conf->lastProf->powerStage);*/
 
 		// temps..
 		for (int i = 0; i < src->acpi->HowManySensors(); i++) {

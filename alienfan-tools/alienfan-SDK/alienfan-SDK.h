@@ -48,9 +48,9 @@ namespace AlienFan_SDK {
 		char readCom[32];
 		char writeCom[32];
 		byte numtemps;
+		byte numfans;
 		char getTemp[10][32];
-		char getFanBoost[32];
-		char setFanBoost[32];
+		short fanID[2];
 	};
 
 	class Control {
@@ -132,7 +132,7 @@ namespace AlienFan_SDK {
 		// Arrays of sensors, fans and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<USHORT> fans;
-		vector<USHORT> powers;
+		vector<byte> powers;
 
 		// true if driver connection fails, as well as start driver attempt fails. Indicates you have not enough rights or system not configured correctly.
 		bool wrongEnvironment = false;

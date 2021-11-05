@@ -17,17 +17,14 @@ struct lightinfo {
 	char desc[256];
 };
 
-struct ColorS
-{
-	unsigned char blue;
-	unsigned char green;
-	unsigned char red;
-	unsigned char brightness;
-};
-
 union ColorU
 {
-	struct ColorS cs;
+	struct {
+		unsigned char b;
+		unsigned char g;
+		unsigned char r;
+		unsigned char br;
+	};
 	unsigned int ci;
 };
 

@@ -46,10 +46,10 @@ unsigned GetActionCode(string name, int mode) {
 	return mode ? AlienFX_SDK::Action::AlienFX_A_Color : LFX_ACTION_COLOR;
 }
 
-void SetBrighness(ColorS *color) {
-	color->red = ((unsigned) color->red * color->brightness) / 255;// >> 8;
-	color->green = ((unsigned) color->green * color->brightness) / 255;// >> 8;
-	color->blue = ((unsigned) color->blue * color->brightness) / 255;// >> 8;
+void SetBrighness(ColorU *color) {
+	color->r = ((unsigned) color->r * color->br) / 255;// >> 8;
+	color->g = ((unsigned) color->g * color->br) / 255;// >> 8;
+	color->b = ((unsigned) color->b * color->br) / 255;// >> 8;
 }
 
 void printUsage() 
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	cerr << "alienfx-cli v5.0.6" << endl;
+	cerr << "alienfx-cli v5.2.1" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -298,14 +298,14 @@ int main(int argc, char* argv[])
 			}
 			unsigned zoneCode = LFX_ALL;
 			static ColorU color;
-			color.cs.red = atoi(args.at(0).c_str());
-			color.cs.green = atoi(args.at(1).c_str());
-			color.cs.blue = atoi(args.at(2).c_str());
-			color.cs.brightness = args.size() > 3 ? atoi(args.at(3).c_str()) : 255;
+			color.r = atoi(args.at(0).c_str());
+			color.g = atoi(args.at(1).c_str());
+			color.b = atoi(args.at(2).c_str());
+			color.br = args.size() > 3 ? atoi(args.at(3).c_str()) : 255;
 			switch (devType) {
 			case 1:
 			{
-				SetBrighness(&color.cs);
+				SetBrighness(&color);
 				vector<UCHAR> lights;
 				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
 					AlienFX_SDK::mapping *lgh = afx_map->GetMappings()->at(i);
@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
 						!(lgh->flags & ALIENFX_FLAG_POWER))
 						lights.push_back((UCHAR) lgh->lightid);
 				}
-				afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
+				afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.r, color.g, color.b);
 				afx_dev->UpdateColors();
 			} break;
 			case 0:
@@ -330,14 +330,14 @@ int main(int argc, char* argv[])
 			}
 			static ColorU color;
 			int devid = atoi(args.at(0).c_str());
-			color.cs.red = atoi(args.at(4).c_str());
-			color.cs.green = atoi(args.at(3).c_str());
-			color.cs.blue = atoi(args.at(2).c_str());
-			color.cs.brightness = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
+			color.r = atoi(args.at(4).c_str());
+			color.g = atoi(args.at(3).c_str());
+			color.b = atoi(args.at(2).c_str());
+			color.br = args.size() > 5 ? atoi(args.at(5).c_str()) : 255;
 			switch (devType) {
 			case 1:
 			{
-				SetBrighness(&color.cs);
+				SetBrighness(&color);
 				if (devid != 0 && devid != afx_dev->GetPID()) {
 					afx_dev->UpdateColors();
 					afx_dev->AlienFXClose();
@@ -345,7 +345,7 @@ int main(int argc, char* argv[])
 					afx_dev->AlienFXChangeDevice(0, devid);// dev->first, dev->second);
 				}
 				afx_dev->SetColor(atoi(args.at(1).c_str()),
-								  color.cs.blue, color.cs.green, color.cs.red);
+								  color.b, color.g, color.r);
 			} break;
 			case 0:
 				lfxUtil.SetOneLFXColor(devid, atoi(args.at(1).c_str()), &color.ci);
@@ -361,15 +361,15 @@ int main(int argc, char* argv[])
 			}
 			static ColorU color;
 			unsigned zoneCode = LFX_ALL;
-			color.cs.red = atoi(args.at(1).c_str());
-			color.cs.green = atoi(args.at(2).c_str());
-			color.cs.blue = atoi(args.at(3).c_str());
-			color.cs.brightness = args.size() > 4 ? atoi(args.at(4).c_str()) : 255;
+			color.r = atoi(args.at(1).c_str());
+			color.g = atoi(args.at(2).c_str());
+			color.b = atoi(args.at(3).c_str());
+			color.br = args.size() > 4 ? atoi(args.at(4).c_str()) : 255;
 			zoneCode = GetZoneCode(args[0], devType);
 			switch (devType) {
 			case 1:
 			{
-				SetBrighness(&color.cs);
+				SetBrighness(&color);
 				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
 				if (grp) {
 					int oldPid = afx_dev->GetPID(), oldVid = afx_dev->GetVid();
@@ -380,7 +380,7 @@ int main(int argc, char* argv[])
 							if (grp->lights[i]->devid == afx_dev->GetPID())
 								lights.push_back((UCHAR) afx_map->GetMappings()->at(i)->lightid);
 						}
-						afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.cs.red, color.cs.green, color.cs.blue);
+						afx_dev->SetMultiLights((int) lights.size(), lights.data(), color.r, color.g, color.b);
 						afx_dev->UpdateColors();
 					}
 					afx_dev->AlienFXChangeDevice(oldVid, oldPid);
@@ -400,16 +400,16 @@ int main(int argc, char* argv[])
 				continue;
 			}
 			static ColorU color, color2;
-			color.cs.red = atoi(args.at(1).c_str());
-			color.cs.green = atoi(args.at(2).c_str());
-			color.cs.blue = atoi(args.at(3).c_str());
-			color2.cs.red = atoi(args.at(4).c_str());
-			color2.cs.green = atoi(args.at(5).c_str());
-			color2.cs.blue = atoi(args.at(6).c_str());
+			color.r = atoi(args.at(1).c_str());
+			color.g = atoi(args.at(2).c_str());
+			color.b = atoi(args.at(3).c_str());
+			color2.r = atoi(args.at(4).c_str());
+			color2.g = atoi(args.at(5).c_str());
+			color2.b = atoi(args.at(6).c_str());
 			if (devType) {
 				afx_dev->SetPowerAction(atoi(args.at(0).c_str()),
-					color.cs.red, color.cs.green, color.cs.blue,
-					color2.cs.red, color2.cs.green, color2.cs.blue);
+					color.r, color.g, color.b,
+					color2.r, color2.g, color2.b);
 			}
 			else {
 				cerr << "High-level API doesn't support set-power!" << endl;
@@ -430,13 +430,13 @@ int main(int argc, char* argv[])
 			while (argPos + 3 < args.size()) {
 				ColorU c;
 				actionCode = GetActionCode(args[argPos], devType);
-				c.cs.blue = atoi(args.at(argPos+1).c_str());
-				c.cs.green = atoi(args.at(argPos + 2).c_str());
-				c.cs.red = atoi(args.at(argPos + 3).c_str());
-				c.cs.brightness = argPos + 4 < args.size() ? atoi(args.at(argPos + 4).c_str()) : 255;
+				c.b = atoi(args.at(argPos+1).c_str());
+				c.g = atoi(args.at(argPos + 2).c_str());
+				c.r = atoi(args.at(argPos + 3).c_str());
+				c.br = argPos + 4 < args.size() ? atoi(args.at(argPos + 4).c_str()) : 255;
 				if (devType) {
-					SetBrighness(&c.cs);
-					act.push_back(AlienFX_SDK::afx_act({(BYTE) actionCode, (BYTE) sleepy, 7, (BYTE) c.cs.blue, (BYTE) c.cs.green, (BYTE) c.cs.red}));
+					SetBrighness(&c);
+					act.push_back(AlienFX_SDK::afx_act({(BYTE) actionCode, (BYTE) sleepy, 7, (BYTE) c.b, (BYTE) c.g, (BYTE) c.r}));
 				} else
 					clrs.push_back(c);
 				argPos += 5;
@@ -476,13 +476,13 @@ int main(int argc, char* argv[])
 			while (argPos + 3 < args.size()) {
 				ColorU c;
 				actionCode = GetActionCode(args[argPos], devType);
-				c.cs.red = atoi(args.at(argPos+1).c_str());
-				c.cs.green = atoi(args.at(argPos + 2).c_str());
-				c.cs.blue = atoi(args.at(argPos + 3).c_str());
-				c.cs.brightness = argPos + 4 < args.size() ? atoi(args.at(argPos + 4).c_str()) : 255;
+				c.r = atoi(args.at(argPos+1).c_str());
+				c.g = atoi(args.at(argPos + 2).c_str());
+				c.b = atoi(args.at(argPos + 3).c_str());
+				c.br = argPos + 4 < args.size() ? atoi(args.at(argPos + 4).c_str()) : 255;
 				if (devType) {
-					SetBrighness(&c.cs);
-					act.push_back(AlienFX_SDK::afx_act({(BYTE) actionCode, (BYTE) sleepy, 7, (BYTE) c.cs.red, (BYTE) c.cs.green, (BYTE) c.cs.blue}));
+					SetBrighness(&c);
+					act.push_back(AlienFX_SDK::afx_act({(BYTE) actionCode, (BYTE) sleepy, 7, (BYTE) c.r, (BYTE) c.g, (BYTE) c.b}));
 				} else
 					clrs.push_back(c);
 				argPos += 5;

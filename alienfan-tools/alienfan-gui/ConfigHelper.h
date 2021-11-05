@@ -29,6 +29,8 @@ struct fan_profile {
 class ConfigHelper {
 private:
 	HKEY   hKey1, hKey2;
+	void GetReg(const char *name, DWORD *value, DWORD defValue = 0);
+	void SetReg(const char *text, DWORD value);
 public:
 	//DWORD lastPowerStage = 0;
 	DWORD lastSelectedFan = -1;

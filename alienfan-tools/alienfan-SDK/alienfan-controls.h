@@ -42,6 +42,7 @@ namespace AlienFan_SDK {
 			"\\_SB.PCI0.MMRB", // read RAM
 			"\\_SB.PCI0.MMWB", // write RAM
 			6,
+			2,
 		    { "\\_SB.PCI0.LPCB.EC0.CPUT",
 			"\\_SB.PCI0.LPCB.EC0.GPUT",
 			"\\_SB.PCI0.LPCB.EC0.PCHT",
@@ -49,8 +50,7 @@ namespace AlienFan_SDK {
 			"\\_SB.PCI0.LPCB.EC0.MEMT",
 			"\\_SB.PCI0.LPCB.EC0.GVRT"
 	        },
-			"\\_SB.PCI0.LPCB.EC0.FANG",
-		    "\\_SB.PCI0.LPCB.EC0.FANW"
+		    {0x902, 0x929}
 		}
 	};
 

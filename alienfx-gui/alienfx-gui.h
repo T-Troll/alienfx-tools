@@ -20,7 +20,17 @@
 #endif
 
 // defines and structures...
-#define C_PAGES 9
+#define C_PAGES      9
+
+#define TAB_COLOR    0
+#define TAB_EVENTS   1
+#define TAB_AMBIENT  2
+#define TAB_HAPTICS  3
+#define TAB_GROUPS   4
+#define TAB_PROFILES 5
+#define TAB_DEVICES  6
+#define TAB_FANS     7
+#define TAB_SETTINGS 8
 
 typedef struct tag_dlghdr {
 	HWND hwndTab;       // tab control

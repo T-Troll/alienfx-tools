@@ -171,4 +171,7 @@
       <Filter>Mappings</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="dpi.manifest" />
+  </ItemGroup>
 </Project>

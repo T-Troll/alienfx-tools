@@ -188,6 +188,7 @@
 #define IDC_CHECK_EXCEPTION             1101
 #define IDC_LIST_SUG                    1103
 #define IDC_BUT_DETECT                  1104
+#define IDC_CHECK_DIM                   1105
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -219,7 +220,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        155
 #define _APS_NEXT_COMMAND_VALUE         32805
-#define _APS_NEXT_CONTROL_VALUE         1105
+#define _APS_NEXT_CONTROL_VALUE         1106
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

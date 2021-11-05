@@ -5,7 +5,7 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
 int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
-VOID OnSelChanged(HWND hwndDlg);
+void SwitchTab(int);
 
 extern int eItem;
 
@@ -41,9 +41,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         //UpdateLightList<FXHelper>(light_list, fxhl, 3);
         if (UpdateLightList(light_list, fxhl, 3) < 0) {
             // no lights, switch to setup
-            HWND tab_list = GetParent(hDlg);
-            TabCtrl_SetCurSel(tab_list, 6);
-            OnSelChanged(tab_list);
+            SwitchTab(TAB_DEVICES);
             return false;
         }
 

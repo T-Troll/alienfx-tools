@@ -41,7 +41,7 @@ ConfigHandler::ConfigHandler() {
 				   NULL);
 
 	testColor.ci = 0;
-	testColor.cs.green = 255;
+	testColor.g = 255;
 
 	niData.cbSize = sizeof(NOTIFYICONDATA);
 	niData.uID = IDI_ALIENFXGUI;
@@ -65,38 +65,50 @@ void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string
 	profile* prof = FindProfile(id);
 	if (prof) {
 		// update profile..
-		if (name != "")
+		if (!name.empty())
 			prof->name = name;
-		if (app != "")
-			prof->triggerapp = app;
+		if (!app.empty())
+			prof->triggerapp.push_back(app);
 		if (flags != -1) {
 			prof->flags = LOWORD(flags);
 			prof->effmode = HIWORD(flags);
 		}
 		return;
 	}
-	prof = new profile{id, LOWORD(flags), HIWORD(flags), app, name};
+	prof = new profile{id, LOWORD(flags), HIWORD(flags), app.empty() ? vector<string>() : vector<string>({app}), name};
 	profiles.push_back(*prof);
 }
 
-void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp) {
+void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags) {
 
 	profile* prof = FindProfile(id);
 	if (prof) {
-		for (int i = 0; i < prof->fansets.fanControls.size(); i++)
-			if (prof->fansets.fanControls[i].sensorIndex == senID) {
-				prof->fansets.fanControls[i].fans.push_back(*temp);
-				return;
-			}
-		temp_block temp_b = {(short)senID};
-		temp_b.fans.push_back(*temp);
-		prof->fansets.fanControls.push_back(temp_b);
+		if (temp) {
+			for (int i = 0; i < prof->fansets.fanControls.size(); i++)
+				if (prof->fansets.fanControls[i].sensorIndex == senID) {
+					prof->fansets.fanControls[i].fans.push_back(*temp);
+					return;
+				}
+			temp_block temp_b = {(short) senID};
+			temp_b.fans.push_back(*temp);
+			prof->fansets.fanControls.push_back(temp_b);
+		}
+		if (flags != -1) {
+			prof->fansets.powerStage = LOWORD(flags);
+			prof->fansets.GPUPower = HIWORD(flags);
+		}	
 		return;
 	} else {
 		prof = new profile{id};
-		temp_block temp_b = {(short) senID};
-		temp_b.fans.push_back(*temp);
-		prof->fansets.fanControls.push_back(temp_b);
+		if (temp) {
+			temp_block temp_b = {(short) senID};
+			temp_b.fans.push_back(*temp);
+			prof->fansets.fanControls.push_back(temp_b);
+		}
+		if (flags != -1) {
+			prof->fansets.powerStage = LOWORD(flags);
+			prof->fansets.GPUPower = HIWORD(flags);
+		}
 		profiles.push_back(*prof);
 	}
 }
@@ -111,12 +123,14 @@ profile* ConfigHandler::FindProfile(int id) {
 	return prof;
 }
 
-profile* ConfigHandler::FindProfileByApp(std::string appName, bool active)
+profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
 	for (int j = 0; j < profiles.size(); j++)
-		if (profiles[j].triggerapp == appName && (active || !(profiles[j].flags & PROF_ACTIVE))) {
-			// app is belong to profile!
-			return &profiles[j];
+		if (active || !(profiles[j].flags & PROF_ACTIVE)) {
+			for (int i = 0; i < profiles[j].triggerapp.size(); i++)
+				if (profiles[j].triggerapp[i] == appName)
+					// app is belong to profile!
+					return &profiles[j];
 		}
 	return NULL;
 }
@@ -170,323 +184,115 @@ void ConfigHandler::SetIconState() {
 }
 
 bool ConfigHandler::IsDimmed() {
-	return FindProfile(activeProfile)->flags & PROF_DIMMED;
+	profile *prof = FindProfile(activeProfile);
+	return dimmed || (!prof->ignoreDimming && prof->flags & PROF_DIMMED);
 }
 
-bool ConfigHandler::IsMonitoring() {
-	return enableMon;
-}
+void ConfigHandler::SetDimmed() {
+	profile *prof = FindProfile(activeProfile);
 
-void ConfigHandler::SetDimmed(bool dimmed) {
-	if (dimmed)
-		FindProfile(activeProfile)->flags |= PROF_DIMMED;
-	else
-		FindProfile(activeProfile)->flags &= 0xff - PROF_DIMMED;
+	if (prof->flags & PROF_DIMMED) {
+		if (!dimmed && !prof->ignoreDimming) {
+			prof->ignoreDimming = true;
+			return;
+		}
+		if (!dimmed || !prof->ignoreDimming)
+			prof->ignoreDimming = !prof->ignoreDimming;
+	}
+
+	dimmed = !dimmed;
 }
 int ConfigHandler::GetEffect() {
-	return FindProfile(activeProfile)->effmode;
+	return enableMon ? FindProfile(activeProfile)->effmode : 3;
 }
 void ConfigHandler::SetEffect(int newMode) {
 	FindProfile(activeProfile)->effmode = newMode;
 }
 
+void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
+	DWORD size = sizeof(DWORD);
+	if (RegGetValueA(hKey1, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+		*value = defValue;
+}
+
+void ConfigHandler::SetReg(char *text, DWORD value) {
+	RegSetValueEx( hKey1, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
+}
+
 int ConfigHandler::Load() {
-	int size = 4, size_c = 4 * 16;
+	DWORD size_c = 16*sizeof(DWORD);// 4 * 16
 
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("AutoStart"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&startWindows,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("Minimized"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&startMinimized,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("Refresh"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&autoRefresh,
-		(LPDWORD)&size);
-	unsigned ret = RegGetValue(hKey1,
-		NULL,
-		TEXT("LightsOn"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&lightsOn,
-		(LPDWORD)&size);
-	if (ret != ERROR_SUCCESS)
-		lightsOn = 1;
-	ret = RegGetValue(hKey1,
-		NULL,
-		TEXT("Monitoring"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&enableMon,
-		(LPDWORD)&size);
-	if (ret != ERROR_SUCCESS)
-		enableMon = 1;
-	ret = RegGetValue(hKey1,
-		NULL,
-		TEXT("GammaCorrection"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&gammaCorrection,
-		(LPDWORD)&size);
-	if (ret != ERROR_SUCCESS)
-		gammaCorrection = 1;
-	ret = RegGetValue(hKey1,
-		NULL,
-		TEXT("DisableAWCC"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&awcc_disable,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("ProfileAutoSwitch"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&enableProf,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("OffWithScreen"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&offWithScreen,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("NoDesktopSwitch"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&noDesktop,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("DimPower"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&dimPowerButton,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("DimmedOnBattery"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&dimmedBatt,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("ActiveProfile"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&activeProfile,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("OffPowerButton"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&offPowerButton,
-		(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("CustomColors"),
-		RRF_RT_REG_BINARY | RRF_ZEROONFAILURE,
-		NULL,
-		customColors,
-		(LPDWORD)&size_c);
-	//RegGetValue(hKey1,
-	//	NULL,
-	//	TEXT("LastActive"),
-	//	RRF_RT_DWORD | RRF_ZEROONFAILURE,
-	//	NULL,
-	//	&lastActive,
-	//	(LPDWORD)&size);
-	RegGetValue(hKey1,
-		NULL,
-		TEXT("EsifTemp"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&esif_temp,
-		(LPDWORD)&size);
-	ret = RegGetValue(hKey1,
-		NULL,
-		TEXT("DimmingPower"),
-		RRF_RT_DWORD | RRF_ZEROONFAILURE,
-		NULL,
-		&dimmingPower,
-		(LPDWORD)&size);
-	if (ret != ERROR_SUCCESS)
-		dimmingPower = 92;
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("GlobalEffect"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&globalEffect,
-				(LPDWORD)&size);
-	ret = RegGetValue(hKey1,
-					  NULL,
-					  TEXT("GlobalTempo"),
-					  RRF_RT_DWORD | RRF_ZEROONFAILURE,
-					  NULL,
-					  &globalDelay,
-					  (LPDWORD)&size);
-	if (ret != ERROR_SUCCESS || globalDelay > 0xa)
-		globalDelay = 5;
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("EffectColor1"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&effColor1.ci,
-				(LPDWORD)&size);
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("EffectColor2"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&effColor2.ci,
-				(LPDWORD)&size);
-	RegGetValue(hKey1,
-				NULL,
-				TEXT("FanControl"),
-				RRF_RT_DWORD | RRF_ZEROONFAILURE,
-				NULL,
-				&fanControl,
-				(LPDWORD)&size);
+	GetReg("AutoStart", &startWindows);
+	GetReg("Minimized", &startMinimized);
+	GetReg("Refresh", &autoRefresh);
+	GetReg("LightsOn", &lightsOn, 1);
+	GetReg("Dimmed", &dimmed);
+	GetReg("Monitoring", &enableMon, 1);
+	GetReg("GammaCorrection", &gammaCorrection, 1);
+	GetReg("DisableAWCC", &awcc_disable);
+	GetReg("ProfileAutoSwitch", &enableProf);
+	GetReg("OffWithScreen", &offWithScreen);
+	GetReg("NoDesktopSwitch", &noDesktop);
+	GetReg("DimPower", &dimPowerButton);
+	GetReg("DimmedOnBattery", &dimmedBatt);
+	GetReg("ActiveProfile", &activeProfile); 
+	GetReg("OffPowerButton", &offPowerButton);
+	GetReg("EsifTemp", &esif_temp);
+	GetReg("DimmingPower", &dimmingPower, 92);
+	GetReg("GlobalEffect", &globalEffect);
+	GetReg("GlobalTempo", &globalDelay, 5);
+	GetReg("EffectColor1", (DWORD*)&effColor1.ci);
+	GetReg("EffectColor2", (DWORD*)&effColor2.ci);
+	GetReg("FanControl", &fanControl);
+	RegGetValue(hKey1, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
-	unsigned vindex = 0;
-	BYTE inarray[380];
-	char name[256]; int pid = -1, appid = -1;
-	ret = 0;
+	int vindex = 0;
+	char name[256]; 
+	int pid = -1, appid = -1;
+	LSTATUS ret = 0;
+	// Profiles...
 	do {
-		DWORD len = 255, lend = 0; profile prof;
-		ret = RegEnumValueA(
-			hKey4,
-			vindex,
-			name,
-			&len,
-			NULL,
-			NULL,
-			NULL,
-			&lend
-		);
-		lend++; len = 255;
-		unsigned ret2 = sscanf_s((char*)name, "Profile-%d", &pid);
-		if (ret == ERROR_SUCCESS && ret2 == 1) {
-			char* profname = new char[lend] {0};
-			ret = RegEnumValueA(
-				hKey4,
-				vindex,
-				name,
-				&len,
-				NULL,
-				NULL,
-				(LPBYTE)profname,
-				&lend
-			);
-			updateProfileByID(pid, profname, "", -1);
-			delete[] profname;
-		}
-		ret2 = sscanf_s((char*)name, "Profile-flags-%d", &pid);
-		if (ret == ERROR_SUCCESS && ret2 == 1) {
-			DWORD pFlags;
-			ret = RegEnumValueA(
-				hKey4,
-				vindex,
-				name,
-				&len,
-				NULL,
-				NULL,
-				(LPBYTE)&pFlags,
-				&lend
-			);
-			updateProfileByID(pid, "", "", pFlags);
-		}
-		ret2 = sscanf_s((char*)name, "Profile-app-%d-%d", &pid, &appid);
-		if (ret == ERROR_SUCCESS && ret2 == 2) {
-			char* profname = new char[lend] {0};
-			ret = RegEnumValueA(
-				hKey4,
-				vindex,
-				name,
-				&len,
-				NULL,
-				NULL,
-				(LPBYTE)profname,
-				&lend
-			);
-			PathStripPath(profname);
-			updateProfileByID(pid, "", profname, -1);
-			delete[] profname;
-		}
-		int senid, fanid;
-		ret2 = sscanf_s((char*)name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid);
-		if (ret == ERROR_SUCCESS && ret2 == 3) {
-			// add fans...
-			byte* fanset = new byte[lend];
-			fan_block fan = {(short)fanid};
-			ret = RegEnumValueA(
-				hKey4,
-				vindex,
-				name,
-				&len,
-				NULL,
-				NULL,
-				(LPBYTE)fanset,
-				&lend
-			);
-			for (unsigned i = 0; i < lend; i += 2) {
-				fan.points.push_back({fanset[i], fanset[i + 1]});
+		DWORD len = 255, lend = 0;
+		if ((ret = RegEnumValueA(hKey4, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
+			lend++; len++;
+			BYTE *data = new BYTE[lend];
+			RegEnumValueA(hKey4, vindex, name, &len, NULL, NULL, data, &lend);
+			vindex++;
+			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
+				updateProfileByID(pid, (char*)data, "", -1);
 			}
-			updateProfileFansByID(pid, senid, &fan);
-		}
-		ret2 = sscanf_s((char*)name, "Profile-power-%d", &pid);
-		if (ret == ERROR_SUCCESS && ret2 == 1) {
-			profile* prof = FindProfile(pid);
-			if (prof) {
-				DWORD pValue = 0;
-				RegGetValue(hKey4,
-							NULL,
-							name,
-							RRF_RT_DWORD | RRF_ZEROONFAILURE,
-							NULL,
-							&pValue,
-							(LPDWORD)&size);
-				prof->fansets.powerStage = LOWORD(pValue);
-				prof->fansets.GPUPower = HIWORD(pValue);
+			if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
+				updateProfileByID(pid, "", "", *(DWORD*)data);
 			}
+			if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
+				PathStripPath((char*)data);
+				updateProfileByID(pid, "", (char*)data, -1);
+			}
+			int senid, fanid;
+			if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
+				// add fans...
+				fan_block fan = {(short) fanid};
+				for (unsigned i = 0; i < lend; i += 2) {
+					fan.points.push_back({data[i], data[i+1]});
+				}
+				updateProfileFansByID(pid, senid, &fan, -1);
+			}
+			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
+				updateProfileFansByID(pid, -1, NULL, *(DWORD*)data);
+			}
+			delete[] data;
 		}
-		vindex++;
 	} while (ret == ERROR_SUCCESS);
-	vindex = 0; ret = 0;
+	vindex = 0;
+	// Event mappings...
 	do {
-		DWORD len = 255, lend = 380; lightset map;
-		ret = RegEnumValueA(
-			hKey3,
-			vindex,
-			name,
-			&len,
-			NULL,
-			NULL,
-			(LPBYTE)inarray,
-			&lend
-		);
+		DWORD len = 255, lend = 0; lightset map;
 		// get id(s)...
-		if (ret == ERROR_SUCCESS) {
-			unsigned profid;
-			unsigned ret2 = sscanf_s((char*)name, "Set-%d-%d-%d", &map.devid, &map.lightid, &profid);
-			if (ret2 == 3) { // incorrect mapping patch
+		if ((ret = RegEnumValueA( hKey3, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+			BYTE *inarray = new BYTE[lend]; len++;
+			RegEnumValueA(hKey3, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
+			vindex++;
+			if (sscanf_s((char*)name, "Set-%d-%d-%d", &map.devid, &map.lightid, &pid) == 3) {
 				BYTE* inPos = inarray;
 				for (int i = 0; i < 4; i++) {
 					map.eve[i].fs.s = *((DWORD*)inPos);
@@ -501,13 +307,12 @@ int ConfigHandler::Load() {
 						inPos += sizeof(AlienFX_SDK::afx_act);
 					}
 				}
-				for (int i = 0; i < profiles.size(); i++)
-					if (profiles[i].id == profid) {
-						profiles[i].lightsets.push_back(map);
-						break;
-					}
+				profile *prof = FindProfile(pid);
+				if (prof) {
+					prof->lightsets.push_back(map);
+				}
 			}
-			vindex++;
+			delete[] inarray;
 		}
 	} while (ret == ERROR_SUCCESS);
 	// set active profile...
@@ -523,7 +328,7 @@ int ConfigHandler::Load() {
 	}
 	else {
 		// need new profile
-		profile prof = {0, 1, 0, "", "Default"};
+		profile prof = {0, 1, 0, vector<string>(), "Default"};
 		profiles.push_back(prof);
 		active_set = &(profiles.back().lightsets);
 		//std::sort(active_set->begin(), active_set->end(), ConfigHandler::sortMappings);
@@ -547,271 +352,77 @@ int ConfigHandler::Load() {
 
 	return 0;
 }
+
 int ConfigHandler::Save() {
 
 	BYTE* out;
-	DWORD dwDisposition;
+	//DWORD dwDisposition;
 
 	if (fan_conf) fan_conf->Save();
 	if (amb_conf) amb_conf->Save();
 	if (hap_conf) hap_conf->Save();
 
-	RegSetValueEx(
-		hKey1,
-		TEXT("AutoStart"),
-		0,
-		REG_DWORD,
-		(BYTE*)&startWindows,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("Minimized"),
-		0,
-		REG_DWORD,
-		(BYTE*)&startMinimized,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("Refresh"),
-		0,
-		REG_DWORD,
-		(BYTE*)&autoRefresh,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("LightsOn"),
-		0,
-		REG_DWORD,
-		(BYTE*)&lightsOn,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("Monitoring"),
-		0,
-		REG_DWORD,
-		(BYTE*)&enableMon,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("OffWithScreen"),
-		0,
-		REG_DWORD,
-		(BYTE*)&offWithScreen,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("NoDesktopSwitch"),
-		0,
-		REG_DWORD,
-		(BYTE*)&noDesktop,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("DimPower"),
-		0,
-		REG_DWORD,
-		(BYTE*)&dimPowerButton,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("DimmedOnBattery"),
-		0,
-		REG_DWORD,
-		(BYTE*)&dimmedBatt,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("OffPowerButton"),
-		0,
-		REG_DWORD,
-		(BYTE*)&offPowerButton,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("DimmingPower"),
-		0,
-		REG_DWORD,
-		(BYTE*)&dimmingPower,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("ActiveProfile"),
-		0,
-		REG_DWORD,
-		(BYTE*)&activeProfile,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("GammaCorrection"),
-		0,
-		REG_DWORD,
-		(BYTE*)&gammaCorrection,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("ProfileAutoSwitch"),
-		0,
-		REG_DWORD,
-		(BYTE*)&enableProf,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("DisableAWCC"),
-		0,
-		REG_DWORD,
-		(BYTE*)&awcc_disable,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("EsifTemp"),
-		0,
-		REG_DWORD,
-		(BYTE*)&esif_temp,
-		sizeof(DWORD)
-	);
-	//RegSetValueEx(
-	//	hKey1,
-	//	TEXT("LastActive"),
-	//	0,
-	//	REG_DWORD,
-	//	(BYTE*)&lastActive,
-	//	sizeof(DWORD)
-	//);
-	RegSetValueEx(
-		hKey1,
-		TEXT("CustomColors"),
-		0,
-		REG_BINARY,
-		(BYTE*)customColors,
-		sizeof(DWORD) * 16
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("GlobalEffect"),
-		0,
-		REG_DWORD,
-		(BYTE*)&globalEffect,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("GlobalTempo"),
-		0,
-		REG_DWORD,
-		(BYTE*)&globalDelay,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("EffectColor1"),
-		0,
-		REG_DWORD,
-		(BYTE*)&effColor1.ci,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("EffectColor2"),
-		0,
-		REG_DWORD,
-		(BYTE*)&effColor2.ci,
-		sizeof(DWORD)
-	);
-	RegSetValueEx(
-		hKey1,
-		TEXT("FanControl"),
-		0,
-		REG_DWORD,
-		(BYTE*)&fanControl,
-		sizeof(DWORD)
-	);
+	SetReg("AutoStart", startWindows);
+	SetReg("Minimized", startMinimized);
+	SetReg("Refresh", autoRefresh);
+	SetReg("LightsOn", lightsOn);
+	SetReg("Dimmed", dimmed);
+	SetReg("Monitoring", enableMon);
+	SetReg("OffWithScreen", offWithScreen);
+	SetReg("NoDesktopSwitch", noDesktop);
+	SetReg("DimPower", dimPowerButton);
+	SetReg("DimmedOnBattery", dimmedBatt);
+	SetReg("OffPowerButton", offPowerButton);
+	SetReg("DimmingPower", dimmingPower);
+	SetReg("ActiveProfile", activeProfile);
+	SetReg("GammaCorrection", gammaCorrection);
+	SetReg("ProfileAutoSwitch", enableProf);
+	SetReg("DisableAWCC", awcc_disable);
+	SetReg("EsifTemp", esif_temp);
+	SetReg("GlobalEffect", globalEffect);
+	SetReg("GlobalTempo", globalDelay);
+	SetReg("EffectColor1", effColor1.ci);
+	SetReg("EffectColor2", effColor2.ci);
+	SetReg("FanControl", fanControl);
+
+	RegSetValueEx( hKey1, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
+
 	if (profiles.size() > 0) {
 		RegDeleteTreeA(hKey1, "Profiles");
-		RegCreateKeyEx(HKEY_CURRENT_USER,
-			TEXT("SOFTWARE\\Alienfxgui\\Profiles"),
-			0,
-			NULL,
-			REG_OPTION_NON_VOLATILE,
-			KEY_ALL_ACCESS,//KEY_WRITE,
-			NULL,
-			&hKey4,
-			&dwDisposition);
-	} else {
+		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);// &dwDisposition);
+	} /*else {
 		DebugPrint("Attempt to save empty profiles!\n");
-	}
+	}*/
 
 	RegDeleteTreeA(hKey1, "Events");
-	RegCreateKeyEx(HKEY_CURRENT_USER,
-		TEXT("SOFTWARE\\Alienfxgui\\Events"),
-		0,
-		NULL,
-		REG_OPTION_NON_VOLATILE,
-		KEY_ALL_ACCESS,//KEY_WRITE,
-		NULL,
-		&hKey3,
-		&dwDisposition);
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);// &dwDisposition);
 
 	for (int j = 0; j < profiles.size(); j++) {
 		string name = "Profile-" + to_string(profiles[j].id);
-		RegSetValueExA(
-			hKey4,
-			name.c_str(),
-			0,
-			REG_SZ,
-			(BYTE*)profiles[j].name.c_str(),
-			(DWORD)profiles[j].name.length()
-		);
+		RegSetValueExA( hKey4, name.c_str(), 0, REG_SZ, (BYTE*)profiles[j].name.c_str(), (DWORD)profiles[j].name.length() );
 		name = "Profile-flags-" + to_string(profiles[j].id);
 		DWORD flagset = MAKELONG(profiles[j].flags, profiles[j].effmode);
-		RegSetValueExA(
-			hKey4,
-			name.c_str(),
-			0,
-			REG_DWORD,
-			(BYTE*)&flagset, //profiles[j].flags,
-			sizeof(DWORD)
-		);
-		if (!profiles[j].triggerapp.empty()) {
-			name = "Profile-app-" + to_string(profiles[j].id) + "-0";
-			RegSetValueExA(
-				hKey4,
-				name.c_str(),
-				0,
-				REG_SZ,
-				(BYTE*) profiles[j].triggerapp.c_str(),
-				(DWORD) profiles[j].triggerapp.length()
-			);
+		RegSetValueExA( hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+
+		for (int i = 0; i < profiles[j].triggerapp.size(); i++) {
+			name = "Profile-app-" + to_string(profiles[j].id) + "-" + to_string(i);
+			RegSetValueExA(hKey4, name.c_str(), 0, REG_SZ, (BYTE *) profiles[j].triggerapp[i].c_str(), (DWORD) profiles[j].triggerapp[i].length());
 		}
+
 		for (int i = 0; i < profiles[j].lightsets.size(); i++) {
 			//preparing name
 			lightset cur = profiles[j].lightsets[i];
 			name = "Set-" + to_string(cur.devid) + "-" + to_string(cur.lightid) + "-" + to_string(profiles[j].id);
 			//preparing binary....
-			size_t size = 6 * 4;// (UINT)mappings[i].map.size();
+			size_t size = 4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
 			for (int j = 0; j < 4; j++)
 				size += cur.eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
-			out = (BYTE*)malloc(size);
+			out = new BYTE[size];
 			BYTE* outPos = out;
-			//Colorcode ccd;
 			for (int j = 0; j < 4; j++) {
 				*((int*)outPos) = cur.eve[j].fs.s;
 				outPos += 4;
-				*outPos = (BYTE)cur.eve[j].source;
+				*outPos = cur.eve[j].source;
 				outPos++;
 				*outPos = (BYTE)cur.eve[j].map.size();
 				outPos++;
@@ -820,29 +431,15 @@ int ConfigHandler::Save() {
 					outPos += sizeof(AlienFX_SDK::afx_act);
 				}
 			}
-			RegSetValueExA(
-				hKey3,
-				name.c_str(),
-				0,
-				REG_BINARY,
-				(BYTE*)out,
-				(DWORD)size
-			);
-			free(out);
+			RegSetValueExA( hKey3, name.c_str(), 0, REG_BINARY, (BYTE*)out, (DWORD)size);
+			delete[] out;
 		}
 		// Fans....
 		if (profiles[j].flags & PROF_FANS) {
 			// save powers..
 			name = "Profile-power-" + to_string(profiles[j].id);
 			DWORD pvalue = MAKELONG(profiles[j].fansets.powerStage, profiles[j].fansets.GPUPower);
-			RegSetValueExA(
-				hKey4,
-				name.c_str(),
-				0,
-				REG_DWORD,
-				(BYTE*)&pvalue,
-				sizeof(DWORD)
-			);
+			RegSetValueExA(hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
 			for (int i = 0; i < profiles[j].fansets.fanControls.size(); i++) {
 				temp_block* sens = &profiles[j].fansets.fanControls[i];
@@ -855,14 +452,7 @@ int ConfigHandler::Save() {
 						outdata[(2 * l) + 1] = (byte) fans->points[l].boost;
 					}
 
-					RegSetValueExA(
-						hKey4,
-						name.c_str(),
-						0,
-						REG_BINARY,
-						(BYTE*) outdata,
-						(DWORD) fans->points.size() * 2
-					);
+					RegSetValueExA( hKey4, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) fans->points.size() * 2 );
 					delete[] outdata;
 				}
 			}

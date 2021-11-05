@@ -161,7 +161,7 @@ namespace AlienFan_SDK {
 				if (RunMainCommand(devs[aDev].probe) >= 1) {
 					// Alienware device detected!
 					// Here is NEW detection block, Dell drop function 0x13 at G5...
-					ALIENFAN_SEN_INFO cur = {0};
+					//ALIENFAN_SEN_INFO cur = {0};
 					powers.push_back(0);
 					if (devs[aDev].commandControlled) {
 						// for new one-command devices
@@ -176,17 +176,12 @@ namespace AlienFan_SDK {
 						// AWCC temperature sensors.
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
 							   && funcID != devs[aDev].errorCode) {
-							cur.senIndex = funcID;
-							cur.isFromAWC = true;
+							string name;
 							if (fIndex - firstSenIndex < 10) {
-								cur.name = temp_names[fIndex - firstSenIndex];
+								name = temp_names[fIndex - firstSenIndex];
 							} else
-								cur.name = "Sensor #" + to_string(fIndex - firstSenIndex);
-							//switch (fIndex - firstSenIndex) {
-							//case 0: cur.name = "CPU Internal Thermistor"; break;
-							//case 1: cur.name = "GPU Internal Thermistor"; break;
-							//default: cur.name = "FAN#" + to_string(i) + " sensor"; break;
-							//}
+								name = "Sensor #" + to_string(fIndex - firstSenIndex);
+							ALIENFAN_SEN_INFO cur = {(short)funcID, name, true};
 							sensors.push_back(cur);
 							fIndex++;
 						}
@@ -211,30 +206,28 @@ namespace AlienFan_SDK {
 					} else {
 						// for older command-controlled devices
 						// EC Temps...
-						for (int i = 0; i < dev_c_controls[cDev].numtemps; i++) {
-							cur.senIndex = i;
-							cur.isFromAWC = true;
-							cur.name = temp_names[i];
+						for (short i = 0; i < dev_c_controls[cDev].numtemps; i++) {
+							ALIENFAN_SEN_INFO cur = {i, temp_names[i], true};
 							sensors.push_back(cur);
 						}
 						// EC fans...
-						fans.push_back(0x902); // CPU fan
-						fans.push_back(0x929); // GPU fan
+						for (int i = 0; i < dev_c_controls[cDev].numfans; i++)
+							fans.push_back(dev_c_controls[cDev].fanID[i]);
+						//fans.push_back(0x902); // CPU fan
+						//fans.push_back(0x929); // GPU fan
 						// Powers...
-						powers.push_back(0xff); // System auto
+						powers.push_back(0x8); // System auto
 					}
 					// Other temperature sensors
-					for (int i = 0; i < 10; i++) {
+					for (short i = 0; i < 10; i++) {
 						tempNamePattern[22] = i + '0';
 						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName) && resName) {
 							char *c_name = new char[1 + resName->Argument[0].DataLength];
 							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
-							string senName = c_name;
-							delete[] c_name;
-							cur.senIndex = i;
-							cur.name = senName;
-							cur.isFromAWC = false;
+							//string senName = c_name;
+							ALIENFAN_SEN_INFO cur = {i, c_name, false};
 							sensors.push_back(cur);
+							delete[] c_name;
 							free(resName);
 						}
 					}
@@ -320,10 +313,9 @@ namespace AlienFan_SDK {
 	int Control::SetPower(int level) {
 		if (level < powers.size())
 			if (devs[aDev].commandControlled)
-				return RunMainCommand(dev_controls[cDev].setPower, (byte) powers[level]);
+				return RunMainCommand(dev_controls[cDev].setPower, powers[level]);
 			else {
-				byte iValue = powers[level] == 0 ? 0 : 8;
-				return WriteRamDirect(dev_c_controls[cDev].unlock, iValue);
+				return WriteRamDirect(dev_c_controls[cDev].unlock, powers[level]);
 			}
 		return -1;
 	}
@@ -334,13 +326,8 @@ namespace AlienFan_SDK {
 				if (powers[i] == pl)
 					return i;
 		} else {
-			return ReadRamDirect(dev_c_controls[cDev].unlock) > 0 ? 1 : 0;
-			//PACPI_EVAL_OUTPUT_BUFFER res = NULL;
-			//if (EvalAcpiMethod(acc, dev_c_controls[cDev].unlockCom, (PVOID *) &res) && res) {
-			//	int res_int = res->Argument[0].Argument;
-			//	free(res);
-			//	return res_int;
-			//}
+			// ToDo: set other 3 power levels (if found)
+			return ReadRamDirect(dev_c_controls[cDev].unlock);
 		}
 		return -1;
 	}

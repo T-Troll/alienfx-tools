@@ -1,10 +1,11 @@
 #include "alienfx-gui.h"
 
-VOID OnSelChanged(HWND hwndDlg);
+void SwitchTab(int);
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
 int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
+bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
 
 extern int eItem;
 
@@ -99,27 +100,6 @@ void DrawFreq(HWND hDlg, int *freq) {
 	}
 }
 
-bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b) {
-	CHOOSECOLOR cc;
-	static COLORREF acrCustClr[16];
-	bool ret;
-	// Initialize CHOOSECOLOR 
-	ZeroMemory(&cc, sizeof(cc));
-	cc.lStructSize = sizeof(cc);
-	cc.hwndOwner = hDlg;
-	cc.lpCustColors = (LPDWORD) acrCustClr;
-	cc.rgbResult = RGB(*r, *g, *b);
-	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
-
-	if (ret = ChooseColor(&cc)) {
-		*r = cc.rgbResult & 0xff;
-		*g = cc.rgbResult >> 8 & 0xff;
-		*b = cc.rgbResult >> 16 & 0xff;
-	}
-	RedrawButton(hDlg, id, *r, *g, *b);
-	return ret;
-}
-
 haptics_map *FindMapping(int lid) {
 	if (lid != -1) {
 		if (lid > 0xffff) {
@@ -158,8 +138,8 @@ void SetMappingData(HWND hDlg, haptics_map* map) {
 		map->hicut = 255;
 		needClean = true;
 	}
-	RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
-	RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
+	RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.r, map->colorfrom.g, map->colorfrom.b);
+	RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.r, map->colorto.g, map->colorto.b);
 	// load cuts...
 	SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 	SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
@@ -183,9 +163,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		if (UpdateLightList(light_list, fxhl, 3) < 0) {
 			// no lights, switch to setup
-			HWND tab_list = GetParent(hDlg);
-			TabCtrl_SetCurSel(tab_list, 6);
-			OnSelChanged(tab_list);
+			SwitchTab(TAB_DEVICES);
 			return false;
 		}
 
@@ -310,8 +288,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case BN_CLICKED:
 		{
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_LPC, &map->colorfrom.cs.red,
-						 &map->colorfrom.cs.green, &map->colorfrom.cs.blue);
+				SetColor(hDlg, IDC_BUTTON_LPC, &map->colorfrom.r, &map->colorfrom.g, &map->colorfrom.b);
 			}
 		} break;
 		} break;
@@ -320,8 +297,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case BN_CLICKED:
 		{
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_HPC, &map->colorto.cs.red,
-						 &map->colorto.cs.green, &map->colorto.cs.blue);
+				SetColor(hDlg, IDC_BUTTON_HPC, &map->colorto.r, &map->colorto.g, &map->colorto.b);
 			}
 		} break;
 		} break;
@@ -374,9 +350,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			if (map)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
-					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorfrom.cs.red, map->colorfrom.cs.green, map->colorfrom.cs.blue);
+					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorfrom.r, map->colorfrom.g, map->colorfrom.b);
 				else
-					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorto.cs.red, map->colorto.cs.green, map->colorto.cs.blue);
+					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorto.r, map->colorto.g, map->colorto.b);
 			else
 				RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, 0, 0, 0);
 			return 0;

@@ -120,7 +120,7 @@ int main()
 								case 65:
 									cout << "APIv6";
 									break;
-								default: "Unknown.";
+								default: cout << "Unknown";
 								}
 								cout << " +++++" << endl;
 							//}

@@ -1,7 +1,8 @@
 #include "alienfx-gui.h"
 #include <windowsx.h>
 
-bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
+//bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
+bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 
@@ -254,14 +255,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
-			AlienFX_SDK::afx_act c;
-			c.r = conf->testColor.cs.red;
-			c.g = conf->testColor.cs.green;
-			c.b = conf->testColor.cs.blue;
-			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, NULL, &c);
-			conf->testColor.cs.red = c.r;
-			conf->testColor.cs.green = c.g;
-			conf->testColor.cs.blue = c.b;
+			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor.r, &conf->testColor.g, &conf->testColor.b);
 			if (eLid != -1) {
 				fxhl->TestLight(did, eLid);
 				SetFocus(light_view);
@@ -350,7 +344,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						size_t pos = 0, posOld = 1;
 						line = content.substr(oldLinePos, linePos - oldLinePos);
 						oldLinePos = linePos + 2;
-						if (line != "") {
+						if (!line.empty()) {
 							while ((pos = line.find("','", posOld)) != string::npos) {
 								fields.push_back(line.substr(posOld, pos - posOld));
 								//pos+=3;
@@ -505,7 +499,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_TESTCOLOR:
-			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.cs.red, conf->testColor.cs.green, conf->testColor.cs.blue);
+			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.r, conf->testColor.g, conf->testColor.b);
 			break;
 		}
 		break;
@@ -582,7 +576,7 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				size_t pos = 0, posOld = 1;
 				line = content.substr(oldLinePos, linePos - oldLinePos);
 				oldLinePos = linePos + 2;
-				if (line != "") {
+				if (!line.empty()) {
 					while ((pos = line.find("','", posOld)) != string::npos) {
 						fields.push_back(line.substr(posOld, pos - posOld));
 						//pos+=3;

@@ -634,7 +634,7 @@ string GetAppVersion() {
     UINT uLen;
     VS_FIXEDFILEINFO* lpFfi;
 
-    std::string res = "";
+    string res;
 
     hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
     if (hResInfo) {
