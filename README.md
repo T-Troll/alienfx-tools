@@ -36,29 +36,10 @@ It's not a virus, in fact, but the kernel hack for load driver. If you don't lik
 
 Run any tool you need from this folder or start menu!
 
-## Devices tested:
-- `Alienware Area51m-R2` Per-key keyboard lights (API v4 + API v5)
-- `Alienware m15R3-R4` Per-key keyboard lights (API v4 + API v5)
-- `Alienware m15R1-R4` 4-zone keyboard ligths (API v4)
-- `Alienware m17R1` (API v4) 
-- `Dell G7/G5/G5SE` (API v4)
-- `Alienware 17R5` (API v3)
-- `Alienware 13R2` (API v2)
-- `Alienware M14x` (API v1)
-- `Alienware Arena R7` (API v0 (ACPI))
+## Supported hardware:
 
-This tools can also support other Dell/Alienware devices:
-- APIv0 - ACPI-controlled lights, 3 lights, 8-bit color,
-- APIv1 - 8-bytes command, 24-bit color,
-- APIv2 - 9-bytes command, 12-bit color,
-- APIv3 - 12-bytes command, 24-bit color,
-- APIv4 - 34-bytes command, 24-bit color,
-- APIv5 - 64-bytes command, 24-bit color (DARFON OEM keyboards).
-
-For fan/power control, any Alienware notebook starting from m15R1/m17R1 or later, as well as Dell G-Series supported. I have unconfirmed reports `Alienware Area51m R2` also supported.
-
-`Alienware desktops` should works as well, but you need to enable "Fan control" in settings for `Aurora R7` (and maybe other with the different (ACPI) interface).  
-External mouses, keyboards and monitors are not supported yet, feel free to open an issue if you want to add support for it, but be ready to help with testing!
+Virtually any Alienware/Dell G-series notebook and desktop.  
+Project Wiki have [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).
 
 ## Known issues
 - Some High-level (Dell) SDK functions can not work as designed. This may be fixed in upcoming AWCC updates. It's not an `alienfx-cli` bug.
@@ -69,6 +50,10 @@ External mouses, keyboards and monitors are not supported yet, feel free to open
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use `alienfx-gui` application with "Power Button"-related features. Keep it working can provide unexpected results up to light system freeze (for APIv4).
 - **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `Ambient` effect from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
 - **WARNING!** In rare case light system freeze, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
+
+## Support
+
+Join Discord [support server](https://discord.gg/XU6UJbN9J5)
 
 ## How to build from source code
 
