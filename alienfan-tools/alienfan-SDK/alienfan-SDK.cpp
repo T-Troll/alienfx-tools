@@ -82,7 +82,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-			if (EvalAcpiMethodArgs(acc, dev_c_controls[cDev].readCom, acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethodArgs(acc, dev_c_controls[cDev].readCom.c_str(), acpiargs, (PVOID *) &res) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -101,7 +101,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, value);
-			if (EvalAcpiMethodArgs(acc, dev_c_controls[cDev].writeCom, acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethodArgs(acc, dev_c_controls[cDev].writeCom.c_str(), acpiargs, (PVOID *) &res) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -118,7 +118,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com.com);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, operand);
-			if (EvalAcpiMethodArgs(acc, devs[aDev].mainCommand, acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethodArgs(acc, devs[aDev].mainCommand.c_str(), acpiargs, (PVOID *) &res) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -160,11 +160,10 @@ namespace AlienFan_SDK {
 				// Probe...
 				if (RunMainCommand(devs[aDev].probe) >= 1) {
 					// Alienware device detected!
-					// Here is NEW detection block, Dell drop function 0x13 at G5...
-					//ALIENFAN_SEN_INFO cur = {0};
-					powers.push_back(0);
+					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
 						// for new one-command devices
+						// Here is NEW detection block, Dell drop function 0x13 at G5, so 0x14,3 used for enumeration
 						int fIndex = 0, funcID = 0;
 						// Scan for avaliable fans...
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x101
@@ -177,10 +176,11 @@ namespace AlienFan_SDK {
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
 							   && funcID != devs[aDev].errorCode) {
 							string name;
-							if (fIndex - firstSenIndex < 10) {
-								name = temp_names[fIndex - firstSenIndex];
+							int sIndex = fIndex - firstSenIndex;
+							if (sIndex < temp_names.size()) {
+								name = temp_names[sIndex];
 							} else
-								name = "Sensor #" + to_string(fIndex - firstSenIndex);
+								name = "Sensor #" + to_string(sIndex);
 							ALIENFAN_SEN_INFO cur = {(short)funcID, name, true};
 							sensors.push_back(cur);
 							fIndex++;
@@ -213,8 +213,6 @@ namespace AlienFan_SDK {
 						// EC fans...
 						for (int i = 0; i < dev_c_controls[cDev].numfans; i++)
 							fans.push_back(dev_c_controls[cDev].fanID[i]);
-						//fans.push_back(0x902); // CPU fan
-						//fans.push_back(0x929); // GPU fan
 						// Powers...
 						powers.push_back(0x8); // System auto
 					}
@@ -224,7 +222,6 @@ namespace AlienFan_SDK {
 						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName) && resName) {
 							char *c_name = new char[1 + resName->Argument[0].DataLength];
 							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
-							//string senName = c_name;
 							ALIENFAN_SEN_INFO cur = {i, c_name, false};
 							sensors.push_back(cur);
 							delete[] c_name;
@@ -275,7 +272,7 @@ namespace AlienFan_SDK {
 				//255 - (255 - devs[aDev].minPwm) * value / 100 : value;
 				return RunMainCommand(dev_controls[cDev].setFanBoost, (byte) fans[fanID], finalValue) != devs[aDev].errorCode;
 			} else {
-				WriteRamDirect(fans[fanID] + 0x23, value);
+				WriteRamDirect(fans[fanID] + 0x23, value + 1); // lock at 0 fix
 				return WriteRamDirect(fans[fanID], value);
 			}
 		}
@@ -290,7 +287,7 @@ namespace AlienFan_SDK {
 				if (devs[aDev].commandControlled)
 					return RunMainCommand(dev_controls[cDev].getTemp, (byte) sensors[TempID].senIndex);
 				else {
-					if (EvalAcpiMethod(acc, dev_c_controls[cDev].getTemp[TempID], (PVOID *) &res) && res) {
+					if (EvalAcpiMethod(acc, dev_c_controls[cDev].getTemp[TempID].c_str(), (PVOID *) &res) && res) {
 						int res_int = res->Argument[0].Argument;
 						free(res);
 						return res_int;

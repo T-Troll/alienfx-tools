@@ -79,15 +79,16 @@ DWORD WINAPI CMonProc(LPVOID param) {
 		for (int i = 0; i < src->acpi->HowManyFans(); i++) {
 			src->boostSets[i] = 0;
 			src->boostValues[i] = src->acpi->GetFanValue(i);
-			if (visible && fanList) {
-				int rpValue = src->acpi->GetFanRPM(i);
-				if (rpValue != src->fanValues[i]) {
-					// Update RPM block...
-					src->fanValues[i] = rpValue;
-					needUpdate = true;
-					string name = "Fan " + to_string(i + 1) + " (" + to_string(rpValue) + ")";
-					ListView_SetItemText(fanList, i, 0, (LPSTR) name.c_str());
-				}
+			int rpValue = src->acpi->GetFanRPM(i);
+			// Set max. rpm
+			if (rpValue > src->conf->maxRPM)
+				src->conf->maxRPM = rpValue;
+			if (visible && fanList && rpValue != src->fanValues[i]) {
+				// Update RPM block...
+				src->fanValues[i] = rpValue;
+				needUpdate = true;
+				string name = "Fan " + to_string(i + 1) + " (" + to_string(rpValue) + ")";
+				ListView_SetItemText(fanList, i, 0, (LPSTR) name.c_str());
 			}
 		}
 
@@ -121,11 +122,8 @@ DWORD WINAPI CMonProc(LPVOID param) {
 //					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";
 //					OutputDebugString(msg.c_str());
 //#endif
-					/*if (visible && src->fDlg && i == src->conf->lastSelectedFan) {
-						SendMessage(src->fDlg, WM_PAINT, 0, 0);
-					}*/
 				}
-			if (visible && needUpdate && src->fDlg /*&& i == src->conf->lastSelectedFan*/) {
+			if (visible && needUpdate && src->fDlg) {
 				SendMessage(src->fDlg, WM_PAINT, 0, 0);
 			}
 		}

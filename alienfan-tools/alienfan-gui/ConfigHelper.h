@@ -32,13 +32,12 @@ private:
 	void GetReg(const char *name, DWORD *value, DWORD defValue = 0);
 	void SetReg(const char *text, DWORD value);
 public:
-	//DWORD lastPowerStage = 0;
 	DWORD lastSelectedFan = -1;
 	DWORD lastSelectedSensor = -1;
-	//DWORD lastGPUPower = 0;
 	DWORD startWithWindows = 0;
 	DWORD startMinimized = 0;
-	//vector<temp_block> tempControls;
+	DWORD maxRPM = 4000;
+
 	fan_profile* lastProf;
 	fan_profile prof;
 

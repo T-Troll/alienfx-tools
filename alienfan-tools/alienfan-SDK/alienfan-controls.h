@@ -27,13 +27,14 @@ namespace AlienFan_SDK {
 		}
 	};
 
-	static const char temp_names[10][32] = {
-		"CPU Internal Thermistor",
-		"GPU Internal Thermistor",
-		"Motherboard Thermistor",
-		"CPU External Thermistor",
-		"Memory Thermistor",
-		"GPU External Thermistor"
+	//static const char temp_names[6][24] = {
+	static vector<string> temp_names = {
+			"CPU Internal Thermistor",
+			"GPU Internal Thermistor",
+			"Motherboard Thermistor",
+			"CPU External Thermistor",
+			"Memory Thermistor",
+			"GPU External Thermistor"
 	};
 
 	static const ALIENFAN_COMMAND_CONTROL dev_c_controls[1] = {
@@ -58,8 +59,8 @@ namespace AlienFan_SDK {
 		{ // Alienware m15/m17
 			"\\_SB.AMW1.WMAX", // main command
 			-1, // Error code
-			false, // Not PWM
-			100, // max. boost
+			true, // Not PWM
+			105, // max. boost
 			true, // command controlled
 			0, // controlID
 			0x14,   1, // Probe command

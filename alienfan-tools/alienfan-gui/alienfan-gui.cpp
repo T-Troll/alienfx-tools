@@ -55,7 +55,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg = {0};
 
     fan_conf = new ConfigHelper();
-    fan_conf->Load();
 
     acpi = new AlienFan_SDK::Control();
 

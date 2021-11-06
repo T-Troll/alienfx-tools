@@ -34,6 +34,7 @@ ConfigHelper::ConfigHelper() {
 						  GetSystemMetrics(SM_CXSMICON),
 						  GetSystemMetrics(SM_CYSMICON),
 						  LR_DEFAULTCOLOR);
+	Load();
 }
 
 ConfigHelper::~ConfigHelper() {
@@ -83,6 +84,7 @@ void ConfigHelper::Load() {
 	GetReg("LastSensor", &lastSelectedSensor);
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("LastGPU", &prof.GPUPower);
+	GetReg("MaxRPM", &maxRPM, 4000);
 
 	// Now load sensor mappings...
 	unsigned vindex = 0;
@@ -129,6 +131,7 @@ void ConfigHelper::Save() {
 	SetReg("LastSensor", lastSelectedSensor);
 	SetReg("LastFan", lastSelectedFan);
 	SetReg("LastGPU", prof.GPUPower);
+	SetReg("MaxRPM", maxRPM);
 
 	if (prof.fanControls.size() > 0) {
 		// clean old data

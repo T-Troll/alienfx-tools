@@ -423,7 +423,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 	SYSTEM_POWER_STATUS state;
 
 	ULONGLONG maxnet = 1;
-	long max_rpm = 5500;
 
 	long maxgpuarray = 10, maxnetarray = 10, maxtemparray = 10;
 	PDH_FMT_COUNTERVALUE_ITEM* gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
@@ -577,7 +576,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		// Getting maximum temp...
 		long maxTemp = 0, maxRpm = 0;
-		if (src->conf->fanControl && src->mon) { 
+		if (src->mon) { 
 			// Let's get temperatures from fan sensors
 			for (unsigned i = 0; i < src->mon->senValues.size(); i++)
 				if (maxTemp < src->mon->senValues[i])
@@ -586,8 +585,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 			for (unsigned i = 0; i < src->mon->fanValues.size(); i++)
 				if (maxRpm < src->mon->fanValues[i])
 					maxRpm = src->mon->fanValues[i];
-			if (maxRpm > max_rpm)
-				max_rpm = maxRpm;
 		} else {
 			for (unsigned i = 0; i < tempCount; i++) {
 				if (maxTemp + 273 < tempArray[i].FmtValue.longValue)
@@ -633,7 +630,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		maxTemp = min(100, max(0, maxTemp));
 		long battLife = min(100, max(0, state.BatteryLifePercent));
 		long hddLoad = max(0, 99 - cHDDVal.longValue);
-		long fanLoad = maxRpm * 100 / max_rpm;
+		long fanLoad = src->mon ? maxRpm * 100 / src->conf->fan_conf->maxRPM : 0;
 
 		src->modifyProfile.lock();
 		src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, (long)totalNet, hddLoad, maxTemp, battLife, fanLoad);

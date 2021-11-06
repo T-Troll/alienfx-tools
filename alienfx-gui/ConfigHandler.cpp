@@ -343,10 +343,7 @@ int ConfigHandler::Load() {
 
 	conf_loaded = true;
 
-	if (fanControl) {
-		fan_conf = new ConfigHelper();
-		fan_conf->Load();
-	}
+	fan_conf = new ConfigHelper();
 	amb_conf = new ConfigAmbient();
 	hap_conf = new ConfigHaptics();
 
@@ -356,7 +353,6 @@ int ConfigHandler::Load() {
 int ConfigHandler::Save() {
 
 	BYTE* out;
-	//DWORD dwDisposition;
 
 	if (fan_conf) fan_conf->Save();
 	if (amb_conf) amb_conf->Save();

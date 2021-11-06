@@ -22,7 +22,7 @@ namespace AlienFan_SDK {
 	};
 
 	struct ALIENFAN_DEVICE {
-		char mainCommand[32];
+		string mainCommand;
 		int  errorCode;
 		bool pwmfans;
 		byte minPwm;
@@ -45,12 +45,12 @@ namespace AlienFan_SDK {
 
 	struct ALIENFAN_COMMAND_CONTROL {
 		short unlock;
-		char readCom[32];
-		char writeCom[32];
+		string readCom;
+		string writeCom;
 		byte numtemps;
 		byte numfans;
-		char getTemp[10][32];
-		short fanID[2];
+		vector<string> getTemp;
+		vector<short> fanID;
 	};
 
 	class Control {
