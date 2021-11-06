@@ -70,6 +70,10 @@ External mouses, keyboards and monitors are not supported yet, feel free to open
 - **WARNING!** There are well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent `Ambient` effect from capture screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at default setting in this case.
 - **WARNING!** In rare case light system freeze, shutdown or hibernate you notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
 
+## Support
+
+Join Discord [support server](https://discord.gg/XU6UJbN9J5)
+
 ## How to build from source code
 
 Pre-requisites:
