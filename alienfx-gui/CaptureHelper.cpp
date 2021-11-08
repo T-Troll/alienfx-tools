@@ -95,7 +95,7 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
 			UINT idx = src->dy * hh * stride + src->dx * ww * 4;//src->dy * 4 + src->dx;
-			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64) hh * ww;// / (divider * divider);
+			ULONG64 r = 0, g = 0, b = 0, div = (ULONG64) hh * ww / (divider * divider);
 			for (UINT y = 0; y < hh; y += divider) {
 				UINT pos = idx + y * stride;
 				for (UINT x = 0; x < ww; x += divider) {
@@ -156,8 +156,6 @@ DWORD WINAPI CInProc(LPVOID param)
 	size_t buf_size;
 	ULONGLONG lastTick = 0;
 
-	DWORD wait_time = 200;
-
 	uiEvent = CreateEvent(NULL, false, false, NULL);
 	lhEvent = CreateEvent(NULL, false, false, NULL);
 
@@ -173,9 +171,13 @@ DWORD WINAPI CInProc(LPVOID param)
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
-	while (WaitForSingleObject(clrStopEvent, wait_time) == WAIT_TIMEOUT) {
+	Sleep(150);
+
+	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		//divider = 9 - (config->divider >> 2);
+		//divider = 2;
 		// Resize & calc
+		ULONGLONG sTime = GetTickCount64();
 		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img) {
 			if (w && h) {
 				if (FindColors(img, imgz) && memcmp(imgz, imgo, GRIDSIZE)) {
@@ -183,6 +185,17 @@ DWORD WINAPI CInProc(LPVOID param)
 					SetEvent(uiEvent);
 					memcpy(imgo, imgz, GRIDSIZE);
 				}
+				lastTick = (lastTick + (GetTickCount64() - sTime)) >> 1;
+				if (lastTick > 100) {
+					DebugPrint("Increase divide!\n");
+					divider++;
+				} else {
+					if (lastTick < 40 && divider > 1) {
+						DebugPrint("Decrease divide!\n");
+						divider--;
+					}
+				}
+				//DebugPrint((string("Medium Color count time ") + to_string(lastTick) + " ms, Divider " + to_string(divider) + "\n").c_str());
 			}
 			else {
 				dxgi_manager->refresh_output();
@@ -194,8 +207,6 @@ DWORD WINAPI CInProc(LPVOID param)
 				stride = w * 4;
 			}
 		}
-
-		wait_time = 50;
 	}
 
 	WaitForMultipleObjects(12, pThread, true, 1000);

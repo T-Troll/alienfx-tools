@@ -95,7 +95,7 @@ namespace AlienFX_SDK {
 		int vid = -1;
 		int pid = -1;
 		int length = -1;
-		int chain = 1;
+		byte chain = 1; // seq. number for APIv1-v3
 		int version = -1;
 		byte bright = 64; // for APIv6
 

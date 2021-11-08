@@ -252,6 +252,7 @@ namespace AlienFX_SDK {
 		{
 			memcpy(buffer, COMMV1.update, sizeof(COMMV1.update));
 			res = HidD_SetOutputReport(devHandle, buffer, length);
+			//AlienfxWaitForBusy();
 			chain = 1;
 		} break;
 		case API_L_ACPI:
@@ -312,20 +313,20 @@ namespace AlienFX_SDK {
 			buffer[9] = g;
 			buffer[10] = b;
 		} break;
-		case API_L_V3: case API_L_V2:
+		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
 			memcpy(buffer, COMMV1.color, sizeof(COMMV1.color));
 			SetMaskAndColor(index, buffer, r, g, b);
 		} break;
-		case API_L_V1:
-		{
-			memcpy(buffer, COMMV1.color, sizeof(COMMV1.color));
-			SetMaskAndColor(index, buffer, r, g, b);
+		//case API_L_V1:
+		//{
+		//	memcpy(buffer, COMMV1.color, sizeof(COMMV1.color));
+		//	SetMaskAndColor(index, buffer, r, g, b);
 
-			if (index == 5) {
-				buffer[1] = 0x83;
-			}
-		} break;
+		//	if (index == 5) {
+		//		buffer[1] = 0x83;
+		//	}
+		//} break;
 		case API_L_ACPI:
 		{
 			unsigned mask = 1 << index;
@@ -557,13 +558,15 @@ namespace AlienFX_SDK {
 			} break;
 			case API_L_V3: case API_L_V2: case API_L_V1:
 			{
-				byte *tempBuffer = new byte[length];
-				memcpy(tempBuffer, COMMV1.setTempo, sizeof(COMMV1.setTempo));
-				tempBuffer[2] = (byte) (((UINT) act[0].tempo << 3 & 0xff00) >> 8);
-				tempBuffer[3] = (byte) ((UINT) act[0].tempo << 3 & 0xff);
-				tempBuffer[4] = (((UINT) act[0].time << 5 & 0xff00) >> 8);
-				tempBuffer[5] = (byte) ((UINT) act[0].time << 5 & 0xff);
-				HidD_SetOutputReport(devHandle, tempBuffer, length);
+				if (act[0].type != AlienFX_A_Color) {
+					byte *tempBuffer = new byte[length];
+					memcpy(tempBuffer, COMMV1.setTempo, sizeof(COMMV1.setTempo));
+					tempBuffer[2] = (byte) (((UINT) act[0].tempo << 3 & 0xff00) >> 8);
+					tempBuffer[3] = (byte) ((UINT) act[0].tempo << 3 & 0xff);
+					tempBuffer[4] = (((UINT) act[0].time << 5 & 0xff00) >> 8);
+					tempBuffer[5] = (byte) ((UINT) act[0].time << 5 & 0xff);
+					HidD_SetOutputReport(devHandle, tempBuffer, length);
+				}
 				memcpy(buffer, COMMV1.color, sizeof(COMMV1.color));
 				for (size_t ca = 0; ca < act.size(); ca++) {
 					switch (act[ca].type) {
@@ -991,20 +994,22 @@ namespace AlienFX_SDK {
 
 	BYTE Functions::AlienfxWaitForReady() {
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_V2_READY; i++) {
+		int i;
+		for (i = 0; i < 100 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_V2_READY; i++) {
 			if (status == ALIENFX_V2_RESET)
 				return status;
-			Sleep(50);
+			Sleep(5);
 		}
+		//OutputDebugString((wstring(L"AWFR count - ") + to_wstring(i) + L"\n").c_str());
 		return status;
 	}
 
 	BYTE Functions::AlienfxWaitForBusy() {
 		byte status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus();
-		for (int i = 0; i < 10 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_V2_BUSY; i++) {
+		for (int i = 0; i < 100 && (status = AlienFX_SDK::Functions::AlienfxGetDeviceStatus()) != ALIENFX_V2_BUSY; i++) {
 			if (status == ALIENFX_V2_RESET)
 				return status;
-			Sleep(50);
+			Sleep(5);
 		}
 		return status;
 	}

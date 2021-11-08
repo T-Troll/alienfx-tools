@@ -307,33 +307,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			return FALSE;
 
 		//register global hotkeys...
-		RegisterHotKey(
-			mDlg,
-			1,
-			MOD_CONTROL | MOD_SHIFT,
-			VK_F12
-		);
-
-		RegisterHotKey(
-			mDlg,
-			2,
-			MOD_CONTROL | MOD_SHIFT,
-			VK_F11
-		);
-
-		RegisterHotKey(
-			mDlg,
-			4,
-			MOD_CONTROL | MOD_SHIFT,
-			VK_F10
-		);
-
-		RegisterHotKey(
-			mDlg,
-			3,
-			0,
-			VK_F18
-		);
+		RegisterHotKey( mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12 );
+		RegisterHotKey( mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11 );
+		RegisterHotKey( mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10 );
+		RegisterHotKey( mDlg, 3, 0, VK_F18 );
+		RegisterHotKey( mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
+		//effect change hotkeys...
+		for (int i = 0; i < 9; i++)
+			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x31 + i);
 
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
@@ -689,7 +670,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	{
 	case WM_INITDIALOG:
 	{
-		DLGHDR *pHdr = new DLGHDR;// (DLGHDR *) LocalAlloc(LPTR, sizeof(DLGHDR));
+		DLGHDR *pHdr = (DLGHDR *) LocalAlloc(LPTR, sizeof(DLGHDR));
 		SetWindowLongPtr(tab_list, GWLP_USERDATA, (LONG_PTR)pHdr);
 
 		pHdr->hwndTab = tab_list;
@@ -958,6 +939,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			conf->enableProf = !conf->enableProf;
 			eve->StartProfiles();
 			ReloadProfileList(hDlg);
+			if (tabSel == TAB_SETTINGS)
+				OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_RESTORE:
 			ShowWindow(hDlg, SW_RESTORE);
@@ -1078,7 +1061,21 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			conf->enableMon = !conf->enableMon;
 			eve->ToggleEvents();
 			ComboBox_SetCurSel(mode_list, conf->GetEffect());
-		break;
+			break;
+		case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // profile switch
+			if (wParam - 10 < conf->profiles.size()) {
+				eve->SwitchActiveProfile(&conf->profiles[wParam - 10]);
+				ReloadProfileList(hDlg);
+			}
+			break;
+		case 5: // profile autoswitch
+			eve->StopProfiles();
+			conf->enableProf = !conf->enableProf;
+			eve->StartProfiles();
+			ReloadProfileList(hDlg);
+			if (tabSel == TAB_SETTINGS)
+				OnSelChanged(tab_list);
+			break;
 		default: return false;
 		}
 		break;

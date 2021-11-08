@@ -316,17 +316,16 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 
 void FXHelper::Flush() {
 
-	DebugPrint("Flushing light query...\n");
+	//DebugPrint("Flushing light query...\n");
 
-	unblockUpdates = false;
 	modifyQuery.lock();
 	deque<LightQueryElement>::iterator qIter;
 	for (qIter = lightQuery.begin(); qIter != lightQuery.end() && !qIter->update; qIter++);
 	if (qIter != lightQuery.end())
 		// flush the rest of query
-		lightQuery.erase(qIter, lightQuery.end());
+		lightQuery.erase(qIter+1, lightQuery.end());
 	modifyQuery.unlock();
-	while (updateThread && !lightQuery.empty()) Sleep(20);
+	//while (updateThread && !lightQuery.empty()) Sleep(20);
 }
 
 void FXHelper::UnblockUpdates(bool newState, bool lock) {
@@ -466,6 +465,8 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 	vector<AlienFX_SDK::afx_act> actions;
 	actions.push_back({0});
 
+	Flush();
+
 	for (UINT i = 0; i < config->amb_conf->mappings.size(); i++) {
 		mapping map = config->amb_conf->mappings[i];
 		UINT r = 0, g = 0, b = 0, size = (UINT) map.map.size(), dsize = size * 255;
@@ -487,7 +488,8 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 				SetGroupLight(map.lightid, actions);
 		}
 	}
-	QueryUpdate(-1, false);
+	if (config->amb_conf->mappings.size())
+		QueryUpdate(-1, false);
 }
 
 struct devset {
@@ -499,6 +501,8 @@ struct devset {
 void FXHelper::RefreshHaptics(int *freq) {
 	vector<AlienFX_SDK::afx_act> actions;
 	actions.push_back({0});
+
+	Flush();
 
 	for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
 		haptics_map map = config->hap_conf->mappings[i];
@@ -530,7 +534,8 @@ void FXHelper::RefreshHaptics(int *freq) {
 			}
 		}
 	}
-	QueryUpdate(-1, false);
+	if (config->hap_conf->mappings.size())
+		QueryUpdate(-1, false);
 }
 
 DWORD WINAPI CLightsProc(LPVOID param) {
@@ -546,6 +551,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	pbstate.resize(2);
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+
+	// ULONGLONG ladt = GetTickCount64();
 
 	while (WaitForMultipleObjects(2, waitArray, false, 200) != WAIT_OBJECT_0) {
 		if (!src->lightQuery.empty()) ResetEvent(src->queryEmpty);
@@ -577,7 +584,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (current.update) {
 				// update command
 				wasDelay = false;
-				// DebugPrint("Update:\n");
+				//ULONGLONG upst = GetTickCount64();
+				//DebugPrint((string("Update begins after ") + to_string(upst - ladt) + " ms\n").c_str());
 				if (src->GetConfig()->stateOn) {
 					for (int i = 0; i < devs_query.size(); i++) {
 						AlienFX_SDK::Functions* dev = src->LocateDev(devs_query[i].devID);
@@ -598,9 +606,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 									}
 								}
 
-								// DebugPrint("Updating device...\n");
-
-								if (dev->IsDeviceReady()) {
+								//if (dev->IsDeviceReady()) {
 #ifdef _DEBUG
 									if (lights.size() != acts.size())
 										OutputDebugString("Data size mismatch!\n");
@@ -608,7 +614,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 									dev->SetMultiColor((int)lights.size(), lights.data(), acts, current.flags);
 									dev->UpdateColors();
 									src->UpdateGlobalEffect(dev);
-								} //else
+								//} //else
 									//dev->Reset(true);
 								devQ->dev_query.clear();
 								lights.clear();
@@ -619,6 +625,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					if (current.did == -1)
 						devs_query.clear();
 				}
+				//ULONGLONG uft = GetTickCount64();
+				//DebugPrint((string("Last update time ") + to_string(uft - upst) + ", circle time " + to_string(uft - ladt) + " ms\n").c_str());
+				//ladt = uft;
 			} else {
 				// set light
 				AlienFX_SDK::Functions* dev = src->LocateDev(current.did);
@@ -650,19 +659,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						if (!src->GetConfig()->block_power && current.actsize > 1) {
 
 							// Do we have the same color?
-							if ((current.flags && dev->GetVersion() != 4) ||
+							if ((current.flags /*&& dev->GetVersion() != 4*/) ||
 								pbstate[0].r != actions[0].r || pbstate[1].r != actions[1].r ||
 								pbstate[0].g != actions[0].g || pbstate[1].g != actions[1].g ||
 								pbstate[0].b != actions[0].b || pbstate[1].b != actions[1].b) {
 
-								DebugPrint((string("Setting power button to " +
-												   to_string(actions[0].r) + "-" +
-												   to_string(actions[0].g) + "-" + 
-												   to_string(actions[0].b) + "/" +
-												   to_string(actions[1].r) + "-" +
-												   to_string(actions[1].g) + "-" +
-												   to_string(actions[1].b) +
-												   "\n")).c_str());
+								DebugPrint((string("Setting power button to ") +
+											to_string(actions[0].r) + "-" +
+											to_string(actions[0].g) + "-" + 
+											to_string(actions[0].b) + "/" +
+											to_string(actions[1].r) + "-" +
+											to_string(actions[1].g) + "-" +
+											to_string(actions[1].b) + 
+											"\n").c_str());
 
 								pbstate = actions;
 								actions[0].type = AlienFX_SDK::AlienFX_A_Power;

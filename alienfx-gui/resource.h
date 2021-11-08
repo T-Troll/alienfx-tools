@@ -211,6 +211,7 @@
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
 #define ID_CHECKUPDATE                  32803
 #define IDM_CHECKUPDATE                 32804
+#define ID_ACCELERATO32805              32805
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -219,7 +220,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        155
-#define _APS_NEXT_COMMAND_VALUE         32805
+#define _APS_NEXT_COMMAND_VALUE         32807
 #define _APS_NEXT_CONTROL_VALUE         1106
 #define _APS_NEXT_SYMED_VALUE           113
 #endif

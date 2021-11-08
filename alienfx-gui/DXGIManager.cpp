@@ -241,9 +241,7 @@ bool DXGIManager::refresh_output() {
 // Returns whether new allocation was made
 bool DXGIManager::update_buffer_allocation() {
 	RECT output_rect = get_output_rect();
-	size_t output_width = (size_t) output_rect.right - output_rect.left;
-	size_t output_height = (size_t) output_rect.bottom - output_rect.top;
-	size_t buf_size = output_width * output_height * PIXEL_SIZE;
+	size_t buf_size = (output_rect.right - output_rect.left) * (output_rect.bottom - output_rect.top) * PIXEL_SIZE;
 	if (m_frame_buf_size != buf_size) {
 		m_frame_buf_size = buf_size;
 		if (m_frame_buf != NULL) {
@@ -326,11 +324,18 @@ CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size)
 	{
 		// Plain copy by byte
 		size_t out_row_size = output_width * PIXEL_SIZE;
-		for (size_t row_n = 0; row_n < output_height; row_n++) {
-			memcpy(m_frame_buf + row_n * out_row_size,
-				mapped_surface.pBits + row_n * mapped_surface.Pitch,
-				out_row_size);
+		if (out_row_size == mapped_surface.Pitch) {
+			// Bulk copy
+			memcpy(m_frame_buf,
+				   mapped_surface.pBits,
+				   out_row_size * output_height);
 		}
+		else
+			for (size_t row_n = 0; row_n < output_height; row_n++) {
+				memcpy(m_frame_buf + row_n * out_row_size,
+					mapped_surface.pBits + row_n * mapped_surface.Pitch,
+					out_row_size);
+			}
 	} else /*if (output_desc.Rotation != DXGI_MODE_ROTATION_UNSPECIFIED)*/ {
 		auto& ofsetter = ofsetters[output_desc.Rotation - 2]; // 90deg = 2 -> 0
 		PIXEL* src_pixels = (PIXEL*)mapped_surface.pBits;

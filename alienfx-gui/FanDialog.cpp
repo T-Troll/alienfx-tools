@@ -354,7 +354,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_CLOSE: case WM_DESTROY:
         // Close curve window
         fanWindow = NULL;
-        mon->fDlg = fanWindow;
+        if (acpi)
+            mon->fDlg = NULL;
         break;
     }
     return 0;

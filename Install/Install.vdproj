@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_015851A88B2E497E6C19EE42E0C66BC8"
+        "OwnerKey" = "8:_799E46A9DE84423E9A42E8A667B8B40B"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_0207635732654CE6A87615796F8EEC39"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -89,6 +95,18 @@
         {
         "MsmKey" = "8:_B829425435A04EFB81D071102204D8B4"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D22F61038ABB17E9902DAEEECA02B4EB"
+        "OwnerKey" = "8:_799E46A9DE84423E9A42E8A667B8B40B"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E5943F519A7605D4A75B1464669B4546"
+        "OwnerKey" = "8:_799E46A9DE84423E9A42E8A667B8B40B"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -190,6 +208,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_015851A88B2E497E6C19EE42E0C66BC8"
+            {
+            "SourcePath" = "8:msdelta.dll"
+            "TargetName" = "8:msdelta.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0207635732654CE6A87615796F8EEC39"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-gui.md"
@@ -268,6 +306,46 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D22F61038ABB17E9902DAEEECA02B4EB"
+            {
+            "SourcePath" = "8:RPCRT4.dll"
+            "TargetName" = "8:RPCRT4.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E5943F519A7605D4A75B1464669B4546"
+            {
+            "SourcePath" = "8:ntdll.dll"
+            "TargetName" = "8:ntdll.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E9F4FBB09B4B4EFC8347065B33B3CE87"
@@ -399,15 +477,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{BDCD912C-555D-43E9-95B3-E01550B5F2FD}"
-        "PackageCode" = "8:{DF18F693-4796-4737-903A-615307225632}"
+        "ProductCode" = "8:{064A5C06-899F-428E-9223-800361CABFA8}"
+        "PackageCode" = "8:{8FE8067C-20FE-4AB8-A445-C37D4F902DC8}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:5.2.2"
+        "ProductVersion" = "8:5.2.3"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
