@@ -203,6 +203,8 @@ Keyboard shortcuts (any time):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights for current profile
 - CTRL+SHIFT+F10 - enable/disable software effects
+- CTRL+SHIFT+F9 - enable/disable profile auto switch
+- CTRL+SHIFT+1..9 - switch active profile to profile #N (profile order is the same as at "Profiles" tab)
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
 
 Other shortcuts (only then application active):
