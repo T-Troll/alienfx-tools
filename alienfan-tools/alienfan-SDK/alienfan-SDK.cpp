@@ -228,6 +228,9 @@ namespace AlienFan_SDK {
 							free(resName);
 						}
 					}
+					// Set boost block
+					for (int i = 0; i < HowManyFans(); i++)
+						boosts.push_back(devs[aDev].maxBoost);
 					return true;
 				}
 			}
@@ -251,15 +254,11 @@ namespace AlienFan_SDK {
 				return ReadRamDirect(fans[fanID]);
 		return -1;
 	}
-	int Control::GetFanValue(int fanID) {
+	int Control::GetFanValue(int fanID, bool force) {
 		if (fanID < fans.size()) {
 			if (devs[aDev].commandControlled) {
-				int value = RunMainCommand(dev_controls[cDev].getFanBoost, (byte) fans[fanID]),
-					finalValue = devs[aDev].pwmfans ?
-					//(255 - RunMainCommand(dev_controls[devs[aDev].controlID].getFanBoost, (byte) fans[fanID])) * 100 / (255 - devs[aDev].minPwm) :
-					value * 100 / devs[aDev].minPwm :
-					value;
-				return finalValue;
+				int value = RunMainCommand(dev_controls[cDev].getFanBoost, (byte) fans[fanID]);
+				return force ? value : value * 100 / boosts[fanID];
 			} else
 				return ReadRamDirect(fans[fanID]);
 		}
@@ -268,8 +267,7 @@ namespace AlienFan_SDK {
 	int Control::SetFanValue(int fanID, byte value, bool force) {
 		if (fanID < fans.size()) {
 			if (devs[aDev].commandControlled) {
-				int finalValue = devs[aDev].pwmfans && !force ? (int) value * devs[aDev].minPwm / 100 : value;
-				//255 - (255 - devs[aDev].minPwm) * value / 100 : value;
+				int finalValue = force ? value : (int) value * boosts[fanID] / 100;
 				return RunMainCommand(dev_controls[cDev].setFanBoost, (byte) fans[fanID], finalValue) != devs[aDev].errorCode;
 			} else {
 				WriteRamDirect(fans[fanID] + 0x23, value + 1); // lock at 0 fix

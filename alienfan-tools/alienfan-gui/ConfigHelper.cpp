@@ -1,5 +1,4 @@
 #include "ConfigHelper.h"
-#include "resource.h"
 #include <string>
 
 ConfigHelper::ConfigHelper() {
@@ -23,17 +22,6 @@ ConfigHelper::ConfigHelper() {
 				   &hKey2,
 				   NULL);
 
-	niData.cbSize = sizeof(NOTIFYICONDATA);
-	niData.uID = IDI_ALIENFANGUI;
-	niData.uFlags = NIF_ICON | NIF_MESSAGE;
-	niData.uCallbackMessage = WM_APP + 1;
-	niData.hIcon =
-		(HICON) LoadImage(GetModuleHandle(NULL),
-						  MAKEINTRESOURCE(IDI_ALIENFANGUI),
-						  IMAGE_ICON,
-						  GetSystemMetrics(SM_CXSMICON),
-						  GetSystemMetrics(SM_CYSMICON),
-						  LR_DEFAULTCOLOR);
 	Load();
 }
 
@@ -84,7 +72,7 @@ void ConfigHelper::Load() {
 	GetReg("LastSensor", &lastSelectedSensor);
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("LastGPU", &prof.GPUPower);
-	GetReg("MaxRPM", &maxRPM, 4000);
+	//GetReg("MaxRPM", &maxRPM, 4000);
 
 	// Now load sensor mappings...
 	unsigned vindex = 0;
@@ -120,6 +108,22 @@ void ConfigHelper::Load() {
 		}
 		vindex++;
 	} while (ret == ERROR_SUCCESS);
+	vindex = 0;
+	do {
+		DWORD len = 255, lend = 0;
+		if ((ret = RegEnumValueA( hKey1, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+			int fid; len++;
+			if (sscanf_s(name, "Boost-%d", &fid) == 1) { // Boost block
+				byte* inarray = new byte[lend];
+				if (fid >= boosts.size())
+					boosts.resize(fid + 1);
+				RegEnumValueA( hKey1, vindex, name, &len, NULL, NULL, inarray, &lend );
+				boosts[fid] = {inarray[0],*(USHORT*)(inarray+sizeof(byte))};
+				delete[] inarray;
+			}
+		}
+		vindex++;
+	} while (ret == ERROR_SUCCESS);
 }
 
 void ConfigHelper::Save() {
@@ -131,7 +135,7 @@ void ConfigHelper::Save() {
 	SetReg("LastSensor", lastSelectedSensor);
 	SetReg("LastFan", lastSelectedFan);
 	SetReg("LastGPU", prof.GPUPower);
-	SetReg("MaxRPM", maxRPM);
+	//SetReg("MaxRPM", maxRPM);
 
 	if (prof.fanControls.size() > 0) {
 		// clean old data
@@ -139,7 +143,7 @@ void ConfigHelper::Save() {
 		RegDeleteTreeA(hKey1, "Sensors");
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan\\Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);
 	}
-
+	// save profiles..
 	for (int i = 0; i < prof.fanControls.size(); i++) {
 		for (int j = 0; j < prof.fanControls[i].fans.size(); j++) {
 			name = "Sensor-" + to_string(prof.fanControls[i].sensorIndex) + "-" 
@@ -154,5 +158,24 @@ void ConfigHelper::Save() {
 			delete[] outdata;
 		}
 	}
+	// save boosts..
+	for (int i = 0; i < boosts.size(); i++) {
+		byte outarray[sizeof(byte) + sizeof(USHORT)] = {0};
+		name = "Boost-" + to_string(i);
+		outarray[0] = boosts[i].maxBoost;
+		*(USHORT *) (outarray + sizeof(byte)) = boosts[i].maxRPM;
+		RegSetValueExA( hKey1, name.c_str(), 0, REG_BINARY, outarray, (DWORD) sizeof(byte) + sizeof(USHORT));
+	}
+}
+
+void ConfigHelper::SetBoosts(AlienFan_SDK::Control *acpi) {
+	for (int i = 0; i < acpi->HowManyFans(); i++)
+		if (i < boosts.size())
+			if (boosts[i].maxBoost)
+				acpi->boosts[i] = boosts[i].maxBoost;
+			else
+				boosts[i] = {acpi->boosts[i], 4000};
+		else
+			boosts.push_back({acpi->boosts[i], 4000});
 }
 

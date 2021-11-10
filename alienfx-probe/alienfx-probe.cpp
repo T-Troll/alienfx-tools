@@ -103,6 +103,9 @@ void CheckDevices(bool show_all) {
 							case 34:
 								supported = true; apiver = "APIv4";
 								break;
+							case 65:
+								supported = true; apiver = "APIv6";
+								break;
 							default: apiver = "Unknown";
 							}
 
@@ -113,18 +116,19 @@ void CheckDevices(bool show_all) {
 
 								cout << dec << "Version " << attributes->VersionNumber << ", Blocksize " << attributes->Size << endl;
 
-								cout << dec << "Output Report Length " << caps.OutputReportByteLength
-									<< ", Input Report Length " << caps.InputReportByteLength
-									<< ", Feature Report Length " << caps.FeatureReportByteLength
+								cout << dec << "Report Lengths: Output " << caps.OutputReportByteLength
+									<< ", Input " << caps.InputReportByteLength
+									<< ", Feature " << caps.FeatureReportByteLength
 									<< endl;
-								cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage << endl;
-								cout << dec << "Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
+								cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage;
+								cout << dec << ", Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
 
 								cout << "+++++ Detected as: ";
 
 								switch (i) {
 								case 0: cout << "Alienware, "; break;
 								case 1: cout << "DARFON, "; break;
+								case 2: cout << "Microchip, "; break;
 								}
 
 								cout << apiver << " +++++" << endl;

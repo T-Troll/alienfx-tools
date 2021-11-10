@@ -81,8 +81,8 @@ DWORD WINAPI CMonProc(LPVOID param) {
 			src->boostValues[i] = src->acpi->GetFanValue(i);
 			int rpValue = src->acpi->GetFanRPM(i);
 			// Set max. rpm
-			if (rpValue > src->conf->maxRPM)
-				src->conf->maxRPM = rpValue;
+			//if (rpValue > src->conf->maxRPM)
+			//	src->conf->maxRPM = rpValue;
 			if (visible && fanList && rpValue != src->fanValues[i]) {
 				// Update RPM block...
 				src->fanValues[i] = rpValue;

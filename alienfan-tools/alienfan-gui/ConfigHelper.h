@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <vector>
+#include "alienfan-sdk.h"
 
 using namespace std;
 
@@ -26,6 +27,11 @@ struct fan_profile {
 	vector<temp_block> fanControls;
 };
 
+struct fan_overboost {
+	byte maxBoost = 0;
+	USHORT maxRPM = 0;
+};
+
 class ConfigHelper {
 private:
 	HKEY   hKey1, hKey2;
@@ -36,12 +42,11 @@ public:
 	DWORD lastSelectedSensor = -1;
 	DWORD startWithWindows = 0;
 	DWORD startMinimized = 0;
-	DWORD maxRPM = 4000;
+	//DWORD maxRPM = 4000;
 
 	fan_profile* lastProf;
 	fan_profile prof;
-
-	NOTIFYICONDATA niData = {0};
+	vector<fan_overboost> boosts;
 
 	ConfigHelper();
 	~ConfigHelper();
@@ -51,5 +56,6 @@ public:
 	void Load();
 	void Save();
 
+	void SetBoosts(AlienFan_SDK::Control *);
 };
 

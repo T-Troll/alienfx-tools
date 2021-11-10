@@ -111,6 +111,10 @@ namespace AlienFX_SDK {
 		//[9,10,11] - RGB
 		//[12] - Brightness (0..64)
 		//[13] - ???
+		//[5] - command (87 - color, 88 - Pulse?, 8d - morph?)
+		// [7] - command type - 4 - color, 1 - morph?, 2 - pulse?
+		// Pulse - [12,13,14] - rgb2 + 63 (WTF?)
+		// Morph - [12,13,14] - rgb2, [15-18] - 00,02,14,7b ???
 	} COMMV6;
 
 }

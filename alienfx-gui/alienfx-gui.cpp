@@ -265,6 +265,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->IsActivated()) {
 			if (acpi->Probe()) {
+				conf->fan_conf->SetBoosts(acpi);
 				if (conf->fan_conf->lastProf->powerStage >= 0)
 					acpi->SetPower(conf->fan_conf->lastProf->powerStage);
 				if (conf->fan_conf->lastProf->GPUPower >= 0)

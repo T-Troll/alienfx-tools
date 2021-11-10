@@ -24,8 +24,7 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_DEVICE {
 		string mainCommand;
 		int  errorCode;
-		bool pwmfans;
-		byte minPwm;
+		byte maxBoost;
 		bool commandControlled;
 		short controlID;
 		ALIENFAN_COMMAND probe;
@@ -82,7 +81,7 @@ namespace AlienFan_SDK {
 		int GetFanPercent(int fanID);
 
 		// Get boost value for the fan index fanID at fans[]. If isPwm true, count from pwm to percent.
-		int GetFanValue(int fanID);
+		int GetFanValue(int fanID, bool force = false);
 
 		// Set boost value for the fan index fanID at fans[] (0..100). If isPwm true, count from pwm to percent.
 		int SetFanValue(int fanID, byte value, bool force = false);
@@ -132,6 +131,7 @@ namespace AlienFan_SDK {
 		// Arrays of sensors, fans and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<USHORT> fans;
+		vector<byte> boosts;
 		vector<byte> powers;
 
 		// true if driver connection fails, as well as start driver attempt fails. Indicates you have not enough rights or system not configured correctly.

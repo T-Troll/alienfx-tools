@@ -178,8 +178,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				EvaluteToAdmin();
 				acpi = new AlienFan_SDK::Control();
 				if (acpi->IsActivated() && acpi->Probe()) {
-					conf->fan_conf = new ConfigHelper();
-					conf->fan_conf->Load();
+					conf->fan_conf->SetBoosts(acpi);
+					/*conf->fan_conf = new ConfigHelper();
+					conf->fan_conf->Load();*/
 					mon = new MonHelper(NULL, NULL, conf->fan_conf, acpi);
 					eve->mon = mon;
 				} else {

@@ -36,6 +36,8 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND toolTip = NULL;
 HWND fanWindow = NULL;
 
+NOTIFYICONDATA niData = {0};
+
 // Forward declarations of functions included in this code module:
 //ATOM                MyRegisterClass(HINSTANCE hInstance);
 HWND                InitInstance(HINSTANCE, int);
@@ -60,7 +62,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     if (acpi->IsActivated()) {
         if (acpi->Probe()) {
-
+            fan_conf->SetBoosts(acpi);
             // Perform application initialization:
             HWND mDlg;
             if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL ))) {
@@ -377,8 +379,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU);
     if (message == newTaskBar) {
         // Started/restarted explorer...
-        Shell_NotifyIcon(NIM_ADD, &fan_conf->niData);
-        CreateThread(NULL, 0, CUpdateCheck, &fan_conf->niData, 0, NULL);
+        Shell_NotifyIcon(NIM_ADD, &niData);
+        CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
         return true;
     }
 
@@ -386,9 +388,20 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_INITDIALOG:
     {
-        fan_conf->niData.hWnd = hDlg;
-        Shell_NotifyIcon(NIM_ADD, &fan_conf->niData);
-        CreateThread(NULL, 0, CUpdateCheck, &fan_conf->niData, 0, NULL);
+        niData.cbSize = sizeof(NOTIFYICONDATA);
+        niData.uID = IDI_ALIENFANGUI;
+        niData.uFlags = NIF_ICON | NIF_MESSAGE;
+        niData.uCallbackMessage = WM_APP + 1;
+        niData.hIcon =
+            (HICON) LoadImage(GetModuleHandle(NULL),
+                              MAKEINTRESOURCE(IDI_ALIENFANGUI),
+                              IMAGE_ICON,
+                              GetSystemMetrics(SM_CXSMICON),
+                              GetSystemMetrics(SM_CYSMICON),
+                              LR_DEFAULTCOLOR);
+        niData.hWnd = hDlg;
+        Shell_NotifyIcon(NIM_ADD, &niData);
+        CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
 
         ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
         ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
@@ -613,7 +626,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CLOSE:
         EndDialog(hDlg, IDOK);
         mon->Stop();
-        Shell_NotifyIcon(NIM_DELETE, &fan_conf->niData);
+        Shell_NotifyIcon(NIM_DELETE, &niData);
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:

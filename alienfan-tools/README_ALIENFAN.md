@@ -5,6 +5,7 @@ This is the side step from my [alienfx-tools](https://github.com/T-Troll/alienfx
 Tools avaliable:
 - `alienfan-cli` - simple fan control command line utility
 - `alienfan-gui` - Fan control GUI application
+- `alienfan-overboost` - command line utility to calculate maximum overboost for you system
 
 ## Disclaimer
 - **Antiviruses will detect virus into package**. It's not a virus, in fact, but the kernel hack for load driver. If you don't like it:
@@ -110,6 +111,7 @@ There are two settings into application menu "Settings":
 - "Start minimized" - If checked, application hide into tray icon after start.
 
 ## `alienfan-cli` usage
+
 It's a simple CLI fan control utility for now, providing the same functionality as AWCC (well... a bit more already).
 ACPI can't control fans directly (well... i'm working on it), so all you can do is set fan boost (More RPM).
 Run `alienfan-cli [command[=value{,value}] [command...]]`. After start, it detect you gear and show number of fans, temperature sensors and power modes avaliable.
@@ -148,6 +150,18 @@ You can share commands you find with me, and i'll add it into applications.
 `directgpu` command doing the same for GPU subsystem, altering some chip settings.
 
 NB: for both `direct` commands, all values are not decimal, but hex (like c8, a3, etc)! It made easy to test values found into ACPI dump.
+
+## `alienfan-overboost` usage
+
+This tool is a probe trying to determinate can you fan(s) be overboosted (setted more, then 100% of the BIOS values) and how much it can be overboosted.  
+It set new boost value, wait until fan RPM will be steady, then check steady RPM against top reached.  
+By default, just run it at IDLE system and wait some minutes until it define and store overboost values for every fan found into you system.  
+
+You can also try to overboost only one fan, issue `alienfan-overboost <fan ID>` command, as well as set maximum boost manually using `alienfan-overboost <fan ID> <max. boost>` command.
+
+NB: For my system is better run this tool at system idle state (it provide more precise results), but for some system it can be better to run it at fully loaded system, running some bench app like Heaven Benchmark. Please keep in mind, full-auto test took some minutes, so you benchmark should be long enough for this.
+
+WARNING: Stop all fan-control software before start this tool, or results will be incorrect!
 
 ## ToDo:
 - [x] Temperature sensors reading
