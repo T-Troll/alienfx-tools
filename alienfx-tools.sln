@@ -57,6 +57,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "alienfan-tools\
 		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E} = {072F189A-CEA9-4CA8-A0FA-1257A7524A8E}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-overboost", "alienfan-tools\alienfan-overboost\alienfan-overboost.vcxproj", "{1243A1E9-2E9A-4509-9174-3AD28E894819}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfx-LFX\alienfx-LFX.vcxitems*{4ecafbb9-b7b9-4bc3-9c42-1882a68edac8}*SharedItemsImports = 4
@@ -260,6 +262,18 @@ Global
 		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.ActiveCfg = Release|x64
 		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.Build.0 = Release|x64
 		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x86.ActiveCfg = Release|x64
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Debug|ARM.ActiveCfg = Debug|Win32
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Debug|x64.ActiveCfg = Debug|x64
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Debug|x64.Build.0 = Debug|x64
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Debug|x86.ActiveCfg = Debug|Win32
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Debug|x86.Build.0 = Debug|Win32
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Release|ARM.ActiveCfg = Release|Win32
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Release|ARM64.ActiveCfg = Release|Win32
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Release|x64.ActiveCfg = Release|x64
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Release|x64.Build.0 = Release|x64
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Release|x86.ActiveCfg = Release|Win32
+		{1243A1E9-2E9A-4509-9174-3AD28E894819}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
