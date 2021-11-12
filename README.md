@@ -39,7 +39,7 @@ Run any tool you need from this folder or start menu!
 ## Supported hardware:
 
 Virtually any Alienware/Dell G-series notebook and desktop.  
-Project Wiki have [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).
+Project Wiki have [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).  
 If your device not supported, you can [help me to support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).
 
 ## Known issues
