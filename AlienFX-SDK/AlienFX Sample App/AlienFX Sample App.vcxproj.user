@@ -8,7 +8,7 @@
     <RemoteDebuggerWorkingDirectory>c:/work/afx-tools/</RemoteDebuggerWorkingDirectory>
     <RemoteDebuggerServerName>\\TTROLL-AW2</RemoteDebuggerServerName>
     <RemoteDebuggerConnection>RemoteWithoutAuthentication</RemoteDebuggerConnection>
-    <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <RemoteDebuggerAttach>false</RemoteDebuggerAttach>
     <DeploymentDirectory>\\TTROLL-AW2\afx-tools</DeploymentDirectory>
     <RemoteDebuggerDeployCppRuntime>false</RemoteDebuggerDeployCppRuntime>

@@ -14,20 +14,21 @@ namespace AlienFX_SDK {
 	#define ALIENFX_V2_READY 0x10
 	#define ALIENFX_V2_BUSY 0x11
 	#define ALIENFX_V2_UNKNOWN 0x12
-	// new statuses for apiv4 - 33 = ok, 36 = wait for update, 35 = wait for color, 34 - busy processing power update
+	// new statuses for apiv4
 	#define ALIENFX_V4_READY 33
 	#define ALIENFX_V4_BUSY 34
 	#define ALIENFX_V4_WAITCOLOR 35
 	#define ALIENFX_V4_WAITUPDATE 36
     #define ALIENFX_V4_WASON 38
-	// apiv5
+	// new statuses for apiv5
     #define ALIENFX_V5_STARTCOMMAND 0x8c
     #define ALIENFX_V5_WAITUPDATE 0x80
     #define ALIENFX_V5_INCOMMAND 0xcc
 
 	// Length by API version:
     #define API_L_ACPI 0 //128
-    #define API_L_V6 6 //64
+    #define API_L_V7 7 //65
+    #define API_L_V6 6 //65
 	#define API_L_V5 5 //64
 	#define API_L_V4 4 //34
 	#define API_L_V3 3 //12
@@ -37,9 +38,6 @@ namespace AlienFX_SDK {
 	// Mapping flags:
     #define ALIENFX_FLAG_POWER 1
     #define ALIENFX_FLAG_INACTIVE 2
-
-	// delay for power button update
-    #define POWER_DELAY 450
 
 	// Maximal buffer size across all device types
     #define MAX_BUFFERSIZE 65
@@ -97,23 +95,31 @@ namespace AlienFX_SDK {
 		int length = -1;
 		byte chain = 1; // seq. number for APIv1-v3
 		int version = -1;
-		byte bright = 64; // for APIv6
+		byte bright = 64; // for APIv6-v7
 
 		// support function for mask-based devices (v1-v3)
-		void SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
+		//void SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
+		vector<pair<byte, byte>> SetMaskAndColor(DWORD index, byte type, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
 
-		// Support functions for ACPI calls
+		// Support functions for ACPI calls (v0)
 		bool SetAcpiColor(byte mask, byte r, byte g, byte b);
+
+		// Support function to send data to USB device
+		bool PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> mods = {});
+
+		// Support function to send whole power block for v1-v3
+		bool SavePowerBlock(byte blID, byte index, vector<afx_act> act, bool needSave, bool needInverse = false);
 
 	public:
 
-		//bool inSet = false;
 		// Initialize device
-		// Returns PID of device used. if pid argument is -1, first device found into the system will be used.
+		// Returns PID of device used. 
+		// If vid is 0, first device found into the system will be used, othervise first device of this type.
+		// If pid is defined, device with vid/pid will be used.
 		int AlienFXInitialize(int vid, int pid = -1);
 
 		// Another init function, for Aurora ACPI init.
-		// acc is a handle to low-level ACPI driver (hwacc.sys) - see alienfan project.
+		// acc is a handle to low-level ACPI driver (hwacc.sys) interface - see alienfan project.
 		int AlienFXInitialize(HANDLE acc);
 
 		//De-init

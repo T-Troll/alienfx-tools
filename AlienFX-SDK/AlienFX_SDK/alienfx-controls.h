@@ -1,11 +1,11 @@
 #pragma once
 
-#define NUM_VIDS 3
+#define NUM_VIDS 4
 
 namespace AlienFX_SDK {
 
 	//This is VIDs for different devices: Alienware (common), Darfon (RGB rekboards), Microship (monitors)
-	const static unsigned vids[NUM_VIDS] = {0x187c, 0x0d62, 0x0424};
+	const static unsigned vids[NUM_VIDS] = {0x187c, 0x0d62, 0x0424, 0x0461};
 
 	static struct COMMV1 {
 		const byte reset[3] = {0x02 ,0x07, 0x04};
@@ -105,8 +105,8 @@ namespace AlienFX_SDK {
 		*/
 	} COMMV5;
 
-	struct COMMV6 {
-		const byte colorSet[13] = {0x92,0x37,0x0a,0x00,0x51,0x87,0xd0,0x04,0x0,0x0,0x0,0x0,0x64};
+	static struct COMMV6 {
+		const byte colorSet[14] = {0x00,0x92,0x37,0x0a,0x00,0x51,0x87,0xd0,0x04,0x0,0x0,0x0,0x0,0x64};
 		//[8] - light mask
 		//[9,10,11] - RGB
 		//[12] - Brightness (0..64)
@@ -116,5 +116,18 @@ namespace AlienFX_SDK {
 		// Pulse - [12,13,14] - rgb2 + 63 (WTF?)
 		// Morph - [12,13,14] - rgb2, [15-18] - 00,02,14,7b ???
 	} COMMV6;
+
+	static struct COMMV7 {
+		// ALL INDEXES + 1!!!!
+		const byte ack[3] = {0x00,0xc0,0x02};
+		const byte colorSet[4] = {0x00,0x40,0x1a,0x07};
+		//[4] - light ID 
+		//[5,6,7] - RGB
+		const byte update[7] = {0x00,0x40,0x60,0x07,0x00,0xc0,0x4e};
+		//[7] = 1 - update finish, [8] = 1 - update color (after set)
+		const byte status[6] = {0x00,0x40,0x03,0x01,0x00,0x01};
+		const byte control[11] = {0x00,0x40,0x10,0x0c,0x00,0x01,0x64,0x00,0x2a,0xaa,0xff};
+		//[5] - brightness
+	} COMMV7;
 
 }

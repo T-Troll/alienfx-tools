@@ -2,144 +2,16 @@
 //
 
 #include <iostream>
-#include <iomanip>
+//#include <iomanip>
 #include "AlienFX_SDK.h"
 #include "LFXUtil.h"
-#include <SetupAPI.h>
 
-extern "C" {
-#include <hidclass.h>
-#include <hidsdi.h>
-}
+void CheckDevices(bool);
 
 using namespace std;
 namespace
 {
 	LFXUtil::LFXUtilC lfxUtil;
-}
-
-void CheckDevices(bool show_all) {
-	GUID guid;
-	bool flag = false;
-	HANDLE tdevHandle;
-	//This is VID for all alienware laptops, use this while initializing, it might be different for external AW device like mouse/kb
-	const static DWORD vids[2] = {0x187c, 0x0d62};
-
-	HidD_GetHidGuid(&guid);
-	HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-	if (hDevInfo == INVALID_HANDLE_VALUE)
-	{
-		return;
-	}
-	unsigned int dw = 0;
-	SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
-
-	unsigned int lastError = 0;
-	while (!flag)
-	{
-		deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
-		if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
-		{
-			lastError = GetLastError();
-			flag = true;
-			continue;
-		}
-		dw++;
-		DWORD dwRequiredSize = 0;
-		if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
-		{
-			continue;
-		}
-		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-		{
-			continue;
-		}
-		std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
-		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-		if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
-		{
-			std::wstring devicePath = deviceInterfaceDetailData->DevicePath;
-			tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-
-			if (tdevHandle != INVALID_HANDLE_VALUE)
-			{
-				std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
-				attributes->Size = sizeof(HIDD_ATTRIBUTES);
-				if (HidD_GetAttributes(tdevHandle, attributes.get()))
-				{
-					for (unsigned i = 0; i < sizeof(vids)/sizeof(DWORD); i++) {
-						if (attributes->VendorID == vids[i]) {
-
-							PHIDP_PREPARSED_DATA prep_caps;
-							HIDP_CAPS caps;
-							HidD_GetPreparsedData(tdevHandle, &prep_caps);
-							HidP_GetCaps(prep_caps, &caps);
-							HidD_FreePreparsedData(prep_caps);
-
-							string apiver;
-							bool supported = false;
-
-							switch (caps.OutputReportByteLength) {
-							case 0:
-							{
-								switch (caps.Usage) {
-								case 0xcc: supported = true; apiver = "RGB, APIv5"; break;
-								default: apiver = "Unknown.";
-								}
-							} break;
-							case 8:
-								supported = true; apiver =  "APIv1";
-								break;
-							case 9:
-								if (attributes->VersionNumber > 511)
-									apiver =  "APIv2";
-								else
-									apiver =  "APIv1";
-								supported = true; 
-								break;
-							case 12:
-								supported = true; apiver = "APIv3";
-								break;
-							case 34:
-								supported = true; apiver = "APIv4";
-								break;
-							case 65:
-								supported = true; apiver = "APIv6";
-								break;
-							default: apiver = "Unknown";
-							}
-
-							if (show_all || supported) {
-
-								cout.fill('0');
-								cout << hex << "===== New device VID" << setw(4) << attributes->VendorID << ", PID" << setw(4) << attributes->ProductID << " =====" << endl;
-
-								cout << dec << "Version " << attributes->VersionNumber << ", Blocksize " << attributes->Size << endl;
-
-								cout << dec << "Report Lengths: Output " << caps.OutputReportByteLength
-									<< ", Input " << caps.InputReportByteLength
-									<< ", Feature " << caps.FeatureReportByteLength
-									<< endl;
-								cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage;
-								cout << dec << ", Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
-
-								cout << "+++++ Detected as: ";
-
-								switch (i) {
-								case 0: cout << "Alienware, "; break;
-								case 1: cout << "DARFON, "; break;
-								case 2: cout << "Microchip, "; break;
-								}
-
-								cout << apiver << " +++++" << endl;
-							}
-						}
-					}
-				}
-			}
-			CloseHandle(tdevHandle);
-		}
-	}
 }
 
 int main(int argc, char* argv[])
@@ -239,7 +111,7 @@ int main(int argc, char* argv[])
 						} else {
 							cout << "Skipped. ";
 						}
-						afx_dev->SetColor(i, 0, 0, 0);
+						afx_dev->SetColor(i, 0, 0, 255);
 						afx_dev->UpdateColors();
 						//afx_dev->Reset();
 						Sleep(100);

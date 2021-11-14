@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AlienFX_SDK.h">
+    <ClInclude Include="alienfx-controls.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alienfx-controls.h">
+    <ClInclude Include="AlienFX_SDK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

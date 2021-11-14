@@ -644,7 +644,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							action.b = ((UINT) action.b * action.b) / 255;
 						}
 						// Dimming...
-						// For v0-v3 devices only, v4 and v5 have hardware dimming
+						// For v0-v3 devices only, v4+ have hardware dimming
 						if (dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
 							unsigned delta = 255 - src->GetConfig()->dimmingPower;
 							action.r = ((UINT) action.r * delta) / 255;// >> 8;
@@ -654,33 +654,29 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						actions.push_back(action);
 					}
 
+					// Is it power button?
 					if (flags & ALIENFX_FLAG_POWER) {
-						// Set power immediately!
-						if (!src->GetConfig()->block_power && current.actsize > 1) {
+						// Should we update it?
+						if (!src->GetConfig()->block_power && current.actsize > 1 &&
+							((current.flags && dev->GetVersion() < 4) ||
+							 memcmp(&pbstate[0], &actions[0], sizeof(AlienFX_SDK::afx_act)) ||
+							 memcmp(&pbstate[1], &actions[1], sizeof(AlienFX_SDK::afx_act)))) {
 
-							// Do we have the same color?
-							if ((current.flags /*&& dev->GetVersion() != 4*/) ||
-								pbstate[0].r != actions[0].r || pbstate[1].r != actions[1].r ||
-								pbstate[0].g != actions[0].g || pbstate[1].g != actions[1].g ||
-								pbstate[0].b != actions[0].b || pbstate[1].b != actions[1].b) {
+							DebugPrint((string("Power button set to ") +
+										to_string(actions[0].r) + "-" +
+										to_string(actions[0].g) + "-" +
+										to_string(actions[0].b) + "/" +
+										to_string(actions[1].r) + "-" +
+										to_string(actions[1].g) + "-" +
+										to_string(actions[1].b) +
+										"\n").c_str());
 
-								DebugPrint((string("Setting power button to ") +
-											to_string(actions[0].r) + "-" +
-											to_string(actions[0].g) + "-" + 
-											to_string(actions[0].b) + "/" +
-											to_string(actions[1].r) + "-" +
-											to_string(actions[1].g) + "-" +
-											to_string(actions[1].b) + 
-											"\n").c_str());
-
-								pbstate = actions;
-								actions[0].type = AlienFX_SDK::AlienFX_A_Power;
-							} else {
-								DebugPrint("Setting power button skipped, same colors\n");
-								continue;
-							}
-						} else
+							pbstate = actions;
+							actions[0].type = AlienFX_SDK::AlienFX_A_Power;
+						} else {
+							DebugPrint("Power button update skipped (blocked or same colors)\n");
 							continue;
+						}
 					}
 
 					// fill query....

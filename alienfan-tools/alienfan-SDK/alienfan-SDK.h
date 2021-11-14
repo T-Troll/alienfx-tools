@@ -1,8 +1,8 @@
 #pragma once
 
-#include <windows.h>
 #include <string>
 #include <vector>
+#include <wtypes.h>
 
 using namespace std;
 
@@ -75,33 +75,43 @@ namespace AlienFan_SDK {
 		bool Probe();
 
 		// Get RPM for the fan index fanID at fans[]
+		// Result: fan RPM
 		int GetFanRPM(int fanID);
 
 		// Get fan RPMs as a persent from 100%
+		// Result: percent of the fan speed
 		int GetFanPercent(int fanID);
 
-		// Get boost value for the fan index fanID at fans[]. If isPwm true, count from pwm to percent.
+		// Get boost value for the fan index fanID at fans[]. If force, raw value returned, otherwise coocked by boost
+		// Result: Error or raw value if forced, otherwise coocked by boost.
 		int GetFanValue(int fanID, bool force = false);
 
-		// Set boost value for the fan index fanID at fans[] (0..100). If isPwm true, count from pwm to percent.
+		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise coocked by boost.
+		// Result: value or error
 		int SetFanValue(int fanID, byte value, bool force = false);
 
 		// Get temperature value for the sensor index TanID at sensors[]
+		// Result: temperature value or error
 		int GetTempValue(int TempID);
 
 		// Unlock manual fan operations. The same as SetPower(0)
+		// Result: raw value set or error
 		int Unlock();
 
 		// Set system power profile to power index at powers[]
+		// Result: raw value set or error
 		int SetPower(int level);
 
 		// Get current system power value index at powers[]
+		// Result: power value index in powers[]
 		int GetPower();
 
 		// Set system GPU limit level (0 - no limit, 3 - min. limit)
+		// Result: success or error
 		int SetGPU(int power);
 
 		// Get low-level driver handle for direct operations
+		// Result: handle to driver or NULL
 		HANDLE GetHandle();
 
 		// True if driver activated and ready, false if not
@@ -123,12 +133,14 @@ namespace AlienFan_SDK {
 		int GetVersion();
 
 		// Call ACPI system control method with given parameters - see ALIENFAN_DEVICE for details
+		// Result: reply from the driver or error
 		int RunMainCommand(ALIENFAN_COMMAND com, byte value1 = 0, byte value2 = 0);
 
 		// Call ACPI GPU control method with given parameters - see ALIENFAN_DEVICE for details
+		// Result: reply from the driver or error
 		int RunGPUCommand(short com, DWORD packed);
 
-		// Arrays of sensors, fans and power values detected at Probe()
+		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<USHORT> fans;
 		vector<byte> boosts;
@@ -145,11 +157,23 @@ namespace AlienFan_SDK {
 		bool activated = false;
 	public:
 		Lights(Control *ac);
+
+		// Resets light subsystem
 		bool Reset();
+
+		// Prepare for operations
 		bool Prepare();
+
+		// Update lights state (end operation)
 		bool Update();
+
+		// Set color of lights mask defined by id to RGB
 		bool SetColor(byte id, byte r, byte g, byte b);
+
+		// Set light system mode (brightness, ???)
 		bool SetMode(byte mode, bool onoff);
+
+		// Return color subsystem avaliability
 		bool IsActivated();
 	};
 }

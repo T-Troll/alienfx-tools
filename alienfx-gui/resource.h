@@ -196,22 +196,21 @@
 #define ID_TRAYMENU_REFRESH             32776
 #define ID_ACC_COLOR                    32777
 #define ID_ACC_EVENTS                   32778
-#define ID_ACC_SETTINGS                 32779
-#define ID_TRAYMENU_MONITORING          32785
-#define ID_ACC_DEVICES                  32786
+#define ID_ACC_AMBIENT                  32779
+#define ID_ACC_HAPTICS                  32780
+#define ID_ACC_PROFILES                 32782
+#define ID_ACC_DEVICES                  32783
+#define ID_ACC_FANS                     32784
+#define ID_ACC_SETTINGS                 32785
+#define ID_TRAYMENU_MONITORING          32786
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
-#define ID_ACC_PROFILES                 32790
 #define ID_TRAYMENU_PROFILE_SELECTED    32791
 #define ID_TRAYMENU_MONITORING_SELECTED 32792
-#define ID_ACC_AMBIENT                  32797
-#define ID_ACC_HAPTICS                  32798
-#define ID_ACC_FANS                     32799
-#define ID_ACC_GROUPS                   32800
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
 #define ID_CHECKUPDATE                  32803
 #define IDM_CHECKUPDATE                 32804
-#define ID_ACCELERATO32805              32805
+#define ID_ACC_GROUPS                   32781
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -220,7 +219,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        155
-#define _APS_NEXT_COMMAND_VALUE         32807
+#define _APS_NEXT_COMMAND_VALUE         32805
 #define _APS_NEXT_CONTROL_VALUE         1106
 #define _APS_NEXT_SYMED_VALUE           113
 #endif

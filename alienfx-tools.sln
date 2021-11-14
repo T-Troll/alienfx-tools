@@ -59,9 +59,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "alienfan-tools\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-overboost", "alienfan-tools\alienfan-overboost\alienfan-overboost.vcxproj", "{1243A1E9-2E9A-4509-9174-3AD28E894819}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CheckDevices", "AlienFX-SDK\CheckDevices\CheckDevices.vcxitems", "{9EFA16C2-DB6E-4AF4-962E-837EDE2C23B2}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfx-LFX\alienfx-LFX.vcxitems*{4ecafbb9-b7b9-4bc3-9c42-1882a68edac8}*SharedItemsImports = 4
+		AlienFX-SDK\CheckDevices\CheckDevices.vcxitems*{4ecafbb9-b7b9-4bc3-9c42-1882a68edac8}*SharedItemsImports = 4
+		AlienFX-SDK\CheckDevices\CheckDevices.vcxitems*{9efa16c2-db6e-4af4-962e-837ede2c23b2}*SharedItemsImports = 9
 		alienfx-LFX\alienfx-LFX.vcxitems*{cc4108ae-d644-45f9-95aa-67940d0fbeda}*SharedItemsImports = 9
 		alienfx-LFX\alienfx-LFX.vcxitems*{ff6119ea-878f-4e7b-9fcd-8410a5d3fbf8}*SharedItemsImports = 4
 	EndGlobalSection

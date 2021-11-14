@@ -33,7 +33,6 @@ EventHandler::~EventHandler()
 {
 	StopProfiles();
 	StopEffects();
-	fxh->Refresh(true);
 }
 
 void EventHandler::ChangePowerState()

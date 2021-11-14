@@ -14,7 +14,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFXDeviceTester", "Alie
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-low", "..\alienfan-tools\alienfan-low\alienfan-low.vcxproj", "{CC889C0D-369A-46F0-87B2-956DA96DDEFD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CheckDevices", "CheckDevices\CheckDevices.vcxitems", "{9EFA16C2-DB6E-4AF4-962E-837EDE2C23B2}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		CheckDevices\CheckDevices.vcxitems*{685645dc-a6fb-47c6-a1bb-deed0d1b465c}*SharedItemsImports = 4
+		CheckDevices\CheckDevices.vcxitems*{9efa16c2-db6e-4af4-962e-837ede2c23b2}*SharedItemsImports = 9
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
 		Debug|ARM64 = Debug|ARM64

@@ -11,16 +11,15 @@ void Usage() {
     cout << "Usage: alienfan-cli [command[=value{,value}] [command...]]\n\
 Avaliable commands: \n\
 usage, help\t\t\tShow this usage\n\
-rpm\t\t\t\tShow fan(s) RPMs\n\
-persent\t\t\tShow fan(s) RPM in perecent of maximum\n\
+rpm\t\t\t\tShow fan(s) RPM\n\
+persent\t\t\t\tShow fan(s) RPM in perecent of maximum\n\
 temp\t\t\t\tShow known temperature sensors values\n\
 unlock\t\t\t\tUnclock fan controls\n\
 getpower\t\t\tDisplay current power state\n\
-power=<value>\t\t\tSet TDP to this level\n\
-gpu=<value>\t\t\tSet GPU power limit\n\
-getfans\t\t\t\tShow current fan boost level (0..100 - in percent)\n\
-setfans=<fan1>[,<fan2>]\t\tSet fans boost level (0..100 - in percent)\n\
-setfandirect=<fanid>,<value>\tSet fan with selected ID to given value\n\
+setpower=<value>\t\tSet TDP to this level\n\
+setgpu=<value>\t\t\tSet GPU power limit\n\
+getfans[=<mode>]\t\tShow current fan boost level (0..100 - in percent) with selected mode\n\
+setfans=<fan1>[,<fan2>[,mode]]\tSet fans boost level (0..100 - in percent) with selected mode\n\
 resetcolor\t\t\tReset color system\n\
 setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
 setcolormode=<dim>,<flag>\tSet light system brightness and mode\n\
@@ -28,14 +27,15 @@ direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tPower level can be in 0..N - according to power states detected\n\
 \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
-\tNumber of fan boost values should be the same as a number fans detected\n\
+\tNumber of fan boost values should be the same as a number of fans detected\n\
+\tMode can be 0 or absent for coocked set, 1 for raw set\n\
 \tBrighness for ACPI lights can only have 10 values - 1,3,4,6,7,9,10,12,13,15\n\
 \tAll values in \"direct\" commands should be hex, not decimal!\n";
 }
 
 int main(int argc, char* argv[])
 {
-    cout << "AlienFan-cli v1.5.0.0\n";
+    cout << "AlienFan-cli v1.5.1.0\n";
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -48,12 +48,7 @@ int main(int argc, char* argv[])
         if (supported = acpi->Probe()) {
             cout << "Supported hardware v" << acpi->GetVersion() << " detected, " << acpi->HowManyFans() << " fans, "
                 << acpi->sensors.size() << " sensors, " << acpi->HowManyPower() << " power states."
-                << " Light control: ";
-            if (lights->IsActivated())
-                cout << "enabled";
-            else
-                cout << "disabled";
-            cout << endl;
+                << " Light control: " << (lights->IsActivated() ? "enabled" : "disabled") << endl;
         }
         else {
             cout << "Supported hardware not found!" << endl;
@@ -121,7 +116,7 @@ int main(int argc, char* argv[])
                         cout << "Unlock failed!" << endl;
                     continue;
                 }
-                if (command == "power" && supported) {
+                if (command == "setpower" && supported) {
                     if (args.size() < 1) {
                         cout << "Power: incorrect arguments" << endl;
                         continue;
@@ -136,7 +131,7 @@ int main(int argc, char* argv[])
                         cout << "Power: incorrect value (should be 0.." << acpi->HowManyPower() << ")" << endl;
                     continue;
                 }
-                if (command == "gpu" && supported) {
+                if (command == "setgpu" && supported) {
                     if (args.size() < 1) {
                         cout << "GPU: incorrect arguments" << endl;
                         continue;
@@ -157,9 +152,11 @@ int main(int argc, char* argv[])
                     continue;
                 }
                 if (command == "getfans" && supported) {
-                    int prms = 0;
+                    int prms = 0; bool direct = false;
+                    if (args.size())
+                        direct = atoi(args[0].c_str()) > 0;
                     for (int i = 0; i < acpi->HowManyFans(); i++)
-                        if ((prms = acpi->GetFanValue(i)) >= 0)
+                        if ((prms = acpi->GetFanValue(i, direct)) >= 0)
                             cout << "Fan#" << i << " now at " << prms << endl;
                         else {
                             cout << "Get fan settings failed!" << endl;
@@ -172,37 +169,18 @@ int main(int argc, char* argv[])
                         cout << "Setfans: incorrect arguments (should be " << acpi->HowManyFans() << " of them)" << endl;
                         continue;
                     }
-                    int prms = 0;
+                    int prms = 0; bool direct = false;
+                    if (args.size() > acpi->HowManyFans())
+                        direct = atoi(args[acpi->HowManyFans()].c_str()) > 0;
                     for (int i = 0; i < acpi->HowManyFans(); i++) {
                         BYTE boost = atoi(args[i].c_str());
-                        if (boost < 101) {
-                            if (acpi->SetFanValue(i, boost) >= 0)
-                                cout << "Fan#" << i << " set to " << (int) boost << endl;
-                            else {
-                                cout << "Set fan level failed!" << endl;
-                                break;
-                            }
-                        } else
-                            cout << "Incorrect boost value for Fan#" << i << endl;
-                    }
-                    continue;
-                }
-                if (command == "setfandirect") {
-                    if (args.size() < 2) {
-                        cout << "Setfandirect: incorrect arguments (should be 2)" << endl;
-                        continue;
-                    }
-                    byte fanID = atoi(args[0].c_str()),
-                        boost = atoi(args[1].c_str());
-                    if (fanID < acpi->HowManyFans()) {
-                        if (acpi->SetFanValue(fanID, boost, true) >= 0)
-                            cout << "Fan#" << (int)fanID << " set to " << (int) boost << endl;
+                        if (acpi->SetFanValue(i, boost, direct) >= 0)
+                            cout << "Fan#" << i << " set to " << (int) boost << endl;
                         else {
                             cout << "Set fan level failed!" << endl;
                             break;
                         }
-                    } else
-                        cout << "Setfandirect: incorrect fan id (should be in 0.." << acpi->HowManyFans() << ")" << endl;
+                    }
                     continue;
                 }
                 if (command == "direct") {

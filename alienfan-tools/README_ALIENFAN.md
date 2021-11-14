@@ -39,39 +39,11 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 Unpack tools into folder, run exe.  
 NB: You should have hwacc.sys into the same folder.
 
-## Supported hardware
-- Notebooks: `Alienware 13R2`, `Alienware m15/17R1` or later, `Alienware Area51m-R1` or later.
-- Should work, but not tested completely: `Alienware Area51m R2`
-- Desktops: `Alienware Aurora R7` or later (GPU control not supported yet).
-- GPU power control support NVidia GPU only. Radeon GPU need other commands i don't know for now.
+## Supported and tested hardware
 
-Send me full ACPI dump if you want to support you gear, i'll add it. 
+Full list of supported devices and API versions avaliable into [AlienFX-Tools wiki](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list)
 
-### Tested gear:
-- `Alienware m15R1`: 
-  - 5 Power modes (unlocked 60W, 60W, 75W, 45W with 65W GPU lock, 45W with 90W GPU lock)
-  - 4 GPU modes (90W...65W limit)
-  - 7 temperature sensors
-- `Alienware m15R4`:
-  - 5 Power modes (unlocked 45W, 105W(!), 105W, 105W, 45W)
-  - 4 GPU modes... But do nothing, just return "OK"
-  - 7 Temperature sensors
-- `Dell G5 15`:
-  - 2 Power modes (but only one can be selected)
-  - 2 Temperature sensors
-  - PWM control
-- `Dell G5 SE` (AMD)
-  - 4 Power modes (one secret, but you can select it)
-  - 2 Temperature sensors
-- `Alienware Aurora R7`
-  - 3 Lights
-  - 3 Fans
-  - 3 Temperature sensors
-  - 2 Power modes
-- `Alienware 13R2`
-  - 2 Fans
-  - 8 Temperature sensors
-  - 2 Power modes (lock/unlock)
+New devices support: Send me ACPI dump from [RW Everything](http://rweverything.com/) for analysis, then it will be added tested and addded. 
 
 ## `alienfan-gui` usage
 
@@ -122,18 +94,19 @@ Avaliable commands:
 - `temp` - Show known temperature sensors name and value
 - `unlock` - Enable manual fan control
 - `getpower` - Print current power mode
-- `power=<value>` - Set system-defined power level. Possible levels autodetected from ACPI, see message at app start 
-- `gpu=<value>` - Set GPU power limit. Possible values from 0 (no limit) to 4 (max. limit).
-- `getfans` - Show current fan RPMs boost
-- `setfandirect=<fanID>,<value>` - Set one fan to exact boost value. If fan is PWM-controlled, it will be direct PWM value.
-- `setfans=<fan1>,<fan2>...` - Set fans RPM boost level (0..100 - in percent). Fan1 is for CPU fan, Fan2 for GPU one. Number of arguments should be the same as number of fans application detect
+- `setpower=<value>` - Set system-defined power level. Possible levels autodetected from ACPI, see message at app start 
+- `setgpu=<value>` - Set GPU power limit. Possible values from 0 (no limit) to 4 (max. limit).
+- `getfans[=mode]` - Show current fan RPMs boost
+- `setfans=<fan1>,<fan2>...[,mode]` - Set fans RPM boost level (0..100 - in percent). Fan1 is for CPU fan, Fan2 for GPU one. Number of arguments should be the same as number of fans application detect
 - `resetcolor` - Reset color system
 - `setcolor=<mask>,r,g,b` - Set light(s) defined by mask to color
 - `setcolormode=<brightness>,<flag>` - Set light system brightness and mode. Valid brightness values are 1,3,4,6,7,9,10,12,13,15.
 - `direct=<id>,<subid>[,val,val]` - Issue direct Alienware interface command (see below)  
 - `directgpu=<id>,<value>` - Issue direct GPU interface command (see below)
 
-NB: Setting Power level to non-zero value disables manual fan control!  
+`getfans` and `setfans` commands can work into 2 different modes. If mode is zero or absent, boost value will be calculated between 0 and 100% depends of the fan overboost. If mode is non-zero, raw boost value will be dispayed/set. 
+
+NB: Setting Power level to non-zero value can disabe manual fan control!  
 
 `direct` command is for testing various functions of the main Alienware ACPI function.  
 If default functions doesn't works, you can check and try to find you system subset.
@@ -162,26 +135,6 @@ You can also try to overboost only one fan, issue `alienfan-overboost <fan ID>` 
 NB: For my system is better run this tool at system idle state (it provide more precise results), but for some system it can be better to run it at fully loaded system, running some bench app like Heaven Benchmark. Please keep in mind, full-auto test took some minutes, so you benchmark should be long enough for this.
 
 WARNING: Stop all fan-control software before start this tool, or results will be incorrect!
-
-## ToDo:
-- [x] Temperature sensors reading
-- [x] Eliminate "Test mode" requirement
-- [x] Additional hardware support (thanks for ACPI dumps, provided by `alienfx-tools` community!):
-  - [x] Alienware m15/m17 (any release)
-  - [x] Older Alienware
-  - [x] Area 51m
-  - [x] Dell G3/G5 (non-AMD)
-  - [x] Dell G5 SE (AMD)
-  - [x] Dell G5 15 (AMD)
-  - [x] Desktops (Aurora R7 and later)
-- [x] SDK lib for easy sharing
-- [X] GUI 
-- [X] Temp-RPM curves and indirect RPM control
-- [x] CPU power limit control
-- [x] GPU power limit contol
-- [x] Direct fan RPM control (for G15 only for now)
-- [ ] Dynamic power distribution (CPU/GPU power share distribution)
-- [x] `alienfx-gui` integration
 
 ## Tools Used
 * Visual Studio Community 2019
