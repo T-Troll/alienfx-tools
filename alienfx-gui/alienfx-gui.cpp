@@ -352,8 +352,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-	CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)DialogConfigStatic, 0);
 	hInst = hInstance;
+	CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)DialogConfigStatic, 0);
+
 	if (mDlg) {
 
 		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
@@ -451,34 +452,28 @@ void SetSlider(HWND tt, int value) {
 
 string GetAppVersion() {
 
-	HRSRC hResInfo;
-	DWORD dwSize;
-	HGLOBAL hResData;
-	LPVOID pRes, pResCopy;
-	UINT uLen;
-	VS_FIXEDFILEINFO* lpFfi;
+	HRSRC hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
 
 	string res;
 
-	hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
 	if (hResInfo) {
-		dwSize = SizeofResource(hInst, hResInfo);
-		hResData = LoadResource(hInst, hResInfo);
+		DWORD dwSize = SizeofResource(hInst, hResInfo);
+		HGLOBAL hResData = LoadResource(hInst, hResInfo);
 		if (hResData) {
-			pRes = LockResource(hResData);
-			pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
+			LPVOID pRes = LockResource(hResData),
+				pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
 			if (pResCopy) {
+				UINT uLen = 0;
+				VS_FIXEDFILEINFO *lpFfi = NULL;
+
 				CopyMemory(pResCopy, pRes, dwSize);
 
 				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
 
-				DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-				DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
-
-				res = to_string(HIWORD(dwFileVersionMS)) + "."
-					+ to_string(LOWORD(dwFileVersionMS)) + "."
-					+ to_string(HIWORD(dwFileVersionLS)) + "."
-					+ to_string(LOWORD(dwFileVersionLS));
+				res = to_string(HIWORD(lpFfi->dwFileVersionMS)) + "."
+					+ to_string(LOWORD(lpFfi->dwFileVersionMS)) + "."
+					+ to_string(HIWORD(lpFfi->dwFileVersionLS)) + "."
+					+ to_string(LOWORD(lpFfi->dwFileVersionLS));
 
 				LocalFree(pResCopy);
 			}
@@ -493,6 +488,8 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	HINTERNET session, req;
 	char buf[2048];
 	DWORD byteRead;
+	// Wait connection for a while
+	Sleep(5000);
 	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
 		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
 								  NULL, 0, 0, NULL)) {
@@ -598,14 +595,15 @@ VOID OnSelChanged(HWND hwndDlg)
 	//default: tdl = (DLGPROC)TabColorDialog;
 	}
 
-	pHdr->hwndDisplay = CreateDialogIndirect(hInst,
-		(DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
+	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
+	if (pHdr->hwndDisplay == NULL)
+		pHdr->hwndDisplay = newDisplay;
 
 	if (pHdr->hwndDisplay != NULL)
 		SetWindowPos(pHdr->hwndDisplay, NULL,
 			pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-			(pHdr->rcDisplay.right - pHdr->rcDisplay.left), //- cxMargin - (GetSystemMetrics(SM_CXDLGFRAME)) + 1,
-			(pHdr->rcDisplay.bottom - pHdr->rcDisplay.top), //- /*cyMargin - */(GetSystemMetrics(SM_CYDLGFRAME)) - GetSystemMetrics(SM_CYCAPTION) + 3,
+			(pHdr->rcDisplay.right - pHdr->rcDisplay.left), 
+			(pHdr->rcDisplay.bottom - pHdr->rcDisplay.top),
 			SWP_SHOWWINDOW);
 	return;
 }
@@ -754,33 +752,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 			conf->niData.uFlags &= ~NIF_INFO;
 			break;
-		//case ID_ACC_COLOR:
-		//	SwitchTab(TAB_COLOR);
-		//	break;
-		//case ID_ACC_EVENTS:
-		//	SwitchTab(TAB_EVENTS);
-		//	break;
-		//case ID_ACC_AMBIENT:
-		//	SwitchTab(TAB_AMBIENT);
-		//break;
-		//case ID_ACC_HAPTICS:
-		//	SwitchTab(TAB_HAPTICS);
-		//	break;
-		//case ID_ACC_GROUPS:
-		//	SwitchTab(TAB_GROUPS);
-		//	break;
-		//case ID_ACC_DEVICES:
-		//	SwitchTab(TAB_DEVICES);
-		//	break;
-		//case ID_ACC_PROFILES:
-		//	SwitchTab(TAB_PROFILES);
-		//	break;
-		//case ID_ACC_FANS:
-		//	SwitchTab(TAB_FANS);
-		//	break;
-		//case ID_ACC_SETTINGS:
-		//	SwitchTab(TAB_SETTINGS);
-		//	break;
 		case IDC_EFFECT_MODE:
 		{
 			switch (HIWORD(wParam)) {
@@ -837,7 +808,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			ReloadProfileList(hDlg);
-			//OnSelChanged(tab_list);
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
@@ -850,7 +820,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			mi.fMask = MIM_STYLE;
 			mi.dwStyle = MNS_NOTIFYBYPOS;
 			SetMenuInfo(tMenu, &mi);
-			MENUITEMINFO mInfo;
+			MENUITEMINFO mInfo = {0};
 			mInfo.cbSize = sizeof(MENUITEMINFO);
 			mInfo.fMask = MIIM_STRING | MIIM_ID;
 			HMENU pMenu;
@@ -894,8 +864,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
 		case NIN_BALLOONHIDE : case NIN_BALLOONTIMEOUT:
-			Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-			Shell_NotifyIcon(NIM_ADD, &conf->niData);
+			if (!isNewVersion) {
+				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+				Shell_NotifyIcon(NIM_ADD, &conf->niData);
+			} else
+				isNewVersion = false;
 			break;
 		case NIN_BALLOONUSERCLICK:
 		{
@@ -987,6 +960,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 			if (mon)
 				mon->Start();
+			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
 			// ac/batt change

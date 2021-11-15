@@ -29,7 +29,7 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 - As usual, AWCC service can interfere (reset values from time to time), so it's reccomended to stop it.
 
 ## Requrements
-- Windows 10 x64 OS revision 1706 or higher. Any other OS **Does not supported!**
+- Windows 10 x64, revision 1903 or later. Any other OS, including Windows 11, **Does not supported!**
 - There are 2 ways to prepare you system for driver loading:
   - You can go into BIOS and disable "Secure boot" option, reboot, then issue `bcdedit /set testsigning on` command from Administarator command prompt and reboot again. You should see "Test mode" watermark on desktop if you do all correct.
   - Do nothing, in this case driver will be installed using kernel hack. Some antivirus can complain, because it's close to rootkit way. Anyway, it will not stay in memory after reboot.

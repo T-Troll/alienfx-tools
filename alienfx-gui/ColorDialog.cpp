@@ -25,7 +25,7 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		ImageList_Destroy(hOld);
 	}
 	ListView_SetExtendedListViewStyle(eff_list, LVS_EX_FULLROWSELECT);
-	LVCOLUMNA lCol;
+	LVCOLUMNA lCol = {0};
 	lCol.mask = LVCF_WIDTH;
 	lCol.cx = 100;
 	ListView_DeleteColumn(eff_list, 0);
