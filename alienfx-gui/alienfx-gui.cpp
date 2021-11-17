@@ -3,12 +3,9 @@
 #include <windowsx.h>
 #include <Shlobj.h>
 #include <ColorDlg.h>
-#include <algorithm>
-#include "alienfan-SDK.h"
-#include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
-#include "../alienfan-tools/alienfan-gui/MonHelper.h"
 #include <wininet.h>
 #include <Dbt.h>
+#include "EventHandler.h"
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -37,12 +34,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
-CaptureHelper *capt;
 
 // Fan control data
 AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
-MonHelper* mon = NULL;                          // Monitoring & changer object
-HWND fanWindow = NULL;
 
 HWND mDlg = 0;
 
@@ -57,6 +51,7 @@ HWND sTip = 0, lTip = 0;
 int tabSel = -1;
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
+// last light selected
 int eItem = -1;
 
 DWORD EvaluteToAdmin() {
@@ -102,11 +97,7 @@ bool DoStopService(bool kind) {
 
 	// Get a handle to the SCM database.
 
-	SC_HANDLE schSCManager = OpenSCManager(
-		NULL,                    // local computer
-		NULL,                    // ServicesActive database
-		/*SC_MANAGER_ALL_ACCESS*/ GENERIC_READ);  // full access rights
-
+	SC_HANDLE schSCManager = OpenSCManager( NULL, NULL,GENERIC_READ);
 	if (NULL == schSCManager)
 	{
 		//printf("OpenSCManager failed (%d)\n", GetLastError());
@@ -115,32 +106,20 @@ bool DoStopService(bool kind) {
 
 	// Get a handle to the service.
 
-	SC_HANDLE schService = OpenService(
-		schSCManager,         // SCM database
-		"AWCCService",            // name of service
-		/*SERVICE_STOP |*/
-		SERVICE_QUERY_STATUS /*|
-		SERVICE_ENUMERATE_DEPENDENTS*/);
+	SC_HANDLE schService = OpenService( schSCManager, "AWCCService",  SERVICE_QUERY_STATUS);
 
 	if (schService == NULL)
 	{
-		//printf("OpenService failed (%d)\n", GetLastError());
 		CloseServiceHandle(schSCManager);
 		return false;
 	}
 
 	// Make sure the service is not already stopped.
 
-	if (QueryServiceStatusEx(
-		schService,
-		SC_STATUS_PROCESS_INFO,
-		(LPBYTE)&ssp,
-		sizeof(SERVICE_STATUS_PROCESS),
-		&dwBytesNeeded))
+	if (QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
 	{
 		if (ssp.dwCurrentState == SERVICE_STOPPED)
 		{
-			//printf("Service is already stopped.\n");
 			if (kind) {
 				CloseServiceHandle(schService);
 				CloseServiceHandle(schSCManager);
@@ -148,19 +127,11 @@ bool DoStopService(bool kind) {
 				return false;
 			}
 			else {
-				schService = OpenService(
-					schSCManager,         // SCM database
-					"AWCCService",            // name of service
-					SERVICE_STOP | SERVICE_START |
-					SERVICE_QUERY_STATUS /*|
-					SERVICE_ENUMERATE_DEPENDENTS*/);
+				schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
 
 				if (schService != NULL)
 				{
-					StartService(
-						schService,  // handle to service
-						0,           // number of arguments
-						NULL);
+					StartService( schService, 0, NULL);
 					conf->block_power = true;
 					CloseServiceHandle(schService);
 					CloseServiceHandle(schSCManager);
@@ -174,31 +145,22 @@ bool DoStopService(bool kind) {
 		CloseServiceHandle(schService);
 
 		if (conf->awcc_disable && kind) {
-			schService = OpenService(
-				schSCManager,         // SCM database
-				"AWCCService",            // name of service
-				SERVICE_STOP | SERVICE_START |
-				SERVICE_QUERY_STATUS /*|
-				SERVICE_ENUMERATE_DEPENDENTS*/);
+			schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
 
 			if (schService == NULL)
 			{
 				// Evaluation attempt...
 				if (EvaluteToAdmin() == ERROR_CANCELLED)
 				{
-					//CloseServiceHandle(schService);
 					CloseServiceHandle(schSCManager);
 					conf->block_power = true;
-					return false;
 				}
+				return false;
 			}
 
 			// Send a stop code to the service.
 
-			if (!ControlService(
-				schService,
-				SERVICE_CONTROL_STOP,
-				(LPSERVICE_STATUS)&ssp))
+			if (!ControlService(schService, SERVICE_CONTROL_STOP, (LPSERVICE_STATUS)&ssp))
 			{
 				CloseServiceHandle(schService);
 				CloseServiceHandle(schSCManager);
@@ -210,12 +172,7 @@ bool DoStopService(bool kind) {
 			while (ssp.dwCurrentState != SERVICE_STOPPED)
 			{
 				Sleep(ssp.dwWaitHint);
-				if (!QueryServiceStatusEx(
-					schService,
-					SC_STATUS_PROCESS_INFO,
-					(LPBYTE)&ssp,
-					sizeof(SERVICE_STATUS_PROCESS),
-					&dwBytesNeeded))
+				if (!QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
 				{
 					CloseServiceHandle(schService);
 					CloseServiceHandle(schSCManager);
@@ -270,7 +227,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					acpi->SetPower(conf->fan_conf->lastProf->powerStage);
 				if (conf->fan_conf->lastProf->GPUPower >= 0)
 					acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
-				mon = new MonHelper(NULL, NULL, conf->fan_conf, acpi);
 			} else {
 				MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
 						   MB_OK | MB_ICONHAND);
@@ -301,7 +257,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		fxhl->Start();
 
-		eve = new EventHandler(conf, mon, fxhl);
+		eve = new EventHandler(conf, fxhl);
+		eve->StartFanMon(acpi);
 		eve->ChangePowerState();
 
 		if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
@@ -339,8 +296,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (conf->wasAWCC) DoStopService(false);
 	}
 
-	if (conf->fanControl) {
-		delete mon;
+	if (acpi) {
 		delete acpi;
 	}
 
@@ -643,6 +599,15 @@ void ReloadModeList(HWND mode_list, int mode) {
 	if (mode_list == NULL)
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 	ListBox_ResetContent(mode_list);
+	//char buffer[32];
+	//LoadString(hInst, IDS_EFF_MON, buffer, 32);
+	//ComboBox_AddString(mode_list, buffer);
+	//LoadString(hInst, IDS_EFF_AMB, buffer, 32);
+	//ComboBox_AddString(mode_list, buffer);
+	//LoadString(hInst, IDS_EFF_HAP, buffer, 32);
+	//ComboBox_AddString(mode_list, buffer);
+	//LoadString(hInst, IDS_EFF_OFF, buffer, 32);
+	//ComboBox_AddString(mode_list, buffer);
 	ComboBox_AddString(mode_list, "Monitoring");
 	ComboBox_AddString(mode_list, "Ambient");
 	ComboBox_AddString(mode_list, "Haptics");
@@ -958,8 +923,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				eve->ToggleEvents();
 				eve->StartProfiles();
 			}
-			if (mon)
-				mon->Start();
+			if (eve->mon)
+				eve->mon->Start();
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
@@ -983,8 +948,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->StopProfiles();
 			eve->StopEffects();
 			fxhl->UnblockUpdates(false);
-			if (mon)
-				mon->Stop();
+			if (eve->mon)
+				eve->mon->Stop();
 			break;
 		}
 		break;
@@ -1125,7 +1090,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
-	CHOOSECOLOR cc;
+	CHOOSECOLOR cc = {0};
 	bool ret;
 
 	AlienFX_SDK::afx_act savedColor = *map;
@@ -1133,7 +1098,6 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 	HANDLE crRefresh;
 
 	// Initialize CHOOSECOLOR
-	ZeroMemory(&cc, sizeof(cc));
 	cc.lStructSize = sizeof(cc);
 	cc.hwndOwner = hDlg;
 	cc.lpfnHook = Lpcchookproc;
@@ -1165,10 +1129,9 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 }
 
 bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b) {
-	CHOOSECOLOR cc;
+	CHOOSECOLOR cc = {0};
 	bool ret;
 	// Initialize CHOOSECOLOR 
-	ZeroMemory(&cc, sizeof(cc));
 	cc.lStructSize = sizeof(cc);
 	cc.hwndOwner = hDlg;
 	cc.lpCustColors = (LPDWORD) conf->customColors;
@@ -1211,20 +1174,19 @@ lightset* FindMapping(int mid)
 lightset* CreateMapping(int lid) {
 	// create new mapping..
 	lightset newmap;
-	AlienFX_SDK::afx_act act;
+	AlienFX_SDK::afx_act act = {0};
 	if (lid > 0xffff) {
 		// group
-		newmap.devid = 0;
-		newmap.lightid = lid;
+		newmap = {0,(unsigned)lid};
 	} else {
 		// light
 		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-		newmap.devid = lgh->devid;
-		newmap.lightid = lgh->lightid;
+		newmap = {lgh->devid, lgh->lightid};
 		if (lgh->flags & ALIENFX_FLAG_POWER) {
 			act.time = 3;
 			act.tempo = 0x64;
 			newmap.eve[0].map.push_back(act);
+			act = {0};
 		}
 	}
 	newmap.eve[0].fs.b.flags = 1;
@@ -1238,7 +1200,6 @@ lightset* CreateMapping(int lid) {
 	newmap.eve[3].map.push_back(act);
 	newmap.eve[3].fs.b.cut = 90;
 	conf->active_set->push_back(newmap);
-	//std::sort(conf->active_set->begin(), conf->active_set->end(), ConfigHandler::sortMappings);
 	return FindMapping(lid);
 }
 

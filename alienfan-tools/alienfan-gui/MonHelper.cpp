@@ -24,7 +24,7 @@ MonHelper::~MonHelper() {
 }
 
 void MonHelper::Start() {
-		// start thread...
+	// start thread...
 	if (!dwHandle) {
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");

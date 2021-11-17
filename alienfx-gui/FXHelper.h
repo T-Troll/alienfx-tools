@@ -10,6 +10,10 @@
 #define MODE_CHARGE	2
 #define MODE_LOW	4
 
+struct EventData {
+	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, NET = 0, Temp = 0, Batt = 100, Fan = 0, KBD = 99;
+};
+
 struct LightQueryElement {
 	int did = 0;
 	int lid = 0;
@@ -28,7 +32,7 @@ class FXHelper
 {
 private:
 	int activeMode = -1;
-	long lCPU = 0, lRAM = 0, lHDD = 0, lGPU = 0, lNET = 0, lTemp = 0, lBatt = 100, lFan = 0;
+	EventData eData;
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
 	ConfigHandler* config;
@@ -62,7 +66,7 @@ public:
 	bool SetMode(int mode);
 	void TestLight(int did, int id);
 	void ResetPower(int did);
-	void SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, long cFan, bool force = false);
+	void SetCounterColor(EventData *data, bool force = false);
 	void RefreshState(bool force = false);
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);

@@ -1,6 +1,6 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 
-//bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
 void ReloadProfileList(HWND hDlg);
 DWORD EvaluteToAdmin();
@@ -8,6 +8,9 @@ bool DoStopService(bool kind);
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
+
+extern EventHandler* eve;
+extern AlienFan_SDK::Control* acpi;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -75,7 +78,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		}
 	} break;
 	case WM_COMMAND: {
-		int eItem = ComboBox_GetCurSel(eff_list);
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
 		{
@@ -83,7 +85,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				conf->globalEffect = (DWORD) ComboBox_GetItemData(eff_list, eItem);
+				conf->globalEffect = (DWORD) ComboBox_GetItemData(eff_list, ComboBox_GetCurSel(eff_list));
 				fxhl->UpdateGlobalEffect();
 			} break;
 			}
@@ -99,14 +101,14 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			fxhl->UpdateGlobalEffect();
 		} break;
 		case IDC_STARTM:
-			conf->startMinimized = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->startMinimized = state;
 			break;
 		case IDC_AUTOREFRESH:
-			conf->autoRefresh = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->autoRefresh = state;
 			break;
 		case IDC_STARTW:
 		{
-			conf->startWindows = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->startWindows = state;
 			char pathBuffer[2048];
 			string shellcomm;
 			if (conf->startWindows) {
@@ -120,40 +122,40 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			}
 		} break;
 		case IDC_BATTDIM:
-			conf->dimmedBatt = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->dimmedBatt = state;
 			fxhl->RefreshState();
 			break;
 		case IDC_SCREENOFF:
-			conf->offWithScreen = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->offWithScreen = state;
 			break;
 		case IDC_BUT_PROFILESWITCH:
 			eve->StopProfiles();
-			conf->enableProf = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->enableProf = state;
 			ReloadProfileList(NULL);
 			eve->StartProfiles();
 			break;
 		case IDC_CHECK_LON:
-			conf->lightsOn = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->lightsOn = state;
 			fxhl->ChangeState();
 			break;
 		case IDC_CHECK_GAMMA:
-			conf->gammaCorrection = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->gammaCorrection = state;
 			fxhl->RefreshState();
 			break;
 		case IDC_CHECK_EFFECTS:
-			conf->enableMon = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->enableMon = state;
 			eve->ToggleEvents();
 			break;
 		case IDC_OFFPOWERBUTTON:
-			conf->offPowerButton = !state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_UNCHECKED);
+			conf->offPowerButton = !state;
 			fxhl->ChangeState();
 			break;
 		case IDC_POWER_DIM:
-			conf->dimPowerButton = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->dimPowerButton = state;
 			fxhl->ChangeState();
 			break;
 		case IDC_AWCC:
-			conf->awcc_disable = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->awcc_disable = state;
 			if (!conf->awcc_disable) {
 				if (conf->wasAWCC) DoStopService(false);
 			}
@@ -161,28 +163,25 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				conf->wasAWCC = DoStopService(true);
 			break;
 		case IDC_ESIFTEMP:
-			conf->esif_temp = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->esif_temp = state;
 			if (conf->esif_temp)
 				EvaluteToAdmin(); // Check admin rights!
 			break;
 		case IDC_CHECK_EXCEPTION:
-			conf->noDesktop = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->noDesktop = state;
 			break;
 		case IDC_CHECK_DIM:
-			conf->dimmed = state;// IsDlgButtonChecked(hDlg, LOWORD(wParam));
+			conf->dimmed = state;
 			fxhl->ChangeState();
 			break;
 		case IDC_FANCONTROL:
-			conf->fanControl = state;// (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			conf->fanControl = state;
 			if (conf->fanControl) {
 				EvaluteToAdmin();
 				acpi = new AlienFan_SDK::Control();
 				if (acpi->IsActivated() && acpi->Probe()) {
 					conf->fan_conf->SetBoosts(acpi);
-					/*conf->fan_conf = new ConfigHelper();
-					conf->fan_conf->Load();*/
-					mon = new MonHelper(NULL, NULL, conf->fan_conf, acpi);
-					eve->mon = mon;
+					eve->StartFanMon(acpi);
 				} else {
 					MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
 								MB_OK | MB_ICONHAND);
@@ -192,10 +191,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 				}
 			} else {
-				// Stop all services
+				// Stop all fan services
 				if (acpi && acpi->IsActivated()) {
-					eve->mon = NULL;
-					delete mon;
+					eve->StopFanMon();
 				}
 				delete acpi;
 				acpi = NULL;

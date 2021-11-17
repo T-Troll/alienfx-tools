@@ -115,7 +115,7 @@ void FXHelper::ResetPower(int did)
 		dev->SetPowerAction(63, 0, 0, 0, 0, 0, 0);
 }
 
-void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long cHDD, long cTemp, long cBatt, long cFan, bool force)
+void FXHelper::SetCounterColor(EventData *data, bool force)
 {
 
 	//char buff[2048];
@@ -134,7 +134,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	blinkStage = !blinkStage;
 	bool wasChanged = false;
 	if (force) {
-		lCPU = 101; lRAM = 0; lHDD = 101; lGPU = 101; lNET = 101; lTemp = 101; lBatt = 101, cFan = 101;
+		eData = {101,0,101,101,101,101,101,101,99};
 	}
 
 	profile* cprof = config->FindProfile(config->activeProfile);
@@ -162,14 +162,14 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				double ccut = Iter->eve[2].fs.b.cut;
 				//long lVal = 0, cVal = 0;
 				switch (Iter->eve[2].source) {
-				case 0: lVal = lCPU; cVal = cCPU; break;
-				case 1: lVal = lRAM; cVal = cRAM; break;
-				case 2: lVal = lHDD; cVal = cHDD; break;
-				case 3: lVal = lGPU; cVal = cGPU; break;
-				case 4: lVal = lNET; cVal = cNet; break;
-				case 5: lVal = lTemp; cVal = cTemp; break;
-				case 6: lVal = lBatt; cVal = cBatt; break;
-				case 7: lVal = lFan; cVal = cFan; break;
+				case 0: lVal = eData.CPU; cVal = data->CPU; break;
+				case 1: lVal = eData.RAM; cVal = data->RAM; break;
+				case 2: lVal = eData.HDD; cVal = data->HDD; break;
+				case 3: lVal = eData.GPU; cVal = data->GPU; break;
+				case 4: lVal = eData.NET; cVal = data->NET; break;
+				case 5: lVal = eData.Temp; cVal = data->Temp; break;
+				case 6: lVal = eData.Batt; cVal = data->Batt; break;
+				case 7: lVal = eData.Fan; cVal = data->Fan; break;
 				}
 
 				if (lVal != cVal && (lVal > ccut || cVal > ccut)) {
@@ -185,11 +185,12 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 				long indi = 0, ccut = Iter->eve[3].fs.b.cut;
 				bool blink = Iter->eve[3].fs.b.proc;
 				switch (Iter->eve[3].source) {
-				case 0: lVal = lHDD; cVal = cHDD; break;
-				case 1: lVal = lNET; cVal = cNet; break;
-				case 2: lVal = lTemp - ccut; cVal = cTemp - ccut; break; //ccut!
-				case 3: lVal = lRAM - ccut; cVal = cRAM - ccut; break; //ccut!
-				case 4: lVal = lBatt - ccut; cVal = cBatt - ccut; break; //ccut!
+				case 0: lVal = eData.HDD; cVal = data->HDD; break;
+				case 1: lVal = eData.NET; cVal = data->NET; break;
+				case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break; //ccut!
+				case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break; //ccut!
+				case 4: lVal = eData.Batt - ccut; cVal = data->Batt - ccut; break; //ccut!
+				case 5: lVal = eData.KBD; cVal = data->KBD; break;
 				}
 
 				if (cVal > 0 || (lVal > 0 && !(cVal > 0))) {
@@ -231,7 +232,7 @@ void FXHelper::SetCounterColor(long cCPU, long cRAM, long cGPU, long cNet, long 
 	}
 	if (wasChanged) {
 		QueryUpdate();
-		lCPU = cCPU; lRAM = cRAM; lHDD = cHDD; lGPU = cGPU; lNET = cNet; lTemp = cTemp; lBatt = cBatt; lFan = cFan;
+		memcpy(&eData, data, sizeof(EventData));
 	}
 }
 
@@ -275,7 +276,7 @@ void FXHelper::RefreshMon()
 {
 	config->SetStates();
 	if (!config->GetEffect())
-		SetCounterColor(lCPU, lRAM, lGPU, lNET, lHDD, lTemp, lBatt, lFan, true);
+		SetCounterColor(&eData, true);
 }
 
 void FXHelper::ChangeState() {
@@ -410,7 +411,6 @@ bool FXHelper::SetMode(int mode)
 bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 {
 	vector<AlienFX_SDK::afx_act> actions;
-	AlienFX_SDK::afx_act action;
 
 	if (!config->stateOn || !map)
 		return false;
@@ -510,18 +510,14 @@ void FXHelper::RefreshHaptics(int *freq) {
 		if (!map.map.empty() && map.hicut > map.lowcut) {
 			double power = 0.0;
 			AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.r,map.colorfrom.g, map.colorfrom.b},
-				to = {0,0,0,map.colorto.r,map.colorto.g, map.colorto.b},
-				fin = {0};
+				to = {0,0,0,map.colorto.r,map.colorto.g, map.colorto.b};
 			// here need to check less bars...
 			for (int j = 0; j < map.map.size(); j++)
 				power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
-			//if (map.map.size() > 1)
-				power = power / (map.map.size() * (map.hicut - map.lowcut));
-			fin.r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
-			fin.g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
-			fin.b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
-
-			actions[0] = fin;
+			power = power / (map.map.size() * (map.hicut - map.lowcut));
+			actions[0].r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
+			actions[0].g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
+			actions[0].b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
 
 			if (map.devid) {
 				SetLight(map.devid, map.lightid, actions);

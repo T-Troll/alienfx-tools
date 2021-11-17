@@ -1,5 +1,4 @@
 #include "alienfx-gui.h"
-//#include <windowsx.h>
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 
@@ -21,8 +20,6 @@ int UpdateLightListG(HWND light_list, AlienFX_SDK::group* grp) {
 				}
 				if (gl < grp->lights.size()) {
 					continue;
-					//pos = ListBox_AddString(light_list, lgh->name.c_str());
-					//ListBox_SetItemData(light_list, pos, i);
 				}
 			} //else {
 				pos = ListBox_AddString(light_list, lgh->name.c_str());

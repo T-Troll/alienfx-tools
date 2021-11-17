@@ -15,13 +15,13 @@
 #endif
 
 DWORD WINAPI CEventProc(LPVOID);
+VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
 
 EventHandler* even = NULL;
 
-EventHandler::EventHandler(ConfigHandler* confi, MonHelper* f_confi, FXHelper* fx)
+EventHandler::EventHandler(ConfigHandler* confi, FXHelper* fx)
 {
 	conf = confi;
-	mon = f_confi;
 	even = this;
 	fxh = fx;
 
@@ -33,6 +33,7 @@ EventHandler::~EventHandler()
 {
 	StopProfiles();
 	StopEffects();
+	StopFanMon();
 }
 
 void EventHandler::ChangePowerState()
@@ -117,7 +118,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 
 void EventHandler::StartEvents()
 {
-	//DWORD dwThreadID;
 	if (!dwHandle) {
 		fxh->RefreshMon();
 		// start thread...
@@ -198,7 +198,18 @@ void EventHandler::StartEffects() {
 		//case 3: 
 		//	break;
 		}
-		//effMode = conf->GetEffect();
+	}
+}
+
+void EventHandler::StartFanMon(AlienFan_SDK::Control *acpi) {
+	if (conf->fanControl && acpi && !mon)
+		mon = new MonHelper(NULL, NULL, conf->fan_conf, acpi);
+}
+
+void EventHandler::StopFanMon() {
+	if (mon) {
+		delete mon;
+		mon = NULL;
 	}
 }
 
@@ -254,23 +265,16 @@ profile* EventHandler::ScanTaskList() {
 // Close - Check process list, switch if found and no foreground active.
 
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	
-	DWORD nameSize = MAX_PATH, cFileName = nameSize;// , cbNeeded;
-	TCHAR* szProcessName = new TCHAR[nameSize]{0};
-	DWORD prcId = 0;
-	//HMODULE hMod;
-	profile* newp = NULL;
 
-	GUITHREADINFO activeThread;
-	activeThread.cbSize = sizeof(GUITHREADINFO);
-
-	GetGUIThreadInfo(NULL, &activeThread);
-
-	if (activeThread.hwndActive != 0) {
-		GetWindowThreadProcessId(activeThread.hwndActive, &prcId);
+	if (hwnd) {
+		DWORD prcId = 0;
+		GetWindowThreadProcessId(hwnd, &prcId);
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
 									  PROCESS_VM_READ,
 									  FALSE, prcId);
+		
+		DWORD nameSize = MAX_PATH, cFileName = nameSize;
+		TCHAR* szProcessName = new TCHAR[nameSize]{0};
 
 		cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
 		while (nameSize == cFileName) {
@@ -286,7 +290,7 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 
 		string pName = szProcessName;
 
-		newp = even->conf->FindProfileByApp(pName, true);
+		profile* newp = even->conf->FindProfileByApp(pName, true);
 		even->conf->foregroundProfile = newp ? newp->id : -1;
 
 		if (newp || !even->conf->noDesktop || (pName != "ShellExperienceHost.exe"
@@ -307,25 +311,25 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 		} else {
 			DebugPrint("Forbidden app, switch blocked!\n");
 		}
+		delete[] szProcessName;
 	}
-	delete[] szProcessName;
 }
 
 VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	DWORD nameSize = MAX_PATH, cFileName = nameSize;
-	TCHAR* szProcessName=new TCHAR[nameSize];
-	szProcessName[0]=0;
-	DWORD prcId = 0;
-	int newp = -1;
 
 	HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
 		FALSE, dwEventThread);
 	if (hThread) {
-		prcId = GetProcessIdOfThread(hThread);
-		if (prcId) {
+		DWORD prcId = GetProcessIdOfThread(hThread);
+		if (prcId &&
+			//GetWindowThreadProcessId(hwnd, NULL) != dwEventThread ||
+			idChild == CHILDID_SELF && even->conf->foregroundProfile != even->conf->activeProfile) {
 			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
 				PROCESS_VM_READ,
 				FALSE, prcId);
+			DWORD nameSize = MAX_PATH, cFileName = nameSize;
+			TCHAR* szProcessName=new TCHAR[nameSize];
+			szProcessName[0]=0;
 			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize);// GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
 			while (nameSize==cFileName) {
 				nameSize=nameSize<<1;
@@ -336,38 +340,34 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 
 			PathStripPath(szProcessName);
 
-			DWORD procstatus = 0;
-
 			switch (dwEvent) {
 			case EVENT_OBJECT_CREATE:
 
-				if (even->conf->foregroundProfile != even->conf->activeProfile &&
-					even->conf->FindProfileByApp(string(szProcessName))) {
+				if (even->conf->FindProfileByApp(string(szProcessName))) {
 					even->SwitchActiveProfile(even->ScanTaskList());
 				}
 				break;
 
 			case EVENT_OBJECT_DESTROY:
-				//GetExitCodeProcess(hProcess, &procstatus);
-				//DebugPrint((string("Process (") + szProcessName + ") status " + to_string((int) procstatus) + "\n").c_str());
-				
-				if (even->conf->foregroundProfile != even->conf->activeProfile &&
-					even->conf->FindProfileByApp(string(szProcessName))) {
+		
+				if (even->conf->FindProfileByApp(string(szProcessName))) {
+					//DebugPrint((string("Process (") + szProcessName + ") status " + to_string(idChild) + "\n").c_str());
 					even->SwitchActiveProfile(even->ScanTaskList());
 				}
 
 				break;
 			}
+
 			CloseHandle(hProcess);
+			delete[] szProcessName;
 		}
 		CloseHandle(hThread);
 	}
-	delete[] szProcessName;
 }
 
 void EventHandler::StartProfiles()
 {
-	if (hEvent == 0 && conf->enableProf) {
+	if (conf->enableProf && !cEvent) {
 
 		DebugPrint("Profile hooks starting.\n");
 
@@ -375,9 +375,10 @@ void EventHandler::StartProfiles()
 		even->SwitchActiveProfile(ScanTaskList());
 
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
-			EVENT_SYSTEM_FOREGROUND, NULL,
-			CForegroundProc, 0, 0,
-			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+								 EVENT_SYSTEM_FOREGROUND, NULL,
+								 CForegroundProc, 0, 0,
+								 WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+
 		cEvent = SetWinEventHook(EVENT_OBJECT_CREATE,
 			EVENT_OBJECT_DESTROY, NULL,
 			CCreateProc, 0, 0,
@@ -387,20 +388,24 @@ void EventHandler::StartProfiles()
 
 void EventHandler::StopProfiles()
 {
-	if (hEvent) {
+	if (cEvent) {
 
 		DebugPrint("Profile hooks stop.\n");
-
-		UnhookWinEvent(cEvent);
 		UnhookWinEvent(hEvent);
-		hEvent = 0;
-		cEvent = 0;
+		UnhookWinEvent(cEvent);
+		cEvent = hEvent = 0;
 	}
 }
 
 DWORD WINAPI CEventProc(LPVOID param)
 {
 	EventHandler* src = (EventHandler*)param;
+
+	// locales block
+	HKL* locIDs = new HKL[10];
+	int locNum = GetKeyboardLayoutList(10, locIDs);
+
+
 
 	LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
 		COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
@@ -421,6 +426,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 	SYSTEM_POWER_STATUS state;
 
 	ULONGLONG maxnet = 1;
+
+	EventData cData;
 
 	long maxgpuarray = 10, maxnetarray = 10, maxtemparray = 10;
 	PDH_FMT_COUNTERVALUE_ITEM* gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
@@ -482,6 +489,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			&cType,
 			&cCPUVal
 		);
+
 		/*pdhStatus =*/ PdhGetFormattedCounterValue(
 			hHDDCounter,
 			PDH_FMT_LONG,
@@ -503,11 +511,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 		}
 
 		if (pdhStatus != ERROR_SUCCESS) {
-		//	if (pdhStatus == PDH_MORE_DATA) {
-		//		maxnetarray = netbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-		//		delete[] netArray;
-		//		netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
-		//	}
 			netCount = 0;
 		}
 
@@ -520,7 +523,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 		if (maxnet < totalNet) 
 			maxnet = totalNet;
 		//if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
-		totalNet = totalNet > 0 ? (totalNet * 100) / maxnet > 0 ? (totalNet * 100) / maxnet : 1 : 0;
 
 		while ((pdhStatus = PdhGetFormattedCounterArray(
 			hGPUCounter,
@@ -536,19 +538,15 @@ DWORD WINAPI CEventProc(LPVOID param)
 		}
 
 		if (pdhStatus != ERROR_SUCCESS) {
-		//	if (pdhStatus == PDH_MORE_DATA) {
-		//		maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-		//		delete[] gpuArray;
-		//		gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
-		//	}
 			gpuCount = 0;
 		}
 
 		// Getting maximum GPU load value...
-		long maxGPU = 0;
+		cData.GPU = 0;
+
 		for (unsigned i = 0; i < gpuCount && gpuArray[i].szName != NULL; i++) {
-			if (maxGPU < gpuArray[i].FmtValue.longValue)
-				maxGPU = gpuArray[i].FmtValue.longValue;
+			if (cData.GPU < gpuArray[i].FmtValue.longValue)
+				cData.GPU = (byte) gpuArray[i].FmtValue.longValue;
 		}
 
 		while ((pdhStatus = PdhGetFormattedCounterArray(
@@ -564,32 +562,28 @@ DWORD WINAPI CEventProc(LPVOID param)
 		}
 
 		if (pdhStatus != ERROR_SUCCESS) {
-			//if (pdhStatus == PDH_MORE_DATA) {
-			//	maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-			//	delete[] tempArray;
-			//	tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
-			//}
 			tempCount = 0;
 		}
 
 		// Getting maximum temp...
-		int maxTemp = 0, maxRpm = 0;
+		cData.Temp = 0, cData.Fan = 0;
 		if (src->mon) { 
 			// Let's get temperatures from fan sensors
 			for (unsigned i = 0; i < src->mon->senValues.size(); i++)
-				if (maxTemp < src->mon->senValues[i])
-					maxTemp = src->mon->senValues[i];
+				if (cData.Temp < src->mon->senValues[i])
+					cData.Temp = src->mon->senValues[i];
 			// And also fan RPMs
+			int maxRPM = 0;
 			for (unsigned i = 0; i < src->mon->fanValues.size(); i++) {
 				// maxRPM is a percent now!
 				int newRpm = src->mon->fanValues[i] * 100 / src->conf->fan_conf->boosts[i].maxRPM;
-				if (maxRpm < newRpm)
-					maxRpm = newRpm;
+				if (cData.Fan < newRpm)
+					cData.Fan = newRpm;
 			}
 		} else {
 			for (unsigned i = 0; i < tempCount; i++) {
-				if (maxTemp + 273 < tempArray[i].FmtValue.longValue)
-					maxTemp = tempArray[i].FmtValue.longValue - 273;
+				if (cData.Temp + 273 < tempArray[i].FmtValue.longValue)
+					cData.Temp = (byte) (tempArray[i].FmtValue.longValue - 273);
 			}
 		}
 
@@ -609,32 +603,43 @@ DWORD WINAPI CEventProc(LPVOID param)
 			}
 
 			if (pdhStatus != ERROR_SUCCESS) {
-				//if (pdhStatus == PDH_MORE_DATA) {
-				//	maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-				//	delete[] tempArray;
-				//	tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
-				//}
 				tempCount = 0;
 			}
 
 			// Added other set maximum temp...
 			for (unsigned i = 0; i < tempCount; i++) {
-				if (maxTemp < tempArray[i].FmtValue.longValue)
-					maxTemp = tempArray[i].FmtValue.longValue;
+				if (cData.Temp < tempArray[i].FmtValue.longValue)
+					cData.Temp = (byte) tempArray[i].FmtValue.longValue;
 			}
 		}
 
 		GlobalMemoryStatusEx(&memStat);
 		GetSystemPowerStatus(&state);
 
+		DWORD tId = GetWindowThreadProcessId(GetForegroundWindow(), NULL);
+		HKL curLocale = GetKeyboardLayout(tId);
+
+		if (curLocale) {
+			for (int i = 0; i < locNum; i++) {
+				if (curLocale == locIDs[i]) {
+					cData.KBD = i*100/locNum;
+					break;
+				}
+			}
+			//DebugPrint((string("Input set to ") + to_string(cData.KBD) + ", locale " + to_string(LOWORD(curLocale)) + "\n").c_str());
+		}
+
 		// Leveling...
-		maxTemp = min(100, max(0, maxTemp));
-		long battLife = min(100, max(0, state.BatteryLifePercent));
-		long hddLoad = max(0, 99 - cHDDVal.longValue);
-		long fanLoad = min(100, maxRpm);
+		cData.Temp = min(100, max(0, cData.Temp));
+		cData.Batt = min(100, max(0, state.BatteryLifePercent));
+		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
+		cData.Fan = min(100, cData.Fan);
+		cData.CPU = (byte) cCPUVal.longValue;
+		cData.RAM = (byte) memStat.dwMemoryLoad;
+		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / maxnet > 0 ? (totalNet * 100) / maxnet : 1 : 0);
 
 		src->modifyProfile.lock();
-		src->fxh->SetCounterColor(cCPUVal.longValue, memStat.dwMemoryLoad, maxGPU, (long)totalNet, hddLoad, maxTemp, battLife, fanLoad);
+		src->fxh->SetCounterColor(&cData);
 		src->modifyProfile.unlock();
 	}
 
@@ -644,6 +649,8 @@ cleanup:
 
 	if (hQuery)
 		PdhCloseQuery(hQuery);
+
+	delete[] locIDs;
 
 	return 0;
 }

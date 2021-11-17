@@ -37,7 +37,9 @@
 #define IDI_ALIENFXGUI                  132
 #define IDD_DIALOG_COLORS               133
 #define IDD_DIALOG_EVENTS               134
+#define IDS_EFF_OFF                     134
 #define IDD_DIALOG_AMBIENT              135
+#define IDS_A_LOCALE                    135
 #define IDD_DIALOG_HAPTICS              136
 #define IDD_DIALOG_GROUPS               137
 #define IDD_DIALOG_PROFILES             138
@@ -198,6 +200,7 @@
 #define ID_ACC_EVENTS                   32778
 #define ID_ACC_AMBIENT                  32779
 #define ID_ACC_HAPTICS                  32780
+#define ID_ACC_GROUPS                   32781
 #define ID_ACC_PROFILES                 32782
 #define ID_ACC_DEVICES                  32783
 #define ID_ACC_FANS                     32784
@@ -210,7 +213,6 @@
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
 #define ID_CHECKUPDATE                  32803
 #define IDM_CHECKUPDATE                 32804
-#define ID_ACC_GROUPS                   32781
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

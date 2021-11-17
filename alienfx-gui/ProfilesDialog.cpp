@@ -1,11 +1,13 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 #include <Shlwapi.h>
-//#include <windowsx.h>
+
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 void ReloadProfileList(HWND hDlg);
 void ReloadModeList(HWND mode_list, int mode);
 
+extern EventHandler* eve;
 int pCid = -1;
 
 void ReloadAppSettings(HWND hDlg, profile *prof) {
@@ -24,9 +26,7 @@ void ReloadAppSettings(HWND hDlg, profile *prof) {
 
 void ReloadProfileView(HWND hDlg, int cID) {
 	int rpos = 0;
-	HWND //app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
-		//mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
-		profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
+	HWND profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 	ListView_DeleteAllItems(profile_list);
 	ListView_SetExtendedListViewStyle(profile_list, LVS_EX_FULLROWSELECT);
 	LVCOLUMNA lCol;
@@ -142,7 +142,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				fstruct.hwndOwner = hDlg;
 				fstruct.hInstance = hInst;
 				fstruct.lpstrFile = (LPSTR) appName;
-				fstruct.nMaxFile = 32767;
+				fstruct.nMaxFile = 4095;
 				fstruct.lpstrFilter = "Applications (*.exe)\0*.exe\0\0";
 				fstruct.lpstrCustomFilter = NULL;
 				fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;

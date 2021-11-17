@@ -2,15 +2,10 @@
 
 #include <wtypes.h>
 #include <CommCtrl.h>
+#include <windowsx.h>
 #include "resource.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
-#include "AlienFX_SDK.h"
-#include "EventHandler.h"
-#include "CaptureHelper.h"
-#include "../alienfan-tools/alienfan-SDK/alienfan-SDK.h"
-#include "../alienfan-tools/alienfan-gui/MonHelper.h"
-#include "../alienfan-tools/alienfan-gui/ConfigHelper.h"
 
 // debug print
 #ifdef _DEBUG
@@ -43,11 +38,7 @@ extern HINSTANCE hInst;
 
 extern FXHelper* fxhl;
 extern ConfigHandler* conf;
-extern EventHandler* eve;
 extern HWND sTip, lTip;
-extern AlienFan_SDK::Control* acpi;
-extern MonHelper* mon;
 
-extern HWND sTip, lTip;
 
 

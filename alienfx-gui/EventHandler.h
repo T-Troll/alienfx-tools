@@ -2,8 +2,9 @@
 #include "ConfigHandler.h"
 #include "CaptureHelper.h"
 #include "WSAudioIn.h"
+#include "alienfan-SDK.h"
 #include "..\\alienfan-tools\alienfan-gui\MonHelper.h"
-#include "FXHelper.h"
+
 class EventHandler
 {
 private:
@@ -27,9 +28,12 @@ public:
 	void StopEffects();
 	void StartEffects();
 
+	void StartFanMon(AlienFan_SDK::Control* acpi);
+	void StopFanMon();
+
 	profile *ScanTaskList();
 
-	EventHandler(ConfigHandler*, MonHelper*, FXHelper*);
+	EventHandler(ConfigHandler*, FXHelper*);
 	~EventHandler();
 
 	FXHelper* fxh = NULL;
@@ -43,4 +47,5 @@ public:
 	mutex modifyProfile;
 
 	long maxNet = 1;
+	//DWORD activeTID = 0;
 };

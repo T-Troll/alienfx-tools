@@ -1,13 +1,12 @@
 #include "alienfx-gui.h"
-#include <windowsx.h>
 
-//bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
+extern AlienFan_SDK::Control* acpi;
 int eLid = -1, eDid = -1, dItem = -1;
 
 void UpdateLightsList(HWND hDlg, int pid, int lid) {
@@ -114,7 +113,6 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 				dItem = 0;
 				eDid = fxhl->devs[0]->GetPID();
 				ComboBox_SetCurSel(dev_list, 0);
-				//conf->lastActive = eDid;
 			}
 			fxhl->TestLight(eDid, -1);
 			UpdateLightsList(hDlg, eDid, -1);
@@ -133,7 +131,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		// First, reset all light devices and re-scan!
 		fxhl->UnblockUpdates(false, true);
-		//fxhl->FillAllDevs(conf->stateOn, conf->offPowerButton, acpi ? acpi->GetHandle() : NULL);
 		// Do we have some lights?
 		if (!fxhl->afx_dev.GetMappings()->size() &&
 			MessageBox(
@@ -159,7 +156,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				//conf->lastActive = did;
 				eLid = -1;
 				eDid = did; dItem = dbItem;
 				fxhl->TestLight(eDid, -1);
@@ -569,7 +565,6 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			string content = (char *) filebuf;
 			delete[] filebuf;
 			string line;
-			//AlienFX_SDK::devmap tDev = {(DWORD) 0, (DWORD) 0, string("")};
 			devInfo tDev;
 			while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 				vector<string> fields;
@@ -674,7 +669,7 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		} break;
 		}
 	} break;
-    default: return false; // default
+    default: return false;
 	}
 	return true;
 }

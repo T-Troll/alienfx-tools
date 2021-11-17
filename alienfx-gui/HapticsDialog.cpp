@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 
 void SwitchTab(int);
 void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
@@ -7,6 +8,7 @@ void SetSlider(HWND tt, int value);
 int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
 
+extern EventHandler* eve;
 extern int eItem;
 
 void DrawFreq(HWND hDlg, int *freq) {
@@ -100,7 +102,7 @@ void DrawFreq(HWND hDlg, int *freq) {
 	}
 }
 
-haptics_map *FindMapping(int lid) {
+haptics_map *FindHapMapping(int lid) {
 	if (lid != -1) {
 		if (lid > 0xffff) {
 			// group
@@ -156,7 +158,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
 	
 	
-	haptics_map *map = FindMapping(eItem);
+	haptics_map *map = FindHapMapping(eItem);
 
 	switch (message) {
 	case WM_INITDIALOG:
@@ -172,7 +174,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		for (int i = 1; i < 21; i++) {
 			int frq = 22050 - (int) round((log(21 - i) * coeff));
 			string frqname = to_string(prevfreq) + "-" + to_string(frq) + "Hz";
-			//sprintf_s(frqname, 55, "%d-%dHz", prevfreq, frq);
 			prevfreq = frq;
 			ListBox_AddString(freq_list, frqname.c_str());
 		}
@@ -222,7 +223,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// check in config - do we have mappings?
 			eItem = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-			map = FindMapping(eItem);
+			map = FindHapMapping(eItem);
 			EnableWindow(freq_list, TRUE);
 			ListBox_SetSel(freq_list, FALSE, -1);
 			if (map) {
@@ -258,7 +259,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					newmap.hicut = 255;
 					newmap.flags = 0;
 					conf->hap_conf->mappings.push_back(newmap);
-					//std::sort(config->mappings.begin(), config->mappings.end(), ConfigHaptics::sortMappings);
 					map = &conf->hap_conf->mappings.back();
 				}
 

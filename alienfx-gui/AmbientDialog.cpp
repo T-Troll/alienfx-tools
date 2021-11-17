@@ -1,15 +1,16 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 
-//void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
 int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 void SwitchTab(int);
 
+extern EventHandler* eve;
 extern int eItem;
 
-mapping *FindMapping(int lid) {
+mapping *FindAmbMapping(int lid) {
     if (lid != -1) {
         if (lid > 0xffff) {
             // group
@@ -32,13 +33,12 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
     
-    mapping *map = FindMapping(eItem);
+    mapping *map = FindAmbMapping(eItem);
 
     switch (message) {
     case WM_INITDIALOG:
     {
 
-        //UpdateLightList<FXHelper>(light_list, fxhl, 3);
         if (UpdateLightList(light_list, fxhl, 3) < 0) {
             // no lights, switch to setup
             SwitchTab(TAB_DEVICES);
@@ -75,23 +75,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 {
                     // check in config - do we have mappings?
                     eItem = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-                    map = FindMapping(eItem);
-                    //if (map == NULL) {
-                    //    mapping newmap;
-                    //    if (lid > 0xffff) {
-                    //        // group
-                    //        newmap.devid = 0;
-                    //        newmap.lightid = lid;
-                    //    } else {
-                    //        // light
-                    //        AlienFX_SDK::mapping lgh = fxhl->afx_dev.GetMappings()->at(lid);
-                    //        newmap.devid = lgh.devid;
-                    //        newmap.lightid = lgh.lightid;
-                    //    }
-                    //    conf->amb_conf->mappings.push_back(newmap);
-                    //    //std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
-                    //    map = FindMapping(lid);
-                    //}
+                    map = FindAmbMapping(eItem);
+
                     UINT bid = IDC_CHECK1;
                     // clear checks...
                     for (int i = 0; i < 12; i++) {
@@ -127,8 +112,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         newmap.lightid = lgh->lightid;
                     }
                     conf->amb_conf->mappings.push_back(newmap);
-                    //std::sort(conf->mappings.begin(), conf->mappings.end(), ConfigAmbient::sortMappings);
-                    map = FindMapping(eItem);
+                    map = FindAmbMapping(eItem);
                 }
                 // add mapping
                 vector <unsigned char>::iterator Iter = map->map.begin();
@@ -236,33 +220,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     case WM_DESTROY:
         conf->amb_conf->hDlg = NULL;
     break;
-    //case WM_POWERBROADCAST:
-    //switch (wParam) {
-    //case PBT_APMRESUMEAUTOMATIC: case PBT_APMPOWERSTATUSCHANGE:
-    //if (wParam == PBT_APMRESUMEAUTOMATIC) {
-    //    //resumed from sleep
-    //    cap->Restart();
-    //}
-    //break;
-    //case PBT_POWERSETTINGCHANGE:
-    //POWERBROADCAST_SETTING *sParams = (POWERBROADCAST_SETTING *) lParam;
-    //if (sParams->PowerSetting == GUID_MONITOR_POWER_ON) {
-    //    if (sParams->Data[0] == 0) {
-    //        cap->Stop();
-    //        fxhl->FadeToBlack();
-    //    } else
-    //        cap->Restart();
-    //}
-    //if (sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS) {
-    //    cap->Restart();
-    //}
-    //break;
-    //}
-    //break;
-    //case WM_DISPLAYCHANGE:
-    //// Monitor configuration changed
-    //cap->Restart();
-    //break;
     default: return false;
     }
     return true;

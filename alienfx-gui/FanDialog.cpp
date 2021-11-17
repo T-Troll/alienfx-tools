@@ -1,13 +1,13 @@
 #include "alienfx-gui.h"
-#include <windowsx.h>
-
-extern HWND fanWindow;
+#include "EventHandler.h"
 
 void SwitchTab(int);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-//void SetSlider(HWND tt, int value);
 
+extern EventHandler* eve;
+extern AlienFan_SDK::Control* acpi;
 fan_point* lastFanPoint = NULL;
+HWND fanWindow = NULL;
 
 INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 
@@ -171,7 +171,6 @@ void ReloadTempView(HWND hDlg, int cID) {
     lCol.cx = 100;
     lCol.iSubItem = 0;
     lCol.pszText = (LPSTR) "T";
-    //ListView_DeleteColumn(list, 0);
     ListView_InsertColumn(list, 0, &lCol);
     lCol.pszText = (LPSTR) "Name";
     lCol.iSubItem = 1;
@@ -217,10 +216,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
             sTip = CreateToolTip(fanWindow, NULL);
 
-            mon->Stop();
-            mon->dlg = hDlg;
-            mon->fDlg = fanWindow;
-            mon->Start();
+            eve->mon->Stop();
+            eve->mon->dlg = hDlg;
+            eve->mon->fDlg = fanWindow;
+            eve->mon->Start();
 
             SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
             SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
@@ -355,7 +354,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         // Close curve window
         fanWindow = NULL;
         if (acpi)
-            mon->fDlg = NULL;
+            eve->mon->fDlg = NULL;
         break;
     }
     return 0;
@@ -457,5 +456,5 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return true;
         break;
     }
-    return 0;// DefWindowProc(hDlg, message, wParam, lParam);
+    return false;
 }
