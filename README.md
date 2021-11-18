@@ -67,6 +67,18 @@ Build process:
 - Clone repository
 - Open solution into you Visual Studio, build.
 
+##ToDo list
+
+- [ ] New events
+  - [x] Input locale
+  - [ ] Missed notifications (toasts)
+  - [ ] Keyboard events (f.e pressed ALT, CTRL, SHIFT, Fn will change scheme)
+- [ ] New devices support
+  - [ ] Monitors
+  - [ ] Mouses
+  - [ ] Keyboards
+- [ ] Windows 11 support
+
 ## Tools Used
 * Visual Studio Community 2019
 

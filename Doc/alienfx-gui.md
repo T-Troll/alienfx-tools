@@ -81,6 +81,7 @@ You can use "Minimal value" slider to define zone of no reaction - for example, 
 - System overheat - Switch light if system temperature above cut level (default 95C, but you can change it using slider below).
 - Out of memory - Switch light if memory usage above 90% (you can change it by the same slider).
 - Low battery - Switch light if battery charged below the level defined by slider.
+- Language indicator - Light will have 1st color if first input language selected, and second color if any other selected.
   
 "Blink" checkbox switch triggered value to blink between on-off colours 6 times per sec.
 You can mix different monitoring type at once, f.e. different colours for same light for both CPU load and system overheat event. In this case Event colour always override Performance one then triggered, as well as both override Power state one.
