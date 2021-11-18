@@ -4,7 +4,6 @@
 #include <WTypesbase.h>
 #include <string>
 #include <SetupAPI.h>
-#include "alienfx-controls.h"
 
 extern "C" {
 #include <hidclass.h>
@@ -15,6 +14,9 @@ extern "C" {
 #pragma comment(lib, "hid.lib")
 
 using namespace std;
+
+#define NUM_VIDS 4
+const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461};
 
 void CheckDevices(bool show_all) {
 	
@@ -63,7 +65,7 @@ void CheckDevices(bool show_all) {
 				if (HidD_GetAttributes(tdevHandle, attributes.get()))
 				{
 					for (unsigned i = 0; i < NUM_VIDS; i++) {
-						if (attributes->VendorID == AlienFX_SDK::vids[i]) {
+						if (attributes->VendorID == vids[i]) {
 
 							PHIDP_PREPARSED_DATA prep_caps;
 							HIDP_CAPS caps;

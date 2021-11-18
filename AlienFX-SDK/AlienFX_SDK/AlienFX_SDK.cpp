@@ -17,20 +17,20 @@ extern "C" {
 
 namespace AlienFX_SDK {	
 
-	vector<pair<byte, byte>> Functions::SetMaskAndColor(DWORD index, byte type, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2) {
-		vector<pair<byte, byte>> mods = {{1, type},{2,(byte)chain},
+	vector<pair<byte, byte>> *Functions::SetMaskAndColor(DWORD index, byte type, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2) {
+		vector<pair<byte, byte>> *mods = new vector<pair<byte, byte>>({{1, type},{2,(byte)chain},
 										 {3,(byte)((index & 0xFF0000) >> 16)},
 										 {4,(byte)((index & 0x00FF00) >> 8)},
-										 {5,(byte)(index & 0x0000FF)}};
+										 {5,(byte)(index & 0x0000FF)}});
 		switch (version) {
 		case API_L_V1:
-			mods.insert(mods.end(),{{6,r1},{7,g1},{8,b1}});
+			mods->insert(mods->end(),{{6,r1},{7,g1},{8,b1}});
 			break;
 		case API_L_V3:
-			mods.insert(mods.end(),{{6,r1},{7,g1},{8,b1},{9,r2},{10,g2},{11,b2}});
+			mods->insert(mods->end(),{{6,r1},{7,g1},{8,b1},{9,r2},{10,g2},{11,b2}});
 			break;
 		case API_L_V2:
-			mods.insert(mods.end(),{{6,(r1 & 0xf0) | ((g1 & 0xf0) >> 4)},
+			mods->insert(mods->end(),{{6,(r1 & 0xf0) | ((g1 & 0xf0) >> 4)},
 						{7,(b1 & 0xf0) | ((r2 & 0xf0) >> 4)},
 						{8,(g2 & 0xf0) | ((b2 & 0xf0) >> 4)}});
 			break;
@@ -54,17 +54,17 @@ namespace AlienFX_SDK {
 		return false;
 	}
 
-	bool Functions::PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> mods) {
+	bool Functions::PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> *mods) {
 		byte buffer[MAX_BUFFERSIZE] = {0};
-		DWORD written;
 
 		if (version == API_L_V6)
 			FillMemory(buffer, MAX_BUFFERSIZE, 0xff);
 
-		memcpy(buffer, command, size);
+		memcpy(&buffer[1], command, size);
+		buffer[0] = reportID;
 
-		for (int i = 0; i < mods.size(); i++)
-			buffer[mods[i].first] = mods[i].second;
+		for (int i = 0; mods && i < mods->size(); i++)
+			buffer[(*mods)[i].first] = (*mods)[i].second;
 
 		switch (version) {
 		case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V4:
@@ -72,13 +72,18 @@ namespace AlienFX_SDK {
 		case API_L_V5: //case API_L_V6: case API_L_V7:
 			return HidD_SetFeature(devHandle, buffer, length);
 		case API_L_V6: case API_L_V7:
+			DWORD written;
 			return WriteFile(devHandle, buffer, length, &written, NULL);
 		}
 		return false;
 	}
 
+	bool Functions::PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> mods) {
+		return PrepareAndSend(command, size, &mods);
+	}
+
 	bool Functions::SavePowerBlock(byte blID, byte index, vector<afx_act> act, bool needSave, bool needInverse) {
-		byte mode = 3;
+		byte mode;
 		switch (act[0].type) {
 		case AlienFX_A_Pulse:
 			mode = 2; break;
@@ -166,18 +171,23 @@ namespace AlienFX_SDK {
 								case 0: 
 									length = caps.FeatureReportByteLength;
 									version = 5;
+									reportID = 0xcc;
 									break;
 								case 8: 
 									version = 1;
+									reportID = 2;
 									break;
 								case 9: 
 									version = 2;
+									reportID = 2;
 									break;
 								case 12:
 									version = 3;
+									reportID = 2;
 									break;
 								case 34:
 									version = 4;
+									reportID = 0;
 									break;
 								case 65:
 									switch (attributes->VendorID) {
@@ -188,6 +198,7 @@ namespace AlienFX_SDK {
 										version = 7;
 										break;
 									}
+									reportID = 0;
 									break;
 								//default: length = caps.OutputReportByteLength;
 								}
@@ -234,7 +245,7 @@ namespace AlienFX_SDK {
 		//ZeroMemory(buffer, length);
 		switch (version) {
 		case API_L_V7:
-			PrepareAndSend(COMMV7.update, sizeof(COMMV7.update), {{8,1}});
+			PrepareAndSend(COMMV7.update, sizeof(COMMV7.update), {{9,1}});
 			break;
 		case API_L_V5:
 			PrepareAndSend(COMMV5.loop, sizeof(COMMV5.loop));
@@ -300,8 +311,8 @@ namespace AlienFX_SDK {
 		case API_L_V7:
 		{
 			PrepareAndSend(COMMV7.status, sizeof(COMMV7.status));
-			PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{5,bright}});
-			res = PrepareAndSend(COMMV7.update, sizeof(COMMV7.update), {{7,1}});
+			PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{6,bright}});
+			res = PrepareAndSend(COMMV7.update, sizeof(COMMV7.update), {{8,1}});
 		} break;
 		case API_L_V5:
 		{
@@ -344,11 +355,11 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_L_V7:
 		{
-			val = PrepareAndSend(COMMV7.colorSet, sizeof(COMMV7.colorSet), {{4,index},{5,r},{6,g},{7,b}});
+			val = PrepareAndSend(COMMV7.colorSet, sizeof(COMMV7.colorSet), {{5,index},{6,r},{7,g},{8,b}});
 		} break;
 		case API_L_V6:
 		{
-			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {{9,1 << index},{10,r},{11,g},{12,b},{13,bright}});
+			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {{10,1 << index},{11,r},{12,g},{13,b},{14,bright}});
 		} break;
 		case API_L_V5:
 		{
@@ -585,7 +596,7 @@ namespace AlienFX_SDK {
 					} break;
 					case AlienFX_A_Morph:
 					{
-						vector<pair<byte, byte>> mods;
+						vector<pair<byte, byte>> *mods;
 						//buffer[1] = 0x1;
 						if (ca < act.size() - 1) {
 							mods = SetMaskAndColor(1 << index, 1, act[ca].r, act[ca].g, act[ca].b, act[ca + 1].r, act[ca + 1].g, act[ca + 1].b);
@@ -743,6 +754,7 @@ namespace AlienFX_SDK {
 			}
 			if (size > 1) {
 				PrepareAndSend(COMMV1.apply, sizeof(COMMV1.apply));
+				//UpdateColors();
 			} else {
 				// Fix for immediate power button change
 				SetColor(index, Red, Green, Blue);
@@ -763,7 +775,7 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_L_V7:
 			PrepareAndSend(COMMV7.status, sizeof(COMMV7.status));
-			return PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{5,bright}});
+			return PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{6,bright}});
 		case API_L_V6:
 			if (!brightness)
 				for (int i = 0; i < mappings->size(); i++) {

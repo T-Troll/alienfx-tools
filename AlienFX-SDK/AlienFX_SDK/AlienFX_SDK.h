@@ -1,5 +1,5 @@
 #pragma once  
-#include <wtypes.h>
+#include <wtypesbase.h>
 #include <vector>
 #include <string>
 
@@ -94,18 +94,20 @@ namespace AlienFX_SDK {
 		int pid = -1;
 		int length = -1;
 		byte chain = 1; // seq. number for APIv1-v3
-		int version = -1;
+		byte version = -1;
+		byte reportID = 0;
 		byte bright = 64; // for APIv6-v7
 
 		// support function for mask-based devices (v1-v3)
 		//void SetMaskAndColor(int index, byte* buffer, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
-		vector<pair<byte, byte>> SetMaskAndColor(DWORD index, byte type, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
+		vector<pair<byte, byte>> *SetMaskAndColor(DWORD index, byte type, byte r1, byte g1, byte b1, byte r2 = 0, byte g2 = 0, byte b2 = 0);
 
 		// Support functions for ACPI calls (v0)
 		bool SetAcpiColor(byte mask, byte r, byte g, byte b);
 
 		// Support function to send data to USB device
-		bool PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> mods = {});
+		bool PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> mods);
+		bool PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> *mods = NULL);
 
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, byte index, vector<afx_act> act, bool needSave, bool needInverse = false);

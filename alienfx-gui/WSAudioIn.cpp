@@ -171,8 +171,10 @@ void WSAudioIn::release()
 	stopSampling();
 	if (pCaptureClient)
 		pCaptureClient->Release();
-	pAudioClient->Release();
-	inpDev->Release();
+	if (pAudioClient)
+		pAudioClient->Release();
+	if (inpDev)
+		inpDev->Release();
 
 }
 

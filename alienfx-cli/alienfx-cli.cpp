@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	cerr << "alienfx-cli v5.2.1" << endl;
+	cerr << "alienfx-cli v5.2.6" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
