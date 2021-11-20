@@ -16,7 +16,7 @@ namespace AlienFan_SDK {
 		activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 		if (!activated) {
 			// We don't, so let's try to start it!
-			TCHAR  driverLocation[MAX_PATH] = {0};
+			TCHAR  driverLocation[MAX_PATH]{0};
 		    wrongEnvironment = true;
 			if (GetServiceName(driverLocation, MAX_PATH)) {
 				if (scManager = OpenSCManager(
@@ -114,7 +114,7 @@ namespace AlienFan_SDK {
 		if (activated && com.com && aDev != -1) {
 			PACPI_EVAL_OUTPUT_BUFFER res = NULL;
 			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-			BYTE operand[4] = {com.sub, value1, value2, 0};
+			BYTE operand[4]{com.sub, value1, value2, 0};
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com.com);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, operand);
@@ -181,8 +181,8 @@ namespace AlienFan_SDK {
 								name = temp_names[sIndex];
 							} else
 								name = "Sensor #" + to_string(sIndex);
-							ALIENFAN_SEN_INFO cur = {(short)funcID, name, true};
-							sensors.push_back(cur);
+							//ALIENFAN_SEN_INFO cur{(short)funcID, name, true};
+							sensors.push_back({(short)funcID, name, true});
 							fIndex++;
 						}
 						if (aDev != 3) {
@@ -207,8 +207,8 @@ namespace AlienFan_SDK {
 						// for older command-controlled devices
 						// EC Temps...
 						for (short i = 0; i < dev_c_controls[cDev].numtemps; i++) {
-							ALIENFAN_SEN_INFO cur = {i, temp_names[i], true};
-							sensors.push_back(cur);
+							//ALIENFAN_SEN_INFO cur{i, temp_names[i], true};
+							sensors.push_back({i, temp_names[i], true});
 						}
 						// EC fans...
 						for (int i = 0; i < dev_c_controls[cDev].numfans; i++)
@@ -222,8 +222,8 @@ namespace AlienFan_SDK {
 						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName) && resName) {
 							char *c_name = new char[1 + resName->Argument[0].DataLength];
 							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
-							ALIENFAN_SEN_INFO cur = {i, c_name, false};
-							sensors.push_back(cur);
+							//ALIENFAN_SEN_INFO cur{i, c_name, false};
+							sensors.push_back({i, c_name, false});
 							delete[] c_name;
 							free(resName);
 						}

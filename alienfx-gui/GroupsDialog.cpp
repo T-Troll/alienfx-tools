@@ -126,7 +126,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				if (lgh->gid >= maxID)
 					maxID = lgh->gid + 1;
 			}
-			AlienFX_SDK::group dev = {maxID, "Group #" + to_string(maxID & 0xffff)};
+			AlienFX_SDK::group dev{maxID, "Group #" + to_string(maxID & 0xffff)};
 			fxhl->afx_dev.GetGroups()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			gLid = maxID;

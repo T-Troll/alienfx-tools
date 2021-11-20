@@ -100,7 +100,7 @@ void FXHelper::TestLight(int did, int id)
 			Sleep(20);
 		if (!dev_ready) return;
 
-		dev->SetMultiLights((int)opLights.size(), opLights.data(), 0, 0, 0);
+		dev->SetMultiLights(&opLights, 0, 0, 0);
 		if (id != -1)
 			dev->SetColor(id, config->testColor.r, config->testColor.g, config->testColor.b);
 		dev->UpdateColors();
@@ -111,8 +111,10 @@ void FXHelper::TestLight(int did, int id)
 void FXHelper::ResetPower(int did)
 {
 	AlienFX_SDK::Functions* dev = LocateDev(did);
-	if (dev != NULL)
-		dev->SetPowerAction(63, 0, 0, 0, 0, 0, 0);
+	if (dev != NULL) {
+		vector<AlienFX_SDK::act_block> act{{63}};
+		dev->SetPowerAction(&act);
+	}
 }
 
 void FXHelper::SetCounterColor(EventData *data, bool force)
@@ -193,17 +195,16 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				case 5: lVal = eData.KBD; cVal = data->KBD; break;
 				}
 
-				if (cVal > 0 || (lVal > 0 && !(cVal > 0))) {
-					if (cVal > 0) {
-						diffC = false;
-						if (!(lVal > 0) || blink)
-							diffI = true;
-						if (!blink || (blink && blinkStage))
+				if (lVal != cVal) {
+					diffI = true;
+					if (cVal)
+						fin = Iter->eve[3].map[1];
+				} else
+					if (cVal && blink) {
+						diffI = true;
+						if (blinkStage)
 							fin = Iter->eve[3].map[1];
-					} else {
-						diffI = !diffC;
 					}
-				}
 			}
 
 			// check for change.
@@ -239,7 +240,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 void FXHelper::QueryUpdate(int did, bool force)
 {
 	if (unblockUpdates && config->stateOn) {
-		LightQueryElement newBlock = {did, 0, force, true};// , actions};
+		LightQueryElement newBlock{did, 0, force, true};// , actions};
 		modifyQuery.lock();
 		lightQuery.push_back(newBlock);
 		modifyQuery.unlock();
@@ -250,7 +251,7 @@ void FXHelper::QueryUpdate(int did, bool force)
 bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force)
 {
 	if (unblockUpdates && config->stateOn) {
-		LightQueryElement newBlock = {did, id, force, false, (byte)actions.size()};
+		LightQueryElement newBlock{did, id, force, false, (byte)actions.size()};
 		for (int i = 0; i < newBlock.actsize; i++)
 			newBlock.actions[i] = actions[i];
 		if (did && newBlock.actsize) {
@@ -309,8 +310,8 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 		}
 	}
 	if (dev && dev->GetVersion() == 5) {
-		AlienFX_SDK::afx_act c1 = {0,0,0,config->effColor1.r, config->effColor1.g, config->effColor1.b},
-			c2 = {0,0,0,config->effColor2.r, config->effColor2.g, config->effColor2.b};
+		AlienFX_SDK::afx_act c1{0,0,0,config->effColor1.r, config->effColor1.g, config->effColor1.b},
+			c2{0,0,0,config->effColor2.r, config->effColor2.g, config->effColor2.b};
 		dev->SetGlobalEffects((byte)config->globalEffect, config->globalDelay, c1, c2);
 	}
 }
@@ -387,28 +388,32 @@ void FXHelper::Stop() {
 	}
 }
 
-int FXHelper::Refresh(bool forced)
+void FXHelper::Refresh(int forced)
 {
+
+#ifdef _DEBUG
 	if (forced) {
-		DebugPrint("Forced Refresh initiated...\n");
+		DebugPrint((string("Forced Refresh initiated in mode ") + to_string(forced) + "\n").c_str());
 	}
+#endif
 
 	config->SetStates();
 	for (int i =0; i < config->active_set->size(); i++) {
 		RefreshOne(&config->active_set->at(i), forced);
 	}
-	QueryUpdate(-1, forced);
-	return 0;
+	QueryUpdate(-1, forced == 2);
 }
 
 bool FXHelper::SetMode(int mode)
 {
 	int t = activeMode;
 	activeMode = mode;
+	for (int i = 0; i < devs.size(); i++)
+		devs[i]->powerMode = (activeMode == MODE_AC || activeMode == MODE_CHARGE);
 	return t == activeMode;
 }
 
-bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
+bool FXHelper::RefreshOne(lightset* map, int force, bool update)
 {
 	vector<AlienFX_SDK::afx_act> actions;
 
@@ -449,12 +454,12 @@ bool FXHelper::RefreshOne(lightset* map, bool force, bool update)
 		return false;
 	
 	if (map->devid)
-		SetLight(map->devid, map->lightid, actions, force);
+		SetLight(map->devid, map->lightid, actions, force == 2);
 	else
 		// Group here!
-		SetGroupLight(map->lightid, actions, force);
+		SetGroupLight(map->lightid, actions, force == 2);
 	if (update)
-		QueryUpdate(map->devid, true);
+		QueryUpdate(map->devid, force == 2);
 
 	return true;
 }
@@ -489,7 +494,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 		}
 	}
 	if (config->amb_conf->mappings.size())
-		QueryUpdate(-1, false);
+		QueryUpdate();
 }
 
 struct devset {
@@ -509,8 +514,8 @@ void FXHelper::RefreshHaptics(int *freq) {
 
 		if (!map.map.empty() && map.hicut > map.lowcut) {
 			double power = 0.0;
-			AlienFX_SDK::afx_act from = {0,0,0,map.colorfrom.r,map.colorfrom.g, map.colorfrom.b},
-				to = {0,0,0,map.colorto.r,map.colorto.g, map.colorto.b};
+			AlienFX_SDK::afx_act from{0,0,0,map.colorfrom.r,map.colorfrom.g, map.colorfrom.b},
+				to{0,0,0,map.colorto.r,map.colorto.g, map.colorto.b};
 			// here need to check less bars...
 			for (int j = 0; j < map.map.size(); j++)
 				power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
@@ -531,7 +536,7 @@ void FXHelper::RefreshHaptics(int *freq) {
 		}
 	}
 	if (config->hap_conf->mappings.size())
-		QueryUpdate(-1, false);
+		QueryUpdate();
 }
 
 DWORD WINAPI CLightsProc(LPVOID param) {
@@ -539,7 +544,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	LightQueryElement current;
 	bool wasDelay = false;
 
-	HANDLE waitArray[2] = {src->stopQuery, src->haveNewElement};
+	HANDLE waitArray[2]{src->stopQuery, src->haveNewElement};
 	vector<deviceQuery> devs_query;
 
 	// Power button state...
@@ -583,38 +588,22 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				//ULONGLONG upst = GetTickCount64();
 				//DebugPrint((string("Update begins after ") + to_string(upst - ladt) + " ms\n").c_str());
 				if (src->GetConfig()->stateOn) {
-					for (int i = 0; i < devs_query.size(); i++) {
-						AlienFX_SDK::Functions* dev = src->LocateDev(devs_query[i].devID);
-						deviceQuery* devQ = &devs_query[i];
+					for (vector<deviceQuery>::iterator devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
+						AlienFX_SDK::Functions* dev = src->LocateDev(devQ->devID);
 						if (dev && (current.did == (-1) || devQ->devID == current.did)) {
-							vector<UCHAR>lights;
-							std::vector<vector<AlienFX_SDK::afx_act>> acts;
 //#ifdef _DEBUG
 //							char buff[2048];
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
 							if (devQ->dev_query.size() > 0) {
-								for (int j = 0; j < devQ->dev_query.size(); j++) {
-									if (devQ->dev_query[j].second.size() > 0) {
-										lights.push_back(devQ->dev_query[j].first);
-										acts.push_back(devQ->dev_query[j].second);
-									}
-								}
-
 								//if (dev->IsDeviceReady()) {
-#ifdef _DEBUG
-									if (lights.size() != acts.size())
-										OutputDebugString("Data size mismatch!\n");
-#endif
-									dev->SetMultiColor((int)lights.size(), lights.data(), acts, current.flags);
+									dev->SetMultiColor(&devQ->dev_query, current.flags);
 									dev->UpdateColors();
 									src->UpdateGlobalEffect(dev);
 								//} //else
 									//dev->Reset(true);
 								devQ->dev_query.clear();
-								lights.clear();
-								acts.clear();
 							}
 						}
 					}
@@ -653,8 +642,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					// Is it power button?
 					if (flags & ALIENFX_FLAG_POWER) {
 						// Should we update it?
-						if (!src->GetConfig()->block_power && current.actsize > 1 &&
-							((current.flags && dev->GetVersion() < 4) ||
+						if (!src->GetConfig()->block_power && current.actsize == 2 &&
+							(current.flags || /*(current.flags && dev->GetVersion() < 4) ||*/
 							 memcmp(&pbstate[0], &actions[0], sizeof(AlienFX_SDK::afx_act)) ||
 							 memcmp(&pbstate[1], &actions[1], sizeof(AlienFX_SDK::afx_act)))) {
 
@@ -668,7 +657,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 										"\n").c_str());
 
 							pbstate = actions;
-							actions[0].type = AlienFX_SDK::AlienFX_A_Power;
+							actions[0].type = actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						} else {
 							DebugPrint("Power button update skipped (blocked or same colors)\n");
 							continue;
@@ -679,14 +668,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					int qn;
 					for (qn = 0; qn < devs_query.size(); qn++)
 						if (devs_query[qn].devID == current.did) {
-							devs_query[qn].dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
+							devs_query[qn].dev_query.push_back({(byte)current.lid, actions});
 								break;
 						}
 					if (qn == devs_query.size()) {
 						// create new query!
-						deviceQuery newQ;
-						newQ.devID = current.did;
-						newQ.dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
+						deviceQuery newQ{current.did, {{(byte) current.lid, actions}}};
+						//newQ.devID = current.did;
+						//newQ.dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
 						devs_query.push_back(newQ);
 					}
 

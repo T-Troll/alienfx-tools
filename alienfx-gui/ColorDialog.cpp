@@ -25,13 +25,13 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		ImageList_Destroy(hOld);
 	}
 	ListView_SetExtendedListViewStyle(eff_list, LVS_EX_FULLROWSELECT);
-	LVCOLUMNA lCol = {0};
+	LVCOLUMNA lCol{0};
 	lCol.mask = LVCF_WIDTH;
 	lCol.cx = 100;
 	ListView_DeleteColumn(eff_list, 0);
 	ListView_InsertColumn(eff_list, 0, &lCol);
 	if (mmap) {
-		LVITEMA lItem{}; char efName[16] = {0};
+		LVITEMA lItem{}; char efName[16]{0};
 		lItem.mask = LVIF_TEXT | LVIF_IMAGE;
 		lItem.iSubItem = 0;
 		COLORREF* picData = NULL;
@@ -67,6 +67,9 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 				break;
 			case AlienFX_SDK::AlienFX_A_Rainbow:
 				LoadString(hInst, IDS_TYPE_RAINBOW, efName, 16);
+				break;
+			case AlienFX_SDK::AlienFX_A_Power:
+				LoadString(hInst, IDS_TYPE_POWER, efName, 16);
 				break;
 			}
 			lItem.pszText = efName;
@@ -165,6 +168,17 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				eItem = lid;// lbItem;
 				effID = 0;
 				mmap = FindMapping(lid);
+				if (mmap) {
+					// check wrong PB data...
+					AlienFX_SDK::mapping *map = fxhl->afx_dev.GetMappingById(mmap->devid, mmap->lightid);
+					if (map->flags & ALIENFX_FLAG_POWER) {
+						mmap->eve[0].map[0].type = mmap->eve[0].map[1].type = AlienFX_SDK::AlienFX_A_Power;
+						if (!mmap->eve[0].map[0].time)
+							mmap->eve[0].map[0].time = mmap->eve[0].map[1].time = 3;
+						if (!mmap->eve[0].map[0].tempo)
+							mmap->eve[0].map[0].tempo = mmap->eve[0].map[1].tempo = 0x64;
+					}
+				}
 				RebuildEffectList(hDlg, mmap);
 				break;
 			} break;
@@ -229,13 +243,13 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				if (mmap != NULL &&
+				if (mmap != NULL && mmap->eve[0].map[0].type != AlienFX_SDK::AlienFX_A_Power &&
 					MessageBox(hDlg, "Do you really want to set all lights to this settings?", "Warning!",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					event light = mmap->eve[0];
 					for (int i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
 						AlienFX_SDK::mapping* map = fxhl->afx_dev.GetMappings()->at(i);
-						if (!(map->flags && ALIENFX_FLAG_POWER)) {
+						if (!(map->flags & ALIENFX_FLAG_POWER)) {
 							lightset* actmap = FindMapping(i);
 							if (actmap)
 								actmap->eve[0] = light;
@@ -272,7 +286,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_C1:
-			AlienFX_SDK::afx_act c = {0};
+			AlienFX_SDK::afx_act c{0};
 			if (mmap && effID < mmap->eve[0].map.size()) {
 				c = mmap->eve[0].map[effID];
 			}

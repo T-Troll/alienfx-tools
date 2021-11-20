@@ -36,7 +36,7 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND toolTip = NULL;
 HWND fanWindow = NULL;
 
-NOTIFYICONDATA niData = {0};
+NOTIFYICONDATA niData{0};
 
 // Forward declarations of functions included in this code module:
 //ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -54,7 +54,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
 
-    MSG msg = {0};
+    MSG msg{0};
 
     fan_conf = new ConfigHelper();
 
@@ -132,7 +132,7 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 
     SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
                  SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    TOOLINFO ti = { 0 };
+    TOOLINFO ti{ 0 };
     ti.cbSize = sizeof(TOOLINFO);
     ti.uFlags = TTF_SUBCLASS;
     ti.hwnd = hwndParent;
@@ -146,7 +146,7 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 }
 
 void SetTooltip(HWND tt, int x, int y) {
-    TOOLINFO ti = { 0 };
+    TOOLINFO ti{ 0 };
     ti.cbSize = sizeof(ti);
     if (tt) {
         SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
@@ -488,9 +488,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 if (cur) {
                     fan_block* fan = fan_conf->FindFanBlock(cur, fan_conf->lastSelectedFan);
                     if (fan) {
-                        fan->points.clear();
-                        fan->points.push_back({0,0});
-                        fan->points.push_back({100,100});
+                        fan->points = {{0,0},{100,100}};
                         DrawFan();
                     }
                 }
@@ -563,7 +561,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                             delete sen;
                             sen = &fan_conf->lastProf->fanControls.back();
                         }
-                        fan_block cFan = {(short)lPoint->iItem};
+                        fan_block cFan{(short)lPoint->iItem};
                         cFan.points.push_back({0,0});
                         cFan.points.push_back({100,100});
                         sen->fans.push_back(cFan);

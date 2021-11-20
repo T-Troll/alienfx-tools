@@ -81,9 +81,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					vacID++; i = -1;
 				}
 			string buf = "Profile " + to_string(vacID);
-			profile new_prof;
 			if (prof) {
-				new_prof = {vacID, prof->flags, prof->effmode, vector<string>(), buf, prof->lightsets, prof->fansets};
+				profile new_prof{vacID, prof->flags, prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets};
 				new_prof.flags &= 0xff - PROF_DEFAULT;
 				conf->profiles.push_back(new_prof);
 				pCid = vacID;
@@ -136,8 +135,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_APP_BROWSE: {
 			if (prof != NULL) {
 				// fileopen dialogue...
-				OPENFILENAMEA fstruct = {0};
-				char appName[4096] = {0};
+				OPENFILENAMEA fstruct{0};
+				char appName[4096]{0};
 				fstruct.lStructSize = sizeof(OPENFILENAMEA);
 				fstruct.hwndOwner = hDlg;
 				fstruct.hInstance = hInst;

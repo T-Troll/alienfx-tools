@@ -77,6 +77,8 @@ Build process:
   - [ ] Monitors
   - [ ] Mouses
   - [ ] Keyboards
+- [ ] Keyboard mapper for easy RGB keyboard setup
+- [ ] Full-scale power button effects (same as common effects)
 - [ ] Windows 11 support
 
 ## Tools Used

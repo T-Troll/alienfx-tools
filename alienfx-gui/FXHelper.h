@@ -25,13 +25,12 @@ struct LightQueryElement {
 
 struct deviceQuery {
 	int devID = 0;
-	vector<pair<int, vector<AlienFX_SDK::afx_act>>> dev_query;
+	vector<AlienFX_SDK::act_block> dev_query;
 };
 
 class FXHelper
 {
 private:
-	int activeMode = -1;
 	EventData eData;
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
@@ -54,6 +53,7 @@ public:
 	mutex modifyQuery;
 	bool unblockUpdates = true;
 	bool updateLock = false;
+	int activeMode = -1;
 
 	FXHelper(ConfigHandler *conf);
 	~FXHelper();
@@ -61,8 +61,8 @@ public:
 	size_t FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
-	int Refresh(bool force = false);
-	bool RefreshOne(lightset* map, bool force = false, bool update = false);
+	void Refresh(int force = 0);
+	bool RefreshOne(lightset* map, int force = 0, bool update = false);
 	bool SetMode(int mode);
 	void TestLight(int did, int id);
 	void ResetPower(int did);

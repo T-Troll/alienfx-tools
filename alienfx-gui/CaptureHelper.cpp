@@ -15,7 +15,7 @@ DWORD WINAPI CFXProc(LPVOID);
 ConfigAmbient* config;
 FXHelper* fxh;
 
-UCHAR  imgz[12 * 3] = { 0 }, imgui[12 * 3] = { 0 };
+UCHAR  imgz[12 * 3]{ 0 }, imgui[12 * 3]{ 0 };
 
 DXGIManager* dxgi_manager = NULL;
 
@@ -81,13 +81,13 @@ struct procData {
 
 static procData callData[3][4];
 UINT w = 2, h = 2, ww = 1, hh = 1, stride = w * 4 , divider = 1;
-HANDLE pThread[12] = { 0 };
-HANDLE pfEvent[12] = { 0 };
+HANDLE pThread[12]{ 0 };
+HANDLE pfEvent[12]{ 0 };
 UCHAR* scrImg = NULL;
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
-	HANDLE waitArray[2] = {src->pEvent, clrStopEvent};
+	HANDLE waitArray[2]{src->pEvent, clrStopEvent};
 	DWORD res = 0;
 
 	UINT ptr = (src->dy * 4 + src->dx);// *3;
@@ -152,7 +152,7 @@ bool FindColors(UCHAR* src, UCHAR* imgz) {
 DWORD WINAPI CInProc(LPVOID param)
 {
 	UCHAR* img = NULL;
-	UCHAR* imgo[GRIDSIZE] = { 0 };
+	UCHAR* imgo[GRIDSIZE]{ 0 };
 
 	size_t buf_size;
 
@@ -227,7 +227,7 @@ DWORD WINAPI CDlgProc(LPVOID param)
 
 DWORD WINAPI CFXProc(LPVOID param) {
 	UCHAR  imgz[12 * 3];
-	HANDLE waitArray[2] = {lhEvent, clrStopEvent};
+	HANDLE waitArray[2]{lhEvent, clrStopEvent};
 	DWORD res = 0;
 	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {

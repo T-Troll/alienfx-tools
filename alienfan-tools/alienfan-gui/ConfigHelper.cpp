@@ -174,8 +174,8 @@ void ConfigHelper::SetBoosts(AlienFan_SDK::Control *acpi) {
 			if (boosts[i].maxBoost)
 				acpi->boosts[i] = boosts[i].maxBoost;
 			else
-				boosts[i] = {acpi->boosts[i], 4000};
+				boosts[i] = {acpi->boosts[i], 5000};
 		else
-			boosts.push_back({acpi->boosts[i], 4000});
+			boosts.push_back({acpi->boosts[i], 5000});
 }
 

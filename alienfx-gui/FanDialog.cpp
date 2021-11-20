@@ -12,7 +12,7 @@ HWND fanWindow = NULL;
 INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 
 void SetTooltip(HWND tt, int x, int y) {
-    TOOLINFO ti = { 0 };
+    TOOLINFO ti{ 0 };
     ti.cbSize = sizeof(ti);
     if (tt) {
         SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
@@ -290,10 +290,11 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                             delete sen;
                             sen = &conf->fan_conf->lastProf->fanControls.back();
                         }
-                        fan_block cFan = {(short) lPoint->iItem};
-                        cFan.points.push_back({0,0});
-                        cFan.points.push_back({100,100});
-                        sen->fans.push_back(cFan);
+                        //fan_block cFan = {(short) lPoint->iItem};
+                        //cFan.points.push_back({0,0});
+                        //cFan.points.push_back({100,100});
+                        //sen->fans.push_back(cFan);
+                        sen->fans.push_back({(short) lPoint->iItem,{{0,0},{100,100}}});
                         DrawFan();
                     }
                 }

@@ -89,9 +89,10 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 					prof->fansets.fanControls[i].fans.push_back(*temp);
 					return;
 				}
-			temp_block temp_b = {(short) senID};
-			temp_b.fans.push_back(*temp);
-			prof->fansets.fanControls.push_back(temp_b);
+			//temp_block temp_b{(short) senID};
+			//temp_b.fans.push_back(*temp);
+			//prof->fansets.fanControls.push_back(temp_b);
+			prof->fansets.fanControls.push_back({(short) senID, {*temp}});
 		}
 		if (flags != -1) {
 			prof->fansets.powerStage = LOWORD(flags);
@@ -101,9 +102,10 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 	} else {
 		prof = new profile{id};
 		if (temp) {
-			temp_block temp_b = {(short) senID};
-			temp_b.fans.push_back(*temp);
-			prof->fansets.fanControls.push_back(temp_b);
+			//temp_block temp_b{(short) senID};
+			//temp_b.fans.push_back(*temp);
+			//prof->fansets.fanControls.push_back(temp_b);
+			prof->fansets.fanControls.push_back({(short) senID, {*temp}});
 		}
 		if (flags != -1) {
 			prof->fansets.powerStage = LOWORD(flags);
@@ -271,7 +273,7 @@ int ConfigHandler::Load() {
 			int senid, fanid;
 			if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
 				// add fans...
-				fan_block fan = {(short) fanid};
+				fan_block fan{(short) fanid};
 				for (unsigned i = 0; i < lend; i += 2) {
 					fan.points.push_back({data[i], data[i+1]});
 				}
@@ -328,7 +330,7 @@ int ConfigHandler::Load() {
 	}
 	else {
 		// need new profile
-		profile prof = {0, 1, 0, vector<string>(), "Default"};
+		profile prof{0, 1, 0, {}, "Default"};
 		profiles.push_back(prof);
 		active_set = &(profiles.back().lightsets);
 		//std::sort(active_set->begin(), active_set->end(), ConfigHandler::sortMappings);

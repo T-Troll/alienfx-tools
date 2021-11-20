@@ -56,6 +56,15 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
 }
 
+void UpdateDeviceInfo(HWND hDlg) {
+	AlienFX_SDK::Functions *cDev = fxhl->LocateDev(eDid);
+	if (cDev) {
+		Static_SetText(GetDlgItem(hDlg, IDC_INFO_VID), ("VID: " + to_string(cDev->GetVid())).c_str());
+		Static_SetText(GetDlgItem(hDlg, IDC_INFO_PID), ("PID: " + to_string(cDev->GetPID())).c_str());
+		Static_SetText(GetDlgItem(hDlg, IDC_INFO_VER), ("API v" + to_string(cDev->GetVersion())).c_str());
+	}
+}
+
 void UpdateDeviceList(HWND hDlg, bool isList = false) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DEVICES);
 	// Now check current device list..
@@ -64,6 +73,9 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 		ListBox_ResetContent(dev_list);
 	else
 		ComboBox_ResetContent(dev_list);
+	if (eDid == -1 && fxhl->devs.size()) {
+		eDid = fxhl->devs[0]->GetPID();
+	}
 	for (UINT i = 0; i < fxhl->devs.size(); i++) {
 		AlienFX_SDK::devmap* cDev = fxhl->afx_dev.GetDeviceById(fxhl->devs[i]->GetPID(), fxhl->devs[i]->GetVid());
 		if (cDev) {
@@ -98,9 +110,10 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 			// select this device.
 			if (isList)
 				ListBox_SetCurSel(dev_list, pos);
-			else
+			else {
 				ComboBox_SetCurSel(dev_list, pos);
-			eDid = fxhl->devs[i]->GetPID(); 
+				UpdateDeviceInfo(hDlg);
+			}
 			dItem = pos;
 		}
 	}
@@ -159,22 +172,31 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				eLid = -1;
 				eDid = did; dItem = dbItem;
 				fxhl->TestLight(eDid, -1);
+				UpdateDeviceInfo(hDlg);
 				UpdateLightsList(hDlg, eDid, -1);
 			} break;
 			case CBN_EDITCHANGE:
 				char buffer[MAX_PATH];
 				GetWindowTextA(dev_list, buffer, MAX_PATH);
-				UINT i;
-				for (i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
-					if (fxhl->afx_dev.GetDevices()->at(i).devid == eDid) {
-						fxhl->afx_dev.GetDevices()->at(i).name = buffer;
-						fxhl->afx_dev.SaveMappings();
-						ComboBox_DeleteString(dev_list, dItem);
-						ComboBox_InsertString(dev_list, dItem, buffer);
-						ComboBox_SetItemData(dev_list, dItem, eDid);
-						break;
-					}
+				AlienFX_SDK::devmap *cDev = fxhl->afx_dev.GetDeviceById(eDid);
+				if (cDev) {
+					cDev->name = buffer;
+					fxhl->afx_dev.SaveMappings();
+					ComboBox_DeleteString(dev_list, dItem);
+					ComboBox_InsertString(dev_list, dItem, buffer);
+					ComboBox_SetItemData(dev_list, dItem, eDid);
 				}
+				//UINT i;
+				//for (i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
+				//	if (fxhl->afx_dev.GetDevices()->at(i).devid == eDid) {
+				//		fxhl->afx_dev.GetDevices()->at(i).name = buffer;
+				//		fxhl->afx_dev.SaveMappings();
+				//		ComboBox_DeleteString(dev_list, dItem);
+				//		ComboBox_InsertString(dev_list, dItem, buffer);
+				//		ComboBox_SetItemData(dev_list, dItem, eDid);
+				//		break;
+				//	}
+				//}
 				break;
 			}
 		} break;
@@ -301,7 +323,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_LOADMAP:
 		{	
 			// Load device and light mappings
-			OPENFILENAMEA fstruct = {0};
+			OPENFILENAMEA fstruct{0};
 			string appName = "Default.csv";
 			appName.reserve(4096);
 			fstruct.lStructSize = sizeof(OPENFILENAMEA);
@@ -334,7 +356,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					string content = (char *) filebuf;
 					delete[] filebuf;
 					string line;
-					AlienFX_SDK::devmap tDev = {(DWORD) 0, (DWORD) 0, string("")};
+					AlienFX_SDK::devmap tDev{(DWORD) 0, (DWORD) 0, string("")};
 					while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 						vector<string> fields;
 						size_t pos = 0, posOld = 1;
@@ -392,7 +414,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_SAVEMAP:
 		{
 			// Save device and ligh mappings
-			OPENFILENAMEA fstruct = {0};
+			OPENFILENAMEA fstruct{0};
 			string appName = "Current.csv";
 			appName.reserve(4096);
 			fstruct.lStructSize = sizeof(OPENFILENAMEA);

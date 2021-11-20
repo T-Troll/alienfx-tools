@@ -213,7 +213,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 
 	updateEvent = CreateEvent(NULL, false, false, NULL);
 	HANDLE updHandle = CreateThread(NULL, 0, resample, src, 0, NULL);
-	HANDLE hArray[2] = {astopEvent, hEvent};
+	HANDLE hArray[2]{astopEvent, hEvent};
 
 	while ((res = WaitForMultipleObjects(2, hArray, false, 500)) != WAIT_OBJECT_0) {
 		switch (res) {
@@ -282,7 +282,7 @@ DWORD WINAPI resample(LPVOID lpParam)
 	WSAudioIn *src = (WSAudioIn *) lpParam;
 	double* waveDouble = src->waveD;
 
-	HANDLE waitArray[2] = {updateEvent, astopEvent};
+	HANDLE waitArray[2]{updateEvent, astopEvent};
 	DWORD res = 0;
 
 	auiEvent = CreateEvent(NULL, false, false, NULL);

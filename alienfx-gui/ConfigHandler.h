@@ -81,7 +81,7 @@ public:
 	DWORD monDelay = 200;
 	bool wasAWCC = false;
 	Colorcode testColor, effColor1, effColor2;
-	COLORREF customColors[16] = {0};
+	COLORREF customColors[16]{0};
 	DWORD globalEffect = 0;
 	DWORD globalDelay = 127;
 	DWORD fanControl = 0;
@@ -99,7 +99,7 @@ public:
 	std::vector<lightset>* active_set;
 	std::vector<profile> profiles;
 
-	NOTIFYICONDATA niData = {0};
+	NOTIFYICONDATA niData{0};
 
 	ConfigHandler();
 	~ConfigHandler();

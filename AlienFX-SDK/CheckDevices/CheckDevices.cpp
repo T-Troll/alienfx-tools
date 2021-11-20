@@ -31,7 +31,7 @@ void CheckDevices(bool show_all) {
 		return;
 	}
 	unsigned int dw = 0;
-	SP_DEVICE_INTERFACE_DATA deviceInterfaceData = {0};
+	SP_DEVICE_INTERFACE_DATA deviceInterfaceData{0};
 
 	while (!flag)
 	{

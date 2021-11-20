@@ -19,8 +19,7 @@ union ColorU {
 AlienFX_SDK::Mappings* afx_map = NULL;
 vector<AlienFX_SDK::Functions *> afx_devs;
 BYTE gtempo = 5;
-AlienFX_SDK::group *groups[6] = {NULL};
-//DWORD groups[6] = {0};
+AlienFX_SDK::group *groups[6]{NULL};
 LFX_COLOR final;
 LFX_RESULT state;
 map<WORD,vector<LFX_COLOR> > lastState;
@@ -262,7 +261,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const u
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightColor(const unsigned int dev, const unsigned int lid, const PLFX_COLOR clr) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
 		AlienFX_SDK::mapping *map = GetMapping(dev, lid);
-		ColorU src = {clr->blue, clr->green, clr->red, clr->brightness};
+		ColorU src{clr->blue, clr->green, clr->red, clr->brightness};
 		LFX_COLOR *fin = TranslateColor(&src);
 		LocateDev(map->devid)->SetColor(map->lightid, fin->red, fin->green, fin->blue);
 	}
@@ -293,7 +292,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 						lights.push_back((UCHAR) lgh->lightid);
 				}
 			}
-			afx_devs[j]->SetMultiLights((int) lights.size(), lights.data(), fin->red, fin->green, fin->blue);
+			afx_devs[j]->SetMultiLights(&lights, fin->red, fin->green, fin->blue);
 		}
 	}
 	return state;
@@ -306,15 +305,17 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColor(const unsigned int dev, c
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColorEx(const unsigned int dev, const unsigned int lid, const unsigned int act, const PLFX_COLOR clr1, const PLFX_COLOR clr2) {
 	if (CheckState() == LFX_SUCCESS) {
 		AlienFX_SDK::mapping *map = GetMapping(dev, lid);
-		vector<AlienFX_SDK::afx_act> actions;
-		ColorU src = {clr1->blue, clr1->green, clr1->red, clr1->brightness};
-		LFX_COLOR* fin = TranslateColor(&src);
-		BYTE fact = GetActionMode(act);
-		actions.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
-		src = {clr2->blue, clr2->green, clr2->red, clr2->brightness};
-		fin = TranslateColor(&src);
-		actions.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
-		afx_devs[dev]->SetAction(map->lightid, actions);
+		if (map) {
+			AlienFX_SDK::act_block actions{(byte) map->lightid};
+			ColorU src{clr1->blue, clr1->green, clr1->red, clr1->brightness};
+			LFX_COLOR *fin = TranslateColor(&src);
+			BYTE fact = GetActionMode(act);
+			actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
+			src = {clr2->blue, clr2->green, clr2->red, clr2->brightness};
+			fin = TranslateColor(&src);
+			actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
+			afx_devs[dev]->SetAction(&actions);
+		}
 	}
 	return state;
 }
@@ -325,14 +326,14 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColor(const unsigned int pos, const uns
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const unsigned int act, const unsigned int clr1, const unsigned int clr2) {
 	if (CheckState() == LFX_SUCCESS) {
-		vector<AlienFX_SDK::afx_act> actions;
+		AlienFX_SDK::act_block actions;
 		ColorU fclr; fclr.ci = clr1;
 		LFX_COLOR *fin = TranslateColor(&fclr);
 		BYTE fact = GetActionMode(act);
-		actions.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
+		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
 		fclr.ci = clr2;
 		fin = TranslateColor(&fclr);
-		actions.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
+		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
 		int gid = GetGroupID(pos);
 		AlienFX_SDK::group *grp = NULL;
 		if (gid >= 0)
@@ -341,14 +342,18 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const u
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
 					if (grp->lights[i]->devid == afx_devs[j]->GetPID() &&
-						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER))
-						afx_devs[j]->SetAction(grp->lights[i]->lightid, actions);
+						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER)) {
+						actions.index = (byte) grp->lights[i]->lightid;
+						afx_devs[j]->SetAction(&actions);
+					}
 			} else {
 				for (int i = 0; gid < 0 && i < afx_map->GetMappings()->size(); i++) {
 					AlienFX_SDK::mapping *lgh = afx_map->GetMappings()->at(i);
 					if (lgh->devid == afx_devs[j]->GetPID() &&
-						!(lgh->flags & ALIENFX_FLAG_POWER))
-						afx_devs[j]->SetAction(lgh->lightid, actions);
+						!(lgh->flags & ALIENFX_FLAG_POWER)) {
+						actions.index = (byte) lgh->lightid;
+						afx_devs[j]->SetAction(&actions);
+					}
 				}
 			}
 		}

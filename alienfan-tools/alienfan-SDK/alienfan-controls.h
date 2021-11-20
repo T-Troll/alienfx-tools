@@ -3,7 +3,7 @@
 #define NUM_DEVICES 5
 
 namespace AlienFan_SDK {
-	static const ALIENFAN_CONTROL dev_controls[2] = {
+	static const ALIENFAN_CONTROL dev_controls[2]{
 		{   0x14,   3, // PowerID
 			0x14,   5, // RPM
 			0x14,   6, // Percent
@@ -28,7 +28,7 @@ namespace AlienFan_SDK {
 	};
 
 	//static const char temp_names[6][24] = {
-	static vector<string> temp_names = {
+	static vector<string> temp_names{
 			"CPU Internal Thermistor",
 			"GPU Internal Thermistor",
 			"Motherboard Thermistor",
@@ -37,7 +37,7 @@ namespace AlienFan_SDK {
 			"GPU External Thermistor"
 	};
 
-	static const ALIENFAN_COMMAND_CONTROL dev_c_controls[1] = {
+	static const ALIENFAN_COMMAND_CONTROL dev_c_controls[1]{
 		{
 			0x8ab, // unlock
 			"\\_SB.PCI0.MMRB", // read RAM
@@ -55,7 +55,7 @@ namespace AlienFan_SDK {
 		}
 	};
 
-	static const ALIENFAN_DEVICE devs[NUM_DEVICES] = {
+	static const ALIENFAN_DEVICE devs[NUM_DEVICES]{
 		{ // Alienware m15/m17
 			"\\_SB.AMW1.WMAX", // main command
 			-1, // Error code

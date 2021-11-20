@@ -62,7 +62,7 @@ DWORD EvaluteToAdmin() {
 		if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
 		{
 			// Launch itself as admin
-			SHELLEXECUTEINFO sei = { sizeof(sei) };
+			SHELLEXECUTEINFO sei{ sizeof(sei) };
 			sei.lpVerb = "runas";
 			sei.lpFile = szPath;
 			sei.hwnd = NULL;
@@ -381,7 +381,7 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 
 	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
 				 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-	TOOLINFO ti = { 0 };
+	TOOLINFO ti{ 0 };
 	ti.cbSize = sizeof(TOOLINFO);
 	ti.uFlags = TTF_SUBCLASS;
 	ti.hwnd = hwndParent;
@@ -395,7 +395,7 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 }
 
 void SetSlider(HWND tt, int value) {
-	TOOLINFO ti = { 0 };
+	TOOLINFO ti{0};
 	ti.cbSize = sizeof(ti);
 	if (tt) {
 		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM) &ti);
@@ -645,8 +645,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		pHdr->hwndTab = tab_list;
 
-		TCITEM tie = {0};
-		char nBuf[64] = {0};
+		TCITEM tie{0};
+		char nBuf[64]{0};
 
 		tie.mask = TCIF_TEXT;
 		tie.iImage = -1;
@@ -711,6 +711,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->afx_dev.SaveMappings();
 			conf->Save();
 			isNewVersion = false;
+			fxhl->Refresh(2); // set def. colors
 			conf->niData.uFlags |= NIF_INFO;
 			strcpy_s(conf->niData.szInfoTitle, "Configuration saved!");
 			strcpy_s(conf->niData.szInfo, "Configuration saved succesdully.");
@@ -785,7 +786,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			mi.fMask = MIM_STYLE;
 			mi.dwStyle = MNS_NOTIFYBYPOS;
 			SetMenuInfo(tMenu, &mi);
-			MENUITEMINFO mInfo = {0};
+			MENUITEMINFO mInfo{0};
 			mInfo.cbSize = sizeof(MENUITEMINFO);
 			mInfo.fMask = MIIM_STRING | MIIM_ID;
 			HMENU pMenu;
@@ -947,6 +948,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->ChangeState();
 			eve->StopProfiles();
 			eve->StopEffects();
+			fxhl->Refresh(2);
 			fxhl->UnblockUpdates(false);
 			if (eve->mon)
 				eve->mon->Stop();
@@ -980,6 +982,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		conf->Save();
 		eve->StopProfiles();
 		eve->StopEffects();
+		fxhl->Refresh(2);
 		fxhl->UnblockUpdates(false, true);
 		return 0;
 		break;
@@ -1034,6 +1037,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 		break;
 	case WM_CLOSE:
+		fxhl->Refresh(2);
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
@@ -1090,7 +1094,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
-	CHOOSECOLOR cc = {0};
+	CHOOSECOLOR cc{0};
 	bool ret;
 
 	AlienFX_SDK::afx_act savedColor = *map;
@@ -1129,7 +1133,7 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 }
 
 bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b) {
-	CHOOSECOLOR cc = {0};
+	CHOOSECOLOR cc{0};
 	bool ret;
 	// Initialize CHOOSECOLOR 
 	cc.lStructSize = sizeof(cc);
@@ -1174,7 +1178,7 @@ lightset* FindMapping(int mid)
 lightset* CreateMapping(int lid) {
 	// create new mapping..
 	lightset newmap;
-	AlienFX_SDK::afx_act act = {0};
+	AlienFX_SDK::afx_act act{0};
 	if (lid > 0xffff) {
 		// group
 		newmap = {0,(unsigned)lid};
@@ -1183,10 +1187,10 @@ lightset* CreateMapping(int lid) {
 		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
 		newmap = {lgh->devid, lgh->lightid};
 		if (lgh->flags & ALIENFX_FLAG_POWER) {
+			act.type = AlienFX_SDK::AlienFX_A_Power;
 			act.time = 3;
 			act.tempo = 0x64;
 			newmap.eve[0].map.push_back(act);
-			act = {0};
 		}
 	}
 	newmap.eve[0].fs.b.flags = 1;
