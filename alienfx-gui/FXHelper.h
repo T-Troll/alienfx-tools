@@ -11,7 +11,7 @@
 #define MODE_LOW	4
 
 struct EventData {
-	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, NET = 0, Temp = 0, Batt = 100, Fan = 0, KBD = 99;
+	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, NET = 0, Temp = 0, Batt = 100, Fan = 0, KBD = 0;
 };
 
 struct LightQueryElement {
@@ -36,7 +36,6 @@ private:
 	HANDLE updateThread = NULL;
 	ConfigHandler* config;
 
-	size_t FillDevs(bool state, bool power);
 	void SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, bool force = false,
 					   AlienFX_SDK::afx_act* from_c = NULL, AlienFX_SDK::afx_act* to_c = NULL, double power = 0);
 	bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
@@ -45,7 +44,6 @@ private:
 public:
 
 	AlienFX_SDK::Mappings afx_dev;
-	std::vector<AlienFX_SDK::Functions * > devs;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
 	HANDLE queryEmpty = NULL;

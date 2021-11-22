@@ -245,10 +245,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	fxhl = new FXHelper(conf);
 
-	// now add ACPI....
-	fxhl->FillAllDevs(acpi);
-
-	if (fxhl->devs.size() > 0 || MessageBox(NULL, "No Alienware light devices detected!\nDo you want to continue?", "Error",
+	if (fxhl->FillAllDevs(acpi) || MessageBox(NULL, "No Alienware light devices detected!\nDo you want to continue?", "Error",
 											MB_YESNO | MB_ICONWARNING) == IDYES) {
 		conf->wasAWCC = DoStopService(true);
 
@@ -857,26 +854,22 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		    break;
 		case ID_TRAYMENU_REFRESH:
 			fxhl->RefreshState(true);
+			ReloadProfileList(hDlg);
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
+			eve->ToggleEvents();
 			UpdateState(hDlg);
-			//fxhl->ChangeState();
-			//if (tabSel == TAB_SETTINGS)
-			//	OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 		    conf->SetDimmed();
 			UpdateState(hDlg);
-			//fxhl->ChangeState();
-			//if (tabSel == TAB_SETTINGS)
-			//	OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
 			eve->ToggleEvents();
 			EnableWindow(mode_list, conf->enableMon);
-			//ReloadModeList(mode_list, conf->GetEffect());
+			ReloadModeList(mode_list, conf->GetEffect());
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			conf->FindProfile(conf->activeProfile)->effmode = idx;
@@ -1181,7 +1174,7 @@ lightset* CreateMapping(int lid) {
 	AlienFX_SDK::afx_act act{0};
 	if (lid > 0xffff) {
 		// group
-		newmap = {0,(unsigned)lid};
+		newmap = {0,0,(unsigned)lid};
 	} else {
 		// light
 		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);

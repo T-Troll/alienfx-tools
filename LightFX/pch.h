@@ -8,6 +8,19 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
-#include "framework.h"
+//#include "framework.h"
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+// Windows Header Files
+#include <windows.h>
+
+union ColorU {
+	struct {
+		unsigned char blue;
+		unsigned char green;
+		unsigned char red;
+		unsigned char brightness;
+	};
+	unsigned  ci;
+};
 
 #endif //PCH_H

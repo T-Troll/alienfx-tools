@@ -152,6 +152,9 @@ void ConfigHandler::SetStates() {
 		SetIconState();
 		Shell_NotifyIcon(NIM_MODIFY, &niData);
 	}
+
+	finalBrightness = (byte) (stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
+	finalPBState = finalBrightness > 0 ? (byte) dimPowerButton : (byte) offPowerButton;
 }
 
 void ConfigHandler::SetIconState() {
@@ -321,7 +324,6 @@ int ConfigHandler::Load() {
 	int activeFound = 0;
 	if (profiles.size() > 0) {
 		for (int i = 0; i < profiles.size(); i++) {
-			//std::sort(profiles[i].lightsets.begin(), profiles[i].lightsets.end(), ConfigHandler::sortMappings);
 			if (profiles[i].id == activeProfile)
 				activeFound = i;
 			if (profiles[i].flags & PROF_DEFAULT)
@@ -333,7 +335,6 @@ int ConfigHandler::Load() {
 		profile prof{0, 1, 0, {}, "Default"};
 		profiles.push_back(prof);
 		active_set = &(profiles.back().lightsets);
-		//std::sort(active_set->begin(), active_set->end(), ConfigHandler::sortMappings);
 	}
 	if (profiles.size() == 1) {
 		profiles[0].flags = profiles[0].flags | PROF_DEFAULT;

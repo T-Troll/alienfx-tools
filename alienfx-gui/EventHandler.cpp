@@ -163,7 +163,7 @@ void EventHandler::ChangeEffectMode(int newMode) {
 		}
 		else {
 			StopEffects();
-			fxh->Refresh(true);
+			//fxh->Refresh(true);
 		}
 }
 

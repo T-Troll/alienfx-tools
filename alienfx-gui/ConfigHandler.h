@@ -30,7 +30,14 @@ struct event {
 };
 
 struct lightset {
-	unsigned devid = 0;
+	union {
+		struct {
+			WORD pid;
+			WORD vid;
+		};
+		DWORD devid = 0;
+	};
+	//unsigned devid = 0;
 	unsigned lightid = 0;
 	event	 eve[4];
 };
@@ -87,6 +94,10 @@ public:
 	DWORD fanControl = 0;
 	DWORD enableMon = 1;
 	DWORD noDesktop = 0;
+
+	// final states
+	byte finalBrightness = 255;
+	byte finalPBState = false;
 
 	// local flags...
 	bool haveV5 = false;

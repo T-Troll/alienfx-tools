@@ -124,7 +124,6 @@
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <Manifest>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
       <AdditionalManifestFiles>dpi.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
@@ -148,7 +147,6 @@
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <Manifest>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
       <AdditionalManifestFiles>dpi.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>

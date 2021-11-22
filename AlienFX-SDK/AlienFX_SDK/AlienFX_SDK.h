@@ -43,22 +43,22 @@ namespace AlienFX_SDK {
     #define MAX_BUFFERSIZE 65
 
 	struct mapping {
-		DWORD vid = 0;
-		DWORD devid = 0;
-		DWORD lightid = 0;
-		DWORD flags = 0;
-		std::string name;
+		WORD vid = 0;
+		WORD devid = 0;
+		WORD lightid = 0;
+		WORD flags = 0;
+		string name;
 	};
 
 	struct devmap {
-		DWORD vid = 0;
-		DWORD devid = 0;
-		std::string name;
+		WORD vid = 0;
+		WORD devid = 0;
+		string name;
 	};
 
 	struct group {
 		DWORD gid = 0;
-		std::string name;
+		string name;
 		vector<mapping*> lights;
 	};
 
@@ -95,8 +95,8 @@ namespace AlienFX_SDK {
 		HANDLE devHandle = NULL;
 		bool inSet = false;
 
-		int vid = -1; // Device PID
-		int pid = -1; // Device VID, can be zero!
+		int vid = -1; // Device VID, can be zero!
+		int pid = -1; // Device PID, -1 if not initialized
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
 		byte version = -1; // interface version
@@ -149,7 +149,7 @@ namespace AlienFX_SDK {
 		// Set multipy lights to the same color. This only works for new API devices, and emulated at old ones.
 		// numLights - how many lights need to be set
 		// lights - pointer to array of light IDs need to be set.
-		bool SetMultiLights(vector<UCHAR> *lights, int r, int g, int b);
+		bool SetMultiLights(vector<byte> *lights, int r, int g, int b);
 
 		// Set multipy lights to different color.
 		// size - how many lights
@@ -176,7 +176,7 @@ namespace AlienFX_SDK {
 		// power - if true, power and indicator lights will be set on/off too
 		bool ToggleState(BYTE brightness, vector <mapping*>* mappings, bool power);
 
-		bool SetGlobalEffects(byte effType, int tempo, afx_act act1, afx_act act2);
+		bool SetGlobalEffects(byte effType, byte tempo, afx_act act1, afx_act act2);
 
 		// return current device state
 		BYTE AlienfxGetDeviceStatus();
@@ -198,18 +198,30 @@ namespace AlienFX_SDK {
 		int GetVersion();
 	};
 
+	struct afx_device {
+		Functions *dev;
+		devmap *desc;
+		vector <mapping *> lights;
+	};
+
 	class Mappings {
 	private:
 		// Name mappings for lights
 		vector <mapping*> mappings;
 		vector <devmap> devices;
 		vector <group> groups;
+
 	public:
+
+		vector<afx_device> fxdevs;
 
 		~Mappings();
 
 		// Enum alienware devices
-		vector<pair<DWORD,DWORD>> AlienFXEnumDevices();
+		vector<pair<WORD,WORD>> AlienFXEnumDevices();
+
+		// Load device data and assign it to structure
+		void AlienFXAssignDevices(HANDLE acc = NULL, byte brightness=255, byte power=false);
 
 		// load light names from registry
 		void LoadMappings();
@@ -226,25 +238,25 @@ namespace AlienFX_SDK {
 		// get defined groups
 		vector <group>* GetGroups();
 
-		devmap* GetDeviceById(int devID, int vid = 0);
+		devmap* GetDeviceById(WORD devID, WORD vid = 0);
 
 		// find mapping by dev/light it...
-		mapping* GetMappingById(int devID, int LightID);
+		mapping* GetMappingById(WORD devID, WORD LightID);
 
 		// find mapping by dev/light it...
-		group* GetGroupById(int gid);
+		group* GetGroupById(DWORD gid);
 
 		// add new light name into the list field-by-field
-		void AddMapping(int devID, int lightID, char* name, int flags);
+		void AddMapping(WORD devID, WORD lightID, char* name, WORD flags);
 
 		// Add new group into the list field-by-field
-		void AddGroup(int gID, char* name, int lightNum, DWORD* lightlist);
+		//void AddGroup(DWORD gID, char* name, int lightNum, DWORD* lightlist);
 
 		// get saved light names
-		int GetFlags(int devid, int lightid);
+		int GetFlags(WORD devid, WORD lightid);
 
 		// get saved light names
-		void SetFlags(int devid, int lightid, int flags);
+		void SetFlags(WORD devid, WORD lightid, WORD flags);
 	};
 
 }

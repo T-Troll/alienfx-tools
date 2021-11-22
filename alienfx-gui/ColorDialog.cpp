@@ -171,7 +171,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (mmap) {
 					// check wrong PB data...
 					AlienFX_SDK::mapping *map = fxhl->afx_dev.GetMappingById(mmap->devid, mmap->lightid);
-					if (map->flags & ALIENFX_FLAG_POWER) {
+					if (map && map->flags & ALIENFX_FLAG_POWER) {
 						mmap->eve[0].map[0].type = mmap->eve[0].map[1].type = AlienFX_SDK::AlienFX_A_Power;
 						if (!mmap->eve[0].map[0].time)
 							mmap->eve[0].map[0].time = mmap->eve[0].map[1].time = 3;

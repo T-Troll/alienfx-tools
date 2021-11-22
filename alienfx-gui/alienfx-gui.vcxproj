@@ -248,9 +248,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
@@ -263,9 +261,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
@@ -301,7 +297,6 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -469,15 +464,15 @@
     <ResourceCompile />
     <Manifest />
     <Manifest>
-      <AdditionalManifestFiles>dpi.manifest</AdditionalManifestFiles>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>Default</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -486,10 +481,7 @@
       <StringPooling>true</StringPooling>
       <Optimization>MinSpace</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <DebugInformationFormat>None</DebugInformationFormat>
-      <CompileAsManaged>false</CompileAsManaged>
-      <CompileAsWinRT>false</CompileAsWinRT>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -500,8 +492,8 @@
     <ResourceCompile />
     <Manifest />
     <Manifest>
-      <AdditionalManifestFiles>dpi.manifest</AdditionalManifestFiles>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -589,13 +581,19 @@
     <ClCompile Include="..\alienfan-tools\alienfan-gui\MonHelper.cpp" />
     <ClCompile Include="alienfx-gui.cpp" />
     <ClCompile Include="AmbientDialog.cpp" />
-    <ClCompile Include="CaptureHelper.cpp" />
+    <ClCompile Include="CaptureHelper.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
+    </ClCompile>
     <ClCompile Include="ColorDialog.cpp" />
     <ClCompile Include="ConfigAmbient.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="ConfigHaptics.cpp" />
     <ClCompile Include="DevicesDialog.cpp" />
-    <ClCompile Include="DFT_gosu.cpp" />
+    <ClCompile Include="DFT_gosu.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
+    </ClCompile>
     <ClCompile Include="DXGIManager.cpp" />
     <ClCompile Include="EventDialog.cpp" />
     <ClCompile Include="EventHandler.cpp" />
@@ -605,7 +603,10 @@
     <ClCompile Include="HapticsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
-    <ClCompile Include="WSAudioIn.cpp" />
+    <ClCompile Include="WSAudioIn.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="alienfx-gui.rc" />
@@ -634,9 +635,6 @@
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj">
       <Project>{90879993-7449-4a28-972e-7228d4c4d0a8}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="dpi.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -28,11 +28,11 @@ int main(int argc, char* argv[])
 			<< "Tested light become green, and turned off after testing." << endl
 			<< "Just press Enter if no visible light at this ID to skip it." << endl;
 		cout << "Probing low-level access... ";
-		vector<pair<DWORD, DWORD>> pids;
+
 		AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 		AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-		//afx_dev->LoadMappings();
-		pids = afx_map->AlienFXEnumDevices();
+		vector<pair<WORD, WORD>> pids = afx_map->AlienFXEnumDevices();
+
 		if (pids.size() > 0) {
 			cout << "Found " << pids.size() << " device(s)" << endl;
 			cout << "Probing Dell SDK... ";
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 							cout << "Final name is " << outName << ", ";
 							// Store value...
 							AlienFX_SDK::mapping* map = new AlienFX_SDK::mapping(
-								{pids[cdev].first, pids[cdev].second, (DWORD)i, 0, string(outName)});
+								{pids[cdev].first, pids[cdev].second, (WORD)i, 0, string(outName)});
 							afx_map->GetMappings()->push_back(map);
 							afx_map->SaveMappings();
 						} else {

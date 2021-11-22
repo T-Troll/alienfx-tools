@@ -4,7 +4,7 @@
 
 namespace AlienFX_SDK {
 
-	//This is VIDs for different devices: Alienware (common), Darfon (RGB rekboards), Microship (monitors), Mouses
+	//This is VIDs for different devices: Alienware (common), Darfon (RGB rekboards), Microship (monitors), Primax (mouses)
 	const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461};
 
 	static struct COMMV1 {
@@ -92,22 +92,22 @@ namespace AlienFX_SDK {
 	} COMMV5;
 
 	static struct COMMV6 {
-		const byte colorSet[14]{0x00,0x92,0x37,0x0a,0x00,0x51,0x87,0xd0,0x04,0x0,0x0,0x0,0x0,0x64};
-		//[8] - light mask, [9,10,11] - RGB, [12] - Brightness (0..64), [13] - ???
-		//[5] - command (87 - color, 88 - Pulse?, 8d - morph?), [7] - command type - 4 - color, 1 - morph?, 2 - pulse?
-		// Pulse - [12,13,14] - rgb2 + 63 (WTF?)
-		// Morph - [12,13,14] - rgb2, [15-18] - 00,02,14,7b ???
+		const byte colorSet[13]{0x92,0x37,0x0a,0x00,0x51,0x87,0xd0,0x04,0x0,0x0,0x0,0x0,0x64};
+		//[9] - light mask, [10,11,12] - RGB, [13] - Brightness (0..64), [13] - ???
+		//[6] - command (87 - color, 88 - Pulse?, 8d - morph?), [8] - command type - 4 - color, 1 - morph?, 2 - pulse?
+		// Pulse - [13,14,15] - rgb2 + 63 (WTF?)
+		// Morph - [13,14,15] - rgb2, [16-19] - 00,02,14,7b ???
 	} COMMV6;
 
 	static struct COMMV7 {
-		const byte ack[2]{0xc0,0x02};
-		const byte colorSet[3]{0x40,0x1a,0x07};
-		//[4] - light ID, [5,6,7] - RGB
-		const byte update[6]{0x40,0x60,0x07,0x00,0xc0,0x4e};
-		//[7] = 1 - update finish, [8] = 1 - update color (after set)
+		//const byte ack[2]{0xc0,0x02};
+		//const byte colorSet[3]{0x40,0x1a,0x07};
+		//[5] - light ID, [6,7,8] - RGB
+		//const byte update[6]{0x40,0x60,0x07,0x00,0xc0,0x4e};
+		//[8] = 1 - update finish, [9] = 1 - update color (after set)
 		const byte status[5]{0x40,0x03,0x01,0x00,0x01};
 		const byte control[10]{0x40,0x10,0x0c,0x00,0x01,0x64,0x00,0x2a,0xaa,0xff};
-		//[5] - brightness
+		//[6] - brightness
 	} COMMV7;
 
 }

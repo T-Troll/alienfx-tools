@@ -137,6 +137,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_LON:
 			conf->lightsOn = state;
 			fxhl->ChangeState();
+			eve->ToggleEvents();
 			break;
 		case IDC_CHECK_GAMMA:
 			conf->gammaCorrection = state;
