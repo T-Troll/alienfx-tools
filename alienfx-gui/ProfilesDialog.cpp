@@ -71,6 +71,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_COMMAND:
 	{
 		profile* prof = conf->FindProfile(pCid);
+		if (!prof) 
+			break;
 
 		switch (LOWORD(wParam))
 		{
@@ -81,17 +83,17 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					vacID++; i = -1;
 				}
 			string buf = "Profile " + to_string(vacID);
-			if (prof) {
+			//if (prof) {
 				profile new_prof{vacID, prof->flags, prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets};
 				new_prof.flags &= 0xff - PROF_DEFAULT;
 				conf->profiles.push_back(new_prof);
 				pCid = vacID;
-			}
+			//}
 			ReloadProfileView(hDlg, pCid);
 			ReloadProfileList(NULL);
 		} break;
 		case IDC_REMOVEPROFILE: {
-			if (prof != NULL && !(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
+			if (/*prof != NULL && */!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
 				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning!",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// is this active profile? Switch needed!
@@ -99,8 +101,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						// switch to default profile..
 						eve->SwitchActiveProfile(conf->FindProfile(conf->defaultProfile));
 					}
-					// Now remove profile....
 					int nCid = conf->activeProfile;
+					// Now remove profile....
+					// Did it have fans? We need to switch to system if it have!
+
 					for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 						 Iter != conf->profiles.end(); Iter++)
 						if (Iter->id == pCid) { //prid) {
@@ -118,22 +122,23 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						   MB_OK | MB_ICONERROR);
 		} break;
 		case IDC_BUT_PROFRESET:
-			if (prof != NULL && MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning!",
+			if (/*prof != NULL && */MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning!",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				prof->lightsets.clear();
 			}
 			break;
 		case IDC_APP_RESET:
-			if (prof) {
-				int ind = ListBox_GetCurSel(app_list);
-				if (ind >= 0) {
-					ListBox_DeleteString(app_list, ind);
-					prof->triggerapp.erase(prof->triggerapp.begin() + ind);
-				}
+		{
+			//if (prof) {
+			int ind = ListBox_GetCurSel(app_list);
+			if (ind >= 0) {
+				ListBox_DeleteString(app_list, ind);
+				prof->triggerapp.erase(prof->triggerapp.begin() + ind);
 			}
-			break;
+			//}
+		} break;
 		case IDC_APP_BROWSE: {
-			if (prof != NULL) {
+			//if (prof != NULL) {
 				// fileopen dialogue...
 				OPENFILENAMEA fstruct{0};
 				char appName[4096]{0};
@@ -150,75 +155,80 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					prof->triggerapp.push_back(appName);
 					ListBox_AddString(app_list, prof->triggerapp.back().c_str());
 				}
-			}
+			//}
 		} break;
 		case IDC_COMBO_EFFMODE:
 		{
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				if (prof) {
+				//if (prof) {
 					prof->effmode = ComboBox_GetCurSel(mode_list);
 					if (prof->id == conf->activeProfile)
 						eve->ChangeEffectMode(prof->effmode);
-				}
+				//}
 			} break;
 			}
 		} break;
 		case IDC_CHECK_DEFPROFILE:
-			if (prof) {
-				bool nflags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				if (nflags) {
-					int oldDefault = conf->defaultProfile;
-					profile* old_def = conf->FindProfile(conf->defaultProfile);
-					if (old_def != NULL)
-						old_def->flags = old_def->flags & ~PROF_DEFAULT;
-					prof->flags = prof->flags | PROF_DEFAULT;
-					conf->defaultProfile = prof->id;
-					if (conf->enableProf && oldDefault == conf->activeProfile)
-						// need to switch to this
-						eve->SwitchActiveProfile(prof);
-				}
-				else
-					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
-			}
-			break;
+		{
+			//if (prof) {
+			bool nflags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			if (nflags) {
+				int oldDefault = conf->defaultProfile;
+				profile *old_def = conf->FindProfile(conf->defaultProfile);
+				if (old_def != NULL)
+					old_def->flags = old_def->flags & ~PROF_DEFAULT;
+				prof->flags = prof->flags | PROF_DEFAULT;
+				conf->defaultProfile = prof->id;
+				if (conf->enableProf && oldDefault == conf->activeProfile)
+					// need to switch to this
+					eve->SwitchActiveProfile(prof);
+			} else
+				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
+			//}
+		} break;
 		case IDC_CHECK_PRIORITY:
-			if (prof) {
+			//if (prof) {
 				prof->flags = (prof->flags & ~PROF_PRIORITY) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
 				// Update active profile, if needed
 				if (conf->enableProf) {
 					eve->SwitchActiveProfile(eve->ScanTaskList());
 				}
-			}
+			//}
 			break;
 		case IDC_CHECK_PROFDIM:
-			if (prof) {
+			//if (prof) {
 				prof->flags = (prof->flags & ~PROF_DIMMED) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 2;
 				prof->ignoreDimming = false;
 				if (prof->id == conf->activeProfile) {
 					conf->SetStates();
 					fxhl->ChangeState();
 				}
-			}
+			//}
 			break;
 		case IDC_CHECK_FOREGROUND:
-			if (prof != NULL) {
+			//if (prof != NULL) {
 				prof->flags = (prof->flags & ~PROF_ACTIVE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 3;
 				if (conf->enableProf) {
 					eve->SwitchActiveProfile(eve->ScanTaskList());
 				}
-			}
+			//}
 			break;
 		case IDC_CHECK_FANPROFILE:
 			// Store fan profile too
-			if (prof != NULL) {
+			//if (prof != NULL) {
 				prof->flags = (prof->flags & ~PROF_FANS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 4;
 				if (prof->flags & PROF_FANS) {
 					// add current fan profile...
 					prof->fansets = conf->fan_conf->prof;
+				} else {
+					// remove fansets
+					prof->fansets.fanControls.clear();
 				}
-			} 
+				if (prof->id == conf->activeProfile)
+					conf->fan_conf->lastProf = prof->flags & PROF_FANS ? &prof->fansets : &conf->fan_conf->prof;
+			//} 
 			break;
 		}
 	} break;

@@ -6,8 +6,16 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
+
+struct devInfo {
+	AlienFX_SDK::devmap dev;
+	vector<AlienFX_SDK::mapping> maps;
+	bool selected = false;
+};
+
 extern AlienFan_SDK::Control* acpi;
-int eLid = -1, /*eDid = -1, */dItem = -1, dIndex = -1;
+int eLid = -1, dItem = -1, dIndex = -1;
+vector<devInfo> csv_devs;
 
 void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	int pos = -1;
@@ -27,28 +35,24 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	ListView_DeleteColumn(light_list, 0);
 	ListView_InsertColumn(light_list, 0, &lCol);
 	for (int i = 0; i < fxhl->afx_dev.fxdevs[pid].lights.size(); i++) {
-
-		//AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
-		//if (pid == lgh->devid) { // && fxhl->LocateDev(lgh.devid)) {
-			LVITEMA lItem; 
-			lItem.mask = LVIF_TEXT | LVIF_PARAM;
-			lItem.iItem = i;
-			lItem.iImage = 0;
-			lItem.iSubItem = 0;
-			lItem.lParam = fxhl->afx_dev.fxdevs[pid].lights[i]->lightid;
-			lItem.pszText = (char*)fxhl->afx_dev.fxdevs[pid].lights[i]->name.c_str();
-			if (lid == fxhl->afx_dev.fxdevs[pid].lights[i]->lightid) {
-				lItem.mask |= LVIF_STATE;
-				lItem.state = LVIS_SELECTED;
-				pos = i;
-				SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
-				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, 
-							   fxhl->afx_dev.fxdevs[pid].lights[i]->flags & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-				CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, 
-							   fxhl->afx_dev.fxdevs[pid].lights[i]->flags & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
-			}
-			ListView_InsertItem(light_list, &lItem);
-		//}
+		LVITEMA lItem; 
+		lItem.mask = LVIF_TEXT | LVIF_PARAM;
+		lItem.iItem = i;
+		lItem.iImage = 0;
+		lItem.iSubItem = 0;
+		lItem.lParam = fxhl->afx_dev.fxdevs[pid].lights[i]->lightid;
+		lItem.pszText = (char*)fxhl->afx_dev.fxdevs[pid].lights[i]->name.c_str();
+		if (lid == fxhl->afx_dev.fxdevs[pid].lights[i]->lightid) {
+			lItem.mask |= LVIF_STATE;
+			lItem.state = LVIS_SELECTED;
+			pos = i;
+			SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
+			CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, 
+							fxhl->afx_dev.fxdevs[pid].lights[i]->flags & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, 
+							fxhl->afx_dev.fxdevs[pid].lights[i]->flags & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
+		}
+		ListView_InsertItem(light_list, &lItem);
 	}
 	ListView_SetColumnWidth(light_list, 0, LVSCW_AUTOSIZE);
 	ListView_EnsureVisible(light_list, pos, false);
@@ -116,6 +120,102 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 	eLid = -1;
 }
 
+void LoadCSV(string name) {
+	csv_devs.clear();
+	// load csv...
+	// Load mappings...
+	HANDLE file = CreateFile(
+		name.c_str(), 
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+	if (file != INVALID_HANDLE_VALUE) {
+		// read and parse...
+		size_t linePos = 0, oldLinePos = 0;
+		DWORD filesize = GetFileSize(file, NULL);
+		byte* filebuf = new byte[filesize+1];
+		ReadFile(file, (LPVOID) filebuf, filesize, NULL, NULL);
+		filebuf[filesize] = 0;
+		string content = (char *) filebuf;
+		delete[] filebuf;
+		string line;
+		devInfo tDev;
+		while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
+			vector<string> fields;
+			size_t pos = 0, posOld = 1;
+			line = content.substr(oldLinePos, linePos - oldLinePos);
+			oldLinePos = linePos + 2;
+			if (!line.empty()) {
+				while ((pos = line.find("','", posOld)) != string::npos) {
+					fields.push_back(line.substr(posOld, pos - posOld));
+					posOld = pos + 3;
+				}
+				fields.push_back(line.substr(posOld, line.size() - posOld - 1));
+				switch (atoi(fields[0].c_str())) {
+				case 0: // device line
+					tDev.dev.vid = atoi(fields[1].c_str());
+					tDev.dev.devid = atoi(fields[2].c_str());
+					tDev.dev.name = fields[3];
+					// add to devs.
+					if (fxhl->afx_dev.GetDeviceById(tDev.dev.devid, tDev.dev.vid))
+						csv_devs.push_back(tDev);
+					else
+						tDev.dev.devid = 0;
+					break;
+				case 1: // lights line
+					if (tDev.dev.devid) {
+						WORD lightid = (WORD)atoi(fields[1].c_str()),
+							flags = (WORD)atoi(fields[2].c_str());
+						// add to maps
+						csv_devs.back().maps.push_back({tDev.dev.vid, tDev.dev.devid, lightid, flags, fields[3]});
+					}
+					break;
+					//default: // wrong line, skip
+				}
+			}
+		}
+		CloseHandle(file);
+	}
+}
+
+void ApplyDeviceMaps(bool force = false) {
+	// save mappings of selected.
+	for (UINT i = 0; i < csv_devs.size(); i++) {
+		if (force || csv_devs[i].selected) {
+			AlienFX_SDK::devmap *cDev = fxhl->afx_dev.GetDeviceById(csv_devs[i].dev.devid, csv_devs[i].dev.vid);
+			int dix = 0;
+			if (cDev) {
+				cDev->name = csv_devs[i].dev.name;
+				// need to find device index in fxdevs...
+				for (dix = 0; dix < fxhl->afx_dev.fxdevs.size(); dix++)
+					if (cDev->vid == fxhl->afx_dev.fxdevs[dix].dev->GetVid() &&
+						cDev->devid == fxhl->afx_dev.fxdevs[dix].dev->GetPID())
+						break;
+			}
+			for (int j = 0; j < csv_devs[i].maps.size(); j++) {
+				AlienFX_SDK::mapping *oMap = fxhl->afx_dev.GetMappingById(csv_devs[i].maps[j].devid, csv_devs[i].maps[j].lightid);
+				if (oMap) {
+					oMap->vid = csv_devs[i].maps[j].vid;
+					oMap->name = csv_devs[i].maps[j].name;
+					oMap->flags = csv_devs[i].maps[j].flags;
+				} else {
+					AlienFX_SDK::mapping *nMap = new AlienFX_SDK::mapping(csv_devs[i].maps[j]);
+					fxhl->afx_dev.GetMappings()->push_back(nMap);
+					// update device list, if any...
+					//if (cDev)
+					//	fxhl->afx_dev.fxdevs[dix].lights.push_back(fxhl->afx_dev.GetMappings()->back());
+				}
+			}
+		}
+	}
+	fxhl->afx_dev.AlienFXAssignDevices();
+	csv_devs.clear();
+}
+
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND light_view = GetDlgItem(hDlg, IDC_LIST_LIGHTS),
@@ -143,8 +243,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		UpdateDeviceList(hDlg);
 	} break;
 	case WM_COMMAND: {
-		int dbItem = ComboBox_GetCurSel(dev_list);
-		int did = (int)ComboBox_GetItemData(dev_list, dbItem);
+		int dbItem = ComboBox_GetCurSel(dev_list),
+			did = (int)ComboBox_GetItemData(dev_list, dbItem);
+		WORD dPid = fxhl->afx_dev.fxdevs[dIndex].desc->devid;
 		switch (LOWORD(wParam))
 		{
 		case IDC_DEVICES:
@@ -183,10 +284,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					cid = -1;
 			}
 			if (cid < 0) cid = maxID + 1;
-			AlienFX_SDK::mapping *light = new AlienFX_SDK::mapping({0,(WORD)fxhl->afx_dev.fxdevs[dIndex].desc->devid,
-																   (WORD)cid,0,
-																   "Light #" + to_string(cid)});
-			fxhl->afx_dev.GetMappings()->push_back(light);
+			fxhl->afx_dev.AddMapping(MAKELONG(fxhl->afx_dev.fxdevs[dIndex].desc->devid,
+											  fxhl->afx_dev.fxdevs[dIndex].desc->vid),
+									 cid,
+									 ("Light #" + to_string(cid)).c_str(), 0);
 			fxhl->afx_dev.fxdevs[dIndex].lights.push_back(fxhl->afx_dev.GetMappings()->back());
 			fxhl->afx_dev.SaveMappings();
 			eLid = cid;
@@ -196,7 +297,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_REML:
 			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning!",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
-				WORD dPid = fxhl->afx_dev.fxdevs[dIndex].desc->devid;
+				//WORD dPid = fxhl->afx_dev.fxdevs[dIndex].desc->devid;
 				// delete from all groups...
 				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
 					AlienFX_SDK::group* grp = &fxhl->afx_dev.GetGroups()->at(i);
@@ -263,12 +364,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_ISPOWERBUTTON:
 			if (eLid != -1) {
-				int flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ;
+				unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid) & ~ALIENFX_FLAG_POWER;
+				flags &= IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? ALIENFX_FLAG_POWER : 0;
 				if (flags)
 					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning!",
 								   MB_YESNO | MB_ICONWARNING) == IDYES) {
-						flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
-						fxhl->afx_dev.SetFlags(did, eLid, flags);
+						fxhl->afx_dev.SetFlagsById(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid, flags);
 					} else
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 				else {
@@ -276,15 +377,15 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning!",
 								   MB_YESNO | MB_ICONWARNING) == IDYES)
 						fxhl->ResetPower(did);
-					flags = fxhl->afx_dev.GetFlags(did, eLid) & 0x2 | flags;
-					fxhl->afx_dev.SetFlags(did, eLid, flags);
+					fxhl->afx_dev.SetFlagsById(dPid, eLid, flags);
 				}
 			}
 			break;
 		case IDC_CHECK_INDICATOR:
 		{
-			int flags = (fxhl->afx_dev.GetFlags(did, eLid) & 0x1) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
-			fxhl->afx_dev.SetFlags(did, eLid, flags);
+			unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid) & ~ALIENFX_FLAG_INDICATOR;
+			flags &= IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? ALIENFX_FLAG_INDICATOR : 0;
+			fxhl->afx_dev.SetFlagsById(dPid, eLid, flags);
 		} break;
 		case IDC_BUTTON_DEVRESET:
 		{
@@ -317,77 +418,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fstruct.Flags = OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
 			if (GetOpenFileName(&fstruct)) {
 				// Now load mappings...
-				HANDLE file = CreateFile(
-					appName.c_str(), 
-					GENERIC_READ,
-					FILE_SHARE_READ,
-					NULL,
-					OPEN_EXISTING,
-					0,
-					NULL
-				);
-				if (file != INVALID_HANDLE_VALUE) {
-					// read and parse...
-					size_t linePos = 0, oldLinePos = 0;
-					DWORD filesize = GetFileSize(file, NULL);
-					byte* filebuf = new byte[filesize+1];
-					ReadFile(file, (LPVOID) filebuf, filesize, NULL, NULL);
-					filebuf[filesize] = 0;
-					string content = (char *) filebuf;
-					delete[] filebuf;
-					string line;
-					AlienFX_SDK::devmap tDev{(DWORD) 0, (DWORD) 0, string("")};
-					while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
-						vector<string> fields;
-						size_t pos = 0, posOld = 1;
-						line = content.substr(oldLinePos, linePos - oldLinePos);
-						oldLinePos = linePos + 2;
-						if (!line.empty()) {
-							while ((pos = line.find("','", posOld)) != string::npos) {
-								fields.push_back(line.substr(posOld, pos - posOld));
-								posOld = pos + 3;
-							}
-							fields.push_back(line.substr(posOld, line.size() - posOld - 1));
-							switch (atoi(fields[0].c_str())) {
-							case 0: // device line
-								tDev.vid = (WORD)atol(fields[1].c_str());
-								tDev.devid = (WORD)atol(fields[2].c_str());
-								tDev.name = fields[3];
-								// add to devs.
-								if (!fxhl->afx_dev.GetDeviceById(tDev.devid, tDev.vid))
-									fxhl->afx_dev.GetDevices()->push_back(tDev);
-								else {
-									fxhl->afx_dev.GetDeviceById(tDev.devid, tDev.vid)->vid = tDev.vid;
-									fxhl->afx_dev.GetDeviceById(tDev.devid, tDev.vid)->name = tDev.name;
-								}
-								break;
-							case 1: // lights line
-								if (tDev.devid) {
-									WORD lightid = (WORD)atol(fields[1].c_str()),
-										flags = (WORD)atol(fields[2].c_str());
-									// add to maps
-									AlienFX_SDK::mapping* oMap = fxhl->afx_dev.GetMappingById(tDev.devid, lightid);
-									if (oMap) {
-										oMap->vid = tDev.vid;
-										oMap->name = fields[3];
-										oMap->flags = flags;
-									} else {
-										AlienFX_SDK::mapping *tMap = new AlienFX_SDK::mapping({
-											tDev.vid, tDev.devid, lightid, flags, fields[3]
-										});
-										fxhl->afx_dev.GetMappings()->push_back(tMap);
-									}
-								}
-								break;
-								//default: // wrong line, skip
-							}
-						}
-					}
-					// reload lists...
-					CloseHandle(file);
-					UpdateDeviceList(hDlg);
-					//UpdateLightsList(hDlg, dIndex, -1);
-				}
+				LoadCSV(appName);
+				ApplyDeviceMaps(true);
+				UpdateDeviceList(hDlg);
+				//UpdateLightsList(hDlg, dIndex, -1);
 			}
 		} break;
 		case IDC_BUT_SAVEMAP:
@@ -461,7 +495,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						eLid = (int)lPoint->lParam;
 						SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid) & ALIENFX_FLAG_INACTIVE ? BST_CHECKED : BST_UNCHECKED);
+						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid) & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
 					} else {
 						SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
@@ -510,14 +544,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	return true;
 }
 
-struct devInfo {
-	AlienFX_SDK::devmap dev;
-	vector<AlienFX_SDK::mapping> maps;
-	bool selected = false;
-};
-
-vector<devInfo> csv_devs;
-
 void UpdateSavedDevices(HWND hDlg) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_LIST_SUG);
 	// Now check current device list..
@@ -527,7 +553,7 @@ void UpdateSavedDevices(HWND hDlg) {
 	ListBox_SetCurSel(dev_list, pos);
 	ListBox_SetItemData(dev_list, pos, -1);
 	for (UINT i = 0; i < csv_devs.size(); i++) {
-		if (csv_devs[i].dev.devid == fxhl->afx_dev.fxdevs[dIndex].dev->GetPID()) {
+		if (LOWORD(csv_devs[i].dev.devid) == fxhl->afx_dev.fxdevs[dIndex].dev->GetPID()) {
 				pos = ListBox_AddString(dev_list, csv_devs[i].dev.name.c_str());
 				ListBox_SetItemData(dev_list, pos, i);
 				if (csv_devs[i].selected)
@@ -542,66 +568,7 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		csv_devs.clear();
-		// load csv...
-		// Load mappings...
-		HANDLE file = CreateFile(
-			".\\Mappings\\devices.csv", 
-			GENERIC_READ,
-			FILE_SHARE_READ,
-			NULL,
-			OPEN_EXISTING,
-			0,
-			NULL
-		);
-		if (file != INVALID_HANDLE_VALUE) {
-			// read and parse...
-			size_t linePos = 0, oldLinePos = 0;
-			DWORD filesize = GetFileSize(file, NULL);
-			byte* filebuf = new byte[filesize+1];
-			ReadFile(file, (LPVOID) filebuf, filesize, NULL, NULL);
-			filebuf[filesize] = 0;
-			string content = (char *) filebuf;
-			delete[] filebuf;
-			string line;
-			devInfo tDev;
-			while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
-				vector<string> fields;
-				size_t pos = 0, posOld = 1;
-				line = content.substr(oldLinePos, linePos - oldLinePos);
-				oldLinePos = linePos + 2;
-				if (!line.empty()) {
-					while ((pos = line.find("','", posOld)) != string::npos) {
-						fields.push_back(line.substr(posOld, pos - posOld));
-						posOld = pos + 3;
-					}
-					fields.push_back(line.substr(posOld, line.size() - posOld - 1));
-					switch (atoi(fields[0].c_str())) {
-					case 0: // device line
-						tDev.dev.vid = atoi(fields[1].c_str());
-						tDev.dev.devid = atoi(fields[2].c_str());
-						tDev.dev.name = fields[3];
-						// add to devs.
-						if (fxhl->afx_dev.GetDeviceById(tDev.dev.devid, tDev.dev.vid))
-							csv_devs.push_back(tDev);
-						else
-							tDev.dev.devid = 0;
-						break;
-					case 1: // lights line
-						if (tDev.dev.devid) {
-							WORD lightid = (WORD)atoi(fields[1].c_str()),
-								flags = (WORD)atoi(fields[2].c_str());
-							// add to maps
-							csv_devs.back().maps.push_back({tDev.dev.vid, tDev.dev.devid, lightid, flags, fields[3]});
-						}
-						break;
-						//default: // wrong line, skip
-					}
-				}
-			}
-			// reload lists...
-			CloseHandle(file);
-		}
+		LoadCSV(string(".\\Mappings\\devices.csv"));
 		// init values according to device list
 		UpdateDeviceList(hDlg, true);
 		// Now init mappings...
@@ -616,33 +583,7 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDOK:
 		{
 			// save mappings of selected.
-			for (UINT i = 0; i < csv_devs.size(); i++) {
-				if (csv_devs[i].selected) {
-					AlienFX_SDK::devmap *cDev = fxhl->afx_dev.GetDeviceById(csv_devs[i].dev.devid, csv_devs[i].dev.vid);
-					int dix = 0;
-					if (cDev) {
-						cDev->name = csv_devs[i].dev.name;
-						// need to find device index in fxdevs...
-						for (dix = 0; dix < fxhl->afx_dev.fxdevs.size(); dix++)
-							if (cDev->vid == fxhl->afx_dev.fxdevs[dix].dev->GetVid() &&
-								cDev->devid == fxhl->afx_dev.fxdevs[dix].dev->GetPID())
-								break;
-					}
-					for (int j = 0; j < csv_devs[i].maps.size(); j++) {
-						AlienFX_SDK::mapping *oMap = fxhl->afx_dev.GetMappingById(csv_devs[i].maps[j].devid, csv_devs[i].maps[j].lightid);
-						if (oMap) {
-							oMap->vid = csv_devs[i].maps[j].vid;
-							oMap->name = csv_devs[i].maps[j].name;
-							oMap->flags = csv_devs[i].maps[j].flags;
-						} else {
-							fxhl->afx_dev.GetMappings()->push_back(&csv_devs[i].maps[j]);
-							// update device list, if any...
-							if (cDev)
-								fxhl->afx_dev.fxdevs[dix].lights.push_back(fxhl->afx_dev.GetMappings()->back());
-						}
-					}
-				}
-			}
+			ApplyDeviceMaps();
 			EndDialog(hDlg, IDOK);
 		} break;
 		case IDCANCEL:

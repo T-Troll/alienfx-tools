@@ -3,24 +3,8 @@
 
 ConfigHelper::ConfigHelper() {
 	
-	RegCreateKeyEx(HKEY_CURRENT_USER,
-				   TEXT("SOFTWARE\\Alienfan"),
-				   0,
-				   NULL,
-				   REG_OPTION_NON_VOLATILE,
-				   KEY_ALL_ACCESS,
-				   NULL,
-				   &hKey1,
-				   NULL);
-	RegCreateKeyEx(HKEY_CURRENT_USER,
-				   TEXT("SOFTWARE\\Alienfan\\Sensors"),
-				   0,
-				   NULL,
-				   REG_OPTION_NON_VOLATILE,
-				   KEY_ALL_ACCESS,
-				   NULL,
-				   &hKey2,
-				   NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan\\Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);
 
 	Load();
 }
@@ -72,7 +56,6 @@ void ConfigHelper::Load() {
 	GetReg("LastSensor", &lastSelectedSensor);
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("LastGPU", &prof.GPUPower);
-	//GetReg("MaxRPM", &maxRPM, 4000);
 
 	// Now load sensor mappings...
 	unsigned vindex = 0;

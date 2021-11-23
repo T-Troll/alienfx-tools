@@ -152,7 +152,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_GAUGE:
 			if (map != NULL) {
 				map->eve[2].fs.b.proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				//fxhl->RefreshMon();
+				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
@@ -164,23 +164,23 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 						SetColor(hDlg, LOWORD(wParam), map, &map->eve[LOWORD(wParam) - IDC_BUTTON_CM1 + 1].map[0]);
 				else
 					SetColor(hDlg, LOWORD(wParam), map, &map->eve[LOWORD(wParam) - IDC_BUTTON_CM4 + 1].map[1]);
-				//fxhl->RefreshMon();
+				fxhl->RefreshMon();
 			}
 		} break;
 		case IDC_COUNTERLIST:
 			if (map && HIWORD(wParam) == CBN_SELCHANGE) {
 				map->eve[2].source = countid;
-				//fxhl->RefreshMon();
+				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_STATUSLIST:
 			if (map && HIWORD(wParam) == CBN_SELCHANGE) {
 				map->eve[3].source = statusid;
-				//fxhl->RefreshMon();
+				fxhl->RefreshMon();
 			}
 			break;
 		}
-		fxhl->RefreshMon();
+		//fxhl->RefreshMon();
 	} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {

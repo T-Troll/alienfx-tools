@@ -20,25 +20,16 @@ int main()
 			//cout << hex << "Status result " << ret << endl;
 			//afx_dev.Reset();
 			//afx_dev.AlienfxGetDeviceStatus();
-			cout << "Let's try to set some colors..." << endl;
-			int res = afx_dev.SetColor(0, 255, 0, 0);
-			cout << "SetColor result: " << res << ", error " << GetLastError() << endl;
-			res = afx_dev.SetColor(1, 0, 255, 0);
-			cout << "SetColor 2 result: " << res << ", error " << GetLastError() << endl;
-			//res = afx_dev.SetColor(2, 0, 0, 255);
-			//cout << "SetColor 3 result: " << res << ", error " << GetLastError() << endl;
-			res = afx_dev.UpdateColors();
-			cout << "Ok, let's try to set lights off...\n";
-			cin.get();
-			res = afx_dev.ToggleState(0, {}, true);
-			cout << "Now set for half brightness...\n";
-			cin.get();
-			res = afx_dev.ToggleState(128, {}, true);
-			cin.get();
-			cout << "... then return back to full...\n";
-			res = afx_dev.ToggleState(255, {}, true);
-			cout << "Done!\n";
-			cin.get();
+			cout << "Let's try to set some effects..." << endl;
+			for (byte effmode = 1; effmode < 8; effmode++) {
+				cout << "Setting light 1 to mode " << (int) effmode << "...";
+				AlienFX_SDK::act_block act{1};
+				act.act.push_back({effmode,0,0,0,255,0});
+				act.act.push_back({effmode,0,0,0,0,255});
+				afx_dev.SetAction(&act);
+				cin.get();
+				cout << endl;
+			}
 			//afx_dev.AlienfxGetDeviceStatus();
 			//afx_dev.UpdateColors();
 			//afx_dev.AlienfxGetDeviceStatus();

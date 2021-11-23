@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	cerr << "alienfx-cli v5.2.7" << endl;
+	cerr << "alienfx-cli v5.3.0" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 								<< " - " << afx_map->fxdevs[i].lights[k]->name;
 							if (afx_map->fxdevs[i].lights[k]->flags & ALIENFX_FLAG_POWER)
 								cout << " (Power button)";
-							if (afx_map->fxdevs[i].lights[k]->flags & ALIENFX_FLAG_INACTIVE)
+							if (afx_map->fxdevs[i].lights[k]->flags & ALIENFX_FLAG_INDICATOR)
 								cout << " (Indicator)";
 							cout << endl;
 					}

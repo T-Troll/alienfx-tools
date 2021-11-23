@@ -37,7 +37,7 @@ namespace AlienFX_SDK {
 
 	// Mapping flags:
     #define ALIENFX_FLAG_POWER 1
-    #define ALIENFX_FLAG_INACTIVE 2
+    #define ALIENFX_FLAG_INDICATOR 2
 
 	// Maximal buffer size across all device types
     #define MAX_BUFFERSIZE 65
@@ -241,22 +241,22 @@ namespace AlienFX_SDK {
 		devmap* GetDeviceById(WORD devID, WORD vid = 0);
 
 		// find mapping by dev/light it...
-		mapping* GetMappingById(WORD devID, WORD LightID);
+		mapping* GetMappingById(DWORD devID, WORD LightID);
 
 		// find mapping by dev/light it...
 		group* GetGroupById(DWORD gid);
 
 		// add new light name into the list field-by-field
-		void AddMapping(WORD devID, WORD lightID, char* name, WORD flags);
+		void AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags);
 
 		// Add new group into the list field-by-field
 		//void AddGroup(DWORD gID, char* name, int lightNum, DWORD* lightlist);
 
 		// get saved light names
-		int GetFlags(WORD devid, WORD lightid);
+		int GetFlags(DWORD devid, WORD lightid);
 
 		// get saved light names
-		void SetFlags(WORD devid, WORD lightid, WORD flags);
+		void SetFlagsById(DWORD devid, WORD lightid, WORD flags);
 	};
 
 }

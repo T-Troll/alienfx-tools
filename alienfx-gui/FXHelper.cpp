@@ -256,14 +256,13 @@ void FXHelper::ChangeState() {
 
 	for (int i = 0; i < afx_dev.fxdevs.size(); i++) {
 		afx_dev.fxdevs[i].dev->ToggleState(config->finalBrightness, afx_dev.GetMappings(), config->finalPBState);
-		switch (afx_dev.fxdevs[i].dev->GetVersion()) {
-		case 0: case 1: case 2: case 3: case 6:
-			if (config->stateOn) {
-				UnblockUpdates(true);
-				RefreshState();
-				UnblockUpdates(false);
+		if (config->stateOn)
+			switch (afx_dev.fxdevs[i].dev->GetVersion()) {
+			case API_L_ACPI: case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V6: case API_L_V7:
+					UnblockUpdates(true);
+					RefreshState();
+					UnblockUpdates(false);
 			}
-		}
 	}
 	UnblockUpdates(true);
 }

@@ -587,7 +587,7 @@ void ReloadProfileList(HWND hDlg) {
 	EnableWindow(mode_list, conf->enableMon);
 
 	switch (tabSel) {
-	case TAB_COLOR: case TAB_EVENTS: case TAB_SETTINGS:
+	case TAB_COLOR: case TAB_EVENTS: case TAB_SETTINGS: case TAB_FANS:
 		OnSelChanged(tab_list);
 	}
 }
@@ -726,15 +726,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 		} break;
 		case IDC_PROFILES: {
-			int pbItem = (int)ComboBox_GetCurSel(profile_list);
-			int prid = (int)ComboBox_GetItemData(profile_list, pbItem);
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
+				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
-				ComboBox_SetCurSel(mode_list, conf->GetEffect());
-				if (tabSel == TAB_COLOR || tabSel == TAB_EVENTS)
-					OnSelChanged(tab_list);
+				ReloadProfileList(hDlg);
 			} break;
 			}
 		} break;
@@ -889,7 +886,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			//ReloadModeList(mode_list, conf->GetEffect());
-			//ReloadProfileList(hDlg);
+			ReloadProfileList(hDlg);
 			//OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
@@ -950,15 +947,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		break;
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVICEARRIVAL || wParam == DBT_DEVICEREMOVECOMPLETE) {
-			// Device added or removed, need to rescan devices...
-			bool wasNotLocked = false;
-			if (!fxhl->updateLock) {
-				fxhl->UnblockUpdates(false, true);
-				wasNotLocked = true;
+			vector<pair<WORD, WORD>> devs = fxhl->afx_dev.AlienFXEnumDevices();
+			if (devs.size() != fxhl->afx_dev.fxdevs.size()) {
+				// Device added or removed, need to rescan devices...
+				bool wasNotLocked = !fxhl->updateLock;
+				if (wasNotLocked) {
+					fxhl->UnblockUpdates(false, true);
+				}
+				fxhl->FillAllDevs(acpi);
+				if (wasNotLocked)
+					fxhl->UnblockUpdates(true, true);
 			}
-			fxhl->FillAllDevs(acpi);
-			if (wasNotLocked)
-				fxhl->UnblockUpdates(true, true);
 		}
 		break;
 	case WM_QUERYENDSESSION:
@@ -1178,7 +1177,7 @@ lightset* CreateMapping(int lid) {
 	} else {
 		// light
 		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-		newmap = {lgh->devid, lgh->lightid};
+		newmap = {lgh->devid, 0/*lgh->vid*/, lgh->lightid};
 		if (lgh->flags & ALIENFX_FLAG_POWER) {
 			act.type = AlienFX_SDK::AlienFX_A_Power;
 			act.time = 3;

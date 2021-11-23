@@ -66,7 +66,7 @@ void EventHandler::ChangePowerState()
 	if (!sameState) {
 		DebugPrint("Power state changed\n");
 		fxh->ChangeState();
-		fxh->RefreshState();
+		fxh->Refresh();
 	}
 }
 
