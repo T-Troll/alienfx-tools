@@ -348,7 +348,7 @@ int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
 	return lights > 0 ? pos : -1;
 }
 
-void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
+void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act* act) {
 	RECT rect;
 	HBRUSH Brush = NULL;
 	HWND tl = GetDlgItem(hDlg, id);
@@ -358,7 +358,7 @@ void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b) {
 	rect.right -= rect.left;
 	rect.top = rect.left = 0;
 	// BGR!
-	Brush = CreateSolidBrush(RGB(r, g, b));
+	Brush = CreateSolidBrush(RGB(act->r, act->g, act->b));
 	FillRect(cnt, &rect, Brush);
 	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
@@ -567,12 +567,10 @@ void SwitchTab(int num) {
 	OnSelChanged(tab_list);
 }
 
-void ReloadProfileList(HWND hDlg) {
-	if (hDlg == NULL)
-		hDlg = mDlg;
-	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN), 
-		profile_list = GetDlgItem(hDlg, IDC_PROFILES),
-		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE);
+void ReloadProfileList() {
+	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN), 
+		profile_list = GetDlgItem(mDlg, IDC_PROFILES),
+		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 	ComboBox_ResetContent(profile_list);
 	for (int i = 0; i < conf->profiles.size(); i++) {
 		int pos = ComboBox_AddString(profile_list, conf->profiles[i].name.c_str());
@@ -592,19 +590,10 @@ void ReloadProfileList(HWND hDlg) {
 	}
 }
 
-void ReloadModeList(HWND mode_list, int mode) {
+void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 	if (mode_list == NULL)
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 	ListBox_ResetContent(mode_list);
-	//char buffer[32];
-	//LoadString(hInst, IDS_EFF_MON, buffer, 32);
-	//ComboBox_AddString(mode_list, buffer);
-	//LoadString(hInst, IDS_EFF_AMB, buffer, 32);
-	//ComboBox_AddString(mode_list, buffer);
-	//LoadString(hInst, IDS_EFF_HAP, buffer, 32);
-	//ComboBox_AddString(mode_list, buffer);
-	//LoadString(hInst, IDS_EFF_OFF, buffer, 32);
-	//ComboBox_AddString(mode_list, buffer);
 	ComboBox_AddString(mode_list, "Monitoring");
 	ComboBox_AddString(mode_list, "Ambient");
 	ComboBox_AddString(mode_list, "Haptics");
@@ -613,8 +602,8 @@ void ReloadModeList(HWND mode_list, int mode) {
 	EnableWindow(mode_list, conf->enableMon);
 }
 
-void UpdateState(HWND hDlg) {
-	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN);
+void UpdateState() {
+	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN);
 	fxhl->ChangeState();
 	if (tabSel == TAB_SETTINGS)
 		OnSelChanged(tab_list);
@@ -662,9 +651,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		pHdr->rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
 		pHdr->rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
 
-		ReloadModeList(mode_list, conf->GetEffect());
+		ReloadModeList();
 
-		ReloadProfileList(hDlg);
+		ReloadProfileList();
 
 		OnSelChanged(tab_list);
 
@@ -702,7 +691,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case IDC_BUTTON_REFRESH:
 			fxhl->RefreshState(true);
-			ReloadProfileList(hDlg);
+			ReloadProfileList();
 			break;
 		case IDC_BUTTON_SAVE:
 			fxhl->afx_dev.SaveMappings();
@@ -720,8 +709,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				conf->FindProfile(conf->activeProfile)->effmode = ComboBox_GetCurSel(mode_list);
-				eve->ChangeEffectMode(ComboBox_GetCurSel(mode_list));
+				int effmode = conf->FindProfile(conf->activeProfile)->effmode = ComboBox_GetCurSel(mode_list);
+				eve->ChangeEffectMode(effmode);
 			} break;
 			}
 		} break;
@@ -731,19 +720,19 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case CBN_SELCHANGE: {
 				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
-				ReloadProfileList(hDlg);
+				ReloadProfileList();
 			} break;
 			}
 		} break;
 		} break;
 	} break;
 	case WM_NOTIFY: {
-		NMHDR* event = (NMHDR*)lParam;
-		switch (event->idFrom) {
+		//NMHDR* event = (NMHDR*)lParam;
+		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
-			if (event->code == TCN_SELCHANGE) {
-				int newTab = TabCtrl_GetCurSel(tab_list);
-				if (newTab != tabSel) { // selection changed!
+			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
+				//int newTab = TabCtrl_GetCurSel(tab_list);
+				if (TabCtrl_GetCurSel(tab_list) != tabSel) { // selection changed!
 					OnSelChanged(tab_list);
 				}
 			}
@@ -767,7 +756,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ShowWindow(hDlg, SW_RESTORE);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			ReloadProfileList(hDlg);
+			ReloadProfileList();
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
@@ -851,22 +840,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		    break;
 		case ID_TRAYMENU_REFRESH:
 			fxhl->RefreshState(true);
-			ReloadProfileList(hDlg);
+			ReloadProfileList();
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
 			eve->ToggleEvents();
-			UpdateState(hDlg);
+			UpdateState();
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 		    conf->SetDimmed();
-			UpdateState(hDlg);
+			UpdateState();
 			break;
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
 			eve->ToggleEvents();
 			EnableWindow(mode_list, conf->enableMon);
-			ReloadModeList(mode_list, conf->GetEffect());
+			ComboBox_SetCurSel(mode_list, conf->GetEffect());
+			//ReloadModeList(mode_list, conf->GetEffect());
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			conf->FindProfile(conf->activeProfile)->effmode = idx;
@@ -877,25 +867,19 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
 			eve->StartProfiles();
-			ReloadProfileList(hDlg);
-			//if (tabSel == TAB_SETTINGS)
-			//	OnSelChanged(tab_list);
+			ReloadProfileList();
 			break;
 		case ID_TRAYMENU_RESTORE:
 			ShowWindow(hDlg, SW_RESTORE);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			//ReloadModeList(mode_list, conf->GetEffect());
-			ReloadProfileList(hDlg);
-			//OnSelChanged(tab_list);
+			ReloadProfileList();
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
 			if (conf->profiles[idx].id != conf->activeProfile) {
 				eve->SwitchActiveProfile(&conf->profiles[idx]);
 				ComboBox_SetCurSel(mode_list, conf->GetEffect());
-				ReloadProfileList(hDlg);
-				//if (tabSel == TAB_COLOR || tabSel == TAB_EVENTS)
-				//	OnSelChanged(tab_list);
+				ReloadProfileList();
 			}
 		} break;
 		}
@@ -982,17 +966,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (wParam) {
 		case 1: // on/off
 			conf->lightsOn = !conf->lightsOn;
-			UpdateState(hDlg);
-			//fxhl->ChangeState();
-			//if (tabSel == TAB_SETTINGS)
-			//	OnSelChanged(tab_list);
+			UpdateState();
 			break;
 		case 2: // dim
 		    conf->SetDimmed();
-			UpdateState(hDlg);
-			//fxhl->ChangeState();
-			//if (tabSel == TAB_SETTINGS)
-			//	OnSelChanged(tab_list);
+			UpdateState();
 			break;
 		case 3: // off-dim-full circle
 			if (conf->lightsOn) {
@@ -1001,10 +979,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				conf->SetDimmed();
 			} else
 				conf->lightsOn = true;
-			UpdateState(hDlg);
-			//fxhl->ChangeState();
-			//if (tabSel == TAB_SETTINGS)
-			//	OnSelChanged(tab_list);
+			UpdateState();
 			break;
 		case 4: // effects
 			conf->enableMon = !conf->enableMon;
@@ -1014,16 +989,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // profile switch
 			if (wParam - 10 < conf->profiles.size()) {
 				eve->SwitchActiveProfile(&conf->profiles[wParam - 10]);
-				ReloadProfileList(hDlg);
+				ReloadProfileList();
 			}
 			break;
 		case 5: // profile autoswitch
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
 			eve->StartProfiles();
-			ReloadProfileList(hDlg);
-			//if (tabSel == TAB_SETTINGS)
-			//	OnSelChanged(tab_list);
+			ReloadProfileList();
 			break;
 		default: return false;
 		}
@@ -1043,19 +1016,14 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 DWORD CColorRefreshProc(LPVOID param) {
-	AlienFX_SDK::afx_act last;
+	AlienFX_SDK::afx_act last = *mod;
 	lightset* mmap = (lightset*)param;
-	last.r = mod->r;
-	last.g = mod->g;
-	last.b = mod->b;
 	while (WaitForSingleObject(stopColorRefresh, 250)) {
 		if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
 			// set colors...
-			last.r = mod->r;
-			last.g = mod->g;
-			last.b = mod->b;
-			if (mmap != NULL) {
-				fxhl->RefreshOne(mmap, true, true);
+			last = *mod;
+			if (mmap) {
+				fxhl->RefreshOne(mmap, 0, true);
 			}
 		}
 	}
@@ -1064,7 +1032,7 @@ DWORD CColorRefreshProc(LPVOID param) {
 
 UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	DRAWITEMSTRUCT* item = 0;
-	UINT r = 0, g = 0, b = 0;
+	//UINT r = 0, g = 0, b = 0;
 
 	switch (message)
 	{
@@ -1072,14 +1040,14 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		mod = (AlienFX_SDK::afx_act*)((CHOOSECOLOR*)lParam)->lCustData;
 		break;
 	case WM_CTLCOLOREDIT:
-		r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
-		g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
-		b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
-		if (r != mod->r || g != mod->g || b != mod->b) {
-			mod->r = r;
-			mod->g = g;
-			mod->b = b;
-		}
+		mod->r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
+		mod->g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
+		mod->b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
+		//if (r != mod->r || g != mod->g || b != mod->b) {
+		//	mod->r = r;
+		//	mod->g = g;
+		//	mod->b = b;
+		//}
 		break;
 	}
 	return 0;
@@ -1115,31 +1083,30 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 
 	if (!ret)
 	{
-		map->r = savedColor.r;
-		map->g = savedColor.g;
-		map->b = savedColor.b;
+		(*map) = savedColor;
 		fxhl->RefreshOne(mmap, true, true);
 	}
-	RedrawButton(hDlg, id, map->r, map->g, map->b);
+	RedrawButton(hDlg, id, map);
 	return ret;
 }
 
-bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b) {
+bool SetColor(HWND hDlg, int id, Colorcode *clr) {
 	CHOOSECOLOR cc{0};
 	bool ret;
 	// Initialize CHOOSECOLOR 
 	cc.lStructSize = sizeof(cc);
 	cc.hwndOwner = hDlg;
 	cc.lpCustColors = (LPDWORD) conf->customColors;
-	cc.rgbResult = RGB(*r, *g, *b);
+	cc.rgbResult = RGB(clr->r, clr->g, clr->b);
 	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
 
 	if (ret = ChooseColor(&cc)) {
-		*r = cc.rgbResult & 0xff;
-		*g = cc.rgbResult >> 8 & 0xff;
-		*b = cc.rgbResult >> 16 & 0xff;
+		clr->r = cc.rgbResult & 0xff;
+		clr->g = cc.rgbResult >> 8 & 0xff;
+		clr->b = cc.rgbResult >> 16 & 0xff;
 	}
-	RedrawButton(hDlg, id, *r, *g, *b);
+	AlienFX_SDK::afx_act act{0,0,0,clr->r,clr->g,clr->g};
+	RedrawButton(hDlg, id, &act);
 	return ret;
 }
 

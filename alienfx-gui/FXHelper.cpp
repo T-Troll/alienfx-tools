@@ -41,9 +41,9 @@ void FXHelper::SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, 
 						// recalc...
 						AlienFX_SDK::afx_act fin;
 						double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
-						fin.r = (unsigned char) ((1.0 - newPower) * from->r + newPower * to_c->r);
-						fin.g = (unsigned char) ((1.0 - newPower) * from->g + newPower * to_c->g);
-						fin.b = (unsigned char) ((1.0 - newPower) * from->b + newPower * to_c->b);
+						fin.r = (byte) ((1.0 - newPower) * from->r + newPower * to_c->r);
+						fin.g = (byte) ((1.0 - newPower) * from->g + newPower * to_c->g);
+						fin.b = (byte) ((1.0 - newPower) * from->b + newPower * to_c->b);
 						actions[0] = fin;
 					}
 				} else
@@ -97,10 +97,10 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		DebugPrint("Forced Counter update initiated...\n");
 	}
 
-	if (config->autoRefresh) {
-		Refresh();
-		force = true;
-	}
+	//if (config->autoRefresh) {
+	//	Refresh();
+	//	force = true;
+	//}
 
 	std::vector <lightset>::iterator Iter;
 	blinkStage = !blinkStage;
@@ -323,6 +323,11 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	config->SetStates();
 	afx_dev.AlienFXAssignDevices(acc ? acc->GetHandle() : NULL, config->finalBrightness, config->finalPBState);
+	// global effects check
+	for (int i=0; i < afx_dev.fxdevs.size(); i++)
+		if (afx_dev.fxdevs[i].dev->GetVersion() == 5) {
+			config->haveV5 = true; break;
+		}
 	return afx_dev.fxdevs.size();
 }
 
