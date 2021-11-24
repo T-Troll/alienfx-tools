@@ -37,7 +37,7 @@ How it works
 
 `"Colour"` tab is set hardware colours and effects for light. This setting will remain even if you exit application.  
 
-Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph ñ 2, Spectrum ñ 7) to work correctly.  
+Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph ‚Äì 2, Spectrum ‚Äì 7) to work correctly.  
 Use "Effects" list to add/remove/select effect. For each effect, you can define its colour, effect mode, speed (how fast to change the colour), and length (how long it plays).  
 Available effect modes are:
 - Colour - Stay at solid colour defined.
@@ -48,7 +48,7 @@ Available effect modes are:
 - Rainbow - Like a Colour, but can use up to 9 colours. (For devices with APIv4)
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.  
-ìSet Allî button copies current light effects to all lights into the list (itís useful if you need to have all lights into the same colour and mode).  
+‚ÄúSet All‚Äù button copies current light effects to all lights into the list (it‚Äôs useful if you need to have all lights into the same colour and mode).  
 
 ![Monitoring tab](/Doc/img/gui-monitoring.png?raw=true)
 
@@ -88,20 +88,20 @@ You can mix different monitoring type at once, f.e. different colours for same l
 
 ![Ambient tab](/Doc/img/gui-ambient.png?raw=true)
 
-This effect mode get shot of screen (primary or secondary), then divide it to several zones.  
+`Ambient` tab defines ambient light effect mode. It get shot of screen (primary or secondary), then divide it to several zones.  
 For each zone, dominant color calculated (you can see it at the button in app interface).  
 For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.  
 You can also select which screen to grab - primary or secondary, if you have more, then one.  
 "Dimming" slider decreases the overall lights brightness - use it for better fit you current monitor brightness.  
-îReset captureî button is used to refresh light list according to devices found into the systems, as well as restart screen capture process.
+‚ÄùReset capture‚Äù button is used to refresh light list according to devices found into the systems, as well as restart screen capture process.
 
 ![Haptics tab](/Doc/img/gui-haptics.png?raw=true)
 
-This effect mode get audio stream from default output or input device (you can select it at the "Audio Source" block), then made a real-time spectrum analysis.  
+`Haptics` tab set up parameters for Haptics effect mode. This effect mode get audio stream from default output or input device (you can select it at the "Audio Source" block), then made a real-time spectrum analysis.  
 After that, spectrum powers grouped into 20 groups using octave scale.  
-For each light found into the system, you can define group(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
+For each light found into the system, you can define frequencies diapason(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
 It's also possible to compress diapason if group always not so or so high powered - use low-level and high-level sliders. Low-level slider define minimum power to react (all below will be treated as zero), and Hi-level slider defines maximum level (all above will be treated as maximum).  
-"Clearî button set all colors to black and sliders to default value.
+"Clear‚Äù button set all colors to black and sliders to default value.
 "Gauge" checkbox - change behavour for groups only. If Gauge on, all lights in group works as a peak indicator (hi-color below power level, low-color above power level, mixed in between).  
 "Axis" checkbox enable axis lines and marks at sound visualisation window.
 
@@ -138,8 +138,8 @@ If application "Profile auto switch" setting is on, active profile will be selec
 
 "Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
 "Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.  
-"Lights" list shows all lights defined for selected device. Use ìAddî/îRemoveî buttons to add new light or remove selected one.  
-NB: If you want to add new light, type light ID into LightID box **before** pressing ìAddî button. If this ID already present in list or absent, it will be changed to the first unused ID.  
+"Lights" list shows all lights defined for selected device. Use ‚ÄúAdd‚Äù/‚ÄùRemove‚Äù buttons to add new light or remove selected one.  
+NB: If you want to add new light, type light ID into LightID box **before** pressing ‚ÄúAdd‚Äù button. If this ID already present in list or absent, it will be changed to the first unused ID.  
 Double-click or press Enter on selected light to edit its name.  
 "Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.  
 "Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
@@ -216,4 +216,4 @@ Other shortcuts (only then application active):
 - ALT+? - about app
 - ALT+x - quit
 
-**WARNING:** All hardware colour effects stop working if you enable any software effect. Itís a hardware bug ñ any light update operation restarts all effects.  
+**WARNING:** All hardware colour effects stop working if you enable any software effect. It‚Äôs a hardware bug ‚Äì any light update operation restarts all effects.  
