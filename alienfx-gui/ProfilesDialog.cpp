@@ -4,13 +4,13 @@
 
 
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-void ReloadProfileList(HWND hDlg);
-void ReloadModeList(HWND mode_list, int mode);
+void ReloadProfileList();
+void ReloadModeList(HWND, int);
 
 extern EventHandler* eve;
 int pCid = -1;
 
-void ReloadAppSettings(HWND hDlg, profile *prof) {
+void ReloadProfSettings(HWND hDlg, profile *prof) {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
 	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
@@ -45,7 +45,7 @@ void ReloadProfileView(HWND hDlg, int cID) {
 		if (conf->profiles[i].id == cID) {
 			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
-			ReloadAppSettings(hDlg, &conf->profiles[i]);
+			ReloadProfSettings(hDlg, &conf->profiles[i]);
 			rpos = i;
 		}
 		ListView_InsertItem(profile_list, &lItem);
@@ -90,7 +90,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				pCid = vacID;
 			//}
 			ReloadProfileView(hDlg, pCid);
-			ReloadProfileList(NULL);
+			ReloadProfileList();
 		} break;
 		case IDC_REMOVEPROFILE: {
 			if (/*prof != NULL && */!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
@@ -114,7 +114,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 							nCid = Iter->id;
 					pCid = nCid;
 					ReloadProfileView(hDlg, nCid);
-					ReloadProfileList(NULL);
+					ReloadProfileList();
 				}
 			}
 			else
@@ -250,7 +250,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						pCid = (int) lPoint->lParam;
 						profile* prof = conf->FindProfile(pCid);
 						if (prof) {
-							ReloadAppSettings(hDlg, prof);
+							ReloadProfSettings(hDlg, prof);
 						}
 					} else {
 						pCid = -1;
@@ -272,7 +272,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					prof->name = sItem->item.pszText;
 					ListView_SetItem(p_list, &sItem->item);
 					ListView_SetColumnWidth(p_list, 0, LVSCW_AUTOSIZE);
-					ReloadProfileList(NULL);
+					ReloadProfileList();
 					return true;
 				} else 
 					return false;

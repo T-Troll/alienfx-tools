@@ -2,11 +2,11 @@
 #include "EventHandler.h"
 
 void SwitchTab(int);
-void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act*);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
 int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
-bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
+bool SetColor(HWND hDlg, int id, Colorcode*);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -140,8 +140,10 @@ void SetMappingData(HWND hDlg, haptics_map* map) {
 		map->hicut = 255;
 		needClean = true;
 	}
-	RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom.r, map->colorfrom.g, map->colorfrom.b);
-	RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto.r, map->colorto.g, map->colorto.b);
+	AlienFX_SDK::afx_act act{0,0,0,map->colorfrom.r, map->colorfrom.g, map->colorfrom.b};
+	RedrawButton(hDlg, IDC_BUTTON_LPC, &act);
+	act = {0,0,0,map->colorto.r, map->colorto.g, map->colorto.b};
+	RedrawButton(hDlg, IDC_BUTTON_HPC, &act);
 	// load cuts...
 	SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 	SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
@@ -288,7 +290,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case BN_CLICKED:
 		{
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_LPC, &map->colorfrom.r, &map->colorfrom.g, &map->colorfrom.b);
+				SetColor(hDlg, IDC_BUTTON_LPC, &map->colorfrom);
 			}
 		} break;
 		} break;
@@ -297,7 +299,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case BN_CLICKED:
 		{
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_HPC, &map->colorto.r, &map->colorto.g, &map->colorto.b);
+				SetColor(hDlg, IDC_BUTTON_HPC, &map->colorto);
 			}
 		} break;
 		} break;
@@ -348,13 +350,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
 		{
+			AlienFX_SDK::afx_act act{0};
 			if (map)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
-					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorfrom.r, map->colorfrom.g, map->colorfrom.b);
+					act = {0,0,0,map->colorfrom.r, map->colorfrom.g, map->colorfrom.b};
 				else
-					RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, map->colorto.r, map->colorto.g, map->colorto.b);
-			else
-				RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, 0, 0, 0);
+					act = {0,0,0,map->colorto.r, map->colorto.g, map->colorto.b};
+			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, &act);
 			return 0;
 		}
 		case IDC_LEVELS:

@@ -1,8 +1,9 @@
 #include "alienfx-gui.h"
+#include "alienfx-controls.h"
 
-bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
+bool SetColor(HWND hDlg, int id, Colorcode*);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act*);
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -85,10 +86,23 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 	for (UINT i = 0; i < fxhl->afx_dev.fxdevs.size(); i++) {
 		if (!fxhl->afx_dev.fxdevs[i].desc) {
 			// no name
+			unsigned devtype = 0;
+			string typeName = "Unknown";
+			// ok, let's check device type...
+			for (unsigned j = 0; j < NUM_VIDS; j++) {
+				if (AlienFX_SDK::vids[j] == fxhl->afx_dev.fxdevs[i].dev->GetVid()) {
+					devtype = j; break;
+				}
+			}
+			switch (devtype) {
+			case 0: typeName = "Notebook"; break;
+			case 1: typeName = "Keyboard"; break;
+			case 2: typeName = "Monitor"; break;
+			case 3: typeName = "Mouse"; break;
+			}
 			AlienFX_SDK::devmap newDev{(WORD)fxhl->afx_dev.fxdevs[i].dev->GetVid(),
 				(WORD)fxhl->afx_dev.fxdevs[i].dev->GetPID(),
-				"Device #" + to_string(fxhl->afx_dev.fxdevs[i].dev->GetVid())
-				+ "_" + to_string(fxhl->afx_dev.fxdevs[i].dev->GetPID())
+				typeName + ", #" + to_string(fxhl->afx_dev.fxdevs[i].dev->GetPID())
 			};
 			fxhl->afx_dev.GetDevices()->push_back(newDev);
 			fxhl->afx_dev.fxdevs[i].desc = &fxhl->afx_dev.GetDevices()->back();
@@ -229,18 +243,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		fxhl->UnblockUpdates(false, true);
 		// Do we have some lights?
 		if (!fxhl->afx_dev.GetMappings()->size() &&
-			MessageBox(
-				NULL,
-				"There is no light names defined. Do you want to detect it?",
-				"Warning",
-				MB_ICONQUESTION | MB_YESNO
-			) == IDYES) {
-			DialogBox(hInst,
-					  MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT),
-					  hDlg,
-					  (DLGPROC) DetectionDialog);
+			MessageBox( hDlg, "There is no light names defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO )
+			== IDYES) {
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC) DetectionDialog);
 		}
-		UpdateDeviceList(hDlg);
+		if (fxhl->afx_dev.fxdevs.size() > 0) {
+			if (dIndex < 0) dIndex = 0;
+			UpdateDeviceList(hDlg);
+		}
 	} break;
 	case WM_COMMAND: {
 		int dbItem = ComboBox_GetCurSel(dev_list),
@@ -356,7 +366,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
-			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor.r, &conf->testColor.g, &conf->testColor.b);
+			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
 			if (eLid != -1) {
 				fxhl->TestLight(dIndex, eLid);
 				//SetFocus(light_view);
@@ -528,8 +538,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_TESTCOLOR:
-			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor.r, conf->testColor.g, conf->testColor.b);
-			break;
+		{
+			AlienFX_SDK::afx_act act{0,0,0,conf->testColor.r, conf->testColor.g, conf->testColor.b};
+			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, &act);
+		} break;
 		}
 		break;
 	case WM_DESTROY:

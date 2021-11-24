@@ -5,7 +5,7 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 lightset* CreateMapping(int lid);
 lightset* FindMapping(int mid);
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act*);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
 int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
@@ -96,7 +96,7 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 			}	
 			// Set data
 			ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
-			RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
+			RedrawButton(hDlg, IDC_BUTTON_C1, &mmap->eve[0].map[effID]);
 			SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
 			SetSlider(sTip, mmap->eve[0].map[effID].tempo);
 			SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
@@ -104,10 +104,11 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		}
 	}
 	else {
+		AlienFX_SDK::afx_act act{0};
 		EnableWindow(type_c1, false);
 		EnableWindow(s1_slider, false);
 		EnableWindow(l1_slider, false);
-		RedrawButton(hDlg, IDC_BUTTON_C1, 0, 0, 0);
+		RedrawButton(hDlg, IDC_BUTTON_C1, &act);
 	}
 	ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
@@ -290,7 +291,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (mmap && effID < mmap->eve[0].map.size()) {
 				c = mmap->eve[0].map[effID];
 			}
-			RedrawButton(hDlg, IDC_BUTTON_C1, c.r, c.g, c.b);
+			RedrawButton(hDlg, IDC_BUTTON_C1, &c);
 			break;
 		}
 		break;
@@ -306,10 +307,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					if (lPoint->iItem != -1) {
 						// Select other color....
 						effID = lPoint->iItem;
-						if (mmap != NULL) {
+						if (mmap) {
 							// Set data
 							ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
-							RedrawButton(hDlg, IDC_BUTTON_C1, mmap->eve[0].map[effID].r, mmap->eve[0].map[effID].g, mmap->eve[0].map[effID].b);
+							RedrawButton(hDlg, IDC_BUTTON_C1, &mmap->eve[0].map[effID]);
 							SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
 							SetSlider(sTip, mmap->eve[0].map[effID].tempo);
 							SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);

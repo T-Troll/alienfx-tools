@@ -1,11 +1,11 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-bool SetColor(HWND hDlg, int id, BYTE *r, BYTE *g, BYTE *b);
-void ReloadProfileList(HWND hDlg);
+bool SetColor(HWND hDlg, int id, Colorcode*);
+void ReloadProfileList();
 DWORD EvaluteToAdmin();
 bool DoStopService(bool kind);
-void RedrawButton(HWND hDlg, unsigned id, BYTE r, BYTE g, BYTE b);
+void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act*);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 void SetSlider(HWND tt, int value);
 
@@ -24,7 +24,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		// system settings...
 		CheckDlgButton(hDlg, IDC_STARTW, conf->startWindows);
 		CheckDlgButton(hDlg, IDC_STARTM, conf->startMinimized);
-		CheckDlgButton(hDlg, IDC_AUTOREFRESH, conf->autoRefresh);
+		//CheckDlgButton(hDlg, IDC_AUTOREFRESH, conf->autoRefresh);
 		CheckDlgButton(hDlg, IDC_BATTDIM, conf->dimmedBatt);
 		CheckDlgButton(hDlg, IDC_SCREENOFF, conf->offWithScreen);
 		CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, conf->enableMon);
@@ -92,20 +92,20 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_BUTTON_EFFCLR1:
 		{
-			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &conf->effColor1.r, &conf->effColor1.g, &conf->effColor1.b);
+			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &conf->effColor1);
 			fxhl->UpdateGlobalEffect();
 		} break;
 		case IDC_BUTTON_EFFCLR2:
 		{
-			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &conf->effColor2.r, &conf->effColor2.g, &conf->effColor2.b);
+			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &conf->effColor2);
 			fxhl->UpdateGlobalEffect();
 		} break;
 		case IDC_STARTM:
 			conf->startMinimized = state;
 			break;
-		case IDC_AUTOREFRESH:
-			conf->autoRefresh = state;
-			break;
+		//case IDC_AUTOREFRESH:
+		//	conf->autoRefresh = state;
+		//	break;
 		case IDC_STARTW:
 		{
 			conf->startWindows = state;
@@ -131,7 +131,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_BUT_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = state;
-			ReloadProfileList(NULL);
+			ReloadProfileList();
 			eve->StartProfiles();
 			break;
 		case IDC_CHECK_LON:
@@ -209,7 +209,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if ((HWND)lParam == dim_slider) {
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip, conf->dimmingPower);
-				fxhl->ChangeState();
+				if (conf->IsDimmed())
+					fxhl->ChangeState();
 			}
 			if ((HWND)lParam == eff_tempo) {
 				conf->globalDelay = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
@@ -221,11 +222,17 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*) lParam)->CtlID) {
 		case IDC_BUTTON_EFFCLR1:
-			RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, conf->effColor1.r, conf->effColor1.g, conf->effColor1.b);
+		{
+			AlienFX_SDK::afx_act act{0,0,0,conf->effColor1.r, conf->effColor1.g, conf->effColor1.b};
+			RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &act);
 			break;
+		}
 		case IDC_BUTTON_EFFCLR2:
-			RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, conf->effColor2.r, conf->effColor2.g, conf->effColor2.b);
+		{
+			AlienFX_SDK::afx_act act{0,0,0,conf->effColor2.r, conf->effColor2.g, conf->effColor2.b};
+			RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &act);
 			break;
+		}
 		}
 		break;
 	default: return false;

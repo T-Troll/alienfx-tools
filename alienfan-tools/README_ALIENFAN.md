@@ -21,6 +21,7 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 - In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control at all.
 
 ## Known issues
+- Starting fan control first time at Windows 11 can provide system crash! It's also reccomended to disable "Memory Integrity" into "Settings/Privacy & Security/Windows Security/Device Security"!
 - ACPI driver can hang into stopping state. Run `alienfan-cli` without parameters to reset it.
 - Fan PRMs boost is quite fast, but if you lower boost, it took some time to slow down fans. 
 - Power control only avaliable on some models, f.e. m15R1, m15R3.
@@ -29,7 +30,7 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 - As usual, AWCC service can interfere (reset values from time to time), so it's reccomended to stop it.
 
 ## Requrements
-- Windows 10 x64, revision 1903 or later. Any other OS, including Windows 11, **Does not supported!**
+- Windows 10 x64, revision 1903 or later. Any older Windows release **Does not supported!**
 - There are 2 ways to prepare you system for driver loading:
   - You can go into BIOS and disable "Secure boot" option, reboot, then issue `bcdedit /set testsigning on` command from Administarator command prompt and reboot again. You should see "Test mode" watermark on desktop if you do all correct.
   - Do nothing, in this case driver will be installed using kernel hack. Some antivirus can complain, because it's close to rootkit way. Anyway, it will not stay in memory after reboot.

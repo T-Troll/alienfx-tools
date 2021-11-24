@@ -8,7 +8,7 @@
 
 // Profile flags pattern
 #define PROF_DEFAULT  0x1
-#define PROF_PRIORITY 0x2 //PROF_NOMONITORING 0x2
+#define PROF_PRIORITY 0x2
 #define PROF_DIMMED   0x4
 #define PROF_ACTIVE   0x8
 #define PROF_FANS     0x10
@@ -68,7 +68,7 @@ private:
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
-	DWORD autoRefresh = 0;
+	//DWORD autoRefresh = 0;
 	DWORD lightsOn = 1;
 	DWORD dimmed = 0;
 	DWORD offWithScreen = 0;

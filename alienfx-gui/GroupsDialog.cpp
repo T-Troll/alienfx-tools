@@ -77,18 +77,17 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	} break;
 	case WM_COMMAND:
 	{
-		int gbItem = (int)ComboBox_GetCurSel(groups_list);
-		int gid = (int)ComboBox_GetItemData(groups_list, gbItem);
 		int glItem = (int)ListBox_GetCurSel(glights_list);
 		AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gLid);
 		switch (LOWORD(wParam)) {
 		case IDC_GROUPS: {
 			switch (HIWORD(wParam))
 			{
-			case CBN_SELCHANGE: {
-				gLid = gid; gItem = gbItem;
+			case CBN_SELCHANGE: { 
+				gItem = ComboBox_GetCurSel(groups_list);
+				gLid = (int)ComboBox_GetItemData(groups_list, gItem);
 				grp = fxhl->afx_dev.GetGroupById(gLid);
-				UpdateGroupLights(glights_list, gid, 0);
+				UpdateGroupLights(glights_list, gLid, 0);
 				UpdateLightListG(light_list, grp);
 			} break;
 			case CBN_EDITCHANGE:
@@ -120,11 +119,10 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			break;
 		case IDC_BUTTON_ADDG: {
 			unsigned maxID = 0x10000;
-			size_t lights = fxhl->afx_dev.GetGroups()->size();
-			for (int i = 0; i < lights; i++) {
-				AlienFX_SDK::group* lgh = &(fxhl->afx_dev.GetGroups()->at(i));
-				if (lgh->gid >= maxID)
-					maxID = lgh->gid + 1;
+			for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
+				if (fxhl->afx_dev.GetGroups()->at(i).gid == maxID) {
+					maxID++; i = 0;
+				}
 			}
 			AlienFX_SDK::group dev{maxID, "Group #" + to_string(maxID & 0xffff)};
 			fxhl->afx_dev.GetGroups()->push_back(dev);
@@ -136,8 +134,8 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			gItem = pos;
 			EnableWindow(groups_list, true);
 			EnableWindow(glights_list, true);
-			UpdateGroupLights(glights_list,gLid,0);
 			grp = &fxhl->afx_dev.GetGroups()->back();
+			UpdateGroupLights(glights_list,gLid,0);
 			UpdateLightListG(light_list, grp);
 		} break;
 		case IDC_BUTTON_REMG: {
