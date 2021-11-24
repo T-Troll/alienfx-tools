@@ -91,7 +91,6 @@
 #define IDC_BUTTON_HPC                  1016
 #define IDC_STARTM                      1017
 #define IDC_BUTTON_REMOVE               1017
-#define IDC_AUTOREFRESH                 1018
 #define IDC_SLIDER_HICUT                1018
 #define IDC_BUTTON_REFRESH              1021
 #define IDC_BUTTON_MINIMIZE             1022
@@ -193,7 +192,6 @@
 #define IDC_CHECK_DIM                   1105
 #define IDC_INFO_VID                    1106
 #define IDC_INFO_PID                    1107
-#define IDC_INF_VER                     1108
 #define IDC_INFO_VER                    1108
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -215,8 +213,10 @@
 #define ID_TRAYMENU_PROFILE_SELECTED    32791
 #define ID_TRAYMENU_MONITORING_SELECTED 32792
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
-#define ID_CHECKUPDATE                  32803
 #define IDM_CHECKUPDATE                 32804
+#define ID_HELP                         32805
+#define ID_MENU_HELP                    32806
+#define IDM_HELP                        32807
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -225,7 +225,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        155
-#define _APS_NEXT_COMMAND_VALUE         32805
+#define _APS_NEXT_COMMAND_VALUE         32808
 #define _APS_NEXT_CONTROL_VALUE         1109
 #define _APS_NEXT_SYMED_VALUE           113
 #endif

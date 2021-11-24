@@ -57,7 +57,6 @@ class ConfigHandler
 {
 private:
 	HKEY hKey1 = NULL, 
-		//hKey2 = NULL, 
 		hKey3 = NULL, 
 		hKey4 = NULL;
 	bool conf_loaded = false;
@@ -87,7 +86,7 @@ public:
 	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
 	DWORD monDelay = 200;
 	bool wasAWCC = false;
-	Colorcode testColor, effColor1, effColor2;
+	Colorcode testColor{0,255}, effColor1, effColor2;
 	COLORREF customColors[16]{0};
 	DWORD globalEffect = 0;
 	DWORD globalDelay = 127;
@@ -110,7 +109,7 @@ public:
 	std::vector<lightset>* active_set;
 	std::vector<profile> profiles;
 
-	NOTIFYICONDATA niData{0};
+	NOTIFYICONDATA niData{sizeof(NOTIFYICONDATA)};
 
 	ConfigHandler();
 	~ConfigHandler();

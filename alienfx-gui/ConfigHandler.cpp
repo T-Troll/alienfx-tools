@@ -12,38 +12,11 @@
 
 ConfigHandler::ConfigHandler() {
 
-	RegCreateKeyEx(HKEY_CURRENT_USER,
-		TEXT("SOFTWARE\\Alienfxgui"),
-		0,
-		NULL,
-		REG_OPTION_NON_VOLATILE,
-		KEY_ALL_ACCESS,
-		NULL,
-		&hKey1,
-				   NULL);
-	RegCreateKeyEx(HKEY_CURRENT_USER,
-				   TEXT("SOFTWARE\\Alienfxgui\\Events"),
-				   0,
-				   NULL,
-				   REG_OPTION_NON_VOLATILE,
-				   KEY_ALL_ACCESS,
-				   NULL,
-				   &hKey3,
-				   NULL);
-	RegCreateKeyEx(HKEY_CURRENT_USER,
-		TEXT("SOFTWARE\\Alienfxgui\\Profiles"),
-		0,
-		NULL,
-		REG_OPTION_NON_VOLATILE,
-		KEY_ALL_ACCESS,
-		NULL,
-		&hKey4,
-				   NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL); 
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);
 
-	testColor.ci = 0;
-	testColor.g = 255;
-
-	niData.cbSize = sizeof(NOTIFYICONDATA);
+	//niData.cbSize = sizeof(NOTIFYICONDATA);
 	niData.uID = IDI_ALIENFXGUI;
 	niData.uFlags = NIF_ICON | NIF_MESSAGE;
 	niData.uCallbackMessage = WM_APP + 1;

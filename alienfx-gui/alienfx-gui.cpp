@@ -17,6 +17,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 // Global Variables:
 HINSTANCE hInst;
 bool isNewVersion = false;
+bool needUpdateFeedback = false;
 
 HWND InitInstance(HINSTANCE, int);
 
@@ -442,7 +443,8 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	char buf[2048];
 	DWORD byteRead;
 	// Wait connection for a while
-	Sleep(5000);
+	if (!needUpdateFeedback)
+		Sleep(10000);
 	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
 		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
 								  NULL, 0, 0, NULL)) {
@@ -468,6 +470,13 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 			InternetCloseHandle(req);
 		}
 		InternetCloseHandle(session);
+	}
+	if (!isNewVersion && needUpdateFeedback) {
+		niData->uFlags |= NIF_INFO;
+		strcpy_s(niData->szInfoTitle, "You are up to date!");
+		strcpy_s(niData->szInfo, "You are using latest version.");
+		Shell_NotifyIcon(NIM_MODIFY, niData);
+		niData->uFlags &= ~NIF_INFO;
 	}
 	return 0;
 }
@@ -682,8 +691,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
+		case IDM_HELP:
+			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/blob/master/Doc/alienfx-gui.md", NULL, NULL, SW_SHOWNORMAL);
+			break;
 		case IDM_CHECKUPDATE:
 			// check update....
+			needUpdateFeedback = true;
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 			break;
 		case IDC_BUTTON_MINIMIZE:
