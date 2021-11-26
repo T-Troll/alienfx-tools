@@ -27,6 +27,8 @@ public:
 	double* waveD;
 	int *freqs = NULL;
 
+	HWND dlg = NULL;
+
 	IAudioCaptureClient* pCaptureClient = NULL;
 
 	WAVEFORMATEX* pwfx;

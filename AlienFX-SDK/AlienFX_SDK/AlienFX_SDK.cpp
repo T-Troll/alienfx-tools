@@ -458,6 +458,14 @@ namespace AlienFX_SDK {
 		bool val = true;
 		if (!inSet) Reset();
 		switch (version) {
+		case API_L_V7:
+		{
+			if (save)
+				SetPowerAction(act);
+			else
+				for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
+						val = SetAction(&(*nc));
+		} break;
 		case API_L_V5:
 		{
 			int bPos = 4;
@@ -512,8 +520,17 @@ namespace AlienFX_SDK {
 			switch (version) {
 			case API_L_V7:
 			{
+				byte opType = 1;
+				switch (act->act[0].type) {
+				//case AlienFX_A_Color: opType = 1; break;
+				case AlienFX_A_Pulse: opType = 5; break;
+				case AlienFX_A_Morph: opType = 3; break;
+				case AlienFX_A_Breathing: opType = 2; break;
+				case AlienFX_A_Spectrum: opType = 4; break;
+				case AlienFX_A_Rainbow: opType = 6; break;
+				}
 				if (act->act.size()) {
-					vector<pair<byte, byte>> mods{{5,act->act[0].type},{6,bright},{7,act->index}};
+					vector<pair<byte, byte>> mods{{5,opType},{6,bright},{7,act->index}};
 					for (int ca = 0; ca < act->act.size(); ca++) {
 						mods.insert(mods.end(), {
 							{ca*3+8, act->act[ca].r},
@@ -530,40 +547,42 @@ namespace AlienFX_SDK {
 				vector<pair<byte, byte>> mods;
 				for (int ca = 0; ca < act->act.size(); ca++) {
 					// 3 actions per record..
-					mods.insert(mods.end(), {
-						 {bPos,act->act[ca].type < AlienFX_A_Breathing ? act->act[ca].type : AlienFX_A_Morph },
-						 {bPos + 1, act->act[ca].time},
-						 {bPos + 4, act->act[ca].tempo},
-						 {bPos + 5, act->act[ca].r},
-						 {bPos + 6, act->act[ca].g},
-						 {bPos + 7, act->act[ca].b}});
+					byte opCode1 = 0xd0, opCode2 = act->act[ca].tempo;
 					switch (act->act[ca].type) {
 					/*case AlienFX_A_Color: 
 						mods.push_back({bPos+2, 0xd0});
 						mods.push_back({bPos+4, 0xfa});
 						break;*/
 					case AlienFX_A_Pulse:
-						mods.push_back({bPos+2, 0xdc});
+						opCode1 = 0xdc;
 						break;
 					case AlienFX_A_Morph:
-						mods.push_back({bPos+2, 0xcf});
+						opCode1 = 0xcf;
 						break;
 					case AlienFX_A_Breathing:
-						mods.push_back({bPos+2, 0xdc});
+						opCode1 = 0xdc;
 						break;
 					case AlienFX_A_Spectrum: 
-						mods.push_back({bPos+2, 0x82});
+						opCode1 = 0x82;
 						break;
 					case AlienFX_A_Rainbow:
-						mods.push_back({bPos+2, 0xac});
+						opCode1 = 0xac;
 						break;
 					case AlienFX_A_Power: 
-						mods.push_back({bPos+2, 0xe8});
+						opCode1 = 0xe8;
 						break;
 					default: 
-						mods.push_back({bPos+2, 0xd0});
-						mods.push_back({bPos+4, 0xfa});
+						//opCode1 = 0xd0;
+						opCode2 = 0xfa;
 					}
+					mods.insert(mods.end(), {
+						{bPos,act->act[ca].type < AlienFX_A_Breathing ? act->act[ca].type : AlienFX_A_Morph },
+								{bPos + 1, act->act[ca].time},
+								{bPos + 2, opCode1},
+								{bPos + 4, opCode2},
+								{bPos + 5, act->act[ca].r},
+								{bPos + 6, act->act[ca].g},
+								{bPos + 7, act->act[ca].b}});
 					bPos += 8;
 					if (bPos + 8 >= length) {
 						res = PrepareAndSend(COMMV4.colorSet, sizeof(COMMV4.colorSet), mods);
@@ -590,7 +609,15 @@ namespace AlienFX_SDK {
 					switch (act->act[ca].type) {
 					case AlienFX_A_Pulse:
 					{
-						mods = SetMaskAndColor(1 << act->index, 2, act->act[ca].r, act->act[ca].g, act->act[ca].b);
+						if (act->act.size() == 1)
+							mods = SetMaskAndColor(1 << act->index, 2, act->act[ca].r, act->act[ca].g, act->act[ca].b);
+						else
+							if (ca < act->act.size() - 1) {
+								mods = SetMaskAndColor(1 << act->index, 2, act->act[ca].r, act->act[ca].g, act->act[ca].b, act->act[ca + 1].r, act->act[ca + 1].g, act->act[ca + 1].b);
+
+							} else {
+								mods = SetMaskAndColor(1 << act->index, 2, act->act[ca].r, act->act[ca].g, act->act[ca].b, act->act[0].r, act->act[0].g, act->act[0].b);
+							}
 					} break;
 					case AlienFX_A_Morph:
 					{
@@ -625,6 +652,12 @@ namespace AlienFX_SDK {
 				break;
 			}
 		switch (version) {
+		case API_L_V7:
+		{
+			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
+					SetAction(&(*nc));
+			PrepareAndSend(COMMV7.update, sizeof(COMMV7.update), {{8,1}});
+		} break;
 		case API_L_V4:
 		{
 			// Need to flush query...

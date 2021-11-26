@@ -82,10 +82,10 @@ void DrawFreq(HWND hDlg, int *freq) {
 			graphZone.bottom--;
 		}
 		if (freq)
-			for (i = 0; i < conf->hap_conf->numbars; i++) {
+			for (i = 0; i < NUMBARS; i++) {
 				rectop = (255 - freq[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
-				Rectangle(hdc, (graphZone.right * i) / conf->hap_conf->numbars + graphZone.left, rectop,
-						  (graphZone.right * (i + 1)) / conf->hap_conf->numbars - 2 + graphZone.left, graphZone.bottom);
+				Rectangle(hdc, (graphZone.right * i) / NUMBARS + graphZone.left, rectop,
+						  (graphZone.right * (i + 1)) / NUMBARS - 2 + graphZone.left, graphZone.bottom);
 				//wsprintf(szSize, "%3d", freq[i]);
 				//TextOut(hdc, ((rcClientP->right - 20) * i) / config->numbars + 10, rectop - 15, szSize, 3);
 			}
@@ -106,17 +106,17 @@ haptics_map *FindHapMapping(int lid) {
 	if (lid != -1) {
 		if (lid > 0xffff) {
 			// group
-			for (int i = 0; i < conf->hap_conf->mappings.size(); i++)
-				if (conf->hap_conf->mappings[i].devid == 0 && conf->hap_conf->mappings[i].lightid == lid) {
-					return &conf->hap_conf->mappings[i];
+			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
+				if (conf->hap_conf->haptics[i].devid == 0 && conf->hap_conf->haptics[i].lightid == lid) {
+					return &conf->hap_conf->haptics[i];
 				}
 		} else {
 			// mapping
 			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-			for (int i = 0; i < conf->hap_conf->mappings.size(); i++)
-				if (conf->hap_conf->mappings[i].devid == lgh->devid && 
-					conf->hap_conf->mappings[i].lightid == lgh->lightid)
-					return &conf->hap_conf->mappings[i];
+			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
+				if (conf->hap_conf->haptics[i].devid == lgh->devid && 
+					conf->hap_conf->haptics[i].lightid == lgh->lightid)
+					return &conf->hap_conf->haptics[i];
 		}
 	}
 	return NULL;
@@ -124,9 +124,9 @@ haptics_map *FindHapMapping(int lid) {
 
 void RemoveHapMapping(haptics_map *map) {
 	std::vector <haptics_map>::iterator Iter;
-	for (Iter = conf->hap_conf->mappings.begin(); Iter != conf->hap_conf->mappings.end(); Iter++)
+	for (Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
 		if (Iter->devid == map->devid && Iter->lightid == map->lightid) {
-			conf->hap_conf->mappings.erase(Iter);
+			conf->hap_conf->haptics.erase(Iter);
 			break;
 		}
 }
@@ -260,8 +260,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					newmap.lowcut = 0;
 					newmap.hicut = 255;
 					newmap.flags = 0;
-					conf->hap_conf->mappings.push_back(newmap);
-					map = &conf->hap_conf->mappings.back();
+					conf->hap_conf->haptics.push_back(newmap);
+					map = &conf->hap_conf->haptics.back();
 				}
 
 				int fid = ListBox_GetCurSel(freq_list);

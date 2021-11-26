@@ -2,19 +2,18 @@
 #define DFT_gosu_H
 
 #include "kiss_fftr.h"
+#include "ConfigHaptics.h"
 
 class DFT_gosu {
 
 public:
-	DFT_gosu(int m,int xscale);
+	DFT_gosu();
 	~DFT_gosu();
 	int* calc(double *x1); 
 	void setSampleRate(int rate) { sampleRate = rate; };
 
 protected:
 	double *x2;
-	int NUMPTS;
-	int RECTSNUM;
 	int sampleRate = 44100;
 	int* spectrum;
 	double* blackman;// , * hanning;

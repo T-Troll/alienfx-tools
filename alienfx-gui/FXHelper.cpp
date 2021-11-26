@@ -40,7 +40,7 @@ void FXHelper::SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, 
 					else {
 						// recalc...
 						AlienFX_SDK::afx_act fin;
-						double newPower = (power - ((double) i) / grp->lights.size()) * grp->lights.size();
+						double newPower = (power - ((double) i) / grp->lights.size())*grp->lights.size();
 						fin.r = (byte) ((1.0 - newPower) * from->r + newPower * to_c->r);
 						fin.g = (byte) ((1.0 - newPower) * from->g + newPower * to_c->g);
 						fin.b = (byte) ((1.0 - newPower) * from->b + newPower * to_c->b);
@@ -109,10 +109,10 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		eData = {101,0,101,101,101,101,101,101,99};
 	}
 
-	profile* cprof = config->FindProfile(config->activeProfile);
-	if (!cprof)
+	//profile* cprof = config->FindProfile(config->activeProfile);
+	if (!config->activeProfile)
 		return;
-	vector<lightset> active = cprof->lightsets;
+	vector<lightset> active = config->activeProfile->lightsets;
 
 	for (Iter = active.begin(); Iter != active.end(); Iter++) {
 		vector<AlienFX_SDK::afx_act> actions;
@@ -125,13 +125,13 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				Iter->eve[2].map[0] :
 				Iter->eve[3].map[0],
 				from = fin;
-			fin.type = 0;
+			fin.type = from.type = 0;
 			double coeff = 0.0;
 			bool diffC = false, diffI = false;
-			long lVal = 0, cVal = 0;
+			int lVal = 0, cVal = 0;
 			if (Iter->eve[2].fs.b.flags) {
 				// counter
-				double ccut = Iter->eve[2].fs.b.cut;
+				int ccut = Iter->eve[2].fs.b.cut;
 				//long lVal = 0, cVal = 0;
 				switch (Iter->eve[2].source) {
 				case 0: lVal = eData.CPU; cVal = data->CPU; break;
@@ -154,7 +154,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			}
 			if (Iter->eve[3].fs.b.flags) {
 				// indicator
-				long indi = 0, ccut = Iter->eve[3].fs.b.cut;
+				int ccut = Iter->eve[3].fs.b.cut;
 				bool blink = Iter->eve[3].fs.b.proc;
 				switch (Iter->eve[3].source) {
 				case 0: lVal = eData.HDD; cVal = data->HDD; break;
@@ -165,12 +165,12 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				case 5: lVal = eData.KBD; cVal = data->KBD; break;
 				}
 
-				if (lVal != cVal) {
+				if (force || (lVal != cVal && ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1)) { //check 0 border!
 					diffI = true;
-					if (cVal)
+					if (cVal > 0 && (!blink || blinkStage))
 						fin = Iter->eve[3].map[1];
 				} else
-					if (cVal && blink) {
+					if (cVal > 0 && blink) {
 						diffI = true;
 						if (blinkStage)
 							fin = Iter->eve[3].map[1];
@@ -443,8 +443,8 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 
 	Flush();
 
-	for (UINT i = 0; i < config->amb_conf->mappings.size(); i++) {
-		mapping map = config->amb_conf->mappings[i];
+	for (UINT i = 0; i < config->amb_conf->zones.size(); i++) {
+		zone map = config->amb_conf->zones[i];
 		UINT r = 0, g = 0, b = 0, size = (UINT) map.map.size(), dsize = size * 255;
 		if (size > 0) {
 			for (unsigned j = 0; j < size; j++) {
@@ -464,7 +464,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 				SetGroupLight(map.lightid, actions);
 		}
 	}
-	if (config->amb_conf->mappings.size())
+	if (config->amb_conf->zones.size())
 		QueryUpdate();
 }
 
@@ -480,8 +480,8 @@ void FXHelper::RefreshHaptics(int *freq) {
 
 	Flush();
 
-	for (unsigned i = 0; i < config->hap_conf->mappings.size(); i++) {
-		haptics_map map = config->hap_conf->mappings[i];
+	for (unsigned i = 0; i < config->hap_conf->haptics.size(); i++) {
+		haptics_map map = config->hap_conf->haptics[i];
 
 		if (!map.map.empty() && map.hicut > map.lowcut) {
 			double power = 0.0;
@@ -506,7 +506,7 @@ void FXHelper::RefreshHaptics(int *freq) {
 			}
 		}
 	}
-	if (config->hap_conf->mappings.size())
+	if (config->hap_conf->haptics.size())
 		QueryUpdate();
 }
 
@@ -559,7 +559,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 								//if (dev->IsDeviceReady()) {
 									dev->SetMultiColor(&devQ->dev_query, current.flags);
 									dev->UpdateColors();
-									src->UpdateGlobalEffect(dev);
+									if (src->config->activeProfile && src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
+										src->UpdateGlobalEffect(dev);
 								//} //else
 									//dev->Reset(true);
 								devQ->dev_query.clear();

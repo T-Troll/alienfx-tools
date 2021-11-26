@@ -12,10 +12,12 @@ DWORD WINAPI CFXProc(LPVOID);
 #define DebugPrint(_x_)  
 #endif
 
+#define GRIDSIZE 36 // 4x3 x 3
+
 ConfigAmbient* config;
 FXHelper* fxh;
 
-UCHAR  imgz[12 * 3]{ 0 }, imgui[12 * 3]{ 0 };
+byte imgz[GRIDSIZE]{0}, imgo[GRIDSIZE]{0};
 
 DXGIManager* dxgi_manager = NULL;
 
@@ -80,10 +82,10 @@ struct procData {
 };
 
 static procData callData[3][4];
-UINT w = 2, h = 2, ww = 1, hh = 1, stride = w * 4 , divider = 1;
+UINT w = 0, h = 0, ww = 0, hh = 0, stride = 0 , divider = 1;
 HANDLE pThread[12]{ 0 };
 HANDLE pfEvent[12]{ 0 };
-UCHAR* scrImg = NULL;
+byte* scrImg = NULL;
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
@@ -118,43 +120,25 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	CloseHandle(pfEvent[ptr]);
 	CloseHandle(src->pEvent);
 	pfEvent[ptr] = 0;
-	//SetEvent(pfEvent[src->dy * 4 + src->dx]);
 	return 0;
 }
 
-bool FindColors(UCHAR* src, UCHAR* imgz) {
-	scrImg = src;
-	for (UINT dy = 0; dy < 3; dy++)
-		for (UINT dx = 0; dx < 4; dx++) {
-			//ColorCalc(&callData[dy][dx]);
-			UINT ptr = (dy * 4 + dx);// *3;
-			if (pfEvent[ptr]) {
-				//ResetEvent(pfEvent[dy * 4 + dx]);
-				SetEvent(callData[dy][dx].pEvent);
-			} else {
-				callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
-				callData[dy][dx].dst = imgz + ptr * 3;
-				callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
-				pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
-				pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
-			}
-		}
-
-	if (WaitForMultipleObjects(12, pfEvent, true, 500) != WAIT_OBJECT_0) {
-		DebugPrint("Color calc thread stuck!\n");
-		return false;
-	}
-	return true;
+void SetDimensions() {
+	RECT dimensions = dxgi_manager->get_output_rect();
+	w = dimensions.right - dimensions.left;
+	h = dimensions.bottom - dimensions.top;
+	ww = w / 4; hh = h / 3;
+	stride = w * 4;
 }
-
-#define GRIDSIZE 36 // 4x3 x 3
 
 DWORD WINAPI CInProc(LPVOID param)
 {
-	UCHAR* img = NULL;
-	UCHAR* imgo[GRIDSIZE]{ 0 };
+	//byte* img = NULL;
+	byte  imgo[GRIDSIZE]{0};
 
 	size_t buf_size;
+
+	DWORD ret = 0;
 
 	uiEvent = CreateEvent(NULL, false, false, NULL);
 	lhEvent = CreateEvent(NULL, false, false, NULL);
@@ -162,12 +146,7 @@ DWORD WINAPI CInProc(LPVOID param)
 	HANDLE uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, NULL),
 		lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, NULL);
 
-	RECT dimensions = dxgi_manager->get_output_rect();
-	w = dimensions.right - dimensions.left;
-	h = dimensions.bottom - dimensions.top;
-
-	ww = w / 4; hh = h / 3;
-	stride = w * 4;
+	SetDimensions();
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
@@ -175,24 +154,34 @@ DWORD WINAPI CInProc(LPVOID param)
 
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		// Resize & calc
-		//ULONGLONG sTime = GetTickCount64();
-		if (dxgi_manager->get_output_data(&img, &buf_size) == CR_OK && img) {
-			if (w && h) {
-				if (FindColors(img, imgz) && memcmp(imgz, imgo, GRIDSIZE)) {
-					SetEvent(lhEvent);
-					SetEvent(uiEvent);
-					memcpy(imgo, imgz, GRIDSIZE);
+		if (w && h && (ret = dxgi_manager->get_output_data(&scrImg, &buf_size)) == CR_OK && scrImg) {
+			for (UINT dy = 0; dy < 3; dy++)
+				for (UINT dx = 0; dx < 4; dx++) {
+					//ColorCalc(&callData[dy][dx]);
+					UINT ptr = (dy * 4 + dx);// *3;
+					if (pfEvent[ptr]) {
+						//ResetEvent(pfEvent[dy * 4 + dx]);
+						SetEvent(callData[dy][dx].pEvent);
+					} else {
+						callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
+						callData[dy][dx].dst = imgo + ptr * 3;
+						callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
+						pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
+						pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
+					}
 				}
-				//DebugPrint((string("Medium Color count time ") + to_string(lastTick) + " ms, Divider " + to_string(divider) + "\n").c_str());
+
+			if (WaitForMultipleObjects(12, pfEvent, true, 500) == WAIT_OBJECT_0 && memcmp(imgz, imgo, GRIDSIZE)) {
+				memcpy(imgz, imgo, GRIDSIZE);
+				SetEvent(lhEvent);
+				SetEvent(uiEvent);
 			}
-			else {
+		}
+		else {
+			if (ret != CR_TIMEOUT) {
 				dxgi_manager->refresh_output();
 				Sleep(200);
-				dimensions = dxgi_manager->get_output_rect();
-				w = dimensions.right - dimensions.left;
-				h = dimensions.bottom - dimensions.top;
-				ww = w / 4; hh = h / 3;
-				stride = w * 4;
+				SetDimensions();
 			}
 		}
 	}
@@ -213,27 +202,26 @@ DWORD WINAPI CInProc(LPVOID param)
 
 DWORD WINAPI CDlgProc(LPVOID param)
 {
-
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		if (config->hDlg && !IsIconic(GetParent(config->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient UI update...\n");
-			memcpy(imgui, (UCHAR*)param, sizeof(imgz));
-			SendMessage(config->hDlg, WM_PAINT, 0, (LPARAM)imgui);
+			//memcpy(imgui, (UCHAR*)param, sizeof(imgz));
+			SendMessage(config->hDlg, WM_PAINT, 0, (LPARAM)imgz);
 		}
 	}
 	return 0;
 }
 
 DWORD WINAPI CFXProc(LPVOID param) {
-	UCHAR  imgz[12 * 3];
+	//UCHAR  imgz[12 * 3];
 	HANDLE waitArray[2]{lhEvent, clrStopEvent};
 	DWORD res = 0;
 	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient light update...\n");
-			memcpy(imgz, (UCHAR *) param, sizeof(imgz));
+			//memcpy(imgz, (UCHAR *) param, sizeof(imgz));
 			fxh->RefreshAmbient(imgz);
 		}
 	}

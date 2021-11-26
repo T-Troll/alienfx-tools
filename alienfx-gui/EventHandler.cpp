@@ -92,11 +92,11 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
-	if (!newID) newID = conf->FindProfile(conf->defaultProfile);
-	if (newID->id != conf->foregroundProfile) conf->foregroundProfile = -1;
-	if (newID->id != conf->activeProfile) {
+	if (!newID) newID = conf->defaultProfile;
+	if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
+	if (newID->id != conf->activeProfile->id) {
 			modifyProfile.lock();
-			conf->activeProfile = newID->id;
+			conf->activeProfile = newID;
 			conf->active_set = &newID->lightsets;
 			if (mon) {
 				if (newID->flags & PROF_FANS)
@@ -145,9 +145,8 @@ void EventHandler::StopEvents()
 void EventHandler::ToggleEvents()
 {
 	conf->SetStates();
-	int newMode = conf->FindProfile(conf->activeProfile)->effmode;
 	if (conf->stateOn) {
-		ChangeEffectMode(newMode);
+		ChangeEffectMode(conf->activeProfile->effmode);
 	}
 }
 
@@ -291,7 +290,7 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 		string pName = szProcessName;
 
 		profile* newp = even->conf->FindProfileByApp(pName, true);
-		even->conf->foregroundProfile = newp ? newp->id : -1;
+		even->conf->foregroundProfile = newp ? newp : NULL;
 
 		if (newp || !even->conf->noDesktop || (pName != "ShellExperienceHost.exe"
 					 && pName != "alienfx-gui.exe"
@@ -305,7 +304,7 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 			if (!newp) {
 				even->SwitchActiveProfile(even->ScanTaskList());
 			} else {
-				if (even->conf->IsPriorityProfile(newp->id) || !even->conf->IsPriorityProfile(even->conf->activeProfile))
+				if (even->conf->IsPriorityProfile(newp) || !even->conf->IsPriorityProfile(even->conf->activeProfile))
 					even->SwitchActiveProfile(newp);
 			}
 		} else {

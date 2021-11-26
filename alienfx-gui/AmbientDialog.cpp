@@ -10,20 +10,20 @@ void SwitchTab(int);
 extern EventHandler* eve;
 extern int eItem;
 
-mapping *FindAmbMapping(int lid) {
+zone *FindAmbMapping(int lid) {
     if (lid != -1) {
         if (lid > 0xffff) {
             // group
-            for (int i = 0; i < conf->amb_conf->mappings.size(); i++)
-                if (conf->amb_conf->mappings[i].devid == 0 && conf->amb_conf->mappings[i].lightid == lid) {
-                    return &conf->amb_conf->mappings[i];
+            for (int i = 0; i < conf->amb_conf->zones.size(); i++)
+                if (conf->amb_conf->zones[i].devid == 0 && conf->amb_conf->zones[i].lightid == lid) {
+                    return &conf->amb_conf->zones[i];
                 }
         } else {
             // mapping
             AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-            for (int i = 0; i < conf->amb_conf->mappings.size(); i++)
-                if (conf->amb_conf->mappings[i].devid == lgh->devid && conf->amb_conf->mappings[i].lightid == lgh->lightid)
-                    return &conf->amb_conf->mappings[i];
+            for (int i = 0; i < conf->amb_conf->zones.size(); i++)
+                if (conf->amb_conf->zones[i].devid == lgh->devid && conf->amb_conf->zones[i].lightid == lgh->lightid)
+                    return &conf->amb_conf->zones[i];
         }
     }
     return NULL;
@@ -33,7 +33,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
     
-    mapping *map = FindAmbMapping(eItem);
+    zone *map = FindAmbMapping(eItem);
 
     switch (message) {
     case WM_INITDIALOG:
@@ -100,7 +100,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 UINT id = LOWORD(wParam) - IDC_BUTTON1;
                 UINT bid = IDC_CHECK1 + id;
                 if (!map) {
-                    mapping newmap;
+                    zone newmap;
                     if (eItem > 0xffff) {
                         // group
                         newmap.devid = 0;
@@ -111,7 +111,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         newmap.devid = lgh->devid;
                         newmap.lightid = lgh->lightid;
                     }
-                    conf->amb_conf->mappings.push_back(newmap);
+                    conf->amb_conf->zones.push_back(newmap);
                     map = FindAmbMapping(eItem);
                 }
                 // add mapping
@@ -131,10 +131,10 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     map->map.erase(Iter);
                     if (!map->map.size()) {
                         // delete mapping!
-                        vector<mapping>::iterator mIter;
-                        for (mIter = conf->amb_conf->mappings.begin(); mIter != conf->amb_conf->mappings.end(); mIter++)
+                        vector<zone>::iterator mIter;
+                        for (mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
                             if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
-                                conf->amb_conf->mappings.erase(mIter);
+                                conf->amb_conf->zones.erase(mIter);
                                 break;
                             }
                     }

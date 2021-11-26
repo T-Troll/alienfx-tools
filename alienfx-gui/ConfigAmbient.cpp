@@ -1,101 +1,75 @@
 #include "ConfigAmbient.h"
-#include <algorithm>
 #include <string>
+#include <winreg.h>
+#include <winerror.h>
 
 using namespace std;
 
 ConfigAmbient::ConfigAmbient() {
 
-    RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxambient"),
-        0,
-        NULL,
-        REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,
-        NULL,
-        &hKey1,
-        NULL);
-    RegCreateKeyEx(HKEY_CURRENT_USER,
-        TEXT("SOFTWARE\\Alienfxambient\\Mappings"),
-        0,
-        NULL,
-        REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS,
-        NULL,
-        &hKey2,
-        NULL);
+    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxambient"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMainKey, NULL);
+    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxambient\\Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     Load();
 }
 ConfigAmbient::~ConfigAmbient() {
     Save();
-    RegCloseKey(hKey1);
-    RegCloseKey(hKey2);
+    RegCloseKey(hMainKey);
+    RegCloseKey(hMappingKey);
 }
 
 void ConfigAmbient::GetReg(char *name, DWORD *value, DWORD defValue) {
     DWORD size = sizeof(DWORD);
-    if (RegGetValueA(hKey1, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+    if (RegGetValueA(hMainKey, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
         *value = defValue;
 }
 
 void ConfigAmbient::SetReg(char *text, DWORD value) {
-    RegSetValueEx( hKey1, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
+    RegSetValueEx(hMainKey, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 }
 
-int ConfigAmbient::Load() {
+void ConfigAmbient::Load() {
     int size = 4;
 
     GetReg("Shift", &shift);
     GetReg("Mode", &mode);
     //GetReg("Divider", &divider);
     GetReg("GammaCorrection", &gammaCorrection, 1);
-    //if (!divider || divider > 32) divider = 16;
-    unsigned vindex = 0, inarray[12*4];
+    unsigned /*vindex = 0,*/ inarray[12 * sizeof(DWORD)]{0};
     char name[256];
-    LSTATUS ret = 0;
-    do {
-        DWORD len = 255, lend = 12 * sizeof(DWORD); mapping map;
+    //LSTATUS ret = 0;
+    DWORD len = 255, lend = 12 * sizeof(DWORD); zone map;
+    for (int vindex = 0; RegEnumValueA(hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend) == ERROR_SUCCESS; vindex++) {
         // get id(s)...
-        if ((ret = RegEnumValueA( hKey2, vindex, name, &len, NULL, NULL, (LPBYTE)inarray, &lend )) == ERROR_SUCCESS) {
-            unsigned ret2 = sscanf_s(name, "%d-%d", &map.devid, &map.lightid);
-            if (ret2 == 2) {
-                if (lend > 0) {
-                    for (unsigned i = 0; i < (lend / 4); i++)
-                        map.map.push_back(inarray[i]);
-                    mappings.push_back(map);
-                }
+        if (sscanf_s(name, "%d-%hd", &map.devid, &map.lightid) == 2) {
+            if (lend > 0) {
+                for (unsigned i = 0; i < (lend / 4); i++)
+                    map.map.push_back(inarray[i]);
+                zones.push_back(map);
             }
-            vindex++;
         }
-    } while (ret == ERROR_SUCCESS);
-    //std::sort(mappings.begin(), mappings.end(), sortMappings);
-	return 0;
+        len = 255; lend = 12 * sizeof(DWORD); map.map.clear();
+    }
 }
-int ConfigAmbient::Save() {
+void ConfigAmbient::Save() {
 
-    unsigned out[12*4];
+    DWORD out[12 * sizeof(DWORD)]{0};
 
     SetReg("Shift", shift);
     SetReg("Mode", mode);
     //SetReg("Divider", divider);
     SetReg("GammaCorrection", gammaCorrection);
-    for (int i = 0; i < mappings.size(); i++) {
+    for (int i = 0; i < zones.size(); i++) {
         //preparing name
-        string name = to_string(mappings[i].devid) + "-" + to_string(mappings[i].lightid);
+        string name = to_string(zones[i].devid) + "-" + to_string(zones[i].lightid);
         //preparing binary....
-        UINT j, size = (UINT) mappings[i].map.size();
+        int size = (int) zones[i].map.size();
         if (size > 0) {
-            for (j = 0; j < size; j++) {
-                out[j] = mappings[i].map[j];
+            for (int j = 0; j < size; j++) {
+                out[j] = zones[i].map[j];
             }
-            size *= sizeof(unsigned);
-            RegSetValueExA( hKey2, name.c_str(), 0, REG_BINARY, (BYTE*)out, size );
+            size *= sizeof(DWORD);
+            RegSetValueExA( hMappingKey, name.c_str(), 0, REG_BINARY, (BYTE*)out, size );
         }
     }
-	return 0;
 }
 
-//bool ConfigAmbient::sortMappings(mapping i, mapping j)
-//{
-//    return i.lightid < j.lightid;
-//}

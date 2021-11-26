@@ -1,6 +1,5 @@
 #include "ConfigHandler.h"
 #include "resource.h"
-#include <algorithm>
 #include <Shlwapi.h>
 
 // debug print
@@ -110,8 +109,7 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 	return NULL;
 }
 
-bool ConfigHandler::IsPriorityProfile(int id) {
-	profile *prof = FindProfile(id);
+bool ConfigHandler::IsPriorityProfile(profile* prof) {
 	return prof && prof->flags & PROF_PRIORITY;
 }
 
@@ -162,29 +160,26 @@ void ConfigHandler::SetIconState() {
 }
 
 bool ConfigHandler::IsDimmed() {
-	profile *prof = FindProfile(activeProfile);
-	return dimmed || (!prof->ignoreDimming && prof->flags & PROF_DIMMED);
+	return dimmed || (!activeProfile->ignoreDimming && activeProfile->flags & PROF_DIMMED);
 }
 
 void ConfigHandler::SetDimmed() {
-	profile *prof = FindProfile(activeProfile);
-
-	if (prof->flags & PROF_DIMMED) {
-		if (!dimmed && !prof->ignoreDimming) {
-			prof->ignoreDimming = true;
+	if (activeProfile->flags & PROF_DIMMED) {
+		if (!dimmed && !activeProfile->ignoreDimming) {
+			activeProfile->ignoreDimming = true;
 			return;
 		}
-		if (!dimmed || !prof->ignoreDimming)
-			prof->ignoreDimming = !prof->ignoreDimming;
+		if (!dimmed || !activeProfile->ignoreDimming)
+			activeProfile->ignoreDimming = !activeProfile->ignoreDimming;
 	}
 
 	dimmed = !dimmed;
 }
 int ConfigHandler::GetEffect() {
-	return enableMon ? FindProfile(activeProfile)->effmode : 3;
+	return enableMon ? activeProfile->effmode : 3;
 }
 void ConfigHandler::SetEffect(int newMode) {
-	FindProfile(activeProfile)->effmode = newMode;
+	activeProfile->effmode = newMode;
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
@@ -197,8 +192,9 @@ void ConfigHandler::SetReg(char *text, DWORD value) {
 	RegSetValueEx( hKey1, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
 }
 
-int ConfigHandler::Load() {
+void ConfigHandler::Load() {
 	DWORD size_c = 16*sizeof(DWORD);// 4 * 16
+	DWORD activeProfileID = 0;
 
 	GetReg("AutoStart", &startWindows);
 	GetReg("Minimized", &startMinimized);
@@ -213,7 +209,7 @@ int ConfigHandler::Load() {
 	GetReg("NoDesktopSwitch", &noDesktop);
 	GetReg("DimPower", &dimPowerButton);
 	GetReg("DimmedOnBattery", &dimmedBatt);
-	GetReg("ActiveProfile", &activeProfile); 
+	GetReg("ActiveProfile", &activeProfileID); 
 	GetReg("OffPowerButton", &offPowerButton);
 	GetReg("EsifTemp", &esif_temp);
 	GetReg("DimmingPower", &dimmingPower, 92);
@@ -297,10 +293,12 @@ int ConfigHandler::Load() {
 	int activeFound = 0;
 	if (profiles.size() > 0) {
 		for (int i = 0; i < profiles.size(); i++) {
-			if (profiles[i].id == activeProfile)
+			if (profiles[i].id == activeProfileID) {
+				activeProfile = &profiles[i];
 				activeFound = i;
+			}
 			if (profiles[i].flags & PROF_DEFAULT)
-				defaultProfile = profiles[i].id;
+				defaultProfile = &profiles[i];
 		}
 	}
 	else {
@@ -311,22 +309,18 @@ int ConfigHandler::Load() {
 	}
 	if (profiles.size() == 1) {
 		profiles[0].flags = profiles[0].flags | PROF_DEFAULT;
-		defaultProfile = activeProfile = profiles[0].id;
+		defaultProfile = activeProfile = &profiles[0];
 	}
 	active_set = &profiles[activeFound].lightsets;
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
 
-	conf_loaded = true;
-
 	fan_conf = new ConfigHelper();
 	amb_conf = new ConfigAmbient();
 	hap_conf = new ConfigHaptics();
-
-	return 0;
 }
 
-int ConfigHandler::Save() {
+void ConfigHandler::Save() {
 
 	BYTE* out;
 
@@ -346,7 +340,7 @@ int ConfigHandler::Save() {
 	SetReg("DimmedOnBattery", dimmedBatt);
 	SetReg("OffPowerButton", offPowerButton);
 	SetReg("DimmingPower", dimmingPower);
-	SetReg("ActiveProfile", activeProfile);
+	SetReg("ActiveProfile", activeProfile->id);
 	SetReg("GammaCorrection", gammaCorrection);
 	SetReg("ProfileAutoSwitch", enableProf);
 	SetReg("DisableAWCC", awcc_disable);
@@ -362,9 +356,7 @@ int ConfigHandler::Save() {
 	if (profiles.size() > 0) {
 		RegDeleteTreeA(hKey1, "Profiles");
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);// &dwDisposition);
-	} /*else {
-		DebugPrint("Attempt to save empty profiles!\n");
-	}*/
+	}
 
 	RegDeleteTreeA(hKey1, "Events");
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);// &dwDisposition);
@@ -430,5 +422,4 @@ int ConfigHandler::Save() {
 			}
 		}
 	}
-	return 0;
 }

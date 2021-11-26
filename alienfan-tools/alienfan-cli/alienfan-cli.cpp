@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
                     continue;
                 }
                 if (command == "getfans" && supported) {
-                    int prms = 0; bool direct = false;
+                    int prms;  bool direct = false;
                     if (args.size())
                         direct = atoi(args[0].c_str()) > 0;
                     for (int i = 0; i < acpi->HowManyFans(); i++)
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
                         cout << "Setfans: incorrect arguments (should be " << acpi->HowManyFans() << " of them)" << endl;
                         continue;
                     }
-                    int prms = 0; bool direct = false;
+                    bool direct = false;
                     if (args.size() > acpi->HowManyFans())
                         direct = atoi(args[acpi->HowManyFans()].c_str()) > 0;
                     for (int i = 0; i < acpi->HowManyFans(); i++) {

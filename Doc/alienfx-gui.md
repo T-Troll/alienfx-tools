@@ -123,6 +123,7 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Priority profile" - If this flag enabled, this profile will be choosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
 - "Dim lights" - Then profile activated, all lights will be dimmed.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
+- "Global effects" - Enable global effects for supported devices for this profile. Global effect will be disabled by default, if this not selected for active profile.
 
 "Trigger applications" list define application executables, which will activate selected profile if running and "Profile auto switch" is on.  
 Press "Add" button to select new application, or select one from the list and press "Remove" button to delete it.

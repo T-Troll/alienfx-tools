@@ -12,6 +12,7 @@
 #define PROF_DIMMED   0x4
 #define PROF_ACTIVE   0x8
 #define PROF_FANS     0x10
+#define PROF_GLOBAL_EFFECTS 0x20
 
 union FlagSet {
 	struct {
@@ -37,7 +38,6 @@ struct lightset {
 		};
 		DWORD devid = 0;
 	};
-	//unsigned devid = 0;
 	unsigned lightid = 0;
 	event	 eve[4];
 };
@@ -59,7 +59,6 @@ private:
 	HKEY hKey1 = NULL, 
 		hKey3 = NULL, 
 		hKey4 = NULL;
-	bool conf_loaded = false;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
 	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
@@ -76,9 +75,9 @@ public:
 	DWORD dimmingPower = 92;
 	DWORD enableProf = 0;
 	DWORD offPowerButton = 0;
-	DWORD activeProfile = -1;
-	DWORD defaultProfile = 0;
-	DWORD foregroundProfile = -1;
+	profile *activeProfile = NULL;// -1;
+	profile *defaultProfile = NULL;// 0;
+	profile *foregroundProfile = NULL;// -1;
 	DWORD awcc_disable = 0;
 	DWORD esif_temp = 0;
 	DWORD block_power = 0;
@@ -113,12 +112,12 @@ public:
 
 	ConfigHandler();
 	~ConfigHandler();
-	int Load();
-	int Save();
+	void Load();
+	void Save();
 	//static bool sortMappings(lightset i, lightset j);
 	profile* FindProfile(int id);
 	profile* FindProfileByApp(std::string appName, bool active = false);
-	bool IsPriorityProfile(int id);
+	bool IsPriorityProfile(profile* prof);
 	void SetStates();
 	void SetIconState();
 	bool IsDimmed();

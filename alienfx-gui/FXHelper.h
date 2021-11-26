@@ -34,7 +34,6 @@ private:
 	EventData eData;
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
-	ConfigHandler* config;
 
 	void SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, bool force = false,
 					   AlienFX_SDK::afx_act* from_c = NULL, AlienFX_SDK::afx_act* to_c = NULL, double power = 0);
@@ -42,7 +41,7 @@ private:
 	void QueryUpdate(int did = -1, bool force = false);
 
 public:
-
+	ConfigHandler* config;
 	AlienFX_SDK::Mappings afx_dev;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;

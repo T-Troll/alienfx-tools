@@ -1,6 +1,11 @@
 #pragma once
 #include <vector>
-#include <Windows.h>
+#include <wtypesbase.h>
+
+#define byte BYTE
+
+#define NUMBARS 20
+#define NUMPTS 2048
 
 union Colorcode
 {
@@ -14,38 +19,36 @@ union Colorcode
 };
 
 struct haptics_map {
-	unsigned devid;
-	unsigned lightid;
+	DWORD devid;
+	WORD lightid;
 	Colorcode colorfrom;
 	Colorcode colorto;
-	unsigned char lowcut;
-	unsigned char hicut;
-	unsigned flags;
+	byte lowcut;
+	byte hicut;
+	byte flags;
 	std::vector<unsigned char> map;
 };
 
 class ConfigHaptics
 {
 private:
-	HKEY   hKey1, hKey2;
-
+	HKEY hMainKey, hMappingKey;
 	void GetReg(char *name, DWORD *value, DWORD defValue = 0);
 	void SetReg(char *text, DWORD value);
 public:
-	DWORD numbars = 20;
-	DWORD numpts = 2048;
+	//const DWORD numbars = 20;
+	//const DWORD numpts = 2048;
 	DWORD inpType = 0;
 	DWORD showAxis = 1;
 
 	HWND dlg = NULL;
 
-	std::vector<haptics_map> mappings;
+	std::vector<haptics_map> haptics;
 
 	ConfigHaptics();
 	~ConfigHaptics();
 
-	int Load();
-	int Save();
-	//static bool ConfigHaptics::sortMappings(mapping i, mapping j);
+	void Load();
+	void Save();
 };
 

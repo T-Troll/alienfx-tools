@@ -212,10 +212,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf->Load();
 	conf->SetStates();
 
-	profile* prof;
-
-	if ((prof = conf->FindProfile(conf->activeProfile)) && prof->flags & PROF_FANS)
-		conf->fan_conf->lastProf = &prof->fansets;
+	if (conf->activeProfile && conf->activeProfile->flags & PROF_FANS)
+		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
 
 	// check fans...
 	if (conf->fanControl) {
@@ -584,7 +582,7 @@ void ReloadProfileList() {
 	for (int i = 0; i < conf->profiles.size(); i++) {
 		int pos = ComboBox_AddString(profile_list, conf->profiles[i].name.c_str());
 		ComboBox_SetItemData(profile_list, pos, conf->profiles[i].id);
-		if (conf->profiles[i].id == conf->activeProfile) {
+		if (conf->profiles[i].id == conf->activeProfile->id) {
 			ComboBox_SetCurSel(profile_list, pos);
 			ComboBox_SetCurSel(mode_list, conf->profiles[i].effmode);
 		}
@@ -722,7 +720,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				int effmode = conf->FindProfile(conf->activeProfile)->effmode = ComboBox_GetCurSel(mode_list);
+				int effmode = conf->activeProfile->effmode = ComboBox_GetCurSel(mode_list);
 				eve->ChangeEffectMode(effmode);
 			} break;
 			}
@@ -740,7 +738,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		} break;
 	} break;
 	case WM_NOTIFY: {
-		//NMHDR* event = (NMHDR*)lParam;
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
@@ -793,12 +790,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				for (int i = 0; i < conf->profiles.size(); i++) {
 					mInfo.dwTypeData = (LPSTR) conf->profiles[i].name.c_str();
 					InsertMenuItem(pMenu, i, false, &mInfo);
-					if (conf->profiles[i].id == conf->activeProfile)
+					if (conf->profiles[i].id == conf->activeProfile->id)
 						CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
 				}
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
 			} else
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_STRING, NULL, ("Profile - " + conf->FindProfile(conf->activeProfile)->name).c_str());
+				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_STRING, NULL, ("Profile - " + conf->activeProfile->name).c_str());
 			// add effects menu...
 			if (conf->enableMon) {
 				pMenu = CreatePopupMenu();
@@ -845,15 +842,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		break;
 	} break;
 	case WM_MENUCOMMAND: {
-		HMENU menu = (HMENU)lParam;
 		int idx = LOWORD(wParam);
-		switch (GetMenuItemID(menu, idx)) {
+		switch (GetMenuItemID((HMENU)lParam, idx)) {
 		case ID_TRAYMENU_EXIT:
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
-		    break;
+		    return true;
 		case ID_TRAYMENU_REFRESH:
 			fxhl->RefreshState(true);
-			ReloadProfileList();
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
@@ -867,35 +862,28 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
 			eve->ToggleEvents();
-			EnableWindow(mode_list, conf->enableMon);
-			ComboBox_SetCurSel(mode_list, conf->GetEffect());
-			//ReloadModeList(mode_list, conf->GetEffect());
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
-			conf->FindProfile(conf->activeProfile)->effmode = idx;
+			conf->activeProfile->effmode = idx;
 			eve->ChangeEffectMode(idx);
-			ComboBox_SetCurSel(mode_list, idx);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
 			eve->StartProfiles();
-			ReloadProfileList();
 			break;
 		case ID_TRAYMENU_RESTORE:
 			ShowWindow(hDlg, SW_RESTORE);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			ReloadProfileList();
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
-			if (conf->profiles[idx].id != conf->activeProfile) {
+			if (conf->profiles[idx].id != conf->activeProfile->id) {
 				eve->SwitchActiveProfile(&conf->profiles[idx]);
-				ComboBox_SetCurSel(mode_list, conf->GetEffect());
-				ReloadProfileList();
 			}
 		} break;
 		}
+		ReloadProfileList();
 	} break;
 	case WM_POWERBROADCAST:
 		switch (wParam) {

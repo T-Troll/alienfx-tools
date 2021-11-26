@@ -7,62 +7,60 @@
 AlienFan_SDK::Control *acpi = NULL;
 ConfigHelper *conf = NULL;
 
-int SetFanSteady(short num, byte boost) {
+int SetFanSteady(short num, byte boost, bool downtrend = false) {
     bool run2 = true;
     acpi->SetFanValue(num, boost, true);
-    int runrpm = 0, newrpm = -1;
+    // Check the trend...
+    cout << "Stabilize Fan#" << num << " at boost " << (int) boost << ":" << endl;
+    int oldMids = 0, midRPMs = 0;
+    int maxRPM = 0, minRPM = 10000;
     do {
-        Sleep(7000);
-        runrpm = acpi->GetFanRPM(num);
-        cout << ".";// << runrpm;
-        run2 = abs(runrpm - newrpm) > 30;// runrpm != newrpm;
-        newrpm = runrpm;
-    } while (run2);
-    return newrpm;
+        oldMids = midRPMs;
+        //midRPMs = 0;
+        maxRPM = 0, minRPM = 10000;
+        for (int i = 0; i < 9; i++) {
+            Sleep(1000);
+            int cRPM = acpi->GetFanRPM(num);
+            if (cRPM < minRPM) minRPM = cRPM;
+            if (cRPM > maxRPM) maxRPM = cRPM;
+            //midRPMs += cRPM;
+        }
+        midRPMs = minRPM + (maxRPM - minRPM) / 2;
+        cout << "\r" << midRPMs << " RPM (" << minRPM << "-" << maxRPM << ")";
+    } while (minRPM != maxRPM && abs(oldMids - midRPMs) > 50 && (!downtrend || oldMids - midRPMs < 100));
+    midRPMs = downtrend && oldMids - midRPMs >= 100 ? -1 : maxRPM;
+    cout << " done, " << (midRPMs < 0 ? minRPM : midRPMs) << " RPM" << endl;
+    return midRPMs;
 }
 
 void CheckFanOverboost(short num) {
     acpi->Unlock();
     int steps = 8;
-    int boost = 100 - steps, newrpm = -1;
-    int runrpm = 0, rpm = newrpm;
-    bool run2 = true;
+    int boost = 100, badBoost = 0;
+    int runrpm = 0, rpm = 0;
     bool run = true;
     cout << "Checking fan #" << num << endl;
+    rpm = SetFanSteady(num, boost);
     do {
-        cout << "Preparting step " << steps;
-        newrpm = SetFanSteady(num, boost);
-        cout << " done, " << newrpm << " RPM" << endl;
+        //cout << "Starting step " << steps << endl;
         // Check for overrun
-        if (!newrpm) boost -= steps;
         do {
             boost += steps;
-            newrpm = acpi->GetFanRPM(num);
-            acpi->SetFanValue(num, boost, true);
-            cout << "Boost " << boost;
-            Sleep(5000);
-            newrpm = -1;// acpi->GetFanRPM(num);
-            run2 = true;
-            do {
-                Sleep(5000);
-                cout << ".";
-                runrpm = acpi->GetFanRPM(num);
-                run2 = runrpm != newrpm && runrpm > rpm - 100;
-                newrpm = runrpm;
-            } while (run2);
-            if (newrpm > rpm)
-                rpm = newrpm;
-            else
+            if (boost != badBoost) {
+                runrpm = SetFanSteady(num, boost, true);// acpi->GetFanRPM(num);
+                run = runrpm > rpm;
+                if (runrpm > rpm) rpm = runrpm;
+            } else
                 run = false;
-            cout << " " << newrpm << " RPM" << endl;
         } while (run);
+        badBoost = boost;
         boost -= steps; run = true;
-        //newrpm = acpi->GetFanRPM(num);
-        //acpi->SetFanValue(num, boost, true);
         steps = steps >> 1;
+        /*if (steps > 0)
+            int trpm = SetFanSteady(num, boost);*/
     } while (steps > 0);
     cout << "Final boost - " << boost << ", " << rpm << " RPM" << endl << endl;
-    acpi->SetFanValue(num, 0);
+    acpi->SetFanValue(num, boost, true);
     if (num >= conf->boosts.size())
         conf->boosts.resize(num + 1);
     else
@@ -74,7 +72,7 @@ void CheckFanOverboost(short num) {
 
 int main(int argc, char* argv[])
 {
-    cout << "AlienFan-Overboost v1.5.0.0" << endl;
+    cout << "AlienFan-Overboost v1.5.1.0" << endl;
     cout << "Usage: AlienFan-Overboost [fan ID [Manual boost]]" << endl;
 
     conf = new ConfigHelper();

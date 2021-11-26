@@ -268,6 +268,10 @@ namespace AlienFan_SDK {
 		if (fanID < fans.size()) {
 			if (devs[aDev].commandControlled) {
 				int finalValue = force ? value : (int) value * boosts[fanID] / 100;
+				//#ifdef _DEBUG
+				//	wstring msg = L"Boost for fan#" + to_wstring(fanID) + L" changed to " + to_wstring(finalValue) + L"\n";
+				//	OutputDebugString(msg.c_str());
+				//#endif
 				return RunMainCommand(dev_controls[cDev].setFanBoost, (byte) fans[fanID], finalValue) != devs[aDev].errorCode;
 			} else {
 				WriteRamDirect(fans[fanID] + 0x23, value + 1); // lock at 0 fix

@@ -2,7 +2,6 @@
 #include "EventHandler.h"
 #include <Shlwapi.h>
 
-
 bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 void ReloadProfileList();
 void ReloadModeList(HWND, int);
@@ -18,13 +17,14 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, prof->flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hDlg, IDC_CHECK_GLOBAL, prof->flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
 	ComboBox_SetCurSel(mode_list, prof->effmode);
 	ListBox_ResetContent(app_list);
 	for (int j = 0; j < prof->triggerapp.size(); j++)
 		ListBox_AddString(app_list, prof->triggerapp[j].c_str());
 }
 
-void ReloadProfileView(HWND hDlg, int cID) {
+void ReloadProfileView(HWND hDlg) {
 	int rpos = 0;
 	HWND profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 	ListView_DeleteAllItems(profile_list);
@@ -42,7 +42,7 @@ void ReloadProfileView(HWND hDlg, int cID) {
 		lItem.iSubItem = 0;
 		lItem.lParam = conf->profiles[i].id;
 		lItem.pszText = (char*)conf->profiles[i].name.c_str();
-		if (conf->profiles[i].id == cID) {
+		if (conf->profiles[i].id == pCid) {
 			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
 			ReloadProfSettings(hDlg, &conf->profiles[i]);
@@ -64,9 +64,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	{
 	case WM_INITDIALOG:
 	{
-		ReloadModeList(mode_list, conf->FindProfile(conf->activeProfile)->effmode);
-		ReloadProfileView(hDlg, conf->activeProfile);
-		pCid = conf->activeProfile;
+		pCid = conf->activeProfile ? conf->activeProfile->id : conf->defaultProfile->id;
+		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
+		ReloadProfileView(hDlg);
+		if (!conf->haveV5)
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);
 	} break;
 	case WM_COMMAND:
 	{
@@ -89,7 +91,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				conf->profiles.push_back(new_prof);
 				pCid = vacID;
 			//}
-			ReloadProfileView(hDlg, pCid);
+			ReloadProfileView(hDlg);
 			ReloadProfileList();
 		} break;
 		case IDC_REMOVEPROFILE: {
@@ -97,14 +99,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning!",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// is this active profile? Switch needed!
-					if (conf->activeProfile == pCid) {
+					if (conf->activeProfile->id == pCid) {
 						// switch to default profile..
-						eve->SwitchActiveProfile(conf->FindProfile(conf->defaultProfile));
+						eve->SwitchActiveProfile(conf->defaultProfile);
 					}
-					int nCid = conf->activeProfile;
+					int nCid = conf->activeProfile->id;
 					// Now remove profile....
 					// Did it have fans? We need to switch to system if it have!
-
 					for (std::vector <profile>::iterator Iter = conf->profiles.begin();
 						 Iter != conf->profiles.end(); Iter++)
 						if (Iter->id == pCid) { //prid) {
@@ -113,7 +114,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						} else
 							nCid = Iter->id;
 					pCid = nCid;
-					ReloadProfileView(hDlg, nCid);
+					ReloadProfileView(hDlg);
 					ReloadProfileList();
 				}
 			}
@@ -164,7 +165,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			{
 				//if (prof) {
 					prof->effmode = ComboBox_GetCurSel(mode_list);
-					if (prof->id == conf->activeProfile)
+					if (prof->id == conf->activeProfile->id)
 						eve->ChangeEffectMode(prof->effmode);
 				//}
 			} break;
@@ -175,13 +176,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			//if (prof) {
 			bool nflags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			if (nflags) {
-				int oldDefault = conf->defaultProfile;
-				profile *old_def = conf->FindProfile(conf->defaultProfile);
-				if (old_def != NULL)
+				//int oldDefault = conf->defaultProfile;
+				profile *old_def = conf->defaultProfile;
+				if (old_def)
 					old_def->flags = old_def->flags & ~PROF_DEFAULT;
-				prof->flags = prof->flags | PROF_DEFAULT;
-				conf->defaultProfile = prof->id;
-				if (conf->enableProf && oldDefault == conf->activeProfile)
+				prof->flags |= PROF_DEFAULT;
+				conf->defaultProfile = prof;
+				if (conf->enableProf && old_def && old_def->id == conf->activeProfile->id)
 					// need to switch to this
 					eve->SwitchActiveProfile(prof);
 			} else
@@ -201,7 +202,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			//if (prof) {
 				prof->flags = (prof->flags & ~PROF_DIMMED) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 2;
 				prof->ignoreDimming = false;
-				if (prof->id == conf->activeProfile) {
+				if (prof->id == conf->activeProfile->id) {
 					conf->SetStates();
 					fxhl->ChangeState();
 				}
@@ -215,6 +216,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			//}
 			break;
+		case IDC_CHECK_GLOBAL:
+			prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
+			break;
 		case IDC_CHECK_FANPROFILE:
 			// Store fan profile too
 			//if (prof != NULL) {
@@ -226,7 +230,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					// remove fansets
 					prof->fansets.fanControls.clear();
 				}
-				if (prof->id == conf->activeProfile)
+				if (prof->id == conf->activeProfile->id)
 					conf->fan_conf->lastProf = prof->flags & PROF_FANS ? &prof->fansets : &conf->fan_conf->prof;
 			//} 
 			break;

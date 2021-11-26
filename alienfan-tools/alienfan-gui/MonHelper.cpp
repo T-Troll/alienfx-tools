@@ -116,7 +116,7 @@ DWORD WINAPI CMonProc(LPVOID param) {
 			}
 			// Now set if needed...
 			for (int i = 0; i < src->acpi->HowManyFans(); i++)
-				if (src->boostSets[i] != src->boostValues[i] /*|| src->boostSets[i] == 100*/) {
+				if (src->boostSets[i] != src->boostValues[i] || src->boostSets[i] == 100) {
 					src->acpi->SetFanValue(i, src->boostSets[i]);
 //#ifdef _DEBUG
 //					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";

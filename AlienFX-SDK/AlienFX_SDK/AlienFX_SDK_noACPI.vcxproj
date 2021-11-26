@@ -104,7 +104,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\NACPI\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\NACPI\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -116,13 +115,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\NACPI\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\NACPI\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_NOACPILIGHTS|x64'">
     <LinkIncremental>false</LinkIncremental>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\NACPI\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\NACPI\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

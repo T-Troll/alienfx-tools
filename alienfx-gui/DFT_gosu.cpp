@@ -7,15 +7,12 @@
 #endif
 
 // default constructor
-DFT_gosu::DFT_gosu(int m,int xscale)
+DFT_gosu::DFT_gosu()
 {
-	NUMPTS = m;
-	//y_scale = yscale;
-	RECTSNUM = xscale;
-	spectrum= new int[xscale]{0};;
+	spectrum= new int[NUMPTS]{0};;
 
-	x2 = new double[NUMPTS];// (double*) malloc(NUMPTS * sizeof(double));
-	blackman = new double[NUMPTS];// (double*) malloc(NUMPTS * sizeof(double));
+	x2 = new double[NUMPTS];
+	blackman = new double[NUMPTS];
 	//hanning = (double*)malloc(NUMPTS * sizeof(double));
 	kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
 	padded_in = (kiss_fft_scalar*) malloc(NUMPTS * sizeof(kiss_fft_scalar));
@@ -53,7 +50,7 @@ int* DFT_gosu::calc(double *x1)
 	double minP = INT_MAX, maxP = 0;
 	double mult = 1.3394/* sqrt3(2)*/, f = 1.0;
 	int idx = 2;
-	for (int n = 0; n < RECTSNUM; n++) {
+	for (int n = 0; n < NUMBARS; n++) {
 		double v = 0;
 		for (int m = 0; m < f; m++) {
 			if (idx < NUMPTS/2)
@@ -86,7 +83,7 @@ int* DFT_gosu::calc(double *x1)
 //#endif
 
 	// Normalize
-	for (int n = 0; n < RECTSNUM; n++) {
+	for (int n = 0; n < NUMBARS; n++) {
 		spectrum[n] = (int)(x2[n] * coeff);
 	}
 
