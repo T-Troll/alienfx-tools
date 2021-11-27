@@ -46,7 +46,7 @@ unsigned GetActionCode(string name, int mode) {
 	return mode ? AlienFX_SDK::Action::AlienFX_A_Color : LFX_ACTION_COLOR;
 }
 
-void SetBrighness(ColorU *color) {
+void SetBrighness(AlienFX_SDK::Colorcode *color) {
 	color->r = ((unsigned) color->r * color->br) / 255;// >> 8;
 	color->g = ((unsigned) color->g * color->br) / 255;// >> 8;
 	color->b = ((unsigned) color->b * color->br) / 255;// >> 8;
@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
 		if (command == "set-all" && CheckArgs(command, 3, args.size())) {
 
 			unsigned zoneCode = LFX_ALL;
-			static ColorU color;
+			static AlienFX_SDK::Colorcode color;
 			color.r = atoi(args.at(0).c_str());
 			color.g = atoi(args.at(1).c_str());
 			color.b = atoi(args.at(2).c_str());
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
 						!(lgh->flags & ALIENFX_FLAG_POWER))
 						lights.push_back((UCHAR) lgh->lightid);
 				}
-				cdev->SetMultiLights(&lights, color.r, color.g, color.b);
+				cdev->SetMultiLights(&lights, color);
 				cdev->UpdateColors();
 			} break;
 			case 0:
@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
 		}
 		if (command == "set-one" && CheckArgs(command, 5, args.size())) {
 			int devid = atoi(args.at(0).c_str());
-			ColorU color{(byte)atoi(args.at(4).c_str()),
+			AlienFX_SDK::Colorcode color{(byte)atoi(args.at(4).c_str()),
 				(byte)atoi(args.at(3).c_str()),
 				(byte)atoi(args.at(2).c_str()),
 				(byte)(args.size() > 5 ? atoi(args.at(5).c_str()) : 255)};
@@ -316,18 +316,17 @@ int main(int argc, char* argv[])
 				if (devid) {
 					FindDevice(devid);
 				}
-				cdev->SetColor(atoi(args.at(1).c_str()),
-								  color.r, color.g, color.b);
+				cdev->SetColor(atoi(args.at(1).c_str()), color);
 			} break;
 			case 0:
-				lfxUtil.SetOneLFXColor(devid, atoi(args.at(1).c_str()), &color.ci);
+				lfxUtil.SetOneLFXColor(devid, atoi(args.at(1).c_str()), (unsigned *)&color.ci);
 				lfxUtil.Update();
 				break;
 			}
 			continue;
 		}
 		if (command == "set-zone" && CheckArgs(command, 4, args.size())) {
-			ColorU color{(byte)atoi(args.at(3).c_str()),
+			AlienFX_SDK::Colorcode color{(byte)atoi(args.at(3).c_str()),
 				(byte)atoi(args.at(2).c_str()),
 				(byte)atoi(args.at(1).c_str()),
 				(byte)(args.size() > 4 ? atoi(args.at(4).c_str()) : 255)};
@@ -345,7 +344,7 @@ int main(int argc, char* argv[])
 							if (grp->lights[i]->devid == afx_map->fxdevs[j].dev->GetPID())
 								lights.push_back((UCHAR) grp->lights[i]->lightid);
 						}
-						afx_map->fxdevs[j].dev->SetMultiLights(&lights, color.r, color.g, color.b);
+						afx_map->fxdevs[j].dev->SetMultiLights(&lights, color);
 						afx_map->fxdevs[j].dev->UpdateColors();
 					}
 				}
@@ -378,13 +377,13 @@ int main(int argc, char* argv[])
 		}
 		if (command == "set-action" && CheckArgs(command, 6, args.size())) {
 			unsigned actionCode = LFX_ACTION_COLOR;
-			vector<ColorU> clrs;
+			vector<AlienFX_SDK::Colorcode> clrs;
 			int argPos = 2;
 			int devid = atoi(args.at(0).c_str()),
 				lightid = atoi(args.at(1).c_str());
 			AlienFX_SDK::act_block act{(byte)lightid};
 			while (argPos + 4 < args.size()) {
-				ColorU c;
+				AlienFX_SDK::Colorcode c;
 				actionCode = GetActionCode(args[argPos], devType);
 				c.b = atoi(args.at(argPos+1).c_str());
 				c.g = atoi(args.at(argPos + 2).c_str());
@@ -407,9 +406,9 @@ int main(int argc, char* argv[])
 				break;
 			case 0:
 				if (clrs.size() < 2) {
-					clrs.push_back(ColorU({0}));
+					clrs.push_back({0});
 				}
-				lfxUtil.SetLFXAction(actionCode, devid, lightid, &clrs[0].ci, &clrs[1].ci);
+				lfxUtil.SetLFXAction(actionCode, devid, lightid, (unsigned*)&clrs[0].ci, (unsigned*)&clrs[1].ci);
 				lfxUtil.Update();
 				break;
 			}
@@ -419,10 +418,10 @@ int main(int argc, char* argv[])
 			unsigned zoneCode = GetZoneCode(args[0], devType);
 			unsigned actionCode = LFX_ACTION_COLOR;
 			AlienFX_SDK::act_block act;
-			vector<ColorU> clrs;
+			vector<AlienFX_SDK::Colorcode> clrs;
 			int argPos = 1;
 			while (argPos + 4 < args.size()) {
-				ColorU c;
+				AlienFX_SDK::Colorcode c;
 				actionCode = GetActionCode(args[argPos], devType);
 				c.r = atoi(args.at(argPos+1).c_str());
 				c.g = atoi(args.at(argPos+2).c_str());
@@ -455,7 +454,7 @@ int main(int argc, char* argv[])
 			} break;
 			case 0:
 				if (clrs.size() < 2)
-					clrs.push_back(ColorU({0}));
+					clrs.push_back({0});
 				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, clrs[0].ci, clrs[1].ci);
 				lfxUtil.Update();
 				break;

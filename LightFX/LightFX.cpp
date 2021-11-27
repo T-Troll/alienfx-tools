@@ -13,15 +13,15 @@ LFX_COLOR final;
 LFX_RESULT state;
 //map<WORD,vector<LFX_COLOR> > lastState;
 
-LFX_COLOR* TranslateColor(ColorU* src) {
+LFX_COLOR* TranslateColor(AlienFX_SDK::Colorcode* src) {
 	// gamma-correction...
-	final.red = ((unsigned) src->red * src->red) / 255;
-	final.green = ((unsigned) src->green * src->green) / 255;
-	final.blue = ((unsigned) src->blue * src->blue) / 255;
+	final.red = ((unsigned) src->r * src->r) / 255;
+	final.green = ((unsigned) src->g * src->g) / 255;
+	final.blue = ((unsigned) src->b * src->b) / 255;
 	// brighness...
-	final.red = (((unsigned) final.red * src->brightness)) / 255;// >> 8;
-	final.green = (((unsigned) final.green * src->brightness)) / 255;// >> 8;
-	final.blue = (((unsigned) final.blue * src->brightness)) / 255;// >> 8;
+	final.red = (((unsigned) final.red * src->br)) / 255;// >> 8;
+	final.green = (((unsigned) final.green * src->br)) / 255;// >> 8;
+	final.blue = (((unsigned) final.blue * src->br)) / 255;// >> 8;
 	return &final;
 }
 
@@ -199,9 +199,9 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const u
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightColor(const unsigned int dev, const unsigned int lid, const PLFX_COLOR clr) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
-		ColorU src{clr->blue, clr->green, clr->red, clr->brightness};
+		AlienFX_SDK::Colorcode src{clr->blue, clr->green, clr->red, clr->brightness};
 		LFX_COLOR *fin = TranslateColor(&src);
-		afx_map->fxdevs[dev].dev->SetColor(afx_map->fxdevs[dev].lights[lid]->lightid, fin->red, fin->green, fin->blue);
+		afx_map->fxdevs[dev].dev->SetColor(afx_map->fxdevs[dev].lights[lid]->lightid, {fin->blue, fin->green, fin->red});
 	}
 	return state;
 }
@@ -209,7 +209,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightColor(const unsigned int dev, const u
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned int color) {
 	// pos as a group index.
 	if (CheckState() == LFX_SUCCESS) {
-		ColorU src; src.ci = color;
+		AlienFX_SDK::Colorcode src; src.ci = color;
 		LFX_COLOR *fin = TranslateColor(&src);
 		int gid = GetGroupID(pos);
 		AlienFX_SDK::group *grp = gid < 0 ? NULL : groups[gid];
@@ -226,7 +226,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 						lights.push_back((byte) afx_map->fxdevs[j].lights[i]->lightid);
 				}
 			}
-			afx_map->fxdevs[j].dev->SetMultiLights(&lights, fin->red, fin->green, fin->blue);
+			afx_map->fxdevs[j].dev->SetMultiLights(&lights, {fin->blue, fin->green, fin->red});
 		}
 	}
 	return state;
@@ -239,7 +239,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColor(const unsigned int dev, c
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColorEx(const unsigned int dev, const unsigned int lid, const unsigned int act, const PLFX_COLOR clr1, const PLFX_COLOR clr2) {
 	if (CheckState(dev,lid) == LFX_SUCCESS) {
 		AlienFX_SDK::act_block actions{(byte) afx_map->fxdevs[dev].lights[lid]->lightid};
-		ColorU src{clr1->blue, clr1->green, clr1->red, clr1->brightness};
+		AlienFX_SDK::Colorcode src{clr1->blue, clr1->green, clr1->red, clr1->brightness};
 		LFX_COLOR *fin = TranslateColor(&src);
 		BYTE fact = GetActionMode(act);
 		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
@@ -258,7 +258,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColor(const unsigned int pos, const uns
 FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const unsigned int act, const unsigned int clr1, const unsigned int clr2) {
 	if (CheckState() == LFX_SUCCESS) {
 		AlienFX_SDK::act_block actions;
-		ColorU fclr; fclr.ci = clr1;
+		AlienFX_SDK::Colorcode fclr; fclr.ci = clr1;
 		LFX_COLOR *fin = TranslateColor(&fclr);
 		BYTE fact = GetActionMode(act);
 		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});

@@ -1,22 +1,18 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-bool SetColor(HWND hDlg, int id, Colorcode*);
-void ReloadProfileList();
-DWORD EvaluteToAdmin();
-bool DoStopService(bool kind);
-void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act*);
-HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-void SetSlider(HWND tt, int value);
+extern void ReloadProfileList();
+extern DWORD EvaluteToAdmin();
+extern bool DoStopService(bool kind);
+extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void SetSlider(HWND tt, int value);
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
-		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
-		dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
+	HWND dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -41,71 +37,16 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
-		sTip = CreateToolTip(dim_slider, sTip);
-		SetSlider(sTip, conf->dimmingPower);
-		// set global effect, colors and delay
-		if (conf->haveV5) {
-			ComboBox_AddString(eff_list, "None");
-			ComboBox_SetItemData(eff_list, 0, 0);
-			ComboBox_AddString(eff_list, "Color");
-			ComboBox_SetItemData(eff_list, 1, 1);
-			ComboBox_AddString(eff_list, "Breathing");
-			ComboBox_SetItemData(eff_list, 2, 2);
-			ComboBox_AddString(eff_list, "Single-color Wave");
-			ComboBox_SetItemData(eff_list, 3, 3);
-			ComboBox_AddString(eff_list, "Dual-color Wave ");
-			ComboBox_SetItemData(eff_list, 4, 4);
-			ComboBox_AddString(eff_list, "Pulse");
-			ComboBox_SetItemData(eff_list, 5, 8);
-			ComboBox_AddString(eff_list, "Mixed Pulse");
-			ComboBox_SetItemData(eff_list, 6, 9);
-			ComboBox_AddString(eff_list, "Night Rider");
-			ComboBox_SetItemData(eff_list, 7, 10);
-			ComboBox_AddString(eff_list, "Lazer");
-			ComboBox_SetItemData(eff_list, 8, 11);
-			ComboBox_SetCurSel(eff_list, conf->globalEffect);
-			// now sliders...
-			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
-			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
-			SendMessage(eff_tempo, TBM_SETPOS, true, conf->globalDelay);
-			lTip = CreateToolTip(eff_tempo, lTip);
-			SetSlider(lTip, conf->globalDelay);
-		} else {
-			EnableWindow(eff_list, false);
-			EnableWindow(eff_tempo, false);
-			EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR1), false);
-			EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR2), false);
-		}
+		sTip1 = CreateToolTip(dim_slider, sTip1);
+		SetSlider(sTip1, conf->dimmingPower);
 	} break;
 	case WM_COMMAND: {
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
 		{
-		case IDC_GLOBAL_EFFECT: {
-			switch (HIWORD(wParam)) {
-			case CBN_SELCHANGE:
-			{
-				conf->globalEffect = (DWORD) ComboBox_GetItemData(eff_list, ComboBox_GetCurSel(eff_list));
-				fxhl->UpdateGlobalEffect();
-			} break;
-			}
-		} break;
-		case IDC_BUTTON_EFFCLR1:
-		{
-			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &conf->effColor1);
-			fxhl->UpdateGlobalEffect();
-		} break;
-		case IDC_BUTTON_EFFCLR2:
-		{
-			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &conf->effColor2);
-			fxhl->UpdateGlobalEffect();
-		} break;
 		case IDC_STARTM:
 			conf->startMinimized = state;
 			break;
-		//case IDC_AUTOREFRESH:
-		//	conf->autoRefresh = state;
-		//	break;
 		case IDC_STARTW:
 		{
 			conf->startWindows = state;
@@ -208,33 +149,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case TB_THUMBPOSITION: case TB_ENDTRACK: {
 			if ((HWND)lParam == dim_slider) {
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-				SetSlider(sTip, conf->dimmingPower);
+				SetSlider(sTip1, conf->dimmingPower);
 				if (conf->IsDimmed())
 					fxhl->ChangeState();
 			}
-			if ((HWND)lParam == eff_tempo) {
-				conf->globalDelay = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-				SetSlider(lTip, conf->globalDelay);
-				fxhl->UpdateGlobalEffect();
-			}
 		} break;
 		} break;
-	case WM_DRAWITEM:
-		switch (((DRAWITEMSTRUCT*) lParam)->CtlID) {
-		case IDC_BUTTON_EFFCLR1:
-		{
-			AlienFX_SDK::afx_act act{0,0,0,conf->effColor1.r, conf->effColor1.g, conf->effColor1.b};
-			RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &act);
-			break;
-		}
-		case IDC_BUTTON_EFFCLR2:
-		{
-			AlienFX_SDK::afx_act act{0,0,0,conf->effColor2.r, conf->effColor2.g, conf->effColor2.b};
-			RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &act);
-			break;
-		}
-		}
-		break;
 	default: return false;
 	}
 	return true;

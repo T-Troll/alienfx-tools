@@ -33,22 +33,29 @@ ConfigHandler::~ConfigHandler() {
 
 //bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
 
-void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags) {
+void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD* eff) {
 	profile* prof = FindProfile(id);
-	if (prof) {
-		// update profile..
-		if (!name.empty())
-			prof->name = name;
-		if (!app.empty())
-			prof->triggerapp.push_back(app);
-		if (flags != -1) {
-			prof->flags = LOWORD(flags);
-			prof->effmode = HIWORD(flags);
-		}
-		return;
+	if (!prof) {
+		// New profile
+		prof = new profile{id};
+		profiles.push_back(*prof);
+		prof = &profiles.back();
 	}
-	prof = new profile{id, LOWORD(flags), HIWORD(flags), app.empty() ? vector<string>() : vector<string>({app}), name};
-	profiles.push_back(*prof);
+	// update profile..
+	if (!name.empty())
+		prof->name = name;
+	if (!app.empty())
+		prof->triggerapp.push_back(app);
+	if (flags != -1) {
+		prof->flags = LOWORD(flags);
+		prof->effmode = HIWORD(flags);
+	}
+	if (eff) {
+		prof->globalEffect = (byte) LOWORD(eff[0]);
+		prof->globalDelay = (byte) HIWORD(eff[0]);
+		prof->effColor1.ci = eff[1];
+		prof->effColor2.ci = eff[2];
+	}
 }
 
 void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags) {
@@ -61,9 +68,6 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 					prof->fansets.fanControls[i].fans.push_back(*temp);
 					return;
 				}
-			//temp_block temp_b{(short) senID};
-			//temp_b.fans.push_back(*temp);
-			//prof->fansets.fanControls.push_back(temp_b);
 			prof->fansets.fanControls.push_back({(short) senID, {*temp}});
 		}
 		if (flags != -1) {
@@ -74,9 +78,6 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 	} else {
 		prof = new profile{id};
 		if (temp) {
-			//temp_block temp_b{(short) senID};
-			//temp_b.fans.push_back(*temp);
-			//prof->fansets.fanControls.push_back(temp_b);
 			prof->fansets.fanControls.push_back({(short) senID, {*temp}});
 		}
 		if (flags != -1) {
@@ -213,10 +214,10 @@ void ConfigHandler::Load() {
 	GetReg("OffPowerButton", &offPowerButton);
 	GetReg("EsifTemp", &esif_temp);
 	GetReg("DimmingPower", &dimmingPower, 92);
-	GetReg("GlobalEffect", &globalEffect);
-	GetReg("GlobalTempo", &globalDelay, 5);
-	GetReg("EffectColor1", (DWORD*)&effColor1.ci);
-	GetReg("EffectColor2", (DWORD*)&effColor2.ci);
+	//GetReg("GlobalEffect", &globalEffect);
+	//GetReg("GlobalTempo", &globalDelay, 5);
+	//GetReg("EffectColor1", (DWORD*)&effColor1.ci);
+	//GetReg("EffectColor2", (DWORD*)&effColor2.ci);
 	GetReg("FanControl", &fanControl);
 	RegGetValue(hKey1, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
@@ -233,14 +234,14 @@ void ConfigHandler::Load() {
 			RegEnumValueA(hKey4, vindex, name, &len, NULL, NULL, data, &lend);
 			vindex++;
 			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
-				updateProfileByID(pid, (char*)data, "", -1);
+				updateProfileByID(pid, (char*)data, "", -1, NULL);
 			}
 			if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
-				updateProfileByID(pid, "", "", *(DWORD*)data);
+				updateProfileByID(pid, "", "", *(DWORD*)data, NULL);
 			}
 			if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
 				PathStripPath((char*)data);
-				updateProfileByID(pid, "", (char*)data, -1);
+				updateProfileByID(pid, "", (char*)data, -1, NULL);
 			}
 			int senid, fanid;
 			if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
@@ -250,6 +251,9 @@ void ConfigHandler::Load() {
 					fan.points.push_back({data[i], data[i+1]});
 				}
 				updateProfileFansByID(pid, senid, &fan, -1);
+			}
+			if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
+				updateProfileByID(pid, "", "", -1, (DWORD*)data);
 			}
 			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 				updateProfileFansByID(pid, -1, NULL, *(DWORD*)data);
@@ -345,10 +349,10 @@ void ConfigHandler::Save() {
 	SetReg("ProfileAutoSwitch", enableProf);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("EsifTemp", esif_temp);
-	SetReg("GlobalEffect", globalEffect);
-	SetReg("GlobalTempo", globalDelay);
-	SetReg("EffectColor1", effColor1.ci);
-	SetReg("EffectColor2", effColor2.ci);
+	//SetReg("GlobalEffect", globalEffect);
+	//SetReg("GlobalTempo", globalDelay);
+	//SetReg("EffectColor1", effColor1.ci);
+	//SetReg("EffectColor2", effColor2.ci);
 	SetReg("FanControl", fanControl);
 
 	RegSetValueEx( hKey1, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
@@ -397,6 +401,15 @@ void ConfigHandler::Save() {
 			}
 			RegSetValueExA( hKey3, name.c_str(), 0, REG_BINARY, (BYTE*)out, (DWORD)size);
 			delete[] out;
+		}
+		// Global effects
+		if (profiles[j].flags & PROF_GLOBAL_EFFECTS) {
+			DWORD buffer[3];
+			name = "Profile-effect-" + to_string(profiles[j].id);
+			buffer[0] = MAKELONG(profiles[j].globalEffect, profiles[j].globalDelay);
+			buffer[1] = profiles[j].effColor1.ci;
+			buffer[2] = profiles[j].effColor2.ci;
+			RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
 		}
 		// Fans....
 		if (profiles[j].flags & PROF_FANS) {

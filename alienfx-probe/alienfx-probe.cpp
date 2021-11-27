@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 					for (int i = 0; i < numlights; i++) {
 						//int j = 0;
 						cout << "Testing light #" << i << "(enter name, ENTER for skip): ";
-						afx_dev->SetColor(i, 0, 255, 0);
+						afx_dev->SetColor(i, {0, 255, 0});
 						afx_dev->UpdateColors();
 						Sleep(100);
 						std::cin.getline(name, 255);
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 						} else {
 							cout << "Skipped. ";
 						}
-						afx_dev->SetColor(i, 0, 0, 255);
+						afx_dev->SetColor(i, {0, 0, 255});
 						afx_dev->UpdateColors();
 						//afx_dev->Reset();
 						Sleep(100);

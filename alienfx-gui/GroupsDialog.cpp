@@ -1,6 +1,6 @@
 #include "alienfx-gui.h"
 
-bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
+extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 
 int	gLid = -1, gItem = -1;
 

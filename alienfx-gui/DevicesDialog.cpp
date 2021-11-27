@@ -1,9 +1,11 @@
 #include "alienfx-gui.h"
 #include "alienfx-controls.h"
 
-bool SetColor(HWND hDlg, int id, Colorcode*);
-bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act*);
+extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
+extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void SetSlider(HWND tt, int value);
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -20,7 +22,6 @@ vector<devInfo> csv_devs;
 
 void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	int pos = -1;
-	//size_t lights = fxhl->afx_dev.GetMappings()->size();
 	HWND light_list = GetDlgItem(hDlg, IDC_LIST_LIGHTS); 
 
 	// clear light options...
@@ -66,9 +67,13 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 
 void UpdateDeviceInfo(HWND hDlg) {
 	if (dIndex >= 0 && dIndex < fxhl->afx_dev.fxdevs.size()) {
-		Static_SetText(GetDlgItem(hDlg, IDC_INFO_VID), ("VID: " + to_string(fxhl->afx_dev.fxdevs[dIndex].desc->vid)).c_str());
-		Static_SetText(GetDlgItem(hDlg, IDC_INFO_PID), ("PID: " + to_string(fxhl->afx_dev.fxdevs[dIndex].desc->devid)).c_str());
-		Static_SetText(GetDlgItem(hDlg, IDC_INFO_VER), ("API v" + to_string(fxhl->afx_dev.fxdevs[dIndex].dev->GetVersion())).c_str());
+		AlienFX_SDK::afx_device *dev = &fxhl->afx_dev.fxdevs[dIndex];
+		Static_SetText(GetDlgItem(hDlg, IDC_INFO_VID), ("VID: " + to_string(dev->desc->vid)).c_str());
+		Static_SetText(GetDlgItem(hDlg, IDC_INFO_PID), ("PID: " + to_string(dev->desc->devid)).c_str());
+		Static_SetText(GetDlgItem(hDlg, IDC_INFO_VER), ("API: v" + to_string(dev->dev->GetVersion())).c_str());
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, dev->desc->white.r);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, dev->desc->white.g);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, dev->desc->white.b);
 	}
 }
 
@@ -196,6 +201,26 @@ void LoadCSV(string name) {
 	}
 }
 
+string OpenSaveFile(HWND hDlg, bool isOpen) {
+	// Load/save device and light mappings
+	OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA)};
+	string appName = isOpen ? "Default.csv" : "Current.csv";
+	appName.reserve(4096);
+	fstruct.hwndOwner = hDlg;
+	fstruct.hInstance = hInst;
+	fstruct.lpstrFile = (LPSTR) appName.c_str();
+	fstruct.nMaxFile = 4096;
+	fstruct.lpstrInitialDir = ".\\Mappings";
+	fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
+	fstruct.lpstrCustomFilter = NULL;
+	fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT |
+		(isOpen ? OFN_FILEMUSTEXIST : OFN_PATHMUSTEXIST);
+	if (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) {
+		return appName;
+	} else
+		return "";
+}
+
 void ApplyDeviceMaps(bool force = false) {
 	// save mappings of selected.
 	for (UINT i = 0; i < csv_devs.size(); i++) {
@@ -219,9 +244,6 @@ void ApplyDeviceMaps(bool force = false) {
 				} else {
 					AlienFX_SDK::mapping *nMap = new AlienFX_SDK::mapping(csv_devs[i].maps[j]);
 					fxhl->afx_dev.GetMappings()->push_back(nMap);
-					// update device list, if any...
-					//if (cDev)
-					//	fxhl->afx_dev.fxdevs[dix].lights.push_back(fxhl->afx_dev.GetMappings()->back());
 				}
 			}
 		}
@@ -247,6 +269,15 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			== IDYES) {
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC) DetectionDialog);
 		}
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETTICFREQ, 16, 0);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETTICFREQ, 16, 0);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETTICFREQ, 16, 0);
+		sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1);
+		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2);
+		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
 		if (fxhl->afx_dev.fxdevs.size() > 0) {
 			if (dIndex < 0) dIndex = 0;
 			UpdateDeviceList(hDlg);
@@ -307,7 +338,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_REML:
 			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning!",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
-				//WORD dPid = fxhl->afx_dev.fxdevs[dIndex].desc->devid;
 				// delete from all groups...
 				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
 					AlienFX_SDK::group* grp = &fxhl->afx_dev.GetGroups()->at(i);
@@ -369,7 +399,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
 			if (eLid != -1) {
 				fxhl->TestLight(dIndex, eLid);
-				//SetFocus(light_view);
 			}
 		} break;
 		case IDC_ISPOWERBUTTON:
@@ -414,43 +443,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_LOADMAP:
 		{	
 			// Load device and light mappings
-			OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA)};
-			string appName = "Default.csv";
-			appName.reserve(4096);
-			//fstruct.lStructSize = sizeof(OPENFILENAMEA);
-			fstruct.hwndOwner = hDlg;
-			fstruct.hInstance = hInst;
-			fstruct.lpstrFile = (LPSTR) appName.c_str();
-			fstruct.nMaxFile = 4096;
-			fstruct.lpstrInitialDir = ".\\Mappings";
-			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
-			fstruct.lpstrCustomFilter = NULL;
-			fstruct.Flags = OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
-			if (GetOpenFileName(&fstruct)) {
+			string appName;
+			if ((appName = OpenSaveFile(hDlg,true)).length()) {
 				// Now load mappings...
 				LoadCSV(appName);
 				ApplyDeviceMaps(true);
 				UpdateDeviceList(hDlg);
-				//UpdateLightsList(hDlg, dIndex, -1);
 			}
 		} break;
 		case IDC_BUT_SAVEMAP:
 		{
 			// Save device and ligh mappings
-			OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA)};
-			string appName = "Current.csv";
-			appName.reserve(4096);
-			//fstruct.lStructSize = sizeof(OPENFILENAMEA);
-			fstruct.hwndOwner = hDlg;
-			fstruct.hInstance = hInst;
-			fstruct.lpstrFile = (LPSTR) appName.c_str();
-			fstruct.lpstrInitialDir = ".\\Mappings";
-			fstruct.nMaxFile = 4096;
-			fstruct.nFilterIndex= 1;
-			fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
-			fstruct.lpstrCustomFilter = NULL;
-			fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT | OFN_PATHMUSTEXIST;
-			if (GetSaveFileName(&fstruct)) {
+			string appName;
+			if ((appName = OpenSaveFile(hDlg,false)).length()) {
 				// Now save mappings...
 				HANDLE file = CreateFile(appName.c_str(),
 										 GENERIC_WRITE,
@@ -460,23 +465,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 										 0,
 										 NULL );
 				if (file != INVALID_HANDLE_VALUE) {
-					for (int i = 0; i < fxhl->afx_dev.GetDevices()->size(); i++) {
-						AlienFX_SDK::devmap* cDev = &fxhl->afx_dev.GetDevices()->at(i);
+					for (int i = 0; i < fxhl->afx_dev.fxdevs.size(); i++) {
 						/// Only connected devices stored!
-						AlienFX_SDK::Functions* dev = NULL;
-						if (dev = fxhl->LocateDev(cDev->devid)) {
-							DWORD writeBytes;
-							string line = "'0','" + to_string(dev->GetVid()) + "','" 
-								+ to_string(dev->GetPID()) + "','" + cDev->name + "'\r\n";
+						DWORD writeBytes;
+						string line = "'0','" + to_string(fxhl->afx_dev.fxdevs[i].desc->vid) + "','" 
+							+ to_string(fxhl->afx_dev.fxdevs[i].desc->devid) + "','" + 
+							fxhl->afx_dev.fxdevs[i].desc->name + "'\r\n";
+						WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
+						for (int j = 0; j < fxhl->afx_dev.fxdevs[i].lights.size(); j++) {
+							AlienFX_SDK::mapping* cMap = fxhl->afx_dev.fxdevs[i].lights[j];
+							line = "'1','" + to_string(cMap->lightid) + "','"
+								+ to_string(cMap->flags) + "','" + cMap->name + "'\r\n";
 							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-							for (int j = 0; j < fxhl->afx_dev.GetMappings()->size(); j++) {
-								AlienFX_SDK::mapping* cMap = fxhl->afx_dev.GetMappings()->at(j);
-								if (cMap->devid == dev->GetPID()) {
-									line = "'1','" + to_string(cMap->lightid) + "','"
-										+ to_string(cMap->flags) + "','" + cMap->name + "'\r\n";
-									WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-								}
-							}
 						}
 					}
 					CloseHandle(file);
@@ -535,12 +535,25 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		}
 		break;
+	case WM_HSCROLL:
+	{
+		if (dIndex >= 0) {
+			switch (LOWORD(wParam)) {
+			case TB_THUMBPOSITION: case TB_ENDTRACK:
+			{
+				if ((HWND) lParam == GetDlgItem(hDlg, IDC_SLIDER_RED)) {
+					fxhl->afx_dev.fxdevs[dIndex].desc->white.r = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip1, fxhl->afx_dev.fxdevs[dIndex].desc->white.r);
+				}
+			} break;
+			}
+		}
+	} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_TESTCOLOR:
 		{
-			AlienFX_SDK::afx_act act{0,0,0,conf->testColor.r, conf->testColor.g, conf->testColor.b};
-			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, &act);
+			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor);
 		} break;
 		}
 		break;
@@ -549,8 +562,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		fxhl->UnblockUpdates(true, true);
 		fxhl->RefreshState();
 	} break;
-	case WM_SIZE:
-		fxhl->UnblockUpdates(false, true);
+	//case WM_PAINT:
+	//	fxhl->UnblockUpdates(false, true);
+	//	if (dIndex >= 0) 
+	//		fxhl->TestLight(dIndex, eLid);
+	//	return false;
 	default: return false;
 	}
 	return true;

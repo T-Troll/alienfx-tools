@@ -2,26 +2,51 @@
 #include "EventHandler.h"
 #include <Shlwapi.h>
 
-bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-void ReloadProfileList();
-void ReloadModeList(HWND, int);
+extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
+extern void ReloadProfileList();
+extern void ReloadModeList(HWND, int);
+extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void SetSlider(HWND tt, int value);
 
 extern EventHandler* eve;
 int pCid = -1;
 
 void ReloadProfSettings(HWND hDlg, profile *prof) {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
+		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
+		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
 	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof->flags & PROF_PRIORITY ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, prof->flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hDlg, IDC_CHECK_GLOBAL, prof->flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hDlg, IDC_CHECK_GLOBAL, prof->flags & PROF_GLOBAL_EFFECTS ? BST_CHECKED : BST_UNCHECKED);
 	ComboBox_SetCurSel(mode_list, prof->effmode);
 	ListBox_ResetContent(app_list);
 	for (int j = 0; j < prof->triggerapp.size(); j++)
 		ListBox_AddString(app_list, prof->triggerapp[j].c_str());
+	// set global effect, colors and delay
+	if (prof->flags & PROF_GLOBAL_EFFECTS) {
+		EnableWindow(eff_list, true);
+		EnableWindow(eff_tempo, true);
+		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR1), true);
+		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR2), true);
+		ComboBox_SetCurSel(eff_list, prof->globalEffect);
+		// now sliders...
+		SendMessage(eff_tempo, TBM_SETPOS, true, prof->globalDelay);
+		SetSlider(sTip2, prof->globalDelay);
+		// now colors...
+		RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, prof->effColor1);
+		RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, prof->effColor2);
+	} else {
+		EnableWindow(eff_list, false);
+		EnableWindow(eff_tempo, false);
+		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR1), false);
+		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR2), false);
+	}
 }
 
 void ReloadProfileView(HWND hDlg) {
@@ -58,6 +83,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
+		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
+		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
 		p_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 
 	switch (message)
@@ -67,17 +94,49 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->defaultProfile->id;
 		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
 		ReloadProfileView(hDlg);
-		if (!conf->haveV5)
-			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);
+		//if (conf->haveV5) {
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 0);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Color"), 1);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Breathing"), 2);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Single-color Wave"), 3);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Dual-color Wave "), 4);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Pulse"), 8);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Mixed Pulse"), 9);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Night Rider"), 10);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Lazer"), 11);
+			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
+			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
+			sTip2 = CreateToolTip(eff_tempo, sTip2);
+		//} else
+		//	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);
 	} break;
 	case WM_COMMAND:
 	{
 		profile* prof = conf->FindProfile(pCid);
-		if (!prof) 
-			break;
+		if (!prof)
+			return false;
 
 		switch (LOWORD(wParam))
 		{
+		case IDC_GLOBAL_EFFECT: {
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				prof->globalEffect = (byte) ComboBox_GetItemData(eff_list, ComboBox_GetCurSel(eff_list));
+				//fxhl->UpdateGlobalEffect();
+			} break;
+			}
+		} break;
+		case IDC_BUTTON_EFFCLR1:
+		{
+			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
+			//fxhl->UpdateGlobalEffect();
+		} break;
+		case IDC_BUTTON_EFFCLR2:
+		{
+			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
+			//fxhl->UpdateGlobalEffect();
+		} break;
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
 			for (int i = 0; i < conf->profiles.size(); i++)
@@ -218,6 +277,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_GLOBAL:
 			prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
+			ReloadProfSettings(hDlg, prof);
 			break;
 		case IDC_CHECK_FANPROFILE:
 			// Store fan profile too
@@ -285,6 +345,38 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		}
 		break;
+	case WM_HSCROLL:
+	{
+		profile *prof = conf->FindProfile(pCid);
+		if (prof)
+			switch (LOWORD(wParam)) {
+			case TB_THUMBPOSITION: case TB_ENDTRACK:
+			{
+				if ((HWND) lParam == eff_tempo) {
+					prof->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip2, prof->globalDelay);
+					//fxhl->UpdateGlobalEffect();
+				}
+			} break;
+			}
+	} break;
+	case WM_DRAWITEM:
+	{
+		profile *prof = conf->FindProfile(pCid);
+		if (prof)
+			switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
+			case IDC_BUTTON_EFFCLR1:
+			{
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, prof->effColor1);
+				break;
+			}
+			case IDC_BUTTON_EFFCLR2:
+			{
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, prof->effColor2);
+				break;
+			}
+			}
+	} break;
 	default: return false;
 	}
 	return true;

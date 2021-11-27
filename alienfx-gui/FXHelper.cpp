@@ -14,11 +14,6 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 	afx_dev.LoadMappings();
 };
 FXHelper::~FXHelper() {
-	//if (devs.size() > 0) {
-	//	for (int i = 0; i < devs.size(); i++)
-	//		devs[i]->AlienFXClose();
-	//	devs.clear();
-	//}
 };
 
 AlienFX_SDK::Functions* FXHelper::LocateDev(int pid) {
@@ -69,10 +64,10 @@ void FXHelper::TestLight(int did, int id)
 		Sleep(20);
 	if (!dev_ready) return;
 
-	afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, 0, 0, 0);
+	afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, {0});
 	afx_dev.fxdevs[did].dev->UpdateColors();
 	if (id != -1) {
-		afx_dev.fxdevs[did].dev->SetColor(id, config->testColor.r, config->testColor.g, config->testColor.b);
+		afx_dev.fxdevs[did].dev->SetColor(id, config->testColor);
 		afx_dev.fxdevs[did].dev->UpdateColors();
 	}
 
@@ -97,11 +92,6 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		DebugPrint("Forced Counter update initiated...\n");
 	}
 
-	//if (config->autoRefresh) {
-	//	Refresh();
-	//	force = true;
-	//}
-
 	std::vector <lightset>::iterator Iter;
 	blinkStage = !blinkStage;
 	bool wasChanged = false;
@@ -109,7 +99,6 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		eData = {101,0,101,101,101,101,101,101,99};
 	}
 
-	//profile* cprof = config->FindProfile(config->activeProfile);
 	if (!config->activeProfile)
 		return;
 	vector<lightset> active = config->activeProfile->lightsets;
@@ -229,10 +218,7 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 			lightQuery.push_back(newBlock);
 			modifyQuery.unlock();
 			SetEvent(haveNewElement);
-		} /*else {
-			DebugPrint((string("ERROR! Light (") + to_string(did) + ", " + to_string(id) + ") have group, not color!\n").c_str());
-			return false;
-		}*/
+		} 
 	}
 	return true;
 }
@@ -278,15 +264,19 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 		}
 	}
 	if (dev && dev->GetVersion() == 5) {
-		AlienFX_SDK::afx_act c1{0,0,0,config->effColor1.r, config->effColor1.g, config->effColor1.b},
-			c2{0,0,0,config->effColor2.r, config->effColor2.g, config->effColor2.b};
-		dev->SetGlobalEffects((byte)config->globalEffect, (byte)config->globalDelay, c1, c2);
+		AlienFX_SDK::afx_act c1{0,0,0,config->activeProfile->effColor1.r, 
+			config->activeProfile->effColor1.g, 
+			config->activeProfile->effColor1.b},
+			c2{0,0,0,config->activeProfile->effColor2.r,
+			config->activeProfile->effColor2.g, 
+			config->activeProfile->effColor2.b};
+		dev->SetGlobalEffects((byte)config->activeProfile->globalEffect, 
+							  (byte)config->activeProfile->globalDelay, c1, c2);
 	}
 }
 
 void FXHelper::Flush() {
 
-	//DebugPrint("Flushing light query...\n");
 	if (!lightQuery.empty()) {
 		modifyQuery.lock();
 		deque<LightQueryElement>::iterator qIter = lightQuery.end()-1;
@@ -297,12 +287,7 @@ void FXHelper::Flush() {
 			DebugPrint((to_string(qIter - lightQuery.begin()) + " elements flushed.\n").c_str());
 			lightQuery.erase(lightQuery.begin(), qIter);
 		}
-		//for (qIter = lightQuery.begin(); qIter != lightQuery.end() && !qIter->update; qIter++);
-		//if (qIter != lightQuery.end())
-		//	// flush the rest of query
-		//	lightQuery.erase(qIter+1, lightQuery.end());
 		modifyQuery.unlock();
-		//while (updateThread && !lightQuery.empty()) Sleep(20);
 	}
 }
 
@@ -523,8 +508,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
-	// ULONGLONG ladt = GetTickCount64();
-
 	while (WaitForMultipleObjects(2, waitArray, false, 200) != WAIT_OBJECT_0) {
 		if (!src->lightQuery.empty()) ResetEvent(src->queryEmpty);
 		int maxQlights = (int)src->afx_dev.GetMappings()->size() * 5;
@@ -544,8 +527,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			//#endif
 			if (current.update) {
 				// update command
-				//ULONGLONG upst = GetTickCount64();
-				//DebugPrint((string("Update begins after ") + to_string(upst - ladt) + " ms\n").c_str());
 				if (src->GetConfig()->stateOn) {
 					for (vector<deviceQuery>::iterator devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
 						AlienFX_SDK::Functions* dev = src->LocateDev(devQ->devID);
@@ -556,13 +537,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 //							OutputDebugString(buff);
 //#endif
 							if (devQ->dev_query.size() > 0) {
-								//if (dev->IsDeviceReady()) {
-									dev->SetMultiColor(&devQ->dev_query, current.flags);
-									dev->UpdateColors();
-									if (src->config->activeProfile && src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
-										src->UpdateGlobalEffect(dev);
-								//} //else
-									//dev->Reset(true);
+								dev->SetMultiColor(&devQ->dev_query, current.flags);
+								dev->UpdateColors();
+								if (src->config->activeProfile && src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
+									src->UpdateGlobalEffect(dev);
 								devQ->dev_query.clear();
 							}
 						}
@@ -579,9 +557,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 									).c_str());
 					}
 				}
-				//ULONGLONG uft = GetTickCount64();
-				//DebugPrint((string("Last update time ") + to_string(uft - upst) + ", circle time " + to_string(uft - ladt) + " ms\n").c_str());
-				//ladt = uft;
 			} else {
 				// set light
 				AlienFX_SDK::Functions* dev = src->LocateDev(current.did);
@@ -643,8 +618,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					if (qn == devs_query.size()) {
 						// create new query!
 						deviceQuery newQ{current.did, {{(byte) current.lid, actions}}};
-						//newQ.devID = current.did;
-						//newQ.dev_query.push_back(pair<int, vector<AlienFX_SDK::afx_act>>(current.lid, actions));
 						devs_query.push_back(newQ);
 					}
 

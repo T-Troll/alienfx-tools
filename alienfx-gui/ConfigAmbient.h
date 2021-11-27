@@ -17,7 +17,6 @@ private:
 public:
 	DWORD mode = 0;
 	DWORD shift = 40;
-	DWORD gammaCorrection = 1;
 	std::vector<zone> zones;
 
 	HWND hDlg = NULL;

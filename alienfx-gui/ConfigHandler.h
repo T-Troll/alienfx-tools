@@ -50,6 +50,9 @@ struct profile {
 	string name;
 	vector<lightset> lightsets;
 	fan_profile fansets;
+	AlienFX_SDK::Colorcode effColor1, effColor2;
+	byte globalEffect = 0,
+         globalDelay = 5;
 	bool ignoreDimming;
 };
 
@@ -61,7 +64,7 @@ private:
 		hKey4 = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
-	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags);
+	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD *eff);
 	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
 public:
 	DWORD startWindows = 0;
@@ -85,10 +88,10 @@ public:
 	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
 	DWORD monDelay = 200;
 	bool wasAWCC = false;
-	Colorcode testColor{0,255}, effColor1, effColor2;
+	AlienFX_SDK::Colorcode testColor{0,255};// , effColor1, effColor2;
 	COLORREF customColors[16]{0};
-	DWORD globalEffect = 0;
-	DWORD globalDelay = 127;
+	//DWORD globalEffect = 0;
+	//DWORD globalDelay = 127;
 	DWORD fanControl = 0;
 	DWORD enableMon = 1;
 	DWORD noDesktop = 0;
@@ -114,7 +117,6 @@ public:
 	~ConfigHandler();
 	void Load();
 	void Save();
-	//static bool sortMappings(lightset i, lightset j);
 	profile* FindProfile(int id);
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);

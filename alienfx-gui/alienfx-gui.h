@@ -38,7 +38,7 @@ extern HINSTANCE hInst;
 
 extern FXHelper* fxhl;
 extern ConfigHandler* conf;
-extern HWND sTip, lTip;
+extern HWND sTip1, sTip2, sTip3;
 
 
 

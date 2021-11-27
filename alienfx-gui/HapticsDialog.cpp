@@ -1,12 +1,12 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-void SwitchTab(int);
-void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act*);
-HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-void SetSlider(HWND tt, int value);
-int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
-bool SetColor(HWND hDlg, int id, Colorcode*);
+extern void SwitchTab(int);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void SetSlider(HWND tt, int value);
+extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
+extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -140,15 +140,13 @@ void SetMappingData(HWND hDlg, haptics_map* map) {
 		map->hicut = 255;
 		needClean = true;
 	}
-	AlienFX_SDK::afx_act act{0,0,0,map->colorfrom.r, map->colorfrom.g, map->colorfrom.b};
-	RedrawButton(hDlg, IDC_BUTTON_LPC, &act);
-	act = {0,0,0,map->colorto.r, map->colorto.g, map->colorto.b};
-	RedrawButton(hDlg, IDC_BUTTON_HPC, &act);
+	RedrawButton(hDlg, IDC_BUTTON_LPC, map->colorfrom);
+	RedrawButton(hDlg, IDC_BUTTON_HPC, map->colorto);
 	// load cuts...
 	SendMessage(hLowSlider, TBM_SETPOS, true, map->lowcut);
 	SendMessage(hHiSlider, TBM_SETPOS, true, map->hicut);
-	SetSlider(sTip, map->lowcut);
-	SetSlider(lTip, map->hicut);
+	SetSlider(sTip1, map->lowcut);
+	SetSlider(sTip2, map->hicut);
 	CheckDlgButton(hDlg, IDC_GAUGE, map->flags ? BST_CHECKED : BST_UNCHECKED);
 	if (needClean) delete map;
 }
@@ -186,8 +184,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		SendMessage(hLowSlider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(hHiSlider, TBM_SETTICFREQ, 16, 0);
 
-		sTip = CreateToolTip(hLowSlider, sTip);
-		lTip = CreateToolTip(hHiSlider, lTip);
+		sTip1 = CreateToolTip(hLowSlider, sTip1);
+		sTip2 = CreateToolTip(hHiSlider, sTip2);
 
 		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
@@ -336,11 +334,11 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (map) {
 				if ((HWND) lParam == hLowSlider) {
 					map->lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
-					SetSlider(sTip, map->lowcut);
+					SetSlider(sTip1, map->lowcut);
 				}
 				if ((HWND) lParam == hHiSlider) {
 					map->hicut = (UCHAR) SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
-					SetSlider(lTip, map->hicut);
+					SetSlider(sTip2, map->hicut);
 				}
 			}
 		} break;
@@ -350,13 +348,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
 		{
-			AlienFX_SDK::afx_act act{0};
+			AlienFX_SDK::Colorcode c{0};
 			if (map)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
-					act = {0,0,0,map->colorfrom.r, map->colorfrom.g, map->colorfrom.b};
+					c = map->colorfrom;
 				else
-					act = {0,0,0,map->colorto.r, map->colorto.g, map->colorto.b};
-			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, &act);
+					c = map->colorto;
+			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, c);
 			return 0;
 		}
 		case IDC_LEVELS:

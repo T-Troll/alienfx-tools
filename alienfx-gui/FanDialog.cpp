@@ -1,8 +1,8 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-void SwitchTab(int);
-HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void SwitchTab(int);
+extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
@@ -33,11 +33,11 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 
         switch (oper) {
         case 2:// tooltip, no redraw
-            SetTooltip(sTip, 100 * (xx - clirect.left) / (clirect.right - clirect.left),
+            SetTooltip(sTip1, 100 * (xx - clirect.left) / (clirect.right - clirect.left),
                        100 * (clirect.bottom - yy) / (clirect.bottom - clirect.top));
             return;
         case 1:// show tooltip
-            SetTooltip(sTip, 100 * (xx - clirect.left) / (clirect.right - clirect.left),
+            SetTooltip(sTip1, 100 * (xx - clirect.left) / (clirect.right - clirect.left),
                        100 * (clirect.bottom - yy) / (clirect.bottom - clirect.top));
             break;
         }
@@ -214,7 +214,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             // So open fan control window...
             fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
             SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
-            sTip = CreateToolTip(fanWindow, NULL);
+            sTip1 = CreateToolTip(fanWindow, NULL);
 
             eve->mon->Stop();
             eve->mon->dlg = hDlg;

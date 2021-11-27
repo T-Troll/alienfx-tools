@@ -46,7 +46,7 @@ HWND mDlg = 0;
 AlienFX_SDK::afx_act* mod;
 HANDLE stopColorRefresh = 0;
 
-HWND sTip = 0, lTip = 0;
+HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
 
 // ConfigStatic:
 int tabSel = -1;
@@ -347,7 +347,7 @@ int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
 	return lights > 0 ? pos : -1;
 }
 
-void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act* act) {
+void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode act) {
 	RECT rect;
 	HBRUSH Brush = NULL;
 	HWND tl = GetDlgItem(hDlg, id);
@@ -357,7 +357,7 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::afx_act* act) {
 	rect.right -= rect.left;
 	rect.top = rect.left = 0;
 	// BGR!
-	Brush = CreateSolidBrush(RGB(act->r, act->g, act->b));
+	Brush = CreateSolidBrush(RGB(act.r, act.g, act.b));
 	FillRect(cnt, &rect, Brush);
 	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
@@ -616,6 +616,15 @@ void UpdateState() {
 		OnSelChanged(tab_list);
 }
 
+void RestoreApp() {
+	ShowWindow(mDlg, SW_RESTORE);
+	SetWindowPos(mDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+	SetWindowPos(mDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+	ReloadProfileList();
+	if (tabSel == TAB_DEVICES)
+		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+}
+
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES),
@@ -763,10 +772,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		{
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
-			ShowWindow(hDlg, SW_RESTORE);
-			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			ReloadProfileList();
+			RestoreApp();
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
@@ -873,9 +879,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->StartProfiles();
 			break;
 		case ID_TRAYMENU_RESTORE:
-			ShowWindow(hDlg, SW_RESTORE);
-			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+			RestoreApp();
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
 			if (conf->profiles[idx].id != conf->activeProfile->id) {
@@ -1016,6 +1020,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	return true;
 }
 
+
+AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act *act) {
+	return new AlienFX_SDK::Colorcode({act->b,act->g,act->r});
+}
+
+//AlienFX_SDK::afx_act *Code2Act(AlienFX_SDK::Colorcode *c) {
+//	return new AlienFX_SDK::afx_act({0,0,0,c->r,c->g,c->b});
+//}
+
 DWORD CColorRefreshProc(LPVOID param) {
 	AlienFX_SDK::afx_act last = *mod;
 	lightset* mmap = (lightset*)param;
@@ -1033,7 +1046,6 @@ DWORD CColorRefreshProc(LPVOID param) {
 
 UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	DRAWITEMSTRUCT* item = 0;
-	//UINT r = 0, g = 0, b = 0;
 
 	switch (message)
 	{
@@ -1044,11 +1056,6 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		mod->r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
 		mod->g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
 		mod->b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
-		//if (r != mod->r || g != mod->g || b != mod->b) {
-		//	mod->r = r;
-		//	mod->g = g;
-		//	mod->b = b;
-		//}
 		break;
 	}
 	return 0;
@@ -1087,11 +1094,11 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 		(*map) = savedColor;
 		fxhl->RefreshOne(mmap, true, true);
 	}
-	RedrawButton(hDlg, id, map);
+	RedrawButton(hDlg, id, *Act2Code(map));
 	return ret;
 }
 
-bool SetColor(HWND hDlg, int id, Colorcode *clr) {
+bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 	CHOOSECOLOR cc{0};
 	bool ret;
 	// Initialize CHOOSECOLOR 
@@ -1106,8 +1113,7 @@ bool SetColor(HWND hDlg, int id, Colorcode *clr) {
 		clr->g = cc.rgbResult >> 8 & 0xff;
 		clr->b = cc.rgbResult >> 16 & 0xff;
 	}
-	AlienFX_SDK::afx_act act{0,0,0,clr->r,clr->g,clr->g};
-	RedrawButton(hDlg, id, &act);
+	RedrawButton(hDlg, id, *clr);
 	return ret;
 }
 
@@ -1177,3 +1183,4 @@ bool RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
 		}
 	return false;
 }
+

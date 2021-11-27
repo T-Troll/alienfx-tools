@@ -17,34 +17,34 @@ extern "C" {
 
 namespace AlienFX_SDK {	
 
-	vector<pair<byte, byte>> *Functions::SetMaskAndColor(DWORD index, byte type, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2) {
+	vector<pair<byte, byte>> *Functions::SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2) {
 		vector<pair<byte, byte>> *mods = new vector<pair<byte, byte>>({{1, type},{2,(byte)chain},
 										 {3,(byte)((index & 0xFF0000) >> 16)},
 										 {4,(byte)((index & 0x00FF00) >> 8)},
 										 {5,(byte)(index & 0x0000FF)}});
 		switch (version) {
 		case API_L_V1:
-			mods->insert(mods->end(),{{6,r1},{7,g1},{8,b1}});
+			mods->insert(mods->end(),{{6,c1.r},{7,c1.g},{8,c1.b}});
 			break;
 		case API_L_V3:
-			mods->insert(mods->end(),{{6,r1},{7,g1},{8,b1},{9,r2},{10,g2},{11,b2}});
+			mods->insert(mods->end(),{{6,c1.r},{7,c1.g},{8,c1.b},{9,c2.r},{10,c2.g},{11,c2.b}});
 			break;
 		case API_L_V2:
-			mods->insert(mods->end(),{{6,(r1 & 0xf0) | ((g1 & 0xf0) >> 4)},
-						{7,(b1 & 0xf0) | ((r2 & 0xf0) >> 4)},
-						{8,(g2 & 0xf0) | ((b2 & 0xf0) >> 4)}});
+			mods->insert(mods->end(),{{6,(c1.r & 0xf0) | ((c1.g & 0xf0) >> 4)},
+						{7,(c1.b & 0xf0) | ((c2.r & 0xf0) >> 4)},
+						{8,(c2.g & 0xf0) | ((c2.b & 0xf0) >> 4)}});
 			break;
 		}
 		return mods;
 	}
 
-	bool Functions::SetAcpiColor(byte mask, byte r, byte g, byte b) {
+	bool Functions::SetAcpiColor(byte mask, Colorcode c) {
 #ifndef NOACPILIGHTS
 		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 		PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
-		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, r);
-		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, g);
-		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, b);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, c.r);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, c.g);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, c.b);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, mask);
 		if (EvalAcpiMethodArgs(devHandle, "\\_SB.AMW1.SETC", acpiargs, (PVOID *) &resName)) {
 			free(resName);
@@ -97,19 +97,19 @@ namespace AlienFX_SDK {
 		PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
 		if (act.act.size() < 2)
 			PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(1 << act.index, mode,
-																			    act.act[0].r, act.act[0].g, act.act[0].b));
+																			   {act.act[0].b, act.act[0].g, act.act[0].r}));
 		else
 			PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(1 << act.index, mode,
-																			   act.act[0].r, act.act[0].g, act.act[0].b,
-																			   act.act[1].r, act.act[1].g, act.act[1].b));
+																			   {act.act[0].b, act.act[0].g, act.act[0].r},
+																			   {act.act[1].b, act.act[1].g, act.act[1].r}));
 		PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
 		Loop();
 
 		if (needInverse) {
 			PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
 			PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(~((1 << act.index)), act.act[1].type,
-																			   act.act[0].r, act.act[0].g, act.act[0].b,
-																			   act.act[1].r, act.act[1].g, act.act[1].b));
+																			   {act.act[0].b, act.act[0].g, act.act[0].r},
+																			   {act.act[1].b, act.act[1].g, act.act[1].r}));
 			PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
 			Loop();
 		}
@@ -348,7 +348,7 @@ namespace AlienFX_SDK {
 
 	}
 
-	bool Functions::SetColor(unsigned index, byte r, byte g, byte b, bool loop) {
+	bool Functions::SetColor(unsigned index, Colorcode c, bool loop) {
 		bool val = false;
 		if (!inSet)
 			Reset();
@@ -357,29 +357,29 @@ namespace AlienFX_SDK {
 		case API_L_V7:
 		{
 			PrepareAndSend(COMMV7.status, sizeof(COMMV7.status));
-			val = PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{6,bright},{7,index},{8,r},{9,g},{10,b}});
+			val = PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{6,bright},{7,index},{8,c.r},{9,c.g},{10,c.b}});
 			//val = PrepareAndSend(COMMV7.colorSet, sizeof(COMMV7.colorSet), {{5,(byte)(index+1)},{6,r},{7,g},{8,b}});
 		} break;
 		case API_L_V6:
 		{
-			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {{9,(byte)(1 << index)},{10,r},{11,g},{12,b},{13,bright}});
+			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {{9,(byte)(1 << index)},{10,c.r},{11,c.g},{12,c.b},{13,bright}});
 		} break;
 		case API_L_V5:
 		{
-			val = PrepareAndSend(COMMV5.colorSet, sizeof(COMMV5.colorSet), {{4,(byte)(index+1)},{5,r},{6,g},{7,b}});
+			val = PrepareAndSend(COMMV5.colorSet, sizeof(COMMV5.colorSet), {{4,(byte)(index+1)},{5,c.r},{6,c.g},{7,c.b}});
 		} break;
 		case API_L_V4:
 		{
 			PrepareAndSend(COMMV4.colorSel, sizeof(COMMV4.colorSel), {{6,index}});
-			val = PrepareAndSend(COMMV4.colorSet, sizeof(COMMV4.colorSet), {{8,r}, {9,g}, {10,b}});
+			val = PrepareAndSend(COMMV4.colorSet, sizeof(COMMV4.colorSet), {{8,c.r}, {9,c.g}, {10,c.b}});
 		} break;
 		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
-			val = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(1<<index, 3, r, g, b));
+			val = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(1<<index, 3, c));
 		} break;
 		case API_L_ACPI:
 		{
-			val = SetAcpiColor(1 << index, r, g, b);
+			val = SetAcpiColor(1 << index, c);
 		} break;
 		default: return false;
 		}
@@ -387,7 +387,7 @@ namespace AlienFX_SDK {
 		return val;
 	}
 
-	bool Functions::SetMultiLights(vector<UCHAR> *lights, int r, int g, int b) {
+	bool Functions::SetMultiLights(vector<UCHAR> *lights, Colorcode c) {
 		bool val = false;
 		if (!inSet) Reset();
 
@@ -398,7 +398,7 @@ namespace AlienFX_SDK {
 			for (int nc = 0; nc < lights->size(); nc++)
 				mask |= 1 << (*lights)[nc];
 			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {
-				{9,mask},{10,r},{11,g},{12,b},{13,bright}});
+				{9,mask},{10,c.r},{11,c.g},{12,c.b},{13,bright}});
 		} break;
 		case API_L_V5:
 		{
@@ -407,7 +407,7 @@ namespace AlienFX_SDK {
 			for (int nc = 0; nc < lights->size(); nc++) {
 				if (bPos + 4 < length) {
 					mods.insert(mods.end(), {
-						{bPos,(*lights)[nc] + 1},{bPos+1,r},{bPos+2,g},{bPos+3,b}});
+						{bPos,(*lights)[nc] + 1},{bPos+1,c.r},{bPos+2,c.g},{bPos+3,c.b}});
 					bPos += 4;
 				} else {
 					// Send command and clear buffer...
@@ -426,7 +426,7 @@ namespace AlienFX_SDK {
 			for (int nc = 0; nc < lights->size(); nc++)
 				mods.push_back({6 + nc, (*lights)[nc]});
 			PrepareAndSend(COMMV4.colorSel, sizeof(COMMV4.colorSel), mods);
-			val = PrepareAndSend(COMMV4.colorSet, sizeof(COMMV4.colorSet), {{8,r}, {9,g}, {10,b}});
+			val = PrepareAndSend(COMMV4.colorSet, sizeof(COMMV4.colorSet), {{8,c.r}, {9,c.g}, {10,c.b}});
 		} break;
 		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
@@ -434,7 +434,7 @@ namespace AlienFX_SDK {
 			DWORD fmask = 0;
 			for (int nc = 0; nc < lights->size(); nc++)
 				fmask |= 1 << (*lights)[nc];
-			val = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(fmask, 3, r, g, b));
+			val = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(fmask, 3, c));
 			Loop();
 		} break;
 		case API_L_ACPI:
@@ -442,12 +442,12 @@ namespace AlienFX_SDK {
 			byte fmask = 0;
 			for (int nc = 0; nc < lights->size(); nc++)
 				fmask |= 1 << (*lights)[nc];
-			val = SetAcpiColor(fmask, r, g, b);
+			val = SetAcpiColor(fmask, c);
 		} break;
 		default:
 		{
 			for (int nc = 0; nc < lights->size(); nc++)
-				val = SetColor((*lights)[nc], r, g, b);
+				val = SetColor((*lights)[nc], c);
 		}
 		}
 		return val;
@@ -505,7 +505,7 @@ namespace AlienFX_SDK {
 		default: //case API_L_ACPI:
 		{
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++) {
-				val = SetColor(nc->index, nc->act[0].r, nc->act[0].g, nc->act[0].b);
+				val = SetColor(nc->index, {nc->act[0].b, nc->act[0].g, nc->act[0].r});
 			}
 		} break;
 		}
@@ -610,34 +610,38 @@ namespace AlienFX_SDK {
 					case AlienFX_A_Pulse:
 					{
 						if (act->act.size() == 1)
-							mods = SetMaskAndColor(1 << act->index, 2, act->act[ca].r, act->act[ca].g, act->act[ca].b);
+							mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r});
 						else
 							if (ca < act->act.size() - 1) {
-								mods = SetMaskAndColor(1 << act->index, 2, act->act[ca].r, act->act[ca].g, act->act[ca].b, act->act[ca + 1].r, act->act[ca + 1].g, act->act[ca + 1].b);
+								mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+													   {act->act[ca + 1].b, act->act[ca + 1].g, act->act[ca + 1].r});
 
 							} else {
-								mods = SetMaskAndColor(1 << act->index, 2, act->act[ca].r, act->act[ca].g, act->act[ca].b, act->act[0].r, act->act[0].g, act->act[0].b);
+								mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+													   {act->act[0].b, act->act[0].g, act->act[0].r});
 							}
 					} break;
 					case AlienFX_A_Morph:
 					{
 						if (ca < act->act.size() - 1) {
-							mods = SetMaskAndColor(1 << act->index, 1, act->act[ca].r, act->act[ca].g, act->act[ca].b, act->act[ca + 1].r, act->act[ca + 1].g, act->act[ca + 1].b);
+							mods = SetMaskAndColor(1 << act->index, 1, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+												   {act->act[ca + 1].b, act->act[ca + 1].g, act->act[ca + 1].r});
 
 						} else {
-							mods = SetMaskAndColor(1 << act->index, 1, act->act[ca].r, act->act[ca].g, act->act[ca].b, act->act[0].r, act->act[0].g, act->act[0].b);
+							mods = SetMaskAndColor(1 << act->index, 1, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+												   {act->act[0].b, act->act[0].g, act->act[0].r});
 						}
 					} break;
 					default:
 					{ //case AlienFX_A_Color:
-						mods = SetMaskAndColor(1 << act->index, 3, act->act[ca].r, act->act[ca].g, act->act[ca].b);
+						mods = SetMaskAndColor(1 << act->index, 3, {act->act[ca].b, act->act[ca].g, act->act[ca].r});
 					} //break;
 					}
 					res = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), mods);
 				}
 				Loop();
 			} break;
-			default: res = SetColor(act->index, act->act[0].r, act->act[0].g, act->act[0].b);
+			default: res = SetColor(act->index, {act->act[0].b, act->act[0].g, act->act[0].r});
 			}
 		}
 		return res;
@@ -787,7 +791,7 @@ namespace AlienFX_SDK {
 			if (pwr && act->size() == 1) {
 				// Fix for immediate power button change
 				int pind = powerMode ? 0 : 1;
-				SetColor(pwr->index, pwr->act[pind].r, pwr->act[pind].g, pwr->act[pind].b);
+				SetColor(pwr->index, {pwr->act[pind].b, pwr->act[pind].g, pwr->act[pind].r});
 			} 
 			//else {
 			//	PrepareAndSend(COMMV1.apply, sizeof(COMMV1.apply));
@@ -797,7 +801,7 @@ namespace AlienFX_SDK {
 		default:
 			// can't set action for other, just use color
 			if (pwr)
-				SetColor(pwr->index, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b);
+				SetColor(pwr->index, {pwr->act[0].b, pwr->act[0].g, pwr->act[0].r});
 		}
 		return true;
 	}
@@ -811,7 +815,7 @@ namespace AlienFX_SDK {
 				for (int i = 0; i < mappings->size(); i++) {
 					mapping* cur = mappings->at(i);
 					if (LOWORD(cur->devid) == pid && (!cur->flags || power)) {
-							SetColor(cur->lightid, 0, 0, 0);
+						SetColor(cur->lightid, {0});
 					}
 				}
 			break;

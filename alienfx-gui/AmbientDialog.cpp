@@ -1,11 +1,11 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-void SetSlider(HWND tt, int value);
-int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
+extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void SetSlider(HWND tt, int value);
+extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
-void SwitchTab(int);
+extern void SwitchTab(int);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -55,8 +55,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         SendMessage(brSlider, TBM_SETPOS, true, conf->amb_conf->shift);
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
 
-        sTip = CreateToolTip(brSlider, sTip);
-        SetSlider(sTip, conf->amb_conf->shift);
+        sTip1 = CreateToolTip(brSlider, sTip1);
+        SetSlider(sTip1, conf->amb_conf->shift);
 
         conf->amb_conf->hDlg = hDlg;
 
@@ -178,12 +178,12 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         case TB_THUMBPOSITION: case TB_ENDTRACK:
         if ((HWND) lParam == brSlider) {
             conf->amb_conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
-            SetSlider(sTip, conf->amb_conf->shift);
+            SetSlider(sTip1, conf->amb_conf->shift);
         }
         break;
         default:
         if ((HWND) lParam == brSlider) {
-            SetSlider(sTip, (int) SendMessage(brSlider, TBM_GETPOS, 0, 0));
+            SetSlider(sTip1, (int) SendMessage(brSlider, TBM_GETPOS, 0, 0));
         }
         }
     break;

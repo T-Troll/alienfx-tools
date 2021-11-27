@@ -194,6 +194,10 @@
 #define IDC_INFO_PID                    1107
 #define IDC_INFO_VER                    1108
 #define IDC_CHECK_GLOBAL                1109
+#define IDC_SLIDER_RED                  1110
+#define IDC_SLIDER_GREEN                1111
+#define IDC_SLIDER_GREEN2               1112
+#define IDC_SLIDER_BLUE                 1112
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -227,7 +231,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        155
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1110
+#define _APS_NEXT_CONTROL_VALUE         1111
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif
