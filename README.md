@@ -7,7 +7,8 @@ AWCC don't needed anymore - here are light weighted tools for Alienware systems 
 
 Some additional tools added from my other [`Alienfan-tools`](https://github.com/T-Troll/alienfan-tools) project:
 - Alienfan GUI control - simple fan and power control utility. Set you fan parameters according to any system temperature sensor, switch system power modes...
-- Alienfan CLI - Command line interface tool for control fans and power from command line.  
+- Alienfan CLI - Command line interface tool for control fans and power from command line.
+- Alienfan Overboost - CLI tool for manual/automatic fan overboost (set higher RPM that BIOS suggest).  
 Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
 
 ## Disclaimer
