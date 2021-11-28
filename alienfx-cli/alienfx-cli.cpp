@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	cerr << "alienfx-cli v5.3.2" << endl;
+	cerr << "alienfx-cli v5.3.3" << endl;
 	if (argc < 2) 
 	{
 		printUsage();
@@ -151,9 +151,9 @@ int main(int argc, char* argv[])
 	}
 	//const char* command = argv[1];
 	for (int cc = 1; cc < argc; cc++) {
-		if (devType && cc > 1) {
-			Sleep(sleepy);
-		}
+		//if (devType && cc > 1) {
+		//	Sleep(sleepy);
+		//}
 		//else
 		//	Sleep(100);
 		string arg = string(argv[cc]);
@@ -195,9 +195,23 @@ int main(int argc, char* argv[])
 			switch (devType) {
 			case 1:
 				for (int i = 0; i < afx_map->fxdevs.size(); i++) {
-					cout << "Device VID#" << afx_map->fxdevs[i].dev->GetVid()
+					cout << "Device ";
+					if (afx_map->fxdevs[i].desc)
+						cout << afx_map->fxdevs[i].desc->name;
+					else
+						cout << "No name";
+					unsigned devtype = afx_map->fxdevs[i].dev->GetType();
+					string typeName = "Unknown";
+					switch (devtype) {
+					case 0: typeName = "Notebook"; break;
+					case 1: typeName = "Keyboard"; break;
+					case 2: typeName = "Monitor"; break;
+					case 3: typeName = "Mouse"; break;
+					}
+					cout << ", " << typeName << ", VID#" << afx_map->fxdevs[i].dev->GetVid()
 						<< ", PID#" << afx_map->fxdevs[i].dev->GetPID()
 						<< ", V" << afx_map->fxdevs[i].dev->GetVersion();
+
 					if (cdev->GetPID() == afx_map->fxdevs[i].dev->GetPID())
 						cout << " (Active)";
 					cout << endl;
@@ -213,7 +227,7 @@ int main(int argc, char* argv[])
 				}
 				// now groups...
 				for (int i = 0; i < afx_map->GetGroups()->size(); i++)
-					cout << "Group #" << (afx_map->GetGroups()->at(i).gid & 0xffff)
+					cout << "  Group #" << (afx_map->GetGroups()->at(i).gid & 0xffff)
 					<< " - " << afx_map->GetGroups()->at(i).name
 					<< " (" << afx_map->GetGroups()->at(i).lights.size() << " lights)" << endl;
 				break;
@@ -223,14 +237,11 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		if (command == "set-tempo" && CheckArgs(command, 1, args.size())) {
+			sleepy = atoi(args.at(0).c_str());
 			switch (devType) {
-			case 1:
-				sleepy = atoi(args.at(0).c_str());
-				break;
 			case 0:
 			{
-				unsigned tempo = atoi(args.at(0).c_str());
-				lfxUtil.SetTempo(tempo);
+				lfxUtil.SetTempo(sleepy);
 				lfxUtil.Update();
 			} break;
 			}
@@ -286,7 +297,15 @@ int main(int argc, char* argv[])
 			case 1:
 			{
 				SetBrighness(&color);
-				vector<UCHAR> lights;
+				for (int j = 0; j < afx_map->fxdevs.size(); j++) {
+					vector<byte> lights;
+					for (int i = 0; i < afx_map->fxdevs[j].lights.size(); i++) {
+						lights.push_back((byte)afx_map->fxdevs[j].lights[i]->lightid);
+					}
+					afx_map->fxdevs[j].dev->SetMultiLights(&lights, color);
+					afx_map->fxdevs[j].dev->UpdateColors();
+				}
+				/*vector<UCHAR> lights;
 				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
 					AlienFX_SDK::mapping *lgh = afx_map->GetMappings()->at(i);
 					if (lgh->devid == cdev->GetPID() &&
@@ -294,7 +313,7 @@ int main(int argc, char* argv[])
 						lights.push_back((UCHAR) lgh->lightid);
 				}
 				cdev->SetMultiLights(&lights, color);
-				cdev->UpdateColors();
+				cdev->UpdateColors();*/
 			} break;
 			case 0:
 				lfxUtil.SetLFXColor(zoneCode, color.ci);

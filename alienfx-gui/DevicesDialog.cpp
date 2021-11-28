@@ -74,6 +74,9 @@ void UpdateDeviceInfo(HWND hDlg) {
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, dev->desc->white.r);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, dev->desc->white.g);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, dev->desc->white.b);
+		SetSlider(sTip1, dev->desc->white.r);
+		SetSlider(sTip2, dev->desc->white.r);
+		SetSlider(sTip3, dev->desc->white.r);
 	}
 }
 
@@ -88,17 +91,11 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 	if (dIndex == -1 && fxhl->afx_dev.fxdevs.size()) {
 		dIndex = 0;
 	}
-	for (UINT i = 0; i < fxhl->afx_dev.fxdevs.size(); i++) {
+	for (int i = 0; i < fxhl->afx_dev.fxdevs.size(); i++) {
 		if (!fxhl->afx_dev.fxdevs[i].desc) {
 			// no name
-			unsigned devtype = 0;
+			unsigned devtype = fxhl->afx_dev.fxdevs[i].dev->GetType();
 			string typeName = "Unknown";
-			// ok, let's check device type...
-			for (unsigned j = 0; j < NUM_VIDS; j++) {
-				if (AlienFX_SDK::vids[j] == fxhl->afx_dev.fxdevs[i].dev->GetVid()) {
-					devtype = j; break;
-				}
-			}
 			switch (devtype) {
 			case 0: typeName = "Notebook"; break;
 			case 1: typeName = "Keyboard"; break;
@@ -226,14 +223,8 @@ void ApplyDeviceMaps(bool force = false) {
 	for (UINT i = 0; i < csv_devs.size(); i++) {
 		if (force || csv_devs[i].selected) {
 			AlienFX_SDK::devmap *cDev = fxhl->afx_dev.GetDeviceById(csv_devs[i].dev.devid, csv_devs[i].dev.vid);
-			int dix = 0;
 			if (cDev) {
 				cDev->name = csv_devs[i].dev.name;
-				// need to find device index in fxdevs...
-				for (dix = 0; dix < fxhl->afx_dev.fxdevs.size(); dix++)
-					if (cDev->vid == fxhl->afx_dev.fxdevs[dix].dev->GetVid() &&
-						cDev->devid == fxhl->afx_dev.fxdevs[dix].dev->GetPID())
-						break;
 			}
 			for (int j = 0; j < csv_devs[i].maps.size(); j++) {
 				AlienFX_SDK::mapping *oMap = fxhl->afx_dev.GetMappingById(csv_devs[i].maps[j].devid, csv_devs[i].maps[j].lightid);
@@ -539,12 +530,21 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		if (dIndex >= 0) {
 			switch (LOWORD(wParam)) {
-			case TB_THUMBPOSITION: case TB_ENDTRACK:
+			case TB_THUMBTRACK: case TB_ENDTRACK:
 			{
 				if ((HWND) lParam == GetDlgItem(hDlg, IDC_SLIDER_RED)) {
 					fxhl->afx_dev.fxdevs[dIndex].desc->white.r = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip1, fxhl->afx_dev.fxdevs[dIndex].desc->white.r);
 				}
+				if ((HWND) lParam == GetDlgItem(hDlg, IDC_SLIDER_GREEN)) {
+					fxhl->afx_dev.fxdevs[dIndex].desc->white.g = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip2, fxhl->afx_dev.fxdevs[dIndex].desc->white.g);
+				}
+				if ((HWND) lParam == GetDlgItem(hDlg, IDC_SLIDER_BLUE)) {
+					fxhl->afx_dev.fxdevs[dIndex].desc->white.b = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip3, fxhl->afx_dev.fxdevs[dIndex].desc->white.b);
+				}
+				fxhl->TestLight(dIndex, eLid, true);
 			} break;
 			}
 		}

@@ -54,14 +54,14 @@ public:
 
 	FXHelper(ConfigHandler *conf);
 	~FXHelper();
-	AlienFX_SDK::Functions *LocateDev(int pid);
+	AlienFX_SDK::afx_device *LocateDev(int pid);
 	size_t FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
 	bool RefreshOne(lightset* map, int force = 0, bool update = false);
 	bool SetMode(int mode);
-	void TestLight(int did, int id);
+	void TestLight(int did, int id, bool wp=false);
 	void ResetPower(int did);
 	void SetCounterColor(EventData *data, bool force = false);
 	void RefreshState(bool force = false);

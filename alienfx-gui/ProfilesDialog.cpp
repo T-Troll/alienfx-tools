@@ -94,7 +94,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->defaultProfile->id;
 		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
 		ReloadProfileView(hDlg);
-		//if (conf->haveV5) {
+		if (conf->haveV5) {
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 0);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Color"), 1);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Breathing"), 2);
@@ -107,8 +107,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
 			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
 			sTip2 = CreateToolTip(eff_tempo, sTip2);
-		//} else
-		//	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);
+		} else
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);
 	} break;
 	case WM_COMMAND:
 	{

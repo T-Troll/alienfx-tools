@@ -451,18 +451,20 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 				string res = buf;
 				size_t pos = res.find("\"name\":"), 
 					posf = res.find("\"", pos + 8);
-				res = res.substr(pos + 8, posf - pos - 8);
-				size_t dotpos = res.find(".", 1+ res.find(".", 1 + res.find(".")));
-				if (res.find(".", 1+ res.find(".", 1 + res.find("."))) == string::npos)
-					res += ".0";
-				if (res != GetAppVersion()) {
-					// new version detected!
-					niData->uFlags |= NIF_INFO;
-					strcpy_s(niData->szInfoTitle, "Update avaliable!");
-					strcpy_s(niData->szInfo, ("Version " + res + " released at GitHub.").c_str());
-					Shell_NotifyIcon(NIM_MODIFY, niData);
-					niData->uFlags &= ~NIF_INFO;
-					isNewVersion = true;
+				if (pos != string::npos) {
+					res = res.substr(pos + 8, posf - pos - 8);
+					size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
+					if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
+						res += ".0";
+					if (res != GetAppVersion()) {
+						// new version detected!
+						niData->uFlags |= NIF_INFO;
+						strcpy_s(niData->szInfoTitle, "Update avaliable!");
+						strcpy_s(niData->szInfo, ("Version " + res + " released at GitHub.").c_str());
+						Shell_NotifyIcon(NIM_MODIFY, niData);
+						niData->uFlags &= ~NIF_INFO;
+						isNewVersion = true;
+					}
 				}
 			}
 			InternetCloseHandle(req);
@@ -580,10 +582,9 @@ void ReloadProfileList() {
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 	ComboBox_ResetContent(profile_list);
 	for (int i = 0; i < conf->profiles.size(); i++) {
-		int pos = ComboBox_AddString(profile_list, conf->profiles[i].name.c_str());
-		ComboBox_SetItemData(profile_list, pos, conf->profiles[i].id);
+		ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i].name.c_str()), conf->profiles[i].id);
 		if (conf->profiles[i].id == conf->activeProfile->id) {
-			ComboBox_SetCurSel(profile_list, pos);
+			ComboBox_SetCurSel(profile_list, i);// pos);
 			ComboBox_SetCurSel(mode_list, conf->profiles[i].effmode);
 		}
 	}

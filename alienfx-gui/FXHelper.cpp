@@ -16,10 +16,10 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 FXHelper::~FXHelper() {
 };
 
-AlienFX_SDK::Functions* FXHelper::LocateDev(int pid) {
+AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 	for (int i = 0; i < afx_dev.fxdevs.size(); i++)
 		if (afx_dev.fxdevs[i].dev->GetPID() == pid)
-			return afx_dev.fxdevs[i].dev;
+			return &afx_dev.fxdevs[i];
 	return nullptr;
 };
 
@@ -50,7 +50,7 @@ void FXHelper::SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, 
 }
 
 
-void FXHelper::TestLight(int did, int id)
+void FXHelper::TestLight(int did, int id, bool wp)
 {
 	vector<byte> opLights;
 
@@ -64,7 +64,14 @@ void FXHelper::TestLight(int did, int id)
 		Sleep(20);
 	if (!dev_ready) return;
 
-	afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, {0});
+	AlienFX_SDK::Colorcode c{0};
+
+	if (wp) {
+		c.ci = afx_dev.fxdevs[did].desc->white.ci;
+		afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
+	}
+	else
+		afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
 	afx_dev.fxdevs[did].dev->UpdateColors();
 	if (id != -1) {
 		afx_dev.fxdevs[did].dev->SetColor(id, config->testColor);
@@ -75,10 +82,10 @@ void FXHelper::TestLight(int did, int id)
 
 void FXHelper::ResetPower(int did)
 {
-	AlienFX_SDK::Functions* dev = LocateDev(did);
+	AlienFX_SDK::afx_device* dev = LocateDev(did);
 	if (dev != NULL) {
 		vector<AlienFX_SDK::act_block> act{{63}};
-		dev->SetPowerAction(&act);
+		dev->dev->SetPowerAction(&act);
 	}
 }
 
@@ -136,9 +143,15 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				if (lVal != cVal && (lVal > ccut || cVal > ccut)) {
 					diffC = true;
 					coeff = cVal > ccut ? (cVal - ccut) / (100.0 - ccut) : 0.0;
-					fin.r = (BYTE) (from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
-					fin.g = (BYTE) (from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
-					fin.b = (BYTE) (from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
+					//fin.r = (BYTE) (from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
+					//fin.g = (BYTE) (from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
+					//fin.b = (BYTE) (from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
+					fin.r = (byte) sqrt((1 - coeff) * from.r * from.r +
+										coeff * Iter->eve[2].map[1].r * Iter->eve[2].map[1].r);
+					fin.g = (byte) sqrt((1 - coeff) * from.g * from.g +
+										coeff * Iter->eve[2].map[1].g * Iter->eve[2].map[1].g);
+					fin.b = (byte) sqrt((1 - coeff) * from.b * from.b +
+										coeff * Iter->eve[2].map[1].b * Iter->eve[2].map[1].b);
 				}
 			}
 			if (Iter->eve[3].fs.b.flags) {
@@ -430,9 +443,9 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 
 	for (UINT i = 0; i < config->amb_conf->zones.size(); i++) {
 		zone map = config->amb_conf->zones[i];
-		UINT r = 0, g = 0, b = 0, size = (UINT) map.map.size(), dsize = size * 255;
-		if (size > 0) {
-			for (unsigned j = 0; j < size; j++) {
+		UINT r = 0, g = 0, b = 0, dsize = (UINT) map.map.size() * 255;
+		if (dsize) {
+			for (unsigned j = 0; j < map.map.size(); j++) {
 				r += img[3 * map.map[j] + 2];
 				g += img[3 * map.map[j] + 1];
 				b += img[3 * map.map[j]];
@@ -476,9 +489,12 @@ void FXHelper::RefreshHaptics(int *freq) {
 			for (int j = 0; j < map.map.size(); j++)
 				power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
 			power = power / (map.map.size() * (map.hicut - map.lowcut));
-			actions[0].r = (unsigned char) ((1.0 - power) * from.r + power * to.r);
-			actions[0].g = (unsigned char) ((1.0 - power) * from.g + power * to.g);
-			actions[0].b = (unsigned char) ((1.0 - power) * from.b + power * to.b);
+			//actions[0].r = (byte) ((1.0 - power) * from.r + power * to.r);
+			//actions[0].g = (byte) ((1.0 - power) * from.g + power * to.g);
+			//actions[0].b = (byte) ((1.0 - power) * from.b + power * to.b);
+			actions[0].r = (byte) sqrt((1.0 - power) * from.r * from.r + power * to.r * to.r);
+			actions[0].g = (byte) sqrt((1.0 - power) * from.g * from.g + power * to.g * to.g);
+			actions[0].b = (byte) sqrt((1.0 - power) * from.b * from.b + power * to.b * to.b);
 
 			if (map.devid) {
 				SetLight(map.devid, map.lightid, actions);
@@ -529,7 +545,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				// update command
 				if (src->GetConfig()->stateOn) {
 					for (vector<deviceQuery>::iterator devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
-						AlienFX_SDK::Functions* dev = src->LocateDev(devQ->devID);
+						AlienFX_SDK::afx_device* dev = src->LocateDev(devQ->devID);
 						if (dev && (current.did == (-1) || devQ->devID == current.did)) {
 //#ifdef _DEBUG
 //							char buff[2048];
@@ -537,10 +553,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 //							OutputDebugString(buff);
 //#endif
 							if (devQ->dev_query.size() > 0) {
-								dev->SetMultiColor(&devQ->dev_query, current.flags);
-								dev->UpdateColors();
+								dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
+								dev->dev->UpdateColors();
 								if (src->config->activeProfile && src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
-									src->UpdateGlobalEffect(dev);
+									src->UpdateGlobalEffect(dev->dev);
 								devQ->dev_query.clear();
 							}
 						}
@@ -559,7 +575,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} else {
 				// set light
-				AlienFX_SDK::Functions* dev = src->LocateDev(current.did);
+				AlienFX_SDK::afx_device* dev = src->LocateDev(current.did);
 
 				if (dev) {
 					vector<AlienFX_SDK::afx_act> actions;// = current.actions;
@@ -568,13 +584,13 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						AlienFX_SDK::afx_act action = current.actions[i];
 						// gamma-correction...
 						if (src->GetConfig()->gammaCorrection) {
-							action.r = ((UINT) action.r * action.r) / 255;
-							action.g = ((UINT) action.g * action.g) / 255;
-							action.b = ((UINT) action.b * action.b) / 255;
+							action.r = ((UINT) action.r * action.r * dev->desc->white.r) / (255 * 255);
+							action.g = ((UINT) action.g * action.g * dev->desc->white.g) / (255 * 255);
+							action.b = ((UINT) action.b * action.b * dev->desc->white.b) / (255 * 255);
 						}
 						// Dimming...
 						// For v0-v3 devices only, v4+ have hardware dimming
-						if (dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
+						if (dev->dev->GetVersion() < 4 && src->GetConfig()->stateDimmed && (!flags || src->GetConfig()->dimPowerButton)) {
 							unsigned delta = 255 - src->GetConfig()->dimmingPower;
 							action.r = ((UINT) action.r * delta) / 255;// >> 8;
 							action.g = ((UINT) action.g * delta) / 255;// >> 8;

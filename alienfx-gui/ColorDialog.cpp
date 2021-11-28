@@ -82,7 +82,7 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		if (effID >= ListView_GetItemCount(eff_list))
 			effID = ListView_GetItemCount(eff_list) - 1;
 		if (effID != -1) {
-			int dev_ver = fxhl->LocateDev(mmap->devid) ? fxhl->LocateDev(mmap->devid)->GetVersion() : -1;
+			int dev_ver = fxhl->LocateDev(mmap->devid) ? fxhl->LocateDev(mmap->devid)->dev->GetVersion() : -1;
 			ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
 			switch (dev_ver) {
 			case -1: case 1: case 2: case 3: case 4: case 7:

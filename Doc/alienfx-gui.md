@@ -125,6 +125,8 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
 - "Global effects" - Enable global effects for supported devices for this profile. Global effect will be disabled by default, if this not selected for active profile.
 
+"Global effects" block controls effect mode, temp and colors for APIv5 devices, provide some cool animations across all keys if enabled.
+
 "Trigger applications" list define application executables, which will activate selected profile if running and "Profile auto switch" is on.  
 Press "Add" button to select new application, or select one from the list and press "Remove" button to delete it.
 
@@ -150,6 +152,10 @@ Selected light changes it colours to the one defined by "Test colour" button, an
 "Detect lights" button check you devices against application database and provide possible light names for you gear from it.  
 "Load Lights" button loads a backup (saved at this or similar device). If devices is different, it will try to apply as much similar configuration as possible.  
 "Save Lights" button save a backup of current light and device names and settings.  
+
+"White point" block - some devices (especially old v2 ones) have not correct color correction, so white color looks wierd. You can tune it using this block.  
+Then you start move the slider, all current device colors set to White, so if it's not white enough you can decrease intencity for visible color to make it more white  .
+Select any light in list to disable white lights.
 
 ![Fans tab](/Doc/img/gui-fans.png?raw=true)
 
@@ -198,9 +204,10 @@ Please keep in mind:
 - "Esif temperature" - Read hardware device temperature counters. If disabled, only system-wide ones will be read. It's useful for some Dell and Alienware systems, but also provide a lot of component temperature readings. It will require "Run as administrator" privilege (default - off).
 - "Enable fan control" - Enables all fan control functionality, if possible.
 
-"Global effects" block provides global control for light effects for current device. It's only work for APIv5 devices, provide some cool animations across all keys. 
 
-Keyboard shortcuts (any time):
+## Keyboard shortcuts 
+
+Global shortcuts (works all rime application running):
 - CTRL+SHIFT+F12 - enable/disable lights
 - CTRL+SHIFT+F11 - dim/undim lights for current profile
 - CTRL+SHIFT+F10 - enable/disable software effects

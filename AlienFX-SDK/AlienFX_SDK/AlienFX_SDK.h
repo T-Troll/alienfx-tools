@@ -205,6 +205,9 @@ namespace AlienFX_SDK {
 		// get VID in use
 		int GetVid();
 
+		// get device type
+		int GetType();
+
 		// get version for current device
 		int GetVersion();
 	};

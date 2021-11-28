@@ -749,34 +749,36 @@ namespace AlienFX_SDK {
 			if (pwr) {
 				//DWORD invMask = ~((1 << index));// | 0x8000); // what is 8000? Macro?
 				chain = 1;
-				// 08 02 - standby
+				// 08 02 - AC standby
 				act_block tact{pwr->index,
 							   {{AlienFX_A_Morph, 0 , 0, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b},
-								{2,0,0,0,0,0}}};
-				//SavePowerBlock(2, index, act, false);
-				//act = {{AlienFX_A_Morph, 0 , 0, 0, 0, 0},
-				//	   {2,0,0,Red,Green,Blue}};
+								{2}}};
+				/*SavePowerBlock(2, tact, false);*/
+				//tact = {pwr->index,
+				//	   {{AlienFX_A_Morph, 0 , 0, 0, 0, 0},
+				//	   {2,0,0,pwr->act[1].r, pwr->act[1].g, pwr->act[1].b}}};
 				SavePowerBlock(2, tact, true, true);
+				// 08 05 - AC power
 				tact = {pwr->index,
 						{{AlienFX_A_Color, 0 , 0, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b},
-						{0,0,0,0,0,0}}};
-				// 08 05 - AC power
+						{0}}};
 				SavePowerBlock(5, tact, true);
+				// 08 06 - charge
 				tact = {pwr->index,
 						{{AlienFX_A_Morph, 0 , 0, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b},
 						{0,0,0,pwr->act[1].r, pwr->act[1].g, pwr->act[1].b}}};
-				// 08 06 - charge
 				SavePowerBlock(6, tact, false);
 				tact = {pwr->index,
 						{{AlienFX_A_Morph, 0 , 0, pwr->act[1].r, pwr->act[1].g, pwr->act[1].b},
 						{0,0,0,pwr->act[0].r, pwr->act[0].g, pwr->act[0].b}}};
 				SavePowerBlock(6, tact, true);
-				// 08 07 - Battery
+				// 08 07 - Battery standby
 				tact = {pwr->index,
-						{{AlienFX_A_Color, 0 , 0, pwr->act[1].r, pwr->act[1].g, pwr->act[1].b},
-						{2,0,0,0,0,0}}};
+						{{AlienFX_A_Morph/*AlienFX_A_Color*/, 0 , 0, pwr->act[1].r, pwr->act[1].g, pwr->act[1].b},
+						{2}}};
 				SavePowerBlock(7, tact, true, true);
 				// 08 08 - battery
+				tact.act[0].type = AlienFX_A_Color;
 				SavePowerBlock(8, tact, true);
 				// 08 09 - batt critical
 				tact.act[0].type = AlienFX_A_Pulse;
@@ -1158,6 +1160,11 @@ namespace AlienFX_SDK {
 				dev.name = string(name);
 				devices.push_back(dev);
 			}
+			if (sscanf_s(kName, "DevWhite#%hd_%hd", &dev.vid, &dev.devid) == 2) {
+				devmap* tDev = GetDeviceById(dev.devid, dev.vid);
+				if (tDev)
+					tDev->white.ci = ((DWORD *) name)[0];
+			}
 			len = 255, lend = 255;
 		}
 		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
@@ -1206,6 +1213,8 @@ namespace AlienFX_SDK {
 			//preparing name
 			string name = "Dev#" + to_string(devices[i].vid) + "_" + to_string(devices[i].devid);
 			RegSetValueExA( hKey1, name.c_str(), 0, REG_SZ, (BYTE *) devices[i].name.c_str(), (DWORD) devices[i].name.length() );
+			name = "DevWhite#" + to_string(devices[i].vid) + "_" + to_string(devices[i].devid);
+			RegSetValueExA( hKey1, name.c_str(), 0, REG_DWORD, (BYTE *) &devices[i].white.ci, sizeof(DWORD));
 		}
 
 		for (int i = 0; i < numlights; i++) {
@@ -1266,6 +1275,16 @@ namespace AlienFX_SDK {
 
 	int Functions::GetVid() {
 		return vid;
+	}
+
+	int Functions::GetType() {
+		int devtype = -1;
+		for (unsigned j = 0; j < NUM_VIDS; j++) {
+			if (vids[j] == GetVid()) {
+				devtype = j; break;
+			}
+		}
+		return devtype;
 	}
 
 	int Functions::GetVersion() {

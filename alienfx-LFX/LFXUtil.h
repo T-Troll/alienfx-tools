@@ -17,16 +17,16 @@ struct lightinfo {
 	char desc[256];
 };
 
-union ColorU
-{
-	struct {
-		unsigned char b;
-		unsigned char g;
-		unsigned char r;
-		unsigned char br;
-	};
-	unsigned int ci;
-};
+//union ColorU
+//{
+//	struct {
+//		unsigned char b;
+//		unsigned char g;
+//		unsigned char r;
+//		unsigned char br;
+//	};
+//	unsigned int ci;
+//};
 
 // utilities for working with Dell LightFX/AlienFX API
 namespace LFXUtil

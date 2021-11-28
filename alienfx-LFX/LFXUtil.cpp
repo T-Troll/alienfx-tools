@@ -9,7 +9,6 @@
 namespace
 {
 	HINSTANCE hLibrary;
-	HINSTANCE cLibrary;
 	LFX2INITIALIZE _LFX_Initialize;
 	LFX2RELEASE _LFX_Release;
 	LFX2RESET _LFX_Reset;
