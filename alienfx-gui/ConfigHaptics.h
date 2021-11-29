@@ -20,13 +20,13 @@
 //};
 
 struct haptics_map {
-	DWORD devid;
-	WORD lightid;
-	AlienFX_SDK::Colorcode colorfrom;
-	AlienFX_SDK::Colorcode colorto;
-	byte lowcut;
-	byte hicut;
-	byte flags;
+	DWORD devid = 0;
+	DWORD lightid = 0;
+	AlienFX_SDK::Colorcode colorfrom{0};
+	AlienFX_SDK::Colorcode colorto{0};
+	byte lowcut = 0;
+	byte hicut = 255;
+	byte flags = 0;
 	std::vector<unsigned char> map;
 };
 

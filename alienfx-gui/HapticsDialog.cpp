@@ -242,23 +242,17 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case LBN_SELCHANGE:
 			{
 				if (!map) {
-					haptics_map newmap;
+					map = new haptics_map();
 					if (eItem > 0xffff) {
 						// group
-						newmap.devid = 0;
-						newmap.lightid = eItem;
+						map->lightid = eItem;
 					} else {
 						// light
 						AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
-						newmap.devid = lgh->devid;
-						newmap.lightid = lgh->lightid;
+						map->devid = lgh->devid;
+						map->lightid = lgh->lightid;
 					}
-					newmap.colorfrom.ci = 0;
-					newmap.colorto.ci = 0;
-					newmap.lowcut = 0;
-					newmap.hicut = 255;
-					newmap.flags = 0;
-					conf->hap_conf->haptics.push_back(newmap);
+					conf->hap_conf->haptics.push_back(*map);
 					map = &conf->hap_conf->haptics.back();
 				}
 

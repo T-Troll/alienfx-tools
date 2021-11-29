@@ -4,7 +4,7 @@
 
 struct zone {
 	DWORD devid = 0;
-	WORD lightid = 0;
+	DWORD lightid = 0;
 	std::vector<byte> map;
 };
 

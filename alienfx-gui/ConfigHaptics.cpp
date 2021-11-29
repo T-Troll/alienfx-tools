@@ -39,7 +39,7 @@ void ConfigHaptics::Load() {
         // get id(s)...
         if ((ret = RegEnumValueA( hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE)inarray, &lend )) == ERROR_SUCCESS) {
             vindex++;
-            if (sscanf_s(name, "Map%u-%hu", &map.devid, &map.lightid) == 2) {
+            if (sscanf_s(name, "Map%u-%u", &map.devid, &map.lightid) == 2) {
                 map.colorfrom.ci = inarray[0];
                 map.colorto.ci = inarray[1];
                 map.lowcut = (byte) inarray[2];

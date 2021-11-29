@@ -243,8 +243,6 @@ namespace AlienFX_SDK {
 	}
 
 	void Functions::Loop() {
-		//byte buffer[MAX_BUFFERSIZE];
-		//ZeroMemory(buffer, length);
 		switch (version) {
 		//case API_L_V7:
 		//	//PrepareAndSend(COMMV7.update, sizeof(COMMV7.update), {{9,1}});
@@ -256,7 +254,6 @@ namespace AlienFX_SDK {
 		//	 //m15 require Input report as a confirmation, not output.
 		//	 //WARNING!!! In latest firmware, this can provide up to 10sec(!) slowdown, so i disable status read. It works without it as well.
 		//	HidD_SetOutputReport(devHandle, buffer, length);
-		//	 //std::cout << "Status: 0x" << std::hex << (int) BufferN[2] << std::endl;
 		//} break;
 		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
@@ -277,6 +274,7 @@ namespace AlienFX_SDK {
 		case API_L_V5:
 		{
 			result = PrepareAndSend(COMMV5.reset, sizeof(COMMV5.reset));
+			AlienfxGetDeviceStatus();
 		} break;
 		case API_L_V4:
 		{
@@ -316,6 +314,7 @@ namespace AlienFX_SDK {
 			//} break;
 			case API_L_V5:
 			{
+				//PrepareAndSend(COMMV5.loop, sizeof(COMMV5.loop));
 				res = PrepareAndSend(COMMV5.update, sizeof(COMMV5.update));
 			} break;
 			case API_L_V4:
@@ -405,7 +404,7 @@ namespace AlienFX_SDK {
 			vector<pair<byte, byte>> mods;
 			int bPos = 4;
 			for (int nc = 0; nc < lights->size(); nc++) {
-				if (bPos + 4 < length) {
+				if (bPos < length) {
 					mods.insert(mods.end(), {
 						{bPos,(*lights)[nc] + 1},{bPos+1,c.r},{bPos+2,c.g},{bPos+3,c.b}});
 					bPos += 4;
@@ -471,7 +470,7 @@ namespace AlienFX_SDK {
 			int bPos = 4;
 			vector<pair<byte, byte>> mods;
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++) {
-				if (bPos + 4 < length) {
+				if (bPos < length) {
 					mods.insert(mods.end(), {
 						        {bPos,nc->index + 1},
 								{bPos+1,nc->act[0].r},
@@ -814,7 +813,7 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_L_V7: case API_L_V6: case API_L_ACPI:
 			if (!brightness)
-				for (int i = 0; i < mappings->size(); i++) {
+				for (int i = 0; mappings && i < mappings->size(); i++) {
 					mapping* cur = mappings->at(i);
 					if (LOWORD(cur->devid) == pid && (!cur->flags || power)) {
 						SetColor(cur->lightid, {0});
@@ -837,7 +836,7 @@ namespace AlienFX_SDK {
 			PrepareAndSend(COMMV4.prepareTurn, sizeof(COMMV4.prepareTurn));
 			vector<pair<byte, byte>> mods{{3,(byte)(0x64 - bright)}};
 			byte pos = 6, pindex = 0;
-			for (int i = 0; i < mappings->size(); i++) {
+			for (int i = 0; mappings && i < mappings->size(); i++) {
 				mapping* cur = mappings->at(i);
 				if (LOWORD(cur->devid) == pid && pos < length)
 					if (!cur->flags || power) {

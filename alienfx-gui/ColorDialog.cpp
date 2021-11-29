@@ -246,7 +246,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED: {
-				if (mmap != NULL && mmap->eve[0].map[0].type != AlienFX_SDK::AlienFX_A_Power &&
+				if (mmap && mmap->eve[0].map[0].type != AlienFX_SDK::AlienFX_A_Power &&
 					MessageBox(hDlg, "Do you really want to set all lights to this settings?", "Warning!",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					event light = mmap->eve[0];
@@ -254,13 +254,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						AlienFX_SDK::mapping* map = fxhl->afx_dev.GetMappings()->at(i);
 						if (!(map->flags & ALIENFX_FLAG_POWER)) {
 							lightset* actmap = FindMapping(i);
-							if (actmap)
-								actmap->eve[0] = light;
-							else {
+							if (!actmap) {
 								// create new mapping
-								lightset* newmap = CreateMapping(i);
-								newmap->eve[0] = light;
+								actmap = CreateMapping(i);
 							}
+							actmap->eve[0] = light;
 						}
 					}
 					fxhl->RefreshState(true);

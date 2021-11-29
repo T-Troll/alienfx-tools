@@ -189,10 +189,10 @@ void EventHandler::StartEffects() {
 			StartEvents(); 
 			break;
 		case 1: 
-			if (!capt) capt = new CaptureHelper(conf->amb_conf, fxh); 
+			if (!capt) capt = new CaptureHelper(/*conf->amb_conf, fxh*/); 
 			break;
 		case 2: 
-			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh); 
+			if (!audio) audio = new WSAudioIn(/*conf->hap_conf, fxh*/); 
 			break;
 		//case 3: 
 		//	break;

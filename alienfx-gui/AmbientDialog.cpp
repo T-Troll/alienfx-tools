@@ -100,19 +100,18 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 UINT id = LOWORD(wParam) - IDC_BUTTON1;
                 UINT bid = IDC_CHECK1 + id;
                 if (!map) {
-                    zone newmap;
+                    map = new zone({0});
                     if (eItem > 0xffff) {
                         // group
-                        newmap.devid = 0;
-                        newmap.lightid = eItem;
+                        map->lightid = eItem;
                     } else {
                         // light
                         AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
-                        newmap.devid = lgh->devid;
-                        newmap.lightid = lgh->lightid;
+                        map->devid = lgh->devid;
+                        map->lightid = lgh->lightid;
                     }
-                    conf->amb_conf->zones.push_back(newmap);
-                    map = FindAmbMapping(eItem);
+                    conf->amb_conf->zones.push_back(*map);
+                    map = &conf->amb_conf->zones.back();
                 }
                 // add mapping
                 vector <unsigned char>::iterator Iter = map->map.begin();
