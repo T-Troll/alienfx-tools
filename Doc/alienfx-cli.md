@@ -21,7 +21,6 @@ The following commands are available:
 - `set-dim=<brigtness>` Set active device hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only).
 - `lightson` Turn all current device lights on.
 - `lightsoff` Turn all current device lights off.
-- `update` Updates light status (for looped commands or old devices).
 - `reset` Reset current device.
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's available.

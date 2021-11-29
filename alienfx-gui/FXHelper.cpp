@@ -288,21 +288,21 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 	}
 }
 
-void FXHelper::Flush() {
-
-	if (!lightQuery.empty()) {
-		modifyQuery.lock();
-		deque<LightQueryElement>::iterator qIter = lightQuery.end()-1;
-		if (qIter->update)
-			qIter--;
-		while (qIter > lightQuery.begin() && !qIter->update) qIter--;
-		if (qIter > lightQuery.begin()) {
-			DebugPrint((to_string(qIter - lightQuery.begin()) + " elements flushed.\n").c_str());
-			lightQuery.erase(lightQuery.begin(), qIter);
-		}
-		modifyQuery.unlock();
-	}
-}
+//void FXHelper::Flush() {
+//
+//	if (!lightQuery.empty()) {
+//		modifyQuery.lock();
+//		deque<LightQueryElement>::iterator qIter = lightQuery.end()-1;
+//		if (qIter->update)
+//			qIter--;
+//		while (qIter > lightQuery.begin() && !qIter->update) qIter--;
+//		if (qIter > lightQuery.begin()) {
+//			DebugPrint((to_string(qIter - lightQuery.begin()) + " elements flushed.\n").c_str());
+//			lightQuery.erase(lightQuery.begin(), qIter);
+//		}
+//		modifyQuery.unlock();
+//	}
+//}
 
 void FXHelper::UnblockUpdates(bool newState, bool lock) {
 	if (lock)
@@ -334,10 +334,10 @@ void FXHelper::Start() {
 		DebugPrint("Light updates started.\n");
 
 		stopQuery = CreateEvent(NULL, true, false, NULL);
-		UnblockUpdates(true);
 		haveNewElement = CreateEvent(NULL, false, false, NULL);
 		queryEmpty = CreateEvent(NULL, true, true, NULL);
 		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
+		UnblockUpdates(true, true);
 	}
 }
 
@@ -439,7 +439,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 	vector<AlienFX_SDK::afx_act> actions;
 	actions.push_back({0});
 
-	Flush();
+	//Flush();
 
 	for (UINT i = 0; i < config->amb_conf->zones.size(); i++) {
 		zone map = config->amb_conf->zones[i];
@@ -466,17 +466,15 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 		QueryUpdate();
 }
 
-struct devset {
-	WORD did;
-	vector<UCHAR> lIDs;
-	vector<vector<AlienFX_SDK::afx_act>> fullSets;
-};
-
 void FXHelper::RefreshHaptics(int *freq) {
 	vector<AlienFX_SDK::afx_act> actions;
 	actions.push_back({0});
 
-	Flush();
+	//Flush();
+	if (config->monDelay > 200) {
+		DebugPrint("Haptics update skipped!\n");
+		return;
+	}
 
 	for (unsigned i = 0; i < config->hap_conf->haptics.size(); i++) {
 		haptics_map map = config->hap_conf->haptics[i];
@@ -524,7 +522,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
-	while (WaitForMultipleObjects(2, waitArray, false, 200) != WAIT_OBJECT_0) {
+	while (WaitForMultipleObjects(2, waitArray, false, 50) != WAIT_OBJECT_0) {
 		if (!src->lightQuery.empty()) ResetEvent(src->queryEmpty);
 		int maxQlights = (int)src->afx_dev.GetMappings()->size() * 5;
 		while (!src->lightQuery.empty()) {

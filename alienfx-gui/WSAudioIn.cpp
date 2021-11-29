@@ -8,6 +8,9 @@
 #define DebugPrint(_x_)  
 #endif
 
+extern FXHelper *fxhl;
+extern ConfigHandler *conf;
+
 DWORD WINAPI WSwaveInProc(LPVOID);
 DWORD WINAPI resample(LPVOID);
 DWORD WINAPI UpdateUI(LPVOID);
@@ -21,17 +24,17 @@ const IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
 
 HANDLE hEvent = 0, astopEvent = 0, updateEvent = 0, auiEvent = 0;
 
-WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper *fx)
+WSAudioIn::WSAudioIn(/*ConfigHaptics* cf, FXHelper *fx*/)
 {
-	fxha = fx;
-	conf = cf;
+	/*fxha = fx;
+	conf = cf;*/
 	waveD = new double[NUMPTS];
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	dftGG = new DFT_gosu();
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
-	if (rate = init(cf->inpType)) {
+	if (rate = init(conf->hap_conf->inpType)) {
 		dftGG->setSampleRate(rate);
 		startSampling();
 	}
@@ -200,21 +203,21 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	UINT32 numFramesAvailable = 0;
 	int arrayPos = 0, shift = 0;
 
-	UINT bytesPerChannel = src->pwfx->wBitsPerSample / 8;// bytePerSample;// / nChannel;
+	UINT bytesPerChannel = src->pwfx->wBitsPerSample >> 3;// 8;// bytePerSample;// / nChannel;
 	UINT nChannel = src->pwfx->nChannels;
 	UINT blockAlign = src->pwfx->nBlockAlign;
 
 	BYTE* pData;
 	DWORD flags, res = 0;
 	double* waveT = new double[NUMPTS];
-	UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
+	//UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
 	IAudioCaptureClient *pCapCli = src->pCaptureClient;
 
 	updateEvent = CreateEvent(NULL, false, false, NULL);
 	HANDLE updHandle = CreateThread(NULL, 0, resample, src, 0, NULL);
 	HANDLE hArray[2]{astopEvent, hEvent};
 
-	while ((res = WaitForMultipleObjects(2, hArray, false, 500)) != WAIT_OBJECT_0) {
+	while ((res = WaitForMultipleObjects(2, hArray, false, 200)) != WAIT_OBJECT_0) {
 		switch (res) {
 		case WAIT_OBJECT_0+1:
 			// got new buffer....
@@ -243,7 +246,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 							}
 							finVal += val;
 						}
-						waveT[arrayPos + i - shift] = (double) (finVal / nChannel) / maxLevel / NUMPTS;
+						waveT[arrayPos + i - shift] = (double) (finVal);// / nChannel) / maxLevel / NUMPTS;
 						if (arrayPos + i - shift == NUMPTS - 1) {
 							//buffer full, send to process.
 							memcpy(src->waveD, waveT, NUMPTS * sizeof(double));
@@ -281,18 +284,18 @@ DWORD WINAPI resample(LPVOID lpParam)
 	WSAudioIn *src = (WSAudioIn *) lpParam;
 	double* waveDouble = src->waveD;
 
-	HANDLE waitArray[2]{updateEvent, astopEvent};
+	HANDLE waitArray[2]{astopEvent, updateEvent};
 	DWORD res = 0;
 
 	auiEvent = CreateEvent(NULL, false, false, NULL);
 	HANDLE uiHandle = CreateThread(NULL, 0, UpdateUI, src, 0, NULL);
 
-	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
-		if (res == WAIT_OBJECT_0) {
+	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0) {
+		if (res == WAIT_OBJECT_0 + 1) {
 			src->freqs = src->dftGG->calc(waveDouble);
 			SetEvent(auiEvent);
 			//DebugPrint("Haptics light update...\n");
-			src->fxha->RefreshHaptics(src->freqs);
+			fxhl->RefreshHaptics(src->freqs);
 		}
 	}
 
@@ -307,9 +310,9 @@ DWORD WINAPI UpdateUI(LPVOID lpParam) {
 	DWORD res = 0;
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 	while (WaitForSingleObject(astopEvent, 40) == WAIT_TIMEOUT) {
-		if (src->conf->dlg && !IsIconic(GetParent(GetParent(src->conf->dlg))) && WaitForSingleObject(auiEvent, 0) == WAIT_OBJECT_0) {
+		if (conf->hap_conf->dlg && !IsIconic(GetParent(GetParent(conf->hap_conf->dlg))) && WaitForSingleObject(auiEvent, 0) == WAIT_OBJECT_0) {
 			//DebugPrint("Haptics UI update...\n");
-			DrawFreq(src->conf->dlg, src->freqs);
+			DrawFreq(conf->hap_conf->dlg, src->freqs);
 		}
 	}
 	return 0;

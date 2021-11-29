@@ -68,7 +68,7 @@ public:
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
-	void Flush();
+	//void Flush();
 	void ChangeState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
 	void UnblockUpdates(bool newState, bool lock = false);

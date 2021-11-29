@@ -14,8 +14,11 @@ DWORD WINAPI CFXProc(LPVOID);
 
 #define GRIDSIZE 36 // 4x3 x 3
 
-ConfigAmbient* config;
-FXHelper* fxh;
+//ConfigAmbient* config;
+//FXHelper* fxh;
+
+extern ConfigHandler *conf;
+extern FXHelper *fxhl;
 
 byte imgz[GRIDSIZE]{0}, imgo[GRIDSIZE]{0};
 
@@ -23,16 +26,16 @@ DXGIManager* dxgi_manager = NULL;
 
 HANDLE clrStopEvent, uiEvent, lhEvent;
 
-CaptureHelper::CaptureHelper(ConfigAmbient* conf, FXHelper* fhh)
+CaptureHelper::CaptureHelper(/*ConfigAmbient* conf, FXHelper* fhh*/)
 {
-	config = conf;
-	fxh = fhh;
+	//config = conf;
+	//fxh = fhh;
 
 	if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED) == S_OK) {
 		dxgi_manager = new DXGIManager();
 		dxgi_manager->set_timeout(100);
 
-		SetCaptureScreen(config->mode);
+		SetCaptureScreen(conf->amb_conf->mode);
 	} else
 		isDirty = true;
 }
@@ -71,7 +74,7 @@ void CaptureHelper::Stop()
 }
 
 void CaptureHelper::Restart() {
-	SetCaptureScreen(config->mode);
+	SetCaptureScreen(conf->amb_conf->mode);
 }
 
 struct procData {
@@ -155,26 +158,30 @@ DWORD WINAPI CInProc(LPVOID param)
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		// Resize & calc
 		if (w && h && (ret = dxgi_manager->get_output_data(&scrImg, &buf_size)) == CR_OK && scrImg) {
-			for (UINT dy = 0; dy < 3; dy++)
-				for (UINT dx = 0; dx < 4; dx++) {
-					//ColorCalc(&callData[dy][dx]);
-					UINT ptr = (dy * 4 + dx);// *3;
-					if (pfEvent[ptr]) {
-						//ResetEvent(pfEvent[dy * 4 + dx]);
-						SetEvent(callData[dy][dx].pEvent);
-					} else {
-						callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
-						callData[dy][dx].dst = imgo + ptr * 3;
-						callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
-						pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
-						pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
+			if (!(conf->monDelay > 200)) {
+				for (UINT dy = 0; dy < 3; dy++)
+					for (UINT dx = 0; dx < 4; dx++) {
+						//ColorCalc(&callData[dy][dx]);
+						UINT ptr = (dy * 4 + dx);// *3;
+						if (pfEvent[ptr]) {
+							//ResetEvent(pfEvent[dy * 4 + dx]);
+							SetEvent(callData[dy][dx].pEvent);
+						} else {
+							callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
+							callData[dy][dx].dst = imgo + ptr * 3;
+							callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
+							pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
+							pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
+						}
 					}
-				}
 
-			if (WaitForMultipleObjects(12, pfEvent, true, 500) == WAIT_OBJECT_0 && memcmp(imgz, imgo, GRIDSIZE)) {
-				memcpy(imgz, imgo, GRIDSIZE);
-				SetEvent(lhEvent);
-				SetEvent(uiEvent);
+				if (WaitForMultipleObjects(12, pfEvent, true, 500) == WAIT_OBJECT_0 && memcmp(imgz, imgo, GRIDSIZE)) {
+					memcpy(imgz, imgo, GRIDSIZE);
+					SetEvent(lhEvent);
+					SetEvent(uiEvent);
+				}
+			} else {
+				DebugPrint("Ambient update skipped!\n");
 			}
 		}
 		else {
@@ -204,10 +211,10 @@ DWORD WINAPI CDlgProc(LPVOID param)
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
-		if (config->hDlg && !IsIconic(GetParent(config->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
+		if (conf->amb_conf->hDlg && !IsIconic(GetParent(conf->amb_conf->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient UI update...\n");
 			//memcpy(imgui, (UCHAR*)param, sizeof(imgz));
-			SendMessage(config->hDlg, WM_PAINT, 0, (LPARAM)imgz);
+			SendMessage(conf->amb_conf->hDlg, WM_PAINT, 0, (LPARAM)imgz);
 		}
 	}
 	return 0;
@@ -222,7 +229,7 @@ DWORD WINAPI CFXProc(LPVOID param) {
 		if (res == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient light update...\n");
 			//memcpy(imgz, (UCHAR *) param, sizeof(imgz));
-			fxh->RefreshAmbient(imgz);
+			fxhl->RefreshAmbient(imgz);
 		}
 	}
 	return 0;

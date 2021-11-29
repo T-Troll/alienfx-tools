@@ -38,7 +38,7 @@ void ConfigAmbient::Load() {
     DWORD len = 255, lend = 12 * sizeof(DWORD); zone map;
     for (int vindex = 0; RegEnumValueA(hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend) == ERROR_SUCCESS; vindex++) {
         // get id(s)...
-        if (sscanf_s(name, "%d-%hd", &map.devid, &map.lightid) == 2) {
+        if (sscanf_s(name, "%d-%d", &map.devid, &map.lightid) == 2) {
             if (lend > 0) {
                 for (unsigned i = 0; i < (lend / sizeof(DWORD)); i++)
                     map.map.push_back((byte)inarray[i]);
