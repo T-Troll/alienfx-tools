@@ -68,7 +68,7 @@ Build process:
 - Clone repository
 - Open solution into you Visual Studio, build.
 
-##ToDo list
+## ToDo list
 
 - [ ] New events
   - [x] Input locale
