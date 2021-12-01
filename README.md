@@ -76,11 +76,11 @@ Build process:
   - [ ] Keyboard events (f.e pressed ALT, CTRL, SHIFT, Fn will change scheme)
 - [ ] New devices support
   - [ ] Monitors
-  - [ ] Mouses
+  - [x] Mouses
   - [ ] Keyboards
 - [ ] Keyboard mapper for easy RGB keyboard setup
 - [ ] Full-scale power button effects (same as common effects)
-- [ ] Windows 11 support
+- [x] Windows 11 support
 
 ## Tools Used
 * Visual Studio Community 2019
