@@ -57,7 +57,12 @@
 	} \
 }
 #else
-#define TRY_PANIC(expr)
+#define TRY_PANIC(expr) { \
+	HRESULT e = expr; \
+	if (FAILED(e)) { \
+		std::exit(e); \
+	} \
+}
 #endif
 
 using std::vector;
