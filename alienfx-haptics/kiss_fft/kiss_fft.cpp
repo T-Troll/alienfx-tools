@@ -344,10 +344,12 @@ void * kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem )
 void kiss_fft_stride(const void * cfg,const kiss_fft_cpx *fin,kiss_fft_cpx *fout,int in_stride)
 {
     const kiss_fft_state * st = (const kiss_fft_state *)cfg;
+#ifdef _DEBUG
     if (st->nfft < 0) {
         fprintf(stderr,"usage error: invalid kiss_fft_state. make sure the correct kiss_fft_alloc routine was used.\n");
         exit(1);
     }
+#endif
 
     if (fin == fout) {
         kf_work(st->tmpbuf,fin,1,in_stride, st->factors,st);

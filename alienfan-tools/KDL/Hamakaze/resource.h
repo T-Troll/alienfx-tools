@@ -3,7 +3,6 @@
 // Used by resource.rc
 //
 #define IDR_TAIGEI                      1337
-#define IDI_ICON1                       1001
 
 // Next default values for new objects
 // 

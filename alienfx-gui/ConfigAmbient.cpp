@@ -8,7 +8,7 @@ using namespace std;
 ConfigAmbient::ConfigAmbient() {
 
     RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxambient"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMainKey, NULL);
-    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxambient\\Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
+    RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     Load();
 }
 ConfigAmbient::~ConfigAmbient() {

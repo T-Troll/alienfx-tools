@@ -5,7 +5,7 @@ using namespace std;
 
 ConfigHaptics::ConfigHaptics() {
     RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxhaptics"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMainKey, NULL);
-    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxhaptics\\Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
+    RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     Load();
 }
 ConfigHaptics::~ConfigHaptics() {
@@ -39,7 +39,7 @@ void ConfigHaptics::Load() {
         // get id(s)...
         if ((ret = RegEnumValueA( hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE)inarray, &lend )) == ERROR_SUCCESS) {
             vindex++;
-            if (sscanf_s(name, "Map%u-%u", &map.devid, &map.lightid) == 2) {
+            if (sscanf_s(name, "Map%u-%u", &map.devid, &map.lightid) == 2 && (map.devid || map.lightid)) {
                 map.colorfrom.ci = inarray[0];
                 map.colorto.ci = inarray[1];
                 map.lowcut = (byte) inarray[2];

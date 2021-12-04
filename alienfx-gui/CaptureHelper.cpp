@@ -153,7 +153,7 @@ DWORD WINAPI CInProc(LPVOID param)
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
-	Sleep(150);
+	//Sleep(150);
 
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		// Resize & calc
@@ -186,8 +186,9 @@ DWORD WINAPI CInProc(LPVOID param)
 		}
 		else {
 			if (ret != CR_TIMEOUT) {
+				DebugPrint("Ambient feed restart!\n");
 				dxgi_manager->refresh_output();
-				Sleep(200);
+				Sleep(150);
 				SetDimensions();
 			}
 		}

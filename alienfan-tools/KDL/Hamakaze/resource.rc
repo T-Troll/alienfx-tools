@@ -47,55 +47,6 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Version
-//
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,1,2105
- PRODUCTVERSION 1,1,1,2105
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "CompanyName", "UG North"
-            VALUE "FileDescription", "Kernel Driver Utility"
-            VALUE "FileVersion", "1.1.1.2105"
-            VALUE "InternalName", "Hamakaze.exe"
-            VALUE "LegalCopyright", "Copyright (C) 2020 - 2021 KDU Project"
-            VALUE "OriginalFilename", "Hamakaze.exe"
-            VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.1.2105"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1200
-    END
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_ICON1               ICON                    "res\\274.ico"
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // RCDATA
 //
 

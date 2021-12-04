@@ -67,12 +67,12 @@ void kiss_fftr(const void * cfg,const kiss_fft_scalar *timedata,kiss_fft_cpx *fr
     /* input buffer timedata is stored row-wise */
     kiss_fftr_state *st = ( kiss_fftr_state *)cfg;
     int k,N;
-
+#ifdef _DEBUG
     if ( st->minus3 != -3 || st->substate->inverse) {
         fprintf(stderr,"kiss fft usage error: improper alloc\n");
         exit(1);
     }
-
+#endif
     N = st->substate->nfft;
 
     /*perform the parallel fft of two real signals packed in real,imag*/
@@ -112,12 +112,12 @@ void kiss_fftri(const void * cfg,const kiss_fft_cpx *freqdata,kiss_fft_scalar *t
     /* input buffer timedata is stored row-wise */
     kiss_fftr_state *st = (kiss_fftr_state *) cfg;
     int k, N;
-
+#ifdef _DEBUG
     if (st->minus3 != -3 || st->substate->inverse == 0) {
         fprintf (stderr, "kiss fft usage error: improper alloc\n");
         exit (1);
     }
-
+#endif
     N = st->substate->nfft;
 
     st->tmpbuf[0].r = freqdata[0].r + freqdata[N].r;

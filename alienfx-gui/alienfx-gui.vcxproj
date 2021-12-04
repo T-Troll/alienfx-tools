@@ -486,6 +486,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <Manifest />
     <ResourceCompile />
@@ -601,6 +602,7 @@
     <ClCompile Include="FXHelper.cpp" />
     <ClCompile Include="GroupsDialog.cpp" />
     <ClCompile Include="HapticsDialog.cpp" />
+    <ClCompile Include="LightInfoDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
     <ClCompile Include="WSAudioIn.cpp">

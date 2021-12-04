@@ -13,6 +13,8 @@ extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 extern int eItem;
 
+extern BOOL CALLBACK LightInfoDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
 int effID = -1;
 
 void RebuildEffectList(HWND hDlg, lightset* mmap) {
@@ -247,7 +249,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			{
 			case BN_CLICKED: {
 				if (mmap && mmap->eve[0].map[0].type != AlienFX_SDK::AlienFX_A_Power &&
-					MessageBox(hDlg, "Do you really want to set all lights to this settings?", "Warning!",
+					MessageBox(hDlg, "Do you really want to set all lights to this settings?", "Warning",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					event light = mmap->eve[0];
 					for (int i = 0; i < fxhl->afx_dev.GetMappings()->size(); i++) {
@@ -265,6 +267,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				}
 			} break;
 			} break;
+		case IDC_BUTTON_INFO:
+			if (eItem >= 0)
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_LIGHTINFO), hDlg, (DLGPROC) LightInfoDialog);
+			break;
 		default: return false;
 		}
 	} break;

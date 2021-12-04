@@ -13,16 +13,15 @@ LFX_COLOR final;
 LFX_RESULT state;
 //map<WORD,vector<LFX_COLOR> > lastState;
 
-LFX_COLOR* TranslateColor(AlienFX_SDK::Colorcode* src) {
+void TranslateColor(LFX_COLOR src) {
 	// gamma-correction...
-	final.red = ((unsigned) src->r * src->r) / 255;
-	final.green = ((unsigned) src->g * src->g) / 255;
-	final.blue = ((unsigned) src->b * src->b) / 255;
+	final.red = ((unsigned) src.red * src.red * src.brightness) / (255 * 255);
+	final.green = ((unsigned) src.green * src.green * src.brightness) / (255 * 255);
+	final.blue = ((unsigned) src.blue * src.blue * src.brightness) / (255 * 255);
 	// brighness...
-	final.red = (((unsigned) final.red * src->br)) / 255;// >> 8;
-	final.green = (((unsigned) final.green * src->br)) / 255;// >> 8;
-	final.blue = (((unsigned) final.blue * src->br)) / 255;// >> 8;
-	return &final;
+	//final.red = (((unsigned) final.red * src.brightness)) / 255;// >> 8;
+	//final.green = (((unsigned) final.green * src.brightness)) / 255;// >> 8;
+	//final.blue = (((unsigned) final.blue * src.brightness)) / 255;// >> 8;
 }
 
 LFX_RESULT CheckState(int did = -1, int lid = -1) {
@@ -30,10 +29,10 @@ LFX_RESULT CheckState(int did = -1, int lid = -1) {
 	if (!afx_map)
 		state = LFX_ERROR_NOINIT;
 	else
-		if (did >= 0 && afx_map->fxdevs.size() < did)
+		if (did >= 0 && afx_map->fxdevs.size() <= did)
 			state = LFX_ERROR_NODEVS;
 		else
-			if (lid >= 0 && afx_map->fxdevs[did].lights.size() < lid)
+			if (lid >= 0 && afx_map->fxdevs[did].lights.size() <= lid)
 				state = LFX_ERROR_NOLIGHTS;
 	return state;
 }
@@ -179,12 +178,9 @@ bool IsInGroup(AlienFX_SDK::mapping* map, AlienFX_SDK::group* grp) {
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightLocation(const unsigned int dev, const unsigned int lid, PLFX_POSITION const pos) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
 		AlienFX_SDK::mapping *map = afx_map->fxdevs[dev].lights[lid];
-		pos->x = IsInGroup(map, groups[1]) ? 0 : 1;
-		pos->x = IsInGroup(map, groups[0]) ? 2 : pos->x;
-		pos->y = IsInGroup(map, groups[3]) ? 0 : 1;
-		pos->y = IsInGroup(map, groups[2]) ? 2 : pos->y;
-		pos->z = IsInGroup(map, groups[5]) ? 0 : 1;
-		pos->z = IsInGroup(map, groups[4]) ? 2 : pos->z;
+		pos->x = IsInGroup(map, groups[1]) ? 0 : IsInGroup(map, groups[0]) ? 2 : 1;
+		pos->y = IsInGroup(map, groups[3]) ? 0 : IsInGroup(map, groups[2]) ? 2 : 1;
+		pos->z = IsInGroup(map, groups[5]) ? 0 : IsInGroup(map, groups[4]) ? 2 : 1;
 	}
 	return state;
 }
@@ -199,9 +195,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const u
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightColor(const unsigned int dev, const unsigned int lid, const PLFX_COLOR clr) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
-		AlienFX_SDK::Colorcode src{clr->blue, clr->green, clr->red, clr->brightness};
-		LFX_COLOR *fin = TranslateColor(&src);
-		afx_map->fxdevs[dev].dev->SetColor(afx_map->fxdevs[dev].lights[lid]->lightid, {fin->blue, fin->green, fin->red});
+		TranslateColor(*clr);
+		afx_map->fxdevs[dev].dev->SetColor(afx_map->fxdevs[dev].lights[lid]->lightid, {final.blue, final.green, final.red});
 	}
 	return state;
 }
@@ -210,7 +205,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 	// pos as a group index.
 	if (CheckState() == LFX_SUCCESS) {
 		AlienFX_SDK::Colorcode src; src.ci = color;
-		LFX_COLOR *fin = TranslateColor(&src);
+		TranslateColor({src.r,src.g,src.b,src.br});
 		int gid = GetGroupID(pos);
 		AlienFX_SDK::group *grp = gid < 0 ? NULL : groups[gid];
 		for (int j = 0; j < afx_map->fxdevs.size(); j++) {
@@ -226,7 +221,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 						lights.push_back((byte) afx_map->fxdevs[j].lights[i]->lightid);
 				}
 			}
-			afx_map->fxdevs[j].dev->SetMultiLights(&lights, {fin->blue, fin->green, fin->red});
+			afx_map->fxdevs[j].dev->SetMultiLights(&lights, {final.blue, final.green, final.red});
 		}
 	}
 	return state;
@@ -239,13 +234,13 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColor(const unsigned int dev, c
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColorEx(const unsigned int dev, const unsigned int lid, const unsigned int act, const PLFX_COLOR clr1, const PLFX_COLOR clr2) {
 	if (CheckState(dev,lid) == LFX_SUCCESS) {
 		AlienFX_SDK::act_block actions{(byte) afx_map->fxdevs[dev].lights[lid]->lightid};
-		AlienFX_SDK::Colorcode src{clr1->blue, clr1->green, clr1->red, clr1->brightness};
-		LFX_COLOR *fin = TranslateColor(&src);
+		//AlienFX_SDK::Colorcode src{clr1->blue, clr1->green, clr1->red, clr1->brightness};
+		TranslateColor(*clr1);
 		BYTE fact = GetActionMode(act);
-		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
-		src = {clr2->blue, clr2->green, clr2->red, clr2->brightness};
-		fin = TranslateColor(&src);
-		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
+		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
+		//src = {clr2->blue, clr2->green, clr2->red, clr2->brightness};
+		TranslateColor(*clr2);
+		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
 		afx_map->fxdevs[dev].dev->SetAction(&actions);
 	}
 	return state;
@@ -258,13 +253,13 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColor(const unsigned int pos, const uns
 FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const unsigned int act, const unsigned int clr1, const unsigned int clr2) {
 	if (CheckState() == LFX_SUCCESS) {
 		AlienFX_SDK::act_block actions;
-		AlienFX_SDK::Colorcode fclr; fclr.ci = clr1;
-		LFX_COLOR *fin = TranslateColor(&fclr);
+		AlienFX_SDK::Colorcode src; src.ci = clr1;
+		TranslateColor({src.r,src.g,src.b,src.br});
 		BYTE fact = GetActionMode(act);
-		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
-		fclr.ci = clr2;
-		fin = TranslateColor(&fclr);
-		actions.act.push_back({fact, gtempo, 7, fin->red, fin->green, fin->blue});
+		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
+		src.ci = clr2;
+		TranslateColor({src.r,src.g,src.b,src.br});
+		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
 		int gid = GetGroupID(pos);
 		AlienFX_SDK::group *grp = gid < 0 ? NULL : groups[gid];
 		for (int j = 0; j < afx_map->fxdevs.size(); j++) {

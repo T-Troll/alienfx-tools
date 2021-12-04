@@ -128,27 +128,24 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			fxhl->afx_dev.GetGroups()->push_back(dev);
 			fxhl->afx_dev.SaveMappings();
 			gLid = maxID;
-			int pos = (int) ComboBox_AddString(groups_list, dev.name.c_str());
-			ComboBox_SetItemData(groups_list, pos, gLid);
-			ComboBox_SetCurSel(groups_list, pos);
-			gItem = pos;
+			gItem = (int) ComboBox_AddString(groups_list, dev.name.c_str());
+			ComboBox_SetItemData(groups_list, gItem, gLid);
+			ComboBox_SetCurSel(groups_list, gItem);
 			EnableWindow(groups_list, true);
 			EnableWindow(glights_list, true);
-			grp = &fxhl->afx_dev.GetGroups()->back();
+			//grp = &fxhl->afx_dev.GetGroups()->back();
 			UpdateGroupLights(glights_list,gLid,0);
-			UpdateLightListG(light_list, grp);
+			UpdateLightListG(light_list, &fxhl->afx_dev.GetGroups()->back());
 		} break;
 		case IDC_BUTTON_REMG: {
 			if (gLid > 0) {
-				for (std::vector <AlienFX_SDK::group>::iterator Iter = fxhl->afx_dev.GetGroups()->begin();
-					 Iter != fxhl->afx_dev.GetGroups()->end(); Iter++)
+				for (auto Iter = fxhl->afx_dev.GetGroups()->begin(); Iter != fxhl->afx_dev.GetGroups()->end(); Iter++)
 					if (Iter->gid == gLid) {
 						fxhl->afx_dev.GetGroups()->erase(Iter);
 						break;
 					}
 				// delete from all profiles...
-				for (vector<profile>::iterator Iter = conf->profiles.begin();
-					 Iter != conf->profiles.end(); Iter++) {
+				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
 					RemoveMapping(&Iter->lightsets, 0, gLid);
 				}
@@ -190,7 +187,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		case IDC_BUT_DELFROMG:
 			if (grp && glItem >= 0) {
 				if (grp && glItem < grp->lights.size()) {
-					std::vector <AlienFX_SDK::mapping*>::iterator Iter = grp->lights.begin() + glItem;
+					auto Iter = grp->lights.begin() + glItem;
 					grp->lights.erase(Iter);
 				}
 				UpdateGroupLights(glights_list, gLid, --glItem);

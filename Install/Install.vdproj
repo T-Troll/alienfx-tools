@@ -15,12 +15,6 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_015851A88B2E497E6C19EE42E0C66BC8"
-        "OwnerKey" = "8:_799E46A9DE84423E9A42E8A667B8B40B"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_0207635732654CE6A87615796F8EEC39"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -101,18 +95,6 @@
         {
         "MsmKey" = "8:_B829425435A04EFB81D071102204D8B4"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D22F61038ABB17E9902DAEEECA02B4EB"
-        "OwnerKey" = "8:_799E46A9DE84423E9A42E8A667B8B40B"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E5943F519A7605D4A75B1464669B4546"
-        "OwnerKey" = "8:_799E46A9DE84423E9A42E8A667B8B40B"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -214,26 +196,6 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_015851A88B2E497E6C19EE42E0C66BC8"
-            {
-            "SourcePath" = "8:msdelta.dll"
-            "TargetName" = "8:msdelta.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0207635732654CE6A87615796F8EEC39"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-gui.md"
@@ -312,46 +274,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D22F61038ABB17E9902DAEEECA02B4EB"
-            {
-            "SourcePath" = "8:RPCRT4.dll"
-            "TargetName" = "8:RPCRT4.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E5943F519A7605D4A75B1464669B4546"
-            {
-            "SourcePath" = "8:ntdll.dll"
-            "TargetName" = "8:ntdll.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E9F4FBB09B4B4EFC8347065B33B3CE87"
@@ -483,15 +405,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{A7385690-37FF-4446-9D15-063029D7B151}"
-        "PackageCode" = "8:{70CB2E98-EB23-4C94-8A5F-952170141D2F}"
+        "ProductCode" = "8:{F9A4BED1-6F92-434F-AE0E-D8E96AFDA7D1}"
+        "PackageCode" = "8:{C2638F4A-592F-4D31-B140-B2C3846050D5}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:5.3.301"
+        "ProductVersion" = "8:5.3.400"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -837,7 +759,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1AA38565231A40689F298FEBA8022EB6"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -866,7 +788,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4B7975803E6C492C8F7D8B599766674C"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfan-gui.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfan-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -894,7 +816,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_6607431E0DEA45F19A1C6F6A3DAFFAA0"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-probe.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-probe.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -923,7 +845,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_799E46A9DE84423E9A42E8A667B8B40B"
             {
-            "SourcePath" = "8:..\\x64\\Release\\kdl.dll"
+            "SourcePath" = "8:..\\x64\\Debug\\kdl.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -951,7 +873,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8533FAE6D43944078DAC051060E0DCFF"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -980,7 +902,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8BD54ECA5F1F4A93AB50408023C9F6C4"
             {
-            "SourcePath" = "8:..\\x64\\Release\\HwAcc.sys"
+            "SourcePath" = "8:..\\x64\\Debug\\HwAcc.sys"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1008,7 +930,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_94DD59AF152B4EC1B2EF22200F020B7E"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfan-overboost.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfan-overboost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1036,7 +958,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_98A7712D38674FC599CD2B2A0C6591F9"
             {
-            "SourcePath" = "8:..\\x64\\Release\\drv64.dll"
+            "SourcePath" = "8:..\\x64\\Debug\\drv64.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1092,7 +1014,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
             {
-            "SourcePath" = "8:..\\x64\\Release\\LightFX\\LightFX.dll"
+            "SourcePath" = "8:..\\x64\\Debug\\LightFX.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_39E2774D52CE4B619039352379796769"
@@ -1120,7 +1042,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B829425435A04EFB81D071102204D8B4"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfan-cli.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfan-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"

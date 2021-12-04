@@ -6,17 +6,17 @@
 using namespace std;
 
 struct fan_point {
-	short temp = 0;
-	short boost = 0;
+	short temp;// = 0;
+	short boost;// = 0;
 };
 
 struct fan_block {
-	short fanIndex = 0;
+	short fanIndex;// = 0;
 	vector<fan_point> points;
 };
 
 struct temp_block {
-	short sensorIndex = 0;
+	short sensorIndex;// = 0;
 	vector<fan_block> fans;
 };
 
@@ -27,8 +27,8 @@ struct fan_profile {
 };
 
 struct fan_overboost {
-	byte maxBoost = 0;
-	USHORT maxRPM = 0;
+	byte maxBoost;// = 0;
+	USHORT maxRPM;// = 0;
 };
 
 class ConfigHelper {

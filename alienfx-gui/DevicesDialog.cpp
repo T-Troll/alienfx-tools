@@ -256,7 +256,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		fxhl->UnblockUpdates(false, true);
 		// Do we have some lights?
 		if (!fxhl->afx_dev.GetMappings()->size() &&
-			MessageBox( hDlg, "There is no light names defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO )
+			MessageBox( hDlg, "Light names not defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO )
 			== IDYES) {
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC) DetectionDialog);
 		}
@@ -327,35 +327,33 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fxhl->TestLight(dIndex, eLid);
 		} break;
 		case IDC_BUTTON_REML:
-			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning!",
+			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// delete from all groups...
 				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
 					AlienFX_SDK::group* grp = &fxhl->afx_dev.GetGroups()->at(i);
-					for (vector<AlienFX_SDK::mapping*>::iterator gIter = grp->lights.begin();
-						 gIter < grp->lights.end(); gIter++)
+					for (auto gIter = grp->lights.begin(); gIter < grp->lights.end(); gIter++)
 						if ((*gIter)->devid == dPid && (*gIter)->lightid == eLid) {
 							grp->lights.erase(gIter);
 							break;
 						}
 				}
 				// delete from all profiles...
-				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
-					 Iter != conf->profiles.end(); Iter++) {
+				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
 					RemoveMapping(&Iter->lightsets, dPid, eLid);
 				}
 
 				int nLid = -1;
 				// delete from current dev block...
-				for (vector <AlienFX_SDK::mapping*>::iterator Iter = fxhl->afx_dev.fxdevs[dIndex].lights.begin();
+				for (auto Iter = fxhl->afx_dev.fxdevs[dIndex].lights.begin();
 					 Iter != fxhl->afx_dev.fxdevs[dIndex].lights.end(); Iter++)
 					if ((*Iter)->lightid == eLid) {
 						fxhl->afx_dev.fxdevs[dIndex].lights.erase(Iter);
 						break;
 					} else nLid = (*Iter)->lightid;
 				// delete from mappings...
-				for (vector <AlienFX_SDK::mapping*>::iterator Iter = fxhl->afx_dev.GetMappings()->begin();
+				for (auto Iter = fxhl->afx_dev.GetMappings()->begin();
 						Iter != fxhl->afx_dev.GetMappings()->end(); Iter++)
 					if ((*Iter)->devid == dPid && (*Iter)->lightid == eLid) {
 						delete *Iter;
@@ -367,7 +365,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				conf->Save();
 				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
 					fxhl->ResetPower(did);
-					MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning!",
+					MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning",
 							   MB_OK);
 				}
 				eLid = nLid;
@@ -376,11 +374,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUTTON_RESETCOLOR:
-			if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning!",
+			if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// delete from all profiles...
-				for (std::vector <profile>::iterator Iter = conf->profiles.begin();
-					 Iter != conf->profiles.end(); Iter++) {
+				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
 					RemoveMapping(&Iter->lightsets, fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid);
 				}
@@ -397,14 +394,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid) & ~ALIENFX_FLAG_POWER;
 				flags &= IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? ALIENFX_FLAG_POWER : 0;
 				if (flags)
-					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning!",
+					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES) {
 						fxhl->afx_dev.SetFlagsById(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid, flags);
 					} else
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 				else {
 					// remove power button config from chip config if unchecked and confirmed
-					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning!",
+					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES)
 						fxhl->ResetPower(did);
 					fxhl->afx_dev.SetFlagsById(dPid, eLid, flags);
@@ -645,6 +642,9 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		} break;
 		}
 	} break;
+	case WM_CLOSE:
+		EndDialog(hDlg, IDOK);
+		break;
     default: return false;
 	}
 	return true;

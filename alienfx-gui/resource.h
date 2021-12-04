@@ -55,6 +55,7 @@
 #define IDI_ALIENFX_DIM                 149
 #define IDR_MENU_TRAY                   150
 #define IDD_DIALOG_AUTODETECT           154
+#define IDD_DIALOG_LIGHTINFO            155
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_BUTTON1                     1000
@@ -128,6 +129,7 @@
 #define IDC_PROFILES                    1034
 #define IDC_POWER_DIM                   1034
 #define IDC_CHECK9                      1034
+#define IDC_BUTTON_INFO                 1034
 #define IDC_ADDPROFILE                  1035
 #define IDC_CHECK10                     1035
 #define IDC_CHECK11                     1036
@@ -196,8 +198,24 @@
 #define IDC_CHECK_GLOBAL                1109
 #define IDC_SLIDER_RED                  1110
 #define IDC_SLIDER_GREEN                1111
+#define IDC_GRPLIST                     1111
 #define IDC_SLIDER_GREEN2               1112
 #define IDC_SLIDER_BLUE                 1112
+#define IDC_FROM_COLOR                  1112
+#define IDC_TO_COLOR                    1113
+#define IDC_REM_COLOR                   1114
+#define IDC_FROM_EFFECT                 1115
+#define IDC_TO_EFFECT                   1116
+#define IDC_REM_EFFECT                  1117
+#define IDC_CHECK_AMBIENT               1118
+#define IDC_REM_AMBIENT                 1120
+#define IDC_FROM_HAPTICS                1124
+#define IDC_TO_HAPTICS                  1125
+#define IDC_REM_HAPTICS                 1126
+#define IDC_FROM_FINAL                  1127
+#define IDC_TO_FINAL                    1128
+#define IDC_REM_HAPTICS2                1129
+#define IDC_REM_GROUP                   1129
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -229,9 +247,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        155
+#define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1111
+#define _APS_NEXT_CONTROL_VALUE         1119
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif
