@@ -219,22 +219,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (conf->fanControl) {
 		EvaluteToAdmin();
 		acpi = new AlienFan_SDK::Control();
-		if (acpi->IsActivated()) {
-			if (acpi->Probe()) {
-				conf->fan_conf->SetBoosts(acpi);
-				if (conf->fan_conf->lastProf->powerStage >= 0)
-					acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-				if (conf->fan_conf->lastProf->GPUPower >= 0)
-					acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
-			} else {
-				MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
-						   MB_OK | MB_ICONHAND);
-				delete acpi;
-				acpi = NULL;
-				conf->fanControl = false;
-			}
+		if (acpi->IsActivated() && acpi->Probe()) {
+			conf->fan_conf->SetBoosts(acpi);
+			if (conf->fan_conf->lastProf->powerStage >= 0)
+				acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+			if (conf->fan_conf->lastProf->GPUPower >= 0)
+				acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 		} else {
-			MessageBox(NULL, "Can't install fan driver, fan control will be disabled!", "Error",
+			MessageBox(NULL, "Fan control didn't start and will be disabled!", "Error",
 					   MB_OK | MB_ICONHAND);
 			delete acpi;
 			acpi = NULL;
@@ -960,13 +952,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		// Shutdown/restart scheduled....
 
 		DebugPrint("Shutdown initiated\n");
-
-		conf->Save();
-		eve->StopProfiles();
-		eve->StopEffects();
-		fxhl->Refresh(2);
-		fxhl->UnblockUpdates(false, true);
-		return 0;
+		SendMessage(hDlg, WM_CLOSE, 0, 0);
+		//conf->Save();
+		//eve->StopProfiles();
+		//eve->StopEffects();
+		//fxhl->Refresh(2);
+		//fxhl->UnblockUpdates(false, true);
+		//return 0;
 		break;
 	case WM_HOTKEY:
 		switch (wParam) {
@@ -1176,12 +1168,49 @@ lightset* CreateMapping(int lid) {
 
 bool RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
 	// erase mappings
-	for (vector <lightset>::iterator mIter = lightsets->begin();
-		mIter != lightsets->end(); mIter++)
-		if (mIter->devid == did && mIter->lightid == lid) {
+	for (auto mIter = lightsets->begin(); mIter != lightsets->end(); mIter++)
+		if (LOWORD(mIter->devid) == did && mIter->lightid == lid) {
 			lightsets->erase(mIter);
 			return true;
 		}
 	return false;
 }
 
+zone *FindAmbMapping(int lid) {
+	if (lid != -1) {
+		if (lid > 0xffff) {
+			// group
+			for (int i = 0; i < conf->amb_conf->zones.size(); i++)
+				if (conf->amb_conf->zones[i].devid == 0 && conf->amb_conf->zones[i].lightid == lid) {
+					return &conf->amb_conf->zones[i];
+				}
+		} else {
+			// mapping
+			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
+			for (int i = 0; i < conf->amb_conf->zones.size(); i++)
+				if (conf->amb_conf->zones[i].devid == lgh->devid && conf->amb_conf->zones[i].lightid == lgh->lightid)
+					return &conf->amb_conf->zones[i];
+		}
+	}
+	return NULL;
+}
+
+haptics_map *FindHapMapping(int lid) {
+	if (lid != -1) {
+		if (lid > 0xffff) {
+			// group
+			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
+				if (conf->hap_conf->haptics[i].devid == 0 && conf->hap_conf->haptics[i].lightid == lid) {
+					return &conf->hap_conf->haptics[i];
+				}
+		} else {
+			// mapping
+			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
+			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
+				if (conf->hap_conf->haptics[i].devid == lgh->devid && 
+					conf->hap_conf->haptics[i].lightid == lgh->lightid)
+					return &conf->hap_conf->haptics[i];
+		}
+	}
+	return NULL;
+}

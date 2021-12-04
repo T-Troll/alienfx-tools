@@ -290,10 +290,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                             delete sen;
                             sen = &conf->fan_conf->lastProf->fanControls.back();
                         }
-                        //fan_block cFan = {(short) lPoint->iItem};
-                        //cFan.points.push_back({0,0});
-                        //cFan.points.push_back({100,100});
-                        //sen->fans.push_back(cFan);
                         sen->fans.push_back({(short) lPoint->iItem,{{0,0},{100,100}}});
                         DrawFan();
                     }
@@ -302,14 +298,13 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     if (conf->fan_conf->lastSelectedSensor != -1) {
                         temp_block* sen = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor);
                         if (sen) { // remove sensor block
-                            for (vector<fan_block>::iterator iFan = sen->fans.begin();
-                                 iFan < sen->fans.end(); iFan++)
+                            for (auto iFan = sen->fans.begin(); iFan < sen->fans.end(); iFan++)
                                 if (iFan->fanIndex == lPoint->iItem) {
                                     sen->fans.erase(iFan);
                                     break;
                                 }
                             if (!sen->fans.size()) // remove sensor block!
-                                for (vector<temp_block>::iterator iSen = conf->fan_conf->lastProf->fanControls.begin();
+                                for (auto iSen = conf->fan_conf->lastProf->fanControls.begin();
                                      iSen < conf->fan_conf->lastProf->fanControls.end(); iSen++)
                                     if (iSen->sensorIndex == sen->sensorIndex) {
                                         conf->fan_conf->lastProf->fanControls.erase(iSen);
@@ -399,8 +394,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             // check and add point
             int temp = (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left),
                 boost = (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top);
-            for (vector<fan_point>::iterator fPi = cFan->points.begin();
-                 fPi < cFan->points.end(); fPi++) {
+            for (auto fPi = cFan->points.begin(); fPi < cFan->points.end(); fPi++) {
                 if (fPi->temp - DRAG_ZONE <= temp && fPi->temp + DRAG_ZONE >= temp) {
                     // Starting drag'n'drop...
                     lastFanPoint = &(*fPi);
@@ -419,8 +413,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         ReleaseCapture();
         // re-sort array.
         if (cFan) {
-            for (vector<fan_point>::iterator fPi = cFan->points.begin();
-                 fPi < cFan->points.end() - 1; fPi++)
+            for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++)
                 if (fPi->temp > (fPi + 1)->temp) {
                     fan_point t = *fPi;
                     *fPi = *(fPi + 1);
@@ -439,8 +432,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             // check and remove point
             int temp = (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left),
                 boost = (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top);
-            for (vector<fan_point>::iterator fPi = cFan->points.begin() + 1;
-                 fPi < cFan->points.end() - 1; fPi++)
+            for (auto fPi = cFan->points.begin() + 1; fPi < cFan->points.end() - 1; fPi++)
                 if (fPi->temp - DRAG_ZONE <= temp && fPi->temp + DRAG_ZONE >= temp ) {
                     // Remove this element...
                     cFan->points.erase(fPi);

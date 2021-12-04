@@ -4,30 +4,12 @@
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
+extern zone *FindAmbMapping(int lid);
 
 extern void SwitchTab(int);
 
 extern EventHandler* eve;
 extern int eItem;
-
-zone *FindAmbMapping(int lid) {
-    if (lid != -1) {
-        if (lid > 0xffff) {
-            // group
-            for (int i = 0; i < conf->amb_conf->zones.size(); i++)
-                if (conf->amb_conf->zones[i].devid == 0 && conf->amb_conf->zones[i].lightid == lid) {
-                    return &conf->amb_conf->zones[i];
-                }
-        } else {
-            // mapping
-            AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-            for (int i = 0; i < conf->amb_conf->zones.size(); i++)
-                if (conf->amb_conf->zones[i].devid == lgh->devid && conf->amb_conf->zones[i].lightid == lgh->lightid)
-                    return &conf->amb_conf->zones[i];
-        }
-    }
-    return NULL;
-}
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
@@ -114,15 +96,12 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     map = &conf->amb_conf->zones.back();
                 }
                 // add mapping
-                vector <unsigned char>::iterator Iter = map->map.begin();
-                int i = 0;
-                for (i = 0; i < map->map.size(); i++)
-                    if (map->map[i] == id)
+                auto Iter = map->map.begin();
+                for (; Iter != map->map.end(); Iter++)
+                    if (*Iter == id)
                         break;
-                    else
-                        Iter++;
                 HWND cBid = GetDlgItem(hDlg, bid);
-                if (i == map->map.size()) {
+                if (Iter == map->map.end()) {
                     // new mapping, add and select
                     map->map.push_back(id);
                     CheckDlgButton(hDlg, bid, BST_CHECKED);
@@ -130,8 +109,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     map->map.erase(Iter);
                     if (!map->map.size()) {
                         // delete mapping!
-                        vector<zone>::iterator mIter;
-                        for (mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
+                        for (auto mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
                             if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
                                 conf->amb_conf->zones.erase(mIter);
                                 break;

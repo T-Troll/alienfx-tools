@@ -91,7 +91,7 @@ namespace AlienFan_SDK {
 		{ // Alienware 13R2
 			"\\_SB.AMW0.WMBC", // main command
 			0, // Error code
-			100, // Max. boost
+			99, // Max. boost
 			false, // command controlled
 			0, // controlID
 			0x14,   5, // Probe command

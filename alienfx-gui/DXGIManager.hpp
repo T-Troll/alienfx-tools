@@ -48,6 +48,7 @@
 	} \
 }
 // -''- If the result is a failure, panic.
+#ifdef _DEBUG
 #define TRY_PANIC(expr) { \
 	HRESULT e = expr; \
 	if (FAILED(e)) { \
@@ -55,6 +56,9 @@
 		std::exit(e); \
 	} \
 }
+#else
+#define TRY_PANIC(expr)
+#endif
 
 using std::vector;
 

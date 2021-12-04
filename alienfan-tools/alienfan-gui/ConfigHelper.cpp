@@ -4,7 +4,7 @@
 ConfigHelper::ConfigHelper() {
 	
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan\\Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);
+	RegCreateKeyEx(hKey1, TEXT("Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);
 
 	Load();
 }
@@ -101,7 +101,7 @@ void ConfigHelper::Load() {
 				if (fid >= boosts.size())
 					boosts.resize(fid + 1);
 				RegEnumValueA( hKey1, vindex, name, &len, NULL, NULL, inarray, &lend );
-				boosts[fid] = {inarray[0],*(USHORT*)(inarray+sizeof(byte))};
+				boosts[fid] = {inarray[0],*(USHORT*)(inarray+1)};
 				delete[] inarray;
 			}
 		}
@@ -118,7 +118,6 @@ void ConfigHelper::Save() {
 	SetReg("LastSensor", lastSelectedSensor);
 	SetReg("LastFan", lastSelectedFan);
 	SetReg("LastGPU", prof.GPUPower);
-	//SetReg("MaxRPM", maxRPM);
 
 	if (prof.fanControls.size() > 0) {
 		// clean old data

@@ -361,7 +361,9 @@ namespace AlienFX_SDK {
 		} break;
 		case API_L_V6:
 		{
-			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {{9,(byte)(1 << index)},{10,c.r},{11,c.g},{12,c.b},{13,bright}});
+			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {{9,(byte) (1 << index)},
+								 {10,c.r},{11,c.g},{12,c.b},
+								 {13,bright},{14,(c.ci? ~(index^8) : index^8)}});
 		} break;
 		case API_L_V5:
 		{
@@ -393,11 +395,11 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_L_V6:
 		{
-			byte mask = 0;
+			byte index = 0;
 			for (int nc = 0; nc < lights->size(); nc++)
-				mask |= 1 << (*lights)[nc];
+				index |= 1 << (*lights)[nc];
 			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {
-				{9,mask},{10,c.r},{11,c.g},{12,c.b},{13,bright}});
+				{9,index},{10,c.r},{11,c.g},{12,c.b},{13,bright},{14,(c.ci? ~(index^8) : index^8)}});
 		} break;
 		case API_L_V5:
 		{
@@ -811,7 +813,7 @@ namespace AlienFX_SDK {
 
 		bright = ((UINT) brightness * 0x64) / 0xff;
 		switch (version) {
-		case API_L_V7: case API_L_V6: case API_L_ACPI:
+		case API_L_V7: case API_L_ACPI:
 			if (!brightness)
 				for (int i = 0; mappings && i < mappings->size(); i++) {
 					mapping* cur = mappings->at(i);
@@ -820,6 +822,16 @@ namespace AlienFX_SDK {
 					}
 				}
 			break;
+		case API_L_V6:
+		{
+			vector<pair<byte, byte>> mods{{9,0xf}, {13,bright}};
+			if (brightness)
+				mods.push_back({14,0xf8});
+			else
+				mods.push_back({14,0x9c});
+			PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), &mods);
+			// shoud be 0x9c for zero.
+		} break;
 		case API_L_V5:
 		{
 			if (inSet) { 

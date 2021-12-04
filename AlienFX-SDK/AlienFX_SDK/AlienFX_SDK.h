@@ -55,32 +55,32 @@ namespace AlienFX_SDK {
 
 	struct mapping { // Light information block
 		WORD vid = 0;
-		WORD devid = 0;
-		WORD lightid = 0;
+		WORD devid;// = 0;
+		WORD lightid;// = 0;
 		WORD flags = 0;
 		string name;
 	};
 
 	struct devmap { // Device information block
 		WORD vid = 0;
-		WORD devid = 0;
+		WORD devid;// = 0;
 		string name;
 		Colorcode white = {255,255,255};
 	};
 
 	struct group { // Light group information block
-		DWORD gid = 0;
+		DWORD gid;// = 0;
 		string name;
 		vector<mapping*> lights;
 	};
 
 	struct afx_act { // atomic light action phase
-		BYTE type = 0; // one of Action values - action type
-		BYTE time = 0; // How long this phase stay
-		BYTE tempo = 0; // How fast it should transform
-		BYTE r = 0; // phase color
-		BYTE g = 0;
-		BYTE b = 0;
+		BYTE type; // one of Action values - action type
+		BYTE time; // How long this phase stay
+		BYTE tempo; // How fast it should transform
+		BYTE r; // phase color
+		BYTE g;
+		BYTE b;
 	};
 
 	struct act_block { // light action block

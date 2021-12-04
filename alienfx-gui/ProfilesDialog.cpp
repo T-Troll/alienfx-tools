@@ -95,7 +95,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
 		ReloadProfileView(hDlg);
 		if (conf->haveV5) {
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 0);
+			//ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 0);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Color"), 1);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Breathing"), 2);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Single-color Wave"), 3);
@@ -123,19 +123,16 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case CBN_SELCHANGE:
 			{
 				prof->globalEffect = (byte) ComboBox_GetItemData(eff_list, ComboBox_GetCurSel(eff_list));
-				//fxhl->UpdateGlobalEffect();
 			} break;
 			}
 		} break;
 		case IDC_BUTTON_EFFCLR1:
 		{
 			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
-			//fxhl->UpdateGlobalEffect();
 		} break;
 		case IDC_BUTTON_EFFCLR2:
 		{
 			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
-			//fxhl->UpdateGlobalEffect();
 		} break;
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
@@ -155,7 +152,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_REMOVEPROFILE: {
 			if (/*prof != NULL && */!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
-				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning!",
+				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// is this active profile? Switch needed!
 					if (conf->activeProfile->id == pCid) {
@@ -165,8 +162,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					int nCid = conf->activeProfile->id;
 					// Now remove profile....
 					// Did it have fans? We need to switch to system if it have!
-					for (std::vector <profile>::iterator Iter = conf->profiles.begin();
-						 Iter != conf->profiles.end(); Iter++)
+					for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++)
 						if (Iter->id == pCid) { //prid) {
 							conf->profiles.erase(Iter);
 							break;
@@ -178,11 +174,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			}
 			else
-				MessageBox(hDlg, "Can't delete last or default profile!", "Error!",
+				MessageBox(hDlg, "Can't delete last or default profile!", "Error",
 						   MB_OK | MB_ICONERROR);
 		} break;
 		case IDC_BUT_PROFRESET:
-			if (/*prof != NULL && */MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning!",
+			if (/*prof != NULL && */MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				prof->lightsets.clear();
 			}
@@ -224,6 +220,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			{
 				//if (prof) {
 					prof->effmode = ComboBox_GetCurSel(mode_list);
+					if (prof->effmode != 3) {
+						prof->flags &= ~PROF_GLOBAL_EFFECTS;
+						ReloadProfSettings(hDlg, prof);
+					}
 					if (prof->id == conf->activeProfile->id)
 						eve->ChangeEffectMode(prof->effmode);
 				//}
@@ -277,6 +277,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_GLOBAL:
 			prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
+			if (prof->flags & PROF_GLOBAL_EFFECTS)
+				prof->effmode = 3;
 			ReloadProfSettings(hDlg, prof);
 			break;
 		case IDC_CHECK_FANPROFILE:

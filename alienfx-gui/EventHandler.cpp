@@ -98,12 +98,15 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 			modifyProfile.lock();
 			conf->activeProfile = newID;
 			conf->active_set = &newID->lightsets;
-			if (mon) {
-				if (newID->flags & PROF_FANS)
-					mon->conf->lastProf = &newID->fansets;
-				else
-					mon->conf->lastProf = &mon->conf->prof;
+			if (newID->flags & PROF_FANS) {
+				conf->fan_conf->lastProf = &newID->fansets;
+				if (mon) {
+					mon->acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+					mon->acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+				}
 			}
+			else
+				conf->fan_conf->lastProf = &mon->conf->prof;
 			modifyProfile.unlock();
 			fxh->ChangeState();
 			ToggleEvents();

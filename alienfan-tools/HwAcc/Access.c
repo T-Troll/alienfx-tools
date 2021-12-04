@@ -105,6 +105,7 @@ Return Value:
 	return status;
 }
 
+#pragma alloc_text("PAGED_CODE", OpenAcpiDevice)
 NTSTATUS
 OpenAcpiDevice(
 	__in PLOCAL_DEVICE_INFO pLDI,
@@ -1103,6 +1104,7 @@ Return Value:
 }
 #endif // #ifndef _TINY_DRIVER_
 
+#pragma alloc_text("PAGED_CODE", EvalAcpiWithoutInputDirect)
 NTSTATUS
 EvalAcpiWithoutInputDirect(
 	__in PLOCAL_DEVICE_INFO pLDI,
@@ -1172,6 +1174,8 @@ Return Value:
 
 }
 
+
+#pragma alloc_text("PAGED_CODE", EvalAcpiWithInputDirect)
 NTSTATUS
 EvalAcpiWithInputDirect(
 	__in PLOCAL_DEVICE_INFO pLDI,

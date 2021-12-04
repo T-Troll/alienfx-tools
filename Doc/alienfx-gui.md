@@ -48,7 +48,9 @@ Available effect modes are:
 - Rainbow - Like a Colour, but can use up to 9 colours. (For devices with APIv4)
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.  
-“Set All” button copies current light effects to all lights into the list (it’s useful if you need to have all lights into the same colour and mode).  
+
+"Set All" button copies current light effects to all lights into the list (it’s useful if you need to have all lights into the same colour and mode).  
+"Info" button opens Light information dialogue for currently selected light. Light information dialogue shows all settings for it across all tabs and modes, and give a possibiliy to predict final color range, as well as modify it components.
 
 ![Monitoring tab](/Doc/img/gui-monitoring.png?raw=true)
 

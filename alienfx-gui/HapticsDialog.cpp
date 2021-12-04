@@ -7,6 +7,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
+extern haptics_map *FindHapMapping(int lid);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -102,29 +103,8 @@ void DrawFreq(HWND hDlg, int *freq) {
 	}
 }
 
-haptics_map *FindHapMapping(int lid) {
-	if (lid != -1) {
-		if (lid > 0xffff) {
-			// group
-			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
-				if (conf->hap_conf->haptics[i].devid == 0 && conf->hap_conf->haptics[i].lightid == lid) {
-					return &conf->hap_conf->haptics[i];
-				}
-		} else {
-			// mapping
-			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
-				if (conf->hap_conf->haptics[i].devid == lgh->devid && 
-					conf->hap_conf->haptics[i].lightid == lgh->lightid)
-					return &conf->hap_conf->haptics[i];
-		}
-	}
-	return NULL;
-}
-
 void RemoveHapMapping(haptics_map *map) {
-	std::vector <haptics_map>::iterator Iter;
-	for (Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
+	for (auto Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
 		if (Iter->devid == map->devid && Iter->lightid == map->lightid) {
 			conf->hap_conf->haptics.erase(Iter);
 			break;
@@ -257,14 +237,11 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 
 				int fid = ListBox_GetCurSel(freq_list);
-				std::vector <unsigned char>::iterator Iter = map->map.begin();
-				int i = 0;
-				for (i = 0; i < map->map.size(); i++)
-					if (map->map[i] == fid)
+				auto Iter = map->map.begin();
+				for (; Iter != map->map.end(); Iter++)
+					if (*Iter == fid)
 						break;
-					else
-						Iter++;
-				if (i == map->map.size())
+				if (Iter == map->map.end())
 					// new mapping, add and select
 					map->map.push_back(fid);
 				else
@@ -349,12 +326,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				else
 					c = map->colorto;
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, c);
-			return 0;
+			return true;
 		}
 		case IDC_LEVELS:
-			DrawFreq(hDlg, NULL);
-			return 0;
+			DrawFreq(hDlg, eve->audio ? eve->audio->freqs : NULL);
+			return true;
 		}
+		return false;
 	break;
 	case WM_CLOSE: 
 	case WM_DESTROY:

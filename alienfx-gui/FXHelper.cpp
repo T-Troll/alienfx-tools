@@ -54,8 +54,7 @@ void FXHelper::TestLight(int did, int id, bool wp)
 {
 	vector<byte> opLights;
 
-	for (vector<AlienFX_SDK::mapping*>::iterator lIter = afx_dev.fxdevs[did].lights.begin();
-			lIter != afx_dev.fxdevs[did].lights.end(); lIter++)
+	for (auto lIter = afx_dev.fxdevs[did].lights.begin(); lIter != afx_dev.fxdevs[did].lights.end(); lIter++)
 		if ((*lIter)->lightid != id && !((*lIter)->flags & ALIENFX_FLAG_POWER))
 			opLights.push_back((byte)(*lIter)->lightid);
 
@@ -64,14 +63,9 @@ void FXHelper::TestLight(int did, int id, bool wp)
 		Sleep(20);
 	if (!dev_ready) return;
 
-	AlienFX_SDK::Colorcode c{0};
+	AlienFX_SDK::Colorcode c = wp ? afx_dev.fxdevs[did].desc->white : AlienFX_SDK::Colorcode({0});
+	afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
 
-	if (wp) {
-		c.ci = afx_dev.fxdevs[did].desc->white.ci;
-		afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
-	}
-	else
-		afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
 	afx_dev.fxdevs[did].dev->UpdateColors();
 	if (id != -1) {
 		afx_dev.fxdevs[did].dev->SetColor(id, config->testColor);
@@ -99,7 +93,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		DebugPrint("Forced Counter update initiated...\n");
 	}
 
-	std::vector <lightset>::iterator Iter;
+	//std::vector <lightset>::iterator Iter;
 	blinkStage = !blinkStage;
 	bool wasChanged = false;
 	if (force) {
@@ -110,7 +104,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		return;
 	vector<lightset> active = config->activeProfile->lightsets;
 
-	for (Iter = active.begin(); Iter != active.end(); Iter++) {
+	for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
 		vector<AlienFX_SDK::afx_act> actions;
 		if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {
 			int mIndex = (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER) && Iter->eve[0].map.size() > 1
@@ -542,7 +536,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (current.update) {
 				// update command
 				if (src->GetConfig()->stateOn) {
-					for (vector<deviceQuery>::iterator devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
+					for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
 						AlienFX_SDK::afx_device* dev = src->LocateDev(devQ->devID);
 						if (dev && (current.did == (-1) || devQ->devID == current.did)) {
 //#ifdef _DEBUG
