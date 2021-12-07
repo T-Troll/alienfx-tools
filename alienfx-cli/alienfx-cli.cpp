@@ -1,7 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
-#include <iostream>
-
-#include "stdafx.h"
+//#include <iostream>
+#include <stdio.h>
+#include <string>
 #include "LFXUtil.h"
 #include "LFXDecl.h"
 #include "AlienFX_SDK.h"
@@ -54,28 +54,27 @@ void SetBrighness(AlienFX_SDK::Colorcode *color) {
 
 void printUsage() 
 {
-	cerr << "Usage: alienfx-cli [command=option,option,option] ... [command=option,option,option] [loop]" << endl
-		<< "Commands:\tOptions:" << endl
-		<< "set-all\t\tr,g,b[,br] - set all device lights." << endl
-		<< "set-one\t\tpid,light,r,g,b[,br] - set one light." << endl
-		<< "set-zone\tzone,r,g,b[,br] - set one zone lights." << endl
-		<< "set-action\tpid,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action." << endl
-		<< "set-zone-action\tzone,action,r,g,b[,br,[action,r,g,b,br]] - set all zone lights and enable it's action." << endl
-		<< "set-power\tlight,r,g,b,r2,g2,b2 - set power button colors (low-level only)." << endl
-		<< "set-tempo\ttempo - set light action tempo (in milliseconds)." << endl
-		<< "set-dev\t\tpid - set active device for low-level." << endl
-		<< "set-dim\t\tbr - set active device dim level." << endl
-		<< "low-level\tswitch to low-level SDK (USB driver)." << endl
-		<< "high-level\tswitch to high-level SDK (Alienware LightFX)." << endl
-		<< "status\t\tshows devices and lights id's, names and statuses." << endl
-		<< "lightson\tturn all current device lights on." << endl
-		<< "lightsoff\tturn all current device lights off." << endl
-		//<< "update\t\tupdates light status (for looped commands or old devices)." << endl
-		<< "reset\t\treset device state." << endl
-		<< "loop\t\trepeat all commands endlessly, until user press ^c. Should be the last command." << endl << endl
-		<< "Zones:\tleft, right, top, bottom, front, rear (high-level) or ID of the Group (low-level)." << endl
-		<< "Actions:color (disable action), pulse, morph (you need 2 colors)," << endl
-		<< "\t(only for low-level v4) breath, spectrum, rainbow (up to 9 colors each)." << endl;
+	printf("Usage: alienfx-cli [command=option,option,option] ... [command=option,option,option] [loop]\n\
+Commands:\tOptions:\n\
+set-all\t\tr,g,b[,br] - set all device lights.\n\
+set-one\t\tpid,light,r,g,b[,br] - set one light.\n\
+set-zone\tzone,r,g,b[,br] - set one zone lights.\n\
+set-action\tpid,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action.\n\
+set-zone-action\tzone,action,r,g,b[,br,[action,r,g,b,br]] - set all zone lights and enable it's action.\n\
+set-power\tlight,r,g,b,r2,g2,b2 - set power button colors (low-level only).\n\
+set-tempo\ttempo - set light action tempo (in milliseconds).\n\
+set-dev\t\tpid - set active device for low-level.\n\
+set-dim\t\tbr - set active device dim level.\n\
+low-level\tswitch to low-level SDK (USB driver).\n\
+high-level\tswitch to high-level SDK (Alienware LightFX).\n\
+status\t\tshows devices and lights id's, names and statuses.\n\
+lightson\tturn all current device lights on.\n\
+lightsoff\tturn all current device lights off.\n\
+reset\t\treset device state.\n\
+loop\t\trepeat all commands endlessly, until user press CTRL+c. Should be the last command.\n\n\
+Zones:\tleft, right, top, bottom, front, rear (high-level) or ID of the Group (low-level).\n\
+Actions:color (disable action), pulse, morph (you need 2 colors),\n\
+\t(only for low-level v4) breath, spectrum, rainbow (up to 9 colors each).");
 }
 
 AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
@@ -94,7 +93,7 @@ void FindDevice(int devID) {
 
 bool CheckArgs(string cName, int minArgs, size_t nargs) {
 	if (minArgs < nargs) {
-		cerr << cName << ": Incorrect arguments (should be " << minArgs << ")" << endl;
+		printf("%s: Incorrect arguments (should be %d)\n", cName.c_str(), minArgs);
 		return false;
 	}
 	return true;
@@ -105,7 +104,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	cerr << "alienfx-cli v5.3.3.1" << endl;
+	printf("alienfx-cli v5.3.5.0\n");
 	if (argc < 2) 
 	{
 		printUsage();
@@ -123,27 +122,27 @@ int main(int argc, char* argv[])
 		if (!cdev->IsDeviceReady()) {
 			cdev->Reset();
 		}
-		cout << "Low-level device ready" << endl;
+		printf("Low-level device ready\n");
 		have_low = true;
 		devType = 1;
 	}
 	else {
-		cerr << "No low-level devices found, trying high-level..." << endl;
+		printf("No low-level devices found, trying high-level...\n");
 	}
 
 	switch (lfxUtil.InitLFX()) {
-	case -1: cout << "Dell API ready" << endl;
+	case -1: printf("Dell API ready\n");
 		have_high = true;
 		if (!have_low) devType = 0;
 		break;
-	case 0: cerr << "Dell library DLL not found (no library?)!" << endl; break;
-	case 1: cerr << "Can't init Dell library!" << endl; break;
-	case 2: cerr << "No high-level devices found!" << endl; break;
-	default: cerr << "Dell library unknown error!" << endl; break;
+	case 0: printf("Dell library DLL not found (no library?)!\n"); break;
+	case 1: printf("Can't init Dell library!\n"); break;
+	case 2: printf("No high-level devices found!\n"); break;
+	default: printf("Dell library unknown error!\n"); break;
 	}
 
 	if (devType == -1) {
-		cout << "Both low-levl and high-level devices not found, exiting!" << endl;
+		printf("Both low-levl and high-level devices not found, exiting!\n");
 		goto deinit;
 	}
 
@@ -163,23 +162,23 @@ int main(int argc, char* argv[])
 				vpos = tvpos == string::npos ? values.size() : tvpos+1;
 			}
 		}
-		//cerr << "Executing " << command << " with " << values << endl;
+		//printf("Executing " command " with " values);
 		if (command == "low-level") {
-			cout << "Low-level device ";
+			printf("Low-level device ");
 			if (have_low) {
 				devType = 1;
-				cout << "selected" << endl;
+				printf("selected\n");
 			} else
-				cout << "not found!" << endl;
+				printf("not found!\n");
 			continue;
 		}
 		if (command == "high-level") {
-			cout << "High-level device ";
+			printf("High-level device ");
 			if (have_high) {
 				devType = 0;
-				cout << "selected" << endl;
+				printf("selected\n");
 			} else
-				cout << "not found!" << endl;
+				printf("not found!\n");
 			continue;
 		}
 		if (command == "loop") {
@@ -198,41 +197,36 @@ int main(int argc, char* argv[])
 			switch (devType) {
 			case 1:
 				for (int i = 0; i < afx_map->fxdevs.size(); i++) {
-					cout << "Device ";
-					if (afx_map->fxdevs[i].desc)
-						cout << afx_map->fxdevs[i].desc->name;
-					else
-						cout << "No name";
-					unsigned devtype = afx_map->fxdevs[i].dev->GetType();
+					printf("Device #%d - %s, ", i, (afx_map->fxdevs[i].desc ? afx_map->fxdevs[i].desc->name.c_str() : "No name"));
 					string typeName = "Unknown";
-					switch (devtype) {
-					case 0: typeName = "Notebook"; break;
-					case 1: typeName = "Keyboard"; break;
-					case 2: typeName = "Monitor"; break;
-					case 3: typeName = "Mouse"; break;
+					switch (afx_map->fxdevs[i].dev->GetVersion()) {
+					case 0: typeName = "Desktop"; break;
+					case 1: case 2: case 3: case 4: typeName = "Notebook"; break;
+					case 5: typeName = "Keyboard"; break;
+					case 6: typeName = "Display"; break;
+					case 7: typeName = "Mouse"; break;
 					}
-					cout << ", " << typeName << ", VID#" << afx_map->fxdevs[i].dev->GetVid()
-						<< ", PID#" << afx_map->fxdevs[i].dev->GetPID()
-						<< ", V" << afx_map->fxdevs[i].dev->GetVersion();
 
-					if (cdev->GetPID() == afx_map->fxdevs[i].dev->GetPID())
-						cout << " (Active)";
-					cout << endl;
+					printf("%s, VID#%d, PID#%d, APIv%d, %d lights %s\n", typeName.c_str(),
+						   afx_map->fxdevs[i].dev->GetVid(), afx_map->fxdevs[i].dev->GetPID(), afx_map->fxdevs[i].dev->GetVersion(),
+						   (int)afx_map->fxdevs[i].lights.size(),
+						   (cdev->GetPID() == afx_map->fxdevs[i].dev->GetPID()) ? "(Active)" : ""
+					);
+
 					for (int k = 0; k < afx_map->fxdevs[i].lights.size(); k++) {
-							cout << "  Light ID#" << afx_map->fxdevs[i].lights[k]->lightid
-								<< " - " << afx_map->fxdevs[i].lights[k]->name;
-							if (afx_map->fxdevs[i].lights[k]->flags & ALIENFX_FLAG_POWER)
-								cout << " (Power button)";
-							if (afx_map->fxdevs[i].lights[k]->flags & ALIENFX_FLAG_INDICATOR)
-								cout << " (Indicator)";
-							cout << endl;
+						printf("  Light ID#%d - %s%s%s\n", afx_map->fxdevs[i].lights[k]->lightid,
+							   afx_map->fxdevs[i].lights[k]->name.c_str(),
+							   (afx_map->fxdevs[i].lights[k]->flags &ALIENFX_FLAG_POWER) ? " (Power button)" : "",
+							   (afx_map->fxdevs[i].lights[k]->flags &ALIENFX_FLAG_INDICATOR) ? " (Indicator)" : "");
 					}
 				}
 				// now groups...
+				if (afx_map->GetGroups()->size() > 0)
+					printf("%d groups:\n", (int)afx_map->GetGroups()->size());
 				for (int i = 0; i < afx_map->GetGroups()->size(); i++)
-					cout << "  Group #" << (afx_map->GetGroups()->at(i).gid & 0xffff)
-					<< " - " << afx_map->GetGroups()->at(i).name
-					<< " (" << afx_map->GetGroups()->at(i).lights.size() << " lights)" << endl;
+					printf("  Group #%d - %s (%d lights)\n", (afx_map->GetGroups()->at(i).gid & 0xffff),
+						   afx_map->GetGroups()->at(i).name.c_str(),
+					       (int)afx_map->GetGroups()->at(i).lights.size());
 				break;
 			case 0:
 				lfxUtil.GetStatus(); break;
@@ -253,7 +247,7 @@ int main(int argc, char* argv[])
 		}
 		if (command == "set-dev" && CheckArgs(command, 1, args.size())) {
 			FindDevice(atoi(args.at(0).c_str()));
-			cout << "Device #" << cdev->GetPID() << " selected" << endl;
+			printf("Device #%d selected\n", cdev->GetPID());
 			continue;
 		}
 		if (command == "reset") {
@@ -265,14 +259,6 @@ int main(int argc, char* argv[])
 			}
 			continue;
 		}
-		//if (command == "update") {
-		//	if (have_low)
-		//		for (int i = 0; i < afx_map->fxdevs.size(); i++)
-		//			afx_map->fxdevs[i].dev->UpdateColors(); 
-		//	/*if (have_high)
-		//		lfxUtil.Update(); break;*/
-		//	continue;
-		//}
 		if (command == "set-dim" && CheckArgs(command, 1, args.size())) {
 			byte dim = atoi(args.at(0).c_str());
 			if (devType)
@@ -300,14 +286,6 @@ int main(int argc, char* argv[])
 			case 1:
 			{
 				SetBrighness(&color);
-				//for (int j = 0; j < afx_map->fxdevs.size(); j++) {
-				//	vector<byte> lights;
-				//	for (int i = 0; i < afx_map->fxdevs[j].lights.size(); i++) {
-				//		lights.push_back((byte)afx_map->fxdevs[j].lights[i]->lightid);
-				//	}
-				//	afx_map->fxdevs[j].dev->SetMultiLights(&lights, color);
-				//	//afx_map->fxdevs[j].dev->UpdateColors();
-				//}
 				vector<byte> lights;
 				for (int i = 0; i < afx_map->GetMappings()->size(); i++) {
 					AlienFX_SDK::mapping *lgh = afx_map->GetMappings()->at(i);
@@ -357,7 +335,7 @@ int main(int argc, char* argv[])
 			case 1:
 			{
 				SetBrighness(&color);
-				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
+				AlienFX_SDK::group* grp = afx_map->GetGroupById(0x10000 + zoneCode);
 				if (grp) {
 					for (int j = 0; j < afx_map->fxdevs.size(); j++) {
 						vector<UCHAR> lights;
@@ -455,7 +433,7 @@ int main(int argc, char* argv[])
 			switch (devType) {
 			case 1:
 			{
-				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
+				AlienFX_SDK::group* grp = afx_map->GetGroupById(0x10000 + zoneCode);
 				if (act.act.size() < 2) {
 					act.act.push_back(AlienFX_SDK::afx_act({(BYTE) actionCode, (BYTE) sleepy, 7, 0, 0, 0}));
 				}
@@ -479,7 +457,7 @@ int main(int argc, char* argv[])
 			}
 			//goto update;
 		} else
-			cerr << "Unknown command: " << command << endl;
+			printf("Unknown command %s\n", command.c_str());
 update:
 		if (have_low) {
 			for (int i = 0; i < afx_map->fxdevs.size(); i++)
@@ -489,7 +467,7 @@ update:
 			lfxUtil.Update();
 		}
 	}
-	cout << "Done." << endl;
+	printf("Done.");
 
 deinit:
 	if (have_high) 

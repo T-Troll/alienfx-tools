@@ -60,7 +60,7 @@
 #define TRY_PANIC(expr) { \
 	HRESULT e = expr; \
 	if (FAILED(e)) { \
-		std::exit(e); \
+		throw e; \
 	} \
 }
 #endif

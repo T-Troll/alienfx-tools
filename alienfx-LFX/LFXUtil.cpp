@@ -2,9 +2,10 @@
 
 #include "LFXUtil.h"
 #include "LFX2.h"
+#include <wtypes.h>
 #include <tchar.h>
-#include <windows.h>
-#include <iostream>
+#include <string>
+//#include <windows.h>
 
 namespace
 {
@@ -158,10 +159,10 @@ namespace LFXUtil
 
 		char vdesc[256];
 
-		if (_LFX_GetVersion(vdesc, 256) == 0)
-			std::cout << "Dell API version " << vdesc << " detected\n";
+		if (!_LFX_GetVersion(vdesc, 256))
+			printf("Dell API version %s detected\n", vdesc);
 		else {
-			std::cout << "Old Dell API detected\n";
+			printf("Old Dell API detected\n");
 		}
 
 		Update();
@@ -169,7 +170,6 @@ namespace LFXUtil
 		unsigned numDev;
 
 		_LFX_GetNumDevices(&numDev);
-		std::cout << "Devices found: " << numDev << "\n";
 
 		for (unsigned i = 0; i < numDev; i++) {
 			char desc[256]; unsigned char id; unsigned numLights;
@@ -189,24 +189,15 @@ namespace LFXUtil
 				case LFX_DEVTYPE_OTHER: type = "Other"; break;
 			}
 
-			std::cout << "Device #" << i << ", Name: " << desc << ", Type: " << type << ", Lights: " << numLights << "\n";
+			printf("Device #%d - %s (%s), %d lights\n", i, desc, type.c_str(), numLights);
 			for (unsigned j = 0; j < numLights; j++) {
-				char ldesc[256]; LFX_COLOR color; LFX_POSITION pos;
-				std::cout << "  Light #" << j << ", Name: ";
-				if (_LFX_GetLightDescription(i, j, ldesc, 256) == 0)
-					std::cout << ldesc << ", Position ";
-				else
-					std::cout << "Unknown, Position ";
-				if (_LFX_GetLightLocation(i, j, &pos) == 0)
-					std::cout << "(" << (unsigned)pos.x << ", " << (unsigned)pos.y << ", " << (unsigned)pos.z << "), Color ";
-				else
-					std::cout << "Unknown, Color ";
-				if (_LFX_GetLightColor(i, j, &color) == 0)
-					std::cout << "(" << (unsigned)color.red << "," << (unsigned)color.green << "," << (unsigned)color.blue
-					<< "), Brightness: " << (unsigned)color.brightness;
-				else
-					std::cout << "Unknown";
-				std::cout << "\n";
+				LFX_COLOR color{0}; LFX_POSITION pos{0};
+				_LFX_GetLightColor(i, j, &color),
+				_LFX_GetLightLocation(i, j, &pos);
+				printf("  Light #%d - %s, Position (%d,%d,%d), Color (%d,%d,%d,%d)\n", j,
+				        (_LFX_GetLightDescription(i, j, desc, 256) ? "Unknown" : desc),
+						pos.x, pos.y, pos.z,
+						color.red, color.green, color.blue, color.brightness);
 			}
 
 		}

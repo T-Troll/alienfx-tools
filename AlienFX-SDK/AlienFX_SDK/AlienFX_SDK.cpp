@@ -208,14 +208,6 @@ namespace AlienFX_SDK {
 								this->vid = attributes->VendorID;
 								pid = attributes->ProductID;
 								flag = true;
-//#ifdef _DEBUG
-//								wchar_t buff[2048];
-//								swprintf_s(buff, 2047, L"Init: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
-//										   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, length);
-//								OutputDebugString(buff);
-//								cout << "Attributes - length: " << attributes->Size << ", version: " << attributes->VersionNumber << endl;
-//								wprintf(L"Path: %s\n%s", devicePath.c_str(), buff);
-//#endif
 							}
 						}
 					}
@@ -1286,16 +1278,6 @@ namespace AlienFX_SDK {
 
 	int Functions::GetVid() {
 		return vid;
-	}
-
-	int Functions::GetType() {
-		int devtype = -1;
-		for (unsigned j = 0; j < NUM_VIDS; j++) {
-			if (vids[j] == GetVid()) {
-				devtype = j; break;
-			}
-		}
-		return devtype;
 	}
 
 	int Functions::GetVersion() {

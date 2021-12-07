@@ -1,5 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
-#include <iostream>
+//#include <iostream>
+#include <stdio.h>
 #include <vector>
 #include "alienfan-SDK.h"
 #include "..\alienfan-gui\ConfigHelper.h"
@@ -11,7 +12,7 @@ int SetFanSteady(short num, byte boost, bool downtrend = false) {
     bool run2 = true;
     acpi->SetFanValue(num, boost, true);
     // Check the trend...
-    cout << "Stabilize Fan#" << num << " at boost " << (int) boost << ":" << endl;
+    printf("Stabilize Fan#%d at boots %d:\n", num, boost);
     int oldMids = 0, midRPMs = 0;
     int maxRPM = 0, minRPM = 10000;
     do {
@@ -26,10 +27,10 @@ int SetFanSteady(short num, byte boost, bool downtrend = false) {
             //midRPMs += cRPM;
         }
         midRPMs = minRPM + (maxRPM - minRPM) / 2;
-        cout << "\r" << midRPMs << " RPM (" << minRPM << "-" << maxRPM << ")";
+        printf("\r%d RPM (%d-%d)", midRPMs, minRPM, maxRPM);
     } while (minRPM != maxRPM && abs(oldMids - midRPMs) > 50 && (!downtrend || oldMids - midRPMs < 100));
     midRPMs = downtrend && oldMids - midRPMs >= 100 ? -1 : maxRPM;
-    cout << " done, " << (midRPMs < 0 ? minRPM : midRPMs) << " RPM" << endl;
+    printf(" done, %d RPM\n", (midRPMs < 0 ? minRPM : midRPMs));
     return midRPMs;
 }
 
@@ -39,10 +40,10 @@ void CheckFanOverboost(short num) {
     int boost = 100, badBoost = 0;
     int runrpm = 0, rpm = 0;
     bool run = true;
-    cout << "Checking fan #" << num << endl;
+    printf("Checking fan #%d\n", num);
     rpm = SetFanSteady(num, boost);
     do {
-        //cout << "Starting step " << steps << endl;
+        //printf("Starting step " << steps << endl;
         // Check for overrun
         do {
             boost += steps;
@@ -59,7 +60,7 @@ void CheckFanOverboost(short num) {
         /*if (steps > 0)
             int trpm = SetFanSteady(num, boost);*/
     } while (steps > 0);
-    cout << "Final boost - " << boost << ", " << rpm << " RPM" << endl << endl;
+    printf("Final boost - %d (at %d RPM)\n\n", boost, rpm);
     acpi->SetFanValue(num, boost, true);
     if (num >= conf->boosts.size())
         conf->boosts.resize(num + 1);
@@ -72,8 +73,8 @@ void CheckFanOverboost(short num) {
 
 int main(int argc, char* argv[])
 {
-    cout << "AlienFan-Overboost v1.5.1.0" << endl;
-    cout << "Usage: AlienFan-Overboost [fan ID [Manual boost]]" << endl;
+    printf("AlienFan-Overboost v1.5.1.0\n");
+    printf("Usage: AlienFan-Overboost [fan ID [Manual boost]]\n");
 
     conf = new ConfigHelper();
 
@@ -90,27 +91,27 @@ int main(int argc, char* argv[])
                         // manual fan set
                         int newBoost = atoi(argv[2]);
                         acpi->Unlock();
-                        cout << "Boost for fan " << fanID << " will be set to " << newBoost;
+                        printf("Boost for fan #%d will be set to %d.\n", fanID, newBoost);
                         int newrpm = SetFanSteady(fanID, newBoost);
                         if (fanID >= conf->boosts.size())
                             conf->boosts.resize(fanID + 1);
                         acpi->SetFanValue(fanID, 0);
                         conf->boosts[fanID] = {(byte)newBoost,(USHORT)newrpm};
-                        cout << " done, " << newrpm << " RPM" << endl;
+                        printf("Done, %d RPM\n", newrpm);
                     } else
                         CheckFanOverboost(fanID);
                 else
-                    cout << "Incorrect fan ID!" << endl;
+                    printf("Incorrect fan ID!\n");
             } else {
                 // all fans
                 for (int i = 0; i < acpi->HowManyFans(); i++)
                     CheckFanOverboost(i);
             }
-            cout << "Done!" << endl;
+            printf("Done!\n");
         } else
-            cout << "Supported device not found!" << endl;
+            printf("Supported device not found!\n");
     } else
-        cout << "Error: can't load driver!" << endl;
+        printf("Error: can't load driver!\n");
 
     delete acpi;
     delete conf;

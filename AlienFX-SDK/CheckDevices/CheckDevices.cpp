@@ -1,5 +1,5 @@
 
-#include <iostream>
+#include <stdio.h>
 #include <iomanip>
 #include <WTypesbase.h>
 #include <string>
@@ -111,28 +111,25 @@ void CheckDevices(bool show_all) {
 
 							if (show_all || supported) {
 
-								cout.fill('0');
-								cout << hex << "===== New device VID_" << setw(4) << attributes->VendorID << ", PID_" << setw(4) << attributes->ProductID << " =====" << endl;
+								printf("===== New device VID_%04x, PID_%04x =====\n", attributes->VendorID, attributes->ProductID);
+								printf("Version %d, blocksize %d\n", attributes->VersionNumber, attributes->Size);
 
-								cout << dec << "Version " << attributes->VersionNumber << ", Blocksize " << attributes->Size << endl;
+								printf("Report Lengths: Output %d, Input %d, Feature %d\n", caps.OutputReportByteLength,
+									caps.InputReportByteLength,
+									caps.FeatureReportByteLength);
+								printf("Usage ID %#x, Usage page %#x, Output caps %d, Index %d\n", caps.Usage, caps.UsagePage,
+								    caps.NumberOutputButtonCaps, caps.NumberOutputDataIndices);
 
-								cout << dec << "Report Lengths: Output " << caps.OutputReportByteLength
-									<< ", Input " << caps.InputReportByteLength
-									<< ", Feature " << caps.FeatureReportByteLength
-									<< endl;
-								cout << hex << "Usage ID " << caps.Usage << ", Usage Page " << caps.UsagePage;
-								cout << dec << ", Output caps " << caps.NumberOutputButtonCaps << ", Index " << caps.NumberOutputDataIndices << endl;
-
-								cout << "+++++ Detected as: ";
+								printf("+++++ Detected as: ");
 
 								switch (i) {
-								case 0: cout << "Alienware, "; break;
-								case 1: cout << "DARFON, "; break;
-								case 2: cout << "Microchip, "; break;
-								case 3: cout << "Primax, "; break;
+								case 0: printf("Alienware,"); break;
+								case 1: printf("DARFON,"); break;
+								case 2: printf("Microchip,"); break;
+								case 3: printf("Primax,"); break;
 								}
 
-								cout << apiver << " +++++" << endl;
+								printf(" %s +++++\n", apiver.c_str());
 							}
 						}
 					}

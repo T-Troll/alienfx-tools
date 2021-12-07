@@ -221,12 +221,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->IsActivated() && acpi->Probe()) {
 			conf->fan_conf->SetBoosts(acpi);
-			if (conf->fan_conf->lastProf->powerStage >= 0)
-				acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-			if (conf->fan_conf->lastProf->GPUPower >= 0)
-				acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+			acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+			acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 		} else {
-			MessageBox(NULL, "Fan control didn't start and will be disabled!", "Error",
+			string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
+			MessageBox(NULL, errMsg.c_str(), "Error",
 					   MB_OK | MB_ICONHAND);
 			delete acpi;
 			acpi = NULL;
@@ -278,8 +277,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 		delete eve;
-		fxhl->Stop();
-		fxhl->afx_dev.SaveMappings();
 
 		if (conf->wasAWCC) DoStopService(false);
 	}
@@ -942,24 +939,23 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			}
 		}
 		break;
-	case WM_QUERYENDSESSION:
-		return true;
 	case WM_DISPLAYCHANGE:
 		// Monitor configuration changed
 	    if (eve->capt) eve->capt->Restart();
 	break;
+	//case WM_QUERYENDSESSION:
+	//	delete eve;
+	//	conf->Save();
+	//	break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
 
 		DebugPrint("Shutdown initiated\n");
-		SendMessage(hDlg, WM_CLOSE, 0, 0);
-		//conf->Save();
-		//eve->StopProfiles();
-		//eve->StopEffects();
-		//fxhl->Refresh(2);
-		//fxhl->UnblockUpdates(false, true);
-		//return 0;
-		break;
+		delete eve;
+		if (acpi) delete acpi;
+		delete fxhl;
+		delete conf;
+		return 0;
 	case WM_HOTKEY:
 		switch (wParam) {
 		case 1: // on/off
@@ -1005,7 +1001,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
 		return 0;
-		break;
 	case WM_DESTROY:
 		PostQuitMessage(0); break;
 	default: return false;

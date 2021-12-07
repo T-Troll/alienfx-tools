@@ -14,6 +14,10 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 	afx_dev.LoadMappings();
 };
 FXHelper::~FXHelper() {
+	Stop();
+	for (auto Iter = afx_dev.fxdevs.begin(); Iter < afx_dev.fxdevs.end(); Iter++)
+		Iter->dev->AlienFXClose();
+	afx_dev.SaveMappings();
 };
 
 AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
