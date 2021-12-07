@@ -137,12 +137,19 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumDevices(unsigned int *const num) {
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, char *const name, const unsigned int namelen, unsigned char *const devtype) {
 	if (CheckState(dev) == LFX_SUCCESS) {
-		string devName;
+		string devName = afx_map->fxdevs[dev].desc ? afx_map->fxdevs[dev].desc->name : "Device #" + to_string(dev);
 		*devtype = LFX_DEVTYPE_UNKNOWN;
-		devName = afx_map->fxdevs[dev].desc ? afx_map->fxdevs[dev].desc->name : "Device #" + to_string(dev);
+		switch (afx_map->fxdevs[dev].dev->GetVersion()) {
+		case 0:*devtype = LFX_DEVTYPE_DESKTOP; break;
+		case 1: case 2: case 3: case 4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
+		case 5: *devtype = LFX_DEVTYPE_KEYBOARD; break;
+		case 6: *devtype = LFX_DEVTYPE_DISPLAY; break;
+		case 7: *devtype = LFX_DEVTYPE_MOUSE; break;
+		}
+		//devName = afx_map->fxdevs[dev].desc ? afx_map->fxdevs[dev].desc->name : "Device #" + to_string(dev);
 
 		if (namelen > devName.length()) {
-			strcpy_s(name, devName.length(), devName.c_str());
+			strcpy_s(name, namelen, devName.c_str());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}
@@ -158,8 +165,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumLights(const unsigned int dev, unsigned
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightDescription(const unsigned int dev, const unsigned int lid, char *const name, const unsigned int namelen) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
-		if (afx_map->fxdevs[dev].lights[lid]->name.length() < namelen) {
-			strcpy_s(name, afx_map->fxdevs[dev].lights[lid]->name.length(), afx_map->fxdevs[dev].lights[lid]->name.c_str());
+		if (namelen > afx_map->fxdevs[dev].lights[lid]->name.length()) {
+			strcpy_s(name, namelen, afx_map->fxdevs[dev].lights[lid]->name.c_str());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}

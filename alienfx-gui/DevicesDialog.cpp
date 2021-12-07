@@ -94,13 +94,13 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 	for (int i = 0; i < fxhl->afx_dev.fxdevs.size(); i++) {
 		if (!fxhl->afx_dev.fxdevs[i].desc) {
 			// no name
-			unsigned devtype = fxhl->afx_dev.fxdevs[i].dev->GetType();
 			string typeName = "Unknown";
-			switch (devtype) {
-			case 0: typeName = "Notebook"; break;
-			case 1: typeName = "Keyboard"; break;
-			case 2: typeName = "Monitor"; break;
-			case 3: typeName = "Mouse"; break;
+			switch (fxhl->afx_dev.fxdevs[i].dev->GetVersion()) {
+			case 0: typeName = "Desktop"; break;
+			case 1: case 2: case 3: case 4: typeName = "Notebook"; break;
+			case 5: typeName = "Keyboard"; break;
+			case 6: typeName = "Display"; break;
+			case 7: typeName = "Mouse"; break;
 			}
 			AlienFX_SDK::devmap newDev{(WORD)fxhl->afx_dev.fxdevs[i].dev->GetVid(),
 				(WORD)fxhl->afx_dev.fxdevs[i].dev->GetPID(),

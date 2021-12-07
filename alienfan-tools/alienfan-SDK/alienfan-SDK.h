@@ -17,7 +17,7 @@ namespace AlienFan_SDK {
 	};
 
 	struct ALIENFAN_COMMAND {
-		short com;
+		byte /*short*/ com;
 		byte sub;
 	};
 
