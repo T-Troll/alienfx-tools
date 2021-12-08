@@ -65,12 +65,12 @@ void ReloadProfileView(HWND hDlg) {
 		lItem.iItem = i;
 		lItem.iImage = 0;
 		lItem.iSubItem = 0;
-		lItem.lParam = conf->profiles[i].id;
-		lItem.pszText = (char*)conf->profiles[i].name.c_str();
-		if (conf->profiles[i].id == pCid) {
+		lItem.lParam = conf->profiles[i]->id;
+		lItem.pszText = (char*)conf->profiles[i]->name.c_str();
+		if (conf->profiles[i]->id == pCid) {
 			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
-			ReloadProfSettings(hDlg, &conf->profiles[i]);
+			ReloadProfSettings(hDlg, conf->profiles[i]);
 			rpos = i;
 		}
 		ListView_InsertItem(profile_list, &lItem);
@@ -137,16 +137,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
 			for (int i = 0; i < conf->profiles.size(); i++)
-				if (vacID == conf->profiles[i].id) {
+				if (vacID == conf->profiles[i]->id) {
 					vacID++; i = -1;
 				}
-			string buf = "Profile " + to_string(vacID);
-			//if (prof) {
-				profile new_prof{vacID, prof->flags, prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets};
-				new_prof.flags &= 0xff - PROF_DEFAULT;
-				conf->profiles.push_back(new_prof);
-				pCid = vacID;
-			//}
+			profile* new_prof = new profile({vacID, prof->flags, prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets});
+			new_prof->flags &= ~PROF_DEFAULT;
+			conf->profiles.push_back(new_prof);
+			pCid = vacID;
 			ReloadProfileView(hDlg);
 			ReloadProfileList();
 		} break;
@@ -163,11 +160,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					// Now remove profile....
 					// Did it have fans? We need to switch to system if it have!
 					for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++)
-						if (Iter->id == pCid) { //prid) {
+						if ((*Iter)->id == pCid) { //prid) {
 							conf->profiles.erase(Iter);
 							break;
 						} else
-							nCid = Iter->id;
+							nCid = (*Iter)->id;
 					pCid = nCid;
 					ReloadProfileView(hDlg);
 					ReloadProfileList();

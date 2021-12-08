@@ -92,7 +92,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
-	if (!newID) newID = conf->defaultProfile;
+	if (!newID) newID = conf->defaultProfile ? conf->defaultProfile : conf->profiles.front();
 	if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
 	if (newID->id != conf->activeProfile->id) {
 			modifyProfile.lock();
@@ -106,7 +106,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 				}
 			}
 			else
-				conf->fan_conf->lastProf = &mon->conf->prof;
+				conf->fan_conf->lastProf = &conf->fan_conf->prof;
 			modifyProfile.unlock();
 			fxh->ChangeState();
 			ToggleEvents();

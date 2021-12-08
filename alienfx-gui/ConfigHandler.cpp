@@ -31,15 +31,12 @@ ConfigHandler::~ConfigHandler() {
 	RegCloseKey(hKey4);
 }
 
-//bool ConfigHandler::sortMappings(lightset i, lightset j) { return (i.lightid < j.lightid); };
-
 void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD* eff) {
 	profile* prof = FindProfile(id);
 	if (!prof) {
 		// New profile
 		prof = new profile{id};
-		profiles.push_back(*prof);
-		prof = &profiles.back();
+		profiles.push_back(prof);
 	}
 	// update profile..
 	if (!name.empty())
@@ -84,15 +81,15 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 			prof->fansets.powerStage = LOWORD(flags);
 			prof->fansets.GPUPower = HIWORD(flags);
 		}
-		profiles.push_back(*prof);
+		profiles.push_back(prof);
 	}
 }
 
 profile* ConfigHandler::FindProfile(int id) {
 	profile* prof = NULL;
 	for (int i = 0; i < profiles.size(); i++)
-		if (profiles[i].id == id) {
-			prof = &profiles[i];
+		if (profiles[i]->id == id) {
+			prof = profiles[i];
 			break;
 		}
 	return prof;
@@ -101,11 +98,11 @@ profile* ConfigHandler::FindProfile(int id) {
 profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
 	for (int j = 0; j < profiles.size(); j++)
-		if (active || !(profiles[j].flags & PROF_ACTIVE)) {
-			for (int i = 0; i < profiles[j].triggerapp.size(); i++)
-				if (profiles[j].triggerapp[i] == appName)
+		if (active || !(profiles[j]->flags & PROF_ACTIVE)) {
+			for (int i = 0; i < profiles[j]->triggerapp.size(); i++)
+				if (profiles[j]->triggerapp[i] == appName)
 					// app is belong to profile!
-					return &profiles[j];
+					return profiles[j];
 		}
 	return NULL;
 }
@@ -214,10 +211,6 @@ void ConfigHandler::Load() {
 	GetReg("OffPowerButton", &offPowerButton);
 	GetReg("EsifTemp", &esif_temp);
 	GetReg("DimmingPower", &dimmingPower, 92);
-	//GetReg("GlobalEffect", &globalEffect);
-	//GetReg("GlobalTempo", &globalDelay, 5);
-	//GetReg("EffectColor1", (DWORD*)&effColor1.ci);
-	//GetReg("EffectColor2", (DWORD*)&effColor2.ci);
 	GetReg("FanControl", &fanControl);
 	RegGetValue(hKey1, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
@@ -293,29 +286,26 @@ void ConfigHandler::Load() {
 			delete[] inarray;
 		}
 	} while (ret == ERROR_SUCCESS);
-	// set active profile...
-	int activeFound = 0;
-	if (profiles.size() > 0) {
-		for (int i = 0; i < profiles.size(); i++) {
-			if (profiles[i].id == activeProfileID) {
-				activeProfile = &profiles[i];
-				activeFound = i;
-			}
-			if (profiles[i].flags & PROF_DEFAULT)
-				defaultProfile = &profiles[i];
-		}
-	}
-	else {
+
+	if (!profiles.size()) {
 		// need new profile
-		profile prof{0, 1, 0, {}, "Default"};
+		profile* prof = new profile({0, 1, 0, {}, "Default"});
 		profiles.push_back(prof);
-		active_set = &(profiles.back().lightsets);
 	}
+	defaultProfile = profiles.front();
 	if (profiles.size() == 1) {
-		profiles[0].flags = profiles[0].flags | PROF_DEFAULT;
-		defaultProfile = activeProfile = &profiles[0];
+		profiles.front()->flags |= PROF_DEFAULT;
+	} else {
+		// check for default profile
+		for (auto iter = profiles.begin(); iter < profiles.end(); iter++)
+			if ((*iter)->flags & PROF_DEFAULT) {
+				defaultProfile = *iter;
+				break;
+			}
 	}
-	active_set = &profiles[activeFound].lightsets;
+	activeProfile = FindProfile(activeProfileID);
+	if (!activeProfile) activeProfile = defaultProfile;
+	active_set = &activeProfile->lightsets;
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
 
@@ -334,7 +324,6 @@ void ConfigHandler::Save() {
 
 	SetReg("AutoStart", startWindows);
 	SetReg("Minimized", startMinimized);
-	//SetReg("Refresh", autoRefresh);
 	SetReg("LightsOn", lightsOn);
 	SetReg("Dimmed", dimmed);
 	SetReg("Monitoring", enableMon);
@@ -349,38 +338,32 @@ void ConfigHandler::Save() {
 	SetReg("ProfileAutoSwitch", enableProf);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("EsifTemp", esif_temp);
-	//SetReg("GlobalEffect", globalEffect);
-	//SetReg("GlobalTempo", globalDelay);
-	//SetReg("EffectColor1", effColor1.ci);
-	//SetReg("EffectColor2", effColor2.ci);
 	SetReg("FanControl", fanControl);
 
 	RegSetValueEx( hKey1, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
 
-	if (profiles.size() > 0) {
-		RegDeleteTreeA(hKey1, "Profiles");
-		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);// &dwDisposition);
-	}
+	RegDeleteTreeA(hKey1, "Profiles");
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);// &dwDisposition);
 
 	RegDeleteTreeA(hKey1, "Events");
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);// &dwDisposition);
 
 	for (int j = 0; j < profiles.size(); j++) {
-		string name = "Profile-" + to_string(profiles[j].id);
-		RegSetValueExA( hKey4, name.c_str(), 0, REG_SZ, (BYTE*)profiles[j].name.c_str(), (DWORD)profiles[j].name.length() );
-		name = "Profile-flags-" + to_string(profiles[j].id);
-		DWORD flagset = MAKELONG(profiles[j].flags, profiles[j].effmode);
+		string name = "Profile-" + to_string(profiles[j]->id);
+		RegSetValueExA( hKey4, name.c_str(), 0, REG_SZ, (BYTE*)profiles[j]->name.c_str(), (DWORD)profiles[j]->name.length() );
+		name = "Profile-flags-" + to_string(profiles[j]->id);
+		DWORD flagset = MAKELONG(profiles[j]->flags, profiles[j]->effmode);
 		RegSetValueExA( hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 
-		for (int i = 0; i < profiles[j].triggerapp.size(); i++) {
-			name = "Profile-app-" + to_string(profiles[j].id) + "-" + to_string(i);
-			RegSetValueExA(hKey4, name.c_str(), 0, REG_SZ, (BYTE *) profiles[j].triggerapp[i].c_str(), (DWORD) profiles[j].triggerapp[i].length());
+		for (int i = 0; i < profiles[j]->triggerapp.size(); i++) {
+			name = "Profile-app-" + to_string(profiles[j]->id) + "-" + to_string(i);
+			RegSetValueExA(hKey4, name.c_str(), 0, REG_SZ, (BYTE *) profiles[j]->triggerapp[i].c_str(), (DWORD) profiles[j]->triggerapp[i].length());
 		}
 
-		for (int i = 0; i < profiles[j].lightsets.size(); i++) {
+		for (int i = 0; i < profiles[j]->lightsets.size(); i++) {
 			//preparing name
-			lightset cur = profiles[j].lightsets[i];
-			name = "Set-" + to_string(cur.devid) + "-" + to_string(cur.lightid) + "-" + to_string(profiles[j].id);
+			lightset cur = profiles[j]->lightsets[i];
+			name = "Set-" + to_string(cur.devid) + "-" + to_string(cur.lightid) + "-" + to_string(profiles[j]->id);
 			//preparing binary....
 			size_t size = 4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
 			for (int j = 0; j < 4; j++)
@@ -403,26 +386,26 @@ void ConfigHandler::Save() {
 			delete[] out;
 		}
 		// Global effects
-		if (profiles[j].flags & PROF_GLOBAL_EFFECTS) {
+		if (profiles[j]->flags & PROF_GLOBAL_EFFECTS) {
 			DWORD buffer[3];
-			name = "Profile-effect-" + to_string(profiles[j].id);
-			buffer[0] = MAKELONG(profiles[j].globalEffect, profiles[j].globalDelay);
-			buffer[1] = profiles[j].effColor1.ci;
-			buffer[2] = profiles[j].effColor2.ci;
+			name = "Profile-effect-" + to_string(profiles[j]->id);
+			buffer[0] = MAKELONG(profiles[j]->globalEffect, profiles[j]->globalDelay);
+			buffer[1] = profiles[j]->effColor1.ci;
+			buffer[2] = profiles[j]->effColor2.ci;
 			RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
 		}
 		// Fans....
-		if (profiles[j].flags & PROF_FANS) {
+		if (profiles[j]->flags & PROF_FANS) {
 			// save powers..
-			name = "Profile-power-" + to_string(profiles[j].id);
-			DWORD pvalue = MAKELONG(profiles[j].fansets.powerStage, profiles[j].fansets.GPUPower);
+			name = "Profile-power-" + to_string(profiles[j]->id);
+			DWORD pvalue = MAKELONG(profiles[j]->fansets.powerStage, profiles[j]->fansets.GPUPower);
 			RegSetValueExA(hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
-			for (int i = 0; i < profiles[j].fansets.fanControls.size(); i++) {
-				temp_block* sens = &profiles[j].fansets.fanControls[i];
+			for (int i = 0; i < profiles[j]->fansets.fanControls.size(); i++) {
+				temp_block* sens = &profiles[j]->fansets.fanControls[i];
 				for (int k = 0; k < sens->fans.size(); k++) {
 					fan_block* fans = &sens->fans[k];
-					name = "Profile-fans-" + to_string(profiles[j].id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
+					name = "Profile-fans-" + to_string(profiles[j]->id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
 					byte* outdata = new byte[fans->points.size() * 2];
 					for (int l = 0; l < fans->points.size(); l++) {
 						outdata[2 * l] = (byte) fans->points[l].temp;

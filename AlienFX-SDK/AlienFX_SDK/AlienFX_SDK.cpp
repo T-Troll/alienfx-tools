@@ -585,7 +585,7 @@ namespace AlienFX_SDK {
 						bPos = 3;
 					}
 				}
-				if (bPos != 3) {
+				if (bPos > 3) {
 					res = PrepareAndSend(COMMV4.colorSet, sizeof(COMMV4.colorSet), mods);
 				}
 				return res;

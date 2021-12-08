@@ -147,7 +147,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 				// delete from all profiles...
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
-					RemoveMapping(&Iter->lightsets, 0, gLid);
+					RemoveMapping(&(*Iter)->lightsets, 0, gLid);
 				}
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
