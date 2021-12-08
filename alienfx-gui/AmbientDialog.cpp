@@ -79,8 +79,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
             {
-                UINT id = LOWORD(wParam) - IDC_BUTTON1;
-                UINT bid = IDC_CHECK1 + id;
+                UINT id = LOWORD(wParam) - IDC_BUTTON1,
+                    bid = IDC_CHECK1 + id;
                 if (!map) {
                     map = new zone({0});
                     if (eItem > 0xffff) {
@@ -100,7 +100,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 for (; Iter != map->map.end(); Iter++)
                     if (*Iter == id)
                         break;
-                HWND cBid = GetDlgItem(hDlg, bid);
                 if (Iter == map->map.end()) {
                     // new mapping, add and select
                     map->map.push_back(id);

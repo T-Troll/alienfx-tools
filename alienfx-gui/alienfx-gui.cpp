@@ -109,7 +109,7 @@ bool DoStopService(bool kind) {
 
 	SC_HANDLE schService = OpenService( schSCManager, "AWCCService",  SERVICE_QUERY_STATUS);
 
-	if (schService == NULL)
+	if (!schService)
 	{
 		CloseServiceHandle(schSCManager);
 		return false;
@@ -148,7 +148,7 @@ bool DoStopService(bool kind) {
 		if (conf->awcc_disable && kind) {
 			schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
 
-			if (schService == NULL)
+			if (!schService)
 			{
 				// Evaluation attempt...
 				if (EvaluteToAdmin() == ERROR_CANCELLED)
@@ -1175,16 +1175,16 @@ zone *FindAmbMapping(int lid) {
 	if (lid != -1) {
 		if (lid > 0xffff) {
 			// group
-			for (int i = 0; i < conf->amb_conf->zones.size(); i++)
-				if (conf->amb_conf->zones[i].devid == 0 && conf->amb_conf->zones[i].lightid == lid) {
-					return &conf->amb_conf->zones[i];
+			for (auto i = conf->amb_conf->zones.begin(); i < conf->amb_conf->zones.end(); i++)
+				if (i->devid == 0 && i->lightid == lid) {
+					return &(*i);
 				}
 		} else {
 			// mapping
 			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-			for (int i = 0; i < conf->amb_conf->zones.size(); i++)
-				if (conf->amb_conf->zones[i].devid == lgh->devid && conf->amb_conf->zones[i].lightid == lgh->lightid)
-					return &conf->amb_conf->zones[i];
+			for (auto i = conf->amb_conf->zones.begin(); i < conf->amb_conf->zones.end(); i++)
+				if (i->devid == lgh->devid && i->lightid == lgh->lightid)
+					return &(*i);
 		}
 	}
 	return NULL;

@@ -9,7 +9,7 @@ ConfigHaptics::ConfigHaptics() {
     Load();
 }
 ConfigHaptics::~ConfigHaptics() {
-    Save();
+    //Save();
     RegCloseKey(hMainKey);
     RegCloseKey(hMappingKey);
 }
@@ -61,7 +61,7 @@ void ConfigHaptics::Save() {
     SetReg("Input", inpType);
 
     RegDeleteTreeA(hMainKey, "Mappings");
-    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxhaptics\\Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
+    RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     for (int i = 0; i < haptics.size(); i++) {
         if (haptics[i].map.size()) {
             //preparing name
