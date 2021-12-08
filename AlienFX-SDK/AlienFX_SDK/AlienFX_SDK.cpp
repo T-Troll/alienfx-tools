@@ -407,6 +407,7 @@ namespace AlienFX_SDK {
 					val = PrepareAndSend(COMMV5.colorSet, sizeof(COMMV5.colorSet), mods);
 					mods.clear();
 					bPos = 4;
+					nc--;
 				}
 			}
 			if (bPos > 4)
@@ -456,14 +457,14 @@ namespace AlienFX_SDK {
 			if (save)
 				SetPowerAction(act);
 			else
-				for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
+				for (auto nc = act->begin(); nc != act->end(); nc++)
 						val = SetAction(&(*nc));
 		} break;
 		case API_L_V5:
 		{
 			int bPos = 4;
 			vector<pair<byte, byte>> mods;
-			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++) {
+			for (auto nc = act->begin(); nc != act->end(); nc++) {
 				if (bPos < length) {
 					mods.insert(mods.end(), {
 						        {bPos,nc->index + 1},
@@ -476,6 +477,7 @@ namespace AlienFX_SDK {
 					val = PrepareAndSend(COMMV5.colorSet, sizeof(COMMV5.colorSet), mods);
 					mods.clear();
 					bPos = 4;
+					nc--;
 				}
 			}
 			if (bPos > 4)

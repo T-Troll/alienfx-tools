@@ -12,7 +12,7 @@ ConfigAmbient::ConfigAmbient() {
     Load();
 }
 ConfigAmbient::~ConfigAmbient() {
-    Save();
+    //Save();
     RegCloseKey(hMainKey);
     RegCloseKey(hMappingKey);
 }
@@ -56,6 +56,8 @@ void ConfigAmbient::Save() {
     SetReg("Mode", mode);
     //SetReg("Divider", divider);
     //SetReg("GammaCorrection", gammaCorrection);
+    RegDeleteTreeA(hMainKey, "Mappings");
+    RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     for (int i = 0; i < zones.size(); i++) {
         //preparing name
         string name = to_string(zones[i].devid) + "-" + to_string(zones[i].lightid);

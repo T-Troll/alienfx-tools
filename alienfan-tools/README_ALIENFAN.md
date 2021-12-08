@@ -28,6 +28,7 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 - Power control modes not detected in power grow order, so check real PL1 after set using other tool, f.e. HWINFO.  
 - Set Power control to non-zero value can block (lock back) fan control.
 - As usual, AWCC service can interfere (reset values from time to time), so it's reccomended to stop it.
+- **WARNING!** Windows 11 can provide system crash at application start! Add all .dll and .sys files at antivirus exceptions! It's also reccomended to disable "Memory Integrity" into "Settings/Privacy & Security/Windows Security/Device Security"! 
 
 ## Requirements
 - Windows 10 x64, revision 1903 or later. Older Windows releases **are not supported!**
