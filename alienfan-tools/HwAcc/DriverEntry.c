@@ -168,10 +168,9 @@ Return Value:
 	DriverObject->DriverUnload = NULL;
 	deviceObject->Flags |= DO_BUFFERED_IO;
 	deviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
-//#else
-#endif
+#else
 	DriverObject->DriverUnload = UnloadDriver;
-//#endif
+#endif
 
 	//
 	// Initialize a Unicode String containing the Win32 name

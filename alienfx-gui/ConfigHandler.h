@@ -69,7 +69,6 @@ private:
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
-	//DWORD autoRefresh = 0;
 	DWORD lightsOn = 1;
 	DWORD dimmed = 0;
 	DWORD offWithScreen = 0;
@@ -88,10 +87,8 @@ public:
 	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
 	DWORD monDelay = 200;
 	bool wasAWCC = false;
-	AlienFX_SDK::Colorcode testColor{0,255};// , effColor1, effColor2;
+	AlienFX_SDK::Colorcode testColor{0,255};
 	COLORREF customColors[16]{0};
-	//DWORD globalEffect = 0;
-	//DWORD globalDelay = 127;
 	DWORD fanControl = 0;
 	DWORD enableMon = 1;
 	DWORD noDesktop = 0;
@@ -109,7 +106,7 @@ public:
 	ConfigHaptics *hap_conf = NULL;
 
 	std::vector<lightset>* active_set;
-	std::vector<profile> profiles;
+	std::vector<profile*> profiles;
 
 	NOTIFYICONDATA niData{sizeof(NOTIFYICONDATA)};
 

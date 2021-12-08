@@ -341,7 +341,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// delete from all profiles...
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
-					RemoveMapping(&Iter->lightsets, dPid, eLid);
+					RemoveMapping(&(*Iter)->lightsets, dPid, eLid);
 				}
 
 				int nLid = -1;
@@ -379,7 +379,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// delete from all profiles...
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
-					RemoveMapping(&Iter->lightsets, fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid);
+					RemoveMapping(&(*Iter)->lightsets, fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid);
 				}
 			}
 			break;

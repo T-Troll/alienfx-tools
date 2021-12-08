@@ -212,7 +212,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf->Load();
 	conf->SetStates();
 
-	if (conf->activeProfile && conf->activeProfile->flags & PROF_FANS)
+	if (/*conf->activeProfile && */conf->activeProfile->flags & PROF_FANS)
 		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
 
 	// check fans...
@@ -571,10 +571,10 @@ void ReloadProfileList() {
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 	ComboBox_ResetContent(profile_list);
 	for (int i = 0; i < conf->profiles.size(); i++) {
-		ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i].name.c_str()), conf->profiles[i].id);
-		if (conf->profiles[i].id == conf->activeProfile->id) {
+		ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i]->name.c_str()), conf->profiles[i]->id);
+		if (conf->profiles[i]->id == conf->activeProfile->id) {
 			ComboBox_SetCurSel(profile_list, i);// pos);
-			ComboBox_SetCurSel(mode_list, conf->profiles[i].effmode);
+			ComboBox_SetCurSel(mode_list, conf->profiles[i]->effmode);
 		}
 	}
 
@@ -784,9 +784,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				pMenu = CreatePopupMenu();
 				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
 				for (int i = 0; i < conf->profiles.size(); i++) {
-					mInfo.dwTypeData = (LPSTR) conf->profiles[i].name.c_str();
+					mInfo.dwTypeData = (LPSTR) conf->profiles[i]->name.c_str();
 					InsertMenuItem(pMenu, i, false, &mInfo);
-					if (conf->profiles[i].id == conf->activeProfile->id)
+					if (conf->profiles[i]->id == conf->activeProfile->id)
 						CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
 				}
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
@@ -872,8 +872,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			RestoreApp();
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
-			if (conf->profiles[idx].id != conf->activeProfile->id) {
-				eve->SwitchActiveProfile(&conf->profiles[idx]);
+			if (conf->profiles[idx]->id != conf->activeProfile->id) {
+				eve->SwitchActiveProfile(conf->profiles[idx]);
 			}
 		} break;
 		}
@@ -982,7 +982,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // profile switch
 			if (wParam - 10 < conf->profiles.size()) {
-				eve->SwitchActiveProfile(&conf->profiles[wParam - 10]);
+				eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
 				ReloadProfileList();
 			}
 			break;

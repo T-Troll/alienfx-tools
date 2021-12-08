@@ -26,16 +26,15 @@ void ConfigHaptics::SetReg(char *text, DWORD value) {
 
 void ConfigHaptics::Load() {
 
-    //GetReg("Bars", &numbars, 20);
     GetReg("Axis", &showAxis, 1);
     GetReg("Input", &inpType);
 
     unsigned vindex = 0;
-    DWORD inarray[25]{0};// = new DWORD[numbars + 5];
+    DWORD inarray[25]{0};
     char name[255];
     LSTATUS ret = 0;
     do {
-        DWORD len = 255, lend = 25/*(numbars+5)*/ * sizeof(DWORD); haptics_map map;
+        DWORD len = 255, lend = 25 * sizeof(DWORD); haptics_map map;
         // get id(s)...
         if ((ret = RegEnumValueA( hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE)inarray, &lend )) == ERROR_SUCCESS) {
             vindex++;
@@ -52,11 +51,9 @@ void ConfigHaptics::Load() {
             }
         }
     } while (ret == ERROR_SUCCESS);
-    //delete[] inarray;
 }
 void ConfigHaptics::Save() {
 
-    //SetReg("Bars", numbars);
     SetReg("Axis", showAxis);
     SetReg("Input", inpType);
 
