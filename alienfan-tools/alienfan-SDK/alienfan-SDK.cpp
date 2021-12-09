@@ -4,7 +4,7 @@
 #include "alienfan-SDK.h"
 #include "alienfan-controls.h"
 #include "alienfan-low.h"
-#include <iostream>
+//#include <iostream>
 
 typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 
@@ -16,6 +16,7 @@ namespace AlienFan_SDK {
 		activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 		if (!activated) {
 			// We don't, so let's try to start it!
+#ifdef _SERVICE_WAY_
 			TCHAR  driverLocation[MAX_PATH]{0};
 		    wrongEnvironment = true;
 			if (GetServiceName(driverLocation, MAX_PATH)) {
@@ -36,6 +37,7 @@ namespace AlienFan_SDK {
 				}
 			}
 			if (wrongEnvironment) {
+#endif
 				// Let's try to load driver via kernel hack....
 				wchar_t currentPath[MAX_PATH];
 				GetModuleFileNameW(NULL, currentPath, MAX_PATH);
@@ -46,12 +48,15 @@ namespace AlienFan_SDK {
 				HMODULE kdl = LoadLibrary(L"kdl.dll");
 				if (kdl) {
 					ACPIF oacpi = (ACPIF) GetProcAddress(kdl, "LoadKernelDriver");
-					if (oacpi && oacpi((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc"))
+					if (oacpi && oacpi((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
 						activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
+					}
 					// In any case, unload dll
 					FreeLibrary(kdl);
 				}
+#ifdef _SERVICE_WAY_
 			}
+#endif
 
 		}
 	}
@@ -60,9 +65,12 @@ namespace AlienFan_SDK {
 		fans.clear();
 		powers.clear();
 		CloseAcpiDevice(acc);
+#ifdef _SERVICE_WAY_
 		UnloadService();
+#endif
 	}
 
+#ifdef _SERVICE_WAY_
 	void Control::UnloadService() {
 		if (scManager) {
 			CloseAcpiDevice(acc);
@@ -72,6 +80,7 @@ namespace AlienFan_SDK {
 			scManager = NULL;
 		}
 	}
+#endif
 
 	int Control::ReadRamDirect(DWORD offset) {
 		if (activated && aDev != -1) {

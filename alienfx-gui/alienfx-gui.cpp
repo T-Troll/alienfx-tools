@@ -224,8 +224,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			acpi->SetPower(conf->fan_conf->lastProf->powerStage);
 			acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 		} else {
-			string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
-			MessageBox(NULL, errMsg.c_str(), "Error",
+			//string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
+			MessageBox(NULL, "Fan control didn't start and will be disabled!", "Error",
 					   MB_OK | MB_ICONHAND);
 			delete acpi;
 			acpi = NULL;
@@ -449,7 +449,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 						// new version detected!
 						niData->uFlags |= NIF_INFO;
 						strcpy_s(niData->szInfoTitle, "Update avaliable!");
-						strcpy_s(niData->szInfo, ("Version " + res + " released at GitHub.").c_str());
+						strcpy_s(niData->szInfo, ("Version " + res + " detected as a recent.").c_str());
 						Shell_NotifyIcon(NIM_MODIFY, niData);
 						niData->uFlags &= ~NIF_INFO;
 						isNewVersion = true;

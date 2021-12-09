@@ -32,9 +32,6 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 
 ## Requirements
 - Windows 10 x64, revision 1903 or later. Older Windows releases **are not supported!**
-- There are 2 ways to prepare you system for driver loading:
-  - You can go into BIOS and disable "Secure boot" option, reboot, then issue `bcdedit /set testsigning on` command from Administarator command prompt and reboot again. You should see "Test mode" watermark on desktop if you do all correct.
-  - Do nothing, in this case driver will be installed using kernel hack. Some antivirus can complain, because it's close to rootkit way. Anyway, it will not stay in memory after reboot.
 - Supported Dell/Alienware hardware.
 
 ## Installation
@@ -45,7 +42,7 @@ NB: You should have hwacc.sys into the same folder.
 
 Full list of supported devices and API versions avaliable into [AlienFX-Tools wiki](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list)
 
-New devices support: Send me ACPI dump from [RW Everything](http://rweverything.com/) for analysis, then it will be added tested and addded. 
+New devices support: Send me ACPI dump from [RW Everything](http://rweverything.com/) for analysis, it will be added. 
 
 ## `alienfan-gui` usage
 
