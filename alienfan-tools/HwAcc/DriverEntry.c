@@ -36,21 +36,19 @@ DRIVER_INITIALIZE DriverInit;
 DRIVER_INITIALIZE DriverEntry;
 DRIVER_DISPATCH CreateClose;
 DRIVER_DISPATCH DeviceControl;
-//#ifndef KERNEL_HACK
+#ifndef KERNEL_HACK
 DRIVER_UNLOAD UnloadDriver;
-//#endif
+#endif
 
 #ifdef ALLOC_PRAGMA
 #ifdef KERNEL_HACK
 #pragma alloc_text( INIT, DriverInit)
 #else
 #pragma alloc_text( INIT, DriverEntry)
+#pragma alloc_text( PAGE, UnloadDriver)
 #endif
 #pragma alloc_text( PAGE, CreateClose)
 #pragma alloc_text( PAGE, DeviceControl)
-//#ifndef KERNEL_HACK
-#pragma alloc_text( PAGE, UnloadDriver)
-//#endif
 #pragma alloc_text( PAGE, OpenAcpiDevice)
 #endif // ALLOC_PRAGMA
 
@@ -252,7 +250,7 @@ Return Value:
 }
 #endif
 
-//#ifndef KERNEL_HACK
+#ifndef KERNEL_HACK
 VOID
 UnloadDriver(
 	__in PDRIVER_OBJECT DriverObject
@@ -311,7 +309,7 @@ Return Value:
 	}
 	DebugPrint(("HWACC: Device unloaded\n"));
 }
-//#endif
+#endif
 
 NTSTATUS
 DeviceControl(

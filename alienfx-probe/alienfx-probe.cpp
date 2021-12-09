@@ -67,7 +67,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 					for (count = 0; count < 5 && !afx_dev->IsDeviceReady(); count++)
 						Sleep(20);
 					printf("Enter device name or id: ");
-					scanf("%255[^\n]", name);
+					scanf_s("%255[^\n]", name, 256);
 					if (isdigit(name[0]) && res == (-1)) {
 						outName = lfxUtil.GetDevInfo(atoi(name))->desc;
 					} else {
@@ -88,7 +88,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 						afx_dev->SetColor(i, {0, 255, 0});
 						afx_dev->UpdateColors();
 						Sleep(100);
-						scanf("%255[^\n]", name);
+						scanf_s("%255[^\n]", name, 256);
 						if (name[0] != 0) {
 							//not skipped
 							//if (isdigit(name[0]) && res == (-1)) {
