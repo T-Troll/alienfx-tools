@@ -622,7 +622,8 @@ FALSE       - Failed to open acpi driver
     osinfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
     if (!GetVersionEx (&osinfo)) {
         //  printf ("OS Major Version is %d, Minor Version is %d", osinfo.dwMajorVersion, osinfo.dwMinorVersion);
-        return FALSE;
+        //printf("GetVersion failed\n");
+        return NULL;
     }
 
     acpi.dwMajorVersion = osinfo.dwMajorVersion;
@@ -630,7 +631,19 @@ FALSE       - Failed to open acpi driver
     acpi.dwBuildNumber  = osinfo.dwBuildNumber;
     acpi.dwPlatformId   = osinfo.dwPlatformId;
     acpi.pAcpiDeviceName = PropertyBuffer;
-    Idx = 0;    
+    Idx = 0;
+
+    if ((hDriver = CreateFile(
+        _T("\\\\?\\GLOBALROOT\\Device\\HWACC0"), // _T("\\\\.\\HwAcc"), //
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        0,
+        NULL)) == INVALID_HANDLE_VALUE) {
+        //printf("Driver access failed\n");
+        return hDriver;
+    }
 
     while (GetAcpiDevice (_T("ACPI_HAL"), PropertyBuffer, Idx)) {           
 
@@ -646,33 +659,15 @@ FALSE       - Failed to open acpi driver
 
         acpi.uAcpiDeviceNameLength = (ULONG)strlen (acpi.pAcpiDeviceName);
 
-        hDriver = CreateFile(
-            _T("\\\\.\\HwAcc"), //_T("\\\\?\\GLOBALROOT\\Device\\HWACC0"),
-            GENERIC_READ | GENERIC_WRITE,
-            0,
-            NULL,
-            OPEN_EXISTING,
-            0,
-            NULL);
-
-        if (hDriver == INVALID_HANDLE_VALUE) {
-            DWORD errNum = GetLastError();
-            return hDriver;
-        } else {
-            IoctlResult = DeviceIoControl(
-                hDriver,            // Handle to device
-                (DWORD) IOCTL_GPD_OPEN_ACPI,    // IO Control code for Read
-                &acpi,        // Buffer to driver.
-                sizeof(ACPI_NAME), // Length of buffer in bytes.
-                NULL,       // Buffer from driver.
-                0,      // Length of buffer in bytes.
-                &ReturnedLength,    // Bytes placed in DataBuffer.
-                NULL                // NULL means wait till op. completes.
-            );
-            if (IoctlResult) {
-                break;
-            }
+        if (IoctlResult = DeviceIoControl(hDriver, (DWORD) IOCTL_GPD_OPEN_ACPI, &acpi, sizeof(ACPI_NAME), NULL, 0, &ReturnedLength, NULL)) {
+            //printf("IOControl OK for %d\n", Idx);
+            break;
         }
+    }
+
+    if (!IoctlResult) {
+        CloseHandle(hDriver);
+        hDriver = NULL;
     }
 
     return hDriver;

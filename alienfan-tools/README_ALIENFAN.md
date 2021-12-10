@@ -8,10 +8,7 @@ Tools avaliable:
 - `alienfan-overboost` - command line utility to calculate maximum overboost for you system
 
 ## Disclaimer
-- **Antiviruses will detect virus into package**. It's not a virus, in fact, but the kernel hack for load driver. If you don't like it:
-  - Remove kdl.dll and drv64.dll from package (or you antivirus do so).
-  - Use "Test mode" instalation method.
-- This tools utilize low-level ACPI functions access, it can provide BSOD at start if supported ACPI bus not found! Use with care, at you own risk!
+- **Antiviruses will detect virus into package**. It's not a virus, in fact, but the kernel hack for load driver. You can add dll's as exception to prevent it.
 
 ## How it works?
 Instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tools does not use direct EC (Embed controller) access and data modification.  
@@ -28,7 +25,6 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 - Power control modes not detected in power grow order, so check real PL1 after set using other tool, f.e. HWINFO.  
 - Set Power control to non-zero value can block (lock back) fan control.
 - As usual, AWCC service can interfere (reset values from time to time), so it's reccomended to stop it.
-- **WARNING!** Windows 11 can provide system crash at application start! Add all .dll and .sys files at antivirus exceptions! It's also reccomended to disable "Memory Integrity" into "Settings/Privacy & Security/Windows Security/Device Security"! 
 
 ## Requirements
 - Windows 10 x64, revision 1903 or later. Older Windows releases **are not supported!**
@@ -36,7 +32,7 @@ My tools utilize propietary Alienware function calls inside ACPI BIOS instead (t
 
 ## Installation
 Unpack tools into folder, run exe.  
-NB: You should have hwacc.sys into the same folder.
+NB: You should have `hwacc.sys`, `kdl.dll` and `drv64.dll` into the same folder.
 
 ## Supported and tested hardware
 

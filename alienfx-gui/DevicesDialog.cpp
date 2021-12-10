@@ -18,6 +18,7 @@ struct devInfo {
 
 extern AlienFan_SDK::Control* acpi;
 int eLid = -1, dItem = -1, dIndex = -1;
+bool whiteTest = false;
 vector<devInfo> csv_devs;
 
 void UpdateLightsList(HWND hDlg, int pid, int lid) {
@@ -126,7 +127,7 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 			else {
 				ComboBox_SetCurSel(dev_list, pos);
 				UpdateDeviceInfo(hDlg);
-				fxhl->TestLight(i, -1);
+				fxhl->TestLight(i, -1, whiteTest);
 				UpdateLightsList(hDlg, i, -1);
 			}
 			dItem = pos;
@@ -287,7 +288,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				eLid = -1;
 				dIndex = did; dItem = dbItem;
-				fxhl->TestLight(dIndex, -1);
+				fxhl->TestLight(dIndex, -1, whiteTest);
 				UpdateDeviceInfo(hDlg);
 				UpdateLightsList(hDlg, dIndex, -1);
 			} break;
@@ -324,7 +325,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fxhl->afx_dev.SaveMappings();
 			eLid = cid;
 			UpdateLightsList(hDlg, dIndex, eLid);
-			fxhl->TestLight(dIndex, eLid);
+			fxhl->TestLight(dIndex, eLid, whiteTest);
 		} break;
 		case IDC_BUTTON_REML:
 			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning",
@@ -370,7 +371,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 				eLid = nLid;
 				UpdateLightsList(hDlg, dIndex, eLid);
-				fxhl->TestLight(dIndex, eLid);
+				fxhl->TestLight(dIndex, eLid, whiteTest);
 			}
 			break;
 		case IDC_BUTTON_RESETCOLOR:
@@ -386,7 +387,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_TESTCOLOR: {
 			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
 			if (eLid != -1) {
-				fxhl->TestLight(dIndex, eLid);
+				fxhl->TestLight(dIndex, eLid, whiteTest);
 			}
 		} break;
 		case IDC_ISPOWERBUTTON:
@@ -471,6 +472,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 			}
 		} break;
+		case IDC_CHECK_WHITE:
+		{
+			whiteTest = IsDlgButtonChecked(hDlg, IDC_CHECK_WHITE) == BST_CHECKED;
+			fxhl->TestLight(dIndex, eLid, whiteTest);
+		} break;
 		default: return false;
 		}
 	} break;
@@ -500,7 +506,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
 						eLid = -1;
 					}
-					fxhl->TestLight(dIndex, eLid);
+					fxhl->TestLight(dIndex, eLid, whiteTest);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -541,7 +547,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					fxhl->afx_dev.fxdevs[dIndex].desc->white.b = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip3, fxhl->afx_dev.fxdevs[dIndex].desc->white.b);
 				}
-				fxhl->TestLight(dIndex, eLid, true);
+				fxhl->TestLight(dIndex, eLid, whiteTest);
 			} break;
 			}
 		}

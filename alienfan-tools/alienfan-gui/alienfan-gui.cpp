@@ -196,35 +196,40 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
 
         if (fan_conf->lastSelectedFan != -1) {
             // curve...
-            temp_block* sen = NULL;
-            fan_block* fan = NULL;
-            if ((sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor)) && (fan = fan_conf->FindFanBlock(sen, fan_conf->lastSelectedFan))) {
-                // draw fan curve
-                SetDCPenColor(hdc, RGB(0, 255, 0));
-                SelectObject(hdc, GetStockObject(DC_PEN));
-                // First point
-                MoveToEx(hdc, clirect.left, clirect.bottom, NULL);
-                for (int i = 0; i < fan->points.size(); i++) {
-                    int cx = fan->points[i].temp * (clirect.right - clirect.left) / 100 + clirect.left,
-                        cy = (100 - fan->points[i].boost) * (clirect.bottom - clirect.top) / 100 + clirect.top;
-                    LineTo(hdc, cx, cy);
-                    Ellipse(hdc, cx - 2, cy - 2, cx + 2, cy + 2);
+            temp_block *sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+            fan_block *fan = NULL;
+            for (auto senI = fan_conf->lastProf->fanControls.begin();
+                 senI < fan_conf->lastProf->fanControls.end(); senI++)
+                if (fan = fan_conf->FindFanBlock(&(*senI), fan_conf->lastSelectedFan)) {
+                    // draw fan curve
+                    if (sen && sen->sensorIndex == senI->sensorIndex)
+                        SetDCPenColor(hdc, RGB(0, 255, 0));
+                    else
+                        SetDCPenColor(hdc, RGB(255, 255, 0));
+                    SelectObject(hdc, GetStockObject(DC_PEN));
+                    // First point
+                    MoveToEx(hdc, clirect.left, clirect.bottom, NULL);
+                    for (int i = 0; i < fan->points.size(); i++) {
+                        int cx = fan->points[i].temp * (clirect.right - clirect.left) / 100 + clirect.left,
+                            cy = (100 - fan->points[i].boost) * (clirect.bottom - clirect.top) / 100 + clirect.top;
+                        LineTo(hdc, cx, cy);
+                        Ellipse(hdc, cx - 2, cy - 2, cx + 2, cy + 2);
+                    }
                 }
-                // Red dot and RPM
-                SetDCPenColor(hdc, RGB(255, 0, 0));
-                SetDCBrushColor(hdc, RGB(255, 0, 0));
-                SelectObject(hdc, GetStockObject(DC_PEN));
-                SelectObject(hdc, GetStockObject(DC_BRUSH));
-                POINT mark;
-                int percent;
-                mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
-                mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
-                Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-                string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + 
-                    ", " + to_string((percent = acpi->GetFanPercent(fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) +
-                    "%)";
-                SetWindowText(fanWindow, rpmText.c_str());
-            }
+            // Red dot and RPM
+            SetDCPenColor(hdc, RGB(255, 0, 0));
+            SetDCBrushColor(hdc, RGB(255, 0, 0));
+            SelectObject(hdc, GetStockObject(DC_PEN));
+            SelectObject(hdc, GetStockObject(DC_BRUSH));
+            POINT mark;
+            int percent;
+            mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
+            mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
+            Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+            string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + 
+                ", " + to_string((percent = acpi->GetFanPercent(fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) +
+                "%)";
+            SetWindowText(fanWindow, rpmText.c_str());
         }
 
         BitBlt(hdc_r, 0, 0, graphZone.right - graphZone.left, graphZone.bottom - graphZone.top, hdc, 0, 0, SRCCOPY);

@@ -4,7 +4,6 @@
 #include "alienfan-SDK.h"
 #include "alienfan-controls.h"
 #include "alienfan-low.h"
-//#include <iostream>
 
 typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 
@@ -15,6 +14,7 @@ namespace AlienFan_SDK {
 		// do we already have service runnning?
 		activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 		if (!activated) {
+			//printf("Device not activated, trying to load driver...\n");
 			// We don't, so let's try to start it!
 #ifdef _SERVICE_WAY_
 			TCHAR  driverLocation[MAX_PATH]{0};
@@ -45,11 +45,16 @@ namespace AlienFan_SDK {
 				cpath.resize(cpath.find_last_of(L"\\"));
 				cpath += L"\\HwAcc.sys";
 
+				//wprintf(L"Loaing driver from %s... ", cpath.c_str());
+
 				HMODULE kdl = LoadLibrary(L"kdl.dll");
 				if (kdl) {
+					//printf("KDL loaded, trying... ");
 					ACPIF oacpi = (ACPIF) GetProcAddress(kdl, "LoadKernelDriver");
 					if (oacpi && oacpi((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
+						//printf("Driver loaded, trying to open it... ");
 						activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
+						//printf("Loading complete %s.\n", activated ? "succesfuly" : ",failed");
 					}
 					// In any case, unload dll
 					FreeLibrary(kdl);
@@ -57,7 +62,7 @@ namespace AlienFan_SDK {
 #ifdef _SERVICE_WAY_
 			}
 #endif
-
+			//printf("Done\n");
 		}
 	}
 	Control::~Control() {
@@ -162,6 +167,7 @@ namespace AlienFan_SDK {
 			sensors.clear();
 			fans.clear();
 			powers.clear();
+			//printf("Probing devices... ");
 			// Check device type...
 			for (int i = 0; i < NUM_DEVICES; i++) {
 				aDev = i;
@@ -169,6 +175,7 @@ namespace AlienFan_SDK {
 				// Probe...
 				if (RunMainCommand(devs[aDev].probe) >= 1) {
 					// Alienware device detected!
+					//printf("Device type %d found.\n", aDev);
 					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
 						// for new one-command devices
@@ -244,6 +251,7 @@ namespace AlienFan_SDK {
 				}
 			}
 			aDev = -1;
+			//printf("No device found.\n");
 		}
 		return false;
 	}
