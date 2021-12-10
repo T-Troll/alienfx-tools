@@ -209,12 +209,12 @@
 #define IDC_REM_EFFECT                  1117
 #define IDC_CHECK_AMBIENT               1118
 #define IDC_REM_AMBIENT                 1120
+#define IDC_CHECK_WHITE                 1120
 #define IDC_FROM_HAPTICS                1124
 #define IDC_TO_HAPTICS                  1125
 #define IDC_REM_HAPTICS                 1126
 #define IDC_FROM_FINAL                  1127
 #define IDC_TO_FINAL                    1128
-#define IDC_REM_HAPTICS2                1129
 #define IDC_REM_GROUP                   1129
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -237,8 +237,6 @@
 #define ID_TRAYMENU_MONITORING_SELECTED 32792
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
 #define IDM_CHECKUPDATE                 32804
-#define ID_HELP                         32805
-#define ID_MENU_HELP                    32806
 #define IDM_HELP                        32807
 #define IDC_STATIC                      -1
 
@@ -249,7 +247,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1119
+#define _APS_NEXT_CONTROL_VALUE         1121
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif
