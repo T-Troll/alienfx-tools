@@ -93,6 +93,6 @@ Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://githu
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
 Per-Key RGB devices testing and a lot of support by [rirozizo](https://github.com/rirozizo).  
-Aurora R7 testing by [Raoul Duke](https://github.com/raould).
+Aurora R7 testing by [Raoul Duke](https://github.com/raould).  
 Support for mouse and a lot of testing by [Billybobertjoe](https://github.com/Billybobertjoe)  
 Special thanks to [PhSMu](https://github.com/PhSMu) for ideas, testing and artwork.
