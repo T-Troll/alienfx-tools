@@ -72,7 +72,8 @@ Light acts like a performance indicator, reflecting system parameters:
 - Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
 - Max. Temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
 - Battery level - Battery charge level in percent (100=discharged, 0=full).
-- Max. Fan RPM - Maximal RPM (in percent of maximum) across all system fans. This indicator will only work if "Fan control" is enabled.
+- Max. Fan RPM - Maximal RPM (in percent of maximum) across all system fans. This indicator will only works if "Fan control" is enabled.
+- Power consumption - Current system power drain level. This indicator will only works if "ESID sensors" enabled at "Settings".
   
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change colour.  
 "Gauge" checkbox changes behaviour for groups only. If Gauge on, all lights in group works as a level indicator (100% colour below indicator value, 0% colour above indicator value, mixed in between.
@@ -101,7 +102,8 @@ You can also select which screen to grab - primary or secondary, if you have mor
 
 `Haptics` tab set up parameters for Haptics effect mode. This effect mode get audio stream from default output or input device (you can select it at the "Audio Source" block), then made a real-time spectrum analysis.  
 After that, spectrum powers grouped into 20 groups using octave scale.  
-For each light found into the system, you can define frequencies diapason(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
+For each light found into the system, you can define Group of frequency diapason(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
+Use "+" and "-" buttons to add frequancy group, then select frequances for this group.  
 It's also possible to compress diapason if group always not so or so high powered - use low-level and high-level sliders. Low-level slider define minimum power to react (all below will be treated as zero), and Hi-level slider defines maximum level (all above will be treated as maximum).  
 "Clear” button set all colors to black and sliders to default value.
 "Gauge" checkbox - change behavour for groups only. If Gauge on, all lights in group works as a peak indicator (hi-color below power level, low-color above power level, mixed in between).  
@@ -156,8 +158,7 @@ Selected light changes it colours to the one defined by "Test colour" button, an
 "Save Lights" button save a backup of current light and device names and settings.  
 
 "White point" block - some devices (especially old v2 ones) have not correct color correction, so white color looks wierd. You can tune it using this block.  
-Then you start move the slider, all current device colors set to White, so if it's not white enough you can decrease intencity for visible color to make it more white  .
-Select any light in list to disable white lights.
+Use "Test White" button to switch testing color for all lights to white for result check.
 
 ![Fans tab](/Doc/img/gui-fans.png?raw=true)
 
@@ -203,8 +204,8 @@ Please keep in mind:
 - "Profile auto switch" - Switch between profiles available automatically, according of applications start and finish. This also block manual profile selection (default - off).
 - "Do not switch for desktop" - If enabled, profile auto switch will not change profile, if start menu/tray/desktop selected (default - off).
 - "Disable AWCC" - Application will check active Alienware Control Centre service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
-- "Esif temperature" - Read hardware device temperature counters. If disabled, only system-wide ones will be read. It's useful for some Dell and Alienware systems, but also provide a lot of component temperature readings. It will require "Run as administrator" privilege (default - off).
-- "Enable fan control" - Enables all fan control functionality, if possible.
+- "ESIF sensors" - Read hardware devices data. If disabled, Power measure and Thermal zone temperature sensors not avaliable. It will require "Run as administrator" privilege (default - off).
+- "Enable fan control" - Enables fan and power control functionality, if avaliable for you hardware.
 
 
 ## Keyboard shortcuts 

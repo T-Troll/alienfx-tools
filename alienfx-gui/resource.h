@@ -36,6 +36,7 @@
 #define IDD_MAINWINDOW                  131
 #define IDS_TYPE_POWER                  131
 #define IDI_ALIENFXGUI                  132
+#define IDS_PWR                         132
 #define IDD_DIALOG_COLORS               133
 #define IDD_DIALOG_EVENTS               134
 #define IDD_DIALOG_AMBIENT              135
@@ -210,6 +211,10 @@
 #define IDC_CHECK_AMBIENT               1118
 #define IDC_REM_AMBIENT                 1120
 #define IDC_CHECK_WHITE                 1120
+#define IDC_FREQ_GROUP                  1121
+#define IDC_BUT_ADD_GROUP               1122
+#define IDC_BUT_ADD_GROUP2              1123
+#define IDC_BUT_REM_GROUP               1123
 #define IDC_FROM_HAPTICS                1124
 #define IDC_TO_HAPTICS                  1125
 #define IDC_REM_HAPTICS                 1126
@@ -247,7 +252,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1121
+#define _APS_NEXT_CONTROL_VALUE         1123
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

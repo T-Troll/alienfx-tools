@@ -212,9 +212,8 @@ DWORD WINAPI CDlgProc(LPVOID param)
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
-		if (conf->amb_conf->hDlg && !IsIconic(GetParent(conf->amb_conf->hDlg)) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
+		if (conf->amb_conf->hDlg && IsWindowVisible(conf->amb_conf->hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient UI update...\n");
-			//memcpy(imgui, (UCHAR*)param, sizeof(imgz));
 			SendMessage(conf->amb_conf->hDlg, WM_PAINT, 0, (LPARAM)imgz);
 		}
 	}
@@ -222,14 +221,12 @@ DWORD WINAPI CDlgProc(LPVOID param)
 }
 
 DWORD WINAPI CFXProc(LPVOID param) {
-	//UCHAR  imgz[12 * 3];
 	HANDLE waitArray[2]{lhEvent, clrStopEvent};
 	DWORD res = 0;
 	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient light update...\n");
-			//memcpy(imgz, (UCHAR *) param, sizeof(imgz));
 			fxhl->RefreshAmbient(imgz);
 		}
 	}

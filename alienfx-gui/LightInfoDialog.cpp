@@ -75,42 +75,45 @@ int FindLastActiveID() {
 }
 
 void SetLightColors(HWND hDlg, int id) {
-	lightset* mmap = id < 0 ? NULL: FindMapping(id);
-	zone* amap = id < 0 ? NULL: FindAmbMapping(id);
-	haptics_map *hmap = id < 0 ? NULL: FindHapMapping(id);
 
-	from_c = to_c = from_e = to_e = from_h = to_h = {0};
+	if (id >= 0) {
+		lightset *mmap = FindMapping(id);
+		zone *amap = FindAmbMapping(id);
+		haptics_map *hmap = FindHapMapping(id);
 
-	if (mmap) {
-		if (mmap->eve[0].fs.b.flags) {
-			from_c = *Act2Code(&mmap->eve[0].map.front());
-			to_c = *Act2Code(&mmap->eve[0].map.back());
-			from_c.br = to_c.br = 255;
-		} else {
-			if (mmap->eve[3].fs.b.flags) {
-				from_e = *Act2Code(&mmap->eve[3].map[0]);
-				from_e.br = 255;
+		from_c = to_c = from_e = to_e = from_h = to_h = {0};
+
+		if (mmap) {
+			if (mmap->eve[0].fs.b.flags) {
+				from_c = *Act2Code(&mmap->eve[0].map.front());
+				to_c = *Act2Code(&mmap->eve[0].map.back());
+				from_c.br = to_c.br = 255;
+			} else {
+				if (mmap->eve[3].fs.b.flags) {
+					from_e = *Act2Code(&mmap->eve[3].map[0]);
+					from_e.br = 255;
+				}
+				if (mmap->eve[2].fs.b.flags) {
+					from_e = *Act2Code(&mmap->eve[2].map[0]);
+					from_e.br = 255;
+				}
 			}
 			if (mmap->eve[2].fs.b.flags) {
-				from_e = *Act2Code(&mmap->eve[2].map[0]);
-				from_e.br = 255;
+				to_e = *Act2Code(&mmap->eve[2].map[1]);
+				to_e.br = 255;
+			}
+			if (mmap->eve[3].fs.b.flags) {
+				to_e = *Act2Code(&mmap->eve[3].map[1]);
+				to_e.br = 255;
 			}
 		}
-		if (mmap->eve[2].fs.b.flags) {
-			to_e = *Act2Code(&mmap->eve[2].map[1]);
-			to_e.br = 255;
+		if (hmap) {
+			from_h = hmap->freqs[0].colorfrom;
+			to_h = hmap->freqs[0].colorto;
+			from_h.br = to_h.br = 255;
 		}
-		if (mmap->eve[3].fs.b.flags) {
-			to_e = *Act2Code(&mmap->eve[3].map[1]);
-			to_e.br = 255;
-		}
+		CheckDlgButton(hDlg, IDC_CHECK_AMBIENT, amap != NULL);
 	}
-	if (hmap) {
-		from_h = hmap->colorfrom;
-		to_h = hmap->colorto;
-		from_h.br = to_h.br = 255;
-	}
-	CheckDlgButton(hDlg, IDC_CHECK_AMBIENT, amap != NULL);
 }
 
 void SetFinalColor() {
@@ -142,8 +145,8 @@ void SetFinalColor() {
 		case 2: // haptics
 		{
 			haptics_map *hmap = &conf->hap_conf->haptics[id];
-			from_f = hmap->colorfrom;
-			to_f = hmap->colorto;
+			from_f = hmap->freqs[0].colorfrom;
+			to_f = hmap->freqs[0].colorto;
 			from_f.br = to_f.br = 255;
 		} break;
 		case 3: // off
