@@ -588,22 +588,21 @@ void ReloadProfileList() {
 }
 
 void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
-	if (mode_list == NULL)
+	if (mode_list == NULL) {
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
-	ListBox_ResetContent(mode_list);
+		EnableWindow(mode_list, conf->enableMon);
+	}
 	ComboBox_AddString(mode_list, "Monitoring");
 	ComboBox_AddString(mode_list, "Ambient");
 	ComboBox_AddString(mode_list, "Haptics");
 	ComboBox_AddString(mode_list, "Off");
 	ComboBox_SetCurSel(mode_list, mode);
-	EnableWindow(mode_list, conf->enableMon);
 }
 
 void UpdateState() {
-	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN);
 	fxhl->ChangeState();
 	if (tabSel == TAB_SETTINGS)
-		OnSelChanged(tab_list);
+		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
 
 void RestoreApp() {
@@ -740,7 +739,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				//int newTab = TabCtrl_GetCurSel(tab_list);
 				if (TabCtrl_GetCurSel(tab_list) != tabSel) { // selection changed!
 					OnSelChanged(tab_list);
 				}
@@ -943,10 +941,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		// Monitor configuration changed
 	    if (eve->capt) eve->capt->Restart();
 	break;
-	//case WM_QUERYENDSESSION:
-	//	delete eve;
-	//	conf->Save();
-	//	break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
 
@@ -1000,7 +994,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
-		return 0;
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0); break;
 	default: return false;
@@ -1194,17 +1188,20 @@ haptics_map *FindHapMapping(int lid) {
 	if (lid != -1) {
 		if (lid > 0xffff) {
 			// group
-			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
-				if (conf->hap_conf->haptics[i].devid == 0 && conf->hap_conf->haptics[i].lightid == lid) {
-					return &conf->hap_conf->haptics[i];
-				}
+			return conf->hap_conf->FindHapMapping(0, lid);
+			//for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
+			//	if (conf->hap_conf->haptics[i].devid == 0 && conf->hap_conf->haptics[i].lightid == lid) {
+			//		return &conf->hap_conf->haptics[i];
+			//	}
 		} else {
 			// mapping
 			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-			for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
-				if (conf->hap_conf->haptics[i].devid == lgh->devid && 
-					conf->hap_conf->haptics[i].lightid == lgh->lightid)
-					return &conf->hap_conf->haptics[i];
+			if (lgh)
+				return conf->hap_conf->FindHapMapping(lgh->devid, lgh->lightid);
+			//for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
+			//	if (conf->hap_conf->haptics[i].devid == lgh->devid && 
+			//		conf->hap_conf->haptics[i].lightid == lgh->lightid)
+			//		return &conf->hap_conf->haptics[i];
 		}
 	}
 	return NULL;

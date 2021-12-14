@@ -310,7 +310,7 @@ DWORD WINAPI UpdateUI(LPVOID lpParam) {
 	DWORD res = 0;
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 	while (WaitForSingleObject(astopEvent, 40) == WAIT_TIMEOUT) {
-		if (conf->hap_conf->dlg && !IsIconic(GetParent(GetParent(conf->hap_conf->dlg))) && WaitForSingleObject(auiEvent, 0) == WAIT_OBJECT_0) {
+		if (conf->hap_conf->dlg && IsWindowVisible(conf->hap_conf->dlg) && WaitForSingleObject(auiEvent, 0) == WAIT_OBJECT_0) {
 			//DebugPrint("Haptics UI update...\n");
 			DrawFreq(conf->hap_conf->dlg, src->freqs);
 		}

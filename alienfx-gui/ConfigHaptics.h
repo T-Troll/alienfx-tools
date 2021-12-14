@@ -8,26 +8,22 @@
 #define NUMBARS 20
 #define NUMPTS 2048
 
-//union Colorcode
-//{
-//	struct {
-//		byte b;
-//		byte g;
-//		byte r;
-//		byte br;
-//	};
-//	unsigned int ci;
-//};
+#define MAP_GAUGE 1
+#define MAP_PFM   2
+
+struct freq_map {
+	AlienFX_SDK::Colorcode colorfrom{0};
+	AlienFX_SDK::Colorcode colorto{0};
+	byte lowcut{0};
+	byte hicut{255};
+	vector<byte> freqID;
+};
 
 struct haptics_map {
 	DWORD devid = 0;
 	DWORD lightid = 0;
-	AlienFX_SDK::Colorcode colorfrom{0};
-	AlienFX_SDK::Colorcode colorto{0};
-	byte lowcut = 0;
-	byte hicut = 255;
 	byte flags = 0;
-	std::vector<unsigned char> map;
+	vector<freq_map> freqs;
 };
 
 class ConfigHaptics
@@ -48,6 +44,8 @@ public:
 
 	ConfigHaptics();
 	~ConfigHaptics();
+
+	haptics_map *FindHapMapping(DWORD devid, DWORD lid);
 
 	void Load();
 	void Save();

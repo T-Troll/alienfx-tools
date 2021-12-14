@@ -84,10 +84,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_BATT, buffer, 32);
 		ComboBox_AddString(list_counter, buffer);
-		if (conf->fanControl) {
+		//if (conf->fanControl) {
 			LoadString(hInst, IDS_FANS, buffer, 32);
 			ComboBox_AddString(list_counter, buffer);
-		}
+		//}
+		//if (conf->esif_temp) {
+			LoadString(hInst, IDS_PWR, buffer, 32);
+			ComboBox_AddString(list_counter, buffer);
+		//}
 		// Set indicator list
 		LoadString(hInst, IDS_A_HDD, buffer, 32);
 		ComboBox_AddString(list_status, buffer);

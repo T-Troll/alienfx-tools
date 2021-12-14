@@ -90,14 +90,10 @@ void FXHelper::ResetPower(int did)
 void FXHelper::SetCounterColor(EventData *data, bool force)
 {
 
-	//char buff[2048];
-	//sprintf_s(buff, 2047, "CPU: %d, RAM: %d, HDD: %d, NET: %d, GPU: %d, Temp: %d, Batt:%d\n", cCPU, cRAM, cHDD, cNet, cGPU, cTemp, cBatt);
-	//OutputDebugString(buff);
 	if (force) {
 		DebugPrint("Forced Counter update initiated...\n");
 	}
 
-	//std::vector <lightset>::iterator Iter;
 	blinkStage = !blinkStage;
 	bool wasChanged = false;
 	if (force) {
@@ -126,7 +122,6 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			if (Iter->eve[2].fs.b.flags) {
 				// counter
 				int ccut = Iter->eve[2].fs.b.cut;
-				//long lVal = 0, cVal = 0;
 				switch (Iter->eve[2].source) {
 				case 0: lVal = eData.CPU; cVal = data->CPU; break;
 				case 1: lVal = eData.RAM; cVal = data->RAM; break;
@@ -136,6 +131,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				case 5: lVal = eData.Temp; cVal = data->Temp; break;
 				case 6: lVal = eData.Batt; cVal = data->Batt; break;
 				case 7: lVal = eData.Fan; cVal = data->Fan; break;
+				case 8: lVal = eData.PWR; cVal = data->PWR; break;
 				}
 
 				if (lVal != cVal && (lVal > ccut || cVal > ccut)) {
@@ -474,32 +470,60 @@ void FXHelper::RefreshHaptics(int *freq) {
 		return;
 	}
 
-	for (unsigned i = 0; i < config->hap_conf->haptics.size(); i++) {
-		haptics_map map = config->hap_conf->haptics[i];
+	for (auto mIter = config->hap_conf->haptics.begin(); mIter < config->hap_conf->haptics.end(); mIter++) {
+		// Now for each freq block...
+		unsigned from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0;
+		double f_power = 0.0;
+		for (auto fIter = mIter->freqs.begin(); fIter < mIter->freqs.end(); fIter++) {
+			if (!fIter->freqID.empty() && fIter->hicut > fIter->lowcut) {
+				double power = 0.0;
+				//AlienFX_SDK::afx_act from{0,0,0,fIter->colorfrom.r,fIter->colorfrom.g, fIter->colorfrom.b},
+				//	to{0,0,0,fIter->colorto.r,fIter->colorto.g, fIter->colorto.b}, current;
+				// here need to check less bars...
+				for (auto iIter = fIter->freqID.begin(); iIter < fIter->freqID.end(); iIter++)
+					power += (freq[*iIter] > fIter->lowcut ? freq[*iIter] < fIter->hicut ?
+							  freq[*iIter] - fIter->lowcut : fIter->hicut - fIter->lowcut : 0);
+				power = power / (fIter->freqID.size() * (fIter->hicut - fIter->lowcut));
+				//actions[0].r = (byte) ((1.0 - power) * from.r + power * to.r);
+				//actions[0].g = (byte) ((1.0 - power) * from.g + power * to.g);
+				//actions[0].b = (byte) ((1.0 - power) * from.b + power * to.b);
+				//current.r = (byte) sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
+				//current.g = (byte) sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
+				//current.b = (byte) sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
 
-		if (!map.map.empty() && map.hicut > map.lowcut) {
-			double power = 0.0;
-			AlienFX_SDK::afx_act from{0,0,0,map.colorfrom.r,map.colorfrom.g, map.colorfrom.b},
-				to{0,0,0,map.colorto.r,map.colorto.g, map.colorto.b};
-			// here need to check less bars...
-			for (int j = 0; j < map.map.size(); j++)
-				power += (freq[map.map[j]] > map.lowcut ? freq[map.map[j]] < map.hicut ? freq[map.map[j]] - map.lowcut : map.hicut - map.lowcut : 0);
-			power = power / (map.map.size() * (map.hicut - map.lowcut));
-			//actions[0].r = (byte) ((1.0 - power) * from.r + power * to.r);
-			//actions[0].g = (byte) ((1.0 - power) * from.g + power * to.g);
-			//actions[0].b = (byte) ((1.0 - power) * from.b + power * to.b);
-			actions[0].r = (byte) sqrt((1.0 - power) * from.r * from.r + power * to.r * to.r);
-			actions[0].g = (byte) sqrt((1.0 - power) * from.g * from.g + power * to.g * to.g);
-			actions[0].b = (byte) sqrt((1.0 - power) * from.b * from.b + power * to.b * to.b);
+				from_r += fIter->colorfrom.r;
+				from_g += fIter->colorfrom.g;
+				from_b += fIter->colorfrom.b;
 
-			if (map.devid) {
-				SetLight(map.devid, map.lightid, actions);
+				to_r += fIter->colorto.r;
+				to_g += fIter->colorto.g;
+				to_b += fIter->colorto.b;
+
+				cur_r += (byte) sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
+				cur_g += (byte) sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
+				cur_b += (byte) sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
+
+				f_power += power;
+
+			}
+
+			size_t groupsize = mIter->freqs.size();
+
+			f_power /= groupsize;
+
+			actions[0] = {0,0,0,(byte)(cur_r/groupsize),(byte)(cur_g/groupsize),(byte)(cur_b/groupsize)};
+
+			AlienFX_SDK::afx_act from{0,0,0,(byte) (from_r / groupsize),(byte) (from_g / groupsize),(byte) (from_b / groupsize)},
+				to{0,0,0,(byte) (to_r / groupsize),(byte) (to_g / groupsize),(byte) (to_b / groupsize)};
+
+			if (mIter->devid) {
+				SetLight(mIter->devid, mIter->lightid, actions);
 			} else {
 				// group
-				if (map.flags)
-					SetGroupLight(map.lightid, actions, false, &from, &to, power);
+				if (mIter->flags & MAP_GAUGE)
+					SetGroupLight(mIter->lightid, actions, false, &from, &to, f_power);
 				else
-					SetGroupLight(map.lightid, actions);
+					SetGroupLight(mIter->lightid, actions);
 			}
 		}
 	}

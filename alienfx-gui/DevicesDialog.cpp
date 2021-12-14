@@ -38,32 +38,28 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	ListView_DeleteColumn(light_list, 0);
 	ListView_InsertColumn(light_list, 0, &lCol);
 	for (int i = 0; i < fxhl->afx_dev.fxdevs[pid].lights.size(); i++) {
+		AlienFX_SDK::mapping *clight = fxhl->afx_dev.fxdevs[pid].lights[i];
 		LVITEMA lItem; 
 		lItem.mask = LVIF_TEXT | LVIF_PARAM;
 		lItem.iItem = i;
 		lItem.iImage = 0;
 		lItem.iSubItem = 0;
-		lItem.lParam = fxhl->afx_dev.fxdevs[pid].lights[i]->lightid;
-		lItem.pszText = (char*)fxhl->afx_dev.fxdevs[pid].lights[i]->name.c_str();
-		if (lid == fxhl->afx_dev.fxdevs[pid].lights[i]->lightid) {
+		lItem.lParam = clight->lightid;
+		lItem.pszText = (char*)clight->name.c_str();
+		if (lid == clight->lightid) {
 			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
 			pos = i;
 			SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
-			CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, 
-							fxhl->afx_dev.fxdevs[pid].lights[i]->flags & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, 
-							fxhl->afx_dev.fxdevs[pid].lights[i]->flags & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, clight->flags & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, clight->flags & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
 		}
 		ListView_InsertItem(light_list, &lItem);
 	}
 	ListView_SetColumnWidth(light_list, 0, LVSCW_AUTOSIZE);
 	ListView_EnsureVisible(light_list, pos, false);
 	BYTE status = fxhl->afx_dev.fxdevs[pid].dev->AlienfxGetDeviceStatus();
-	if (status && status != 0xff)
-		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Ok");
-	else
-		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, "Status: Error");
+	SetDlgItemText(hDlg, IDC_DEVICE_STATUS, status && status != 0xff ? "" : "Error!");
 }
 
 void UpdateDeviceInfo(HWND hDlg) {
@@ -202,7 +198,7 @@ void LoadCSV(string name) {
 string OpenSaveFile(HWND hDlg, bool isOpen) {
 	// Load/save device and light mappings
 	OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA)};
-	string appName = isOpen ? "Default.csv" : "Current.csv";
+	string appName = "Current.csv";
 	appName.reserve(4096);
 	fstruct.hwndOwner = hDlg;
 	fstruct.hInstance = hInst;
@@ -392,12 +388,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_ISPOWERBUTTON:
 			if (eLid != -1) {
-				unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid) & ~ALIENFX_FLAG_POWER;
-				flags &= IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? ALIENFX_FLAG_POWER : 0;
-				if (flags)
+				unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid);
+				if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED)
 					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES) {
-						fxhl->afx_dev.SetFlagsById(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid, flags);
+						fxhl->afx_dev.SetFlagsById(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid, flags | ALIENFX_FLAG_POWER);
 					} else
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 				else {
@@ -405,14 +400,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES)
 						fxhl->ResetPower(did);
-					fxhl->afx_dev.SetFlagsById(dPid, eLid, flags);
+					fxhl->afx_dev.SetFlagsById(dPid, eLid, flags & ~ALIENFX_FLAG_POWER);
 				}
 			}
 			break;
 		case IDC_CHECK_INDICATOR:
 		{
-			unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid) & ~ALIENFX_FLAG_INDICATOR;
-			flags &= IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? ALIENFX_FLAG_INDICATOR : 0;
+			unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid);
+			flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? flags | ALIENFX_FLAG_INDICATOR : flags & ~ALIENFX_FLAG_INDICATOR;
 			fxhl->afx_dev.SetFlagsById(dPid, eLid, flags);
 		} break;
 		case IDC_BUTTON_DEVRESET:
@@ -565,11 +560,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		fxhl->UnblockUpdates(true, true);
 		fxhl->RefreshState();
 	} break;
-	//case WM_PAINT:
-	//	fxhl->UnblockUpdates(false, true);
-	//	if (dIndex >= 0) 
-	//		fxhl->TestLight(dIndex, eLid);
-	//	return false;
 	default: return false;
 	}
 	return true;

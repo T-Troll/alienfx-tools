@@ -399,6 +399,23 @@ void EventHandler::StopProfiles()
 	}
 }
 
+PDH_FMT_COUNTERVALUE_ITEM *counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1];
+DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
+
+int GetValuesArray(HCOUNTER counter) {
+	PDH_STATUS pdhStatus;
+	DWORD count;
+	while ((pdhStatus = PdhGetFormattedCounterArray( counter, PDH_FMT_LONG, &counterSize, &count, counterValues )) == PDH_MORE_DATA) {
+		delete[] counterValues;
+		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
+	}
+
+	if (pdhStatus != ERROR_SUCCESS) {
+		return 0;
+	}
+	return count;
+}
+
 DWORD WINAPI CEventProc(LPVOID param)
 {
 	EventHandler* src = (EventHandler*)param;
@@ -407,20 +424,19 @@ DWORD WINAPI CEventProc(LPVOID param)
 	HKL* locIDs = new HKL[10];
 	int locNum = GetKeyboardLayoutList(10, locIDs);
 
-
-
 	LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
 		COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
 		COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
 		COUNTER_PATH_HOT = "\\Thermal Zone Information(*)\\Temperature",
 		COUNTER_PATH_HOT2 = "\\EsifDeviceInformation(*)\\Temperature",
+		COUNTER_PATH_PWR = "\\EsifDeviceInformation(*)\\RAPL Power",
 		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time";
 
 	HQUERY hQuery = NULL;
 	HLOG hLog = NULL;
-	PDH_STATUS pdhStatus;
+	//PDH_STATUS pdhStatus;
 	DWORD dwLogType = PDH_LOG_TYPE_CSV;
-	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2;
+	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
 	MEMORYSTATUSEX memStat;
 	memStat.dwLength = sizeof(MEMORYSTATUSEX);
@@ -428,147 +444,59 @@ DWORD WINAPI CEventProc(LPVOID param)
 	SYSTEM_POWER_STATUS state;
 
 	ULONGLONG maxnet = 1;
+	DWORD maxPower = 100;
 
 	EventData cData;
-
-	long maxgpuarray = 10, maxnetarray = 10, maxtemparray = 10;
-	PDH_FMT_COUNTERVALUE_ITEM* gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
-	PDH_FMT_COUNTERVALUE_ITEM* netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
-	PDH_FMT_COUNTERVALUE_ITEM* tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
 
 	// Set data source...
 	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
 
-	// Open a query object.
 	if (PdhOpenQuery(NULL, 0, &hQuery) != ERROR_SUCCESS)
 	{
 		goto cleanup;
 	}
 
-	// Add one counter that will provide the data.
-	/*pdhStatus =*/ PdhAddCounter(hQuery,
-		COUNTER_PATH_CPU,
-		0,
-		&hCPUCounter);
-
-	/*pdhStatus =*/ PdhAddCounter(hQuery,
-		COUNTER_PATH_HDD,
-		0,
-		&hHDDCounter);
-
-	/*pdhStatus =*/ PdhAddCounter(hQuery,
-		COUNTER_PATH_NET,
-		0,
-		&hNETCounter);
-
-	/*pdhStatus =*/ PdhAddCounter(hQuery,
-		COUNTER_PATH_GPU,
-		0,
-		&hGPUCounter);
-	/*pdhStatus =*/ PdhAddCounter(hQuery,
-		COUNTER_PATH_HOT,
-		0,
-		&hTempCounter);
-
-	/*pdhStatus =*/ PdhAddCounter(hQuery,
-		COUNTER_PATH_HOT2,
-		0,
-		&hTempCounter2);
+	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
+	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
+	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
+	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
+	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
+	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
+	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 
 	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
-	DWORD cType = 0,
-		netbSize = maxnetarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), netCount = 0,
-		gpubSize = maxgpuarray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), gpuCount = 0,
-		tempbSize = maxtemparray * sizeof(PDH_FMT_COUNTERVALUE_ITEM), tempCount = 0;
+	DWORD cType = 0, valCount = 0;
 
 	while (WaitForSingleObject(src->stopEvents, src->conf->monDelay) == WAIT_TIMEOUT) {
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 
-		/*pdhStatus =*/ PdhGetFormattedCounterValue(
-			hCPUCounter,
-			PDH_FMT_LONG,
-			&cType,
-			&cCPUVal
-		);
+		/*pdhStatus =*/ PdhGetFormattedCounterValue( hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal );
+		/*pdhStatus =*/ PdhGetFormattedCounterValue( hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal );
 
-		/*pdhStatus =*/ PdhGetFormattedCounterValue(
-			hHDDCounter,
-			PDH_FMT_LONG,
-			&cType,
-			&cHDDVal
-		);
+		cData = {0};
 
-		while ((pdhStatus = PdhGetFormattedCounterArray(
-			hNETCounter,
-			PDH_FMT_LONG,
-			&netbSize,
-			&netCount,
-			netArray
-		)) == PDH_MORE_DATA) {
-			maxnetarray = netbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-			delete[] netArray;
-			netArray = new PDH_FMT_COUNTERVALUE_ITEM[maxnetarray];
-			netCount = 0;
-		}
+		// Network load
+		valCount = GetValuesArray(hNETCounter);
 
-		if (pdhStatus != ERROR_SUCCESS) {
-			netCount = 0;
-		}
-
-		// Normilizing net values...
-		ULONGLONG totalNet = 0;
-		for (unsigned i = 0; i < netCount; i++) {
-			totalNet += netArray[i].FmtValue.longValue;
+		long totalNet = 0;
+		for (unsigned i = 0; i < valCount; i++) {
+			totalNet += counterValues[i].FmtValue.longValue;
 		}
 
 		if (maxnet < totalNet) 
 			maxnet = totalNet;
 		//if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
 
-		while ((pdhStatus = PdhGetFormattedCounterArray(
-			hGPUCounter,
-			PDH_FMT_LONG,
-			&gpubSize,
-			&gpuCount,
-			gpuArray
-		)) == PDH_MORE_DATA) {
-			maxgpuarray = gpubSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-			delete[] gpuArray;
-			gpuArray = new PDH_FMT_COUNTERVALUE_ITEM[maxgpuarray];
-			gpuCount = 0;
+		// GPU load
+		valCount = GetValuesArray(hGPUCounter);
+
+		for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
+			if (cData.GPU < counterValues[i].FmtValue.longValue)
+				cData.GPU = (byte) counterValues[i].FmtValue.longValue;
 		}
 
-		if (pdhStatus != ERROR_SUCCESS) {
-			gpuCount = 0;
-		}
-
-		// Getting maximum GPU load value...
-		cData.GPU = 0;
-
-		for (unsigned i = 0; i < gpuCount && gpuArray[i].szName != NULL; i++) {
-			if (cData.GPU < gpuArray[i].FmtValue.longValue)
-				cData.GPU = (byte) gpuArray[i].FmtValue.longValue;
-		}
-
-		while ((pdhStatus = PdhGetFormattedCounterArray(
-			hTempCounter,
-			PDH_FMT_LONG,
-			&tempbSize,
-			&tempCount,
-			tempArray
-		)) == PDH_MORE_DATA) {
-			maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-			delete[] tempArray;
-			tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
-		}
-
-		if (pdhStatus != ERROR_SUCCESS) {
-			tempCount = 0;
-		}
-
-		// Getting maximum temp...
-		cData.Temp = 0, cData.Fan = 0;
+		// Temperatures
 		if (src->mon) { 
 			// Let's get temperatures from fan sensors
 			for (unsigned i = 0; i < src->mon->senValues.size(); i++)
@@ -583,43 +511,39 @@ DWORD WINAPI CEventProc(LPVOID param)
 					cData.Fan = newRpm;
 			}
 		} else {
-			for (unsigned i = 0; i < tempCount; i++) {
-				if (cData.Temp + 273 < tempArray[i].FmtValue.longValue)
-					cData.Temp = (byte) (tempArray[i].FmtValue.longValue - 273);
+			valCount = GetValuesArray(hTempCounter);
+			for (unsigned i = 0; i < valCount; i++) {
+				if (((int)cData.Temp) + 273 < counterValues[i].FmtValue.longValue)
+					cData.Temp = (byte) (counterValues[i].FmtValue.longValue - 273);
 			}
 		}
 
-		// Now other temp sensor block...
+		// Now other temp sensor block and power block...
+		DWORD totalPwr = 0;
 		if (src->conf->esif_temp) {
-			tempbSize = maxtemparray * sizeof(PDH_FMT_COUNTERVALUE_ITEM); tempCount = 0;
-			while ((pdhStatus = PdhGetFormattedCounterArray(
-				hTempCounter2,
-				PDH_FMT_LONG,
-				&tempbSize,
-				&tempCount,
-				tempArray
-			)) == PDH_MORE_DATA) {
-				maxtemparray = tempbSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-				delete[] tempArray;
-				tempArray = new PDH_FMT_COUNTERVALUE_ITEM[maxtemparray];
-			}
-
-			if (pdhStatus != ERROR_SUCCESS) {
-				tempCount = 0;
-			}
+			valCount = GetValuesArray(hTempCounter2);
 
 			// Added other set maximum temp...
-			for (unsigned i = 0; i < tempCount; i++) {
-				if (cData.Temp < tempArray[i].FmtValue.longValue)
-					cData.Temp = (byte) tempArray[i].FmtValue.longValue;
+			for (unsigned i = 0; i < valCount; i++) {
+				if (cData.Temp < counterValues[i].FmtValue.longValue)
+					cData.Temp = (byte) counterValues[i].FmtValue.longValue;
 			}
+
+			// Powers
+			valCount = GetValuesArray(hPwrCounter);
+			for (unsigned i = 0; i < valCount; i++) {
+				totalPwr += counterValues[i].FmtValue.longValue;
+			}
+			while (totalPwr > maxPower)
+				maxPower <<= 1;
+			//if (totalPwr > maxPower)
+			//	maxPower = totalPwr;
 		}
 
 		GlobalMemoryStatusEx(&memStat);
 		GetSystemPowerStatus(&state);
 
-		DWORD tId = GetWindowThreadProcessId(GetForegroundWindow(), NULL);
-		HKL curLocale = GetKeyboardLayout(tId);
+		HKL curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL));
 
 		if (curLocale) {
 			for (int i = 0; i < locNum; i++) {
@@ -628,7 +552,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 					break;
 				}
 			}
-			//DebugPrint((string("Input set to ") + to_string(cData.KBD) + ", locale " + to_string(LOWORD(curLocale)) + "\n").c_str());
 		}
 
 		// Leveling...
@@ -639,13 +562,16 @@ DWORD WINAPI CEventProc(LPVOID param)
 		cData.CPU = (byte) cCPUVal.longValue;
 		cData.RAM = (byte) memStat.dwMemoryLoad;
 		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / maxnet > 0 ? (totalNet * 100) / maxnet : 1 : 0);
+		cData.PWR = (byte) min(100, totalPwr * 100 / maxPower);
 
 		src->modifyProfile.lock();
 		src->fxh->SetCounterColor(&cData);
 		src->modifyProfile.unlock();
-	}
 
-	delete[] gpuArray; delete[] netArray; delete[] tempArray;
+		/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) + 
+					", Power=" + to_string(cData.PWR) + 
+					", Max. power=" + to_string(maxPower) + "\n").c_str());*/
+	}
 
 cleanup:
 

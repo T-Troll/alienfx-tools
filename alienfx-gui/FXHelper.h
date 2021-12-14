@@ -11,7 +11,7 @@
 #define MODE_LOW	4
 
 struct EventData {
-	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, NET = 0, Temp = 0, Batt = 100, Fan = 0, KBD = 0;
+	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, NET = 0, Temp = 0, Batt = 100, Fan = 0, KBD = 0, PWR = 0;
 };
 
 struct LightQueryElement {
