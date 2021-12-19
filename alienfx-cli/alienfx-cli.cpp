@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v5.3.5.1\n");
+	printf("alienfx-cli v5.4.0.1\n");
 	if (argc < 2) 
 	{
 		printUsage();

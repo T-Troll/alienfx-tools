@@ -291,10 +291,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
+//DLGTEMPLATE* DoLockDlgRes(LPCTSTR lpszResName)
+//{
+//	//HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG);
+//	//HGLOBAL hglb = LoadResource(hInst, FindResource(NULL, lpszResName, RT_DIALOG));
+//	return (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, lpszResName, RT_DIALOG)));
+//}
+
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	hInst = hInstance;
-	CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)DialogConfigStatic, 0);
+	CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)DialogConfigStatic);
 
 	if (mDlg) {
 
@@ -509,14 +516,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-DLGTEMPLATE* DoLockDlgRes(LPCTSTR lpszResName)
-{
-	HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG);
-
-	HGLOBAL hglb = LoadResource(hInst, hrsrc);
-	return (DLGTEMPLATE*)LockResource(hglb);
-}
-
 VOID OnSelChanged(HWND hwndDlg)
 {
 	// Get the dialog header data.
@@ -644,7 +643,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		tie.pszText = nBuf;
 
 		for (int i = 0; i < C_PAGES; i++) {
-			pHdr->apRes[i] = DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
+			pHdr->apRes[i] = (DLGTEMPLATE *) LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLORS + i), RT_DIALOG)));// DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
 			LoadString(hInst, IDS_TAB_COLOR + i, tie.pszText, 64);
 			SendMessage(tab_list, TCM_INSERTITEM, i, (LPARAM) &tie);
 		}

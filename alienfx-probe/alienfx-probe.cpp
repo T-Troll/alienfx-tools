@@ -17,12 +17,13 @@ int main(int argc, char* argv[])
 {
 	int numlights = 23;
 	bool show_all = argc > 1 && string(argv[1]) == "-a";
-	printf("alienfx-probe v5.3.5.1\n");
+	char name[256]{0}, *outName;
+	printf("alienfx-probe v5.4.0.2\n");
 	printf("Checking USB light devices...\n");
 	CheckDevices(show_all);
 	printf("Do you want to set devices and lights names?");
-	char answer = getchar();
-	if (answer == 'y' || answer == 'Y') {
+	gets_s(name, 255);
+	if (name[0] == 'y' || name[0] == 'Y') {
 		printf("\nFor each light please enter LightFX SDK light ID or light name if ID is not available\n\
 Tested light become green, and turned off after testing.\n\
 Just press Enter if no visible light at this ID to skip it.\n");
@@ -61,13 +62,13 @@ Just press Enter if no visible light at this ID to skip it.\n");
 				int isInit = afx_dev->AlienFXChangeDevice(pids[cdev].first, pids[cdev].second);
 				if (isInit != -1) {
 					printf(" Connected.\n");
-					char name[256], * outName;
 					int count;
 					afx_dev->Reset();
 					for (count = 0; count < 5 && !afx_dev->IsDeviceReady(); count++)
 						Sleep(20);
 					printf("Enter device name or id: ");
-					scanf_s("%255[^\n]", name, 256);
+					//scanf_s("%255s\n", name, 255);
+					gets_s(name,255);
 					if (isdigit(name[0]) && res == (-1)) {
 						outName = lfxUtil.GetDevInfo(atoi(name))->desc;
 					} else {
@@ -88,7 +89,8 @@ Just press Enter if no visible light at this ID to skip it.\n");
 						afx_dev->SetColor(i, {0, 255, 0});
 						afx_dev->UpdateColors();
 						Sleep(100);
-						scanf_s("%255[^\n]", name, 256);
+						//scanf_s("%255s\n", name, 255);
+						gets_s(name, 255);
 						if (name[0] != 0) {
 							//not skipped
 							//if (isdigit(name[0]) && res == (-1)) {

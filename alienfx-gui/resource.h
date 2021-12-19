@@ -200,7 +200,6 @@
 #define IDC_SLIDER_RED                  1110
 #define IDC_SLIDER_GREEN                1111
 #define IDC_GRPLIST                     1111
-#define IDC_SLIDER_GREEN2               1112
 #define IDC_SLIDER_BLUE                 1112
 #define IDC_FROM_COLOR                  1112
 #define IDC_TO_COLOR                    1113
@@ -213,7 +212,6 @@
 #define IDC_CHECK_WHITE                 1120
 #define IDC_FREQ_GROUP                  1121
 #define IDC_BUT_ADD_GROUP               1122
-#define IDC_BUT_ADD_GROUP2              1123
 #define IDC_BUT_REM_GROUP               1123
 #define IDC_FROM_HAPTICS                1124
 #define IDC_TO_HAPTICS                  1125
