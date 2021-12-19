@@ -58,8 +58,6 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	}
 	ListView_SetColumnWidth(light_list, 0, LVSCW_AUTOSIZE);
 	ListView_EnsureVisible(light_list, pos, false);
-	BYTE status = fxhl->afx_dev.fxdevs[pid].dev->AlienfxGetDeviceStatus();
-	SetDlgItemText(hDlg, IDC_DEVICE_STATUS, status && status != 0xff ? "" : "Error!");
 }
 
 void UpdateDeviceInfo(HWND hDlg) {
@@ -74,6 +72,8 @@ void UpdateDeviceInfo(HWND hDlg) {
 		SetSlider(sTip1, dev->desc->white.r);
 		SetSlider(sTip2, dev->desc->white.r);
 		SetSlider(sTip3, dev->desc->white.r);
+		BYTE status = fxhl->afx_dev.fxdevs[dIndex].dev->AlienfxGetDeviceStatus();
+		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, status && status != 0xff ? "" : "Error!");
 	}
 }
 
@@ -123,8 +123,8 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 			else {
 				ComboBox_SetCurSel(dev_list, pos);
 				UpdateDeviceInfo(hDlg);
-				fxhl->TestLight(i, -1, whiteTest);
-				UpdateLightsList(hDlg, i, -1);
+				fxhl->TestLight(dIndex, -1, whiteTest);
+				UpdateLightsList(hDlg, dIndex, -1);
 			}
 			dItem = pos;
 		}
@@ -324,7 +324,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fxhl->TestLight(dIndex, eLid, whiteTest);
 		} break;
 		case IDC_BUTTON_REML:
-			if (MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning",
+			if (eLid >= 0 && MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// delete from all groups...
 				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
@@ -371,12 +371,20 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUTTON_RESETCOLOR:
-			if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles?", "Warning",
+			if (MessageBox(hDlg, "Do you really want to remove current light control settings from all profiles and groups?", "Warning",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// delete from all profiles...
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					// erase mappings
-					RemoveMapping(&(*Iter)->lightsets, fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid);
+					RemoveMapping(&(*Iter)->lightsets, dPid, eLid);
+				}
+				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
+					AlienFX_SDK::group* grp = &fxhl->afx_dev.GetGroups()->at(i);
+					for (auto gIter = grp->lights.begin(); gIter < grp->lights.end(); gIter++)
+						if ((*gIter)->devid == dPid && (*gIter)->lightid == eLid) {
+							grp->lights.erase(gIter);
+							break;
+						}
 				}
 			}
 			break;
@@ -488,21 +496,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-				if (lPoint->uNewState & LVIS_FOCUSED) {
+				if (lPoint->uNewState & LVIS_FOCUSED || lPoint->uNewState & LVIS_SELECTED) {
 					// Select other item...
-					if (lPoint->iItem != -1) {
-						eLid = (int)lPoint->lParam;
-						SetDlgItemInt(hDlg, IDC_LIGHTID, eLid, false);
-						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, fxhl->afx_dev.GetFlags(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid) & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, fxhl->afx_dev.GetFlags(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid) & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
-					} else {
-						SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
-						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
-						eLid = -1;
-					}
-					fxhl->TestLight(dIndex, eLid, whiteTest);
-				}
+					eLid = lPoint->iItem;
+				} else
+					eLid = -1;
+				SetDlgItemInt(hDlg, IDC_LIGHTID, eLid < 0 ? 0 : eLid, false);
+				int flags = fxhl->afx_dev.GetFlags(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid);
+				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, flags & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
+				CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, flags & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
+				fxhl->TestLight(dIndex, eLid, whiteTest);
 			} break;
 			case LVN_ENDLABELEDIT:
 			{

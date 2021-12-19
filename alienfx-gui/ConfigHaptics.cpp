@@ -58,7 +58,7 @@ void ConfigHaptics::Load() {
                 continue;
             }
             if (sscanf_s(name, "Light%u-%u-%u", &map.devid, &map.lightid, &gIndex) == 3) {
-                byte *bArray = (byte *) inarray + 2*sizeof(DWORD);
+                byte *bArray = (byte *) (inarray + 2);
                 haptics_map *cmap = FindHapMapping(map.devid, map.lightid);
                 if (!cmap) {
                     haptics.push_back({map.devid, map.lightid});
@@ -70,7 +70,8 @@ void ConfigHaptics::Load() {
                 freq.hicut = bArray[1];
                 cmap->flags = bArray[2];
                 for (unsigned i = 3; i + 2*sizeof(DWORD) < lend; i++)
-                    freq.freqID.push_back((byte)bArray[i]);
+                    if (bArray[i] < NUMBARS)
+                        freq.freqID.push_back((byte) bArray[i]);
                 cmap->freqs.push_back(freq);
                 continue;
             }
