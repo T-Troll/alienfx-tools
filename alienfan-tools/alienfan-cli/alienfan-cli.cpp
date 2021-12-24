@@ -37,14 +37,14 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tPower level can be in 0..N - according to power states detected\n\
 \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
-\tMode can be 0 or absent for coocked set, 1 for raw set\n\
+\tMode can be 0 or absent for set cooked value, 1 for raw value\n\
 \tBrighness for ACPI lights can only have 10 values - 1,3,4,6,7,9,10,12,13,15\n\
 \tAll values in \"direct\" commands should be hex, not decimal!\n");
 }
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v1.5.4.0\n");
+    printf("AlienFan-cli v1.6.0.0\n");
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -55,12 +55,9 @@ int main(int argc, char* argv[])
         AlienFan_SDK::Lights *lights = new AlienFan_SDK::Lights(acpi);
 
         if (supported = acpi->Probe()) {
-            printf("Supported hardware v%d detected, %d fans, %ud sensors, %d power states. Light control %s.\n",
+            printf("Supported hardware v%d detected, %d fans, %d sensors, %d power states. Light control %s.\n",
                    acpi->GetVersion(), (int) acpi->HowManyFans(), (int) acpi->sensors.size(), (int) acpi->HowManyPower(),
                    (lights->IsActivated() ? "enabled" : "disabled"));
-            //printf("Supported hardware v" << acpi->GetVersion() << " detected, " << acpi->HowManyFans() << " fans, "
-            //    << acpi->sensors.size() << " sensors, " << acpi->HowManyPower() << " power states."
-            //    << " Light control: " << (lights->IsActivated() ? "enabled" : "disabled"));
         }
         else {
            printf("Supported hardware not found!\n");
