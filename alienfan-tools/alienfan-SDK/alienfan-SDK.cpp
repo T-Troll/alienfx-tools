@@ -11,6 +11,7 @@ namespace AlienFan_SDK {
 
 	Control::Control() {
 
+		//printf("Driver activation started.\n");
 		// do we already have service runnning?
 		activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 		if (!activated) {
@@ -45,25 +46,29 @@ namespace AlienFan_SDK {
 				cpath.resize(cpath.find_last_of(L"\\"));
 				cpath += L"\\HwAcc.sys";
 
-				//wprintf(L"Loaing driver from %s... ", cpath.c_str());
+				//wprintf(L"Loading driver from %s...\n", cpath.c_str());
+				if (GetFileAttributes(cpath.c_str()) != INVALID_FILE_ATTRIBUTES) {
 
-				HMODULE kdl = LoadLibrary(L"kdl.dll");
-				if (kdl) {
-					//printf("KDL loaded, trying... ");
-					ACPIF oacpi = (ACPIF) GetProcAddress(kdl, "LoadKernelDriver");
-					if (oacpi && oacpi((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-						//printf("Driver loaded, trying to open it... ");
-						activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
-						//printf("Loading complete %s.\n", activated ? "succesfuly" : ",failed");
-					}
-					// In any case, unload dll
-					FreeLibrary(kdl);
-				}
+					HMODULE kdl = LoadLibrary(L"kdl.dll");
+					if (kdl) {
+						//printf("KDL loaded, trying... ");
+						ACPIF oacpi = (ACPIF) GetProcAddress(kdl, "LoadKernelDriver");
+						if (oacpi && oacpi((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
+							//printf("Driver loaded, trying to open it... ");
+							activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
+							//printf("Loading complete - %s.\n", activated ? "success" : "failed");
+						}
+						// In any case, unload dll
+						FreeLibrary(kdl);
+					} //else
+						//printf("KDL library not found!\n");
+				} //else
+					//printf("Driver file not found!\n");
 #ifdef _SERVICE_WAY_
 			}
 #endif
-			//printf("Done\n");
 		}
+		//printf("Done.\n");
 	}
 	Control::~Control() {
 		sensors.clear();
@@ -178,15 +183,15 @@ namespace AlienFan_SDK {
 					//printf("Device type %d found.\n", aDev);
 					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
-						// for new one-command devices
-						// Here is NEW detection block, Dell drop function 0x13 at G5, so 0x14,3 used for enumeration
 						int fIndex = 0, funcID = 0;
 						// Scan for avaliable fans...
-						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x101
+						//printf("Scanning data block...\n");
+						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x100
 							   && funcID != devs[aDev].errorCode) {
 							fans.push_back(funcID);
 							fIndex++;
 						}
+						//printf("%d fans detected, last reply %d\n", fIndex, funcID);
 						int firstSenIndex = fIndex;
 						// AWCC temperature sensors.
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
@@ -197,17 +202,18 @@ namespace AlienFan_SDK {
 								name = temp_names[sIndex];
 							} else
 								name = "Sensor #" + to_string(sIndex);
-							//ALIENFAN_SEN_INFO cur{(short)funcID, name, true};
 							sensors.push_back({(short)funcID, name, true});
 							fIndex++;
 						}
+						//printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
 						if (aDev != 3) {
-							while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) >= 0
+							while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0
 								   && funcID != devs[aDev].errorCode) {
 								// Power modes.
 								powers.push_back(funcID);
 								fIndex++;
 							}
+							//printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
 						}
 						// patches... 
 						switch (aDev) {
@@ -238,14 +244,14 @@ namespace AlienFan_SDK {
 						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName) && resName) {
 							char *c_name = new char[resName->Argument[0].DataLength+1];
 							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
-							//ALIENFAN_SEN_INFO cur{i, c_name, false};
 							sensors.push_back({i, c_name, false});
 							delete[] c_name;
 							free(resName);
 						}
 					}
+					//printf("%d TZ sensors detected.\n", HowManySensors());
 					// Set boost block
-					for (int i = 0; i < HowManyFans(); i++)
+					for (int i = 0; i < fans.size(); i++)
 						boosts.push_back(devs[aDev].maxBoost);
 					return true;
 				}
