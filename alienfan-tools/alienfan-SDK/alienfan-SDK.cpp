@@ -178,41 +178,44 @@ namespace AlienFan_SDK {
 				aDev = i;
 				cDev = devs[aDev].controlID;
 				// Probe...
-				if (RunMainCommand(devs[aDev].probe) >= 1) {
+				if ((systemID = RunMainCommand(devs[aDev].probe) & 0xffff) > 0) {
 					// Alienware device detected!
-					//printf("Device type %d found.\n", aDev);
+					//printf("Device ID %x found.\n", systemID);
 					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
 						int fIndex = 0, funcID = 0;
 						// Scan for avaliable fans...
 						//printf("Scanning data block...\n");
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x100
-							   && funcID != devs[aDev].errorCode) {
-							fans.push_back(funcID);
+							   && funcID != devs[aDev].errorCode || funcID > 0x130) { // bugfix for 0x132 fan for R7
+							fans.push_back(funcID & 0xff);
 							fIndex++;
 						}
 						//printf("%d fans detected, last reply %d\n", fIndex, funcID);
 						int firstSenIndex = fIndex;
 						// AWCC temperature sensors.
-						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
-							   && funcID != devs[aDev].errorCode) {
+						do {
 							string name;
 							int sIndex = fIndex - firstSenIndex;
-							if (sIndex < temp_names.size()) {
-								name = temp_names[sIndex];
-							} else
-								name = "Sensor #" + to_string(sIndex);
-							sensors.push_back({(short)funcID, name, true});
+							// Check temperature, disable if -1
+							if (RunMainCommand(dev_controls[cDev].getTemp, (byte) funcID) >= 0) {
+								if (sIndex < temp_names.size()) {
+									name = temp_names[sIndex];
+								} else
+									name = "Sensor #" + to_string(sIndex);
+								sensors.push_back({(short) funcID, name, true});
+							}
 							fIndex++;
-						}
+						} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
+								 && funcID < 0x1A0 && funcID != devs[aDev].errorCode);
 						//printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
 						if (aDev != 3) {
-							while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0
-								   && funcID != devs[aDev].errorCode) {
+							do {
 								// Power modes.
-								powers.push_back(funcID);
+								powers.push_back(funcID && 0xff);
 								fIndex++;
-							}
+							} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0
+									 && funcID != devs[aDev].errorCode);
 							//printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
 						}
 						// patches... 
@@ -220,7 +223,7 @@ namespace AlienFan_SDK {
 						case 2: // for G5 - hidden performance boost
 							powers.push_back(0xAB);
 							break;
-						case 3: // for Aurora - powers is 1..2
+						case 3: // for Aurora R7 - powers is 1..2
 							powers.push_back(1);
 							powers.push_back(2);
 							break;
