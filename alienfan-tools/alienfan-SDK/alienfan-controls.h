@@ -62,7 +62,7 @@ namespace AlienFan_SDK {
 			105, // max. boost
 			true, // command controlled
 			0, // controlID
-			0x14,   1, // Probe command
+			0x14,   2, // Probe command
 		}, 
 		{ // Dell G15
 			"\\_SB.AMW3.WMAX", // main command
@@ -70,7 +70,7 @@ namespace AlienFan_SDK {
 			150, // Max. boost
 			true, // command controlled
 			0, // controlID
-			0x14,   1, // Probe command
+			0x14,   2, // Probe command
 		},
 		{ // Dell G5 SE
 			"\\_SB.AMWW.WMAX", // main command
@@ -78,7 +78,7 @@ namespace AlienFan_SDK {
 			100, // Max. boost
 			true, // command controlled
 			0, // controlID
-			0x14,   1, // Probe command
+			0x14,   2, // Probe command
 		},
 		{ // Aurora R7
 			"\\_SB.AMW1.WMAX", // main command
@@ -86,7 +86,7 @@ namespace AlienFan_SDK {
 			100, // Max. boost
 			true, // command controlled
 			1, // controlID
-			0x10,   1, // Probe command
+			0x10,   2, // Probe command
 		},
 		{ // Alienware 13R2
 			"\\_SB.AMW0.WMBC", // main command
