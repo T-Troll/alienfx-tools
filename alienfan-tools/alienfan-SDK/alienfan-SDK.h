@@ -23,7 +23,7 @@ namespace AlienFan_SDK {
 
 	struct ALIENFAN_DEVICE {
 		string mainCommand;
-		int  errorCode;
+		//int  errorCode;
 		byte maxBoost;
 		bool commandControlled;
 		short controlID;
@@ -119,9 +119,6 @@ namespace AlienFan_SDK {
 
 		// True if driver activated and ready, false if not
 		bool IsActivated();
-
-		// Error code for selected device
-		int GetErrorCode();
 
 		// Return number of fans into fans[] detected at Probe()
 		int HowManyFans();

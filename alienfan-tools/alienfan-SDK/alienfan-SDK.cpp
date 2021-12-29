@@ -187,7 +187,7 @@ namespace AlienFan_SDK {
 						// Scan for avaliable fans...
 						//printf("Scanning data block...\n");
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x100
-							   && funcID != devs[aDev].errorCode || funcID > 0x130) { // bugfix for 0x132 fan for R7
+							   && funcID > 0 || funcID > 0x130) { // bugfix for 0x132 fan for R7
 							fans.push_back(funcID & 0xff);
 							fIndex++;
 						}
@@ -198,24 +198,23 @@ namespace AlienFan_SDK {
 							string name;
 							int sIndex = fIndex - firstSenIndex;
 							// Check temperature, disable if -1
-							if (RunMainCommand(dev_controls[cDev].getTemp, (byte) funcID) >= 0) {
+							//if (RunMainCommand(dev_controls[cDev].getTemp, (byte) funcID) > 0) {
 								if (sIndex < temp_names.size()) {
 									name = temp_names[sIndex];
 								} else
 									name = "Sensor #" + to_string(sIndex);
 								sensors.push_back({(short) funcID, name, true});
-							}
+							//}
 							fIndex++;
 						} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
-								 && funcID < 0x1A0 && funcID != devs[aDev].errorCode);
+								 && funcID < 0x1A0 && funcID > 0);
 						//printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
 						if (aDev != 3) {
 							do {
 								// Power modes.
 								powers.push_back(funcID && 0xff);
 								fIndex++;
-							} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0
-									 && funcID != devs[aDev].errorCode);
+							} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0);
 							//printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
 						}
 						// patches... 
@@ -298,7 +297,7 @@ namespace AlienFan_SDK {
 				//	wstring msg = L"Boost for fan#" + to_wstring(fanID) + L" changed to " + to_wstring(finalValue) + L"\n";
 				//	OutputDebugString(msg.c_str());
 				//#endif
-				return RunMainCommand(dev_controls[cDev].setFanBoost, (byte) fans[fanID], finalValue) != devs[aDev].errorCode;
+				return RunMainCommand(dev_controls[cDev].setFanBoost, (byte) fans[fanID], finalValue);
 			} else {
 				WriteRamDirect(fans[fanID] + 0x23, value + 1); // lock at 0 fix
 				return WriteRamDirect(fans[fanID], value);
@@ -367,9 +366,6 @@ namespace AlienFan_SDK {
 	}
 	bool Control::IsActivated() {
 		return activated;
-	}
-	int Control::GetErrorCode() {
-		return aDev != -1 ? devs[aDev].errorCode : -1;
 	}
 	int Control::HowManyFans() {
 		return (int)fans.size();
