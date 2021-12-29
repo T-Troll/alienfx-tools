@@ -178,7 +178,7 @@ namespace AlienFan_SDK {
 				aDev = i;
 				cDev = devs[aDev].controlID;
 				// Probe...
-				if ((systemID = RunMainCommand(devs[aDev].probe) & 0xffff) > 0) {
+				if (systemID = RunMainCommand(devs[aDev].probe) > 0) {
 					// Alienware device detected!
 					//printf("Device ID %x found.\n", systemID);
 					powers.push_back(0); // Unlocked power

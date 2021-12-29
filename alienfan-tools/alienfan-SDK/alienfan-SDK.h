@@ -57,7 +57,7 @@ namespace AlienFan_SDK {
 		HANDLE acc = NULL;
 		short aDev = -1;
 		short cDev = -1;
-		DWORD systemID = 0;
+		int systemID = 0;
 		bool activated = false;
 		SC_HANDLE scManager = NULL;
 
