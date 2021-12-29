@@ -21,7 +21,7 @@ int eLid = -1, dItem = -1, dIndex = -1;
 bool whiteTest = false;
 vector<devInfo> csv_devs;
 
-void UpdateLightsList(HWND hDlg, int pid, int lid) {
+void UpdateLightsList(HWND hDlg, int lid) {
 	int pos = -1;
 	HWND light_list = GetDlgItem(hDlg, IDC_LIST_LIGHTS); 
 
@@ -37,8 +37,8 @@ void UpdateLightsList(HWND hDlg, int pid, int lid) {
 	lCol.cx = 100;
 	ListView_DeleteColumn(light_list, 0);
 	ListView_InsertColumn(light_list, 0, &lCol);
-	for (int i = 0; i < fxhl->afx_dev.fxdevs[pid].lights.size(); i++) {
-		AlienFX_SDK::mapping *clight = fxhl->afx_dev.fxdevs[pid].lights[i];
+	for (int i = 0; i < fxhl->afx_dev.fxdevs[dIndex].lights.size(); i++) {
+		AlienFX_SDK::mapping *clight = fxhl->afx_dev.fxdevs[dIndex].lights[i];
 		LVITEMA lItem; 
 		lItem.mask = LVIF_TEXT | LVIF_PARAM;
 		lItem.iItem = i;
@@ -124,7 +124,7 @@ void UpdateDeviceList(HWND hDlg, bool isList = false) {
 				ComboBox_SetCurSel(dev_list, pos);
 				UpdateDeviceInfo(hDlg);
 				fxhl->TestLight(dIndex, -1, whiteTest);
-				UpdateLightsList(hDlg, dIndex, -1);
+				UpdateLightsList(hDlg, -1);
 			}
 			dItem = pos;
 		}
@@ -272,8 +272,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 	} break;
 	case WM_COMMAND: {
-		int dbItem = ComboBox_GetCurSel(dev_list),
-			did = (int)ComboBox_GetItemData(dev_list, dbItem);
+		//int dbItem = ComboBox_GetCurSel(dev_list),
+		//	did = (int)ComboBox_GetItemData(dev_list, dbItem);
 		WORD dPid = fxhl->afx_dev.fxdevs[dIndex].desc->devid;
 		switch (LOWORD(wParam))
 		{
@@ -283,10 +283,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case CBN_SELCHANGE:
 			{
 				eLid = -1;
-				dIndex = did; dItem = dbItem;
+				dItem = ComboBox_GetCurSel(dev_list);
+				dIndex = (int)ComboBox_GetItemData(dev_list, dItem); 
 				fxhl->TestLight(dIndex, -1, whiteTest);
 				UpdateDeviceInfo(hDlg);
-				UpdateLightsList(hDlg, dIndex, -1);
+				UpdateLightsList(hDlg, -1);
 			} break;
 			case CBN_EDITCHANGE:
 				char buffer[MAX_PATH];
@@ -320,7 +321,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			fxhl->afx_dev.fxdevs[dIndex].lights.push_back(fxhl->afx_dev.GetMappings()->back());
 			fxhl->afx_dev.SaveMappings();
 			eLid = cid;
-			UpdateLightsList(hDlg, dIndex, eLid);
+			UpdateLightsList(hDlg, eLid);
 			fxhl->TestLight(dIndex, eLid, whiteTest);
 		} break;
 		case IDC_BUTTON_REML:
@@ -361,12 +362,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
 				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
-					fxhl->ResetPower(did);
+					fxhl->ResetPower(dPid);
 					MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning",
 							   MB_OK);
 				}
 				eLid = nLid;
-				UpdateLightsList(hDlg, dIndex, eLid);
+				UpdateLightsList(hDlg, eLid);
 				fxhl->TestLight(dIndex, eLid, whiteTest);
 			}
 			break;
@@ -400,14 +401,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED)
 					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES) {
-						fxhl->afx_dev.SetFlagsById(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid, flags | ALIENFX_FLAG_POWER);
+						fxhl->afx_dev.SetFlagsById(dPid, eLid, flags | ALIENFX_FLAG_POWER);
+						// Check mappings and remove all power button data
+						for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
+							// erase mapping
+							RemoveMapping(&(*Iter)->lightsets, dPid, eLid);
+						}
 					} else
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 				else {
 					// remove power button config from chip config if unchecked and confirmed
 					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES)
-						fxhl->ResetPower(did);
+						fxhl->ResetPower(dPid);
 					fxhl->afx_dev.SetFlagsById(dPid, eLid, flags & ~ALIENFX_FLAG_POWER);
 				}
 			}

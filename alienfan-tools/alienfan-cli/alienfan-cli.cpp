@@ -44,7 +44,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v1.6.1.0\n");
+    printf("AlienFan-cli v1.6.2.0\n");
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -113,8 +113,8 @@ int main(int argc, char* argv[])
                 if (command == "temp" && supported) {
                     int res = 0;
                     for (int i = 0; i < acpi->sensors.size(); i++) {
-                        if ((res = acpi->GetTempValue(i)) >= 0)
-                            printf("%s: %d\n", acpi->sensors[i].name.c_str(), res);
+                        //if ((res = acpi->GetTempValue(i)) >= 0)
+                            printf("%s: %d\n", acpi->sensors[i].name.c_str(), acpi->GetTempValue(i));
                     }
                     continue;
                 }
@@ -129,10 +129,11 @@ int main(int argc, char* argv[])
 
                     BYTE unlockStage = atoi(args[0].c_str());
                     if (unlockStage < acpi->HowManyPower()) {
-                        if (acpi->SetPower(unlockStage) != acpi->GetErrorCode())
-                            printf("Power set to %d\n", unlockStage);
-                        else
-                            printf("Power set failed!\n");
+                        printf("Power set to %d (result %d)\n", unlockStage, acpi->SetPower(unlockStage));
+                        //if (acpi->SetPower(unlockStage) != acpi->GetErrorCode())
+                        //    printf("Power set to %d\n", unlockStage);
+                        //else
+                        //    printf("Power set failed!\n");
                     } else
                         printf("Power: incorrect value (should be 0..%d\n", acpi->HowManyPower());
                     continue;
@@ -184,7 +185,7 @@ int main(int argc, char* argv[])
                     continue;
                 }
                 if (command == "direct" && CheckArgs(command, 2, args.size()) ) {
-                    int res = 0;
+                    //int res = 0;
 
                     AlienFan_SDK::ALIENFAN_COMMAND comm;
                     comm.com = (byte) strtoul(args[0].c_str(), NULL, 16);
@@ -194,24 +195,24 @@ int main(int argc, char* argv[])
                         value1 = (byte) strtol(args[2].c_str(), NULL, 16);
                     if (args.size() > 3)
                         value2 = (byte) strtol(args[3].c_str(), NULL, 16);
-                    if ((res = acpi->RunMainCommand(comm, value1, value2)) != acpi->GetErrorCode())
-                        printf("Direct call result: %d\n", res);
-                    else {
-                        printf("Direct call failed!\n");
-                        break;
-                    }
+                    //if ((res = acpi->RunMainCommand(comm, value1, value2)) != acpi->GetErrorCode())
+                        printf("Direct call result: %d\n", acpi->RunMainCommand(comm, value1, value2));
+                    //else {
+                    //    printf("Direct call failed!\n");
+                    //    break;
+                    //}
                     continue;
                 }
                 if (command == "directgpu" && CheckArgs(command, 2, args.size())) {
-                    int res = 0;
+                    //int res = 0;
                     USHORT command = (USHORT) strtoul(args[0].c_str(), NULL, 16);// atoi(args[0].c_str());
                     DWORD subcommand = strtoul(args[1].c_str(), NULL, 16);// atoi(args[1].c_str());
-                    if ((res = acpi->RunGPUCommand(command, subcommand)) != acpi->GetErrorCode())
-                        printf("DirectGPU call result: %d\n", res);
-                    else {
-                        printf("DirectGPU call failed!\n");
-                        break;
-                    }
+                    //if ((res = acpi->RunGPUCommand(command, subcommand)) != acpi->GetErrorCode())
+                        printf("DirectGPU call result: %d\n", acpi->RunGPUCommand(command, subcommand));
+                    //else {
+                    //    printf("DirectGPU call failed!\n");
+                    //    break;
+                    //}
                     continue;
                 }
 

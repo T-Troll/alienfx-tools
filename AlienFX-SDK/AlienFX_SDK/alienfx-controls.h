@@ -4,7 +4,7 @@
 
 namespace AlienFX_SDK {
 
-	//This is VIDs for different devices: Alienware (common), Darfon (RGB rekboards), Microship (monitors), Primax (mouses)
+	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microship (monitors), Primax (mouses)
 	const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461};
 
 	static struct COMMV1 {

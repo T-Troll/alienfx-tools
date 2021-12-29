@@ -111,12 +111,12 @@ Return Value:
 
 	NTSTATUS        ntStatus;
 	UNICODE_STRING  ntUnicodeString;    // NT Device Name "\Device\HwAcc"
-	UNICODE_STRING  ntWin32NameString;    // Win32 Name "\DosDevices\HwAcc"
+	//UNICODE_STRING  ntWin32NameString;    // Win32 Name "\DosDevices\HwAcc"
 	PDEVICE_OBJECT  deviceObject = NULL;    // ptr to device object
 
 
 	RtlInitUnicodeString(&ntUnicodeString, NT_DEVICE_NAME);
-	RtlInitUnicodeString(&ntWin32NameString, DOS_DEVICE_NAME);
+	//RtlInitUnicodeString(&ntWin32NameString, DOS_DEVICE_NAME);
 
 	//DbgBreakPoint ();
 	DebugPrint(("HWACC: Entry Point"));
@@ -143,17 +143,17 @@ Return Value:
 	// Create a symbolic link between our device name  and the Win32 name
 	//
 
-	ntStatus = IoCreateSymbolicLink(
-		&ntWin32NameString, &ntUnicodeString);
+	//ntStatus = IoCreateSymbolicLink(
+	//	&ntWin32NameString, &ntUnicodeString);
 
-	if (!NT_SUCCESS(ntStatus))
-	{
-		//
-		// Delete everything that this routine has allocated.
-		//
-		DebugPrint(("HWACC: Couldn't create symbolic link\n"));
-		IoDeleteDevice(deviceObject);
-	}
+	//if (!NT_SUCCESS(ntStatus))
+	//{
+	//	//
+	//	// Delete everything that this routine has allocated.
+	//	//
+	//	DebugPrint(("HWACC: Couldn't create symbolic link\n"));
+	//	IoDeleteDevice(deviceObject);
+	//}
 
 	//
 	// Initialize the driver object with this driver's entry points.
@@ -175,7 +175,7 @@ Return Value:
 	// for our device.
 	//
 
-	RtlInitUnicodeString(&ntWin32NameString, DOS_DEVICE_NAME);
+	//RtlInitUnicodeString(&ntWin32NameString, DOS_DEVICE_NAME);
 
 	DebugPrint(("HWACC: Init done\n"));
 
@@ -276,7 +276,7 @@ Return Value:
 
 
 	PDEVICE_OBJECT deviceObject = DriverObject->DeviceObject;
-	UNICODE_STRING uniWin32NameString;
+	//UNICODE_STRING uniWin32NameString;
 
 	PAGED_CODE();
 #ifndef _TINY_DRIVER_
@@ -294,14 +294,14 @@ Return Value:
 	// Create counted string version of our Win32 device name.
 	//
 
-	RtlInitUnicodeString(&uniWin32NameString, DOS_DEVICE_NAME);
+	//RtlInitUnicodeString(&uniWin32NameString, DOS_DEVICE_NAME);
 
 
 	//
 	// Delete the link from our device name to a name in the Win32 namespace.
 	//
 
-	IoDeleteSymbolicLink(&uniWin32NameString);
+	//IoDeleteSymbolicLink(&uniWin32NameString);
 
 	if (deviceObject != NULL)
 	{

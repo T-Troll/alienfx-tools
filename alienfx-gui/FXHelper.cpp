@@ -90,18 +90,13 @@ void FXHelper::ResetPower(int did)
 void FXHelper::SetCounterColor(EventData *data, bool force)
 {
 
-	if (force) {
-		DebugPrint("Forced Counter update initiated...\n");
-	}
-
 	blinkStage = !blinkStage;
 	bool wasChanged = false;
 	if (force) {
+		DebugPrint("Forced Counter update initiated...\n");
 		eData = {101,0,101,101,101,101,101,101,99};
 	}
 
-	if (!config->activeProfile)
-		return;
 	vector<lightset> active = config->activeProfile->lightsets;
 
 	for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
@@ -206,7 +201,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 void FXHelper::QueryUpdate(int did, bool force)
 {
 	if (unblockUpdates && config->stateOn) {
-		LightQueryElement newBlock{did, 0, force, true};// , actions};
+		LightQueryElement newBlock{did, 0, force, true};
 		modifyQuery.lock();
 		lightQuery.push_back(newBlock);
 		modifyQuery.unlock();
