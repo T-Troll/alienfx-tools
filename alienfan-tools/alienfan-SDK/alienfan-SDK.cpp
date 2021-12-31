@@ -212,7 +212,7 @@ namespace AlienFan_SDK {
 						if (aDev != 3) {
 							do {
 								// Power modes.
-								powers.push_back(funcID && 0xff);
+								powers.push_back(funcID & 0xff);
 								fIndex++;
 							} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0);
 							//printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
