@@ -348,7 +348,7 @@ namespace AlienFX_SDK {
 		case API_L_V7:
 		{
 			PrepareAndSend(COMMV7.status, sizeof(COMMV7.status));
-			val = PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{6,bright},{7,index},{8,c.r},{9,c.g},{10,c.b}});
+			val = PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), {{6,bright},{7,(byte)index},{8,c.r},{9,c.g},{10,c.b}});
 			//val = PrepareAndSend(COMMV7.colorSet, sizeof(COMMV7.colorSet), {{5,(byte)(index+1)},{6,r},{7,g},{8,b}});
 		} break;
 		case API_L_V6:
@@ -653,7 +653,7 @@ namespace AlienFX_SDK {
 		{
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
 					SetAction(&(*nc));
-			PrepareAndSend(COMMV7.update, sizeof(COMMV7.update), {{8,1}});
+			PrepareAndSend(COMMV7.update, sizeof(COMMV7.update));
 		} break;
 		case API_L_V4:
 		{

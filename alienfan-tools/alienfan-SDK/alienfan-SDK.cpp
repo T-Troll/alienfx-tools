@@ -350,8 +350,12 @@ namespace AlienFan_SDK {
 				if (powers[i] == pl)
 					return i;
 		} else {
-			// ToDo: set other 3 power levels (if found)
-			return ReadRamDirect(dev_c_controls[cDev].unlock);
+			// Always return Auto mode for system safety!
+			return 1;
+			//int pl = ReadRamDirect(dev_c_controls[cDev].unlock);
+			//for (int i = 0; pl >= 0 && i < powers.size(); i++)
+			//	if (powers[i] == pl)
+			//		return i;
 		}
 		return -1;
 	}

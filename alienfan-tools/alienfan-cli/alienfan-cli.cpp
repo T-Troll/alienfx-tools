@@ -44,7 +44,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v1.6.2.2\n");
+    printf("AlienFan-cli v1.6.3\n");
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
