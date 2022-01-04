@@ -68,6 +68,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             return FALSE;
         }
 
+        //power mode hotkeys
+        for (int i = 0; i < 6; i++)
+            RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+
         if (fan_conf->lastProf->powerStage >= 0)
             acpi->SetPower(fan_conf->lastProf->powerStage);
 
@@ -385,8 +389,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return true;
     }
 
-    switch (message)
-    {
+    switch (message) {
     case WM_INITDIALOG:
     {
         niData.cbSize = sizeof(NOTIFYICONDATA);
@@ -413,8 +416,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         GetWindowRect(hDlg, &cDlg);
         int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
         fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP,//WS_OVERLAPPED,
-                                        cDlg.right, cDlg.top, wh, wh, 
-                                        hDlg, NULL, hInst, 0);
+                                 cDlg.right, cDlg.top, wh, wh,
+                                 hDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
         toolTip = CreateToolTip(fanWindow, NULL);
         if (fan_conf->startMinimized) {
@@ -430,75 +433,75 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
         SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
 
-        return true; 
+        return true;
     } break;
     case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // Parse the menu selections:
+        switch (wmId) {
+        case IDC_COMBO_POWER:
         {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
+            int pItem = ComboBox_GetCurSel(power_list);
+            int pid = (int) ComboBox_GetItemData(power_list, pItem);
+            switch (HIWORD(wParam)) {
+            case CBN_SELCHANGE:
             {
-            case IDC_COMBO_POWER: {
-                int pItem = ComboBox_GetCurSel(power_list);
-                int pid = (int)ComboBox_GetItemData(power_list, pItem);
-                switch (HIWORD(wParam))
-                {
-                case CBN_SELCHANGE: {
-                    fan_conf->lastProf->powerStage = pid;
-                    acpi->SetPower(pid);
-                    fan_conf->Save();
-                } break;
-                }
-            } break;
-            case IDC_BUT_MINIMIZE:
-                ShowWindow(fanWindow, SW_HIDE);
-                ShowWindow(hDlg, SW_HIDE);
-                break;
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
-                break;
-            case IDC_BUT_CLOSE: case IDM_EXIT:
-                SendMessage(hDlg, WM_CLOSE, 0, 0);
-                break;
-            case IDM_SETTINGS_STARTWITHWINDOWS:
-            {
-                fan_conf->startWithWindows = !fan_conf->startWithWindows;
-                CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
-                char pathBuffer[MAX_PATH];
-                string shellcomm;
-                if (fan_conf->startWithWindows) {
-                    GetModuleFileName(NULL, pathBuffer, MAX_PATH);
-                    shellcomm = "Register-ScheduledTask -TaskName \"AlienFan-GUI\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-                        + string(pathBuffer) + "') -force -RunLevel Highest";
-                    ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
-                } else {
-                    shellcomm = "/delete /F /TN \"AlienFan-GUI\"";
-                    ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
-                }
+                fan_conf->lastProf->powerStage = pid;
+                acpi->SetPower(pid);
                 fan_conf->Save();
             } break;
-            case IDM_SETTINGS_STARTMINIMIZED:
-            {
-                fan_conf->startMinimized = !fan_conf->startMinimized;
-                CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
-                fan_conf->Save();
-            } break;
-            case IDC_BUT_RESET:
-            {
-                temp_block* cur = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
-                if (cur) {
-                    fan_block* fan = fan_conf->FindFanBlock(cur, fan_conf->lastSelectedFan);
-                    if (fan) {
-                        fan->points = {{0,0},{100,100}};
-                        DrawFan();
-                    }
-                }
-            } break;
-            default:
-                return DefWindowProc(hDlg, message, wParam, lParam);
             }
+        } break;
+        case IDC_BUT_MINIMIZE:
+            ShowWindow(fanWindow, SW_HIDE);
+            ShowWindow(hDlg, SW_HIDE);
+            break;
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
+            break;
+        case IDC_BUT_CLOSE: case IDM_EXIT:
+            SendMessage(hDlg, WM_CLOSE, 0, 0);
+            break;
+        case IDM_SETTINGS_STARTWITHWINDOWS:
+        {
+            fan_conf->startWithWindows = !fan_conf->startWithWindows;
+            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
+            char pathBuffer[MAX_PATH];
+            string shellcomm;
+            if (fan_conf->startWithWindows) {
+                GetModuleFileName(NULL, pathBuffer, MAX_PATH);
+                shellcomm = "Register-ScheduledTask -TaskName \"AlienFan-GUI\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
+                    + string(pathBuffer) + "') -force -RunLevel Highest";
+                ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
+            } else {
+                shellcomm = "/delete /F /TN \"AlienFan-GUI\"";
+                ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
+            }
+            fan_conf->Save();
+        } break;
+        case IDM_SETTINGS_STARTMINIMIZED:
+        {
+            fan_conf->startMinimized = !fan_conf->startMinimized;
+            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
+            fan_conf->Save();
+        } break;
+        case IDC_BUT_RESET:
+        {
+            temp_block *cur = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+            if (cur) {
+                fan_block *fan = fan_conf->FindFanBlock(cur, fan_conf->lastSelectedFan);
+                if (fan) {
+                    fan->points = {{0,0},{100,100}};
+                    DrawFan();
+                }
+            }
+        } break;
+        default:
+            return DefWindowProc(hDlg, message, wParam, lParam);
         }
-        break;
+    }
+    break;
     case WM_SIZE:
         if (wParam == SIZE_MINIMIZED) {
             // go to tray...
@@ -512,9 +515,9 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         GetWindowRect(hDlg, &cDlg);
         SetWindowPos(fanWindow, hDlg, cDlg.right, cDlg.top, 0, 0, SWP_NOSIZE | SWP_NOREDRAW | SWP_NOACTIVATE);
     } break;
-    case WM_APP + 1: {
-        switch (lParam)
-        {
+    case WM_APP + 1:
+    {
+        switch (lParam) {
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
             ShowWindow(hDlg, SW_RESTORE);
@@ -523,7 +526,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             ShowWindow(fanWindow, SW_RESTORE);
             DrawFan();
             break;
-        case WM_RBUTTONUP: case WM_CONTEXTMENU: {
+        case WM_RBUTTONUP: case WM_CONTEXTMENU:
+        {
             SendMessage(hDlg, WM_CLOSE, 0, 0);
         } break;
         case NIN_BALLOONUSERCLICK:
@@ -532,6 +536,12 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         } break;
         }
         break;
+    } break;
+    case WM_HOTKEY: {
+        if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
+            fan_conf->lastProf->powerStage = (DWORD)wParam - 20;
+            acpi->SetPower(fan_conf->lastProf->powerStage);
+        }
     } break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {

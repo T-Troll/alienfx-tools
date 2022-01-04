@@ -257,10 +257,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		RegisterHotKey( mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10 );
 		RegisterHotKey( mDlg, 3, 0, VK_F18 );
 		RegisterHotKey( mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
-		//effect change hotkeys...
+		//profile change hotkeys...
 		for (int i = 0; i < 9; i++)
-			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x31 + i);
-
+			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x31 + i); // 1,2,3...
+		//power mode hotkeys
+		for (int i = 0; i < 6; i++)
+			RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
@@ -950,6 +952,16 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		delete conf;
 		return 0;
 	case WM_HOTKEY:
+		if (wParam > 9 && wParam < 19 && wParam - 10 < conf->profiles.size()) {
+			eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
+			ReloadProfileList();
+			break;
+		}
+		if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
+			conf->fan_conf->lastProf->powerStage = (DWORD)wParam - 20;
+			acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+			break;
+		}
 		switch (wParam) {
 		case 1: // on/off
 			conf->lightsOn = !conf->lightsOn;
@@ -973,12 +985,18 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->ToggleEvents();
 			ComboBox_SetCurSel(mode_list, conf->GetEffect());
 			break;
-		case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // profile switch
-			if (wParam - 10 < conf->profiles.size()) {
-				eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
-				ReloadProfileList();
-			}
-			break;
+		//case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // profile switch
+		//	if (wParam - 10 < conf->profiles.size()) {
+		//		eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
+		//		ReloadProfileList();
+		//	}
+		//	break;
+		//case 20: case 21: case 22: case 23: case 24: case 25: case 16: case 17: case 18: // profile switch
+		//	if (wParam - 10 < conf->profiles.size()) {
+		//		eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
+		//		ReloadProfileList();
+		//	}
+		//	break;
 		case 5: // profile autoswitch
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
