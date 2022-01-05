@@ -1,6 +1,6 @@
 #pragma once
 
-#define NUM_DEVICES 5
+#define NUM_DEVICES 6
 
 namespace AlienFan_SDK {
 	static const ALIENFAN_CONTROL dev_controls[2]{
@@ -88,7 +88,15 @@ namespace AlienFan_SDK {
 			1, // controlID
 			0x10,   2, // Probe command
 		},
-		{ // Alienware 13R2
+		{ // Area 51R4
+			"\\_SB.WMI2.WMAX", // main command
+			//-1, // Error code
+			100, // Max. boost
+			true, // command controlled
+			1, // controlID
+			0x10,   2, // Probe command
+		},
+		{ // Alienware 13R2, 15R2
 			"\\_SB.AMW0.WMBC", // main command
 			//0, // Error code
 			99, // Max. boost

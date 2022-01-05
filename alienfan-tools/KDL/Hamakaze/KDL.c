@@ -132,7 +132,7 @@ LoadKernelDriver(
         hvciEnabled,
         osv.dwBuildNumber,
         6, // Provider number
-        3, //3, // ShellCode version
+        3, // ShellCode version
         DriverName,
         DriverDevice,
         DriverDevice // Registry path

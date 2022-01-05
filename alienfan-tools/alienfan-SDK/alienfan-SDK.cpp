@@ -198,18 +198,18 @@ namespace AlienFan_SDK {
 							string name;
 							int sIndex = fIndex - firstSenIndex;
 							// Check temperature, disable if -1
-							//if (RunMainCommand(dev_controls[cDev].getTemp, (byte) funcID) > 0) {
+							if (RunMainCommand(dev_controls[cDev].getTemp, (byte) funcID) > 0) {
 								if (sIndex < temp_names.size()) {
 									name = temp_names[sIndex];
 								} else
 									name = "Sensor #" + to_string(sIndex);
 								sensors.push_back({(short) funcID, name, true});
-							//}
+							}
 							fIndex++;
 						} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
-								 && funcID < 0x1A0 && funcID > 0);
+								 && funcID < 0x1A0);
 						//printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
-						if (aDev != 3) {
+						if (aDev != 3 && funcID > 0) {
 							do {
 								// Power modes.
 								powers.push_back(funcID & 0xff);
@@ -222,7 +222,7 @@ namespace AlienFan_SDK {
 						case 2: // for G5 - hidden performance boost
 							powers.push_back(0xAB);
 							break;
-						case 3: // for Aurora R7 - powers is 1..2
+						case 3: case 4: // for Aurora R7 and Area 51 - powers is 1..2
 							powers.push_back(1);
 							powers.push_back(2);
 							break;
