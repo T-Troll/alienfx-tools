@@ -66,7 +66,7 @@ DriverInit(
 	_In_  struct _DRIVER_OBJECT* DriverObject,
 	_In_  PUNICODE_STRING RegistryPath
 ) {
-	NTSTATUS        status;
+	//NTSTATUS        status;
 	UNICODE_STRING  drvName;
 
 	/* This parameters are invalid due to nonstandard way of loading and should not be used. */
@@ -76,16 +76,16 @@ DriverInit(
 	DebugPrint(("HWACC: Init, Calling entry point..."));
 
 	RtlInitUnicodeString(&drvName, NT_DEVICE_NAME);
-	status = IoCreateDriver(&drvName, &DriverEntry);
+	//status = IoCreateDriver(&drvName, &DriverEntry);
 
-	return status;
+	return IoCreateDriver(&drvName, &DriverEntry); //status;
 }
 #endif
 
 NTSTATUS
 DriverEntry(
-	__in PDRIVER_OBJECT   DriverObject,
-	__in PUNICODE_STRING  RegistryPath
+	_In_ PDRIVER_OBJECT   DriverObject,
+	_In_ PUNICODE_STRING  RegistryPath
 )
 /*++
 
@@ -118,10 +118,7 @@ Return Value:
 	RtlInitUnicodeString(&ntUnicodeString, NT_DEVICE_NAME);
 	//RtlInitUnicodeString(&ntWin32NameString, DOS_DEVICE_NAME);
 
-	//DbgBreakPoint ();
 	DebugPrint(("HWACC: Entry Point"));
-
-	//
 
 	ntStatus = IoCreateDevice(
 		DriverObject,                   // Our Driver Object
@@ -170,13 +167,6 @@ Return Value:
 	DriverObject->DriverUnload = UnloadDriver;
 #endif
 
-	//
-	// Initialize a Unicode String containing the Win32 name
-	// for our device.
-	//
-
-	//RtlInitUnicodeString(&ntWin32NameString, DOS_DEVICE_NAME);
-
 	DebugPrint(("HWACC: Init done\n"));
 
 	return ntStatus;
@@ -184,8 +174,8 @@ Return Value:
 
 NTSTATUS
 CreateClose(
-	PDEVICE_OBJECT DeviceObject, //__in PDEVICE_OBJECT DeviceObject,
-	PIRP Irp //__in PIRP Irp
+	_In_ PDEVICE_OBJECT DeviceObject, //__in PDEVICE_OBJECT DeviceObject,
+	_In_ PIRP Irp //__in PIRP Irp
 )
 /*++
 
@@ -313,8 +303,8 @@ Return Value:
 
 NTSTATUS
 DeviceControl(
-	PDEVICE_OBJECT DeviceObject, // was _in
-	PIRP pIrp
+	_In_ PDEVICE_OBJECT DeviceObject,
+	_Inout_ PIRP pIrp
 )
 
 /*++

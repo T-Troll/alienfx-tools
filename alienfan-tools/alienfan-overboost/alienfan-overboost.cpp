@@ -73,7 +73,7 @@ void CheckFanOverboost(short num) {
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-Overboost v1.6.2.0\n");
+    printf("AlienFan-Overboost v1.7.0\n");
     printf("Usage: AlienFan-Overboost [fan ID [Manual boost]]\n");
 
     conf = new ConfigHelper();

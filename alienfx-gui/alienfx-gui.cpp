@@ -991,7 +991,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		//		ReloadProfileList();
 		//	}
 		//	break;
-		//case 20: case 21: case 22: case 23: case 24: case 25: case 16: case 17: case 18: // profile switch
+		//case 20: case 21: case 22: case 23: case 24: case 25: // profile switch
 		//	if (wParam - 10 < conf->profiles.size()) {
 		//		eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
 		//		ReloadProfileList();
