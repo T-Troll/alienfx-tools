@@ -63,10 +63,10 @@ void EventHandler::ChangePowerState()
 			break;
 		}
 	}
-	if (!sameState) {
+	if (!sameState && conf->dimmedBatt) {
 		DebugPrint("Power state changed\n");
 		fxh->ChangeState();
-		fxh->Refresh();
+		fxh->RefreshState();
 	}
 }
 

@@ -458,7 +458,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 						// new version detected!
 						niData->uFlags |= NIF_INFO;
 						strcpy_s(niData->szInfoTitle, "Update avaliable!");
-						strcpy_s(niData->szInfo, ("Version " + res + " detected as a recent.").c_str());
+						strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
 						Shell_NotifyIcon(NIM_MODIFY, niData);
 						niData->uFlags &= ~NIF_INFO;
 						isNewVersion = true;

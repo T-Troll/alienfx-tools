@@ -350,8 +350,9 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
     HINTERNET session, req;
     char buf[2048];
     DWORD byteRead;
+    Sleep(10000);
     if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
-        if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfan-tools/tags?per_page=1",
+        if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
                                   NULL, 0, 0, NULL)) {
             if (InternetReadFile(req, buf, 2047, &byteRead)) {
                 buf[byteRead] = 0;
@@ -366,7 +367,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
                     // new version detected!
                     niData->uFlags |= NIF_INFO;
                     strcpy_s(niData->szInfoTitle, "Update avaliable!");
-                    strcpy_s(niData->szInfo, ("Version " + res + " released at GitHub.").c_str());
+                    strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
                     Shell_NotifyIcon(NIM_MODIFY, niData);
                     niData->uFlags &= ~NIF_INFO;
                 }
@@ -471,7 +472,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             string shellcomm;
             if (fan_conf->startWithWindows) {
                 GetModuleFileName(NULL, pathBuffer, MAX_PATH);
-                shellcomm = "Register-ScheduledTask -TaskName \"AlienFan-GUI\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
+                shellcomm = "Register-ScheduledTask -TaskName \"AlienFan-GUI\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
                     + string(pathBuffer) + "') -force -RunLevel Highest";
                 ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
             } else {
@@ -532,7 +533,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         } break;
         case NIN_BALLOONUSERCLICK:
         {
-            ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfan-tools/releases", NULL, NULL, SW_SHOWNORMAL);
+            ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
         } break;
         }
         break;
@@ -712,7 +713,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
             case NM_CLICK:
             case NM_RETURN:
-                ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfan-tools", NULL, NULL, SW_SHOWNORMAL);
+                ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
                 break;
             } break;
         }

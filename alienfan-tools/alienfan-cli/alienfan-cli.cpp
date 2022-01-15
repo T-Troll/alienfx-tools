@@ -20,9 +20,9 @@ void Usage() {
     printf("Usage: alienfan-cli [command[=value{,value}] [command...]]\n\
 Avaliable commands: \n\
 usage, help\t\t\tShow this usage\n\
-rpm\t\t\t\tShow fan(s) RPM\n\
-persent\t\t\t\tShow fan(s) RPM in perecent of maximum\n\
-temp\t\t\t\tShow known temperature sensors values\n\
+rpm[=id]\t\t\tShow fan(s) RPM\n\
+persent[=id]\t\t\tShow fan(s) RPM in perecent of maximum\n\
+temp[=id]\t\t\tShow known temperature sensors values\n\
 unlock\t\t\t\tUnclock fan controls\n\
 getpower\t\t\tDisplay current power state\n\
 setpower=<value>\t\tSet TDP to this level\n\
@@ -44,7 +44,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v1.7.0\n");
+    printf("AlienFan-cli v5.4.5.1\n");
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -90,31 +90,42 @@ int main(int argc, char* argv[])
                 }
                 if (command == "rpm" && supported) {
                     int rpms = 0;
-                    for (int i = 0; i < acpi->HowManyFans(); i++)
-                        if ((rpms = acpi->GetFanRPM(i)) >= 0)
-                            printf("Fan#%d: %d\n", i, rpms);
-                        else {
-                            printf("RPM reading failed!\n");
-                            break;
-                        }
+                    if (args.size() > 0 && atoi(args[0].c_str()) < acpi->HowManyFans()) {
+                        printf("%d\n", acpi->GetFanRPM(atoi(args[0].c_str())));
+                    } else {
+                        for (int i = 0; i < acpi->HowManyFans(); i++)
+                            if ((rpms = acpi->GetFanRPM(i)) >= 0)
+                                printf("Fan#%d: %d\n", i, rpms);
+                            else {
+                                printf("RPM reading failed!\n");
+                                break;
+                            }
+                    }
                     continue;
                 }
                 if (command == "percent" && supported) {
                     int prms = 0;
-                    for (int i = 0; i < acpi->HowManyFans(); i++)
-                        if ((prms = acpi->GetFanPercent(i)) >= 0)
-                            printf("Fan#%d: %d%%\n", i ,prms);
-                        else {
-                            printf("RPM percent reading failed!\n");
-                            break;
-                        }
+                    if (args.size() > 0 && atoi(args[0].c_str()) < acpi->HowManyFans()) {
+                        printf("%d\n", acpi->GetFanPercent(atoi(args[0].c_str())));
+                    } else {
+                        for (int i = 0; i < acpi->HowManyFans(); i++)
+                            if ((prms = acpi->GetFanPercent(i)) >= 0)
+                                printf("Fan#%d: %d%%\n", i, prms);
+                            else {
+                                printf("RPM percent reading failed!\n");
+                                break;
+                            }
+                    }
                     continue;
                 }
                 if (command == "temp" && supported) {
                     int res = 0;
-                    for (int i = 0; i < acpi->sensors.size(); i++) {
-                        //if ((res = acpi->GetTempValue(i)) >= 0)
+                    if (args.size() > 0 && atoi(args[0].c_str()) < acpi->HowManySensors()) {
+                        printf("%d\n", acpi->GetTempValue(atoi(args[0].c_str())));
+                    } else {
+                        for (int i = 0; i < acpi->HowManySensors(); i++) {
                             printf("%s: %d\n", acpi->sensors[i].name.c_str(), acpi->GetTempValue(i));
+                        }
                     }
                     continue;
                 }
@@ -130,10 +141,6 @@ int main(int argc, char* argv[])
                     BYTE unlockStage = atoi(args[0].c_str());
                     if (unlockStage < acpi->HowManyPower()) {
                         printf("Power set to %d (result %d)\n", unlockStage, acpi->SetPower(unlockStage));
-                        //if (acpi->SetPower(unlockStage) != acpi->GetErrorCode())
-                        //    printf("Power set to %d\n", unlockStage);
-                        //else
-                        //    printf("Power set failed!\n");
                     } else
                         printf("Power: incorrect value (should be 0..%d\n", acpi->HowManyPower());
                     continue;
