@@ -55,11 +55,10 @@ namespace AlienFX_SDK {
 	}
 
 	bool Functions::PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> *mods) {
-		byte buffer[MAX_BUFFERSIZE]{0};
+		byte buffer[MAX_BUFFERSIZE];
 		DWORD written;
 
-		if (version == API_L_V6)
-			FillMemory(buffer, MAX_BUFFERSIZE, 0xff);
+		FillMemory(buffer, MAX_BUFFERSIZE, version == API_L_V6 ? 0xff : 0);
 
 		memcpy(&buffer[1], command, size);
 		buffer[0] = reportID;
@@ -122,7 +121,7 @@ namespace AlienFX_SDK {
 		return true;
 	}
 
-	//Use this method for general devices, pid = -1 for full scan
+	//Use this method for general devices, vid = 0 for any vid, pid = -1 for any pid. Do not use at the same time!
 	int Functions::AlienFXInitialize(int vid, int pidd) {
 		GUID guid;
 		bool flag = false;

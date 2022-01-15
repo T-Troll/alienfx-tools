@@ -25,7 +25,7 @@ namespace AlienFX_SDK {
     #define ALIENFX_V5_WAITUPDATE 0x80
     #define ALIENFX_V5_INCOMMAND 0xcc
 
-	// Length by API version:
+	// API version (was length):
     #define API_L_ACPI 0 //128
     #define API_L_V7 7 //65
     #define API_L_V6 6 //65
@@ -148,67 +148,68 @@ namespace AlienFX_SDK {
 		// Switch to other AlienFX device
 		bool AlienFXChangeDevice(int vid, int pid, HANDLE acc = NULL);
 
-		//Enable/Disable all lights (or just prepare to set)
+		// Prepare to set lights
 		bool Reset();
 
+		// Comand separator for some APIs
 		void Loop();
 
+		// false - not ready, true - ready, 0xff - stalled
 		BYTE IsDeviceReady();
 
+		// basic color set with ID index for current device. loop - does it need loop command after?
 		bool SetColor(unsigned index, Colorcode c, bool loop = true);
 
-		// Set multipy lights to the same color. This only works for new API devices, and emulated at old ones.
-		// numLights - how many lights need to be set
-		// lights - pointer to array of light IDs need to be set.
+		// Set multipy lights to the same color. This only works for new API devices, and emulated for old ones.
+		// lights - pointer to vector of light IDs need to be set.
+		// c - color to set (brightness ignored)
 		bool SetMultiLights(vector<byte> *lights, Colorcode c);
 
 		// Set multipy lights to different color.
-		// size - how many lights
-		// lights - pointer to array of light IDs need to be set (should be "size")
-		// act - array of light colors set (should be "size)
-		// store - need to save solors into device memory (v1-v3)
+		// act - pointer to vector of light control blocks
+		// store - need to save settings into device memory (v1-v4)
 		bool SetMultiColor(vector<act_block> *act, bool store = false);
 
 		// Set color to action
-		// action - action type (see enum above)
-		// time - how much time to keep action (0-255)
-		// tempo - how fast to do evolution (f.e. pulse - 0-255) 
-		// It can possible to mix 2 actions in one (useful for morph), in this case use action2...Blue2
+		// act - pointer to light control block
 		bool SetAction(act_block *act);
-			//int action, int time, int tempo, int Red, int Green, int Blue, int action2 = AlienFX_A_NoAction, int time2 = 0, int tempo2=0, int Red2 = 0, int Green2 = 0, int Blue2 = 0);
 
-		// Set action for Power button
-		// For now, settings as a default of AWCC, but it possible to do it more complex
+		// Set action for Power button and store other light colors as default
+		// act - pointer to vector of light control blocks
 		bool SetPowerAction(vector<act_block> *act);
 
-		// Hardware enable/disable lights
-		// newState - on/off
-		// mappings - needed to keep some lights on
-		// power - if true, power and indicator lights will be set on/off too
+		// Hardware enable/disable/dim lights
+		// brightness - desired brightness (0 - off, 255 - full)
+		// mappings - needed to enable some lights for v1-v4 and for software emulation
+		// power - if true, power and indicator lights will be set too
 		bool ToggleState(BYTE brightness, vector <mapping*>* mappings, bool power);
 
+		// Global (whole device) effect control for APIv5
 		bool SetGlobalEffects(byte effType, byte tempo, afx_act act1, afx_act act2);
 
 		// return current device state
 		BYTE AlienfxGetDeviceStatus();
 
+		// Next command delay for APIv1-v3
 		BYTE AlienfxWaitForReady();
 
+		// After-reset delay for APIv1-v3
 		BYTE AlienfxWaitForBusy();
 
 		// Apply changes and update colors
 		bool UpdateColors();
 
-		// get PID in use
+		// get PID for current device
 		int GetPID();
 
-		// get VID in use
+		// get VID for current device
 		int GetVid();
 
-		// get version for current device
+		// get API version for current device
 		int GetVersion();
 	};
 
+	// Single device data - IDs, types, name, lights
 	struct afx_device {
 		Functions *dev;
 		devmap *desc;
@@ -217,10 +218,9 @@ namespace AlienFX_SDK {
 
 	class Mappings {
 	private:
-		// Name mappings for lights
-		vector <mapping*> mappings;
-		vector <devmap> devices;
-		vector <group> groups;
+		vector <mapping*> mappings; // Lights data for all devices
+		vector <devmap> devices; // Device data found/present in system
+		vector <group> groups; // Defined light groups
 
 	public:
 
@@ -228,10 +228,10 @@ namespace AlienFX_SDK {
 
 		~Mappings();
 
-		// Enum alienware devices
+		// Enum all alienware devices into the system
 		vector<pair<WORD,WORD>> AlienFXEnumDevices();
 
-		// Load device data and assign it to structure
+		// Load device data and assign it to structure, as well as init devices and set brightness
 		void AlienFXAssignDevices(HANDLE acc = NULL, byte brightness=255, byte power=false);
 
 		// load light names from registry
@@ -249,12 +249,13 @@ namespace AlienFX_SDK {
 		// get defined groups
 		vector <group>* GetGroups();
 
+		// get device structure by PID (devID)/VID
 		devmap* GetDeviceById(WORD devID, WORD vid = 0);
 
-		// find mapping by dev/light it...
+		// find light mapping by PID (or PID/VID) and light ID
 		mapping* GetMappingById(DWORD devID, WORD LightID);
 
-		// find mapping by dev/light it...
+		// find light group by it's ID
 		group* GetGroupById(DWORD gid);
 
 		// add new light name into the list field-by-field
@@ -263,10 +264,10 @@ namespace AlienFX_SDK {
 		// Add new group into the list field-by-field
 		//void AddGroup(DWORD gID, char* name, int lightNum, DWORD* lightlist);
 
-		// get saved light names
+		// get light flags (Power, indicator) by PID/VID and light ID
 		int GetFlags(DWORD devid, WORD lightid);
 
-		// get saved light names
+		// set light flags (Power, indicator) by PID/VID and light ID
 		void SetFlagsById(DWORD devid, WORD lightid, WORD flags);
 	};
 
