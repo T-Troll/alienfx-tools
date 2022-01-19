@@ -1,6 +1,6 @@
 ## `alienfan-gui`
 
-![alienfan-gui](/img/alienfan.png?raw=true)
+![alienfan-gui](/Doc/img/alienfan.png?raw=true)
 
 GUI application for fan control.  
 Then you start it, you will see 2 main windows - Temperaturs (with current readings) and Fans (with checkboxes and current RPM), as well as separate Fan curve (graph).  
