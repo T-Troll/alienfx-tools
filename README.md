@@ -1,35 +1,47 @@
 # Alienfx tools
 AWCC don't needed anymore - here are light weighted tools for Alienware systems lights,fans,power profile control:
 - [AlienFX Control](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights (including hardware and software effects such as system parameters monitoring, ambient lights, sound haptic), fans, temperatures, power settings and a lot more.
-- [alienfx-cli](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command line interface).
+- [AlienFX-CLI](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command line interface).
 - [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Support all Dell's API functions using my low-level SDK.
-- [alienfx-probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name it for using into other applications.
+- [AlienFX-Probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name it for using into other applications.
+- [AlienFan GUI control](/Doc/alienfan-gui.md) - simple fan and power control utility. Set you fan parameters according to any system temperature sensor, switch system power modes...
+- [AlienFan-CLI](/Doc/alienfan-cli.md) - Command line interface tool for control fans (and lights for some systems) as well as some power settings from command line.
+- [AlienFan-Overboost](/Doc/alienfan-overboost.md) - CLI tool for manual/automatic fan overboost (set higher RPM that BIOS suggest).  
 
-Some additional tools added from my other [`Alienfan-tools`](https://github.com/T-Troll/alienfan-tools) project:
-- Alienfan GUI control - simple fan and power control utility. Set you fan parameters according to any system temperature sensor, switch system power modes...
-- Alienfan CLI - Command line interface tool for control fans and power from command line.
-- Alienfan Overboost - CLI tool for manual/automatic fan overboost (set higher RPM that BIOS suggest).  
-Readme is avaliable [here](https://github.com/T-Troll/alienfan-tools).
+## How it works?
+
+Light control tools work with USB/ACPI hardware device directly, it doesn't require some other tools/drivers installed.
+- It's way more fast. For older systems, change rate can be up to 20cps, for modern up to 120cps.
+- It's flexible. I can use some uncommon calls to set wider range of effects and modes.
+- Group lights, create light/fan Profiles for different situations, switch them by runing games/applications.
+
+But instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tools does not use direct EC (Embed controller) access and data modification.  
+It utilize propietary Alienware function calls inside ACPI BIOS (the same as AWCC).
+- It's more safe - BIOS still monitor fans and have no risk fans will be stopped at full load.
+- It's more universal - Most Alienware systems have the same interface.
+- In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control at all.
+
 
 ## Disclaimer
 Starting from the release 4.2.1, **Antiviruses can detect virus into project package**.  
-It's not a virus, in fact, but the kernel hack for load driver. You should add `HwAcc.sys`, `kdl.dll` and `drv64.dll` into antivirus excetion list or do not use fan control.
+It's not a virus, in fact, but the kernel hack for load driver. You should add `HwAcc.sys`, `kdl.dll` and `drv64.dll` into antivirus exception list or do not use fan control (light control wiil work without this files).
 
 ## Requirements
-- Alienware light device present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
-- Windows 10 v1803 or later (binary files for 64-bit only, but you can compile project for 32-bit as well).
-- `alienfan-gui` and `alienfan-cli` always require Administrator rights to work (for communication with hardware).
+- Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
+- Windows 10 v1903 or later (binary files for 64-bit only, but you can compile project for 32-bit as well).
+- `alienfan-gui`, `-cli` and `-overboost` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` requre Administrator rights in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privilegy)
   - "Esif temperature" selected (access to ESIF values blocked from user account)
   - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
+- The rest of `alienfx-` tools does not require Administrator and can be run at any level.
+- All tools doesn not require internet connection, but `alienfan-gui` and `alienfx-gui` will connect to GitHub server for update check if connection avaliable.
 
 ## Installation
 - Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
 - (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes doesn't require it, so you need it in case if you plan to use `Ambient` effects only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
-- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, any of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version. 
-- (Optional) If you plan to use `alienfx-gui` fan control or any of Aliefan tools, check [alienfan readme](https://github.com/T-Troll/alienfan-tools) for possible configuration alternatives.
+- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version. 
 - Unpack the archive to any directory of your choise or just run installer.  
 - After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
 
@@ -37,14 +49,16 @@ Run any tool you need from this folder or start menu!
 
 ## Supported hardware:
 
-Virtually any Alienware/Dell G-series notebook and desktop.  
+Light control: Virtually any Alienware/Dell G-series notebook and desktop, some Alienware mouses. Monitor support in progress.
+Fan control: Modern Alienware/Dell G-Series notebooks (any m-series, x-series, Area51m), Aurora R7 desktop and later models, some older notebooks (13R2 and compatible).
+
 Project Wiki have [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).  
-If your device not supported, you can [help me to support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).
+If your device not supported, you can [help me to support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).  
+For fan control - Send me ACPI dump from [RW Everything](http://rweverything.com/) for analysis.
 
 ## Known issues
-- Some High-level (Dell) SDK functions can not work as designed. This may be fixed in upcoming AWCC updates. It's not an `alienfx-cli` bug.
-- Hardware light effects breathing, spectrum, rainbow doesn't supported for older (APIv1-v3) devices.
-- Hardware light effects (and global effect) didn't work with software light effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
+- Hardware light effects breathing, spectrum, rainbow doesn't supported for older (APIv1-v3) and per-key RGB (APIv5) devices.
+- Hardware light effects (and global effect) didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
 - DirectX12 games didn't allow to access GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
 - Using hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to "Devices" tab or quit with visible delay.
 - **WARNING!** Strongly recommended to stop AWCCService if you plan to use `alienfx-gui` application with "Power Button"-related features. Keep it working can provide unexpected results up to light system freeze (for APIv4).
@@ -92,7 +106,11 @@ High-level API code and cli app is based on Kalbert312's [alienfx-cli](https://g
 Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
+ACPI driver based on kdshk's [WindowsHwAccess](https://github.com/kdshk/WindowsHwAccess).  
+Kernel loading hack based on hfiref0x's [KDU](https://github.com/hfiref0x/KDU)  
+
+Special thanks to [DavidLapous](https://github.com/DavidLapous) for inspiration and advices!  
 Per-Key RGB devices testing and a lot of support by [rirozizo](https://github.com/rirozizo).  
 Aurora R7 testing by [Raoul Duke](https://github.com/raould).  
 Support for mouse and a lot of testing by [Billybobertjoe](https://github.com/Billybobertjoe)  
-Special thanks to [PhSMu](https://github.com/PhSMu) for ideas, testing and artwork.
+Special thanks to [PhSMu](https://github.com/PhSMu) for ideas, Dell G-series testing and artwork.

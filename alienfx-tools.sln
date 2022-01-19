@@ -40,6 +40,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-gui", "alienfan-to
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{C02B116D-3DDE-4326-B934-C192CCF0B368}"
 	ProjectSection(SolutionItems) = preProject
+		Doc\alienfan-cli.md = Doc\alienfan-cli.md
+		Doc\alienfan-gui.md = Doc\alienfan-gui.md
+		Doc\alienfan-overboost.md = Doc\alienfan-overboost.md
 		Doc\alienfx-cli.md = Doc\alienfx-cli.md
 		Doc\alienfx-gui.md = Doc\alienfx-gui.md
 		Doc\alienfx-probe.md = Doc\alienfx-probe.md

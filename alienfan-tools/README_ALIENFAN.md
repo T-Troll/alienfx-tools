@@ -1,6 +1,10 @@
 # alienfan-tools
 Utilities for fan and power, and sometimes lights control for Alienware and Dell G-series devices trough direct calls into ACPI BIOS.  
-This is the side step from my [alienfx-tools](https://github.com/T-Troll/alienfx-tools) project, dedicated to fan and power control subsystem.
+
+# **WARNING!**
+This repository will be not updated anymore, new versions published as a part of [alienfx-tools](https://github.com/T-Troll/alienfx-tools) project!
+
+---
 
 Tools avaliable:
 - `alienfan-cli` - simple fan control command line utility
