@@ -21,6 +21,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_09B1992F95E748E1845109AD2B634C5A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_0A00A47835A1465B951DE62EC59665E5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -28,6 +34,12 @@
         "Entry"
         {
         "MsmKey" = "8:_1AA38565231A40689F298FEBA8022EB6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3AE7CAAC94814B3090DEAE0C5F50265B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -75,13 +87,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
-        "OwnerKey" = "8:_B829425435A04EFB81D071102204D8B4"
+        "MsmKey" = "8:_94DD59AF152B4EC1B2EF22200F020B7E"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_94DD59AF152B4EC1B2EF22200F020B7E"
+        "MsmKey" = "8:_981E70E7906A47D493BC62ED49AF1096"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -100,12 +112,6 @@
         "Entry"
         {
         "MsmKey" = "8:_B829425435A04EFB81D071102204D8B4"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E9F4FBB09B4B4EFC8347065B33B3CE87"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -222,10 +228,50 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_09B1992F95E748E1845109AD2B634C5A"
+            {
+            "SourcePath" = "8:..\\Doc\\alienfan-gui.md"
+            "TargetName" = "8:alienfan-gui.md"
+            "Tag" = "8:"
+            "Folder" = "8:_F547A8D6D49C432390AEA0D6A0C1CA97"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0A00A47835A1465B951DE62EC59665E5"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-cli.md"
             "TargetName" = "8:alienfx-cli.md"
+            "Tag" = "8:"
+            "Folder" = "8:_F547A8D6D49C432390AEA0D6A0C1CA97"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3AE7CAAC94814B3090DEAE0C5F50265B"
+            {
+            "SourcePath" = "8:..\\Doc\\alienfan-cli.md"
+            "TargetName" = "8:alienfan-cli.md"
             "Tag" = "8:"
             "Folder" = "8:_F547A8D6D49C432390AEA0D6A0C1CA97"
             "Condition" = "8:"
@@ -282,32 +328,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8F3090BEFD2084C54DFF0BFAD98DA84F"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_981E70E7906A47D493BC62ED49AF1096"
             {
-            "SourcePath" = "8:SETUPAPI.dll"
-            "TargetName" = "8:SETUPAPI.dll"
+            "SourcePath" = "8:..\\Doc\\alienfan-overboost.md"
+            "TargetName" = "8:alienfan-overboost.md"
             "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E9F4FBB09B4B4EFC8347065B33B3CE87"
-            {
-            "SourcePath" = "8:..\\alienfan-tools\\README_ALIENFAN.md"
-            "TargetName" = "8:README_ALIENFAN.md"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Folder" = "8:_F547A8D6D49C432390AEA0D6A0C1CA97"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
