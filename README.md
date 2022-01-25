@@ -15,7 +15,7 @@ Light control tools work with USB/ACPI hardware device directly, it doesn't requ
 - It's flexible. I can use some uncommon calls to set wider range of effects and modes.
 - Group lights, create light/fan Profiles for different situations, switch them by runing games/applications.
 
-But instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tools does not use direct EC (Embed controller) access and data modification.  
+For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tools does not use direct EC (Embed controller) access and data modification.  
 It utilize propietary Alienware function calls inside ACPI BIOS (the same as AWCC).
 - It's more safe - BIOS still monitor fans and have no risk fans will be stopped at full load.
 - It's more universal - Most Alienware systems have the same interface.
