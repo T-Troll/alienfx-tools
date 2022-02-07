@@ -56,6 +56,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg{0};
 
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
+
     fan_conf = new ConfigHelper();
 
     acpi = new AlienFan_SDK::Control();

@@ -213,6 +213,7 @@
 #define IDC_FREQ_GROUP                  1121
 #define IDC_BUT_ADD_GROUP               1122
 #define IDC_BUT_REM_GROUP               1123
+#define IDC_FC_LABEL                    1123
 #define IDC_FROM_HAPTICS                1124
 #define IDC_TO_HAPTICS                  1125
 #define IDC_REM_HAPTICS                 1126
@@ -250,7 +251,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1123
+#define _APS_NEXT_CONTROL_VALUE         1124
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

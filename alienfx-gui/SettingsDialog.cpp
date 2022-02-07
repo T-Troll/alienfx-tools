@@ -124,6 +124,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (acpi->IsActivated() && acpi->Probe()) {
 					conf->fan_conf->SetBoosts(acpi);
 					eve->StartFanMon(acpi);
+					// check for ACPI lights
+					fxhl->UnblockUpdates(false);
+					fxhl->FillAllDevs(acpi);
+					fxhl->UnblockUpdates(true);
 				} else {
 					MessageBox(NULL, "Supported hardware not found. Fan control will be disabled!", "Error",
 								MB_OK | MB_ICONHAND);
@@ -136,6 +140,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				// Stop all fan services
 				if (acpi && acpi->IsActivated()) {
 					eve->StopFanMon();
+					fxhl->UnblockUpdates(false);
+					fxhl->FillAllDevs(NULL);
+					fxhl->UnblockUpdates(true);
 				}
 				delete acpi;
 				acpi = NULL;

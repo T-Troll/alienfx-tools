@@ -4,6 +4,7 @@
 #include <WTypesbase.h>
 #include <string>
 #include <SetupAPI.h>
+#include "..\AlienFX_SDK\alienfx-controls.h"
 
 extern "C" {
 #include <hidclass.h>
@@ -15,8 +16,8 @@ extern "C" {
 
 using namespace std;
 
-#define NUM_VIDS 4
-const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461};
+//#define NUM_VIDS 4
+//const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461};
 
 void CheckDevices(bool show_all) {
 	
@@ -65,7 +66,7 @@ void CheckDevices(bool show_all) {
 				if (HidD_GetAttributes(tdevHandle, attributes.get()))
 				{
 					for (unsigned i = 0; i < NUM_VIDS; i++) {
-						if (attributes->VendorID == vids[i]) {
+						if (attributes->VendorID == AlienFX_SDK::vids[i]) {
 
 							PHIDP_PREPARSED_DATA prep_caps;
 							HIDP_CAPS caps;
@@ -80,29 +81,32 @@ void CheckDevices(bool show_all) {
 							case 0:
 							{
 								switch (caps.Usage) {
-								case 0xcc: apiver = "RGB, APIv5"; break;
+								case 0xcc: apiver = "RGB keyboard, APIv5"; break;
 								default: supported = false; apiver = "Unknown.";
 								}
 							} break;
 							case 8:
-								apiver =  "APIv1";
+								apiver =  "Notebook, APIv1";
 								break;
 							case 9:
-								apiver =  "APIv2";
+								apiver =  "Notebook, APIv2";
 								break;
 							case 12:
-								apiver = "APIv3";
+								apiver = "Notebook, APIv3";
 								break;supported = true;
 							case 34:
-								apiver = "APIv4";
+								apiver = "Notebook/Desktop, APIv4";
 								break;
 							case 65:
 								switch (i) {
 								case 2:
-									apiver =  "APIv6";
+									apiver =  "Monitor, APIv6";
 									break;
 								case 3:
-									apiver =  "APIv7";
+									apiver =  "Mouse, APIv7";
+									break;
+								case 4:
+									apiver =  "Keyboard, APIv8";
 									break;
 								}
 								break;
@@ -111,7 +115,7 @@ void CheckDevices(bool show_all) {
 
 							if (show_all || supported) {
 
-								printf("===== New device VID_%04x, PID_%04x =====\n", attributes->VendorID, attributes->ProductID);
+								printf("===== Device VID_%04x, PID_%04x =====\n", attributes->VendorID, attributes->ProductID);
 								printf("Version %d, blocksize %d\n", attributes->VersionNumber, attributes->Size);
 
 								printf("Report Lengths: Output %d, Input %d, Feature %d\n", caps.OutputReportByteLength,
@@ -127,6 +131,7 @@ void CheckDevices(bool show_all) {
 								case 1: printf("DARFON,"); break;
 								case 2: printf("Microchip,"); break;
 								case 3: printf("Primax,"); break;
+								case 4: printf("Chicony,"); break;
 								}
 
 								printf(" %s +++++\n", apiver.c_str());

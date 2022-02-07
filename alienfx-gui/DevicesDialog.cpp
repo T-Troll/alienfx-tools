@@ -274,7 +274,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_COMMAND: {
 		//int dbItem = ComboBox_GetCurSel(dev_list),
 		//	did = (int)ComboBox_GetItemData(dev_list, dbItem);
-		WORD dPid = fxhl->afx_dev.fxdevs[dIndex].desc->devid;
+		WORD dPid = dIndex < 0 ? 0 : fxhl->afx_dev.fxdevs[dIndex].desc->devid;
 		switch (LOWORD(wParam))
 		{
 		case IDC_DEVICES:
