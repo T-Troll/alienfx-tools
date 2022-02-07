@@ -1,8 +1,8 @@
 # Alienfx tools
-AWCC don't needed anymore - here are light weighted tools for Alienware systems lights,fans,power profile control:
+AWCC don't needed anymore - here are light weighted tools for Alienware systems lights, fans, power profile control:
 - [AlienFX Control](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control you system lights (including hardware and software effects such as system parameters monitoring, ambient lights, sound haptic), fans, temperatures, power settings and a lot more.
 - [AlienFX-CLI](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command line interface).
-- [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Support all Dell's API functions using my low-level SDK.
+- [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Support all Dell's API functions using my low-level SDK. It can be used for any LightFX/AlienFX-compatible game.
 - [AlienFX-Probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name it for using into other applications.
 - [AlienFan GUI control](/Doc/alienfan-gui.md) - simple fan and power control utility. Set you fan parameters according to any system temperature sensor, switch system power modes...
 - [AlienFan-CLI](/Doc/alienfan-cli.md) - Command line interface tool for control fans (and lights for some systems) as well as some power settings from command line.
@@ -15,7 +15,7 @@ Light control tools work with USB/ACPI hardware device directly, it doesn't requ
 - It's flexible. I can use some uncommon calls to set wider range of effects and modes.
 - Group lights, create light/fan Profiles for different situations, switch them by runing games/applications.
 
-But instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tools does not use direct EC (Embed controller) access and data modification.  
+For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tools does not use direct EC (Embed controller) access and data modification.  
 It utilize propietary Alienware function calls inside ACPI BIOS (the same as AWCC).
 - It's more safe - BIOS still monitor fans and have no risk fans will be stopped at full load.
 - It's more universal - Most Alienware systems have the same interface.
@@ -49,7 +49,7 @@ Run any tool you need from this folder or start menu!
 
 ## Supported hardware:
 
-Light control: Virtually any Alienware/Dell G-series notebook and desktop, some Alienware mouses. Monitor support in progress.
+Light control: Virtually any Alienware/Dell G-series notebook and desktop, some Alienware mouses. Monitor support in progress.  
 Fan control: Modern Alienware/Dell G-Series notebooks (any m-series, x-series, Area51m), Aurora R7 desktop and later models, some older notebooks (13R2 and compatible).
 
 Project Wiki have [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).  
