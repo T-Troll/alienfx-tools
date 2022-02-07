@@ -208,6 +208,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
+	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
+
 	conf = new ConfigHandler();
 	conf->Load();
 	conf->SetStates();
@@ -292,13 +294,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	return 0;
 }
-
-//DLGTEMPLATE* DoLockDlgRes(LPCTSTR lpszResName)
-//{
-//	//HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG);
-//	//HGLOBAL hglb = LoadResource(hInst, FindResource(NULL, lpszResName, RT_DIALOG));
-//	return (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, lpszResName, RT_DIALOG)));
-//}
 
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
@@ -632,6 +627,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_INITDIALOG:
 	{
 		mDlg = hDlg;
+
 		DLGHDR *pHdr = (DLGHDR *) LocalAlloc(LPTR, sizeof(DLGHDR));
 		SetWindowLongPtr(tab_list, GWLP_USERDATA, (LONG_PTR)pHdr);
 

@@ -215,6 +215,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ReloadTempView(hDlg, conf->fan_conf->lastSelectedSensor);
             ReloadFanView(hDlg, conf->fan_conf->lastSelectedFan);
 
+            Static_SetText(GetDlgItem(hDlg, IDC_FC_LABEL), 
+                           ("Fan curve (scale: " + to_string(conf->fan_conf->boosts[conf->fan_conf->lastSelectedFan].maxBoost) + ")").c_str());
+
             // So open fan control window...
             fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
             SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
@@ -280,6 +283,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     if (lPoint->iItem != -1) {
                         // Select other fan....
                         conf->fan_conf->lastSelectedFan = lPoint->iItem;
+                        // Update label...
+                        Static_SetText(GetDlgItem(hDlg, IDC_FC_LABEL), 
+                                       ("Fan curve (scale: " + to_string(conf->fan_conf->boosts[conf->fan_conf->lastSelectedFan].maxBoost) + ")").c_str());
                         // Redraw fans
                         DrawFan();
                     }

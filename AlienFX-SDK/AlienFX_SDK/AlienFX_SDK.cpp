@@ -60,6 +60,13 @@ namespace AlienFX_SDK {
 
 		FillMemory(buffer, MAX_BUFFERSIZE, version == API_L_V6 ? 0xff : 0);
 
+		if (version == API_L_V8) {
+			// Neeed to send report before any command!
+			buffer[0] = reportID;
+			buffer[1] = 0x1;
+			int res = HidD_SetFeature(devHandle, buffer, length);
+		}
+
 		memcpy(&buffer[1], command, size);
 		buffer[0] = reportID;
 
@@ -71,7 +78,7 @@ namespace AlienFX_SDK {
 			return HidD_SetOutputReport(devHandle, buffer, length);
 		case API_L_V5:
 			return HidD_SetFeature(devHandle, buffer, length);
-		case API_L_V6:
+		case API_L_V6: case API_L_V8:
 			return WriteFile(devHandle, buffer, length, &written, NULL);
 		case API_L_V7:
 			WriteFile(devHandle, buffer, length, &written, NULL);
@@ -168,6 +175,7 @@ namespace AlienFX_SDK {
 
 								// Yes, now so easy...
 								length = caps.OutputReportByteLength;
+								reportID = 0;
 								switch (caps.OutputReportByteLength) {
 								case 0: 
 									length = caps.FeatureReportByteLength;
@@ -188,7 +196,6 @@ namespace AlienFX_SDK {
 									break;
 								case 34:
 									version = 4;
-									reportID = 0;
 									break;
 								case 65:
 									switch (attributes->VendorID) {
@@ -198,8 +205,11 @@ namespace AlienFX_SDK {
 									case 0x0461:
 										version = 7;
 										break;
+									case 0x04f2:
+										version = 8;
+										reportID = 5;
+										break;
 									}
-									reportID = 0;
 									break;
 								//default: length = caps.OutputReportByteLength;
 								}
@@ -297,6 +307,16 @@ namespace AlienFX_SDK {
 
 		if (inSet) {
 			switch (version) {
+			case API_L_V8:
+			{
+				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x10}});
+				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0xe0}});
+				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0x7}});
+				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x20}});
+				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0x10}});
+				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x80}});
+				res = PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x4d}});
+			} break;
 			//case API_L_V7:
 			//{
 			//	//PrepareAndSend(COMMV7.status, sizeof(COMMV7.status));
@@ -344,6 +364,10 @@ namespace AlienFX_SDK {
 			Reset();
 
 		switch (version) {
+		case API_L_V8:
+		{
+			val = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), {{15,(byte)index},{3,c.r},{4,c.g},{5,c.b}});
+		} break;
 		case API_L_V7:
 		{
 			PrepareAndSend(COMMV7.status, sizeof(COMMV7.status));

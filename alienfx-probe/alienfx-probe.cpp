@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 	int numlights = 23;
 	bool show_all = argc > 1 && string(argv[1]) == "-a";
 	char name[256]{0}, *outName;
-	printf("alienfx-probe v5.4.0.2\n");
+	printf("alienfx-probe v5.4.6\n");
 	printf("Checking USB light devices...\n");
 	CheckDevices(show_all);
 	printf("Do you want to set devices and lights names?");

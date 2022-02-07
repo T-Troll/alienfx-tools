@@ -15,8 +15,6 @@ FXHelper::FXHelper(ConfigHandler* conf) {
 };
 FXHelper::~FXHelper() {
 	Stop();
-	//for (auto Iter = afx_dev.fxdevs.begin(); Iter < afx_dev.fxdevs.end(); Iter++)
-	//	Iter->dev->AlienFXClose();
 	afx_dev.SaveMappings();
 };
 
@@ -567,13 +565,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
-							if (devQ->dev_query.size() > 0) {
-								dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
-								dev->dev->UpdateColors();
-								if (src->config->activeProfile && src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
-									src->UpdateGlobalEffect(dev->dev);
-								devQ->dev_query.clear();
-							}
+							if (dev->dev->GetVersion() == 5 && src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
+								src->UpdateGlobalEffect(dev->dev);
+							else
+								if (devQ->dev_query.size() > 0) {
+									dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
+									dev->dev->UpdateColors();							
+								}
+							devQ->dev_query.clear();
 						}
 					}
 					if (current.did == -1)
