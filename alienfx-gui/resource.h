@@ -38,12 +38,17 @@
 #define IDI_ALIENFXGUI                  132
 #define IDS_PWR                         132
 #define IDD_DIALOG_COLORS               133
+#define IDS_BOOST_OFF                   133
 #define IDD_DIALOG_EVENTS               134
+#define IDS_BOOST_ON                    134
 #define IDD_DIALOG_AMBIENT              135
 #define IDS_A_LOCALE                    135
 #define IDD_DIALOG_HAPTICS              136
+#define IDS_BOOST_AGGRESSIVE            136
 #define IDD_DIALOG_GROUPS               137
+#define IDS_BOOST_EFFICIENT             137
 #define IDD_DIALOG_PROFILES             138
+#define IDS_BOOST_EFFAGGR               138
 #define IDD_DIALOG_DEVICES              139
 #define IDD_DIALOG_FAN                  140
 #define IDD_DIALOG_SETTINGS             141
@@ -215,7 +220,9 @@
 #define IDC_BUT_REM_GROUP               1123
 #define IDC_FC_LABEL                    1123
 #define IDC_FROM_HAPTICS                1124
+#define IDC_AC_BOOST                    1124
 #define IDC_TO_HAPTICS                  1125
+#define IDC_DC_BOOST                    1125
 #define IDC_REM_HAPTICS                 1126
 #define IDC_FROM_FINAL                  1127
 #define IDC_TO_FINAL                    1128
@@ -251,7 +258,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1124
+#define _APS_NEXT_CONTROL_VALUE         1126
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

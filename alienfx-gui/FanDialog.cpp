@@ -1,5 +1,8 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include <powrprof.h>
+
+#pragma comment(lib, "PowrProf.lib")
 
 extern void SwitchTab(int);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
@@ -8,6 +11,10 @@ extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
 fan_point* lastFanPoint = NULL;
 HWND fanWindow = NULL;
+
+int pLid = -1;
+
+GUID* sch_guid, perfset;
 
 INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 
@@ -154,14 +161,18 @@ void ReloadPowerList(HWND hDlg, int id) {
     ComboBox_ResetContent(list);
     for (int i = 0; i < acpi->HowManyPower(); i++) {
         string name;
-        if (i)
-            name = "Level " + to_string(i);
+        if (i) {
+            auto pwr = conf->fan_conf->powers.find(acpi->powers[i]);
+            name = pwr != conf->fan_conf->powers.end() ? pwr->second : "Level " + to_string(i);
+        }
         else
             name = "Manual";
         int pos = ComboBox_AddString(list, (LPARAM)(name.c_str()));
         ComboBox_SetItemData(list, pos, i);
-        if (i == id)
+        if (i == id) {
             ComboBox_SetCurSel(list, pos);
+            pLid = pos;
+        }
     }
 }
 
@@ -211,6 +222,35 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         if (acpi && acpi->IsActivated()) {
 
+            // set PerfBoost lists...
+            HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
+                boost_dc = GetDlgItem(hDlg, IDC_DC_BOOST);
+            IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
+            PowerGetActiveScheme(NULL, &sch_guid);
+            DWORD acMode, dcMode;
+            PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
+            PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
+
+            char buffer[64];
+            LoadString(hInst, IDS_BOOST_OFF, buffer, 64);
+            ComboBox_AddString(boost_ac, buffer);
+            ComboBox_AddString(boost_dc, buffer);
+            LoadString(hInst, IDS_BOOST_ON, buffer, 64);
+            ComboBox_AddString(boost_ac, buffer);
+            ComboBox_AddString(boost_dc, buffer);
+            LoadString(hInst, IDS_BOOST_AGGRESSIVE, buffer, 64);
+            ComboBox_AddString(boost_ac, buffer);
+            ComboBox_AddString(boost_dc, buffer);
+            LoadString(hInst, IDS_BOOST_EFFICIENT, buffer, 64);
+            ComboBox_AddString(boost_ac, buffer);
+            ComboBox_AddString(boost_dc, buffer);
+            LoadString(hInst, IDS_BOOST_EFFAGGR, buffer, 64);
+            ComboBox_AddString(boost_ac, buffer);
+            ComboBox_AddString(boost_dc, buffer);
+
+            ComboBox_SetCurSel(boost_ac, acMode);
+            ComboBox_SetCurSel(boost_dc, dcMode);
+
             ReloadPowerList(hDlg, conf->fan_conf->lastProf->powerStage);
             ReloadTempView(hDlg, conf->fan_conf->lastSelectedSensor);
             ReloadFanView(hDlg, conf->fan_conf->lastSelectedFan);
@@ -243,17 +283,46 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         int wmId = LOWORD(wParam);
         // Parse the menu selections:
         switch (wmId) {
-        case IDC_COMBO_POWER:
-        {
-            int pItem = ComboBox_GetCurSel(power_list);
-            int pid = (int) ComboBox_GetItemData(power_list, pItem);
+        case IDC_AC_BOOST: case IDC_DC_BOOST: {
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
+                int cBst = ComboBox_GetCurSel(GetDlgItem(hDlg, wmId));
+                if (wmId == IDC_AC_BOOST)
+                    PowerWriteACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
+                else
+                    PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
+                PowerSetActiveScheme(NULL, sch_guid);
+            } break;
+            }
+        } break;
+        case IDC_COMBO_POWER:
+        {
+            switch (HIWORD(wParam)) {
+            case CBN_SELCHANGE:
+            {
+                pLid = ComboBox_GetCurSel(power_list);
+                int pid = (int)ComboBox_GetItemData(power_list, pLid);
                 conf->fan_conf->lastProf->powerStage = pid;
                 acpi->SetPower(pid);
                 conf->fan_conf->Save();
             } break;
+            case CBN_EDITCHANGE:
+            {
+                char buffer[MAX_PATH];
+                GetWindowTextA(power_list, buffer, MAX_PATH);
+                if (pLid > 0) {
+                    auto ret = conf->fan_conf->powers.emplace(acpi->powers[conf->fan_conf->lastProf->powerStage], buffer);
+                    if (!ret.second)
+                        // just update...
+                        ret.first->second = buffer;
+                    conf->fan_conf->Save();
+                    ComboBox_DeleteString(power_list, pLid);
+                    ComboBox_InsertString(power_list, pLid, buffer);
+                    ComboBox_SetItemData(power_list, pLid, conf->fan_conf->lastProf->powerStage);
+                }
+                break;
+            }
             }
         } break;
         case IDC_BUT_RESET:
@@ -359,7 +428,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_CLOSE: case WM_DESTROY:
         // Close curve window
         fanWindow = NULL;
-        if (acpi)
+        LocalFree(sch_guid);
+        if (eve->mon)
             eve->mon->fDlg = NULL;
         break;
     }

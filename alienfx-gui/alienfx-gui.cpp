@@ -214,17 +214,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf->Load();
 	conf->SetStates();
 
-	if (/*conf->activeProfile && */conf->activeProfile->flags & PROF_FANS)
-		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
-
 	// check fans...
+	if (conf->activeProfile->flags & PROF_FANS)
+		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
 	if (conf->fanControl) {
 		EvaluteToAdmin();
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->IsActivated() && acpi->Probe()) {
 			conf->fan_conf->SetBoosts(acpi);
-			acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-			acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+			//acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+			//acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 		} else {
 			//string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
 			MessageBox(NULL, "Fan control didn't start and will be disabled!", "Error",
@@ -956,6 +955,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
 			conf->fan_conf->lastProf->powerStage = (DWORD)wParam - 20;
 			acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+			if (tabSel == TAB_FANS)
+				OnSelChanged(tab_list);
 			break;
 		}
 		switch (wParam) {

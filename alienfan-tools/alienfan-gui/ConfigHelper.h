@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include "alienfan-sdk.h"
 
 using namespace std;
@@ -23,6 +24,8 @@ struct temp_block {
 struct fan_profile {
 	DWORD powerStage = 0;
 	DWORD GPUPower = 0;
+	//DWORD perfModeAC = 0;
+	//DWORD perfModeDC = 0;
 	vector<temp_block> fanControls;
 };
 
@@ -33,7 +36,7 @@ struct fan_overboost {
 
 class ConfigHelper {
 private:
-	HKEY   hKey1, hKey2;
+	HKEY keyMain, keySensors, keyPowers;
 	void GetReg(const char *name, DWORD *value, DWORD defValue = 0);
 	void SetReg(const char *text, DWORD value);
 public:
@@ -41,11 +44,11 @@ public:
 	DWORD lastSelectedSensor = -1;
 	DWORD startWithWindows = 0;
 	DWORD startMinimized = 0;
-	//DWORD maxRPM = 4000;
 
 	fan_profile* lastProf;
 	fan_profile prof;
 	vector<fan_overboost> boosts;
+	map<byte, string> powers;
 
 	ConfigHelper();
 	~ConfigHelper();

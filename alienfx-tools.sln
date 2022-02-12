@@ -23,7 +23,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{277F5C20-3D99-468F-9D00-B51EC647D372}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
-		alienfan-tools\README_ALIENFAN.md = alienfan-tools\README_ALIENFAN.md
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-LFX", "alienfx-LFX\alienfx-LFX.vcxitems", "{CC4108AE-D644-45F9-95AA-67940D0FBEDA}"

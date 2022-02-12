@@ -12,6 +12,7 @@ Avaliable commands:
 - `getpower` - Print current power mode
 - `setpower=<value>` - Set system-defined power level. Possible levels autodetected from ACPI, see message at app start 
 - `setgpu=<value>` - Set GPU power limit. Possible values from 0 (no limit) to 4 (max. limit).
+- `setperf=<ac>,<dc>` - Set CPU Performance boost for AC and battery to desired level. Performance boost can be in 0..4 - disabled, enabled, aggresive, efficient, efficient aggresive.
 - `getfans[=mode]` - Show current fan RPMs boost
 - `setfans=<fan1>,<fan2>...[,mode]` - Set fans RPM boost level (0..100 - in percent). Fan1 is for CPU fan, Fan2 for GPU one. Number of arguments should be the same as number of fans application detect
 - `resetcolor` - Reset color system
