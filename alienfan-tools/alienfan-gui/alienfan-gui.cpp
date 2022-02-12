@@ -11,6 +11,9 @@
 #include "alienfan-SDK.h"
 #include "ConfigHelper.h"
 #include "MonHelper.h"
+#include <powrprof.h>
+
+#pragma comment(lib, "PowrProf.lib")
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -35,6 +38,10 @@ fan_point* lastFanPoint = NULL;
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND toolTip = NULL;
 HWND fanWindow = NULL;
+
+int pLid = -1;
+
+GUID* sch_guid, perfset;
 
 NOTIFYICONDATA niData{0};
 
@@ -74,11 +81,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         for (int i = 0; i < 6; i++)
             RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
 
-        if (fan_conf->lastProf->powerStage >= 0)
-            acpi->SetPower(fan_conf->lastProf->powerStage);
+        //if (fan_conf->lastProf->powerStage >= 0)
+        //    acpi->SetPower(fan_conf->lastProf->powerStage);
 
-        if (fan_conf->lastProf->GPUPower >= 0)
-            acpi->SetGPU(fan_conf->lastProf->GPUPower);
+        //if (fan_conf->lastProf->GPUPower >= 0)
+        //    acpi->SetGPU(fan_conf->lastProf->GPUPower);
 
         mon = new MonHelper(mDlg, fanWindow, fan_conf, acpi);
 
@@ -92,7 +99,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         delete mon;
     } else
-        MessageBox(NULL, "Driver did not start or supported hardware not detected!", "Fatal error",
+        MessageBox(NULL, "Driver can't start or supported hardware not detected!", "Fatal error",
                     MB_OK | MB_ICONSTOP);
 
     delete acpi;
@@ -292,8 +299,10 @@ void ReloadPowerList(HWND hDlg, int id) {
     ComboBox_ResetContent(list);
     for (int i = 0; i < acpi->HowManyPower(); i++) {
         string name;
-        if (i)
-            name = "Level " + to_string(i);
+        if (i) {
+            auto pwr = fan_conf->powers.find(acpi->powers[i]);
+            name = pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(i);
+        }
         else
             name = "Manual";
         int pos = ComboBox_AddString(list, (LPARAM)(name.c_str()));
@@ -385,6 +394,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
         power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU);
+
     if (message == newTaskBar) {
         // Started/restarted explorer...
         Shell_NotifyIcon(NIM_ADD, &niData);
@@ -409,6 +419,29 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         niData.hWnd = hDlg;
         Shell_NotifyIcon(NIM_ADD, &niData);
         CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
+
+        // set PerfBoost lists...
+        HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
+             boost_dc = GetDlgItem(hDlg, IDC_DC_BOOST);
+        IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
+        PowerGetActiveScheme(NULL, &sch_guid);
+        DWORD acMode, dcMode;
+        PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
+        PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
+
+        ComboBox_AddString(boost_ac, "Off");
+        ComboBox_AddString(boost_dc, "Off");
+        ComboBox_AddString(boost_ac, "Enabled");
+        ComboBox_AddString(boost_dc, "Enabled");
+        ComboBox_AddString(boost_ac, "Aggressive");
+        ComboBox_AddString(boost_dc, "Aggressive");
+        ComboBox_AddString(boost_ac, "Efficient");
+        ComboBox_AddString(boost_dc, "Efficient");
+        ComboBox_AddString(boost_ac, "Efficient aggressive");
+        ComboBox_AddString(boost_dc, "Efficient aggressive");
+
+        ComboBox_SetCurSel(boost_ac, acMode);
+        ComboBox_SetCurSel(boost_dc, dcMode);
 
         ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
         ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
@@ -443,17 +476,46 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         int wmId = LOWORD(wParam);
         // Parse the menu selections:
         switch (wmId) {
-        case IDC_COMBO_POWER:
-        {
-            int pItem = ComboBox_GetCurSel(power_list);
-            int pid = (int) ComboBox_GetItemData(power_list, pItem);
+        case IDC_AC_BOOST: case IDC_DC_BOOST: {
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
+                int cBst = ComboBox_GetCurSel(GetDlgItem(hDlg, wmId));
+                if (wmId == IDC_AC_BOOST)
+                    PowerWriteACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
+                else
+                    PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
+                PowerSetActiveScheme(NULL, sch_guid);
+            } break;
+            }
+        } break;
+        case IDC_COMBO_POWER:
+        {
+            switch (HIWORD(wParam)) {
+            case CBN_SELCHANGE:
+            {
+                pLid = ComboBox_GetCurSel(power_list);
+                int pid = (int)ComboBox_GetItemData(power_list, pLid);
                 fan_conf->lastProf->powerStage = pid;
                 acpi->SetPower(pid);
                 fan_conf->Save();
             } break;
+            case CBN_EDITCHANGE:
+            {
+                char buffer[MAX_PATH];
+                GetWindowTextA(power_list, buffer, MAX_PATH);
+                if (pLid > 0) {
+                    auto ret = fan_conf->powers.emplace(acpi->powers[fan_conf->lastProf->powerStage], buffer);
+                    if (!ret.second)
+                        // just update...
+                        ret.first->second = buffer;
+                    fan_conf->Save();
+                    ComboBox_DeleteString(power_list, pLid);
+                    ComboBox_InsertString(power_list, pLid, buffer);
+                    ComboBox_SetItemData(power_list, pLid, fan_conf->lastProf->powerStage);
+                }
+                break;
+            }
             }
         } break;
         case IDC_BUT_MINIMIZE:
@@ -544,6 +606,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
             fan_conf->lastProf->powerStage = (DWORD)wParam - 20;
             acpi->SetPower(fan_conf->lastProf->powerStage);
+            ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
         }
     } break;
     case WM_NOTIFY:
@@ -643,6 +706,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_DESTROY:
         fan_conf->Save();
+        LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
     }

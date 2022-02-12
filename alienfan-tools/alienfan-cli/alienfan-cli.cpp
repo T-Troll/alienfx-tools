@@ -3,8 +3,12 @@
 //#include <iostream>
 #include <stdio.h>
 #include <vector>
+#include <combaseapi.h>
+#include <PowrProf.h>
 #include "alienfan-SDK.h"
 #include "alienfan-low.h"
+
+#pragma comment(lib, "PowrProf.lib")
 
 using namespace std;
 
@@ -25,8 +29,9 @@ persent[=id]\t\t\tShow fan(s) RPM in perecent of maximum\n\
 temp[=id]\t\t\tShow known temperature sensors values\n\
 unlock\t\t\t\tUnclock fan controls\n\
 getpower\t\t\tDisplay current power state\n\
-setpower=<value>\t\tSet TDP to this level\n\
+setpower=<mode>\t\t\tSet CPU power to this mode\n\
 setgpu=<value>\t\t\tSet GPU power limit\n\
+setperf=<ac>,<dc>\t\tSet CPU performance boost\n\
 getfans[=<mode>]\t\tShow current fan boost level (0..100 - in percent) with selected mode\n\
 setfans=<fan1>[,<fan2>[,mode]]\tSet fans boost level (0..100 - in percent) with selected mode\n\
 resetcolor\t\t\tReset color system\n\
@@ -34,7 +39,8 @@ setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
 setcolormode=<dim>,<flag>\tSet light system brightness and mode\n\
 direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
-\tPower level can be in 0..N - according to power states detected\n\
+\tPower mode can be in 0..N - according to power states detected\n\
+\tPerformance boost can be in 0..4 - disabled, enabled, aggresive, efficient, efficient aggresive\n\
 \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
 \tMode can be 0 or absent for set cooked value, 1 for raw value\n\
@@ -44,7 +50,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v5.4.5.1\n");
+    printf("AlienFan-cli v5.5.0\n");
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -152,6 +158,25 @@ int main(int argc, char* argv[])
                         printf("GPU limit set to %d", gpuStage);
                     else
                         printf("GPU limit set failed!\n");
+                    continue;
+                }
+                if (command == "setperf" && CheckArgs(command, 2, args.size())) {
+                    DWORD acMode = atoi(args[0].c_str()),
+                        dcMode = atoi(args[1].c_str());
+                    if (acMode > 4 || dcMode > 4)
+                        printf("Incorrect value - should be 0..4\n");
+                    else {
+                        GUID* sch_guid, perfset;
+                        IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
+                        PowerGetActiveScheme(NULL, &sch_guid);
+                        PowerWriteACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, acMode);
+                        PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, dcMode);
+                        PowerSetActiveScheme(NULL, sch_guid);
+                        printf("CPU boost set to %d,%d\n", acMode, dcMode);
+                        //PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
+                        //PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
+                        LocalFree(sch_guid);
+                    }
                     continue;
                 }
                 if (command == "getpower" && supported) {

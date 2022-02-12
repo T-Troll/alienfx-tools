@@ -20,6 +20,8 @@
 #define IDC_SYSLINK_HOMEPAGE            1010
 #define IDC_SLIDER_GPU                  1013
 #define IDC_STATIC_BOOST                1014
+#define IDC_AC_BOOST                    1124
+#define IDC_DC_BOOST                    1125
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDC_STATIC                      -1
