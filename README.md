@@ -109,8 +109,8 @@ DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) e
 ACPI driver based on kdshk's [WindowsHwAccess](https://github.com/kdshk/WindowsHwAccess).  
 Kernel loading hack based on hfiref0x's [KDU](https://github.com/hfiref0x/KDU)
 
-Special thanks to [DavidLapous](https://github.com/DavidLapous) for inspiration and advices!
-Special thanks to [theotherJohnC](https://github.com/theotherJohnC) for Performance Boost idea!
+Special thanks to [DavidLapous](https://github.com/DavidLapous) for inspiration and advices!  
+Special thanks to [theotherJohnC](https://github.com/theotherJohnC) for Performance Boost idea!  
 Per-Key RGB devices testing and a lot of support by [rirozizo](https://github.com/rirozizo).  
 Aurora R7 testing by [Raoul Duke](https://github.com/raould).  
 Support for mouse and a lot of testing by [Billybobertjoe](https://github.com/Billybobertjoe)  
