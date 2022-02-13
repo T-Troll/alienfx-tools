@@ -98,16 +98,21 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 			modifyProfile.lock();
 			conf->activeProfile = newID;
 			conf->active_set = &newID->lightsets;
-			if (newID->flags & PROF_FANS) {
+			if (newID->flags & PROF_FANS)
 				conf->fan_conf->lastProf = &newID->fansets;
-				if (mon) {
-					mon->acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-					mon->acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
-				}
-			}
 			else
 				conf->fan_conf->lastProf = &conf->fan_conf->prof;
+			if (mon) {
+				mon->acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+				mon->acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+			}
 			modifyProfile.unlock();
+			if (conf->haveV5 && !(newID->flags & PROF_GLOBAL_EFFECTS)) {
+				// Disable global effect
+				fxh->UnblockUpdates(false);
+				fxh->UpdateGlobalEffect();
+				fxh->UnblockUpdates(true);
+			}
 			fxh->ChangeState();
 			ToggleEvents();
 
@@ -149,24 +154,23 @@ void EventHandler::ToggleEvents()
 {
 	conf->SetStates();
 	if (conf->stateOn) {
-		ChangeEffectMode(conf->activeProfile->effmode);
+		ChangeEffectMode(conf->GetEffect());
 	}
 }
 
 void EventHandler::ChangeEffectMode(int newMode) {
-	if (newMode != effMode) {
-		StopEffects();
-		conf->SetEffect(newMode);
-		StartEffects();
-	} else
-		if (conf->enableMon) {
-			fxh->Refresh(true);
-			StartEffects();
-		}
-		else {
+	if (conf->enableMon) {
+		if (newMode != effMode) {
 			StopEffects();
-			//fxh->Refresh(true);
+			//conf->SetEffect(newMode);
 		}
+		else
+			fxh->Refresh(true);
+		StartEffects();
+	}
+	else {
+		StopEffects();
+	}
 }
 
 void EventHandler::StopEffects() {
@@ -192,10 +196,10 @@ void EventHandler::StartEffects() {
 			StartEvents(); 
 			break;
 		case 1: 
-			if (!capt) capt = new CaptureHelper(/*conf->amb_conf, fxh*/); 
+			if (!capt) capt = new CaptureHelper(); 
 			break;
 		case 2: 
-			if (!audio) audio = new WSAudioIn(/*conf->hap_conf, fxh*/); 
+			if (!audio) audio = new WSAudioIn(); 
 			break;
 		//case 3: 
 		//	break;

@@ -176,9 +176,9 @@ void ConfigHandler::SetDimmed() {
 int ConfigHandler::GetEffect() {
 	return enableMon ? activeProfile->effmode : 3;
 }
-void ConfigHandler::SetEffect(int newMode) {
-	activeProfile->effmode = newMode;
-}
+//void ConfigHandler::SetEffect(int newMode) {
+//	activeProfile->effmode = newMode;
+//}
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);

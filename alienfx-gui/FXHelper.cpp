@@ -270,8 +270,11 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 			c2{0,0,0,config->activeProfile->effColor2.r,
 			config->activeProfile->effColor2.g, 
 			config->activeProfile->effColor2.b};
-		dev->SetGlobalEffects((byte)config->activeProfile->globalEffect, 
-							  (byte)config->activeProfile->globalDelay, c1, c2);
+		if (config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
+			dev->SetGlobalEffects((byte)config->activeProfile->globalEffect, 
+								  (byte)config->activeProfile->globalDelay, c1, c2);
+		else
+			dev->SetGlobalEffects(1, 0, c1, c2);
 	}
 }
 
@@ -307,6 +310,7 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 
 size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	config->SetStates();
+	config->haveV5 = false;
 	afx_dev.AlienFXAssignDevices(acc ? acc->GetHandle() : NULL, config->finalBrightness, config->finalPBState);
 	// global effects check
 	for (int i=0; i < afx_dev.fxdevs.size(); i++)

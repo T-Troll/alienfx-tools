@@ -122,5 +122,5 @@ public:
 	bool IsDimmed();
 	void SetDimmed();
 	int  GetEffect();
-	void SetEffect(int);
+	//void SetEffect(int);
 };

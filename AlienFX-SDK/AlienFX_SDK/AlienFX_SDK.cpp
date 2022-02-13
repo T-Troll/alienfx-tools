@@ -888,13 +888,22 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_L_V5:
 		{
-			if (!inSet) Reset();
-			PrepareAndSend(COMMV5.setEffect, sizeof(COMMV5.setEffect), {
+			if (inSet)
+				UpdateColors();
+			Reset();
+			if (effType < 2)
+				PrepareAndSend(COMMV5.setEffect, sizeof(COMMV5.setEffect), {
+						   {2,1}, {11,0xff}, {12,0xff}, {14,0xff}, {15,0xff}});
+			else
+				PrepareAndSend(COMMV5.setEffect, sizeof(COMMV5.setEffect), {
 						   {2,effType}, {3,tempo},
 						   {10,act1.r}, {11,act1.g}, {12,act1.b},
 						   {13,act2.r}, {14,act2.g}, {15,act2.b},
-						   {16,1}});
-			UpdateColors();
+						   {16,5}});
+			if (effType < 2)
+				PrepareAndSend(COMMV5.update, sizeof(COMMV5.update), { {3,0xfe}, {6,0xff}, {7,0xff} });
+			else
+				UpdateColors();
 			return true;
 		} break;
 		default: return true;
