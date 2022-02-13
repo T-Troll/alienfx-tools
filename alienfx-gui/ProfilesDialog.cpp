@@ -267,8 +267,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof->flags & PROF_GLOBAL_EFFECTS)
 				prof->effmode = 3;
 			ReloadProfSettings(hDlg, prof);
-			if (prof->id == conf->activeProfile->id)
+			if (prof->id == conf->activeProfile->id) {
 				fxhl->UpdateGlobalEffect();
+				fxhl->Refresh(true);
+			}
 			break;
 		case IDC_CHECK_FANPROFILE:
 			prof->flags = (prof->flags & ~PROF_FANS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 4;
