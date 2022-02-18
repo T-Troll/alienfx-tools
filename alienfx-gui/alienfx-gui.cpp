@@ -755,7 +755,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->Refresh(2); // set def. colors
 			conf->niData.uFlags |= NIF_INFO;
 			strcpy_s(conf->niData.szInfoTitle, "Configuration saved!");
-			strcpy_s(conf->niData.szInfo, "Configuration saved succesdully.");
+			strcpy_s(conf->niData.szInfo, "Configuration saved succesfully.");
 			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 			conf->niData.uFlags &= ~NIF_INFO;
 			break;
