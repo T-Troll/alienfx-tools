@@ -3,33 +3,33 @@
 AWCC is not needed anymore - here are light weighted tools for Alienware systems lights, fans, power profile control:
 - [AlienFX Control](/Doc/alienfx-gui.md) - AWCC alternative in 500kb. You can control your system lights (including hardware and software effects such as system parameters monitoring, ambient lights, sound haptic), fans, temperatures, power settings, and a lot more.
 - [AlienFX-CLI](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command-line interface).
-- [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Support all Dell's API functions using my low-level SDK. It can be used for any LightFX/AlienFX-compatible game.
-- [AlienFX-Probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights and name them for use in other applications.
-- [AlienFan GUI control](/Doc/alienfan-gui.md) - simple fan and power control utility. Set your fan parameters according to any system temperature sensor, switch system power modes.
+- [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Supports all Dell's API functions using my low-level SDK. It can be used for any LightFX/AlienFX-compatible game.
+- [AlienFX-Probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights, naming them for use in other applications.
+- [AlienFan GUI control](/Doc/alienfan-gui.md) - simple fan and power control utility. Set your fan parameters according to any system temperature sensor, switch system power modes, etc.
 - [AlienFan-CLI](/Doc/alienfan-cli.md) - Command-line interface tool for control fans (and lights for some systems) as well as some power settings from the command line.
 - [AlienFan-Overboost](/Doc/alienfan-overboost.md) - CLI tool for manual/automatic fan overboost (set higher RPM that BIOS suggest).  
 
 ## How does it work?
 
-Light control tools work with USB/ACPI hardware devices directly, it doesn't require some other tools/drivers installed.
+Light control tools work with USB/ACPI hardware devices directly, not requiring the installation of other tools/drivers.
 
 - It's way faster. For older systems, the change rate can be up to 20cps, for modern up to 120cps.
-- It's flexible. I can use some uncommon calls to set a wider range of effects and modes.
+- It's flexible. I can use uncommon calls to set a wider range of effects and modes.
 - Group lights, create light/fan Profiles for different situations, switch them by running games/applications.
 
 For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tool does not use direct EC (Embed controller) access and data modification.  
-It utilizes proprietary Alienware function calls inside ACPI BIOS (the same as AWCC).
-- It's safer - BIOS still monitors fans and has no risk fans will be stopped at full load.
-- It's more universal - Most Alienware systems have the same interface.
+It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used by AWCC).
+- It's safer - BIOS still monitors fans and has no risk. Fans will stop at full load.
+- It's universal - Most Alienware systems have the same interface.
 - In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control at all.
 
 ## Disclaimer
 
 Starting from the release 4.2.1, **Antiviruses can detect virus into project package**.  
-It's not a virus, in fact, but the kernel hack for load driver. You should add `HwAcc.sys`, `kdl.dll`, and `drv64.dll` into the antivirus exception list or do not use fan control (light control will work without these files).
+It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys`, `kdl.dll`, and `drv64.dll` into the antivirus exception list or do not use fan control (light control will work without these files).
 
 ## Requirements
-- Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even if the device is not found, but if Dell LightFX is present in the system).
+- Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX just needs to be present in the system).
 - Windows 10 v1903 or later (binary files for 64-bit only, but you can compile the project for 32-bit as well).
 - `alienfan-gui`, `-cli` and `-overboost` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
@@ -41,9 +41,9 @@ It's not a virus, in fact, but the kernel hack for load driver. You should add `
 
 ## Installation
 - Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
-- (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes don't require it, so you need it in case you plan to use `Ambient` effects only.
+- (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes don't require it, so you need it if you plan to use `Ambient` effects only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
-- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are automatically installed with Alienware Command Center and should be picked up by this program. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu then "Allow 3rd-party applications" in older Desktop version. 
+- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
 - Unpack the archive to any directory of your choice or just run the installer.  
 - After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
 
@@ -61,7 +61,7 @@ For fan control - Send me the ACPI dump from [RW Everything](http://rweverything
 ## Known issues
 - Hardware light effects like breathing, spectrum, rainbow mode, do not support older (APIv1-v3) and per-key RGB (APIv5) devices.
 - Hardware light effects (and global effect) didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
-- DirectX12 games didn't allow to access GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
+- DirectX12 games didn't allow access to GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
 - Using a hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to the "Devices" tab or quit with visible delay.
 
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
