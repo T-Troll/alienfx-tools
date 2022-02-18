@@ -13,8 +13,8 @@ AWCC is not needed anymore - here are light weighted tools for Alienware systems
 
 Light control tools work with USB/ACPI hardware devices directly, not requiring the installation of other tools/drivers.
 
-- It's way faster. For older systems, the change rate can be up to 20cps, for modern up to 120cps.
-- It's flexible. I can use uncommon calls to set a wider range of effects and modes.
+- It's way faster. For older systems, the change rate can be up to 20cps. For modern, up to 120cps.
+- It's flexible. I can use uncommon calls to set a broader range of effects and modes.
 - Group lights, create light/fan Profiles for different situations, switch them by running games/applications.
 
 For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tool does not use direct EC (Embed controller) access and data modification.  
@@ -29,7 +29,7 @@ Starting from the release 4.2.1, **Antiviruses can detect virus into project pac
 It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys`, `kdl.dll`, and `drv64.dll` into the antivirus exception list or do not use fan control (light control will work without these files).
 
 ## Requirements
-- Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX just needs to be present in the system).
+- Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
 - Windows 10 v1903 or later (binary files for 64-bit only, but you can compile the project for 32-bit as well).
 - `alienfan-gui`, `-cli` and `-overboost` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
@@ -55,18 +55,18 @@ Light control: Virtually any Alienware/Dell G-series notebook and desktop, some 
 Fan control: Modern Alienware/Dell G-Series notebooks (any m-series, x-series, Area51m), Aurora R7 desktop and later models, some older notebooks (13R2 and compatible).
 
 Project Wiki has [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).  
-If your device is not supported, you can [help me to support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).  
+If your device is not supported, you can [help me support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).  
 For fan control - Send me the ACPI dump from [RW Everything](http://rweverything.com/) for analysis.
 
 ## Known issues
-- Hardware light effects like breathing, spectrum, rainbow mode, do not support older (APIv1-v3) and per-key RGB (APIv5) devices.
+- Hardware light effects like breathing, spectrum, rainbow mode do not support older (APIv1-v3) and per-key RGB (APIv5) devices.
 - Hardware light effects (and global effect) didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
 - DirectX12 games didn't allow access to GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
 - Using a hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to the "Devices" tab or quit with visible delay.
 
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
 
-- **WARNING!** There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, which can prevent the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected, but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" into the same panel. It will not work at the default setting in this case.
+- **WARNING!** There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, preventing the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" for the same monitor. It will not work at the default setting in this case.
 
 - **WARNING!** In rare case light system freeze, shutdown or hibernate your notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
 
