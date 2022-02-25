@@ -80,7 +80,7 @@ void FXHelper::ResetPower(int did)
 {
 	AlienFX_SDK::afx_device* dev = LocateDev(did);
 	if (dev != NULL) {
-		vector<AlienFX_SDK::act_block> act{{63}};
+		vector<AlienFX_SDK::act_block> act{ { (byte)63, {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} } };
 		dev->dev->SetPowerAction(&act);
 	}
 }
@@ -564,13 +564,15 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
 						AlienFX_SDK::afx_device* dev = src->LocateDev(devQ->devID);
 						if (dev && (current.did == (-1) || devQ->devID == current.did)) {
-//#ifdef _DEBUG
-//							char buff[2048];
-//							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
-//							OutputDebugString(buff);
-//#endif
-							if (dev->dev->GetVersion() == 5 && src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
+#ifdef _DEBUG
+							char buff[2048];
+							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
+							OutputDebugString(buff);
+#endif
+							if (dev->dev->GetVersion() == 5 && (src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)) {
+								DebugPrint("V5 global effect active!\n");
 								src->UpdateGlobalEffect(dev->dev);
+							}
 							else
 								if (devQ->dev_query.size() > 0) {
 									dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
@@ -579,8 +581,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							devQ->dev_query.clear();
 						}
 					}
-					if (current.did == -1)
-						devs_query.clear();
+					//if (current.did == -1)
+					//	devs_query.clear();
 					if (src->lightQuery.size() > maxQlights) {
 						src->GetConfig()->monDelay += 50;
 						DebugPrint((string("Query so big (") +
@@ -614,6 +616,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							action.g = ((UINT) action.g * delta) / 255;// >> 8;
 							action.b = ((UINT) action.b * delta) / 255;// >> 8;
 						}
+						//DebugPrint(("Light for #" + to_string(current.did) + ", ID " + to_string(current.lid) +
+						//" to (" + to_string(action.r) + "," + to_string(action.g) + "," + to_string(action.b) + ")\n").c_str());
 						actions.push_back(action);
 					}
 

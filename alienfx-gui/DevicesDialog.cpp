@@ -504,7 +504,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
 				if (lPoint->uNewState & LVIS_FOCUSED || lPoint->uNewState & LVIS_SELECTED) {
 					// Select other item...
-					eLid = lPoint->iItem;
+					eLid = (int) lPoint->lParam;// iItem;
 				} else
 					eLid = -1;
 				SetDlgItemInt(hDlg, IDC_LIGHTID, eLid < 0 ? 0 : eLid, false);
