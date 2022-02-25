@@ -24,7 +24,7 @@ It utilize propietary Alienware function calls inside ACPI BIOS (the same as AWC
 
 ## Disclaimer
 Starting from the release 4.2.1, **Antiviruses can detect virus into project package**.  
-It's not a virus, in fact, but the kernel hack for load driver. You should add `HwAcc.sys`, `kdl.dll` and `drv64.dll` into antivirus exception list or do not use fan control (light control wiil work without this files).
+It's not a virus, in fact, but the kernel hack for load driver. You should add `HwAcc.sys`, `kdl.dll` and `drv64.dll` into antivirus exception list or do not use fan control (light control will work without this files).
 
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even if device not found, but Dell LightFX present into system).
@@ -35,7 +35,7 @@ It's not a virus, in fact, but the kernel hack for load driver. You should add `
   - "Esif temperature" selected (access to ESIF values blocked from user account)
   - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
 - The rest of `alienfx-` tools does not require Administrator and can be run at any level.
-- All tools doesn not require internet connection, but `alienfan-gui` and `alienfx-gui` will connect to GitHub server for update check if connection avaliable.
+- All tools does not require internet connection, but `alienfan-gui` and `alienfx-gui` will connect to GitHub server for update check if connection avaliable.
 
 ## Installation
 - Download latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
