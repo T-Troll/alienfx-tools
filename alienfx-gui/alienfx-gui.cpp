@@ -1062,7 +1062,6 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 	bool ret;
 
 	AlienFX_SDK::afx_act savedColor = *map;
-	DWORD crThreadID;
 	HANDLE crRefresh;
 
 	// Initialize CHOOSECOLOR
@@ -1076,7 +1075,7 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 
 	mod = map;
 	stopColorRefresh = CreateEvent(NULL, false, false, NULL);
-	crRefresh = CreateThread(NULL, 0, CColorRefreshProc, mmap, 0, &crThreadID);
+	crRefresh = CreateThread(NULL, 0, CColorRefreshProc, mmap, 0, NULL);
 
 	ret = ChooseColor(&cc);
 

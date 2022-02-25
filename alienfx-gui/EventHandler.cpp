@@ -501,32 +501,32 @@ DWORD WINAPI CEventProc(LPVOID param)
 		}
 
 		// Temperatures
-		if (src->mon) { 
-			// Let's get temperatures from fan sensors
-			for (unsigned i = 0; i < src->mon->senValues.size(); i++)
-				if (cData.Temp < src->mon->senValues[i])
-					cData.Temp = src->mon->senValues[i];
-			// And also fan RPMs
-			int maxRPM = 0;
+		valCount = GetValuesArray(hTempCounter);
+		for (unsigned i = 0; i < valCount; i++) {
+			if (((int)cData.Temp) + 273 < counterValues[i].FmtValue.longValue)
+				cData.Temp = (byte) (counterValues[i].FmtValue.longValue - 273);
+		}
+
+		if (src->mon) {
+			// Check fan RPMs
 			for (unsigned i = 0; i < src->mon->fanValues.size(); i++) {
-				// maxRPM is a percent now!
 				int newRpm = src->mon->fanValues[i] * 100 / src->conf->fan_conf->boosts[i].maxRPM;
 				if (cData.Fan < newRpm)
 					cData.Fan = newRpm;
-			}
-		} else {
-			valCount = GetValuesArray(hTempCounter);
-			for (unsigned i = 0; i < valCount; i++) {
-				if (((int)cData.Temp) + 273 < counterValues[i].FmtValue.longValue)
-					cData.Temp = (byte) (counterValues[i].FmtValue.longValue - 273);
 			}
 		}
 
 		// Now other temp sensor block and power block...
 		DWORD totalPwr = 0;
 		if (src->conf->esif_temp) {
-			valCount = GetValuesArray(hTempCounter2);
+			if (src->mon) {
+				// Let's get temperatures from fan sensors
+				for (unsigned i = 0; i < src->mon->senValues.size(); i++)
+					if (cData.Temp < src->mon->senValues[i])
+						cData.Temp = src->mon->senValues[i];
+			}
 
+			valCount = GetValuesArray(hTempCounter2);
 			// Added other set maximum temp...
 			for (unsigned i = 0; i < valCount; i++) {
 				if (cData.Temp < counterValues[i].FmtValue.longValue)
@@ -538,10 +538,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 			for (unsigned i = 0; i < valCount; i++) {
 				totalPwr += counterValues[i].FmtValue.longValue;
 			}
+
 			while (totalPwr > maxPower)
 				maxPower <<= 1;
-			//if (totalPwr > maxPower)
-			//	maxPower = totalPwr;
 		}
 
 		GlobalMemoryStatusEx(&memStat);

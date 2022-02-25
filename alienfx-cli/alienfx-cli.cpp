@@ -1,5 +1,4 @@
 #define WIN32_LEAN_AND_MEAN
-//#include <iostream>
 #include <stdio.h>
 #include <string>
 #include "LFXUtil.h"
@@ -135,7 +134,7 @@ int main(int argc, char* argv[])
 		have_high = true;
 		if (!have_low) devType = 0;
 		break;
-	case 0: printf("Dell library DLL not found (no library?)!\n"); break;
+	case 0: printf("Dell library DLL not found!\n"); break;
 	case 1: printf("Can't init Dell library!\n"); break;
 	case 2: printf("No high-level devices found!\n"); break;
 	default: printf("Dell library unknown error!\n"); break;

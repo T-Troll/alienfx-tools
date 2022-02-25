@@ -742,6 +742,11 @@ namespace AlienFX_SDK {
 				Sleep(50);
 				count++;
 			}
+#ifdef _DEBUG
+			if (count == 20)
+				OutputDebugString(L"Power device ready timeout!\n");
+#endif // _DEBUG
+
 			while (!IsDeviceReady()) Sleep(50);
 			// Close set
 			//buffer[2] = 0x21; buffer[4] = 0x1; buffer[5] = 0xff; buffer[6] = 0xff;
@@ -825,6 +830,13 @@ namespace AlienFX_SDK {
 	}
 
 	bool Functions::ToggleState(BYTE brightness, vector<mapping*> *mappings, bool power) {
+
+#ifdef _DEBUG
+		wchar_t buff[2048];
+		swprintf_s(buff, 2047, L"State update: PID: %#x, brightness: %d, Power: %d\n",
+			pid, brightness, power);
+		OutputDebugString(buff);
+#endif
 
 		bright = ((UINT) brightness * 0x64) / 0xff;
 		switch (version) {

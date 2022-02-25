@@ -98,9 +98,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
 
         delete mon;
-    } else
+    }
+    else {
         MessageBox(NULL, "Driver can't start or supported hardware not detected!", "Fatal error",
-                    MB_OK | MB_ICONSTOP);
+            MB_OK | MB_ICONSTOP);
+        string shellcomm = "/delete /F /TN \"AlienFan-GUI\"";
+        ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
+        fan_conf->startWithWindows = false;
+    }
 
     delete acpi;
     fan_conf->Save();
