@@ -20,6 +20,8 @@
 #define IDC_SYSLINK_HOMEPAGE            1010
 #define IDC_SLIDER_GPU                  1013
 #define IDC_STATIC_BOOST                1014
+#define IDC_BUTTON1                     1016
+#define IDC_MAX_RESET                   1016
 #define IDC_AC_BOOST                    1124
 #define IDC_DC_BOOST                    1125
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
@@ -33,7 +35,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32780
-#define _APS_NEXT_CONTROL_VALUE         1016
+#define _APS_NEXT_CONTROL_VALUE         1017
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

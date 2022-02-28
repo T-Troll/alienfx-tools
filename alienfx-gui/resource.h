@@ -96,6 +96,7 @@
 #define IDC_BUTTON_LPC                  1015
 #define IDC_STARTW                      1016
 #define IDC_BUTTON_HPC                  1016
+#define IDC_MAX_RESET                   1016
 #define IDC_STARTM                      1017
 #define IDC_BUTTON_REMOVE               1017
 #define IDC_SLIDER_HICUT                1018

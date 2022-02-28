@@ -12,7 +12,7 @@ public:
 	HANDLE stopEvent = 0;
 	short oldPower = 0;
 	AlienFan_SDK::Control* acpi;
-	vector<int> senValues, fanValues, boostValues, boostSets;
+	vector<int> senValues, fanValues, boostValues, boostSets, maxTemps;
 
 	MonHelper(HWND, HWND, ConfigHelper*, AlienFan_SDK::Control*);
 	~MonHelper();

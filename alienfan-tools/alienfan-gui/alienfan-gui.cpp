@@ -39,7 +39,7 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND toolTip = NULL;
 HWND fanWindow = NULL;
 
-int pLid = -1;
+int pLid = -1, maxBoost = 100;
 
 GUID* sch_guid, perfset;
 
@@ -71,11 +71,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     if (acpi->IsActivated() && acpi->Probe()) {
         fan_conf->SetBoosts(acpi);
+        
         // Perform application initialization:
         HWND mDlg;
         if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL ))) {
             return FALSE;
         }
+
+        mon->dlg = mDlg;
 
         //power mode hotkeys
         for (int i = 0; i < 6; i++)
@@ -86,8 +89,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         //if (fan_conf->lastProf->GPUPower >= 0)
         //    acpi->SetGPU(fan_conf->lastProf->GPUPower);
-
-        mon = new MonHelper(mDlg, fanWindow, fan_conf, acpi);
 
         HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
 
@@ -244,7 +245,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
             mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
             mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-            string rpmText = "Fan curve (boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + 
+            string rpmText = "Fan curve (scale: " + to_string(maxBoost) + ", boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + 
                 ", " + to_string((percent = acpi->GetFanPercent(fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) +
                 "%)";
             SetWindowText(fanWindow, rpmText.c_str());
@@ -285,6 +286,7 @@ void ReloadFanView(HWND hDlg, int cID) {
         if (i == cID) {
             lItem.mask |= LVIF_STATE;
             lItem.state = LVIS_SELECTED;
+            maxBoost = fan_conf->boosts[fan_conf->lastSelectedFan].maxBoost;
             DrawFan();
         }
         ListView_InsertItem(list, &lItem);
@@ -322,19 +324,21 @@ void ReloadTempView(HWND hDlg, int cID) {
     HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-    LVCOLUMNA lCol;
-    lCol.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-    lCol.cx = 100;
-    lCol.iSubItem = 0;
-    lCol.pszText = (LPSTR) "T";
-    //ListView_DeleteColumn(list, 0);
-    ListView_InsertColumn(list, 0, &lCol);
-    lCol.pszText = (LPSTR) "Name";
-    lCol.iSubItem = 1;
-    ListView_InsertColumn(list, 1, &lCol);
+    if (!ListView_GetColumnWidth(list, 1)) {
+        LVCOLUMNA lCol;
+        lCol.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+        lCol.cx = 100;
+        lCol.iSubItem = 0;
+        lCol.pszText = (LPSTR)"Temp";
+        //ListView_DeleteColumn(list, 0);
+        ListView_InsertColumn(list, 0, &lCol);
+        lCol.pszText = (LPSTR)"Name";
+        lCol.iSubItem = 1;
+        ListView_InsertColumn(list, 1, &lCol);
+    }
     for (int i = 0; i < acpi->HowManySensors(); i++) {
         LVITEMA lItem;
-        string name = to_string(acpi->GetTempValue(i));
+        string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
         lItem.mask = LVIF_TEXT | LVIF_PARAM;
         lItem.iItem = i;
         lItem.iImage = 0;
@@ -448,10 +452,6 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         ComboBox_SetCurSel(boost_ac, acMode);
         ComboBox_SetCurSel(boost_dc, dcMode);
 
-        ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
-        ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
-        ReloadFanView(hDlg, fan_conf->lastSelectedFan);
-
         // So open fan control window...
         RECT cDlg;
         GetWindowRect(hDlg, &cDlg);
@@ -466,6 +466,12 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         } else {
             ShowWindow(fanWindow, SW_SHOWNA);
         }
+
+        mon = new MonHelper(hDlg, fanWindow, fan_conf, acpi);
+
+        ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
+        ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
+        ReloadFanView(hDlg, fan_conf->lastSelectedFan);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -567,6 +573,12 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
         } break;
+        case IDC_MAX_RESET:
+        {
+            for (int i = 0; i < acpi->HowManySensors(); i++)
+                mon->maxTemps[i] = acpi->GetTempValue(i);
+            ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
+        } break;
         default:
             return DefWindowProc(hDlg, message, wParam, lParam);
         }
@@ -629,6 +641,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     if (lPoint->iItem != -1) {
                         // Select other fan....
                         fan_conf->lastSelectedFan = lPoint->iItem;
+                        maxBoost = fan_conf->boosts[fan_conf->lastSelectedFan].maxBoost;
                         // Redraw fans
                         DrawFan();
                     }
