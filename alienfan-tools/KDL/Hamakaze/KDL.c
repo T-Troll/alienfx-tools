@@ -131,7 +131,7 @@ LoadKernelDriver(
     return (BOOLEAN) KDUProcessDrvMapSwitch(
         hvciEnabled,
         osv.dwBuildNumber,
-        6, // Provider number
+        1, //6, // Provider number
         3, // ShellCode version
         DriverName,
         DriverDevice,
