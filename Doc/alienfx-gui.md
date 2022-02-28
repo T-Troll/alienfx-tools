@@ -165,7 +165,7 @@ Use "Test White" button to switch testing color for all lights to white for resu
 `"Fans"` tab is UI for control system fans and temperature sensors.  
 
 First, take a look at "Power mode" dropdown - it can control system pre-defined power modes. For manual fan control switch it to "Manual". You can edit mode name by selecting it and type new name.  
-"Temperature sensors" list present all hardware sensors found at your motherboard (some SSD sensors can absent into this list), and their current temperature values.
+"Temperature sensors" list present all hardware sensors found at your motherboard (some SSD sensors can absent into this list), and their current and maximal (press "x" button at list head to reset it to current values) temperature values.
 "Fans" list presents all fans found into the system and their current RPMs.  
 "GPU limit" slider define top maximal GPU board power limit shift. 0 (left) is no limit, 4 (right) - maximal limit. This feature only supported at some notebooks, and real limit can vary. You can use this slider to keep more power at CPU or extend battery life.  
 "CPU Boost" dropdowns can be used to select active Windows Power Plan boost mode (separately for AC and battery power). This settings is extremely useful for Ryzen CPU, but even for Intel it provide a little performance boost (+3% at "Aggressive" for my gear).  

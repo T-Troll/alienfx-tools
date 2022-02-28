@@ -181,18 +181,20 @@ void ReloadTempView(HWND hDlg, int cID) {
     HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-    LVCOLUMNA lCol;
-    lCol.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-    lCol.cx = 100;
-    lCol.iSubItem = 0;
-    lCol.pszText = (LPSTR) "T";
-    ListView_InsertColumn(list, 0, &lCol);
-    lCol.pszText = (LPSTR) "Name";
-    lCol.iSubItem = 1;
-    ListView_InsertColumn(list, 1, &lCol);
+    if (!ListView_GetColumnWidth(list, 1)) {
+        LVCOLUMNA lCol;
+        lCol.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+        lCol.cx = 100;
+        lCol.iSubItem = 0;
+        lCol.pszText = (LPSTR)"Temp";
+        ListView_InsertColumn(list, 0, &lCol);
+        lCol.pszText = (LPSTR)"Name";
+        lCol.iSubItem = 1;
+        ListView_InsertColumn(list, 1, &lCol);
+    }
     for (int i = 0; i < acpi->HowManySensors(); i++) {
         LVITEMA lItem;
-        string name = to_string(acpi->GetTempValue(i));
+        string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
         lItem.mask = LVIF_TEXT | LVIF_PARAM;
         lItem.iItem = i;
         lItem.iImage = 0;
@@ -337,6 +339,12 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     DrawFan();
                 }
             }
+        } break;
+        case IDC_MAX_RESET:
+        {
+            for (int i = 0; i < acpi->HowManySensors(); i++)
+                eve->mon->maxTemps[i] = acpi->GetTempValue(i);
+            ReloadTempView(hDlg, conf->fan_conf->lastSelectedSensor);
         } break;
         }
     } break;

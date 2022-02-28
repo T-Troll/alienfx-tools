@@ -564,11 +564,11 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
 						AlienFX_SDK::afx_device* dev = src->LocateDev(devQ->devID);
 						if (dev && (current.did == (-1) || devQ->devID == current.did)) {
-#ifdef _DEBUG
-							char buff[2048];
-							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
-							OutputDebugString(buff);
-#endif
+//#ifdef _DEBUG
+//							char buff[2048];
+//							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
+//							OutputDebugString(buff);
+//#endif
 							if (dev->dev->GetVersion() == 5 && (src->config->activeProfile->flags & PROF_GLOBAL_EFFECTS)) {
 								DebugPrint("V5 global effect active!\n");
 								src->UpdateGlobalEffect(dev->dev);

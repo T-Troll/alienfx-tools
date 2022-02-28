@@ -13,6 +13,12 @@ MonHelper::MonHelper(HWND cDlg, HWND fanDlg, ConfigHelper* config, AlienFan_SDK:
 	if (oldPower != conf->lastProf->powerStage)
 		acpi->SetPower(conf->lastProf->powerStage);
 	acpi->SetGPU(conf->lastProf->GPUPower);
+
+	maxTemps.resize(acpi->HowManySensors());
+	for (int i = 0; i < acpi->HowManySensors(); i++) {
+		maxTemps[i] = acpi->GetTempValue(i);
+	}
+
 	stopEvent = CreateEvent(NULL, false, false, NULL);
 	Start();
 }
@@ -66,11 +72,13 @@ DWORD WINAPI CMonProc(LPVOID param) {
 		// temps..
 		for (int i = 0; i < src->acpi->HowManySensors(); i++) {
 			int sValue = src->acpi->GetTempValue(i);
+			if (sValue > src->maxTemps[i])
+				src->maxTemps[i] = sValue;
 			if (sValue != src->senValues[i]) {
 				src->senValues[i] = sValue;
 				needUpdate = true;
 				if (visible && tempList) {
-					string name = to_string(sValue);
+					string name = to_string(sValue) + " (" + to_string(src->maxTemps[i]) + ")";
 					ListView_SetItemText(tempList, i, 0, (LPSTR) name.c_str());
 				}
 			}
