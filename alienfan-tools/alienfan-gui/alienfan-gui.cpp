@@ -82,7 +82,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         //power mode hotkeys
         for (int i = 0; i < 6; i++)
-            RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+            RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i);
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
 
         //if (fan_conf->lastProf->powerStage >= 0)
         //    acpi->SetPower(fan_conf->lastProf->powerStage);
@@ -468,6 +469,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         mon = new MonHelper(hDlg, fanWindow, fan_conf, acpi);
+        mon->tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
+        mon->fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
 
         ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
         ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
@@ -625,6 +628,17 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             acpi->SetPower(fan_conf->lastProf->powerStage);
             ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
         }
+        switch (wParam) {
+        case 6: // G-key for Dell G-series power switch
+        {
+            if (acpi->GetPower())
+                fan_conf->lastProf->powerStage = 0;
+            else
+                fan_conf->lastProf->powerStage = 1;
+            acpi->SetPower(fan_conf->lastProf->powerStage);
+        } break;
+        }
+        break;
     } break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {

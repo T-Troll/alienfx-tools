@@ -36,3 +36,10 @@ You can minimize application to tray pressing Minimize button (or the top one), 
 There are two settings into application top menu under "Settings":
 - "Start with windows" - If checked, application will run at system start.
 - "Start minimized" - If checked, application hide into tray icon after start.
+
+## Keyboard shortcuts 
+
+Global shortcuts (works all time application running):
+- CTRL+ALT+0..5 - switch active power mode. 0 is for Manual, 1..5 for system-defined
+- F17 (G-key for Dell G-series laptops) - cycle between manual and performance power mode
+

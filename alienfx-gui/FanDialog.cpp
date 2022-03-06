@@ -265,10 +265,12 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
             sTip1 = CreateToolTip(fanWindow, NULL);
 
-            eve->mon->Stop();
+            //eve->mon->Stop();
             eve->mon->dlg = hDlg;
             eve->mon->fDlg = fanWindow;
-            eve->mon->Start();
+            eve->mon->tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
+            eve->mon->fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
+            //eve->mon->Start();
 
             SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
             SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
@@ -437,8 +439,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         // Close curve window
         fanWindow = NULL;
         LocalFree(sch_guid);
-        if (eve->mon)
-            eve->mon->fDlg = NULL;
+        if (eve->mon) {
+            eve->mon->dlg = eve->mon->fDlg = eve->mon->tempList = eve->mon->fanList = NULL;
+        }
         break;
     }
     return 0;

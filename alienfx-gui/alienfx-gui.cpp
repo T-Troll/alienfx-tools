@@ -253,11 +253,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			return FALSE;
 
 		//register global hotkeys...
-		RegisterHotKey( mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12 );
-		RegisterHotKey( mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11 );
-		RegisterHotKey( mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10 );
-		RegisterHotKey( mDlg, 3, 0, VK_F18 );
-		RegisterHotKey( mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
+		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
+		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
+		RegisterHotKey(mDlg, 3, 0, VK_F18);
+		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
+		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
+		RegisterHotKey(mDlg, 6, 0, VK_F17);
 		//profile change hotkeys...
 		for (int i = 0; i < 9; i++)
 			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x31 + i); // 1,2,3...
@@ -519,7 +520,12 @@ VOID OnSelChanged(HWND hwndDlg)
 		hwndDlg, GWLP_USERDATA);
 
 	// Get the index of the selected tab.
-	tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
+	int newSel = TabCtrl_GetCurSel(pHdr->hwndTab);
+	//tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
+	if (newSel == tabSel)
+		return;
+	else
+		tabSel = newSel;
 
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay != NULL) {
@@ -545,12 +551,42 @@ VOID OnSelChanged(HWND hwndDlg)
 	if (pHdr->hwndDisplay == NULL)
 		pHdr->hwndDisplay = newDisplay;
 
-	if (pHdr->hwndDisplay != NULL)
+	if (pHdr->hwndDisplay != NULL) {
+		RECT dRect;
+		GetClientRect(pHdr->hwndDisplay, &dRect);
+		if (dRect.right > pHdr->rcDisplay.right - pHdr->rcDisplay.left ||
+			dRect.bottom > pHdr->rcDisplay.bottom - pHdr->rcDisplay.top) {
+			DebugPrint("Resize needed!\n");
+			RECT mRect;
+			int deltax = dRect.right - (pHdr->rcDisplay.right - pHdr->rcDisplay.left),
+				deltay = dRect.bottom - (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top);
+			if (deltax < 0) deltax = 0;
+			if (deltay < 0) deltay = 0;
+			GetWindowRect(mDlg, &mRect);
+			SetWindowPos(mDlg, NULL, 0, 0, mRect.right - mRect.left + deltax, mRect.bottom - mRect.top + deltay, SWP_NOMOVE);
+			GetWindowRect(hwndDlg, &mRect);
+			SetWindowPos(hwndDlg, NULL, 0, 0, mRect.right - mRect.left + deltax, mRect.bottom - mRect.top + deltay, SWP_NOOWNERZORDER | SWP_NOMOVE);
+			GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &mRect);
+			POINT cPos = { mRect.left, mRect.top };
+			ScreenToClient(mDlg, &cPos);
+			SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, cPos.x, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+			GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &mRect);
+			cPos = { mRect.left, mRect.top };
+			ScreenToClient(mDlg, &cPos);
+			SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+			GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &mRect);
+			cPos = { mRect.left, mRect.top };
+			ScreenToClient(mDlg, &cPos);
+			SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+			pHdr->rcDisplay.right += deltax;
+			pHdr->rcDisplay.bottom += deltay;
+		}
 		SetWindowPos(pHdr->hwndDisplay, NULL,
 			pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-			(pHdr->rcDisplay.right - pHdr->rcDisplay.left), 
-			(pHdr->rcDisplay.bottom - pHdr->rcDisplay.top),
+			pHdr->rcDisplay.right - pHdr->rcDisplay.left,
+			pHdr->rcDisplay.bottom - pHdr->rcDisplay.top,
 			SWP_SHOWWINDOW);
+	}
 	return;
 }
 
@@ -982,23 +1018,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->ToggleEvents();
 			ComboBox_SetCurSel(mode_list, conf->GetEffect());
 			break;
-		//case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // profile switch
-		//	if (wParam - 10 < conf->profiles.size()) {
-		//		eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
-		//		ReloadProfileList();
-		//	}
-		//	break;
-		//case 20: case 21: case 22: case 23: case 24: case 25: // profile switch
-		//	if (wParam - 10 < conf->profiles.size()) {
-		//		eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
-		//		ReloadProfileList();
-		//	}
-		//	break;
 		case 5: // profile autoswitch
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
 			eve->StartProfiles();
 			ReloadProfileList();
+			break;
+		case 6: // G-key for Dell G-series power switch
+			if (conf->fanControl) {
+				if (acpi->GetPower())
+					conf->fan_conf->lastProf->powerStage = 0;
+				else
+					conf->fan_conf->lastProf->powerStage = 1;
+				acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+			}
 			break;
 		default: return false;
 		}
