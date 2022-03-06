@@ -115,7 +115,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_COMMAND:
 	{
 		//profile* prof = conf->FindProfile(pCid);
-		if (!prof)
+		if (!prof && LOWORD(wParam) != IDC_ADDPROFILE)
 			return false;
 
 		switch (LOWORD(wParam))
@@ -148,7 +148,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (vacID == conf->profiles[i]->id) {
 					vacID++; i = -1;
 				}
-			profile* new_prof = new profile({vacID, prof->flags, prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets});
+			if (!prof)
+				prof = conf->activeProfile;
+			profile* new_prof = new profile({ vacID, prof->flags, prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets });
 			new_prof->flags &= ~PROF_DEFAULT;
 			conf->profiles.push_back(new_prof);
 			pCid = vacID;

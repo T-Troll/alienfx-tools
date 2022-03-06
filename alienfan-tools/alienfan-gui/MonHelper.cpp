@@ -61,8 +61,8 @@ DWORD WINAPI CMonProc(LPVOID param) {
 	src->boostValues.resize(src->acpi->HowManyFans());
 	src->boostSets.resize(src->acpi->HowManyFans());
 
-	HWND tempList = GetDlgItem(src->dlg, IDC_TEMP_LIST),
-		fanList = GetDlgItem(src->dlg, IDC_FAN_LIST);
+	//HWND tempList = GetDlgItem(src->dlg, IDC_TEMP_LIST),
+	//	fanList = GetDlgItem(src->dlg, IDC_FAN_LIST);
 
 	while (WaitForSingleObject(src->stopEvent, 500) == WAIT_TIMEOUT) {
 		// update values.....
@@ -77,9 +77,9 @@ DWORD WINAPI CMonProc(LPVOID param) {
 			if (sValue != src->senValues[i]) {
 				src->senValues[i] = sValue;
 				needUpdate = true;
-				if (visible && tempList) {
+				if (visible && src->tempList) {
 					string name = to_string(sValue) + " (" + to_string(src->maxTemps[i]) + ")";
-					ListView_SetItemText(tempList, i, 0, (LPSTR) name.c_str());
+					ListView_SetItemText(src->tempList, i, 0, (LPSTR) name.c_str());
 				}
 			}
 		}
@@ -92,12 +92,12 @@ DWORD WINAPI CMonProc(LPVOID param) {
 			// Set max. rpm
 			//if (rpValue > src->conf->maxRPM)
 			//	src->conf->maxRPM = rpValue;
-			if (visible && fanList && rpValue != src->fanValues[i]) {
+			if (visible && src->fanList && rpValue != src->fanValues[i]) {
 				// Update RPM block...
 				src->fanValues[i] = rpValue;
 				needUpdate = true;
 				string name = "Fan " + to_string(i + 1) + " (" + to_string(rpValue) + ")";
-				ListView_SetItemText(fanList, i, 0, (LPSTR) name.c_str());
+				ListView_SetItemText(src->fanList, i, 0, (LPSTR) name.c_str());
 			}
 		}
 

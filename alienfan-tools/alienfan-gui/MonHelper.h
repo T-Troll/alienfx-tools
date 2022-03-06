@@ -8,7 +8,7 @@ private:
 	HANDLE dwHandle = 0;
 public:
 	ConfigHelper* conf;
-	HWND dlg = NULL, fDlg = NULL;
+	HWND dlg = NULL, fDlg = NULL, tempList = NULL, fanList = NULL;
 	HANDLE stopEvent = 0;
 	short oldPower = 0;
 	AlienFan_SDK::Control* acpi;

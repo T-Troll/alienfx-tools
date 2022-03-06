@@ -211,14 +211,15 @@ Please keep in mind:
 
 ## Keyboard shortcuts 
 
-Global shortcuts (works all rime application running):
-- CTRL+SHIFT+F12 - enable/disable lights
+Global shortcuts (works all time application running):
+- CTRL+SHIFT+F12 - enable/disable lights.
 - CTRL+SHIFT+F11 - dim/undim lights for current profile
 - CTRL+SHIFT+F10 - enable/disable software effects
 - CTRL+SHIFT+F9 - enable/disable profile auto switch
 - CTRL+SHIFT+1..9 - switch active profile to profile #N (profile order is the same as at "Profiles" tab)
-- CTRL+ALT+0..5 - switch active power mode (in case fan control enabled). 0 is for Manual, 1..5 for system-defined.
+- CTRL+ALT+0..5 - switch active power mode (in case fan control enabled). 0 is for Manual, 1..5 for system-defined
 - F18 (on Alienware keyboards it's mapped to Fn+AlienFX) - cycle light mode (on-dim-off)
+- F17 (G-key for Dell G-series laptops) - cycle between manual and performance power mode (in case Fan Control enabled)
 
 Other shortcuts (only then application active):
 - ALT+1..ALT+8 - switch to corresponding tab (from left to right)
