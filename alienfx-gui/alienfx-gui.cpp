@@ -258,7 +258,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		RegisterHotKey(mDlg, 3, 0, VK_F18);
 		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
-		RegisterHotKey(mDlg, 6, 0, VK_F17);
+		//RegisterHotKey(mDlg, 6, 0, VK_F17);
 		//profile change hotkeys...
 		for (int i = 0; i < 9; i++)
 			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x31 + i); // 1,2,3...
@@ -675,18 +675,18 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		tie.iImage = -1;
 		tie.pszText = nBuf;
 
-		for (int i = 0; i < C_PAGES; i++) {
-			pHdr->apRes[i] = (DLGTEMPLATE *) LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLORS + i), RT_DIALOG)));// DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
-			LoadString(hInst, IDS_TAB_COLOR + i, tie.pszText, 64);
-			SendMessage(tab_list, TCM_INSERTITEM, i, (LPARAM) &tie);
-		}
-
 		GetClientRect(pHdr->hwndTab, &pHdr->rcDisplay);
 
 		pHdr->rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
 		pHdr->rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
 		pHdr->rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
 		pHdr->rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
+
+		for (int i = 0; i < C_PAGES; i++) {
+			pHdr->apRes[i] = (DLGTEMPLATE *) LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLORS + i), RT_DIALOG)));// DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
+			LoadString(hInst, IDS_TAB_COLOR + i, tie.pszText, 64);
+			SendMessage(tab_list, TCM_INSERTITEM, i, (LPARAM) &tie);
+		}
 
 		ReloadModeList();
 
@@ -786,7 +786,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				fxhl->RefreshState();
 			}
 			ShowWindow(hDlg, SW_HIDE);
-		} break;
+		}
+		break;
 	case WM_APP + 1: {
 		switch (lParam)
 		{
@@ -1024,15 +1025,15 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			eve->StartProfiles();
 			ReloadProfileList();
 			break;
-		case 6: // G-key for Dell G-series power switch
-			if (conf->fanControl) {
-				if (acpi->GetPower())
-					conf->fan_conf->lastProf->powerStage = 0;
-				else
-					conf->fan_conf->lastProf->powerStage = 1;
-				acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-			}
-			break;
+		//case 6: // G-key for Dell G-series power switch
+		//	if (conf->fanControl) {
+		//		if (acpi->GetPower())
+		//			conf->fan_conf->lastProf->powerStage = 0;
+		//		else
+		//			conf->fan_conf->lastProf->powerStage = 1;
+		//		acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+		//	}
+		//	break;
 		default: return false;
 		}
 		break;
