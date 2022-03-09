@@ -225,9 +225,19 @@
 #define IDC_TO_HAPTICS                  1125
 #define IDC_DC_BOOST                    1125
 #define IDC_REM_HAPTICS                 1126
+#define IDC_VAL_CPU                     1126
 #define IDC_FROM_FINAL                  1127
+#define IDC_VAL_RAM                     1127
 #define IDC_TO_FINAL                    1128
+#define IDC_VAL_GPU                     1128
 #define IDC_REM_GROUP                   1129
+#define IDC_VAL_PWR                     1129
+#define IDC_VAL_FAN                     1130
+#define IDC_VAL_NET                     1131
+#define IDC_VAL_BAT                     1132
+#define IDC_VAL_TEMP                    1133
+#define IDC_VAL_TEMP2                   1134
+#define IDC_VAL_CNT                     1134
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -259,7 +269,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1126
+#define _APS_NEXT_CONTROL_VALUE         1127
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

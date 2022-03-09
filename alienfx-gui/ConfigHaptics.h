@@ -38,8 +38,6 @@ public:
 	DWORD inpType = 0;
 	DWORD showAxis = 1;
 
-	HWND dlg = NULL;
-
 	std::vector<haptics_map> haptics;
 
 	ConfigHaptics();

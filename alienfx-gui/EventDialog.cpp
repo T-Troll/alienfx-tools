@@ -12,6 +12,10 @@ extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 extern int eItem;
 
+DWORD WINAPI UpdateEventUI(LPVOID);
+
+HANDLE euiEvent = CreateEvent(NULL, false, false, NULL), uiEventHandle = NULL;
+
 void UpdateMonitoringInfo(HWND hDlg, lightset *map) {
 	HWND list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
 		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
@@ -114,6 +118,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		sTip1 = CreateToolTip(s1_slider, sTip1);
 		sTip2 = CreateToolTip(s2_slider, sTip2);
 
+		// Start UI update thread...
+		uiEventHandle = CreateThread(NULL, 0, UpdateEventUI, hDlg, 0, NULL);
+
 		if (eItem >= 0) {
 			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)light_list);
 		}
@@ -212,7 +219,32 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 			break;
 		} break;
+	case WM_DESTROY:
+		SetEvent(euiEvent);
+		WaitForSingleObject(uiEventHandle, 1000);
+		CloseHandle(uiEventHandle);
+		break;
 	default: return false;
 	}
 	return true;
+}
+
+DWORD WINAPI UpdateEventUI(LPVOID lpParam) {
+
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+	while (WaitForSingleObject(euiEvent, 500) == WAIT_TIMEOUT) {
+		if (IsWindowVisible((HWND)lpParam)) {
+			//DebugPrint("Events UI update...\n");
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_CPU), (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_RAM), (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_GPU), (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_PWR), (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " W").c_str());
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_FAN), (to_string(fxhl->eData.Fan * fxhl->maxData.Fan / 100) + " RPM").c_str());
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_BAT), (to_string(fxhl->eData.Batt) + " %").c_str());
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_NET), (to_string(fxhl->eData.NET * fxhl->maxData.NET / 102400) + " kb").c_str());
+			Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_TEMP), (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
+
+		}
+	}
+	return 0;
 }

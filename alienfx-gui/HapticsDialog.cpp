@@ -14,6 +14,10 @@ extern int eItem;
 
 int fGrpItem = -1;
 
+DWORD WINAPI UpdateHapticsUI(LPVOID);
+
+HANDLE auiEvent = CreateEvent(NULL, false, false, NULL), uiHapHandle = NULL;
+
 void DrawFreq(HWND hDlg, int *freq) {
 	unsigned i, rectop;
 	char szSize[5]; //for labels
@@ -174,7 +178,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
 		CheckDlgButton(hDlg, IDC_SHOWAXIS, conf->hap_conf->showAxis ? BST_CHECKED : BST_UNCHECKED);
 
-		conf->hap_conf->dlg = hDlg;
+		// Start UI update thread...
+		uiHapHandle = CreateThread(NULL, 0, UpdateHapticsUI, hDlg, 0, NULL);
 
 		if (eItem >= 0) {
 			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
@@ -384,10 +389,24 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	break;
 	case WM_CLOSE: 
 	case WM_DESTROY:
-		conf->hap_conf->dlg = NULL;
+		SetEvent(auiEvent);
+		WaitForSingleObject(uiHapHandle, 1000);
+		CloseHandle(uiHapHandle);
 	break;
 	default: return false;
 	}
 
 	return TRUE;
+}
+
+DWORD WINAPI UpdateHapticsUI(LPVOID lpParam) {
+
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+	while (WaitForSingleObject(auiEvent, 40) == WAIT_TIMEOUT) {
+		if (eve->audio && IsWindowVisible((HWND)lpParam)) {
+			//DebugPrint("Haptics UI update...\n");
+			DrawFreq((HWND)lpParam, eve->audio->freqs);
+		}
+	}
+	return 0;
 }

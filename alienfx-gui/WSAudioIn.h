@@ -12,7 +12,7 @@ class WSAudioIn
 {
 public:
 
-	WSAudioIn(/*ConfigHaptics* cf, FXHelper* fx*/);
+	WSAudioIn(ConfigHaptics* cf, FXHelper* fx);
 	~WSAudioIn();
 	void startSampling();
 	void stopSampling();
@@ -21,9 +21,9 @@ public:
 	void release();
 
 	// variables...
-	//FXHelper* fxha = NULL;
+	FXHelper* fxha = NULL;
 	DFT_gosu* dftGG = NULL;
-	//ConfigHaptics *conf = NULL;
+	ConfigHaptics *conf = NULL;
 	double* waveD;
 	int *freqs = NULL;
 

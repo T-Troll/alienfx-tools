@@ -8,13 +8,13 @@ private:
 	HANDLE dwHandle = 0;
 public:
 	ConfigHelper* conf;
-	HWND dlg = NULL, fDlg = NULL, tempList = NULL, fanList = NULL;
+	//HWND dlg = NULL, fDlg = NULL, tempList = NULL, fanList = NULL;
 	HANDLE stopEvent = 0;
 	short oldPower = 0;
 	AlienFan_SDK::Control* acpi;
 	vector<int> senValues, fanValues, boostValues, boostSets, maxTemps;
 
-	MonHelper(HWND, HWND, ConfigHelper*, AlienFan_SDK::Control*);
+	MonHelper(ConfigHelper*, AlienFan_SDK::Control*);
 	~MonHelper();
 	void Start();
 	void Stop();

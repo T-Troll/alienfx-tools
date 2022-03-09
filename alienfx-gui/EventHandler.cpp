@@ -199,7 +199,7 @@ void EventHandler::StartEffects() {
 			if (!capt) capt = new CaptureHelper(); 
 			break;
 		case 2: 
-			if (!audio) audio = new WSAudioIn(); 
+			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh); 
 			break;
 		//case 3: 
 		//	break;
@@ -209,7 +209,7 @@ void EventHandler::StartEffects() {
 
 void EventHandler::StartFanMon(AlienFan_SDK::Control *acpi) {
 	if (conf->fanControl && acpi && !mon)
-		mon = new MonHelper(NULL, NULL, conf->fan_conf, acpi);
+		mon = new MonHelper(conf->fan_conf, acpi);
 }
 
 void EventHandler::StopFanMon() {
@@ -447,8 +447,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 	SYSTEM_POWER_STATUS state;
 
-	ULONGLONG maxnet = 1;
-	DWORD maxPower = 100;
+	//ULONGLONG maxnet = 1;
+	//DWORD maxPower = 100;
 
 	EventData cData;
 
@@ -475,10 +475,10 @@ DWORD WINAPI CEventProc(LPVOID param)
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 
+		cData = { 0 };
+
 		/*pdhStatus =*/ PdhGetFormattedCounterValue( hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal );
 		/*pdhStatus =*/ PdhGetFormattedCounterValue( hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal );
-
-		cData = {0};
 
 		// Network load
 		valCount = GetValuesArray(hNETCounter);
@@ -488,8 +488,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 			totalNet += counterValues[i].FmtValue.longValue;
 		}
 
-		if (maxnet < totalNet) 
-			maxnet = totalNet;
+		if (src->fxh->maxData.NET < totalNet) 
+			src->fxh->maxData.NET = totalNet;
 		//if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
 
 		// GPU load
@@ -511,13 +511,15 @@ DWORD WINAPI CEventProc(LPVOID param)
 			// Check fan RPMs
 			for (unsigned i = 0; i < src->mon->fanValues.size(); i++) {
 				int newRpm = src->mon->fanValues[i] * 100 / src->conf->fan_conf->boosts[i].maxRPM;
+				if (src->fxh->maxData.Fan < src->conf->fan_conf->boosts[i].maxRPM)
+					src->fxh->maxData.Fan = src->conf->fan_conf->boosts[i].maxRPM;
 				if (cData.Fan < newRpm)
 					cData.Fan = newRpm;
 			}
 		}
 
 		// Now other temp sensor block and power block...
-		DWORD totalPwr = 0;
+		short totalPwr = 0;
 		if (src->conf->esif_temp) {
 			if (src->mon) {
 				// Let's get temperatures from fan sensors
@@ -536,11 +538,11 @@ DWORD WINAPI CEventProc(LPVOID param)
 			// Powers
 			valCount = GetValuesArray(hPwrCounter);
 			for (unsigned i = 0; i < valCount; i++) {
-				totalPwr += counterValues[i].FmtValue.longValue;
+				totalPwr += (short) counterValues[i].FmtValue.longValue / 10;
 			}
 
-			while (totalPwr > maxPower)
-				maxPower <<= 1;
+			while (totalPwr > src->fxh->maxData.PWR)
+				src->fxh->maxData.PWR <<= 1;
 		}
 
 		GlobalMemoryStatusEx(&memStat);
@@ -559,13 +561,21 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		// Leveling...
 		cData.Temp = min(100, max(0, cData.Temp));
+		if (cData.Temp > src->fxh->maxData.Temp)
+			src->fxh->maxData.Temp = cData.Temp;
 		cData.Batt = min(100, max(0, state.BatteryLifePercent));
 		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
+		if (cData.CPU > src->fxh->maxData.CPU)
+			src->fxh->maxData.CPU = cData.CPU;
 		cData.RAM = (byte) memStat.dwMemoryLoad;
-		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / maxnet > 0 ? (totalNet * 100) / maxnet : 1 : 0);
-		cData.PWR = (byte) min(100, totalPwr * 100 / maxPower);
+		if (cData.RAM > src->fxh->maxData.RAM)
+			src->fxh->maxData.RAM = cData.RAM;
+		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / src->fxh->maxData.NET > 0 ? (totalNet * 100) / src->fxh->maxData.NET : 1 : 0);
+		cData.PWR = (byte) min(100, totalPwr * 100 / src->fxh->maxData.PWR);
+		if (cData.GPU > src->fxh->maxData.GPU)
+			src->fxh->maxData.GPU = cData.GPU;
 
 		src->modifyProfile.lock();
 		src->fxh->SetCounterColor(&cData);

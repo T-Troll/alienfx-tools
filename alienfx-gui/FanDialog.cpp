@@ -17,6 +17,8 @@ int pLid = -1;
 GUID* sch_guid, perfset;
 
 INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
+DWORD WINAPI UpdateFanUI(LPVOID);
+HANDLE fuiEvent = CreateEvent(NULL, false, false, NULL), uiFanHandle = NULL;
 
 void SetTooltip(HWND tt, int x, int y) {
     TOOLINFO ti{ 0 };
@@ -265,12 +267,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
             sTip1 = CreateToolTip(fanWindow, NULL);
 
-            //eve->mon->Stop();
-            eve->mon->dlg = hDlg;
-            eve->mon->fDlg = fanWindow;
-            eve->mon->tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
-            eve->mon->fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
-            //eve->mon->Start();
+            // Start UI update thread...
+            uiFanHandle = CreateThread(NULL, 0, UpdateFanUI, hDlg, 0, NULL);
 
             SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
             SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
@@ -435,13 +433,13 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         } break;
-    case WM_CLOSE: case WM_DESTROY:
+    case WM_DESTROY:
+        SetEvent(fuiEvent);
+        WaitForSingleObject(uiFanHandle, 1000);
+        CloseHandle(uiFanHandle);
         // Close curve window
-        fanWindow = NULL;
+        // fanWindow = NULL;
         LocalFree(sch_guid);
-        if (eve->mon) {
-            eve->mon->dlg = eve->mon->fDlg = eve->mon->tempList = eve->mon->fanList = NULL;
-        }
         break;
     }
     return 0;
@@ -541,4 +539,26 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return false;
+}
+
+DWORD WINAPI UpdateFanUI(LPVOID lpParam) {
+    HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
+	     fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST);
+
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    while (WaitForSingleObject(fuiEvent, 250) == WAIT_TIMEOUT) {
+        if (eve->mon && IsWindowVisible((HWND)lpParam)) {
+            //DebugPrint("Fans UI update...\n");
+            for (int i = 0; i < eve->mon->acpi->HowManySensors(); i++) {
+                string name = to_string(eve->mon->senValues[i]) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
+                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+            }
+            for (int i = 0; i < eve->mon->acpi->HowManyFans(); i++) {
+                string name = "Fan " + to_string(i + 1) + " (" + to_string(eve->mon->fanValues[i]) + ")";
+                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+            }
+            SendMessage(fanWindow, WM_PAINT, 0, 0);
+        }
+    }
+    return 0;
 }

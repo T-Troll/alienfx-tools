@@ -19,8 +19,6 @@ public:
 	DWORD shift = 40;
 	std::vector<zone> zones;
 
-	HWND hDlg = NULL;
-
 	ConfigAmbient();
 	~ConfigAmbient();
 	void Load();

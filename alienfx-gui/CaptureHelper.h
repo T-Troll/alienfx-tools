@@ -2,6 +2,8 @@
 #include "ConfigAmbient.h"
 #include "FXHelper.h"
 
+#define GRIDSIZE 36 // 4x3 x 3
+
 class CaptureHelper
 {
 public:
@@ -12,6 +14,7 @@ public:
 	void Stop();
 	void Restart();
 	bool isDirty = false;
+	byte imgz[GRIDSIZE]{ 0 };
 private:
 	HANDLE dwHandle = NULL;
 };

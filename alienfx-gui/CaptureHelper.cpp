@@ -2,7 +2,6 @@
 #include "DXGIManager.hpp"
 
 DWORD WINAPI CInProc(LPVOID);
-DWORD WINAPI CDlgProc(LPVOID);
 DWORD WINAPI CFXProc(LPVOID);
 
 // debug print
@@ -12,7 +11,7 @@ DWORD WINAPI CFXProc(LPVOID);
 #define DebugPrint(_x_)  
 #endif
 
-#define GRIDSIZE 36 // 4x3 x 3
+//#define GRIDSIZE 36 // 4x3 x 3
 
 //ConfigAmbient* config;
 //FXHelper* fxh;
@@ -20,11 +19,11 @@ DWORD WINAPI CFXProc(LPVOID);
 extern ConfigHandler *conf;
 extern FXHelper *fxhl;
 
-byte imgz[GRIDSIZE]{0}, imgo[GRIDSIZE]{0};
+//byte imgz[GRIDSIZE]{ 0 };// , imgo[GRIDSIZE]{ 0 };
 
 DXGIManager* dxgi_manager = NULL;
 
-HANDLE clrStopEvent, uiEvent, lhEvent;
+HANDLE clrStopEvent, lhEvent;
 
 CaptureHelper::CaptureHelper(/*ConfigAmbient* conf, FXHelper* fhh*/)
 {
@@ -57,7 +56,7 @@ void CaptureHelper::Start()
 {
 	if (!dwHandle) {
 		clrStopEvent = CreateEvent(NULL, true, false, NULL);
-		dwHandle = CreateThread( NULL, 0, CInProc, NULL, 0, NULL);
+		dwHandle = CreateThread( NULL, 0, CInProc, this, 0, NULL);
 	}
 }
 
@@ -137,17 +136,16 @@ void SetDimensions() {
 DWORD WINAPI CInProc(LPVOID param)
 {
 	//byte* img = NULL;
+	CaptureHelper* src = (CaptureHelper*)param;
 	byte  imgo[GRIDSIZE]{0};
 
 	size_t buf_size;
 
 	DWORD ret = 0;
 
-	uiEvent = CreateEvent(NULL, false, false, NULL);
 	lhEvent = CreateEvent(NULL, false, false, NULL);
 
-	HANDLE uiHandle = CreateThread(NULL, 0, CDlgProc, imgz, 0, NULL),
-		lightHandle = CreateThread(NULL, 0, CFXProc, imgz, 0, NULL);
+	HANDLE lightHandle = CreateThread(NULL, 0, CFXProc, src->imgz, 0, NULL);
 
 	SetDimensions();
 
@@ -164,7 +162,6 @@ DWORD WINAPI CInProc(LPVOID param)
 						//ColorCalc(&callData[dy][dx]);
 						UINT ptr = (dy * 4 + dx);// *3;
 						if (pfEvent[ptr]) {
-							//ResetEvent(pfEvent[dy * 4 + dx]);
 							SetEvent(callData[dy][dx].pEvent);
 						} else {
 							callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
@@ -175,10 +172,9 @@ DWORD WINAPI CInProc(LPVOID param)
 						}
 					}
 
-				if (WaitForMultipleObjects(12, pfEvent, true, 500) == WAIT_OBJECT_0 && memcmp(imgz, imgo, GRIDSIZE)) {
-					memcpy(imgz, imgo, GRIDSIZE);
+				if (WaitForMultipleObjects(12, pfEvent, true, 500) == WAIT_OBJECT_0 && memcmp(src->imgz, imgo, GRIDSIZE)) {
+					memcpy(src->imgz, imgo, GRIDSIZE);
 					SetEvent(lhEvent);
-					SetEvent(uiEvent);
 				}
 			} else {
 				DebugPrint("Ambient update skipped!\n");
@@ -200,23 +196,9 @@ DWORD WINAPI CInProc(LPVOID param)
 		CloseHandle(pThread[i]);
 		pThread[i] = 0;
 	}
-	WaitForSingleObject(uiHandle, 1000);
 	WaitForSingleObject(lightHandle, 1000);
-	CloseHandle(uiHandle);
 	CloseHandle(lightHandle);
 
-	return 0;
-}
-
-DWORD WINAPI CDlgProc(LPVOID param)
-{
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
-		if (conf->amb_conf->hDlg && IsWindowVisible(conf->amb_conf->hDlg) && WaitForSingleObject(uiEvent, 0) == WAIT_OBJECT_0) {
-			//DebugPrint("Ambient UI update...\n");
-			SendMessage(conf->amb_conf->hDlg, WM_PAINT, 0, (LPARAM)imgz);
-		}
-	}
 	return 0;
 }
 
@@ -227,7 +209,7 @@ DWORD WINAPI CFXProc(LPVOID param) {
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient light update...\n");
-			fxhl->RefreshAmbient(imgz);
+			fxhl->RefreshAmbient((UCHAR*)param);
 		}
 	}
 	return 0;

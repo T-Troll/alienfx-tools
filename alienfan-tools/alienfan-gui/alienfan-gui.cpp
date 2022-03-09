@@ -45,6 +45,9 @@ GUID* sch_guid, perfset;
 
 NOTIFYICONDATA niData{0};
 
+DWORD WINAPI UpdateFanUI(LPVOID);
+HANDLE fuiEvent = CreateEvent(NULL, false, false, NULL), uiFanHandle = NULL;
+
 // Forward declarations of functions included in this code module:
 //ATOM                MyRegisterClass(HINSTANCE hInstance);
 HWND                InitInstance(HINSTANCE, int);
@@ -72,13 +75,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     if (acpi->IsActivated() && acpi->Probe()) {
         fan_conf->SetBoosts(acpi);
         
+        mon = new MonHelper(fan_conf, acpi);
+
         // Perform application initialization:
         HWND mDlg;
         if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL ))) {
             return FALSE;
         }
-
-        mon->dlg = mDlg;
 
         //power mode hotkeys
         for (int i = 0; i < 6; i++)
@@ -468,9 +471,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             ShowWindow(fanWindow, SW_SHOWNA);
         }
 
-        mon = new MonHelper(hDlg, fanWindow, fan_conf, acpi);
-        mon->tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
-        mon->fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
+        uiFanHandle = CreateThread(NULL, 0, UpdateFanUI, hDlg, 0, NULL);
 
         ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
         ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
@@ -732,12 +733,13 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         } break;
     case WM_CLOSE:
         EndDialog(hDlg, IDOK);
-        mon->Stop();
         Shell_NotifyIcon(NIM_DELETE, &niData);
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
-        fan_conf->Save();
+        SetEvent(fuiEvent);
+        WaitForSingleObject(uiFanHandle, 1000);
+        CloseHandle(uiFanHandle);
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
@@ -916,4 +918,26 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return DefWindowProc(hDlg, message, wParam, lParam);
+}
+
+DWORD WINAPI UpdateFanUI(LPVOID lpParam) {
+    HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
+        fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST);
+
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    while (WaitForSingleObject(fuiEvent, 250) == WAIT_TIMEOUT) {
+        if (mon && IsWindowVisible((HWND)lpParam)) {
+            //DebugPrint("Fans UI update...\n");
+            for (int i = 0; i < mon->acpi->HowManySensors(); i++) {
+                string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
+                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+            }
+            for (int i = 0; i < mon->acpi->HowManyFans(); i++) {
+                string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanValues[i]) + ")";
+                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+            }
+            SendMessage(fanWindow, WM_PAINT, 0, 0);
+        }
+    }
+    return 0;
 }

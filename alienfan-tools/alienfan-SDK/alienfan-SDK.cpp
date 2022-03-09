@@ -147,7 +147,7 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::RunGPUCommand(short com, DWORD packed) {
-		if (activated && com) {
+		if (activated && com && aDev != -1) {
 			PACPI_EVAL_OUTPUT_BUFFER res = NULL;
 			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
 			
@@ -155,7 +155,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0x100);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, (UCHAR*)&packed);
-			if (EvalAcpiMethodArgs(acc, "\\_SB.PCI0.PEG0.PEGP.GPS", acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethodArgs(acc, devs[aDev].gpuCommand.c_str(), acpiargs, (PVOID *) &res) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
