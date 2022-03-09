@@ -1,5 +1,4 @@
 #include "WSAudioIn.h"
-#include "HapticsDialog.h"
 
 // debug print
 #ifdef _DEBUG
@@ -8,12 +7,11 @@
 #define DebugPrint(_x_)  
 #endif
 
-extern FXHelper *fxhl;
-extern ConfigHandler *conf;
+//extern FXHelper *fxhl;
+//extern ConfigHandler *conf;
 
 DWORD WINAPI WSwaveInProc(LPVOID);
 DWORD WINAPI resample(LPVOID);
-DWORD WINAPI UpdateUI(LPVOID);
 
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
@@ -22,19 +20,19 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
 
-HANDLE hEvent = 0, astopEvent = 0, updateEvent = 0, auiEvent = 0;
+HANDLE hEvent = 0, astopEvent = 0, updateEvent = 0;
 
-WSAudioIn::WSAudioIn(/*ConfigHaptics* cf, FXHelper *fx*/)
+WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper* fx)
 {
-	/*fxha = fx;
-	conf = cf;*/
+	conf = cf;
+	fxha = fx;
 	waveD = new double[NUMPTS];
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	dftGG = new DFT_gosu();
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
-	if (rate = init(conf->hap_conf->inpType)) {
+	if (rate = init(conf->inpType)) {
 		dftGG->setSampleRate(rate);
 		startSampling();
 	}
@@ -282,38 +280,17 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 DWORD WINAPI resample(LPVOID lpParam)
 {
 	WSAudioIn *src = (WSAudioIn *) lpParam;
-	double* waveDouble = src->waveD;
 
 	HANDLE waitArray[2]{astopEvent, updateEvent};
 	DWORD res = 0;
 
-	auiEvent = CreateEvent(NULL, false, false, NULL);
-	HANDLE uiHandle = CreateThread(NULL, 0, UpdateUI, src, 0, NULL);
-
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0) {
 		if (res == WAIT_OBJECT_0 + 1) {
-			src->freqs = src->dftGG->calc(waveDouble);
-			SetEvent(auiEvent);
+			src->freqs = src->dftGG->calc(src->waveD);
 			//DebugPrint("Haptics light update...\n");
-			fxhl->RefreshHaptics(src->freqs);
+			src->fxha->RefreshHaptics(src->freqs);
 		}
 	}
 
-	WaitForSingleObject(uiHandle, 3000);
-	CloseHandle(uiHandle);
-	CloseHandle(auiEvent);
-	return 0;
-}
-
-DWORD WINAPI UpdateUI(LPVOID lpParam) {
-	WSAudioIn *src = (WSAudioIn *) lpParam;
-	DWORD res = 0;
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-	while (WaitForSingleObject(astopEvent, 40) == WAIT_TIMEOUT) {
-		if (conf->hap_conf->dlg && IsWindowVisible(conf->hap_conf->dlg) && WaitForSingleObject(auiEvent, 0) == WAIT_OBJECT_0) {
-			//DebugPrint("Haptics UI update...\n");
-			DrawFreq(conf->hap_conf->dlg, src->freqs);
-		}
-	}
 	return 0;
 }

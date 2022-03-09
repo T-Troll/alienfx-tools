@@ -11,6 +11,10 @@ extern void SwitchTab(int);
 extern EventHandler* eve;
 extern int eItem;
 
+DWORD WINAPI CDlgProc(LPVOID);
+HANDLE uiStopEvent = CreateEvent(NULL, false, false, NULL);
+HANDLE uiHandle = NULL;
+
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
@@ -40,7 +44,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         sTip1 = CreateToolTip(brSlider, sTip1);
         SetSlider(sTip1, conf->amb_conf->shift);
 
-        conf->amb_conf->hDlg = hDlg;
+        // Start UI update thread...
+        uiHandle = CreateThread(NULL, 0, CDlgProc, hDlg, 0, NULL);
 
         if (eItem >= 0) {
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
@@ -194,9 +199,24 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     break;
     case WM_CLOSE: 
     case WM_DESTROY:
-        conf->amb_conf->hDlg = NULL;
+        SetEvent(uiStopEvent);
+        WaitForSingleObject(uiHandle, 1000);
+        CloseHandle(uiHandle);
+        //conf->amb_conf->hDlg = NULL;
     break;
     default: return false;
     }
     return true;
+}
+
+DWORD WINAPI CDlgProc(LPVOID param)
+{
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    while (WaitForSingleObject(uiStopEvent, 100) == WAIT_TIMEOUT) {
+        if (eve->capt && IsWindowVisible((HWND)param)) {
+            //DebugPrint("Ambient UI update...\n");
+            SendMessage((HWND) param, WM_PAINT, 0, (LPARAM) eve->capt->imgz);
+        }
+    }
+    return 0;
 }

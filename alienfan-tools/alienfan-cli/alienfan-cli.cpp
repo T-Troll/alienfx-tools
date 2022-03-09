@@ -13,7 +13,7 @@
 using namespace std;
 
 bool CheckArgs(string cName, int minArgs, size_t nargs) {
-    if (minArgs < nargs) {
+    if (minArgs > nargs) {
         printf("%s: Incorrect arguments (should be %d)\n", cName.c_str(), minArgs);
         return false;
     }
@@ -50,7 +50,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v5.5.0\n");
+    printf("AlienFan-cli v5.6.0\n");
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 

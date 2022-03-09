@@ -23,7 +23,7 @@ namespace AlienFan_SDK {
 
 	struct ALIENFAN_DEVICE {
 		string mainCommand;
-		//int  errorCode;
+		string gpuCommand;
 		byte maxBoost;
 		bool commandControlled;
 		short controlID;

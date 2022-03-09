@@ -1,12 +1,8 @@
 #include "MonHelper.h"
-#include <CommCtrl.h>
-#include "resource.h"
 
 DWORD WINAPI CMonProc(LPVOID);
 
-MonHelper::MonHelper(HWND cDlg, HWND fanDlg, ConfigHelper* config, AlienFan_SDK::Control* acp) {
-	dlg = cDlg;
-	fDlg = fanDlg;
+MonHelper::MonHelper(ConfigHelper* config, AlienFan_SDK::Control* acp) {
 	conf = config;
 	acpi = acp;
 	oldPower = acpi->GetPower();
@@ -15,6 +11,10 @@ MonHelper::MonHelper(HWND cDlg, HWND fanDlg, ConfigHelper* config, AlienFan_SDK:
 	acpi->SetGPU(conf->lastProf->GPUPower);
 
 	maxTemps.resize(acpi->HowManySensors());
+	senValues.resize(acpi->HowManySensors());
+	fanValues.resize(acpi->HowManyFans());
+	boostValues.resize(acpi->HowManyFans());
+	boostSets.resize(acpi->HowManyFans());
 	for (int i = 0; i < acpi->HowManySensors(); i++) {
 		maxTemps[i] = acpi->GetTempValue(i);
 	}
@@ -55,55 +55,27 @@ void MonHelper::Stop() {
 
 DWORD WINAPI CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
-	//vector<int> senValues, fanValues, boostValues, boostSets;
-	src->senValues.resize(src->acpi->HowManySensors());
-	src->fanValues.resize(src->acpi->HowManyFans());
-	src->boostValues.resize(src->acpi->HowManyFans());
-	src->boostSets.resize(src->acpi->HowManyFans());
-
-	//HWND tempList = GetDlgItem(src->dlg, IDC_TEMP_LIST),
-	//	fanList = GetDlgItem(src->dlg, IDC_FAN_LIST);
 
 	while (WaitForSingleObject(src->stopEvent, 500) == WAIT_TIMEOUT) {
 		// update values.....
-		bool visible = IsWindowVisible(src->dlg);// IsIconic(src->dlg);
-		bool needUpdate = false;
 
 		// temps..
 		for (int i = 0; i < src->acpi->HowManySensors(); i++) {
-			int sValue = src->acpi->GetTempValue(i);
-			if (sValue > src->maxTemps[i])
-				src->maxTemps[i] = sValue;
-			if (sValue != src->senValues[i]) {
-				src->senValues[i] = sValue;
-				needUpdate = true;
-				if (visible && src->tempList) {
-					string name = to_string(sValue) + " (" + to_string(src->maxTemps[i]) + ")";
-					ListView_SetItemText(src->tempList, i, 0, (LPSTR) name.c_str());
-				}
-			}
+			src->senValues[i] = src->acpi->GetTempValue(i);
+			if (src->senValues[i] > src->maxTemps[i])
+				src->maxTemps[i] = src->senValues[i];
 		}
 
 		// fans...
 		for (int i = 0; i < src->acpi->HowManyFans(); i++) {
 			src->boostSets[i] = 0;
 			src->boostValues[i] = src->acpi->GetFanValue(i);
-			int rpValue = src->acpi->GetFanRPM(i);
-			// Set max. rpm
-			//if (rpValue > src->conf->maxRPM)
-			//	src->conf->maxRPM = rpValue;
-			if (visible && src->fanList && rpValue != src->fanValues[i]) {
-				// Update RPM block...
-				src->fanValues[i] = rpValue;
-				needUpdate = true;
-				string name = "Fan " + to_string(i + 1) + " (" + to_string(rpValue) + ")";
-				ListView_SetItemText(src->fanList, i, 0, (LPSTR) name.c_str());
-			}
+			src->fanValues[i] = src->acpi->GetFanRPM(i);
 		}
 
 		// boosts..
 		if (!src->conf->lastProf->powerStage) {
-			// in manual mode, can set...
+			// in manual mode only
 			for (int i = 0; i < src->conf->lastProf->fanControls.size(); i++) {
 				temp_block* sen = &src->conf->lastProf->fanControls[i];
 				for (int j = 0; j < sen->fans.size(); j++) {
@@ -132,9 +104,6 @@ DWORD WINAPI CMonProc(LPVOID param) {
 //					OutputDebugString(msg.c_str());
 //#endif
 				}
-			if (visible && needUpdate && src->fDlg) {
-				SendMessage(src->fDlg, WM_PAINT, 0, 0);
-			}
 		}
 
 	}

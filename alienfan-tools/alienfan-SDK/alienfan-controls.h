@@ -58,7 +58,7 @@ namespace AlienFan_SDK {
 	static const ALIENFAN_DEVICE devs[NUM_DEVICES]{
 		{ // Alienware m15/m17
 			"\\_SB.AMW1.WMAX", // main command
-			//-1, // Error code
+			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
 			105, // max. boost
 			true, // command controlled
 			0, // controlID
@@ -66,7 +66,7 @@ namespace AlienFan_SDK {
 		}, 
 		{ // Dell G15
 			"\\_SB.AMW3.WMAX", // main command
-			//0, // Error code
+			"\\_SB.PCI0.GPP0.PEGP.GPS", // GPU command
 			150, // Max. boost
 			true, // command controlled
 			0, // controlID
@@ -74,7 +74,7 @@ namespace AlienFan_SDK {
 		},
 		{ // Dell G5 SE
 			"\\_SB.AMWW.WMAX", // main command
-			//0, // Error code
+			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
 			100, // Max. boost
 			true, // command controlled
 			0, // controlID
@@ -82,7 +82,7 @@ namespace AlienFan_SDK {
 		},
 		{ // Aurora R7
 			"\\_SB.AMW1.WMAX", // main command
-			//-1, // Error code
+			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
 			100, // Max. boost
 			true, // command controlled
 			1, // controlID
@@ -90,7 +90,7 @@ namespace AlienFan_SDK {
 		},
 		{ // Area 51R4
 			"\\_SB.WMI2.WMAX", // main command
-			//-1, // Error code
+			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
 			100, // Max. boost
 			true, // command controlled
 			1, // controlID
@@ -98,7 +98,7 @@ namespace AlienFan_SDK {
 		},
 		{ // Alienware 13R2, 15R2
 			"\\_SB.AMW0.WMBC", // main command
-			//0, // Error code
+			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
 			99, // Max. boost
 			false, // command controlled
 			0, // controlID

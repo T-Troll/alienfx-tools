@@ -192,8 +192,8 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 	}
 	if (wasChanged) {
 		QueryUpdate();
-		memcpy(&eData, data, sizeof(EventData));
 	}
+	memcpy(&eData, data, sizeof(EventData));
 }
 
 void FXHelper::QueryUpdate(int did, bool force)

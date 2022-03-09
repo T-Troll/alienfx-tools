@@ -91,7 +91,7 @@ void FindDevice(int devID) {
 }
 
 bool CheckArgs(string cName, int minArgs, size_t nargs) {
-	if (minArgs < nargs) {
+	if (minArgs > nargs) {
 		printf("%s: Incorrect arguments (should be %d)\n", cName.c_str(), minArgs);
 		return false;
 	}
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v5.4.6\n");
+	printf("alienfx-cli v5.6.0\n");
 	if (argc < 2) 
 	{
 		printUsage();
