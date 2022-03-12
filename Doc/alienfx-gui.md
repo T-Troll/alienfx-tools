@@ -154,7 +154,7 @@ Double-click or press Enter on selected light to edit its name.
 Selected light changes it colours to the one defined by "Test colour" button, and fade to black then unselected.
 
 "Detect lights" button opens "check you devices" dialogue with database to provide possible device/light names for you gear from it:
-![Devices tab](/Doc/img/new-devices.png?raw=true)
+![New Devices dialogue](/Doc/img/new_devices.png?raw=true)  
 "Load Lights" button loads a backup (saved at this or similar device). If devices is different, it will try to apply as much similar configuration as possible.  
 "Save Lights" button save a backup of current light and device names and settings.  
 
