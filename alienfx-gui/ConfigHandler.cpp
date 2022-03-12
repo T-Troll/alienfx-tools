@@ -196,7 +196,7 @@ void ConfigHandler::Load() {
 
 	GetReg("AutoStart", &startWindows);
 	GetReg("Minimized", &startMinimized);
-	//GetReg("Refresh", &autoRefresh);
+	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LightsOn", &lightsOn, 1);
 	GetReg("Dimmed", &dimmed);
 	GetReg("Monitoring", &enableMon, 1);
@@ -324,6 +324,7 @@ void ConfigHandler::Save() {
 
 	SetReg("AutoStart", startWindows);
 	SetReg("Minimized", startMinimized);
+	SetReg("UpdateCheck", updateCheck);
 	SetReg("LightsOn", lightsOn);
 	SetReg("Dimmed", dimmed);
 	SetReg("Monitoring", enableMon);

@@ -17,7 +17,7 @@ struct devInfo {
 };
 
 extern AlienFan_SDK::Control* acpi;
-int eLid = -1, dItem = -1, dIndex = -1;
+int eLid = -1, dItem = -1, dIndex = -1, lMaxIndex = 0;
 bool whiteTest = false;
 vector<devInfo> csv_devs;
 
@@ -29,6 +29,7 @@ void UpdateLightsList(HWND hDlg, int lid) {
 	SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
 	CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 	CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
+	lMaxIndex = 0;
 
 	ListView_DeleteAllItems(light_list);
 	ListView_SetExtendedListViewStyle(light_list, LVS_EX_FULLROWSELECT);
@@ -39,6 +40,7 @@ void UpdateLightsList(HWND hDlg, int lid) {
 	ListView_InsertColumn(light_list, 0, &lCol);
 	for (int i = 0; i < fxhl->afx_dev.fxdevs[dIndex].lights.size(); i++) {
 		AlienFX_SDK::mapping *clight = fxhl->afx_dev.fxdevs[dIndex].lights[i];
+		if (lMaxIndex < clight->lightid) lMaxIndex = clight->lightid;
 		LVITEMA lItem; 
 		lItem.mask = LVIF_TEXT | LVIF_PARAM;
 		lItem.iItem = i;
@@ -305,15 +307,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_ADDL: {
 			int cid = GetDlgItemInt(hDlg, IDC_LIGHTID, NULL, false);
 			// let's check if we have the same ID, need to use max+1 in this case
-			unsigned maxID = 0;
-			for (int i = 0; i < fxhl->afx_dev.fxdevs[dIndex].lights.size(); i++) {
-				WORD aPid = fxhl->afx_dev.fxdevs[dIndex].lights[i]->lightid;
-				if (aPid > maxID)
-					maxID = aPid;
-				if (aPid == cid)
-					cid = -1;
+			if (fxhl->afx_dev.GetMappingById(dPid, cid)) {
+				// have light, need to use max ID
+				cid = lMaxIndex + 1;
 			}
-			if (cid < 0) cid = maxID + 1;
+			//unsigned maxID = 0;
+			//for (int i = 0; i < fxhl->afx_dev.fxdevs[dIndex].lights.size(); i++) {
+			//	WORD aPid = fxhl->afx_dev.fxdevs[dIndex].lights[i]->lightid;
+			//	if (aPid > maxID)
+			//		maxID = aPid;
+			//	if (aPid == cid)
+			//		cid = -1;
+			//}
+			//if (cid < 0) cid = maxID + 1;
 			fxhl->afx_dev.AddMapping(MAKELONG(fxhl->afx_dev.fxdevs[dIndex].desc->devid,
 											  fxhl->afx_dev.fxdevs[dIndex].desc->vid),
 									 cid,
@@ -367,7 +373,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							   MB_OK);
 				}
 				eLid = nLid;
+				int nMaxIndex = lMaxIndex;
 				UpdateLightsList(hDlg, eLid);
+				lMaxIndex = nMaxIndex;
 				fxhl->TestLight(dIndex, eLid, whiteTest);
 			}
 			break;

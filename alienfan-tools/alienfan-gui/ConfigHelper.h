@@ -44,6 +44,7 @@ public:
 	DWORD lastSelectedSensor = -1;
 	DWORD startWithWindows = 0;
 	DWORD startMinimized = 0;
+	DWORD updateCheck = 1;
 
 	fan_profile* lastProf;
 	fan_profile prof;
