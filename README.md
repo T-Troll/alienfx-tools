@@ -45,7 +45,7 @@ It's not a virus, in fact, but the kernel hack for load driver. You should add `
 - Unpack the archive to any directory of your choise or just run installer.  
 - After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
 
-Please read (How to start)[https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide-and-tips)] guide first!
+Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide-and-tips)) guide first!
 
 ## Supported hardware:
 
