@@ -20,7 +20,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		// system settings...
 		CheckDlgButton(hDlg, IDC_STARTW, conf->startWindows);
 		CheckDlgButton(hDlg, IDC_STARTM, conf->startMinimized);
-		//CheckDlgButton(hDlg, IDC_AUTOREFRESH, conf->autoRefresh);
 		CheckDlgButton(hDlg, IDC_BATTDIM, conf->dimmedBatt);
 		CheckDlgButton(hDlg, IDC_SCREENOFF, conf->offWithScreen);
 		CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, conf->enableMon);
@@ -34,6 +33,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_FANCONTROL, conf->fanControl);
 		CheckDlgButton(hDlg, IDC_CHECK_EXCEPTION, conf->noDesktop);
 		CheckDlgButton(hDlg, IDC_CHECK_DIM, conf->dimmed);
+		CheckDlgButton(hDlg, IDC_CHECK_UPDATE, conf->updateCheck);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -62,6 +62,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
 			}
 		} break;
+		case IDC_CHECK_UPDATE:
+			conf->updateCheck = state;
+			break;
 		case IDC_BATTDIM:
 			conf->dimmedBatt = state;
 			fxhl->RefreshState();

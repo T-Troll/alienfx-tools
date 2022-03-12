@@ -86,7 +86,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //power mode hotkeys
         for (int i = 0; i < 6; i++)
             RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-        RegisterHotKey(mDlg, 6, 0, VK_F17);
+        //RegisterHotKey(mDlg, 6, 0, VK_F17);
 
         //if (fan_conf->lastProf->powerStage >= 0)
         //    acpi->SetPower(fan_conf->lastProf->powerStage);
@@ -411,7 +411,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     if (message == newTaskBar) {
         // Started/restarted explorer...
         Shell_NotifyIcon(NIM_ADD, &niData);
-        CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
+        if (fan_conf->updateCheck)
+            CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
         return true;
     }
 
@@ -430,8 +431,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                               GetSystemMetrics(SM_CYSMICON),
                               LR_DEFAULTCOLOR);
         niData.hWnd = hDlg;
-        Shell_NotifyIcon(NIM_ADD, &niData);
-        CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
+        if (Shell_NotifyIcon(NIM_ADD, &niData) && fan_conf->updateCheck)
+            CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
 
         // set PerfBoost lists...
         HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
@@ -479,6 +480,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
 
         SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
         SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
@@ -566,6 +568,11 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
             fan_conf->Save();
         } break;
+        case IDM_SETTINGS_UPDATE: {
+            fan_conf->updateCheck = !fan_conf->updateCheck;
+            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
+            fan_conf->Save();
+        } break;
         case IDC_BUT_RESET:
         {
             temp_block *cur = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
@@ -629,16 +636,16 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             acpi->SetPower(fan_conf->lastProf->powerStage);
             ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
         }
-        switch (wParam) {
-        case 6: // G-key for Dell G-series power switch
-        {
-            if (acpi->GetPower())
-                fan_conf->lastProf->powerStage = 0;
-            else
-                fan_conf->lastProf->powerStage = 1;
-            acpi->SetPower(fan_conf->lastProf->powerStage);
-        } break;
-        }
+        //switch (wParam) {
+        //case 6: // G-key for Dell G-series power switch
+        //{
+        //    if (acpi->GetPower())
+        //        fan_conf->lastProf->powerStage = 0;
+        //    else
+        //        fan_conf->lastProf->powerStage = 1;
+        //    acpi->SetPower(fan_conf->lastProf->powerStage);
+        //} break;
+        //}
         break;
     } break;
     case WM_NOTIFY:

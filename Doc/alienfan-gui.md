@@ -36,6 +36,7 @@ You can minimize application to tray pressing Minimize button (or the top one), 
 There are two settings into application top menu under "Settings":
 - "Start with windows" - If checked, application will run at system start.
 - "Start minimized" - If checked, application hide into tray icon after start.
+- "Check for update" - If checked, application will made online update check at start.
 
 ## Keyboard shortcuts 
 

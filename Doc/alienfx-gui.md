@@ -153,7 +153,8 @@ Double-click or press Enter on selected light to edit its name.
 "Indicator" checkbox is for indicator lights (HDD, caps lock, Wi-Fi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
 Selected light changes it colours to the one defined by "Test colour" button, and fade to black then unselected.
 
-"Detect lights" button check you devices against application database and provide possible light names for you gear from it.  
+"Detect lights" button opens "check you devices" dialogue with database to provide possible device/light names for you gear from it:
+![Devices tab](/Doc/img/new-devices.png?raw=true)
 "Load Lights" button loads a backup (saved at this or similar device). If devices is different, it will try to apply as much similar configuration as possible.  
 "Save Lights" button save a backup of current light and device names and settings.  
 
@@ -200,7 +201,8 @@ Please keep in mind:
 - "Dim lights on battery" - Automatically dim lights if system running at battery power, decreasing energy usage (default - on).
 - "Dimming power" - Amount of the brightness decrease then dimmed. Values can be from 0 to 255, default is 92.
 - "Start with Windows" - Start application at Windows start. It will not work if application request run as admin level (see below) (default - off).
-- "Start minimized" - Hide application window in system tray after start.
+- "Start minimized" - Hide application window in system tray after start (default - off).
+- "Check for update" - Enables online update check (default - on).
 - "Enable monitoring" - Application start to monitor system metrics (CPU/GPU/RAM load, etc) and refresh lights according to it (default - on).
 - "Profile auto switch" - Switch between profiles available automatically, according of applications start and finish. This also block manual profile selection (default - off).
 - "Do not switch for desktop" - If enabled, profile auto switch will not change profile, if start menu/tray/desktop selected (default - off).

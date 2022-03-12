@@ -653,7 +653,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
 		Shell_NotifyIcon(NIM_ADD, &conf->niData);
-		CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+		if (conf->updateCheck)
+			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		return true;
 	}
 
@@ -697,7 +698,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		conf->niData.hWnd = hDlg;
 		conf->SetIconState();
 		
-		if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
+		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
 			// check update....
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		} 

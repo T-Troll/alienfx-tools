@@ -69,6 +69,7 @@ private:
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
+	DWORD updateCheck = 1;
 	DWORD lightsOn = 1;
 	DWORD dimmed = 0;
 	DWORD offWithScreen = 0;

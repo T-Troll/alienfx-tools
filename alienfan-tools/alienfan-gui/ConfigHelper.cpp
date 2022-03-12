@@ -54,6 +54,7 @@ void ConfigHelper::Load() {
 
 	GetReg("StartAtBoot", &startWithWindows);
 	GetReg("StartMinimized", &startMinimized);
+	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LastPowerStage", &prof.powerStage);
 	//GetReg("LastPerfModeAC", &prof.perfModeAC);
 	//GetReg("LastPerfModeDC", &prof.perfModeDC);
@@ -133,8 +134,7 @@ void ConfigHelper::Save() {
 	SetReg("StartAtBoot", startWithWindows);
 	SetReg("StartMinimized", startMinimized);
 	SetReg("LastPowerStage", prof.powerStage);
-	//SetReg("LastPerfModeAC", prof.perfModeAC);
-	//SetReg("LastPerfModeDC", prof.perfModeDC);
+	SetReg("UpdateCheck", updateCheck);
 	SetReg("LastSensor", lastSelectedSensor);
 	SetReg("LastFan", lastSelectedFan);
 	SetReg("LastGPU", prof.GPUPower);
