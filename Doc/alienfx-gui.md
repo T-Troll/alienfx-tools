@@ -153,7 +153,7 @@ Double-click or press Enter on selected light to edit its name.
 "Indicator" checkbox is for indicator lights (HDD, caps lock, Wi-Fi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
 Selected light changes it colours to the one defined by "Test colour" button, and fade to black then unselected.
 
-"Detect lights" button opens "check you devices" dialogue with database to provide possible device/light names for you gear from it:
+"Detect lights" button opens "New Devices detection" dialogue with database to provide possible device/light names for you gear from it:
 ![New Devices dialogue](/Doc/img/new_devices.png?raw=true)  
 "Load Lights" button loads a backup (saved at this or similar device). If devices is different, it will try to apply as much similar configuration as possible.  
 "Save Lights" button save a backup of current light and device names and settings.  
