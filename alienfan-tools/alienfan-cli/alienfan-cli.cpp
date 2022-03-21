@@ -173,8 +173,6 @@ int main(int argc, char* argv[])
                         PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, dcMode);
                         PowerSetActiveScheme(NULL, sch_guid);
                         printf("CPU boost set to %d,%d\n", acMode, dcMode);
-                        //PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
-                        //PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
                         LocalFree(sch_guid);
                     }
                     continue;

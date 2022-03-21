@@ -433,6 +433,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	HINTERNET session, req;
 	char buf[2048];
 	DWORD byteRead;
+	bool isConnectionFailed = false;
 	// Wait connection for a while
 	if (!needUpdateFeedback)
 		Sleep(10000);
@@ -460,14 +461,26 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 					}
 				}
 			}
+			else
+				isConnectionFailed = true;
 			InternetCloseHandle(req);
 		}
+		else
+			isConnectionFailed = true;
 		InternetCloseHandle(session);
 	}
-	if (!isNewVersion && needUpdateFeedback) {
+	else
+		isConnectionFailed = true;
+	if (needUpdateFeedback && !isNewVersion) {
 		niData->uFlags |= NIF_INFO;
-		strcpy_s(niData->szInfoTitle, "You are up to date!");
-		strcpy_s(niData->szInfo, "You are using latest version.");
+		if (isConnectionFailed) {
+			strcpy_s(niData->szInfoTitle, "Update check failed!");
+			strcpy_s(niData->szInfo, "Can't connect to GitHub for update check.");
+		}
+		else {
+			strcpy_s(niData->szInfoTitle, "You are up to date!");
+			strcpy_s(niData->szInfo, "You are using latest version.");
+		}
 		Shell_NotifyIcon(NIM_MODIFY, niData);
 		niData->uFlags &= ~NIF_INFO;
 	}
