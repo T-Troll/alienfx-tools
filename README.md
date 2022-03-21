@@ -66,7 +66,7 @@ For fan control - Send me the ACPI dump from [RW Everything](http://rweverything
 
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
 
-- **WARNING!** There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, preventing the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-ambient` with "integrated GPU" setting at "Program settings" for the same monitor. It will not work at the default setting in this case.
+- **WARNING!** There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, preventing the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-gui` with "integrated GPU" setting at "Program settings" for the same monitor. It will not work at the default setting in this case.
 
 - **WARNING!** In rare case light system freeze, shutdown or hibernate your notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
 
@@ -78,7 +78,7 @@ Join Discord [support server](https://discord.gg/XU6UJbN9J5)
 
 Pre-requisites:
 - Visual Studio Community 2019
-- Microsoft SDK v10.0 or higher
+- Microsoft Driver SDK (DDK) v10.0 or higher
 
 Build process:
 - Clone repository
@@ -96,7 +96,7 @@ Build process:
   - [ ] Keyboards
 - [ ] Keyboard mapper for easy RGB keyboard setup
 - [ ] Full-scale power button effects (same as common effects)
-- [x] Windows 11 support
+- [x] Windows 11 support (unstable for now)
 
 ## Tools Used
 
