@@ -411,6 +411,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
     else
         isConnectionFailed = true;
     if (isConnectionFailed) {
+        niData->uFlags |= NIF_INFO;
         strcpy_s(niData->szInfoTitle, "Update check failed!");
         strcpy_s(niData->szInfo, "Can't connect to GitHub for update check.");
         Shell_NotifyIcon(NIM_MODIFY, niData);
