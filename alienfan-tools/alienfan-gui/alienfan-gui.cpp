@@ -374,31 +374,47 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
     HINTERNET session, req;
     char buf[2048];
     DWORD byteRead;
+    bool isConnectionFailed = false;
+    // Wait connection for a while
     Sleep(10000);
     if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
         if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
-                                  NULL, 0, 0, NULL)) {
+            NULL, 0, 0, NULL)) {
             if (InternetReadFile(req, buf, 2047, &byteRead)) {
                 buf[byteRead] = 0;
                 string res = buf;
-                size_t pos = res.find("\"name\":"), 
+                size_t pos = res.find("\"name\":"),
                     posf = res.find("\"", pos + 8);
-                res = res.substr(pos + 8, posf - pos - 8);
-                size_t dotpos = res.find(".", 1+ res.find(".", 1 + res.find(".")));
-                if (res.find(".", 1+ res.find(".", 1 + res.find("."))) == string::npos)
-                    res += ".0";
-                if (res != GetAppVersion()) {
-                    // new version detected!
-                    niData->uFlags |= NIF_INFO;
-                    strcpy_s(niData->szInfoTitle, "Update avaliable!");
-                    strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
-                    Shell_NotifyIcon(NIM_MODIFY, niData);
-                    niData->uFlags &= ~NIF_INFO;
+                if (pos != string::npos) {
+                    res = res.substr(pos + 8, posf - pos - 8);
+                    size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
+                    if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
+                        res += ".0";
+                    if (res != GetAppVersion()) {
+                        // new version detected!
+                        niData->uFlags |= NIF_INFO;
+                        strcpy_s(niData->szInfoTitle, "Update avaliable!");
+                        strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
+                        Shell_NotifyIcon(NIM_MODIFY, niData);
+                        niData->uFlags &= ~NIF_INFO;
+                    }
                 }
             }
+            else
+                isConnectionFailed = true;
             InternetCloseHandle(req);
         }
+        else
+            isConnectionFailed = true;
         InternetCloseHandle(session);
+    }
+    else
+        isConnectionFailed = true;
+    if (isConnectionFailed) {
+        strcpy_s(niData->szInfoTitle, "Update check failed!");
+        strcpy_s(niData->szInfo, "Can't connect to GitHub for update check.");
+        Shell_NotifyIcon(NIM_MODIFY, niData);
+        niData->uFlags &= ~NIF_INFO;
     }
     return 0;
 }

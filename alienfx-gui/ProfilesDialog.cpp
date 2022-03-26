@@ -261,8 +261,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_FOREGROUND:
 			prof->flags = (prof->flags & ~PROF_ACTIVE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 3;
-			if (conf->enableProf)
-				eve->SwitchActiveProfile(eve->ScanTaskList());
+			//if (conf->enableProf)
+			//	eve->SwitchActiveProfile(eve->ScanTaskList());
 			break;
 		case IDC_CHECK_GLOBAL:
 			prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
