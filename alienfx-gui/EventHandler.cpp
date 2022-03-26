@@ -165,7 +165,7 @@ void EventHandler::ChangeEffectMode(int newMode) {
 			//conf->SetEffect(newMode);
 		}
 		else
-			fxh->Refresh(true);
+			fxh->RefreshState(true);
 		StartEffects();
 	}
 	else {
@@ -266,21 +266,17 @@ profile* EventHandler::ScanTaskList() {
 	return finalP;
 }
 
-// Create - Check process ID, switch if found and no foreground active.
-// Foreground - Check process ID, switch if found, clear foreground if not.
-// Close - Check process list, switch if found and no foreground active.
-
-VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
+void EventHandler::CheckProfileWindow(HWND hwnd) {
 
 	if (hwnd) {
 		DWORD prcId = 0;
 		GetWindowThreadProcessId(hwnd, &prcId);
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
-									  PROCESS_VM_READ,
-									  FALSE, prcId);
-		
+			PROCESS_VM_READ,
+			FALSE, prcId);
+
 		DWORD nameSize = MAX_PATH, cFileName = nameSize;
-		TCHAR* szProcessName = new TCHAR[nameSize]{0};
+		TCHAR* szProcessName = new TCHAR[nameSize]{ 0 };
 
 		cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
 		while (nameSize == cFileName) {
@@ -296,29 +292,42 @@ VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND h
 
 		string pName = szProcessName;
 
-		profile* newp = even->conf->FindProfileByApp(pName, true);
-		even->conf->foregroundProfile = newp ? newp : NULL;
+		profile* newp = conf->FindProfileByApp(pName, true);
+		conf->foregroundProfile = newp ? newp : NULL;
 
-		if (newp || !even->conf->noDesktop || (pName != "ShellExperienceHost.exe"
-					 && pName != "alienfx-gui.exe"
-					 && pName != "explorer.exe"
-					 && pName != "SearchApp.exe"
-					#ifdef _DEBUG
-					 && pName != "devenv.exe"
-					#endif
-					 )) {
+		if (newp || !conf->noDesktop || (pName != "ShellExperienceHost.exe"
+			&& pName != "alienfx-gui.exe"
+			&& pName != "explorer.exe"
+			&& pName != "SearchApp.exe"
+#ifdef _DEBUG
+			&& pName != "devenv.exe"
+#endif
+			)) {
 
 			if (!newp) {
-				even->SwitchActiveProfile(even->ScanTaskList());
-			} else {
-				if (even->conf->IsPriorityProfile(newp) || !even->conf->IsPriorityProfile(even->conf->activeProfile))
-					even->SwitchActiveProfile(newp);
+				SwitchActiveProfile(ScanTaskList());
 			}
-		} else {
+			else {
+				if (conf->IsPriorityProfile(newp) || !conf->IsPriorityProfile(conf->activeProfile))
+					SwitchActiveProfile(newp);
+			}
+		}
+		else {
 			DebugPrint("Forbidden app, switch blocked!\n");
 		}
 		delete[] szProcessName;
 	}
+	else {
+		SwitchActiveProfile(ScanTaskList());
+	}
+}
+
+// Create - Check process ID, switch if found and no foreground active.
+// Foreground - Check process ID, switch if found, clear foreground if not.
+// Close - Check process list, switch if found and no foreground active.
+
+VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
+	even->CheckProfileWindow(hwnd);
 }
 
 VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
@@ -378,7 +387,7 @@ void EventHandler::StartProfiles()
 		DebugPrint("Profile hooks starting.\n");
 
 		// Need to switch if already running....
-		even->SwitchActiveProfile(ScanTaskList());
+		CheckProfileWindow(GetForegroundWindow());
 
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 								 EVENT_SYSTEM_FOREGROUND, NULL,
@@ -395,7 +404,6 @@ void EventHandler::StartProfiles()
 void EventHandler::StopProfiles()
 {
 	if (cEvent) {
-
 		DebugPrint("Profile hooks stop.\n");
 		UnhookWinEvent(hEvent);
 		UnhookWinEvent(cEvent);

@@ -33,6 +33,8 @@ public:
 
 	profile *ScanTaskList();
 
+	void CheckProfileWindow(HWND hwnd);
+
 	EventHandler(ConfigHandler*, FXHelper*);
 	~EventHandler();
 

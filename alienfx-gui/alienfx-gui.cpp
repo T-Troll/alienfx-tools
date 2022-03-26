@@ -622,7 +622,7 @@ void ReloadProfileList() {
 		}
 	}
 
-	EnableWindow(profile_list, !conf->enableProf);
+	//EnableWindow(profile_list, !conf->enableProf);
 	EnableWindow(mode_list, conf->enableMon);
 
 	switch (tabSel) {
@@ -775,7 +775,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case CBN_SELCHANGE: {
 				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
-				ReloadProfileList();
+				//ReloadProfileList();
+				ReloadModeList();
 			} break;
 			}
 		} break;
@@ -802,6 +803,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ShowWindow(hDlg, SW_HIDE);
 		}
 		break;
+	case WM_SETFOCUS: {
+		// so focus on
+		eve->StopProfiles();
+		ReloadProfileList();
+	} break;
+	case WM_ACTIVATE: {
+		if (!LOWORD(wParam)) {
+			// deactivating...
+			eve->StartProfiles();
+		}
+	} break;
 	case WM_APP + 1: {
 		switch (lParam)
 		{
