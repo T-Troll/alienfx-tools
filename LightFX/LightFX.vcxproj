@@ -155,6 +155,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <TurnOffAssemblyGeneration>true</TurnOffAssemblyGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

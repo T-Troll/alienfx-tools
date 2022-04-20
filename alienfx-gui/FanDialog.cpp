@@ -282,15 +282,14 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     } break;
     case WM_COMMAND:
     {
-        int wmId = LOWORD(wParam);
         // Parse the menu selections:
-        switch (wmId) {
+        switch (LOWORD(wParam)) {
         case IDC_AC_BOOST: case IDC_DC_BOOST: {
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                int cBst = ComboBox_GetCurSel(GetDlgItem(hDlg, wmId));
-                if (wmId == IDC_AC_BOOST)
+                int cBst = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+                if (LOWORD(wParam) == IDC_AC_BOOST)
                     PowerWriteACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
                 else
                     PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
@@ -543,7 +542,8 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 DWORD WINAPI UpdateFanUI(LPVOID lpParam) {
     HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
-	     fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST);
+        fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
+        power_list = GetDlgItem((HWND)lpParam, IDC_COMBO_POWER);
 
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
     while (WaitForSingleObject(fuiEvent, 250) == WAIT_TIMEOUT) {

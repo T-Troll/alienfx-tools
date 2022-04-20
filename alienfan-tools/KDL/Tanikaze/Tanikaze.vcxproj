@@ -161,6 +161,7 @@
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalOptions>/NOCOFFGRPINFO %(AdditionalOptions)</AdditionalOptions>
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
+      <TurnOffAssemblyGeneration>true</TurnOffAssemblyGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

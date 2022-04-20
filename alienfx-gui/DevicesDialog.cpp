@@ -6,6 +6,8 @@ extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
+extern void RemoveHapMapping(haptics_map* map);
+extern void RemoveAmbMapping(zone* map);
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -311,15 +313,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// have light, need to use max ID
 				cid = lMaxIndex + 1;
 			}
-			//unsigned maxID = 0;
-			//for (int i = 0; i < fxhl->afx_dev.fxdevs[dIndex].lights.size(); i++) {
-			//	WORD aPid = fxhl->afx_dev.fxdevs[dIndex].lights[i]->lightid;
-			//	if (aPid > maxID)
-			//		maxID = aPid;
-			//	if (aPid == cid)
-			//		cid = -1;
-			//}
-			//if (cid < 0) cid = maxID + 1;
 			fxhl->afx_dev.AddMapping(MAKELONG(fxhl->afx_dev.fxdevs[dIndex].desc->devid,
 											  fxhl->afx_dev.fxdevs[dIndex].desc->vid),
 									 cid,
@@ -364,6 +357,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						fxhl->afx_dev.GetMappings()->erase(Iter);
 						break;
 					}
+				// delete from haptics and ambient
+				haptics_map mhap{ dPid, (DWORD)eLid };
+				RemoveHapMapping(&mhap);
+				zone mamb{ dPid, (DWORD)eLid };
+				RemoveAmbMapping(&mamb);
 
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
