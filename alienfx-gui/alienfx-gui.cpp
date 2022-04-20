@@ -3,6 +3,7 @@
 #include <windowsx.h>
 #include <Shlobj.h>
 #include <ColorDlg.h>
+//#include <Commdlg.h>
 #include <wininet.h>
 #include <Dbt.h>
 #include "EventHandler.h"
@@ -535,9 +536,9 @@ VOID OnSelChanged(HWND hwndDlg)
 	// Get the index of the selected tab.
 	int newSel = TabCtrl_GetCurSel(pHdr->hwndTab);
 	//tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
-	if (newSel == tabSel)
-		return;
-	else
+	//if (newSel == tabSel)
+	//	return;
+	//else
 		tabSel = newSel;
 
 	// Destroy the current child dialog box, if any.
@@ -1154,11 +1155,9 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 }
 
 bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
-	CHOOSECOLOR cc{0};
+	CHOOSECOLOR cc{ sizeof(cc), hDlg };
 	bool ret;
 	// Initialize CHOOSECOLOR 
-	cc.lStructSize = sizeof(cc);
-	cc.hwndOwner = hDlg;
 	cc.lpCustColors = (LPDWORD) conf->customColors;
 	cc.rgbResult = RGB(clr->r, clr->g, clr->b);
 	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
@@ -1238,6 +1237,22 @@ bool RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
 	return false;
 }
 
+void RemoveHapMapping(haptics_map* map) {
+	for (auto Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
+		if (Iter->devid == map->devid && Iter->lightid == map->lightid) {
+			conf->hap_conf->haptics.erase(Iter);
+			break;
+		}
+}
+
+void RemoveAmbMapping(zone* map) {
+	for (auto mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
+		if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
+			conf->amb_conf->zones.erase(mIter);
+			break;
+		}
+}
+
 zone *FindAmbMapping(int lid) {
 	if (lid != -1) {
 		if (lid > 0xffff) {
@@ -1262,19 +1277,11 @@ haptics_map *FindHapMapping(int lid) {
 		if (lid > 0xffff) {
 			// group
 			return conf->hap_conf->FindHapMapping(0, lid);
-			//for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
-			//	if (conf->hap_conf->haptics[i].devid == 0 && conf->hap_conf->haptics[i].lightid == lid) {
-			//		return &conf->hap_conf->haptics[i];
-			//	}
 		} else {
 			// mapping
 			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
 			if (lgh)
 				return conf->hap_conf->FindHapMapping(lgh->devid, lgh->lightid);
-			//for (int i = 0; i < conf->hap_conf->haptics.size(); i++)
-			//	if (conf->hap_conf->haptics[i].devid == lgh->devid && 
-			//		conf->hap_conf->haptics[i].lightid == lgh->lightid)
-			//		return &conf->hap_conf->haptics[i];
 		}
 	}
 	return NULL;

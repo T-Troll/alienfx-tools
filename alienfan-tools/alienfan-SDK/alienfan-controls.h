@@ -74,7 +74,7 @@ namespace AlienFan_SDK {
 		},
 		{ // Dell G5 SE
 			"\\_SB.AMWW.WMAX", // main command
-			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
+			"\\_SB.PC00.PEG1.PEGP.GPS", // GPU command
 			100, // Max. boost
 			true, // command controlled
 			0, // controlID

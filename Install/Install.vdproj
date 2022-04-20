@@ -111,6 +111,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_B4AC75ADC732414DA45BA869CD059423"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B829425435A04EFB81D071102204D8B4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -173,18 +179,13 @@
         "InstallerBootstrapper" = "3:2"
             "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
             {
-            "Enabled" = "11:TRUE"
+            "Enabled" = "11:FALSE"
             "PromptEnabled" = "11:TRUE"
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
-                    {
-                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
-                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
                 }
             }
         }
@@ -458,7 +459,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
         "ProductCode" = "8:{80A4CDE4-1289-4354-AC9D-A32CECFD3068}"
-        "PackageCode" = "8:{1207B0E5-B393-4BFF-8691-748BF57820BF}"
+        "PackageCode" = "8:{C4BE5F94-3F22-4257-8C47-E538ED3A126F}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -522,6 +523,20 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_04B798934888418EA9AFB7DACD97D583"
+            {
+            "Name" = "8:AlienFX Monitor"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:107"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_B4AC75ADC732414DA45BA869CD059423"
+            "Folder" = "8:_A84FD7F9318443A388193688867B14F6"
+            "WorkingFolder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Icon" = "8:_B4AC75ADC732414DA45BA869CD059423"
+            "Feature" = "8:"
+            }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_3482D9C905104BFD9CCC79D50E61D45F"
             {
             "Name" = "8:AlienFan Control"
@@ -835,7 +850,6 @@
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
-                "ExcludeFilter" = "8:*.dll"
                 }
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4B7975803E6C492C8F7D8B599766674C"
@@ -892,7 +906,6 @@
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
-                "ExcludeFilter" = "8:*.dll"
                 }
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_799E46A9DE84423E9A42E8A667B8B40B"
@@ -949,7 +962,6 @@
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
-                "ExcludeFilter" = "8:*.dll"
                 }
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8BD54ECA5F1F4A93AB50408023C9F6C4"
@@ -1087,6 +1099,34 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{9E86C7E5-6E4C-4120-B8A5-9AB53B57F918}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B4AC75ADC732414DA45BA869CD059423"
+            {
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-mon.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{583D215B-C1A5-4607-A26C-823EB6B28155}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {

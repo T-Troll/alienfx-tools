@@ -8,6 +8,7 @@ extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern haptics_map *FindHapMapping(int lid);
+extern void RemoveHapMapping(haptics_map*);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -109,13 +110,13 @@ void DrawFreq(HWND hDlg, int *freq) {
 	}
 }
 
-void RemoveHapMapping(haptics_map *map) {
-	for (auto Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
-		if (Iter->devid == map->devid && Iter->lightid == map->lightid) {
-			conf->hap_conf->haptics.erase(Iter);
-			break;
-		}
-}
+//void RemoveHapMapping(haptics_map *map) {
+//	for (auto Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
+//		if (Iter->devid == map->devid && Iter->lightid == map->lightid) {
+//			conf->hap_conf->haptics.erase(Iter);
+//			break;
+//		}
+//}
 
 void SetMappingData(HWND hDlg, haptics_map* map) {
 	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);

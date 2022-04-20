@@ -5,6 +5,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 extern zone *FindAmbMapping(int lid);
+extern void RemoveAmbMapping(zone* map);
 
 extern void SwitchTab(int);
 
@@ -113,11 +114,12 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     map->map.erase(Iter);
                     if (!map->map.size()) {
                         // delete mapping!
-                        for (auto mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
+                        RemoveAmbMapping(map);
+                        /*for (auto mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
                             if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
                                 conf->amb_conf->zones.erase(mIter);
                                 break;
-                            }
+                            }*/
                     }
                     CheckDlgButton(hDlg, bid, BST_UNCHECKED);
                 }
