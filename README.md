@@ -19,7 +19,7 @@ Light control tools work with USB/ACPI hardware devices directly, not requiring 
 
 For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tool does not use direct EC (Embed controller) access and data modification.  
 It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used by AWCC).
-- It's safer - BIOS still monitors fans and has no risk. Fans can't be stoped under heavy load.
+- It's safer - BIOS still monitors fans and has no risk. Fans will stop at full load.
 - It's universal - Most Alienware systems have the same interface.
 - In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control at all.
 
