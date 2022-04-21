@@ -44,6 +44,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{C02B116D-3DD
 		Doc\alienfan-overboost.md = Doc\alienfan-overboost.md
 		Doc\alienfx-cli.md = Doc\alienfx-cli.md
 		Doc\alienfx-gui.md = Doc\alienfx-gui.md
+		Doc\alienfx-mon.md = Doc\alienfx-mon.md
 		Doc\alienfx-probe.md = Doc\alienfx-probe.md
 		Doc\LightFX.md = Doc\LightFX.md
 	EndProjectSection

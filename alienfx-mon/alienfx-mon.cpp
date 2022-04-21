@@ -338,17 +338,11 @@ void ReloadSensorView() {
 }
 
 void RemoveSensors(int src, bool state) {
-	//senmon->StopMon();
 	for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
 		if (iter->source == src) {
-			//conf->active_sensors.erase(iter);
-			//iter = conf->active_sensors.begin();
 			iter->disabled = !state;
-			//if (iter->intray && iter->niData)
-			//	Shell_NotifyIcon(NIM_DELETE, iter->niData);
 		}
 	conf->needFullUpdate = true;
-	//senmon->StartMon();
 }
 
 bool SetColor(int id, DWORD* clr) {
@@ -410,6 +404,15 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
 		{
+		case IDOK: {
+			HWND senList = GetDlgItem(hDlg, IDC_SENSOR_LIST);
+			HWND editC = ListView_GetEditControl(senList);
+			if (editC) {
+				RECT rect;
+				ListView_GetSubItemRect(senList, ListView_GetSelectionMark(senList), 3, LVIR_LABEL, &rect);
+				SetWindowPos(editC, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+			}
+		} break;
 		case IDCLOSE: case IDC_CLOSE: case IDM_EXIT:
 		{
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
@@ -468,6 +471,11 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_CHECK_INTRAY:
 			conf->active_sensors[selSensor].intray = state;
+			break;
+		case IDC_REFRESH_TIME:
+			if (HIWORD(wParam) == EN_CHANGE) {
+				conf->refreshDelay = GetDlgItemInt(hDlg, IDC_REFRESH_TIME, NULL, false);
+			}
 			break;
 		}
 	} break;
@@ -561,17 +569,20 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 }
 
 void UpdateTrayData(SENSOR* sen) {
-	sprintf_s(sen->niData->szTip, 127, "%s\nMin: %d\nCur: %d\nMax: %d", sen->name.c_str(), sen->min, sen->cur, sen->max);
+	sprintf_s(sen->niData->szTip, 128, "%s\nMin: %d\nCur: %d\nMax: %d", sen->name.c_str(), sen->min, sen->cur, sen->max);
 
-	string val = to_string(sen->cur > 100 ? sen->cur / 100 : sen->cur == 100 ? 0 : sen->cur);
+	char val[5];
+	sprintf_s(val, 5, "%4d", sen->cur > 100 ? sen->cur / 100 : sen->cur == 100 ? 99 : sen->cur);
 
 	HDC hdc, hdcMem;
-	HBITMAP hBitmap = NULL;
-	//HBITMAP hOldBitMap = NULL;
-	//HBITMAP hBitmapMask = NULL;
+	HBITMAP hBitmap;
+	RECT clip{ 0,0,32,33 };
+	//HBITMAP hOldBitMap;
+	//HBITMAP hBitmapMask;
 	ICONINFO iconInfo;
 	HFONT hFont;
 	HICON hIcon;
+	COLORREF bkColor = GetSysColor(0);
 
 	hdc = GetDC(mDlg);
 	hdcMem = CreateCompatibleDC(hdc);
@@ -579,32 +590,46 @@ void UpdateTrayData(SENSOR* sen) {
 	//hBitmapMask = CreateCompatibleBitmap(hdc, 32, 32);
 	ReleaseDC(mDlg, hdc);
 	/*hOldBitMap = (HBITMAP)*/SelectObject(hdcMem, hBitmap);
-	SetTextColor(hdcMem, 0x000000); // 0x00bbggrr
+	if (sen->traycolor)
+		SetTextColor(hdcMem, 0x000000); // 0x00bbggrr
+	else
+		SetTextColor(hdcMem, 0xffffff); // 0x00bbggrr
 	SetBkColor(hdcMem, sen->traycolor); // color here
-	SetBkMode(hdcMem, OPAQUE);// TRANSPARENT);
-	//PatBlt(hdcMem, 0, 0, 32, 32, WHITENESS);
+	SetBkMode(hdcMem, OPAQUE);
+	//PatBlt(hdcMem, 0, 0, 32, 32, WHITEONBLACK);
 
 	// Draw percentage
-	hFont = CreateFont(30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
-	hFont = (HFONT)SelectObject(hdcMem, hFont);
-	TextOut(hdcMem, 1, 1, val.c_str(), (int)val.length());
+	hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
+	/*hFont = (HFONT)*/SelectObject(hdcMem, hFont);
+	DrawText(hdcMem, val, strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+	//TextOut(hdcMem, 1, 1, val, 2);
 
 	//SelectObject(hdc, hOldBitMap);
 	//hOldBitMap = NULL;
 
+	//SelectObject(hdcMem, hBitmapMask);
+	//SetBkColor(hdcMem, 0x0);
+	//SetBkMode(hdcMem, TRANSPARENT);
+	//PatBlt(hdcMem, 0, 0, 32, 32, BLACKONWHITE);
+	//DrawText(hdcMem, val, strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+
+
 	iconInfo.fIcon = TRUE;
 	//iconInfo.xHotspot = 0;
 	//iconInfo.yHotspot = 0;
-	iconInfo.hbmMask = hBitmap;// hBitmapMask;
+	iconInfo.hbmMask = hBitmap;
 	iconInfo.hbmColor = hBitmap;
 
 	hIcon = CreateIconIndirect(&iconInfo);
 
+	if (sen->niData->hIcon)
+		DestroyIcon(sen->niData->hIcon);
+
 	sen->niData->hIcon = hIcon;
 
-	DeleteObject(SelectObject(hdcMem, hFont));
+	DeleteObject(hFont);
 	DeleteDC(hdcMem);
-	DeleteDC(hdc);
+	//DeleteDC(hdc);
 	DeleteObject(hBitmap);
 	//DeleteObject(hBitmapMask);
 }
@@ -644,8 +669,8 @@ DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
 				}
 				else {
 					// add tray counter
-					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i+1,
-						NIF_ICON | NIF_TIP, WM_APP + 1});
+					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i,
+						NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1});
 					UpdateTrayData(&conf->active_sensors[i]);
 					Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData);
 				}
@@ -654,6 +679,8 @@ DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
 				// check remove from tray
 				if (conf->active_sensors[i].niData) {
 					Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData);
+					if (conf->active_sensors[i].niData->hIcon)
+						DestroyIcon(conf->active_sensors[i].niData->hIcon);
 					delete conf->active_sensors[i].niData;
 					conf->active_sensors[i].niData = NULL;
 				}
