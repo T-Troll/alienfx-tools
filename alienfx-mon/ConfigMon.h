@@ -15,6 +15,7 @@ struct SENSOR {
 	bool intray;
 	DWORD traycolor = 0xffffff;
 	NOTIFYICONDATA* niData;
+	int oldCur;
 };
 
 class ConfigMon

@@ -487,6 +487,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ShowWindow(hDlg, SW_RESTORE);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+			ReloadSensorView();
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
@@ -601,7 +602,7 @@ void UpdateTrayData(SENSOR* sen) {
 	// Draw percentage
 	hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
 	/*hFont = (HFONT)*/SelectObject(hdcMem, hFont);
-	DrawText(hdcMem, val, strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+	DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
 	//TextOut(hdcMem, 1, 1, val, 2);
 
 	//SelectObject(hdc, hOldBitMap);
@@ -638,41 +639,53 @@ DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
 	HWND list = GetDlgItem(mDlg, IDC_SENSOR_LIST);
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+
 	while (WaitForSingleObject(muiEvent, conf->refreshDelay) == WAIT_TIMEOUT) {
 		if (IsWindowVisible(mDlg) && runUIUpdate) {
 			//DebugPrint("Fans UI update...\n");
-			if (conf->needFullUpdate)
+			if (conf->needFullUpdate) {
 				ReloadSensorView();
+			}
 			else {
 				int pos = 0;
 				for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
 					if (!iter->disabled) {
-						string name = to_string(iter->min);
-						ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
-						name = to_string(iter->cur);
-						ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-						name = to_string(iter->max);
-						ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
-						//ListView_SetItemText(list, i, 3, (LPSTR)iter->name.c_str());
+						if (iter->cur != iter->oldCur) {
+							string name = to_string(iter->min);
+							ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
+							name = to_string(iter->cur);
+							ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
+							name = to_string(iter->max);
+							ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
+							//ListView_SetItemText(list, i, 3, (LPSTR)iter->name.c_str());
+						}
 						pos++;
 					}
 				}
 			}
 		}
+		else
+			conf->needFullUpdate = true;
 		// Trayworks...
 		for (int i = 0; i < conf->active_sensors.size(); i++) {
 			if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled) {
 				if (conf->active_sensors[i].niData) {
 					// update tray counter
-					UpdateTrayData(&conf->active_sensors[i]);
-					Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData);
+					if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
+						UpdateTrayData(&conf->active_sensors[i]);
+						Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData);
+					}
 				}
 				else {
 					// add tray counter
 					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i,
 						NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1});
 					UpdateTrayData(&conf->active_sensors[i]);
-					Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData);
+					if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {
+						DestroyIcon(conf->active_sensors[i].niData->hIcon);
+						delete conf->active_sensors[i].niData;
+						conf->active_sensors[i].niData = NULL;
+					}
 				}
 			}
 			else {
@@ -685,6 +698,7 @@ DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
 					conf->active_sensors[i].niData = NULL;
 				}
 			}
+			conf->active_sensors[i].oldCur = conf->active_sensors[i].cur;
 		}
 	}
 	return 0;

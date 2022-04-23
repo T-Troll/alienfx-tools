@@ -70,6 +70,7 @@ void SenMonHelper::ModifyMon()
 void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, string name) {
 	SENSOR* sen;
 	if (sen = conf->FindSensor(grp, type, id)) {
+		//sen->oldCur = sen->cur;
 		sen->cur = val;
 		if (sen->cur < sen->min)
 			sen->min = sen->cur;
@@ -79,6 +80,7 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 	else {
 		// add sensor
 		sen = new SENSOR({ grp, type, id, name, val, val, val });
+		sen->oldCur = val + 1;
 		conf->active_sensors.push_back(*sen);
 		conf->needFullUpdate = true;
 	}
@@ -191,7 +193,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			}
 			valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
 			for (unsigned i = 0; i < valCount; i++) {
-				AddUpdateSensor(src->conf, 1, 1, i, counterValues[i].FmtValue.longValue, (string)"Power " + counterValues[i].szName);
+				AddUpdateSensor(src->conf, 1, 1, i, counterValues[i].FmtValue.longValue/2, (string)"Power " + counterValues[i].szName);
 			}
 		}
 
@@ -203,8 +205,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 			for (int i = 0; i < src->acpi->HowManyFans(); i++) { // BIOS fans, code 1-2
 				int fpst = src->acpi->GetFanPercent(i);
-				AddUpdateSensor(src->conf, 2, 1, i, src->acpi->GetFanRPM(i), (string)"Fan " + to_string(i) + " RPM");
-				AddUpdateSensor(src->conf, 2, 2, i, fpst > 100 ? 100 : fpst, (string)"Fan " + to_string(i) + " percent");
+				AddUpdateSensor(src->conf, 2, 1, i, src->acpi->GetFanRPM(i), (string)"Fan " + to_string(i+1) + " RPM");
+				AddUpdateSensor(src->conf, 2, 2, i, fpst > 100 ? 100 : fpst, (string)"Fan " + to_string(i+1) + " percent");
 			}
 		}
 	}
