@@ -1,25 +1,21 @@
-// alienfan-gui.cpp : Defines the entry point for the application.
-//
-
 #include <windows.h>
-#include "alienfan-gui.h"
+#include "Resource.h"
 #include <windowsx.h>
 #include <winuser.h>
 #include <CommCtrl.h>
 #include <string>
 #include <wininet.h>
 #include "alienfan-SDK.h"
-#include "ConfigHelper.h"
+#include "ConfigFan.h"
 #include "MonHelper.h"
 #include <powrprof.h>
-
-#pragma comment(lib, "PowrProf.lib")
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"Version.lib")
 #pragma comment(lib,"Wininet.lib")
+#pragma comment(lib, "PowrProf.lib")
 
 using namespace std;
 
@@ -31,7 +27,7 @@ WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
-ConfigHelper* fan_conf = NULL;                      // Config...
+ConfigFan* fan_conf = NULL;                     // Config...
 MonHelper* mon = NULL;                          // Monitoring & changer object
 
 fan_point* lastFanPoint = NULL;
@@ -68,13 +64,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
 
-    fan_conf = new ConfigHelper();
+    fan_conf = new ConfigFan();
 
     acpi = new AlienFan_SDK::Control();
 
     if (acpi->IsActivated() && acpi->Probe()) {
         fan_conf->SetBoosts(acpi);
-        
+
         mon = new MonHelper(fan_conf, acpi);
 
         // Perform application initialization:
@@ -87,12 +83,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         for (int i = 0; i < 6; i++)
             RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i);
         //RegisterHotKey(mDlg, 6, 0, VK_F17);
-
-        //if (fan_conf->lastProf->powerStage >= 0)
-        //    acpi->SetPower(fan_conf->lastProf->powerStage);
-
-        //if (fan_conf->lastProf->GPUPower >= 0)
-        //    acpi->SetGPU(fan_conf->lastProf->GPUPower);
 
         HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
 
@@ -140,10 +130,10 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 {
-    // Create a tooltip.
+    // Create a tool tip.
     if (oldTip) {
         DestroyWindow(oldTip);
-    } 
+    }
     HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
                                  WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -249,7 +239,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
             mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
             mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-            string rpmText = "Fan curve (scale: " + to_string(maxBoost) + ", boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + 
+            string rpmText = "Fan curve (scale: " + to_string(maxBoost) + ", boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) +
                 ", " + to_string((percent = acpi->GetFanPercent(fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) +
                 "%)";
             SetWindowText(fanWindow, rpmText.c_str());
@@ -265,7 +255,7 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
         ReleaseDC(fanWindow, hdc_r);
         DeleteDC(hdc_r);
     }
-} 
+}
 
 void ReloadFanView(HWND hDlg, int cID) {
     temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
@@ -334,7 +324,6 @@ void ReloadTempView(HWND hDlg, int cID) {
         lCol.cx = 100;
         lCol.iSubItem = 0;
         lCol.pszText = (LPSTR)"Temp";
-        //ListView_DeleteColumn(list, 0);
         ListView_InsertColumn(list, 0, &lCol);
         lCol.pszText = (LPSTR)"Name";
         lCol.iSubItem = 1;
@@ -352,19 +341,14 @@ void ReloadTempView(HWND hDlg, int cID) {
         if (i == cID) {
             lItem.mask |= LVIF_STATE;
             lItem.state = LVIS_SELECTED;
-            // TODO: check selected fans here
             rpos = i;
         }
         ListView_InsertItem(list, &lItem);
-        //lItem.pszText = (LPSTR) acpi->sensors[i].name.c_str();
         ListView_SetItemText(list, i, 1, (LPSTR) acpi->sensors[i].name.c_str());
     }
-    //RECT csize;
-    //GetClientRect(profile_list, &csize);
-    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);// csize.right - csize.left - 1);
+    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
     ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
     ListView_EnsureVisible(list, rpos, false);
-    //return rpos;
 }
 
 string GetAppVersion();
@@ -393,7 +377,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
                     if (res != GetAppVersion()) {
                         // new version detected!
                         niData->uFlags |= NIF_INFO;
-                        strcpy_s(niData->szInfoTitle, "Update avaliable!");
+                        strcpy_s(niData->szInfoTitle, "Update available!");
                         strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
                         Shell_NotifyIcon(NIM_MODIFY, niData);
                         niData->uFlags &= ~NIF_INFO;
@@ -672,9 +656,6 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             case LVN_ITEMCHANGED:
             {
                 NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-                //if (lPoint->uNewState & LVIS_STATEIMAGEMASK) {
-                //    int i = 0;
-                //}
                 if (lPoint->uNewState & LVIS_FOCUSED) {
                     // Select other item...
                     if (lPoint->iItem != -1) {
@@ -859,12 +840,12 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message) {
     case WM_PAINT: {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hDlg, &ps);      
+        HDC hdc = BeginPaint(hDlg, &ps);
         DrawFan();
         EndPaint(hDlg, &ps);
         return true;
     } break;
-    case WM_MOUSEMOVE: { 
+    case WM_MOUSEMOVE: {
         int x = GET_X_LPARAM(lParam), y = GET_Y_LPARAM(lParam);
 
         if (lastFanPoint && wParam & MK_LBUTTON) {

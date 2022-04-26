@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <wtypes.h>
+#include "resource.h"
 
 using namespace std;
 
@@ -11,8 +12,14 @@ struct SENSOR {
 	DWORD id;
 	string name;
 	int min, max, cur;
-	bool disabled;
-	bool intray;
+	union {
+		struct {
+			byte disabled;
+			byte intray;
+			byte inverse;
+		};
+		DWORD flags;
+	};
 	DWORD traycolor = 0xffffff;
 	NOTIFYICONDATA* niData;
 	int oldCur;
@@ -26,6 +33,8 @@ private:
 	void GetReg(const char*, DWORD*, DWORD def = 0);
 	void SetReg(const char* text, DWORD value);
 
+	SENSOR* CheckSensor(int src, byte type, DWORD id);
+
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -36,15 +45,21 @@ public:
 	DWORD refreshDelay = 500;
 
 	bool needFullUpdate = false;
+	bool paused = false;
 
 	std::vector<SENSOR> active_sensors;
 
-	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA) };
+	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE, WM_APP + 1, (HICON)LoadImage(GetModuleHandle(NULL),
+					MAKEINTRESOURCE(IDI_ALIENFXMON),
+					IMAGE_ICON,
+					GetSystemMetrics(SM_CXSMICON),
+					GetSystemMetrics(SM_CYSMICON),
+					LR_DEFAULTCOLOR) };
 
 	ConfigMon();
 	~ConfigMon();
 	void Load();
 	void Save();
-	void SetIconState();
+
 	SENSOR* FindSensor(int, byte, DWORD);
 };

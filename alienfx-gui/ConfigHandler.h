@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include "AlienFX_SDK.h"
-#include "..\alienfan-tools\alienfan-gui\ConfigHelper.h"
+#include "..\alienfan-tools\alienfan-gui\ConfigFan.h"
 #include "ConfigAmbient.h"
 #include "ConfigHaptics.h"
 
@@ -59,9 +59,7 @@ struct profile {
 class ConfigHandler
 {
 private:
-	HKEY hKey1 = NULL, 
-		hKey3 = NULL, 
-		hKey4 = NULL;
+	HKEY hKey1 = NULL, hKey3 = NULL, hKey4 = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
 	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD *eff);
@@ -78,9 +76,9 @@ public:
 	DWORD dimmingPower = 92;
 	DWORD enableProf = 0;
 	DWORD offPowerButton = 0;
-	profile *activeProfile = NULL;// -1;
-	profile *defaultProfile = NULL;// 0;
-	profile *foregroundProfile = NULL;// -1;
+	profile *activeProfile = NULL;
+	profile *defaultProfile = NULL;
+	profile *foregroundProfile = NULL;
 	DWORD awcc_disable = 0;
 	DWORD esif_temp = 0;
 	DWORD block_power = 0;
@@ -102,14 +100,14 @@ public:
 	bool haveV5 = false;
 
 	// 3rd-party config blocks
-	ConfigHelper *fan_conf = NULL;
+	ConfigFan *fan_conf = NULL;
 	ConfigAmbient *amb_conf = NULL;
 	ConfigHaptics *hap_conf = NULL;
 
 	std::vector<lightset>* active_set;
 	std::vector<profile*> profiles;
 
-	NOTIFYICONDATA niData{sizeof(NOTIFYICONDATA)};
+	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE, WM_APP + 1 };
 
 	ConfigHandler();
 	~ConfigHandler();
@@ -123,5 +121,4 @@ public:
 	bool IsDimmed();
 	void SetDimmed();
 	int  GetEffect();
-	//void SetEffect(int);
 };

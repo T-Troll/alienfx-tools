@@ -14,10 +14,6 @@ ConfigMon::ConfigMon() {
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxmon"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
 	RegCreateKeyEx(hKey1, TEXT("Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);
 
-	//niData.cbSize = sizeof(NOTIFYICONDATA);
-	niData.uID = IDI_ALIENFXMON;
-	niData.uFlags = NIF_ICON | NIF_MESSAGE;
-	niData.uCallbackMessage = WM_APP + 1;
 	Load();
 }
 
@@ -25,17 +21,6 @@ ConfigMon::~ConfigMon() {
 	Save();
 	RegCloseKey(hKey1);
 	RegCloseKey(hKey2);
-}
-
-void ConfigMon::SetIconState() {
-	// change tray icon...
-			niData.hIcon =
-				(HICON)LoadImage(GetModuleHandle(NULL),
-					MAKEINTRESOURCE(IDI_ALIENFXMON),
-					IMAGE_ICON,
-					GetSystemMetrics(SM_CXSMICON),
-					GetSystemMetrics(SM_CYSMICON),
-					LR_DEFAULTCOLOR);
 }
 
 SENSOR* ConfigMon::FindSensor(int src, byte type, DWORD id)
@@ -56,6 +41,16 @@ void ConfigMon::SetReg(const char* text, DWORD value) {
 	RegSetValueEx(hKey1, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 }
 
+SENSOR* ConfigMon::CheckSensor(int src, byte type, DWORD id)
+{
+	SENSOR* sen = FindSensor(src, type, id);
+	if (!sen) {
+		active_sensors.push_back({ src, (byte)type, (DWORD)id, "", -1});
+		sen = &active_sensors.back();
+	}
+	return sen;
+}
+
 void ConfigMon::Load() {
 	DWORD size_c = 16 * sizeof(DWORD);// 4 * 16
 	DWORD activeProfileID = 0;
@@ -71,7 +66,7 @@ void ConfigMon::Load() {
 	int vindex = 0;
 	char name[256];
 	int src, type, id;
-	SENSOR* sen;
+	//SENSOR* sen;
 	LSTATUS ret = 0;
 	// Profiles...
 	do {
@@ -82,37 +77,26 @@ void ConfigMon::Load() {
 			RegEnumValueA(hKey2, vindex, name, &len, NULL, NULL, data, &lend);
 			vindex++;
 			if (sscanf_s(name, "Name-%d-%d-%d", &src,&type,&id) == 3) {
-				if (sen = FindSensor(src, type, id))
-					sen->name = string((char*)data);
-				else {
-					sen = new SENSOR({ src, (byte)type, (DWORD)id, string((char*)data), 30000 });
-					active_sensors.push_back(*sen);
-				}
+				CheckSensor(src, type, id)->name = string((char*)data);
+				goto nextEntry;
 			}
 			if (sscanf_s(name, "Tray-%d-%d-%d", &src, &type, &id) == 3) {
-				if (sen = FindSensor(src, type, id))
-					sen->intray = *(DWORD*)data;
-				else {
-					sen = new SENSOR({ src, (byte)type, (DWORD)id, "", 30000, 0, 0, false, (bool)*(DWORD*)data });
-					active_sensors.push_back(*sen);
-				}
+				CheckSensor(src, type, id)->intray = (byte)*(DWORD*)data;
+				goto nextEntry;
 			}
 			if (sscanf_s(name, "State-%d-%d-%d", &src, &type, &id) == 3) {
-				if (sen = FindSensor(src, type, id))
-					sen->disabled = *(DWORD*)data;
-				else {
-					sen = new SENSOR({ src, (byte)type, (DWORD)id, "", 30000, 0, 0, (bool)*(DWORD*)data });
-					active_sensors.push_back(*sen);
-				}
+				CheckSensor(src, type, id)->disabled = (byte)*(DWORD*)data;
+				goto nextEntry;
+			}
+			if (sscanf_s(name, "Flags-%d-%d-%d", &src, &type, &id) == 3) {
+				CheckSensor(src, type, id)->flags = *(DWORD*)data;
+				goto nextEntry;
 			}
 			if (sscanf_s(name, "Color-%d-%d-%d", &src, &type, &id) == 3) {
-				if (sen = FindSensor(src, type, id))
-					sen->traycolor = *(DWORD*)data;
-				else {
-					sen = new SENSOR({ src, (byte)type, (DWORD)id, "", 30000, 0, 0, false, false, *(DWORD*)data });
-					active_sensors.push_back(*sen);
-				}
+				CheckSensor(src, type, id)->traycolor = *(DWORD*)data;
+				goto nextEntry;
 			}
+			nextEntry:
 			delete[] data;
 		}
 	} while (ret == ERROR_SUCCESS);
@@ -135,12 +119,12 @@ void ConfigMon::Save() {
 	for (int j = 0; j < active_sensors.size(); j++) {
 		string name = "Name-" + to_string(active_sensors[j].source) + "-" + to_string(active_sensors[j].type) + "-" + to_string(active_sensors[j].id);
 		RegSetValueExA(hKey2, name.c_str(), 0, REG_SZ, (BYTE*)active_sensors[j].name.c_str(), (DWORD)active_sensors[j].name.length());
-		DWORD val = active_sensors[j].intray;
-		name = "Tray-" + to_string(active_sensors[j].source) + "-" + to_string(active_sensors[j].type) + "-" + to_string(active_sensors[j].id);
-		RegSetValueEx(hKey2, name.c_str(), 0, REG_DWORD, (BYTE*)&val, sizeof(DWORD));
-		val = active_sensors[j].disabled;
-		name = "State-" + to_string(active_sensors[j].source) + "-" + to_string(active_sensors[j].type) + "-" + to_string(active_sensors[j].id);
-		RegSetValueEx(hKey2, name.c_str(), 0, REG_DWORD, (BYTE*)&val, sizeof(DWORD));
+		//DWORD val = active_sensors[j].intray;
+		name = "Flags-" + to_string(active_sensors[j].source) + "-" + to_string(active_sensors[j].type) + "-" + to_string(active_sensors[j].id);
+		RegSetValueEx(hKey2, name.c_str(), 0, REG_DWORD, (BYTE*)&active_sensors[j].flags, sizeof(DWORD));
+		//val = active_sensors[j].disabled;
+		//name = "State-" + to_string(active_sensors[j].source) + "-" + to_string(active_sensors[j].type) + "-" + to_string(active_sensors[j].id);
+		//RegSetValueEx(hKey2, name.c_str(), 0, REG_DWORD, (BYTE*)&val, sizeof(DWORD));
 		name = "Color-" + to_string(active_sensors[j].source) + "-" + to_string(active_sensors[j].type) + "-" + to_string(active_sensors[j].id);
 		RegSetValueEx(hKey2, name.c_str(), 0, REG_DWORD, (BYTE*)&active_sensors[j].traycolor, sizeof(DWORD));
 	}

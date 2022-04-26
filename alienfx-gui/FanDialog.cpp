@@ -120,26 +120,20 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
         ReleaseDC(fanWindow, hdc_r);
         DeleteDC(hdc_r);
     }
-} 
+}
 
 void ReloadFanView(HWND hDlg, int cID) {
     temp_block* sen = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor);
     HWND list = GetDlgItem(hDlg, IDC_FAN_LIST);
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
-    LVCOLUMNA lCol;
-    lCol.mask = LVCF_WIDTH;
-    lCol.cx = 100;
-    lCol.iSubItem = 0;
-    ListView_DeleteColumn(list, 0);
-    ListView_InsertColumn(list, 0, &lCol);
+    if (!ListView_GetColumnWidth(list, 0)) {
+        LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
+        ListView_InsertColumn(list, 0, &lCol);
+    }
     for (int i = 0; i < acpi->HowManyFans(); i++) {
-        LVITEMA lItem;
+        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, i};
         string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
-        lItem.mask = LVIF_TEXT | LVIF_PARAM;
-        lItem.iItem = i;
-        lItem.iImage = 0;
-        lItem.iSubItem = 0;
         lItem.lParam = i;
         lItem.pszText = (LPSTR) name.c_str();
         if (i == cID) {
@@ -149,9 +143,9 @@ void ReloadFanView(HWND hDlg, int cID) {
         }
         ListView_InsertItem(list, &lItem);
         if (sen && conf->fan_conf->FindFanBlock(sen, i)) {
-            conf->fan_conf->lastSelectedSensor = -1;
+            //conf->fan_conf->lastSelectedSensor = -1;
             ListView_SetCheckState(list, i, true);
-            conf->fan_conf->lastSelectedSensor = sen->sensorIndex;
+            //conf->fan_conf->lastSelectedSensor = sen->sensorIndex;
         }
     }
 
@@ -184,23 +178,15 @@ void ReloadTempView(HWND hDlg, int cID) {
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
     if (!ListView_GetColumnWidth(list, 1)) {
-        LVCOLUMNA lCol;
-        lCol.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-        lCol.cx = 100;
-        lCol.iSubItem = 0;
-        lCol.pszText = (LPSTR)"Temp";
+        LVCOLUMNA lCol{ LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM ,LVCFMT_LEFT,100,(LPSTR)"Temp",4};
         ListView_InsertColumn(list, 0, &lCol);
         lCol.pszText = (LPSTR)"Name";
         lCol.iSubItem = 1;
         ListView_InsertColumn(list, 1, &lCol);
     }
     for (int i = 0; i < acpi->HowManySensors(); i++) {
-        LVITEMA lItem;
+        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, i };
         string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
-        lItem.mask = LVIF_TEXT | LVIF_PARAM;
-        lItem.iItem = i;
-        lItem.iImage = 0;
-        lItem.iSubItem = 0;
         lItem.lParam = i;
         lItem.pszText = (LPSTR) name.c_str();
         if (i == cID) {
@@ -259,7 +245,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ReloadTempView(hDlg, conf->fan_conf->lastSelectedSensor);
             ReloadFanView(hDlg, conf->fan_conf->lastSelectedFan);
 
-            Static_SetText(GetDlgItem(hDlg, IDC_FC_LABEL), 
+            Static_SetText(GetDlgItem(hDlg, IDC_FC_LABEL),
                            ("Fan curve (scale: " + to_string(conf->fan_conf->boosts[conf->fan_conf->lastSelectedFan].maxBoost) + ")").c_str());
 
             // So open fan control window...
@@ -360,7 +346,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         // Select other fan....
                         conf->fan_conf->lastSelectedFan = lPoint->iItem;
                         // Update label...
-                        Static_SetText(GetDlgItem(hDlg, IDC_FC_LABEL), 
+                        Static_SetText(GetDlgItem(hDlg, IDC_FC_LABEL),
                                        ("Fan curve (scale: " + to_string(conf->fan_conf->boosts[conf->fan_conf->lastSelectedFan].maxBoost) + ")").c_str());
                         // Redraw fans
                         DrawFan();
@@ -436,8 +422,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SetEvent(fuiEvent);
         WaitForSingleObject(uiFanHandle, 1000);
         CloseHandle(uiFanHandle);
-        // Close curve window
-        // fanWindow = NULL;
         LocalFree(sch_guid);
         break;
     }
@@ -458,12 +442,12 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_PAINT: {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hDlg, &ps);      
+        HDC hdc = BeginPaint(hDlg, &ps);
         DrawFan();
         EndPaint(hDlg, &ps);
         return true;
     } break;
-    case WM_MOUSEMOVE: { 
+    case WM_MOUSEMOVE: {
         int x = GET_X_LPARAM(lParam), y = GET_Y_LPARAM(lParam);
 
         if (lastFanPoint && wParam & MK_LBUTTON) {

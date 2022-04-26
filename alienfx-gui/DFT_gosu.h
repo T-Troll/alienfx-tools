@@ -9,7 +9,7 @@ class DFT_gosu {
 public:
 	DFT_gosu();
 	~DFT_gosu();
-	int* calc(double *x1); 
+	int* calc(double *x1);
 	void setSampleRate(int rate) { sampleRate = rate; };
 
 protected:

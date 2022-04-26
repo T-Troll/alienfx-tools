@@ -1,4 +1,4 @@
-#pragma once  
+#pragma once
 #include <wtypesbase.h>
 #include <vector>
 #include <string>
@@ -7,9 +7,9 @@ using namespace std;
 
 #define byte BYTE
 
-namespace AlienFX_SDK {	
+namespace AlienFX_SDK {
 
-	// Old alieware device statuses v1-v3
+	// Old alienware device statuses v1-v3
 	#define ALIENFX_V2_RESET 0x06
 	#define ALIENFX_V2_READY 0x10
 	#define ALIENFX_V2_BUSY 0x11
@@ -45,7 +45,7 @@ namespace AlienFX_SDK {
 
 	union Colorcode // Atomic color structure
 	{
-		struct { 
+		struct {
 			byte b;
 			byte g;
 			byte r;
@@ -88,7 +88,7 @@ namespace AlienFX_SDK {
 		byte index;
 		vector<afx_act> act;
 	};
-	
+
 	enum Action
 	{
 		AlienFX_A_Color = 0,
@@ -134,8 +134,8 @@ namespace AlienFX_SDK {
 		bool powerMode = true; // current power mode for APIv1-v3
 
 		// Initialize device
-		// Returns PID of device used. 
-		// If vid is 0, first device found into the system will be used, othervise first device of this type.
+		// Returns PID of device used.
+		// If vid is 0, first device found into the system will be used, otherwise first device of this type.
 		// If pid is defined, device with vid/pid will be used.
 		int AlienFXInitialize(int vid, int pid = -1);
 
@@ -152,7 +152,7 @@ namespace AlienFX_SDK {
 		// Prepare to set lights
 		bool Reset();
 
-		// Comand separator for some APIs
+		// Command separator for some APIs
 		void Loop();
 
 		// false - not ready, true - ready, 0xff - stalled
@@ -161,12 +161,12 @@ namespace AlienFX_SDK {
 		// basic color set with ID index for current device. loop - does it need loop command after?
 		bool SetColor(unsigned index, Colorcode c, bool loop = true);
 
-		// Set multipy lights to the same color. This only works for new API devices, and emulated for old ones.
+		// Set multiply lights to the same color. This only works for new API devices, and emulated for old ones.
 		// lights - pointer to vector of light IDs need to be set.
 		// c - color to set (brightness ignored)
 		bool SetMultiLights(vector<byte> *lights, Colorcode c);
 
-		// Set multipy lights to different color.
+		// Set multiply lights to different color.
 		// act - pointer to vector of light control blocks
 		// store - need to save settings into device memory (v1-v4)
 		bool SetMultiColor(vector<act_block> *act, bool store = false);
@@ -229,7 +229,7 @@ namespace AlienFX_SDK {
 
 		~Mappings();
 
-		// Enum all alienware devices into the system
+		// Enumerate all alienware devices into the system
 		vector<pair<WORD,WORD>> AlienFXEnumDevices();
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
@@ -261,9 +261,6 @@ namespace AlienFX_SDK {
 
 		// add new light name into the list field-by-field
 		void AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags);
-
-		// Add new group into the list field-by-field
-		//void AddGroup(DWORD gID, char* name, int lightNum, DWORD* lightlist);
 
 		// get light flags (Power, indicator) by PID/VID and light ID
 		int GetFlags(DWORD devid, WORD lightid);

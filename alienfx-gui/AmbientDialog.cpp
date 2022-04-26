@@ -19,7 +19,7 @@ HANDLE uiHandle = NULL;
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
-    
+
     zone *map = FindAmbMapping(eItem);
 
     switch (message) {
@@ -55,7 +55,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     } break;
     case WM_COMMAND:
     {
-        
+
         switch (LOWORD(wParam)) {
         case IDC_LIGHTS: // should reload mappings
             switch (HIWORD(wParam)) {
@@ -77,7 +77,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         }
                     }
                 } break;
-            } 
+            }
         break;
         case IDC_BUTTON1: case IDC_BUTTON2: case IDC_BUTTON3: case IDC_BUTTON4: case IDC_BUTTON5: case IDC_BUTTON6: case IDC_BUTTON7:
         case IDC_BUTTON8: case IDC_BUTTON9: case IDC_BUTTON10: case IDC_BUTTON11: case IDC_BUTTON12:
@@ -115,11 +115,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     if (!map->map.size()) {
                         // delete mapping!
                         RemoveAmbMapping(map);
-                        /*for (auto mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
-                            if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
-                                conf->amb_conf->zones.erase(mIter);
-                                break;
-                            }*/
                     }
                     CheckDlgButton(hDlg, bid, BST_UNCHECKED);
                 }
@@ -199,12 +194,10 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
         return false;
     break;
-    case WM_CLOSE: 
-    case WM_DESTROY:
+    case WM_CLOSE: case WM_DESTROY:
         SetEvent(uiStopEvent);
         WaitForSingleObject(uiHandle, 1000);
         CloseHandle(uiHandle);
-        //conf->amb_conf->hDlg = NULL;
     break;
     default: return false;
     }

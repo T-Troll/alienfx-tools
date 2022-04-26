@@ -4,11 +4,8 @@
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
-
-//extern FXHelper *fxhl;
-//extern ConfigHandler *conf;
 
 DWORD WINAPI WSwaveInProc(LPVOID);
 DWORD WINAPI resample(LPVOID);
@@ -71,7 +68,7 @@ void WSAudioIn::stopSampling()
 void WSAudioIn::RestartDevice(int type)
 {
 	release();
-	
+
 	if (rate = init(type)) {
 		dftGG->setSampleRate(rate);
 		startSampling();
@@ -81,14 +78,13 @@ void WSAudioIn::RestartDevice(int type)
 int WSAudioIn::init(int type)
 {
 	DWORD ret = 0;
-	// get deveice
+	// get device
 	if (!type)
 		inpDev = GetDefaultMultimediaDevice(eRender);
 	else
 		inpDev = GetDefaultMultimediaDevice(eCapture);
-	if (!inpDev)
-		return 0;
-	
+	if (!inpDev) return 0;
+
 	//open it for render...
 	inpDev->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
 
@@ -96,47 +92,7 @@ int WSAudioIn::init(int type)
 
 	pAudioClient->GetMixFormat(&pwfx);
 
-	/*switch (pwfx->wFormatTag)
-	{
-	case WAVE_FORMAT_IEEE_FLOAT:
-		pwfx->wFormatTag = WAVE_FORMAT_PCM;
-		//pwfx->cbSize = 0;
-		//pwfx->wBitsPerSample = 16;
-		//!!!
-		//pwfx->nChannels = 2;
-		//pwfx->nSamplesPerSec = 44100;// rate;
-		//!!!
-		//pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
-		//pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
-		break;
-
-	case WAVE_FORMAT_EXTENSIBLE:
-	{
-		PWAVEFORMATEXTENSIBLE pEx = reinterpret_cast<PWAVEFORMATEXTENSIBLE>(pwfx);
-		if (IsEqualGUID(KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, pEx->SubFormat))
-		{
-			pEx->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
-			pwfx->wFormatTag = WAVE_FORMAT_PCM;
-			//pEx->Format.cbSize = 0;
-			//pEx->Samples.wValidBitsPerSample = 16;
-			//pwfx->wBitsPerSample = 16;
-			//!!!
-			//pEx->Format.nChannels = 2;
-			//pEx->Format.nSamplesPerSec = 44100;
-			//pwfx->nChannels = 1;
-			//pwfx->nSamplesPerSec = rate;
-			//!!!
-			//pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
-			//pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
-			//pEx->Format.nBlockAlign = 2 * pwfx->wBitsPerSample / 8;
-			//pEx->Format.nAvgBytesPerSec = pEx->Format.nBlockAlign * pwfx->nSamplesPerSec;
-		}
-	}
-	break;
-	}*/
-
-	REFERENCE_TIME hnsRequestedDuration = 10000000 / 5;// (rate / (2 * N));
-	//ret = pAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, pwfx, &suggest);
+	REFERENCE_TIME hnsRequestedDuration = 10000000 / 5;
 	if (!type)
 		ret = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
 			AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
@@ -148,18 +104,9 @@ int WSAudioIn::init(int type)
 	if (ret) {
 		return 0;
 	}
-	//ret = pAudioClient->GetService(IID_IAudioClockAdjustment,
-	//	(void**)&pRateClient);
-	//ret = pRateClient->SetSampleRate(44100.0);
+
 	pAudioClient->GetMixFormat(&pwfx);
-	//PWAVEFORMATEXTENSIBLE pEx = reinterpret_cast<PWAVEFORMATEXTENSIBLE>(pwfx);
-	//rate = pwfx->nSamplesPerSec;
-	//if (pwfx->nChannels > 6)
-	//	nChannel = 2; // pwfx->nChannels; - Realtek bugfix
-	//else
-	//nChannel = pwfx->nChannels;
-	//blockAlign = pwfx->nBlockAlign;
-	//bytePerSample = pwfx->wBitsPerSample / 8;
+
 	pAudioClient->SetEventHandle(hEvent);
 	pAudioClient->GetService(
 		IID_IAudioCaptureClient,
@@ -201,14 +148,14 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	UINT32 numFramesAvailable = 0;
 	int arrayPos = 0, shift = 0;
 
-	UINT bytesPerChannel = src->pwfx->wBitsPerSample >> 3;// 8;// bytePerSample;// / nChannel;
+	UINT bytesPerChannel = src->pwfx->wBitsPerSample >> 3;
 	UINT nChannel = src->pwfx->nChannels;
 	UINT blockAlign = src->pwfx->nBlockAlign;
 
 	BYTE* pData;
 	DWORD flags, res = 0;
 	double* waveT = new double[NUMPTS];
-	//UINT32 maxLevel = (UINT32) pow(256, bytesPerChannel) - 1;
+
 	IAudioCaptureClient *pCapCli = src->pCaptureClient;
 
 	updateEvent = CreateEvent(NULL, false, false, NULL);
@@ -219,7 +166,6 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 		switch (res) {
 		case WAIT_OBJECT_0+1:
 			// got new buffer....
-			// = 0;
 			pCapCli->GetNextPacketSize(&packetLength);
 			while (packetLength != 0) {
 				int ret = pCapCli->GetBuffer(
@@ -244,7 +190,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 							}
 							finVal += val;
 						}
-						waveT[arrayPos + i - shift] = (double) (finVal);// / nChannel) / maxLevel / NUMPTS;
+						waveT[arrayPos + i - shift] = (double) (finVal);
 						if (arrayPos + i - shift == NUMPTS - 1) {
 							//buffer full, send to process.
 							memcpy(src->waveD, waveT, NUMPTS * sizeof(double));

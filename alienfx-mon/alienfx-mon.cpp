@@ -1,14 +1,10 @@
-// alienfx-mon.cpp : Defines the entry point for the application.
-//
-
-#include "framework.h"
-#include "alienfx-mon.h"
 #include <Shlobj.h>
 #include <shellapi.h>
 #include <windowsx.h>
 #include <wininet.h>
 #include <string>
 #include <Commdlg.h>
+#include "resource.h"
 #include "ConfigMon.h"
 #include "SenMonHelper.h"
 using namespace std;
@@ -83,13 +79,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+    //UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
 	conf = new ConfigMon();
 
 	if (conf->eSensors || conf->bSensors)
 		EvaluteToAdmin();
+
+	// Due to the fact task run delay broken in W10....
+	if (wstring(lpCmdLine) == L"-d")
+		Sleep(5000);
 
 	senmon = new SenMonHelper(conf);
 
@@ -263,7 +263,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-void RedrawButton(unsigned id, DWORD* clr) {
+void RedrawButton(unsigned id, DWORD clr) {
 	RECT rect;
 	HBRUSH Brush = NULL;
 	HWND tl = GetDlgItem(mDlg, id);
@@ -273,7 +273,7 @@ void RedrawButton(unsigned id, DWORD* clr) {
 	rect.right -= rect.left;
 	rect.top = rect.left = 0;
 	// BGR!
-	Brush = CreateSolidBrush(*clr);
+	Brush = CreateSolidBrush(clr);
 	FillRect(cnt, &rect, Brush);
 	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
@@ -285,11 +285,8 @@ void ReloadSensorView() {
 	HWND list = GetDlgItem(mDlg, IDC_SENSOR_LIST);
 	ListView_DeleteAllItems(list);
 	ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-	if (!ListView_GetColumnWidth(list, 1)) {
-		LVCOLUMNA lCol;
-		lCol.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		lCol.cx = 100;
-		lCol.iSubItem = 0;
+	if (!ListView_GetColumnWidth(list, 0)) {
+		LVCOLUMNA lCol{ LVCF_TEXT | LVCF_SUBITEM };
 		lCol.pszText = (LPSTR)"Min";
 		ListView_InsertColumn(list, 0, &lCol);
 		lCol.pszText = (LPSTR)"Cur";
@@ -302,15 +299,11 @@ void ReloadSensorView() {
 		lCol.iSubItem = 3;
 		ListView_InsertColumn(list, 3, &lCol);
 	}
-	
+
 	for (int i = 0; i < conf->active_sensors.size(); i++) {
 		if (!conf->active_sensors[i].disabled) {
-			LVITEMA lItem;
+			LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, pos };
 			string name = to_string(conf->active_sensors[i].min);
-			lItem.mask = LVIF_TEXT | LVIF_PARAM;
-			lItem.iItem = pos;
-			//lItem.iImage = 0;
-			lItem.iSubItem = 0;
 			lItem.lParam = i;
 			lItem.pszText = (LPSTR)name.c_str();
 			if (i == selSensor) {
@@ -318,7 +311,8 @@ void ReloadSensorView() {
 				lItem.state = LVIS_SELECTED;
 				rpos = ListView_InsertItem(list, &lItem);
 				CheckDlgButton(mDlg, IDC_CHECK_INTRAY, conf->active_sensors[i].intray);
-				RedrawButton(IDC_BUTTON_COLOR, &conf->active_sensors[i].traycolor);
+				CheckDlgButton(mDlg, IDC_CHECK_INVERTED, conf->active_sensors[i].inverse);
+				RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[i].traycolor);
 			} else
 				ListView_InsertItem(list, &lItem);
 			name = to_string(conf->active_sensors[i].cur);
@@ -349,7 +343,7 @@ bool SetColor(int id, DWORD* clr) {
 	CHOOSECOLOR cc{ sizeof(cc), mDlg };
 	bool ret;
 	DWORD custColors[16]{ 0 };
-	// Initialize CHOOSECOLOR 
+	// Initialize CHOOSECOLOR
 	cc.lpCustColors = custColors;
 	cc.rgbResult = *clr;
 	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
@@ -357,7 +351,7 @@ bool SetColor(int id, DWORD* clr) {
 	if (ret = ChooseColor(&cc)) {
 		*clr = (DWORD)cc.rgbResult;
 	}
-	RedrawButton(id, clr);
+	RedrawButton(id, *clr);
 	return ret;
 }
 
@@ -388,7 +382,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		ReloadSensorView();
 
 		conf->niData.hWnd = hDlg;
-		conf->SetIconState();
+		//conf->SetIconState();
 
 		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
 			// check update....
@@ -428,7 +422,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (conf->startWindows) {
 				GetModuleFileNameA(NULL, pathBuffer, 2047);
 				shellcomm = "Register-ScheduledTask -TaskName \"AlienFX-Mon\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-					+ string(pathBuffer) + "') -force -RunLevel Highest";
+					+ string(pathBuffer) + "' -Argument '-d') -force -RunLevel Highest";
 				ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
 			}
 			else {
@@ -462,15 +456,21 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_BUTTON_RESET:
 			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
 				iter->max = iter->min = iter->cur;
+			ReloadSensorView();
 			break;
 		case IDC_BUTTON_MINIMIZE:
 			ShowWindow(hDlg, SW_HIDE);
 			break;
 		case IDC_BUTTON_COLOR:
 			SetColor(IDC_BUTTON_COLOR, &conf->active_sensors[selSensor].traycolor);
+			conf->active_sensors[selSensor].oldCur = -1;
 			break;
 		case IDC_CHECK_INTRAY:
 			conf->active_sensors[selSensor].intray = state;
+			break;
+		case IDC_CHECK_INVERTED:
+			conf->active_sensors[selSensor].inverse = state;
+			conf->active_sensors[selSensor].oldCur = -1;
 			break;
 		case IDC_REFRESH_TIME:
 			if (HIWORD(wParam) == EN_CHANGE) {
@@ -479,19 +479,48 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 	} break;
+	case WM_DRAWITEM:
+		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+		case IDC_BUTTON_COLOR:
+		{
+			if (selSensor < conf->active_sensors.size())
+				RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
+		} break;
+		}
+		break;
 	case WM_APP + 1:
 	{
 		switch (lParam) {
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
+			if (wParam)
+				selSensor = (int)wParam - 1;
 			ShowWindow(hDlg, SW_RESTORE);
+			RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 			ReloadSensorView();
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
-			SendMessage(hDlg, WM_CLOSE, 0, 0);
+			POINT lpClickPoint;
+			HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDC_MON_TRAY));
+			tMenu = GetSubMenu(tMenu, 0);
+			MENUINFO mi;
+			memset(&mi, 0, sizeof(mi));
+			mi.cbSize = sizeof(mi);
+			mi.fMask = MIM_STYLE;
+			mi.dwStyle = MNS_NOTIFYBYPOS;
+			SetMenuInfo(tMenu, &mi);
+			MENUITEMINFO mInfo{ 0 };
+			mInfo.cbSize = sizeof(MENUITEMINFO);
+			mInfo.fMask = MIIM_STRING | MIIM_ID;
+			CheckMenuItem(tMenu, ID__PAUSE, conf->paused ? MF_CHECKED : MF_UNCHECKED);
+			GetCursorPos(&lpClickPoint);
+			SetForegroundWindow(hDlg);
+			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
+				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
+			//SendMessage(hDlg, WM_CLOSE, 0, 0);
 		} break;
 		case NIN_BALLOONUSERCLICK:
 		{
@@ -499,6 +528,32 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		}
 		break;
+	} break;
+	case WM_MENUCOMMAND: {
+		int idx = LOWORD(wParam);
+		switch (GetMenuItemID((HMENU)lParam, idx)) {
+		case ID__EXIT:
+			SendMessage(hDlg, WM_CLOSE, 0, 0);
+			break;
+		case ID__RESTORE:
+			ShowWindow(hDlg, SW_RESTORE);
+			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+			ReloadSensorView();
+			break;
+		case ID__PAUSE:
+			conf->paused = !conf->paused;
+			if (conf->paused)
+				senmon->StopMon();
+			else
+				senmon->StartMon();
+			break;
+		case ID__RESETMIN:
+			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
+				iter->max = iter->min = iter->cur;
+			ReloadSensorView();
+			break;
+		}
 	} break;
 	case WM_SIZE:
 		if (wParam == SIZE_MINIMIZED) {
@@ -520,7 +575,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (conf->active_sensors[i].intray && conf->active_sensors[i].niData) {
 				Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData);
 			}
-		PostQuitMessage(0); 
+		PostQuitMessage(0);
 		break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
@@ -547,7 +602,8 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				if (lPoint->uNewState & LVIS_FOCUSED) {
 					selSensor = (int)lPoint->lParam;
 					CheckDlgButton(mDlg, IDC_CHECK_INTRAY, conf->active_sensors[selSensor].intray);
-					RedrawButton(IDC_BUTTON_COLOR, &conf->active_sensors[selSensor].traycolor);
+					CheckDlgButton(mDlg, IDC_CHECK_INVERTED, conf->active_sensors[selSensor].inverse);
+					RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -578,48 +634,52 @@ void UpdateTrayData(SENSOR* sen) {
 	HDC hdc, hdcMem;
 	HBITMAP hBitmap;
 	RECT clip{ 0,0,32,33 };
-	//HBITMAP hOldBitMap;
-	//HBITMAP hBitmapMask;
+	HBITMAP hBitmapMask;
 	ICONINFO iconInfo;
 	HFONT hFont;
 	HICON hIcon;
-	COLORREF bkColor = GetSysColor(0);
 
 	hdc = GetDC(mDlg);
 	hdcMem = CreateCompatibleDC(hdc);
 	hBitmap = CreateCompatibleBitmap(hdc, 32, 32);
-	//hBitmapMask = CreateCompatibleBitmap(hdc, 32, 32);
-	ReleaseDC(mDlg, hdc);
-	/*hOldBitMap = (HBITMAP)*/SelectObject(hdcMem, hBitmap);
-	if (sen->traycolor)
-		SetTextColor(hdcMem, 0x000000); // 0x00bbggrr
-	else
-		SetTextColor(hdcMem, 0xffffff); // 0x00bbggrr
-	SetBkColor(hdcMem, sen->traycolor); // color here
-	SetBkMode(hdcMem, OPAQUE);
-	//PatBlt(hdcMem, 0, 0, 32, 32, WHITEONBLACK);
 
 	// Draw percentage
 	hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
-	/*hFont = (HFONT)*/SelectObject(hdcMem, hFont);
+	SelectObject(hdcMem, hFont);
+	SelectObject(hdcMem, hBitmap);
+
+	if (sen->inverse) {
+		hBitmapMask = CreateCompatibleBitmap(hdc, 32, 32);
+		if (sen->traycolor != 0xffffff)
+			SetTextColor(hdcMem, sen->traycolor);
+		else
+			SetTextColor(hdcMem, 0);
+		SetBkColor(hdcMem, 0xffffff);
+		SetBkMode(hdcMem, OPAQUE);
+		PatBlt(hdcMem, 0, 0, 32, 32, WHITEONBLACK);
+		DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+		SelectObject(hdcMem, hBitmapMask);
+		SetTextColor(hdcMem, sen->traycolor);
+		SetBkColor(hdcMem, 0x0);
+		SetBkMode(hdcMem, TRANSPARENT);
+		PatBlt(hdcMem, 0, 0, 32, 32, BLACKONWHITE);
+	}
+	else {
+		hBitmapMask = hBitmap;
+		if (sen->traycolor)
+			SetTextColor(hdcMem, 0); // 0x00bbggrr
+		else
+			SetTextColor(hdcMem, 0xffffff); // 0x00bbggrr
+		SetBkColor(hdcMem, sen->traycolor);
+		SetBkMode(hdcMem, OPAQUE);
+	}
 	DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
-	//TextOut(hdcMem, 1, 1, val, 2);
 
-	//SelectObject(hdc, hOldBitMap);
-	//hOldBitMap = NULL;
-
-	//SelectObject(hdcMem, hBitmapMask);
-	//SetBkColor(hdcMem, 0x0);
-	//SetBkMode(hdcMem, TRANSPARENT);
-	//PatBlt(hdcMem, 0, 0, 32, 32, BLACKONWHITE);
-	//DrawText(hdcMem, val, strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
-
+	ReleaseDC(mDlg, hdc);
 
 	iconInfo.fIcon = TRUE;
-	//iconInfo.xHotspot = 0;
-	//iconInfo.yHotspot = 0;
 	iconInfo.hbmMask = hBitmap;
-	iconInfo.hbmColor = hBitmap;
+	iconInfo.hbmColor = hBitmapMask;
 
 	hIcon = CreateIconIndirect(&iconInfo);
 
@@ -630,9 +690,9 @@ void UpdateTrayData(SENSOR* sen) {
 
 	DeleteObject(hFont);
 	DeleteDC(hdcMem);
-	//DeleteDC(hdc);
 	DeleteObject(hBitmap);
-	//DeleteObject(hBitmapMask);
+	if (sen->inverse)
+		DeleteObject(hBitmapMask);
 }
 
 DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
@@ -668,7 +728,7 @@ DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
 			conf->needFullUpdate = true;
 		// Trayworks...
 		for (int i = 0; i < conf->active_sensors.size(); i++) {
-			if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled) {
+			if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled && !(conf->active_sensors[i].min < 0)) {
 				if (conf->active_sensors[i].niData) {
 					// update tray counter
 					if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
@@ -678,7 +738,7 @@ DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
 				}
 				else {
 					// add tray counter
-					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i,
+					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i+1,
 						NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1});
 					UpdateTrayData(&conf->active_sensors[i]);
 					if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {

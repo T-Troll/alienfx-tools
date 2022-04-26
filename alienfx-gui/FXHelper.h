@@ -34,7 +34,7 @@ struct deviceQuery {
 class FXHelper
 {
 private:
-	//EventData eData;
+
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
 

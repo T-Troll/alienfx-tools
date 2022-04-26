@@ -5,7 +5,6 @@
 #include <wtypes.h>
 #include <tchar.h>
 #include <string>
-//#include <windows.h>
 
 namespace
 {
@@ -138,7 +137,7 @@ namespace LFXUtil
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
-		
+
 		if (_LFX_SetLightColor(dev, light, (PLFX_COLOR)color) != LFX_SUCCESS)
 			return 0;
 
@@ -209,7 +208,7 @@ namespace LFXUtil
 	{
 
 		_LFX_GetNumDevices(&numDev);
-		
+
 		for (unsigned i = 0; i < numDev; i++) {
 			deviceinfo d;
 			_LFX_GetDeviceDescription(i, d.desc, 256, &d.type);

@@ -1,4 +1,3 @@
-#include "pch.h"
 #include <vector>
 #include "LFX2.h"
 #include "AlienFX_SDK.h"
@@ -18,7 +17,7 @@ void TranslateColor(LFX_COLOR src) {
 	final.red = ((unsigned) src.red * src.red * src.brightness) / (255 * 255);
 	final.green = ((unsigned) src.green * src.green * src.brightness) / (255 * 255);
 	final.blue = ((unsigned) src.blue * src.blue * src.brightness) / (255 * 255);
-	// brighness...
+	// brightness...
 	//final.red = (((unsigned) final.red * src.brightness)) / 255;// >> 8;
 	//final.green = (((unsigned) final.green * src.brightness)) / 255;// >> 8;
 	//final.blue = (((unsigned) final.blue * src.brightness)) / 255;// >> 8;
@@ -67,7 +66,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 	// now map groups to zones
 	for (int i = 0; i < afx_map->GetGroups()->size(); i++) {
 		AlienFX_SDK::group *grp = &afx_map->GetGroups()->at(i);
-		if (grp->name == "Right") groups[0] = grp;// grp->gid;
+		if (grp->name == "Right") groups[0] = grp;
 		if (grp->name == "Left") groups[1] = grp;
 		if (grp->name == "Top") groups[2] = grp;
 		if (grp->name == "Bottom") groups[3] = grp;
@@ -146,7 +145,6 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, 
 		case 6: *devtype = LFX_DEVTYPE_DISPLAY; break;
 		case 7: *devtype = LFX_DEVTYPE_MOUSE; break;
 		}
-		//devName = afx_map->fxdevs[dev].desc ? afx_map->fxdevs[dev].desc->name : "Device #" + to_string(dev);
 
 		if (namelen > devName.length()) {
 			strcpy_s(name, namelen, devName.c_str());
@@ -195,7 +193,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightLocation(const unsigned int dev, cons
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const unsigned int lid, PLFX_COLOR const clr) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
 		// ToDo: remember last color
-		*clr = {0}; //clr->brightness = 255;
+		*clr = {0};
 	}
 	return state;
 }
@@ -241,11 +239,9 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColor(const unsigned int dev, c
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColorEx(const unsigned int dev, const unsigned int lid, const unsigned int act, const PLFX_COLOR clr1, const PLFX_COLOR clr2) {
 	if (CheckState(dev,lid) == LFX_SUCCESS) {
 		AlienFX_SDK::act_block actions{(byte) afx_map->fxdevs[dev].lights[lid]->lightid};
-		//AlienFX_SDK::Colorcode src{clr1->blue, clr1->green, clr1->red, clr1->brightness};
 		TranslateColor(*clr1);
 		BYTE fact = GetActionMode(act);
 		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
-		//src = {clr2->blue, clr2->green, clr2->red, clr2->brightness};
 		TranslateColor(*clr2);
 		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
 		afx_map->fxdevs[dev].dev->SetAction(&actions);

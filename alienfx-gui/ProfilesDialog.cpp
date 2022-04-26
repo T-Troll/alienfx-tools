@@ -60,11 +60,7 @@ void ReloadProfileView(HWND hDlg) {
 	ListView_DeleteColumn(profile_list, 0);
 	ListView_InsertColumn(profile_list, 0, &lCol);
 	for (int i = 0; i < conf->profiles.size(); i++) {
-		LVITEMA lItem; 
-		lItem.mask = LVIF_TEXT | LVIF_PARAM;
-		lItem.iItem = i;
-		lItem.iImage = 0;
-		lItem.iSubItem = 0;
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, i};
 		lItem.lParam = conf->profiles[i]->id;
 		lItem.pszText = (char*)conf->profiles[i]->name.c_str();
 		if (conf->profiles[i]->id == pCid) {
@@ -105,7 +101,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Pulse"), 8);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Mixed Pulse"), 9);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Night Rider"), 10);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Lazer"), 11);
+			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Laser"), 11);
 			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
 			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
 			sTip2 = CreateToolTip(eff_tempo, sTip2);
@@ -114,7 +110,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	} break;
 	case WM_COMMAND:
 	{
-		//profile* prof = conf->FindProfile(pCid);
 		if (!prof && LOWORD(wParam) != IDC_ADDPROFILE)
 			return false;
 
@@ -200,15 +195,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_APP_BROWSE: {
 			// fileopen dialogue...
-			OPENFILENAMEA fstruct{0};
-			char appName[4096]{0};
-			fstruct.lStructSize = sizeof(OPENFILENAMEA);
-			fstruct.hwndOwner = hDlg;
-			fstruct.hInstance = hInst;
+			OPENFILENAMEA fstruct{ sizeof(OPENFILENAMEA), hDlg, hInst, "Applications (*.exe)\0*.exe\0\0" };
+			char appName[4096]; appName[0] = 0;
 			fstruct.lpstrFile = (LPSTR) appName;
 			fstruct.nMaxFile = 4095;
-			fstruct.lpstrFilter = "Applications (*.exe)\0*.exe\0\0";
-			fstruct.lpstrCustomFilter = NULL;
 			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
 			if (GetOpenFileNameA(&fstruct)) {
 				PathStripPath(fstruct.lpstrFile);
@@ -261,8 +251,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_FOREGROUND:
 			prof->flags = (prof->flags & ~PROF_ACTIVE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 3;
-			//if (conf->enableProf)
-			//	eve->SwitchActiveProfile(eve->ScanTaskList());
 			break;
 		case IDC_CHECK_GLOBAL:
 			prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
@@ -302,22 +290,19 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
 				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
-					//if (lPoint->iItem != -1) {
-						pCid = (int) lPoint->lParam;
-						/*profile* */prof = conf->FindProfile(pCid);
-						if (prof) {
-							ReloadProfSettings(hDlg, prof);
-						}
-					} else {
-						pCid = -1;
-						CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
-						CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, BST_UNCHECKED);
-						ListBox_ResetContent(app_list);
-						ComboBox_SetCurSel(mode_list, 3);
-					//}
+					pCid = (int) lPoint->lParam;
+					prof = conf->FindProfile(pCid);
+					if (prof)
+						ReloadProfSettings(hDlg, prof);
+				} else {
+					pCid = -1;
+					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, BST_UNCHECKED);
+					ListBox_ResetContent(app_list);
+					ComboBox_SetCurSel(mode_list, 3);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -330,7 +315,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					ListView_SetColumnWidth(p_list, 0, LVSCW_AUTOSIZE);
 					ReloadProfileList();
 					return true;
-				} else 
+				} else
 					return false;
 			} break;
 			}
@@ -339,7 +324,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		break;
 	case WM_HSCROLL:
 	{
-		//profile *prof = conf->FindProfile(pCid);
 		if (prof)
 			switch (LOWORD(wParam)) {
 			case TB_THUMBPOSITION: case TB_ENDTRACK:
@@ -355,7 +339,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	} break;
 	case WM_DRAWITEM:
 	{
-		//profile *prof = conf->FindProfile(pCid);
 		if (prof)
 			switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 			case IDC_BUTTON_EFFCLR1:

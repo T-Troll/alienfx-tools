@@ -52,10 +52,6 @@ void UpdateMonitoringInfo(HWND hDlg, lightset *map) {
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
-	//	mode_light = GetDlgItem(hDlg, IDC_CHECK_NOEVENT),
-	//	mode_power = GetDlgItem(hDlg, IDC_CHECK_POWER),
-	//	mode_perf = GetDlgItem(hDlg, IDC_CHECK_PERF),
-	//	mode_status = GetDlgItem(hDlg, IDC_CHECK_STATUS),
 		list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
 		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
@@ -88,15 +84,13 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		ComboBox_AddString(list_counter, buffer);
 		LoadString(hInst, IDS_BATT, buffer, 32);
 		ComboBox_AddString(list_counter, buffer);
-		//if (conf->fanControl) {
-			LoadString(hInst, IDS_FANS, buffer, 32);
-			ComboBox_AddString(list_counter, buffer);
-		//}
-		//if (conf->esif_temp) {
-			LoadString(hInst, IDS_PWR, buffer, 32);
-			ComboBox_AddString(list_counter, buffer);
-		//}
-		// Set indicator list
+
+		LoadString(hInst, IDS_FANS, buffer, 32);
+		ComboBox_AddString(list_counter, buffer);
+
+		LoadString(hInst, IDS_PWR, buffer, 32);
+		ComboBox_AddString(list_counter, buffer);
+
 		LoadString(hInst, IDS_A_HDD, buffer, 32);
 		ComboBox_AddString(list_status, buffer);
 		LoadString(hInst, IDS_A_NET, buffer, 32);
@@ -112,7 +106,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		// Set sliders
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
-		//TBM_SETTICFREQ
+
 		SendMessage(s1_slider, TBM_SETTICFREQ, 10, 0);
 		SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
 		sTip1 = CreateToolTip(s1_slider, sTip1);
@@ -145,7 +139,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					map = CreateMapping(eItem);
 				}
 				map->eve[LOWORD(wParam) - IDC_CHECK_NOEVENT].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				//UpdateMonitoringInfo(hDlg, map);
+
 				fxhl->RefreshState();
 			} else
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);

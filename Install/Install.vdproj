@@ -69,7 +69,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_799E46A9DE84423E9A42E8A667B8B40B"
+        "MsmKey" = "8:_678C7A24858C40D5841D4C44812C6A93"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -81,25 +81,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_8BD54ECA5F1F4A93AB50408023C9F6C4"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_94DD59AF152B4EC1B2EF22200F020B7E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_981E70E7906A47D493BC62ED49AF1096"
+        "MsmKey" = "8:_9752947669754683929089279BB314AF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_98A7712D38674FC599CD2B2A0C6591F9"
+        "MsmKey" = "8:_981E70E7906A47D493BC62ED49AF1096"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -124,6 +118,12 @@
         "Entry"
         {
         "MsmKey" = "8:_C4B1307E827A4442ACD87D8B7EAF7F24"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D06A699B47CF40DFAD55D62D2CC14B4D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -484,15 +484,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{B0383038-163D-4819-AFAB-6DE1C0596932}"
-        "PackageCode" = "8:{219661D3-DC6F-4911-A824-6FDB7FE6517B}"
+        "ProductCode" = "8:{43FF50E4-8C0E-4F67-8A4F-2ACAA572FEF5}"
+        "PackageCode" = "8:{152E61B8-45CF-41D1-98D0-D2EC147DC6C9}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:5.6.100"
+        "ProductVersion" = "8:5.6.200"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -934,7 +934,7 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_799E46A9DE84423E9A42E8A667B8B40B"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_678C7A24858C40D5841D4C44812C6A93"
             {
             "SourcePath" = "8:..\\x64\\Release\\kdl.dll"
             "TargetName" = "8:"
@@ -990,34 +990,6 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8BD54ECA5F1F4A93AB50408023C9F6C4"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\HwAcc.sys"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_94DD59AF152B4EC1B2EF22200F020B7E"
             {
             "SourcePath" = "8:..\\x64\\Release\\alienfan-overboost.exe"
@@ -1046,9 +1018,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_98A7712D38674FC599CD2B2A0C6591F9"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9752947669754683929089279BB314AF"
             {
-            "SourcePath" = "8:..\\x64\\Release\\drv64.dll"
+            "SourcePath" = "8:..\\x64\\Release\\HwAcc.sys"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1068,7 +1040,7 @@
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}"
+            "OutputProjectGuid" = "8:{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
@@ -1181,6 +1153,34 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{D6AD2E10-F61C-43F1-87EA-E77DEA12DD42}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D06A699B47CF40DFAD55D62D2CC14B4D"
+            {
+            "SourcePath" = "8:..\\x64\\Release\\drv64.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {

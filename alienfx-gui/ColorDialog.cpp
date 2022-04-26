@@ -28,15 +28,14 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		ImageList_Destroy(hOld);
 	}
 	ListView_SetExtendedListViewStyle(eff_list, LVS_EX_FULLROWSELECT);
-	LVCOLUMNA lCol{0};
-	lCol.mask = LVCF_WIDTH;
-	lCol.cx = 100;
-	ListView_DeleteColumn(eff_list, 0);
-	ListView_InsertColumn(eff_list, 0, &lCol);
+	if (!ListView_GetColumnWidth(eff_list, 0)) {
+		LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
+		ListView_InsertColumn(eff_list, 0, &lCol);
+	}
 	if (mmap) {
-		LVITEMA lItem{}; char efName[16]{0};
-		lItem.mask = LVIF_TEXT | LVIF_IMAGE;
-		lItem.iSubItem = 0;
+		LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE };
+		char efName[16]{0};
+
 		COLORREF* picData = NULL;
 		HBITMAP colorBox = NULL;
 		HIMAGELIST hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),

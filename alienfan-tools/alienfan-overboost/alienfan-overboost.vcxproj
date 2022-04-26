@@ -146,7 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\alienfan-gui\ConfigHelper.cpp" />
+    <ClCompile Include="..\alienfan-gui\ConfigFan.cpp" />
     <ClCompile Include="alienfan-overboost.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -155,7 +155,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\alienfan-gui\ConfigHelper.h" />
+    <ClInclude Include="..\alienfan-gui\ConfigFan.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

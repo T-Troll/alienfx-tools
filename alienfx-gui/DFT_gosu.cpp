@@ -88,4 +88,4 @@ int* DFT_gosu::calc(double *x1)
 	}
 
 	return spectrum;
-} // end function calc
+}

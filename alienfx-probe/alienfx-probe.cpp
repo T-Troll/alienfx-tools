@@ -40,7 +40,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 			if (res != -1) {
 				switch (res) {
 				case 0: printf("Dell library DLL not found (no library?)!\n"); break;
-				case 1: printf("Can't init Dell library!\n"); break;
+				case 1: printf("Can't access Dell library!\n"); break;
 				case 2: printf("No high-level devices found!\n"); break;
 				default: printf("Dell library unknown error!\n"); break;
 				}

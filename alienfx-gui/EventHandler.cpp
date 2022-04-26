@@ -11,7 +11,7 @@
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
 
 DWORD WINAPI CEventProc(LPVOID);
@@ -160,17 +160,14 @@ void EventHandler::ToggleEvents()
 
 void EventHandler::ChangeEffectMode(int newMode) {
 	if (conf->enableMon) {
-		if (newMode != effMode) {
+		if (newMode != effMode)
 			StopEffects();
-			//conf->SetEffect(newMode);
-		}
 		else
 			fxh->RefreshState(true);
 		StartEffects();
 	}
-	else {
+	else
 		StopEffects();
-	}
 }
 
 void EventHandler::StopEffects() {
@@ -182,7 +179,6 @@ void EventHandler::StopEffects() {
 	case 2: if (audio) {
 		delete audio; audio = NULL;
 	} break;
-	//case 3: break;
 	}
 	effMode = -1;
 	fxh->Refresh(true);
@@ -192,17 +188,15 @@ void EventHandler::StartEffects() {
 	if (conf->enableMon) {
 		// start new mode...
 		switch (effMode = conf->GetEffect()) {
-		case 0: 
-			StartEvents(); 
+		case 0:
+			StartEvents();
 			break;
-		case 1: 
-			if (!capt) capt = new CaptureHelper(); 
+		case 1:
+			if (!capt) capt = new CaptureHelper();
 			break;
-		case 2: 
-			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh); 
+		case 2:
+			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh);
 			break;
-		//case 3: 
-		//	break;
 		}
 	}
 }
@@ -337,7 +331,6 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 	if (hThread) {
 		DWORD prcId = GetProcessIdOfThread(hThread);
 		if (prcId &&
-			//GetWindowThreadProcessId(hwnd, NULL) != dwEventThread ||
 			idChild == CHILDID_SELF && even->conf->foregroundProfile != even->conf->activeProfile) {
 			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
 				PROCESS_VM_READ,
@@ -364,7 +357,7 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 				break;
 
 			case EVENT_OBJECT_DESTROY:
-		
+
 				if (even->conf->FindProfileByApp(string(szProcessName))) {
 					//DebugPrint((string("Process (") + szProcessName + ") status " + to_string(idChild) + "\n").c_str());
 					even->SwitchActiveProfile(even->ScanTaskList());
@@ -446,7 +439,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 	HQUERY hQuery = NULL;
 	HLOG hLog = NULL;
-	//PDH_STATUS pdhStatus;
+
 	DWORD dwLogType = PDH_LOG_TYPE_CSV;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
@@ -455,26 +448,22 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 	SYSTEM_POWER_STATUS state;
 
-	//ULONGLONG maxnet = 1;
-	//DWORD maxPower = 100;
-
 	EventData cData;
 
 	// Set data source...
-	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
 
 	if (PdhOpenQuery(NULL, 0, &hQuery) != ERROR_SUCCESS)
 	{
 		goto cleanup;
 	}
 
-	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
-	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
-	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
-	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
-	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
-	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
-	/*pdhStatus =*/ PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
+	PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
+	PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
+	PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
+	PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
+	PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
+	PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
+	PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 
 	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
 	DWORD cType = 0, valCount = 0;
@@ -485,8 +474,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		cData = { 0 };
 
-		/*pdhStatus =*/ PdhGetFormattedCounterValue( hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal );
-		/*pdhStatus =*/ PdhGetFormattedCounterValue( hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal );
+		PdhGetFormattedCounterValue( hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal );
+		PdhGetFormattedCounterValue( hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal );
 
 		// Network load
 		valCount = GetValuesArray(hNETCounter);
@@ -496,9 +485,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 			totalNet += counterValues[i].FmtValue.longValue;
 		}
 
-		if (src->fxh->maxData.NET < totalNet) 
+		if (src->fxh->maxData.NET < totalNet)
 			src->fxh->maxData.NET = totalNet;
-		//if (maxnet / 4 > totalNet) maxnet /= 2; TODO: think about decay!
 
 		// GPU load
 		valCount = GetValuesArray(hGPUCounter);
@@ -589,8 +577,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 		src->fxh->SetCounterColor(&cData);
 		src->modifyProfile.unlock();
 
-		/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) + 
-					", Power=" + to_string(cData.PWR) + 
+		/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) +
+					", Power=" + to_string(cData.PWR) +
 					", Max. power=" + to_string(maxPower) + "\n").c_str());*/
 	}
 

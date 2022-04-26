@@ -7,34 +7,33 @@
 using namespace std;
 
 struct fan_point {
-	short temp;// = 0;
-	short boost;// = 0;
+	short temp;
+	short boost;
 };
 
 struct fan_block {
-	short fanIndex;// = 0;
+	short fanIndex;
 	vector<fan_point> points;
 };
 
 struct temp_block {
-	short sensorIndex;// = 0;
+	short sensorIndex;
 	vector<fan_block> fans;
 };
 
 struct fan_profile {
 	DWORD powerStage = 0;
 	DWORD GPUPower = 0;
-	//DWORD perfModeAC = 0;
-	//DWORD perfModeDC = 0;
 	vector<temp_block> fanControls;
 };
 
 struct fan_overboost {
-	byte maxBoost;// = 0;
-	USHORT maxRPM;// = 0;
+	byte fanID;
+	byte maxBoost;
+	USHORT maxRPM;
 };
 
-class ConfigHelper {
+class ConfigFan {
 private:
 	HKEY keyMain, keySensors, keyPowers;
 	void GetReg(const char *name, DWORD *value, DWORD defValue = 0);
@@ -51,8 +50,8 @@ public:
 	vector<fan_overboost> boosts;
 	map<byte, string> powers;
 
-	ConfigHelper();
-	~ConfigHelper();
+	ConfigFan();
+	~ConfigFan();
 	temp_block* FindSensor(int);
 	fan_block* FindFanBlock(temp_block*, int);
 

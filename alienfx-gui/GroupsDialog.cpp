@@ -83,7 +83,7 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		case IDC_GROUPS: {
 			switch (HIWORD(wParam))
 			{
-			case CBN_SELCHANGE: { 
+			case CBN_SELCHANGE: {
 				gItem = ComboBox_GetCurSel(groups_list);
 				gLid = (int)ComboBox_GetItemData(groups_list, gItem);
 				grp = fxhl->afx_dev.GetGroupById(gLid);
@@ -133,7 +133,6 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 			ComboBox_SetCurSel(groups_list, gItem);
 			EnableWindow(groups_list, true);
 			EnableWindow(glights_list, true);
-			//grp = &fxhl->afx_dev.GetGroups()->back();
 			UpdateGroupLights(glights_list,gLid,0);
 			UpdateLightListG(light_list, &fxhl->afx_dev.GetGroups()->back());
 		} break;

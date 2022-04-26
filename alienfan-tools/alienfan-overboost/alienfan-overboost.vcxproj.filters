@@ -18,12 +18,12 @@
     <ClCompile Include="alienfan-overboost.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\alienfan-gui\ConfigHelper.cpp">
+    <ClCompile Include="..\alienfan-gui\ConfigFan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\alienfan-gui\ConfigHelper.h">
+    <ClInclude Include="..\alienfan-gui\ConfigFan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

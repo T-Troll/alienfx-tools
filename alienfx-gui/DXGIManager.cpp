@@ -32,10 +32,6 @@
 #include <chrono>
 #include <thread>
 
-// TODO: add tests!!
-
-// TODO: Add member vars for frame buf and buf size, to avoid malloc for every frame
-
 // The default format of B8G8R8A8 gives a pixel-size of 4 bytes
 #define PIXEL_SIZE 4
 #define PIXEL uint32_t
@@ -107,7 +103,7 @@ HRESULT DuplicatedOutput::get_frame(IDXGISurface1** out_surface, uint32_t timeou
 	TRY_RETURN(m_device->CreateTexture2D(&texture_desc, NULL, &readable_texture));
 
 	// Lower priorities causes stuff to be needlessly copied from gpu to ram, causing huge
-	// fluxuations on some systems.
+	// fluctuation on some systems.
 	readable_texture->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
 	m_device_context->CopyResource(readable_texture, frame_texture);
@@ -282,14 +278,14 @@ CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size)
 		return CR_ACCESS_DENIED;
 	} else if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
 		return CR_TIMEOUT;
-	} else if (FAILED(hr)) { // || m_output_duplication == NULL) {
+	} else if (FAILED(hr)) {
 		// Sometimes when modes are changed or something, AcquireNextFrame complains about
 		// DXGI_ERROR_INVALID_CALL, the previous frame was not released. This is not the
 		// case though, and to accomodate for the change in modes we refresh outputs.
 		refresh_output();
 		return CR_FAIL;
 	}
-	
+
 	DXGI_MAPPED_RECT mapped_surface;
 	hr = frame_surface->Map(&mapped_surface, DXGI_MAP_READ);
 	if (FAILED(hr)) {
@@ -350,16 +346,14 @@ CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size)
 
 	frame_surface->Unmap();
 	frame_surface->Release();
-	
+
 	*out_buf = m_frame_buf;
 	*out_buf_size = m_frame_buf_size;
 	return CR_OK;
 }
 
 void DXGIManager::clear_output_duplications() {
-	//delete m_output_duplication;
 	m_out_dups.clear();
-	//m_output_duplication = NULL;
 }
 
 // If there are no output duplications, or specified monitor is not found, return NULL
@@ -370,16 +364,11 @@ DuplicatedOutput* DXGIManager::get_output_duplication() {
 				return &m_out_dups[m_capture_source];
 		}
 		else
-			//return &m_out_dups[0]; - primary monitor
-		//if (m_capture_source == 0 || n_out_dups < m_capture_source) { // Find the primary output
 			for (size_t i = 0; i < n_out_dups; i++) {
 				if (m_out_dups[i].is_primary()) {
 					return &m_out_dups[i];
 				}
 			}
-		//} else {
-		//	return &m_out_dups[m_capture_source - 1];
-		//}
 	}
 	return NULL;
 }

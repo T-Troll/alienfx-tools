@@ -20,7 +20,7 @@ using namespace std;
 //const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461};
 
 void CheckDevices(bool show_all) {
-	
+
 	GUID guid;
 	bool flag = false;
 	HANDLE tdevHandle;
@@ -116,7 +116,7 @@ void CheckDevices(bool show_all) {
 							if (show_all || supported) {
 
 								printf("===== Device VID_%04x, PID_%04x =====\n", attributes->VendorID, attributes->ProductID);
-								printf("Version %d, blocksize %d\n", attributes->VersionNumber, attributes->Size);
+								printf("Version %d, block size %d\n", attributes->VersionNumber, attributes->Size);
 
 								printf("Report Lengths: Output %d, Input %d, Feature %d\n", caps.OutputReportByteLength,
 									caps.InputReportByteLength,

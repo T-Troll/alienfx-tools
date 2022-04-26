@@ -564,7 +564,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigHelper.h" />
+    <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigFan.h" />
     <ClInclude Include="..\alienfan-tools\alienfan-gui\MonHelper.h" />
     <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="CaptureHelper.h" />
@@ -580,7 +580,7 @@
     <ClInclude Include="WSAudioIn.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigHelper.cpp" />
+    <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigFan.cpp" />
     <ClCompile Include="..\alienfan-tools\alienfan-gui\MonHelper.cpp" />
     <ClCompile Include="alienfx-gui.cpp" />
     <ClCompile Include="AmbientDialog.cpp" />

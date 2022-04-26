@@ -86,7 +86,7 @@ void ConfigHaptics::Save() {
     RegDeleteTreeA(hMainKey, "Mappings");
     RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     for (auto i = haptics.begin(); i < haptics.end(); i++) {
-        // TODO: save all freqs!
+
         if (i->freqs.size()) {
             for (int j = 0; j < i->freqs.size(); j++) {
                 string name = "Light" + to_string(i->devid) + "-" + to_string(i->lightid) + "-" + to_string(j);
@@ -103,21 +103,6 @@ void ConfigHaptics::Save() {
                 RegSetValueExA( hMappingKey, name.c_str(), 0, REG_BINARY, out, (DWORD) (i->freqs[0].freqID.size() + 2 * sizeof(DWORD) + 3));
                 delete[] out;
             }
-            //preparing name
-            //string name = "Map" + to_string(i->devid) + "-" + to_string(i->lightid);
-            ////preparing binary....
-            //DWORD *out = new DWORD[i->freqs[0].freqID.size() + 5];
-            //out[0] = i->freqs[0].colorfrom.ci;
-            //out[1] = i->freqs[0].colorto.ci;
-            //out[2] = i->freqs[0].lowcut;
-            //out[3] = i->freqs[0].hicut;
-            //out[4] = i->flags;
-
-            //for (int j = 0; j < i->freqs[0].freqID.size(); j++) {
-            //    out[j + 5] = i->freqs[0].freqID[j];
-            //}
-            //RegSetValueExA( hMappingKey, name.c_str(), 0, REG_BINARY, (BYTE *) out, (DWORD) (i->freqs[0].freqID.size() + 5) * sizeof(DWORD) );
-            //delete[] out;
         }
     }
 }
