@@ -2,7 +2,7 @@
 #include "AlienFX_SDK.h"
 #include "alienfx-controls.h"
 #ifndef NOACPILIGHTS
-#include "alienfan-low.h"
+#include "../../alienfan-tools/alienfan-SDK/alienfan-SDK.h"
 #else
 #include <SetupAPI.h>
 #pragma comment(lib,"setupapi.lib")
@@ -15,7 +15,7 @@ extern "C" {
 
 #pragma comment(lib, "hid.lib")
 
-namespace AlienFX_SDK {	
+namespace AlienFX_SDK {
 
 	vector<pair<byte, byte>> *Functions::SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2) {
 		vector<pair<byte, byte>> *mods = new vector<pair<byte, byte>>({{1, type},{2,(byte)chain},
@@ -61,7 +61,7 @@ namespace AlienFX_SDK {
 		FillMemory(buffer, MAX_BUFFERSIZE, version == API_L_V6 ? 0xff : 0);
 
 		if (version == API_L_V8) {
-			// Neeed to send report before any command!
+			// Need to send report before any command!
 			buffer[0] = reportID;
 			buffer[1] = 0x1;
 			int res = HidD_SetFeature(devHandle, buffer, length);
@@ -124,7 +124,7 @@ namespace AlienFX_SDK {
 			PrepareAndSend(COMMV1.save, sizeof(COMMV1.save));
 			Reset();
 		}
-			
+
 		return true;
 	}
 
@@ -177,16 +177,16 @@ namespace AlienFX_SDK {
 								length = caps.OutputReportByteLength;
 								reportID = 0;
 								switch (caps.OutputReportByteLength) {
-								case 0: 
+								case 0:
 									length = caps.FeatureReportByteLength;
 									version = 5;
 									reportID = 0xcc;
 									break;
-								case 8: 
+								case 8:
 									version = 1;
 									reportID = 2;
 									break;
-								case 9: 
+								case 9:
 									version = 2;
 									reportID = 2;
 									break;
@@ -505,7 +505,7 @@ namespace AlienFX_SDK {
 				val = PrepareAndSend(COMMV5.colorSet, sizeof(COMMV5.colorSet), mods);
 			Loop();
 		}break;
-		case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V4: 
+		case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V4:
 		{
 			if (save)
 				SetPowerAction(act);
@@ -565,7 +565,7 @@ namespace AlienFX_SDK {
 					// 3 actions per record..
 					byte opCode1 = 0xd0, opCode2 = act->act[ca].tempo;
 					switch (act->act[ca].type) {
-					/*case AlienFX_A_Color: 
+					/*case AlienFX_A_Color:
 						mods.push_back({bPos+2, 0xd0});
 						mods.push_back({bPos+4, 0xfa});
 						break;*/
@@ -578,16 +578,16 @@ namespace AlienFX_SDK {
 					case AlienFX_A_Breathing:
 						opCode1 = 0xdc;
 						break;
-					case AlienFX_A_Spectrum: 
+					case AlienFX_A_Spectrum:
 						opCode1 = 0x82;
 						break;
 					case AlienFX_A_Rainbow:
 						opCode1 = 0xac;
 						break;
-					case AlienFX_A_Power: 
+					case AlienFX_A_Power:
 						opCode1 = 0xe8;
 						break;
-					default: 
+					default:
 						//opCode1 = 0xd0;
 						opCode2 = 0xfa;
 					}
@@ -629,22 +629,22 @@ namespace AlienFX_SDK {
 							mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r});
 						else
 							if (ca < act->act.size() - 1) {
-								mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+								mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r},
 													   {act->act[ca + 1].b, act->act[ca + 1].g, act->act[ca + 1].r});
 
 							} else {
-								mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+								mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r},
 													   {act->act[0].b, act->act[0].g, act->act[0].r});
 							}
 					} break;
 					case AlienFX_A_Morph:
 					{
 						if (ca < act->act.size() - 1) {
-							mods = SetMaskAndColor(1 << act->index, 1, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+							mods = SetMaskAndColor(1 << act->index, 1, {act->act[ca].b, act->act[ca].g, act->act[ca].r},
 												   {act->act[ca + 1].b, act->act[ca + 1].g, act->act[ca + 1].r});
 
 						} else {
-							mods = SetMaskAndColor(1 << act->index, 1, {act->act[ca].b, act->act[ca].g, act->act[ca].r}, 
+							mods = SetMaskAndColor(1 << act->index, 1, {act->act[ca].b, act->act[ca].g, act->act[ca].r},
 												   {act->act[0].b, act->act[0].g, act->act[0].r});
 						}
 					} break;
@@ -768,7 +768,6 @@ namespace AlienFX_SDK {
 			}
 
 			if (pwr) {
-				//DWORD invMask = ~((1 << index));// | 0x8000); // what is 8000? Macro?
 				chain = 1;
 				// 08 02 - AC standby
 				act_block tact{pwr->index,
@@ -795,13 +794,13 @@ namespace AlienFX_SDK {
 				SavePowerBlock(6, tact, true);
 				// 08 07 - Battery standby
 				tact = {pwr->index,
-						{{AlienFX_A_Morph/*AlienFX_A_Color*/, 0 , 0, pwr->act[1].r, pwr->act[1].g, pwr->act[1].b},
+						{{AlienFX_A_Morph, 0 , 0, pwr->act[1].r, pwr->act[1].g, pwr->act[1].b},
 						{2}}};
 				SavePowerBlock(7, tact, true, true);
 				// 08 08 - battery
 				tact.act[0].type = AlienFX_A_Color;
 				SavePowerBlock(8, tact, true);
-				// 08 09 - batt critical
+				// 08 09 - battery critical
 				tact.act[0].type = AlienFX_A_Pulse;
 				SavePowerBlock(9, tact, true);
 			}
@@ -815,7 +814,7 @@ namespace AlienFX_SDK {
 				// Fix for immediate power button change
 				int pind = powerMode ? 0 : 1;
 				SetColor(pwr->index, {pwr->act[pind].b, pwr->act[pind].g, pwr->act[pind].r});
-			} 
+			}
 			//else {
 			//	PrepareAndSend(COMMV1.apply, sizeof(COMMV1.apply));
 			//}
@@ -857,11 +856,11 @@ namespace AlienFX_SDK {
 			else
 				mods.push_back({14,0x9c});
 			PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), &mods);
-			// shoud be 0x9c for zero.
+			// should be 0x9c for zero.
 		} break;
 		case API_L_V5:
 		{
-			if (inSet) { 
+			if (inSet) {
 				UpdateColors();
 				Reset();
 			}
@@ -929,8 +928,6 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_L_V5:
 		{
-			//memcpy(buffer, COMMV5.status, sizeof(COMMV5.status));
-			//HidD_SetFeature(devHandle, buffer, length);
 			PrepareAndSend(COMMV5.status, sizeof(COMMV5.status));
 			buffer[1] = 0x93;
 			if (HidD_GetFeature(devHandle, buffer, length))
@@ -1222,7 +1219,7 @@ namespace AlienFX_SDK {
 				RegGetValueA(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &flags, &nameLen);
 				AddMapping(dID, lID, name, LOWORD(flags));
 			}
-		} 
+		}
 		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++)  {
 			if (sscanf_s((char *) kName, "Group%d", &dID) == 1) {
 				DWORD nameLen = 255, *maps;

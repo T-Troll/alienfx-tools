@@ -40,7 +40,7 @@ setcolormode=<dim>,<flag>\tSet light system brightness and mode\n\
 direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tPower mode can be in 0..N - according to power states detected\n\
-\tPerformance boost can be in 0..4 - disabled, enabled, aggresive, efficient, efficient aggresive\n\
+\tPerformance boost can be in 0..4 - disabled, enabled, aggressive, efficient, efficient aggressive\n\
 \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
 \tMode can be 0 or absent for set cooked value, 1 for raw value\n\
@@ -50,7 +50,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v5.6.0\n");
+    printf("AlienFan-cli v5.6.2\n");
 
     AlienFan_SDK::Control *acpi = new AlienFan_SDK::Control();
 
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
            printf("Supported hardware not found!\n");
         }
 
-        if (argc < 2) 
+        if (argc < 2)
         {
             Usage();
         } else {
@@ -225,24 +225,13 @@ int main(int argc, char* argv[])
                         value1 = (byte) strtol(args[2].c_str(), NULL, 16);
                     if (args.size() > 3)
                         value2 = (byte) strtol(args[3].c_str(), NULL, 16);
-                    //if ((res = acpi->RunMainCommand(comm, value1, value2)) != acpi->GetErrorCode())
                         printf("Direct call result: %d\n", acpi->RunMainCommand(comm, value1, value2));
-                    //else {
-                    //    printf("Direct call failed!\n");
-                    //    break;
-                    //}
                     continue;
                 }
                 if (command == "directgpu" && CheckArgs(command, 2, args.size())) {
-                    //int res = 0;
-                    USHORT command = (USHORT) strtoul(args[0].c_str(), NULL, 16);// atoi(args[0].c_str());
-                    DWORD subcommand = strtoul(args[1].c_str(), NULL, 16);// atoi(args[1].c_str());
-                    //if ((res = acpi->RunGPUCommand(command, subcommand)) != acpi->GetErrorCode())
-                        printf("DirectGPU call result: %d\n", acpi->RunGPUCommand(command, subcommand));
-                    //else {
-                    //    printf("DirectGPU call failed!\n");
-                    //    break;
-                    //}
+                    USHORT command = (USHORT) strtoul(args[0].c_str(), NULL, 16);
+                    DWORD subcommand = strtoul(args[1].c_str(), NULL, 16);
+                    printf("DirectGPU call result: %d\n", acpi->RunGPUCommand(command, subcommand));
                     continue;
                 }
 
@@ -266,7 +255,7 @@ int main(int argc, char* argv[])
                     lights->Update();
                     continue;
                 }
-                if (command == "setcolormode" && lights->IsActivated() && CheckArgs(command, 2, args.size())) { // set effect (?) for Aurora
+                if (command == "setcolormode" && lights->IsActivated() && CheckArgs(command, 2, args.size())) { // set brightness for Aurora
 
                     byte num = atoi(args[0].c_str()),
                         mode = atoi(args[1].c_str());

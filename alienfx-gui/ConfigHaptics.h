@@ -33,8 +33,6 @@ private:
 	void GetReg(char *name, DWORD *value, DWORD defValue = 0);
 	void SetReg(char *text, DWORD value);
 public:
-	//const DWORD numbars = 20;
-	//const DWORD numpts = 2048;
 	DWORD inpType = 0;
 	DWORD showAxis = 1;
 

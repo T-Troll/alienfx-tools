@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <wtypes.h>
+#include "alienfan-low/alienfan-low.h"
 
 using namespace std;
 
@@ -81,15 +82,15 @@ namespace AlienFan_SDK {
 		// Result: fan RPM
 		int GetFanRPM(int fanID);
 
-		// Get fan RPMs as a persent from 100%
+		// Get fan RPMs as a percent of RPM
 		// Result: percent of the fan speed
 		int GetFanPercent(int fanID);
 
-		// Get boost value for the fan index fanID at fans[]. If force, raw value returned, otherwise coocked by boost
-		// Result: Error or raw value if forced, otherwise coocked by boost.
+		// Get boost value for the fan index fanID at fans[]. If force, raw value returned, otherwise cooked by boost
+		// Result: Error or raw value if forced, otherwise cooked by boost.
 		int GetFanValue(int fanID, bool force = false);
 
-		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise coocked by boost.
+		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise cooked by boost.
 		// Result: value or error
 		int SetFanValue(int fanID, byte value, bool force = false);
 
@@ -175,7 +176,7 @@ namespace AlienFan_SDK {
 		// Set light system mode (brightness, ???)
 		bool SetMode(byte mode, bool onoff);
 
-		// Return color subsystem avaliability
+		// Return color subsystem availability
 		bool IsActivated();
 	};
 }

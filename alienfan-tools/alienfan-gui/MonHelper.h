@@ -1,20 +1,20 @@
 #pragma once
 #include <windowsx.h>
-#include "ConfigHelper.h"
+#include "ConfigFan.h"
 #include "alienfan-SDK.h"
 
 class MonHelper {
 private:
 	HANDLE dwHandle = 0;
 public:
-	ConfigHelper* conf;
-	//HWND dlg = NULL, fDlg = NULL, tempList = NULL, fanList = NULL;
+	ConfigFan* conf;
+
 	HANDLE stopEvent = 0;
 	short oldPower = 0;
 	AlienFan_SDK::Control* acpi;
 	vector<int> senValues, fanValues, boostValues, boostSets, maxTemps;
 
-	MonHelper(ConfigHelper*, AlienFan_SDK::Control*);
+	MonHelper(ConfigFan*, AlienFan_SDK::Control*);
 	~MonHelper();
 	void Start();
 	void Stop();

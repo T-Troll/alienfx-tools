@@ -7,7 +7,7 @@
 class CaptureHelper
 {
 public:
-	CaptureHelper(/*ConfigAmbient* conf, FXHelper* fhh*/);
+	CaptureHelper();
 	~CaptureHelper();
 	void SetCaptureScreen(int mode);
 	void Start();

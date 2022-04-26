@@ -3,7 +3,6 @@
 
 #include "alienfan-SDK.h"
 #include "alienfan-controls.h"
-#include "alienfan-low.h"
 
 typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 
@@ -12,7 +11,7 @@ namespace AlienFan_SDK {
 	Control::Control() {
 
 		//printf("Driver activation started.\n");
-		// do we already have service runnning?
+		// do we already have service running?
 		activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 		if (!activated) {
 			//printf("Device not activated, trying to load driver...\n");
@@ -74,6 +73,7 @@ namespace AlienFan_SDK {
 		sensors.clear();
 		fans.clear();
 		powers.clear();
+		boosts.clear();
 		CloseAcpiDevice(acc);
 #ifdef _SERVICE_WAY_
 		UnloadService();
@@ -150,7 +150,7 @@ namespace AlienFan_SDK {
 		if (activated && com && aDev != -1) {
 			PACPI_EVAL_OUTPUT_BUFFER res = NULL;
 			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-			
+
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0x100);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com);
@@ -184,7 +184,7 @@ namespace AlienFan_SDK {
 					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
 						int fIndex = 0, funcID = 0;
-						// Scan for avaliable fans...
+						// Scan for available fans...
 						//printf("Scanning data block...\n");
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x100
 							   && funcID > 0 || funcID > 0x130) { // bugfix for 0x132 fan for R7
@@ -217,7 +217,7 @@ namespace AlienFan_SDK {
 							} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0);
 							//printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
 						}
-						// patches... 
+						// patches...
 						switch (aDev) {
 						case 2: // for G5 - hidden performance boost
 							powers.push_back(0xAB);

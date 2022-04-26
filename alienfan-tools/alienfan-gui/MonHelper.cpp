@@ -2,7 +2,7 @@
 
 DWORD WINAPI CMonProc(LPVOID);
 
-MonHelper::MonHelper(ConfigHelper* config, AlienFan_SDK::Control* acp) {
+MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
 	conf = config;
 	acpi = acp;
 	oldPower = acpi->GetPower();

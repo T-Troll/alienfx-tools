@@ -152,7 +152,7 @@
     <ClCompile Include="alienfan-cli.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\alienfan-low\alienfan-low.vcxproj">
+    <ProjectReference Include="..\alienfan-SDK\alienfan-low\alienfan-low.vcxproj">
       <Project>{cc889c0d-369a-46f0-87b2-956da96ddefd}</Project>
     </ProjectReference>
     <ProjectReference Include="..\alienfan-SDK\alienfan-SDK.vcxproj">

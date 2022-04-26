@@ -6,19 +6,15 @@
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
 
 ConfigHandler::ConfigHandler() {
 
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL); 
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
 	RegCreateKeyEx(hKey1, TEXT("Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);
 	RegCreateKeyEx(hKey1, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);
 
-	//niData.cbSize = sizeof(NOTIFYICONDATA);
-	niData.uID = IDI_ALIENFXGUI;
-	niData.uFlags = NIF_ICON | NIF_MESSAGE;
-	niData.uCallbackMessage = WM_APP + 1;
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -70,7 +66,7 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 		if (flags != -1) {
 			prof->fansets.powerStage = LOWORD(flags);
 			prof->fansets.GPUPower = HIWORD(flags);
-		}	
+		}
 		return;
 	} else {
 		prof = new profile{id};
@@ -113,7 +109,7 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 
 void ConfigHandler::SetStates() {
 	bool oldStateOn = stateOn, oldStateDim = stateDimmed;
-	// Lighs on state...
+	// Lights on state...
 	stateOn = lightsOn && stateScreen;
 	// Dim state...
 	stateDimmed = IsDimmed() || dimmedScreen || (dimmedBatt && !statePower);
@@ -128,33 +124,9 @@ void ConfigHandler::SetStates() {
 
 void ConfigHandler::SetIconState() {
 	// change tray icon...
-	if (stateOn) {
-		if (stateDimmed) {
-			niData.hIcon =
-				(HICON)LoadImage(GetModuleHandle(NULL),
-								 MAKEINTRESOURCE(IDI_ALIENFX_DIM),
-								 IMAGE_ICON,
-								 GetSystemMetrics(SM_CXSMICON),
-								 GetSystemMetrics(SM_CYSMICON),
-								 LR_DEFAULTCOLOR);
-		} else {
-			niData.hIcon =
-				(HICON)LoadImage(GetModuleHandle(NULL),
-								 MAKEINTRESOURCE(IDI_ALIENFX_ON),
-								 IMAGE_ICON,
-								 GetSystemMetrics(SM_CXSMICON),
-								 GetSystemMetrics(SM_CYSMICON),
-								 LR_DEFAULTCOLOR);
-		}
-	} else {
-		niData.hIcon =
-			(HICON) LoadImage(GetModuleHandle(NULL),
-							  MAKEINTRESOURCE(IDI_ALIENFX_OFF),
-							  IMAGE_ICON,
-							  GetSystemMetrics(SM_CXSMICON),
-							  GetSystemMetrics(SM_CYSMICON),
-							  LR_DEFAULTCOLOR);
-	}
+	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
+						stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
+						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 }
 
 bool ConfigHandler::IsDimmed() {
@@ -176,9 +148,6 @@ void ConfigHandler::SetDimmed() {
 int ConfigHandler::GetEffect() {
 	return enableMon ? activeProfile->effmode : 3;
 }
-//void ConfigHandler::SetEffect(int newMode) {
-//	activeProfile->effmode = newMode;
-//}
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
@@ -207,7 +176,7 @@ void ConfigHandler::Load() {
 	GetReg("NoDesktopSwitch", &noDesktop);
 	GetReg("DimPower", &dimPowerButton);
 	GetReg("DimmedOnBattery", &dimmedBatt);
-	GetReg("ActiveProfile", &activeProfileID); 
+	GetReg("ActiveProfile", &activeProfileID);
 	GetReg("OffPowerButton", &offPowerButton);
 	GetReg("EsifTemp", &esif_temp);
 	GetReg("DimmingPower", &dimmingPower, 92);
@@ -215,7 +184,7 @@ void ConfigHandler::Load() {
 	RegGetValue(hKey1, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
 	int vindex = 0;
-	char name[256]; 
+	char name[256];
 	int pid = -1, appid = -1;
 	LSTATUS ret = 0;
 	// Profiles...
@@ -309,7 +278,7 @@ void ConfigHandler::Load() {
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
 
-	fan_conf = new ConfigHelper();
+	fan_conf = new ConfigFan();
 	amb_conf = new ConfigAmbient();
 	hap_conf = new ConfigHaptics();
 }

@@ -24,7 +24,7 @@ Environment:
 #define NTSTRSAFE_LIB
 #include <ntstrsafe.h>
 #include <string.h>
-#include <Acpiioct.h>   
+#include <Acpiioct.h>
 #include "def.h"
 #include "access.h"
 
@@ -142,7 +142,7 @@ Return Value:
 	NTSTATUS        ntStatus;
 	ACPI_NAME       *pInput;
 	UINT            AcpiDeviceExtension;
-	
+
 	PAGED_CODE();
 
 	//DebugPrint(("HWACC: Open ACPI device..."));
@@ -176,13 +176,13 @@ Return Value:
 	// point the Acpi_Hal Device Extension for data retrieve
 	AcpiDeviceExtension = (UINT)(pLDI->LowDeviceObject)->DeviceExtension;
 
-	// seaching for the ACPI data objects, insert the notification code....
+	// searching for the ACPI data objects, insert the notification code....
 	// Not test on Win7 may failed on old win10
 	// Check the device extension
 	// KdBreakPoint();
 	if (pInput->dwMajorVersion >= 6) {
 		//pLDI->AcpiObject = (PVOID)(AcpiDeviceExtension + pLDI->uAcpiOffset);
-		// new way to get acpi acpi namespace is only verifed on windows 10 after 2016
+		// new way to get acpi acpi namespace is only verified on windows 10 after 2016
 #ifndef _TINY_DRIVER_
 		if (!(GetAcpiObjectBase(pLDI, AcpiDeviceExtension) == STATUS_SUCCESS))
 		{
@@ -224,7 +224,7 @@ Return Value:
 {
 	UNREFERENCED_PARAMETER(address);
 	UINTN* pAddress = (UINTN*)address;
-	unsigned char *  pTest;	
+	unsigned char *  pTest;
 	unsigned char test;
 	UINTN* pBackTrace;
 	OS_DATA * pOsData;
@@ -237,16 +237,16 @@ Return Value:
 			RtlCopyMemory(&test, pTest, 1);
 			// no memory access issue, then get the valid data
 			pOsData = CORD_FROM(pTest, obj, OS_DATA);
-			
+
 			if (VALID_OS_DATA(pOsData)) {	// or, it's a back trace for addressing???
-				
+
 				pAcpiObj = (ACPI_OBJ *)pTest;
-				// Goback to the root.
+				// Go back to the root.
 				while (pAcpiObj->pnsParent != NULL) {
 					pAcpiObj = pAcpiObj->pnsParent;
 				}
 				if (pAcpiObj->dwNameSeg != '___\\') {
-					// it's not a valid ACPI Root					
+					// it's not a valid ACPI Root
 					continue;
 				}
 				pLDI->pAcpiScope = (PVOID)(pAddress + Depth);
@@ -256,27 +256,27 @@ Return Value:
 			// check if it's HNSO object of acpi...
 			pBackTrace = (UINTN*)(*(UINTN*)pAddress[Depth]);
 			RtlCopyMemory(&test, (pBackTrace), 1);
-			pOsData = CORD_FROM(pBackTrace, obj, OS_DATA);   			
-			if (VALID_OS_DATA(pOsData)) {	
+			pOsData = CORD_FROM(pBackTrace, obj, OS_DATA);
+			if (VALID_OS_DATA(pOsData)) {
 				//it's a valid data object of OS ACPI Object
 				pAcpiObj = (ACPI_OBJ*)pBackTrace;
-				
+
 				while (pAcpiObj->pnsParent != NULL) {
 					pAcpiObj = pAcpiObj->pnsParent;
 				}
 
 				if (pAcpiObj->dwNameSeg != '___\\') {
-					// it's not a valid ACPI Root					
+					// it's not a valid ACPI Root
 					continue;
 				}
-				
+
 				pLDI->pAcpiScope = (PVOID)(*(UINTN *)(pAddress+Depth));
 				pLDI->AcpiObject = (PVOID)pAcpiObj;
-				
+
 				return STATUS_SUCCESS;
 				//break;
 			}
-		} 
+		}
 		__except (EXCEPTION_EXECUTE_HANDLER) {
 			// avoid invalid memory access cause system crash
 			// KdBreakPoint();
@@ -305,8 +305,8 @@ Routine Description:
 Arguments:
 
 	pParent     - kernel acpi object parent
-	puCount     - addres of receive number of total objs
-	puSize		- addres of receive total size of internal data
+	puCount     - address of receive number of total objs
+	puSize		- address of receive total size of internal data
 
 Return Value:
 
@@ -320,19 +320,19 @@ Return Value:
 	__try {
 		if (pParent->pnsFirstChild == NULL) {
 			return;
-		}		
+		}
 		pFirstChild = pParent->pnsFirstChild;
 		pLastChild = pParent->pnsLastChild;
 		if (pLastChild == pFirstChild) {
 			// only one child, break
 			bOneSubOnly = TRUE;
-		}		
+		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
-		
+
 		return;
 	}
-	
+
 	while(TRUE) {
 		__try {
 			if (pFirstChild->pnsFirstChild != NULL &&
@@ -353,19 +353,19 @@ Return Value:
 			if (bOneSubOnly) {
 				break;
 			}
-			
+
 			if (pFirstChild == pLastChild) {
 				// Finish handle the last one
 				break;
 			}
 
-			pFirstChild = (ACPI_OBJ*)pFirstChild->list.plistNext;			
+			pFirstChild = (ACPI_OBJ*)pFirstChild->list.plistNext;
 		}
 		__except (EXCEPTION_EXECUTE_HANDLER) {
-			
+
 			break;
 		}
-	} 
+	}
 	return;
 }
 
@@ -405,13 +405,13 @@ Return Value:
 	uCount += 1;	// for the root
 	uObjs = uCount * sizeof(ACPI_NAMESPACE);
 	if (OutBufferSize < uObjs) {
-		
+
 		if (OutBufferSize >= sizeof(UINT)) {
 			*(UINT*)(pIrp->AssociatedIrp.SystemBuffer) = uObjs;
-			pIrp->IoStatus.Information = sizeof(UINT);			
+			pIrp->IoStatus.Information = sizeof(UINT);
 		}
 		else {
-			pIrp->IoStatus.Information = 0;			
+			pIrp->IoStatus.Information = 0;
 			return STATUS_BUFFER_TOO_SMALL;
 		}
 	}
@@ -421,22 +421,22 @@ Return Value:
 		ACPI_NAMESPACE* pUserStart;
 		ACPI_NAMESPACE** pNext;
 		pBuffer = (ACPI_NAMESPACE*)pIrp->AssociatedIrp.SystemBuffer;
-		
+
 		RtlZeroMemory(pBuffer, OutBufferSize);
 		// Initialize the parent
 		//ASSIGN_ACPI_OBJ(pBuffer, pAcpiObject);
 		// data field
 		ASSIGN_ACPI_OBJ(pBuffer, pAcpiObject);
-		// assign the next avaiable value
+		// assign the next available value
 		pUserStart = pBuffer;
-		
-		pNext = &pUserStart;		
+
+		pNext = &pUserStart;
 		pEnd = pBuffer + OutBufferSize /sizeof(ACPI_NAMESPACE) + 1;
 		(*pNext)++;
 		uSize = BuildUserAcpiNameObjs(pAcpiObject, pBuffer, pEnd, pNext);
 		uSize += 1;// for the root
 		pIrp->IoStatus.Information = sizeof(ACPI_NAMESPACE) * uSize;
-		
+
 	}
 	return STATUS_SUCCESS;
 }
@@ -459,14 +459,14 @@ Arguments:
 	pParent     - kernel acpi object parent
 	pUserParent - user acpi object parent
 	pEnd		- end of memory space
-	pNextObj	- next avaiable memory for user acpi objects
+	pNextObj	- next available memory for user acpi objects
 
 Return Value:
 
 	ULONG		- size of user acpi objects
 
 --*/
-{	
+{
 	UNREFERENCED_PARAMETER(pUserParent);
 	BOOLEAN	  bOneSubOnly = FALSE;
 	ACPI_OBJ* pLastChild;
@@ -474,7 +474,7 @@ Return Value:
 	ACPI_NAMESPACE* pUser = *pNextObj;
 	ULONG			nSize = 0;
 	PAGED_CODE();
-	
+
 	__try {
 		if (pParent->pnsFirstChild == NULL) {
 			return 0;
@@ -484,11 +484,11 @@ Return Value:
 		if (pLastChild == pFirstChild) {
 			// only one child, break
 			bOneSubOnly = TRUE;
-		}		
+		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
 		// Debug try
-		
+
 		return 0;
 	}
 
@@ -498,13 +498,13 @@ Return Value:
 			ASSIGN_ACPI_OBJ(pUser, pFirstChild);
 			(*pNextObj)++;	// point to next userable
 			if ((*pNextObj) >= pEnd) {
-				
+
 				return nSize;
 			}
 			nSize++;
 			if (pFirstChild->pnsFirstChild != NULL &&
 				pFirstChild->pnsFirstChild != (ACPI_OBJ*)&pFirstChild->pnsFirstChild)
-			{			
+			{
 				//	GetChildNamespace(pFirstChild, puCount, puSize);
 				nSize += BuildUserAcpiNameObjs(pFirstChild, pUser, pEnd, pNextObj);
 			}
@@ -522,7 +522,7 @@ Return Value:
 			KdBreakPoint();
 			break;
 		}
-	} 
+	}
 	return nSize;
 }
 
@@ -533,7 +533,7 @@ EvalAcpiWithoutInputInternal(
 	__in ACPI_OBJ			*pParent,
 	__in UCHAR				*puNameSeg,
 	__in PVOID				pBuffer,
-	__in ULONG				*uBufSize 
+	__in ULONG				*uBufSize
 )
 
 /*++
@@ -563,7 +563,7 @@ Return Value:
 	PACPI_EVAL_INPUT_BUFFER_EX  pMethodWithoutInputEx;
 	NTSTATUS                    status;
 	ACPI_OBJ					*pAcpiRoot;
-	
+
 	pMethodWithoutInputEx =
 		(ACPI_EVAL_INPUT_BUFFER_EX*)ExAllocatePoolWithTag(NonPagedPool, sizeof(ACPI_EVAL_INPUT_BUFFER_EX), MY_TAG);
 
@@ -600,7 +600,7 @@ EvalAcpiWithoutInput(
 
 Routine Description:
 
-	Eval ACPI data or method without input paramter
+	Eval ACPI data or method without input parameter
 
 Arguments:
 
@@ -619,16 +619,15 @@ Return Value:
 
 --*/
 {
-	
 
 	NTSTATUS                    status;
 	PACPI_NAMESPACE             pAcpiNameSpace;
 	//ACPI_EVAL_OUTPUT_BUFFER		acpi_eval_out;
-	ULONG						nSize = sizeof(ACPI_EVAL_OUTPUT_BUFFER);// sizeof(acpi_eval_out);
+	ULONG						nSize = sizeof(ACPI_EVAL_OUTPUT_BUFFER);
 	UCHAR						uName[5];
 
 	PAGED_CODE();
-	
+
 	if (IrpStack->Parameters.DeviceIoControl.InputBufferLength < sizeof(PACPI_NAMESPACE)) {
 		return STATUS_INVALID_PARAMETER_2;
 	}
@@ -638,17 +637,17 @@ Return Value:
 
 	if (pAcpiNameSpace == NULL) {
 		return STATUS_INVALID_PARAMETER_1;
-	}	
+	}
 	uName[0] = pAcpiNameSpace->MethodName[0];
 	uName[1] = pAcpiNameSpace->MethodName[1];
 	uName[2] = pAcpiNameSpace->MethodName[2];
-	uName[3] = pAcpiNameSpace->MethodName[3];	
+	uName[3] = pAcpiNameSpace->MethodName[3];
 	uName[4] = 0;
 	//if (pAcpiNameSpace->pKernelAddr == pLDI->pSetupAml) {
 	//	//Debug for Aml Notification
-	//	//KdBreakPoint();		
+	//	//KdBreakPoint();
 	//}
-	status = EvalAcpiWithoutInputInternal(pLDI, (ACPI_OBJ*)pAcpiNameSpace->pParentNameSpace, uName, pAcpiNameSpace, &nSize);	
+	status = EvalAcpiWithoutInputInternal(pLDI, (ACPI_OBJ*)pAcpiNameSpace->pParentNameSpace, uName, pAcpiNameSpace, &nSize);
 	pIrp->IoStatus.Information = nSize;
 	return status;
 
@@ -675,7 +674,7 @@ Arguments:
 Return Value:
 	STATUS_SUCCESS           -- OK
 
-	STATUS_ACCESS_VIOLATION  -- Target memory is not accessable
+	STATUS_ACCESS_VIOLATION  -- Target memory is not accessible
 
 --*/
 {
@@ -689,11 +688,11 @@ Return Value:
 	pOutput = (UCHAR*)pIrp->AssociatedIrp.SystemBuffer;
 	uLong = IrpStack->Parameters.DeviceIoControl.OutputBufferLength;
 
-	try 
-	{		
+	try
+	{
 		RtlCopyMemory(pOutput, (PVOID)(*pInput), uLong);
-	} 
-	except(EXCEPTION_EXECUTE_HANDLER) 
+	}
+	except(EXCEPTION_EXECUTE_HANDLER)
 	{
 		// Failed to access acpi memory
 		DebugPrint(("Exception, When Copy Memory %d!\n", uLong));
@@ -716,7 +715,7 @@ EvalAcpiWithInput(
 
 Routine Description:
 
-	Eval ACPI data or method without input paramter
+	Eval ACPI data or method without input parameter
 
 Arguments:
 
@@ -764,20 +763,20 @@ Return Value:
 
 	if (pInput->InputBufferComplex.Signature == ACPI_EVAL_INPUT_BUFFER_COMPLEX_SIGNATURE_EX) {
 		status = EvalAcpiWithInputInternalEx(
-					pLDI, 
+					pLDI,
 			        (ACPI_EVAL_INPUT_BUFFER_COMPLEX_EX*) &pInput->InputBufferComplex,
-					(ACPI_OBJ*)pAcpiNameSpace->pParentNameSpace, 
-					uName, 
-					pInput, 
+					(ACPI_OBJ*)pAcpiNameSpace->pParentNameSpace,
+					uName,
+					pInput,
 					&nSize);
 	}
 	else {
 		status = EvalAcpiWithInputInternal(
-					pLDI, 
-					&pInput->InputBufferComplex, 
-					(ACPI_OBJ*)pAcpiNameSpace->pParentNameSpace, 
-					uName, 
-					pInput, 
+					pLDI,
+					&pInput->InputBufferComplex,
+					(ACPI_OBJ*)pAcpiNameSpace->pParentNameSpace,
+					uName,
+					pInput,
 					&nSize);
 	}
 
@@ -802,7 +801,7 @@ EvalAcpiWithInputInternal(
 /*++
 
 Routine Description:
-	Eval ACPI data or method without input paramter
+	Eval ACPI data or method without input parameter
 
 Arguments:
 
@@ -866,7 +865,7 @@ EvalAcpiWithInputInternalEx(
 /*++
 
 Routine Description:
-	Eval ACPI data or method without input paramter
+	Eval ACPI data or method without input parameter
 
 Arguments:
 
@@ -887,7 +886,7 @@ Return Value:
 	UNREFERENCED_PARAMETER(puNameSeg);
 	NTSTATUS    status;
 	ACPI_OBJ	*pAcpiRoot;
-	
+
 	ULONG nSize = pInputBuffer->Size;
 	pInputBuffer->Signature = ACPI_EVAL_INPUT_BUFFER_COMPLEX_SIGNATURE_EX;
 
@@ -954,7 +953,7 @@ SetupAmlForNotifyInternal(
 Routine Description:
 
 	Allocate the inserted AML code memory resource and setup the ACPI Namespace link.
-	This will be dangrous if os changes the data format and will easily cause blue screen.
+	This will be dangerous if os changes the data format and will easily cause blue screen.
 
 Arguments:
 
@@ -968,17 +967,17 @@ Return Value:
 --*/
 {
 	//PAGED_CODE();
-	ACPI_OBJ* pAcpiObj;	
+	ACPI_OBJ* pAcpiObj;
 
 	if (pLDI->pSetupAml != NULL) {
-		// memory already allocated then just put the code in...... 
+		// memory already allocated then just put the code in......
 		return pLDI->pSetupAml;
 	}
 	__try {
 		pAcpiObj = ExAllocatePoolWithTag(NonPagedPool, (SIZE_T)pAmlSetup->dwSize + MYNT_OBJ_LEN, MYNT_TAG);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
-		//EnableInterrupt();		
+		//EnableInterrupt();
 		pAcpiObj = NULL;
 		//return STATUS_ILLEGAL_INSTRUCTION;
 	}
@@ -999,7 +998,7 @@ Return Value:
 		pAcpiObj->ucName[2] = 'N';
 		pAcpiObj->ucName[3] = 'T';
 		//// Insert the parent and heads
-		////pAcpiName->SubNameSpace;;	// The header of first sub; get the header and insert of tail		
+		////pAcpiName->SubNameSpace;;	// The header of first sub; get the header and insert of tail
 		AddMyNotifyInAcpiNS(pLDI,pAcpiObj);
 	}
 
@@ -1017,7 +1016,7 @@ RemoveAmlForNotify(
 
 Routine Description:
 
-	Remove inserted Aml Code 
+	Remove inserted Aml Code
 
 Arguments:
 
@@ -1056,7 +1055,7 @@ Routine Description:
              Noop ();
          }
 	May need to adjust on different OS version.
-	
+
 Arguments:
 
 	pLDI        - our local device data
@@ -1089,7 +1088,7 @@ Return Value:
 		ACPI_OBJ* pAcpiObj = (ACPI_OBJ *)pLDI->pSetupAml;
 		memset(&pAcpiObj->ObjData.pbDataBuff[pAmlCode->dwOffset + 1], 0xA3, pAmlCode->dwSize - pAmlCode->dwOffset);
 		// a notify code #define NOTIFY_OP			0x86
-		pAcpiObj->ObjData.pbDataBuff[pAmlCode->dwOffset + 1] = 0x86;	
+		pAcpiObj->ObjData.pbDataBuff[pAmlCode->dwOffset + 1] = 0x86;
 		// setup the namestring for target device, processor or thermal
 		RtlCopyMemory(&pAcpiObj->ObjData.pbDataBuff[pAmlCode->dwOffset + 2], pAmlCode->Name, pAmlCode->uNameSize);
 		pAcpiObj->ObjData.pbDataBuff[pAmlCode->dwOffset + 2 + pAmlCode->uNameSize] = 0x0C;	// dword integer for notify code
@@ -1100,7 +1099,7 @@ Return Value:
 	if (pLDI->pSetupAml == NULL) {
 		return STATUS_BUFFER_OVERFLOW;
 	}
-	return STATUS_SUCCESS;	
+	return STATUS_SUCCESS;
 }
 #endif // #ifndef _TINY_DRIVER_
 
@@ -1115,7 +1114,7 @@ EvalAcpiWithoutInputDirect(
 
 Routine Description:
 
-	Eval ACPI data or method without input paramter
+	Eval ACPI data or method without input parameter
 
 Arguments:
 
@@ -1138,7 +1137,7 @@ Return Value:
 
 	NTSTATUS                    status;
 	PACPI_EVAL_INPUT_BUFFER_EX  pInput;
-	ULONG						nSize = 0;// sizeof(acpi_eval_out);
+	ULONG						nSize = 0;
 
 	PAGED_CODE();
 
@@ -1186,7 +1185,7 @@ EvalAcpiWithInputDirect(
 
 Routine Description:
 
-	Eval ACPI data or method without input paramter
+	Eval ACPI data or method without input parameter
 
 Arguments:
 
@@ -1208,7 +1207,7 @@ Return Value:
 {
 	NTSTATUS                    status;
 	ACPI_EVAL_INPUT_BUFFER_COMPLEX_EX *pInput;
-	ULONG						nSize = 0;// sizeof(acpi_eval_out);
+	ULONG						nSize = 0;
 
 
 	PAGED_CODE();
@@ -1222,7 +1221,6 @@ Return Value:
 
 	nSize = IrpStack->Parameters.DeviceIoControl.OutputBufferLength;
 
-	//ULONG nSize = pInput->Size;
 	pInput->Signature = ACPI_EVAL_INPUT_BUFFER_COMPLEX_SIGNATURE_EX;
 
 	status = SendDownStreamIrp(

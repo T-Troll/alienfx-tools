@@ -8,27 +8,18 @@ DWORD WINAPI CFXProc(LPVOID);
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
-
-//#define GRIDSIZE 36 // 4x3 x 3
-
-//ConfigAmbient* config;
-//FXHelper* fxh;
 
 extern ConfigHandler *conf;
 extern FXHelper *fxhl;
-
-//byte imgz[GRIDSIZE]{ 0 };// , imgo[GRIDSIZE]{ 0 };
 
 DXGIManager* dxgi_manager = NULL;
 
 HANDLE clrStopEvent, lhEvent;
 
-CaptureHelper::CaptureHelper(/*ConfigAmbient* conf, FXHelper* fhh*/)
+CaptureHelper::CaptureHelper()
 {
-	//config = conf;
-	//fxh = fhh;
 
 	if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED) == S_OK) {
 		dxgi_manager = new DXGIManager();
@@ -135,7 +126,6 @@ void SetDimensions() {
 
 DWORD WINAPI CInProc(LPVOID param)
 {
-	//byte* img = NULL;
 	CaptureHelper* src = (CaptureHelper*)param;
 	byte  imgo[GRIDSIZE]{0};
 
@@ -205,7 +195,7 @@ DWORD WINAPI CInProc(LPVOID param)
 DWORD WINAPI CFXProc(LPVOID param) {
 	HANDLE waitArray[2]{lhEvent, clrStopEvent};
 	DWORD res = 0;
-	//SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
 			//DebugPrint("Ambient light update...\n");

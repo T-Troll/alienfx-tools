@@ -1,6 +1,6 @@
 #pragma once
 #include "ConfigMon.h"
-#include "../alienfan-tools/alienfan-SDK/alienfan-SDK.h"
+#include "alienfan-SDK.h"
 
 class SenMonHelper
 {

@@ -5,7 +5,7 @@
 #include "LFXDecl.h"
 #include "AlienFX_SDK.h"
 
-namespace 
+namespace
 {
 	LFXUtil::LFXUtilC lfxUtil;
 }
@@ -16,11 +16,11 @@ unsigned GetZoneCode(string name, int mode) {
 	switch (mode) {
 	case 1: return atoi(name.c_str()) | 0x10000;
 	case 0:
-		if (name == "left") return LFX_ALL_LEFT;		
+		if (name == "left") return LFX_ALL_LEFT;
 		if (name == "right") return LFX_ALL_RIGHT;
-		if (name == "top") return LFX_ALL_UPPER;		
-		if (name == "bottom") return LFX_ALL_LOWER;		
-		if (name == "front") return LFX_ALL_FRONT;		
+		if (name == "top") return LFX_ALL_UPPER;
+		if (name == "bottom") return LFX_ALL_LOWER;
+		if (name == "front") return LFX_ALL_FRONT;
 		if (name == "rear") return LFX_ALL_REAR;
 	}
 	return LFX_ALL;
@@ -51,7 +51,7 @@ void SetBrighness(AlienFX_SDK::Colorcode *color) {
 	color->b = ((unsigned) color->b * color->br) / 255;// >> 8;
 }
 
-void printUsage() 
+void printUsage()
 {
 	printf("Usage: alienfx-cli [command=option,option,option] ... [command=option,option,option] [loop]\n\
 Commands:\tOptions:\n\
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 	UINT sleepy = 0;
 
 	printf("alienfx-cli v5.6.0\n");
-	if (argc < 2) 
+	if (argc < 2)
 	{
 		printUsage();
 		return 1;
@@ -135,13 +135,13 @@ int main(int argc, char* argv[])
 		if (!have_low) devType = 0;
 		break;
 	case 0: printf("Dell library DLL not found!\n"); break;
-	case 1: printf("Can't init Dell library!\n"); break;
+	case 1: printf("Can't access Dell library!\n"); break;
 	case 2: printf("No high-level devices found!\n"); break;
 	default: printf("Dell library unknown error!\n"); break;
 	}
 
 	if (devType == -1) {
-		printf("Both low-levl and high-level devices not found, exiting!\n");
+		printf("Both low-level and high-level devices not found, exiting!\n");
 		goto deinit;
 	}
 
@@ -182,14 +182,6 @@ int main(int argc, char* argv[])
 		}
 		if (command == "loop") {
 			cc = 1;
-			//switch (devType) {
-			//case 1:
-			//	for (int i = 0; i < afx_map->fxdevs.size(); i++)
-			//		afx_map->fxdevs[i].dev->UpdateColors(); 
-			//	break;
-			//case 0:
-			//	lfxUtil.Update(); break;
-			//}
 			goto update;
 		}
 		if (command == "status") {
@@ -293,11 +285,9 @@ int main(int argc, char* argv[])
 						lights.push_back((byte) lgh->lightid);
 				}
 				cdev->SetMultiLights(&lights, color);
-				//cdev->UpdateColors();
 			} break;
 			case 0:
 				lfxUtil.SetLFXColor(LFX_ALL, color.ci);
-				//lfxUtil.Update();
 				break;
 			}
 			goto update;
@@ -319,7 +309,6 @@ int main(int argc, char* argv[])
 			} break;
 			case 0:
 				lfxUtil.SetOneLFXColor(devid, atoi(args.at(1).c_str()), (unsigned *)&color.ci);
-				//lfxUtil.Update();
 				break;
 			}
 			goto update;
@@ -343,14 +332,12 @@ int main(int argc, char* argv[])
 								lights.push_back((UCHAR) grp->lights[i]->lightid);
 						}
 						afx_map->fxdevs[j].dev->SetMultiLights(&lights, color);
-						//afx_map->fxdevs[j].dev->UpdateColors();
 					}
 				}
 			} break;
 			case 0:
 			{
 				lfxUtil.SetLFXColor(zoneCode, color.ci);
-				//lfxUtil.Update();
 			} break;
 			}
 			goto update;
@@ -404,7 +391,6 @@ int main(int argc, char* argv[])
 					clrs.push_back({0});
 				}
 				lfxUtil.SetLFXAction(actionCode, devid, lightid, (unsigned*)&clrs[0].ci, (unsigned*)&clrs[1].ci);
-				//lfxUtil.Update();
 				break;
 			}
 			goto update;
@@ -444,14 +430,12 @@ int main(int argc, char* argv[])
 							afx_map->fxdevs[j].dev->SetAction(&act);
 						}
 					}
-					//afx_map->fxdevs[j].dev->UpdateColors();
 				}
 			} break;
 			case 0:
 				if (clrs.size() < 2)
 					clrs.push_back({0});
 				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, clrs[0].ci, clrs[1].ci);
-				//lfxUtil.Update();
 				break;
 			}
 			//goto update;
@@ -460,7 +444,7 @@ int main(int argc, char* argv[])
 update:
 		if (have_low) {
 			for (int i = 0; i < afx_map->fxdevs.size(); i++)
-				afx_map->fxdevs[i].dev->UpdateColors(); 
+				afx_map->fxdevs[i].dev->UpdateColors();
 		}
 		if (have_high) {
 			lfxUtil.Update();
@@ -469,7 +453,7 @@ update:
 	printf("Done.");
 
 deinit:
-	if (have_high) 
+	if (have_high)
 		lfxUtil.Release();
 	delete afx_map;
     return 0;

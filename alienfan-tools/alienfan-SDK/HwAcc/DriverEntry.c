@@ -28,7 +28,7 @@ Environment:
 #include "access.h"
 
 #define NT_DEVICE_NAME      L"\\Device\\HWACC0"
-#define DOS_DEVICE_NAME     L"\\DosDevices\\HwAcc"
+//#define DOS_DEVICE_NAME     L"\\DosDevices\\HwAcc"
 
 #ifdef KERNEL_HACK
 DRIVER_INITIALIZE DriverInit;
@@ -61,7 +61,7 @@ IoCreateDriver(
 	_In_ PDRIVER_INITIALIZE InitializationFunction
 );
 
-NTSTATUS 
+NTSTATUS
 DriverInit(
 	_In_  struct _DRIVER_OBJECT* DriverObject,
 	_In_  PUNICODE_STRING RegistryPath

@@ -153,17 +153,14 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="alienfan-gui.h" />
-    <ClInclude Include="AlienfanHelper.h" />
-    <ClInclude Include="ConfigHelper.h" />
+    <ClInclude Include="ConfigFan.h" />
     <ClInclude Include="MonHelper.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfan-gui.cpp" />
-    <ClCompile Include="AlienfanHelper.cpp" />
-    <ClCompile Include="ConfigHelper.cpp" />
+    <ClCompile Include="ConfigFan.cpp" />
     <ClCompile Include="MonHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -176,14 +173,6 @@
     <ProjectReference Include="..\alienfan-SDK\alienfan-SDK.vcxproj">
       <Project>{41343b7c-6c9f-4ad4-9d27-050b3d76290d}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Xsd Include="dpi.manifest">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </Xsd>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

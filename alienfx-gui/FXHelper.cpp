@@ -4,7 +4,7 @@
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
 
 DWORD WINAPI CLightsProc(LPVOID param);
@@ -218,7 +218,7 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 			lightQuery.push_back(newBlock);
 			modifyQuery.unlock();
 			SetEvent(haveNewElement);
-		} 
+		}
 	}
 	return true;
 }
@@ -264,14 +264,14 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 		}
 	}
 	if (dev && dev->GetVersion() == 5) {
-		AlienFX_SDK::afx_act c1{0,0,0,config->activeProfile->effColor1.r, 
-			config->activeProfile->effColor1.g, 
+		AlienFX_SDK::afx_act c1{0,0,0,config->activeProfile->effColor1.r,
+			config->activeProfile->effColor1.g,
 			config->activeProfile->effColor1.b},
 			c2{0,0,0,config->activeProfile->effColor2.r,
-			config->activeProfile->effColor2.g, 
+			config->activeProfile->effColor2.g,
 			config->activeProfile->effColor2.b};
 		if (config->activeProfile->flags & PROF_GLOBAL_EFFECTS)
-			dev->SetGlobalEffects((byte)config->activeProfile->globalEffect, 
+			dev->SetGlobalEffects((byte)config->activeProfile->globalEffect,
 								  (byte)config->activeProfile->globalDelay, c1, c2);
 		else
 			dev->SetGlobalEffects(1, 0, c1, c2);
@@ -406,13 +406,13 @@ bool FXHelper::RefreshOne(lightset* map, int force, bool update)
 				break;
 			}
 		}
-		if (map->eve[2].fs.b.flags || map->eve[3].fs.b.flags) 
+		if (map->eve[2].fs.b.flags || map->eve[3].fs.b.flags)
 			return false;
 	}
 
-	if (!actions.size()) 
+	if (!actions.size())
 		return false;
-	
+
 	if (map->devid)
 		SetLight(map->devid, map->lightid, actions, force == 2);
 	else
@@ -474,19 +474,12 @@ void FXHelper::RefreshHaptics(int *freq) {
 		for (auto fIter = mIter->freqs.begin(); fIter < mIter->freqs.end(); fIter++) {
 			if (!fIter->freqID.empty() && fIter->hicut > fIter->lowcut) {
 				double power = 0.0;
-				//AlienFX_SDK::afx_act from{0,0,0,fIter->colorfrom.r,fIter->colorfrom.g, fIter->colorfrom.b},
-				//	to{0,0,0,fIter->colorto.r,fIter->colorto.g, fIter->colorto.b}, current;
+
 				// here need to check less bars...
 				for (auto iIter = fIter->freqID.begin(); iIter < fIter->freqID.end(); iIter++)
 					power += (freq[*iIter] > fIter->lowcut ? freq[*iIter] < fIter->hicut ?
 							  freq[*iIter] - fIter->lowcut : fIter->hicut - fIter->lowcut : 0);
 				power = power / (fIter->freqID.size() * (fIter->hicut - fIter->lowcut));
-				//actions[0].r = (byte) ((1.0 - power) * from.r + power * to.r);
-				//actions[0].g = (byte) ((1.0 - power) * from.g + power * to.g);
-				//actions[0].b = (byte) ((1.0 - power) * from.b + power * to.b);
-				//current.r = (byte) sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
-				//current.g = (byte) sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
-				//current.b = (byte) sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
 
 				from_r += fIter->colorfrom.r;
 				from_g += fIter->colorfrom.g;
@@ -576,7 +569,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							else
 								if (devQ->dev_query.size() > 0) {
 									dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
-									dev->dev->UpdateColors();							
+									dev->dev->UpdateColors();
 								}
 							devQ->dev_query.clear();
 						}
@@ -598,7 +591,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				AlienFX_SDK::afx_device* dev = src->LocateDev(current.did);
 
 				if (dev) {
-					vector<AlienFX_SDK::afx_act> actions;// = current.actions;
+					vector<AlienFX_SDK::afx_act> actions;
 					byte flags = src->afx_dev.GetFlags(current.did, current.lid);
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::afx_act action = current.actions[i];

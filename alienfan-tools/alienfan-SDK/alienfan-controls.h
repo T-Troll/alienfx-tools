@@ -27,7 +27,6 @@ namespace AlienFan_SDK {
 		}
 	};
 
-	//static const char temp_names[6][24] = {
 	static vector<string> temp_names{
 			"CPU Internal Thermistor",
 			"GPU Internal Thermistor",
@@ -63,7 +62,7 @@ namespace AlienFan_SDK {
 			true, // command controlled
 			0, // controlID
 			0x14,   2, // Probe command
-		}, 
+		},
 		{ // Dell G15
 			"\\_SB.AMW3.WMAX", // main command
 			"\\_SB.PCI0.GPP0.PEGP.GPS", // GPU command

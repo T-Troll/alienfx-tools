@@ -42,7 +42,7 @@ AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
 
 HWND mDlg = 0;
 
-// Dialogues data....
+// Dialogs data....
 // Common:
 AlienFX_SDK::afx_act* mod;
 HANDLE stopColorRefresh = 0;
@@ -102,7 +102,6 @@ bool DoStopService(bool kind) {
 	SC_HANDLE schSCManager = OpenSCManager( NULL, NULL,GENERIC_READ);
 	if (NULL == schSCManager)
 	{
-		//printf("OpenSCManager failed (%d)\n", GetLastError());
 		return false;
 	}
 
@@ -142,7 +141,7 @@ bool DoStopService(bool kind) {
 			}
 		}
 
-		// Evalute UAC and re-open manager and service here.
+		// Evaluate UAC and re-open manager and service here.
 
 		CloseServiceHandle(schService);
 
@@ -223,8 +222,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->IsActivated() && acpi->Probe()) {
 			conf->fan_conf->SetBoosts(acpi);
-			//acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-			//acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 		} else {
 			//string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
 			MessageBox(NULL, "Fan control didn't start and will be disabled!", "Error",
@@ -315,7 +312,7 @@ int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
 	int pos = -1, selpos = -1;
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
 	size_t groups = fxhl->afx_dev.GetGroups()->size();
-	
+
 	ListBox_ResetContent(light_list);
 
 	for (int i = 0; i < groups; i++) {
@@ -360,10 +357,10 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode act) {
 
 HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 {
-	// Create a tooltip.
+	// Create a tool tip.
 	if (oldTip) {
 		DestroyWindow(oldTip);
-	} 
+	}
 	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
 								 WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
 								 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -444,7 +441,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 			if (InternetReadFile(req, buf, 2047, &byteRead)) {
 				buf[byteRead] = 0;
 				string res = buf;
-				size_t pos = res.find("\"name\":"), 
+				size_t pos = res.find("\"name\":"),
 					posf = res.find("\"", pos + 8);
 				if (pos != string::npos) {
 					res = res.substr(pos + 8, posf - pos - 8);
@@ -454,7 +451,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 					if (res != GetAppVersion()) {
 						// new version detected!
 						niData->uFlags |= NIF_INFO;
-						strcpy_s(niData->szInfoTitle, "Update avaliable!");
+						strcpy_s(niData->szInfoTitle, "Update available!");
 						strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
 						Shell_NotifyIcon(NIM_MODIFY, niData);
 						niData->uFlags &= ~NIF_INFO;
@@ -534,12 +531,7 @@ VOID OnSelChanged(HWND hwndDlg)
 		hwndDlg, GWLP_USERDATA);
 
 	// Get the index of the selected tab.
-	int newSel = TabCtrl_GetCurSel(pHdr->hwndTab);
-	//tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
-	//if (newSel == tabSel)
-	//	return;
-	//else
-		tabSel = newSel;
+	tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
 
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay != NULL) {
@@ -611,19 +603,18 @@ void SwitchTab(int num) {
 }
 
 void ReloadProfileList() {
-	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN), 
+	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(mDlg, IDC_PROFILES),
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 	ComboBox_ResetContent(profile_list);
 	for (int i = 0; i < conf->profiles.size(); i++) {
 		ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i]->name.c_str()), conf->profiles[i]->id);
 		if (conf->profiles[i]->id == conf->activeProfile->id) {
-			ComboBox_SetCurSel(profile_list, i);// pos);
+			ComboBox_SetCurSel(profile_list, i);
 			ComboBox_SetCurSel(mode_list, conf->profiles[i]->effmode);
 		}
 	}
 
-	//EnableWindow(profile_list, !conf->enableProf);
 	EnableWindow(mode_list, conf->enableMon);
 
 	switch (tabSel) {
@@ -711,11 +702,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		conf->niData.hWnd = hDlg;
 		conf->SetIconState();
-		
+
 		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
 			// check update....
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
-		} 
+		}
 
 		conf->SetStates();
 	} break;
@@ -756,7 +747,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			fxhl->Refresh(2); // set def. colors
 			conf->niData.uFlags |= NIF_INFO;
 			strcpy_s(conf->niData.szInfoTitle, "Configuration saved!");
-			strcpy_s(conf->niData.szInfo, "Configuration saved succesfully.");
+			strcpy_s(conf->niData.szInfo, "Configuration saved successfully.");
 			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 			conf->niData.uFlags &= ~NIF_INFO;
 			break;
@@ -890,7 +881,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				LoadString(hInst, IDS_UPDATEPAGE, uurl, MAX_PATH);
 				ShellExecute(NULL, "open", uurl, NULL, NULL, SW_SHOWNORMAL);
 				isNewVersion = false;
-			} 
+			}
 		} break;
 		}
 		break;
@@ -940,7 +931,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_POWERBROADCAST:
 		switch (wParam) {
 		case PBT_APMRESUMEAUTOMATIC: {
-			// resume from sleep/hybernate
+			// resume from sleep/hibernate
 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
@@ -1157,7 +1148,7 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 	CHOOSECOLOR cc{ sizeof(cc), hDlg };
 	bool ret;
-	// Initialize CHOOSECOLOR 
+	// Initialize CHOOSECOLOR
 	cc.lpCustColors = (LPDWORD) conf->customColors;
 	cc.rgbResult = RGB(clr->r, clr->g, clr->b);
 	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
@@ -1185,7 +1176,7 @@ lightset* FindMapping(int mid)
 			if (fxhl->afx_dev.GetMappings()->size() > mid) {
 				AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(mid);
 				for (int i = 0; i < conf->active_set->size(); i++)
-					if (conf->active_set->at(i).devid == lgh->devid && 
+					if (conf->active_set->at(i).devid == lgh->devid &&
 						conf->active_set->at(i).lightid == lgh->lightid) {
 						return &conf->active_set->at(i);
 					}

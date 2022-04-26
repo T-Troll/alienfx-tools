@@ -49,5 +49,4 @@ public:
 	mutex modifyProfile;
 
 	long maxNet = 1;
-	//DWORD activeTID = 0;
 };

@@ -25,7 +25,7 @@ vector<devInfo> csv_devs;
 
 void UpdateLightsList(HWND hDlg, int lid) {
 	int pos = -1;
-	HWND light_list = GetDlgItem(hDlg, IDC_LIST_LIGHTS); 
+	HWND light_list = GetDlgItem(hDlg, IDC_LIST_LIGHTS);
 
 	// clear light options...
 	SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
@@ -43,11 +43,9 @@ void UpdateLightsList(HWND hDlg, int lid) {
 	for (int i = 0; i < fxhl->afx_dev.fxdevs[dIndex].lights.size(); i++) {
 		AlienFX_SDK::mapping *clight = fxhl->afx_dev.fxdevs[dIndex].lights[i];
 		if (lMaxIndex < clight->lightid) lMaxIndex = clight->lightid;
-		LVITEMA lItem; 
-		lItem.mask = LVIF_TEXT | LVIF_PARAM;
-		lItem.iItem = i;
-		lItem.iImage = 0;
-		lItem.iSubItem = 0;
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM , i };
+		//lItem.iImage = 0;
+		//lItem.iSubItem = 0;
 		lItem.lParam = clight->lightid;
 		lItem.pszText = (char*)clight->name.c_str();
 		if (lid == clight->lightid) {
@@ -141,15 +139,7 @@ void LoadCSV(string name) {
 	csv_devs.clear();
 	// load csv...
 	// Load mappings...
-	HANDLE file = CreateFile(
-		name.c_str(), 
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		NULL
-	);
+	HANDLE file = CreateFile(name.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 	if (file != INVALID_HANDLE_VALUE) {
 		// read and parse...
 		size_t linePos = 0, oldLinePos = 0;
@@ -276,8 +266,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 	} break;
 	case WM_COMMAND: {
-		//int dbItem = ComboBox_GetCurSel(dev_list),
-		//	did = (int)ComboBox_GetItemData(dev_list, dbItem);
 		WORD dPid = dIndex < 0 ? 0 : fxhl->afx_dev.fxdevs[dIndex].desc->devid;
 		switch (LOWORD(wParam))
 		{
@@ -288,7 +276,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				eLid = -1;
 				dItem = ComboBox_GetCurSel(dev_list);
-				dIndex = (int)ComboBox_GetItemData(dev_list, dItem); 
+				dIndex = (int)ComboBox_GetItemData(dev_list, dItem);
 				fxhl->TestLight(dIndex, -1, whiteTest);
 				UpdateDeviceInfo(hDlg);
 				UpdateLightsList(hDlg, -1);
@@ -438,14 +426,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_DETECT:
 		{
 			// Try to detect lights from DB
-			if (DialogBox(hInst,
-						  MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT),
-						  hDlg,
-						  (DLGPROC) DetectionDialog) == IDOK)
+			if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC) DetectionDialog) == IDOK)
 				UpdateDeviceList(hDlg);
 		} break;
 		case IDC_BUT_LOADMAP:
-		{	
+		{
 			// Load device and light mappings
 			string appName;
 			if ((appName = OpenSaveFile(hDlg,true)).length()) {
@@ -457,23 +442,17 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_BUT_SAVEMAP:
 		{
-			// Save device and ligh mappings
+			// Save device and light mappings
 			string appName;
 			if ((appName = OpenSaveFile(hDlg,false)).length()) {
 				// Now save mappings...
-				HANDLE file = CreateFile(appName.c_str(),
-										 GENERIC_WRITE,
-										 0,
-										 NULL,
-										 CREATE_ALWAYS,
-										 0,
-										 NULL );
+				HANDLE file = CreateFile(appName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
 				if (file != INVALID_HANDLE_VALUE) {
 					for (int i = 0; i < fxhl->afx_dev.fxdevs.size(); i++) {
 						/// Only connected devices stored!
 						DWORD writeBytes;
-						string line = "'0','" + to_string(fxhl->afx_dev.fxdevs[i].desc->vid) + "','" 
-							+ to_string(fxhl->afx_dev.fxdevs[i].desc->devid) + "','" + 
+						string line = "'0','" + to_string(fxhl->afx_dev.fxdevs[i].desc->vid) + "','"
+							+ to_string(fxhl->afx_dev.fxdevs[i].desc->devid) + "','" +
 							fxhl->afx_dev.fxdevs[i].desc->name + "'\r\n";
 						WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 						for (int j = 0; j < fxhl->afx_dev.fxdevs[i].lights.size(); j++) {

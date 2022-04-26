@@ -26,7 +26,7 @@ It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used
 
 ## Disclaimer
 
-Starting from the release 4.2.1, **Antiviruses can detect virus into project package**.  
+Starting from the release 4.2.1, **Anti-viruses can detect virus into project package**.  
 It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys`, `kdl.dll`, and `drv64.dll` into the antivirus exception list or do not use fan control (light control will work without these files).
 
 ## Requirements
@@ -39,7 +39,7 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
   - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
 - `alienfx-mon` require Administrator rights in case ESIF or BIOS monitoring enabled (the same reason as for `alienfx-gui`)
 - The rest of the `alienfx-` tools does not require Administrator privilege and can be run at any level.
-- All the tools don't require an internet connection, but `alienfan-gui`, `alienfx-mon` and `alienfx-gui` will connect to GitHub to check for updates if a connection is available.
+- All the tools don't require an Internet connection, but `alienfan-gui`, `alienfx-mon` and `alienfx-gui` will connect to GitHub to check for updates if a connection is available.
 
 ## Installation
 - Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
@@ -65,11 +65,8 @@ For fan control - Send me the ACPI dump from [RW Everything](http://rweverything
 - Hardware light effects (and global effect) didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
 - DirectX12 games didn't allow access to GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
 - Using a hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to the "Devices" tab or quit with visible delay.
-
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
-
 - **WARNING!** There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, preventing the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-gui` with "integrated GPU" setting at "Program settings" for the same monitor. It will not work at the default setting in this case.
-
 - **WARNING!** In rare case light system freeze, shutdown or hibernate your notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
 
 ## Support
@@ -78,9 +75,9 @@ Join Discord [support server](https://discord.gg/XU6UJbN9J5)
 
 ## How to build from source code
 
-Pre-requisites:
+Prerequisites:
 - Visual Studio Community 2019
-- Microsoft Driver SDK (DDK) v10.0 or higher
+- Microsoft Driver Development Kit (DDK) v10.0 or higher
 
 Build process:
 - Clone repository
@@ -100,10 +97,6 @@ Build process:
 - [ ] Full-scale power button effects (same as common effects)
 - [x] Windows 11 support (unstable for now)
 
-## Tools Used
-
-* Visual Studio Community 2019
-
 ## License
 
 MIT. You can use these tools for any non-commercial or commercial use, modify it anyway - supposing you provide a link to this page from your product page and mention me as one of the authors.
@@ -112,7 +105,7 @@ MIT. You can use these tools for any non-commercial or commercial use, modify it
 
 Functionality idea and code, new devices support haptic and ambient algorithms by T-Troll.  
 Low-level SDK based on Gurjot95's [AlienFX_SDK](https://github.com/Gurjot95/AlienFX-SDK).  
-High-level API code and cli app is based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).  
+High-level API code and alienfx-cli based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).  
 Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  

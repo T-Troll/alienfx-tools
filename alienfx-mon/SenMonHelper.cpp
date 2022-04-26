@@ -19,13 +19,9 @@ SenMonHelper::SenMonHelper(ConfigMon* cf)
 	conf = cf;
 	stopEvents = CreateEvent(NULL, true, false, NULL);
 
-	if (conf->bSensors) {
-		acpi = new AlienFan_SDK::Control();
-		validB = acpi->IsActivated() && acpi->Probe();
-	}
-	//if (conf->wSensors || conf->eSensors) {
+	ModifyMon();
 	StartMon();
-	//}
+
 }
 
 SenMonHelper::~SenMonHelper()
@@ -61,8 +57,10 @@ void SenMonHelper::ModifyMon()
 		validB = acpi->IsActivated() && acpi->Probe();
 	}
 	else {
-		delete acpi;
-		acpi = NULL;
+		if (acpi) {
+			delete acpi;
+			acpi = NULL;
+		}
 		validB = false;
 	}
 }
@@ -70,9 +68,8 @@ void SenMonHelper::ModifyMon()
 void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, string name) {
 	SENSOR* sen;
 	if (sen = conf->FindSensor(grp, type, id)) {
-		//sen->oldCur = sen->cur;
 		sen->cur = val;
-		if (sen->cur < sen->min)
+		if (sen->cur < sen->min || sen->min < 0)
 			sen->min = sen->cur;
 		if (sen->cur > sen->max)
 			sen->max = sen->cur;
@@ -106,10 +103,6 @@ int GetValuesArray(HCOUNTER counter) {
 DWORD WINAPI CEventProc(LPVOID param)
 {
 	SenMonHelper* src = (SenMonHelper*)param;
-
-	// locales block
-	//HKL* locIDs = new HKL[10];
-	//int locNum = GetKeyboardLayoutList(10, locIDs);
 
 	LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
 		COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
@@ -199,8 +192,10 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		if (src->conf->bSensors && src->validB) { // group 2
 			// Fan data and BIOS temperatures
+			int val;
 			for (int i = 0; i < src->acpi->HowManySensors(); i++) { // BIOS temps, code 0
-				AddUpdateSensor(src->conf, 2, 0, i, src->acpi->GetTempValue(i), src->acpi->sensors[i].name);
+				if (val = src->acpi->GetTempValue(i))
+					AddUpdateSensor(src->conf, 2, 0, i, val, src->acpi->sensors[i].name);
 			}
 
 			for (int i = 0; i < src->acpi->HowManyFans(); i++) { // BIOS fans, code 1-2

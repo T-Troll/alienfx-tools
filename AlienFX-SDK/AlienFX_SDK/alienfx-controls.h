@@ -47,7 +47,7 @@ namespace AlienFX_SDK {
 		const byte prepareTurn[3]{0x03, 0x20, 0x2};
 		const byte turnOn[2]{0x03, 0x26};
 		// 4 = 0x64 - off, 0x41 - dim, 0 - on, 6 - number, 7...31 - IDs (like colorSel)
-		// Uknown command codes : 0x20 0x2
+		// Unknown command codes : 0x20 0x2
 	} COMMV4;
 
 	static struct COMMV5 {
@@ -74,7 +74,7 @@ namespace AlienFX_SDK {
 		//	                    01,  01,01,01,00,00,00,00,01,01,01,01,01,01,01,01,
 		//	                    01,  01,01,01,01,01,00,01,00,00,00,00,01,00,01,01,
 		//	                    01,  01,01,01,01,01,01,01,01,01,01,01,00,00,00,01};
-		//// secnd 4 rows bitmask map
+		//// second 4 rows bitmask map
 		//byte colorSel6[60] = {0xcc,0x8c,06,00,00,01,01,01,01,01,01,01,01,01,01,01,
 		//	                    01,  01,01,00,00,00,00,00,00,01,01,01,01,01,01,01,
 		//	                    01,  01,01,01,01,00,01,00,00,00,00,00,01,01,00,01,
@@ -100,9 +100,6 @@ namespace AlienFX_SDK {
 	} COMMV6;
 
 	static struct COMMV7 {
-		//const byte ack[2]{0xc0,0x02};
-		//const byte colorSet[3]{0x40,0x1a,0x07};
-		//[5] - light ID, [6,7,8] - RGB
 		const byte update[8]{0x40,0x60,0x07,0x00,0xc0,0x4e,0x00,0x01};
 		//[8] = 1 - update finish, [9] = 1 - update color (after set)
 		const byte status[5]{0x40,0x03,0x01,0x00,0x01};

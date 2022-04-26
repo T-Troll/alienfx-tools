@@ -31,8 +31,7 @@ void ConfigAmbient::Load() {
 
     GetReg("Shift", &shift);
     GetReg("Mode", &mode);
-    //GetReg("Divider", &divider);
-    //GetReg("GammaCorrection", &gammaCorrection, 1);
+
     DWORD inarray[12 * sizeof(DWORD)]{0};
     char name[256];
     DWORD len = 255, lend = 12 * sizeof(DWORD); zone map;
@@ -54,8 +53,7 @@ void ConfigAmbient::Save() {
 
     SetReg("Shift", shift);
     SetReg("Mode", mode);
-    //SetReg("Divider", divider);
-    //SetReg("GammaCorrection", gammaCorrection);
+
     RegDeleteTreeA(hMainKey, "Mappings");
     RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     for (int i = 0; i < zones.size(); i++) {

@@ -36,7 +36,7 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigHelper.h">
+    <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigFan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\alienfan-tools\alienfan-gui\MonHelper.h">
@@ -92,7 +92,7 @@
     <ClCompile Include="SettingsDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigHelper.cpp">
+    <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigFan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\alienfan-tools\alienfan-gui\MonHelper.cpp">

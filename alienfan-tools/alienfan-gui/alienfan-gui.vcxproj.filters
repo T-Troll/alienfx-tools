@@ -21,16 +21,10 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alienfan-gui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AlienfanHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ConfigHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MonHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfigFan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,13 +32,10 @@
     <ClCompile Include="alienfan-gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AlienfanHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ConfigHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MonHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigFan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -57,10 +48,5 @@
     <Image Include="alienfan-gui.ico">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Xsd Include="dpi.manifest">
-      <Filter>Header Files</Filter>
-    </Xsd>
   </ItemGroup>
 </Project>

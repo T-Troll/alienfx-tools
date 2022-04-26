@@ -41,10 +41,7 @@ void DrawFreq(HWND hDlg, int *freq) {
 		HGDIOBJ hOld = SelectObject(hdc, hbmMem);
 
 		//setting colors:
-		//SetDCBrushColor(hdc, RGB(255, 255, 255));
-		//SetDCPenColor(hdc, RGB(255, 255, 39));
 		SetTextColor(hdc, RGB(255, 255, 255));
-		//SelectObject(hdc, GetStockObject(DC_BRUSH));
 		SelectObject(hdc, GetStockObject(WHITE_PEN));
 		SetBkMode(hdc, TRANSPARENT);
 
@@ -55,7 +52,6 @@ void DrawFreq(HWND hDlg, int *freq) {
 			LineTo(hdc, levels_rect.right - 15, levels_rect.bottom - 26);
 			MoveToEx(hdc, levels_rect.right - 10, levels_rect.bottom - 21, (LPPOINT) NULL);
 			LineTo(hdc, levels_rect.right - 15, levels_rect.bottom - 16);
-			//TextOut(hdc, rcClientP->right - 45, rcClientP->bottom - 27, "f(kHz)", 6);
 
 			//draw y axis:
 			MoveToEx(hdc, 10, levels_rect.bottom - 21, (LPPOINT) NULL);
@@ -63,13 +59,6 @@ void DrawFreq(HWND hDlg, int *freq) {
 			LineTo(hdc, 15, 15);
 			MoveToEx(hdc, 10, 10, (LPPOINT) NULL);
 			LineTo(hdc, 5, 15);
-			//TextOut(hdc, 15, 10, "[Power]", 7);
-			//wsprintf(szSize, "%6d", (int)y_scale);
-			//TextOut(hdc, 150, 10, szSize, 6);
-			//TextOut(hdc, 10, 40, "255", 3);
-			//TextOut(hdc, 10, (rcClientP->bottom) / 2, "128", 3);
-			//TextOut(hdc, 10, rcClientP->bottom - 35, "  0", 3);
-			//axis_draw = false;
 			int oldvalue = (-1);
 			double coeff = 22 / (log(22.0));
 			for (i = 0; i <= 22; i++) {
@@ -94,8 +83,6 @@ void DrawFreq(HWND hDlg, int *freq) {
 				rectop = (255 - freq[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
 				Rectangle(hdc, (graphZone.right * i) / NUMBARS + graphZone.left, rectop,
 						  (graphZone.right * (i + 1)) / NUMBARS - 2 + graphZone.left, graphZone.bottom);
-				//sprintf_s(szSize, "%3d", freq[i]);
-				//TextOut(hdc, (graphZone.right * i) / NUMBARS + graphZone.left, rectop - 15, szSize, 3);
 			}
 
 		BitBlt(hdc_r, 0, 0, levels_rect.right - levels_rect.left, levels_rect.bottom - levels_rect.top, hdc, 0, 0, SRCCOPY);
@@ -109,14 +96,6 @@ void DrawFreq(HWND hDlg, int *freq) {
 		DeleteDC(hdc_r);
 	}
 }
-
-//void RemoveHapMapping(haptics_map *map) {
-//	for (auto Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
-//		if (Iter->devid == map->devid && Iter->lightid == map->lightid) {
-//			conf->hap_conf->haptics.erase(Iter);
-//			break;
-//		}
-//}
 
 void SetMappingData(HWND hDlg, haptics_map* map) {
 	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
@@ -143,8 +122,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
 	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
 	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
-	
-	
+
 	haptics_map *map = FindHapMapping(eItem);
 
 	switch (message) {
@@ -245,7 +223,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 				SetMappingData(hDlg, map);
 			} break;
-			} 
+			}
 			break;
 		case IDC_FREQ:
 		{ // should update mappings list
@@ -388,8 +366,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 		return false;
 	break;
-	case WM_CLOSE: 
-	case WM_DESTROY:
+	case WM_CLOSE: case WM_DESTROY:
 		SetEvent(auiEvent);
 		WaitForSingleObject(uiHapHandle, 1000);
 		CloseHandle(uiHapHandle);
