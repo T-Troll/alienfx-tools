@@ -44,8 +44,6 @@ void UpdateLightsList(HWND hDlg, int lid) {
 		AlienFX_SDK::mapping *clight = fxhl->afx_dev.fxdevs[dIndex].lights[i];
 		if (lMaxIndex < clight->lightid) lMaxIndex = clight->lightid;
 		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM , i };
-		//lItem.iImage = 0;
-		//lItem.iSubItem = 0;
 		lItem.lParam = clight->lightid;
 		lItem.pszText = (char*)clight->name.c_str();
 		if (lid == clight->lightid) {
