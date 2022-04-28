@@ -58,7 +58,7 @@
         "Entry"
         {
         "MsmKey" = "8:_62778E3B93EA66E8423CFE35D880654B"
-        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
+        "OwnerKey" = "8:_1AA38565231A40689F298FEBA8022EB6"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -82,7 +82,7 @@
         "Entry"
         {
         "MsmKey" = "8:_82E4C2532EEB39831247EDB4B6D917DC"
-        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
+        "OwnerKey" = "8:_1AA38565231A40689F298FEBA8022EB6"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -536,15 +536,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{2E05F5A3-00DA-492B-B93A-6195ADAD7EE4}"
-        "PackageCode" = "8:{6CCA6ED4-2F05-4915-85BD-8FC04F1D7227}"
+        "ProductCode" = "8:{FD2A9426-25B2-4A1D-BAB3-B6E482A06B59}"
+        "PackageCode" = "8:{8CEF3328-588B-43FA-8C3B-628A8526AE7E}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:5.7.0"
+        "ProductVersion" = "8:5.7.1"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
