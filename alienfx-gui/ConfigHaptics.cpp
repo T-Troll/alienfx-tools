@@ -9,7 +9,7 @@ ConfigHaptics::ConfigHaptics() {
     Load();
 }
 ConfigHaptics::~ConfigHaptics() {
-    //Save();
+    Save();
     RegCloseKey(hMainKey);
     RegCloseKey(hMappingKey);
 }

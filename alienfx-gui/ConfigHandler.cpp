@@ -15,6 +15,9 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKey1, TEXT("Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);
 	RegCreateKeyEx(hKey1, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);
 
+	fan_conf = new ConfigFan();
+	amb_conf = new ConfigAmbient();
+	hap_conf = new ConfigHaptics();
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -277,10 +280,6 @@ void ConfigHandler::Load() {
 	active_set = &activeProfile->lightsets;
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
-
-	fan_conf = new ConfigFan();
-	amb_conf = new ConfigAmbient();
-	hap_conf = new ConfigHaptics();
 }
 
 void ConfigHandler::Save() {

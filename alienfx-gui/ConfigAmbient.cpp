@@ -12,7 +12,7 @@ ConfigAmbient::ConfigAmbient() {
     Load();
 }
 ConfigAmbient::~ConfigAmbient() {
-    //Save();
+    Save();
     RegCloseKey(hMainKey);
     RegCloseKey(hMappingKey);
 }

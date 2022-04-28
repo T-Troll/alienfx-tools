@@ -670,16 +670,12 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     if (fan_conf->lastSelectedSensor != -1) {
                         temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
                         if (!sen) { // add new sensor block
-                            sen = new temp_block;
-                            sen->sensorIndex = (short)fan_conf->lastSelectedSensor;
-                            fan_conf->lastProf->fanControls.push_back(*sen);
-                            delete sen;
+                            fan_conf->lastProf->fanControls.push_back({ (short)fan_conf->lastSelectedSensor });
                             sen = &fan_conf->lastProf->fanControls.back();
                         }
-                        fan_block cFan{(short)lPoint->iItem};
-                        cFan.points.push_back({0,0});
-                        cFan.points.push_back({100,100});
-                        sen->fans.push_back(cFan);
+                        if (!fan_conf->FindFanBlock(sen, lPoint->iItem)) {
+                            sen->fans.push_back({ (short)lPoint->iItem,{{0,0},{100,100}} });
+                        }
                         DrawFan();
                     }
                 }

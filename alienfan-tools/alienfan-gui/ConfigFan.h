@@ -45,8 +45,9 @@ public:
 	DWORD startMinimized = 0;
 	DWORD updateCheck = 1;
 
-	fan_profile* lastProf;
 	fan_profile prof;
+	fan_profile* lastProf = &prof;
+
 	vector<fan_overboost> boosts;
 	map<byte, string> powers;
 

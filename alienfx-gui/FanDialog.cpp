@@ -356,13 +356,12 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     if (conf->fan_conf->lastSelectedSensor != -1) {
                         temp_block* sen = conf->fan_conf->FindSensor(conf->fan_conf->lastSelectedSensor);
                         if (!sen) { // add new sensor block
-                            sen = new temp_block;
-                            sen->sensorIndex = (short) conf->fan_conf->lastSelectedSensor;
-                            conf->fan_conf->lastProf->fanControls.push_back(*sen);
-                            delete sen;
+                            conf->fan_conf->lastProf->fanControls.push_back({ (short)conf->fan_conf->lastSelectedSensor });
                             sen = &conf->fan_conf->lastProf->fanControls.back();
                         }
-                        sen->fans.push_back({(short) lPoint->iItem,{{0,0},{100,100}}});
+                        if (!conf->fan_conf->FindFanBlock(sen, lPoint->iItem)) {
+                            sen->fans.push_back({ (short)lPoint->iItem,{{0,0},{100,100}} });
+                        }
                         DrawFan();
                     }
                 }
@@ -494,7 +493,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             cFan->points.front().temp = 0;
             cFan->points.back().temp = 100;
             DrawFan();
-            conf->fan_conf->Save();
+            //conf->fan_conf->Save();
         }
         SetFocus(GetParent(hDlg));
     } break;

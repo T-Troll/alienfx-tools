@@ -173,21 +173,17 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 
 			actions.push_back(fin);
 
-			if (Iter->devid) {
-				if (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER)
-					if (activeMode == MODE_AC || activeMode == MODE_CHARGE) {
-						actions.push_back(Iter->eve[0].map[1]);
-					} else {
-						actions[0] = Iter->eve[0].map[0];
-						actions.push_back(fin);
-					}
+			if (Iter->devid && afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER)
+				if (activeMode == MODE_AC || activeMode == MODE_CHARGE) {
+					actions.push_back(Iter->eve[0].map[1]);
+				} else {
+					actions[0] = Iter->eve[0].map[0];
+					actions.push_back(fin);
+				}
+			if (!Iter->devid && Iter->eve[2].fs.b.flags && Iter->eve[2].fs.b.proc)
+				SetGroupLight(Iter->lightid, actions, false, &from, &Iter->eve[2].map[1], coeff);
+			else
 				SetLight(Iter->devid, Iter->lightid, actions);
-			} else {
-				if (Iter->eve[2].fs.b.flags && Iter->eve[2].fs.b.proc)
-					SetGroupLight(Iter->lightid, actions, false, &from, &Iter->eve[2].map[1], coeff);
-				else
-					SetGroupLight(Iter->lightid, actions);
-			}
 		}
 	}
 	if (wasChanged) {
@@ -210,14 +206,19 @@ void FXHelper::QueryUpdate(int did, bool force)
 bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force)
 {
 	if (unblockUpdates && config->stateOn) {
-		LightQueryElement newBlock{did, id, force, false, (byte)actions.size()};
-		for (int i = 0; i < newBlock.actsize; i++)
-			newBlock.actions[i] = actions[i];
-		if (did && newBlock.actsize) {
-			modifyQuery.lock();
-			lightQuery.push_back(newBlock);
-			modifyQuery.unlock();
-			SetEvent(haveNewElement);
+		if (did) {
+			LightQueryElement newBlock{ did, id, force, false, (byte)actions.size() };
+			for (int i = 0; i < newBlock.actsize; i++)
+				newBlock.actions[i] = actions[i];
+			if (did && newBlock.actsize) {
+				modifyQuery.lock();
+				lightQuery.push_back(newBlock);
+				modifyQuery.unlock();
+				SetEvent(haveNewElement);
+			}
+		}
+		else {
+			SetGroupLight(id, actions, force);
 		}
 	}
 	return true;
@@ -413,11 +414,8 @@ bool FXHelper::RefreshOne(lightset* map, int force, bool update)
 	if (!actions.size())
 		return false;
 
-	if (map->devid)
-		SetLight(map->devid, map->lightid, actions, force == 2);
-	else
-		// Group here!
-		SetGroupLight(map->lightid, actions, force == 2);
+	SetLight(map->devid, map->lightid, actions, force == 2);
+
 	if (update)
 		QueryUpdate(map->devid, force == 2);
 
@@ -452,12 +450,8 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 				actions[0].r = (BYTE)((r * shift) / dsize);
 				actions[0].g = (BYTE)((g * shift) / dsize);
 				actions[0].b = (BYTE)((b * shift) / dsize);
-			}
-
-			if (map.devid)
 				SetLight(map.devid, map.lightid, actions);
-			else
-				SetGroupLight(map.lightid, actions);
+			}
 		}
 	}
 	if (config->amb_conf->zones.size())
@@ -513,15 +507,11 @@ void FXHelper::RefreshHaptics(int *freq) {
 			AlienFX_SDK::afx_act from{0,0,0,(byte) (from_r / groupsize),(byte) (from_g / groupsize),(byte) (from_b / groupsize)},
 				to{0,0,0,(byte) (to_r / groupsize),(byte) (to_g / groupsize),(byte) (to_b / groupsize)};
 
-			if (mIter->devid) {
+			if (!mIter->devid && mIter->flags & MAP_GAUGE)
+				SetGroupLight(mIter->lightid, actions, false, &from, &to, f_power);
+			else
 				SetLight(mIter->devid, mIter->lightid, actions);
-			} else {
-				// group
-				if (mIter->flags & MAP_GAUGE)
-					SetGroupLight(mIter->lightid, actions, false, &from, &to, f_power);
-				else
-					SetGroupLight(mIter->lightid, actions);
-			}
+
 		}
 	}
 	if (config->hap_conf->haptics.size())

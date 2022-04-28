@@ -18,26 +18,22 @@ ConfigFan::~ConfigFan() {
 }
 
 temp_block* ConfigFan::FindSensor(int id) {
-	temp_block* res = NULL;
 	if (id >= 0) {
 		for (int i = 0; i < lastProf->fanControls.size(); i++)
 			if (lastProf->fanControls[i].sensorIndex == id) {
-				res = &lastProf->fanControls[i];
-				break;
+				return &lastProf->fanControls[i];
 			}
 	}
-	return res;
+	return NULL;
 }
 
 fan_block* ConfigFan::FindFanBlock(temp_block* sen, int id) {
-	fan_block* res = 0;
 	if (sen && id >= 0)
 		for (int i = 0; i < sen->fans.size(); i++)
 			if (sen->fans[i].fanIndex == id) {
-				res = &sen->fans[i];
-				break;
+				return &sen->fans[i];
 			}
-	return res;
+	return NULL;
 }
 
 void ConfigFan::GetReg(const char *name, DWORD *value, DWORD defValue) {
@@ -66,7 +62,7 @@ void ConfigFan::Load() {
 	unsigned vindex = 0;
 	int ret = 0;
 	char name[256];
-	lastProf = &prof;
+
 	do {
 		DWORD len = 255, lend = 0;
 		if ((ret = RegEnumValueA( keySensors, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
@@ -74,9 +70,7 @@ void ConfigFan::Load() {
 			if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) { // Sensor-fan block
 				temp_block* cSensor = FindSensor(sid);
 				if (!cSensor) { // Need to add new sensor block
-					cSensor = new temp_block{sid};
-					prof.fanControls.push_back(*cSensor);
-					delete cSensor;
+					prof.fanControls.push_back({ sid });
 					cSensor = &prof.fanControls.back();
 				}
 				// Now load and add fan data..
@@ -85,10 +79,7 @@ void ConfigFan::Load() {
 				fan_block cFan;
 				cFan.fanIndex = fid;
 				for (UINT i = 0; i < lend; i += 2) {
-					fan_point cPos;
-					cPos.temp = inarray[i];
-					cPos.boost = inarray[i + 1];
-					cFan.points.push_back(cPos);
+					cFan.points.push_back({ inarray[i], inarray[i + 1 ]});
 				}
 				cSensor->fans.push_back(cFan);
 				delete[] inarray;
