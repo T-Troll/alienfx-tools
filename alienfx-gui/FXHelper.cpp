@@ -434,18 +434,25 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 
 	for (UINT i = 0; i < config->amb_conf->zones.size(); i++) {
 		zone map = config->amb_conf->zones[i];
-		UINT r = 0, g = 0, b = 0, dsize = (UINT) map.map.size() * 255;
+		UINT r = 0, g = 0, b = 0, dsize = (UINT)map.map.size() * 255, gridsize = config->amb_conf->grid.x * config->amb_conf->grid.y;
 		if (dsize) {
 			for (unsigned j = 0; j < map.map.size(); j++) {
-				r += img[3 * map.map[j] + 2];
-				g += img[3 * map.map[j] + 1];
-				b += img[3 * map.map[j]];
+				if (map.map[j] < gridsize) {
+					r += img[3 * map.map[j] + 2];
+					g += img[3 * map.map[j] + 1];
+					b += img[3 * map.map[j]];
+				}
+				else {
+					dsize -= 255;
+				}
 			}
 
 			// Multilights and brightness correction...
-			actions[0].r = (BYTE) ((r * shift) / dsize);
-			actions[0].g = (BYTE) ((g * shift) / dsize);
-			actions[0].b = (BYTE) ((b * shift) / dsize);
+			if (dsize) {
+				actions[0].r = (BYTE)((r * shift) / dsize);
+				actions[0].g = (BYTE)((g * shift) / dsize);
+				actions[0].b = (BYTE)((b * shift) / dsize);
+			}
 
 			if (map.devid)
 				SetLight(map.devid, map.lightid, actions);

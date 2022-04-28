@@ -57,6 +57,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_62778E3B93EA66E8423CFE35D880654B"
+        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6351900FB5424C86AB017CEAB765135D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -71,6 +77,12 @@
         {
         "MsmKey" = "8:_678C7A24858C40D5841D4C44812C6A93"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_82E4C2532EEB39831247EDB4B6D917DC"
+        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -315,6 +327,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_62778E3B93EA66E8423CFE35D880654B"
+            {
+            "SourcePath" = "8:SETUPAPI.dll"
+            "TargetName" = "8:SETUPAPI.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_39E2774D52CE4B619039352379796769"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6351900FB5424C86AB017CEAB765135D"
             {
             "SourcePath" = "8:..\\Doc\\LightFX.md"
@@ -333,6 +365,26 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_82E4C2532EEB39831247EDB4B6D917DC"
+            {
+            "SourcePath" = "8:HID.DLL"
+            "TargetName" = "8:HID.DLL"
+            "Tag" = "8:"
+            "Folder" = "8:_39E2774D52CE4B619039352379796769"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_981E70E7906A47D493BC62ED49AF1096"
@@ -485,7 +537,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
         "ProductCode" = "8:{2E05F5A3-00DA-492B-B93A-6195ADAD7EE4}"
-        "PackageCode" = "8:{91222B8C-5B53-4A25-AAD6-15FADAE30E4A}"
+        "PackageCode" = "8:{6CCA6ED4-2F05-4915-85BD-8FC04F1D7227}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
