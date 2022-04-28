@@ -189,16 +189,12 @@ void LoadCSV(string name) {
 
 string OpenSaveFile(HWND hDlg, bool isOpen) {
 	// Load/save device and light mappings
-	OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA)};
+	OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA), hDlg, hInst, "Mapping files (*.csv)\0*.csv\0\0" };
 	string appName = "Current.csv";
 	appName.reserve(4096);
-	fstruct.hwndOwner = hDlg;
-	fstruct.hInstance = hInst;
 	fstruct.lpstrFile = (LPSTR) appName.c_str();
 	fstruct.nMaxFile = 4096;
 	fstruct.lpstrInitialDir = ".\\Mappings";
-	fstruct.lpstrFilter = "Mapping files (*.csv)\0*.csv\0\0";
-	fstruct.lpstrCustomFilter = NULL;
 	fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT |
 		(isOpen ? OFN_FILEMUSTEXIST : OFN_PATHMUSTEXIST);
 	if (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) {

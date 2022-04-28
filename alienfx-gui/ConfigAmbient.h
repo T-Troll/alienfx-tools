@@ -8,6 +8,10 @@ struct zone {
 	std::vector<byte> map;
 };
 
+struct gridDef {
+	byte x, y;
+};
+
 class ConfigAmbient
 {
 private:
@@ -17,6 +21,7 @@ private:
 public:
 	DWORD mode = 0;
 	DWORD shift = 40;
+	gridDef grid{ 4,3 };
 	std::vector<zone> zones;
 
 	ConfigAmbient();

@@ -368,10 +368,10 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 
 	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
 				 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-	TOOLINFO ti{ 0 };
-	ti.cbSize = sizeof(TOOLINFO);
-	ti.uFlags = TTF_SUBCLASS;
-	ti.hwnd = hwndParent;
+	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
+	//ti.cbSize = sizeof(TOOLINFO);
+	//ti.uFlags = TTF_SUBCLASS;
+	//ti.hwnd = hwndParent;
 	ti.hinst = hInst;
 	ti.lpszText = (LPTSTR)"0";
 
@@ -382,8 +382,7 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 }
 
 void SetSlider(HWND tt, int value) {
-	TOOLINFO ti{0};
-	ti.cbSize = sizeof(ti);
+	TOOLINFO ti{ sizeof(TOOLINFO) };
 	if (tt) {
 		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM) &ti);
 		string toolTip = to_string(value);
@@ -758,6 +757,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			{
 				int effmode = conf->activeProfile->effmode = ComboBox_GetCurSel(mode_list);
 				eve->ChangeEffectMode(effmode);
+				OnSelChanged(tab_list);
 			} break;
 			}
 		} break;
@@ -767,7 +767,6 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case CBN_SELCHANGE: {
 				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
-				//ReloadProfileList();
 				ReloadModeList();
 			} break;
 			}
@@ -907,10 +906,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
 			eve->ToggleEvents();
+			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			conf->activeProfile->effmode = idx;
 			eve->ChangeEffectMode(idx);
+			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();

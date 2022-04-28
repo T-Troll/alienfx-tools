@@ -13,8 +13,10 @@ public:
 	void Start();
 	void Stop();
 	void Restart();
+	void SetGridSize(int, int);
 	bool isDirty = false;
-	byte imgz[GRIDSIZE]{ 0 };
+	bool needUpdate = false;
+	byte *imgz;
 private:
 	HANDLE dwHandle = NULL;
 };

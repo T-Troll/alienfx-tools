@@ -29,8 +29,13 @@ void ConfigAmbient::SetReg(char *text, DWORD value) {
 
 void ConfigAmbient::Load() {
 
+    DWORD fGrid;
+
     GetReg("Shift", &shift);
     GetReg("Mode", &mode);
+    GetReg("Grid", &fGrid, 0x30004);
+
+    grid = { (byte)LOWORD(fGrid), (byte)HIWORD(fGrid) };
 
     DWORD inarray[12 * sizeof(DWORD)]{0};
     char name[256];
@@ -53,6 +58,7 @@ void ConfigAmbient::Save() {
 
     SetReg("Shift", shift);
     SetReg("Mode", mode);
+    SetReg("Grid", MAKELPARAM(grid.x, grid.y));
 
     RegDeleteTreeA(hMainKey, "Mappings");
     RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
