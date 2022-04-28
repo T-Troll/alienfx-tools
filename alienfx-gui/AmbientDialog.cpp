@@ -16,9 +16,51 @@ DWORD WINAPI CDlgProc(LPVOID);
 HANDLE uiStopEvent = CreateEvent(NULL, false, false, NULL);
 HANDLE uiHandle = NULL;
 
+void InitButtonZone(HWND dlg) {
+    // delete zone buttons...
+    for (DWORD bID = 2000; GetDlgItem(dlg, bID); bID++)
+        DestroyWindow(GetDlgItem(dlg, bID));
+    // Create zone buttons...
+    HWND bblock = GetDlgItem(dlg, IDC_BUTTON_ZONE);
+    RECT bzone;
+    GetClientRect(bblock, &bzone);
+    MapWindowPoints(bblock, dlg, (LPPOINT)&bzone, 1);
+    bzone.right /= conf->amb_conf->grid.x;
+    bzone.bottom /= conf->amb_conf->grid.y;
+    DWORD bId = 2000;
+    for (int y = 0; y < conf->amb_conf->grid.y; y++)
+        for (int x = 0; x < conf->amb_conf->grid.x; x++) {
+            HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+                bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, dlg, (HMENU)bId, hInst, NULL);
+            bId++;
+        }
+}
+
+void RedrawButtonZone(HWND dlg) {
+    for (int i = 0; i < conf->amb_conf->grid.x * conf->amb_conf->grid.y; i++)
+        RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
+}
+
+void SetGridSize(HWND dlg, int x, int y) {
+    SetEvent(uiStopEvent);
+    WaitForSingleObject(uiHandle, 1000);
+    CloseHandle(uiHandle);
+    if (eve->capt) {
+        eve->capt->SetGridSize(x, y);
+    }
+    else {
+        conf->amb_conf->grid.x = x;
+        conf->amb_conf->grid.y = y;
+    }
+    InitButtonZone(dlg);
+    uiHandle = CreateThread(NULL, 0, CDlgProc, dlg, 0, NULL);
+}
+
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
-    HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR);
+    HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR),
+        gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
+        gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
 
     zone *map = FindAmbMapping(eItem);
 
@@ -42,8 +84,22 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         SendMessage(brSlider, TBM_SETPOS, true, conf->amb_conf->shift);
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
 
+        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(1, 20));
+        SendMessage(gridX, TBM_SETPOS, true, conf->amb_conf->grid.x);
+        //SendMessage(gridX, TBM_SETTICFREQ, 16, 0);
+
+        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(1, 12));
+        SendMessage(gridY, TBM_SETPOS, true, conf->amb_conf->grid.y);
+        //SendMessage(gridY, TBM_SETTICFREQ, 16, 0);
+
         sTip1 = CreateToolTip(brSlider, sTip1);
         SetSlider(sTip1, conf->amb_conf->shift);
+
+        sTip2 = CreateToolTip(gridX, sTip2);
+        SetSlider(sTip2, conf->amb_conf->grid.x);
+
+        sTip3 = CreateToolTip(gridY, sTip3);
+        SetSlider(sTip3, conf->amb_conf->grid.y);
 
         // Start UI update thread...
         uiHandle = CreateThread(NULL, 0, CDlgProc, hDlg, 0, NULL);
@@ -52,47 +108,24 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
         }
 
+        InitButtonZone(hDlg);
+
     } break;
     case WM_COMMAND:
     {
-
-        switch (LOWORD(wParam)) {
-        case IDC_LIGHTS: // should reload mappings
-            switch (HIWORD(wParam)) {
-                case LBN_SELCHANGE:
-                {
-                    // check in config - do we have mappings?
-                    eItem = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-                    map = FindAmbMapping(eItem);
-
-                    UINT bid = IDC_CHECK1;
-                    // clear checks...
-                    for (int i = 0; i < 12; i++) {
-                        CheckDlgButton(hDlg, bid + i, BST_UNCHECKED);
-                    }
-                    if (map) {
-                        // load zones....
-                        for (int j = 0; j < map->map.size(); j++) {
-                            CheckDlgButton(hDlg, bid + map->map[j], BST_CHECKED);
-                        }
-                    }
-                } break;
-            }
-        break;
-        case IDC_BUTTON1: case IDC_BUTTON2: case IDC_BUTTON3: case IDC_BUTTON4: case IDC_BUTTON5: case IDC_BUTTON6: case IDC_BUTTON7:
-        case IDC_BUTTON8: case IDC_BUTTON9: case IDC_BUTTON10: case IDC_BUTTON11: case IDC_BUTTON12:
-        {
+        if (LOWORD(wParam) >= 2000) { // grid button
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
-            {
-                UINT id = LOWORD(wParam) - IDC_BUTTON1,
-                    bid = IDC_CHECK1 + id;
+                if (eItem == (-1))
+                    break;
+                UINT id = LOWORD(wParam) - 2000;
                 if (!map) {
-                    map = new zone({0});
+                    map = new zone({ 0 });
                     if (eItem > 0xffff) {
                         // group
                         map->lightid = eItem;
-                    } else {
+                    }
+                    else {
                         // light
                         AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
                         map->devid = lgh->devid;
@@ -109,32 +142,41 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 if (Iter == map->map.end()) {
                     // new mapping, add and select
                     map->map.push_back(id);
-                    CheckDlgButton(hDlg, bid, BST_CHECKED);
-                } else {
+                }
+                else {
                     map->map.erase(Iter);
                     if (!map->map.size()) {
                         // delete mapping!
                         RemoveAmbMapping(map);
                     }
-                    CheckDlgButton(hDlg, bid, BST_UNCHECKED);
                 }
-
+                RedrawWindow(GetDlgItem(hDlg, LOWORD(wParam)), 0, 0, RDW_INVALIDATE);
+                break;
+            }
+        }
+        switch (LOWORD(wParam)) {
+        case IDC_LIGHTS: // should reload mappings
+            switch (HIWORD(wParam)) {
+            case LBN_SELCHANGE:
+            {
+                eItem = (int)ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
+                RedrawButtonZone(hDlg);
             } break;
             }
-        } break;
+            break;
         case IDC_RADIO_PRIMARY:
-        switch (HIWORD(wParam)) {
+            switch (HIWORD(wParam)) {
             case BN_CLICKED:
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
                 conf->amb_conf->mode = 0;
                 if (eve->capt)
                     eve->capt->Restart();
-            break;
-        } break;
+                break;
+            } break;
         case IDC_RADIO_SECONDARY:
             switch (HIWORD(wParam)) {
-                case BN_CLICKED:
+            case BN_CLICKED:
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_CHECKED);
                 conf->amb_conf->mode = 1;
@@ -142,58 +184,72 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     eve->capt->Restart();
                 break;
             }
-        break;
+            break;
         case IDC_BUTTON_RESET:
-        if (eve->capt) {
-            eve->capt->Restart();
-        }
-        break;
+            if (eve->capt) {
+                eve->capt->Restart();
+            }
+            break;
         default: return false;
         }
     } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
         case TB_THUMBPOSITION: case TB_ENDTRACK:
-        if ((HWND) lParam == brSlider) {
-            conf->amb_conf->shift = (DWORD) SendMessage(brSlider, TBM_GETPOS, 0, 0);
-            SetSlider(sTip1, conf->amb_conf->shift);
-        }
-        break;
+            if ((HWND)lParam == brSlider) {
+                conf->amb_conf->shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                SetSlider(sTip1, conf->amb_conf->shift);
+                break;
+            }
+            if ((HWND)lParam == gridX) {
+                SetGridSize(hDlg, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), conf->amb_conf->grid.y);
+                SetSlider(sTip2, conf->amb_conf->grid.x);
+                break;
+            }
+            break;
         default:
-        if ((HWND) lParam == brSlider) {
-            SetSlider(sTip1, (int) SendMessage(brSlider, TBM_GETPOS, 0, 0));
-        }
-        }
-    break;
-    case WM_PAINT:
-        if (lParam != NULL) {
-            // repaint buttons from lparam
-            RECT rect;
-            HBRUSH Brush = NULL;
-            UCHAR *imgui = (UCHAR *) lParam;
-            for (int i = 0; i < 12; i++) {
-                HWND tl = GetDlgItem(hDlg, IDC_BUTTON1 + i);
-                HWND cBid = GetDlgItem(hDlg, IDC_CHECK1 + i);
-                GetWindowRect(tl, &rect);
-                HDC cnt = GetWindowDC(tl);
-                rect.bottom -= rect.top;
-                rect.right -= rect.left;
-                rect.top = rect.left = 0;
-                // BGR!
-                Brush = CreateSolidBrush(RGB(imgui[i * 3 + 2], imgui[i * 3 + 1], imgui[i * 3]));
-                FillRect(cnt, &rect, Brush);
-                DeleteObject(Brush);
-                UINT state = IsDlgButtonChecked(hDlg, IDC_CHECK1 + i);
-                if ((state & BST_CHECKED))
-                    DrawEdge(cnt, &rect, EDGE_SUNKEN, BF_RECT);
-                else
-                    DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
-                RedrawWindow(cBid, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-                ReleaseDC(tl, cnt);
+            if ((HWND)lParam == brSlider) {
+                SetSlider(sTip1, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+                break;
+            }
+            if ((HWND)lParam == gridX) {
+                SetSlider(sTip2, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+                break;
             }
         }
-        return false;
-    break;
+        break;
+    case WM_VSCROLL:
+        switch (LOWORD(wParam)) {
+        case TB_THUMBPOSITION: case TB_ENDTRACK:
+            if ((HWND)lParam == gridY) {
+                SetGridSize(hDlg, conf->amb_conf->grid.x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+                SetSlider(sTip3, conf->amb_conf->grid.y);
+            }
+        default:
+            if ((HWND)lParam == gridY) {
+                SetSlider(sTip3, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+            }
+        }
+        break;
+    case WM_DRAWITEM: {
+        DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
+        if (ditem->CtlID >= 2000) {
+            int idx = ditem->CtlID - 2000;
+            HBRUSH Brush;
+            if (eve->capt)
+                Brush = CreateSolidBrush(RGB(eve->capt->imgz[idx * 3 + 2], eve->capt->imgz[idx * 3 + 1], eve->capt->imgz[idx * 3]));
+            else
+                Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+            FillRect(ditem->hDC, &ditem->rcItem, Brush);
+            DeleteObject(Brush);
+            bool selected = false;
+            if (map)
+                for (auto Iter = map->map.begin(); Iter != map->map.end(); Iter++)
+                    if (*Iter == idx)
+                        selected = true;
+            DrawEdge(ditem->hDC, &ditem->rcItem, selected ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT);
+        }
+    } break;
     case WM_CLOSE: case WM_DESTROY:
         SetEvent(uiStopEvent);
         WaitForSingleObject(uiHandle, 1000);
@@ -207,10 +263,11 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 DWORD WINAPI CDlgProc(LPVOID param)
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-    while (WaitForSingleObject(uiStopEvent, 100) == WAIT_TIMEOUT) {
-        if (eve->capt && IsWindowVisible((HWND)param)) {
+    while (WaitForSingleObject(uiStopEvent, 200) == WAIT_TIMEOUT) {
+        if (eve->capt && eve->capt->needUpdate && IsWindowVisible((HWND)param)) {
             //DebugPrint("Ambient UI update...\n");
-            SendMessage((HWND) param, WM_PAINT, 0, (LPARAM) eve->capt->imgz);
+            RedrawButtonZone((HWND)param);
+            eve->capt->needUpdate = false;
         }
     }
     return 0;

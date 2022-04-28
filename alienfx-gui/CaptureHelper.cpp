@@ -20,7 +20,7 @@ HANDLE clrStopEvent, lhEvent;
 
 CaptureHelper::CaptureHelper()
 {
-
+	imgz = new byte[conf->amb_conf->grid.x * conf->amb_conf->grid.y * 3];
 	if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED) == S_OK) {
 		dxgi_manager = new DXGIManager();
 		dxgi_manager->set_timeout(100);
@@ -35,6 +35,7 @@ CaptureHelper::~CaptureHelper()
 	Stop();
 	delete dxgi_manager;
 	CoUninitialize();
+	delete[] imgz;
 }
 
 void CaptureHelper::SetCaptureScreen(int mode) {
@@ -67,6 +68,16 @@ void CaptureHelper::Restart() {
 	SetCaptureScreen(conf->amb_conf->mode);
 }
 
+void CaptureHelper::SetGridSize(int x, int y)
+{
+	Stop();
+	conf->amb_conf->grid.x = x;
+	conf->amb_conf->grid.y = y;
+	delete[] imgz;
+	imgz = new byte[x * y * 3];
+	Start();
+}
+
 struct procData {
 	int dx, dy;
 	UCHAR* dst;
@@ -74,18 +85,13 @@ struct procData {
 	HANDLE pfEvent;
 };
 
-static procData callData[3][4];
 UINT w = 0, h = 0, ww = 0, hh = 0, stride = 0 , divider = 1;
-HANDLE pThread[12]{ 0 };
-HANDLE pfEvent[12]{ 0 };
 byte* scrImg = NULL;
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
 	HANDLE waitArray[2]{src->pEvent, clrStopEvent};
 	DWORD res = 0;
-
-	UINT ptr = (src->dy * 4 + src->dx);// *3;
 
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
@@ -107,12 +113,12 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 			src->dst[0] = (UCHAR) r;
 			src->dst[1] = (UCHAR) g;
 			src->dst[2] = (UCHAR) b;
-			SetEvent(pfEvent[ptr]);
+			SetEvent(src->pfEvent);
 		}
 	}
-	CloseHandle(pfEvent[ptr]);
+	CloseHandle(src->pfEvent);
 	CloseHandle(src->pEvent);
-	pfEvent[ptr] = 0;
+	src->pfEvent = 0;
 	return 0;
 }
 
@@ -120,14 +126,17 @@ void SetDimensions() {
 	RECT dimensions = dxgi_manager->get_output_rect();
 	w = dimensions.right - dimensions.left;
 	h = dimensions.bottom - dimensions.top;
-	ww = w / 4; hh = h / 3;
+	ww = w / conf->amb_conf->grid.x; hh = h / conf->amb_conf->grid.y;
 	stride = w * 4;
 }
 
 DWORD WINAPI CInProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
-	byte  imgo[GRIDSIZE]{0};
+
+	DWORD gridSize = conf->amb_conf->grid.x * conf->amb_conf->grid.y, gridDataSize = gridSize * 3;
+
+	byte* imgo = new byte[gridDataSize];
 
 	size_t buf_size;
 
@@ -141,30 +150,51 @@ DWORD WINAPI CInProc(LPVOID param)
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
-	//Sleep(150);
+	procData callData[16];
+
+	HANDLE pThread[16];
+	HANDLE pfEvent[16];
+
+	// prepare threads and data...
+	for (UINT i = 0; i < 16; i++) {
+		callData[i] = { 0, 0, NULL, CreateEvent(NULL, false, false, NULL), CreateEvent(NULL, false, false, NULL) };
+		pThread[i] = CreateThread(NULL, 0, ColorCalc, &callData[i], 0, NULL);
+		pfEvent[i] = callData[i].pfEvent;
+	}
 
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		// Resize & calc
+		UINT tInd = 0;
 		if (w && h && (ret = dxgi_manager->get_output_data(&scrImg, &buf_size)) == CR_OK && scrImg) {
 			if (!(conf->monDelay > 200)) {
-				for (UINT dy = 0; dy < 3; dy++)
-					for (UINT dx = 0; dx < 4; dx++) {
-						//ColorCalc(&callData[dy][dx]);
-						UINT ptr = (dy * 4 + dx);// *3;
-						if (pfEvent[ptr]) {
-							SetEvent(callData[dy][dx].pEvent);
-						} else {
-							callData[dy][dx].dy = dy; callData[dy][dx].dx = dx;
-							callData[dy][dx].dst = imgo + ptr * 3;
-							callData[dy][dx].pEvent = CreateEvent(NULL, false, true, NULL);
-							pfEvent[ptr] = CreateEvent(NULL, false, false, NULL);
-							pThread[ptr] = CreateThread(NULL, 6 * w * h, ColorCalc, &callData[dy][dx], 0, NULL);
+				for (int dy = 0; dy < conf->amb_conf->grid.y; dy++)
+					for (int dx = 0; dx < conf->amb_conf->grid.x; dx++) {
+						UINT ptr = (dy * conf->amb_conf->grid.x + dx);
+						tInd = ptr % 16;
+						if (ptr > 0 && !tInd) {
+#ifndef _DEBUG
+							WaitForMultipleObjects(16, pfEvent, true, 1000);
+#else
+							if (WaitForMultipleObjects(16, pfEvent, true, 1000) != WAIT_OBJECT_0)
+								DebugPrint(("Ambient thread execution fails at " + to_string(ptr) + "\n").c_str());
+#endif
 						}
+						callData[tInd].dx = dx;
+						callData[tInd].dy = dy;
+						callData[tInd].dst = imgo + ptr * 3;
+						SetEvent(callData[tInd].pEvent);
 					}
+#ifndef _DEBUG
+				WaitForMultipleObjects(tInd + 1, pfEvent, true, 1000);
+#else
+				if (WaitForMultipleObjects(tInd+1, pfEvent, true, 1000) != WAIT_OBJECT_0)
+					DebugPrint("Ambient thread execution fails at last set\n");
+#endif
 
-				if (WaitForMultipleObjects(12, pfEvent, true, 500) == WAIT_OBJECT_0 && memcmp(src->imgz, imgo, GRIDSIZE)) {
-					memcpy(src->imgz, imgo, GRIDSIZE);
+				if (memcmp(src->imgz, imgo, gridDataSize)) {
+					memcpy(src->imgz, imgo, gridDataSize);
 					SetEvent(lhEvent);
+					src->needUpdate = true;
 				}
 			} else {
 				DebugPrint("Ambient update skipped!\n");
@@ -180,14 +210,18 @@ DWORD WINAPI CInProc(LPVOID param)
 		}
 	}
 
-	WaitForMultipleObjects(12, pThread, true, 1000);
+	WaitForMultipleObjects(16, pThread, true, 1000);
 	// close handles here!
-	for (int i = 0; i < 12; i++) {
+	for (DWORD i = 0; i < 16; i++) {
 		CloseHandle(pThread[i]);
-		pThread[i] = 0;
 	}
 	WaitForSingleObject(lightHandle, 1000);
 	CloseHandle(lightHandle);
+
+	//delete[] pThread;
+	//delete[] pfEvent;
+	//delete[] callData;
+	delete[] imgo;
 
 	return 0;
 }

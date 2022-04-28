@@ -16,7 +16,7 @@ But what it can do, instead?
   - Make lights react on screen colors (Ambient lights).
   - Make lights react on sound around (Haptics).
   - It fast!
-- Control system fans. Instead of AWCC, fan control is dynamic, so you can boost them any way you want. Or unboost.
+- Control system fans. Instead of AWCC, fan control is dynamic, so you can boost them any way you want. Or reset boost.
 - Can have a profile for any application you run, switching not only light sets, but, for example, dim lights or only switch if application in foreground.
 - Fast, less buggy and robust LightFX support (emulation).
 
@@ -24,7 +24,7 @@ But what it can do, instead?
 Run `alienfx-gui.exe`.  
 First, use "Devices and Lights" tab to configure out devices and lights settings, if you don't run `Alienfx-probe` yet.  
 Use "Colour" tab for simple lights setup (these colours and modes will stay as default until AWCC run or modified by another app), even after reboot.  
-There are 4 Software effect modes avaliable:
+There are 4 Software effect modes available:
  - Monitoring - Assign event for lights to react on (power state, performance indicator, or just activity light), as well as a colour for reaction at "Monitoring" tab.
  - Ambient - Assign lights to change colors with the screen zones.
  - Haptics - Lights will react on sound played by the system or external sounds. 
@@ -50,7 +50,7 @@ Available effect modes are:
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.  
 
 "Set All" button copies current light effects to all lights into the list (it’s useful if you need to have all lights into the same colour and mode).  
-"Info" button opens Light information dialogue for currently selected light. Light information dialogue shows all settings for it across all tabs and modes, and give a possibiliy to predict final color range, as well as modify it components.
+"Info" button opens Light information dialog for currently selected light. Light information dialog shows all settings for it across all tabs and modes, and give a possibility to predict final color range, as well as modify it components.
 
 ![Monitoring tab](/Doc/img/gui-monitoring.png?raw=true)
 
@@ -76,7 +76,7 @@ Light acts like a performance indicator, reflecting system parameters:
 - Power consumption - Current system power drain level. This indicator will only works if "ESID sensors" enabled at "Settings".
   
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change colour.  
-"Gauge" checkbox changes behaviour for groups only. If Gauge on, all lights in group works as a level indicator (100% colour below indicator value, 0% colour above indicator value, mixed in between.
+"Gauge" check box changes behavior for groups only. If Gauge on, all lights in group works as a level indicator (100% colour below indicator value, 0% colour above indicator value, mixed in between.
 
 "Event" - Light switches between colours if system event occurs:
 - Disk activity - Switch light every disk activity event (HDD IDLE above zero).
@@ -86,33 +86,34 @@ You can use "Minimal value" slider to define zone of no reaction - for example, 
 - Low battery - Switch light if battery charged below the level defined by slider.
 - Language indicator - Light will have 1st color if first input language selected, and second color if any other selected.
   
-"Blink" checkbox switch triggered value to blink between on-off colours 6 times per sec.
+"Blink" check box switch triggered value to blink between on-off colours 6 times per sec.
 You can mix different monitoring type at once, f.e. different colours for same light for both CPU load and system overheat event. In this case Event colour always override Performance one then triggered, as well as both override Power state one.
 
 ![Ambient tab](/Doc/img/gui-ambient.png?raw=true)
 
-`Ambient` tab defines ambient light effect mode. It get shot of screen (primary or secondary), then divide it to several zones.  
+`Ambient` tab defines ambient light effect mode. It get screen shot (for the primary or secondary display), then divide it to several zones.  
 For each zone, dominant color calculated (you can see it at the button in app interface).  
-For each light found into the system, you can define zone(s) it should follow. If more, then one zone selected for light, it will try to blend zone colors into one.  
-You can also select which screen to grab - primary or secondary, if you have more, then one.  
+For each light found into the system, you can define zone(s) it should follow by pressing corresponding grid button. If more, then one zone selected for light, it will try to blend zone colors into one.  
+You can also select which display to grab - primary or secondary, if you have more, then one.  
+Sliders below and right to zone grid can be used to change grid density, providing more or less light zones on the screen.  
 "Dimming" slider decreases the overall lights brightness - use it for better fit you current monitor brightness.  
-”Reset capture” button is used to refresh light list according to devices found into the systems, as well as restart screen capture process.
+"Reset capture" button is used to refresh light list according to devices found into the systems, as well as restart screen capture process.
 
 ![Haptics tab](/Doc/img/gui-haptics.png?raw=true)
 
 `Haptics` tab set up parameters for Haptics effect mode. This effect mode get audio stream from default output or input device (you can select it at the "Audio Source" block), then made a real-time spectrum analysis.  
 After that, spectrum powers grouped into 20 groups using octave scale.  
 For each light found into the system, you can define Group of frequency diapason(s) it should react, as well as color for Lowest Hi power level into frequency group. If more, then one group is selected, power will be calculated as a medium power level across of them.  
-Use "+" and "-" buttons to add frequancy group, then select frequances for this group.  
+Use "+" and "-" buttons to add frequency group, then select freelances for this group.  
 It's also possible to compress diapason if group always not so or so high powered - use low-level and high-level sliders. Low-level slider define minimum power to react (all below will be treated as zero), and Hi-level slider defines maximum level (all above will be treated as maximum).  
 "Clear” button set all colors to black and sliders to default value.
-"Gauge" checkbox - change behavour for groups only. If Gauge on, all lights in group works as a peak indicator (hi-color below power level, low-color above power level, mixed in between).  
-"Axis" checkbox enable axis lines and marks at sound visualisation window.
+"Gauge" check box - change behavior for groups only. If Gauge on, all lights in group works as a peak indicator (hi-color below power level, low-color above power level, mixed in between).  
+"Axis" check box enable axis lines and marks at sound visualization window.
 
 ![Groups tab](/Doc/img/gui-groups.png?raw=true)
 
 `"Groups"` tab provides control for light groups. Each group can be selected and set at "Colour" and "Monitoring" pages as a one light.  
-Press [+] and [-] buttons to add/remove group, use dropdown to select it or change its name.  
+Press [+] and [-] buttons to add/remove group, use drop-down to select it or change its name.  
 If you have a group selected, "Group lights" list present the list of lights assigned to this group. Use [-->] and [<--] buttons to add and remove light from the group.  
 
 ![Profiles tab](/Doc/img/gui-profiles.png?raw=true)
@@ -124,7 +125,7 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off (The same as "Disable monitoring" before).
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
 - "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
-- "Priority profile" - If this flag enabled, this profile will be choosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
+- "Priority profile" - If this flag enabled, this profile will be chosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
 - "Dim lights" - Then profile activated, all lights will be dimmed.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
 - "Global effects" - Enable global effects for supported devices for this profile. Global effect will be disabled by default, if this not selected for active profile.
@@ -134,48 +135,50 @@ Each profile can have settings and application for trigger it. The settings are:
 "Trigger applications" list define application executables, which will activate selected profile if running and "Profile auto switch" is on.  
 Press "Add" button to select new application, or select one from the list and press "Remove" button to delete it.
 
-If application "Profile auto switch" setting is on, active profile will be selected automaticly according to this rules:
+If application "Profile auto switch" setting is on, active profile will be selected automatically according to this rules:
 - If running application, belongs to any profile not found - "Default" profile selected.
-- If running applications belongs to profile found and have no "Only wthen active" flag, "Priority" one will be choosen, or the random profile if no "Proirity" found.
-- If foreground application belongs to profile, and no other application belongs to Priority profile found, application-related profile will be selected, otherwise priority profile will be choosen.
+- If running applications belongs to profile found and have no "Only when active" flag, "Priority" one will be chosen, or the random profile if no "Priority" found.
+- If foreground application belongs to profile, and no other application belongs to Priority profile found, application-related profile will be selected, otherwise priority profile will be chosen.
 
 ![Devices tab](/Doc/img/gui-devices.png?raw=true)
 
+```<language>
 `"Devices"` tab is an extended GUI for `Alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
+```
 
-"Devices" dropdown shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
+"Devices" drop-down shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
 "Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.  
 "Lights" list shows all lights defined for selected device. Use “Add”/”Remove” buttons to add new light or remove selected one.  
 NB: If you want to add new light, type light ID into LightID box **before** pressing “Add” button. If this ID already present in list or absent, it will be changed to the first unused ID.  
 Double-click or press Enter on selected light to edit its name.  
 "Reset light" button keep the light into the list, but removes all settings for this light from all profiles, so it will be not changed anymore until you set it up again.  
-"Power button" checkbox set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
-"Indicator" checkbox is for indicator lights (HDD, caps lock, Wi-Fi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
+"Power button" check box set selected light as a "Hardware Power Button". After this operation, it will react to power source state (ac/battery/charging/sleep etc) automatically, but this kind of light change from the other app is a dangerous operation, and can provide unpleasant effects or light system hang.  
+"Indicator" check box is for indicator lights (HDD, caps lock, WiFi) if present. Then checked, it will not turn off with screen/lights off (same like power), as well as will be disabled in other apps.
 Selected light changes it colours to the one defined by "Test colour" button, and fade to black then unselected.
 
-"Detect lights" button opens "New Devices detection" dialogue with database to provide possible device/light names for you gear from it:
-![New Devices dialogue](/Doc/img/new_devices.png?raw=true)  
+"Detect lights" button opens "New Devices detection" dialog with database to provide possible device/light names for you gear from it:
+![New Devices dialog](/Doc/img/new_devices.png?raw=true)  
 "Load Lights" button loads a backup (saved at this or similar device). If devices is different, it will try to apply as much similar configuration as possible.  
 "Save Lights" button save a backup of current light and device names and settings.  
 
-"White point" block - some devices (especially old v2 ones) have not correct color correction, so white color looks wierd. You can tune it using this block.  
+"White point" block - some devices (especially old v2 ones) have not correct color correction, so white color looks weird. You can tune it using this block.  
 Use "Test White" button to switch testing color for all lights to white for result check.
 
 ![Fans tab](/Doc/img/gui-fans.png?raw=true)
 
 `"Fans"` tab is UI for control system fans and temperature sensors.  
 
-First, take a look at "Power mode" dropdown - it can control system pre-defined power modes. For manual fan control switch it to "Manual". You can edit mode name by selecting it and type new name.  
+First, take a look at "Power mode" drop-down - it can control system predefined power modes. For manual fan control switch it to "Manual". You can edit mode name by selecting it and type new name.  
 "Temperature sensors" list present all hardware sensors found at your motherboard (some SSD sensors can absent into this list), and their current and maximal (press "x" button at list head to reset it to current values) temperature values.
 "Fans" list presents all fans found into the system and their current RPMs.  
 "GPU limit" slider define top maximal GPU board power limit shift. 0 (left) is no limit, 4 (right) - maximal limit. This feature only supported at some notebooks, and real limit can vary. You can use this slider to keep more power at CPU or extend battery life.  
-"CPU Boost" dropdowns can be used to select active Windows Power Plan boost mode (separately for AC and battery power). This settings is extremely useful for Ryzen CPU, but even for Intel it provide a little performance boost (+3% at "Aggressive" for my gear).  
+"CPU Boost" drop-downs can be used to select active Windows Power Plan boost mode (separately for AC and battery power). This settings is extremely useful for Ryzen CPU, but even for Intel it provide a little performance boost (+3% at "Aggressive" for my gear).  
 
 Additional "Fan curve" window at the right shows currently selected fan temperature/boost curve, as well as current boost.  
 
 Fan control is temperature sensor-driven, so first select one of temperature sensors.  
 Then, select which fan(s) should react on its readings - you can select from none to all in any combination.  
-So, select checkbox for fan(s) you need.
+So, select check box for fan(s) you need.
 
 After you doing so, currently selected fan settings will be shown at "Fan Curve" window - you will see current fan boost at the top, and the fan control curve (green lines).
 Now play with fan control curve - it defines fan boost by temperature level. X axle is temperature, Y axle is boost level.  
@@ -190,7 +193,7 @@ Please keep in mind:
 
 ![Settings tab](/Doc/img/gui-settings.png?raw=true)
 
-`"Settings"` tab is for application/global lights settings control - states, behaviour, dimming, as well as application settings:
+`"Settings"` tab is for application/global lights settings control - states, behavior, dimming, as well as application settings:
 - "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
 - "Lights follow screen state" - Dim/Fade to black lights then system screen dimmed/off (default - off).
 - "Keep Power/indicator on" - Lights, marked as Power Button or Indicator will be always on, or follows the system state if disabled (default - on).
@@ -206,9 +209,9 @@ Please keep in mind:
 - "Enable monitoring" - Application start to monitor system metrics (CPU/GPU/RAM load, etc) and refresh lights according to it (default - on).
 - "Profile auto switch" - Switch between profiles available automatically, according of applications start and finish. This also block manual profile selection (default - off).
 - "Do not switch for desktop" - If enabled, profile auto switch will not change profile, if start menu/tray/desktop selected (default - off).
-- "Disable AWCC" - Application will check active Alienware Control Centre service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
-- "ESIF sensors" - Read hardware devices data. If disabled, Power measure and Thermal zone temperature sensors not avaliable. It will require "Run as administrator" privilege (default - off).
-- "Enable fan control" - Enables fan and power control functionality, if avaliable for you hardware.
+- "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
+- "ESIF sensors" - Read hardware devices data. If disabled, Power measure and Thermal zone temperature sensors not available. It will require "Run as administrator" privilege (default - off).
+- "Enable fan control" - Enables fan and power control functionality, if available for you hardware.
 
 
 ## Keyboard shortcuts 
