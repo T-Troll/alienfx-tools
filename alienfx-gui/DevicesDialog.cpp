@@ -74,6 +74,7 @@ void UpdateDeviceInfo(HWND hDlg) {
 		SetSlider(sTip3, dev->desc->white.r);
 		BYTE status = fxhl->afx_dev.fxdevs[dIndex].dev->AlienfxGetDeviceStatus();
 		SetDlgItemText(hDlg, IDC_DEVICE_STATUS, status && status != 0xff ? "" : "Error!");
+		EnableWindow(GetDlgItem(hDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
 	}
 }
 
