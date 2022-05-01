@@ -99,12 +99,12 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 
 	for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
 		vector<AlienFX_SDK::afx_act> actions;
-		if ((Iter->eve[2].fs.b.flags || Iter->eve[3].fs.b.flags)) {
+		if ((Iter->flags & LEVENT_PERF || Iter->flags & LEVENT_ACT)) {
 			int mIndex = (afx_dev.GetFlags(Iter->devid, Iter->lightid) & ALIENFX_FLAG_POWER) && Iter->eve[0].map.size() > 1
 				&& activeMode != MODE_AC && activeMode != MODE_CHARGE ? 1 : 0;
-			AlienFX_SDK::afx_act fin = Iter->eve[0].fs.b.flags ?
+			AlienFX_SDK::afx_act fin = Iter->flags & LEVENT_COLOR && Iter->eve[0].map.size() > mIndex ?
 				Iter->eve[0].map[mIndex] :
-				Iter->eve[2].fs.b.flags ?
+				Iter->flags & LEVENT_PERF ?
 				Iter->eve[2].map[0] :
 				Iter->eve[3].map[0],
 				from = fin;
@@ -112,9 +112,9 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			double coeff = 0.0;
 			bool diffC = false, diffI = false;
 			int lVal = 0, cVal = 0;
-			if (Iter->eve[2].fs.b.flags) {
+			if (Iter->flags & LEVENT_PERF) {
 				// counter
-				int ccut = Iter->eve[2].fs.b.cut;
+				int ccut = Iter->eve[2].cut;
 				switch (Iter->eve[2].source) {
 				case 0: lVal = eData.CPU; cVal = data->CPU; break;
 				case 1: lVal = eData.RAM; cVal = data->RAM; break;
@@ -141,10 +141,10 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 										coeff * Iter->eve[2].map[1].b * Iter->eve[2].map[1].b);
 				}
 			}
-			if (Iter->eve[3].fs.b.flags) {
+			if (Iter->flags & LEVENT_ACT) {
 				// indicator
-				int ccut = Iter->eve[3].fs.b.cut;
-				bool blink = Iter->eve[3].fs.b.proc;
+				int ccut = Iter->eve[3].cut;
+				bool blink = Iter->eve[3].proc;
 				switch (Iter->eve[3].source) {
 				case 0: lVal = eData.HDD; cVal = data->HDD; break;
 				case 1: lVal = eData.NET; cVal = data->NET; break;
@@ -180,7 +180,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 					actions[0] = Iter->eve[0].map[0];
 					actions.push_back(fin);
 				}
-			if (!Iter->devid && Iter->eve[2].fs.b.flags && Iter->eve[2].fs.b.proc)
+			if (!Iter->devid && Iter->flags & LEVENT_PERF && Iter->eve[2].proc)
 				SetGroupLight(Iter->lightid, actions, false, &from, &Iter->eve[2].map[1], coeff);
 			else
 				SetLight(Iter->devid, Iter->lightid, actions);
@@ -205,7 +205,7 @@ void FXHelper::QueryUpdate(int did, bool force)
 
 bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force)
 {
-	if (unblockUpdates && config->stateOn) {
+	if (unblockUpdates && config->stateOn && !actions.empty()) {
 		if (did) {
 			LightQueryElement newBlock{ did, id, force, false, (byte)actions.size() };
 			for (int i = 0; i < newBlock.actsize; i++)
@@ -381,14 +381,16 @@ bool FXHelper::RefreshOne(lightset* map, int force, bool update)
 	if (!config->stateOn || !map)
 		return false;
 
-	if (map->eve[0].fs.b.flags) {
+	if (map->flags & LEVENT_COLOR && !map->eve[0].map.empty()) {
 		actions = map->eve[0].map;
 	}
 
 	if (!config->GetEffect() && !force) {
-		if (map->eve[1].fs.b.flags) {
+		if (map->flags & LEVENT_PERF || map->flags & LEVENT_PERF)
+			return false;
+		if (map->flags & LEVENT_POWER) {
 			// use power event;
-			if (!map->eve[0].fs.b.flags)
+			if (!map->flags & LEVENT_COLOR || actions.empty())
 				actions = map->eve[1].map;
 			else
 				actions.push_back(map->eve[1].map[1]);
@@ -407,12 +409,7 @@ bool FXHelper::RefreshOne(lightset* map, int force, bool update)
 				break;
 			}
 		}
-		if (map->eve[2].fs.b.flags || map->eve[3].fs.b.flags)
-			return false;
 	}
-
-	if (!actions.size())
-		return false;
 
 	SetLight(map->devid, map->lightid, actions, force == 2);
 

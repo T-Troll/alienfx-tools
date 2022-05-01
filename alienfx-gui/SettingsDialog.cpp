@@ -81,7 +81,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_LON:
 			conf->lightsOn = state;
 			fxhl->ChangeState();
-			eve->ToggleEvents();
+			eve->ChangeEffectMode();
 			break;
 		case IDC_CHECK_GAMMA:
 			conf->gammaCorrection = state;
@@ -89,7 +89,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_EFFECTS:
 			conf->enableMon = state;
-			eve->ToggleEvents();
+			eve->ChangeEffectMode();
 			break;
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = !state;

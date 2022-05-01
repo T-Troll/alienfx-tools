@@ -61,7 +61,6 @@
 #define IDI_ALIENFX_DIM                 149
 #define IDR_MENU_TRAY                   150
 #define IDD_DIALOG_AUTODETECT           154
-#define IDD_DIALOG_LIGHTINFO            155
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -115,7 +114,6 @@
 #define IDC_BUTTON_CM6                  1034
 #define IDC_PROFILES                    1034
 #define IDC_POWER_DIM                   1034
-#define IDC_BUTTON_INFO                 1034
 #define IDC_ADDPROFILE                  1035
 #define IDC_BUT_PROFILESWITCH           1037
 #define IDC_AWCC                        1038
@@ -213,6 +211,8 @@
 #define IDC_SLIDER_HSCALE               1129
 #define IDC_VAL_FAN                     1130
 #define IDC_SLIDER_VSCALE               1130
+#define IDC_BUTTON1                     1130
+#define IDC_BUT_COPYACTIVE              1130
 #define IDC_VAL_NET                     1131
 #define IDC_VAL_BAT                     1132
 #define IDC_VAL_TEMP                    1133
@@ -247,7 +247,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1130
+#define _APS_NEXT_CONTROL_VALUE         1131
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

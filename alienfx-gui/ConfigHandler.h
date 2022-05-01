@@ -14,19 +14,26 @@
 #define PROF_FANS     0x10
 #define PROF_GLOBAL_EFFECTS 0x20
 
+#define LEVENT_COLOR 0x1
+#define LEVENT_POWER 0x2
+#define LEVENT_PERF  0x4
+#define LEVENT_ACT   0x8
+
 union FlagSet {
 	struct {
 		BYTE flags;
 		BYTE cut;
 		BYTE proc;
 		BYTE reserved;
-	} b;
+	};
 	DWORD s = 0;
 };
 
 struct event {
-	FlagSet fs;
+	//FlagSet fs;
 	BYTE source = 0;
+	BYTE cut = 0;
+	BYTE proc = 0;
 	std::vector<AlienFX_SDK::afx_act> map;
 };
 
@@ -39,6 +46,7 @@ struct lightset {
 		DWORD devid = 0;
 	};
 	unsigned lightid = 0;
+	BYTE     flags = 0;
 	event	 eve[4];
 };
 

@@ -6,14 +6,20 @@ extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern lightset* CreateMapping(int lid);
 extern lightset* FindMapping(int mid);
 extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 extern int eItem;
 
-extern BOOL CALLBACK LightInfoDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+extern zone* FindAmbMapping(int lid);
+extern haptics_map* FindHapMapping(int lid);
+extern void RemoveHapMapping(int devid, int lightid);
+extern void RemoveAmbMapping(int devid, int lightid);
+extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
+
+vector<AlienFX_SDK::group*> lghGrp;
 
 int effID = -1;
 
@@ -100,7 +106,7 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 			}
 			// Set data
 			ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
-			RedrawButton(hDlg, IDC_BUTTON_C1, *Act2Code(&mmap->eve[0].map[effID]));
+			RedrawButton(hDlg, IDC_BUTTON_C1, Act2Code(&mmap->eve[0].map[effID]));
 			SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
 			SetSlider(sTip1, mmap->eve[0].map[effID].tempo);
 			SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
@@ -117,13 +123,171 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 	ListView_EnsureVisible(eff_list, effID, false);
 }
 
+int FindLastActiveID() {
+
+	int devid = eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->devid : 0,
+		lightid = eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->lightid : eItem;
+
+	switch (conf->GetEffect()) {
+	case 0: case 3:
+	{
+		for (int iter = (int)conf->activeProfile->lightsets.size() - 1; iter >= 0; iter--) {
+			lightset* Iter = &conf->activeProfile->lightsets[iter];
+			if (Iter->devid || !devid) {
+				if (Iter->devid == devid && Iter->lightid == lightid) {
+					return iter;
+				}
+			}
+			else {
+				// check groups...
+				for (auto gIter = lghGrp.begin(); gIter < lghGrp.end(); gIter++)
+					if (Iter->lightid == (*gIter)->gid && (conf->GetEffect() != 3 || Iter->flags & LEVENT_COLOR)) {
+						return iter;
+					}
+			}
+		}
+	} break;
+	case 1:
+	{
+		for (int iter = (int)conf->amb_conf->zones.size() - 1; iter >= 0; iter--) {
+			zone* Iter = &conf->amb_conf->zones[iter];
+			if (Iter->devid || !devid) {
+				if (Iter->devid == devid && Iter->lightid == lightid) {
+					return iter;
+				}
+			}
+			else {
+				// check groups...
+				for (auto gIter = lghGrp.begin(); gIter < lghGrp.end(); gIter++)
+					if (Iter->lightid == (*gIter)->gid) {
+						return iter;
+					}
+			}
+		}
+	} break;
+	case 2:
+	{
+		for (int iter = (int)conf->hap_conf->haptics.size() - 1; iter >= 0; iter--) {
+			haptics_map* Iter = &conf->hap_conf->haptics[iter];
+			if (Iter->devid || !devid) {
+				if (Iter->devid == devid && Iter->lightid == lightid) {
+					return iter;
+				}
+			}
+			else {
+				// check groups...
+				for (auto gIter = lghGrp.begin(); gIter < lghGrp.end(); gIter++)
+					if (Iter->lightid == (*gIter)->gid) {
+						return iter;
+					}
+			}
+		}
+	} break;
+	}
+	return -1;
+}
+
+void SetLightColors(HWND hDlg, int id) {
+
+	if (id >= 0) {
+		lightset* mmap = FindMapping(id);
+		zone* amap = FindAmbMapping(id);
+		haptics_map* hmap = FindHapMapping(id);
+
+		AlienFX_SDK::Colorcode* from_c, * to_c, * from_e, * to_e, * from_h, * to_h, * from_f, * to_f;
+		from_c = to_c = from_e = to_e = from_h = to_h = from_f = to_f = { NULL };
+
+		if (mmap) {
+			if (mmap->flags & LEVENT_ACT) {
+				from_e = Act2Code(&mmap->eve[3].map[0]);
+				to_e = Act2Code(&mmap->eve[3].map[1]);
+			}
+			else
+				if (mmap->flags & LEVENT_PERF) {
+					from_e = Act2Code(&mmap->eve[2].map[0]);
+					to_e = Act2Code(&mmap->eve[2].map[1]);
+				} else
+					if (mmap->flags & LEVENT_POWER) {
+						from_e = Act2Code(&mmap->eve[1].map[0]);
+						to_e = Act2Code(&mmap->eve[1].map[1]);
+					}
+			if (mmap->flags & LEVENT_COLOR) {
+				from_c = Act2Code(&mmap->eve[0].map.front());
+				to_c = Act2Code(&mmap->eve[0].map.back());
+				if (from_e)
+					from_e = from_c;
+			}
+		}
+		if (hmap) {
+			from_h = &hmap->freqs[0].colorfrom;
+			to_h = &hmap->freqs[0].colorto;
+		}
+		RedrawButton(hDlg, IDC_FROM_COLOR, from_c);
+		RedrawButton(hDlg, IDC_TO_COLOR, to_c);
+		RedrawButton(hDlg, IDC_FROM_EFFECT, from_e);
+		RedrawButton(hDlg, IDC_TO_EFFECT, to_e);
+		RedrawButton(hDlg, IDC_FROM_HAPTICS, from_h);
+		RedrawButton(hDlg, IDC_TO_HAPTICS, to_h);
+		CheckDlgButton(hDlg, IDC_CHECK_AMBIENT, amap != NULL);
+
+		int idf = FindLastActiveID();
+		if (idf >= 0) {
+			switch (conf->GetEffect()) {
+			case 0: // monitoring
+			{
+				mmap = &conf->activeProfile->lightsets[idf];
+				if (mmap->flags & LEVENT_ACT) {
+					from_f = Act2Code(&mmap->eve[3].map[0]);
+					to_f = Act2Code(&mmap->eve[3].map[1]);
+				}
+				else
+					if (mmap->flags & LEVENT_PERF) {
+						from_f = Act2Code(&mmap->eve[2].map[0]);
+						to_f = Act2Code(&mmap->eve[2].map[1]);
+					} else
+						if (mmap->flags & LEVENT_POWER) {
+							from_f = Act2Code(&mmap->eve[1].map[0]);
+							to_f = Act2Code(&mmap->eve[1].map[1]);
+						}
+				if (mmap->flags & LEVENT_COLOR) {
+					if (!from_f)
+						to_f = Act2Code(&mmap->eve[0].map.back());
+					from_f = Act2Code(&mmap->eve[0].map.front());
+				}
+			} break;
+			case 2: // haptics
+			{
+				hmap = &conf->hap_conf->haptics[idf];
+				from_f = &hmap->freqs[0].colorfrom;
+				to_f = &hmap->freqs[0].colorto;
+			} break;
+			case 3: // off
+			{
+				mmap = &conf->activeProfile->lightsets[idf];
+				if (mmap->flags & LEVENT_COLOR) {
+					to_f = Act2Code(&mmap->eve[0].map.back());
+					from_f = Act2Code(&mmap->eve[0].map.front());
+				}
+			} break;
+			}
+		}
+
+		RedrawButton(hDlg, IDC_FROM_FINAL, from_f);
+		RedrawButton(hDlg, IDC_TO_FINAL, to_f);
+	}
+}
+
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS),
 		s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
-		type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
+		type_c1 = GetDlgItem(hDlg, IDC_TYPE1),
+		grpList = GetDlgItem(hDlg, IDC_GRPLIST);
 
 	lightset* mmap = eItem < 0 ? NULL: FindMapping(eItem);
+
+	int devid = eItem >= 0 && eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->devid : 0,
+		lightid = eItem >= 0 && eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->lightid : eItem;
 
 	switch (message)
 	{
@@ -156,6 +320,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
 		sTip1 = CreateToolTip(s1_slider, sTip1);
 		sTip2 = CreateToolTip(l1_slider, sTip2);
+
 		// Restore selection....
 		if (eItem >= 0) {
 			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
@@ -173,9 +338,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				effID = 0;
 				mmap = FindMapping(lid);
 				if (mmap) {
-					// check wrong PB data...
 					AlienFX_SDK::mapping *map = fxhl->afx_dev.GetMappingById(mmap->devid, mmap->lightid);
-					if (map && map->flags & ALIENFX_FLAG_POWER) {
+					if (map && (map->flags & ALIENFX_FLAG_POWER)) {
 						mmap->eve[0].map[0].type = mmap->eve[0].map[1].type = AlienFX_SDK::AlienFX_A_Power;
 						if (!mmap->eve[0].map[0].time)
 							mmap->eve[0].map[0].time = mmap->eve[0].map[1].time = 3;
@@ -184,6 +348,28 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					}
 				}
 				RebuildEffectList(hDlg, mmap);
+
+				// update light info...
+				devid = eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->devid : 0;
+				lightid = eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->lightid : eItem;
+				lghGrp.clear();
+				ListBox_ResetContent(grpList);
+				if (devid) {
+					ListBox_SetItemData(grpList, ListBox_AddString(grpList, "(Light)"), eItem);
+					for (auto Iter = fxhl->afx_dev.GetGroups()->begin(); Iter < fxhl->afx_dev.GetGroups()->end(); Iter++)
+						for (auto lIter = Iter->lights.begin(); lIter < Iter->lights.end(); lIter++)
+							if ((*lIter)->devid == devid && (*lIter)->lightid == lightid) {
+								lghGrp.push_back(&(*Iter));
+								ListBox_SetItemData(grpList, ListBox_AddString(grpList, Iter->name.c_str()), Iter->gid);
+							}
+				}
+				else {
+					ListBox_SetItemData(grpList, ListBox_AddString(grpList, fxhl->afx_dev.GetGroupById(eItem)->name.c_str()), eItem);
+				}
+				ListBox_SetCurSel(grpList, 0);
+				EnableWindow(GetDlgItem(hDlg, IDC_REM_GROUP), false);
+				SetLightColors(hDlg, eItem);
+
 				break;
 			} break;
 		case IDC_TYPE1:
@@ -232,9 +418,12 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				mmap->eve[0].map.pop_back();
 				if (effID == mmap->eve[0].map.size())
 					effID--;
-				// remove mapping if no colors!
+				// remove mapping if no colors and effects!
 				if (fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER || mmap->eve[0].map.empty()) {
-					RemoveMapping(conf->active_set, mmap->devid, mmap->lightid);
+					//if (mmap->eve[1].fs.flags || mmap->eve[2].fs.flags || mmap->eve[3].fs.flags)
+					//	mmap->eve[0].fs.flags = false;
+					//else
+						RemoveMapping(conf->active_set, mmap->devid, mmap->lightid);
 					RebuildEffectList(hDlg, NULL);
 					effID = -1;
 				} else {
@@ -266,9 +455,60 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				}
 			} break;
 			} break;
-		case IDC_BUTTON_INFO:
-			if (eItem >= 0)
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_LIGHTINFO), hDlg, (DLGPROC) LightInfoDialog);
+		// info block controls.
+		case IDC_GRPLIST:
+			if (HIWORD(wParam) == LBN_SELCHANGE) {
+				int selGrp = ListBox_GetCurSel(grpList);
+				EnableWindow(GetDlgItem(hDlg, IDC_REM_GROUP), selGrp);
+				EnableWindow(GetDlgItem(hDlg, IDC_REM_COLOR), !selGrp);
+				EnableWindow(GetDlgItem(hDlg, IDC_REM_EFFECT), !selGrp);
+				EnableWindow(GetDlgItem(hDlg, IDC_REM_AMBIENT), !selGrp);
+				EnableWindow(GetDlgItem(hDlg, IDC_REM_HAPTICS), !selGrp);
+				SetLightColors(hDlg, (int)ListBox_GetItemData(grpList, selGrp));
+			}
+			break;
+		case IDC_REM_GROUP:
+		{
+			AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById((DWORD)ListBox_GetItemData(grpList, ListBox_GetCurSel(grpList)));
+			if (grp && devid) {
+				ListBox_DeleteString(grpList, ListBox_GetCurSel(grpList));
+				ListBox_SetCurSel(grpList, 0);
+				RemoveLightFromGroup(grp, devid, lightid);
+				SetLightColors(hDlg, eItem);
+				fxhl->RefreshState(true);
+			}
+		} break;
+		case IDC_REM_COLOR:
+			if (mmap) {
+				if (mmap->flags & ~LEVENT_COLOR)
+					mmap->flags &= ~LEVENT_COLOR;
+				else
+					RemoveMapping(conf->active_set, mmap->devid, mmap->lightid);
+				SetLightColors(hDlg, eItem);
+				fxhl->RefreshState(true);
+			}
+			break;
+		case IDC_REM_EFFECT:
+			if (mmap) {
+				if (mmap->flags & LEVENT_COLOR)
+					mmap->flags |= LEVENT_COLOR;
+				else
+					RemoveMapping(conf->active_set, mmap->devid, mmap->lightid);
+				SetLightColors(hDlg, eItem);
+				fxhl->RefreshState(true);
+			}
+			break;
+		case IDC_REM_AMBIENT:
+			if (lightid >= 0) {
+				RemoveAmbMapping(devid, lightid);
+				SetLightColors(hDlg, eItem);
+			}
+			break;
+		case IDC_REM_HAPTICS:
+			if (lightid >= 0) {
+				RemoveHapMapping(devid, lightid);
+				SetLightColors(hDlg, eItem);
+			}
 			break;
 		default: return false;
 		}
@@ -291,12 +531,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-		case IDC_BUTTON_C1:
-			AlienFX_SDK::Colorcode c{0};
+		case IDC_BUTTON_C1: {
+			AlienFX_SDK::Colorcode* c{ NULL };
 			if (mmap && effID < mmap->eve[0].map.size()) {
-				c = *Act2Code(&mmap->eve[0].map[effID]);
+				c = Act2Code(&mmap->eve[0].map[effID]);
 			}
 			RedrawButton(hDlg, IDC_BUTTON_C1, c);
+		} break;
+		case IDC_TO_FINAL:
+			SetLightColors(hDlg, eItem);
 			break;
 		}
 		break;
@@ -315,7 +558,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						if (mmap) {
 							// Set data
 							ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
-							RedrawButton(hDlg, IDC_BUTTON_C1, *Act2Code(&mmap->eve[0].map[effID]));
+							RedrawButton(hDlg, IDC_BUTTON_C1, Act2Code(&mmap->eve[0].map[effID]));
 							SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
 							SetSlider(sTip1, mmap->eve[0].map[effID].tempo);
 							SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);

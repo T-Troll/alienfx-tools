@@ -98,23 +98,22 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 			modifyProfile.lock();
 			conf->activeProfile = newID;
 			conf->active_set = &newID->lightsets;
-			if (newID->flags & PROF_FANS)
-				conf->fan_conf->lastProf = &newID->fansets;
-			else
-				conf->fan_conf->lastProf = &conf->fan_conf->prof;
+			conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 			if (mon) {
 				mon->acpi->SetPower(conf->fan_conf->lastProf->powerStage);
 				mon->acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 			}
 			modifyProfile.unlock();
-			if (conf->haveV5 && !(newID->flags & PROF_GLOBAL_EFFECTS)) {
-				// Disable global effect
+
+			// change global effect
+			if (conf->haveV5) {
 				fxh->UnblockUpdates(false);
 				fxh->UpdateGlobalEffect();
 				fxh->UnblockUpdates(true);
 			}
+
 			fxh->ChangeState();
-			ToggleEvents();
+			ChangeEffectMode();
 
 			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
 
@@ -150,17 +149,17 @@ void EventHandler::StopEvents()
 	}
 }
 
-void EventHandler::ToggleEvents()
-{
-	conf->SetStates();
-	if (conf->stateOn) {
-		ChangeEffectMode(conf->GetEffect());
-	}
-}
+//void EventHandler::ToggleEvents()
+//{
+//	//conf->SetStates();
+//	if (conf->stateOn) {
+//		ChangeEffectMode(conf->GetEffect());
+//	}
+//}
 
-void EventHandler::ChangeEffectMode(int newMode) {
-	if (conf->enableMon) {
-		if (newMode != effMode)
+void EventHandler::ChangeEffectMode() {
+	if (conf->enableMon && conf->stateOn) {
+		if (conf->GetEffect() != effMode)
 			StopEffects();
 		else
 			fxh->RefreshState(true);

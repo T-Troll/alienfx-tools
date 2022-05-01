@@ -23,8 +23,8 @@ public:
 	void SwitchActiveProfile(profile* newID);
 	void StartProfiles();
 	void StopProfiles();
-	void ToggleEvents();
-	void ChangeEffectMode(int);
+	//void ToggleEvents();
+	void ChangeEffectMode();
 	void StopEffects();
 	void StartEffects();
 

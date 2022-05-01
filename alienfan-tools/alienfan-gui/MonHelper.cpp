@@ -1,5 +1,12 @@
 #include "MonHelper.h"
 
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(_x_);
+#else
+#define DebugPrint(_x_)
+#endif
+
 DWORD WINAPI CMonProc(LPVOID);
 
 MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
@@ -68,7 +75,7 @@ DWORD WINAPI CMonProc(LPVOID param) {
 
 		// fans...
 		for (int i = 0; i < src->acpi->HowManyFans(); i++) {
-			src->boostSets[i] = 0;
+			src->boostSets[i] = -273;
 			src->boostValues[i] = src->acpi->GetFanValue(i);
 			src->fanValues[i] = src->acpi->GetFanRPM(i);
 		}
@@ -76,28 +83,22 @@ DWORD WINAPI CMonProc(LPVOID param) {
 		// boosts..
 		if (!src->conf->lastProf->powerStage) {
 			// in manual mode only
-			for (int i = 0; i < src->conf->lastProf->fanControls.size(); i++) {
-				temp_block* sen = &src->conf->lastProf->fanControls[i];
-				for (int j = 0; j < sen->fans.size(); j++) {
-					fan_block* fan = &sen->fans[j];
+			for (auto cIter = src->conf->lastProf->fanControls.begin(); cIter < src->conf->lastProf->fanControls.end(); cIter++) {
+				for (auto fIter = cIter->fans.begin(); fIter < cIter->fans.end(); fIter++) {
 					// Look for boost point for temp...
-					for (int k = 1; k < fan->points.size(); k++) {
-						if (src->senValues[sen->sensorIndex] <= fan->points[k].temp) {
-							int tBoost = fan->points[k - 1].boost +
-								(fan->points[k].boost - fan->points[k - 1].boost) *
-								(src->senValues[sen->sensorIndex] - fan->points[k - 1].temp) /
-								(fan->points[k].temp - fan->points[k - 1].temp);
-							tBoost = tBoost < 0 ? 0 : tBoost > 100 ? 100 : tBoost;
-							if (fan->fanIndex < src->boostSets.size() && tBoost > src->boostSets[fan->fanIndex])
-								src->boostSets[fan->fanIndex] = tBoost;
-							break;
-						}
-					}
+					int k;
+					for (k = 1; k < fIter->points.size() && src->senValues[cIter->sensorIndex] >= fIter->points[k].temp; k++);
+					int tBoost = fIter->points[k - 1].boost +
+						((fIter->points[k].boost - fIter->points[k - 1].boost) *
+						(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
+						(fIter->points[k].temp - fIter->points[k - 1].temp);
+					if (tBoost >= src->boostSets[fIter->fanIndex])
+						src->boostSets[fIter->fanIndex] = tBoost;
 				}
 			}
 			// Now set if needed...
 			for (int i = 0; i < src->acpi->HowManyFans(); i++)
-				if (src->boostSets[i] != src->boostValues[i] || src->boostSets[i] == 100) {
+				if (src->boostSets[i] >= 0 && (src->boostSets[i] != src->boostValues[i]) || src->boostSets[i] == 100) {
 					src->acpi->SetFanValue(i, src->boostSets[i]);
 //#ifdef _DEBUG
 //					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";

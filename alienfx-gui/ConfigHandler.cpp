@@ -196,6 +196,7 @@ void ConfigHandler::Load() {
 		if ((ret = RegEnumValueA(hKey4, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
 			lend++; len++;
 			BYTE *data = new BYTE[lend];
+			//lightset map;
 			RegEnumValueA(hKey4, vindex, name, &len, NULL, NULL, data, &lend);
 			vindex++;
 			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
@@ -223,6 +224,28 @@ void ConfigHandler::Load() {
 			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 				updateProfileFansByID(pid, -1, NULL, *(DWORD*)data);
 			}
+			//if (sscanf_s(name, "Set-%d-%d-%d", &pid, &map.devid, &map.lightid) == 3) {
+			//	profile* prof = FindProfile(pid);
+			//	byte* curData = data;
+			//	map.flags = *curData++;
+			//	for (int i = 0; i < 4; i++) {
+			//		map.eve[i].proc = *curData++;
+			//		map.eve[i].cut = *curData++;
+			//		map.eve[i].source = *curData++;
+			//		byte mapSize = *curData++;
+			//		map.eve[i].map.clear();
+			//		for (int j = 0; j < mapSize; j++) {
+			//			map.eve[i].map.push_back(*((AlienFX_SDK::afx_act*)curData));
+			//			curData += sizeof(AlienFX_SDK::afx_act);
+			//		}
+			//	}
+			//	if (!prof) {
+			//		prof = new profile({ (unsigned)pid });
+			//		profiles.push_back(prof);
+			//		prof = profiles.back();
+			//	}
+			//	prof->lightsets.push_back(map);
+			//}
 			delete[] data;
 		}
 	} while (ret == ERROR_SUCCESS);
@@ -238,22 +261,21 @@ void ConfigHandler::Load() {
 			if (sscanf_s((char*)name, "Set-%d-%d-%d", &map.devid, &map.lightid, &pid) == 3) {
 				BYTE* inPos = inarray;
 				for (int i = 0; i < 4; i++) {
-					map.eve[i].fs.s = *((DWORD*)inPos);
+					FlagSet fs; fs.s = *((DWORD*)inPos);
+					map.flags |= fs.flags << i;
+					map.eve[i].cut = fs.cut;
+					map.eve[i].proc = fs.proc;
+					//map.eve[i].fs.s = *((DWORD*)inPos);
 					inPos += sizeof(DWORD);
-					map.eve[i].source = *inPos;
-					inPos++;
-					BYTE mapSize = *inPos;
-					inPos++;
+					map.eve[i].source = *inPos++;
+					BYTE mapSize = *inPos++;
 					map.eve[i].map.clear();
 					for (int j = 0; j < mapSize; j++) {
 						map.eve[i].map.push_back(*((AlienFX_SDK::afx_act*)inPos));
 						inPos += sizeof(AlienFX_SDK::afx_act);
 					}
 				}
-				profile *prof = FindProfile(pid);
-				if (prof) {
-					prof->lightsets.push_back(map);
-				}
+				FindProfile(pid)->lightsets.push_back(map);
 			}
 			delete[] inarray;
 		}
@@ -317,37 +339,59 @@ void ConfigHandler::Save() {
 	RegDeleteTreeA(hKey1, "Events");
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);// &dwDisposition);
 
-	for (int j = 0; j < profiles.size(); j++) {
-		string name = "Profile-" + to_string(profiles[j]->id);
-		RegSetValueExA( hKey4, name.c_str(), 0, REG_SZ, (BYTE*)profiles[j]->name.c_str(), (DWORD)profiles[j]->name.length() );
-		name = "Profile-flags-" + to_string(profiles[j]->id);
-		DWORD flagset = MAKELONG(profiles[j]->flags, profiles[j]->effmode);
+	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
+		string name = "Profile-" + to_string((*jIter)->id);
+		RegSetValueExA( hKey4, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length() );
+		name = "Profile-flags-" + to_string((*jIter)->id);
+		DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
 		RegSetValueExA( hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 
-		for (int i = 0; i < profiles[j]->triggerapp.size(); i++) {
-			name = "Profile-app-" + to_string(profiles[j]->id) + "-" + to_string(i);
-			RegSetValueExA(hKey4, name.c_str(), 0, REG_SZ, (BYTE *) profiles[j]->triggerapp[i].c_str(), (DWORD) profiles[j]->triggerapp[i].length());
+		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
+			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
+			RegSetValueExA(hKey4, name.c_str(), 0, REG_SZ, (BYTE *)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
 		}
 
-		for (int i = 0; i < profiles[j]->lightsets.size(); i++) {
+		// New mappings format
+		//for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
+		//	//preparing name
+		//	name = "Set-" + to_string((*jIter)->id) + "-" + to_string(iIter->devid) + "-" + to_string(iIter->lightid);
+		//	//preparing binary....
+		//	size_t size = 17; // 4*4 + 1 //  4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
+		//	for (int j = 0; j < 4; j++)
+		//		size += iIter->eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
+		//	out = new BYTE[size];
+		//	BYTE* outPos = out;
+		//	outPos[0] = iIter->flags; outPos++;
+		//	for (int j = 0; j < 4; j++) {
+		//		*outPos = iIter->eve[j].proc; outPos++;
+		//		*outPos = iIter->eve[j].cut; outPos++;
+		//		*outPos = iIter->eve[j].source;	outPos++;
+		//		*outPos = (BYTE)iIter->eve[j].map.size(); outPos++;
+		//		for (int k = 0; k < iIter->eve[j].map.size(); k++) {
+		//			memcpy(outPos, &iIter->eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
+		//			outPos += sizeof(AlienFX_SDK::afx_act);
+		//		}
+		//	}
+		//	RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)out, (DWORD)size);
+		//	delete[] out;
+		//}
+
+		for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
 			//preparing name
-			lightset cur = profiles[j]->lightsets[i];
-			name = "Set-" + to_string(cur.devid) + "-" + to_string(cur.lightid) + "-" + to_string(profiles[j]->id);
+			name = "Set-" + to_string(iIter->devid) + "-" + to_string(iIter->lightid) + "-" + to_string((*jIter)->id);
 			//preparing binary....
 			size_t size = 4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
 			for (int j = 0; j < 4; j++)
-				size += cur.eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
+				size += iIter->eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
 			out = new BYTE[size];
 			BYTE* outPos = out;
 			for (int j = 0; j < 4; j++) {
-				*((int*)outPos) = cur.eve[j].fs.s;
-				outPos += 4;
-				*outPos = cur.eve[j].source;
-				outPos++;
-				*outPos = (BYTE)cur.eve[j].map.size();
-				outPos++;
-				for (int k = 0; k < cur.eve[j].map.size(); k++) {
-					memcpy(outPos, &cur.eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
+				FlagSet fs{(byte)(iIter->flags & (1<<j) ? 1 : 0), iIter->eve[j].cut, iIter->eve[j].proc};
+				*((int*)outPos) = fs.s; outPos += 4;
+				*outPos++ = iIter->eve[j].source;
+				*outPos++ = (BYTE)iIter->eve[j].map.size();
+				for (int k = 0; k < iIter->eve[j].map.size(); k++) {
+					memcpy(outPos, &iIter->eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
 					outPos += sizeof(AlienFX_SDK::afx_act);
 				}
 			}
@@ -355,26 +399,26 @@ void ConfigHandler::Save() {
 			delete[] out;
 		}
 		// Global effects
-		if (profiles[j]->flags & PROF_GLOBAL_EFFECTS) {
+		if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
 			DWORD buffer[3];
-			name = "Profile-effect-" + to_string(profiles[j]->id);
-			buffer[0] = MAKELONG(profiles[j]->globalEffect, profiles[j]->globalDelay);
-			buffer[1] = profiles[j]->effColor1.ci;
-			buffer[2] = profiles[j]->effColor2.ci;
+			name = "Profile-effect-" + to_string((*jIter)->id);
+			buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
+			buffer[1] = (*jIter)->effColor1.ci;
+			buffer[2] = (*jIter)->effColor2.ci;
 			RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
 		}
 		// Fans....
-		if (profiles[j]->flags & PROF_FANS) {
+		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
-			name = "Profile-power-" + to_string(profiles[j]->id);
-			DWORD pvalue = MAKELONG(profiles[j]->fansets.powerStage, profiles[j]->fansets.GPUPower);
+			name = "Profile-power-" + to_string((*jIter)->id);
+			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, (*jIter)->fansets.GPUPower);
 			RegSetValueExA(hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
-			for (int i = 0; i < profiles[j]->fansets.fanControls.size(); i++) {
-				temp_block* sens = &profiles[j]->fansets.fanControls[i];
+			for (int i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
+				temp_block* sens = &(*jIter)->fansets.fanControls[i];
 				for (int k = 0; k < sens->fans.size(); k++) {
 					fan_block* fans = &sens->fans[k];
-					name = "Profile-fans-" + to_string(profiles[j]->id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
+					name = "Profile-fans-" + to_string((*jIter)->id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
 					byte* outdata = new byte[fans->points.size() * 2];
 					for (int l = 0; l < fans->points.size(); l++) {
 						outdata[2 * l] = (byte) fans->points[l].temp;

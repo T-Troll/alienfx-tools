@@ -101,12 +101,13 @@ void DrawFan(int oper = 0, int xx=-1, int yy=-1)
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
             POINT mark;
-            int percent;
+            int percent = acpi->GetFanPercent(conf->fan_conf->lastSelectedFan);
+            int fv = acpi->GetFanValue(conf->fan_conf->lastSelectedFan);
             mark.x = acpi->GetTempValue(conf->fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
-            mark.y = (100 - acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
+            mark.y = (100 - fv) * (clirect.bottom - clirect.top) / 100 + clirect.top;
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-            string rpmText = "Boost: " + to_string(acpi->GetFanValue(conf->fan_conf->lastSelectedFan)) +
-                ", " + to_string((percent = acpi->GetFanPercent(conf->fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) + "%";
+            string rpmText = "Boost: " + to_string(fv) +
+                ", " + to_string(percent > 100 ? 0 : percent < 0 ? 0 : percent) + "%";
             SetWindowText(GetDlgItem(GetParent(fanWindow), IDC_STATIC_BOOST), rpmText.c_str());
         }
 

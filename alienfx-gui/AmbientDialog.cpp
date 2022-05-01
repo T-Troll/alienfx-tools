@@ -5,7 +5,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 extern zone *FindAmbMapping(int lid);
-extern void RemoveAmbMapping(zone* map);
+extern void RemoveAmbMapping(int devid, int lightid);
 
 extern void SwitchTab(int);
 
@@ -147,7 +147,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     map->map.erase(Iter);
                     if (!map->map.size()) {
                         // delete mapping!
-                        RemoveAmbMapping(map);
+                        RemoveAmbMapping(map->devid, map->lightid);
                     }
                 }
                 RedrawWindow(GetDlgItem(hDlg, LOWORD(wParam)), 0, 0, RDW_INVALIDATE);

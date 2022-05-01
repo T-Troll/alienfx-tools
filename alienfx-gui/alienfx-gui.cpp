@@ -338,19 +338,22 @@ int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
 	return lights > 0 ? pos : -1;
 }
 
-void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode act) {
+void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 	RECT rect;
 	HBRUSH Brush = NULL;
 	HWND tl = GetDlgItem(hDlg, id);
-	GetWindowRect(tl, &rect);
+	GetClientRect(tl, &rect);
 	HDC cnt = GetWindowDC(tl);
-	rect.bottom -= rect.top;
-	rect.right -= rect.left;
-	rect.top = rect.left = 0;
 	// BGR!
-	Brush = CreateSolidBrush(RGB(act.r, act.g, act.b));
-	FillRect(cnt, &rect, Brush);
-	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
+	if (act) {
+		Brush = CreateSolidBrush(RGB(act->r, act->g, act->b));
+		FillRect(cnt, &rect, Brush);
+		DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
+	}
+	else {
+		Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+		FillRect(cnt, &rect, Brush);
+	}
 	DeleteObject(Brush);
 	ReleaseDC(tl, cnt);
 }
@@ -755,8 +758,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				int effmode = conf->activeProfile->effmode = ComboBox_GetCurSel(mode_list);
-				eve->ChangeEffectMode(effmode);
+				conf->activeProfile->effmode = ComboBox_GetCurSel(mode_list);
+				eve->ChangeEffectMode();
 				OnSelChanged(tab_list);
 			} break;
 			}
@@ -768,6 +771,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
 				ReloadModeList();
+				OnSelChanged(tab_list);
 			} break;
 			}
 		} break;
@@ -896,8 +900,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
-			eve->ToggleEvents();
 			UpdateState();
+			eve->ChangeEffectMode();
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 		    conf->SetDimmed();
@@ -905,12 +909,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
-			eve->ToggleEvents();
+			eve->ChangeEffectMode();
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			conf->activeProfile->effmode = idx;
-			eve->ChangeEffectMode(idx);
+			eve->ChangeEffectMode();
 			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
@@ -940,7 +944,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				fxhl->UnblockUpdates(true);
 				eve->ChangePowerState();
 				conf->stateScreen = true;
-				eve->ToggleEvents();
+				conf->SetStates();
+				eve->ChangeEffectMode();
 				eve->StartProfiles();
 			}
 			if (eve->mon)
@@ -1035,7 +1040,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		case 4: // effects
 			conf->enableMon = !conf->enableMon;
-			eve->ToggleEvents();
+			eve->ChangeEffectMode();
 			ComboBox_SetCurSel(mode_list, conf->GetEffect());
 			break;
 		case 5: // profile autoswitch
@@ -1142,7 +1147,7 @@ bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
 		(*map) = savedColor;
 		fxhl->RefreshOne(mmap, true, true);
 	}
-	RedrawButton(hDlg, id, *Act2Code(map));
+	RedrawButton(hDlg, id, Act2Code(map));
 	return ret;
 }
 
@@ -1159,7 +1164,7 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 		clr->g = cc.rgbResult >> 8 & 0xff;
 		clr->b = cc.rgbResult >> 16 & 0xff;
 	}
-	RedrawButton(hDlg, id, *clr);
+	RedrawButton(hDlg, id, clr);
 	return ret;
 }
 
@@ -1205,18 +1210,18 @@ lightset* CreateMapping(int lid) {
 			newmap.eve[0].map.push_back(act);
 		}
 	}
-	newmap.eve[0].fs.b.flags = 1;
+	newmap.flags = LEVENT_COLOR;
 	newmap.eve[0].map.push_back(act);
 	newmap.eve[1].map.push_back(act);
 	newmap.eve[1].map.push_back(act);
 	newmap.eve[2].map.push_back(act);
 	newmap.eve[2].map.push_back(act);
-	newmap.eve[2].fs.b.cut = 0;
+	newmap.eve[2].cut = 0;
 	newmap.eve[3].map.push_back(act);
 	newmap.eve[3].map.push_back(act);
-	newmap.eve[3].fs.b.cut = 90;
+	newmap.eve[3].cut = 90;
 	conf->active_set->push_back(newmap);
-	return FindMapping(lid);
+	return &conf->active_set->back();
 }
 
 bool RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
@@ -1229,17 +1234,17 @@ bool RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
 	return false;
 }
 
-void RemoveHapMapping(haptics_map* map) {
+void RemoveHapMapping(int devid, int lightid) {
 	for (auto Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
-		if (Iter->devid == map->devid && Iter->lightid == map->lightid) {
+		if (Iter->devid == devid && Iter->lightid == lightid) {
 			conf->hap_conf->haptics.erase(Iter);
 			break;
 		}
 }
 
-void RemoveAmbMapping(zone* map) {
+void RemoveAmbMapping(int devid, int lightid) {
 	for (auto mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
-		if (mIter->devid == map->devid && mIter->lightid == map->lightid) {
+		if (mIter->devid == devid && mIter->lightid == lightid) {
 			conf->amb_conf->zones.erase(mIter);
 			break;
 		}
@@ -1277,4 +1282,12 @@ haptics_map *FindHapMapping(int lid) {
 		}
 	}
 	return NULL;
+}
+
+void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
+	for (auto gIter = grp->lights.begin(); gIter < grp->lights.end(); gIter++)
+		if ((*gIter)->devid == devid && (*gIter)->lightid == lightid) {
+			grp->lights.erase(gIter);
+			break;
+		}
 }

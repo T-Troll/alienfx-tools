@@ -2,11 +2,10 @@
 #include "EventHandler.h"
 #include <Shlwapi.h>
 
-extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 extern void ReloadProfileList();
 extern void ReloadModeList(HWND, int);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 
@@ -29,23 +28,23 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	for (int j = 0; j < prof->triggerapp.size(); j++)
 		ListBox_AddString(app_list, prof->triggerapp[j].c_str());
 	// set global effect, colors and delay
-	if (prof->flags & PROF_GLOBAL_EFFECTS) {
-		EnableWindow(eff_list, true);
-		EnableWindow(eff_tempo, true);
-		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR1), true);
-		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR2), true);
+	bool flag = prof->flags & PROF_GLOBAL_EFFECTS;
+	EnableWindow(eff_list, flag);
+	EnableWindow(eff_tempo, flag);
+	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), flag);
+	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), flag);
+	if (flag) {
 		ComboBox_SetCurSel(eff_list, prof->globalEffect);
 		// now sliders...
 		SendMessage(eff_tempo, TBM_SETPOS, true, prof->globalDelay);
 		SetSlider(sTip2, prof->globalDelay);
 		// now colors...
-		RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, prof->effColor1);
-		RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, prof->effColor2);
-	} else {
-		EnableWindow(eff_list, false);
-		EnableWindow(eff_tempo, false);
-		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR1), false);
-		EnableWindow(GetDlgItem(hDlg,IDC_BUTTON_EFFCLR2), false);
+		RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
+		RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
+	}
+	else {
+		RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, NULL);
+		RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, NULL);
 	}
 }
 
@@ -75,6 +74,19 @@ void ReloadProfileView(HWND hDlg) {
 	ListView_EnsureVisible(profile_list, rpos, false);
 }
 
+int RemoveProfile(int id) {
+	int nCid = conf->activeProfile->id;
+	// Now remove profile....
+	for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++)
+		if ((*Iter)->id == id) {
+			conf->profiles.erase(Iter);
+			break;
+		}
+		else
+			nCid = (*Iter)->id;
+	return nCid;
+}
+
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
@@ -91,7 +103,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	{
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->defaultProfile->id;
 		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
-		ReloadProfileView(hDlg);
 		if (conf->haveV5) {
 			//ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 1);
 			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Color"), 0);
@@ -107,6 +118,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			sTip2 = CreateToolTip(eff_tempo, sTip2);
 		} else
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);
+		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
 	{
@@ -145,8 +157,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			if (!prof)
 				prof = conf->activeProfile;
-			profile* new_prof = new profile({ vacID, prof->flags, prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets });
-			new_prof->flags &= ~PROF_DEFAULT;
+			profile* new_prof = new profile({ vacID, (WORD)(prof->flags & ~PROF_DEFAULT), prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets });
 			conf->profiles.push_back(new_prof);
 			pCid = vacID;
 			ReloadProfileView(hDlg);
@@ -161,16 +172,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						// switch to default profile..
 						eve->SwitchActiveProfile(conf->defaultProfile);
 					}
-					int nCid = conf->activeProfile->id;
-					// Now remove profile....
-					// Did it have fans? We need to switch to system if it have!
-					for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++)
-						if ((*Iter)->id == pCid) {
-							conf->profiles.erase(Iter);
-							break;
-						} else
-							nCid = (*Iter)->id;
-					pCid = nCid;
+					pCid = RemoveProfile(pCid);
 					ReloadProfileView(hDlg);
 					ReloadProfileList();
 				}
@@ -183,6 +185,18 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				prof->lightsets.clear();
+			}
+			break;
+		case IDC_BUT_COPYACTIVE:
+			if (conf->activeProfile->id != prof->id) {
+				profile* new_prof = new profile(*conf->activeProfile);
+				new_prof->id = prof->id;
+				new_prof->name = prof->name;
+				new_prof->flags &= ~PROF_DEFAULT;
+				new_prof->flags |= prof->flags & PROF_DEFAULT;
+				RemoveProfile(prof->id);
+				conf->profiles.push_back(new_prof);
+				ReloadProfileView(hDlg);
 			}
 			break;
 		case IDC_APP_RESET:
@@ -217,7 +231,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					ReloadProfSettings(hDlg, prof);
 				}
 				if (prof->id == conf->activeProfile->id)
-					eve->ChangeEffectMode(prof->effmode);
+					eve->ChangeEffectMode();
 			} break;
 			}
 		} break;
@@ -339,16 +353,12 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	} break;
 	case WM_DRAWITEM:
 	{
-		if (prof)
+		if (prof && (prof->flags & PROF_GLOBAL_EFFECTS))
 			switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
-			case IDC_BUTTON_EFFCLR1:
-			{
-				RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, prof->effColor1);
-				break;
-			}
 			case IDC_BUTTON_EFFCLR2:
 			{
-				RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, prof->effColor2);
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
 				break;
 			}
 			}

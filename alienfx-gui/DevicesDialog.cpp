@@ -3,11 +3,12 @@
 
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveHapMapping(haptics_map* map);
-extern void RemoveAmbMapping(zone* map);
+extern void RemoveHapMapping(int devid, int lightid);
+extern void RemoveAmbMapping(int devid, int lightid);
+extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -310,13 +311,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (eLid >= 0 && MessageBox(hDlg, "Do you really want to remove current light name and all it's settings from all groups and profiles?", "Warning",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// delete from all groups...
-				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
-					AlienFX_SDK::group* grp = &fxhl->afx_dev.GetGroups()->at(i);
-					for (auto gIter = grp->lights.begin(); gIter < grp->lights.end(); gIter++)
-						if ((*gIter)->devid == dPid && (*gIter)->lightid == eLid) {
-							grp->lights.erase(gIter);
-							break;
-						}
+				for (auto iter = fxhl->afx_dev.GetGroups()->begin(); iter < fxhl->afx_dev.GetGroups()->end(); iter++) {
+					RemoveLightFromGroup(&(*iter), dPid, eLid);
 				}
 				// delete from all profiles...
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
@@ -341,10 +337,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						break;
 					}
 				// delete from haptics and ambient
-				haptics_map mhap{ dPid, (DWORD)eLid };
-				RemoveHapMapping(&mhap);
-				zone mamb{ dPid, (DWORD)eLid };
-				RemoveAmbMapping(&mamb);
+				RemoveHapMapping(dPid, eLid);
+				RemoveAmbMapping(dPid, eLid);
 
 				fxhl->afx_dev.SaveMappings();
 				conf->Save();
@@ -540,7 +534,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_TESTCOLOR:
 		{
-			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, conf->testColor);
+			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
 		} break;
 		}
 		break;

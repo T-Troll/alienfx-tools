@@ -5,7 +5,7 @@ extern bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* ma
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern lightset* CreateMapping(int lid);
 extern lightset* FindMapping(int mid);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
@@ -23,27 +23,30 @@ void UpdateMonitoringInfo(HWND hDlg, lightset *map) {
 		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
 	for (int i = 0; i < 4; i++) {
-		CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, (map ? map->eve[i].fs.b.flags : 0) ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, map && map->flags & (1 << i) ? BST_CHECKED : BST_UNCHECKED);
 
-		if (map && i > 0) {
-			if (map->eve[0].fs.b.flags) {
-				RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, *Act2Code(&map->eve[0].map[0]));
-			} else {
-				RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, *Act2Code(&map->eve[i].map[0]));
+		if (map && i) {
+			RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map && map->flags & LEVENT_COLOR && !map->eve[0].map.empty() ?
+				Act2Code(&map->eve[0].map[0]) : Act2Code(&map->eve[i].map[0]));
+			RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, Act2Code(&map->eve[i].map[1]));
+		}
+		else {
+			if (i) {
+				RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, NULL);
+				RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, NULL);
 			}
-			RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, *Act2Code(&map->eve[i].map[1]));
 		}
 	}
 
 	// Alarms
-	CheckDlgButton(hDlg, IDC_STATUS_BLINK, (map ? map->eve[3].fs.b.proc : 0) ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s2_slider, TBM_SETPOS, true, map ? map->eve[3].fs.b.cut : 0);
-	SetSlider(sTip2, map ? map->eve[3].fs.b.cut : 0);
+	CheckDlgButton(hDlg, IDC_STATUS_BLINK, map && map->eve[3].proc ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(s2_slider, TBM_SETPOS, true, map ? map->eve[3].cut : 0);
+	SetSlider(sTip2, map ? map->eve[3].cut : 0);
 
 	// Events
-	CheckDlgButton(hDlg, IDC_GAUGE, (map ? map->eve[2].fs.b.proc : 0) ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s1_slider, TBM_SETPOS, true, map ? map->eve[2].fs.b.cut : 0);
-	SetSlider(sTip1, map ? map->eve[2].fs.b.cut : 0);
+	CheckDlgButton(hDlg, IDC_GAUGE, map && map->eve[2].proc ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(s1_slider, TBM_SETPOS, true, map ? map->eve[2].cut : 0);
+	SetSlider(sTip1, map ? map->eve[2].cut : 0);
 
 	ComboBox_SetCurSel(list_counter, map ? map->eve[2].source : 0);
 	ComboBox_SetCurSel(list_status, map ? map->eve[3].source : 0);
@@ -138,7 +141,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				if (!map) {
 					map = CreateMapping(eItem);
 				}
-				map->eve[LOWORD(wParam) - IDC_CHECK_NOEVENT].fs.b.flags = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				BYTE findex = LOWORD(wParam) - IDC_CHECK_NOEVENT;
+				map->flags &= ~(1 << findex);
+				map->flags |= (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << findex;
 
 				fxhl->RefreshState();
 			} else
@@ -146,18 +151,18 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		} break;
 		case IDC_STATUS_BLINK:
 			if (map && HIWORD(wParam) == BN_CLICKED)
-				map->eve[3].fs.b.proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				map->eve[3].proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			break;
 		case IDC_GAUGE:
 			if (map && HIWORD(wParam) == BN_CLICKED) {
-				map->eve[2].fs.b.proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				map->eve[2].proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
 			if (map && HIWORD(wParam) == BN_CLICKED) {
 				if (LOWORD(wParam) < IDC_BUTTON_CM4)
-					if (map->eve[0].fs.b.flags)
+					if (map->flags & LEVENT_COLOR)
 						SetColor(hDlg, LOWORD(wParam), map, &map->eve[0].map[0]);
 					else
 						SetColor(hDlg, LOWORD(wParam), map, &map->eve[LOWORD(wParam) - IDC_BUTTON_CM1 + 1].map[0]);
@@ -183,15 +188,15 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
-			AlienFX_SDK::Colorcode c{0};
+			AlienFX_SDK::Colorcode* c{ NULL };
 			if (map) {
 				if (((DRAWITEMSTRUCT*)lParam)->CtlID < IDC_BUTTON_CM4)
-					if (map->eve[0].fs.b.flags)
-						c = *Act2Code(&map->eve[0].map[0]);
+					if (map->flags & LEVENT_COLOR)
+						c = Act2Code(&map->eve[0].map[0]);
 					else
-						c = *Act2Code(&map->eve[((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM1 + 1].map[0]);
+						c = Act2Code(&map->eve[((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM1 + 1].map[0]);
 				else
-					c = *Act2Code(&map->eve[((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM4 + 1].map[1]);
+					c = Act2Code(&map->eve[((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM4 + 1].map[1]);
 			}
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c);
 		} break;
@@ -202,12 +207,12 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			if (map) {
 				if ((HWND)lParam == s1_slider) {
-					map->eve[2].fs.b.cut = (BYTE) SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, map->eve[2].fs.b.cut);
+					map->eve[2].cut = (BYTE) SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip1, map->eve[2].cut);
 				}
 				if ((HWND)lParam == s2_slider) {
-					map->eve[3].fs.b.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip2, map->eve[3].fs.b.cut);
+					map->eve[3].cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip2, map->eve[3].cut);
 				}
 				fxhl->RefreshMon();
 			}

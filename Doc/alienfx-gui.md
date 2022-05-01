@@ -35,22 +35,23 @@ How it works
 ```
 ![Color tab](/Doc/img/gui-color.png?raw=true)
 
-`"Colour"` tab is set hardware colours and effects for light. This setting will remain even if you exit application.  
+`"Color"` tab is set hardware colors and effects for light. This setting will remain even if you exit application.  
 
 Each light (except Power Button) can have up to 9 different hardware effects assigned to it, but some modes require more, then one effect (f.e. Morph – 2, Spectrum – 7) to work correctly.  
 Use "Effects" list to add/remove/select effect. For each effect, you can define its colour, effect mode, speed (how fast to change the colour), and length (how long it plays).  
 Available effect modes are:
-- Colour - Stay at solid colour defined.
-- Pulse - Switch between defined colour and black.
-- Morph - Morph light from previous colour to current one.
-- Breath - Morph light from black to current colour. (For devices with APIv4)
-- Spectrum - Like a morph, but up to 9 colours can be defined. (For devices with APIv4)
-- Rainbow - Like a Colour, but can use up to 9 colours. (For devices with APIv4)
+- Color - Stay at solid color defined.
+- Pulse - Switch between defined color and next color(s).
+- Morph - Morph light from previous color to current one.
+- Breath - Morph light from black to current color. (For devices with APIv4)
+- Spectrum - Like a morph, but up to 9 colors can be defined. (For devices with APIv4)
+- Rainbow - Like a Colour, but can use up to 9 colors. (For devices with APIv4)
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do nothing). But you can experiment.  
 
 "Set All" button copies current light effects to all lights into the list (it’s useful if you need to have all lights into the same colour and mode).  
-"Info" button opens Light information dialog for currently selected light. Light information dialog shows all settings for it across all tabs and modes, and give a possibility to predict final color range, as well as modify it components.
+
+"Light Information" block reveals color information and prediction for currently selected light. It shows all settings for it across all tabs and modes, and give a possibility to predict final color range, as well as modify it components (remove light parameters and group participation).
 
 ![Monitoring tab](/Doc/img/gui-monitoring.png?raw=true)
 
@@ -120,7 +121,11 @@ If you have a group selected, "Group lights" list present the list of lights ass
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.  
 
+Press "+" or "-" buttons to add or remove profile. New profile settings will be copied from currently selected profile.  
+For clear light settings for selected profile press "Reset" button.  
+"Copy active" button will copy all profile settings from the profile currently in action into system.  
 You can double-click or press Enter on selected profile into the list to edit its name.  
+
 Each profile can have settings and application for trigger it. The settings are:
 - "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off (The same as "Disable monitoring" before).
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
@@ -133,18 +138,16 @@ Each profile can have settings and application for trigger it. The settings are:
 "Global effects" block controls effect mode, temp and colors for APIv5 devices, provide some cool animations across all keys if enabled.
 
 "Trigger applications" list define application executables, which will activate selected profile if running and "Profile auto switch" is on.  
-Press "Add" button to select new application, or select one from the list and press "Remove" button to delete it.
+Press "+" button to select new application, or select one from the list and press "-" button to delete it.
 
-If application "Profile auto switch" setting is on, active profile will be selected automatically according to this rules:
+If application's "Profile auto switch" setting is on, active profile will be selected automatically according to this rules:
 - If running application, belongs to any profile not found - "Default" profile selected.
 - If running applications belongs to profile found and have no "Only when active" flag, "Priority" one will be chosen, or the random profile if no "Priority" found.
 - If foreground application belongs to profile, and no other application belongs to Priority profile found, application-related profile will be selected, otherwise priority profile will be chosen.
 
 ![Devices tab](/Doc/img/gui-devices.png?raw=true)
 
-```<language>
 `"Devices"` tab is an extended GUI for `Alienfx-probe`, providing devices and lights names and settings, name modification, light testing and some other hardware-related settings.  
-```
 
 "Devices" drop-down shows the list of the light devices found into the system, as well as selected device status (ok/error), you can also edit their names here.  
 "Reset" button refresh the devices list (useful after you disconnect/connect new device), as well as re-open each device in case it stuck.  

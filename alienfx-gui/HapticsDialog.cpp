@@ -2,13 +2,13 @@
 #include "EventHandler.h"
 
 extern void SwitchTab(int);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode);
+extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern haptics_map *FindHapMapping(int lid);
-extern void RemoveHapMapping(haptics_map*);
+extern void RemoveHapMapping(int devid, int lightid);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -105,8 +105,8 @@ void SetMappingData(HWND hDlg, haptics_map* map) {
 		map = &hap;
 		fGrpItem = 0;
 	}
-	RedrawButton(hDlg, IDC_BUTTON_LPC, map->freqs[fGrpItem].colorfrom);
-	RedrawButton(hDlg, IDC_BUTTON_HPC, map->freqs[fGrpItem].colorto);
+	RedrawButton(hDlg, IDC_BUTTON_LPC, &map->freqs[fGrpItem].colorfrom);
+	RedrawButton(hDlg, IDC_BUTTON_HPC, &map->freqs[fGrpItem].colorto);
 	// load cuts...
 	SendMessage(hLowSlider, TBM_SETPOS, true, map->freqs[fGrpItem].lowcut);
 	SendMessage(hHiSlider, TBM_SETPOS, true, map->freqs[fGrpItem].hicut);
@@ -279,7 +279,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				ListBox_SetCurSel(grp_list, fGrpItem);
 				if (!map->freqs.size()) {
 					// remove mapping
-					RemoveHapMapping(map);
+					RemoveHapMapping(map->devid, map->lightid);
 					map = NULL; fGrpItem = -1;
 					EnableWindow(freq_list, false);
 				}
@@ -351,12 +351,12 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
 		{
-			AlienFX_SDK::Colorcode c{0};
+			AlienFX_SDK::Colorcode* c{NULL};
 			if (map && fGrpItem >= 0)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
-					c = map->freqs[fGrpItem].colorfrom;
+					c = &map->freqs[fGrpItem].colorfrom;
 				else
-					c = map->freqs[fGrpItem].colorto;
+					c = &map->freqs[fGrpItem].colorto;
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, c);
 			return true;
 		}
