@@ -24,7 +24,7 @@ vector<AlienFX_SDK::group*> lghGrp;
 int effID = -1;
 
 void RebuildEffectList(HWND hDlg, lightset* mmap) {
-	HWND eff_list = GetDlgItem(hDlg, IDC_EFFECTS_LIST),
+	HWND eff_list = GetDlgItem(hDlg, IDC_LEFFECTS_LIST),
 		s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
 		type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
@@ -86,8 +86,8 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
 
 		// Set selection...
-		if (effID >= ListView_GetItemCount(eff_list))
-			effID = ListView_GetItemCount(eff_list) - 1;
+		//if (effID >= ListView_GetItemCount(eff_list))
+		//	effID = ListView_GetItemCount(eff_list) - 1;
 		if (effID != -1) {
 			int dev_ver = fxhl->LocateDev(mmap->devid) ? fxhl->LocateDev(mmap->devid)->dev->GetVersion() : -1;
 			ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
@@ -337,16 +337,16 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				eItem = lid;// lbItem;
 				effID = 0;
 				mmap = FindMapping(lid);
-				if (mmap) {
-					AlienFX_SDK::mapping *map = fxhl->afx_dev.GetMappingById(mmap->devid, mmap->lightid);
-					if (map && (map->flags & ALIENFX_FLAG_POWER)) {
-						mmap->eve[0].map[0].type = mmap->eve[0].map[1].type = AlienFX_SDK::AlienFX_A_Power;
-						if (!mmap->eve[0].map[0].time)
-							mmap->eve[0].map[0].time = mmap->eve[0].map[1].time = 3;
-						if (!mmap->eve[0].map[0].tempo)
-							mmap->eve[0].map[0].tempo = mmap->eve[0].map[1].tempo = 0x64;
-					}
-				}
+				//if (mmap) {
+				//	AlienFX_SDK::mapping *map = fxhl->afx_dev.GetMappingById(mmap->devid, mmap->lightid);
+				//	if (map && (map->flags & ALIENFX_FLAG_POWER)) {
+				//		mmap->eve[0].map[0].type = mmap->eve[0].map[1].type = AlienFX_SDK::AlienFX_A_Power;
+				//		if (!mmap->eve[0].map[0].time)
+				//			mmap->eve[0].map[0].time = mmap->eve[0].map[1].time = 3;
+				//		if (!mmap->eve[0].map[0].tempo)
+				//			mmap->eve[0].map[0].tempo = mmap->eve[0].map[1].tempo = 0x64;
+				//	}
+				//}
 				RebuildEffectList(hDlg, mmap);
 
 				// update light info...
@@ -394,6 +394,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					}
 					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->eve[0].map[effID]);
 					RebuildEffectList(hDlg, mmap);
+					SetLightColors(hDlg, eItem);
 				}
 			} break;
 			} break;
@@ -410,6 +411,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						effID = (int)mmap->eve[0].map.size() - 1;
 					}
 				RebuildEffectList(hDlg, mmap);
+				SetLightColors(hDlg, eItem);
 				fxhl->RefreshOne(mmap, true, true);
 			}
 			break;
@@ -428,8 +430,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					effID = -1;
 				} else {
 					RebuildEffectList(hDlg, mmap);
-					fxhl->RefreshOne(mmap, true, true);
+					fxhl->RefreshOne(mmap, false, true);
 				}
+				SetLightColors(hDlg, eItem);
 			}
 			break;
 		case IDC_BUTTON_SETALL:
@@ -480,20 +483,26 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		} break;
 		case IDC_REM_COLOR:
 			if (mmap) {
-				if (mmap->flags & ~LEVENT_COLOR)
-					mmap->flags &= ~LEVENT_COLOR;
-				else
+				mmap->flags &= ~LEVENT_COLOR;
+				if (!mmap->flags) {
 					RemoveMapping(conf->active_set, mmap->devid, mmap->lightid);
+					effID = -1;
+					RebuildEffectList(hDlg, mmap);
+					RedrawButton(hDlg, IDC_BUTTON_C1, NULL);
+				}
 				SetLightColors(hDlg, eItem);
 				fxhl->RefreshState(true);
 			}
 			break;
 		case IDC_REM_EFFECT:
 			if (mmap) {
-				if (mmap->flags & LEVENT_COLOR)
-					mmap->flags |= LEVENT_COLOR;
-				else
+				mmap->flags &= LEVENT_COLOR;
+				if (!mmap->flags) {
 					RemoveMapping(conf->active_set, mmap->devid, mmap->lightid);
+					effID = -1;
+					RebuildEffectList(hDlg, mmap);
+					RedrawButton(hDlg, IDC_BUTTON_C1, NULL);
+				}
 				SetLightColors(hDlg, eItem);
 				fxhl->RefreshState(true);
 			}
@@ -536,16 +545,19 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (mmap && effID < mmap->eve[0].map.size()) {
 				c = Act2Code(&mmap->eve[0].map[effID]);
 			}
+			else
+				DebugPrint("Transparent c1!\n");
 			RedrawButton(hDlg, IDC_BUTTON_C1, c);
 		} break;
 		case IDC_TO_FINAL:
 			SetLightColors(hDlg, eItem);
 			break;
+		default: return false;
 		}
 		break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_EFFECTS_LIST:
+		case IDC_LEFFECTS_LIST:
 			switch (((NMHDR*) lParam)->code) {
 			case LVN_ITEMCHANGED:
 			{

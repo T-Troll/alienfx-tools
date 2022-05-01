@@ -142,7 +142,7 @@
 #define IDC_DEVICE_STATUS               1058
 #define IDC_APP_RESET                   1059
 #define IDC_APP_BROWSE                  1060
-#define IDC_EFFECTS_LIST                1066
+#define IDC_LEFFECTS_LIST                1066
 #define IDC_BUT_ADD_EFFECT              1068
 #define IDC_BUTT_REMOVE_EFFECT          1069
 #define IDC_CHECK_PROFDIM               1071

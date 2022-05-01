@@ -620,7 +620,7 @@ void ReloadProfileList() {
 	EnableWindow(mode_list, conf->enableMon);
 
 	switch (tabSel) {
-	case TAB_COLOR: case TAB_EVENTS: case TAB_SETTINGS: case TAB_FANS:
+	case TAB_COLOR: case TAB_EVENTS: case TAB_FANS:
 		OnSelChanged(tab_list);
 	}
 }
@@ -798,16 +798,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ShowWindow(hDlg, SW_HIDE);
 		}
 		break;
-	case WM_SETFOCUS: {
-		// so focus on
-		eve->StopProfiles();
-		ReloadProfileList();
-	} break;
 	case WM_ACTIVATE: {
-		if (!LOWORD(wParam)) {
-			// deactivating...
+		if (LOWORD(wParam)) {
+			eve->StopProfiles();
+		} else
 			eve->StartProfiles();
-		}
 	} break;
 	case WM_APP + 1: {
 		switch (lParam)
@@ -1086,13 +1081,10 @@ AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act *act) {
 DWORD CColorRefreshProc(LPVOID param) {
 	AlienFX_SDK::afx_act last = *mod;
 	lightset* mmap = (lightset*)param;
-	while (WaitForSingleObject(stopColorRefresh, 250)) {
+	while (WaitForSingleObject(stopColorRefresh, 200)) {
 		if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
-			// set colors...
 			last = *mod;
-			if (mmap) {
-				fxhl->RefreshOne(mmap, 0, true);
-			}
+			if (mmap) fxhl->RefreshOne(mmap, false, true);
 		}
 	}
 	return 0;
@@ -1116,38 +1108,27 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
-	CHOOSECOLOR cc{0};
+	CHOOSECOLOR cc{ sizeof(cc), hDlg, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
+		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
 	bool ret;
 
 	AlienFX_SDK::afx_act savedColor = *map;
-	HANDLE crRefresh;
-
-	// Initialize CHOOSECOLOR
-	cc.lStructSize = sizeof(cc);
-	cc.hwndOwner = hDlg;
-	cc.lpfnHook = Lpcchookproc;
-	cc.lCustData = (LPARAM)map;
-	cc.lpCustColors = (LPDWORD)conf->customColors;
-	cc.rgbResult = RGB(map->r, map->g, map->b);
-	cc.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK;
 
 	mod = map;
 	stopColorRefresh = CreateEvent(NULL, false, false, NULL);
-	crRefresh = CreateThread(NULL, 0, CColorRefreshProc, mmap, 0, NULL);
+	HANDLE crRefresh = CreateThread(NULL, 0, CColorRefreshProc, mmap, 0, NULL);
 
-	ret = ChooseColor(&cc);
+	if (!(ret=ChooseColor(&cc)))
+		(*map) = savedColor;
 
 	SetEvent(stopColorRefresh);
-	WaitForSingleObject(crRefresh, 1200);
+	WaitForSingleObject(crRefresh, 500);
 	CloseHandle(crRefresh);
 	CloseHandle(stopColorRefresh);
 
-	if (!ret)
-	{
-		(*map) = savedColor;
-		fxhl->RefreshOne(mmap, true, true);
-	}
+	fxhl->RefreshOne(mmap, false, true);
 	RedrawButton(hDlg, id, Act2Code(map));
+
 	return ret;
 }
 

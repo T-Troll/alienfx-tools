@@ -86,14 +86,16 @@ DWORD WINAPI CMonProc(LPVOID param) {
 			for (auto cIter = src->conf->lastProf->fanControls.begin(); cIter < src->conf->lastProf->fanControls.end(); cIter++) {
 				for (auto fIter = cIter->fans.begin(); fIter < cIter->fans.end(); fIter++) {
 					// Look for boost point for temp...
-					int k;
-					for (k = 1; k < fIter->points.size() && src->senValues[cIter->sensorIndex] >= fIter->points[k].temp; k++);
-					int tBoost = fIter->points[k - 1].boost +
-						((fIter->points[k].boost - fIter->points[k - 1].boost) *
-						(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-						(fIter->points[k].temp - fIter->points[k - 1].temp);
-					if (tBoost >= src->boostSets[fIter->fanIndex])
-						src->boostSets[fIter->fanIndex] = tBoost;
+					for (int k = 1; k < fIter->points.size(); k++)
+						if (src->senValues[cIter->sensorIndex] <= fIter->points[k].temp) {
+							int tBoost = fIter->points[k - 1].boost +
+								((fIter->points[k].boost - fIter->points[k - 1].boost) *
+									(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
+								(fIter->points[k].temp - fIter->points[k - 1].temp);
+							if (tBoost >= src->boostSets[fIter->fanIndex])
+								src->boostSets[fIter->fanIndex] = tBoost;
+							break;
+						}
 				}
 			}
 			// Now set if needed...

@@ -591,6 +591,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						AlienFX_SDK::afx_act action = current.actions[i];
 						// gamma-correction...
 						if (src->GetConfig()->gammaCorrection) {
+							//action.r = (byte)(pow((float)action.r / 255.0, 2.2) * 255 + 0.5);
+							//action.g = (byte)(pow((float)action.g / 255.0, 2.2) * 255 + 0.5);
+							//action.b = (byte)(pow((float)action.b / 255.0, 2.2) * 255 + 0.5);
 							action.r = ((UINT) action.r * action.r * dev->desc->white.r) / (255 * 255);
 							action.g = ((UINT) action.g * action.g * dev->desc->white.g) / (255 * 255);
 							action.b = ((UINT) action.b * action.b * dev->desc->white.b) / (255 * 255);
