@@ -40,6 +40,7 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 - `alienfx-mon` require Administrator rights in case ESIF or BIOS monitoring enabled (the same reason as for `alienfx-gui`)
 - The rest of the `alienfx-` tools does not require Administrator privilege and can be run at any level.
 - All the tools don't require an Internet connection, but `alienfan-gui`, `alienfx-mon` and `alienfx-gui` will connect to GitHub to check for updates if a connection is available.
+- All the tools does not collect and share any personal data. Some hardware data collected (but not shared) during hardware detection process.
 
 ## Installation
 - Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
@@ -62,8 +63,8 @@ If your device is not supported, you can [help me support it](https://github.com
 For fan control - Send me the ACPI dump from [RW Everything](http://rweverything.com/) for analysis.
 
 ## Known issues
-- Hardware light effects like breathing, spectrum, rainbow mode do not support older (APIv1-v3) and per-key RGB (APIv5) devices.
-- Hardware light effects (and global effect) didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
+- Hardware light effects like breathing, spectrum, rainbow only supported at APIv4 (Tron) lights.
+- Hardware light effects and global effect didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
 - DirectX12 games didn't allow access to GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
 - Using a hardware power button, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to the "Devices" tab or quit with visible delay.
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
@@ -95,7 +96,6 @@ Build process:
   - [x] Mouses
   - [ ] Keyboards
 - [ ] Keyboard mapper for easy RGB keyboard setup
-- [ ] Full-scale power button effects (same as common effects)
 - [x] Windows 11 support (unstable for now)
 
 ## License
