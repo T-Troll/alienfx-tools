@@ -15,9 +15,8 @@ extern int eItem;
 
 int fGrpItem = -1;
 
-DWORD WINAPI UpdateHapticsUI(LPVOID);
-
-HANDLE auiEvent = CreateEvent(NULL, false, false, NULL), uiHapHandle = NULL;
+void UpdateHapticsUI(LPVOID);
+ThreadHelper* hapUIThread;
 
 void DrawFreq(HWND hDlg, int *freq) {
 	unsigned i, rectop;
@@ -158,7 +157,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		CheckDlgButton(hDlg, IDC_SHOWAXIS, conf->hap_conf->showAxis ? BST_CHECKED : BST_UNCHECKED);
 
 		// Start UI update thread...
-		uiHapHandle = CreateThread(NULL, 0, UpdateHapticsUI, hDlg, 0, NULL);
+		hapUIThread = new ThreadHelper(UpdateHapticsUI, hDlg, 40);
 
 		if (eItem >= 0) {
 			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
@@ -367,9 +366,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		return false;
 	break;
 	case WM_CLOSE: case WM_DESTROY:
-		SetEvent(auiEvent);
-		WaitForSingleObject(uiHapHandle, 1000);
-		CloseHandle(uiHapHandle);
+		delete hapUIThread;
 	break;
 	default: return false;
 	}
@@ -377,14 +374,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	return TRUE;
 }
 
-DWORD WINAPI UpdateHapticsUI(LPVOID lpParam) {
-
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-	while (WaitForSingleObject(auiEvent, 40) == WAIT_TIMEOUT) {
-		if (eve->audio && IsWindowVisible((HWND)lpParam)) {
-			//DebugPrint("Haptics UI update...\n");
-			DrawFreq((HWND)lpParam, eve->audio->freqs);
-		}
+void UpdateHapticsUI(LPVOID lpParam) {
+	if (eve->audio && IsWindowVisible((HWND)lpParam)) {
+		//DebugPrint("Haptics UI update...\n");
+		DrawFreq((HWND)lpParam, eve->audio->freqs);
 	}
-	return 0;
 }

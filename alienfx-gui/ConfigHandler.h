@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include "AlienFX_SDK.h"
-#include "..\alienfan-tools\alienfan-gui\ConfigFan.h"
+#include "ConfigFan.h"
 #include "ConfigAmbient.h"
 #include "ConfigHaptics.h"
 

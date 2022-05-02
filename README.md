@@ -47,7 +47,8 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
 - Unpack the archive to any directory of your choice or just run the installer.  
-- After installation, run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
+- If you plan to use fan control, it's highly recommended to run `alienfan-overboost` after installation from the folder you install it. It will set correct overboost values and maximal fans RPM.
+- Run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
 
 Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide-and-tips)) guide first!
 

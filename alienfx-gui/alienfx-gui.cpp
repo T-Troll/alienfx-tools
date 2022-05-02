@@ -47,7 +47,7 @@ HWND mDlg = 0;
 AlienFX_SDK::afx_act* mod;
 HANDLE stopColorRefresh = 0;
 
-HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
+HWND toolTip = 0, sTip1 = 0, sTip2 = 0, sTip3 = 0;
 
 // ConfigStatic:
 int tabSel = -1;

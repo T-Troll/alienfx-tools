@@ -33,6 +33,8 @@ public:
 
 	WAVEFORMATEX* pwfx;
 
+	HANDLE stopEvent, updateEvent, hEvent;
+
 private:
 	IMMDevice* inpDev;
 	IAudioClient* pAudioClient = NULL;

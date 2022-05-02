@@ -7,6 +7,7 @@
 #include "resource.h"
 #include "ConfigMon.h"
 #include "SenMonHelper.h"
+#include <ThreadHelper.h>
 using namespace std;
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
@@ -35,8 +36,9 @@ SenMonHelper* senmon;
 HWND                InitInstance(HINSTANCE, int);
 BOOL CALLBACK       DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-DWORD WINAPI UpdateMonUI(LPVOID);
-HANDLE muiEvent = CreateEvent(NULL, false, false, NULL), uiMonHandle = NULL;
+
+void UpdateMonUI(LPVOID);
+ThreadHelper* muiThread = NULL;
 
 DWORD EvaluteToAdmin() {
     // Evaluation attempt...
@@ -79,7 +81,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
-    //UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
 	conf = new ConfigMon();
@@ -390,7 +391,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 
 		// Start UI update thread...
-		uiMonHandle = CreateThread(NULL, 0, UpdateMonUI, hDlg, 0, NULL);
+		muiThread = new ThreadHelper(UpdateMonUI, hDlg, conf->refreshDelay);
 
 	} break;
 	case WM_COMMAND:
@@ -475,6 +476,8 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_REFRESH_TIME:
 			if (HIWORD(wParam) == EN_CHANGE) {
 				conf->refreshDelay = GetDlgItemInt(hDlg, IDC_REFRESH_TIME, NULL, false);
+				if (muiThread)
+					muiThread->delay = conf->refreshDelay;
 			}
 			break;
 		}
@@ -520,7 +523,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			SetForegroundWindow(hDlg);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
-			//SendMessage(hDlg, WM_CLOSE, 0, 0);
 		} break;
 		case NIN_BALLOONUSERCLICK:
 		{
@@ -567,9 +569,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:
-		SetEvent(muiEvent);
-		WaitForSingleObject(uiMonHandle, 1000);
-		CloseHandle(uiMonHandle);
+		delete muiThread;
 		// Remove icons from tray...
 		for (int i = 0; i < conf->active_sensors.size(); i++)
 			if (conf->active_sensors[i].intray && conf->active_sensors[i].niData) {
@@ -695,71 +695,65 @@ void UpdateTrayData(SENSOR* sen) {
 		DeleteObject(hBitmapMask);
 }
 
-DWORD WINAPI UpdateMonUI(LPVOID lpParam) {
+void UpdateMonUI(LPVOID lpParam) {
 	HWND list = GetDlgItem(mDlg, IDC_SENSOR_LIST);
-
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-
-	while (WaitForSingleObject(muiEvent, conf->refreshDelay) == WAIT_TIMEOUT) {
-		if (IsWindowVisible(mDlg) && runUIUpdate) {
-			//DebugPrint("Fans UI update...\n");
-			if (conf->needFullUpdate) {
-				ReloadSensorView();
-			}
-			else {
-				int pos = 0;
-				for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
-					if (!iter->disabled) {
-						if (iter->cur != iter->oldCur) {
-							string name = to_string(iter->min);
-							ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
-							name = to_string(iter->cur);
-							ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-							name = to_string(iter->max);
-							ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
-							//ListView_SetItemText(list, i, 3, (LPSTR)iter->name.c_str());
-						}
-						pos++;
+	if (IsWindowVisible(mDlg) && runUIUpdate) {
+		//DebugPrint("Fans UI update...\n");
+		if (conf->needFullUpdate) {
+			ReloadSensorView();
+		}
+		else {
+			int pos = 0;
+			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
+				if (!iter->disabled) {
+					if (iter->cur != iter->oldCur) {
+						string name = to_string(iter->min);
+						ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
+						name = to_string(iter->cur);
+						ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
+						name = to_string(iter->max);
+						ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
+						//ListView_SetItemText(list, i, 3, (LPSTR)iter->name.c_str());
 					}
+					pos++;
 				}
 			}
 		}
-		else
-			conf->needFullUpdate = true;
-		// Trayworks...
-		for (int i = 0; i < conf->active_sensors.size(); i++) {
-			if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled && !(conf->active_sensors[i].min < 0)) {
-				if (conf->active_sensors[i].niData) {
-					// update tray counter
-					if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
-						UpdateTrayData(&conf->active_sensors[i]);
-						Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData);
-					}
-				}
-				else {
-					// add tray counter
-					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i+1,
-						NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1});
+	}
+	else
+		conf->needFullUpdate = true;
+	// Trayworks...
+	for (int i = 0; i < conf->active_sensors.size(); i++) {
+		if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled && !(conf->active_sensors[i].min < 0)) {
+			if (conf->active_sensors[i].niData) {
+				// update tray counter
+				if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
 					UpdateTrayData(&conf->active_sensors[i]);
-					if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {
-						DestroyIcon(conf->active_sensors[i].niData->hIcon);
-						delete conf->active_sensors[i].niData;
-						conf->active_sensors[i].niData = NULL;
-					}
+					Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData);
 				}
 			}
 			else {
-				// check remove from tray
-				if (conf->active_sensors[i].niData) {
-					Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData);
-					if (conf->active_sensors[i].niData->hIcon)
-						DestroyIcon(conf->active_sensors[i].niData->hIcon);
+				// add tray counter
+				conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i + 1,
+					NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
+				UpdateTrayData(&conf->active_sensors[i]);
+				if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {
+					DestroyIcon(conf->active_sensors[i].niData->hIcon);
 					delete conf->active_sensors[i].niData;
 					conf->active_sensors[i].niData = NULL;
 				}
 			}
-			conf->active_sensors[i].oldCur = conf->active_sensors[i].cur;
 		}
+		else {
+			// check remove from tray
+			if (conf->active_sensors[i].niData) {
+				Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData);
+				if (conf->active_sensors[i].niData->hIcon)
+					DestroyIcon(conf->active_sensors[i].niData->hIcon);
+				delete conf->active_sensors[i].niData;
+				conf->active_sensors[i].niData = NULL;
+			}
+		}
+		conf->active_sensors[i].oldCur = conf->active_sensors[i].cur;
 	}
-	return 0;
 }

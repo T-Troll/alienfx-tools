@@ -12,9 +12,9 @@ extern void SwitchTab(int);
 extern EventHandler* eve;
 extern int eItem;
 
-DWORD WINAPI CDlgProc(LPVOID);
-HANDLE uiStopEvent = CreateEvent(NULL, false, false, NULL);
-HANDLE uiHandle = NULL;
+ThreadHelper* ambUIupdate = NULL;
+
+void AmbUpdate(LPVOID);
 
 void InitButtonZone(HWND dlg) {
     // delete zone buttons...
@@ -27,7 +27,7 @@ void InitButtonZone(HWND dlg) {
     MapWindowPoints(bblock, dlg, (LPPOINT)&bzone, 1);
     bzone.right /= conf->amb_conf->grid.x;
     bzone.bottom /= conf->amb_conf->grid.y;
-    DWORD bId = 2000;
+    LONGLONG bId = 2000;
     for (int y = 0; y < conf->amb_conf->grid.y; y++)
         for (int x = 0; x < conf->amb_conf->grid.x; x++) {
             HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
@@ -42,9 +42,7 @@ void RedrawButtonZone(HWND dlg) {
 }
 
 void SetGridSize(HWND dlg, int x, int y) {
-    SetEvent(uiStopEvent);
-    WaitForSingleObject(uiHandle, 1000);
-    CloseHandle(uiHandle);
+    delete ambUIupdate;
     if (eve->capt) {
         eve->capt->SetGridSize(x, y);
     }
@@ -53,7 +51,7 @@ void SetGridSize(HWND dlg, int x, int y) {
         conf->amb_conf->grid.y = y;
     }
     InitButtonZone(dlg);
-    uiHandle = CreateThread(NULL, 0, CDlgProc, dlg, 0, NULL);
+    ambUIupdate = new ThreadHelper(AmbUpdate, dlg);
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -102,7 +100,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         SetSlider(sTip3, conf->amb_conf->grid.y);
 
         // Start UI update thread...
-        uiHandle = CreateThread(NULL, 0, CDlgProc, hDlg, 0, NULL);
+        ambUIupdate = new ThreadHelper(AmbUpdate, hDlg, 200);
 
         if (eItem >= 0) {
             SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
@@ -251,24 +249,17 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
     } break;
     case WM_CLOSE: case WM_DESTROY:
-        SetEvent(uiStopEvent);
-        WaitForSingleObject(uiHandle, 1000);
-        CloseHandle(uiHandle);
+        delete ambUIupdate;
     break;
     default: return false;
     }
     return true;
 }
 
-DWORD WINAPI CDlgProc(LPVOID param)
-{
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-    while (WaitForSingleObject(uiStopEvent, 200) == WAIT_TIMEOUT) {
-        if (eve->capt && eve->capt->needUpdate && IsWindowVisible((HWND)param)) {
-            //DebugPrint("Ambient UI update...\n");
-            RedrawButtonZone((HWND)param);
-            eve->capt->needUpdate = false;
-        }
+void AmbUpdate(LPVOID param) {
+    if (eve->capt && eve->capt->needUpdate && IsWindowVisible((HWND)param)) {
+        //DebugPrint("Ambient UI update...\n");
+        RedrawButtonZone((HWND)param);
+        eve->capt->needUpdate = false;
     }
-    return 0;
 }

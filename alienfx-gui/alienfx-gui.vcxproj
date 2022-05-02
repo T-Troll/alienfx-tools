@@ -189,7 +189,10 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared" />
+  <ImportGroup Label="Shared">
+    <Import Project="..\alienfan-tools\alienfan-shared\alienfan-shared.vcxitems" Label="Shared" />
+    <Import Project="..\alienfan-tools\alienfan-curve\alienfan-curve.vcxitems" Label="Shared" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -564,8 +567,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\alienfan-tools\alienfan-gui\ConfigFan.h" />
-    <ClInclude Include="..\alienfan-tools\alienfan-gui\MonHelper.h" />
     <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="CaptureHelper.h" />
     <ClInclude Include="ConfigAmbient.h" />
@@ -580,8 +581,6 @@
     <ClInclude Include="WSAudioIn.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\alienfan-tools\alienfan-gui\ConfigFan.cpp" />
-    <ClCompile Include="..\alienfan-tools\alienfan-gui\MonHelper.cpp" />
     <ClCompile Include="alienfx-gui.cpp" />
     <ClCompile Include="AmbientDialog.cpp" />
     <ClCompile Include="CaptureHelper.cpp">

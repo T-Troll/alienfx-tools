@@ -91,8 +91,8 @@ DWORD WINAPI CMonProc(LPVOID param) {
 							int tBoost = fIter->points[k - 1].boost +
 								((fIter->points[k].boost - fIter->points[k - 1].boost) *
 									(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-								(fIter->points[k].temp - fIter->points[k - 1].temp);
-							if (tBoost >= src->boostSets[fIter->fanIndex])
+									(fIter->points[k].temp - fIter->points[k - 1].temp);
+							if (tBoost > src->boostSets[fIter->fanIndex])
 								src->boostSets[fIter->fanIndex] = tBoost;
 							break;
 						}

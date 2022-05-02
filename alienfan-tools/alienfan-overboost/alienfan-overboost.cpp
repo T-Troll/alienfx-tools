@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <vector>
 #include "alienfan-SDK.h"
-#include "..\alienfan-gui\ConfigFan.h"
+#include "ConfigFan.h"
 
 AlienFan_SDK::Control *acpi = NULL;
 ConfigFan *conf = NULL;
@@ -11,7 +11,7 @@ int SetFanSteady(short num, byte boost, bool downtrend = false) {
     bool run2 = true;
     acpi->SetFanValue(num, boost, true);
     // Check the trend...
-    printf("Stabilize Fan#%d at boots %d:\n", num, boost);
+    printf("Stabilize Fan#%d at boost %d:\n", num, boost);
     int oldMids = 0, midRPMs = 0;
     int maxRPM = 0, minRPM = 10000;
     do {
@@ -77,7 +77,7 @@ void CheckFanOverboost(byte num) {
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-Overboost v5.6.2\n");
+    printf("AlienFan-Overboost v5.8.1\n");
     printf("Usage: AlienFan-Overboost [fan ID [Manual boost]]\n");
 
     conf = new ConfigFan();

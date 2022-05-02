@@ -17,14 +17,18 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
 
-HANDLE hEvent = 0, astopEvent = 0, updateEvent = 0;
+//HANDLE hEvent = 0;// , astopEvent = 0, updateEvent = 0;
 
 WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper* fx)
 {
 	conf = cf;
 	fxha = fx;
 	waveD = new double[NUMPTS];
-	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	stopEvent = CreateEvent(NULL, true, false, NULL);
+	updateEvent = CreateEvent(NULL, false, false, NULL);
+	hEvent = CreateEvent(NULL, false, false, NULL);
+
 	dftGG = new DFT_gosu();
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
@@ -38,6 +42,9 @@ WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper* fx)
 WSAudioIn::~WSAudioIn()
 {
 	release();
+	CloseHandle(stopEvent);
+	CloseHandle(updateEvent);
+	CloseHandle(hEvent);
 	delete dftGG;
 	delete[] waveD;
 	CoUninitialize();
@@ -47,7 +54,7 @@ void WSAudioIn::startSampling()
 {
 	// creating listener thread...
 	if (pAudioClient && !dwHandle) {
-		astopEvent = CreateEvent(NULL, true, false, NULL);
+		//astopEvent = CreateEvent(NULL, true, false, NULL);
 		dwHandle = CreateThread( NULL, 0, WSwaveInProc, this, 0, NULL);
 		pAudioClient->Start();
 	}
@@ -56,10 +63,10 @@ void WSAudioIn::startSampling()
 void WSAudioIn::stopSampling()
 {
 	if (dwHandle) {
-		SetEvent(astopEvent);
+		SetEvent(stopEvent);
 		WaitForSingleObject(dwHandle, 6000);
 		pAudioClient->Stop();
-		ResetEvent(astopEvent);
+		ResetEvent(stopEvent);
 		CloseHandle(dwHandle);
 		dwHandle = 0;
 	}
@@ -158,9 +165,8 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 
 	IAudioCaptureClient *pCapCli = src->pCaptureClient;
 
-	updateEvent = CreateEvent(NULL, false, false, NULL);
 	HANDLE updHandle = CreateThread(NULL, 0, resample, src, 0, NULL);
-	HANDLE hArray[2]{astopEvent, hEvent};
+	HANDLE hArray[2]{src->stopEvent, src->hEvent};
 
 	while ((res = WaitForMultipleObjects(2, hArray, false, 200)) != WAIT_OBJECT_0) {
 		switch (res) {
@@ -176,7 +182,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) {
 					ZeroMemory(src->waveD, NUMPTS * sizeof(double));
 					//buffer full, send to process.
-					SetEvent(updateEvent);
+					SetEvent(src->updateEvent);
 					//reset arrayPos
 					arrayPos = 0;
 					shift = 0;
@@ -194,7 +200,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 						if (arrayPos + i - shift == NUMPTS - 1) {
 							//buffer full, send to process.
 							memcpy(src->waveD, waveT, NUMPTS * sizeof(double));
-							SetEvent(updateEvent);
+							SetEvent(src->updateEvent);
 							//reset arrayPos
 							arrayPos = 0;
 							shift = i - shift;
@@ -209,7 +215,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 		case WAIT_TIMEOUT: // no buffer data for 1 sec...
 			ZeroMemory(src->waveD, NUMPTS * sizeof(double));
 			//buffer full, send to process.
-			SetEvent(updateEvent);
+			SetEvent(src->updateEvent);
 			//reset arrayPos
 			arrayPos = 0;
 			shift = 0;
@@ -218,7 +224,6 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	}
 	WaitForSingleObject(updHandle, 3000);
 	CloseHandle(updHandle);
-	CloseHandle(updateEvent);
 	delete[] waveT;
 	return 0;
 }
@@ -227,7 +232,7 @@ DWORD WINAPI resample(LPVOID lpParam)
 {
 	WSAudioIn *src = (WSAudioIn *) lpParam;
 
-	HANDLE waitArray[2]{astopEvent, updateEvent};
+	HANDLE waitArray[2]{src->stopEvent, src->updateEvent};
 	DWORD res = 0;
 
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0) {

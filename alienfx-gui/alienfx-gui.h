@@ -6,12 +6,13 @@
 #include "resource.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
+#include "ThreadHelper.h"
 
 // debug print
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
 
 // defines and structures...

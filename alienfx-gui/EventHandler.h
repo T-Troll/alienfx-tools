@@ -3,7 +3,7 @@
 #include "CaptureHelper.h"
 #include "WSAudioIn.h"
 #include "alienfan-SDK.h"
-#include "..\\alienfan-tools\alienfan-gui\MonHelper.h"
+#include "MonHelper.h"
 
 class EventHandler
 {

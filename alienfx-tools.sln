@@ -76,12 +76,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "alienfan-tools\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tanikaze", "alienfan-tools\alienfan-SDK\KDL\Tanikaze\Tanikaze.vcxproj", "{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-shared", "alienfan-tools\alienfan-shared\alienfan-shared.vcxitems", "{05A1D711-23F5-4B90-9F62-EC3DE2419B4D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-curve", "alienfan-tools\alienfan-curve\alienfan-curve.vcxitems", "{79BE1884-5FDB-4851-BC17-39FB58101CBA}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{05a1d711-23f5-4b90-9f62-ec3de2419b4d}*SharedItemsImports = 9
+		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{1243a1e9-2e9a-4509-9174-3ad28e894819}*SharedItemsImports = 4
+		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
+		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfx-LFX\alienfx-LFX.vcxitems*{4ecafbb9-b7b9-4bc3-9c42-1882a68edac8}*SharedItemsImports = 4
 		AlienFX-SDK\CheckDevices\CheckDevices.vcxitems*{4ecafbb9-b7b9-4bc3-9c42-1882a68edac8}*SharedItemsImports = 4
+		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
+		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{79be1884-5fdb-4851-bc17-39fb58101cba}*SharedItemsImports = 9
 		AlienFX-SDK\CheckDevices\CheckDevices.vcxitems*{9efa16c2-db6e-4af4-962e-837ede2c23b2}*SharedItemsImports = 9
 		alienfx-LFX\alienfx-LFX.vcxitems*{cc4108ae-d644-45f9-95aa-67940d0fbeda}*SharedItemsImports = 9
+		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
+		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		alienfx-LFX\alienfx-LFX.vcxitems*{ff6119ea-878f-4e7b-9fcd-8410a5d3fbf8}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
