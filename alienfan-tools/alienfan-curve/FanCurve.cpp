@@ -10,13 +10,12 @@ extern HWND fanWindow, tipWindow;
 extern AlienFan_SDK::Control* acpi;
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern HWND toolTip;
+HWND toolTip = NULL;
 
 fan_point* lastFanPoint = NULL;
 
 void SetTooltip(HWND tt, int x, int y) {
-    TOOLINFO ti{ 0 };
-    ti.cbSize = sizeof(ti);
+    TOOLINFO ti{ sizeof(ti) };
     if (tt) {
         SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
         string toolTip = "Temp: " + to_string(x) + ", Boost: " + to_string(y);
@@ -36,12 +35,12 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
 
         switch (oper) {
         case 2:// tooltip, no redraw
-            SetTooltip(toolTip, 100 * (xx - clirect.left) / (clirect.right - clirect.left),
-                100 * (clirect.bottom - yy) / (clirect.bottom - clirect.top));
+            SetTooltip(toolTip, 100 * (xx - clirect.left) / clirect.right,
+                100 * (clirect.bottom - yy) / clirect.bottom);
             return;
         case 1:// show tooltip
-            SetTooltip(toolTip, 100 * (xx - clirect.left) / (clirect.right - clirect.left),
-                100 * (clirect.bottom - yy) / (clirect.bottom - clirect.top));
+            SetTooltip(toolTip, 100 * (xx - clirect.left) / clirect.right,
+                100 * (clirect.bottom - yy) / clirect.bottom);
             break;
         }
 
@@ -59,8 +58,8 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
         SelectObject(hdc, GetStockObject(DC_PEN));
         for (int x = 0; x < 11; x++)
             for (int y = 0; y < 11; y++) {
-                int cx = x * (clirect.right - clirect.left) / 10 + clirect.left,
-                    cy = y * (clirect.bottom - clirect.top) / 10 + clirect.top;
+                int cx = (x * clirect.right) / 10 + clirect.left,
+                    cy = (y * clirect.bottom) / 10 + clirect.top;
                 MoveToEx(hdc, cx, clirect.top, NULL);
                 LineTo(hdc, cx, clirect.bottom);
                 MoveToEx(hdc, clirect.left, cy, NULL);
@@ -83,8 +82,8 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
                     // First point
                     MoveToEx(hdc, clirect.left, clirect.bottom, NULL);
                     for (int i = 0; i < fan->points.size(); i++) {
-                        int cx = fan->points[i].temp * (clirect.right - clirect.left) / 100 + clirect.left,
-                            cy = (100 - fan->points[i].boost) * (clirect.bottom - clirect.top) / 100 + clirect.top;
+                        int cx = fan->points[i].temp * clirect.right  / 100 + clirect.left,
+                            cy = (100 - fan->points[i].boost) * clirect.bottom / 100 + clirect.top;
                         LineTo(hdc, cx, cy);
                         Ellipse(hdc, cx - 2, cy - 2, cx + 2, cy + 2);
                     }
@@ -95,33 +94,31 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         SelectObject(hdc, GetStockObject(DC_BRUSH));
                         POINT mark;
-                        mark.x = acpi->GetTempValue(senI->sensorIndex) * (clirect.right - clirect.left) / 100 + clirect.left;
-                        mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
+                        mark.x = acpi->GetTempValue(senI->sensorIndex) * clirect.right / 100 + clirect.left;
+                        mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * clirect.bottom / 100 + clirect.top;
                         Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                     }
                 }
-            int percent;
             // Red dot
             SetDCPenColor(hdc, RGB(255, 0, 0));
             SetDCBrushColor(hdc, RGB(255, 0, 0));
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
             POINT mark;
-            mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * (clirect.right - clirect.left) / 100 + clirect.left;
-            mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * (clirect.bottom - clirect.top) / 100 + clirect.top;
+            mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * clirect.right / 100 + clirect.left;
+            mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * clirect.bottom / 100 + clirect.top;
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
             // RPM
-            string rpmText = "Fan curve (scale: " + to_string(fan_conf->boosts[fan_conf->lastSelectedFan].maxBoost) + ", boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) +
-                ", " + to_string((percent = acpi->GetFanPercent(fan_conf->lastSelectedFan)) > 100 ? 0 : percent < 0 ? 0 : percent) +
-                "%)";
+            fan_overboost* maxBoost = fan_conf->FindBoost(fan_conf->lastSelectedFan);
+            string rpmText = "Fan curve (scale: " + to_string(maxBoost ? maxBoost->maxBoost : acpi->boosts[fan_conf->lastSelectedFan])
+                + ", boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + ", "
+                + to_string(maxBoost ? acpi->GetFanRPM(fan_conf->lastSelectedFan) * 100 / maxBoost->maxRPM : acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
         }
 
         BitBlt(hdc_r, 0, 0, graphZone.right - graphZone.left, graphZone.bottom - graphZone.top, hdc, 0, 0, SRCCOPY);
 
-        // Free-up the off-screen DC
         SelectObject(hdc, hOld);
-
         DeleteObject(hbmMem);
         DeleteDC(hdc);
         ReleaseDC(fanWindow, hdc_r);
@@ -151,8 +148,8 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (lastFanPoint && wParam & MK_LBUTTON) {
             int temp = (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left),
                 boost = (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top);
-            lastFanPoint->temp = temp < 0 ? 0 : temp > 100 ? 100 : temp;
-            lastFanPoint->boost = boost < 0 ? 0 : boost > 100 ? 100 : boost;
+            lastFanPoint->temp = max(0, min(100, temp));
+            lastFanPoint->boost = max(0, min(100, boost));
             DrawFan(1, x, y);
         }
         else
@@ -228,25 +225,3 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hDlg, message, wParam, lParam);
 }
-
-//DWORD WINAPI UpdateFanUI(LPVOID lpParam) {
-//    HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
-//        fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST);
-//
-//    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-//    while (WaitForSingleObject(fuiEvent, 250) == WAIT_TIMEOUT) {
-//        if (mon && IsWindowVisible((HWND)lpParam)) {
-//            //DebugPrint("Fans UI update...\n");
-//            for (int i = 0; i < mon->acpi->HowManySensors(); i++) {
-//                string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
-//                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
-//            }
-//            for (int i = 0; i < mon->acpi->HowManyFans(); i++) {
-//                string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanValues[i]) + ")";
-//                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-//            }
-//            SendMessage(fanWindow, WM_PAINT, 0, 0);
-//        }
-//    }
-//    return 0;
-//}

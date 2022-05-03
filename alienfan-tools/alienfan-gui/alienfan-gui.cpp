@@ -30,10 +30,10 @@ AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
 ConfigFan* fan_conf = NULL;                     // Config...
 MonHelper* mon = NULL;                          // Monitoring & changer object
 
-//fan_point* lastFanPoint = NULL;
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
-HWND toolTip = NULL;
 HWND fanWindow = NULL, tipWindow = NULL;
+
+extern HWND toolTip;
 
 int pLid = -1;
 
@@ -43,7 +43,6 @@ NOTIFYICONDATA niData{0};
 
 void UpdateFanUI(LPVOID);
 ThreadHelper* fanThread;
-//HANDLE fuiEvent = CreateEvent(NULL, false, false, NULL), uiFanHandle = NULL;
 
 // Forward declarations of functions included in this code module:
 //ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -132,22 +131,16 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 {
     // Create a tool tip.
-    if (oldTip) {
-        DestroyWindow(oldTip);
-    }
+    if (oldTip) DestroyWindow(oldTip);
     HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
                                  WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                                  hwndParent, NULL, hInst, NULL);
 
-    SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    TOOLINFO ti{ 0 };
-    ti.cbSize = sizeof(TOOLINFO);
-    ti.uFlags = TTF_SUBCLASS;
-    ti.hwnd = hwndParent;
+    SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
     ti.hinst = hInst;
-    ti.lpszText = (LPTSTR)"0";
+    //ti.lpszText = (LPTSTR)"0";
 
     GetClientRect(hwndParent, &ti.rect);
 

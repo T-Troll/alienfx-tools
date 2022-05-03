@@ -12,8 +12,7 @@ void CMonProc(LPVOID);
 MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
 	conf = config;
 	acpi = acp;
-	oldPower = acpi->GetPower();
-	if (oldPower != conf->lastProf->powerStage)
+	if ((oldPower = acpi->GetPower()) != conf->lastProf->powerStage)
 		acpi->SetPower(conf->lastProf->powerStage);
 	acpi->SetGPU(conf->lastProf->GPUPower);
 

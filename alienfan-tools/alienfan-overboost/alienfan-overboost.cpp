@@ -18,8 +18,9 @@ int SetFanSteady(short num, byte boost, bool downtrend = false) {
         oldMids = midRPMs;
 
         maxRPM = 0, minRPM = 10000;
+        Sleep(500);
         for (int i = 0; i < 9; i++) {
-            Sleep(1000);
+            Sleep(700);
             int cRPM = acpi->GetFanRPM(num);
             if (cRPM < minRPM) minRPM = cRPM;
             if (cRPM > maxRPM) maxRPM = cRPM;
@@ -33,23 +34,17 @@ int SetFanSteady(short num, byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost(byte id, byte boost, USHORT rpm) {
-    bool noBoost = true;
-    for (auto iter = conf->boosts.begin(); iter != conf->boosts.end(); iter++)
-        if (iter->fanID == id) {
-            iter->maxBoost = boost;
-            iter->maxRPM = rpm;
-            noBoost = false;
-            break;
-        }
-    if (noBoost)
+    fan_overboost* fOver = conf->FindBoost(id);
+    if (fOver) {
+        fOver->maxBoost = boost;
+        fOver->maxRPM = rpm;
+    } else
         conf->boosts.push_back({ id, boost, rpm });
 }
 
 void CheckFanOverboost(byte num) {
-    acpi->Unlock();
-    int steps = 8;
-    int boost = 100, badBoost = 0;
-    int runrpm = 0, rpm = 0;
+    int steps = 8, boost = 100, badBoost = 0,
+        runrpm = 0, rpm = 0, oldBoost = acpi->GetFanValue(num, true);
     bool run = true;
     printf("Checking fan #%d\n", num);
     rpm = SetFanSteady(num, boost);
@@ -58,27 +53,26 @@ void CheckFanOverboost(byte num) {
         // Check for overrun
         do {
             boost += steps;
-            if (boost != badBoost) {
+            if (!(run = (boost == badBoost))) {
                 runrpm = SetFanSteady(num, boost, true);
-                run = runrpm > rpm;
-                if (runrpm > rpm) rpm = runrpm;
-            } else
-                run = false;
+                //run = runrpm > rpm;
+                if (run = runrpm > rpm) rpm = runrpm;
+            } /*else
+                run = false;*/
         } while (run);
         badBoost = boost;
         boost -= steps; run = true;
         steps = steps >> 1;
     } while (steps > 0);
     printf("Final boost - %d (at %d RPM)\n\n", boost, rpm);
-    acpi->SetFanValue(num, boost, true);
-    bool noBoost = true;
+    acpi->SetFanValue(num, oldBoost, true);
     UpdateBoost(num, boost, rpm);
 }
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-Overboost v5.8.1\n");
-    printf("Usage: AlienFan-Overboost [fan ID [Manual boost]]\n");
+    printf("AlienFan-Overboost v5.8.2\n");
+    printf("Usage: AlienFan-Overboost [fanID [Manual boost]]\n");
 
     conf = new ConfigFan();
 
@@ -86,7 +80,9 @@ int main(int argc, char* argv[])
 
     if (acpi->IsActivated()) {
         if (acpi->Probe()) {
-            conf->SetBoosts(acpi);
+            // Switch to manual mode
+            int oldMode = acpi->GetPower();
+            acpi->Unlock();
             if (argc > 1) {
                 // one fan
                 byte fanID = atoi(argv[1]);
@@ -102,17 +98,18 @@ int main(int argc, char* argv[])
                     } else
                         CheckFanOverboost(fanID);
                 else
-                    printf("Incorrect fan ID!\n");
+                    printf("Incorrect fan ID (should be 0..%d)!\n", acpi->HowManyFans() - 1 );
             } else {
                 // all fans
                 for (int i = 0; i < acpi->HowManyFans(); i++)
                     CheckFanOverboost(i);
             }
+            acpi->SetPower(oldMode);
             printf("Done!\n");
         } else
             printf("Error: Supported device not found!\n");
     } else
-        printf("Error: can't load driver!\n");
+        printf("Error: Can't load driver!\n");
 
     delete acpi;
     delete conf;

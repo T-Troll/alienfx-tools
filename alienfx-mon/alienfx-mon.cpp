@@ -497,7 +497,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
 			if (wParam)
-				selSensor = (int)wParam - 1;
+				selSensor = wParam & 0xff - 1;
 			ShowWindow(hDlg, SW_RESTORE);
 			RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
 			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
@@ -572,9 +572,20 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		delete muiThread;
 		// Remove icons from tray...
 		for (int i = 0; i < conf->active_sensors.size(); i++)
-			if (conf->active_sensors[i].intray && conf->active_sensors[i].niData) {
+			if (conf->active_sensors[i].niData) {
 				Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData);
+				if (conf->active_sensors[i].niData->hIcon)
+					DestroyIcon(conf->active_sensors[i].niData->hIcon);
+				delete conf->active_sensors[i].niData;
+				conf->active_sensors[i].niData = NULL;
 			}
+			//while (!conf->active_sensors[i].niData.empty()) {
+			//	Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData.back());
+			//	if (conf->active_sensors[i].niData.back()->hIcon)
+			//		DestroyIcon(conf->active_sensors[i].niData.back()->hIcon);
+			//	delete conf->active_sensors[i].niData.back();
+			//	conf->active_sensors[i].niData.pop_back();
+			//}
 		PostQuitMessage(0);
 		break;
 	case WM_NOTIFY:
@@ -625,68 +636,76 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	return true;
 }
 
-void UpdateTrayData(SENSOR* sen) {
-	sprintf_s(sen->niData->szTip, 128, "%s\nMin: %d\nCur: %d\nMax: %d", sen->name.c_str(), sen->min, sen->cur, sen->max);
+void UpdateTrayData(SENSOR* sen, byte index) {
 
-	char val[5];
-	sprintf_s(val, 5, "%4d", sen->cur > 100 ? sen->cur / 100 : sen->cur == 100 ? 99 : sen->cur);
+	NOTIFYICONDATA* niData = sen->niData;
 
-	HDC hdc, hdcMem;
-	HBITMAP hBitmap;
-	RECT clip{ 0,0,32,33 };
-	HBITMAP hBitmapMask;
-	ICONINFO iconInfo;
-	HFONT hFont;
-	HICON hIcon;
+	//int resVal = sen->cur, cIndex = index;
+	char val[3];
 
-	hdc = GetDC(mDlg);
-	hdcMem = CreateCompatibleDC(hdc);
-	hBitmap = CreateCompatibleBitmap(hdc, 32, 32);
+	////niData = sen->niData[index];
 
-	// Draw percentage
-	hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
+	//for (int i = 0; i < index; i++)
+	//	resVal /= 100;
+
+	//if (index) {
+	//	if (resVal > 0)
+	//		sprintf_s(val, "%2d", resVal);
+	//	else
+	//		sprintf_s(val, " ");
+	//}
+	//else {
+	//	if (sen->cur < 100)
+	//		sprintf_s(val, "%2d", sen->cur);
+	//	else
+	//		sprintf_s(val, "%02d", sen->cur % 100);
+	//}
+
+	if (sen->cur != 100)
+		sprintf_s(val, "%2d", sen->cur > 100 ? sen->cur / 100 : sen->cur);
+	else
+		sprintf_s(val, "00");
+
+	sprintf_s(niData->szTip, 128, "%s\nMin: %d\nCur: %d\nMax: %d", sen->name.c_str(), sen->min, sen->cur, sen->max);
+
+	RECT clip{ 0,0,32,32 };
+
+	HDC hdc = GetDC(mDlg), hdcMem = CreateCompatibleDC(hdc);
+	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, 32, 32), hBitmapMask = sen->inverse ? CreateCompatibleBitmap(hdc, 32, 32) : hBitmap;
+	HFONT hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
+	HBRUSH brush = CreateSolidBrush(sen->inverse ? 0xffffff : sen->traycolor);
+
 	SelectObject(hdcMem, hFont);
 	SelectObject(hdcMem, hBitmap);
 
+	SetTextColor(hdcMem, sen->inverse ?
+		sen->traycolor != 0xffffff ? sen->traycolor : 0
+		: sen->traycolor ? 0 : 0xffffff);
+
+	SetBkColor(hdcMem, sen->inverse ? 0xffffff : sen->traycolor);
+	SetBkMode(hdcMem, OPAQUE);
+	FillRect(hdcMem, &clip, brush);
+	DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+	hBitmapMask = sen->inverse ? CreateCompatibleBitmap(hdc, 32, 32) : hBitmap;
+
 	if (sen->inverse) {
-		hBitmapMask = CreateCompatibleBitmap(hdc, 32, 32);
-		if (sen->traycolor != 0xffffff)
-			SetTextColor(hdcMem, sen->traycolor);
-		else
-			SetTextColor(hdcMem, 0);
-		SetBkColor(hdcMem, 0xffffff);
-		SetBkMode(hdcMem, OPAQUE);
-		PatBlt(hdcMem, 0, 0, 32, 32, WHITEONBLACK);
-		DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
 		SelectObject(hdcMem, hBitmapMask);
 		SetTextColor(hdcMem, sen->traycolor);
 		SetBkColor(hdcMem, 0x0);
 		SetBkMode(hdcMem, TRANSPARENT);
-		PatBlt(hdcMem, 0, 0, 32, 32, BLACKONWHITE);
+		DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
 	}
-	else {
-		hBitmapMask = hBitmap;
-		if (sen->traycolor)
-			SetTextColor(hdcMem, 0); // 0x00bbggrr
-		else
-			SetTextColor(hdcMem, 0xffffff); // 0x00bbggrr
-		SetBkColor(hdcMem, sen->traycolor);
-		SetBkMode(hdcMem, OPAQUE);
-	}
-	DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
 
+	DeleteObject(brush);
 	ReleaseDC(mDlg, hdc);
 
-	iconInfo.fIcon = TRUE;
-	iconInfo.hbmMask = hBitmap;
-	iconInfo.hbmColor = hBitmapMask;
+	ICONINFO iconInfo{true, 0, 0, hBitmap, hBitmapMask };
+	HICON hIcon = CreateIconIndirect(&iconInfo);
 
-	hIcon = CreateIconIndirect(&iconInfo);
+	if (niData->hIcon)
+		DestroyIcon(niData->hIcon);
 
-	if (sen->niData->hIcon)
-		DestroyIcon(sen->niData->hIcon);
-
-	sen->niData->hIcon = hIcon;
+	niData->hIcon = hIcon;
 
 	DeleteObject(hFont);
 	DeleteDC(hdcMem);
@@ -722,37 +741,64 @@ void UpdateMonUI(LPVOID lpParam) {
 	}
 	else
 		conf->needFullUpdate = true;
-	// Trayworks...
+	// Tray works...
 	for (int i = 0; i < conf->active_sensors.size(); i++) {
 		if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled && !(conf->active_sensors[i].min < 0)) {
-			if (conf->active_sensors[i].niData) {
-				// update tray counter
-				if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
-					UpdateTrayData(&conf->active_sensors[i]);
+			if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
+				if (conf->active_sensors[i].niData) {
+					// update tray icon
+					UpdateTrayData(&conf->active_sensors[i], 0);
 					Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData);
 				}
-			}
-			else {
-				// add tray counter
-				conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i + 1,
-					NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
-				UpdateTrayData(&conf->active_sensors[i]);
-				if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {
-					DestroyIcon(conf->active_sensors[i].niData->hIcon);
-					delete conf->active_sensors[i].niData;
-					conf->active_sensors[i].niData = NULL;
+				else {
+					// add new tray icon
+					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i + 1,
+						NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
+					UpdateTrayData(&conf->active_sensors[i], 0);
+					if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {
+						DestroyIcon(conf->active_sensors[i].niData->hIcon);
+						delete conf->active_sensors[i].niData;
+						conf->active_sensors[i].niData = NULL;
+					}
 				}
+				//int maxVal = conf->active_sensors[i].max;
+				//for (int j = 0; j < conf->active_sensors[i].niData.size(); j++) {
+				//	// update tray counters
+				//	UpdateTrayData(&conf->active_sensors[i], j);
+				//	Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData[j]);
+				//	maxVal /= 100;
+				//}
+				//while (maxVal > 0 && maxVal != 100) {
+				//	// add tray counter
+				//	NOTIFYICONDATA* niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg,
+				//		(unsigned) (conf->active_sensors[i].niData.size() -1 ) << 8 + i + 1,
+				//		NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
+				//	conf->active_sensors[i].niData.push_back(niData);
+				//	UpdateTrayData(&conf->active_sensors[i], (byte)conf->active_sensors[i].niData.size() - 1);
+				//	if (!Shell_NotifyIcon(NIM_ADD, niData)) {
+				//		DestroyIcon(niData->hIcon);
+				//		delete niData;
+				//		conf->active_sensors[i].niData.pop_back();
+				//	}
+				//	maxVal /= 100;
+				//}
 			}
 		}
 		else {
-			// check remove from tray
+			// remove tray icon
 			if (conf->active_sensors[i].niData) {
 				Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData);
-				if (conf->active_sensors[i].niData->hIcon)
-					DestroyIcon(conf->active_sensors[i].niData->hIcon);
+				DestroyIcon(conf->active_sensors[i].niData->hIcon);
 				delete conf->active_sensors[i].niData;
 				conf->active_sensors[i].niData = NULL;
 			}
+			//while (!conf->active_sensors[i].niData.empty()) {
+			//	Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData.back());
+			//	if (conf->active_sensors[i].niData.back()->hIcon)
+			//		DestroyIcon(conf->active_sensors[i].niData.back()->hIcon);
+			//	delete conf->active_sensors[i].niData.back();
+			//	conf->active_sensors[i].niData.pop_back();
+			//}
 		}
 		conf->active_sensors[i].oldCur = conf->active_sensors[i].cur;
 	}

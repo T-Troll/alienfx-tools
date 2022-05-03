@@ -45,7 +45,7 @@ SENSOR* ConfigMon::CheckSensor(int src, byte type, DWORD id)
 {
 	SENSOR* sen = FindSensor(src, type, id);
 	if (!sen) {
-		active_sensors.push_back({ src, (byte)type, (DWORD)id, "", -1});
+		active_sensors.push_back({ src, (byte)type, (DWORD)id, "", -300});
 		sen = &active_sensors.back();
 	}
 	return sen;

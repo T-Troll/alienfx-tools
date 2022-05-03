@@ -8,7 +8,7 @@
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
 
 DWORD WINAPI CEventProc(LPVOID);
@@ -67,9 +67,10 @@ void SenMonHelper::ModifyMon()
 
 void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, string name) {
 	SENSOR* sen;
+	if (val > 10000) return;
 	if (sen = conf->FindSensor(grp, type, id)) {
 		sen->cur = val;
-		if (sen->cur < sen->min || sen->min < 0)
+		if (sen->cur < sen->min || sen->min < -299)
 			sen->min = sen->cur;
 		if (sen->cur > sen->max)
 			sen->max = sen->cur;
@@ -114,7 +115,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 	HQUERY hQuery = NULL;
 	HLOG hLog = NULL;
-	//PDH_STATUS pdhStatus;
 	DWORD dwLogType = PDH_LOG_TYPE_CSV;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
@@ -122,9 +122,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 	memStat.dwLength = sizeof(MEMORYSTATUSEX);
 
 	SYSTEM_POWER_STATUS state;
-
-	//ULONGLONG maxnet = 1;
-	//DWORD maxPower = 100;
 
 	DWORD cType = 0, valCount = 0;
 
@@ -199,9 +196,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 			}
 
 			for (int i = 0; i < src->acpi->HowManyFans(); i++) { // BIOS fans, code 1-2
-				int fpst = src->acpi->GetFanPercent(i);
 				AddUpdateSensor(src->conf, 2, 1, i, src->acpi->GetFanRPM(i), (string)"Fan " + to_string(i+1) + " RPM");
-				AddUpdateSensor(src->conf, 2, 2, i, fpst > 100 ? 100 : fpst, (string)"Fan " + to_string(i+1) + " percent");
+				AddUpdateSensor(src->conf, 2, 2, i, src->acpi->GetFanPercent(i), (string)"Fan " + to_string(i+1) + " percent");
+				AddUpdateSensor(src->conf, 2, 3, i, src->acpi->GetFanValue(i, true), (string)"Fan " + to_string(i + 1) + " boost");
 			}
 		}
 	}

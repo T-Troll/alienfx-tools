@@ -168,16 +168,21 @@ void ConfigFan::Save() {
 }
 
 void ConfigFan::SetBoosts(AlienFan_SDK::Control* acpi) {
+	fan_overboost* maxB;
 	for (byte fID = 0; fID < acpi->boosts.size(); fID++) {
-		auto iter = boosts.begin();
-		for (; iter != boosts.end(); iter++)
-			if (iter->fanID == fID) {
-				acpi->boosts[fID] = iter->maxBoost;
-				break;
-			}
-		if (iter == boosts.end())
-			// No boost found for fan, need to use ACPI data
-			boosts.push_back({ fID, acpi->boosts[fID], 5000 });
+		if ((maxB = FindBoost(fID)))
+			acpi->boosts[fID] = maxB->maxBoost;
+		//else
+		//	// No boost found for fan, need to use ACPI data
+		//	boosts.push_back({ fID, acpi->boosts[fID], 5000 });
 	}
+}
+
+fan_overboost* ConfigFan::FindBoost(int fID)
+{
+	for (auto bIter = boosts.begin(); bIter < boosts.end(); bIter++)
+		if (bIter->fanID == fID)
+			return &(*bIter);
+	return 0;
 }
 

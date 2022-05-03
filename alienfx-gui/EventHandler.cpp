@@ -505,9 +505,8 @@ DWORD WINAPI CEventProc(LPVOID param)
 		if (src->mon) {
 			// Check fan RPMs
 			for (unsigned i = 0; i < src->mon->fanValues.size(); i++) {
-				int newRpm = src->mon->fanValues[i] * 100 / src->conf->fan_conf->boosts[i].maxRPM;
-				if (src->fxh->maxData.Fan < src->conf->fan_conf->boosts[i].maxRPM)
-					src->fxh->maxData.Fan = src->conf->fan_conf->boosts[i].maxRPM;
+				fan_overboost* overBoost = src->conf->fan_conf->FindBoost(i);
+				int newRpm = overBoost ? src->mon->fanValues[i] * 100 / overBoost->maxBoost : src->mon->acpi->GetFanPercent(i);
 				if (cData.Fan < newRpm)
 					cData.Fan = newRpm;
 			}

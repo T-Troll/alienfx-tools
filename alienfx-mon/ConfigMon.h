@@ -21,6 +21,7 @@ struct SENSOR {
 		DWORD flags;
 	};
 	DWORD traycolor = 0xffffff;
+	//vector<NOTIFYICONDATA*> niData;
 	NOTIFYICONDATA* niData;
 	int oldCur;
 };

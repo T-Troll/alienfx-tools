@@ -47,7 +47,7 @@ HWND mDlg = 0;
 AlienFX_SDK::afx_act* mod;
 HANDLE stopColorRefresh = 0;
 
-HWND toolTip = 0, sTip1 = 0, sTip2 = 0, sTip3 = 0;
+HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
 
 // ConfigStatic:
 int tabSel = -1;
@@ -244,8 +244,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		fxhl->Start();
 
 		eve = new EventHandler(conf, fxhl);
-		eve->StartFanMon(acpi);
 		eve->ChangePowerState();
+		eve->StartFanMon(acpi);
 
 		if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 			return FALSE;
@@ -361,25 +361,16 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 {
 	// Create a tool tip.
-	if (oldTip) {
-		DestroyWindow(oldTip);
-	}
+	if (oldTip) DestroyWindow(oldTip);
+
 	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
 								 WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-								 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-								 hwndParent, NULL, hInst, NULL);
+								 0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
+	//SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+	//			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-				 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
-	//ti.cbSize = sizeof(TOOLINFO);
-	//ti.uFlags = TTF_SUBCLASS;
-	//ti.hwnd = hwndParent;
-	ti.hinst = hInst;
-	ti.lpszText = (LPTSTR)"0";
-
 	GetClientRect(hwndParent, &ti.rect);
-
 	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
 	return hwndTT;
 }

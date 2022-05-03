@@ -60,5 +60,6 @@ public:
 	void Save();
 
 	void SetBoosts(AlienFan_SDK::Control *);
+	fan_overboost* FindBoost(int);
 };
 
