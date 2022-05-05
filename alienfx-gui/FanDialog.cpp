@@ -19,87 +19,12 @@ int pLid = -1;
 GUID* sch_guid, perfset;
 
 extern INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
+extern void ReloadFanView(HWND list, int cID);
+extern void ReloadPowerList(HWND list, int id);
+extern void ReloadTempView(HWND list, int cID);
 void UpdateFanUI(LPVOID);
 
 ThreadHelper* fanUIUpdate;
-
-void ReloadFanView(HWND hDlg, int cID) {
-    temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
-    HWND list = GetDlgItem(hDlg, IDC_FAN_LIST);
-    ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
-    if (!ListView_GetColumnWidth(list, 0)) {
-        LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
-        ListView_InsertColumn(list, 0, &lCol);
-    }
-    for (int i = 0; i < acpi->HowManyFans(); i++) {
-        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, i};
-        string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
-        lItem.lParam = i;
-        lItem.pszText = (LPSTR) name.c_str();
-        if (i == cID) {
-            lItem.mask |= LVIF_STATE;
-            lItem.state = LVIS_SELECTED;
-            SendMessage(fanWindow, WM_PAINT, 0, 0);
-        }
-        ListView_InsertItem(list, &lItem);
-        if (sen && fan_conf->FindFanBlock(sen, i)) {
-            ListView_SetCheckState(list, i, true);
-        }
-    }
-
-    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE_USEHEADER);
-}
-
-void ReloadPowerList(HWND hDlg, int id) {
-    HWND list = GetDlgItem(hDlg, IDC_COMBO_POWER);
-    ComboBox_ResetContent(list);
-    for (int i = 0; i < acpi->HowManyPower(); i++) {
-        string name;
-        if (i) {
-            auto pwr = fan_conf->powers.find(acpi->powers[i]);
-            name = pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(i);
-        }
-        else
-            name = "Manual";
-        int pos = ComboBox_AddString(list, (LPARAM)(name.c_str()));
-        ComboBox_SetItemData(list, pos, i);
-        if (i == id) {
-            ComboBox_SetCurSel(list, pos);
-            pLid = pos;
-        }
-    }
-}
-
-void ReloadTempView(HWND hDlg, int cID) {
-    int rpos = 0;
-    HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
-    ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-    if (!ListView_GetColumnWidth(list, 1)) {
-        LVCOLUMNA lCol{ LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM ,LVCFMT_LEFT,100,(LPSTR)"Temp",4};
-        ListView_InsertColumn(list, 0, &lCol);
-        lCol.pszText = (LPSTR)"Name";
-        lCol.iSubItem = 1;
-        ListView_InsertColumn(list, 1, &lCol);
-    }
-    for (int i = 0; i < acpi->HowManySensors(); i++) {
-        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, i };
-        string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
-        lItem.lParam = i;
-        lItem.pszText = (LPSTR) name.c_str();
-        if (i == cID) {
-            lItem.mask |= LVIF_STATE;
-            lItem.state = LVIS_SELECTED;
-            rpos = i;
-        }
-        ListView_InsertItem(list, &lItem);
-        ListView_SetItemText(list, i, 1, (LPSTR) acpi->sensors[i].name.c_str());
-    }
-    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
-    ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
-    ListView_EnsureVisible(list, rpos, false);
-}
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -142,9 +67,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ComboBox_SetCurSel(boost_ac, acMode);
             ComboBox_SetCurSel(boost_dc, dcMode);
 
-            ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
-            ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
-            ReloadFanView(hDlg, fan_conf->lastSelectedFan);
+            ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
+            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
+            ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
 
             // So open fan control window...
             fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
@@ -227,9 +152,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_MAX_RESET:
         {
-            for (int i = 0; i < acpi->HowManySensors(); i++)
-                eve->mon->maxTemps[i] = acpi->GetTempValue(i);
-            ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
+            mon->maxTemps = mon->senValues;
+            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
         } break;
         }
     } break;
@@ -297,7 +221,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         // Select other fan....
                         fan_conf->lastSelectedSensor = lPoint->iItem;
                         // Redraw fans
-                        ReloadFanView(hDlg, fan_conf->lastSelectedFan);
+                        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
                         SendMessage(fanWindow, WM_PAINT, 0, 0);
                     }
                 }

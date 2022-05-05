@@ -61,10 +61,6 @@ DWORD EvaluteToAdmin() {
             {
                 if (mDlg) {
                     conf->Save();
-                    //fan_conf->Save();
-                    //if (acpi)
-                    //    delete acpi;
-                    //Shell_NotifyIcon(NIM_DELETE, &conf->niData);
                     EndDialog(mDlg, 1);
                 }
                 _exit(1);  // Quit itself
@@ -281,6 +277,13 @@ void RedrawButton(unsigned id, DWORD clr) {
 	ReleaseDC(tl, cnt);
 }
 
+void UpdateItemInfo() {
+	CheckDlgButton(mDlg, IDC_CHECK_INTRAY, conf->active_sensors[selSensor].intray);
+	CheckDlgButton(mDlg, IDC_CHECK_INVERTED, conf->active_sensors[selSensor].inverse);
+	CheckDlgButton(mDlg, IDC_CHECK_HIDDEN, conf->active_sensors[selSensor].disabled);
+	RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
+}
+
 void ReloadSensorView() {
 	int pos = 0, rpos = 0;
 	HWND list = GetDlgItem(mDlg, IDC_SENSOR_LIST);
@@ -302,23 +305,21 @@ void ReloadSensorView() {
 	}
 
 	for (int i = 0; i < conf->active_sensors.size(); i++) {
-		if (!conf->active_sensors[i].disabled) {
+		if ((conf->showHidden && conf->active_sensors[i].disabled) ||
+			(!conf->showHidden && !conf->active_sensors[i].disabled)) {
+			string name = conf->active_sensors[i].min > NO_SEN_VALUE ? to_string(conf->active_sensors[i].min) : "--";
 			LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, pos };
-			string name = to_string(conf->active_sensors[i].min);
 			lItem.lParam = i;
 			lItem.pszText = (LPSTR)name.c_str();
+			ListView_InsertItem(list, &lItem);
 			if (i == selSensor) {
-				lItem.mask |= LVIF_STATE;
-				lItem.state = LVIS_SELECTED;
-				rpos = ListView_InsertItem(list, &lItem);
-				CheckDlgButton(mDlg, IDC_CHECK_INTRAY, conf->active_sensors[i].intray);
-				CheckDlgButton(mDlg, IDC_CHECK_INVERTED, conf->active_sensors[i].inverse);
-				RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[i].traycolor);
-			} else
-				ListView_InsertItem(list, &lItem);
-			name = to_string(conf->active_sensors[i].cur);
+				ListView_SetItemState(list, pos, LVIS_SELECTED, LVIS_SELECTED);
+				rpos = pos;
+				UpdateItemInfo();
+			}
+			name = conf->active_sensors[i].min > NO_SEN_VALUE ? to_string(conf->active_sensors[i].cur) : "--";
 			ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-			name = to_string(conf->active_sensors[i].max);
+			name = conf->active_sensors[i].min > NO_SEN_VALUE ? to_string(conf->active_sensors[i].max) : "--";
 			ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
 			ListView_SetItemText(list, pos, 3, (LPSTR)conf->active_sensors[i].name.c_str());
 			pos++;
@@ -356,6 +357,15 @@ bool SetColor(int id, DWORD* clr) {
 	return ret;
 }
 
+void RestoreWindow(int id) {
+	if (id) selSensor = (id & 0xff) - 1;
+	ShowWindow(mDlg, SW_RESTORE);
+	RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
+	SetWindowPos(mDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+	SetWindowPos(mDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+	ReloadSensorView();
+}
+
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	if (message == newTaskBar) {
@@ -383,7 +393,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		ReloadSensorView();
 
 		conf->niData.hWnd = hDlg;
-		//conf->SetIconState();
 
 		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
 			// check update....
@@ -419,16 +428,13 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		{
 			conf->startWindows = state;
 			char pathBuffer[2048];
-			string shellcomm;
 			if (conf->startWindows) {
 				GetModuleFileNameA(NULL, pathBuffer, 2047);
-				shellcomm = "Register-ScheduledTask -TaskName \"AlienFX-Mon\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-					+ string(pathBuffer) + "' -Argument '-d') -force -RunLevel Highest";
-				ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
+				ShellExecute(NULL, "runas", "powershell.exe", string("Register-ScheduledTask -TaskName \"AlienFX-Mon\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
+					+ string(pathBuffer) + "' -Argument '-d') -force -RunLevel Highest").c_str(), NULL, SW_HIDE);
 			}
 			else {
-				shellcomm = "/delete /F /TN \"Alienfx-Mon\"";
-				ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
+				ShellExecute(NULL, "runas", "schtasks.exe", "/delete /F /TN \"Alienfx-Mon\"", NULL, SW_HIDE);
 			}
 		} break;
 		case IDC_CHECK_UPDATE:
@@ -473,6 +479,22 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->active_sensors[selSensor].inverse = state;
 			conf->active_sensors[selSensor].oldCur = -1;
 			break;
+		case IDC_CHECK_HIDDEN:
+			conf->active_sensors[selSensor].disabled = state;
+			while (selSensor < conf->active_sensors.size() && conf->showHidden ? !conf->active_sensors[selSensor].disabled :
+				conf->active_sensors[selSensor].disabled)
+				selSensor++;
+			if (conf->showHidden ? !conf->active_sensors[selSensor].disabled :
+				conf->active_sensors[selSensor].disabled)
+				while (selSensor >=0 && conf->showHidden ? !conf->active_sensors[selSensor].disabled :
+					conf->active_sensors[selSensor].disabled)
+					selSensor--;
+			ReloadSensorView();
+			break;
+		case IDC_SHOW_HIDDEN:
+			conf->showHidden = state;
+			ReloadSensorView();
+			break;
 		case IDC_REFRESH_TIME:
 			if (HIWORD(wParam) == EN_CHANGE) {
 				conf->refreshDelay = GetDlgItemInt(hDlg, IDC_REFRESH_TIME, NULL, false);
@@ -496,28 +518,16 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (lParam) {
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
-			if (wParam)
-				selSensor = wParam & 0xff - 1;
-			ShowWindow(hDlg, SW_RESTORE);
-			RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
-			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			ReloadSensorView();
+			RestoreWindow((int)wParam);
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDC_MON_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi;
-			memset(&mi, 0, sizeof(mi));
-			mi.cbSize = sizeof(mi);
-			mi.fMask = MIM_STYLE;
-			mi.dwStyle = MNS_NOTIFYBYPOS;
+			MENUINFO mi{ sizeof(mi), MIM_STYLE, MNS_NOTIFYBYPOS };
 			SetMenuInfo(tMenu, &mi);
-			MENUITEMINFO mInfo{ 0 };
-			mInfo.cbSize = sizeof(MENUITEMINFO);
-			mInfo.fMask = MIIM_STRING | MIIM_ID;
+			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID };
 			CheckMenuItem(tMenu, ID__PAUSE, conf->paused ? MF_CHECKED : MF_UNCHECKED);
 			GetCursorPos(&lpClickPoint);
 			SetForegroundWindow(hDlg);
@@ -538,10 +548,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
 			break;
 		case ID__RESTORE:
-			ShowWindow(hDlg, SW_RESTORE);
-			SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-			ReloadSensorView();
+			RestoreWindow((int)wParam);
 			break;
 		case ID__PAUSE:
 			conf->paused = !conf->paused;
@@ -612,9 +619,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
 				if (lPoint->uNewState & LVIS_FOCUSED) {
 					selSensor = (int)lPoint->lParam;
-					CheckDlgButton(mDlg, IDC_CHECK_INTRAY, conf->active_sensors[selSensor].intray);
-					CheckDlgButton(mDlg, IDC_CHECK_INVERTED, conf->active_sensors[selSensor].inverse);
-					RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
+					UpdateItemInfo();
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -722,19 +727,21 @@ void UpdateMonUI(LPVOID lpParam) {
 			ReloadSensorView();
 		}
 		else {
-			int pos = 0;
-			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
-				if (!iter->disabled) {
-					if (iter->cur != iter->oldCur) {
-						string name = to_string(iter->min);
-						ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
-						name = to_string(iter->cur);
-						ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-						name = to_string(iter->max);
-						ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
-						//ListView_SetItemText(list, i, 3, (LPSTR)iter->name.c_str());
+			if (!conf->showHidden) {
+				int pos = 0;
+				for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
+					if (!iter->disabled) {
+						if (iter->cur != iter->oldCur) {
+							string name = to_string(iter->min);
+							ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
+							name = to_string(iter->cur);
+							ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
+							name = to_string(iter->max);
+							ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
+							//ListView_SetItemText(list, i, 3, (LPSTR)iter->name.c_str());
+						}
+						pos++;
 					}
-					pos++;
 				}
 			}
 		}
@@ -743,7 +750,7 @@ void UpdateMonUI(LPVOID lpParam) {
 		conf->needFullUpdate = true;
 	// Tray works...
 	for (int i = 0; i < conf->active_sensors.size(); i++) {
-		if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled && !(conf->active_sensors[i].min < 0)) {
+		if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled && conf->active_sensors[i].min > NO_SEN_VALUE) {
 			if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
 				if (conf->active_sensors[i].niData) {
 					// update tray icon

@@ -51,6 +51,10 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
+void ReloadFanView(HWND list, int cID);
+void ReloadPowerList(HWND list, int id);
+void ReloadTempView(HWND list, int cID);
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -146,99 +150,6 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 
     SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
     return hwndTT;
-}
-
-void ReloadFanView(HWND hDlg, int cID) {
-    temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
-    HWND list = GetDlgItem(hDlg, IDC_FAN_LIST);
-    ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES /*| LVS_EX_AUTOSIZECOLUMNS*/ | LVS_EX_FULLROWSELECT);
-    LVCOLUMNA lCol;
-    lCol.mask = LVCF_WIDTH;
-    lCol.cx = 100;
-    lCol.iSubItem = 0;
-    ListView_DeleteColumn(list, 0);
-    ListView_InsertColumn(list, 0, &lCol);
-    for (int i = 0; i < acpi->HowManyFans(); i++) {
-        LVITEMA lItem;
-        string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
-        lItem.mask = LVIF_TEXT | LVIF_PARAM;
-        lItem.iItem = i;
-        lItem.iImage = 0;
-        lItem.iSubItem = 0;
-        lItem.lParam = i;
-        lItem.pszText = (LPSTR) name.c_str();
-        if (i == cID) {
-            lItem.mask |= LVIF_STATE;
-            lItem.state = LVIS_SELECTED;
-            SendMessage(fanWindow, WM_PAINT, 0, 0);
-        }
-        ListView_InsertItem(list, &lItem);
-        if (sen && fan_conf->FindFanBlock(sen, i)) {
-            fan_conf->lastSelectedSensor = -1;
-            ListView_SetCheckState(list, i, true);
-            fan_conf->lastSelectedSensor = sen->sensorIndex;
-        }
-    }
-
-    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE_USEHEADER);
-}
-
-
-void ReloadPowerList(HWND hDlg, int id) {
-    HWND list = GetDlgItem(hDlg, IDC_COMBO_POWER);
-    ComboBox_ResetContent(list);
-    for (int i = 0; i < acpi->HowManyPower(); i++) {
-        string name;
-        if (i) {
-            auto pwr = fan_conf->powers.find(acpi->powers[i]);
-            name = pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(i);
-        }
-        else
-            name = "Manual";
-        int pos = ComboBox_AddString(list, (LPARAM)(name.c_str()));
-        ComboBox_SetItemData(list, pos, i);
-        if (i == id)
-            ComboBox_SetCurSel(list, pos);
-    }
-}
-
-void ReloadTempView(HWND hDlg, int cID) {
-    int rpos = 0;
-    HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
-    ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-    if (!ListView_GetColumnWidth(list, 1)) {
-        LVCOLUMNA lCol;
-        lCol.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-        lCol.cx = 100;
-        lCol.iSubItem = 0;
-        lCol.pszText = (LPSTR)"Temp";
-        ListView_InsertColumn(list, 0, &lCol);
-        lCol.pszText = (LPSTR)"Name";
-        lCol.iSubItem = 1;
-        ListView_InsertColumn(list, 1, &lCol);
-    }
-    for (int i = 0; i < acpi->HowManySensors(); i++) {
-        LVITEMA lItem;
-        string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
-        lItem.mask = LVIF_TEXT | LVIF_PARAM;
-        lItem.iItem = i;
-        lItem.iImage = 0;
-        lItem.iSubItem = 0;
-        lItem.lParam = i;
-        lItem.pszText = (LPSTR) name.c_str();
-        if (i == cID) {
-            lItem.mask |= LVIF_STATE;
-            lItem.state = LVIS_SELECTED;
-            rpos = i;
-        }
-        ListView_InsertItem(list, &lItem);
-        ListView_SetItemText(list, i, 1, (LPSTR) acpi->sensors[i].name.c_str());
-    }
-    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
-    ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
-    ListView_EnsureVisible(list, rpos, false);
 }
 
 string GetAppVersion();
@@ -366,9 +277,9 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg);
 
-        ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
-        ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
-        ReloadFanView(hDlg, fan_conf->lastSelectedFan);
+        ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
+        ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
+        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -478,9 +389,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         } break;
         case IDC_MAX_RESET:
         {
-            for (int i = 0; i < acpi->HowManySensors(); i++)
-                mon->maxTemps[i] = acpi->GetTempValue(i);
-            ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
+            mon->maxTemps = mon->senValues;
+            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
         } break;
         default:
             return DefWindowProc(hDlg, message, wParam, lParam);
@@ -526,7 +436,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
             fan_conf->lastProf->powerStage = (DWORD)wParam - 20;
             acpi->SetPower(fan_conf->lastProf->powerStage);
-            ReloadPowerList(hDlg, fan_conf->lastProf->powerStage);
+            ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
         }
         //switch (wParam) {
         //case 6: // G-key for Dell G-series power switch
@@ -604,7 +514,7 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         // Select other fan....
                         fan_conf->lastSelectedSensor = lPoint->iItem;
                         // Redraw fans
-                        ReloadFanView(hDlg, fan_conf->lastSelectedFan);
+                        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
                         SendMessage(fanWindow, WM_PAINT, 0, 0);
                     }
                 }

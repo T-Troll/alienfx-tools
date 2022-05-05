@@ -23,6 +23,28 @@ vector<AlienFX_SDK::group*> lghGrp;
 
 int effID = -1;
 
+void SetEffectData(HWND hDlg, lightset* mmap) {
+	bool hasEffects = false;
+	if (mmap) {
+		switch (fxhl->LocateDev(mmap->devid) ? fxhl->LocateDev(mmap->devid)->dev->GetVersion() : -1) {
+		case -1: case 1: case 2: case 3: case 4: case 7:
+			// Have hardware effects
+			hasEffects = true;
+			break;
+		}
+		// Set data
+		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->eve[0].map[effID].type);
+		SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
+		SetSlider(sTip1, mmap->eve[0].map[effID].tempo);
+		SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->eve[0].map[effID].time);
+		SetSlider(sTip2, mmap->eve[0].map[effID].time);
+	}
+	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER));
+	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
+	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
+	RedrawButton(hDlg, IDC_BUTTON_C1, mmap ? Act2Code(&mmap->eve[0].map[effID]) : 0);
+}
+
 void RebuildEffectList(HWND hDlg, lightset* mmap) {
 	HWND eff_list = GetDlgItem(hDlg, IDC_LEFFECTS_LIST),
 		s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
@@ -39,23 +61,20 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 		ListView_InsertColumn(eff_list, 0, &lCol);
 	}
 	if (mmap) {
-		LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE };
-		char efName[16]{0};
-
 		COLORREF* picData = NULL;
 		HBITMAP colorBox = NULL;
 		HIMAGELIST hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
 								  GetSystemMetrics(SM_CYSMICON),
 								  ILC_COLOR32, 1, 1);
 		for (int i = 0; i < mmap->eve[0].map.size(); i++) {
+			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
+			char efName[16]{ 0 };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
 			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), RGB(mmap->eve[0].map[i].b, mmap->eve[0].map[i].g, mmap->eve[0].map[i].r));
-			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
-									1, 32, picData);
+			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 1, 32, picData);
 			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);
 			DeleteObject(colorBox);
-			lItem.iItem = i;
 			lItem.iImage = i;
 			switch (mmap->eve[0].map[i].type) {
 			case AlienFX_SDK::AlienFX_A_Color:
@@ -81,44 +100,15 @@ void RebuildEffectList(HWND hDlg, lightset* mmap) {
 				break;
 			}
 			lItem.pszText = efName;
+			// check selection...
+			if (i == effID) {
+				lItem.state = LVIS_SELECTED;
+			}
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
-
-		// Set selection...
-		//if (effID >= ListView_GetItemCount(eff_list))
-		//	effID = ListView_GetItemCount(eff_list) - 1;
-		if (effID != -1) {
-			int dev_ver = fxhl->LocateDev(mmap->devid) ? fxhl->LocateDev(mmap->devid)->dev->GetVersion() : -1;
-			ListView_SetItemState(eff_list, effID, LVIS_SELECTED, LVIS_SELECTED);
-			switch (dev_ver) {
-			case -1: case 1: case 2: case 3: case 4: case 7:
-				// Have hardware effects
-				EnableWindow(type_c1, !(fxhl->afx_dev.GetFlags(mmap->devid, mmap->lightid) & ALIENFX_FLAG_POWER));
-				EnableWindow(s1_slider, true);
-				EnableWindow(l1_slider, true);
-				break;
-			default:
-				// No hardware effects, color only
-				EnableWindow(type_c1, false);
-				EnableWindow(s1_slider, false);
-				EnableWindow(l1_slider, false);
-			}
-			// Set data
-			ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
-			RedrawButton(hDlg, IDC_BUTTON_C1, Act2Code(&mmap->eve[0].map[effID]));
-			SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
-			SetSlider(sTip1, mmap->eve[0].map[effID].tempo);
-			SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
-			SetSlider(sTip2, mmap->eve[0].map[effID].time);
-		}
 	}
-	else {
-		EnableWindow(type_c1, false);
-		EnableWindow(s1_slider, false);
-		EnableWindow(l1_slider, false);
-		RedrawButton(hDlg, IDC_BUTTON_C1, {0});
-	}
+	SetEffectData(hDlg, mmap);
 	ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
 }
@@ -564,21 +554,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
 				if (lPoint->uNewState & LVIS_FOCUSED) {
 					// Select other item...
-					if (lPoint->iItem != -1) {
-						// Select other color....
-						effID = lPoint->iItem;
-						if (mmap) {
-							// Set data
-							ComboBox_SetCurSel(type_c1, mmap->eve[0].map[effID].type);
-							RedrawButton(hDlg, IDC_BUTTON_C1, Act2Code(&mmap->eve[0].map[effID]));
-							SendMessage(s1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].tempo);
-							SetSlider(sTip1, mmap->eve[0].map[effID].tempo);
-							SendMessage(l1_slider, TBM_SETPOS, true, mmap->eve[0].map[effID].time);
-							SetSlider(sTip2, mmap->eve[0].map[effID].time);
-						}
-					} else {
-						effID = 0;
-					}
+					effID = lPoint->iItem != -1 ? effID = lPoint->iItem : 0;
+					SetEffectData(hDlg, mmap);
 				}
 			} break;
 			case NM_DBLCLK:

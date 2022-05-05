@@ -6,7 +6,7 @@
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(_x_);
 #else
-#define DebugPrint(_x_)  
+#define DebugPrint(_x_)
 #endif
 
 ConfigMon::ConfigMon() {
@@ -45,7 +45,7 @@ SENSOR* ConfigMon::CheckSensor(int src, byte type, DWORD id)
 {
 	SENSOR* sen = FindSensor(src, type, id);
 	if (!sen) {
-		active_sensors.push_back({ src, (byte)type, (DWORD)id, "", -300});
+		active_sensors.push_back({ src, (byte)type, (DWORD)id, "", NO_SEN_VALUE });
 		sen = &active_sensors.back();
 	}
 	return sen;

@@ -225,3 +225,80 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hDlg, message, wParam, lParam);
 }
+
+void ReloadFanView(HWND list, int cID) {
+    temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+    //HWND list = GetDlgItem(hDlg, IDC_FAN_LIST);
+    ListView_DeleteAllItems(list);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES /*| LVS_EX_AUTOSIZECOLUMNS*/ | LVS_EX_FULLROWSELECT);
+    if (!ListView_GetColumnWidth(list, 0)) {
+        LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
+        ListView_InsertColumn(list, 0, &lCol);
+    }
+    for (int i = 0; i < acpi->HowManyFans(); i++) {
+        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
+        string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
+        lItem.lParam = i;
+        lItem.pszText = (LPSTR)name.c_str();
+        if (i == cID) {
+            lItem.state = LVIS_SELECTED;
+            SendMessage(fanWindow, WM_PAINT, 0, 0);
+        }
+        ListView_InsertItem(list, &lItem);
+        if (sen && fan_conf->FindFanBlock(sen, i)) {
+            fan_conf->lastSelectedSensor = -1;
+            ListView_SetCheckState(list, i, true);
+            fan_conf->lastSelectedSensor = sen->sensorIndex;
+        }
+    }
+
+    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE_USEHEADER);
+}
+
+
+void ReloadPowerList(HWND list, int id) {
+    //HWND list = GetDlgItem(hDlg, IDC_COMBO_POWER);
+    ComboBox_ResetContent(list);
+    for (int i = 0; i < acpi->HowManyPower(); i++) {
+        string name;
+        if (i) {
+            auto pwr = fan_conf->powers.find(acpi->powers[i]);
+            name = pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(i);
+        }
+        else
+            name = "Manual";
+        int pos = ComboBox_AddString(list, (LPARAM)(name.c_str()));
+        ComboBox_SetItemData(list, pos, i);
+        if (i == id)
+            ComboBox_SetCurSel(list, pos);
+    }
+}
+
+void ReloadTempView(HWND list, int cID) {
+    int rpos = 0;
+    //HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
+    ListView_DeleteAllItems(list);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    if (!ListView_GetColumnWidth(list, 1)) {
+        LVCOLUMNA lCol{ LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM, LVCFMT_LEFT, 100, (LPSTR)"Temp" };
+        ListView_InsertColumn(list, 0, &lCol);
+        lCol.pszText = (LPSTR)"Name";
+        lCol.iSubItem = 1;
+        ListView_InsertColumn(list, 1, &lCol);
+    }
+    for (int i = 0; i < acpi->HowManySensors(); i++) {
+        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
+        string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
+        lItem.lParam = i;
+        lItem.pszText = (LPSTR)name.c_str();
+        if (i == cID) {
+            lItem.state = LVIS_SELECTED;
+            rpos = i;
+        }
+        ListView_InsertItem(list, &lItem);
+        ListView_SetItemText(list, i, 1, (LPSTR)acpi->sensors[i].name.c_str());
+    }
+    ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
+    ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
+    ListView_EnsureVisible(list, rpos, false);
+}

@@ -70,7 +70,7 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 	if (val > 10000) return;
 	if (sen = conf->FindSensor(grp, type, id)) {
 		sen->cur = val;
-		if (sen->cur < sen->min || sen->min < -299)
+		if (sen->cur < sen->min || sen->min == NO_SEN_VALUE)
 			sen->min = sen->cur;
 		if (sen->cur > sen->max)
 			sen->max = sen->cur;
@@ -90,7 +90,7 @@ DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
 int GetValuesArray(HCOUNTER counter) {
 	PDH_STATUS pdhStatus;
 	DWORD count;
-	while ((pdhStatus = PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {
+	while ((pdhStatus = PdhGetFormattedCounterArray(counter, PDH_FMT_LONG | PDH_FMT_NOCAP100, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {
 		delete[] counterValues;
 		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
 	}
@@ -148,14 +148,14 @@ DWORD WINAPI CEventProc(LPVOID param)
 		PdhCollectQueryData(hQuery);
 
 		if (src->conf->wSensors) { // group 0
-			PdhGetFormattedCounterValue(hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal); // CPU, code 0
-			AddUpdateSensor(src->conf, 0, 0, 0, cCPUVal.longValue, "CPU load");
+			if (PdhGetFormattedCounterValue(hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal) == ERROR_SUCCESS) // CPU, code 0
+				AddUpdateSensor(src->conf, 0, 0, 0, cCPUVal.longValue, "CPU load");
 
 			GlobalMemoryStatusEx(&memStat); // RAM, code 1
 			AddUpdateSensor(src->conf, 0, 1, 0, memStat.dwMemoryLoad, "Memory usage");
 
-			PdhGetFormattedCounterValue(hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal); // HDD, code 2
-			AddUpdateSensor(src->conf, 0, 2, 0, 100 - cHDDVal.longValue, "HDD load");
+			if (PdhGetFormattedCounterValue(hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal) == ERROR_SUCCESS) // HDD, code 2
+				AddUpdateSensor(src->conf, 0, 2, 0, 100 - cHDDVal.longValue, "HDD load");
 
 			GetSystemPowerStatus(&state); // Battery, code 3
 			AddUpdateSensor(src->conf, 0, 3, 0, state.BatteryLifePercent, "Battery");
@@ -163,27 +163,35 @@ DWORD WINAPI CEventProc(LPVOID param)
 			valCount = GetValuesArray(hGPUCounter); // GPU, code 4
 			long valLast = 0;
 			for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
-				if (valLast < counterValues[i].FmtValue.longValue)
+				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
+					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
+					&& valLast < counterValues[i].FmtValue.longValue)
 					valLast = (byte)counterValues[i].FmtValue.longValue;
 			}
 			AddUpdateSensor(src->conf, 0, 4, 0, valLast, "GPU load");
 
 			valCount = GetValuesArray(hTempCounter); // Temps, code 5
 			for (unsigned i = 0; i < valCount; i++) {
-				AddUpdateSensor(src->conf, 0, 5, i, counterValues[i].FmtValue.longValue - 273, (string)counterValues[i].szName);
+				if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
+					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
+					AddUpdateSensor(src->conf, 0, 5, i, counterValues[i].FmtValue.longValue - 273, (string)counterValues[i].szName);
 			}
 		}
 
 		if (src->conf->eSensors) { // group 1
 			// ESIF temperatures and power
 			valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
-			// Added other set maximum temp...
+			// Added other tempset ...
 			for (unsigned i = 0; i < valCount; i++) {
-				AddUpdateSensor(src->conf, 1, 0, i, counterValues[i].FmtValue.longValue, (string)"Temp " + counterValues[i].szName);
+				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
+					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue)
+					AddUpdateSensor(src->conf, 1, 0, i, counterValues[i].FmtValue.longValue, (string)"Temp " + to_string(i));
 			}
 			valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
 			for (unsigned i = 0; i < valCount; i++) {
-				AddUpdateSensor(src->conf, 1, 1, i, counterValues[i].FmtValue.longValue/2, (string)"Power " + counterValues[i].szName);
+				if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
+					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
+					AddUpdateSensor(src->conf, 1, 1, i, counterValues[i].FmtValue.longValue/2, (string)"Power " + to_string(i)/*counterValues[i].szName*/);
 			}
 		}
 
@@ -195,7 +203,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 					AddUpdateSensor(src->conf, 2, 0, i, val, src->acpi->sensors[i].name);
 			}
 
-			for (int i = 0; i < src->acpi->HowManyFans(); i++) { // BIOS fans, code 1-2
+			for (int i = 0; i < src->acpi->HowManyFans(); i++) { // BIOS fans, code 1-3
 				AddUpdateSensor(src->conf, 2, 1, i, src->acpi->GetFanRPM(i), (string)"Fan " + to_string(i+1) + " RPM");
 				AddUpdateSensor(src->conf, 2, 2, i, src->acpi->GetFanPercent(i), (string)"Fan " + to_string(i+1) + " percent");
 				AddUpdateSensor(src->conf, 2, 3, i, src->acpi->GetFanValue(i, true), (string)"Fan " + to_string(i + 1) + " boost");
@@ -207,8 +215,6 @@ cleanup:
 
 	if (hQuery)
 		PdhCloseQuery(hQuery);
-
-	//delete[] locIDs;
 
 	return 0;
 }

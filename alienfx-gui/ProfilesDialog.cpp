@@ -17,12 +17,12 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
 		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
-	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof->flags & PROF_PRIORITY ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, prof->flags & PROF_FANS ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hDlg, IDC_CHECK_GLOBAL, prof->flags & PROF_GLOBAL_EFFECTS ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT);
+	CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof->flags & PROF_PRIORITY);
+	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED);
+	CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE);
+	CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, prof->flags & PROF_FANS);
+	CheckDlgButton(hDlg, IDC_CHECK_GLOBAL, prof->flags & PROF_GLOBAL_EFFECTS);
 	ComboBox_SetCurSel(mode_list, prof->effmode);
 	ListBox_ResetContent(app_list);
 	for (int j = 0; j < prof->triggerapp.size(); j++)
@@ -33,19 +33,13 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	EnableWindow(eff_tempo, flag);
 	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), flag);
 	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), flag);
-	if (flag) {
-		ComboBox_SetCurSel(eff_list, prof->globalEffect);
-		// now sliders...
-		SendMessage(eff_tempo, TBM_SETPOS, true, prof->globalDelay);
-		SetSlider(sTip2, prof->globalDelay);
-		// now colors...
-		RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
-		RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
-	}
-	else {
-		RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, NULL);
-		RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, NULL);
-	}
+	// now sliders...
+	SendMessage(eff_tempo, TBM_SETPOS, true, prof->globalDelay);
+	SetSlider(sTip2, prof->globalDelay);
+	// now colors...
+	RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, flag ? &prof->effColor1 : 0);
+	RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, flag ? &prof->effColor2 : 0);
+	ComboBox_SetCurSel(eff_list, prof->globalEffect);
 }
 
 void ReloadProfileView(HWND hDlg) {
@@ -53,17 +47,14 @@ void ReloadProfileView(HWND hDlg) {
 	HWND profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 	ListView_DeleteAllItems(profile_list);
 	ListView_SetExtendedListViewStyle(profile_list, LVS_EX_FULLROWSELECT);
-	LVCOLUMNA lCol;
-	lCol.mask = LVCF_WIDTH;
-	lCol.cx = 100;
+	LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
 	ListView_DeleteColumn(profile_list, 0);
 	ListView_InsertColumn(profile_list, 0, &lCol);
 	for (int i = 0; i < conf->profiles.size(); i++) {
-		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, i};
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i};
 		lItem.lParam = conf->profiles[i]->id;
 		lItem.pszText = (char*)conf->profiles[i]->name.c_str();
 		if (conf->profiles[i]->id == pCid) {
-			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
 			ReloadProfSettings(hDlg, conf->profiles[i]);
 			rpos = i;

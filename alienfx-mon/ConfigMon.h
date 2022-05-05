@@ -6,6 +6,8 @@
 
 using namespace std;
 
+#define NO_SEN_VALUE -300
+
 struct SENSOR {
 	int source;
 	byte type;
@@ -47,6 +49,7 @@ public:
 
 	bool needFullUpdate = false;
 	bool paused = false;
+	bool showHidden = false;
 
 	std::vector<SENSOR> active_sensors;
 

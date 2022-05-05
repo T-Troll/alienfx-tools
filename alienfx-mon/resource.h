@@ -26,6 +26,9 @@
 #define IDC_BUTTON_MINIMIZE             1007
 #define IDC_CHECK1                      1008
 #define IDC_CHECK_INVERTED              1008
+#define IDC_CHECK_HIDDEN                1009
+#define IDC_CHECK2                      1010
+#define IDC_SHOW_HIDDEN                 1010
 #define IDC_STARTW                      1016
 #define IDC_STARTM                      1017
 #define IDC_ESENSORS                    1039
@@ -46,7 +49,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1009
+#define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

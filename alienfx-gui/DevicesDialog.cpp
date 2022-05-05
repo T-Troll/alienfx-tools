@@ -24,14 +24,21 @@ int eLid = -1, dItem = -1, dIndex = -1, lMaxIndex = 0;
 bool whiteTest = false;
 vector<devInfo> csv_devs;
 
+void SetLightInfo(HWND hDlg, AlienFX_SDK::mapping* clight) {
+	if (clight)
+		SetDlgItemInt(hDlg, IDC_LIGHTID, clight->lightid, false);
+	else
+		SetDlgItemText(hDlg, IDC_LIGHTID, "");
+	CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, clight && clight->flags & ALIENFX_FLAG_POWER);
+	CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, clight && clight->flags & ALIENFX_FLAG_INDICATOR);
+}
+
 void UpdateLightsList(HWND hDlg, int lid) {
 	int pos = -1;
 	HWND light_list = GetDlgItem(hDlg, IDC_LIST_LIGHTS);
 
-	// clear light options...
-	SetDlgItemInt(hDlg, IDC_LIGHTID, 0, false);
-	CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
-	CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, BST_UNCHECKED);
+	AlienFX_SDK::mapping* flight = NULL;
+
 	lMaxIndex = 0;
 
 	ListView_DeleteAllItems(light_list);
@@ -44,21 +51,19 @@ void UpdateLightsList(HWND hDlg, int lid) {
 	for (int i = 0; i < fxhl->afx_dev.fxdevs[dIndex].lights.size(); i++) {
 		AlienFX_SDK::mapping *clight = fxhl->afx_dev.fxdevs[dIndex].lights[i];
 		if (lMaxIndex < clight->lightid) lMaxIndex = clight->lightid;
-		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM , i };
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
 		lItem.lParam = clight->lightid;
 		lItem.pszText = (char*)clight->name.c_str();
 		if (lid == clight->lightid) {
-			lItem.mask |= LVIF_STATE;
 			lItem.state = LVIS_SELECTED;
 			pos = i;
-			SetDlgItemInt(hDlg, IDC_LIGHTID, lid, false);
-			CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, clight->flags & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, clight->flags & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
+			flight =  clight;
 		}
 		ListView_InsertItem(light_list, &lItem);
 	}
 	ListView_SetColumnWidth(light_list, 0, LVSCW_AUTOSIZE);
 	ListView_EnsureVisible(light_list, pos, false);
+	SetLightInfo(hDlg, flight);
 }
 
 void UpdateDeviceInfo(HWND hDlg) {
@@ -476,15 +481,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-				if (lPoint->uNewState & LVIS_FOCUSED || lPoint->uNewState & LVIS_SELECTED) {
-					// Select other item...
-					eLid = (int) lPoint->lParam;// iItem;
-				} else
-					eLid = -1;
-				SetDlgItemInt(hDlg, IDC_LIGHTID, eLid < 0 ? 0 : eLid, false);
-				int flags = fxhl->afx_dev.GetFlags(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid);
-				CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, flags & ALIENFX_FLAG_POWER ? BST_CHECKED : BST_UNCHECKED);
-				CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, flags & ALIENFX_FLAG_INDICATOR ? BST_CHECKED : BST_UNCHECKED);
+				eLid = lPoint->uNewState & LVIS_FOCUSED || lPoint->uNewState & LVIS_SELECTED ? (int)lPoint->lParam : -1;
+				SetLightInfo(hDlg, fxhl->afx_dev.GetMappingById(fxhl->afx_dev.fxdevs[dIndex].desc->devid, eLid));
 				fxhl->TestLight(dIndex, eLid, whiteTest);
 			} break;
 			case LVN_ENDLABELEDIT:

@@ -807,15 +807,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi;
-			memset(&mi, 0, sizeof(mi));
-			mi.cbSize = sizeof(mi);
-			mi.fMask = MIM_STYLE;
-			mi.dwStyle = MNS_NOTIFYBYPOS;
+			MENUINFO mi{ sizeof(mi), MIM_STYLE, MNS_NOTIFYBYPOS };
 			SetMenuInfo(tMenu, &mi);
-			MENUITEMINFO mInfo{0};
-			mInfo.cbSize = sizeof(MENUITEMINFO);
-			mInfo.fMask = MIIM_STRING | MIIM_ID;
+			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID };
 			HMENU pMenu;
 			// add profiles...
 			if (!conf->enableProf) {
