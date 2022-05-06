@@ -25,6 +25,10 @@ The following commands are available:
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's available.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
+- `probe[=-a|=<lights>]` Probe light devices present into the system and set devices and light names.
 
 Supported Zones: `left, right, top, bottom, front, rear` for high-level, any group ID (see in `status`) for low-level. 
 Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For APIv4 devices, `breath, spectrum, rainbow` also supported. APIv5 not supported.
+
+For `probe` command, `a` for show additional device info, `l` for define number of lights, `d` for deviceID and (optionally) lightid. Can be combined or absent.  
+By default, first 23 lights (or 136 for keyboard devices) for all devices will be checked.

@@ -13,7 +13,7 @@ struct SENSOR {
 	byte type;
 	DWORD id;
 	string name;
-	int min, max, cur;
+	int min, max, cur, oldCur;
 	union {
 		struct {
 			byte disabled;
@@ -25,7 +25,6 @@ struct SENSOR {
 	DWORD traycolor = 0xffffff;
 	//vector<NOTIFYICONDATA*> niData;
 	NOTIFYICONDATA* niData;
-	int oldCur;
 };
 
 class ConfigMon

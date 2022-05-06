@@ -5,10 +5,8 @@ AWCC is not needed anymore - here are light weighted tools for Alienware systems
 - [AlienFX Monitor](/Doc/alienfx-mon.md) - System monitoring tool - you can check system health and put important parameters into tray.
 - [AlienFX-CLI](/Doc/alienfx-cli.md) - Make changes and check status of your AlienFX lights from the CLI (command-line interface).
 - [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Supports all Dell's API functions using my low-level SDK. It can be used for any LightFX/AlienFX-compatible game.
-- [AlienFX-Probe](/Doc/alienfx-probe.md) - CLI application to probe devices and lights, naming them for use in other applications.
 - [AlienFan GUI control](/Doc/alienfan-gui.md) - simple fan and power control utility. Set your fan parameters according to any system temperature sensor, switch system power modes, etc.
 - [AlienFan-CLI](/Doc/alienfan-cli.md) - Command-line interface tool for control fans (and lights for some systems) as well as some power settings from the command line.
-- [AlienFan-Overboost](/Doc/alienfan-overboost.md) - CLI tool for manual/automatic fan overboost (set higher RPM that BIOS suggest).  
 
 ## How does it work?
 
@@ -32,13 +30,13 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
 - Windows 10 v1903 or later (binary files for 64-bit only, but you can compile the project for 32-bit as well).
-- `alienfan-gui`, `-cli` and `-overboost` always require Administrator rights to work (for communication with hardware).
+- `alienfan-gui` and `-cli` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privileges)
   - "Esif temperature" selected (access to ESIF values blocked from user account)
   - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
 - `alienfx-mon` require Administrator rights in case ESIF or BIOS monitoring enabled (the same reason as for `alienfx-gui`)
-- The rest of the `alienfx-` tools does not require Administrator privilege and can be run at any level.
+- `alienfx-cli` does not require Administrator privilege and can be run at any level.
 - All the tools don't require an Internet connection, but `alienfan-gui`, `alienfx-mon` and `alienfx-gui` will connect to GitHub to check for updates if a connection is available.
 - All the tools does not collect and share any personal data. Some hardware data collected (but not shared) during hardware detection process.
 
@@ -48,8 +46,8 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
 - (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
 - Unpack the archive to any directory of your choice or just run the installer.  
-- If you plan to use fan control, it's highly recommended to run `alienfan-overboost` after installation from the folder you install it. It will set correct overboost values and maximal fans RPM.
-- Run `alienfx-gui` or `alienfx-probe` to check and set light names (all apps will have limited to no functionality without this step).  
+- If you plan to use fan control, it's highly recommended to run `alienfan-cli setover` after installation from the folder you install it. It will set correct overboost values and maximal fans RPM.
+- Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (all tools will have limited functionality without this step).  
 
 Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide-and-tips)) guide first!
 
@@ -90,12 +88,13 @@ Build process:
 - [ ] New events
   - [x] Input locale
   - [ ] Missed notifications (toasts)
-  - [ ] Keyboard events (f.e pressed ALT, CTRL, SHIFT, Fn will change scheme)
+  - [ ] Keyboard events (positional effects, key press reaction)
 - [ ] New devices support
   - [ ] Monitors
   - [x] Mouses
   - [ ] Keyboards
 - [ ] Keyboard mapper for easy RGB keyboard setup
+- [ ] Overboost GUI
 - [x] Windows 11 support (unstable for now)
 
 ## License

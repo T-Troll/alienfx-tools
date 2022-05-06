@@ -12,6 +12,8 @@ namespace
 
 using namespace std;
 
+void CheckDevices(bool);
+
 unsigned GetZoneCode(string name, int mode) {
 	switch (mode) {
 	case 1: return atoi(name.c_str()) | 0x10000;
@@ -67,10 +69,13 @@ set-dim\t\tbr - set active device dim level.\n\
 low-level\tswitch to low-level SDK (USB driver).\n\
 high-level\tswitch to high-level SDK (Alienware LightFX).\n\
 status\t\tshows devices and lights id's, names and statuses.\n\
+probe\t\t[ald[,lights][,devID[,lightID]] - probe lights across devices\n\
 lightson\tturn all current device lights on.\n\
 lightsoff\tturn all current device lights off.\n\
 reset\t\treset device state.\n\
 loop\t\trepeat all commands endlessly, until user press CTRL+c. Should be the last command.\n\n\
+For probe, a for all devices info, l for define number of lights, d for deviceID and (optionally)\n\
+\tlightid. Can be combined.\n\
 Zones:\tleft, right, top, bottom, front, rear (high-level) or ID of the Group (low-level).\n\
 Actions:color (disable action), pulse, morph (you need 2 colors),\n\
 \t(only for low-level v4) breath, spectrum, rainbow (up to 9 colors each).");
@@ -103,7 +108,7 @@ int main(int argc, char* argv[])
 	int devType = -1; bool have_low = false, have_high = false;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v5.6.0\n");
+	printf("alienfx-cli v5.9.0\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -157,8 +162,8 @@ int main(int argc, char* argv[])
 			values = arg.substr(vid + 1, arg.size());
 			while (vpos < values.size()) {
 				size_t tvpos = values.find(',', vpos);
-				args.push_back(values.substr(vpos, tvpos-vpos));
-				vpos = tvpos == string::npos ? values.size() : tvpos+1;
+				args.push_back(values.substr(vpos, tvpos - vpos));
+				vpos = tvpos == string::npos ? values.size() : tvpos + 1;
 			}
 		}
 		//printf("Executing " command " with " values);
@@ -167,7 +172,8 @@ int main(int argc, char* argv[])
 			if (have_low) {
 				devType = 1;
 				printf("selected\n");
-			} else
+			}
+			else
 				printf("not found!\n");
 			continue;
 		}
@@ -176,7 +182,8 @@ int main(int argc, char* argv[])
 			if (have_high) {
 				devType = 0;
 				printf("selected\n");
-			} else
+			}
+			else
 				printf("not found!\n");
 			continue;
 		}
@@ -199,16 +206,16 @@ int main(int argc, char* argv[])
 					}
 
 					printf("%s, VID#%d, PID#%d, APIv%d, %d lights %s\n", typeName.c_str(),
-						   afx_map->fxdevs[i].dev->GetVid(), afx_map->fxdevs[i].dev->GetPID(), afx_map->fxdevs[i].dev->GetVersion(),
-						   (int)afx_map->fxdevs[i].lights.size(),
-						   (cdev->GetPID() == afx_map->fxdevs[i].dev->GetPID()) ? "(Active)" : ""
+						afx_map->fxdevs[i].dev->GetVid(), afx_map->fxdevs[i].dev->GetPID(), afx_map->fxdevs[i].dev->GetVersion(),
+						(int)afx_map->fxdevs[i].lights.size(),
+						(cdev->GetPID() == afx_map->fxdevs[i].dev->GetPID()) ? "(Active)" : ""
 					);
 
 					for (int k = 0; k < afx_map->fxdevs[i].lights.size(); k++) {
 						printf("  Light ID#%d - %s%s%s\n", afx_map->fxdevs[i].lights[k]->lightid,
-							   afx_map->fxdevs[i].lights[k]->name.c_str(),
-							   (afx_map->fxdevs[i].lights[k]->flags &ALIENFX_FLAG_POWER) ? " (Power button)" : "",
-							   (afx_map->fxdevs[i].lights[k]->flags &ALIENFX_FLAG_INDICATOR) ? " (Indicator)" : "");
+							afx_map->fxdevs[i].lights[k]->name.c_str(),
+							(afx_map->fxdevs[i].lights[k]->flags & ALIENFX_FLAG_POWER) ? " (Power button)" : "",
+							(afx_map->fxdevs[i].lights[k]->flags & ALIENFX_FLAG_INDICATOR) ? " (Indicator)" : "");
 					}
 				}
 				// now groups...
@@ -216,11 +223,123 @@ int main(int argc, char* argv[])
 					printf("%d groups:\n", (int)afx_map->GetGroups()->size());
 				for (int i = 0; i < afx_map->GetGroups()->size(); i++)
 					printf("  Group #%d - %s (%d lights)\n", (afx_map->GetGroups()->at(i).gid & 0xffff),
-						   afx_map->GetGroups()->at(i).name.c_str(),
-					       (int)afx_map->GetGroups()->at(i).lights.size());
+						afx_map->GetGroups()->at(i).name.c_str(),
+						(int)afx_map->GetGroups()->at(i).lights.size());
 				break;
 			case 0:
 				lfxUtil.GetStatus(); break;
+			}
+			continue;
+		}
+		if (command == "probe") {
+			int numlights = -1, devID = -1, lightID = -1;
+			bool show_all = false;
+			if (args.size()) {
+				int pos = 1;
+				show_all = args[0].find('a') != string::npos;
+				if (args[0].find('l') != string::npos && args.size() > 1) {
+					numlights = atoi(args[1].c_str());
+					pos++;
+				}
+				if (args[0].find('d') != string::npos && args.size() > pos) {
+					devID = atoi(args[pos].c_str());
+					if (args.size() > pos+1)
+						lightID = atoi(args[pos+1].c_str());
+				}
+			}
+			char name[256]{ 0 };
+			CheckDevices(show_all);
+			printf("Do you want to set devices and lights names?");
+			gets_s(name, 255);
+			if (name[0] == 'y' || name[0] == 'Y') {
+				printf("\nFor each light please enter LightFX SDK light ID or light name if ID is not available\n\
+Tested light become green, and turned off after testing.\n\
+Just press Enter if no visible light at this ID to skip it.\n");
+				printf("Probing low-level access... ");
+
+				//AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
+				AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
+				vector<pair<WORD, WORD>> pids = afx_map->AlienFXEnumDevices();
+
+				if (pids.size() > 0) {
+					printf("Found %d device(s)\n", (int)pids.size());
+					if (have_high) {
+						lfxUtil.FillInfo();
+						lfxUtil.GetStatus();
+					}
+
+					for (int cdev = 0; cdev < pids.size(); cdev++)
+						if (devID == -1 || devID == pids[cdev].second) {
+							printf("Probing device VID_%04x, PID_%04x...", pids[cdev].first, pids[cdev].second);
+							int isInit = afx_dev->AlienFXChangeDevice(pids[cdev].first, pids[cdev].second);
+							if (isInit != -1) {
+								printf(" Connected.\n");
+								int count;
+								afx_dev->Reset();
+								for (count = 0; count < 5 && !afx_dev->IsDeviceReady(); count++)
+									Sleep(20);
+								AlienFX_SDK::devmap* devs = afx_map->GetDeviceById(afx_dev->GetPID(), afx_dev->GetVid());
+								if (devs)
+									printf("Old device name is %s, ", devs->name.c_str());
+								else {
+									devs = new AlienFX_SDK::devmap{ pids[cdev].first,pids[cdev].second,"" };
+									afx_map->GetDevices()->push_back(*devs);
+									devs = &afx_map->GetDevices()->back();
+								}
+								printf("Enter device name or LightFX id: ");
+								gets_s(name, 255);
+								devs->name = isdigit(name[0]) && have_high ? lfxUtil.GetDevInfo(atoi(name))->desc
+									: devs && name[0] == 0 ? devs->name : name;
+								printf("Final device name is %s\n", devs->name.c_str());
+								// How many lights to check?
+								int fnumlights = numlights == -1 ? pids[cdev].first == 0x0d62 ? 0x88 : 23 : numlights;
+								for (int i = 0; i < fnumlights; i++)
+									if (lightID == -1 || lightID == i) {
+										printf("Testing light #%d", i);
+										AlienFX_SDK::mapping* lmap = afx_map->GetMappingById(afx_dev->GetPID(), i);
+										if (lmap) {
+											printf(", old name %s ", lmap->name.c_str());
+										}
+										printf("(ENTER for skip): ");
+										afx_dev->SetColor(i, { 0, 255, 0 });
+										afx_dev->UpdateColors();
+										Sleep(100);
+										gets_s(name, 255);
+										if (name[0] != 0) {
+											//not skipped
+											if (lmap) {
+												lmap->name = name;
+											}
+											else {
+												lmap = new AlienFX_SDK::mapping({ pids[cdev].first, pids[cdev].second, (WORD)i, 0, name });
+												afx_map->GetMappings()->push_back(lmap);
+												lmap = afx_map->GetMappings()->back();
+											}
+											afx_map->SaveMappings();
+											//}
+											printf("Final name is %s, ", lmap->name.c_str());
+										}
+										else {
+											printf("Skipped, ");
+										}
+										afx_dev->SetColor(i, { 0, 0, 255 });
+										afx_dev->UpdateColors();
+										//afx_dev->Reset();
+										Sleep(100);
+									}
+								// now store config...
+								afx_map->SaveMappings();
+							}
+							else {
+								printf(" Device not initialized!\n");
+							}
+						}
+					afx_dev->AlienFXClose();
+					delete afx_dev;
+				}
+			}
+			else {
+				printf("AlienFX devices not present, please check device manage!\n");
 			}
 			continue;
 		}

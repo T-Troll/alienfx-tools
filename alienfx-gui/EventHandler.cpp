@@ -437,13 +437,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time";
 
 	HQUERY hQuery = NULL;
-	HLOG hLog = NULL;
-
-	DWORD dwLogType = PDH_LOG_TYPE_CSV;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
-	MEMORYSTATUSEX memStat;
-	memStat.dwLength = sizeof(MEMORYSTATUSEX);
+	MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
 
 	SYSTEM_POWER_STATUS state;
 

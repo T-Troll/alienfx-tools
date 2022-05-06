@@ -52,12 +52,12 @@ void CheckDevices(bool show_all) {
 		{
 			continue;
 		}
-		std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
-		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+		std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA_W> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA_W*)new char[dwRequiredSize]);
+		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
 		if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
 		{
-			std::wstring devicePath = deviceInterfaceDetailData->DevicePath;
-			tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+			wstring devicePath = deviceInterfaceDetailData->DevicePath;
+			tdevHandle = CreateFileW(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
 			if (tdevHandle != INVALID_HANDLE_VALUE)
 			{

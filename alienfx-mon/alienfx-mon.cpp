@@ -265,7 +265,7 @@ void RedrawButton(unsigned id, DWORD clr) {
 	HBRUSH Brush = NULL;
 	HWND tl = GetDlgItem(mDlg, id);
 	GetWindowRect(tl, &rect);
-	HDC cnt = GetWindowDC(tl);
+	HDC cnt = GetDC(tl);
 	rect.bottom -= rect.top;
 	rect.right -= rect.left;
 	rect.top = rect.left = 0;
@@ -305,8 +305,7 @@ void ReloadSensorView() {
 	}
 
 	for (int i = 0; i < conf->active_sensors.size(); i++) {
-		if ((conf->showHidden && conf->active_sensors[i].disabled) ||
-			(!conf->showHidden && !conf->active_sensors[i].disabled)) {
+		if (!conf->showHidden ^ conf->active_sensors[i].disabled) {
 			string name = conf->active_sensors[i].min > NO_SEN_VALUE ? to_string(conf->active_sensors[i].min) : "--";
 			LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, pos };
 			lItem.lParam = i;
@@ -337,6 +336,7 @@ void RemoveSensors(int src, bool state) {
 	for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
 		if (iter->source == src) {
 			iter->disabled = !state;
+			iter->oldCur = NO_SEN_VALUE;
 		}
 	conf->needFullUpdate = true;
 }
@@ -364,6 +364,15 @@ void RestoreWindow(int id) {
 	SetWindowPos(mDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 	SetWindowPos(mDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 	ReloadSensorView();
+}
+
+void FindValidSensor() {
+	for (; selSensor < conf->active_sensors.size() &&
+		!(!conf->showHidden ^ conf->active_sensors[selSensor].disabled); selSensor++);
+	if (selSensor == conf->active_sensors.size()) {
+		for (selSensor--; selSensor > 0 && !(!conf->showHidden ^ conf->active_sensors[selSensor].disabled);	selSensor--);
+	}
+	if (selSensor < 0) selSensor = 0;
 }
 
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -470,29 +479,24 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_BUTTON_COLOR:
 			SetColor(IDC_BUTTON_COLOR, &conf->active_sensors[selSensor].traycolor);
-			conf->active_sensors[selSensor].oldCur = -1;
+			conf->active_sensors[selSensor].oldCur = NO_SEN_VALUE;
 			break;
 		case IDC_CHECK_INTRAY:
 			conf->active_sensors[selSensor].intray = state;
 			break;
 		case IDC_CHECK_INVERTED:
 			conf->active_sensors[selSensor].inverse = state;
-			conf->active_sensors[selSensor].oldCur = -1;
+			conf->active_sensors[selSensor].oldCur = NO_SEN_VALUE;
 			break;
 		case IDC_CHECK_HIDDEN:
 			conf->active_sensors[selSensor].disabled = state;
-			while (selSensor < conf->active_sensors.size() && conf->showHidden ? !conf->active_sensors[selSensor].disabled :
-				conf->active_sensors[selSensor].disabled)
-				selSensor++;
-			if (conf->showHidden ? !conf->active_sensors[selSensor].disabled :
-				conf->active_sensors[selSensor].disabled)
-				while (selSensor >=0 && conf->showHidden ? !conf->active_sensors[selSensor].disabled :
-					conf->active_sensors[selSensor].disabled)
-					selSensor--;
+			FindValidSensor();
 			ReloadSensorView();
 			break;
 		case IDC_SHOW_HIDDEN:
 			conf->showHidden = state;
+			selSensor = 0;
+			FindValidSensor();
 			ReloadSensorView();
 			break;
 		case IDC_REFRESH_TIME:
@@ -571,20 +575,19 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_CLOSE:
-		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:
 		delete muiThread;
 		// Remove icons from tray...
-		for (int i = 0; i < conf->active_sensors.size(); i++)
-			if (conf->active_sensors[i].niData) {
-				Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData);
-				if (conf->active_sensors[i].niData->hIcon)
-					DestroyIcon(conf->active_sensors[i].niData->hIcon);
-				delete conf->active_sensors[i].niData;
-				conf->active_sensors[i].niData = NULL;
+		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+		for (auto i = conf->active_sensors.begin(); i < conf->active_sensors.end(); i++)
+			if (i->niData) {
+				Shell_NotifyIcon(NIM_DELETE, i->niData);
+				if (i->niData->hIcon)
+					DestroyIcon(i->niData->hIcon);
+				delete i->niData;
 			}
 			//while (!conf->active_sensors[i].niData.empty()) {
 			//	Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData.back());
@@ -636,6 +639,21 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		}
 		break;
+	case WM_POWERBROADCAST:
+		switch (wParam) {
+		case PBT_APMRESUMEAUTOMATIC: {
+			// resume from sleep/hibernate
+			//DebugPrint("Resume from Sleep/hibernate initiated\n");
+			senmon->StartMon();
+			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+		} break;
+		case PBT_APMSUSPEND:
+			// Sleep initiated.
+			//DebugPrint("Sleep/hibernate initiated\n");
+			senmon->StopMon();
+			break;
+		}
+		break;
 	default: return false;
 	}
 	return true;
@@ -676,7 +694,8 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 	RECT clip{ 0,0,32,32 };
 
 	HDC hdc = GetDC(mDlg), hdcMem = CreateCompatibleDC(hdc);
-	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, 32, 32), hBitmapMask = sen->inverse ? CreateCompatibleBitmap(hdc, 32, 32) : hBitmap;
+	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, 32, 32),
+		hBitmapMask = sen->inverse ? CreateCompatibleBitmap(hdc, 32, 32) : hBitmap;
 	HFONT hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
 	HBRUSH brush = CreateSolidBrush(sen->inverse ? 0xffffff : sen->traycolor);
 
@@ -691,7 +710,6 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 	SetBkMode(hdcMem, OPAQUE);
 	FillRect(hdcMem, &clip, brush);
 	DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
-	hBitmapMask = sen->inverse ? CreateCompatibleBitmap(hdc, 32, 32) : hBitmap;
 
 	if (sen->inverse) {
 		SelectObject(hdcMem, hBitmapMask);
@@ -702,21 +720,22 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 	}
 
 	DeleteObject(brush);
-	ReleaseDC(mDlg, hdc);
 
 	ICONINFO iconInfo{true, 0, 0, hBitmap, hBitmapMask };
 	HICON hIcon = CreateIconIndirect(&iconInfo);
 
-	if (niData->hIcon)
+	if (niData->hIcon) {
 		DestroyIcon(niData->hIcon);
+	}
 
 	niData->hIcon = hIcon;
 
 	DeleteObject(hFont);
-	DeleteDC(hdcMem);
 	DeleteObject(hBitmap);
 	if (sen->inverse)
 		DeleteObject(hBitmapMask);
+	DeleteDC(hdcMem);
+	ReleaseDC(mDlg, hdc);
 }
 
 void UpdateMonUI(LPVOID lpParam) {
@@ -731,6 +750,10 @@ void UpdateMonUI(LPVOID lpParam) {
 				int pos = 0;
 				for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
 					if (!iter->disabled) {
+						if (iter->min == NO_SEN_VALUE) {
+							conf->needFullUpdate = true;
+							break;
+						}
 						if (iter->cur != iter->oldCur) {
 							string name = to_string(iter->min);
 							ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());

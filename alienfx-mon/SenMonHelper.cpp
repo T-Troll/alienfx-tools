@@ -67,18 +67,19 @@ void SenMonHelper::ModifyMon()
 
 void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, string name) {
 	SENSOR* sen;
-	if (val > 10000) return;
+	if (val > 10000 || val < NO_SEN_VALUE) return;
 	if (sen = conf->FindSensor(grp, type, id)) {
 		sen->cur = val;
-		if (sen->cur < sen->min || sen->min == NO_SEN_VALUE)
-			sen->min = sen->cur;
-		if (sen->cur > sen->max)
-			sen->max = sen->cur;
+		sen->min = sen->min == NO_SEN_VALUE ? val : min(sen->min, val);
+		//if (sen->cur < sen->min || sen->min == NO_SEN_VALUE)
+		//	sen->min = sen->cur;
+		sen->max = max(sen->max, val);
+		//if (sen->cur > sen->max)
+		//	sen->max = sen->cur;
 	}
 	else {
 		// add sensor
-		sen = new SENSOR({ grp, type, id, name, val, val, val });
-		sen->oldCur = val + 1;
+		sen = new SENSOR({ grp, type, id, name, val, val, val, NO_SEN_VALUE });
 		conf->active_sensors.push_back(*sen);
 		conf->needFullUpdate = true;
 	}
@@ -90,9 +91,9 @@ DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
 int GetValuesArray(HCOUNTER counter) {
 	PDH_STATUS pdhStatus;
 	DWORD count;
-	while ((pdhStatus = PdhGetFormattedCounterArray(counter, PDH_FMT_LONG | PDH_FMT_NOCAP100, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {
+	while ((pdhStatus = PdhGetFormattedCounterArray(counter, PDH_FMT_LONG /*| PDH_FMT_NOSCALE*/, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {
 		delete[] counterValues;
-		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
+		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[(counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM)) + 1];
 	}
 
 	if (pdhStatus != ERROR_SUCCESS) {
@@ -114,19 +115,16 @@ DWORD WINAPI CEventProc(LPVOID param)
 		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time";
 
 	HQUERY hQuery = NULL;
-	HLOG hLog = NULL;
-	DWORD dwLogType = PDH_LOG_TYPE_CSV;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
-	MEMORYSTATUSEX memStat;
-	memStat.dwLength = sizeof(MEMORYSTATUSEX);
+	MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
 
 	SYSTEM_POWER_STATUS state;
 
 	DWORD cType = 0, valCount = 0;
 
 	// Set data source...
-	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
+	PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
 
 	if (PdhOpenQuery(NULL, 0, &hQuery) != ERROR_SUCCESS)
 	{
@@ -142,6 +140,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 	PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 
 	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
+
+	// Bugfix for incorrect value order
+	PdhCollectQueryData(hQuery);
 
 	while (WaitForSingleObject(src->stopEvents, src->conf->refreshDelay) == WAIT_TIMEOUT) {
 		// get indicators...
@@ -163,18 +164,17 @@ DWORD WINAPI CEventProc(LPVOID param)
 			valCount = GetValuesArray(hGPUCounter); // GPU, code 4
 			long valLast = 0;
 			for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
-				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
-					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
-					&& valLast < counterValues[i].FmtValue.longValue)
-					valLast = (byte)counterValues[i].FmtValue.longValue;
+				if ((/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
+					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA))
+					valLast = max(valLast, counterValues[i].FmtValue.longValue);
 			}
 			AddUpdateSensor(src->conf, 0, 4, 0, valLast, "GPU load");
 
 			valCount = GetValuesArray(hTempCounter); // Temps, code 5
 			for (unsigned i = 0; i < valCount; i++) {
-				if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
+				if (/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
 					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
-					AddUpdateSensor(src->conf, 0, 5, i, counterValues[i].FmtValue.longValue - 273, (string)counterValues[i].szName);
+					AddUpdateSensor(src->conf, 0, 5, i, counterValues[i].FmtValue.longValue - 273, counterValues[i].szName);
 			}
 		}
 
@@ -183,13 +183,13 @@ DWORD WINAPI CEventProc(LPVOID param)
 			valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
 			// Added other tempset ...
 			for (unsigned i = 0; i < valCount; i++) {
-				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
+				if ((/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
 					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue)
 					AddUpdateSensor(src->conf, 1, 0, i, counterValues[i].FmtValue.longValue, (string)"Temp " + to_string(i));
 			}
 			valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
 			for (unsigned i = 0; i < valCount; i++) {
-				if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||
+				if (/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
 					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
 					AddUpdateSensor(src->conf, 1, 1, i, counterValues[i].FmtValue.longValue/2, (string)"Power " + to_string(i)/*counterValues[i].szName*/);
 			}
