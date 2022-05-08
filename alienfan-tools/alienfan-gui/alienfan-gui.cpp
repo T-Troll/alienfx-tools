@@ -1,20 +1,17 @@
 #include <windows.h>
-#include "Resource.h"
-#include <windowsx.h>
-#include <winuser.h>
-#include <CommCtrl.h>
+#include <powrprof.h>
 #include <string>
-#include <wininet.h>
+#include "Resource.h"
 #include "alienfan-SDK.h"
 #include "ConfigFan.h"
 #include "MonHelper.h"
-#include <powrprof.h>
+#include "common.h"
+#include <windowsx.h>
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"Version.lib")
-#pragma comment(lib,"Wininet.lib")
 #pragma comment(lib, "PowrProf.lib")
 
 using namespace std;
@@ -31,7 +28,7 @@ ConfigFan* fan_conf = NULL;                     // Config...
 MonHelper* mon = NULL;                          // Monitoring & changer object
 
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
-HWND fanWindow = NULL, tipWindow = NULL;
+HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
 
 extern HWND toolTip;
 
@@ -40,6 +37,9 @@ int pLid = -1;
 GUID* sch_guid, perfset;
 
 NOTIFYICONDATA niData{0};
+
+bool isNewVersion = false;
+bool needUpdateFeedback = false;
 
 void UpdateFanUI(LPVOID);
 ThreadHelper* fanThread;
@@ -51,9 +51,12 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
+void ResetDPIScale();
+
 void ReloadFanView(HWND list, int cID);
 void ReloadPowerList(HWND list, int id);
 void ReloadTempView(HWND list, int cID);
+HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -66,9 +69,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg{0};
 
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
-
     fan_conf = new ConfigFan();
+
+    ResetDPIScale();
 
     acpi = new AlienFan_SDK::Control();
 
@@ -78,7 +81,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         mon = new MonHelper(fan_conf, acpi);
 
         // Perform application initialization:
-        HWND mDlg;
+
         if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL ))) {
             return FALSE;
         }
@@ -130,79 +133,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     ShowWindow(dlg, nCmdShow);
 
     return dlg;
-}
-
-HWND CreateToolTip(HWND hwndParent, HWND oldTip)
-{
-    // Create a tool tip.
-    if (oldTip) DestroyWindow(oldTip);
-    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-                                 WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-                                 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                 hwndParent, NULL, hInst, NULL);
-
-    SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
-    ti.hinst = hInst;
-    //ti.lpszText = (LPTSTR)"0";
-
-    GetClientRect(hwndParent, &ti.rect);
-
-    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-    return hwndTT;
-}
-
-string GetAppVersion();
-
-DWORD WINAPI CUpdateCheck(LPVOID lparam) {
-    NOTIFYICONDATA* niData = (NOTIFYICONDATA*) lparam;
-    HINTERNET session, req;
-    char buf[2048];
-    DWORD byteRead;
-    bool isConnectionFailed = false;
-    // Wait connection for a while
-    Sleep(10000);
-    if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
-        if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
-            NULL, 0, 0, NULL)) {
-            if (InternetReadFile(req, buf, 2047, &byteRead)) {
-                buf[byteRead] = 0;
-                string res = buf;
-                size_t pos = res.find("\"name\":"),
-                    posf = res.find("\"", pos + 8);
-                if (pos != string::npos) {
-                    res = res.substr(pos + 8, posf - pos - 8);
-                    size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
-                    if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
-                        res += ".0";
-                    if (res != GetAppVersion()) {
-                        // new version detected!
-                        niData->uFlags |= NIF_INFO;
-                        strcpy_s(niData->szInfoTitle, "Update available!");
-                        strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
-                        Shell_NotifyIcon(NIM_MODIFY, niData);
-                        niData->uFlags &= ~NIF_INFO;
-                    }
-                }
-            }
-            else
-                isConnectionFailed = true;
-            InternetCloseHandle(req);
-        }
-        else
-            isConnectionFailed = true;
-        InternetCloseHandle(session);
-    }
-    else
-        isConnectionFailed = true;
-    if (isConnectionFailed) {
-        niData->uFlags |= NIF_INFO;
-        strcpy_s(niData->szInfoTitle, "Update check failed!");
-        strcpy_s(niData->szInfo, "Can't connect to GitHub for update check.");
-        Shell_NotifyIcon(NIM_MODIFY, niData);
-        niData->uFlags &= ~NIF_INFO;
-    }
-    return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

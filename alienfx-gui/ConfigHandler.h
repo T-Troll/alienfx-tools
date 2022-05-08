@@ -84,8 +84,8 @@ public:
 	DWORD dimmingPower = 92;
 	DWORD enableProf = 0;
 	DWORD offPowerButton = 0;
+	DWORD offOnBattery = 0;
 	profile *activeProfile = NULL;
-	profile *defaultProfile = NULL;
 	profile *foregroundProfile = NULL;
 	DWORD awcc_disable = 0;
 	DWORD esif_temp = 0;
@@ -122,9 +122,10 @@ public:
 	void Load();
 	void Save();
 	profile* FindProfile(int id);
+	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);
-	void SetStates();
+	bool SetStates();
 	void SetIconState();
 	bool IsDimmed();
 	void SetDimmed();

@@ -1,24 +1,22 @@
 #include "alienfx-gui.h"
-#include <wtypes.h>
 #include <windowsx.h>
-#include <Shlobj.h>
 #include <ColorDlg.h>
-//#include <Commdlg.h>
-#include <wininet.h>
 #include <Dbt.h>
 #include "EventHandler.h"
+#include "common.h"
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"Version.lib")
 #pragma comment(lib,"comctl32.lib")
-#pragma comment(lib,"Wininet.lib")
 
 // Global Variables:
 HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
+
+void ResetDPIScale();
 
 HWND InitInstance(HINSTANCE, int);
 
@@ -55,41 +53,6 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // last light selected
 int eItem = -1;
-
-DWORD EvaluteToAdmin() {
-	// Evaluation attempt...
-	DWORD dwError = ERROR_CANCELLED;
-	char szPath[MAX_PATH];
-	if (!IsUserAnAdmin()) {
-		if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
-		{
-			// Launch itself as admin
-			SHELLEXECUTEINFO sei{ sizeof(sei) };
-			sei.lpVerb = "runas";
-			sei.lpFile = szPath;
-			sei.hwnd = NULL;
-			sei.nShow = SW_NORMAL;
-			if (!ShellExecuteEx(&sei))
-			{
-				dwError = GetLastError();
-			}
-			else
-			{
-				if (mDlg) {
-					conf->Save();
-					//fan_conf->Save();
-					if (acpi)
-						delete acpi;
-					Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-					EndDialog(mDlg, 1);
-				}
-				_exit(1);  // Quit itself
-			}
-		}
-		return dwError;
-	}
-	return 0;
-}
 
 bool DoStopService(bool kind) {
 	SERVICE_STATUS_PROCESS ssp;
@@ -151,12 +114,12 @@ bool DoStopService(bool kind) {
 			if (!schService)
 			{
 				// Evaluation attempt...
-				if (EvaluteToAdmin() == ERROR_CANCELLED)
-				{
-					CloseServiceHandle(schSCManager);
-					conf->block_power = true;
-				}
-				return false;
+				EvaluteToAdmin();
+				//{
+				//	CloseServiceHandle(schSCManager);
+				//	conf->block_power = true;
+				//}
+				//return false;
 			}
 
 			// Send a stop code to the service.
@@ -208,24 +171,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
-	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
+	//SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
 
 	conf = new ConfigHandler();
 	conf->Load();
-	conf->SetStates();
+	//conf->SetStates();
 
 	// check fans...
 	if (conf->activeProfile->flags & PROF_FANS)
 		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
 	if (conf->fanControl) {
 		EvaluteToAdmin();
+
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->IsActivated() && acpi->Probe()) {
 			conf->fan_conf->SetBoosts(acpi);
-		} else {
+		}
+		else {
 			//string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
 			MessageBox(NULL, "Fan control didn't start and will be disabled!", "Error",
-					   MB_OK | MB_ICONHAND);
+				MB_OK | MB_ICONHAND);
 			delete acpi;
 			acpi = NULL;
 			conf->fanControl = false;
@@ -246,6 +211,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		eve = new EventHandler(conf, fxhl);
 		eve->ChangePowerState();
 		eve->StartFanMon(acpi);
+
+		ResetDPIScale();
 
 		if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 			return FALSE;
@@ -358,23 +325,6 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 	ReleaseDC(tl, cnt);
 }
 
-HWND CreateToolTip(HWND hwndParent, HWND oldTip)
-{
-	// Create a tool tip.
-	if (oldTip) DestroyWindow(oldTip);
-
-	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-								 WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-								 0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
-	//SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-	//			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
-	GetClientRect(hwndParent, &ti.rect);
-	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-	return hwndTT;
-}
-
 void SetSlider(HWND tt, int value) {
 	TOOLINFO ti{ sizeof(TOOLINFO) };
 	if (tt) {
@@ -417,65 +367,6 @@ string GetAppVersion() {
 		}
 	}
 	return res;
-}
-
-DWORD WINAPI CUpdateCheck(LPVOID lparam) {
-	NOTIFYICONDATA* niData = (NOTIFYICONDATA*) lparam;
-	HINTERNET session, req;
-	char buf[2048];
-	DWORD byteRead;
-	bool isConnectionFailed = false;
-	// Wait connection for a while
-	if (!needUpdateFeedback)
-		Sleep(10000);
-	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
-		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
-								  NULL, 0, 0, NULL)) {
-			if (InternetReadFile(req, buf, 2047, &byteRead)) {
-				buf[byteRead] = 0;
-				string res = buf;
-				size_t pos = res.find("\"name\":"),
-					posf = res.find("\"", pos + 8);
-				if (pos != string::npos) {
-					res = res.substr(pos + 8, posf - pos - 8);
-					size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
-					if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
-						res += ".0";
-					if (res != GetAppVersion()) {
-						// new version detected!
-						niData->uFlags |= NIF_INFO;
-						strcpy_s(niData->szInfoTitle, "Update available!");
-						strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
-						Shell_NotifyIcon(NIM_MODIFY, niData);
-						niData->uFlags &= ~NIF_INFO;
-						isNewVersion = true;
-					}
-				}
-			}
-			else
-				isConnectionFailed = true;
-			InternetCloseHandle(req);
-		}
-		else
-			isConnectionFailed = true;
-		InternetCloseHandle(session);
-	}
-	else
-		isConnectionFailed = true;
-	if (needUpdateFeedback && !isNewVersion) {
-		niData->uFlags |= NIF_INFO;
-		if (isConnectionFailed) {
-			strcpy_s(niData->szInfoTitle, "Update check failed!");
-			strcpy_s(niData->szInfo, "Can't connect to GitHub for update check.");
-		}
-		else {
-			strcpy_s(niData->szInfoTitle, "You are up to date!");
-			strcpy_s(niData->szInfo, "You are using latest version.");
-		}
-		Shell_NotifyIcon(NIM_MODIFY, niData);
-		niData->uFlags &= ~NIF_INFO;
-	}
-	return 0;
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -922,9 +813,9 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 			if (fxhl->FillAllDevs(acpi)) {
 				fxhl->UnblockUpdates(true);
-				eve->ChangePowerState();
 				conf->stateScreen = true;
-				conf->SetStates();
+				eve->ChangePowerState();
+				//conf->SetStates();
 				eve->ChangeEffectMode();
 				eve->StartProfiles();
 			}
@@ -1043,11 +934,12 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		break;
 	case WM_CLOSE:
 		fxhl->Refresh(2);
-		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:
+		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+		conf->Save();
 		PostQuitMessage(0); break;
 	default: return false;
 	}
@@ -1134,26 +1026,19 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 	return ret;
 }
 
-lightset* FindMapping(int mid)
+lightset* FindMapping(int mid, int lid = 0)
 {
+	WORD did = 0;
 	if (!(mid < 0)) {
-		if (mid > 0xffff) {
-			// group
-			for (int i = 0; i < conf->active_set->size(); i++)
-				if (conf->active_set->at(i).devid == 0 && conf->active_set->at(i).lightid == mid) {
-					return &conf->active_set->at(i);
-				}
-		} else {
-			// mapping
-			if (fxhl->afx_dev.GetMappings()->size() > mid) {
-				AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(mid);
-				for (int i = 0; i < conf->active_set->size(); i++)
-					if (conf->active_set->at(i).devid == lgh->devid &&
-						conf->active_set->at(i).lightid == lgh->lightid) {
-						return &conf->active_set->at(i);
-					}
-			}
+		if (mid < 0x10000) {
+			if (fxhl->afx_dev.GetMappings()->size() <= mid) return nullptr;
+			did = fxhl->afx_dev.GetMappings()->at(mid)->devid;
+			mid = fxhl->afx_dev.GetMappings()->at(mid)->lightid;
 		}
+		auto res = find_if(conf->active_set->begin(), conf->active_set->end(), [mid, did](lightset ls) {
+			return ls.lightid == mid && ls.devid == did;
+			});
+		return res == conf->active_set->end() ? nullptr : &(*res);
 	}
 	return nullptr;
 }
@@ -1190,49 +1075,41 @@ lightset* CreateMapping(int lid) {
 	return &conf->active_set->back();
 }
 
-bool RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
-	// erase mappings
-	for (auto mIter = lightsets->begin(); mIter != lightsets->end(); mIter++)
-		if (LOWORD(mIter->devid) == did && mIter->lightid == lid) {
-			lightsets->erase(mIter);
-			return true;
-		}
-	return false;
+void RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
+	lightsets->erase(find_if(lightsets->begin(), lightsets->end(),
+		[lid, did](lightset ls) {
+			return ls.lightid == lid && ls.devid == did;
+		}));
 }
 
 void RemoveHapMapping(int devid, int lightid) {
-	for (auto Iter = conf->hap_conf->haptics.begin(); Iter != conf->hap_conf->haptics.end(); Iter++)
-		if (Iter->devid == devid && Iter->lightid == lightid) {
-			conf->hap_conf->haptics.erase(Iter);
-			break;
-		}
+	conf->hap_conf->haptics.erase(find_if(conf->hap_conf->haptics.begin(), conf->hap_conf->haptics.end(),
+		[lightid, devid](haptics_map ls) {
+			return ls.lightid == lightid && ls.devid == devid;
+		}));
 }
 
 void RemoveAmbMapping(int devid, int lightid) {
-	for (auto mIter = conf->amb_conf->zones.begin(); mIter != conf->amb_conf->zones.end(); mIter++)
-		if (mIter->devid == devid && mIter->lightid == lightid) {
-			conf->amb_conf->zones.erase(mIter);
-			break;
-		}
+	conf->amb_conf->zones.erase(find_if(conf->amb_conf->zones.begin(), conf->amb_conf->zones.end(),
+		[lightid, devid](zone ls) {
+			return ls.lightid == lightid && ls.devid == devid;
+		}));
 }
 
 zone *FindAmbMapping(int lid) {
-	if (lid != -1) {
-		if (lid > 0xffff) {
-			// group
-			for (auto i = conf->amb_conf->zones.begin(); i < conf->amb_conf->zones.end(); i++)
-				if (i->devid == 0 && i->lightid == lid) {
-					return &(*i);
-				}
-		} else {
-			// mapping
-			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-			for (auto i = conf->amb_conf->zones.begin(); i < conf->amb_conf->zones.end(); i++)
-				if (i->devid == lgh->devid && i->lightid == lgh->lightid)
-					return &(*i);
+	WORD did = 0;
+	if (!(lid < 0)) {
+		if (lid < 0x10000) {
+			if (fxhl->afx_dev.GetMappings()->size() <= lid) return nullptr;
+			did = fxhl->afx_dev.GetMappings()->at(lid)->devid;
+			lid = fxhl->afx_dev.GetMappings()->at(lid)->lightid;
 		}
+		auto res = find_if(conf->amb_conf->zones.begin(), conf->amb_conf->zones.end(), [lid, did](zone ls) {
+			return ls.lightid == lid && ls.devid == did;
+			});
+		return res == conf->amb_conf->zones.end() ? nullptr : &(*res);
 	}
-	return NULL;
+	return nullptr;
 }
 
 haptics_map *FindHapMapping(int lid) {
@@ -1242,12 +1119,12 @@ haptics_map *FindHapMapping(int lid) {
 			return conf->hap_conf->FindHapMapping(0, lid);
 		} else {
 			// mapping
-			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-			if (lgh)
-				return conf->hap_conf->FindHapMapping(lgh->devid, lgh->lightid);
+			if (fxhl->afx_dev.GetMappings()->size() <= lid) return nullptr;
+			return conf->hap_conf->FindHapMapping(fxhl->afx_dev.GetMappings()->at(lid)->devid,
+				fxhl->afx_dev.GetMappings()->at(lid)->lightid);
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {

@@ -83,7 +83,7 @@ void CheckFanOverboost(byte num) {
         cBoost = fBoost + steps;
         boost = fBoost;
     }
-    printf("Fuzzy check done, best %d @ %d RPM\n", fBoost, rpm);
+    printf("High check done, best %d @ %d RPM, starting low check...\n", fBoost, rpm);
     boost = fBoost;
     rpm = gRpm;
     for (int steps = cSteps >> 1; steps; steps = steps >> 1) {
@@ -133,7 +133,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v5.9.0\n");
+    printf("AlienFan-cli v5.9.1\n");
 
     bool supported = false;
 

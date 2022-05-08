@@ -1,7 +1,6 @@
 #pragma once
-#include <windowsx.h>
-#include "ConfigFan.h"
 #include "alienfan-SDK.h"
+#include "ConfigFan.h"
 #include "ThreadHelper.h"
 
 class MonHelper {
@@ -13,7 +12,7 @@ public:
 	//HANDLE stopEvent = 0;
 	short oldPower = 0;
 	AlienFan_SDK::Control* acpi;
-	vector<int> senValues, fanValues, boostValues, boostSets, maxTemps;
+	vector<int> senValues, fanValues, boostValues, boostRaw, boostSets, maxTemps, fanSleep;
 
 	MonHelper(ConfigFan*, AlienFan_SDK::Control*);
 	~MonHelper();

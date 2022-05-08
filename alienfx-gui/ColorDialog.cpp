@@ -4,8 +4,8 @@ extern void SwitchTab(int);
 extern bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern lightset* CreateMapping(int lid);
-extern lightset* FindMapping(int mid);
-extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
+extern lightset* FindMapping(int mid, int lid = 0);
+extern void RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
@@ -121,17 +121,30 @@ int FindLastActiveID() {
 	switch (conf->GetEffect()) {
 	case 0: case 3:
 	{
+		if (!conf->GetEffect())
+			// first check effects....
+			//find_if()
+			for (int iter = (int)conf->activeProfile->lightsets.size() - 1; iter >= 0; iter--) {
+				lightset* Iter = &conf->activeProfile->lightsets[iter];
+				if (Iter->flags & ~LEVENT_COLOR) {
+					if (Iter->devid == devid && Iter->lightid == lightid) {
+						return iter;
+					}
+					for (auto gIter = lghGrp.begin(); gIter < lghGrp.end(); gIter++)
+						if (Iter->lightid == (*gIter)->gid) {
+							return iter;
+						}
+				}
+			}
+		// now check colors only...
 		for (int iter = (int)conf->activeProfile->lightsets.size() - 1; iter >= 0; iter--) {
 			lightset* Iter = &conf->activeProfile->lightsets[iter];
-			if (Iter->devid || !devid) {
+			if (Iter->flags & LEVENT_COLOR) {
 				if (Iter->devid == devid && Iter->lightid == lightid) {
 					return iter;
 				}
-			}
-			else {
-				// check groups...
 				for (auto gIter = lghGrp.begin(); gIter < lghGrp.end(); gIter++)
-					if (Iter->lightid == (*gIter)->gid && (conf->GetEffect() != 3 || Iter->flags & LEVENT_COLOR)) {
+					if (Iter->lightid == (*gIter)->gid) {
 						return iter;
 					}
 			}
@@ -188,19 +201,13 @@ void SetLightColors(HWND hDlg, int id) {
 		from_c = to_c = from_e = to_e = from_h = to_h = from_f = to_f = { NULL };
 
 		if (mmap) {
-			if (mmap->flags & LEVENT_ACT) {
-				from_e = Act2Code(&mmap->eve[3].map[0]);
-				to_e = Act2Code(&mmap->eve[3].map[1]);
+			int actIndex = mmap->flags & LEVENT_ACT ? 3 :
+				mmap->flags & LEVENT_PERF ? 2 :
+				mmap->flags & LEVENT_POWER ? 1 : 0;
+			if (actIndex) {
+				from_e = Act2Code(&mmap->eve[actIndex].map[0]);
+				to_e = Act2Code(&mmap->eve[actIndex].map[1]);
 			}
-			else
-				if (mmap->flags & LEVENT_PERF) {
-					from_e = Act2Code(&mmap->eve[2].map[0]);
-					to_e = Act2Code(&mmap->eve[2].map[1]);
-				} else
-					if (mmap->flags & LEVENT_POWER) {
-						from_e = Act2Code(&mmap->eve[1].map[0]);
-						to_e = Act2Code(&mmap->eve[1].map[1]);
-					}
 			if (mmap->flags & LEVENT_COLOR) {
 				from_c = Act2Code(&mmap->eve[0].map.front());
 				to_c = Act2Code(&mmap->eve[0].map.back());
@@ -226,19 +233,13 @@ void SetLightColors(HWND hDlg, int id) {
 			case 0: // monitoring
 			{
 				mmap = &conf->activeProfile->lightsets[idf];
-				if (mmap->flags & LEVENT_ACT) {
-					from_f = Act2Code(&mmap->eve[3].map[0]);
-					to_f = Act2Code(&mmap->eve[3].map[1]);
+				int actIndex = mmap->flags & LEVENT_ACT ? 3 :
+					mmap->flags & LEVENT_PERF ? 2 :
+					mmap->flags & LEVENT_POWER ? 1 : 0;
+				if (actIndex) {
+					from_f = Act2Code(&mmap->eve[actIndex].map[0]);
+					to_f = Act2Code(&mmap->eve[actIndex].map[1]);
 				}
-				else
-					if (mmap->flags & LEVENT_PERF) {
-						from_f = Act2Code(&mmap->eve[2].map[0]);
-						to_f = Act2Code(&mmap->eve[2].map[1]);
-					} else
-						if (mmap->flags & LEVENT_POWER) {
-							from_f = Act2Code(&mmap->eve[1].map[0]);
-							to_f = Act2Code(&mmap->eve[1].map[1]);
-						}
 				if (mmap->flags & LEVENT_COLOR) {
 					if (!from_f)
 						to_f = Act2Code(&mmap->eve[0].map.back());
@@ -274,7 +275,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		type_c1 = GetDlgItem(hDlg, IDC_TYPE1),
 		grpList = GetDlgItem(hDlg, IDC_GRPLIST);
 
-	lightset* mmap = eItem < 0 ? NULL: FindMapping(eItem);
+	lightset* mmap = FindMapping(eItem);
 
 	int devid = eItem >= 0 && eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->devid : 0,
 		lightid = eItem >= 0 && eItem < 0x10000 ? fxhl->afx_dev.GetMappings()->at(eItem)->lightid : eItem;

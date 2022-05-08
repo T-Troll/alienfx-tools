@@ -1,8 +1,11 @@
 // AlienFX Sample App.cpp : Defines the entry point for the console application.
 
-#include "stdafx.h"
 #include "AlienFX_SDK.h"
 #include <iostream>
+//#include <windows.h>
+#include <stdio.h>
+#include <tchar.h>
+
 
 using namespace std;
 
@@ -15,8 +18,8 @@ int main()
 	cout << devs.size() << " device(s) detected." << endl;
 	//for (int i = 0; i < devs.size(); i++) {
 		//if (afx_dev.AlienFXInitialize(0x0461, 0x4EC0) != -1) { // mouse
-		//if (afx_dev.AlienFXInitialize(0x0424, 0x2745) != -1) { // monitor
-	    if (afx_dev.AlienFXInitialize(0x04f2) != -1) { // keyboard
+		if (afx_dev.AlienFXInitialize(0x0424, 0x2745) != -1) { // monitor
+	    //if (afx_dev.AlienFXInitialize(0x04f2) != -1) { // keyboard
 			cout << hex << "VID: 0x" << afx_dev.GetVid() << ", PID: 0x" << afx_dev.GetPID() << ", API v" << afx_dev.GetVersion() << endl;
 			cout << "Now try light 2 to blue... ";
 			afx_dev.SetColor(2, {255});

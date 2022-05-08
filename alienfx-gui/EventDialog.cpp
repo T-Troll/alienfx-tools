@@ -4,7 +4,7 @@ extern void SwitchTab(int);
 extern bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern lightset* CreateMapping(int lid);
-extern lightset* FindMapping(int mid);
+extern lightset* FindMapping(int mid, int lid = 0);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);

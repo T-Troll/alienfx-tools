@@ -1,21 +1,18 @@
 #include <Shlobj.h>
-#include <shellapi.h>
 #include <windowsx.h>
-#include <wininet.h>
 #include <string>
-#include <Commdlg.h>
 #include "resource.h"
 #include "ConfigMon.h"
 #include "SenMonHelper.h"
-#include <ThreadHelper.h>
+#include "ThreadHelper.h"
+#include "Common.h"
+
 using namespace std;
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"Version.lib")
-#pragma comment(lib,"comctl32.lib")
-#pragma comment(lib,"Wininet.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -37,39 +34,10 @@ HWND                InitInstance(HINSTANCE, int);
 BOOL CALLBACK       DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
+void ResetDPIScale();
+
 void UpdateMonUI(LPVOID);
 ThreadHelper* muiThread = NULL;
-
-DWORD EvaluteToAdmin() {
-    // Evaluation attempt...
-    DWORD dwError = ERROR_CANCELLED;
-    char szPath[MAX_PATH];
-    if (!IsUserAnAdmin()) {
-        if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
-        {
-            // Launch itself as admin
-            SHELLEXECUTEINFO sei{ sizeof(sei) };
-            sei.lpVerb = "runas";
-            sei.lpFile = szPath;
-            sei.hwnd = NULL;
-            sei.nShow = SW_NORMAL;
-            if (!ShellExecuteEx(&sei))
-            {
-                dwError = GetLastError();
-            }
-            else
-            {
-                if (mDlg) {
-                    conf->Save();
-                    EndDialog(mDlg, 1);
-                }
-                _exit(1);  // Quit itself
-            }
-        }
-        return dwError;
-    }
-    return 0;
-}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -89,6 +57,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		Sleep(5000);
 
 	senmon = new SenMonHelper(conf);
+
+	ResetDPIScale();
 
     // Perform application initialization:
     if (!InitInstance (hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL))
@@ -160,65 +130,6 @@ string GetAppVersion() {
 		}
 	}
 	return res;
-}
-
-DWORD WINAPI CUpdateCheck(LPVOID lparam) {
-	NOTIFYICONDATA* niData = (NOTIFYICONDATA*)lparam;
-	HINTERNET session, req;
-	char buf[2048];
-	DWORD byteRead;
-	bool isConnectionFailed = false;
-	// Wait connection for a while
-	if (!needUpdateFeedback)
-		Sleep(10000);
-	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
-		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
-			NULL, 0, 0, NULL)) {
-			if (InternetReadFile(req, buf, 2047, &byteRead)) {
-				buf[byteRead] = 0;
-				string res = buf;
-				size_t pos = res.find("\"name\":"),
-					posf = res.find("\"", pos + 8);
-				if (pos != string::npos) {
-					res = res.substr(pos + 8, posf - pos - 8);
-					size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
-					if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
-						res += ".0";
-					if (res != GetAppVersion()) {
-						// new version detected!
-						niData->uFlags |= NIF_INFO;
-						strcpy_s(niData->szInfoTitle, "Update avaliable!");
-						strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
-						Shell_NotifyIcon(NIM_MODIFY, niData);
-						niData->uFlags &= ~NIF_INFO;
-						isNewVersion = true;
-					}
-				}
-			}
-			else
-				isConnectionFailed = true;
-			InternetCloseHandle(req);
-		}
-		else
-			isConnectionFailed = true;
-		InternetCloseHandle(session);
-	}
-	else
-		isConnectionFailed = true;
-	if (needUpdateFeedback && !isNewVersion) {
-		niData->uFlags |= NIF_INFO;
-		if (isConnectionFailed) {
-			strcpy_s(niData->szInfoTitle, "Update check failed!");
-			strcpy_s(niData->szInfo, "Can't connect to GitHub for update check.");
-		}
-		else {
-			strcpy_s(niData->szInfoTitle, "You are up to date!");
-			strcpy_s(niData->szInfo, "You are using latest version.");
-		}
-		Shell_NotifyIcon(NIM_MODIFY, niData);
-		niData->uFlags &= ~NIF_INFO;
-	}
-	return 0;
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -458,15 +369,15 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_ESENSORS:
 			conf->eSensors = state;
+			RemoveSensors(1, state);
 			if (state)
 				EvaluteToAdmin();
-			RemoveSensors(1, state);
 			break;
 		case IDC_BSENSORS:
 			conf->bSensors = state;
+			RemoveSensors(2, state);
 			if (state)
 				EvaluteToAdmin();
-			RemoveSensors(2, state);
 			senmon->ModifyMon();
 			break;
 		case IDC_BUTTON_RESET:

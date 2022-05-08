@@ -1,48 +1,30 @@
 #include "alienfx-gui.h"
 
-extern bool RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
+extern void RemoveMapping(std::vector<lightset>* lightsets, int did, int lid);
 
 int	gLid = -1, gItem = -1;
 
-int UpdateLightListG(HWND light_list, AlienFX_SDK::group* grp) {
-	int pos = -1;
+void UpdateLightListG(HWND light_list, AlienFX_SDK::group* grp) {
 	size_t lights = fxhl->afx_dev.GetMappings()->size();
 	ListBox_ResetContent(light_list);
-	for (int i = 0; i < lights; i++) {
+	for (auto i = 0; i < lights; i++) {
 		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
-		if (fxhl->LocateDev(lgh->devid)) {
-			if (grp) {
-				int gl = 0;
-				for (gl=0; gl < grp->lights.size(); gl++) {
-					if (grp->lights.at(gl)->devid == lgh->devid &&
-						grp->lights.at(gl)->lightid == lgh->lightid)
-						break;
-				}
-				if (gl < grp->lights.size()) {
-					continue;
-				}
-			} //else {
-				pos = ListBox_AddString(light_list, lgh->name.c_str());
-				ListBox_SetItemData(light_list, pos, i);
-			//}
+		if (!grp ||	find_if(grp->lights.begin(), grp->lights.end(), [lgh](AlienFX_SDK::mapping* map) {
+				return map->devid == lgh->devid &&
+					map->lightid == lgh->lightid;
+				}) == grp->lights.end()) {
+			ListBox_SetItemData(light_list, ListBox_AddString(light_list, lgh->name.c_str()), i);
 		}
 	}
-	RedrawWindow(light_list, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW);
-	return pos;
 }
 
-int UpdateGroupLights(HWND light_list, int gID, int sel) {
-	int pos = -1;
+void UpdateGroupLights(HWND light_list, int gID, int sel) {
 	ListBox_ResetContent(light_list);
 	AlienFX_SDK::group* grp = fxhl->afx_dev.GetGroupById(gID);
-	if (grp) {
-		for (int i = 0; i < grp->lights.size(); i++) {
-			pos = (int) ListBox_AddString(light_list, grp->lights[i]->name.c_str());
-			ListBox_SetItemData(light_list, pos, i);
-		}
-		ListBox_SetCurSel(light_list, sel);
+	for (int i = 0; grp && i < grp->lights.size(); i++) {
+		ListBox_SetItemData(light_list, ListBox_AddString(light_list, grp->lights[i]->name.c_str()), i);
 	}
-	return pos;
+	ListBox_SetCurSel(light_list, sel);
 }
 
 BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {

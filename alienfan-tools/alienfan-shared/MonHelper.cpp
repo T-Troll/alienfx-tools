@@ -20,7 +20,10 @@ MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
 	senValues.resize(acpi->HowManySensors());
 	fanValues.resize(acpi->HowManyFans());
 	boostValues.resize(acpi->HowManyFans());
+	boostRaw.resize(acpi->HowManyFans());
 	boostSets.resize(acpi->HowManyFans());
+	fanSleep.resize(acpi->HowManyFans());
+
 	for (int i = 0; i < acpi->HowManySensors(); i++) {
 		maxTemps[i] = acpi->GetTempValue(i);
 	}
@@ -33,6 +36,10 @@ MonHelper::~MonHelper() {
 
 	if (oldPower != conf->lastProf->powerStage)
 		acpi->SetPower(oldPower);
+	if (!oldPower)
+		// reset boost
+		for (int i = 0; i < acpi->fans.size(); i++)
+			acpi->SetFanValue(i, 0);
 }
 
 void MonHelper::Start() {
@@ -71,6 +78,7 @@ void CMonProc(LPVOID param) {
 	for (int i = 0; i < src->acpi->HowManyFans(); i++) {
 		src->boostSets[i] = -273;
 		src->boostValues[i] = src->acpi->GetFanValue(i);
+		src->boostRaw[i] = src->acpi->GetFanValue(i, true);
 		src->fanValues[i] = src->acpi->GetFanRPM(i);
 	}
 
@@ -94,13 +102,21 @@ void CMonProc(LPVOID param) {
 		}
 		// Now set if needed...
 		for (int i = 0; i < src->acpi->HowManyFans(); i++)
-			if (src->boostSets[i] >= 0 && (src->boostSets[i] != src->boostValues[i]) || src->boostSets[i] == 100) {
-				src->acpi->SetFanValue(i, src->boostSets[i]);
-//#ifdef _DEBUG
-//					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";
-//					OutputDebugString(msg.c_str());
-//#endif
+			if (!src->fanSleep[i] && src->boostSets[i] >= 0 && (src->boostSets[i] != src->boostValues[i]) /*|| src->boostRaw[i] > 100*/) {
+				if (src->boostRaw[i] < 100 && src->boostSets[i] * src->acpi->boosts[i] > 10000) {
+					src->acpi->SetFanValue(i, 100, true);
+					src->fanSleep[i] = 6;
+				}
+				else
+					src->acpi->SetFanValue(i, src->boostSets[i]);
+				//#ifdef _DEBUG
+				//					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";
+				//					OutputDebugString(msg.c_str());
+				//#endif
 			}
+			else
+				if (src->fanSleep[i])
+					src->fanSleep[i]--;
 	}
 
 }

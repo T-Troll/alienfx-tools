@@ -63,8 +63,8 @@ void EventHandler::ChangePowerState()
 			break;
 		}
 	}
-	if (!sameState && conf->dimmedBatt) {
-		DebugPrint("Power state changed\n");
+	if (!sameState) {
+		DebugPrint(("Power state changed to " + to_string(conf->statePower) + "\n").c_str());
 		fxh->ChangeState();
 		fxh->RefreshState();
 	}
@@ -92,7 +92,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
-	if (!newID) newID = conf->defaultProfile ? conf->defaultProfile : conf->profiles.front();
+	if (!newID) newID = conf->FindDefaultProfile();
 	if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
 	if (newID->id != conf->activeProfile->id) {
 			modifyProfile.lock();
@@ -142,20 +142,12 @@ void EventHandler::StopEvents()
 		DebugPrint("Event thread stop.\n");
 
 		SetEvent(stopEvents);
-		WaitForSingleObject(dwHandle, 1000);
+		WaitForSingleObject(dwHandle, conf->monDelay << 1);
 		CloseHandle(dwHandle);
 		CloseHandle(stopEvents);
 		dwHandle = 0;
 	}
 }
-
-//void EventHandler::ToggleEvents()
-//{
-//	//conf->SetStates();
-//	if (conf->stateOn) {
-//		ChangeEffectMode(conf->GetEffect());
-//	}
-//}
 
 void EventHandler::ChangeEffectMode() {
 	if (conf->enableMon && conf->stateOn) {
@@ -179,7 +171,7 @@ void EventHandler::StopEffects() {
 		delete audio; audio = NULL;
 	} break;
 	}
-	effMode = -1;
+	effMode = 3;
 	fxh->Refresh(true);
 }
 
@@ -467,6 +459,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 
+		if (!src->fxh->unblockUpdates)
+			continue;
+
 		cData = { 0 };
 
 		PdhGetFormattedCounterValue( hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal );
@@ -480,15 +475,13 @@ DWORD WINAPI CEventProc(LPVOID param)
 			totalNet += counterValues[i].FmtValue.longValue;
 		}
 
-		if (src->fxh->maxData.NET < totalNet)
-			src->fxh->maxData.NET = totalNet;
+		src->fxh->maxData.NET = max(src->fxh->maxData.NET, totalNet);
 
 		// GPU load
 		valCount = GetValuesArray(hGPUCounter);
 
 		for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
-			if (cData.GPU < counterValues[i].FmtValue.longValue)
-				cData.GPU = (byte) counterValues[i].FmtValue.longValue;
+			cData.GPU = (byte)max(cData.GPU, counterValues[i].FmtValue.longValue);
 		}
 
 		// Temperatures
@@ -502,9 +495,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			// Check fan RPMs
 			for (unsigned i = 0; i < src->mon->fanValues.size(); i++) {
 				fan_overboost* overBoost = src->conf->fan_conf->FindBoost(i);
-				int newRpm = overBoost ? src->mon->fanValues[i] * 100 / overBoost->maxBoost : src->mon->acpi->GetFanPercent(i);
-				if (cData.Fan < newRpm)
-					cData.Fan = newRpm;
+				cData.Fan = max(cData.Fan, overBoost ? src->mon->fanValues[i] * 100 / overBoost->maxRPM : src->mon->acpi->GetFanPercent(i));
 			}
 		}
 
@@ -514,23 +505,21 @@ DWORD WINAPI CEventProc(LPVOID param)
 			if (src->mon) {
 				// Let's get temperatures from fan sensors
 				for (unsigned i = 0; i < src->mon->senValues.size(); i++)
-					if (cData.Temp < src->mon->senValues[i])
-						cData.Temp = src->mon->senValues[i];
+					cData.Temp = max(cData.Temp, src->mon->senValues[i]);
 			}
 
 			valCount = GetValuesArray(hTempCounter2);
 			// Added other set maximum temp...
 			for (unsigned i = 0; i < valCount; i++) {
-				if (cData.Temp < counterValues[i].FmtValue.longValue)
-					cData.Temp = (byte) counterValues[i].FmtValue.longValue;
+				cData.Temp = (byte)max(cData.Temp, counterValues[i].FmtValue.longValue);
 			}
 
 			// Powers
 			valCount = GetValuesArray(hPwrCounter);
 			for (unsigned i = 0; i < valCount; i++) {
-				totalPwr += (short) counterValues[i].FmtValue.longValue / 10;
+				totalPwr = (short)max(totalPwr, counterValues[i].FmtValue.longValue);
 			}
-
+			//src->fxh->maxData.PWR = max(src->fxh->maxData.PWR,(totalPwr & 0xff) << 1 + 1);
 			while (totalPwr > src->fxh->maxData.PWR)
 				src->fxh->maxData.PWR <<= 1;
 		}
@@ -551,21 +540,17 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		// Leveling...
 		cData.Temp = min(100, max(0, cData.Temp));
-		if (cData.Temp > src->fxh->maxData.Temp)
-			src->fxh->maxData.Temp = cData.Temp;
 		cData.Batt = min(100, max(0, state.BatteryLifePercent));
 		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
-		if (cData.CPU > src->fxh->maxData.CPU)
-			src->fxh->maxData.CPU = cData.CPU;
+		src->fxh->maxData.CPU = max(src->fxh->maxData.CPU, cData.CPU);
 		cData.RAM = (byte) memStat.dwMemoryLoad;
-		if (cData.RAM > src->fxh->maxData.RAM)
-			src->fxh->maxData.RAM = cData.RAM;
+		src->fxh->maxData.RAM = max(src->fxh->maxData.RAM, cData.RAM);
 		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / src->fxh->maxData.NET > 0 ? (totalNet * 100) / src->fxh->maxData.NET : 1 : 0);
 		cData.PWR = (byte) min(100, totalPwr * 100 / src->fxh->maxData.PWR);
-		if (cData.GPU > src->fxh->maxData.GPU)
-			src->fxh->maxData.GPU = cData.GPU;
+		src->fxh->maxData.GPU = max(src->fxh->maxData.GPU, cData.GPU);
+		src->fxh->maxData.Temp = max(src->fxh->maxData.Temp, cData.Temp);
 
 		src->modifyProfile.lock();
 		src->fxh->SetCounterColor(&cData);

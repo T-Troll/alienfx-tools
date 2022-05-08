@@ -1,6 +1,7 @@
 #include "ConfigFan.h"
 #include "MonHelper.h"
 #include "alienfan-SDK.h"
+#include <windowsx.h>
 
 #define DRAG_ZONE 2
 
@@ -11,8 +12,26 @@ extern AlienFan_SDK::Control* acpi;
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 HWND toolTip = NULL;
+extern HINSTANCE hInst;
 
 fan_point* lastFanPoint = NULL;
+
+HWND CreateToolTip(HWND hwndParent, HWND oldTip)
+{
+    // Create a tool tip.
+    if (oldTip) DestroyWindow(oldTip);
+
+    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
+    //SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+    //			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+    TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
+    GetClientRect(hwndParent, &ti.rect);
+    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+    return hwndTT;
+}
 
 void SetTooltip(HWND tt, int x, int y) {
     TOOLINFO ti{ sizeof(ti) };

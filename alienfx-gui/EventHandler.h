@@ -12,7 +12,7 @@ private:
 
 	HWINEVENTHOOK hEvent = 0, cEvent = 0;
 
-	int effMode = -1;
+	int effMode = 3;
 
 	void StartEvents();
 	void StopEvents();

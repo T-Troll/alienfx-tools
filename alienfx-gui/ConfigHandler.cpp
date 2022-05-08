@@ -85,13 +85,11 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 }
 
 profile* ConfigHandler::FindProfile(int id) {
-	profile* prof = NULL;
 	for (int i = 0; i < profiles.size(); i++)
 		if (profiles[i]->id == id) {
-			prof = profiles[i];
-			break;
+			return profiles[i];
 		}
-	return prof;
+	return NULL;
 }
 
 profile* ConfigHandler::FindProfileByApp(string appName, bool active)
@@ -110,19 +108,21 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 	return prof && prof->flags & PROF_PRIORITY;
 }
 
-void ConfigHandler::SetStates() {
-	bool oldStateOn = stateOn, oldStateDim = stateDimmed;
+bool ConfigHandler::SetStates() {
+	bool oldStateOn = stateOn, oldStateDim = stateDimmed, oldPBState = finalPBState;
 	// Lights on state...
-	stateOn = lightsOn && stateScreen;
+	stateOn = lightsOn && stateScreen && (!offOnBattery || statePower);
 	// Dim state...
 	stateDimmed = IsDimmed() || dimmedScreen || (dimmedBatt && !statePower);
-	if (oldStateOn != stateOn || oldStateDim != stateDimmed) {
+	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
+	finalPBState = finalBrightness > 0 ? (byte)dimPowerButton : (byte)offPowerButton;
+
+	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldPBState != (bool)finalPBState) {
 		SetIconState();
 		Shell_NotifyIcon(NIM_MODIFY, &niData);
+		return true;
 	}
-
-	finalBrightness = (byte) (stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
-	finalPBState = finalBrightness > 0 ? (byte) dimPowerButton : (byte) offPowerButton;
+	return false;
 }
 
 void ConfigHandler::SetIconState() {
@@ -183,6 +183,7 @@ void ConfigHandler::Load() {
 	GetReg("OffPowerButton", &offPowerButton);
 	GetReg("EsifTemp", &esif_temp);
 	GetReg("DimmingPower", &dimmingPower, 92);
+	GetReg("OffOnBattery", &offOnBattery);
 	GetReg("FanControl", &fanControl);
 	RegGetValue(hKey1, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
@@ -286,22 +287,23 @@ void ConfigHandler::Load() {
 		profile* prof = new profile({0, 1, 0, {}, "Default"});
 		profiles.push_back(prof);
 	}
-	defaultProfile = profiles.front();
+	//defaultProfile = profiles.front();
 	if (profiles.size() == 1) {
 		profiles.front()->flags |= PROF_DEFAULT;
-	} else {
-		// check for default profile
-		for (auto iter = profiles.begin(); iter < profiles.end(); iter++)
-			if ((*iter)->flags & PROF_DEFAULT) {
-				defaultProfile = *iter;
-				break;
-			}
 	}
 	activeProfile = FindProfile(activeProfileID);
-	if (!activeProfile) activeProfile = defaultProfile;
+	if (!(activeProfile = FindProfile(activeProfileID))) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
+}
+
+profile* ConfigHandler::FindDefaultProfile() {
+	auto res = find_if(profiles.begin(), profiles.end(),
+		[](profile* prof) {
+			return (prof->flags & PROF_DEFAULT);
+	});
+	return res == profiles.end() ? profiles.front() : *res;
 }
 
 void ConfigHandler::Save() {
@@ -323,6 +325,7 @@ void ConfigHandler::Save() {
 	SetReg("DimPower", dimPowerButton);
 	SetReg("DimmedOnBattery", dimmedBatt);
 	SetReg("OffPowerButton", offPowerButton);
+	SetReg("OffOnBattery", offOnBattery);
 	SetReg("DimmingPower", dimmingPower);
 	SetReg("ActiveProfile", activeProfile->id);
 	SetReg("GammaCorrection", gammaCorrection);

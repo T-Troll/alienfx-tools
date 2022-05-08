@@ -200,6 +200,7 @@ Please keep in mind:
 - "Turn on lights" - Operate all lights into the system. It will be black if this option disabled (default - on).
 - "Lights follow screen state" - Dim/Fade to black lights then system screen dimmed/off (default - off).
 - "Keep Power/indicator on" - Lights, marked as Power Button or Indicator will be always on, or follows the system state if disabled (default - on).
+- "Turn off for battery" - Lights will turned off at battery power and back on at AC. (default - off).
 - "Colour Gamma correction" - Enables colour correction to make them looks close to screen one. It keeps original AWCC colours if disabled (default - on).
 - "Enable software effects" - Global software effect switch. If it's off, effects always disabled, if it's on - effect mode defined by current profile.
 - "Dim lights" - Dim system lights brightness. It's useful for night/battery scenario (default - off).

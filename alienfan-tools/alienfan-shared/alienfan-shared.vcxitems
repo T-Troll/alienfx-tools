@@ -19,6 +19,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ThreadHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)common.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ConfigFan.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MonHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ThreadHelper.h" />

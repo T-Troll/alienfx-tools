@@ -142,7 +142,7 @@
 #define IDC_DEVICE_STATUS               1058
 #define IDC_APP_RESET                   1059
 #define IDC_APP_BROWSE                  1060
-#define IDC_LEFFECTS_LIST                1066
+#define IDC_LEFFECTS_LIST               1066
 #define IDC_BUT_ADD_EFFECT              1068
 #define IDC_BUTT_REMOVE_EFFECT          1069
 #define IDC_CHECK_PROFDIM               1071
@@ -214,6 +214,8 @@
 #define IDC_BUTTON1                     1130
 #define IDC_BUT_COPYACTIVE              1130
 #define IDC_VAL_NET                     1131
+#define IDC_CHECK1                      1131
+#define IDC_OFFONBATTERY                1131
 #define IDC_VAL_BAT                     1132
 #define IDC_VAL_TEMP                    1133
 #define ID_TRAYMENU_RESTORE             32772
@@ -247,7 +249,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1131
+#define _APS_NEXT_CONTROL_VALUE         1132
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

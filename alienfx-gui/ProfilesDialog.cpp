@@ -65,17 +65,11 @@ void ReloadProfileView(HWND hDlg) {
 	ListView_EnsureVisible(profile_list, rpos, false);
 }
 
-int RemoveProfile(int id) {
-	int nCid = conf->activeProfile->id;
-	// Now remove profile....
-	for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++)
-		if ((*Iter)->id == id) {
-			conf->profiles.erase(Iter);
-			break;
-		}
-		else
-			nCid = (*Iter)->id;
-	return nCid;
+void RemoveProfile(int id) {
+	conf->profiles.erase(find_if(conf->profiles.begin(), conf->profiles.end(),
+		[id](profile* pr) {
+			return pr->id == id;
+		}));
 }
 
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -92,7 +86,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	{
 	case WM_INITDIALOG:
 	{
-		pCid = conf->activeProfile ? conf->activeProfile->id : conf->defaultProfile->id;
+		pCid = conf->activeProfile ? conf->activeProfile->id : conf->FindDefaultProfile()->id;
 		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
 		if (conf->haveV5) {
 			//ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 1);
@@ -161,11 +155,12 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					// is this active profile? Switch needed!
 					if (conf->activeProfile->id == pCid) {
 						// switch to default profile..
-						eve->SwitchActiveProfile(conf->defaultProfile);
+						eve->SwitchActiveProfile(conf->FindDefaultProfile());
+						pCid = conf->FindDefaultProfile()->id;
+						ReloadProfileList();
 					}
-					pCid = RemoveProfile(pCid);
+					RemoveProfile(pCid);
 					ReloadProfileView(hDlg);
-					ReloadProfileList();
 				}
 			}
 			else
@@ -229,12 +224,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_DEFPROFILE:
 		{
 			if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
-				profile *old_def = conf->defaultProfile;
-				if (old_def)
-					old_def->flags = old_def->flags & ~PROF_DEFAULT;
+				profile *old_def = conf->FindDefaultProfile();
+				old_def->flags = old_def->flags & ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
-				conf->defaultProfile = prof;
-				if (conf->enableProf && old_def && old_def->id == conf->activeProfile->id)
+				if (conf->enableProf && old_def->id == conf->activeProfile->id)
 					// need to switch to this
 					eve->SwitchActiveProfile(prof);
 			} else
@@ -250,7 +243,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			prof->flags = (prof->flags & ~PROF_DIMMED) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 2;
 			prof->ignoreDimming = false;
 			if (prof->id == conf->activeProfile->id) {
-				conf->SetStates();
+				//conf->SetStates();
 				fxhl->ChangeState();
 			}
 			break;

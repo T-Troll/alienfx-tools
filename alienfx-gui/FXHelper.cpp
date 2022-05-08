@@ -37,7 +37,7 @@ void FXHelper::SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, 
 					else {
 						// recalc...
 						AlienFX_SDK::afx_act fin;
-						double newPower = (power - ((double) i) / grp->lights.size())*grp->lights.size();
+						double newPower = (power - ((double)i) / grp->lights.size())*grp->lights.size();
 						fin.r = (byte) ((1.0 - newPower) * from->r + newPower * to_c->r);
 						fin.g = (byte) ((1.0 - newPower) * from->g + newPower * to_c->g);
 						fin.b = (byte) ((1.0 - newPower) * from->b + newPower * to_c->b);
@@ -92,7 +92,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 	bool wasChanged = false;
 	if (force) {
 		DebugPrint("Forced Counter update initiated...\n");
-		eData = {101,0,101,101,101,101,101,101,99};
+		eData = {101,101,101,101,200,101,101,-1,-1,-1};
 	}
 
 	vector<lightset> active = config->activeProfile->lightsets;
@@ -110,7 +110,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				from = fin;
 			fin.type = from.type = 0;
 			double coeff = 0.0;
-			bool diffC = false, diffI = false;
+			bool diff = false;// , diffI = false;
 			int lVal = 0, cVal = 0;
 			if (Iter->flags & LEVENT_PERF) {
 				// counter
@@ -128,17 +128,17 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				}
 
 				if (lVal != cVal && (lVal > ccut || cVal > ccut)) {
-					diffC = true;
+					diff = true;
 					coeff = cVal > ccut ? (cVal - ccut) / (100.0 - ccut) : 0.0;
-					//fin.r = (BYTE) (from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
-					//fin.g = (BYTE) (from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
-					//fin.b = (BYTE) (from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
-					fin.r = (byte) sqrt((1 - coeff) * from.r * from.r +
-										coeff * Iter->eve[2].map[1].r * Iter->eve[2].map[1].r);
-					fin.g = (byte) sqrt((1 - coeff) * from.g * from.g +
-										coeff * Iter->eve[2].map[1].g * Iter->eve[2].map[1].g);
-					fin.b = (byte) sqrt((1 - coeff) * from.b * from.b +
-										coeff * Iter->eve[2].map[1].b * Iter->eve[2].map[1].b);
+					fin.r = (BYTE) (from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
+					fin.g = (BYTE) (from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
+					fin.b = (BYTE) (from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
+					//fin.r = (byte) sqrt((1 - coeff) * from.r * from.r +
+					//					coeff * Iter->eve[2].map[1].r * Iter->eve[2].map[1].r);
+					//fin.g = (byte) sqrt((1 - coeff) * from.g * from.g +
+					//					coeff * Iter->eve[2].map[1].g * Iter->eve[2].map[1].g);
+					//fin.b = (byte) sqrt((1 - coeff) * from.b * from.b +
+					//					coeff * Iter->eve[2].map[1].b * Iter->eve[2].map[1].b);
 				}
 			}
 			if (Iter->flags & LEVENT_ACT) {
@@ -155,19 +155,19 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				}
 
 				if (force || (lVal != cVal && ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1)) { //check 0 border!
-					diffI = true;
+					diff = true;
 					if (cVal > 0 && (!blink || blinkStage))
 						fin = Iter->eve[3].map[1];
 				} else
 					if (cVal > 0 && blink) {
-						diffI = true;
+						diff = true;
 						if (blinkStage)
 							fin = Iter->eve[3].map[1];
 					}
 			}
 
 			// check for change.
-			if (!diffC && !diffI)
+			if (!diff/*C && !diffI*/)
 				continue;
 			wasChanged = true;
 
@@ -232,26 +232,29 @@ void FXHelper::RefreshState(bool force)
 
 void FXHelper::RefreshMon()
 {
-	config->SetStates();
-	if (!config->GetEffect())
-		SetCounterColor(&eData, true);
+	EventData tData;
+	eData = tData;
+	//config->SetStates();
+	//if (!config->GetEffect())
+	//	SetCounterColor(&eData, true);
 }
 
 void FXHelper::ChangeState() {
-	config->SetStates();
-	UnblockUpdates(false);
+	if (config->SetStates()) {
+		UnblockUpdates(false);
 
-	for (int i = 0; i < afx_dev.fxdevs.size(); i++) {
-		afx_dev.fxdevs[i].dev->ToggleState(config->finalBrightness, afx_dev.GetMappings(), config->finalPBState);
-		if (config->stateOn)
-			switch (afx_dev.fxdevs[i].dev->GetVersion()) {
-			case API_L_ACPI: case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V6: case API_L_V7:
+		for (int i = 0; i < afx_dev.fxdevs.size(); i++) {
+			afx_dev.fxdevs[i].dev->ToggleState(config->finalBrightness, afx_dev.GetMappings(), config->finalPBState);
+			if (config->stateOn)
+				switch (afx_dev.fxdevs[i].dev->GetVersion()) {
+				case API_L_ACPI: case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V6: case API_L_V7:
 					UnblockUpdates(true);
 					RefreshState();
 					UnblockUpdates(false);
-			}
+				}
+		}
+		UnblockUpdates(true);
 	}
-	UnblockUpdates(true);
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
@@ -358,7 +361,7 @@ void FXHelper::Refresh(int forced)
 	}
 #endif
 
-	config->SetStates();
+	//config->SetStates();
 	for (int i =0; i < config->active_set->size(); i++) {
 		RefreshOne(&config->active_set->at(i), forced);
 	}

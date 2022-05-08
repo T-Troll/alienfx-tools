@@ -25,10 +25,10 @@ void ConfigHaptics::SetReg(char *text, DWORD value) {
 }
 
 haptics_map *ConfigHaptics::FindHapMapping(DWORD devid, DWORD lid) {
-    for (auto i = haptics.begin(); i < haptics.end(); i++)
-        if (i->devid == devid && i->lightid == lid)
-            return &(*i);
-    return NULL;
+    auto res = find_if(haptics.begin(), haptics.end(), [lid, devid](haptics_map ls) {
+        return ls.lightid == lid && ls.devid == devid;
+        });
+    return res == haptics.end() ? nullptr : &(*res);
 }
 
 void ConfigHaptics::Load() {

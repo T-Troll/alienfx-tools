@@ -2,10 +2,10 @@
 #include "EventHandler.h"
 
 extern void ReloadProfileList();
-extern DWORD EvaluteToAdmin();
 extern bool DoStopService(bool kind);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
+extern void EvaluteToAdmin();
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
@@ -34,6 +34,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_CHECK_EXCEPTION, conf->noDesktop);
 		CheckDlgButton(hDlg, IDC_CHECK_DIM, conf->dimmed);
 		CheckDlgButton(hDlg, IDC_CHECK_UPDATE, conf->updateCheck);
+		CheckDlgButton(hDlg, IDC_OFFONBATTERY, conf->offOnBattery);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -93,10 +94,32 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = !state;
-			fxhl->ChangeState();
+			if (!conf->lightsOn) {
+				if (state) {
+					//conf->offPowerButton = false;
+					conf->lightsOn = true;
+					fxhl->ChangeState();
+					conf->lightsOn = false;
+				}
+				fxhl->ChangeState();
+			}
 			break;
 		case IDC_POWER_DIM:
 			conf->dimPowerButton = state;
+			if (conf->IsDimmed()) {
+				if (!state) {
+					DWORD oldDimmed = conf->dimmed;
+					conf->dimmed = false;
+					conf->dimPowerButton = true;
+					fxhl->ChangeState();
+					conf->dimPowerButton = false;
+					conf->dimmed = oldDimmed;
+				}
+				fxhl->ChangeState();
+			}
+			break;
+		case IDC_OFFONBATTERY:
+			conf->offOnBattery = state;
 			fxhl->ChangeState();
 			break;
 		case IDC_AWCC:
@@ -109,7 +132,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_ESIFTEMP:
 			conf->esif_temp = state;
-			if (conf->esif_temp)
+			if (state)
 				EvaluteToAdmin(); // Check admin rights!
 			break;
 		case IDC_CHECK_EXCEPTION:
@@ -121,7 +144,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_FANCONTROL:
 			conf->fanControl = state;
-			if (conf->fanControl) {
+			if (state) {
 				EvaluteToAdmin();
 				acpi = new AlienFan_SDK::Control();
 				if (acpi->IsActivated() && acpi->Probe()) {
