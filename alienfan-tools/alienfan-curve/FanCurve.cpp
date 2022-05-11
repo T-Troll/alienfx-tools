@@ -10,11 +10,18 @@ extern MonHelper* mon;
 extern HWND fanWindow, tipWindow;
 extern AlienFan_SDK::Control* acpi;
 
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
+bool fanMode = true;
+RECT cArea{ 0 };
 
 fan_point* lastFanPoint = NULL;
+fan_overboost* lastBoostPoint = NULL, bestBoostPoint{ 0 };
+vector<fan_overboost> boostCheck;
+
+int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
+
+HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
 
 HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 {
@@ -43,49 +50,73 @@ void SetTooltip(HWND tt, int x, int y) {
     }
 }
 
-void DrawFan(int oper = 0, int xx = -1, int yy = -1)
+void SetBoostTip(HWND tt, int rpm, int boost) {
+    TOOLINFO ti{ sizeof(ti) };
+    if (tt) {
+        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+        string toolTip = "Boost " + to_string(boost) + " @ " + to_string(rpm) + " RPM";
+        ti.lpszText = (LPTSTR)toolTip.c_str();
+        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+    }
+}
+
+fan_point Screen2Fan(LPARAM lParam) {
+    return {
+        (short)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
+        (short)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
+        //(short)max(0, min(100, (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left))),
+        //(short)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top)))
+    };
+}
+
+POINT Fan2Screen(short temp, short boost) {
+    return {
+        temp* cArea.right / 100,
+        (100 - boost)* cArea.bottom / 100
+        //temp * cArea.right / 100 + cArea.left,
+        //(100 - boost)* cArea.bottom / 100 + cArea.top
+    };
+}
+
+POINT Boost2Screen(fan_overboost* boost) {
+    if (boost) {
+        boostScale = boost->maxBoost - 100 > boostScale ? boostScale << 1 : boostScale;
+        fanMaxScale = boost->maxRPM - fanMinScale > fanMaxScale ? ((boost->maxRPM - fanMinScale)/ 500 + 1) * 500 : fanMaxScale;
+        return {
+            boost->maxRPM < fanMinScale ? 0 : ((boost->maxRPM - fanMinScale) * cArea.right) / fanMaxScale,
+            (boostScale + 100 - boost->maxBoost)* cArea.bottom / boostScale
+        };
+    }
+    else
+        return { 0 };
+}
+
+void DrawFan()
 {
     if (fanWindow) {
-        RECT clirect, graphZone;
-        GetClientRect(fanWindow, &clirect);
-        graphZone = clirect;
-        clirect.right -= 1;
-        clirect.bottom -= 1;
-
-        switch (oper) {
-        case 2:// tooltip, no redraw
-            SetTooltip(toolTip, 100 * (xx - clirect.left) / clirect.right,
-                100 * (clirect.bottom - yy) / clirect.bottom);
-            return;
-        case 1:// show tooltip
-            SetTooltip(toolTip, 100 * (xx - clirect.left) / clirect.right,
-                100 * (clirect.bottom - yy) / clirect.bottom);
-            break;
-        }
-
+        POINT mark;
         HDC hdc_r = GetDC(fanWindow);
 
         // Double buff...
         HDC hdc = CreateCompatibleDC(hdc_r);
-        HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, graphZone.right - graphZone.left, graphZone.bottom - graphZone.top);
-
+        HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, cArea.right - cArea.left + 1, cArea.bottom - cArea.top + 1);
         SetBkMode(hdc, TRANSPARENT);
-
         HGDIOBJ hOld = SelectObject(hdc, hbmMem);
 
+        // Grid...
         SetDCPenColor(hdc, RGB(127, 127, 127));
         SelectObject(hdc, GetStockObject(DC_PEN));
         for (int x = 0; x < 11; x++)
             for (int y = 0; y < 11; y++) {
-                int cx = (x * clirect.right) / 10 + clirect.left,
-                    cy = (y * clirect.bottom) / 10 + clirect.top;
-                MoveToEx(hdc, cx, clirect.top, NULL);
-                LineTo(hdc, cx, clirect.bottom);
-                MoveToEx(hdc, clirect.left, cy, NULL);
-                LineTo(hdc, clirect.right, cy);
+                int cx = (x * cArea.right) / 10 + cArea.left,
+                    cy = (y * cArea.bottom) / 10 + cArea.top;
+                MoveToEx(hdc, cx, cArea.top, NULL);
+                LineTo(hdc, cx, cArea.bottom);
+                MoveToEx(hdc, cArea.left, cy, NULL);
+                LineTo(hdc, cArea.right, cy);
             }
 
-        if (fan_conf->lastSelectedFan != -1) {
+        if (fanMode /*&& fan_conf->lastSelectedFan != -1*/) {
             // curve...
             temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             fan_block* fan = NULL;
@@ -99,12 +130,11 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
                         SetDCPenColor(hdc, RGB(255, 255, 0));
                     SelectObject(hdc, GetStockObject(DC_PEN));
                     // First point
-                    MoveToEx(hdc, clirect.left, clirect.bottom, NULL);
+                    MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
                     for (int i = 0; i < fan->points.size(); i++) {
-                        int cx = fan->points[i].temp * clirect.right  / 100 + clirect.left,
-                            cy = (100 - fan->points[i].boost) * clirect.bottom / 100 + clirect.top;
-                        LineTo(hdc, cx, cy);
-                        Ellipse(hdc, cx - 2, cy - 2, cx + 2, cy + 2);
+                        mark = Fan2Screen(fan->points[i].temp, fan->points[i].boost);
+                        LineTo(hdc, mark.x, mark.y);
+                        Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
                     }
                     // Yellow dots
                     if (sen && senI->sensorIndex != sen->sensorIndex) {
@@ -112,9 +142,7 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
                         SetDCBrushColor(hdc, RGB(255, 255, 0));
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         SelectObject(hdc, GetStockObject(DC_BRUSH));
-                        POINT mark;
-                        mark.x = acpi->GetTempValue(senI->sensorIndex) * clirect.right / 100 + clirect.left;
-                        mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * clirect.bottom / 100 + clirect.top;
+                        mark = Fan2Screen(mon->senValues[senI->sensorIndex], mon->boostValues[fan_conf->lastSelectedFan]);
                         Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                     }
                 }
@@ -123,9 +151,7 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
             SetDCBrushColor(hdc, RGB(255, 0, 0));
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
-            POINT mark;
-            mark.x = acpi->GetTempValue(fan_conf->lastSelectedSensor) * clirect.right / 100 + clirect.left;
-            mark.y = (100 - acpi->GetFanValue(fan_conf->lastSelectedFan)) * clirect.bottom / 100 + clirect.top;
+            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], mon->boostValues[fan_conf->lastSelectedFan]);
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
             // RPM
             fan_overboost* maxBoost = fan_conf->FindBoost(fan_conf->lastSelectedFan);
@@ -134,8 +160,35 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
                 + to_string(maxBoost ? acpi->GetFanRPM(fan_conf->lastSelectedFan) * 100 / maxBoost->maxRPM : acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
         }
+        else {
+            SetDCPenColor(hdc, RGB(0, 255, 0));
+            SelectObject(hdc, GetStockObject(DC_PEN));
+            MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
+            for (auto iter = boostCheck.begin(); iter < boostCheck.end(); iter++) {
+                mark = Boost2Screen(&(*iter));
+                LineTo(hdc, mark.x, mark.y);
+                Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
+            }
+            if (lastBoostPoint) {
+                SetDCPenColor(hdc, RGB(255, 255, 0));
+                SetDCBrushColor(hdc, RGB(255, 255, 0));
+                SelectObject(hdc, GetStockObject(DC_PEN));
+                SelectObject(hdc, GetStockObject(DC_BRUSH));
+                mark = Boost2Screen(lastBoostPoint);
+                Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+                string rpmText = to_string(lastBoostPoint->maxBoost) + " @ " + to_string(lastBoostPoint->maxRPM)
+                    + " RPM (Max. " + to_string(bestBoostPoint.maxBoost) + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM)";
+                SetWindowText(tipWindow, rpmText.c_str());
+            }
+            SetDCPenColor(hdc, RGB(255, 0, 0));
+            SetDCBrushColor(hdc, RGB(255, 0, 0));
+            SelectObject(hdc, GetStockObject(DC_PEN));
+            SelectObject(hdc, GetStockObject(DC_BRUSH));
+            mark = Boost2Screen(&bestBoostPoint);
+            Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+        }
 
-        BitBlt(hdc_r, 0, 0, graphZone.right - graphZone.left, graphZone.bottom - graphZone.top, hdc, 0, 0, SRCCOPY);
+        BitBlt(hdc_r, 0, 0, cArea.right - cArea.left + 1, cArea.bottom - cArea.top + 1, hdc, 0, 0, SRCCOPY);
 
         SelectObject(hdc, hOld);
         DeleteObject(hbmMem);
@@ -145,13 +198,106 @@ void DrawFan(int oper = 0, int xx = -1, int yy = -1)
     }
 }
 
+int SetFanSteady(byte boost, bool downtrend = false) {
+    acpi->SetFanValue(bestBoostPoint.fanID, boost, true);
+    // Check the trend...
+    int fRpm, fDelta = -1, oDelta, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
+    boostCheck.push_back({ bestBoostPoint.fanID, boost, (USHORT)bRpm });
+    lastBoostPoint = &boostCheck.back();
+    DrawFan();
+    //if (WaitForSingleObject(ocStopEvent, 5000) != WAIT_TIMEOUT)
+    //    return -1;
+    do {
+        oDelta = fDelta;
+        if (WaitForSingleObject(ocStopEvent, 6000) != WAIT_TIMEOUT)
+            return -1;
+        fRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
+        fDelta = fRpm - bRpm;
+        lastBoostPoint->maxRPM = max(bRpm, fRpm);
+        bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, lastBoostPoint->maxRPM);
+        bRpm = fRpm;
+        DrawFan();
+    } while ((fDelta > 0 || oDelta < 0) && (!downtrend || !(fDelta < -40 && oDelta < -40)));
+    return lastBoostPoint->maxRPM;
+}
+
+void UpdateBoost() {
+    fan_overboost* fOver = fan_conf->FindBoost(bestBoostPoint.fanID);
+    if (fOver) {
+        fOver->maxBoost = bestBoostPoint.maxBoost;
+        fOver->maxRPM = max(bestBoostPoint.maxRPM, fOver->maxRPM);
+    }
+    else
+        fan_conf->boosts.push_back(bestBoostPoint);
+    acpi->boosts[bestBoostPoint.fanID] = bestBoostPoint.maxBoost;
+    fan_conf->Save();
+}
+
+DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
+    int num = (int)lpParam, steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanValue(num, true);
+    mon->Stop();
+    fanMode = false;
+    acpi->Unlock();
+    for (int i = 0; i < acpi->HowManyFans(); i++)
+        if (num < 0 || num == i) {
+            bestBoostPoint = { (byte)i, 100, 0 };
+            boostScale = 10; fanMinScale = 4000; fanMaxScale = 500;
+            if ((rpm = SetFanSteady(boost)) < 0)
+                goto finish;
+            fanMinScale = (rpm / 100) * 100;
+            for (int steps = 8; steps; steps = steps >> 1) {
+                // Check for uptrend
+                while ((boost += steps) != cBoost)
+                {
+                    if ((crpm = SetFanSteady(boost, true)) > rpm) {
+                        rpm = lastBoostPoint->maxRPM;
+                        cSteps = steps;
+                        bestBoostPoint.maxBoost = boost;
+                        DrawFan();
+                        //steps = steps << 1;
+                    }
+                    else {
+                        if (crpm > 0)
+                            break;
+                        else
+                            goto finish;
+                    }
+                }
+                boost = bestBoostPoint.maxBoost;
+                cBoost = boost + steps;
+            }
+            for (int steps = cSteps > 1 ? cSteps >> 1 : 1; steps; steps = steps >> 1) {
+                // Check for uptrend
+                boost -= steps;
+                while ((crpm = SetFanSteady(boost, true)) >= bestBoostPoint.maxRPM - 60) {
+                    bestBoostPoint.maxBoost = boost;
+                    DrawFan();
+                    boost -= steps;
+                }
+                if (crpm < 0)
+                    goto finish;
+                boost = bestBoostPoint.maxBoost;
+            }
+            acpi->SetFanValue(num, oldBoost, true);
+            UpdateBoost();
+            DrawFan();
+        }
+    MessageBox(fanWindow, ("Overboost calculation done, best " + to_string(bestBoostPoint.maxBoost)
+        + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.").c_str(), "Done!", MB_OK | MB_ICONINFORMATION);
+finish:
+    lastBoostPoint = NULL;
+    boostCheck.clear();
+    acpi->SetPower(fan_conf->lastProf->powerStage);
+    fanMode = true;
+    mon->Start();
+    return 0;
+}
+
 INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     fan_block* cFan = fan_conf->FindFanBlock(fan_conf->FindSensor(fan_conf->lastSelectedSensor), fan_conf->lastSelectedFan);
-    RECT cArea;
     GetClientRect(hDlg, &cArea);
-    cArea.right -= 1;
-    cArea.bottom -= 1;
+    cArea.right--; cArea.bottom--;
 
     switch (message) {
     case WM_PAINT: {
@@ -162,35 +308,34 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return true;
     } break;
     case WM_MOUSEMOVE: {
-        int x = GET_X_LPARAM(lParam), y = GET_Y_LPARAM(lParam);
-
-        if (lastFanPoint && wParam & MK_LBUTTON) {
-            int temp = (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left),
-                boost = (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top);
-            lastFanPoint->temp = max(0, min(100, temp));
-            lastFanPoint->boost = max(0, min(100, boost));
-            DrawFan(1, x, y);
+        if (fanMode) {
+            fan_point clk = Screen2Fan(lParam);
+            if (lastFanPoint && wParam & MK_LBUTTON) {
+                *lastFanPoint = clk;
+                DrawFan();
+            }
+            SetTooltip(toolTip, clk.temp, clk.boost);
         }
-        else
-            DrawFan(2, x, y);
+        else {
+            SetBoostTip(toolTip, GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale,
+                (cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100);
+        }
     } break;
     case WM_LBUTTONDOWN:
     {
-        SetCapture(hDlg);
-        if (cFan) {
+        if (fanMode && cFan) {
+            SetCapture(hDlg);
             // check and add point
-            int temp = (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left),
-                boost = (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top);
-            for (vector<fan_point>::iterator fPi = cFan->points.begin();
-                fPi < cFan->points.end(); fPi++) {
-                if (fPi->temp - DRAG_ZONE <= temp && fPi->temp + DRAG_ZONE >= temp) {
+            fan_point clk = Screen2Fan(lParam);
+            for (auto fPi = cFan->points.begin(); fPi < cFan->points.end(); fPi++) {
+                if (abs(fPi->temp - clk.temp) <= DRAG_ZONE && abs(fPi->boost - clk.boost) <= DRAG_ZONE) {
                     // Starting drag'n'drop...
                     lastFanPoint = &(*fPi);
                     break;
                 }
-                if (fPi->temp > temp) {
+                if (fPi->temp > clk.temp) {
                     // Insert point here...
-                    lastFanPoint = &(*cFan->points.insert(fPi, { (short)temp, (short)boost }));
+                    lastFanPoint = &(*cFan->points.insert(fPi, clk));
                     break;
                 }
             }
@@ -200,9 +345,8 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_LBUTTONUP: {
         ReleaseCapture();
         // re-sort and de-duplicate array.
-        if (cFan) {
-            for (vector<fan_point>::iterator fPi = cFan->points.begin();
-                fPi < cFan->points.end() - 1; fPi++) {
+        if (fanMode && cFan) {
+            for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++) {
                 if (fPi->temp > (fPi + 1)->temp) {
                     fan_point t = *fPi;
                     *fPi = *(fPi + 1);
@@ -216,17 +360,16 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             DrawFan();
             fan_conf->Save();
         }
+        lastFanPoint = NULL;
         SetFocus(GetParent(hDlg));
     } break;
     case WM_RBUTTONUP: {
         // remove point from curve...
-        if (cFan && cFan->points.size() > 2) {
+        if (fanMode && cFan && cFan->points.size() > 2) {
             // check and remove point
-            int temp = (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left),
-                boost = (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top);
-            for (vector<fan_point>::iterator fPi = cFan->points.begin() + 1;
-                fPi < cFan->points.end() - 1; fPi++)
-                if (fPi->temp - DRAG_ZONE <= temp && fPi->temp + DRAG_ZONE >= temp) {
+            fan_point clk = Screen2Fan(lParam);
+            for (auto fPi = cFan->points.begin() + 1; fPi < cFan->points.end() - 1; fPi++)
+                if (abs(fPi->temp - clk.temp) <= DRAG_ZONE && abs(fPi->boost - clk.boost) <= DRAG_ZONE) {
                     // Remove this element...
                     cFan->points.erase(fPi);
                     break;

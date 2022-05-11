@@ -25,82 +25,83 @@ bool CheckArgs(string cName, int minArgs, size_t nargs) {
     return true;
 }
 
-int SetFanSteady(short num, byte boost, int &gMaxRPM, bool downtrend = false) {
-    printf("Probing Fan#%d at boost %d: ", num, boost);
-    //acpi->SetFanValue(num, 0, true);
-    //Sleep(2000);
-    acpi->SetFanValue(num, boost, true);
+fan_overboost bestBoostPoint, lastBoostPoint;
+
+int SetFanSteady(byte boost, bool downtrend = false) {
+    printf("Probing Fan#%d at boost %d: ", bestBoostPoint.fanID, boost);
+    acpi->SetFanValue(bestBoostPoint.fanID, boost, true);
     // Check the trend...
-    int fRpm, fDelta = -1, oDelta, bRpm = acpi->GetFanRPM(num);
+    int fRpm, fDelta = -1, oDelta, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
+    lastBoostPoint = { (byte)bestBoostPoint.fanID, boost, (USHORT)bRpm };
     Sleep(5000);
     do {
         oDelta = fDelta;
         Sleep(5000);
-        fRpm = acpi->GetFanRPM(num);
+        fRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
         fDelta = fRpm - bRpm;
-        printf("\rProbing Fan#%d at boost %d: %d-%d (%+d)   ", num, boost, bRpm, fRpm, fDelta);
-        gMaxRPM = max(gMaxRPM, max(bRpm, bRpm));
-        //printf("-%d (%+d)     ", fRpm, fDelta);
+        printf("\rProbing Fan#%d at boost %d: %d-%d (%+d)   ", bestBoostPoint.fanID, boost, bRpm, fRpm, fDelta);
+        lastBoostPoint.maxRPM = max(bRpm, fRpm);
+        bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, lastBoostPoint.maxRPM);
         bRpm = fRpm;
     } while ((fDelta > 0 || oDelta < 0 ) && (!downtrend || !(fDelta < -40 && oDelta < -40)));
-    printf("\rProbing Fan#%d at boost %d done, %d RPM ", num, boost, fRpm);
-    return oDelta > 0 && fDelta < 0 ? bRpm - fDelta : fRpm;
+    printf("\rProbing Fan#%d at boost %d done, %d RPM ", bestBoostPoint.fanID, boost, lastBoostPoint.maxRPM);
+    return lastBoostPoint.maxRPM;
 }
 
-void UpdateBoost(byte id, byte boost, USHORT rpm) {
-    fan_overboost* fOver = fan_conf->FindBoost(id);
+void UpdateBoost() {
+    fan_overboost* fOver = fan_conf->FindBoost(bestBoostPoint.fanID);
     if (fOver) {
-        fOver->maxBoost = boost;
-        fOver->maxRPM = max(rpm, fOver->maxRPM);
+        fOver->maxBoost = bestBoostPoint.maxBoost;
+        fOver->maxRPM = max(bestBoostPoint.maxRPM, fOver->maxRPM);
     }
     else
-        fan_conf->boosts.push_back({ id, boost, rpm });
-    acpi->boosts[id] = boost;
+        fan_conf->boosts.push_back(bestBoostPoint);
+    acpi->boosts[bestBoostPoint.fanID] = bestBoostPoint.maxBoost;
     fan_conf->Save();
 }
 
 void CheckFanOverboost(byte num) {
-    int steps = 8, cSteps, boost = 100, cBoost = 0, fBoost = 100, gRpm = 0,
-        runrpm = 0, rpm = 0, oldBoost = acpi->GetFanValue(num, true);
-    bool run = true;
+    int steps = 8, cSteps, boost = 100, cBoost = 100,
+        rpm, oldBoost = acpi->GetFanValue(num, true);
     printf("Checking Fan#%d:\n", num);
-    runrpm = rpm = SetFanSteady(num, boost, gRpm);
+    bestBoostPoint = { (byte)num, 100, 0 };
+    rpm = SetFanSteady(boost);
     printf("    \n");
     for (int steps = 8; steps; steps = steps >> 1) {
         // Check for uptrend
         while ((boost+=steps) != cBoost)
         {
-            runrpm = SetFanSteady(num, boost, gRpm, true);
-            printf("(Best: %d @ %d RPM)\n", runrpm > rpm ? boost : fBoost, gRpm);
-            if (runrpm > rpm) {
-                rpm = runrpm;
+            SetFanSteady(boost, true);
+            //printf("(Best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+            if (lastBoostPoint.maxRPM > rpm) {
+                rpm = lastBoostPoint.maxRPM;
                 cSteps = steps;
-                fBoost = boost;
+                bestBoostPoint.maxBoost = boost;
+                printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
             }
-            else
+            else {
+                printf("(Skipped)\n");
                 break;
+            }
         }
-        cBoost = fBoost + steps;
-        boost = fBoost;
+        boost = bestBoostPoint.maxBoost;
+        cBoost = boost + steps;
     }
-    printf("High check done, best %d @ %d RPM, starting low check...\n", fBoost, rpm);
-    boost = fBoost;
-    rpm = gRpm;
-    for (int steps = cSteps >> 1; steps; steps = steps >> 1) {
+    printf("High check done, best %d @ %d RPM, starting low check:\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+    for (int steps = cSteps > 1 ? cSteps >> 1 : 1; steps; steps = steps >> 1) {
         // Check for uptrend
         boost -= steps;
-        runrpm = SetFanSteady(num, boost, gRpm);
-        if (runrpm >= rpm - 60) {
-            rpm = max(runrpm, rpm);
-            fBoost = boost;
+        while (SetFanSteady(boost, true) >= bestBoostPoint.maxRPM - 60) {
+            bestBoostPoint.maxBoost = boost;
+            boost -= steps;
+            printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
         }
-        printf("(Best: %d @ %d RPM)\n", fBoost, gRpm);
-        boost = fBoost;
+        printf("(Step back)\n");
+        boost = bestBoostPoint.maxBoost;
     }
-    //boost++;
-    printf("Final boost - %d, %d RPM\n\n", fBoost, gRpm);
+    printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
     acpi->SetFanValue(num, oldBoost, true);
-    UpdateBoost(num, fBoost, gRpm);
+    UpdateBoost();
 }
 
 void Usage() {
@@ -133,7 +134,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v5.9.1\n");
+    printf("AlienFan-cli v5.9.2\n");
 
     bool supported = false;
 
@@ -283,12 +284,12 @@ int main(int argc, char* argv[])
                             if (fanID < acpi->HowManyFans())
                                 if (args.size() > 1) {
                                     // manual fan set
-                                    byte newBoost = atoi(args[1].c_str());
                                     acpi->Unlock();
-                                    printf("Boost for fan #%d will be set to %d.\n", fanID, newBoost);
-                                    int mrpm, newrpm = SetFanSteady(fanID, newBoost, mrpm);
-                                    UpdateBoost(fanID, newBoost, newrpm);
-                                    printf("Done, %d RPM\n", newrpm);
+                                    bestBoostPoint = { fanID, (byte)atoi(args[1].c_str()), 0 };
+                                    printf("Boost for fan #%d will be set to %d.\n", fanID, bestBoostPoint.maxBoost);
+                                    SetFanSteady(fanID, bestBoostPoint.maxBoost);
+                                    UpdateBoost();
+                                    printf("\nDone, %d RPM\n", bestBoostPoint.maxRPM);
                                 }
                                 else
                                     CheckFanOverboost(fanID);

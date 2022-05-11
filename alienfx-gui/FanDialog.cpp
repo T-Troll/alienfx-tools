@@ -16,15 +16,19 @@ extern HWND toolTip;
 
 int pLid = -1;
 
+extern bool fanMode;
+
 GUID* sch_guid, perfset;
 
 extern INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
+DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 extern void ReloadFanView(HWND list, int cID);
 extern void ReloadPowerList(HWND list, int id);
 extern void ReloadTempView(HWND list, int cID);
-void UpdateFanUI(LPVOID);
+extern HANDLE ocStopEvent;
 
-ThreadHelper* fanUIUpdate;
+void UpdateFanUI(LPVOID);
+ThreadHelper* fanUIUpdate = NULL;
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -34,7 +38,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     switch (message) {
     case WM_INITDIALOG:
     {
-        if (acpi && acpi->IsActivated()) {
+        if (eve->mon) {
             fan_conf = conf->fan_conf;
             mon = eve->mon;
 
@@ -84,6 +88,15 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
             SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
             SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
+
+            if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Question",
+                MB_YESNO | MB_ICONINFORMATION) == IDYES) {
+                // ask for boost check
+                EnableWindow(power_list, false);
+                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)(-1), 0, NULL);
+                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+            }
+            fan_conf->obCheck = 1;
 
         } else {
             SwitchTab(TAB_SETTINGS);
@@ -137,7 +150,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
             }
         } break;
-        case IDC_BUT_RESET:
+        case IDC_FAN_RESET:
         {
             temp_block* cur = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             if (cur) {
@@ -151,10 +164,20 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case IDC_MAX_RESET:
-        {
             mon->maxTemps = mon->senValues;
             ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
-        } break;
+            break;
+        case IDC_BUT_OVER:
+            if (fanMode) {
+                EnableWindow(power_list, false);
+                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan_conf->lastSelectedFan, 0, NULL);
+                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+            }
+            else {
+                SetEvent(ocStopEvent);
+                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Overboost");
+            }
+            break;
         }
     } break;
     case WM_NOTIFY:
@@ -240,11 +263,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         } break;
     case WM_DESTROY:
-        //SetEvent(fuiEvent);
-        //WaitForSingleObject(uiFanHandle, 1000);
-        //CloseHandle(uiFanHandle);
-        delete fanUIUpdate;
-        LocalFree(sch_guid);
+        if (fanUIUpdate) {
+            delete fanUIUpdate;
+            LocalFree(sch_guid);
+        }
         break;
     }
     return 0;
@@ -254,39 +276,20 @@ void UpdateFanUI(LPVOID lpParam) {
     HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
         fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
         power_list = GetDlgItem((HWND)lpParam, IDC_COMBO_POWER);
+    if (fanMode) {
+        EnableWindow(power_list, true);
+        SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Overboost");
+    }
     if (eve->mon && IsWindowVisible((HWND)lpParam)) {
         //DebugPrint("Fans UI update...\n");
-        for (int i = 0; i < eve->mon->acpi->HowManySensors(); i++) {
-            string name = to_string(eve->mon->senValues[i]) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
+        for (int i = 0; i < acpi->HowManySensors(); i++) {
+            string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
-        for (int i = 0; i < eve->mon->acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(eve->mon->fanValues[i]) + ")";
+        for (int i = 0; i < acpi->HowManyFans(); i++) {
+            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i) /*eve->mon->fanValues[i]*/) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);
     }
 }
-
-//DWORD WINAPI UpdateFanUI(LPVOID lpParam) {
-//    HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
-//        fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
-//        power_list = GetDlgItem((HWND)lpParam, IDC_COMBO_POWER);
-//
-//    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-//    while (WaitForSingleObject(fuiEvent, 250) == WAIT_TIMEOUT) {
-//        if (eve->mon && IsWindowVisible((HWND)lpParam)) {
-//            //DebugPrint("Fans UI update...\n");
-//            for (int i = 0; i < eve->mon->acpi->HowManySensors(); i++) {
-//                string name = to_string(eve->mon->senValues[i]) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
-//                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
-//            }
-//            for (int i = 0; i < eve->mon->acpi->HowManyFans(); i++) {
-//                string name = "Fan " + to_string(i + 1) + " (" + to_string(eve->mon->fanValues[i]) + ")";
-//                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-//            }
-//            SendMessage(fanWindow, WM_PAINT, 0, 0);
-//        }
-//    }
-//    return 0;
-//}

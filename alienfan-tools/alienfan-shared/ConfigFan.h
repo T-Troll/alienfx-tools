@@ -44,6 +44,7 @@ public:
 	DWORD startWithWindows = 0;
 	DWORD startMinimized = 0;
 	DWORD updateCheck = 1;
+	DWORD obCheck = 0;
 
 	fan_profile prof;
 	fan_profile* lastProf = &prof;

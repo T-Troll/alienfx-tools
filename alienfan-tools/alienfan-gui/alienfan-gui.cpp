@@ -47,7 +47,7 @@ ThreadHelper* fanThread;
 // Forward declarations of functions included in this code module:
 //ATOM                MyRegisterClass(HINSTANCE hInstance);
 HWND                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
@@ -57,6 +57,10 @@ void ReloadFanView(HWND list, int cID);
 void ReloadPowerList(HWND list, int id);
 void ReloadTempView(HWND list, int cID);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+
+extern bool fanMode;
+extern HANDLE ocStopEvent;
+DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -104,9 +108,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     else {
         MessageBox(NULL, "Driver can't start or supported hardware not detected!", "Fatal error",
             MB_OK | MB_ICONSTOP);
-        string shellcomm = "/delete /F /TN \"AlienFan-GUI\"";
-        ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
         fan_conf->startWithWindows = false;
+        WindowsStartSet(false, "AlienFan-GUI");
     }
 
     delete acpi;
@@ -124,7 +127,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     dlg = CreateDialogParam(hInstance,//GetModuleHandle(NULL),         /// instance handle
                             MAKEINTRESOURCE(IDD_MAIN_VIEW),    /// dialog box template
                             NULL,                    /// handle to parent
-                            (DLGPROC)WndProc, 0);
+                            (DLGPROC)FanDialog, 0);
     if (!dlg) return NULL;
 
     SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
@@ -135,7 +138,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     return dlg;
 }
 
-LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
         power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU);
@@ -219,6 +222,15 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
         SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
 
+        if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Question",
+            MB_YESNO | MB_ICONINFORMATION) == IDYES) {
+            // ask for boost check
+            EnableWindow(power_list, false);
+            CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)(-1), 0, NULL);
+            SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+        }
+        fan_conf->obCheck = 1;
+
         return true;
     } break;
     case WM_COMMAND:
@@ -282,18 +294,8 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         {
             fan_conf->startWithWindows = !fan_conf->startWithWindows;
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
-            char pathBuffer[MAX_PATH];
-            string shellcomm;
-            if (fan_conf->startWithWindows) {
-                GetModuleFileName(NULL, pathBuffer, MAX_PATH);
-                shellcomm = "Register-ScheduledTask -TaskName \"AlienFan-GUI\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-                    + string(pathBuffer) + "') -force -RunLevel Highest";
-                ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
-            } else {
-                shellcomm = "/delete /F /TN \"AlienFan-GUI\"";
-                ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
-            }
-            fan_conf->Save();
+            if (WindowsStartSet(fan_conf->startWithWindows, "AlienFan-GUI"))
+                fan_conf->Save();
         } break;
         case IDM_SETTINGS_STARTMINIMIZED:
         {
@@ -318,12 +320,20 @@ LRESULT CALLBACK WndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
         } break;
         case IDC_MAX_RESET:
-        {
             mon->maxTemps = mon->senValues;
             ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
-        } break;
-        default:
-            return DefWindowProc(hDlg, message, wParam, lParam);
+            break;
+        case IDC_BUT_OVER:
+            if (fanMode) {
+                EnableWindow(power_list, false);
+                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan_conf->lastSelectedFan, 0, NULL);
+                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+            }
+            else {
+                SetEvent(ocStopEvent);
+                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Overboost");
+            }
+            break;
         }
     }
     break;
@@ -553,15 +563,20 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 void UpdateFanUI(LPVOID lpParam) {
     HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
-        fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST);
+        fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
+        power_list = GetDlgItem((HWND)lpParam, IDC_COMBO_POWER);
+    if (fanMode) {
+        EnableWindow(power_list, true);
+        SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Overboost");
+    }
     if (mon && IsWindowVisible((HWND)lpParam)) {
         //DebugPrint("Fans UI update...\n");
-        for (int i = 0; i < mon->acpi->HowManySensors(); i++) {
-            string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
+        for (int i = 0; i < acpi->HowManySensors(); i++) {
+            string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
-        for (int i = 0; i < mon->acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanValues[i]) + ")";
+        for (int i = 0; i < acpi->HowManyFans(); i++) {
+            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i) /*eve->mon->fanValues[i]*/) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);

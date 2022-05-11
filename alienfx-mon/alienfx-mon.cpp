@@ -347,15 +347,8 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_STARTW:
 		{
 			conf->startWindows = state;
-			char pathBuffer[2048];
-			if (conf->startWindows) {
-				GetModuleFileNameA(NULL, pathBuffer, 2047);
-				ShellExecute(NULL, "runas", "powershell.exe", string("Register-ScheduledTask -TaskName \"AlienFX-Mon\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-					+ string(pathBuffer) + "' -Argument '-d') -force -RunLevel Highest").c_str(), NULL, SW_HIDE);
-			}
-			else {
-				ShellExecute(NULL, "runas", "schtasks.exe", "/delete /F /TN \"Alienfx-Mon\"", NULL, SW_HIDE);
-			}
+			if (WindowsStartSet(state, "AlienFX-Mon"))
+				conf->Save();
 		} break;
 		case IDC_CHECK_UPDATE:
 			conf->updateCheck = state;

@@ -189,6 +189,7 @@ namespace AlienFan_SDK {
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x100
 							   && funcID > 0 || funcID > 0x130) { // bugfix for 0x132 fan for R7
 							fans.push_back(funcID & 0xff);
+							boosts.push_back(100);
 							fIndex++;
 						}
 						//printf("%d fans detected, last reply %d\n", fIndex, funcID);
@@ -253,8 +254,8 @@ namespace AlienFan_SDK {
 					}
 					//printf("%d TZ sensors detected.\n", HowManySensors());
 					// Set boost block
-					for (int i = 0; i < fans.size(); i++)
-						boosts.push_back(devs[aDev].maxBoost);
+					//for (int i = 0; i < fans.size(); i++)
+					//	boosts.push_back(devs[aDev].maxBoost);
 					return true;
 				}
 			}

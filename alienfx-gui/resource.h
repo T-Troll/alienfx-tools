@@ -213,10 +213,11 @@
 #define IDC_SLIDER_VSCALE               1130
 #define IDC_BUTTON1                     1130
 #define IDC_BUT_COPYACTIVE              1130
+#define IDC_BUT_OVER                    1130
 #define IDC_VAL_NET                     1131
-#define IDC_CHECK1                      1131
 #define IDC_OFFONBATTERY                1131
 #define IDC_VAL_BAT                     1132
+#define IDC_FAN_RESET                   1132
 #define IDC_VAL_TEMP                    1133
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -249,7 +250,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1132
+#define _APS_NEXT_CONTROL_VALUE         1133
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

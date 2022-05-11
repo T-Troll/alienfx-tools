@@ -1,11 +1,13 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
+
 extern void ReloadProfileList();
 extern bool DoStopService(bool kind);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void EvaluteToAdmin();
+extern bool WindowsStartSet(bool kind, string name);
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
@@ -51,17 +53,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_STARTW:
 		{
 			conf->startWindows = state;
-			char pathBuffer[2048];
-			string shellcomm;
-			if (conf->startWindows) {
-				GetModuleFileNameA(NULL, pathBuffer, 2047);
-				shellcomm = "Register-ScheduledTask -TaskName \"AlienFX-GUI\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-					+ string(pathBuffer) + "') -force -RunLevel Highest";
-				ShellExecute(NULL, "runas", "powershell.exe", shellcomm.c_str(), NULL, SW_HIDE);
-			} else {
-				shellcomm = "/delete /F /TN \"Alienfx-GUI\"";
-				ShellExecute(NULL, "runas", "schtasks.exe", shellcomm.c_str(), NULL, SW_HIDE);
-			}
+			if (WindowsStartSet(state, "AlienFX-GUI"))
+				conf->Save();
 		} break;
 		case IDC_CHECK_UPDATE:
 			conf->updateCheck = state;

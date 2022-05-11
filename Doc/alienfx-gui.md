@@ -187,12 +187,20 @@ After you doing so, currently selected fan settings will be shown at "Fan Curve"
 Now play with fan control curve - it defines fan boost by temperature level. X axle is temperature, Y axle is boost level.  
 You can left click (and drag until release mouse button) into the curve window to add point or select close point (if any) and move it.  
 You can click right mouse button at the graph point to remove it.  
-Big red dot represents current boost-in-action position.  
+Big red dot represent current boost and temperature position, yellow dots present current temperatures for other sensors involved into control of this fan.  
 
 Please keep in mind:
 - You can't remove first or last point of the curve.
 - If you move first or last point, it will keep its temperature after button release - but you can set other boost level for it.
-- Then fan controlled by more, then one sensor, boost will be set to the maximal value across them. 
+- Then fan controlled by more, then one sensor, boost will be set to the maximal value across them.  
+
+"X" button above sensors list reset maximal temperature sensors value to current one.  
+"X" button above fans list reset currently selected fan curve to default one (0-100 boost).
+
+"Overboost" button will check possibility of currently selected fan to increase RPM even more, then 100% boost.  
+It will switch curve window to other mode - showing currently tested boost level and resulting RPM.  
+This process can take some minutes, window with final results will be shown after the process ends, and they be used lately for this fan.  
+You can press "Stop Overboost" button at any time to stop overboost check.
 
 ![Settings tab](/Doc/img/gui-settings.png?raw=true)
 

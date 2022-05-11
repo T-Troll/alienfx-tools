@@ -175,7 +175,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	conf = new ConfigHandler();
 	conf->Load();
-	//conf->SetStates();
 
 	// check fans...
 	if (conf->activeProfile->flags & PROF_FANS)

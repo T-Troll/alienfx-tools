@@ -57,6 +57,7 @@ void ConfigFan::Load() {
 	GetReg("LastSensor", &lastSelectedSensor);
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("LastGPU", &prof.GPUPower);
+	GetReg("ObCheck", &obCheck);
 
 	// Now load sensor mappings...
 	unsigned vindex = 0;
@@ -130,6 +131,7 @@ void ConfigFan::Save() {
 	SetReg("LastSensor", lastSelectedSensor);
 	SetReg("LastFan", lastSelectedFan);
 	SetReg("LastGPU", prof.GPUPower);
+	SetReg("ObCheck", obCheck);
 
 	if (prof.fanControls.size() > 0) {
 		// clean old data
