@@ -30,6 +30,7 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
 - Windows 10 v1903 or later (binary files for 64-bit only, but you can compile the project for 32-bit as well).
+- If you plan to use fan control, "Memory integrity" (Settings->Update&Security->Security->Device Security->Core isolation) should be disabled.
 - `alienfan-gui` and `-cli` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privileges)
@@ -44,9 +45,9 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 - Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
 - (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes don't require it, so you need it if you plan to use `Ambient` effects only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
-- (Optional) For `alienfx-cli` and `alienfx-probe` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
+- (Optional) For `alienfx-cli` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
 - Unpack the archive to any directory of your choice or just run the installer.  
-- If you plan to use fan control, it's highly recommended to run `alienfan-cli setover` after installation from the folder you install it. It will set correct overboost values and maximal fans RPM.
+- (Optional) For the fan control, it's highly recommended to set correct overboost values and maximal fans RPM. You can do it at GUI apps first start or by running `alienfx-cli setover` command.
 - Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (all tools will have limited functionality without this step).  
 
 Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide-and-tips)) guide first!

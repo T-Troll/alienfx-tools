@@ -654,11 +654,7 @@ void UpdateMonUI(LPVOID lpParam) {
 				int pos = 0;
 				for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
 					if (!iter->disabled) {
-						if (iter->min == NO_SEN_VALUE) {
-							conf->needFullUpdate = true;
-							break;
-						}
-						if (iter->cur != iter->oldCur) {
+						if (iter->min != NO_SEN_VALUE && iter->cur != iter->oldCur) {
 							string name = to_string(iter->min);
 							ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
 							name = to_string(iter->cur);
