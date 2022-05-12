@@ -25,18 +25,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""winres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -50,37 +50,9 @@ END
 // RCDATA
 //
 
-IDR_iQVM64              RCDATA                  "drv\\iQVM64.bin"
-
 IDR_PROCEXP             RCDATA                  "drv\\procexp.bin"
-
+IDR_iQVM64              RCDATA                  "drv\\iQVM64.bin"
 IDR_RTCORE64            RCDATA                  "drv\\RTCore64.bin"
-
-IDR_GDRV                RCDATA                  "drv\\gdrv.bin"
-
-IDR_ATSZIO64            RCDATA                  "drv\\ATSZIO64.bin"
-
-IDR_MSIO64              RCDATA                  "drv\\msio64.bin"
-
-IDR_GLCKIO2             RCDATA                  "drv\\glckio2.bin"
-
-IDR_ENEIO64             RCDATA                  "drv\\eneio64.bin"
-
-IDR_WINRING0            RCDATA                  "drv\\WinRing0x64.bin"
-
-IDR_ENETECHIO64         RCDATA                  "drv\\enetechio64.bin"
-
-IDR_PHYMEMX64           RCDATA                  "drv\\phymemx64.bin"
-
-IDR_RTKIO64             RCDATA                  "drv\\rtkio64.bin"
-
-IDR_ENETECHIO64B        RCDATA                  "drv\\ene2.bin"
-
-IDR_LHA                 RCDATA                  "drv\\lha.bin"
-
-IDR_ASIO2               RCDATA                  "drv\\asio2.bin"
-
-IDR_DIRECTIO64          RCDATA                  "drv\\DirectIo64.bin"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

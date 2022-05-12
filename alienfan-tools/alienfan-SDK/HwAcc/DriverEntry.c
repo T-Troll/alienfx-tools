@@ -1,24 +1,3 @@
-/*++
-
-2006-2020  NickelS
-
-Module Name:
-
-	HwAcc.c
-
-Abstract:
-
-	Purpose of this driver is to demonstrate how the four different types
-	of IOCTLs can be used, and how the I/O manager handles the user I/O
-	buffers in each case. This sample also helps to understand the usage of
-	some of the memory manager functions.
-
-Environment:
-
-	Kernel mode only.
-
---*/
-
 // This is a kernel-mode driver
 #include <ntddk.h>
 #define NTSTRSAFE_LIB

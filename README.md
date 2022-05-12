@@ -78,7 +78,7 @@ Join Discord [support server](https://discord.gg/XU6UJbN9J5)
 
 Prerequisites:
 - Visual Studio Community 2019
-- Microsoft Driver Development Kit (DDK) v10.0 or higher
+- Microsoft Windows Driver Development Kit (WDK) v10.0 or higher
 
 Build process:
 - Clone repository
