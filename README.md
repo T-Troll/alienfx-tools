@@ -95,8 +95,8 @@ Build process:
   - [x] Mouses
   - [ ] Keyboards
 - [ ] Keyboard mapper for easy RGB keyboard setup
-- [ ] Overboost GUI
-- [x] Windows 11 support (unstable for now)
+- [x] Overboost GUI
+- [x] Windows 11 support
 
 ## License
 
