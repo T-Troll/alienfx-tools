@@ -143,7 +143,7 @@ PVOID KDUDecompressResource(
         diDelta.uSize = ResourceSize;
 
         if (ApplyDeltaB(DELTA_FILE_TYPE_RAW, diSource, diDelta, &doOutput)) {
-            
+
             SIZE_T newSize = doOutput.uSize;
             PVOID decomPtr = doOutput.lpStart;
 
@@ -155,10 +155,10 @@ PVOID KDUDecompressResource(
             if (VerifyChecksum) {
 
                 if (bValidData == FALSE) {
-                    
-                    //supPrintfEvent(kduEventError, 
+
+                    //supPrintfEvent(kduEventError,
                     //    "[!] Error data checksum mismatch! Header sum 0x%lx, calculated sum 0x%lx\r\n",
-                    //    headerSum, 
+                    //    headerSum,
                     //    calcSum);
 
                 }
@@ -185,8 +185,8 @@ PVOID KDUDecompressResource(
 
         }
         else {
-            
-            //supPrintfEvent(kduEventError, 
+
+            //supPrintfEvent(kduEventError,
             //    "[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
 
         }

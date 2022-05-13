@@ -9,7 +9,6 @@ private:
 public:
 	ConfigMon* conf = NULL;
 	AlienFan_SDK::Control* acpi = NULL;
-	bool validB = false;
 	HANDLE stopEvents = NULL;
 	SenMonHelper(ConfigMon*);
 	~SenMonHelper();

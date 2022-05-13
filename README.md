@@ -25,7 +25,7 @@ It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used
 ## Disclaimer
 
 Starting from the release 4.2.1, **Anti-viruses can detect virus into project package**.  
-It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys`, `kdl.dll`, and `drv64.dll` into the antivirus exception list or do not use fan control (light control will work without these files).
+It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys` and `kdl.dll` into the antivirus exception list or do not use fan control (light control will work without these files).
 
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).

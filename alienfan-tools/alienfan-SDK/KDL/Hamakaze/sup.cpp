@@ -483,7 +483,8 @@ NTSTATUS supLoadDriver(
         }
     }
     else {
-        if (status == STATUS_OBJECT_NAME_EXISTS)
+        if (status == STATUS_OBJECT_NAME_EXISTS ||
+            status == STATUS_OBJECT_NAME_COLLISION)
             status = STATUS_SUCCESS;
     }
 
@@ -707,10 +708,10 @@ PVOID supGetLoadedModulesList(
     //
     // Handle unexpected return.
     //
-    // If driver image path exceeds structure field size then 
+    // If driver image path exceeds structure field size then
     // RtlUnicodeStringToAnsiString will throw STATUS_BUFFER_OVERFLOW.
-    // 
-    // If this is the last driver in the enumeration service will return 
+    //
+    // If this is the last driver in the enumeration service will return
     // valid data but STATUS_BUFFER_OVERFLOW in result.
     //
     if (ntStatus == STATUS_BUFFER_OVERFLOW) {
@@ -1671,7 +1672,7 @@ ULONG_PTR supGetModuleBaseByName(
     ANSI_STRING moduleName;
 
     if (ImageSize)
-        *ImageSize = 0;  
+        *ImageSize = 0;
 
     moduleName.Buffer = NULL;
     moduleName.Length = moduleName.MaximumLength = 0;
@@ -1763,7 +1764,7 @@ BOOL supManageDummyDll(
             //
             // Extract file from resource and drop to the disk in %temp% directory.
             //
-            dllHandle = (PVOID)GetModuleHandle(NULL);
+            dllHandle = (PVOID)GetModuleHandle(/*L"KDL.DLL"*/NULL);
 
             dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI,
                 dllHandle,

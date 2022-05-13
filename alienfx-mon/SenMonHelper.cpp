@@ -54,14 +54,14 @@ void SenMonHelper::ModifyMon()
 {
 	if (conf->bSensors) {
 		acpi = new AlienFan_SDK::Control();
-		validB = acpi->IsActivated() && acpi->Probe();
+		conf->bSensors = acpi->IsActivated() && acpi->Probe();
 	}
 	else {
 		if (acpi) {
 			delete acpi;
 			acpi = NULL;
 		}
-		validB = false;
+		conf->bSensors = false;
 	}
 }
 
@@ -195,7 +195,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			}
 		}
 
-		if (src->conf->bSensors && src->validB) { // group 2
+		if (src->conf->bSensors) { // group 2
 			// Fan data and BIOS temperatures
 			int val;
 			for (int i = 0; i < src->acpi->HowManySensors(); i++) { // BIOS temps, code 0

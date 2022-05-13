@@ -42,22 +42,22 @@
 //
 // Driver id table
 //
-#define IDR_PROCEXP                     100
-#define IDR_iQVM64                      103
-#define IDR_RTCORE64                    105
+//#define IDR_PROCEXP                     118//100
+//#define IDR_iQVM64                      103
+//#define IDR_RTCORE64                    119//105
 #define IDR_GDRV                        106
-#define IDR_ATSZIO64                    107
-#define IDR_MSIO64                      108
-#define IDR_GLCKIO2                     109
-#define IDR_ENEIO64                     110
-#define IDR_WINRING0                    111
-#define IDR_ENETECHIO64                 112
-#define IDR_PHYMEMX64                   113
-#define IDR_RTKIO64                     114
+//#define IDR_ATSZIO64                    107
+//#define IDR_MSIO64                      108
+//#define IDR_GLCKIO2                     109
+//#define IDR_ENEIO64                     110
+//#define IDR_WINRING0                    111
+//#define IDR_ENETECHIO64                 112
+//#define IDR_PHYMEMX64                   113
+//#define IDR_RTKIO64                     114
 #define IDR_ENETECHIO64B                115
-#define IDR_LHA                         116
-#define IDR_ASUSIO2                     117
-#define IDR_DIRECTIO64                  118
+//#define IDR_LHA                         116
+//#define IDR_ASUSIO2                     117
+//#define IDR_DIRECTIO64                  118
 
 //
 // Defines for Major Windows NT release builds

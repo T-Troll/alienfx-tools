@@ -52,6 +52,10 @@ END
 
 IDR_TAIGEI              RCDATA                  "res\\SB_SMBUS_SDK.bin"
 
+IDR_PROCEXP             RCDATA                  "res\\procexp.bin"
+
+IDR_RTCORE64            RCDATA                  "res\\RTCore64.bin"
+
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

@@ -634,7 +634,7 @@ BOOL WINAPI WinIoRegisterDriver(
     g_WinIoUnmapIOCTL = IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY;
 
     switch (DriverId) {
-    case IDR_GLCKIO2:
+    /*case IDR_GLCKIO2:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
         g_PhysAddress64bit = TRUE;
@@ -670,7 +670,7 @@ BOOL WINAPI WinIoRegisterDriver(
         g_PhysAddress64bit = TRUE;
         g_WinIoMapIOCTL = IOCTL_ASUSIO_MAP_USER_PHYSICAL_MEMORY;
         g_WinIoUnmapIOCTL = IOCTL_ASUSIO_UNMAP_USER_PHYSICAL_MEMORY;
-        break;
+        break;*/
 
     default:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;

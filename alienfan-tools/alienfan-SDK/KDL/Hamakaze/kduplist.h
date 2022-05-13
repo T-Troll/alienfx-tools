@@ -24,32 +24,32 @@
 //
 static KDU_PROVIDER g_KDUProviders[] =
 {
-    {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_iQVM64,
-        SourceBaseNone,
-        KDUPROV_FLAGS_NONE,
-        (LPWSTR)L"CVE-2015-2291",
-        (LPWSTR)L"NalDrv",
-        (LPWSTR)L"Nal",
-        (LPWSTR)L"Intel Corporation",
+    //{
+    //    KDU_MIN_NTBUILDNUMBER,
+    //    KDU_MAX_NTBUILDNUMBER,
+    //    IDR_iQVM64,
+    //    SourceBaseNone,
+    //    KDUPROV_FLAGS_NONE,
+    //    (LPWSTR)L"CVE-2015-2291",
+    //    (LPWSTR)L"NalDrv",
+    //    (LPWSTR)L"Nal",
+    //    (LPWSTR)L"Intel Corporation",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+    //    (provRegisterDriver)KDUProviderStub,
+    //    (provUnregisterDriver)KDUProviderStub,
+    //    (provPreOpenDriver)KDUProviderStub,
+    //    (provPostOpenDriver)KDUProviderPostOpen,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
-        (provReadKernelVM)NalReadVirtualMemoryEx,
-        (provWriteKernelVM)NalWriteVirtualMemoryEx,
-        (provVirtualToPhysical)NalVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)KDUProviderStub,
-        (provReadPhysicalMemory)KDUProviderStub,
-        (provWritePhysicalMemory)KDUProviderStub
-    },
+    //    (provAllocateKernelVM)KDUProviderStub,
+    //    (provFreeKernelVM)KDUProviderStub,
+    //    (provReadKernelVM)NalReadVirtualMemoryEx,
+    //    (provWriteKernelVM)NalWriteVirtualMemoryEx,
+    //    (provVirtualToPhysical)NalVirtualToPhysical,
+    //    (provReadControlRegister)KDUProviderStub,
+    //    (provQueryPML4)KDUProviderStub,
+    //    (provReadPhysicalMemory)KDUProviderStub,
+    //    (provWritePhysicalMemory)KDUProviderStub
+    //},
 
     {
         KDU_MIN_NTBUILDNUMBER,
@@ -78,7 +78,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWritePhysicalMemory)KDUProviderStub
     },
 
-    {
+   /* {
         KDU_MIN_NTBUILDNUMBER,
         KDU_MAX_NTBUILDNUMBER,
         IDR_GDRV,
@@ -427,5 +427,5 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)DI64QueryPML4Value,
         (provReadPhysicalMemory)DI64ReadPhysicalMemory,
         (provWritePhysicalMemory)DI64WritePhysicalMemory
-    }
+    }*/
 };

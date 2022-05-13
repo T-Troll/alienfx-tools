@@ -243,6 +243,10 @@ BOOL KDUProvStartVulnerableDriver(
     //
     // Check if driver already loaded.
     //
+
+    // debug...
+    //supUnloadDriver(lpDeviceName, TRUE);
+
     if (supIsObjectExists((LPWSTR)L"\\Device", lpDeviceName)) {
 
         //supPrintfEvent(kduEventError,
@@ -566,7 +570,7 @@ HINSTANCE KDUProviderLoadDB(
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
     SetDllDirectory(NULL);
-    hInstance = LoadLibraryEx(DRV64DLL, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE);
+    hInstance = LoadLibraryEx(L"KDL.DLL"/*DRV64DLL*/, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE);
     if (hInstance) {
         //printf_s("[+] Drivers database \"%ws\" loaded at 0x%p\r\n", DRV64DLL, hInstance);
     }

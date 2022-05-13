@@ -597,7 +597,7 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 
 	RECT clip{ 0,0,32,32 };
 
-	HDC hdc = GetDC(mDlg), hdcMem = CreateCompatibleDC(hdc);
+	HDC hdc = GetDC(NULL), hdcMem = CreateCompatibleDC(hdc);
 	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, 32, 32),
 		hBitmapMask = sen->inverse ? CreateCompatibleBitmap(hdc, 32, 32) : hBitmap;
 	HFONT hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
@@ -613,14 +613,14 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 	SetBkColor(hdcMem, sen->inverse ? 0xffffff : sen->traycolor);
 	SetBkMode(hdcMem, OPAQUE);
 	FillRect(hdcMem, &clip, brush);
-	DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+	DrawText(hdcMem, val, -1, &clip, DT_RIGHT | DT_SINGLELINE /*| DT_VCENTER*/ | DT_NOCLIP);
 
 	if (sen->inverse) {
 		SelectObject(hdcMem, hBitmapMask);
 		SetTextColor(hdcMem, sen->traycolor);
 		SetBkColor(hdcMem, 0x0);
 		SetBkMode(hdcMem, TRANSPARENT);
-		DrawText(hdcMem, val, (int)strlen(val), &clip, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+		DrawText(hdcMem, val, -1, &clip, DT_RIGHT | DT_SINGLELINE /*| DT_VCENTER*/ | DT_NOCLIP);
 	}
 
 	DeleteObject(brush);
