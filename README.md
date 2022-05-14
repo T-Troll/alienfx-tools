@@ -29,7 +29,7 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
-- Windows 10 v1903 or later (binary files for 64-bit only, but you can compile the project for 32-bit as well).
+- Windows 10 v1903 or later (64-bit only).
 - If you plan to use fan control, "Memory integrity" (Settings->Update&Security->Security->Device Security->Core isolation) should be disabled.
 - `alienfan-gui` and `-cli` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
@@ -100,11 +100,11 @@ Build process:
 
 ## License
 
-MIT. You can use these tools for any non-commercial or commercial use, modify it anyway - supposing you provide a link to this page from your product page and mention me as one of the authors.
+MIT. You can use these tools for any non-commercial or commercial use, modify it any way - supposing you provide a link to this page from your product page and mention me as one of the authors.
 
 ## Credits
 
-Functionality idea and code, new devices support haptic and ambient algorithms by T-Troll.  
+Functionality idea and code, new devices support, haptic and ambient algorithms by T-Troll.  
 Low-level SDK based on Gurjot95's [AlienFX_SDK](https://github.com/Gurjot95/AlienFX-SDK).  
 High-level API code and alienfx-cli based on Kalbert312's [alienfx-cli](https://github.com/kalbert312/alienfx-cli).  
 Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
