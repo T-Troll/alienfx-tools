@@ -223,6 +223,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 SetGridSize(hDlg, conf->amb_conf->grid.x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
                 SetSlider(sTip3, conf->amb_conf->grid.y);
             }
+            break;
         default:
             if ((HWND)lParam == gridY) {
                 SetSlider(sTip3, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
