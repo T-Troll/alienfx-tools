@@ -212,7 +212,7 @@ void SetLightMap(HWND hDlg) {
         SetWindowText(GetDlgItem(hDlg, IDC_EDIT_NAME), "<not used>");
         //SetDlgItemText(hDlg, IDC_LIGHTID, "");
     }
-    SetDlgItemText(hDlg, IDC_LIGHTID, ("ID: " + to_string(cLightID)).c_str());
+    SetDlgItemInt(hDlg, IDC_LIGHTID, cLightID, false);
     // mainGrid->..
     RedrawButtonZone(hDlg);
     // Test...
@@ -320,11 +320,11 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
         RedrawDevList(hDlg);
 
-        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(1, 22));
+        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(3, 22));
         SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
         //SendMessage(gridX, TBM_SETTICFREQ, 16, 0);
 
-        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(1, 10));
+        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 10));
         SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
         //SendMessage(gridY, TBM_SETTICFREQ, 16, 0);
 
@@ -411,6 +411,12 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
                             it->grid[x][y] = 0;
             SetLightMap(hDlg);
         } break;
+        case IDC_BUT_LAST: {
+            cLightID = 0;
+            for (auto it = afx_dev.fxdevs[dIndex].lights.begin(); it < afx_dev.fxdevs[dIndex].lights.end(); it++)
+                cLightID = max(cLightID, (*it)->lightid);
+            SetLightMap(hDlg);
+        } break;
         }
     } break;
     case WM_HSCROLL:
@@ -445,12 +451,13 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
             DWORD gridVal = mainGrid->grid[(ditem->CtlID - 2000) % mainGrid->x][(ditem->CtlID - 2000) / mainGrid->x];
+            WORD idVal = HIWORD(gridVal) << 4;
             HBRUSH Brush = NULL;
             if (gridVal) {
                 if (HIWORD(gridVal) == cLightID && LOWORD(gridVal) == devID)
                     Brush = CreateSolidBrush(RGB(0, 255, 0));
                 else
-                    Brush = CreateSolidBrush(RGB(255, 0, 0));
+                    Brush = CreateSolidBrush(RGB(0xff - (idVal << 1), 0, idVal & 0xff));
             }
             else
                 Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
@@ -530,7 +537,10 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
                     for (auto it = afx_dev.GetGrids()->begin(); it < afx_dev.GetGrids()->end(); it++)
                         if (it->id == lPoint->lParam) {
                             mainGrid = &(*it);
+                            SetGridSize(hDlg, mainGrid->x, mainGrid->y);
                             RedrawButtonZone(hDlg);
+                            SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
+                            SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
                             break;
                         }
                 }

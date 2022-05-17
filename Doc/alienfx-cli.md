@@ -17,6 +17,7 @@ The following commands are available:
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
 - `set-power=<light-id>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
+- `set-global=mode,r,g,b,r,g,b` Set global effect mode (v5 devices only)
 - `set-dev=<pid>` Switch active device to this PID (low-level only).
 - `set-dim=<brigtness>` Set active device hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only).
 - `lightson` Turn all current device lights on.
