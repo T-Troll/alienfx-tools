@@ -482,6 +482,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
+    case WM_ENDSESSION:
+        // Shutdown/restart scheduled....
+        fan_conf->Save();
+        mon->Stop();
+        return 0;
     }
     return 0;
 }

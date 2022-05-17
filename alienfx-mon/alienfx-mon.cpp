@@ -558,6 +558,9 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		break;
+	case WM_ENDSESSION:
+		conf->Save();
+		return 0;
 	default: return false;
 	}
 	return true;

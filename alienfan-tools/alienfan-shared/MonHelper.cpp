@@ -12,39 +12,31 @@ void CMonProc(LPVOID);
 MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
 	conf = config;
 	acpi = acp;
-	if ((oldPower = acpi->GetPower()) != conf->lastProf->powerStage)
-		acpi->SetPower(conf->lastProf->powerStage);
-	acpi->SetGPU(conf->lastProf->GPUPower);
 
 	maxTemps.resize(acpi->HowManySensors());
 	senValues.resize(acpi->HowManySensors());
-	fanValues.resize(acpi->HowManyFans());
-	boostValues.resize(acpi->HowManyFans());
+	fanRpm.resize(acpi->HowManyFans());
 	boostRaw.resize(acpi->HowManyFans());
 	boostSets.resize(acpi->HowManyFans());
 	fanSleep.resize(acpi->HowManyFans());
 
-	for (int i = 0; i < acpi->HowManySensors(); i++) {
-		maxTemps[i] = acpi->GetTempValue(i);
-	}
+	//for (int i = 0; i < acpi->HowManySensors(); i++) {
+	//	maxTemps[i] = acpi->GetTempValue(i);
+	//}
 
 	Start();
 }
 
 MonHelper::~MonHelper() {
 	Stop();
-
-	if (oldPower != conf->lastProf->powerStage)
-		acpi->SetPower(oldPower);
-	if (!oldPower)
-		// reset boost
-		for (int i = 0; i < acpi->fans.size(); i++)
-			acpi->SetFanValue(i, 0);
 }
 
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
+		if ((oldPower = acpi->GetPower()) != conf->lastProf->powerStage)
+			acpi->SetPower(conf->lastProf->powerStage);
+		acpi->SetGPU(conf->lastProf->GPUPower);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
@@ -59,6 +51,12 @@ void MonHelper::Stop() {
 #endif
 		delete monThread;
 		monThread = NULL;
+		if (oldPower != conf->lastProf->powerStage)
+			acpi->SetPower(oldPower);
+		if (!oldPower)
+			// reset boost
+			for (int i = 0; i < acpi->fans.size(); i++)
+				acpi->SetFanValue(i, 0);
 	}
 }
 
@@ -77,9 +75,8 @@ void CMonProc(LPVOID param) {
 	// fans...
 	for (int i = 0; i < src->acpi->HowManyFans(); i++) {
 		src->boostSets[i] = -273;
-		src->boostValues[i] = src->acpi->GetFanValue(i);
 		src->boostRaw[i] = src->acpi->GetFanValue(i, true);
-		src->fanValues[i] = src->acpi->GetFanRPM(i);
+		src->fanRpm[i] = src->acpi->GetFanRPM(i);
 	}
 
 	// boosts..
@@ -90,10 +87,10 @@ void CMonProc(LPVOID param) {
 				// Look for boost point for temp...
 				for (int k = 1; k < fIter->points.size(); k++)
 					if (src->senValues[cIter->sensorIndex] <= fIter->points[k].temp) {
-						int tBoost = fIter->points[k - 1].boost +
-							((fIter->points[k].boost - fIter->points[k - 1].boost) *
+						int tBoost = (fIter->points[k - 1].boost +
+								((fIter->points[k].boost - fIter->points[k - 1].boost) *
 								(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-								(fIter->points[k].temp - fIter->points[k - 1].temp);
+								(fIter->points[k].temp - fIter->points[k - 1].temp)) * src->acpi->boosts[fIter->fanIndex] / 100;
 						if (tBoost > src->boostSets[fIter->fanIndex])
 							src->boostSets[fIter->fanIndex] = tBoost;
 						break;
@@ -102,13 +99,14 @@ void CMonProc(LPVOID param) {
 		}
 		// Now set if needed...
 		for (int i = 0; i < src->acpi->HowManyFans(); i++)
-			if (!src->fanSleep[i] && src->boostSets[i] >= 0 && (src->boostSets[i] != src->boostValues[i]) /*|| src->boostRaw[i] > 100*/) {
-				if (src->boostRaw[i] < 100 && src->boostSets[i] * src->acpi->boosts[i] > 10000) {
+			if (src->boostSets[i] >= 0 && !src->fanSleep[i]) {
+				// Check overboost tricks...
+				if (src->boostRaw[i] < 100 && src->boostSets[i] > 100) {
 					src->acpi->SetFanValue(i, 100, true);
 					src->fanSleep[i] = 6;
-				}
-				else
-					src->acpi->SetFanValue(i, src->boostSets[i]);
+				} else
+				    if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100)
+						src->acpi->SetFanValue(i, src->boostSets[i], true);
 				//#ifdef _DEBUG
 				//					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";
 				//					OutputDebugString(msg.c_str());

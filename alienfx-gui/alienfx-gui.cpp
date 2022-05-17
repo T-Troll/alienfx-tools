@@ -872,10 +872,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		// Shutdown/restart scheduled....
 
 		DebugPrint("Shutdown initiated\n");
-		delete eve;
-		if (acpi) delete acpi;
-		delete fxhl;
-		delete conf;
+		conf->Save();
+		eve->StopEffects();
+		eve->StopFanMon();
+		fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 19 && wParam - 10 < conf->profiles.size()) {

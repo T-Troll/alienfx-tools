@@ -14,19 +14,27 @@
 //#include <memory.h>
 //#include <tchar.h>
 #include <vector>
+#include <string>
 
 using namespace std;
 
-#define byte BYTE
+//#define byte BYTE
+//
+//struct lightgrid {
+//	byte id;
+//	byte x, y;
+//	string name;
+//	DWORD grid[21][8];
+//};
 
-struct gridpos {
-	byte zone;
-	byte x;
-	byte y;
-};
-
-struct lightpos {
-	DWORD devID;
-	WORD lightID;
-	vector<gridpos> pos;
-};
+//struct gridpos {
+//	byte zone;
+//	byte x;
+//	byte y;
+//};
+//
+//struct lightpos {
+//	DWORD devID;
+//	WORD lightID;
+//	vector<gridpos> pos;
+//};

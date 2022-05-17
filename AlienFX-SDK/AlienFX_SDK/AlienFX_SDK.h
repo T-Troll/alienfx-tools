@@ -75,6 +75,15 @@ namespace AlienFX_SDK {
 		vector<mapping*> lights;
 	};
 
+#define MAXGRIDSIZE 220
+
+	struct lightgrid {
+		byte id;
+		byte x, y;
+		string name;
+		DWORD grid[22][10];
+	};
+
 	struct afx_act { // atomic light action phase
 		BYTE type; // one of Action values - action type
 		BYTE time; // How long this phase stay
@@ -214,7 +223,7 @@ namespace AlienFX_SDK {
 	struct afx_device {
 		Functions *dev;
 		devmap *desc;
-		vector <mapping *> lights;
+		vector <mapping*> lights;
 	};
 
 	class Mappings {
@@ -222,6 +231,7 @@ namespace AlienFX_SDK {
 		vector <mapping*> mappings; // Lights data for all devices
 		vector <devmap> devices; // Device data found/present in system
 		vector <group> groups; // Defined light groups
+		vector <lightgrid> grids; // Grid zones info
 
 	public:
 
@@ -249,6 +259,9 @@ namespace AlienFX_SDK {
 
 		// get defined groups
 		vector <group>* GetGroups();
+
+		// get defined grids
+		vector <lightgrid>* GetGrids() { return &grids; };
 
 		// get device structure by PID (devID)/VID
 		devmap* GetDeviceById(WORD devID, WORD vid = 0);

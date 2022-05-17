@@ -120,6 +120,7 @@ void DrawFan()
             // curve...
             temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             fan_block* fan = NULL;
+            int fanBoost = acpi->GetFanValue(fan_conf->lastSelectedFan);
             for (auto senI = fan_conf->lastProf->fanControls.begin();
                 senI < fan_conf->lastProf->fanControls.end(); senI++)
                 if (fan = fan_conf->FindFanBlock(&(*senI), fan_conf->lastSelectedFan)) {
@@ -142,7 +143,7 @@ void DrawFan()
                         SetDCBrushColor(hdc, RGB(255, 255, 0));
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         SelectObject(hdc, GetStockObject(DC_BRUSH));
-                        mark = Fan2Screen(mon->senValues[senI->sensorIndex], mon->boostValues[fan_conf->lastSelectedFan]);
+                        mark = Fan2Screen(mon->senValues[senI->sensorIndex], fanBoost/*mon->boostValues[fan_conf->lastSelectedFan]*/);
                         Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                     }
                 }
@@ -151,12 +152,12 @@ void DrawFan()
             SetDCBrushColor(hdc, RGB(255, 0, 0));
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
-            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], mon->boostValues[fan_conf->lastSelectedFan]);
+            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost/*mon->boostValues[fan_conf->lastSelectedFan]*/);
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
             // RPM
             fan_overboost* maxBoost = fan_conf->FindBoost(fan_conf->lastSelectedFan);
             string rpmText = "Fan curve (scale: " + to_string(maxBoost ? maxBoost->maxBoost : acpi->boosts[fan_conf->lastSelectedFan])
-                + ", boost: " + to_string(acpi->GetFanValue(fan_conf->lastSelectedFan)) + ", "
+                + ", boost: " + to_string(fanBoost) + ", "
                 + to_string(maxBoost ? acpi->GetFanRPM(fan_conf->lastSelectedFan) * 100 / maxBoost->maxRPM : acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
         }
