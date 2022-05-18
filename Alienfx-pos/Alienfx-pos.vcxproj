@@ -148,6 +148,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Alienfx-pos.cpp" />
+    <ClCompile Include="TabGrid.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Alienfx-pos.rc" />

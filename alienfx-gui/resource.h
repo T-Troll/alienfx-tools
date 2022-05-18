@@ -22,7 +22,6 @@
 #define IDS_TYPE_SPECTRUM               117
 #define IDS_TYPE_RAINBOW                118
 #define IDS_A_LOWBATT                   119
-#define IDS_HOMEPAGE                    120
 #define IDS_UPDATEPAGE                  121
 #define IDS_TAB_COLOR                   122
 #define IDS_TAB_EVENTS                  123
@@ -68,7 +67,6 @@
 #define IDC_FREQ                        1004
 #define IDC_BUTTON_C1                   1005
 #define IDC_SPEED1                      1007
-#define IDC_BUT_RESET                   1007
 #define IDC_LENGTH1                     1009
 #define IDC_CHECK_NOEVENT               1009
 #define IDC_CHECK_POWER                 1010
@@ -165,7 +163,6 @@
 #define IDC_RADIO_OUTPUT                1094
 #define IDC_RADIO_INPUT                 1095
 #define IDC_FAN_CURVE                   1096
-#define IDC_STATIC_BOOST                1097
 #define IDC_COMBO_EFFMODE               1098
 #define IDC_CHECK_EFFECTS               1099
 #define IDC_CHECK_PRIORITY              1100
@@ -211,7 +208,6 @@
 #define IDC_SLIDER_HSCALE               1129
 #define IDC_VAL_FAN                     1130
 #define IDC_SLIDER_VSCALE               1130
-#define IDC_BUTTON1                     1130
 #define IDC_BUT_COPYACTIVE              1130
 #define IDC_BUT_OVER                    1130
 #define IDC_VAL_NET                     1131

@@ -99,48 +99,13 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return mDlg;
 }
 
-string GetAppVersion() {
-
-	HRSRC hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-
-	string res;
-
-	if (hResInfo) {
-		DWORD dwSize = SizeofResource(hInst, hResInfo);
-		HGLOBAL hResData = LoadResource(hInst, hResInfo);
-		if (hResData) {
-			LPVOID pRes = LockResource(hResData),
-				pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-			if (pResCopy) {
-				UINT uLen = 0;
-				VS_FIXEDFILEINFO* lpFfi = NULL;
-
-				CopyMemory(pResCopy, pRes, dwSize);
-
-				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-
-				res = to_string(HIWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(HIWORD(lpFfi->dwFileVersionLS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionLS));
-
-				LocalFree(pResCopy);
-			}
-			FreeResource(hResData);
-		}
-	}
-	return res;
-}
-
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-
-		Static_SetText(GetDlgItem(hDlg, IDC_STATIC_VERSION), ("Version: " + GetAppVersion()).c_str());
-
+		SetDlgItemText(hDlg, IDC_STATIC_VERSION, ("Version: " + GetAppVersion()).c_str());
 		return (INT_PTR)TRUE;
 	} break;
 	case WM_COMMAND:
@@ -160,9 +125,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case NM_CLICK:
 			case NM_RETURN:
 			{
-				char hurl[MAX_PATH];
-				LoadString(hInst, IDS_HOMEPAGE, hurl, MAX_PATH);
-				ShellExecute(NULL, "open", hurl, NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
 			} break;
 			} break;
 		}

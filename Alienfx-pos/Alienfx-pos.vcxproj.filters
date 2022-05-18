@@ -32,6 +32,9 @@
     <ClCompile Include="Alienfx-pos.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TabGrid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Alienfx-pos.rc">

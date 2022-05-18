@@ -335,48 +335,13 @@ void SetSlider(HWND tt, int value) {
 
 }
 
-string GetAppVersion() {
-
-	HRSRC hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-
-	string res;
-
-	if (hResInfo) {
-		DWORD dwSize = SizeofResource(hInst, hResInfo);
-		HGLOBAL hResData = LoadResource(hInst, hResInfo);
-		if (hResData) {
-			LPVOID pRes = LockResource(hResData),
-				pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-			if (pResCopy) {
-				UINT uLen = 0;
-				VS_FIXEDFILEINFO *lpFfi = NULL;
-
-				CopyMemory(pResCopy, pRes, dwSize);
-
-				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-
-				res = to_string(HIWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(HIWORD(lpFfi->dwFileVersionLS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionLS));
-
-				LocalFree(pResCopy);
-			}
-			FreeResource(hResData);
-		}
-	}
-	return res;
-}
-
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-
-		Static_SetText(GetDlgItem(hDlg, IDC_STATIC_VERSION), ("Version: " + GetAppVersion()).c_str());
-
+		SetDlgItemText(hDlg, IDC_STATIC_VERSION, ("Version: " + GetAppVersion()).c_str());
 		return (INT_PTR)TRUE;
 	} break;
 	case WM_COMMAND:
@@ -396,9 +361,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			case NM_CLICK:
 			case NM_RETURN:
 			{
-				char hurl[MAX_PATH];
-				LoadString(hInst, IDS_HOMEPAGE, hurl, MAX_PATH);
-				ShellExecute(NULL, "open", hurl, NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
 			} break;
 			} break;
 		}
@@ -422,21 +385,21 @@ VOID OnSelChanged(HWND hwndDlg)
 		DestroyWindow(pHdr->hwndDisplay);
 		pHdr->hwndDisplay = NULL;
 	}
-	DLGPROC tdl = NULL;
-	switch (tabSel) {
-	case TAB_COLOR: tdl = (DLGPROC)TabColorDialog; break;
-	case TAB_EVENTS: tdl = (DLGPROC)TabEventsDialog; break;
-	case TAB_AMBIENT: tdl = (DLGPROC)TabAmbientDialog; break;
-	case TAB_HAPTICS: tdl = (DLGPROC)TabHapticsDialog; break;
-	case TAB_GROUPS: tdl = (DLGPROC)TabGroupsDialog; break;
-	case TAB_PROFILES: tdl = (DLGPROC)TabProfilesDialog; break;
-	case TAB_DEVICES: tdl = (DLGPROC)TabDevicesDialog; break;
-	case TAB_FANS: tdl = (DLGPROC)TabFanDialog; break;
-	case TAB_SETTINGS: tdl = (DLGPROC)TabSettingsDialog; break;
-	//default: tdl = (DLGPROC)TabColorDialog;
-	}
+	//DLGPROC tdl = NULL;
+	//switch (tabSel) {
+	//case TAB_COLOR: tdl = (DLGPROC)TabColorDialog; break;
+	//case TAB_EVENTS: tdl = (DLGPROC)TabEventsDialog; break;
+	//case TAB_AMBIENT: tdl = (DLGPROC)TabAmbientDialog; break;
+	//case TAB_HAPTICS: tdl = (DLGPROC)TabHapticsDialog; break;
+	//case TAB_GROUPS: tdl = (DLGPROC)TabGroupsDialog; break;
+	//case TAB_PROFILES: tdl = (DLGPROC)TabProfilesDialog; break;
+	//case TAB_DEVICES: tdl = (DLGPROC)TabDevicesDialog; break;
+	//case TAB_FANS: tdl = (DLGPROC)TabFanDialog; break;
+	//case TAB_SETTINGS: tdl = (DLGPROC)TabSettingsDialog; break;
+	////default: tdl = (DLGPROC)TabColorDialog;
+	//}
 
-	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, tdl);
+	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, pHdr->apProc[tabSel]/*tdl*/);
 	if (pHdr->hwndDisplay == NULL)
 		pHdr->hwndDisplay = newDisplay;
 
@@ -557,11 +520,11 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 		pHdr->hwndTab = tab_list;
 
-		TCITEM tie{0};
+		TCITEM tie{ TCIF_TEXT };
 		char nBuf[64]{0};
 
-		tie.mask = TCIF_TEXT;
-		tie.iImage = -1;
+		//tie.mask = TCIF_TEXT;
+		//tie.iImage = -1;
 		tie.pszText = nBuf;
 
 		GetClientRect(pHdr->hwndTab, &pHdr->rcDisplay);
@@ -575,6 +538,17 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			pHdr->apRes[i] = (DLGTEMPLATE *) LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLORS + i), RT_DIALOG)));// DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
 			LoadString(hInst, IDS_TAB_COLOR + i, tie.pszText, 64);
 			SendMessage(tab_list, TCM_INSERTITEM, i, (LPARAM) &tie);
+			switch (i) {
+			case TAB_COLOR: pHdr->apProc[i] = (DLGPROC)TabColorDialog; break;
+			case TAB_EVENTS: pHdr->apProc[i] = (DLGPROC)TabEventsDialog; break;
+			case TAB_AMBIENT: pHdr->apProc[i] = (DLGPROC)TabAmbientDialog; break;
+			case TAB_HAPTICS: pHdr->apProc[i] = (DLGPROC)TabHapticsDialog; break;
+			case TAB_GROUPS: pHdr->apProc[i] = (DLGPROC)TabGroupsDialog; break;
+			case TAB_PROFILES: pHdr->apProc[i] = (DLGPROC)TabProfilesDialog; break;
+			case TAB_DEVICES: pHdr->apProc[i] = (DLGPROC)TabDevicesDialog; break;
+			case TAB_FANS: pHdr->apProc[i] = (DLGPROC)TabFanDialog; break;
+			case TAB_SETTINGS: pHdr->apProc[i] = (DLGPROC)TabSettingsDialog; break;
+			}
 		}
 
 		ReloadModeList();

@@ -28,13 +28,9 @@ HWND mDlg;
 
 AlienFX_SDK::Mappings afx_dev;
 
-int cLightID = 0, dIndex = 0;
+int cLightID = 0, dIndex = 0, devID = 0;
 
 AlienFX_SDK::lightgrid* mainGrid;
-
-RECT dragZone;
-POINT clkPoint, dragStart;
-DWORD oldClkValue;
 
 size_t FillAllDevs() {
     //config->haveV5 = false;
@@ -153,54 +149,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-void InitButtonZone(HWND dlg) {
-    // delete zone buttons...
-    for (DWORD bID = 2000; GetDlgItem(dlg, bID); bID++)
-        DestroyWindow(GetDlgItem(dlg, bID));
-    // Create zone buttons...
-    HWND bblock = GetDlgItem(dlg, IDC_BUTTON_ZONE);
-    RECT bzone;
-    GetClientRect(bblock, &bzone);
-    MapWindowPoints(bblock, dlg, (LPPOINT)&bzone, 1);
-    bzone.right /= mainGrid->x;
-    bzone.bottom /= mainGrid->y;
-    LONGLONG bId = 2000;
-    for (int y = 0; y < mainGrid->y; y++)
-        for (int x = 0; x < mainGrid->x; x++) {
-            HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW | WS_DISABLED,
-                bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, dlg, (HMENU)bId, hInst, NULL);
-            bId++;
-        }
-}
-
-void RedrawButtonZone(HWND dlg) {
-    for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
-        RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
-}
-
-void RedrawGridList(HWND hDlg) {
-    int rpos = 0;
-    HWND grid_list = GetDlgItem(hDlg, IDC_LIST_GRID);
-    ListView_DeleteAllItems(grid_list);
-    ListView_SetExtendedListViewStyle(grid_list, LVS_EX_FULLROWSELECT);
-    LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
-    ListView_DeleteColumn(grid_list, 0);
-    ListView_InsertColumn(grid_list, 0, &lCol);
-    for (int i = 0; i < afx_dev.GetGrids()->size(); i++) {
-        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
-        lItem.lParam = afx_dev.GetGrids()->at(i).id;
-        lItem.pszText = (char*)afx_dev.GetGrids()->at(i).name.c_str();
-        if (lItem.lParam == mainGrid->id) {
-            lItem.state = LVIS_SELECTED;
-            RedrawButtonZone(hDlg);
-            rpos = i;
-        }
-        ListView_InsertItem(grid_list, &lItem);
-    }
-    ListView_SetColumnWidth(grid_list, 0, LVSCW_AUTOSIZE_USEHEADER);
-    ListView_EnsureVisible(grid_list, rpos, false);
-}
-
 void SetLightMap(HWND hDlg) {
     AlienFX_SDK::mapping* lgh = afx_dev.GetMappingById(afx_dev.fxdevs[0].dev->GetPID(), cLightID);
     if (lgh) {
@@ -214,7 +162,7 @@ void SetLightMap(HWND hDlg) {
     }
     SetDlgItemInt(hDlg, IDC_LIGHTID, cLightID, false);
     // mainGrid->..
-    RedrawButtonZone(hDlg);
+    //RedrawButtonZone(hDlg);
     // Test...
     TestLight(dIndex, cLightID, false);
 }
@@ -257,44 +205,6 @@ void RedrawDevList(HWND hDlg) {
     ListView_EnsureVisible(dev_list, rpos, false);
 }
 
-void SetGridSize(HWND dlg, int x, int y) {
-    mainGrid->x = x;
-    mainGrid->y = y;
-    InitButtonZone(dlg);
-}
-
-#define MAKEDWORD(_a, _b)   (DWORD)(((WORD)(((DWORD_PTR)(_a)) & 0xffff)) | ((DWORD)((WORD)(((DWORD_PTR)(_b)) & 0xffff))) << 16)
-
-void ModifyDragZone(WORD did, WORD lid, bool clear = false) {
-    for (int x = dragZone.left; x <= dragZone.right; x++)
-        for (int y = dragZone.top; y <= dragZone.bottom; y++) {
-            if (!mainGrid->grid[x][y] && !clear)
-                mainGrid->grid[x][y] = MAKEDWORD(did, lid);
-            else
-                if (clear && mainGrid->grid[x][y] == MAKEDWORD(did, lid))
-                    mainGrid->grid[x][y] = 0;
-        }
-}
-
-bool TranslateClick(HWND hDlg, LPARAM lParam) {
-    clkPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-    // check if in control window...
-    RECT gRect;
-    MapWindowPoints(hDlg, HWND_DESKTOP, &clkPoint, 1);
-    GetClientRect(GetDlgItem(hDlg, IDC_BUTTON_ZONE), &gRect);
-    ScreenToClient(GetDlgItem(hDlg, IDC_BUTTON_ZONE), &clkPoint);
-    if (PtInRect(&gRect, clkPoint)) {
-        // start dragging...
-        clkPoint = { clkPoint.x / (gRect.right / mainGrid->x),
-                     clkPoint.y / (gRect.bottom / mainGrid->y) };
-        return true;
-    }
-    else {
-        clkPoint = { -1, -1 };
-        return false;
-    }
-}
-
 AlienFX_SDK::mapping* FindCreateMapping() {
     AlienFX_SDK::mapping* lgh = afx_dev.GetMappingById(afx_dev.fxdevs[dIndex].dev->GetPID(), cLightID);
     if (!lgh) {
@@ -307,29 +217,130 @@ AlienFX_SDK::mapping* FindCreateMapping() {
     return lgh;
 }
 
+typedef struct tag_dlghdr {
+    HWND hwndTab;       // tab control
+    HWND hwndDisplay;   // current child dialog box
+    RECT rcDisplay;     // display rectangle for the tab control
+    DLGTEMPLATE* apRes;
+} DLGHDR;
+
+int tabSel = 0;
+
+BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
+VOID OnSelChanged(HWND hwndDlg)
+{
+    // Get the dialog header data.
+    DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(
+        hwndDlg, GWLP_USERDATA);
+
+    // Get the index of the selected tab.
+    tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
+    mainGrid = &afx_dev.GetGrids()->at(tabSel);
+
+    // Destroy the current child dialog box, if any.
+    if (pHdr->hwndDisplay != NULL) {
+        EndDialog(pHdr->hwndDisplay, IDOK);
+        DestroyWindow(pHdr->hwndDisplay);
+        pHdr->hwndDisplay = NULL;
+    }
+
+    HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes, pHdr->hwndTab, (DLGPROC)TabGrid);
+    if (pHdr->hwndDisplay == NULL)
+        pHdr->hwndDisplay = newDisplay;
+
+    if (pHdr->hwndDisplay != NULL) {
+        SetWindowPos(pHdr->hwndDisplay, NULL,
+            pHdr->rcDisplay.left, pHdr->rcDisplay.top,
+            pHdr->rcDisplay.right - pHdr->rcDisplay.left,
+            pHdr->rcDisplay.bottom - pHdr->rcDisplay.top,
+            SWP_SHOWWINDOW);
+    }
+    return;
+}
+
+WNDPROC oldproc;
+
+void SetNewGridName(HWND hDlg) {
+    // set text and close
+    mainGrid->name.resize(GetWindowTextLength(hDlg) + 1);
+    GetWindowText(hDlg, (LPSTR)mainGrid->name.c_str(), 255);
+    // change tab text, close window
+    TCITEM tie{ TCIF_TEXT };
+    tie.pszText = (LPSTR)mainGrid->name.c_str();
+    TabCtrl_SetItem(GetParent(hDlg), tabSel, &tie);
+    OnSelChanged(GetParent(hDlg));
+    DestroyWindow(hDlg);
+}
+
+LRESULT CALLBACK GridNameEdit(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) {
+    case WM_KEYUP: {
+        switch (wParam) {
+        case VK_RETURN: case VK_TAB: {
+            SetNewGridName(hDlg);
+        } break;
+        case VK_ESCAPE: {
+            // just close edit
+            DestroyWindow(hDlg);
+        } break;
+        default:
+            CallWindowProcW(oldproc, hDlg, message, wParam, lParam);
+        }
+    } break;
+    case WM_KILLFOCUS:
+        SetNewGridName(hDlg);
+        break;
+    default: return CallWindowProcW(oldproc, hDlg, message, wParam, lParam);
+    }
+    return 0;
+}
+
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
-        gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
+        gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE),
+        gridTab = GetDlgItem(hDlg, IDC_TAB_GRIDS);
 
-    int devID = afx_dev.fxdevs[dIndex].dev->GetPID();
+    devID = afx_dev.fxdevs[dIndex].dev->GetPID();
 
     switch (message) {
     case WM_INITDIALOG:
     {
         mDlg = hDlg;
 
+        DLGHDR* pHdr = (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
+        SetWindowLongPtr(gridTab, GWLP_USERDATA, (LONG_PTR)pHdr);
+
+        pHdr->hwndTab = gridTab;
+
+        TCITEM tie{ TCIF_TEXT };
+
+        GetClientRect(pHdr->hwndTab, &pHdr->rcDisplay);
+
+        pHdr->rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
+        pHdr->rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
+        pHdr->rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
+        pHdr->rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
+
+        pHdr->apRes = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_GRIDBLOCK), RT_DIALOG)));// DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
+
+        for (int i = 0; i < afx_dev.GetGrids()->size(); i++) {
+            tie.pszText = (char*)afx_dev.GetGrids()->at(i).name.c_str();
+            TabCtrl_InsertItem(gridTab, i, (LPARAM)&tie);
+            //SendMessage(gridTab, TCM_INSERTITEM, i, (LPARAM)&tie);
+        }
+
+        // Special tabs for add/remove
+        tie.pszText = LPSTR("+");
+        TabCtrl_InsertItem(gridTab, afx_dev.GetGrids()->size(), (LPARAM)&tie);
+        tie.pszText = LPSTR("-");
+        TabCtrl_InsertItem(gridTab, afx_dev.GetGrids()->size()+1, (LPARAM)&tie);
+
+        TabCtrl_SetMinTabWidth(gridTab, 10);
+
         RedrawDevList(hDlg);
-
-        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(3, 22));
-        SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
-        //SendMessage(gridX, TBM_SETTICFREQ, 16, 0);
-
-        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 10));
-        SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
-        //SendMessage(gridY, TBM_SETTICFREQ, 16, 0);
-
-        InitButtonZone(hDlg);
-        RedrawGridList(hDlg);
+        OnSelChanged(gridTab);
         SetLightMap(hDlg);
     } break;
     case WM_COMMAND:
@@ -342,10 +353,12 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
         case IDC_BUT_NEXT:
             cLightID++;
             SetLightMap(hDlg);
+            OnSelChanged(gridTab);
             break;
         case IDC_BUT_PREV:
             if (cLightID) cLightID--;
             SetLightMap(hDlg);
+            OnSelChanged(gridTab);
             break;
         case IDC_EDIT_NAME:
             switch (HIWORD(wParam)) {
@@ -359,46 +372,16 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
                 break;
             }
             break;
-        case IDC_BUT_ADDGRID: {
-            byte newGridIndex = 0;
-            for (auto it = afx_dev.GetGrids()->begin(); it < afx_dev.GetGrids()->end(); ) {
-                if (newGridIndex == it->id) {
-                    newGridIndex++;
-                    it = afx_dev.GetGrids()->begin();
-                }
-                else
-                    it++;
-            }
-            afx_dev.GetGrids()->push_back({ newGridIndex, mainGrid->x, mainGrid->y, "Grid #" + to_string(newGridIndex) });
-            mainGrid = &afx_dev.GetGrids()->back();
-            RedrawGridList(hDlg);
-        } break;
-        case IDC_BUT_REMGRID:
-            if (afx_dev.GetGrids()->size() > 1) {
-                for (auto it = afx_dev.GetGrids()->begin(); it < afx_dev.GetGrids()->end(); it++ ) {
-                    if (it->id == mainGrid->id) {
-                        // remove
-                        if ((it+1) != afx_dev.GetGrids()->end())
-                            mainGrid = &(*(it+1));
-                        else
-                            mainGrid = &(*(it - 1));
-                        afx_dev.GetGrids()->erase(it);
-                        RedrawGridList(hDlg);
-                        break;
-                    }
-                }
-            }
-        break;
         case IDC_BUT_CLEAR: {
             auto pos = find_if(afx_dev.fxdevs[dIndex].lights.begin(), afx_dev.fxdevs[dIndex].lights.end(),
-                [devID](AlienFX_SDK::mapping* t) {
+                [](AlienFX_SDK::mapping* t) {
                     return t->devid == devID && t->lightid == cLightID;
                 });
             if (pos != afx_dev.fxdevs[dIndex].lights.end())
                 afx_dev.fxdevs[dIndex].lights.erase(pos);
             // Remove from mapping list...
             pos = find_if(afx_dev.GetMappings()->begin(), afx_dev.GetMappings()->end(),
-                [devID](AlienFX_SDK::mapping* t) {
+                [](AlienFX_SDK::mapping* t) {
                     return t->devid == devID && t->lightid == cLightID;
                 });
             if (pos != afx_dev.GetMappings()->end())
@@ -407,7 +390,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
             for (auto it = afx_dev.GetGrids()->begin(); it < afx_dev.GetGrids()->end(); it++)
                 for (int x = 0; x < it->x; x++)
                     for (int y = 0; y < it->y; y++)
-                        if (it->grid[x][y] == MAKEDWORD(devID, cLightID))
+                        if (it->grid[x][y] == MAKELPARAM(devID, cLightID))
                             it->grid[x][y] = 0;
             SetLightMap(hDlg);
         } break;
@@ -419,150 +402,70 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
         } break;
         }
     } break;
-    case WM_HSCROLL:
-        switch (LOWORD(wParam)) {
-        case TB_THUMBPOSITION: case TB_ENDTRACK:
-            if ((HWND)lParam == gridX) {
-                SetGridSize(hDlg, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), mainGrid->y);
-                //SetSlider(sTip2, conf->amb_conf->mainGrid->x);
-            }
-            break;
-        default:
-            if ((HWND)lParam == gridX) {
-                //SetSlider(sTip2, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-            }
-        }
-        break;
-    case WM_VSCROLL:
-        switch (LOWORD(wParam)) {
-        case TB_THUMBPOSITION: case TB_ENDTRACK:
-            if ((HWND)lParam == gridY) {
-                SetGridSize(hDlg, mainGrid->x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-                //SetSlider(sTip3, conf->amb_conf->mainGrid->y);
-            }
-            break;
-        default:
-            if ((HWND)lParam == gridY) {
-                //SetSlider(sTip3, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-            }
-        }
-        break;
-    case WM_DRAWITEM: {
-        DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
-        if (ditem->CtlID >= 2000) {
-            DWORD gridVal = mainGrid->grid[(ditem->CtlID - 2000) % mainGrid->x][(ditem->CtlID - 2000) / mainGrid->x];
-            WORD idVal = HIWORD(gridVal) << 4;
-            HBRUSH Brush = NULL;
-            if (gridVal) {
-                if (HIWORD(gridVal) == cLightID && LOWORD(gridVal) == devID)
-                    Brush = CreateSolidBrush(RGB(0, 255, 0));
-                else
-                    Brush = CreateSolidBrush(RGB(0xff - (idVal << 1), 0, idVal & 0xff));
-            }
-            else
-                Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-            FillRect(ditem->hDC, &ditem->rcItem, Brush);
-            DeleteObject(Brush);
-            if (!gridVal)
-                DrawEdge(ditem->hDC, &ditem->rcItem, /*selected ? EDGE_SUNKEN : */EDGE_RAISED, BF_RECT);
-        }
-    } break;
-    case WM_RBUTTONUP: {
-        // remove grid mapping
-        if (TranslateClick(hDlg, lParam)) {
-            mainGrid->grid[clkPoint.x][clkPoint.y] = 0;
-            RedrawButtonZone(hDlg);
-        }
-    } break;
-    case WM_LBUTTONDOWN: {
-        // selection mark
-        if (TranslateClick(hDlg, lParam)) {
-            oldClkValue = mainGrid->grid[clkPoint.x][clkPoint.y];
-        }
-        dragZone = { clkPoint.x, clkPoint.y, clkPoint.x, clkPoint.y };
-        dragStart = clkPoint;
-    } break;
-    case WM_LBUTTONUP:
-        // end selection
-        if (dragZone.top >= 0) {
-            if (dragZone.bottom - dragZone.top || dragZone.right - dragZone.left || !oldClkValue) {
-                // just set zone
-                ModifyDragZone(devID, cLightID);
-                FindCreateMapping();
-            }
-            else {
-                // single click at assigned grid
-                if (oldClkValue == MAKEDWORD(devID, cLightID))
-                    mainGrid->grid[dragZone.left][dragZone.top] = 0;
-                else {
-                    // change light to old one
-                    cLightID = HIWORD(oldClkValue);
-                    auto pos = find_if(afx_dev.fxdevs.begin(), afx_dev.fxdevs.end(),
-                        [](auto t) {
-                            return t.dev->GetPID() == LOWORD(oldClkValue);
-                        });
-                    if (pos != afx_dev.fxdevs.end())
-                        dIndex = (int)(pos - afx_dev.fxdevs.begin());
-                }
-            }
-            SetLightMap(hDlg);
-        }
-        break;
-    case WM_MOUSEMOVE:
-        if (wParam & MK_LBUTTON) {
-            // drag
-            if (TranslateClick(hDlg, lParam) && dragZone.top >= 0) {
-                ModifyDragZone(devID, cLightID, true);
-                dragZone = { min(clkPoint.x, dragStart.x), min(clkPoint.y, dragStart.y),
-                    max(clkPoint.x, dragStart.x), max(clkPoint.y, dragStart.y) };
-                ModifyDragZone(devID, cLightID);
-                RedrawButtonZone(hDlg);
-            }
-        }
-        break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
-        case IDC_LIST_GRID:
+        case IDC_TAB_GRIDS: {
             switch (((NMHDR*)lParam)->code) {
-            case LVN_ITEMACTIVATE: {
-                NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
-                ListView_EditLabel(GetDlgItem(hDlg, ((NMHDR*)lParam)->idFrom), sItem->iItem);
+            case NM_RCLICK: {
+                RECT tRect;
+                TabCtrl_GetItemRect(gridTab, tabSel, &tRect);
+                //GetClientRect(gridTab, &tRect);
+                HWND tabEdit = CreateWindow("EDIT", "", WS_CHILD | WS_VISIBLE | WS_BORDER,
+                    tRect.left - 1, tRect.top -1, tRect.right - tRect.left + 2,
+                    tRect.bottom - tRect.top + 2/*GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER)*/, gridTab, NULL,
+                    GetModuleHandle(NULL), NULL);
+                oldproc = (WNDPROC)SetWindowLongPtr(tabEdit, GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
+                Edit_SetText(tabEdit, mainGrid->name.c_str());
+                SetFocus(tabEdit);
             } break;
-
-            case LVN_ITEMCHANGED:
-            {
-                NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
-                if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
-                    // Select other item...
-                    for (auto it = afx_dev.GetGrids()->begin(); it < afx_dev.GetGrids()->end(); it++)
-                        if (it->id == lPoint->lParam) {
-                            mainGrid = &(*it);
-                            SetGridSize(hDlg, mainGrid->x, mainGrid->y);
-                            RedrawButtonZone(hDlg);
-                            SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
-                            SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
-                            break;
+            case TCN_SELCHANGE: {
+                int newSel = TabCtrl_GetCurSel(gridTab);
+                if ( newSel != tabSel) { // selection changed!
+                    if (newSel < afx_dev.GetGrids()->size())
+                        OnSelChanged(gridTab);
+                    else
+                        if (newSel == afx_dev.GetGrids()->size()) {
+                            // add grid
+                            byte newGridIndex = 0;
+                            for (auto it = afx_dev.GetGrids()->begin(); it < afx_dev.GetGrids()->end(); ) {
+                                if (newGridIndex == it->id) {
+                                    newGridIndex++;
+                                    it = afx_dev.GetGrids()->begin();
+                                }
+                                else
+                                    it++;
+                            }
+                            afx_dev.GetGrids()->push_back({ newGridIndex, mainGrid->x, mainGrid->y, "Grid #" + to_string(newGridIndex) });
+                            mainGrid = &afx_dev.GetGrids()->back();
+                            //RedrawGridList(hDlg);
+                            TCITEM tie{ TCIF_TEXT };
+                            tie.pszText = (LPSTR)mainGrid->name.c_str();
+                            TabCtrl_InsertItem(gridTab, afx_dev.GetGrids()->size() - 1, (LPARAM)&tie);
+                            TabCtrl_SetCurSel(gridTab, afx_dev.GetGrids()->size() - 1);
+                            OnSelChanged(gridTab);
+                        }
+                        else
+                        {
+                            if (afx_dev.GetGrids()->size() > 1) {
+                                int newTab = tabSel;
+                                for (auto it = afx_dev.GetGrids()->begin(); it < afx_dev.GetGrids()->end(); it++) {
+                                    if (it->id == mainGrid->id) {
+                                        // remove
+                                        if ((it + 1) == afx_dev.GetGrids()->end())
+                                            newTab--;
+                                        afx_dev.GetGrids()->erase(it);
+                                        TabCtrl_DeleteItem(gridTab, tabSel);
+                                        TabCtrl_SetCurSel(gridTab, newTab);
+                                        OnSelChanged(gridTab);
+                                        break;
+                                    }
+                                }
+                            }
                         }
                 }
-                else {
-                    if (!ListView_GetSelectedCount(GetDlgItem(hDlg, ((NMHDR*)lParam)->idFrom)))
-                        RedrawGridList(hDlg);
-                }
-            } break;
-            case LVN_ENDLABELEDIT:
-            {
-                NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                if (sItem->item.pszText) {
-                    mainGrid->name = sItem->item.pszText;
-                    ListView_SetItem(GetDlgItem(hDlg, IDC_LIST_GRID), &sItem->item);
-                    ListView_SetColumnWidth(GetDlgItem(hDlg, IDC_LIST_GRID), 0, LVSCW_AUTOSIZE);
-                    return true;
-                }
-                else
-                    return false;
             } break;
             }
-            break;
+        } break;
         case IDC_LIST_DEV:
             switch (((NMHDR*)lParam)->code) {
             case LVN_ITEMACTIVATE: {

@@ -491,45 +491,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     return 0;
 }
 
-string GetAppVersion() {
-
-    HRSRC hResInfo;
-    DWORD dwSize;
-    HGLOBAL hResData;
-    LPVOID pRes, pResCopy;
-    UINT uLen;
-    VS_FIXEDFILEINFO* lpFfi;
-
-    string res;
-
-    hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-    if (hResInfo) {
-        dwSize = SizeofResource(hInst, hResInfo);
-        hResData = LoadResource(hInst, hResInfo);
-        if (hResData) {
-            pRes = LockResource(hResData);
-            pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-            if (pResCopy) {
-                CopyMemory(pResCopy, pRes, dwSize);
-
-                VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
-
-                DWORD dwFileVersionMS = lpFfi->dwFileVersionMS;
-                DWORD dwFileVersionLS = lpFfi->dwFileVersionLS;
-
-                res = std::to_string(HIWORD(dwFileVersionMS)) + "."
-                    + std::to_string(LOWORD(dwFileVersionMS)) + "."
-                    + std::to_string(HIWORD(dwFileVersionLS)) + "."
-                    + std::to_string(LOWORD(dwFileVersionLS));
-
-                LocalFree(pResCopy);
-            }
-            FreeResource(hResData);
-        }
-    }
-    return res;
-}
-
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -537,16 +498,16 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG: {
-        HWND version_text = GetDlgItem(hDlg, IDC_STATIC_VERSION);
-        Static_SetText(version_text, ("Version: " + GetAppVersion()).c_str());
-
+        SetDlgItemText(hDlg, IDC_STATIC_VERSION, ("Version: " + GetAppVersion()).c_str());
         return (INT_PTR)TRUE;
-    }
+    } break;
     case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        switch (LOWORD(wParam)) {
+        case IDOK: case IDCANCEL:
         {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
+        } break;
         }
         break;
     case WM_NOTIFY:
@@ -554,11 +515,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         case IDC_SYSLINK_HOMEPAGE:
             switch (((LPNMHDR)lParam)->code)
             {
-
             case NM_CLICK:
             case NM_RETURN:
+            {
                 ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
-                break;
+            } break;
             } break;
         }
         break;
