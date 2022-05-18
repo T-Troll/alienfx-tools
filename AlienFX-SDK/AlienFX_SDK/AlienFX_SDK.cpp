@@ -1140,23 +1140,35 @@ namespace AlienFX_SDK {
 	}
 
 	devmap *Mappings::GetDeviceById(WORD devID, WORD vid) {
-		for (int i = 0; i < devices.size(); i++)
-			if (devices[i].devid == devID)
-				// vid check, if any
-				if (vid && devices[i].vid)
-					if (vid == devices[i].vid)
-						return &devices[i];
-					else
-						return nullptr;
-				else
-					return &devices[i];
+		auto pos = find_if(devices.begin(), devices.end(),
+			[devID, vid](devmap t) {
+				return t.devid == devID && (!vid || t.vid == vid);
+			} );
+		if (pos != devices.end())
+			return &(*pos);
+		//for (int i = 0; i < devices.size(); i++)
+		//	if (devices[i].devid == devID)
+		//		// vid check, if any
+		//		if (vid && devices[i].vid)
+		//			if (vid == devices[i].vid)
+		//				return &devices[i];
+		//			else
+		//				return nullptr;
+		//		else
+		//			return &devices[i];
 		return nullptr;
 	}
 
 	mapping *Mappings::GetMappingById(DWORD devID, WORD LightID) {
-		for (int i = 0; i < mappings.size(); i++)
-			if (LOWORD(mappings[i]->devid) == LOWORD(devID) && mappings[i]->lightid == LightID)
-				return mappings[i];
+		auto pos = find_if(mappings.begin(), mappings.end(),
+			[devID, LightID](mapping* t) {
+				return LOWORD(t->devid) == LOWORD(devID) && t->lightid == LightID;
+			} );
+		if (pos != mappings.end())
+			return *pos;
+		//for (int i = 0; i < mappings.size(); i++)
+		//	if (LOWORD(mappings[i]->devid) == LOWORD(devID) && mappings[i]->lightid == LightID)
+		//		return mappings[i];
 		return nullptr;
 	}
 
@@ -1180,9 +1192,15 @@ namespace AlienFX_SDK {
 	}
 
 	group *Mappings::GetGroupById(DWORD gID) {
-		for (int i = 0; i < groups.size(); i++)
-			if (groups[i].gid == gID)
-				return &groups[i];
+		auto pos = find_if(groups.begin(), groups.end(),
+			[gID](group t) {
+				return t.gid == gID;
+			});
+		if (pos != groups.end())
+			return &(*pos);
+		//for (int i = 0; i < groups.size(); i++)
+		//	if (groups[i].gid == gID)
+		//		return &groups[i];
 		return nullptr;
 	}
 
@@ -1320,15 +1338,10 @@ namespace AlienFX_SDK {
 	}
 
 	int Mappings::GetFlags(DWORD devid, WORD lightid) {
-		for (int i = 0; i < mappings.size(); i++)
-			if (LOWORD(mappings[i]->devid) == LOWORD(devid) && mappings[i]->lightid == lightid)
-				return mappings[i]->flags;
+		mapping* lgh = GetMappingById(devid, lightid);
+		if (lgh)
+			return lgh->flags;
 		return 0;
-	}
-
-	void Mappings::SetFlagsById(DWORD devid, WORD lightid, WORD flags) {
-		mapping *map = GetMappingById(devid, lightid);
-		if (map) map->flags = flags;
 	}
 
 	std::vector<devmap> *Mappings::GetDevices() {

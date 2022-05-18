@@ -17,10 +17,11 @@
 #define IDC_EDIT_NAME                   1005
 #define IDC_BUT_CLEAR                   1012
 #define IDC_LIGHTID                     1013
-#define IDC_BUT_REMGRID                 1017
 #define IDC_LIST_DEV                    1018
 #define IDC_BUT_LAST                    1019
 #define IDC_TAB_GRIDS                   1020
+#define IDC_ISPOWERBUTTON               1044
+#define IDC_CHECK_INDICATOR             1080
 #define IDC_BUTTON_ZONE                 1128
 #define IDC_SLIDER_HSCALE               1129
 #define IDC_SLIDER_VSCALE               1130

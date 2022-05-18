@@ -161,8 +161,8 @@ void SetLightMap(HWND hDlg) {
         //SetDlgItemText(hDlg, IDC_LIGHTID, "");
     }
     SetDlgItemInt(hDlg, IDC_LIGHTID, cLightID, false);
-    // mainGrid->..
-    //RedrawButtonZone(hDlg);
+    CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, lgh && lgh->flags & ALIENFX_FLAG_POWER);
+    CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, lgh && lgh->flags & ALIENFX_FLAG_INDICATOR);
     // Test...
     TestLight(dIndex, cLightID, false);
 }
@@ -227,36 +227,20 @@ typedef struct tag_dlghdr {
 int tabSel = 0;
 
 BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+void RepaintGrid(HWND);
 
-VOID OnSelChanged(HWND hwndDlg)
+void OnSelChanged(HWND hwndDlg)
 {
     // Get the dialog header data.
     DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(
         hwndDlg, GWLP_USERDATA);
 
     // Get the index of the selected tab.
-    tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
+    tabSel = TabCtrl_GetCurSel(hwndDlg);
     mainGrid = &afx_dev.GetGrids()->at(tabSel);
 
-    // Destroy the current child dialog box, if any.
-    if (pHdr->hwndDisplay != NULL) {
-        EndDialog(pHdr->hwndDisplay, IDOK);
-        DestroyWindow(pHdr->hwndDisplay);
-        pHdr->hwndDisplay = NULL;
-    }
-
-    HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes, pHdr->hwndTab, (DLGPROC)TabGrid);
-    if (pHdr->hwndDisplay == NULL)
-        pHdr->hwndDisplay = newDisplay;
-
-    if (pHdr->hwndDisplay != NULL) {
-        SetWindowPos(pHdr->hwndDisplay, NULL,
-            pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-            pHdr->rcDisplay.right - pHdr->rcDisplay.left,
-            pHdr->rcDisplay.bottom - pHdr->rcDisplay.top,
-            SWP_SHOWWINDOW);
-    }
-    return;
+    // Repaint.
+    RepaintGrid(pHdr->hwndDisplay);
 }
 
 WNDPROC oldproc;
@@ -328,7 +312,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
         for (int i = 0; i < afx_dev.GetGrids()->size(); i++) {
             tie.pszText = (char*)afx_dev.GetGrids()->at(i).name.c_str();
             TabCtrl_InsertItem(gridTab, i, (LPARAM)&tie);
-            //SendMessage(gridTab, TCM_INSERTITEM, i, (LPARAM)&tie);
         }
 
         // Special tabs for add/remove
@@ -339,8 +322,16 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
         TabCtrl_SetMinTabWidth(gridTab, 10);
 
+        pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes, pHdr->hwndTab, (DLGPROC)TabGrid);
+
+        SetWindowPos(pHdr->hwndDisplay, NULL,
+            pHdr->rcDisplay.left, pHdr->rcDisplay.top,
+            pHdr->rcDisplay.right - pHdr->rcDisplay.left,
+            pHdr->rcDisplay.bottom - pHdr->rcDisplay.top,
+            SWP_SHOWWINDOW);
+
         RedrawDevList(hDlg);
-        OnSelChanged(gridTab);
+        //OnSelChanged(gridTab);
         SetLightMap(hDlg);
     } break;
     case WM_COMMAND:
@@ -399,6 +390,15 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
             for (auto it = afx_dev.fxdevs[dIndex].lights.begin(); it < afx_dev.fxdevs[dIndex].lights.end(); it++)
                 cLightID = max(cLightID, (*it)->lightid);
             SetLightMap(hDlg);
+        } break;
+        case IDC_CHECK_INDICATOR:
+        {
+            AlienFX_SDK::mapping* lgh = afx_dev.GetMappingById(devID, cLightID);
+            if (lgh) {
+                lgh->flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ?
+                    lgh->flags | ALIENFX_FLAG_INDICATOR :
+                    lgh->flags & ~ALIENFX_FLAG_INDICATOR;
+            }
         } break;
         }
     } break;

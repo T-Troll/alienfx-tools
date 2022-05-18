@@ -385,11 +385,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_ISPOWERBUTTON:
 			if (eLid != -1) {
-				unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid);
-				if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED)
+				AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappingById(dPid, eLid);
+				if (lgh && IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED)
 					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES) {
-						fxhl->afx_dev.SetFlagsById(dPid, eLid, flags | ALIENFX_FLAG_POWER);
+						lgh->flags |= ALIENFX_FLAG_POWER;
 						// Check mappings and remove all power button data
 						for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 							// erase mapping
@@ -399,18 +399,23 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 				else {
 					// remove power button config from chip config if unchecked and confirmed
-					if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning",
-								   MB_YESNO | MB_ICONWARNING) == IDYES)
-						fxhl->ResetPower(dPid);
-					fxhl->afx_dev.SetFlagsById(dPid, eLid, flags & ~ALIENFX_FLAG_POWER);
+					if (lgh) {
+						if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning",
+							MB_YESNO | MB_ICONWARNING) == IDYES)
+							fxhl->ResetPower(dPid);
+						lgh->flags &= ~ALIENFX_FLAG_POWER;
+					}
 				}
 			}
 			break;
 		case IDC_CHECK_INDICATOR:
 		{
-			unsigned flags = fxhl->afx_dev.GetFlags(dPid, eLid);
-			flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? flags | ALIENFX_FLAG_INDICATOR : flags & ~ALIENFX_FLAG_INDICATOR;
-			fxhl->afx_dev.SetFlagsById(dPid, eLid, flags);
+			AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappingById(dPid, eLid);
+			if (lgh) {
+				lgh->flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ?
+					lgh->flags | ALIENFX_FLAG_INDICATOR :
+					lgh->flags & ~ALIENFX_FLAG_INDICATOR;
+			}
 		} break;
 		case IDC_BUTTON_DEVRESET:
 		{

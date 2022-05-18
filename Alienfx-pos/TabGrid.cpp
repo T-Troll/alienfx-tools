@@ -36,8 +36,9 @@ void InitButtonZone(HWND dlg) {
 }
 
 void RedrawButtonZone(HWND dlg) {
-    for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
-        RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
+    //for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
+    //    RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
+    RedrawWindow(GetDlgItem(dlg, IDC_BUTTON_ZONE), 0, 0, RDW_INVALIDATE);
 }
 
 void SetGridSize(HWND dlg, int x, int y) {
@@ -76,6 +77,13 @@ bool TranslateClick(HWND hDlg, LPARAM lParam) {
     }
 }
 
+void RepaintGrid(HWND hDlg) {
+    InitButtonZone(hDlg);
+    SendMessage(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), TBM_SETPOS, true, mainGrid->x);
+    SendMessage(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), TBM_SETPOS, true, mainGrid->y);
+    RedrawButtonZone(hDlg);
+}
+
 BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
         gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
@@ -84,13 +92,14 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_INITDIALOG:
 	{
         SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(3, 22));
-        SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
+        //SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
 
         SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 10));
-        SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
+        //SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
 
-        InitButtonZone(hDlg);
-        RedrawButtonZone(hDlg);
+        //InitButtonZone(hDlg);
+        //RedrawButtonZone(hDlg);
+        RepaintGrid(hDlg);
 	} break;
     case WM_RBUTTONUP: {
         // remove grid mapping
@@ -192,6 +201,8 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             DeleteObject(Brush);
             if (!gridVal)
                 DrawEdge(ditem->hDC, &ditem->rcItem, /*selected ? EDGE_SUNKEN : */EDGE_RAISED, BF_RECT);
+            //else
+            //    DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
         }
     } break;
 	default: return false;

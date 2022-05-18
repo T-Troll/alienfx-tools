@@ -277,9 +277,6 @@ namespace AlienFX_SDK {
 
 		// get light flags (Power, indicator) by PID/VID and light ID
 		int GetFlags(DWORD devid, WORD lightid);
-
-		// set light flags (Power, indicator) by PID/VID and light ID
-		void SetFlagsById(DWORD devid, WORD lightid, WORD flags);
 	};
 
 }
