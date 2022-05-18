@@ -1049,24 +1049,30 @@ lightset* CreateMapping(int lid) {
 }
 
 void RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
-	lightsets->erase(find_if(lightsets->begin(), lightsets->end(),
+	auto pos = find_if(lightsets->begin(), lightsets->end(),
 		[lid, did](lightset ls) {
 			return ls.lightid == lid && ls.devid == did;
-		}));
+		});
+	if (pos != lightsets->end())
+		lightsets->erase(pos);
 }
 
 void RemoveHapMapping(int devid, int lightid) {
-	conf->hap_conf->haptics.erase(find_if(conf->hap_conf->haptics.begin(), conf->hap_conf->haptics.end(),
+	auto pos = find_if(conf->hap_conf->haptics.begin(), conf->hap_conf->haptics.end(),
 		[lightid, devid](haptics_map ls) {
 			return ls.lightid == lightid && ls.devid == devid;
-		}));
+		});
+	if (pos != conf->hap_conf->haptics.end())
+		conf->hap_conf->haptics.erase(pos);
 }
 
 void RemoveAmbMapping(int devid, int lightid) {
-	conf->amb_conf->zones.erase(find_if(conf->amb_conf->zones.begin(), conf->amb_conf->zones.end(),
+	auto pos = find_if(conf->amb_conf->zones.begin(), conf->amb_conf->zones.end(),
 		[lightid, devid](zone ls) {
 			return ls.lightid == lightid && ls.devid == devid;
-		}));
+		});
+	if (pos != conf->amb_conf->zones.end())
+		conf->amb_conf->zones.erase(pos);
 }
 
 zone *FindAmbMapping(int lid) {
@@ -1101,9 +1107,10 @@ haptics_map *FindHapMapping(int lid) {
 }
 
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
-	for (auto gIter = grp->lights.begin(); gIter < grp->lights.end(); gIter++)
-		if ((*gIter)->devid == devid && (*gIter)->lightid == lightid) {
-			grp->lights.erase(gIter);
-			break;
-		}
+	auto pos = find_if(grp->lights.begin(), grp->lights.end(),
+		[devid, lightid](auto t) {
+			return t->devid == devid && t->lightid == lightid;
+		});
+	if (pos != grp->lights.end())
+		grp->lights.erase(pos);
 }

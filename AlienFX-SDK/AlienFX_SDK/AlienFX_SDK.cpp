@@ -1191,6 +1191,18 @@ namespace AlienFX_SDK {
 		map->flags = flags;
 	}
 
+	void Mappings::RemoveMapping(DWORD devID, WORD lightID)
+	{
+		auto del_map = find_if(mappings.begin(), mappings.end(),
+			[devID, lightID](auto t) {
+				return t->devid == devID && t->lightid == lightID;
+			});
+		if (del_map != mappings.end()) {
+			delete (*del_map);
+			mappings.erase(del_map);
+		}
+	}
+
 	group *Mappings::GetGroupById(DWORD gID) {
 		auto pos = find_if(groups.begin(), groups.end(),
 			[gID](group t) {

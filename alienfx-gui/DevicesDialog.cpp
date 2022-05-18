@@ -327,20 +327,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
 				int nLid = -1;
 				// delete from current dev block...
-				for (auto Iter = fxhl->afx_dev.fxdevs[dIndex].lights.begin();
-					 Iter != fxhl->afx_dev.fxdevs[dIndex].lights.end(); Iter++)
-					if ((*Iter)->lightid == eLid) {
-						fxhl->afx_dev.fxdevs[dIndex].lights.erase(Iter);
-						break;
-					} else nLid = (*Iter)->lightid;
+				auto pos = find_if(fxhl->afx_dev.fxdevs[dIndex].lights.begin(), fxhl->afx_dev.fxdevs[dIndex].lights.end(),
+					[](auto t) {
+						return t->lightid == eLid;
+					});
+				if ((pos + 1) != fxhl->afx_dev.fxdevs[dIndex].lights.end())
+					nLid = (*(pos + 1))->lightid;
+				else
+					if (pos != fxhl->afx_dev.fxdevs[dIndex].lights.begin())
+						nLid = (*(pos - 1))->lightid;
+				fxhl->afx_dev.fxdevs[dIndex].lights.erase(pos);
 				// delete from mappings...
-				for (auto Iter = fxhl->afx_dev.GetMappings()->begin();
-						Iter != fxhl->afx_dev.GetMappings()->end(); Iter++)
-					if ((*Iter)->devid == dPid && (*Iter)->lightid == eLid) {
-						delete *Iter;
-						fxhl->afx_dev.GetMappings()->erase(Iter);
-						break;
-					}
+				fxhl->afx_dev.RemoveMapping(dPid, eLid);
 				// delete from haptics and ambient
 				RemoveHapMapping(dPid, eLid);
 				RemoveAmbMapping(dPid, eLid);
@@ -367,14 +365,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					// erase mappings
 					RemoveMapping(&(*Iter)->lightsets, dPid, eLid);
 				}
-				for (int i = 0; i < fxhl->afx_dev.GetGroups()->size(); i++) {
-					AlienFX_SDK::group* grp = &fxhl->afx_dev.GetGroups()->at(i);
-					for (auto gIter = grp->lights.begin(); gIter < grp->lights.end(); gIter++)
-						if ((*gIter)->devid == dPid && (*gIter)->lightid == eLid) {
-							grp->lights.erase(gIter);
-							break;
-						}
+				// delete from all groups...
+				for (auto iter = fxhl->afx_dev.GetGroups()->begin(); iter < fxhl->afx_dev.GetGroups()->end(); iter++) {
+					RemoveLightFromGroup(&(*iter), dPid, eLid);
 				}
+				RemoveHapMapping(dPid, eLid);
+				RemoveAmbMapping(dPid, eLid);
 			}
 			break;
 		case IDC_BUTTON_TESTCOLOR: {

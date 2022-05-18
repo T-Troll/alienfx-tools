@@ -275,6 +275,9 @@ namespace AlienFX_SDK {
 		// add new light name into the list field-by-field
 		void AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags);
 
+		// remove light mapping by id
+		void RemoveMapping(DWORD devID, WORD lightID);
+
 		// get light flags (Power, indicator) by PID/VID and light ID
 		int GetFlags(DWORD devid, WORD lightid);
 	};
