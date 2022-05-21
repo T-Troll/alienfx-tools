@@ -276,33 +276,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return mDlg;
 }
 
-int UpdateLightList(HWND light_list, byte flag = 0) {
-	int pos = -1;
-	//size_t lights = conf->afx_dev.GetMappings()->size();
-	size_t groups = conf->afx_dev.GetGroups()->size();
-
-	ListBox_ResetContent(light_list);
-
-	for (int i = 0; i < groups; i++) {
-		AlienFX_SDK::group grp = conf->afx_dev.GetGroups()->at(i);
-		string fname = grp.name + " (" + to_string(grp.lights.size()) + " lights)";
-		pos = ListBox_AddString(light_list, fname.c_str());
-		ListBox_SetItemData(light_list, i, grp.gid);
-		if (grp.gid == eItem)
-			ListBox_SetCurSel(light_list, pos = i);
-	}
-	//for (int i = 0; i < lights; i++) {
-	//	AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappings()->at(i);
-	//	if (fxhl->LocateDev(lgh->devid) && !(lgh->flags & flag)) {
-	//		pos = ListBox_AddString(light_list, lgh->name.c_str());
-	//		ListBox_SetItemData(light_list, pos, i);
-	//		if (i == eItem)
-	//			ListBox_SetCurSel(light_list, selpos = pos);
-	//	}
-	//}
-	return pos;
-}
-
 void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 	RECT rect;
 	HBRUSH Brush = NULL;
@@ -1010,13 +983,40 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 
 colorset* FindMapping(int mid)
 {
-	if (mid >= 0) {
+	if (mid > 0) {
 		auto res = find_if(conf->active_set->colors.begin(), conf->active_set->colors.end(), [mid](colorset ls) {
 			return ls.groups.size() && ls.groups[0]->gid == mid;
 			});
 		return res == conf->active_set->colors.end() ? nullptr : &(*res);
 	}
 	return nullptr;
+}
+
+int UpdateLightList(HWND light_list, byte flag = 0) {
+	int pos = -1;
+	//size_t lights = conf->afx_dev.GetMappings()->size();
+	size_t groups = conf->afx_dev.GetGroups()->size();
+
+	ListBox_ResetContent(light_list);
+
+	for (int i = 0; i < groups; i++) {
+		AlienFX_SDK::group grp = conf->afx_dev.GetGroups()->at(i);
+		string fname = grp.name + " (" + to_string(grp.lights.size()) + " lights)";
+		pos = ListBox_AddString(light_list, fname.c_str());
+		ListBox_SetItemData(light_list, i, grp.gid);
+		if (grp.gid == eItem)
+			ListBox_SetCurSel(light_list, pos = i);
+	}
+	//for (int i = 0; i < lights; i++) {
+	//	AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappings()->at(i);
+	//	if (fxhl->LocateDev(lgh->devid) && !(lgh->flags & flag)) {
+	//		pos = ListBox_AddString(light_list, lgh->name.c_str());
+	//		ListBox_SetItemData(light_list, pos, i);
+	//		if (i == eItem)
+	//			ListBox_SetCurSel(light_list, selpos = pos);
+	//	}
+	//}
+	return pos;
 }
 
 colorset* CreateMapping(int lid) {
@@ -1028,9 +1028,10 @@ colorset* CreateMapping(int lid) {
 }
 
 void RemoveMapping(groupset* lightsets) {
-	for (auto it = lightsets->colors.begin(); it < lightsets->colors.end(); )
+	for (auto it = lightsets->colors.begin(); it < lightsets->colors.end();)
 		if (it->color.empty() && !it->power.active && !it->events.active && !it->perf.active) {
 			lightsets->colors.erase(it);
+			it = lightsets->colors.begin();
 		}
 		else
 			it++;

@@ -607,6 +607,7 @@
     <ClCompile Include="LightsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
+    <ClCompile Include="TabColorGrid.cpp" />
     <ClCompile Include="TabDevGrid.cpp" />
     <ClCompile Include="WSAudioIn.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>

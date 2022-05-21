@@ -11,7 +11,8 @@ extern void RemoveAmbMapping(int devid, int lightid);
 extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
 extern void RemoveLightAndClean(int dPid, int eLid);
 
-extern void CreateGridBlock(HWND gridTab);
+extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+extern void CreateGridBlock(HWND gridTab, DLGPROC);
 extern void OnGridSelChanged(HWND);
 extern AlienFX_SDK::mapping* FindCreateMapping();
 
@@ -351,7 +352,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			//UpdateDeviceList(hDlg);
 			RedrawDevList(hDlg);
 		}
-		CreateGridBlock(gridTab);
+		CreateGridBlock(gridTab, (DLGPROC)TabGrid);
 		TabCtrl_SetCurSel(gridTab, gridTabSel);
 		OnGridSelChanged(gridTab);
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);

@@ -21,6 +21,10 @@ HWND tipH = NULL, tipV = NULL;
 
 int gridTabSel=0;
 
+extern HWND cgDlg;
+
+extern pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*> colorGrid[30][15];
+
 AlienFX_SDK::mapping* FindCreateMapping() {
     AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(conf->afx_dev.fxdevs[dIndex].dev->GetPID(), eLid);
     if (!lgh) {
@@ -54,10 +58,44 @@ void InitGridButtonZone(HWND dlg) {
         }
 }
 
-void RedrawGridButtonZone(HWND dlg) {
-    for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
-        RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
-    //RedrawWindow(GetDlgItem(dlg, IDC_BUTTON_ZONE), 0, 0, RDW_INVALIDATE);
+void RedrawGridButtonZone(bool recalc = false) {
+    // Now refresh final grids...
+    if (recalc) {
+        for (int x = 0; x < mainGrid->x; x++)
+            for (int y = 0; y < mainGrid->y; y++)
+                colorGrid[x][y] = { NULL, NULL };
+        for (auto cs = conf->activeProfile->lightsets.colors.begin();
+            cs < conf->activeProfile->lightsets.colors.end(); cs++) {
+            for (auto cgrp = cs->groups.begin(); cgrp < cs->groups.end(); cgrp++)
+                for (auto clgh = (*cgrp)->lights.begin(); clgh < (*cgrp)->lights.end(); clgh++) {
+                    for (int x = 0; x < mainGrid->x; x++)
+                        for (int y = 0; y < mainGrid->y; y++)
+                            if (LOWORD(mainGrid->grid[x][y]) == clgh->first &&
+                                HIWORD(mainGrid->grid[x][y]) == clgh->second) {
+                                if (cs->color.size()) {
+                                    colorGrid[x][y] = { &cs->color.front(), &cs->color.back() };
+                                }
+                                if (conf->GetEffect() == 0) {// monitoring
+                                    if (cs->power.active) {
+                                        colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->power.from;
+                                        colorGrid[x][y].second = &cs->power.to;
+                                    }
+                                    if (cs->perf.active) {
+                                        colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->perf.from;
+                                        colorGrid[x][y].second = &cs->perf.to;
+                                    }
+                                    if (cs->events.active) {
+                                        colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->events.from;
+                                        colorGrid[x][y].second = &cs->events.to;
+                                    }
+                                }
+                            }
+                }
+        }
+    }
+    //for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
+    //    RedrawWindow(GetDlgItem(cgDlg, 2000 + i), 0, 0, RDW_INVALIDATE);
+    RedrawWindow(cgDlg, 0, 0, RDW_INVALIDATE);
 }
 
 void SetLightGridSize(HWND dlg, int x, int y) {
@@ -100,7 +138,7 @@ void RepaintGrid(HWND hDlg) {
     InitGridButtonZone(hDlg);
     SendMessage(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), TBM_SETPOS, true, mainGrid->x);
     SendMessage(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), TBM_SETPOS, true, mainGrid->y);
-    RedrawGridButtonZone(hDlg);
+    RedrawGridButtonZone(true);
 }
 
 BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -135,7 +173,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         // remove grid mapping
         if (TranslateClick(hDlg, lParam)) {
             mainGrid->grid[clkPoint.x][clkPoint.y] = 0;
-            RedrawGridButtonZone(hDlg);
+            RedrawGridButtonZone();
         }
     } break;
     case WM_LBUTTONDOWN: {
@@ -170,7 +208,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 }
             }
             SetLightInfo(GetParent(GetParent(hDlg)));
-            RedrawGridButtonZone(hDlg);
+            RedrawGridButtonZone();
         }
         break;
     case WM_MOUSEMOVE:
@@ -181,7 +219,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 dragZone = { min(clkPoint.x, dragStart.x), min(clkPoint.y, dragStart.y),
                     max(clkPoint.x, dragStart.x), max(clkPoint.y, dragStart.y) };
                 ModifyDragZone(devID, eLid);
-                RedrawGridButtonZone(hDlg);
+                RedrawGridButtonZone();
             }
         }
         break;
@@ -240,7 +278,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return true;
 }
 
-void CreateGridBlock(HWND gridTab) {
+void CreateGridBlock(HWND gridTab, DLGPROC func) {
 
     RECT rcDisplay;
     TCITEM tie{ TCIF_TEXT };
@@ -267,7 +305,7 @@ void CreateGridBlock(HWND gridTab) {
 
     HWND hwndDisplay = CreateDialogIndirect(GetModuleHandle(NULL),
         (DLGTEMPLATE*)LockResource(LoadResource(GetModuleHandle(NULL), FindResource(NULL, MAKEINTRESOURCE(IDD_GRIDBLOCK), RT_DIALOG))),
-        gridTab, (DLGPROC)TabGrid);
+        gridTab, func);
 
     SetWindowLongPtr(gridTab, GWLP_USERDATA, (LONG_PTR)hwndDisplay);
 
