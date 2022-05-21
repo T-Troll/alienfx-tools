@@ -15,6 +15,8 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKey1, TEXT("Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);
 	RegCreateKeyEx(hKey1, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);
 
+	afx_dev.LoadMappings();
+
 	fan_conf = new ConfigFan();
 	amb_conf = new ConfigAmbient();
 	hap_conf = new ConfigHaptics();
@@ -25,6 +27,9 @@ ConfigHandler::~ConfigHandler() {
 	if (fan_conf) delete fan_conf;
 	if (amb_conf) delete amb_conf;
 	if (hap_conf) delete hap_conf;
+
+	afx_dev.SaveMappings();
+
 	RegCloseKey(hKey1);
 	RegCloseKey(hKey3);
 	RegCloseKey(hKey4);
@@ -152,6 +157,19 @@ int ConfigHandler::GetEffect() {
 	return enableMon ? activeProfile->effmode : 3;
 }
 
+AlienFX_SDK::group* ConfigHandler::CreateGroup(string name)
+{
+	unsigned maxID = 0x10000;
+	while (find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
+		[maxID](AlienFX_SDK::group t) {
+			return maxID == t.gid;
+		}) != afx_dev.GetGroups()->end())
+		maxID++;
+	AlienFX_SDK::group* dev = new AlienFX_SDK::group({ maxID, name + " #" + to_string(maxID & 0xffff) });
+
+	return dev;
+}
+
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
 	if (RegGetValueA(hKey1, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
@@ -225,28 +243,6 @@ void ConfigHandler::Load() {
 			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 				updateProfileFansByID(pid, -1, NULL, *(DWORD*)data);
 			}
-			//if (sscanf_s(name, "Set-%d-%d-%d", &pid, &map.devid, &map.lightid) == 3) {
-			//	profile* prof = FindProfile(pid);
-			//	byte* curData = data;
-			//	map.flags = *curData++;
-			//	for (int i = 0; i < 4; i++) {
-			//		map.eve[i].proc = *curData++;
-			//		map.eve[i].cut = *curData++;
-			//		map.eve[i].source = *curData++;
-			//		byte mapSize = *curData++;
-			//		map.eve[i].map.clear();
-			//		for (int j = 0; j < mapSize; j++) {
-			//			map.eve[i].map.push_back(*((AlienFX_SDK::afx_act*)curData));
-			//			curData += sizeof(AlienFX_SDK::afx_act);
-			//		}
-			//	}
-			//	if (!prof) {
-			//		prof = new profile({ (unsigned)pid });
-			//		profiles.push_back(prof);
-			//		prof = profiles.back();
-			//	}
-			//	prof->lightsets.push_back(map);
-			//}
 			delete[] data;
 		}
 	} while (ret == ERROR_SUCCESS);
@@ -276,7 +272,52 @@ void ConfigHandler::Load() {
 						inPos += sizeof(AlienFX_SDK::afx_act);
 					}
 				}
-				FindProfile(pid)->lightsets.push_back(map);
+				// now load new structure...
+				profile* prof = FindProfile(pid);// ->lightsets.push_back(map);
+				colorset t;
+				t.color = map.eve[0].map;
+				if (map.devid) {
+					AlienFX_SDK::group* grp = CreateGroup("Zone");
+					grp->lights.push_back({ map.devid, map.lightid });
+					auto tGrp = find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
+						[grp](auto g) {
+							if (g.lights.size() == grp->lights.size()) {
+								for (int i = 0; i < g.lights.size(); i++)
+									if (g.lights[i] != grp->lights[i])
+										return false;
+							}
+							else
+								return false;
+							return true;
+						});;
+					if (tGrp == afx_dev.GetGroups()->end()) {
+						afx_dev.GetGroups()->push_back(*grp);
+						delete grp;
+						grp = &afx_dev.GetGroups()->back();
+					}
+					else {
+						delete grp;
+						grp = &(*tGrp);
+					}
+					t.havePower = afx_dev.GetFlags(map.devid, map.lightid) & ALIENFX_FLAG_POWER;
+					t.groups.push_back(grp);
+				}
+				else
+					t.groups.push_back(afx_dev.GetGroupById(map.lightid));
+				if (map.flags & LEVENT_POWER) {
+					t.power = { true, 0, 0, 0, map.eve[1].map[0], map.eve[1].map[1] };
+					//prof->lightsets.events.push_back(t);
+				}
+				if (map.flags & LEVENT_PERF) {
+					t.perf = { true, map.eve[2].source, map.eve[2].cut, map.eve[2].proc, map.eve[2].map[0], map.eve[2].map[1] };
+					//prof->lightsets.events.push_back(t);
+				}
+				if (map.flags & LEVENT_ACT) {
+					t.events = { true, map.eve[3].source, map.eve[3].cut, map.eve[3].proc, map.eve[3].map[0], map.eve[3].map[1] };
+					//prof->lightsets.events.push_back(t);
+				}
+				t.fromColor = map.flags & LEVENT_COLOR;
+				prof->lightsets.colors.push_back(t);
 			}
 			delete[] inarray;
 		}
@@ -292,7 +333,7 @@ void ConfigHandler::Load() {
 		profiles.front()->flags |= PROF_DEFAULT;
 	}
 	activeProfile = FindProfile(activeProfileID);
-	if (!(activeProfile = FindProfile(activeProfileID))) activeProfile = FindDefaultProfile();
+	if (!activeProfile) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
@@ -314,124 +355,126 @@ void ConfigHandler::Save() {
 	if (amb_conf) amb_conf->Save();
 	if (hap_conf) hap_conf->Save();
 
-	SetReg("AutoStart", startWindows);
-	SetReg("Minimized", startMinimized);
-	SetReg("UpdateCheck", updateCheck);
-	SetReg("LightsOn", lightsOn);
-	SetReg("Dimmed", dimmed);
-	SetReg("Monitoring", enableMon);
-	SetReg("OffWithScreen", offWithScreen);
-	SetReg("NoDesktopSwitch", noDesktop);
-	SetReg("DimPower", dimPowerButton);
-	SetReg("DimmedOnBattery", dimmedBatt);
-	SetReg("OffPowerButton", offPowerButton);
-	SetReg("OffOnBattery", offOnBattery);
-	SetReg("DimmingPower", dimmingPower);
-	SetReg("ActiveProfile", activeProfile->id);
-	SetReg("GammaCorrection", gammaCorrection);
-	SetReg("ProfileAutoSwitch", enableProf);
-	SetReg("DisableAWCC", awcc_disable);
-	SetReg("EsifTemp", esif_temp);
-	SetReg("FanControl", fanControl);
+	return; // DEBUG: don't save config!
 
-	RegSetValueEx( hKey1, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
+	//SetReg("AutoStart", startWindows);
+	//SetReg("Minimized", startMinimized);
+	//SetReg("UpdateCheck", updateCheck);
+	//SetReg("LightsOn", lightsOn);
+	//SetReg("Dimmed", dimmed);
+	//SetReg("Monitoring", enableMon);
+	//SetReg("OffWithScreen", offWithScreen);
+	//SetReg("NoDesktopSwitch", noDesktop);
+	//SetReg("DimPower", dimPowerButton);
+	//SetReg("DimmedOnBattery", dimmedBatt);
+	//SetReg("OffPowerButton", offPowerButton);
+	//SetReg("OffOnBattery", offOnBattery);
+	//SetReg("DimmingPower", dimmingPower);
+	//SetReg("ActiveProfile", activeProfile->id);
+	//SetReg("GammaCorrection", gammaCorrection);
+	//SetReg("ProfileAutoSwitch", enableProf);
+	//SetReg("DisableAWCC", awcc_disable);
+	//SetReg("EsifTemp", esif_temp);
+	//SetReg("FanControl", fanControl);
 
-	RegDeleteTreeA(hKey1, "Profiles");
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);// &dwDisposition);
+	//RegSetValueEx( hKey1, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
 
-	RegDeleteTreeA(hKey1, "Events");
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);// &dwDisposition);
+	//RegDeleteTreeA(hKey1, "Profiles");
+	//RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);// &dwDisposition);
 
-	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
-		string name = "Profile-" + to_string((*jIter)->id);
-		RegSetValueExA( hKey4, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length() );
-		name = "Profile-flags-" + to_string((*jIter)->id);
-		DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
-		RegSetValueExA( hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+	//RegDeleteTreeA(hKey1, "Events");
+	//RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey3, NULL);// &dwDisposition);
 
-		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
-			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
-			RegSetValueExA(hKey4, name.c_str(), 0, REG_SZ, (BYTE *)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
-		}
+	//for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
+	//	string name = "Profile-" + to_string((*jIter)->id);
+	//	RegSetValueExA( hKey4, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length() );
+	//	name = "Profile-flags-" + to_string((*jIter)->id);
+	//	DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
+	//	RegSetValueExA( hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 
-		// New mappings format
-		//for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
-		//	//preparing name
-		//	name = "Set-" + to_string((*jIter)->id) + "-" + to_string(iIter->devid) + "-" + to_string(iIter->lightid);
-		//	//preparing binary....
-		//	size_t size = 17; // 4*4 + 1 //  4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
-		//	for (int j = 0; j < 4; j++)
-		//		size += iIter->eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
-		//	out = new BYTE[size];
-		//	BYTE* outPos = out;
-		//	outPos[0] = iIter->flags; outPos++;
-		//	for (int j = 0; j < 4; j++) {
-		//		*outPos = iIter->eve[j].proc; outPos++;
-		//		*outPos = iIter->eve[j].cut; outPos++;
-		//		*outPos = iIter->eve[j].source;	outPos++;
-		//		*outPos = (BYTE)iIter->eve[j].map.size(); outPos++;
-		//		for (int k = 0; k < iIter->eve[j].map.size(); k++) {
-		//			memcpy(outPos, &iIter->eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
-		//			outPos += sizeof(AlienFX_SDK::afx_act);
-		//		}
-		//	}
-		//	RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)out, (DWORD)size);
-		//	delete[] out;
-		//}
+	//	for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
+	//		name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
+	//		RegSetValueExA(hKey4, name.c_str(), 0, REG_SZ, (BYTE *)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
+	//	}
 
-		for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
-			//preparing name
-			name = "Set-" + to_string(iIter->devid) + "-" + to_string(iIter->lightid) + "-" + to_string((*jIter)->id);
-			//preparing binary....
-			size_t size = 4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
-			for (int j = 0; j < 4; j++)
-				size += iIter->eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
-			out = new BYTE[size];
-			BYTE* outPos = out;
-			for (int j = 0; j < 4; j++) {
-				FlagSet fs{(byte)(iIter->flags & (1<<j) ? 1 : 0), iIter->eve[j].cut, iIter->eve[j].proc};
-				*((int*)outPos) = fs.s; outPos += 4;
-				*outPos++ = iIter->eve[j].source;
-				*outPos++ = (BYTE)iIter->eve[j].map.size();
-				for (int k = 0; k < iIter->eve[j].map.size(); k++) {
-					memcpy(outPos, &iIter->eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
-					outPos += sizeof(AlienFX_SDK::afx_act);
-				}
-			}
-			RegSetValueExA( hKey3, name.c_str(), 0, REG_BINARY, (BYTE*)out, (DWORD)size);
-			delete[] out;
-		}
-		// Global effects
-		if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
-			DWORD buffer[3];
-			name = "Profile-effect-" + to_string((*jIter)->id);
-			buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
-			buffer[1] = (*jIter)->effColor1.ci;
-			buffer[2] = (*jIter)->effColor2.ci;
-			RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
-		}
-		// Fans....
-		if ((*jIter)->flags & PROF_FANS) {
-			// save powers..
-			name = "Profile-power-" + to_string((*jIter)->id);
-			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, (*jIter)->fansets.GPUPower);
-			RegSetValueExA(hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
-			// save fans...
-			for (int i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
-				temp_block* sens = &(*jIter)->fansets.fanControls[i];
-				for (int k = 0; k < sens->fans.size(); k++) {
-					fan_block* fans = &sens->fans[k];
-					name = "Profile-fans-" + to_string((*jIter)->id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
-					byte* outdata = new byte[fans->points.size() * 2];
-					for (int l = 0; l < fans->points.size(); l++) {
-						outdata[2 * l] = (byte) fans->points[l].temp;
-						outdata[(2 * l) + 1] = (byte) fans->points[l].boost;
-					}
+	//	// New mappings format
+	//	//for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
+	//	//	//preparing name
+	//	//	name = "Set-" + to_string((*jIter)->id) + "-" + to_string(iIter->devid) + "-" + to_string(iIter->lightid);
+	//	//	//preparing binary....
+	//	//	size_t size = 17; // 4*4 + 1 //  4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
+	//	//	for (int j = 0; j < 4; j++)
+	//	//		size += iIter->eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
+	//	//	out = new BYTE[size];
+	//	//	BYTE* outPos = out;
+	//	//	outPos[0] = iIter->flags; outPos++;
+	//	//	for (int j = 0; j < 4; j++) {
+	//	//		*outPos = iIter->eve[j].proc; outPos++;
+	//	//		*outPos = iIter->eve[j].cut; outPos++;
+	//	//		*outPos = iIter->eve[j].source;	outPos++;
+	//	//		*outPos = (BYTE)iIter->eve[j].map.size(); outPos++;
+	//	//		for (int k = 0; k < iIter->eve[j].map.size(); k++) {
+	//	//			memcpy(outPos, &iIter->eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
+	//	//			outPos += sizeof(AlienFX_SDK::afx_act);
+	//	//		}
+	//	//	}
+	//	//	RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)out, (DWORD)size);
+	//	//	delete[] out;
+	//	//}
 
-					RegSetValueExA( hKey4, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) fans->points.size() * 2 );
-					delete[] outdata;
-				}
-			}
-		}
-	}
+	//	for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
+	//		//preparing name
+	//		name = "Set-" + to_string(iIter->devid) + "-" + to_string(iIter->lightid) + "-" + to_string((*jIter)->id);
+	//		//preparing binary....
+	//		size_t size = 4 * (sizeof(DWORD) + 2 * sizeof(BYTE));
+	//		for (int j = 0; j < 4; j++)
+	//			size += iIter->eve[j].map.size() * (sizeof(AlienFX_SDK::afx_act));
+	//		out = new BYTE[size];
+	//		BYTE* outPos = out;
+	//		for (int j = 0; j < 4; j++) {
+	//			FlagSet fs{(byte)(iIter->flags & (1<<j) ? 1 : 0), iIter->eve[j].cut, iIter->eve[j].proc};
+	//			*((int*)outPos) = fs.s; outPos += 4;
+	//			*outPos++ = iIter->eve[j].source;
+	//			*outPos++ = (BYTE)iIter->eve[j].map.size();
+	//			for (int k = 0; k < iIter->eve[j].map.size(); k++) {
+	//				memcpy(outPos, &iIter->eve[j].map.at(k), sizeof(AlienFX_SDK::afx_act));
+	//				outPos += sizeof(AlienFX_SDK::afx_act);
+	//			}
+	//		}
+	//		RegSetValueExA( hKey3, name.c_str(), 0, REG_BINARY, (BYTE*)out, (DWORD)size);
+	//		delete[] out;
+	//	}
+	//	// Global effects
+	//	if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
+	//		DWORD buffer[3];
+	//		name = "Profile-effect-" + to_string((*jIter)->id);
+	//		buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
+	//		buffer[1] = (*jIter)->effColor1.ci;
+	//		buffer[2] = (*jIter)->effColor2.ci;
+	//		RegSetValueExA(hKey4, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
+	//	}
+	//	// Fans....
+	//	if ((*jIter)->flags & PROF_FANS) {
+	//		// save powers..
+	//		name = "Profile-power-" + to_string((*jIter)->id);
+	//		DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, (*jIter)->fansets.GPUPower);
+	//		RegSetValueExA(hKey4, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
+	//		// save fans...
+	//		for (int i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
+	//			temp_block* sens = &(*jIter)->fansets.fanControls[i];
+	//			for (int k = 0; k < sens->fans.size(); k++) {
+	//				fan_block* fans = &sens->fans[k];
+	//				name = "Profile-fans-" + to_string((*jIter)->id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
+	//				byte* outdata = new byte[fans->points.size() * 2];
+	//				for (int l = 0; l < fans->points.size(); l++) {
+	//					outdata[2 * l] = (byte) fans->points[l].temp;
+	//					outdata[(2 * l) + 1] = (byte) fans->points[l].boost;
+	//				}
+
+	//				RegSetValueExA( hKey4, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) fans->points.size() * 2 );
+	//				delete[] outdata;
+	//			}
+	//		}
+	//	}
+	//}
 }

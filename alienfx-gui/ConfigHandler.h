@@ -30,11 +30,46 @@ union FlagSet {
 };
 
 struct event {
-	//FlagSet fs;
+	bool active = false;
 	BYTE source = 0;
 	BYTE cut = 0;
 	BYTE proc = 0;
-	std::vector<AlienFX_SDK::afx_act> map;
+	AlienFX_SDK::afx_act from;
+	AlienFX_SDK::afx_act to;
+};
+
+struct old_event {
+	bool active = false;
+	BYTE source = 0;
+	BYTE cut = 0;
+	BYTE proc = 0;
+	vector<AlienFX_SDK::afx_act> map;
+};
+
+struct colorset {
+	bool fromColor = true;
+	bool havePower = false;
+	vector<AlienFX_SDK::group*> groups;
+	vector<AlienFX_SDK::afx_act> color;
+	event power;
+	event events;
+	event perf;
+};
+
+struct ambientset {
+	vector<AlienFX_SDK::group*> groups;
+	zone	ambient;
+};
+
+struct hapticset {
+	vector<AlienFX_SDK::group*> groups;
+	haptics_map haptic;
+};
+
+struct groupset {
+	vector<colorset> colors;
+	vector<ambientset> ambients;
+	vector<hapticset> haptics;
 };
 
 struct lightset {
@@ -47,7 +82,7 @@ struct lightset {
 	};
 	unsigned lightid = 0;
 	BYTE     flags = 0;
-	event	 eve[4];
+	old_event	 eve[4];
 };
 
 struct profile {
@@ -56,7 +91,8 @@ struct profile {
 	WORD effmode = 0;
 	vector<string> triggerapp;
 	string name;
-	vector<lightset> lightsets;
+	//vector<lightset> lightsets;
+	groupset lightsets;
 	fan_profile fansets;
 	AlienFX_SDK::Colorcode effColor1, effColor2;
 	byte globalEffect = 0,
@@ -112,8 +148,12 @@ public:
 	ConfigAmbient *amb_conf = NULL;
 	ConfigHaptics *hap_conf = NULL;
 
-	std::vector<lightset>* active_set;
-	std::vector<profile*> profiles;
+	//vector<lightset>* active_set;
+	groupset* active_set;
+	vector<profile*> profiles;
+
+	// mapping block from SDK
+	AlienFX_SDK::Mappings afx_dev;
 
 	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE, WM_APP + 1 };
 
@@ -130,4 +170,5 @@ public:
 	bool IsDimmed();
 	void SetDimmed();
 	int  GetEffect();
+	AlienFX_SDK::group* CreateGroup(string name);
 };

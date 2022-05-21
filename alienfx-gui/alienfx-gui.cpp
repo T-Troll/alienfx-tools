@@ -1,5 +1,4 @@
 #include "alienfx-gui.h"
-#include <windowsx.h>
 #include <ColorDlg.h>
 #include <Dbt.h>
 #include "EventHandler.h"
@@ -15,21 +14,24 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
+// Lights grid
+AlienFX_SDK::lightgrid* mainGrid;
 
 void ResetDPIScale();
 
 HWND InitInstance(HINSTANCE, int);
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//BOOL CALLBACK TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
 ConfigHandler* conf;
@@ -48,7 +50,7 @@ HANDLE stopColorRefresh = 0;
 HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
 
 // ConfigStatic:
-int tabSel = -1;
+int tabSel = 0;
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // last light selected
@@ -274,34 +276,31 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return mDlg;
 }
 
-int UpdateLightList(HWND light_list, FXHelper* fxhl, int flag = 0) {
-	int pos = -1, selpos = -1;
-	size_t lights = fxhl->afx_dev.GetMappings()->size();
-	size_t groups = fxhl->afx_dev.GetGroups()->size();
+int UpdateLightList(HWND light_list, byte flag = 0) {
+	int pos = -1;
+	//size_t lights = conf->afx_dev.GetMappings()->size();
+	size_t groups = conf->afx_dev.GetGroups()->size();
 
 	ListBox_ResetContent(light_list);
 
 	for (int i = 0; i < groups; i++) {
-		AlienFX_SDK::group grp = fxhl->afx_dev.GetGroups()->at(i);
-		string fname = grp.name + " (Group)";
+		AlienFX_SDK::group grp = conf->afx_dev.GetGroups()->at(i);
+		string fname = grp.name + " (" + to_string(grp.lights.size()) + " lights)";
 		pos = ListBox_AddString(light_list, fname.c_str());
-		ListBox_SetItemData(light_list, pos, grp.gid);
+		ListBox_SetItemData(light_list, i, grp.gid);
 		if (grp.gid == eItem)
-			ListBox_SetCurSel(light_list, selpos = pos);
+			ListBox_SetCurSel(light_list, pos = i);
 	}
-	for (int i = 0; i < lights; i++) {
-		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(i);
-		if (fxhl->LocateDev(lgh->devid) && !(lgh->flags & flag)) {
-			pos = ListBox_AddString(light_list, lgh->name.c_str());
-			ListBox_SetItemData(light_list, pos, i);
-			if (i == eItem)
-				ListBox_SetCurSel(light_list, selpos = pos);
-		}
-	}
-	if (selpos < 0) {
-		eItem = -1;
-	}
-	return lights > 0 ? pos : -1;
+	//for (int i = 0; i < lights; i++) {
+	//	AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappings()->at(i);
+	//	if (fxhl->LocateDev(lgh->devid) && !(lgh->flags & flag)) {
+	//		pos = ListBox_AddString(light_list, lgh->name.c_str());
+	//		ListBox_SetItemData(light_list, pos, i);
+	//		if (i == eItem)
+	//			ListBox_SetCurSel(light_list, selpos = pos);
+	//	}
+	//}
+	return pos;
 }
 
 void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
@@ -370,14 +369,13 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-VOID OnSelChanged(HWND hwndDlg)
+void OnSelChanged(HWND hwndDlg)
 {
 	// Get the dialog header data.
-	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(
-		hwndDlg, GWLP_USERDATA);
+	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr( hwndDlg, GWLP_USERDATA);
 
 	// Get the index of the selected tab.
-	tabSel = TabCtrl_GetCurSel(pHdr->hwndTab);
+	tabSel = TabCtrl_GetCurSel(hwndDlg);
 
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay != NULL) {
@@ -385,58 +383,39 @@ VOID OnSelChanged(HWND hwndDlg)
 		DestroyWindow(pHdr->hwndDisplay);
 		pHdr->hwndDisplay = NULL;
 	}
-	//DLGPROC tdl = NULL;
-	//switch (tabSel) {
-	//case TAB_COLOR: tdl = (DLGPROC)TabColorDialog; break;
-	//case TAB_EVENTS: tdl = (DLGPROC)TabEventsDialog; break;
-	//case TAB_AMBIENT: tdl = (DLGPROC)TabAmbientDialog; break;
-	//case TAB_HAPTICS: tdl = (DLGPROC)TabHapticsDialog; break;
-	//case TAB_GROUPS: tdl = (DLGPROC)TabGroupsDialog; break;
-	//case TAB_PROFILES: tdl = (DLGPROC)TabProfilesDialog; break;
-	//case TAB_DEVICES: tdl = (DLGPROC)TabDevicesDialog; break;
-	//case TAB_FANS: tdl = (DLGPROC)TabFanDialog; break;
-	//case TAB_SETTINGS: tdl = (DLGPROC)TabSettingsDialog; break;
-	////default: tdl = (DLGPROC)TabColorDialog;
-	//}
 
-	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], pHdr->hwndTab, pHdr->apProc[tabSel]/*tdl*/);
+	RECT rcDisplay;
+
+	GetClientRect(hwndDlg, &rcDisplay);
+	rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
+	rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
+	rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
+	rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
+
+	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]/*tdl*/);
 	if (pHdr->hwndDisplay == NULL)
 		pHdr->hwndDisplay = newDisplay;
 
 	if (pHdr->hwndDisplay != NULL) {
 		RECT dRect;
 		GetClientRect(pHdr->hwndDisplay, &dRect);
-		if (dRect.right > pHdr->rcDisplay.right - pHdr->rcDisplay.left ||
-			dRect.bottom > pHdr->rcDisplay.bottom - pHdr->rcDisplay.top) {
+		if (dRect.right != rcDisplay.right - rcDisplay.left ||
+			dRect.bottom != rcDisplay.bottom - rcDisplay.top) {
 			DebugPrint("Resize needed!\n");
 			RECT mRect;
-			int deltax = dRect.right - (pHdr->rcDisplay.right - pHdr->rcDisplay.left),
-				deltay = dRect.bottom - (pHdr->rcDisplay.bottom - pHdr->rcDisplay.top);
-			if (deltax < 0) deltax = 0;
-			if (deltay < 0) deltay = 0;
-			GetWindowRect(mDlg, &mRect);
-			SetWindowPos(mDlg, NULL, 0, 0, mRect.right - mRect.left + deltax, mRect.bottom - mRect.top + deltay, SWP_NOMOVE);
-			GetWindowRect(hwndDlg, &mRect);
-			SetWindowPos(hwndDlg, NULL, 0, 0, mRect.right - mRect.left + deltax, mRect.bottom - mRect.top + deltay, SWP_NOOWNERZORDER | SWP_NOMOVE);
-			GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &mRect);
-			POINT cPos = { mRect.left, mRect.top };
-			ScreenToClient(mDlg, &cPos);
-			SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, cPos.x, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-			GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &mRect);
-			cPos = { mRect.left, mRect.top };
-			ScreenToClient(mDlg, &cPos);
-			SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-			GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &mRect);
-			cPos = { mRect.left, mRect.top };
-			ScreenToClient(mDlg, &cPos);
-			SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-			pHdr->rcDisplay.right += deltax;
-			pHdr->rcDisplay.bottom += deltay;
+			int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
+				deltay = dRect.bottom - (rcDisplay.bottom -rcDisplay.top);
+			//if (deltax < 0) deltax = 0;
+			//if (deltay < 0) deltay = 0;
+			GetWindowRect(GetParent(GetParent(pHdr->hwndDisplay)), &mRect);
+			SetWindowPos(GetParent(GetParent(pHdr->hwndDisplay)), NULL, 0, 0, mRect.right - mRect.left + deltax, mRect.bottom - mRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
+			rcDisplay.right += deltax;
+			rcDisplay.bottom += deltay;
 		}
 		SetWindowPos(pHdr->hwndDisplay, NULL,
-			pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-			pHdr->rcDisplay.right - pHdr->rcDisplay.left,
-			pHdr->rcDisplay.bottom - pHdr->rcDisplay.top,
+			rcDisplay.left, rcDisplay.top,
+			rcDisplay.right - rcDisplay.left,
+			rcDisplay.bottom - rcDisplay.top,
 			SWP_SHOWWINDOW);
 	}
 	return;
@@ -444,6 +423,12 @@ VOID OnSelChanged(HWND hwndDlg)
 
 void SwitchTab(int num) {
 	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN);
+	TabCtrl_SetCurSel(tab_list, num);
+	OnSelChanged(tab_list);
+}
+
+void SwitchLightTab(HWND dlg, int num) {
+	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_LIGHTS);
 	TabCtrl_SetCurSel(tab_list, num);
 	OnSelChanged(tab_list);
 }
@@ -464,7 +449,7 @@ void ReloadProfileList() {
 	EnableWindow(mode_list, conf->enableMon);
 
 	switch (tabSel) {
-	case TAB_COLOR: case TAB_EVENTS: case TAB_FANS:
+	case TAB_LIGHTS: case TAB_FANS:
 		OnSelChanged(tab_list);
 	}
 }
@@ -489,11 +474,31 @@ void UpdateState() {
 
 void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
-	SetWindowPos(mDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-	SetWindowPos(mDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+	SetForegroundWindow(mDlg);
 	ReloadProfileList();
 	if (tabSel == TAB_DEVICES)
 		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+}
+
+void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func) {
+
+	DLGHDR* pHdr = (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
+	SetWindowLongPtr(parent, GWLP_USERDATA, (LONG_PTR)pHdr);
+
+	int tabsize = names.size();
+
+	pHdr->apRes = (DLGTEMPLATE**)LocalAlloc(LPTR, tabsize * sizeof(DLGTEMPLATE*));
+	pHdr->apProc = (DLGPROC*)LocalAlloc(LPTR, tabsize * sizeof(DLGPROC));
+
+	TCITEM tie{ TCIF_TEXT };
+
+	for (int i = 0; i < names.size(); i++) {
+		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
+		tie.pszText = (LPSTR)names[i].c_str();
+		SendMessage(parent, TCM_INSERTITEM, i, (LPARAM)&tie);
+		pHdr->apProc[i] = func[i];
+	}
+
 }
 
 BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -515,44 +520,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	{
 		mDlg = hDlg;
 
-		DLGHDR *pHdr = (DLGHDR *) LocalAlloc(LPTR, sizeof(DLGHDR));
-		SetWindowLongPtr(tab_list, GWLP_USERDATA, (LONG_PTR)pHdr);
-
-		pHdr->hwndTab = tab_list;
-
-		TCITEM tie{ TCIF_TEXT };
-		char nBuf[64]{0};
-
-		//tie.mask = TCIF_TEXT;
-		//tie.iImage = -1;
-		tie.pszText = nBuf;
-
-		GetClientRect(pHdr->hwndTab, &pHdr->rcDisplay);
-
-		pHdr->rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
-		pHdr->rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
-		pHdr->rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
-		pHdr->rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
-
-		for (int i = 0; i < C_PAGES; i++) {
-			pHdr->apRes[i] = (DLGTEMPLATE *) LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLORS + i), RT_DIALOG)));// DoLockDlgRes(MAKEINTRESOURCE((IDD_DIALOG_COLORS + i)));
-			LoadString(hInst, IDS_TAB_COLOR + i, tie.pszText, 64);
-			SendMessage(tab_list, TCM_INSERTITEM, i, (LPARAM) &tie);
-			switch (i) {
-			case TAB_COLOR: pHdr->apProc[i] = (DLGPROC)TabColorDialog; break;
-			case TAB_EVENTS: pHdr->apProc[i] = (DLGPROC)TabEventsDialog; break;
-			case TAB_AMBIENT: pHdr->apProc[i] = (DLGPROC)TabAmbientDialog; break;
-			case TAB_HAPTICS: pHdr->apProc[i] = (DLGPROC)TabHapticsDialog; break;
-			case TAB_GROUPS: pHdr->apProc[i] = (DLGPROC)TabGroupsDialog; break;
-			case TAB_PROFILES: pHdr->apProc[i] = (DLGPROC)TabProfilesDialog; break;
-			case TAB_DEVICES: pHdr->apProc[i] = (DLGPROC)TabDevicesDialog; break;
-			case TAB_FANS: pHdr->apProc[i] = (DLGPROC)TabFanDialog; break;
-			case TAB_SETTINGS: pHdr->apProc[i] = (DLGPROC)TabSettingsDialog; break;
-			}
-		}
+		CreateTabControl(tab_list,
+			{"Lights", "Fans", "Profiles", "Settings"},
+			{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS},
+			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
+			);
 
 		ReloadModeList();
-
 		ReloadProfileList();
 
 		OnSelChanged(tab_list);
@@ -569,10 +543,10 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	} break;
 	case WM_COMMAND:
 	{
-		if (LOWORD(wParam) >= ID_ACC_COLOR && LOWORD(wParam) <= ID_ACC_SETTINGS) {
-			SwitchTab(TAB_COLOR + LOWORD(wParam) - ID_ACC_COLOR);
-			break;
-		}
+		//if (LOWORD(wParam) >= ID_ACC_COLOR && LOWORD(wParam) <= ID_ACC_SETTINGS) {
+		//	SwitchTab(TAB_COLOR + LOWORD(wParam) - ID_ACC_COLOR);
+		//	break;
+		//}
 		switch (LOWORD(wParam))
 		{
 		case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
@@ -598,7 +572,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			ReloadProfileList();
 			break;
 		case IDC_BUTTON_SAVE:
-			fxhl->afx_dev.SaveMappings();
+			conf->afx_dev.SaveMappings();
 			conf->Save();
 			isNewVersion = false;
 			fxhl->Refresh(2); // set def. colors
@@ -636,21 +610,56 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				if (TabCtrl_GetCurSel(tab_list) != tabSel) { // selection changed!
 					OnSelChanged(tab_list);
-				}
 			}
 		} break;
 		}
 	} break;
+	case WM_WINDOWPOSCHANGING: {
+		WINDOWPOS* pos = (WINDOWPOS*)lParam;
+		RECT oldRect;
+		GetWindowRect(mDlg, &oldRect);
+		if (!(pos->flags & (SWP_HIDEWINDOW | SWP_SHOWWINDOW)) && (pos->cx || pos->cy)) {
+			int deltax = pos->cx - oldRect.right + oldRect.left,
+				deltay = pos->cy - oldRect.bottom + oldRect.top;
+			if (deltax || deltay) {
+				GetWindowRect(tab_list, &oldRect);
+				SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
+				GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
+				SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
+				GetWindowRect(GetDlgItem(mDlg, IDC_EFFECT_MODE), &oldRect);
+				POINT cPos = { oldRect.left, oldRect.top };
+				ScreenToClient(mDlg, &cPos);
+				SetWindowPos(GetDlgItem(mDlg, IDC_EFFECT_MODE), NULL, cPos.x + deltax, cPos.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+				GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
+				cPos = { oldRect.left, oldRect.top };
+				ScreenToClient(mDlg, &cPos);
+				SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, cPos.x + deltax, cPos.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
+				cPos = { oldRect.left, oldRect.top };
+				ScreenToClient(mDlg, &cPos);
+				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, cPos.x, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &oldRect);
+				cPos = { oldRect.left, oldRect.top };
+				ScreenToClient(mDlg, &cPos);
+				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &oldRect);
+				cPos = { oldRect.left, oldRect.top };
+				ScreenToClient(mDlg, &cPos);
+				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+			}
+		}
+	} break;
 	case WM_SIZE:
-		if (wParam == SIZE_MINIMIZED) {
+		switch (wParam) {
+		case SIZE_MINIMIZED: {
 			// go to tray...
 			if (!fxhl->unblockUpdates) {
 				fxhl->UnblockUpdates(true, true);
 				fxhl->RefreshState();
 			}
 			ShowWindow(hDlg, SW_HIDE);
+		} break;
 		}
 		break;
 	case WM_ACTIVATE: {
@@ -825,8 +834,8 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		break;
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVICEARRIVAL || wParam == DBT_DEVICEREMOVECOMPLETE) {
-			vector<pair<WORD, WORD>> devs = fxhl->afx_dev.AlienFXEnumDevices();
-			if (devs.size() != fxhl->afx_dev.fxdevs.size()) {
+			vector<pair<WORD, WORD>> devs = conf->afx_dev.AlienFXEnumDevices();
+			if (devs.size() != conf->afx_dev.fxdevs.size()) {
 				// Device added or removed, need to rescan devices...
 				bool wasNotLocked = !fxhl->updateLock;
 				if (wasNotLocked) {
@@ -930,7 +939,7 @@ AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act *act) {
 
 DWORD CColorRefreshProc(LPVOID param) {
 	AlienFX_SDK::afx_act last = *mod;
-	lightset* mmap = (lightset*)param;
+	colorset* mmap = (colorset*)param;
 	while (WaitForSingleObject(stopColorRefresh, 200)) {
 		if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
 			last = *mod;
@@ -957,7 +966,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map) {
+bool SetColor(HWND hDlg, int id, colorset* mmap, AlienFX_SDK::afx_act* map) {
 	CHOOSECOLOR cc{ sizeof(cc), hDlg, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
 	bool ret;
@@ -999,62 +1008,32 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 	return ret;
 }
 
-lightset* FindMapping(int mid, int lid = 0)
+colorset* FindMapping(int mid)
 {
-	WORD did = 0;
-	if (!(mid < 0)) {
-		if (mid < 0x10000) {
-			if (fxhl->afx_dev.GetMappings()->size() <= mid) return nullptr;
-			did = fxhl->afx_dev.GetMappings()->at(mid)->devid;
-			mid = fxhl->afx_dev.GetMappings()->at(mid)->lightid;
-		}
-		auto res = find_if(conf->active_set->begin(), conf->active_set->end(), [mid, did](lightset ls) {
-			return ls.lightid == mid && ls.devid == did;
+	if (mid >= 0) {
+		auto res = find_if(conf->active_set->colors.begin(), conf->active_set->colors.end(), [mid](colorset ls) {
+			return ls.groups.size() && ls.groups[0]->gid == mid;
 			});
-		return res == conf->active_set->end() ? nullptr : &(*res);
+		return res == conf->active_set->colors.end() ? nullptr : &(*res);
 	}
 	return nullptr;
 }
 
-lightset* CreateMapping(int lid) {
+colorset* CreateMapping(int lid) {
 	// create new mapping..
-	lightset newmap;
-	AlienFX_SDK::afx_act act{0};
-	if (lid > 0xffff) {
-		// group
-		newmap = {0,0,(unsigned)lid};
-	} else {
-		// light
-		AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(lid);
-		newmap = {lgh->devid, 0/*lgh->vid*/, lgh->lightid};
-		if (lgh->flags & ALIENFX_FLAG_POWER) {
-			act.type = AlienFX_SDK::AlienFX_A_Power;
-			act.time = 3;
-			act.tempo = 0x64;
-			newmap.eve[0].map.push_back(act);
-		}
-	}
-	newmap.flags = LEVENT_COLOR;
-	newmap.eve[0].map.push_back(act);
-	newmap.eve[1].map.push_back(act);
-	newmap.eve[1].map.push_back(act);
-	newmap.eve[2].map.push_back(act);
-	newmap.eve[2].map.push_back(act);
-	newmap.eve[2].cut = 0;
-	newmap.eve[3].map.push_back(act);
-	newmap.eve[3].map.push_back(act);
-	newmap.eve[3].cut = 90;
-	conf->active_set->push_back(newmap);
-	return &conf->active_set->back();
+	colorset newmap;
+	newmap.groups.push_back(conf->afx_dev.GetGroupById(lid));
+	conf->active_set->colors.push_back(newmap);
+	return &conf->active_set->colors.back();
 }
 
-void RemoveMapping(vector<lightset>* lightsets, int did, int lid) {
-	auto pos = find_if(lightsets->begin(), lightsets->end(),
-		[lid, did](lightset ls) {
-			return ls.lightid == lid && ls.devid == did;
-		});
-	if (pos != lightsets->end())
-		lightsets->erase(pos);
+void RemoveMapping(groupset* lightsets) {
+	for (auto it = lightsets->colors.begin(); it < lightsets->colors.end(); )
+		if (it->color.empty() && !it->power.active && !it->events.active && !it->perf.active) {
+			lightsets->colors.erase(it);
+		}
+		else
+			it++;
 }
 
 void RemoveHapMapping(int devid, int lightid) {
@@ -1079,9 +1058,9 @@ zone *FindAmbMapping(int lid) {
 	WORD did = 0;
 	if (!(lid < 0)) {
 		if (lid < 0x10000) {
-			if (fxhl->afx_dev.GetMappings()->size() <= lid) return nullptr;
-			did = fxhl->afx_dev.GetMappings()->at(lid)->devid;
-			lid = fxhl->afx_dev.GetMappings()->at(lid)->lightid;
+			if (conf->afx_dev.GetMappings()->size() <= lid) return nullptr;
+			did = conf->afx_dev.GetMappings()->at(lid)->devid;
+			lid = conf->afx_dev.GetMappings()->at(lid)->lightid;
 		}
 		auto res = find_if(conf->amb_conf->zones.begin(), conf->amb_conf->zones.end(), [lid, did](zone ls) {
 			return ls.lightid == lid && ls.devid == did;
@@ -1098,9 +1077,9 @@ haptics_map *FindHapMapping(int lid) {
 			return conf->hap_conf->FindHapMapping(0, lid);
 		} else {
 			// mapping
-			if (fxhl->afx_dev.GetMappings()->size() <= lid) return nullptr;
-			return conf->hap_conf->FindHapMapping(fxhl->afx_dev.GetMappings()->at(lid)->devid,
-				fxhl->afx_dev.GetMappings()->at(lid)->lightid);
+			if (conf->afx_dev.GetMappings()->size() <= lid) return nullptr;
+			return conf->hap_conf->FindHapMapping(conf->afx_dev.GetMappings()->at(lid)->devid,
+				conf->afx_dev.GetMappings()->at(lid)->lightid);
 		}
 	}
 	return nullptr;
@@ -1109,8 +1088,35 @@ haptics_map *FindHapMapping(int lid) {
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
 	auto pos = find_if(grp->lights.begin(), grp->lights.end(),
 		[devid, lightid](auto t) {
-			return t->devid == devid && t->lightid == lightid;
+			return t.first == devid && t.second == lightid;
 		});
 	if (pos != grp->lights.end())
 		grp->lights.erase(pos);
 }
+
+void RemoveLightAndClean(int dPid, int eLid) {
+	// delete from all groups...
+	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
+		RemoveLightFromGroup(&(*iter), dPid, eLid);
+		if (iter->lights.empty()) {
+			// remove from profiles...
+			for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
+				// erase mappings
+				for (auto it = (*Iter)->lightsets.colors.begin(); it < (*Iter)->lightsets.colors.end(); it++) {
+					for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
+						if ((*lList)->gid == iter->gid) {
+							it->groups.erase(lList);
+							break;
+						}
+					if (it->groups.empty()) {
+						(*Iter)->lightsets.colors.erase(it);
+						it--;
+					}
+				}
+			}
+			conf->afx_dev.GetGroups()->erase(iter);
+			iter--;
+		}
+	}
+}
+

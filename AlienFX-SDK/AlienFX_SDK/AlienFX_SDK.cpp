@@ -1259,10 +1259,8 @@ namespace AlienFX_SDK {
 				maps = new DWORD[nameLen / sizeof(DWORD)];
 				RegGetValueA(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
 				groups.push_back({dID, name});
-				mapping *map;
 				for (int i = 0; i < nameLen / sizeof(DWORD); i += 2) {
-					if (map = GetMappingById(maps[i], LOWORD(maps[i + 1])))
-						groups.back().lights.push_back(map);
+					groups.back().lights.push_back({ maps[i], maps[i + 1] });
 				}
 				delete[] maps;
 			}
@@ -1323,8 +1321,8 @@ namespace AlienFX_SDK {
 			DWORD *grLights = new DWORD[groups[i].lights.size() * 2];
 
 			for (int j = 0; j < groups[i].lights.size(); j++) {
-				grLights[j * 2] = groups[i].lights[j]->devid;
-				grLights[j * 2 + 1] = groups[i].lights[j]->lightid;
+				grLights[j * 2] = groups[i].lights[j].first;
+				grLights[j * 2 + 1] = groups[i].lights[j].second;
 			}
 			RegSetValueExA( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD) groups[i].lights.size() * sizeof(DWORD) );
 

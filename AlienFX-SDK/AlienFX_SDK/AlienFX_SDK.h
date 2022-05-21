@@ -72,7 +72,7 @@ namespace AlienFX_SDK {
 	struct group { // Light group information block
 		DWORD gid;// = 0;
 		string name;
-		vector<mapping*> lights;
+		vector<pair<DWORD,DWORD>> lights;
 	};
 
 #define MAXGRIDSIZE 220

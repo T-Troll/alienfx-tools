@@ -202,8 +202,8 @@ int main(int argc, char* argv[])
 					for (int j = 0; j < afx_map->fxdevs.size(); j++) {
 						vector<UCHAR> lights;
 						for (int i = 0; i < grp->lights.size(); i++) {
-							if (grp->lights[i]->devid == afx_map->fxdevs[j].dev->GetPID())
-								lights.push_back((UCHAR)grp->lights[i]->lightid);
+							if (grp->lights[i].first == afx_map->fxdevs[j].dev->GetPID())
+								lights.push_back((UCHAR)grp->lights[i].second);
 						}
 						afx_map->fxdevs[j].dev->SetMultiLights(&lights, color);
 					}
@@ -269,9 +269,9 @@ int main(int argc, char* argv[])
 				}
 				for (int j = 0; j < afx_map->fxdevs.size(); j++) {
 					for (int i = 0; i < (grp ? grp->lights.size() : afx_map->GetMappings()->size()); i++) {
-						if (grp ? grp->lights[i]->devid : (*afx_map->GetMappings())[i]->devid
+						if (grp ? grp->lights[i].first : (*afx_map->GetMappings())[i]->devid
 							== afx_map->fxdevs[j].dev->GetPID()) {
-							act.index = (byte)(grp ? grp->lights[i]->lightid : (*afx_map->GetMappings())[i]->lightid);
+							act.index = (byte)(grp ? grp->lights[i].second : (*afx_map->GetMappings())[i]->lightid);
 							afx_map->fxdevs[j].dev->SetAction(&act);
 						}
 					}

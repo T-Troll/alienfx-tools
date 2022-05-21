@@ -1,11 +1,11 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-extern void SwitchTab(int);
+extern void SwitchLightTab(HWND, int);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
+extern int UpdateLightList(HWND light_list, byte flag = 0);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern haptics_map *FindHapMapping(int lid);
 extern void RemoveHapMapping(int devid, int lightid);
@@ -127,9 +127,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		if (UpdateLightList(light_list, fxhl, 3) < 0) {
+		if (eItem = UpdateLightList(light_list, 3) < 0) {
 			// no lights, switch to setup
-			SwitchTab(TAB_DEVICES);
+			SwitchLightTab(hDlg, TAB_DEVICES);
 			return false;
 		}
 
@@ -254,7 +254,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					map->lightid = eItem;
 				} else {
 					// light
-					AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
+					AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappings()->at(eItem);
 					map->devid = lgh->devid;
 					map->lightid = lgh->lightid;
 				}

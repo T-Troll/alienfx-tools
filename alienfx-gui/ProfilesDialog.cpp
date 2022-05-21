@@ -77,8 +77,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
 		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
-		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
-		p_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
+		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO);// ,
+		//p_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 
 	profile *prof = conf->FindProfile(pCid);
 
@@ -170,7 +170,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_BUT_PROFRESET:
 			if (MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
-				prof->lightsets.clear();
+				prof->lightsets.colors.clear();
+				prof->lightsets.ambients.clear();
+				prof->lightsets.haptics.clear();
 			}
 			break;
 		case IDC_BUT_COPYACTIVE:
@@ -279,8 +281,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_LIST_PROFILES:
 			switch (((NMHDR*) lParam)->code) {
 			case LVN_ITEMACTIVATE: {
-				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
-				ListView_EditLabel(p_list, sItem->iItem);
+				//NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
+				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
 			} break;
 
 			case LVN_ITEMCHANGED:
@@ -289,9 +291,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
 					pCid = (int) lPoint->lParam;
-					prof = conf->FindProfile(pCid);
-					if (prof)
-						ReloadProfSettings(hDlg, prof);
+					//prof = conf->FindProfile(pCid);
+					//if (prof)
+						ReloadProfSettings(hDlg, conf->FindProfile(pCid));// prof);
 				} else {
 					pCid = -1;
 					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
@@ -309,8 +311,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				profile* prof = conf->FindProfile((int)sItem->item.lParam);
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
-					ListView_SetItem(p_list, &sItem->item);
-					ListView_SetColumnWidth(p_list, 0, LVSCW_AUTOSIZE);
+					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
+					//ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 0, LVSCW_AUTOSIZE);
 					ReloadProfileList();
 					return true;
 				} else

@@ -604,8 +604,10 @@
     <ClCompile Include="FXHelper.cpp" />
     <ClCompile Include="GroupsDialog.cpp" />
     <ClCompile Include="HapticsDialog.cpp" />
+    <ClCompile Include="LightsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
+    <ClCompile Include="TabDevGrid.cpp" />
     <ClCompile Include="WSAudioIn.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>

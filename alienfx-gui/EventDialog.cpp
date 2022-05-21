@@ -1,54 +1,52 @@
 #include "alienfx-gui.h"
 
-extern void SwitchTab(int);
-extern bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
+extern void SwitchLightTab(HWND, int);
+extern bool SetColor(HWND hDlg, int id, colorset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
-extern lightset* CreateMapping(int lid);
-extern lightset* FindMapping(int mid, int lid = 0);
+extern colorset* CreateMapping(int lid);
+extern colorset* FindMapping(int mid);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
+extern int UpdateLightList(HWND light_list, byte flag = 0);
 
 extern int eItem;
 
 void UpdateEventUI(LPVOID);
 ThreadHelper* hapUIupdate;
 
-void UpdateMonitoringInfo(HWND hDlg, lightset *map) {
+void UpdateMonitoringInfo(HWND hDlg, colorset *map) {
 	HWND list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
 		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
 		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
-	for (int i = 0; i < 4; i++) {
-		CheckDlgButton(hDlg, IDC_CHECK_NOEVENT + i, map && map->flags & (1 << i) ? BST_CHECKED : BST_UNCHECKED);
-
-		if (map && i) {
-			RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, map && map->flags & LEVENT_COLOR && !map->eve[0].map.empty() ?
-				Act2Code(&map->eve[0].map[0]) : Act2Code(&map->eve[i].map[0]));
-			RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, Act2Code(&map->eve[i].map[1]));
-		}
-		else {
-			if (i) {
-				RedrawButton(hDlg, IDC_BUTTON_CM1 + i - 1, NULL);
-				RedrawButton(hDlg, IDC_BUTTON_CM4 + i - 1, NULL);
-			}
-		}
+		CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, map && map->fromColor ? BST_CHECKED : BST_UNCHECKED );
+	if (map && map->perf.active) { // Performance
+		CheckDlgButton(hDlg, IDC_CHECK_PERF, BST_CHECKED);
+		//RedrawButton(hDlg, IDC_BUTTON_CM2, Act2Code(map->fromColor && map->color.size() ?  &map->color[0] : &map->perf.from));
+		//RedrawButton(hDlg, IDC_BUTTON_CM3, Act2Code( &map->perf.to ));
+		CheckDlgButton(hDlg, IDC_GAUGE, map->perf.proc ? BST_CHECKED : BST_UNCHECKED);
+		SendMessage(s1_slider, TBM_SETPOS, true, map->perf.cut);
+		SetSlider(sTip1, map->perf.cut);
+		ComboBox_SetCurSel(list_counter, map->perf.source);
 	}
-
-	// Alarms
-	CheckDlgButton(hDlg, IDC_STATUS_BLINK, map && map->eve[3].proc ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s2_slider, TBM_SETPOS, true, map ? map->eve[3].cut : 0);
-	SetSlider(sTip2, map ? map->eve[3].cut : 0);
-
-	// Events
-	CheckDlgButton(hDlg, IDC_GAUGE, map && map->eve[2].proc ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s1_slider, TBM_SETPOS, true, map ? map->eve[2].cut : 0);
-	SetSlider(sTip1, map ? map->eve[2].cut : 0);
-
-	ComboBox_SetCurSel(list_counter, map ? map->eve[2].source : 0);
-	ComboBox_SetCurSel(list_status, map ? map->eve[3].source : 0);
+	if (map && map->events.active) { // events
+		CheckDlgButton(hDlg, IDC_CHECK_STATUS, BST_CHECKED);
+		//RedrawButton(hDlg, IDC_BUTTON_CM4, Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->events.from));
+		//RedrawButton(hDlg, IDC_BUTTON_CM5, Act2Code(&map->events.to));
+		CheckDlgButton(hDlg, IDC_STATUS_BLINK, map->events.proc ? BST_CHECKED : BST_UNCHECKED);
+		SendMessage(s2_slider, TBM_SETPOS, true, map->events.cut);
+		SetSlider(sTip2, map->events.cut);
+		ComboBox_SetCurSel(list_status, map->events.source);
+	}
+	if (map && map->power.active) {
+		CheckDlgButton(hDlg, IDC_CHECK_POWER, BST_CHECKED);
+		//RedrawButton(hDlg, IDC_BUTTON_CM1, Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->power.from));
+		//RedrawButton(hDlg, IDC_BUTTON_CM2, Act2Code(&map->power.to));
+	}
+	for (int bId = 0; bId < 6; bId++)
+		RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_CM1 + bId), NULL, NULL, RDW_INVALIDATE);
 }
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -59,14 +57,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
 		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
-	lightset* map = FindMapping(eItem);
+	colorset* map = FindMapping(eItem);
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-		if (UpdateLightList(light_list, fxhl) < 0) {
-			SwitchTab(TAB_DEVICES);
+		if (eItem = UpdateLightList(light_list) < 0) {
+			SwitchLightTab(hDlg, TAB_DEVICES);
 			return false;
 		}
 
@@ -123,6 +121,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 
 	} break;
 	case WM_COMMAND: {
+		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
 		{
 		case IDC_LIGHTS_E:
@@ -134,71 +133,128 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				UpdateMonitoringInfo(hDlg, map);
 				break;
 			} break;
-		case IDC_CHECK_NOEVENT: case IDC_CHECK_PERF: case IDC_CHECK_POWER: case IDC_CHECK_STATUS:
-		{
-			if (!(eItem < 0)) {
-				if (!map) {
-					map = CreateMapping(eItem);
-				}
-				BYTE findex = LOWORD(wParam) - IDC_CHECK_NOEVENT;
-				map->flags &= ~(1 << findex);
-				map->flags |= (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << findex;
-
-				fxhl->RefreshState();
-			} else
+		case IDC_CHECK_NOEVENT:
+			if (map) {
+				map->fromColor = state;
+				UpdateMonitoringInfo(hDlg, map);
+			}
+			else
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
-		} break;
+			break;
+		case IDC_CHECK_PERF:
+			if (eItem >= 0) {
+				if (!map)
+					map = CreateMapping(eItem);
+				map->perf.active = state;
+				UpdateMonitoringInfo(hDlg, map);
+			}
+			else
+				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
+			break;
+		case IDC_CHECK_POWER:
+			if (eItem >= 0) {
+				if (!map)
+					map = CreateMapping(eItem);
+				map->power.active = state;
+				UpdateMonitoringInfo(hDlg, map);
+			}
+			else
+				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
+			break;
+		case IDC_CHECK_STATUS:
+			if (eItem >= 0) {
+				if (!map)
+					map = CreateMapping(eItem);
+				map->events.active = state;
+				UpdateMonitoringInfo(hDlg, map);
+			}
+			else
+				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
+			break;
 		case IDC_STATUS_BLINK:
-			if (map && HIWORD(wParam) == BN_CLICKED)
-				map->eve[3].proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			if (map && map->events.active)
+				map->events.proc = state;
 			break;
 		case IDC_GAUGE:
-			if (map && HIWORD(wParam) == BN_CLICKED) {
-				map->eve[2].proc = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			if (map && map->perf.active) {
+				map->perf.proc = state;
 				fxhl->RefreshMon();
 			}
 			break;
-		case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
-			if (map && HIWORD(wParam) == BN_CLICKED) {
-				if (LOWORD(wParam) < IDC_BUTTON_CM4)
-					if (map->flags & LEVENT_COLOR)
-						SetColor(hDlg, LOWORD(wParam), map, &map->eve[0].map[0]);
-					else
-						SetColor(hDlg, LOWORD(wParam), map, &map->eve[LOWORD(wParam) - IDC_BUTTON_CM1 + 1].map[0]);
-				else
-					SetColor(hDlg, LOWORD(wParam), map, &map->eve[LOWORD(wParam) - IDC_BUTTON_CM4 + 1].map[1]);
+		case IDC_BUTTON_CM1:
+			if (map && map->power.active && !map->fromColor) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->power.from);
 				fxhl->RefreshMon();
 			}
-		} break;
+			break;
+		case IDC_BUTTON_CM4:
+			if (map && map->power.active) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->power.to);
+				fxhl->RefreshMon();
+			}
+			break;
+		case IDC_BUTTON_CM2:
+			if (map && map->perf.active && !map->fromColor) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->perf.from);
+				fxhl->RefreshMon();
+			}
+			break;
+		case IDC_BUTTON_CM5:
+			if (map && map->perf.active) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->perf.to);
+				fxhl->RefreshMon();
+			}
+			break;
+		case IDC_BUTTON_CM3:
+			if (map && map->events.active && !map->fromColor) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->events.from);
+				fxhl->RefreshMon();
+			}
+			break;
+		case IDC_BUTTON_CM6:
+			if (map && map->events.active) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->events.to);
+				fxhl->RefreshMon();
+			}
+			break;
 		case IDC_COUNTERLIST:
 			if (map && HIWORD(wParam) == CBN_SELCHANGE) {
-				map->eve[2].source = ComboBox_GetCurSel(list_counter);
+				map->perf.source = ComboBox_GetCurSel(list_counter);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_STATUSLIST:
 			if (map && HIWORD(wParam) == CBN_SELCHANGE) {
-				map->eve[3].source = ComboBox_GetCurSel(list_status);
+				map->events.source = ComboBox_GetCurSel(list_status);
 				fxhl->RefreshMon();
 			}
 			break;
 		}
 	} break;
 	case WM_DRAWITEM:
-		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-		case IDC_BUTTON_CM1: case IDC_BUTTON_CM2: case IDC_BUTTON_CM3: case IDC_BUTTON_CM4: case IDC_BUTTON_CM5: case IDC_BUTTON_CM6: {
+		if (map) {
 			AlienFX_SDK::Colorcode* c{ NULL };
-			if (map) {
-				if (((DRAWITEMSTRUCT*)lParam)->CtlID < IDC_BUTTON_CM4)
-					if (map->flags & LEVENT_COLOR)
-						c = Act2Code(&map->eve[0].map[0]);
-					else
-						c = Act2Code(&map->eve[((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM1 + 1].map[0]);
-				else
-					c = Act2Code(&map->eve[((DRAWITEMSTRUCT*)lParam)->CtlID - IDC_BUTTON_CM4 + 1].map[1]);
+			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+			case IDC_BUTTON_CM1:
+				c = map->power.active ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->power.from) : NULL;
+				break;
+			case IDC_BUTTON_CM4:
+				c = map->power.active ? Act2Code(&map->power.to) : NULL;
+				break;
+			case IDC_BUTTON_CM2:
+				c = map->perf.active ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->perf.from) : NULL;
+				break;
+			case IDC_BUTTON_CM5:
+				c = map->perf.active ? Act2Code(&map->perf.to) : NULL;
+				break;
+			case IDC_BUTTON_CM3:
+				c = map->events.active ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->events.from) : NULL;
+				break;
+			case IDC_BUTTON_CM6:
+				c = map->events.active ? Act2Code(&map->events.to) : NULL;
+				break;
 			}
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c);
-		} break;
 		}
 		break;
 	case WM_HSCROLL:
@@ -206,12 +262,12 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			if (map) {
 				if ((HWND)lParam == s1_slider) {
-					map->eve[2].cut = (BYTE) SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, map->eve[2].cut);
+					map->perf.cut = (BYTE) SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip1, map->perf.cut);
 				}
 				if ((HWND)lParam == s2_slider) {
-					map->eve[3].cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip2, map->eve[3].cut);
+					map->events.cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip2, map->events.cut);
 				}
 				fxhl->RefreshMon();
 			}

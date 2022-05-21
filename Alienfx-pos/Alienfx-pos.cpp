@@ -5,7 +5,7 @@
 #include "Alienfx-pos.h"
 #include "Alienfx_SDK.h"
 #include <CommCtrl.h>
-#include <windef.h>
+//#include <windef.h>
 #include <windowsx.h>
 
 #define MAX_LOADSTRING 100

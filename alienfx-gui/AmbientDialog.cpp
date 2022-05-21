@@ -3,11 +3,11 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
+extern int UpdateLightList(HWND light_list, byte flag = 0);
 extern zone *FindAmbMapping(int lid);
 extern void RemoveAmbMapping(int devid, int lightid);
 
-extern void SwitchTab(int);
+extern void SwitchLightTab(HWND, int);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -37,6 +37,7 @@ void InitButtonZone(HWND dlg) {
 }
 
 void RedrawButtonZone(HWND dlg) {
+    // ToDo - one update!
     for (int i = 0; i < conf->amb_conf->grid.x * conf->amb_conf->grid.y; i++)
         RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
 }
@@ -44,7 +45,7 @@ void RedrawButtonZone(HWND dlg) {
 void SetGridSize(HWND dlg, int x, int y) {
     delete ambUIupdate;
     if (eve->capt) {
-        eve->capt->SetGridSize(x, y);
+        eve->capt->SetLightGridSize(x, y);
     }
     else {
         conf->amb_conf->grid.x = x;
@@ -66,9 +67,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     case WM_INITDIALOG:
     {
 
-        if (UpdateLightList(light_list, fxhl, 3) < 0) {
+        if (eItem = UpdateLightList(light_list, 3) < 0) {
             // no lights, switch to setup
-            SwitchTab(TAB_DEVICES);
+            SwitchLightTab(hDlg, TAB_DEVICES);
             return false;
         }
 
@@ -125,7 +126,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     }
                     else {
                         // light
-                        AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
+                        AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappings()->at(eItem);
                         map->devid = lgh->devid;
                         map->lightid = lgh->lightid;
                     }

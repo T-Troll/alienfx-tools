@@ -23,15 +23,7 @@
 #define IDS_TYPE_RAINBOW                118
 #define IDS_A_LOWBATT                   119
 #define IDS_UPDATEPAGE                  121
-#define IDS_TAB_COLOR                   122
-#define IDS_TAB_EVENTS                  123
-#define IDS_TAB_AMBIENT                 124
-#define IDS_TAB_HAPTICS                 125
-#define IDS_TAB_GROUPS                  126
-#define IDS_TAB_PROFILES                127
-#define IDS_TAB_DEVICES                 128
-#define IDS_TAB_FANS                    129
-#define IDS_TAB_SETTINGS                130
+#define IDD_GRIDBLOCK                   130
 #define IDD_MAINWINDOW                  131
 #define IDS_TYPE_POWER                  131
 #define IDI_ALIENFXGUI                  132
@@ -60,24 +52,28 @@
 #define IDI_ALIENFX_DIM                 149
 #define IDR_MENU_TRAY                   150
 #define IDD_DIALOG_AUTODETECT           154
+#define IDD_DIALOG_LIGHTS               156
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
+#define IDC_BUT_NEXT                    1002
 #define IDC_FAN_LIST                    1003
 #define IDC_FREQ                        1004
+#define IDC_BUT_PREV                    1004
 #define IDC_BUTTON_C1                   1005
+#define IDC_EDIT_NAME                   1005
 #define IDC_SPEED1                      1007
 #define IDC_LENGTH1                     1009
 #define IDC_CHECK_NOEVENT               1009
 #define IDC_CHECK_POWER                 1010
 #define IDC_CHECK_PERF                  1011
 #define IDC_CHECK_STATUS                1012
+#define IDC_BUT_CLEAR                   1012
 #define IDC_LIGHTS                      1013
 #define IDC_COUNTERLIST                 1013
 #define IDC_SLIDER_GPU                  1013
 #define IDC_STATUSLIST                  1014
 #define IDC_SLIDER_LOWCUT               1014
-#define IDC_DEVICES                     1015
 #define IDC_BUTTON_LPC                  1015
 #define IDC_STARTW                      1016
 #define IDC_BUTTON_HPC                  1016
@@ -85,6 +81,8 @@
 #define IDC_STARTM                      1017
 #define IDC_BUTTON_REMOVE               1017
 #define IDC_SLIDER_HICUT                1018
+#define IDC_LIST_DEV                    1018
+#define IDC_BUT_LAST                    1019
 #define IDC_BUTTON_REFRESH              1021
 #define IDC_BUTTON_MINIMIZE             1022
 #define IDC_LIGHTS_E                    1023
@@ -92,10 +90,7 @@
 #define IDC_BUTTON_SAVE                 1024
 #define IDC_LEVELS                      1025
 #define IDC_LIGHTID                     1026
-#define IDC_BUTTON_ADDL                 1027
-#define IDC_BUTTON_REML                 1028
 #define IDC_BUTTON_CM1                  1029
-#define IDC_BUTTON_DEVRESET             1029
 #define IDC_BUTTON_CM2                  1030
 #define IDC_BUTTON_ADDG                 1030
 #define IDC_BUTTON_CM3                  1031
@@ -134,10 +129,8 @@
 #define IDC_CHECK_LON                   1049
 #define IDC_OFFPOWERBUTTON              1051
 #define IDC_CHECK_GAMMA                 1052
-#define IDC_BUTTON_RESETCOLOR           1053
 #define IDC_LIST_APPLICATIONS           1055
 #define IDC_CHECK_DEFPROFILE            1056
-#define IDC_DEVICE_STATUS               1058
 #define IDC_APP_RESET                   1059
 #define IDC_APP_BROWSE                  1060
 #define IDC_LEFFECTS_LIST               1066
@@ -147,7 +140,6 @@
 #define IDC_CHECK_FOREGROUND            1073
 #define IDC_BUT_PROFRESET               1076
 #define IDC_LIST_PROFILES               1077
-#define IDC_LIST_LIGHTS                 1079
 #define IDC_CHECK_INDICATOR             1080
 #define IDC_GROUPS                      1082
 #define IDC_LIST_INGROUP                1083
@@ -171,8 +163,6 @@
 #define IDC_BUT_DETECT                  1104
 #define IDC_CHECK_DIM                   1105
 #define IDC_INFO_VID                    1106
-#define IDC_INFO_PID                    1107
-#define IDC_INFO_VER                    1108
 #define IDC_CHECK_GLOBAL                1109
 #define IDC_SLIDER_RED                  1110
 #define IDC_SLIDER_GREEN                1111
@@ -215,6 +205,12 @@
 #define IDC_VAL_BAT                     1132
 #define IDC_FAN_RESET                   1132
 #define IDC_VAL_TEMP                    1133
+#define IDC_TAB_LIGHTS                  1133
+#define IDC_STATIC_EFFECTS              1134
+#define IDC_TAB_DEV_GRID                1135
+#define IDC_BUT_FIRST                   1137
+#define IDC_EDIT_GRID                   1138
+#define IDC_TAB_COLOR_GRID              1139
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -244,9 +240,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        156
+#define _APS_NEXT_RESOURCE_VALUE        157
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1133
+#define _APS_NEXT_CONTROL_VALUE         1140
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

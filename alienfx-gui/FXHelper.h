@@ -44,7 +44,7 @@ private:
 
 public:
 	ConfigHandler* config;
-	AlienFX_SDK::Mappings afx_dev;
+	//AlienFX_SDK::Mappings afx_dev;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
 	HANDLE queryEmpty = NULL;
@@ -64,7 +64,7 @@ public:
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
-	bool RefreshOne(lightset* map, int force = 0, bool update = false);
+	bool RefreshOne(colorset* map, int force = 0, bool update = false);
 	bool SetMode(int mode);
 	void TestLight(int did, int id, bool wp=false);
 	void ResetPower(int did);

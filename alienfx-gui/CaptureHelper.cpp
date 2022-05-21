@@ -68,7 +68,7 @@ void CaptureHelper::Restart() {
 	SetCaptureScreen(conf->amb_conf->mode);
 }
 
-void CaptureHelper::SetGridSize(int x, int y)
+void CaptureHelper::SetLightGridSize(int x, int y)
 {
 	Stop();
 	conf->amb_conf->grid.x = x;
