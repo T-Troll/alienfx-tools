@@ -234,9 +234,8 @@ bool SetColor(int id, DWORD* clr) {
 void RestoreWindow(int id) {
 	if (id) selSensor = (id & 0xff) - 1;
 	ShowWindow(mDlg, SW_RESTORE);
+	SetForegroundWindow(mDlg);
 	RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
-	SetWindowPos(mDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-	SetWindowPos(mDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 	ReloadSensorView();
 }
 
@@ -337,8 +336,10 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			senmon->ModifyMon();
 			break;
 		case IDC_BUTTON_RESET:
-			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
+			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
 				iter->max = iter->min = iter->cur;
+				iter->oldCur = NO_SEN_VALUE;
+			}
 			ReloadSensorView();
 			break;
 		case IDC_BUTTON_MINIMIZE:

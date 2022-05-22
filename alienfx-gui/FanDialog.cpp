@@ -93,7 +93,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 MB_YESNO | MB_ICONINFORMATION) == IDYES) {
                 // ask for boost check
                 EnableWindow(power_list, false);
-                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)(-1), 0, NULL);
+                int fanID = -1;
+                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fanID, 0, NULL);
                 SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
             }
             fan_conf->obCheck = 1;
@@ -170,7 +171,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDC_BUT_OVER:
             if (fanMode) {
                 EnableWindow(power_list, false);
-                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan_conf->lastSelectedFan, 0, NULL);
+                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fan_conf->lastSelectedFan, 0, NULL);
                 SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
             }
             else {

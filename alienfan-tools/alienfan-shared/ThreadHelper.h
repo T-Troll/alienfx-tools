@@ -9,8 +9,8 @@ public:
 	void (*func)(LPVOID param) = NULL;
 	LPVOID param;
 	HANDLE tEvent;
-	int delay;
-	ThreadHelper(LPVOID function, LPVOID param, int delay = 250);
+	int delay, priority;
+	ThreadHelper(LPVOID function, LPVOID param, int delay = 250, int prt = THREAD_PRIORITY_LOWEST);
 	~ThreadHelper();
 };
 

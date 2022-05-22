@@ -179,6 +179,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// check fans...
 	if (conf->activeProfile->flags & PROF_FANS)
 		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
+
 	if (conf->fanControl) {
 		EvaluteToAdmin();
 
@@ -207,9 +208,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		fxhl->Start();
 
-		eve = new EventHandler(conf, fxhl);
-		eve->ChangePowerState();
-		eve->StartFanMon(acpi);
+		eve = new EventHandler();
 
 		ResetDPIScale();
 
@@ -489,10 +488,9 @@ void UpdateState() {
 
 void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
-	SetWindowPos(mDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-	SetWindowPos(mDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+	SetForegroundWindow(mDlg);
 	ReloadProfileList();
-	if (tabSel == TAB_DEVICES)
+	if (tabSel == TAB_DEVICES || tabSel == TAB_FANS)
 		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
 

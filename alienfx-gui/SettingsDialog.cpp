@@ -142,7 +142,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				acpi = new AlienFan_SDK::Control();
 				if (acpi->IsActivated() && acpi->Probe()) {
 					conf->fan_conf->SetBoosts(acpi);
-					eve->StartFanMon(acpi);
+					eve->StartFanMon();
 					// check for ACPI lights
 					fxhl->UnblockUpdates(false);
 					fxhl->FillAllDevs(acpi);

@@ -2,10 +2,12 @@
 #include <vector>
 #include <wtypesbase.h>
 
+using namespace std;
+
 struct zone {
 	DWORD devid = 0;
 	DWORD lightid = 0;
-	std::vector<byte> map;
+	vector<byte> map;
 };
 
 struct gridDef {
@@ -22,7 +24,7 @@ public:
 	DWORD mode = 0;
 	DWORD shift = 40;
 	gridDef grid{ 4,3 };
-	std::vector<zone> zones;
+	vector<zone> zones;
 
 	ConfigAmbient();
 	~ConfigAmbient();

@@ -1,4 +1,5 @@
 #pragma once
+#include "DXGIManager.hpp"
 #include "ConfigAmbient.h"
 #include "FXHelper.h"
 
@@ -15,8 +16,9 @@ public:
 	void Restart();
 	void SetGridSize(int, int);
 	bool isDirty = false;
-	bool needUpdate = false;
+	//bool needUpdate = false;
 	byte *imgz;
+	DXGIManager* dxgi_manager = NULL;
 private:
 	HANDLE dwHandle = NULL;
 };

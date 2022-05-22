@@ -235,7 +235,7 @@ void UpdateBoost() {
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = (int)lpParam, steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanValue(num, true);
+    int num = *((int*)lpParam), steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanValue(num, true);
     mon->Stop();
     fanMode = false;
     acpi->Unlock();

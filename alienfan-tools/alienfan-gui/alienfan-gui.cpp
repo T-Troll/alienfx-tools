@@ -226,7 +226,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             MB_YESNO | MB_ICONINFORMATION) == IDYES) {
             // ask for boost check
             EnableWindow(power_list, false);
-            CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)(-1), 0, NULL);
+            int fanID = -1;
+            CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fanID, 0, NULL);
             SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
         }
         fan_conf->obCheck = 1;
@@ -326,7 +327,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDC_BUT_OVER:
             if (fanMode) {
                 EnableWindow(power_list, false);
-                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan_conf->lastSelectedFan, 0, NULL);
+                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fan_conf->lastSelectedFan, 0, NULL);
                 SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
             }
             else {
@@ -354,13 +355,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         switch (lParam) {
         case WM_LBUTTONDBLCLK:
-        case WM_LBUTTONUP:
-            ShowWindow(hDlg, SW_RESTORE);
-            SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
-            SetWindowPos(hDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+        case WM_LBUTTONUP: {
             ShowWindow(fanWindow, SW_RESTORE);
             SendMessage(fanWindow, WM_PAINT, 0, 0);
-            break;
+            ShowWindow(mDlg, SW_RESTORE);
+            SetForegroundWindow(mDlg);
+            HWND temp_list = GetDlgItem(hDlg, IDC_TEMP_LIST);
+            ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
+        } break;
         case WM_RBUTTONUP: case WM_CONTEXTMENU:
         {
             SendMessage(hDlg, WM_CLOSE, 0, 0);
@@ -541,6 +543,8 @@ void UpdateFanUI(LPVOID lpParam) {
             string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
+        ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+        ListView_SetColumnWidth(tempList, 1, LVSCW_AUTOSIZE_USEHEADER);
         for (int i = 0; i < acpi->HowManyFans(); i++) {
             string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i) /*eve->mon->fanValues[i]*/) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());

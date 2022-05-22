@@ -2,8 +2,9 @@
 
 DWORD WINAPI ThreadFunc(LPVOID lpParam);
 
-ThreadHelper::ThreadHelper(LPVOID function, LPVOID param, int delay) {
+ThreadHelper::ThreadHelper(LPVOID function, LPVOID param, int delay, int prt) {
 	this->delay = delay;
+	priority = prt;
 	func = (void (*)(LPVOID))function;
 	this->param = param;
 	tEvent = CreateEvent(NULL, false, false, NULL);
@@ -20,7 +21,7 @@ ThreadHelper::~ThreadHelper()
 
 DWORD WINAPI ThreadFunc(LPVOID lpParam) {
 	ThreadHelper* src = (ThreadHelper*)lpParam;
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+	SetThreadPriority(GetCurrentThread(), src->priority);
 	while (WaitForSingleObject(src->tEvent, src->delay) == WAIT_TIMEOUT) {
 		src->func(src->param);
 	}

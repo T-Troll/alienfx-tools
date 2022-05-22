@@ -1,5 +1,5 @@
 #pragma once
-#include <vector>
+//#include <vector>
 #include <wtypesbase.h>
 #include "AlienFX_SDK.h"
 

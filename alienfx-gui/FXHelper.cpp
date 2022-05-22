@@ -107,7 +107,8 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				Iter->flags & LEVENT_PERF ?
 				Iter->eve[2].map[0] :
 				Iter->eve[3].map[0],
-				from = fin;
+				from = fin,
+				*gFin = &Iter->eve[2].map[1];
 			fin.type = from.type = 0;
 			double coeff = 0.0;
 			bool diff = false;// , diffI = false;
@@ -127,9 +128,9 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				case 8: lVal = eData.PWR; cVal = data->PWR; break;
 				}
 
+				coeff = cVal > ccut ? (cVal - ccut) / (100.0 - ccut) : 0.0;
 				if (lVal != cVal && (lVal > ccut || cVal > ccut)) {
 					diff = true;
-					coeff = cVal > ccut ? (cVal - ccut) / (100.0 - ccut) : 0.0;
 					fin.r = (BYTE) (from.r * (1 - coeff) + Iter->eve[2].map[1].r * coeff);
 					fin.g = (BYTE) (from.g * (1 - coeff) + Iter->eve[2].map[1].g * coeff);
 					fin.b = (BYTE) (from.b * (1 - coeff) + Iter->eve[2].map[1].b * coeff);
@@ -157,12 +158,15 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				if (force || (lVal != cVal && ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1)) { //check 0 border!
 					diff = true;
 					if (cVal > 0 && (!blink || blinkStage))
-						fin = Iter->eve[3].map[1];
+						gFin = &(fin = Iter->eve[3].map[1]);
+					else
+						if (cVal <= 0)
+							gFin = &Iter->eve[2].map[1];
 				} else
 					if (cVal > 0 && blink) {
 						diff = true;
 						if (blinkStage)
-							fin = Iter->eve[3].map[1];
+							gFin = &(fin = Iter->eve[3].map[1]);
 					}
 			}
 
@@ -181,7 +185,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 					actions.push_back(fin);
 				}
 			if (!Iter->devid && Iter->flags & LEVENT_PERF && Iter->eve[2].proc)
-				SetGroupLight(Iter->lightid, actions, false, &from, &Iter->eve[2].map[1], coeff);
+				SetGroupLight(Iter->lightid, actions, false, &from, gFin, coeff);
 			else
 				SetLight(Iter->devid, Iter->lightid, actions);
 		}
@@ -384,7 +388,7 @@ bool FXHelper::RefreshOne(lightset* map, int force, bool update)
 	if (!config->stateOn || !map)
 		return false;
 
-	if (map->flags & LEVENT_COLOR && !map->eve[0].map.empty()) {
+	if (/*map->flags & LEVENT_COLOR && */!map->eve[0].map.empty()) {
 		actions = map->eve[0].map;
 	}
 
