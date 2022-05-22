@@ -1267,18 +1267,18 @@ namespace AlienFX_SDK {
 				delete[] maps;
 			}
 		}
-		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
-			if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
-				DWORD nameLen = 255, grid[MAXGRIDSIZE], sizes;
-				RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
-				nameLen = sizeof(DWORD);
-				RegGetValueA(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &sizes, &nameLen);
-				nameLen = MAXGRIDSIZE*sizeof(DWORD);
-				RegGetValueA(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &nameLen);
-				grids.push_back({ (byte)dID, (byte)(sizes >> 8), (byte)(sizes & 0xff), name });
-				memcpy(grids.back().grid, grid, MAXGRIDSIZE * sizeof(DWORD));
-			}
-		}
+		//for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
+		//	if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
+		//		DWORD nameLen = 255, grid[MAXGRIDSIZE], sizes;
+		//		RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
+		//		nameLen = sizeof(DWORD);
+		//		RegGetValueA(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &sizes, &nameLen);
+		//		nameLen = MAXGRIDSIZE*sizeof(DWORD);
+		//		RegGetValueA(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &nameLen);
+		//		grids.push_back({ (byte)dID, (byte)(sizes >> 8), (byte)(sizes & 0xff), name });
+		//		memcpy(grids.back().grid, grid, MAXGRIDSIZE * sizeof(DWORD));
+		//	}
+		//}
 		RegCloseKey(hKey1);
 	}
 
@@ -1332,15 +1332,15 @@ namespace AlienFX_SDK {
 			RegCloseKey(hKeyS);
 		}
 
-		for (int i = 0; i < numGrids; i++) {
-			string name = "Grid" + to_string(grids[i].id);
-			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
-			RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
-			DWORD sizes = ((DWORD)grids[i].x << 8) | grids[i].y;
-			RegSetValueExA(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
-			RegSetValueExA(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)&grids[i].grid, MAXGRIDSIZE * sizeof(DWORD));
-			RegCloseKey(hKeyS);
-		}
+		//for (int i = 0; i < numGrids; i++) {
+		//	string name = "Grid" + to_string(grids[i].id);
+		//	RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
+		//	RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
+		//	DWORD sizes = ((DWORD)grids[i].x << 8) | grids[i].y;
+		//	RegSetValueExA(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
+		//	RegSetValueExA(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)&grids[i].grid, MAXGRIDSIZE * sizeof(DWORD));
+		//	RegCloseKey(hKeyS);
+		//}
 
 		RegCloseKey(hKey1);
 	}
