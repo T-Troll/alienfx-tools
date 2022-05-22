@@ -274,7 +274,7 @@ void ConfigHandler::Load() {
 				}
 				// now load new structure...
 				profile* prof = FindProfile(pid);// ->lightsets.push_back(map);
-				colorset t;
+				groupset t;
 				t.color = map.eve[0].map;
 				if (map.devid) {
 					AlienFX_SDK::group* grp = CreateGroup("Zone");
@@ -291,6 +291,7 @@ void ConfigHandler::Load() {
 							return true;
 						});;
 					if (tGrp == afx_dev.GetGroups()->end()) {
+						grp->have_power = afx_dev.GetFlags(map.devid, map.lightid);
 						afx_dev.GetGroups()->push_back(*grp);
 						delete grp;
 						grp = &afx_dev.GetGroups()->back();
@@ -299,25 +300,20 @@ void ConfigHandler::Load() {
 						delete grp;
 						grp = &(*tGrp);
 					}
-					t.havePower = afx_dev.GetFlags(map.devid, map.lightid) & ALIENFX_FLAG_POWER;
-					t.groups.push_back(grp);
+					t.group = grp;
 				}
 				else
-					t.groups.push_back(afx_dev.GetGroupById(map.lightid));
+					t.group = afx_dev.GetGroupById(map.lightid);
 				if (map.flags & LEVENT_POWER) {
-					t.power = { true, 0, 0, 0, map.eve[1].map[0], map.eve[1].map[1] };
-					//prof->lightsets.events.push_back(t);
+					t.powers.push_back({ map.eve[1].map[0], map.eve[1].map[1] });
 				}
 				if (map.flags & LEVENT_PERF) {
-					t.perf = { true, map.eve[2].source, map.eve[2].cut, map.eve[2].proc, map.eve[2].map[0], map.eve[2].map[1] };
-					//prof->lightsets.events.push_back(t);
+					t.perfs.push_back({ map.eve[2].source, map.eve[2].cut, map.eve[2].proc, 0, map.eve[2].map[0], map.eve[2].map[1] });
 				}
 				if (map.flags & LEVENT_ACT) {
-					t.events = { true, map.eve[3].source, map.eve[3].cut, map.eve[3].proc, map.eve[3].map[0], map.eve[3].map[1] };
-					//prof->lightsets.events.push_back(t);
+					t.events.push_back({ map.eve[3].source, map.eve[3].cut, map.eve[3].proc, map.eve[3].map[0], map.eve[3].map[1] });
 				}
-				t.fromColor = map.flags & LEVENT_COLOR;
-				prof->lightsets.colors.push_back(t);
+				prof->lightsets.push_back(t);
 			}
 			delete[] inarray;
 		}
@@ -355,29 +351,29 @@ void ConfigHandler::Save() {
 	if (amb_conf) amb_conf->Save();
 	if (hap_conf) hap_conf->Save();
 
+	SetReg("AutoStart", startWindows);
+	SetReg("Minimized", startMinimized);
+	SetReg("UpdateCheck", updateCheck);
+	SetReg("LightsOn", lightsOn);
+	SetReg("Dimmed", dimmed);
+	SetReg("Monitoring", enableMon);
+	SetReg("OffWithScreen", offWithScreen);
+	SetReg("NoDesktopSwitch", noDesktop);
+	SetReg("DimPower", dimPowerButton);
+	SetReg("DimmedOnBattery", dimmedBatt);
+	SetReg("OffPowerButton", offPowerButton);
+	SetReg("OffOnBattery", offOnBattery);
+	SetReg("DimmingPower", dimmingPower);
+	SetReg("ActiveProfile", activeProfile->id);
+	SetReg("GammaCorrection", gammaCorrection);
+	SetReg("ProfileAutoSwitch", enableProf);
+	SetReg("DisableAWCC", awcc_disable);
+	SetReg("EsifTemp", esif_temp);
+	SetReg("FanControl", fanControl);
+
+	RegSetValueEx( hKey1, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
+
 	return; // DEBUG: don't save config!
-
-	//SetReg("AutoStart", startWindows);
-	//SetReg("Minimized", startMinimized);
-	//SetReg("UpdateCheck", updateCheck);
-	//SetReg("LightsOn", lightsOn);
-	//SetReg("Dimmed", dimmed);
-	//SetReg("Monitoring", enableMon);
-	//SetReg("OffWithScreen", offWithScreen);
-	//SetReg("NoDesktopSwitch", noDesktop);
-	//SetReg("DimPower", dimPowerButton);
-	//SetReg("DimmedOnBattery", dimmedBatt);
-	//SetReg("OffPowerButton", offPowerButton);
-	//SetReg("OffOnBattery", offOnBattery);
-	//SetReg("DimmingPower", dimmingPower);
-	//SetReg("ActiveProfile", activeProfile->id);
-	//SetReg("GammaCorrection", gammaCorrection);
-	//SetReg("ProfileAutoSwitch", enableProf);
-	//SetReg("DisableAWCC", awcc_disable);
-	//SetReg("EsifTemp", esif_temp);
-	//SetReg("FanControl", fanControl);
-
-	//RegSetValueEx( hKey1, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
 
 	//RegDeleteTreeA(hKey1, "Profiles");
 	//RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui\\Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey4, NULL);// &dwDisposition);

@@ -95,7 +95,7 @@ void RedrawGridButtonZone(bool recalc = false) {
     }
     //for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
     //    RedrawWindow(GetDlgItem(cgDlg, 2000 + i), 0, 0, RDW_INVALIDATE);
-    RedrawWindow(cgDlg, 0, 0, RDW_INVALIDATE);
+    RedrawWindow(cgDlg, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 void SetLightGridSize(HWND dlg, int x, int y) {
@@ -137,7 +137,9 @@ bool TranslateClick(HWND hDlg, LPARAM lParam) {
 void RepaintGrid(HWND hDlg) {
     InitGridButtonZone(hDlg);
     SendMessage(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), TBM_SETPOS, true, mainGrid->x);
+    SetSlider(tipH, mainGrid->x);
     SendMessage(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), TBM_SETPOS, true, mainGrid->y);
+    SetSlider(tipV, mainGrid->y);
     RedrawGridButtonZone(true);
 }
 
@@ -150,6 +152,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message) {
 	case WM_INITDIALOG:
 	{
+        cgDlg = hDlg;
         if (!conf->afx_dev.GetGrids()->size())
             conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main" });
         mainGrid = &conf->afx_dev.GetGrids()->front();
@@ -157,12 +160,10 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         tipH = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), tipH);
         tipV = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), tipV);
 
-        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(3, 22));
+        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(3, 30));
         //SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
-        SetSlider(tipH, mainGrid->x);
 
-        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 10));
-        SetSlider(tipV, mainGrid->y);
+        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 15));
         //SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
 
         //InitButtonZone(hDlg);
@@ -242,12 +243,12 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == gridY) {
                 SetLightGridSize(hDlg, mainGrid->x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-                SetSlider(tipH, mainGrid->y);
+                SetSlider(tipV, mainGrid->y);
             }
             break;
         default:
             if ((HWND)lParam == gridY) {
-                SetSlider(tipH, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+                SetSlider(tipV, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
             }
         }
         break;
@@ -273,6 +274,10 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             //    DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
         }
     } break;
+    case WM_DESTROY:
+        for (DWORD bID = 2000; GetDlgItem(hDlg, bID); bID++)
+            DestroyWindow(GetDlgItem(hDlg, bID));
+        break;
 	default: return false;
 	}
 	return true;

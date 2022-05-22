@@ -1019,6 +1019,34 @@ int UpdateLightList(HWND light_list, byte flag = 0) {
 	return pos;
 }
 
+int UpdateZoneList(HWND hDlg, byte flag = 0) {
+	int rpos = -1, pos = -1;
+	HWND zone_list = GetDlgItem(hDlg, IDC_LIST_ZONES);
+	LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE };
+	ListView_DeleteAllItems(zone_list);
+	ListView_SetExtendedListViewStyle(zone_list, LVS_EX_FULLROWSELECT);
+	if (!ListView_GetColumnWidth(zone_list, 0)) {
+		LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
+		ListView_InsertColumn(zone_list, 0, &lCol);
+	}
+	for (int i = 0; i < conf->afx_dev.GetGroups()->size(); i++) {
+		AlienFX_SDK::group grp = conf->afx_dev.GetGroups()->at(i);
+		string name = grp.name + " (" + to_string(grp.lights.size()) + " lights)";
+		lItem.iItem = pos;
+		lItem.lParam = grp.gid;
+		lItem.pszText = (LPSTR)name.c_str();
+		if (grp.gid == eItem) {
+			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
+			rpos = pos;
+		}
+		ListView_InsertItem(zone_list, &lItem);
+		pos++;
+	}
+	ListView_SetColumnWidth(zone_list, 0, LVSCW_AUTOSIZE_USEHEADER);
+	ListView_EnsureVisible(zone_list, rpos, false);
+	return pos;
+}
+
 colorset* CreateMapping(int lid) {
 	// create new mapping..
 	colorset newmap;

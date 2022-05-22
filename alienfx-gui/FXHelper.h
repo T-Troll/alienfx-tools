@@ -64,7 +64,7 @@ public:
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
-	bool RefreshOne(colorset* map, int force = 0, bool update = false);
+	bool RefreshOne(groupset* map, int force = 0, bool update = false);
 	bool SetMode(int mode);
 	void TestLight(int did, int id, bool wp=false);
 	void ResetPower(int did);

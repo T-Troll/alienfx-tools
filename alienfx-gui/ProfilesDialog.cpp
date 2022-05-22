@@ -281,7 +281,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_LIST_PROFILES:
 			switch (((NMHDR*) lParam)->code) {
 			case LVN_ITEMACTIVATE: {
-				//NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
 				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
 			} break;
 

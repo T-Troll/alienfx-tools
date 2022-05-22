@@ -29,11 +29,24 @@ union FlagSet {
 	DWORD s = 0;
 };
 
-struct event {
-	bool active = false;
+struct power_event {
+	AlienFX_SDK::afx_act from;
+	AlienFX_SDK::afx_act to;
+};
+
+struct perf_event {
 	BYTE source = 0;
 	BYTE cut = 0;
-	BYTE proc = 0;
+	BYTE mode = 0;
+	double coeff;
+	AlienFX_SDK::afx_act from;
+	AlienFX_SDK::afx_act to;
+};
+
+struct act_event {
+	BYTE source = 0;
+	BYTE cut = 0;
+	BYTE blink = 0;
 	AlienFX_SDK::afx_act from;
 	AlienFX_SDK::afx_act to;
 };
@@ -46,30 +59,15 @@ struct old_event {
 	vector<AlienFX_SDK::afx_act> map;
 };
 
-struct colorset {
-	bool fromColor = true;
-	bool havePower = false;
-	vector<AlienFX_SDK::group*> groups;
-	vector<AlienFX_SDK::afx_act> color;
-	event power;
-	event events;
-	event perf;
-};
-
-struct ambientset {
-	vector<AlienFX_SDK::group*> groups;
-	zone	ambient;
-};
-
-struct hapticset {
-	vector<AlienFX_SDK::group*> groups;
-	haptics_map haptic;
-};
-
 struct groupset {
-	vector<colorset> colors;
-	vector<ambientset> ambients;
-	vector<hapticset> haptics;
+	bool fromColor = false;
+	AlienFX_SDK::group* group;
+	vector<AlienFX_SDK::afx_act> color;
+	vector<power_event> powers;
+	vector<perf_event> perfs;
+	vector<act_event> events;
+	vector<zone> ambients;
+	vector<haptics_map> haptics;
 };
 
 struct lightset {
@@ -91,8 +89,7 @@ struct profile {
 	WORD effmode = 0;
 	vector<string> triggerapp;
 	string name;
-	//vector<lightset> lightsets;
-	groupset lightsets;
+	vector<groupset> lightsets;
 	fan_profile fansets;
 	AlienFX_SDK::Colorcode effColor1, effColor2;
 	byte globalEffect = 0,
@@ -149,7 +146,7 @@ public:
 	ConfigHaptics *hap_conf = NULL;
 
 	//vector<lightset>* active_set;
-	groupset* active_set;
+	vector<groupset>* active_set;
 	vector<profile*> profiles;
 
 	// mapping block from SDK

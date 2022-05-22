@@ -9,7 +9,7 @@ extern void RemoveMapping(groupset* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern int UpdateLightList(HWND light_list, byte flag = 0);
+extern int UpdateZoneList(HWND hDlg, byte flag = 0);
 
 extern int eItem;
 
@@ -294,7 +294,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 	case WM_INITDIALOG:
 	{
-		if (eItem = UpdateLightList(light_list) < 0) {
+		if (eItem = UpdateZoneList(hDlg) < 0) {
 			// no lights, switch to setup
 			SwitchLightTab(hDlg, TAB_DEVICES);
 			return false;
@@ -453,6 +453,50 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				//SetLightColors(hDlg, eItem);
 			}
 			break;
+		case IDC_BUT_ADD_ZONE: {
+			AlienFX_SDK::group* grp = conf->CreateGroup("New zone");
+			conf->afx_dev.GetGroups()->push_back(*grp);
+			eItem = grp->gid;
+			UpdateZoneList(hDlg);
+			//conf->afx_dev.SaveMappings();
+		} break;
+		case IDC_BUT_DEL_ZONE:
+			if (eItem > 0) {
+				// delete from all profiles...
+				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
+					// erase group from list
+					for (auto it = (*Iter)->lightsets.colors.begin(); it < (*Iter)->lightsets.colors.end(); it++) {
+						for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
+							if ((*lList)->gid == eItem) {
+								it->groups.erase(lList);
+								break;
+							}
+						if (it->groups.empty()) {
+							(*Iter)->lightsets.colors.erase(it);
+							it--;
+						}
+					}
+				}
+				for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
+					if (Iter->gid == eItem) {
+						conf->afx_dev.GetGroups()->erase(Iter);
+						break;
+					}
+				/*conf->afx_dev.SaveMappings();
+				conf->Save();*/
+				//ComboBox_DeleteString(groups_list, gItem);
+				//if (conf->afx_dev.GetGroups()->size() > 0) {
+				//	if (eItem >= conf->afx_dev.GetGroups()->size())
+				//		eItem--;
+				//	gLid = conf->afx_dev.GetGroups()->at(gItem).gid;
+				//	grp = &conf->afx_dev.GetGroups()->at(gItem);
+				//	UpdateLightListG(light_list, grp);
+				//}
+				//else {
+				//	eItem = -1;
+				//}
+			}
+			break;
 		//case IDC_BUTTON_SETALL:
 		//	switch (HIWORD(wParam))
 		//	{
@@ -607,6 +651,45 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
 					RebuildEffectList(hDlg, mmap);
 				}
+			} break;
+			}
+			break;
+		case IDC_LIST_ZONES:
+			switch (((NMHDR*)lParam)->code) {
+			case LVN_ITEMACTIVATE: {
+				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
+			} break;
+
+			case LVN_ITEMCHANGED:
+			{
+				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
+				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
+					// Select other item...
+					eItem = (int)lPoint->lParam;// lbItem;
+					effID = 0;
+					mmap = FindMapping(eItem);
+					RebuildEffectList(hDlg, mmap);
+					RedrawGridButtonZone();
+				}
+				//else {
+				//	/*eItem = -1;
+				//	mmap = NULL;
+				//	RebuildEffectList(hDlg, mmap);
+				//	RedrawGridButtonZone();*/
+				//}
+			} break;
+			case LVN_ENDLABELEDIT:
+			{
+				NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
+				AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById((int)sItem->item.lParam);
+				if (grp && sItem->item.pszText) {
+					grp->name = sItem->item.pszText;
+					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
+					//ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 0, LVSCW_AUTOSIZE);
+					return true;
+				}
+				else
+					return false;
 			} break;
 			}
 			break;

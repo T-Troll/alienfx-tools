@@ -305,6 +305,10 @@ BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         }
     } break;
+    case WM_DESTROY:
+        for (DWORD bID = 2000; GetDlgItem(hDlg, bID); bID++)
+            DestroyWindow(GetDlgItem(hDlg, bID));
+        break;
 	default: return false;
 	}
 	return true;

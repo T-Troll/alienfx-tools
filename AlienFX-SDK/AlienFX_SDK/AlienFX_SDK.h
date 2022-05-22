@@ -73,15 +73,16 @@ namespace AlienFX_SDK {
 		DWORD gid;// = 0;
 		string name;
 		vector<pair<DWORD,DWORD>> lights;
+		bool have_power = false;
 	};
 
-#define MAXGRIDSIZE 220
+#define MAXGRIDSIZE 450
 
 	struct lightgrid {
 		byte id;
 		byte x, y;
 		string name;
-		DWORD grid[22][10];
+		DWORD grid[30][15];
 	};
 
 	struct afx_act { // atomic light action phase

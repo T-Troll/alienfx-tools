@@ -36,6 +36,8 @@ typedef struct tag_dlghdr {
 	DLGPROC* apProc; // dialog functions
 } DLGHDR;
 
+#define _i(_x, _y) (_y*mainGrid->x+_x)
+
 extern HINSTANCE hInst;
 
 extern FXHelper* fxhl;
