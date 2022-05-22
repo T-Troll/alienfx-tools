@@ -82,7 +82,7 @@ namespace AlienFX_SDK {
 		byte id;
 		byte x, y;
 		string name;
-		DWORD grid[30][15];
+		DWORD *grid;
 	};
 
 	struct afx_act { // atomic light action phase

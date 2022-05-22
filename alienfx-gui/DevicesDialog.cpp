@@ -2,7 +2,7 @@
 #include "alienfx-controls.h"
 
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-extern void RemoveMapping(groupset* lightsets);
+extern void RemoveUnused(groupset* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);

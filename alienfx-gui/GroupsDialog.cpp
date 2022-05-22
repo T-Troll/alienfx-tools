@@ -1,6 +1,6 @@
 #include "alienfx-gui.h"
 
-extern void RemoveMapping(groupset* lightsets);
+extern void RemoveUnused(groupset* lightsets);
 
 int	gLid = -1, gItem = -1;
 
@@ -117,42 +117,42 @@ BOOL TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		case IDC_BUTTON_REMG: {
 			if (gLid > 0) {
 				// delete from all profiles...
-				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
-					// erase group from list
-					for (auto it = (*Iter)->lightsets.colors.begin(); it < (*Iter)->lightsets.colors.end(); it++) {
-						for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
-							if ((*lList)->gid == gLid) {
-								it->groups.erase(lList);
-								break;
-							}
-						if (it->groups.empty()) {
-							(*Iter)->lightsets.colors.erase(it);
-							it--;
-						}
-					}
-				}
-				for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
-					if (Iter->gid == gLid) {
-						conf->afx_dev.GetGroups()->erase(Iter);
-						break;
-					}
-				conf->afx_dev.SaveMappings();
-				conf->Save();
-				ComboBox_DeleteString(groups_list, gItem);
-				if (conf->afx_dev.GetGroups()->size() > 0) {
-					if (gItem >= conf->afx_dev.GetGroups()->size())
-						gItem--;
-					gLid = conf->afx_dev.GetGroups()->at(gItem).gid;
-					grp = &conf->afx_dev.GetGroups()->at(gItem);
-					UpdateLightListG(light_list, grp);
-				} else {
-					gLid = -1;
-					gItem = -1;
-					EnableWindow(groups_list, false);
-					EnableWindow(glights_list, false);
-				}
-				ComboBox_SetCurSel(groups_list, gItem);
-				UpdateGroupLights(glights_list, gLid,0);
+				//for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
+				//	// erase group from list
+				//	for (auto it = (*Iter)->lightsets.colors.begin(); it < (*Iter)->lightsets.colors.end(); it++) {
+				//		for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
+				//			if ((*lList)->gid == gLid) {
+				//				it->groups.erase(lList);
+				//				break;
+				//			}
+				//		if (it->groups.empty()) {
+				//			(*Iter)->lightsets.colors.erase(it);
+				//			it--;
+				//		}
+				//	}
+				//}
+				//for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
+				//	if (Iter->gid == gLid) {
+				//		conf->afx_dev.GetGroups()->erase(Iter);
+				//		break;
+				//	}
+				//conf->afx_dev.SaveMappings();
+				//conf->Save();
+				//ComboBox_DeleteString(groups_list, gItem);
+				//if (conf->afx_dev.GetGroups()->size() > 0) {
+				//	if (gItem >= conf->afx_dev.GetGroups()->size())
+				//		gItem--;
+				//	gLid = conf->afx_dev.GetGroups()->at(gItem).gid;
+				//	grp = &conf->afx_dev.GetGroups()->at(gItem);
+				//	UpdateLightListG(light_list, grp);
+				//} else {
+				//	gLid = -1;
+				//	gItem = -1;
+				//	EnableWindow(groups_list, false);
+				//	EnableWindow(glights_list, false);
+				//}
+				//ComboBox_SetCurSel(groups_list, gItem);
+				//UpdateGroupLights(glights_list, gLid,0);
 			}
 		} break;
 		case IDC_BUT_ADDTOG:

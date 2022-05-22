@@ -1,11 +1,11 @@
 #include "alienfx-gui.h"
 
 extern void SwitchLightTab(HWND, int);
-extern bool SetColor(HWND hDlg, int id, colorset* mmap, AlienFX_SDK::afx_act* map);
+extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
-extern colorset* CreateMapping(int lid);
-extern colorset* FindMapping(int mid);
-extern void RemoveMapping(groupset* lightsets);
+extern groupset* CreateMapping(int lid);
+extern groupset* FindMapping(int mid);
+extern void RemoveUnused(vector<groupset>* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
@@ -32,7 +32,7 @@ extern AlienFX_SDK::lightgrid* mainGrid;
 
 int effID = -1;
 
-void SetEffectData(HWND hDlg, colorset* mmap) {
+void SetEffectData(HWND hDlg, groupset* mmap) {
 	bool hasEffects = false;
 	if (mmap && mmap->color.size()) {
 		//switch (fxhl->LocateDev(mmap->lights[0]->devid) ? fxhl->LocateDev(mmap->lights[0]->devid)->dev->GetVersion() : -1) {
@@ -48,13 +48,13 @@ void SetEffectData(HWND hDlg, colorset* mmap) {
 		SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
 		SetSlider(sTip2, mmap->color[effID].time);
 	}
-	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !mmap->havePower);
+	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !mmap->group->have_power);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
 	RedrawButton(hDlg, IDC_BUTTON_C1, mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
 }
 
-void RebuildEffectList(HWND hDlg, colorset* mmap) {
+void RebuildEffectList(HWND hDlg, groupset* mmap) {
 	HWND eff_list = GetDlgItem(hDlg, IDC_LEFFECTS_LIST),
 		s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
@@ -285,7 +285,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		grpList = GetDlgItem(hDlg, IDC_GRPLIST),
 		gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID);
 
-	colorset* mmap = FindMapping(eItem);
+	groupset* mmap = FindMapping(eItem);
 
 	//int devid = eItem >= 0 && eItem < 0x10000 ? conf->afx_dev.GetMappings()->at(eItem)->devid : 0,
 	//	lightid = eItem >= 0 && eItem < 0x10000 ? conf->afx_dev.GetMappings()->at(eItem)->lightid : eItem;
@@ -411,7 +411,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (!mmap) {
 					// create new mapping..
 					mmap = CreateMapping(lid);
-					if (mmap->color.size() && mmap->havePower) {
+					if (mmap->color.size() && mmap->group->have_power) {
 						act.type = AlienFX_SDK::AlienFX_A_Power;
 						act.time = 3;
 						act.tempo = 0x64;
@@ -421,7 +421,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						mmap->color.push_back(act);
 					effID = 0;
 				} else
-					if (!mmap->havePower && mmap->color.size() < 9) {
+					if (!mmap->group->have_power && mmap->color.size() < 9) {
 						act = mmap->color[effID];
 						mmap->color.push_back(act);
 						effID = (int)mmap->color.size() - 1;
@@ -433,7 +433,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_BUTT_REMOVE_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap) {
-				if (mmap->havePower)
+				if (mmap->group->have_power)
 					mmap->color.clear();
 				else {
 					mmap->color.pop_back();
@@ -442,7 +442,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				// remove mapping if no colors and effects!
 				if (mmap->color.empty()) {
-					RemoveMapping(conf->active_set);
+					RemoveUnused(conf->active_set);
 					RebuildEffectList(hDlg, NULL);
 					effID = -1;
 					fxhl->Refresh();
@@ -464,24 +464,20 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (eItem > 0) {
 				// delete from all profiles...
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
-					// erase group from list
-					for (auto it = (*Iter)->lightsets.colors.begin(); it < (*Iter)->lightsets.colors.end(); it++) {
-						for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
-							if ((*lList)->gid == eItem) {
-								it->groups.erase(lList);
-								break;
-							}
-						if (it->groups.empty()) {
-							(*Iter)->lightsets.colors.erase(it);
-							it--;
-						}
-					}
+					auto pos = find_if((*Iter)->lightsets.begin(), (*Iter)->lightsets.end(),
+						[](auto t) {
+							return t.group->gid == eItem;
+						});
+					if (pos != (*Iter)->lightsets.end())
+						(*Iter)->lightsets.erase(pos);
 				}
 				for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
 					if (Iter->gid == eItem) {
 						conf->afx_dev.GetGroups()->erase(Iter);
 						break;
 					}
+				// ToDo: update UI
+
 				/*conf->afx_dev.SaveMappings();
 				conf->Save();*/
 				//ComboBox_DeleteString(groups_list, gItem);

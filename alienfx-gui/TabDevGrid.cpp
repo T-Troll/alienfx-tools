@@ -64,33 +64,32 @@ void RedrawGridButtonZone(bool recalc = false) {
         for (int x = 0; x < mainGrid->x; x++)
             for (int y = 0; y < mainGrid->y; y++)
                 colorGrid[x][y] = { NULL, NULL };
-        for (auto cs = conf->activeProfile->lightsets.colors.begin();
-            cs < conf->activeProfile->lightsets.colors.end(); cs++) {
-            for (auto cgrp = cs->groups.begin(); cgrp < cs->groups.end(); cgrp++)
-                for (auto clgh = (*cgrp)->lights.begin(); clgh < (*cgrp)->lights.end(); clgh++) {
-                    for (int x = 0; x < mainGrid->x; x++)
-                        for (int y = 0; y < mainGrid->y; y++)
-                            if (LOWORD(mainGrid->grid[x][y]) == clgh->first &&
-                                HIWORD(mainGrid->grid[x][y]) == clgh->second) {
-                                if (cs->color.size()) {
-                                    colorGrid[x][y] = { &cs->color.front(), &cs->color.back() };
+        for (auto cs = conf->activeProfile->lightsets.begin();
+            cs < conf->activeProfile->lightsets.end(); cs++) {
+            for (auto clgh = cs->group->lights.begin(); clgh < cs->group->lights.end(); clgh++) {
+                for (int x = 0; x < mainGrid->x; x++)
+                    for (int y = 0; y < mainGrid->y; y++)
+                        if (LOWORD(mainGrid->grid[x][y]) == clgh->first &&
+                            HIWORD(mainGrid->grid[x][y]) == clgh->second) {
+                            if (cs->color.size()) {
+                                colorGrid[x][y] = { &cs->color.front(), &cs->color.back() };
+                            }
+                            if (conf->GetEffect() == 0) {// monitoring
+                                if (cs->powers.size()) {
+                                    colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->powers[0].from;
+                                    colorGrid[x][y].second = &cs->powers[0].to;
                                 }
-                                if (conf->GetEffect() == 0) {// monitoring
-                                    if (cs->power.active) {
-                                        colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->power.from;
-                                        colorGrid[x][y].second = &cs->power.to;
-                                    }
-                                    if (cs->perf.active) {
-                                        colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->perf.from;
-                                        colorGrid[x][y].second = &cs->perf.to;
-                                    }
-                                    if (cs->events.active) {
-                                        colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->events.from;
-                                        colorGrid[x][y].second = &cs->events.to;
-                                    }
+                                if (cs->perfs.size()) {
+                                    colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->perfs[0].from;
+                                    colorGrid[x][y].second = &cs->perfs[0].to;
+                                }
+                                if (cs->events.size()) {
+                                    colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->events[0].from;
+                                    colorGrid[x][y].second = &cs->events[0].to;
                                 }
                             }
-                }
+                        }
+            }
         }
     }
     //for (int i = 0; i < mainGrid->x * mainGrid->y; i++)

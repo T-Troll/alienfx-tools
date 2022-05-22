@@ -2,7 +2,7 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern colorset* FindMapping(int mid);
+extern groupset* FindMapping(int mid);
 
 //extern void SetLightInfo(HWND hDlg);
 
@@ -291,17 +291,12 @@ BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (!gridVal)
                 DrawEdge(ditem->hDC, &ditem->rcItem, /*selected ? EDGE_SUNKEN : */EDGE_RAISED, BF_RECT);
             else {
-                colorset* mmap = FindMapping(eItem);
-                if (mmap) {
-                    if (find_if(mmap->groups.begin(), mmap->groups.end(),
-                        [gridVal](auto tgrp) {
-                            return find_if(tgrp->lights.begin(), tgrp->lights.end(),
+                groupset* mmap = FindMapping(eItem);
+                if (mmap && find_if(mmap->group->lights.begin(), mmap->group->lights.end(),
                                 [gridVal](auto lgh) {
                                     return lgh.first == LOWORD(gridVal) && lgh.second == HIWORD(gridVal);
-                                }) != tgrp->lights.end();
-                        }) != mmap->groups.end())
+                                }) != mmap->group->lights.end())
                         DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
-                }
             }
         }
     } break;

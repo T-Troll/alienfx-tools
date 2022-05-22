@@ -912,7 +912,7 @@ AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act *act) {
 
 DWORD CColorRefreshProc(LPVOID param) {
 	AlienFX_SDK::afx_act last = *mod;
-	colorset* mmap = (colorset*)param;
+	groupset* mmap = (groupset*)param;
 	while (WaitForSingleObject(stopColorRefresh, 200)) {
 		if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
 			last = *mod;
@@ -939,7 +939,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-bool SetColor(HWND hDlg, int id, colorset* mmap, AlienFX_SDK::afx_act* map) {
+bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map) {
 	CHOOSECOLOR cc{ sizeof(cc), hDlg, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
 	bool ret;
@@ -981,13 +981,13 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 	return ret;
 }
 
-colorset* FindMapping(int mid)
+groupset* FindMapping(int mid)
 {
 	if (mid > 0) {
-		auto res = find_if(conf->active_set->colors.begin(), conf->active_set->colors.end(), [mid](colorset ls) {
-			return ls.groups.size() && ls.groups[0]->gid == mid;
+		auto res = find_if(conf->active_set->begin(), conf->active_set->end(), [mid](groupset ls) {
+			return ls.group->gid == mid;
 			});
-		return res == conf->active_set->colors.end() ? nullptr : &(*res);
+		return res == conf->active_set->end() ? nullptr : &(*res);
 	}
 	return nullptr;
 }
@@ -1020,7 +1020,7 @@ int UpdateLightList(HWND light_list, byte flag = 0) {
 }
 
 int UpdateZoneList(HWND hDlg, byte flag = 0) {
-	int rpos = -1, pos = -1;
+	int rpos = -1, pos = 0;
 	HWND zone_list = GetDlgItem(hDlg, IDC_LIST_ZONES);
 	LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE };
 	ListView_DeleteAllItems(zone_list);
@@ -1036,7 +1036,7 @@ int UpdateZoneList(HWND hDlg, byte flag = 0) {
 		lItem.lParam = grp.gid;
 		lItem.pszText = (LPSTR)name.c_str();
 		if (grp.gid == eItem) {
-			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
+			lItem.state = LVIS_SELECTED;
 			rpos = pos;
 		}
 		ListView_InsertItem(zone_list, &lItem);
@@ -1047,19 +1047,20 @@ int UpdateZoneList(HWND hDlg, byte flag = 0) {
 	return pos;
 }
 
-colorset* CreateMapping(int lid) {
+groupset* CreateMapping(int lid) {
 	// create new mapping..
-	colorset newmap;
-	newmap.groups.push_back(conf->afx_dev.GetGroupById(lid));
-	conf->active_set->colors.push_back(newmap);
-	return &conf->active_set->colors.back();
+	groupset newmap;
+	newmap.group = conf->afx_dev.GetGroupById(lid);
+	conf->active_set->push_back(newmap);
+	return &conf->active_set->back();
 }
 
-void RemoveMapping(groupset* lightsets) {
-	for (auto it = lightsets->colors.begin(); it < lightsets->colors.end();)
-		if (it->color.empty() && !it->power.active && !it->events.active && !it->perf.active) {
-			lightsets->colors.erase(it);
-			it = lightsets->colors.begin();
+void RemoveUnused(vector<groupset>* lightsets) {
+	for (auto it = lightsets->begin(); it < lightsets->end();)
+		if (!(it->color.size() + it->events.size() + it->perfs.size() +
+			it->powers.size() + it->ambients.size() + it->haptics.size())) {
+			lightsets->erase(it);
+			it = lightsets->begin();
 		}
 		else
 			it++;
@@ -1127,25 +1128,27 @@ void RemoveLightAndClean(int dPid, int eLid) {
 	// delete from all groups...
 	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
 		RemoveLightFromGroup(&(*iter), dPid, eLid);
-		if (iter->lights.empty()) {
-			// remove from profiles...
-			for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
-				// erase mappings
-				for (auto it = (*Iter)->lightsets.colors.begin(); it < (*Iter)->lightsets.colors.end(); it++) {
-					for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
-						if ((*lList)->gid == iter->gid) {
-							it->groups.erase(lList);
-							break;
-						}
-					if (it->groups.empty()) {
-						(*Iter)->lightsets.colors.erase(it);
-						it--;
-					}
-				}
-			}
-			conf->afx_dev.GetGroups()->erase(iter);
-			iter--;
-		}
+		// for now, better keep mappings.
+		//if (iter->lights.empty()) {
+		//	// remove from profiles...
+		//	for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
+		//		// erase mappings
+		//		for (auto it = (*Iter)->lightsets.begin(); it < (*Iter)->lightsets.end(); it++) {
+		//			if ()
+		//			for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
+		//				if ((*lList)->gid == iter->gid) {
+		//					it->groups.erase(lList);
+		//					break;
+		//				}
+		//			if (it->groups.empty()) {
+		//				(*Iter)->lightsets.colors.erase(it);
+		//				it--;
+		//			}
+		//		}
+		//	}
+		//	conf->afx_dev.GetGroups()->erase(iter);
+		//	iter--;
+		//}
 	}
 }
 

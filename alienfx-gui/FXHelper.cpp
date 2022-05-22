@@ -101,13 +101,14 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		vector<AlienFX_SDK::afx_act> actions;
 		bool noDiff = true;
 		int lVal = 0, cVal = 0;
-		AlienFX_SDK::afx_act from{ 99 }, fin{ 99 };
+		AlienFX_SDK::afx_act from{ 99 }, fin{ 99 }, * gFin = NULL;
 		if (Iter->fromColor) {
 			from = Iter->group->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color[1] : Iter->color[0];
 			from.type = 0;
 		}
 		if (Iter->perfs.size()) {
 			// counter
+			gFin = &Iter->perfs[0].to;
 			switch (Iter->perfs[0].source) {
 			case 0: lVal = eData.CPU; cVal = data->CPU; break;
 			case 1: lVal = eData.RAM; cVal = data->RAM; break;
@@ -148,13 +149,16 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			if (force || (lVal != cVal && ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1)) { //check 0 border!
 				noDiff = false;
 				if (cVal > 0 && (!blink || blinkStage))
-					fin = Iter->events[0].to;
+					gFin = &(fin = Iter->events[0].to);
+				else
+					if (cVal <= 0 && Iter->perfs.size())
+						gFin = &Iter->perfs[0].to;
 			}
 			else
 				if (cVal > 0 && blink) {
 					noDiff = false;
 					if (blinkStage)
-						fin = Iter->events[0].to;
+						gFin = &(fin = Iter->events[0].to);
 				}
 		}
 
@@ -173,7 +177,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			}
 
 		//for (auto it = Iter->groups.begin(); it < Iter->groups.end(); it++)
-		SetGroupLight(Iter->group->gid, actions, false, Iter->perfs.size() && Iter->perfs[0].mode ? &from : NULL, &Iter->perfs[0].to, Iter->perfs[0].coeff);
+		SetGroupLight(Iter->group->gid, actions, false, Iter->perfs.size() && Iter->perfs[0].mode ? &from : NULL, gFin, Iter->perfs[0].coeff);
 	}
 	if (wasChanged) {
 		QueryUpdate();

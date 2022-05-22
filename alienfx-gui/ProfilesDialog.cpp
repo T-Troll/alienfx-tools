@@ -168,11 +168,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						   MB_OK | MB_ICONERROR);
 		} break;
 		case IDC_BUT_PROFRESET:
-			if (MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning",
+			if (MessageBox(hDlg, "Do you really want to reset all light settings for this profile?", "Warning",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
-				prof->lightsets.colors.clear();
-				prof->lightsets.ambients.clear();
-				prof->lightsets.haptics.clear();
+				prof->lightsets.clear();
 			}
 			break;
 		case IDC_BUT_COPYACTIVE:
