@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_015851A88B2E497E6C19EE42E0C66BC8"
+        "OwnerKey" = "8:_678C7A24858C40D5841D4C44812C6A93"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_0207635732654CE6A87615796F8EEC39"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -103,6 +109,18 @@
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
+        "Entry"
+        {
+        "MsmKey" = "8:_D22F61038ABB17E9902DAEEECA02B4EB"
+        "OwnerKey" = "8:_678C7A24858C40D5841D4C44812C6A93"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E5943F519A7605D4A75B1464669B4546"
+        "OwnerKey" = "8:_678C7A24858C40D5841D4C44812C6A93"
+        "MsmSig" = "8:_UNDEFINED"
+        }
     }
     "Configurations"
     {
@@ -185,6 +203,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_015851A88B2E497E6C19EE42E0C66BC8"
+            {
+            "SourcePath" = "8:msdelta.dll"
+            "TargetName" = "8:msdelta.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0207635732654CE6A87615796F8EEC39"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-gui.md"
@@ -325,6 +363,46 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D22F61038ABB17E9902DAEEECA02B4EB"
+            {
+            "SourcePath" = "8:RPCRT4.dll"
+            "TargetName" = "8:RPCRT4.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E5943F519A7605D4A75B1464669B4546"
+            {
+            "SourcePath" = "8:ntdll.dll"
+            "TargetName" = "8:ntdll.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
@@ -415,7 +493,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
         "ProductCode" = "8:{87E8A274-EABB-49F4-83CA-EBE437A0F49D}"
-        "PackageCode" = "8:{F5DA8115-57EF-4550-9CC5-604E31DFD739}"
+        "PackageCode" = "8:{BA4EA59B-9B29-41AD-B368-E2895ADCCBDD}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
