@@ -69,24 +69,31 @@ void RedrawGridButtonZone(bool recalc = false) {
             for (auto clgh = cs->group->lights.begin(); clgh < cs->group->lights.end(); clgh++) {
                 for (int x = 0; x < mainGrid->x; x++)
                     for (int y = 0; y < mainGrid->y; y++)
-                        if (LOWORD(mainGrid->grid[x][y]) == clgh->first &&
-                            HIWORD(mainGrid->grid[x][y]) == clgh->second) {
-                            if (cs->color.size()) {
-                                colorGrid[x][y] = { &cs->color.front(), &cs->color.back() };
-                            }
-                            if (conf->GetEffect() == 0) {// monitoring
+                        if (LOWORD(mainGrid->grid[ind(x,y)]) == clgh->first &&
+                            HIWORD(mainGrid->grid[ind(x,y)]) == clgh->second) {
+                            switch (conf->GetEffect()) {
+                            case 0: // monitoring
                                 if (cs->powers.size()) {
-                                    colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->powers[0].from;
+                                    colorGrid[x][y].first = cs->fromColor && cs->color.size() ? &cs->color.front() : &cs->powers[0].from;
                                     colorGrid[x][y].second = &cs->powers[0].to;
                                 }
                                 if (cs->perfs.size()) {
-                                    colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->perfs[0].from;
+                                    colorGrid[x][y].first = cs->fromColor && cs->color.size() ? &cs->color.front() : &cs->perfs[0].from;
                                     colorGrid[x][y].second = &cs->perfs[0].to;
                                 }
                                 if (cs->events.size()) {
-                                    colorGrid[x][y].first = cs->fromColor ? colorGrid[x][y].first : &cs->events[0].from;
+                                    colorGrid[x][y].first = cs->fromColor && cs->color.size() ? &cs->color.front() : &cs->events[0].from;
                                     colorGrid[x][y].second = &cs->events[0].to;
                                 }
+                                break;
+                            case 2: // haptics
+                                if (cs->haptics.size()) {
+                                    //colorGrid[x][y] = { cs->haptics[0].freqs[0].colorfrom, cs->haptics[0].freqs[0].colorto };
+                                }
+                                break;
+                            }
+                            if (!colorGrid[x][y].first && cs->color.size()) {
+                                colorGrid[x][y] = { &cs->color.front(), &cs->color.back() };
                             }
                         }
             }
@@ -98,6 +105,12 @@ void RedrawGridButtonZone(bool recalc = false) {
 }
 
 void SetLightGridSize(HWND dlg, int x, int y) {
+    DWORD* newgrid = new DWORD[x * y]{ 0 };
+    for (int row = 0; row < min(mainGrid->y, y); row++)
+        memcpy(newgrid + row * min(mainGrid->x, x),
+            mainGrid->grid + row * min(mainGrid->x, x), min(mainGrid->x, x) * sizeof(DWORD));
+    delete[] mainGrid->grid;
+    mainGrid->grid = newgrid;
     mainGrid->x = x;
     mainGrid->y = y;
     InitGridButtonZone(dlg);
@@ -106,11 +119,11 @@ void SetLightGridSize(HWND dlg, int x, int y) {
 void ModifyDragZone(WORD did, WORD lid, bool clear = false) {
     for (int x = dragZone.left; x <= dragZone.right; x++)
         for (int y = dragZone.top; y <= dragZone.bottom; y++) {
-            if (!mainGrid->grid[x][y] && !clear)
-                mainGrid->grid[x][y] = MAKELPARAM(did, lid);
+            if (!mainGrid->grid[ind(x,y)] && !clear)
+                mainGrid->grid[ind(x,y)] = MAKELPARAM(did, lid);
             else
-                if (clear && mainGrid->grid[x][y] == MAKELPARAM(did, lid))
-                    mainGrid->grid[x][y] = 0;
+                if (clear && mainGrid->grid[ind(x,y)] == MAKELPARAM(did, lid))
+                    mainGrid->grid[ind(x,y)] = 0;
         }
 }
 
@@ -169,17 +182,30 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         //RedrawButtonZone(hDlg);
         RepaintGrid(hDlg);
 	} break;
+    case WM_COMMAND: {
+        switch (LOWORD(wParam))
+        {
+        case IDC_BUT_CLEARGRID:
+            if (eLid >= 0) {
+                for (int ind = 0; ind < mainGrid->x * mainGrid->y; ind++)
+                    if (mainGrid->grid[ind] == MAKELPARAM(devID, eLid))
+                        mainGrid->grid[ind] = 0;
+                RedrawGridButtonZone();
+            }
+            break;
+        }
+    } break;
     case WM_RBUTTONUP: {
         // remove grid mapping
         if (TranslateClick(hDlg, lParam)) {
-            mainGrid->grid[clkPoint.x][clkPoint.y] = 0;
+            mainGrid->grid[ind(clkPoint.x,clkPoint.y)] = 0;
             RedrawGridButtonZone();
         }
     } break;
     case WM_LBUTTONDOWN: {
         // selection mark
         if (TranslateClick(hDlg, lParam)) {
-            oldClkValue = mainGrid->grid[clkPoint.x][clkPoint.y];
+            oldClkValue = mainGrid->grid[ind(clkPoint.x, clkPoint.y)];
         }
         dragZone = { clkPoint.x, clkPoint.y, clkPoint.x, clkPoint.y };
         dragStart = clkPoint;
@@ -195,7 +221,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             else {
                 // single click at assigned grid
                 if (oldClkValue == MAKELPARAM(devID, eLid))
-                    mainGrid->grid[dragZone.left][dragZone.top] = 0;
+                    mainGrid->grid[ind(dragZone.left,dragZone.top)] = 0;
                 else {
                     // change light to old one
                     eLid = HIWORD(oldClkValue);
@@ -254,7 +280,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     case WM_DRAWITEM: {
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
-            DWORD gridVal = mainGrid->grid[(ditem->CtlID - 2000) % mainGrid->x][(ditem->CtlID - 2000) / mainGrid->x];
+            DWORD gridVal = mainGrid->grid[(ditem->CtlID - 2000)];//% mainGrid->x][(ditem->CtlID - 2000) / mainGrid->x];
             WORD idVal = HIWORD(gridVal) << 4;
             HBRUSH Brush = NULL;
             if (gridVal) {

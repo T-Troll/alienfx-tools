@@ -1338,7 +1338,7 @@ namespace AlienFX_SDK {
 			RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
 			DWORD sizes = ((DWORD)grids[i].x << 8) | grids[i].y;
 			RegSetValueExA(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
-			RegSetValueExA(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)&grids[i].grid, grids[i].x * grids[i].y * sizeof(DWORD));
+			RegSetValueExA(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)grids[i].grid, grids[i].x * grids[i].y * sizeof(DWORD));
 			RegCloseKey(hKeyS);
 		}
 

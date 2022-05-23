@@ -444,8 +444,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); it++)
 					for (int x = 0; x < it->x; x++)
 						for (int y = 0; y < it->y; y++)
-							if (it->grid[x][y] == MAKELPARAM(dPid, eLid))
-								it->grid[x][y] = 0;
+							if (it->grid[ind(x,y)] == MAKELPARAM(dPid, eLid))
+								it->grid[ind(x,y)] = 0;
 
 				// delete from all groups...
 				RemoveLightAndClean(dPid, eLid);
@@ -633,7 +633,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 								else
 									it++;
 							}
-							conf->afx_dev.GetGrids()->push_back({ newGridIndex, mainGrid->x, mainGrid->y, "Grid #" + to_string(newGridIndex) });
+							DWORD* newGrid = new DWORD[mainGrid->x * mainGrid->y]{ 0 };
+							conf->afx_dev.GetGrids()->push_back({ newGridIndex, mainGrid->x, mainGrid->y, "Grid #" + to_string(newGridIndex), newGrid });
 							mainGrid = &conf->afx_dev.GetGrids()->back();
 							//RedrawGridList(hDlg);
 							TCITEM tie{ TCIF_TEXT };
@@ -651,6 +652,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 										// remove
 										if ((it + 1) == conf->afx_dev.GetGrids()->end())
 											newTab--;
+										delete[] it->grid;
 										conf->afx_dev.GetGrids()->erase(it);
 										TabCtrl_DeleteItem(gridTab, gridTabSel);
 										TabCtrl_SetCurSel(gridTab, newTab);

@@ -613,6 +613,7 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
     </ClCompile>
+    <ClCompile Include="ZoneSel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="alienfx-gui.rc" />
