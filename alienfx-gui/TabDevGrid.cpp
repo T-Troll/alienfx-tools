@@ -99,9 +99,13 @@ void RedrawGridButtonZone(bool recalc = false) {
             }
         }
     }
+    RECT pRect;
+    GetWindowRect(GetDlgItem(cgDlg, IDC_BUTTON_ZONE), &pRect);
+    MapWindowPoints(HWND_DESKTOP, cgDlg, (LPPOINT)&pRect, 2);
+    RedrawWindow(cgDlg, &pRect, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
     //for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
     //    RedrawWindow(GetDlgItem(cgDlg, 2000 + i), 0, 0, RDW_INVALIDATE);
-    RedrawWindow(cgDlg, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+    //RedrawWindow(cgDlg, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 void SetLightGridSize(HWND dlg, int x, int y) {

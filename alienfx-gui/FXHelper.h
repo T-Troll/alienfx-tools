@@ -43,7 +43,7 @@ private:
 	void QueryUpdate(int did = -1, bool force = false);
 
 public:
-	ConfigHandler* config;
+	//ConfigHandler* config;
 	//AlienFX_SDK::Mappings afx_dev;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
@@ -55,7 +55,7 @@ public:
 	int activeMode = -1;
 	EventData eData, maxData;
 
-	FXHelper(ConfigHandler *conf);
+	FXHelper(/*ConfigHandler *conf*/);
 	~FXHelper();
 	//bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	//void QueryUpdate(int did = -1, bool force = false);
@@ -78,5 +78,5 @@ public:
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
 	void UnblockUpdates(bool newState, bool lock = false);
 
-	ConfigHandler* GetConfig() { return config; };
+	//ConfigHandler* GetConfig() { return config; };
 };

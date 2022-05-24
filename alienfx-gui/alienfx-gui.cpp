@@ -198,7 +198,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
-	fxhl = new FXHelper(conf);
+	fxhl = new FXHelper();
 
 	if (fxhl->FillAllDevs(acpi) || MessageBox(NULL, "No Alienware light devices detected!\nDo you want to continue?", "Error",
 											MB_YESNO | MB_ICONWARNING) == IDYES) {
@@ -206,8 +206,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (conf->esif_temp)
 			EvaluteToAdmin();
-
-		fxhl->Start();
 
 		eve = new EventHandler(conf, fxhl);
 		eve->ChangePowerState();
@@ -251,11 +249,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (conf->wasAWCC) DoStopService(false);
 	}
 
+	delete fxhl;
+
 	if (acpi) {
 		delete acpi;
 	}
 
-	delete fxhl;
 	delete conf;
 
 	return 0;
@@ -601,25 +600,20 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
 				SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
 				GetWindowRect(GetDlgItem(mDlg, IDC_EFFECT_MODE), &oldRect);
-				POINT cPos = { oldRect.left, oldRect.top };
-				ScreenToClient(mDlg, &cPos);
-				SetWindowPos(GetDlgItem(mDlg, IDC_EFFECT_MODE), NULL, cPos.x + deltax, cPos.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+				ScreenToClient(mDlg, (LPPOINT)&oldRect);
+				SetWindowPos(GetDlgItem(mDlg, IDC_EFFECT_MODE), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
 				GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
-				cPos = { oldRect.left, oldRect.top };
-				ScreenToClient(mDlg, &cPos);
-				SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, cPos.x + deltax, cPos.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+				ScreenToClient(mDlg, (LPPOINT)&oldRect);
+				SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
 				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
-				cPos = { oldRect.left, oldRect.top };
-				ScreenToClient(mDlg, &cPos);
-				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, cPos.x, cPos.y + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+				ScreenToClient(mDlg, (LPPOINT)&oldRect);
+				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, oldRect.left, oldRect.top + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
 				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &oldRect);
-				cPos = { oldRect.left, oldRect.top };
-				ScreenToClient(mDlg, &cPos);
-				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+				ScreenToClient(mDlg, (LPPOINT)&oldRect);
+				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &oldRect);
-				cPos = { oldRect.left, oldRect.top };
-				ScreenToClient(mDlg, &cPos);
-				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, cPos.x + deltax, cPos.y + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+				ScreenToClient(mDlg, (LPPOINT)&oldRect);
+				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 			}
 		}
 	} break;

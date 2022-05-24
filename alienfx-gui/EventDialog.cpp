@@ -8,9 +8,19 @@ extern groupset* FindMapping(int mid);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern int UpdateLightList(HWND light_list, byte flag = 0);
+//extern int UpdateLightList(HWND light_list, byte flag = 0);
+
+extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
+extern void RedrawGridButtonZone(bool recalc = false);
+extern void CreateGridBlock(HWND gridTab, DLGPROC);
+extern void OnGridSelChanged(HWND);
+extern int gridTabSel;
 
 extern int eItem;
+
+extern HWND zsDlg;
 
 void UpdateEventUI(LPVOID);
 ThreadHelper* hapUIupdate;
@@ -21,37 +31,31 @@ void UpdateMonitoringInfo(HWND hDlg, groupset *map) {
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
 		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
-		CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, map && map->fromColor ? BST_CHECKED : BST_UNCHECKED );
-	if (map && map->perfs.size()) { // Performance
-		CheckDlgButton(hDlg, IDC_CHECK_PERF, BST_CHECKED);
-		//RedrawButton(hDlg, IDC_BUTTON_CM2, Act2Code(map->fromColor && map->color.size() ?  &map->color[0] : &map->perfs[0].from));
-		//RedrawButton(hDlg, IDC_BUTTON_CM3, Act2Code( &map->perfs[0].to ));
-		CheckDlgButton(hDlg, IDC_GAUGE, map->perfs[0].mode ? BST_CHECKED : BST_UNCHECKED);
-		SendMessage(s1_slider, TBM_SETPOS, true, map->perfs[0].cut);
-		SetSlider(sTip1, map->perfs[0].cut);
-		ComboBox_SetCurSel(list_counter, map->perfs[0].source);
-	}
-	if (map && map->events.size()) { // events
-		CheckDlgButton(hDlg, IDC_CHECK_STATUS, BST_CHECKED);
-		//RedrawButton(hDlg, IDC_BUTTON_CM4, Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->events[0].from));
-		//RedrawButton(hDlg, IDC_BUTTON_CM5, Act2Code(&map->events[0].to));
-		CheckDlgButton(hDlg, IDC_STATUS_BLINK, map->events[0].blink ? BST_CHECKED : BST_UNCHECKED);
-		SendMessage(s2_slider, TBM_SETPOS, true, map->events[0].cut);
-		SetSlider(sTip2, map->events[0].cut);
-		ComboBox_SetCurSel(list_status, map->events[0].source);
-	}
-	if (map && map->powers.size()) {
-		CheckDlgButton(hDlg, IDC_CHECK_POWER, BST_CHECKED);
-		//RedrawButton(hDlg, IDC_BUTTON_CM1, Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->powers[0].from));
-		//RedrawButton(hDlg, IDC_BUTTON_CM2, Act2Code(&map->powers[0].to));
-	}
+	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, map && map->fromColor ? BST_CHECKED : BST_UNCHECKED );
+
+	CheckDlgButton(hDlg, IDC_CHECK_PERF, BST_CHECKED);
+	CheckDlgButton(hDlg, IDC_GAUGE, map && map->perfs.size() && map->perfs[0].mode ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(s1_slider, TBM_SETPOS, true, map && map->perfs.size() ? map->perfs[0].cut : 0);
+	SetSlider(sTip1, map && map->perfs.size() ? map->perfs[0].cut : 0);
+	ComboBox_SetCurSel(list_counter, map && map->perfs.size() ? map->perfs[0].source : 0);
+
+	CheckDlgButton(hDlg, IDC_CHECK_STATUS, BST_CHECKED);
+	CheckDlgButton(hDlg, IDC_STATUS_BLINK, map && map->events.size() && map->events[0].blink ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(s2_slider, TBM_SETPOS, true, map && map->events.size() ? map->events[0].cut : 0);
+	SetSlider(sTip2, map && map->events.size() ? map->events[0].cut : 0);
+	ComboBox_SetCurSel(list_status, map && map->events.size() ? map->events[0].source : 0);
+
+	CheckDlgButton(hDlg, IDC_CHECK_POWER, map && map->powers.size() ? BST_CHECKED : BST_UNCHECKED);
+
 	for (int bId = 0; bId < 6; bId++)
 		RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_CM1 + bId), NULL, NULL, RDW_INVALIDATE);
+	RedrawGridButtonZone(true);
 }
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
+	HWND //light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
+		gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID),
 		list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
 		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
@@ -63,10 +67,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 	case WM_INITDIALOG:
 	{
-		if (eItem = UpdateLightList(light_list) < 0) {
-			SwitchLightTab(hDlg, TAB_DEVICES);
-			return false;
-		}
+		zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
+		RECT mRect;
+		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES_E), &mRect);
+		ScreenToClient(hDlg, (LPPOINT)&mRect);
+		SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
+
+		if (!conf->afx_dev.GetMappings()->size())
+			OnGridSelChanged(gridTab);
 
 		// Set counter list...
 		char buffer[32];
@@ -112,27 +120,38 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		sTip1 = CreateToolTip(s1_slider, sTip1);
 		sTip2 = CreateToolTip(s2_slider, sTip2);
 
+		CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
+		TabCtrl_SetCurSel(gridTab, gridTabSel);
+		OnGridSelChanged(gridTab);
+
+		//UpdateMonitoringInfo(hDlg, map);
+
 		// Start UI update thread...
 		hapUIupdate = new ThreadHelper(UpdateEventUI, hDlg);
 
-		if (eItem >= 0) {
-			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)light_list);
-		}
+		//if (eItem >= 0) {
+		//	SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)light_list);
+		//}
 
+	} break;
+	case WM_APP + 2: {
+		map = FindMapping(eItem);
+		UpdateMonitoringInfo(hDlg, map);
+		//RedrawGridButtonZone();
 	} break;
 	case WM_COMMAND: {
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
 		{
-		case IDC_LIGHTS_E:
-			switch (HIWORD(wParam))
-			{
-			case LBN_SELCHANGE:
-				eItem = (int)ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-				map = FindMapping(eItem);
-				UpdateMonitoringInfo(hDlg, map);
-				break;
-			} break;
+		//case IDC_LIGHTS_E:
+		//	switch (HIWORD(wParam))
+		//	{
+		//	case LBN_SELCHANGE:
+		//		eItem = (int)ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
+		//		map = FindMapping(eItem);
+		//		UpdateMonitoringInfo(hDlg, map);
+		//		break;
+		//	} break;
 		case IDC_CHECK_NOEVENT:
 			if (map) {
 				map->fromColor = state;
@@ -282,7 +301,23 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 			break;
 		} break;
+	case WM_NOTIFY:
+		switch (((NMHDR*)lParam)->idFrom) {
+		case IDC_TAB_COLOR_GRID: {
+			switch (((NMHDR*)lParam)->code) {
+			case TCN_SELCHANGE: {
+				int newSel = TabCtrl_GetCurSel(gridTab);
+				if (newSel != gridTabSel) { // selection changed!
+					if (newSel < conf->afx_dev.GetGrids()->size())
+						OnGridSelChanged(gridTab);
+				}
+			} break;
+			}
+		} break;
+		}
+		break;
 	case WM_DESTROY:
+		DestroyWindow(zsDlg);
 		delete hapUIupdate;
 		break;
 	default: return false;
@@ -293,13 +328,13 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 void UpdateEventUI(LPVOID lpParam) {
 	if (IsWindowVisible((HWND)lpParam)) {
 		//DebugPrint("Events UI update...\n");
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_CPU), (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_RAM), (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_GPU), (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_PWR), (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " W").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_FAN), (to_string(fxhl->eData.Fan * fxhl->maxData.Fan / 100) + " RPM").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_BAT), (to_string(fxhl->eData.Batt) + " %").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_NET), (to_string(fxhl->eData.NET * fxhl->maxData.NET / 102400) + " kb").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_TEMP), (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_CPU, (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " W").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(fxhl->eData.Fan * fxhl->maxData.Fan / 100) + " RPM").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET * fxhl->maxData.NET / 102400) + " kb").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
 	}
 }

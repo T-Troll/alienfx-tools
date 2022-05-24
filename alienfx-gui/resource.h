@@ -87,7 +87,6 @@
 #define IDC_BUT_LAST                    1019
 #define IDC_BUTTON_REFRESH              1021
 #define IDC_BUTTON_MINIMIZE             1022
-#define IDC_LIGHTS_E                    1023
 #define IDC_SHOWAXIS                    1023
 #define IDC_BUTTON_SAVE                 1024
 #define IDC_LEVELS                      1025
@@ -101,7 +100,6 @@
 #define IDC_SLIDER_DIMMING              1032
 #define IDC_BUTTON_CM4                  1032
 #define IDC_BUT_GRP_UP                  1032
-#define IDC_BUTTON_SETALL               1033
 #define IDC_BUTTON_CM5                  1033
 #define IDC_REMOVEPROFILE               1033
 #define IDC_SCREENOFF                   1033
@@ -216,11 +214,11 @@
 #define IDC_BUT_ADD_ZONE                1140
 #define IDC_BUT_DEL_ZONE                1141
 #define IDC_AMB_BUTTON_ZONE             1142
-#define IDC_LIST1                       1143
 #define IDC_LIST_ZONES                  1143
 #define IDC_BUT_CLEARGRID               1144
 #define IDC_STATIC_ZONES                1145
 #define IDC_STATIC_ZONE_LABEL           1146
+#define IDC_STATIC_ZONES_E              1147
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -252,7 +250,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        159
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1147
+#define _APS_NEXT_CONTROL_VALUE         1148
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

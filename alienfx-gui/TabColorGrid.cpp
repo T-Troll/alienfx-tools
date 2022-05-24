@@ -3,7 +3,7 @@
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern groupset* FindMapping(int mid);
-extern int UpdateZoneList(HWND hDlg, byte flag = 0);
+extern void UpdateZoneList(HWND hDlg, byte flag = 0);
 
 //extern void SetLightInfo(HWND hDlg);
 
@@ -49,8 +49,14 @@ void ModifyColorDragZone(bool inverse = false, bool clear = false) {
                         grp->lights.erase(pos);
                         continue;
                     }
-                    if (!clear && pos == grp->lights.end())
+                    if (!clear && pos == grp->lights.end()) {
                         grp->lights.push_back({ (DWORD)LOWORD(mainGrid->grid[ind(x, y)]), (DWORD)HIWORD(mainGrid->grid[ind(x, y)]) });
+                        // Sort!
+                        sort(grp->lights.begin(), grp->lights.end(),
+                            [](auto t, auto t2) {
+                                return t.first == t2.first ? t2.second > t.second : t2.first > t.first;
+                            });
+                    }
                 }
     }
 }

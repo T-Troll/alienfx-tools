@@ -105,6 +105,7 @@ private:
 	void SetReg(char *text, DWORD value);
 	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD *eff);
 	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
+	AlienFX_SDK::group* FindCreateGroup(int did, int lid);
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;

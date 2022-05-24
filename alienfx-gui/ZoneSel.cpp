@@ -2,7 +2,7 @@
 
 extern int eItem, effID;
 
-int UpdateZoneList(HWND hDlg, byte flag = 0) {
+void UpdateZoneList(HWND hDlg, byte flag = 0) {
 	int rpos = -1, pos = 0;
 	HWND zone_list = GetDlgItem(hDlg, IDC_LIST_ZONES);
 	LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE };
@@ -23,13 +23,14 @@ int UpdateZoneList(HWND hDlg, byte flag = 0) {
 				lItem.state = LVIS_SELECTED;
 				rpos = pos;
 			}
+			else
+				lItem.state = 0;
 			ListView_InsertItem(zone_list, &lItem);
 			pos++;
 		}
 	}
 	ListView_SetColumnWidth(zone_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	ListView_EnsureVisible(zone_list, rpos, false);
-	return pos;
 }
 
 BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -37,8 +38,8 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	{
 	case WM_INITDIALOG:
 	{
-		if (!UpdateZoneList(hDlg))
-			SendMessage(GetParent(hDlg), WM_APP + 2, 0, 0);
+		UpdateZoneList(hDlg);
+		return false;
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -90,16 +91,18 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
+				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					// Select other item...
-					eItem = (int)lPoint->lParam;// lbItem;
+					if ((int)lPoint->lParam > 0)
+						eItem = (int)lPoint->lParam;// lbItem;
 					effID = 0;
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 					//mmap = FindMapping(eItem);
 					//RebuildEffectList(hDlg, mmap);
 					//RedrawGridButtonZone();
 				}
-				//else {
+				//else
+				//	return false;
 				//	/*eItem = -1;
 				//	mmap = NULL;
 				//	RebuildEffectList(hDlg, mmap);

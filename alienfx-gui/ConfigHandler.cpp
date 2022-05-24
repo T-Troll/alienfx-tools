@@ -89,6 +89,32 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 	}
 }
 
+AlienFX_SDK::group* ConfigHandler::FindCreateGroup(int did, int lid)
+{
+	AlienFX_SDK::group* grp = CreateGroup("Zone");
+	grp->lights.push_back({ did, lid });
+	auto tGrp = find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
+		[grp](auto g) {
+			if (g.lights.size() == grp->lights.size()) {
+				for (int i = 0; i < g.lights.size(); i++)
+					if (g.lights[i] != grp->lights[i])
+						return false;
+			}
+			else
+				return false;
+			return true;
+		});;
+	if (tGrp == afx_dev.GetGroups()->end()) {
+		afx_dev.GetGroups()->push_back(*grp);
+		delete grp;
+		grp = &afx_dev.GetGroups()->back();
+		grp->have_power = afx_dev.GetFlags(did, lid);
+	}
+	else
+		grp = &(*tGrp);
+	return grp;
+}
+
 profile* ConfigHandler::FindProfile(int id) {
 	for (int i = 0; i < profiles.size(); i++)
 		if (profiles[i]->id == id) {
@@ -277,30 +303,7 @@ void ConfigHandler::Load() {
 				groupset t;
 				t.color = map.eve[0].map;
 				if (map.devid) {
-					AlienFX_SDK::group* grp = CreateGroup("Zone");
-					grp->lights.push_back({ map.devid, map.lightid });
-					auto tGrp = find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
-						[grp](auto g) {
-							if (g.lights.size() == grp->lights.size()) {
-								for (int i = 0; i < g.lights.size(); i++)
-									if (g.lights[i] != grp->lights[i])
-										return false;
-							}
-							else
-								return false;
-							return true;
-						});;
-					if (tGrp == afx_dev.GetGroups()->end()) {
-						grp->have_power = afx_dev.GetFlags(map.devid, map.lightid);
-						afx_dev.GetGroups()->push_back(*grp);
-						delete grp;
-						grp = &afx_dev.GetGroups()->back();
-					}
-					else {
-						delete grp;
-						grp = &(*tGrp);
-					}
-					t.group = grp;
+					t.group = FindCreateGroup(map.devid, map.lightid);
 				}
 				else
 					t.group = afx_dev.GetGroupById(map.lightid);
@@ -331,6 +334,43 @@ void ConfigHandler::Load() {
 	activeProfile = FindProfile(activeProfileID);
 	if (!activeProfile) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
+
+	// Parse old mappings and haptics...
+	// Ambients...
+	for (auto it = amb_conf->zones.begin(); it < amb_conf->zones.end(); it++) {
+		AlienFX_SDK::group* grp = FindCreateGroup(it->devid, it->lightid);
+		auto pos = find_if(active_set->begin(), active_set->end(),
+			[grp](auto t) {
+				return t.group->gid == grp->gid;
+			});
+		groupset* tSet;
+		if (pos != active_set->end())
+			tSet = &(*pos);
+		else {
+			tSet = new groupset{ false, grp };
+			active_set->push_back(*tSet);
+			tSet = &active_set->back();
+		}
+		tSet->ambients.push_back(*it);
+	}
+	// Haptics...
+	for (auto it = hap_conf->haptics.begin(); it < hap_conf->haptics.end(); it++) {
+		AlienFX_SDK::group* grp = FindCreateGroup(it->devid, it->lightid);
+		auto pos = find_if(active_set->begin(), active_set->end(),
+			[grp](auto t) {
+				return t.group->gid == grp->gid;
+			});
+		groupset* tSet;
+		if (pos != active_set->end())
+			tSet = &(*pos);
+		else {
+			tSet = new groupset{ false, grp };
+			active_set->push_back(*tSet);
+			tSet = &active_set->back();
+		}
+		tSet->haptics.push_back(*it);
+	}
+
 	stateDimmed = IsDimmed();
 	stateOn = lightsOn;
 }

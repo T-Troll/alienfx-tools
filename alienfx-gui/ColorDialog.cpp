@@ -21,11 +21,11 @@ extern int eItem;
 //extern void RemoveAmbMapping(int devid, int lightid);
 //extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
 
-BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern void CreateGridBlock(HWND gridTab, DLGPROC);
 extern void OnGridSelChanged(HWND);
 extern AlienFX_SDK::mapping* FindCreateMapping();
-void RedrawGridButtonZone(bool recalc = false);
+extern void RedrawGridButtonZone(bool recalc = false);
 
 extern int gridTabSel;
 extern AlienFX_SDK::lightgrid* mainGrid;
@@ -149,7 +149,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		RECT mRect;
 		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
 		ScreenToClient(hDlg, (LPPOINT)&mRect);
-		SetWindowPos(zsDlg, HWND_TOP, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+		SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
+
+		if (!conf->afx_dev.GetMappings()->size())
+			OnGridSelChanged(gridTab);
+
 		// Set types list...
 		char buffer[100];
 		LoadString(hInst, IDS_TYPE_COLOR, buffer, 100);
@@ -185,15 +189,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 	} break;
 	case WM_APP + 2: {
-		if (lParam) {
-			mmap = FindMapping(eItem);
-			RebuildEffectList(hDlg, mmap);
-			RedrawGridButtonZone();
-		}
-		else {
-			SwitchLightTab(hDlg, TAB_DEVICES);
-			return false;
-		}
+		mmap = FindMapping(eItem);
+		RebuildEffectList(hDlg, mmap);
+		RedrawGridButtonZone();
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -372,7 +370,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		}
 		break;
 	case WM_DESTROY:
-		EndDialog(zsDlg, IDOK);
+		//EndDialog(zsDlg, IDOK);
+		DestroyWindow(zsDlg);
 		break;
 	default: return false;
 	}
