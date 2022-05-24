@@ -10,6 +10,8 @@ extern MonHelper* mon;
 extern HWND fanWindow, tipWindow;
 extern AlienFan_SDK::Control* acpi;
 
+extern void SetToolTip(HWND, string);
+
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
 bool fanMode = true;
@@ -23,42 +25,42 @@ int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
 
 HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
 
-HWND CreateToolTip(HWND hwndParent, HWND oldTip)
-{
-    // Create a tool tip.
-    if (oldTip) DestroyWindow(oldTip);
+//HWND CreateToolTip(HWND hwndParent, HWND oldTip)
+//{
+//    // Create a tool tip.
+//    if (oldTip) DestroyWindow(oldTip);
+//
+//    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+//        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+//        0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
+//    //SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+//    //			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+//
+//    TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
+//    GetClientRect(hwndParent, &ti.rect);
+//    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+//    return hwndTT;
+//}
 
-    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-        0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
-    //SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-    //			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-    TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
-    GetClientRect(hwndParent, &ti.rect);
-    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-    return hwndTT;
-}
-
-void SetTooltip(HWND tt, int x, int y) {
-    TOOLINFO ti{ sizeof(ti) };
-    if (tt) {
-        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-        string toolTip = "Temp: " + to_string(x) + ", Boost: " + to_string(y);
-        ti.lpszText = (LPTSTR)toolTip.c_str();
-        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-    }
-}
-
-void SetBoostTip(HWND tt, int rpm, int boost) {
-    TOOLINFO ti{ sizeof(ti) };
-    if (tt) {
-        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-        string toolTip = "Boost " + to_string(boost) + " @ " + to_string(rpm) + " RPM";
-        ti.lpszText = (LPTSTR)toolTip.c_str();
-        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-    }
-}
+//void SetTooltip(HWND tt, int x, int y) {
+//    TOOLINFO ti{ sizeof(ti) };
+//    if (tt) {
+//        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+//        string toolTip = "Temp: " + to_string(x) + ", Boost: " + to_string(y);
+//        ti.lpszText = (LPTSTR)toolTip.c_str();
+//        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+//    }
+//}
+//
+//void SetBoostTip(HWND tt, int rpm, int boost) {
+//    TOOLINFO ti{ sizeof(ti) };
+//    if (tt) {
+//        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+//        string toolTip = "Boost " + to_string(boost) + " @ " + to_string(rpm) + " RPM";
+//        ti.lpszText = (LPTSTR)toolTip.c_str();
+//        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+//    }
+//}
 
 fan_point Screen2Fan(LPARAM lParam) {
     return {
@@ -315,11 +317,11 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 *lastFanPoint = clk;
                 DrawFan();
             }
-            SetTooltip(toolTip, clk.temp, clk.boost);
+            SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
         }
         else {
-            SetBoostTip(toolTip, GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale,
-                (cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100);
+            SetToolTip(toolTip, "Boost " + to_string((cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100) + " @ " +
+                to_string(GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale) + " RPM");
         }
     } break;
     case WM_LBUTTONDOWN:

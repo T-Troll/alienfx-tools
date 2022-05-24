@@ -347,11 +347,11 @@ void ConfigHandler::Load() {
 		if (pos != active_set->end())
 			tSet = &(*pos);
 		else {
-			tSet = new groupset{ false, grp };
+			tSet = new groupset{ grp };
 			active_set->push_back(*tSet);
 			tSet = &active_set->back();
 		}
-		tSet->ambients.push_back(*it);
+		tSet->ambients = it->map;
 	}
 	// Haptics...
 	for (auto it = hap_conf->haptics.begin(); it < hap_conf->haptics.end(); it++) {
@@ -364,11 +364,11 @@ void ConfigHandler::Load() {
 		if (pos != active_set->end())
 			tSet = &(*pos);
 		else {
-			tSet = new groupset{ false, grp };
+			tSet = new groupset{ grp };
 			active_set->push_back(*tSet);
 			tSet = &active_set->back();
 		}
-		tSet->haptics.push_back(*it);
+		tSet->haptics = it->freqs;
 	}
 
 	stateDimmed = IsDimmed();

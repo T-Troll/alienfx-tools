@@ -60,14 +60,16 @@ struct old_event {
 };
 
 struct groupset {
-	bool fromColor = false;
 	AlienFX_SDK::group* group;
 	vector<AlienFX_SDK::afx_act> color;
 	vector<power_event> powers;
 	vector<perf_event> perfs;
 	vector<act_event> events;
-	vector<zone> ambients;
-	vector<haptics_map> haptics;
+	vector<byte> ambients;
+	vector<freq_map> haptics;
+	bool fromColor = false;
+	bool spectrum = false;
+	byte gauge = 0;
 };
 
 struct lightset {

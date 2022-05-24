@@ -77,9 +77,6 @@
     <ClCompile Include="DevicesDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GroupsDialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ProfilesDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

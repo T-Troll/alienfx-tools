@@ -140,3 +140,30 @@ string GetAppVersion() {
 	}
 	return res;
 }
+
+HWND CreateToolTip(HWND hwndParent, HWND oldTip)
+{
+	// Create a tool tip.
+	if (oldTip) DestroyWindow(oldTip);
+
+	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+		0, 0, 0, 0, hwndParent, NULL, GetModuleHandle(NULL), NULL);
+	//SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+	//			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
+	GetClientRect(hwndParent, &ti.rect);
+	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+	return hwndTT;
+}
+
+void SetToolTip(HWND tt, string value) {
+	TOOLINFO ti{ sizeof(TOOLINFO) };
+	if (tt) {
+		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+		ti.lpszText = (LPTSTR)value.c_str();
+		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+	}
+
+}

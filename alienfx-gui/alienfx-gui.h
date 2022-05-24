@@ -21,7 +21,6 @@
 #define TAB_EVENTS   1
 #define TAB_AMBIENT  2
 #define TAB_HAPTICS  3
-#define TAB_GROUPS   5
 #define TAB_PROFILES 2
 #define TAB_DEVICES  4
 #define TAB_FANS     1

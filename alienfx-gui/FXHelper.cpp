@@ -180,7 +180,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			}
 
 		//for (auto it = Iter->groups.begin(); it < Iter->groups.end(); it++)
-		SetGroupLight(Iter->group->gid, actions, false, Iter->perfs.size() && Iter->perfs[0].mode ? &from : NULL, gFin, Iter->perfs[0].coeff);
+		SetGroupLight(Iter->group->gid, actions, false, Iter->perfs.size() && Iter->perfs[0].mode ? &from : NULL, gFin, Iter->perfs.size() ? Iter->perfs[0].coeff : 0);
 	}
 	if (wasChanged) {
 		QueryUpdate();
@@ -426,9 +426,9 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 
 	for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
 		if (it->ambients.size()) {
-			UINT r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.back().map.size() * 255;
-			for (auto cAmb = it->ambients.back().map.begin(); cAmb < it->ambients.back().map.end(); cAmb++) {
-				if (cAmb - it->ambients.back().map.begin() < gridsize) {
+			UINT r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size() * 255;
+			for (auto cAmb = it->ambients.begin(); cAmb < it->ambients.end(); cAmb++) {
+				if (cAmb - it->ambients.begin() < gridsize) {
 					wasChanged = true;
 					r += img[3 * *cAmb + 2];
 					g += img[3 * *cAmb + 1];
@@ -453,6 +453,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 void FXHelper::RefreshHaptics(int *freq) {
 	vector<AlienFX_SDK::afx_act> actions;
 	actions.push_back({0});
+	bool wasChanged = false;
 
 	//Flush();
 	if (conf->monDelay > 200) {
@@ -460,53 +461,52 @@ void FXHelper::RefreshHaptics(int *freq) {
 		return;
 	}
 
-	for (auto mIter = conf->hap_conf->haptics.begin(); mIter < conf->hap_conf->haptics.end(); mIter++) {
-		// Now for each freq block...
-		unsigned from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0;
-		double f_power = 0.0;
-		for (auto fIter = mIter->freqs.begin(); fIter < mIter->freqs.end(); fIter++) {
-			if (!fIter->freqID.empty() && fIter->hicut > fIter->lowcut) {
-				double power = 0.0;
+	for (auto mIter = conf->active_set->begin(); mIter < conf->active_set->end(); mIter++) {
+		if (mIter->haptics.size()) {
+			// Now for each freq block...
+			unsigned from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0;
+			double f_power = 0.0;
+			for (auto fIter = mIter->haptics.begin(); fIter < mIter->haptics.end(); fIter++) {
+				if (!fIter->freqID.empty() && fIter->hicut > fIter->lowcut) {
+					double power = 0.0;
 
-				// here need to check less bars...
-				for (auto iIter = fIter->freqID.begin(); iIter < fIter->freqID.end(); iIter++)
-					power += (freq[*iIter] > fIter->lowcut ? freq[*iIter] < fIter->hicut ?
-							  freq[*iIter] - fIter->lowcut : fIter->hicut - fIter->lowcut : 0);
-				power = power / (fIter->freqID.size() * (fIter->hicut - fIter->lowcut));
+					// here need to check less bars...
+					for (auto iIter = fIter->freqID.begin(); iIter < fIter->freqID.end(); iIter++)
+						power += (freq[*iIter] > fIter->lowcut ? freq[*iIter] < fIter->hicut ?
+							freq[*iIter] - fIter->lowcut : fIter->hicut - fIter->lowcut : 0);
+					power = power / (fIter->freqID.size() * (fIter->hicut - fIter->lowcut));
 
-				from_r += fIter->colorfrom.r;
-				from_g += fIter->colorfrom.g;
-				from_b += fIter->colorfrom.b;
+					from_r += fIter->colorfrom.r;
+					from_g += fIter->colorfrom.g;
+					from_b += fIter->colorfrom.b;
 
-				to_r += fIter->colorto.r;
-				to_g += fIter->colorto.g;
-				to_b += fIter->colorto.b;
+					to_r += fIter->colorto.r;
+					to_g += fIter->colorto.g;
+					to_b += fIter->colorto.b;
 
-				cur_r += (byte) sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
-				cur_g += (byte) sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
-				cur_b += (byte) sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
+					cur_r += (byte)sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
+					cur_g += (byte)sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
+					cur_b += (byte)sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
 
-				f_power += power;
+					f_power += power;
 
+				}
+
+				size_t groupsize = fIter->freqID.size();
+
+				f_power /= groupsize;
+
+				actions[0] = { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) };
+
+				AlienFX_SDK::afx_act from{ 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize) },
+					to{ 0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize) };
+
+				SetGroupLight(mIter->group->gid, actions, false, mIter->gauge ? &from : NULL, &to, f_power);
+				wasChanged = true;
 			}
-
-			size_t groupsize = mIter->freqs.size();
-
-			f_power /= groupsize;
-
-			actions[0] = {0,0,0,(byte)(cur_r/groupsize),(byte)(cur_g/groupsize),(byte)(cur_b/groupsize)};
-
-			AlienFX_SDK::afx_act from{0,0,0,(byte) (from_r / groupsize),(byte) (from_g / groupsize),(byte) (from_b / groupsize)},
-				to{0,0,0,(byte) (to_r / groupsize),(byte) (to_g / groupsize),(byte) (to_b / groupsize)};
-
-			if (!mIter->devid && mIter->flags & MAP_GAUGE)
-				SetGroupLight(mIter->lightid, actions, false, &from, &to, f_power);
-			else
-				SetLight(mIter->devid, mIter->lightid, actions);
-
 		}
 	}
-	if (conf->hap_conf->haptics.size())
+	if (wasChanged)
 		QueryUpdate();
 }
 

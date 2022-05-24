@@ -8,7 +8,9 @@ using namespace std;
 
 void EvaluteToAdmin();
 void ResetDPIScale();
-DWORD WINAPI CUpdateCheck(LPVOID lparam);
-bool WindowsStartSet(bool kind, string name);
+DWORD WINAPI CUpdateCheck(LPVOID);
+bool WindowsStartSet(bool, string);
 string GetAppVersion();
+HWND CreateToolTip(HWND, HWND);
+void SetToolTip(HWND, string);
 

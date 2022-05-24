@@ -602,7 +602,6 @@
     <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="FanDialog.cpp" />
     <ClCompile Include="FXHelper.cpp" />
-    <ClCompile Include="GroupsDialog.cpp" />
     <ClCompile Include="HapticsDialog.cpp" />
     <ClCompile Include="LightsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />

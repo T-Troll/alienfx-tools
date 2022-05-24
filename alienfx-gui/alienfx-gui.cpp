@@ -303,7 +303,6 @@ void SetSlider(HWND tt, int value) {
 		ti.lpszText = (LPTSTR) toolTip.c_str();
 		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM) &ti);
 	}
-
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -457,14 +456,14 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 	DLGHDR* pHdr = (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
 	SetWindowLongPtr(parent, GWLP_USERDATA, (LONG_PTR)pHdr);
 
-	int tabsize = names.size();
+	int tabsize = (int)names.size();
 
 	pHdr->apRes = (DLGTEMPLATE**)LocalAlloc(LPTR, tabsize * sizeof(DLGTEMPLATE*));
 	pHdr->apProc = (DLGPROC*)LocalAlloc(LPTR, tabsize * sizeof(DLGPROC));
 
 	TCITEM tie{ TCIF_TEXT };
 
-	for (int i = 0; i < names.size(); i++) {
+	for (int i = 0; i < tabsize; i++) {
 		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
 		tie.pszText = (LPSTR)names[i].c_str();
 		SendMessage(parent, TCM_INSERTITEM, i, (LPARAM)&tie);
@@ -900,9 +899,9 @@ AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act *act) {
 	return new AlienFX_SDK::Colorcode({act->b,act->g,act->r});
 }
 
-//AlienFX_SDK::afx_act *Code2Act(AlienFX_SDK::Colorcode *c) {
-//	return new AlienFX_SDK::afx_act({0,0,0,c->r,c->g,c->b});
-//}
+AlienFX_SDK::afx_act *Code2Act(AlienFX_SDK::Colorcode *c) {
+	return new AlienFX_SDK::afx_act({0,0,0,c->r,c->g,c->b});
+}
 
 DWORD CColorRefreshProc(LPVOID param) {
 	AlienFX_SDK::afx_act last = *mod;

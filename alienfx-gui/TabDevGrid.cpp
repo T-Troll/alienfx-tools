@@ -2,6 +2,7 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
+extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 
 extern void SetLightInfo(HWND hDlg);
 
@@ -88,7 +89,7 @@ void RedrawGridButtonZone(bool recalc = false) {
                                 break;
                             case 2: // haptics
                                 if (cs->haptics.size()) {
-                                    //colorGrid[x][y] = { cs->haptics[0].freqs[0].colorfrom, cs->haptics[0].freqs[0].colorto };
+                                    colorGrid[x][y] = { Code2Act(&cs->haptics[0].colorfrom), Code2Act(&cs->haptics[0].colorto) };
                                 }
                                 break;
                             }

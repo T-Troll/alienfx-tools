@@ -9,6 +9,7 @@ extern void SetSlider(HWND tt, int value);
 
 extern groupset* CreateMapping(int lid);
 extern groupset* FindMapping(int mid);
+extern void RemoveUnused(vector<groupset>*);
 
 extern void SwitchLightTab(HWND, int);
 
@@ -72,7 +73,7 @@ void SetGridSize(HWND dlg, int x, int y) {
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
+    //HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR),
         gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID),
         gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
@@ -124,14 +125,10 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         TabCtrl_SetCurSel(gridTab, gridTabSel);
         OnGridSelChanged(gridTab);
 
+        InitButtonZone(hDlg);
+
         // Start UI update thread...
         ambUIupdate = new ThreadHelper(AmbUpdate, hDlg, 200);
-
-        /*if (eItem >= 0) {
-            SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-        }*/
-
-        InitButtonZone(hDlg);
 
     } break;
     case WM_COMMAND:
@@ -143,24 +140,18 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                     UINT id = LOWORD(wParam) - 2000;
                     if (!map) {
                         map = CreateMapping(eItem);
-                        //map->ambients.push_back({ 0 });
                     }
-                    // add mapping
-                    if (map->ambients.size()) {
-                        auto pos = map->ambients.back().map.begin();
-                        if ((pos = find_if(map->ambients.back().map.begin(), map->ambients.back().map.end(),
-                            [id](auto t) {
-                                return t == id;
-                            })) == map->ambients.back().map.end())
-                            map->ambients.back().map.push_back(id);
-                        else
-                            map->ambients.back().map.erase(pos);
-                        if (map->ambients.back().map.empty())
-                            map->ambients.clear();
-                    }
+                    // add/remove mapping
+                    auto pos = map->ambients.begin();
+                    if ((pos = find_if(map->ambients.begin(), map->ambients.end(),
+                        [id](auto t) {
+                            return t == id;
+                        })) == map->ambients.end())
+                        map->ambients.push_back(id);
                     else {
-                        map->ambients.push_back({ 0 });
-                        map->ambients.back().map.push_back(id);
+                        map->ambients.erase(pos);
+                        if (map->ambients.empty())
+                            RemoveUnused(conf->active_set);
                     }
 
                     RedrawButtonZone(hDlg);
@@ -264,11 +255,11 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             DeleteObject(Brush);
             bool selected = false;
             if (map && map->ambients.size()) {
-                auto pos = find_if(map->ambients.back().map.begin(), map->ambients.back().map.end(),
+                auto pos = find_if(map->ambients.begin(), map->ambients.end(),
                     [idx](auto t) {
                         return t == idx;
                     });
-                selected = pos != map->ambients.back().map.end();
+                selected = pos != map->ambients.end();
             }
             DrawEdge(ditem->hDC, &ditem->rcItem, selected ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT);
         }
