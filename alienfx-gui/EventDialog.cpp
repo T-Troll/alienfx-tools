@@ -8,13 +8,13 @@ extern groupset* FindMapping(int mid);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-//extern int UpdateLightList(HWND light_list, byte flag = 0);
+extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 extern void RedrawGridButtonZone(bool recalc = false);
-extern void CreateGridBlock(HWND gridTab, DLGPROC);
+extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
 extern int gridTabSel;
 
@@ -26,26 +26,26 @@ void UpdateEventUI(LPVOID);
 ThreadHelper* hapUIupdate;
 
 void UpdateMonitoringInfo(HWND hDlg, groupset *map) {
-	HWND list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
-		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
-		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
-		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
+	//HWND list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
+	//	list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
+	//	s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
+	//	s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
 	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, map && map->fromColor ? BST_CHECKED : BST_UNCHECKED );
+	bool setState = map && map->events[1].state;
+	CheckDlgButton(hDlg, IDC_CHECK_PERF, setState ? BST_CHECKED : BST_UNCHECKED);
+	//CheckDlgButton(hDlg, IDC_GAUGE, map && map->perfs.size() && map->perfs[0].mode ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(GetDlgItem(hDlg, IDC_MINPVALUE), TBM_SETPOS, true, setState ? map->events[1].cut : 0);
+	SetSlider(sTip1, setState ? map->events[1].cut : 0);
+	ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COUNTERLIST), setState ? map->events[1].source : 0);
+	setState = map && map->events[2].state;
+	CheckDlgButton(hDlg, IDC_CHECK_STATUS, setState ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hDlg, IDC_STATUS_BLINK, setState && map->events[2].mode ? BST_CHECKED : BST_UNCHECKED);
+	SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_SETPOS, true, setState ? map->events[2].cut : 0);
+	SetSlider(sTip2, setState ? map->events[2].cut : 0);
+	ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_STATUSLIST), setState ? map->events[0].source : 0);
 
-	CheckDlgButton(hDlg, IDC_CHECK_PERF, BST_CHECKED);
-	CheckDlgButton(hDlg, IDC_GAUGE, map && map->perfs.size() && map->perfs[0].mode ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s1_slider, TBM_SETPOS, true, map && map->perfs.size() ? map->perfs[0].cut : 0);
-	SetSlider(sTip1, map && map->perfs.size() ? map->perfs[0].cut : 0);
-	ComboBox_SetCurSel(list_counter, map && map->perfs.size() ? map->perfs[0].source : 0);
-
-	CheckDlgButton(hDlg, IDC_CHECK_STATUS, BST_CHECKED);
-	CheckDlgButton(hDlg, IDC_STATUS_BLINK, map && map->events.size() && map->events[0].blink ? BST_CHECKED : BST_UNCHECKED);
-	SendMessage(s2_slider, TBM_SETPOS, true, map && map->events.size() ? map->events[0].cut : 0);
-	SetSlider(sTip2, map && map->events.size() ? map->events[0].cut : 0);
-	ComboBox_SetCurSel(list_status, map && map->events.size() ? map->events[0].source : 0);
-
-	CheckDlgButton(hDlg, IDC_CHECK_POWER, map && map->powers.size() ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hDlg, IDC_CHECK_POWER, map && map->events[0].state ? BST_CHECKED : BST_UNCHECKED);
 
 	for (int bId = 0; bId < 6; bId++)
 		RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_CM1 + bId), NULL, NULL, RDW_INVALIDATE);
@@ -77,40 +77,11 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			OnGridSelChanged(gridTab);
 
 		// Set counter list...
-		char buffer[32];
-		LoadString(hInst, IDS_CPU, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-		LoadString(hInst, IDS_RAM, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-		LoadString(hInst, IDS_HDD, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-		LoadString(hInst, IDS_GPU, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-		LoadString(hInst, IDS_NET, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-		LoadString(hInst, IDS_TEMP, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-		LoadString(hInst, IDS_BATT, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
+		UpdateCombo(list_counter,
+			{ "CPU load", "RAM load", "HDD load", "GPU load", "Network traffic", "Max. Temperature", "Battery level",
+			"Fan RPM", "Power consumption" });
+		UpdateCombo(list_status, { "HDD activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" });
 
-		LoadString(hInst, IDS_FANS, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-
-		LoadString(hInst, IDS_PWR, buffer, 32);
-		ComboBox_AddString(list_counter, buffer);
-
-		LoadString(hInst, IDS_A_HDD, buffer, 32);
-		ComboBox_AddString(list_status, buffer);
-		LoadString(hInst, IDS_A_NET, buffer, 32);
-		ComboBox_AddString(list_status, buffer);
-		LoadString(hInst, IDS_A_HOT, buffer, 32);
-		ComboBox_AddString(list_status, buffer);
-		LoadString(hInst, IDS_A_OOM, buffer, 32);
-		ComboBox_AddString(list_status, buffer);
-		LoadString(hInst, IDS_A_LOWBATT, buffer, 32);
-		ComboBox_AddString(list_status, buffer);
-		LoadString(hInst, IDS_A_LOCALE, buffer, 32);
-		ComboBox_AddString(list_status, buffer);
 		// Set sliders
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
@@ -143,15 +114,6 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
 		{
-		//case IDC_LIGHTS_E:
-		//	switch (HIWORD(wParam))
-		//	{
-		//	case LBN_SELCHANGE:
-		//		eItem = (int)ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-		//		map = FindMapping(eItem);
-		//		UpdateMonitoringInfo(hDlg, map);
-		//		break;
-		//	} break;
 		case IDC_CHECK_NOEVENT:
 			if (map) {
 				map->fromColor = state;
@@ -162,12 +124,11 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		case IDC_CHECK_PERF:
 			if (eItem >= 0) {
-				if (!map)
+				if (!map) {
 					map = CreateMapping(eItem);
-				if (state)
-					map->perfs.push_back({ 0 });
-				else
-					map->perfs.clear();
+					map->events[2].cut = 90;
+				}
+				map->events[1].state = state;
 				UpdateMonitoringInfo(hDlg, map);
 			}
 			else
@@ -175,12 +136,11 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		case IDC_CHECK_POWER:
 			if (eItem >= 0) {
-				if (!map)
+				if (!map) {
 					map = CreateMapping(eItem);
-				if (state)
-					map->powers.push_back({ 0 });
-				else
-					map->powers.clear();
+					map->events[2].cut = 90;
+				}
+				map->events[0].state = state;
 				UpdateMonitoringInfo(hDlg, map);
 			}
 			else
@@ -188,72 +148,71 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		case IDC_CHECK_STATUS:
 			if (eItem >= 0) {
-				if (!map)
+				if (!map) {
 					map = CreateMapping(eItem);
-				if (state)
-					map->events.push_back({ 0 });
-				else
-					map->events.clear();
+					map->events[2].cut = 90;
+				}
+				map->events[2].state = state;
 				UpdateMonitoringInfo(hDlg, map);
 			}
 			else
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 			break;
 		case IDC_STATUS_BLINK:
-			if (map && map->events.size())
-				map->events[0].blink = state;
+			if (map)
+				map->events[2].mode = state;
 			break;
-		case IDC_GAUGE:
-			if (map && map->perfs.size()) {
-				map->perfs[0].mode = state;
-				fxhl->RefreshMon();
-			}
-			break;
+		//case IDC_GAUGE:
+		//	if (map && map->perfs.size()) {
+		//		map->perfs[0].mode = state;
+		//		fxhl->RefreshMon();
+		//	}
+		//	break;
 		case IDC_BUTTON_CM1:
-			if (map && map->powers.size() && !map->fromColor) {
-				SetColor(hDlg, LOWORD(wParam), map, &map->powers[0].from);
-				fxhl->RefreshMon();
-			}
-			break;
-		case IDC_BUTTON_CM4:
-			if (map && map->powers.size()) {
-				SetColor(hDlg, LOWORD(wParam), map, &map->powers[0].to);
-				fxhl->RefreshMon();
-			}
-			break;
-		case IDC_BUTTON_CM2:
-			if (map && map->perfs.size() && !map->fromColor) {
-				SetColor(hDlg, LOWORD(wParam), map, &map->perfs[0].from);
-				fxhl->RefreshMon();
-			}
-			break;
-		case IDC_BUTTON_CM5:
-			if (map && map->perfs.size()) {
-				SetColor(hDlg, LOWORD(wParam), map, &map->perfs[0].to);
-				fxhl->RefreshMon();
-			}
-			break;
-		case IDC_BUTTON_CM3:
-			if (map && map->events.size() && !map->fromColor) {
+			if (map && (!map->fromColor || map->color.size())) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[0].from);
 				fxhl->RefreshMon();
 			}
 			break;
-		case IDC_BUTTON_CM6:
-			if (map && map->events.size()) {
+		case IDC_BUTTON_CM4:
+			if (map) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[0].to);
 				fxhl->RefreshMon();
 			}
 			break;
+		case IDC_BUTTON_CM2:
+			if (map && (!map->fromColor || map->color.size())) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->events[1].from);
+				fxhl->RefreshMon();
+			}
+			break;
+		case IDC_BUTTON_CM5:
+			if (map) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->events[1].to);
+				fxhl->RefreshMon();
+			}
+			break;
+		case IDC_BUTTON_CM3:
+			if (map && (!map->fromColor || map->color.size())) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->events[2].from);
+				fxhl->RefreshMon();
+			}
+			break;
+		case IDC_BUTTON_CM6:
+			if (map) {
+				SetColor(hDlg, LOWORD(wParam), map, &map->events[2].to);
+				fxhl->RefreshMon();
+			}
+			break;
 		case IDC_COUNTERLIST:
-			if (map && map->perfs.size() && HIWORD(wParam) == CBN_SELCHANGE) {
-				map->perfs[0].source = ComboBox_GetCurSel(list_counter);
+			if (map && HIWORD(wParam) == CBN_SELCHANGE) {
+				map->events[1].source = ComboBox_GetCurSel(list_counter);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_STATUSLIST:
-			if (map && map->events.size() && HIWORD(wParam) == CBN_SELCHANGE) {
-				map->events[0].source = ComboBox_GetCurSel(list_status);
+			if (map && HIWORD(wParam) == CBN_SELCHANGE) {
+				map->events[2].source = ComboBox_GetCurSel(list_status);
 				fxhl->RefreshMon();
 			}
 			break;
@@ -264,22 +223,22 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			AlienFX_SDK::Colorcode* c{ NULL };
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_CM1:
-				c = map->powers.size() ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->powers[0].from) : NULL;
+				c = map->events[0].state ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->events[0].from) : NULL;
 				break;
 			case IDC_BUTTON_CM4:
-				c = map->powers.size() ? Act2Code(&map->powers[0].to) : NULL;
+				c = map->events[0].state ? Act2Code(&map->events[0].to) : NULL;
 				break;
 			case IDC_BUTTON_CM2:
-				c = map->perfs.size() ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->perfs[0].from) : NULL;
+				c = map->events[1].state ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->events[1].from) : NULL;
 				break;
 			case IDC_BUTTON_CM5:
-				c = map->perfs.size() ? Act2Code(&map->perfs[0].to) : NULL;
+				c = map->events[1].state ? Act2Code(&map->events[1].to) : NULL;
 				break;
 			case IDC_BUTTON_CM3:
-				c = map->events.size() ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->events[0].from) : NULL;
+				c = map->events[2].state ? Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &map->events[2].from) : NULL;
 				break;
 			case IDC_BUTTON_CM6:
-				c = map->events.size() ? Act2Code(&map->events[0].to) : NULL;
+				c = map->events[2].state ? Act2Code(&map->events[2].to) : NULL;
 				break;
 			}
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c);
@@ -290,12 +249,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			if (map) {
 				if ((HWND)lParam == s1_slider) {
-					map->perfs[0].cut = (BYTE) SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, map->perfs[0].cut);
+					SetSlider(sTip1, map->events[1].cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
 				}
 				if ((HWND)lParam == s2_slider) {
-					map->events[0].cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip2, map->events[0].cut);
+					SetSlider(sTip2, map->events[2].cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
 				}
 				fxhl->RefreshMon();
 			}

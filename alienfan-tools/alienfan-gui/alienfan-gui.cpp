@@ -178,19 +178,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
         PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
-        ComboBox_AddString(boost_ac, "Off");
-        ComboBox_AddString(boost_dc, "Off");
-        ComboBox_AddString(boost_ac, "Enabled");
-        ComboBox_AddString(boost_dc, "Enabled");
-        ComboBox_AddString(boost_ac, "Aggressive");
-        ComboBox_AddString(boost_dc, "Aggressive");
-        ComboBox_AddString(boost_ac, "Efficient");
-        ComboBox_AddString(boost_dc, "Efficient");
-        ComboBox_AddString(boost_ac, "Efficient aggressive");
-        ComboBox_AddString(boost_dc, "Efficient aggressive");
-
-        ComboBox_SetCurSel(boost_ac, acMode);
-        ComboBox_SetCurSel(boost_dc, dcMode);
+        vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
+        UpdateCombo(boost_ac, pModes, acMode);
+        UpdateCombo(boost_dc, pModes, dcMode);;
 
         // So open fan control window...
         RECT cDlg;

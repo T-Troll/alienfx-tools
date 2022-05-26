@@ -1,12 +1,11 @@
 #include "Common.h"
-//#include <Windows.h>
+#include <windowsx.h>
 
 using namespace std;
 
 #pragma comment(lib,"Wininet.lib")
 
 extern HWND mDlg;
-extern string GetAppVersion();
 extern bool needUpdateFeedback, isNewVersion;
 
 void EvaluteToAdmin() {
@@ -165,5 +164,14 @@ void SetToolTip(HWND tt, string value) {
 		ti.lpszText = (LPTSTR)value.c_str();
 		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
 	}
+}
 
+void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
+	ComboBox_ResetContent(ctrl);
+	for (int i = 0; i < items.size(); i++) {
+		ComboBox_AddString(ctrl, items[i].c_str());
+		if (val.size())
+			ComboBox_SelectItemData(ctrl, i, val[i]);
+	}
+	ComboBox_SetCurSel(ctrl, sel);
 }

@@ -9,20 +9,14 @@ extern void RemoveUnused(vector<groupset>* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-//extern int UpdateZoneList(HWND hDlg, byte flag = 0);
+extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 extern int eItem;
 
-//extern zone* FindAmbMapping(int lid);
-//extern haptics_map* FindHapMapping(int lid);
-//extern void RemoveHapMapping(int devid, int lightid);
-//extern void RemoveAmbMapping(int devid, int lightid);
-//extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
-
 extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern void CreateGridBlock(HWND gridTab, DLGPROC);
+extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is=false);
 extern void OnGridSelChanged(HWND);
 extern AlienFX_SDK::mapping* FindCreateMapping();
 extern void RedrawGridButtonZone(bool recalc = false);
@@ -30,31 +24,32 @@ extern void RedrawGridButtonZone(bool recalc = false);
 extern int gridTabSel;
 extern AlienFX_SDK::lightgrid* mainGrid;
 
-//vector<AlienFX_SDK::group*> lghGrp;
-
 int effID = -1;
 
 HWND zsDlg = NULL;
 
+vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
+
 void SetEffectData(HWND hDlg, groupset* mmap) {
 	bool hasEffects = false;
-	if (mmap && mmap->color.size()) {
-		//switch (fxhl->LocateDev(mmap->lights[0]->devid) ? fxhl->LocateDev(mmap->lights[0]->devid)->dev->GetVersion() : -1) {
-		//case -1: case 1: case 2: case 3: case 4: case 7:
-		//	// Have hardware effects
+	if (mmap) {
+		if (mmap->color.size()) {
 			hasEffects = true;
-		//	break;
-		//}
-		// Set data
-		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->color[effID].type);
-		SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->color[effID].tempo);
-		SetSlider(sTip1, mmap->color[effID].tempo);
-		SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
-		SetSlider(sTip2, mmap->color[effID].time);
+			ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->color[effID].type);
+			SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->color[effID].tempo);
+			SetSlider(sTip1, mmap->color[effID].tempo);
+			SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
+			SetSlider(sTip2, mmap->color[effID].time);
+		}
+		// gauge and spectrum.
+		CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gradient);
+		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !mmap->group->have_power);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
+	EnableWindow(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap != NULL);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
 	RedrawButton(hDlg, IDC_BUTTON_C1, mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
 }
 
@@ -81,7 +76,7 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 								  ILC_COLOR32, 1, 1);
 		for (int i = 0; i < mmap->color.size(); i++) {
 			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
-			char efName[16]{ 0 };
+			//char efName[16]{ 0 };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
 			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), RGB(mmap->color[i].b, mmap->color[i].g, mmap->color[i].r));
 			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 1, 32, picData);
@@ -89,30 +84,31 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 			ImageList_Add(hSmall, colorBox, NULL);
 			DeleteObject(colorBox);
 			lItem.iImage = i;
-			switch (mmap->color[i].type) {
-			case AlienFX_SDK::AlienFX_A_Color:
-				LoadString(hInst, IDS_TYPE_COLOR, efName, 16);
-				break;
-			case AlienFX_SDK::AlienFX_A_Pulse:
-				LoadString(hInst, IDS_TYPE_PULSE, efName, 16);
-				break;
-			case AlienFX_SDK::AlienFX_A_Morph:
-				LoadString(hInst, IDS_TYPE_MORPH, efName, 16);
-				break;
-			case AlienFX_SDK::AlienFX_A_Spectrum:
-				LoadString(hInst, IDS_TYPE_SPECTRUM, efName, 16);
-				break;
-			case AlienFX_SDK::AlienFX_A_Breathing:
-				LoadString(hInst, IDS_TYPE_BREATH, efName, 16);
-				break;
-			case AlienFX_SDK::AlienFX_A_Rainbow:
-				LoadString(hInst, IDS_TYPE_RAINBOW, efName, 16);
-				break;
-			case AlienFX_SDK::AlienFX_A_Power:
-				LoadString(hInst, IDS_TYPE_POWER, efName, 16);
-				break;
-			}
-			lItem.pszText = efName;
+			lItem.pszText = mmap->color[i].type != 6 ? (LPSTR)lightEffectNames[mmap->color[i].type].c_str() : "Power";
+			//switch (mmap->color[i].type) {
+			//case AlienFX_SDK::AlienFX_A_Color:
+			//	LoadString(hInst, IDS_TYPE_COLOR, efName, 16);
+			//	break;
+			//case AlienFX_SDK::AlienFX_A_Pulse:
+			//	LoadString(hInst, IDS_TYPE_PULSE, efName, 16);
+			//	break;
+			//case AlienFX_SDK::AlienFX_A_Morph:
+			//	LoadString(hInst, IDS_TYPE_MORPH, efName, 16);
+			//	break;
+			//case AlienFX_SDK::AlienFX_A_Spectrum:
+			//	LoadString(hInst, IDS_TYPE_SPECTRUM, efName, 16);
+			//	break;
+			//case AlienFX_SDK::AlienFX_A_Breathing:
+			//	LoadString(hInst, IDS_TYPE_BREATH, efName, 16);
+			//	break;
+			//case AlienFX_SDK::AlienFX_A_Rainbow:
+			//	LoadString(hInst, IDS_TYPE_RAINBOW, efName, 16);
+			//	break;
+			//case AlienFX_SDK::AlienFX_A_Power:
+			//	LoadString(hInst, IDS_TYPE_POWER, efName, 16);
+			//	break;
+			//}
+			//lItem.pszText = efName;
 			// check selection...
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
@@ -127,11 +123,9 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 }
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	HWND //light_list = GetDlgItem(hDlg, IDC_LIGHTS),
-		s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
+	HWND s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
-		type_c1 = GetDlgItem(hDlg, IDC_TYPE1),
-		grpList = GetDlgItem(hDlg, IDC_GRPLIST),
+		//type_c1 = GetDlgItem(hDlg, IDC_TYPE1),
 		gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID);
 
 	groupset* mmap = FindMapping(eItem);
@@ -140,11 +134,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 	case WM_INITDIALOG:
 	{
-		//if (!UpdateZoneList(hDlg)) {
-		//	// no lights, switch to setup
-		//	SwitchLightTab(hDlg, TAB_DEVICES);
-		//	return false;
-		//}
 		zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
 		RECT mRect;
 		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
@@ -154,20 +143,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		if (!conf->afx_dev.GetMappings()->size())
 			OnGridSelChanged(gridTab);
 
-		// Set types list...
-		char buffer[100];
-		LoadString(hInst, IDS_TYPE_COLOR, buffer, 100);
-		ComboBox_AddString(type_c1, buffer);
-		LoadString(hInst, IDS_TYPE_PULSE, buffer, 100);
-		ComboBox_AddString(type_c1, buffer);
-		LoadString(hInst, IDS_TYPE_MORPH, buffer, 100);
-		ComboBox_AddString(type_c1, buffer);
-		LoadString(hInst, IDS_TYPE_BREATH, buffer, 100);
-		ComboBox_AddString(type_c1, buffer);
-		LoadString(hInst, IDS_TYPE_SPECTRUM, buffer, 100);
-		ComboBox_AddString(type_c1, buffer);
-		LoadString(hInst, IDS_TYPE_RAINBOW, buffer, 100);
-		ComboBox_AddString(type_c1, buffer);
+		// Set types and gauge list...
+		UpdateCombo(GetDlgItem(hDlg, IDC_TYPE1), lightEffectNames);
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal" });
 		// now sliders...
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -199,7 +177,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		case IDC_TYPE1:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				if (mmap != NULL) {
-					int lType1 = (int)ComboBox_GetCurSel(type_c1);
+					int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 					mmap->color[effID].type = lType1;
 					RebuildEffectList(hDlg, mmap);
 					fxhl->RefreshOne(mmap, true, true);
@@ -218,7 +196,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					}
 					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
 					RebuildEffectList(hDlg, mmap);
-					//SetLightColors(hDlg, eItem);
 				}
 			} break;
 			} break;
@@ -244,7 +221,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						effID = (int)mmap->color.size() - 1;
 					}
 				RebuildEffectList(hDlg, mmap);
-				//SetLightColors(hDlg, eItem);
 				fxhl->RefreshOne(mmap, true, true);
 			}
 			break;
@@ -267,33 +243,21 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					RebuildEffectList(hDlg, mmap);
 					fxhl->RefreshOne(mmap, false, true);
 				}
-				//SetLightColors(hDlg, eItem);
 			}
 			break;
-		//case IDC_BUTTON_SETALL:
-		//	switch (HIWORD(wParam))
-		//	{
-		//	case BN_CLICKED: {
-		//		if (mmap && mmap->eve[0].map[0].type != AlienFX_SDK::AlienFX_A_Power &&
-		//			MessageBox(hDlg, "Do you really want to set all lights to this settings?", "Warning",
-		//					   MB_YESNO | MB_ICONWARNING) == IDYES) {
-		//			event light = mmap->eve[0];
-		//			for (int i = 0; i < conf->afx_dev.GetMappings()->size(); i++) {
-		//				AlienFX_SDK::mapping* map = conf->afx_dev.GetMappings()->at(i);
-		//				if (!(map->flags & ALIENFX_FLAG_POWER)) {
-		//					lightset* actmap = FindMapping(i);
-		//					if (!actmap) {
-		//						// create new mapping
-		//						actmap = CreateMapping(i);
-		//					}
-		//					actmap->eve[0] = light;
-		//				}
-		//			}
-		//			fxhl->RefreshState(true);
-		//		}
-		//	} break;
-		//	} break;
-		// info block controls.
+		case IDC_CHECK_SPECTRUM:
+			if (mmap) {
+				mmap->gradient = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
+				fxhl->Refresh();
+			}
+			break;
+		case IDC_COMBO_GAUGE:
+			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
+				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				conf->SortGroupGauge(mmap);
+				fxhl->Refresh();
+			}
+			break;
 		default: return false;
 		}
 	} break;

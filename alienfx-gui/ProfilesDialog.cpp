@@ -8,6 +8,7 @@ extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
+extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern EventHandler* eve;
 int pCid = -1;
@@ -87,17 +88,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 	{
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->FindDefaultProfile()->id;
-		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
+		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 0);
 		if (conf->haveV5) {
-			//ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 1);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Color"), 0);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Breathing"), 2);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Single-color Wave"), 3);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Dual-color Wave "), 4);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Pulse"), 8);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Mixed Pulse"), 9);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Night Rider"), 10);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Laser"), 11);
+			UpdateCombo(eff_list,
+				{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
+				0, {0,2,3,4,8,9,10,11});
 			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
 			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
 			sTip2 = CreateToolTip(eff_tempo, sTip2);
@@ -175,13 +170,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_BUT_COPYACTIVE:
 			if (conf->activeProfile->id != prof->id) {
-				profile* new_prof = new profile(*conf->activeProfile);
-				new_prof->id = prof->id;
-				new_prof->name = prof->name;
-				new_prof->flags &= ~PROF_DEFAULT;
-				new_prof->flags |= prof->flags & PROF_DEFAULT;
-				RemoveProfile(prof->id);
-				conf->profiles.push_back(new_prof);
+				//profile* new_prof = new profile(*conf->activeProfile);
+				//new_prof->id = prof->id;
+				//new_prof->name = prof->name;
+				//new_prof->flags &= ~PROF_DEFAULT;
+				//new_prof->flags |= prof->flags & PROF_DEFAULT;
+				//RemoveProfile(prof->id);
+				//conf->profiles.push_back(new_prof);
+				prof->lightsets = conf->activeProfile->lightsets;
 				ReloadProfileView(hDlg);
 			}
 			break;

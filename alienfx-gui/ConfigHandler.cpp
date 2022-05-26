@@ -49,7 +49,7 @@ void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string
 		prof->triggerapp.push_back(app);
 	if (flags != -1) {
 		prof->flags = LOWORD(flags);
-		prof->effmode = HIWORD(flags);
+		prof->effmode = HIWORD(flags) == 3 ? 0 : HIWORD(flags) + 1;
 	}
 	if (eff) {
 		prof->globalEffect = (byte) LOWORD(eff[0]);
@@ -288,7 +288,6 @@ void ConfigHandler::Load() {
 					map.flags |= fs.flags << i;
 					map.eve[i].cut = fs.cut;
 					map.eve[i].proc = fs.proc;
-					//map.eve[i].fs.s = *((DWORD*)inPos);
 					inPos += sizeof(DWORD);
 					map.eve[i].source = *inPos++;
 					BYTE mapSize = *inPos++;
@@ -299,23 +298,27 @@ void ConfigHandler::Load() {
 					}
 				}
 				// now load new structure...
-				profile* prof = FindProfile(pid);// ->lightsets.push_back(map);
+				profile* prof = FindProfile(pid);
 				groupset t;
 				t.color = map.eve[0].map;
+				t.fromColor = map.flags & LEVENT_COLOR;
 				if (map.devid) {
 					t.group = FindCreateGroup(map.devid, map.lightid);
 				}
 				else
 					t.group = afx_dev.GetGroupById(map.lightid);
 				if (map.flags & LEVENT_POWER) {
-					t.powers.push_back({ map.eve[1].map[0], map.eve[1].map[1] });
+					t.events[0] = { true, 0, 0, 0, map.eve[1].map[0], map.eve[1].map[1] } ;
 				}
 				if (map.flags & LEVENT_PERF) {
-					t.perfs.push_back({ map.eve[2].source, map.eve[2].cut, map.eve[2].proc, 0, map.eve[2].map[0], map.eve[2].map[1] });
+					t.events[1] = { true, map.eve[2].source, map.eve[2].cut, map.eve[2].proc, map.eve[2].map[0], map.eve[2].map[1] };
+					if (map.eve[2].proc)
+						t.gauge = 1;
 				}
 				if (map.flags & LEVENT_ACT) {
-					t.events.push_back({ map.eve[3].source, map.eve[3].cut, map.eve[3].proc, map.eve[3].map[0], map.eve[3].map[1] });
+					t.events[2] = { true, map.eve[3].source, map.eve[3].cut, map.eve[3].proc, map.eve[3].map[0], map.eve[3].map[1] };
 				}
+				SortGroupGauge(&t);
 				prof->lightsets.push_back(t);
 			}
 			delete[] inarray;
@@ -513,4 +516,71 @@ void ConfigHandler::Save() {
 	//		}
 	//	}
 	//}
+}
+
+void ConfigHandler::SortGroupGauge(groupset* map) {
+	if (map->lightMap.grid)
+		delete[] map->lightMap.grid;
+	ZeroMemory(&map->lightMap, sizeof(AlienFX_SDK::lightgrid));
+	if (map->gauge) {
+		int tempX = 0, tempY = 0;
+		vector<vector<DWORD>> tempGrid;
+		for (auto t = afx_dev.GetGrids()->begin(); t < afx_dev.GetGrids()->end(); t++) {
+			tempY = max(tempY, t->y); tempX = max(tempX, t->x);
+			tempGrid.resize(tempY, vector<DWORD>(tempX));
+		}
+		int minX = tempGrid[0].size(), minY = tempGrid.size(), maxX = 0, maxY = 0;
+		//DWORD lgt = MAKELPARAM(map->group->lights[i].first, map->group->lights[i].second);
+		// fill grid...
+		for (auto lgh = map->group->lights.begin(); lgh < map->group->lights.end(); lgh++) {
+			DWORD lgt = MAKELPARAM(lgh->first, lgh->second);
+			for (auto t = afx_dev.GetGrids()->begin(); t < afx_dev.GetGrids()->end(); t++) {
+				for (int ind = 0; ind < t->x * t->y; ind++)
+					if (t->grid[ind] == lgt) {
+						tempGrid[ind / t->x][ind % t->x] = t->grid[ind];
+						minX = min(minX, ind % t->x);
+						minY = min(minY, ind / t->x);
+						maxX = max(maxX, ind % t->x);
+						maxY = max(maxY, ind / t->x);
+						break;
+					}
+			}
+		}
+		// resize grid...
+		tempGrid.resize(maxY + 1);
+		tempGrid.erase(tempGrid.begin(), tempGrid.begin() + minY);
+		for (auto tY = tempGrid.begin(); tY < tempGrid.end(); ) {
+			tY->resize(maxX + 1);
+			tY->erase(tY->begin(), tY->begin() + minX);
+			// remove empty rows...
+			if (find_if(tY->begin(), tY->end(),
+				[](auto t) {
+					return t;
+				}) == tY->end()) {
+				int pos = tY - tempGrid.begin();
+				tempGrid.erase(tY);
+				tY = pos + tempGrid.begin();
+			}
+			else
+				tY++;
+		}
+		// remove empty columns
+		if (tempGrid.size()) {
+			for (int i = 0; i < tempGrid[0].size(); i++) {
+				if (find_if(tempGrid.begin(), tempGrid.end(),
+					[i](auto t) {
+						return t[i];
+					}) == tempGrid.end()) {
+					for (auto tg = tempGrid.begin(); tg < tempGrid.end(); tg++)
+						tg->erase(tg->begin() + i);
+					i--;
+				}
+			}
+			map->lightMap.x = tempGrid[0].size(); map->lightMap.y = tempGrid.size();
+			map->lightMap.grid = new DWORD[map->lightMap.x * map->lightMap.y];
+			for (int y = 0; y < map->lightMap.y; y++)
+				for (int x = 0; x < map->lightMap.x; x++)
+					map->lightMap.grid[y * map->lightMap.x + x] = tempGrid[y][x];
+		}
+	}
 }

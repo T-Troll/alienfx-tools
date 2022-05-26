@@ -61,7 +61,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_BATTDIM:
 			conf->dimmedBatt = state;
-			fxhl->RefreshState();
+			fxhl->Refresh();
 			break;
 		case IDC_SCREENOFF:
 			conf->offWithScreen = state;
@@ -79,7 +79,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_GAMMA:
 			conf->gammaCorrection = state;
-			fxhl->RefreshState();
+			fxhl->Refresh();
 			break;
 		case IDC_CHECK_EFFECTS:
 			conf->enableMon = state;

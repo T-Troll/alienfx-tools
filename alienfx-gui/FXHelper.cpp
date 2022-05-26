@@ -28,29 +28,83 @@ AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 	return nullptr;
 };
 
-void FXHelper::SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, bool force, AlienFX_SDK::afx_act* from, AlienFX_SDK::afx_act* to_c, double power) {
-	AlienFX_SDK::group *grp = conf->afx_dev.GetGroupById(groupID);
-	if (grp && grp->lights.size()) {
-		for (int i = 0; i < grp->lights.size(); i++) {
-			if (from) {
-				// gauge
-				if (((double) i) / grp->lights.size() < power) {
-					if (((double) i + 1) / grp->lights.size() < power)
-						actions[0] = *to_c;
-					else {
-						// recalc...
-						AlienFX_SDK::afx_act fin;
-						double newPower = (power - ((double)i) / grp->lights.size())*grp->lights.size();
-						fin.r = (byte) ((1.0 - newPower) * from->r + newPower * to_c->r);
-						fin.g = (byte) ((1.0 - newPower) * from->g + newPower * to_c->g);
-						fin.b = (byte) ((1.0 - newPower) * from->b + newPower * to_c->b);
-						actions[0] = fin;
-					}
-				} else
-					actions[0] = *from;
-			}
-			SetLight(grp->lights[i].first, grp->lights[i].second, actions, force);
+void FXHelper::SetGaugeLight(DWORD id, int x, int max, bool grad, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
+{
+	if (id) {
+		vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
+		if (grad) {
+			double newPower = (double)x / max;
+			fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
+			fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
+			fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
 		}
+		else {
+			if (((double)x) / max < power) {
+				if (((double)x + 1) / max < power)
+					fAct[0] = actions.back();
+				else {
+					// recalc...
+					double newPower = (power - ((double)x) / max) * max;
+					fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
+					fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
+					fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
+				}
+			}
+		}
+		SetLight(LOWORD(id), HIWORD(id), fAct, force);
+	}
+}
+
+void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power, bool force) {
+	if (grp->group->lights.size()) {
+		switch (grp->gauge) {
+		case 0: // solid
+			for (int i = 0; i < grp->group->lights.size(); i++)
+				SetLight(grp->group->lights[i].first, grp->group->lights[i].second, actions, force);
+			break;
+		case 1: // horizontal
+			for (int x = 0; x < grp->lightMap.x; x++)
+				for (int y = 0; y < grp->lightMap.y; y++)
+					SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x, grp->lightMap.x, grp->gradient, actions, power, force);
+			break;
+		case 2: // vertical
+			for (int x = 0; x < grp->lightMap.x; x++)
+				for (int y = 0; y < grp->lightMap.y; y++)
+					SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], y, grp->lightMap.y, grp->gradient, actions, power, force);
+			break;
+		case 3: // diagonal
+			for (int x = 0; x < grp->lightMap.x; x++)
+				for (int y = 0; y < grp->lightMap.y; y++)
+					SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x + y , grp->lightMap.x + grp->lightMap.y, grp->gradient, actions, power, force);
+			break;
+		}
+		//for (int i = 0; i < grp->group->lights.size(); i++) {
+		//	if (grp->gauge && actions.size() > 1) {
+		//		// gauge
+		//		vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
+		//		if (grp->gradient) {
+		//			double newPower = (double)i / grp->group->lights.size();
+		//			fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
+		//			fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
+		//			fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
+		//		}
+		//		else {
+		//			if (((double)i) / grp->group->lights.size() < power) {
+		//				if (((double)i + 1) / grp->group->lights.size() < power)
+		//					fAct[0] = actions.back();
+		//				else {
+		//					// recalc...
+		//					double newPower = (power - ((double)i) / grp->group->lights.size()) * grp->group->lights.size();
+		//					fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
+		//					fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
+		//					fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
+		//				}
+		//			}
+		//		}
+		//		SetLight(grp->group->lights[i].first, grp->group->lights[i].second, fAct, force);
+		//	} else
+		//		SetLight(grp->group->lights[i].first, grp->group->lights[i].second, actions, force);
+		//}
 	}
 }
 
@@ -95,7 +149,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 	bool wasChanged = false;
 	if (force) {
 		DebugPrint("Forced Counter update initiated...\n");
-		eData = {101,101,101,101,200,101,101,-1,-1,-1};
+		//eData = {101,101,101,101,200,101,101,-1,-1,-1};
 	}
 
 	vector<groupset> active = conf->activeProfile->lightsets;
@@ -104,15 +158,16 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		vector<AlienFX_SDK::afx_act> actions;
 		bool noDiff = true;
 		int lVal = 0, cVal = 0;
-		AlienFX_SDK::afx_act from{ 99 }, fin{ 99 }, * gFin = NULL;
-		if (Iter->fromColor) {
-			from = Iter->group->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color[1] : Iter->color[0];
-			from.type = 0;
+		//AlienFX_SDK::afx_act from{ 99 }, fin{ 99 }, * gFin = NULL;
+		if (Iter->fromColor && Iter->color.size()) {
+			actions.push_back(Iter->group->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color.back() : Iter->color.front());
+			actions.back().type = 0;
 		}
-		if (Iter->perfs.size()) {
+		if (Iter->events[1].state) {
 			// counter
-			gFin = &Iter->perfs[0].to;
-			switch (Iter->perfs[0].source) {
+			if (actions.empty())
+				actions.push_back(Iter->events[1].from);
+			switch (Iter->events[1].source) {
 			case 0: lVal = eData.CPU; cVal = data->CPU; break;
 			case 1: lVal = eData.RAM; cVal = data->RAM; break;
 			case 2: lVal = eData.HDD; cVal = data->HDD; break;
@@ -124,23 +179,27 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			case 8: lVal = eData.PWR; cVal = data->PWR; break;
 			}
 
-			if (lVal != cVal && (lVal > Iter->perfs[0].cut || cVal > Iter->perfs[0].cut)) {
-				if (from.type)
-					from = Iter->perfs[0].from;
+			if (force || (lVal != cVal && (lVal > Iter->events[1].cut || cVal > Iter->events[1].cut))) {
+				//if (from.type)
+				//	from = Iter->perfs[0].from;
 				noDiff = false;
-				Iter->perfs[0].coeff = cVal > Iter->perfs[0].cut ? (cVal - Iter->perfs[0].cut) / (100.0 - Iter->perfs[0].cut) : 0.0;
-				fin.r = (BYTE)(from.r * (1 - Iter->perfs[0].coeff) + Iter->perfs[0].to.r * Iter->perfs[0].coeff);
-				fin.g = (BYTE)(from.g * (1 - Iter->perfs[0].coeff) + Iter->perfs[0].to.g * Iter->perfs[0].coeff);
-				fin.b = (BYTE)(from.b * (1 - Iter->perfs[0].coeff) + Iter->perfs[0].to.b * Iter->perfs[0].coeff);
+				Iter->events[1].coeff = cVal > Iter->events[1].cut ? (cVal - Iter->events[1].cut) / (100.0 - Iter->events[1].cut) : 0.0;
+				if (Iter->gauge && !Iter->gradient)
+					actions.push_back(Iter->events[1].to);
+				else
+					actions.push_back({ 0,0,0,
+						(BYTE)(actions.front().r * (1 - Iter->events[1].coeff) + Iter->events[1].to.r * Iter->events[1].coeff),
+						(BYTE)(actions.front().g * (1 - Iter->events[1].coeff) + Iter->events[1].to.g * Iter->events[1].coeff),
+						(BYTE)(actions.front().b * (1 - Iter->events[1].coeff) + Iter->events[1].to.b * Iter->events[1].coeff) });
 			}
 		}
-		if (Iter->events.size()) {
-			if (fin.type == 99)
-				fin = Iter->events[0].from;
+		if (Iter->events[2].state) {
 			// indicator
-			int ccut = Iter->events[0].cut;
-			bool blink = Iter->events[0].blink;
-			switch (Iter->events[0].source) {
+			if (actions.empty())
+				actions.push_back(Iter->events[2].from);
+			int ccut = Iter->events[2].cut;
+			bool blink = Iter->events[2].mode;
+			switch (Iter->events[2].source) {
 			case 0: lVal = eData.HDD; cVal = data->HDD; break;
 			case 1: lVal = eData.NET; cVal = data->NET; break;
 			case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
@@ -149,19 +208,19 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			case 5: lVal = eData.KBD; cVal = data->KBD; break;
 			}
 
-			if (force || (lVal != cVal && ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1)) { //check 0 border!
+			if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
 				noDiff = false;
-				if (cVal > 0 && (!blink || blinkStage))
-					gFin = &(fin = Iter->events[0].to);
-				else
-					if (cVal <= 0 && Iter->perfs.size())
-						gFin = &Iter->perfs[0].to;
-			}
-			else
-				if (cVal > 0 && blink) {
+				if (cVal > 0) {
+					actions.erase(actions.begin());
+					actions.push_back(Iter->events[2].to);
+				}
+			} else
+				if (blink && cVal > 0 ) {
 					noDiff = false;
-					if (blinkStage)
-						gFin = &(fin = Iter->events[0].to);
+					if (blinkStage) {
+						actions.erase(actions.begin());
+						actions.push_back(Iter->events[2].to);
+					}
 				}
 		}
 
@@ -169,18 +228,14 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		if (noDiff)	continue;
 		wasChanged = true;
 
-		actions.push_back(fin);
-
 		if (Iter->group->have_power)
 			if (activeMode == MODE_AC || activeMode == MODE_CHARGE) {
 				actions.push_back(Iter->color[1]);
 			} else {
-				actions[0] = Iter->color[0];
-				actions.push_back(fin);
+				actions.insert(actions.begin(), Iter->color[0]);
 			}
 
-		//for (auto it = Iter->groups.begin(); it < Iter->groups.end(); it++)
-		SetGroupLight(Iter->group->gid, actions, false, Iter->perfs.size() && Iter->perfs[0].mode ? &from : NULL, gFin, Iter->perfs.size() ? Iter->perfs[0].coeff : 0);
+		SetGroupLight(&(*Iter), actions, Iter->events[1].state ? Iter->events[1].coeff : 0);
 	}
 	if (wasChanged) {
 		QueryUpdate();
@@ -213,22 +268,15 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 				SetEvent(haveNewElement);
 			}
 		}
-		else {
-			SetGroupLight(id, actions, force);
-		}
 	}
 	return true;
 }
 
-void FXHelper::RefreshState(bool force)
+inline void FXHelper::RefreshMon()
 {
-	Refresh(force);
-	RefreshMon();
-}
-
-void FXHelper::RefreshMon()
-{
-	eData = EventData();
+	if (conf->enableMon && conf->GetEffect() == 1)
+		SetCounterColor(&eData, true);
+	//eData = EventData();
 }
 
 void FXHelper::ChangeState() {
@@ -241,7 +289,7 @@ void FXHelper::ChangeState() {
 				switch (conf->afx_dev.fxdevs[i].dev->GetVersion()) {
 				case API_L_ACPI: case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V6: case API_L_V7:
 					UnblockUpdates(true);
-					RefreshState();
+					Refresh();
 					UnblockUpdates(false);
 				}
 		}
@@ -356,6 +404,8 @@ void FXHelper::Refresh(int forced)
 	for (auto it = (*conf->active_set).begin(); it < (*conf->active_set).end(); it++) {
 		RefreshOne(&(*it), forced);
 	}
+	if (!forced) RefreshMon();
+
 	QueryUpdate(-1, forced == 2);
 }
 
@@ -379,26 +429,26 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 		actions = map->color;
 	}
 
-	if (!conf->GetEffect() && !force) {
-		if (map->events.size() || map->perfs.size())
+	if (!force && conf->enableMon && conf->GetEffect() == 1) {
+		if (map->events[1].state || map->events[2].state)
 			return false;
-		if (map->powers.size()) {
+		if (map->events[0].state) {
 			// use power event;
 			if (!map->fromColor)
-				actions = { map->powers[0].from };
+				actions = { map->events[0].from };
 			switch (activeMode) {
 			case MODE_BAT:
-				actions = { map->powers[0].to };
+				actions = { map->events[0].to };
 				break;
 			case MODE_LOW:
 				actions.resize(1);
-				actions.push_back(map->powers[0].to);
+				actions.push_back(map->events[0].to);
 				actions.front().type = AlienFX_SDK::AlienFX_A_Pulse;
 				actions.back().type = AlienFX_SDK::AlienFX_A_Pulse;
 				break;
 			case MODE_CHARGE:
 				actions.resize(1);
-				actions.push_back(map->powers[0].to);
+				actions.push_back(map->events[0].to);
 				actions.front().type = AlienFX_SDK::AlienFX_A_Morph;
 				actions.back().type = AlienFX_SDK::AlienFX_A_Morph;
 				break;
@@ -406,12 +456,11 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 		}
 	}
 
-	//for (auto it = map->groups.begin(); it < map->groups.end(); it++)
-		SetGroupLight(map->group->gid, actions, force == 2);
-
-	if (update)
-		QueryUpdate(-1, force == 2);
-
+	if (actions.size()) {
+		SetGroupLight(map, actions, 0, force == 2);
+		if (update)
+			QueryUpdate(-1, force == 2);
+	}
 	return true;
 }
 
@@ -443,7 +492,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 				actions[0].r = (BYTE)((r * shift) / dsize);
 				actions[0].g = (BYTE)((g * shift) / dsize);
 				actions[0].b = (BYTE)((b * shift) / dsize);
-				SetGroupLight(it->group->gid, actions);
+				SetGroupLight(&(*it), actions);
 			}
 		}
 	if (wasChanged)
@@ -501,7 +550,7 @@ void FXHelper::RefreshHaptics(int *freq) {
 				AlienFX_SDK::afx_act from{ 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize) },
 					to{ 0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize) };
 
-				SetGroupLight(mIter->group->gid, actions, false, mIter->gauge ? &from : NULL, &to, f_power);
+				SetGroupLight(&(*mIter), actions, f_power);
 				wasChanged = true;
 			}
 		}

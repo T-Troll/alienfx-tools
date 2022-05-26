@@ -73,21 +73,15 @@ void RedrawGridButtonZone(bool recalc = false) {
                         if (LOWORD(mainGrid->grid[ind(x,y)]) == clgh->first &&
                             HIWORD(mainGrid->grid[ind(x,y)]) == clgh->second) {
                             switch (conf->GetEffect()) {
-                            case 0: // monitoring
-                                if (cs->powers.size()) {
-                                    colorGrid[x][y].first = cs->fromColor && cs->color.size() ? &cs->color.front() : &cs->powers[0].from;
-                                    colorGrid[x][y].second = &cs->powers[0].to;
-                                }
-                                if (cs->perfs.size()) {
-                                    colorGrid[x][y].first = cs->fromColor && cs->color.size() ? &cs->color.front() : &cs->perfs[0].from;
-                                    colorGrid[x][y].second = &cs->perfs[0].to;
-                                }
-                                if (cs->events.size()) {
-                                    colorGrid[x][y].first = cs->fromColor && cs->color.size() ? &cs->color.front() : &cs->events[0].from;
-                                    colorGrid[x][y].second = &cs->events[0].to;
-                                }
+                            case 1: // monitoring
+                                for (int i = 0; i < 3; i++)
+                                    if (cs->events[i].state) {
+                                        colorGrid[x][y].first = cs->fromColor && cs->color.size() ?
+                                            &cs->color.front() : &cs->events[i].from;
+                                        colorGrid[x][y].second = &cs->events[i].to;
+                                    }
                                 break;
-                            case 2: // haptics
+                            case 3: // haptics
                                 if (cs->haptics.size()) {
                                     colorGrid[x][y] = { Code2Act(&cs->haptics[0].colorfrom), Code2Act(&cs->haptics[0].colorto) };
                                 }
@@ -313,7 +307,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return true;
 }
 
-void CreateGridBlock(HWND gridTab, DLGPROC func) {
+void CreateGridBlock(HWND gridTab, DLGPROC func, bool needAddDel) {
 
     RECT rcDisplay;
     TCITEM tie{ TCIF_TEXT };
@@ -330,11 +324,13 @@ void CreateGridBlock(HWND gridTab, DLGPROC func) {
         TabCtrl_InsertItem(gridTab, i, (LPARAM)&tie);
     }
 
-    // Special tabs for add/remove
-    tie.pszText = LPSTR("+");
-    TabCtrl_InsertItem(gridTab, conf->afx_dev.GetGrids()->size(), (LPARAM)&tie);
-    tie.pszText = LPSTR("-");
-    TabCtrl_InsertItem(gridTab, conf->afx_dev.GetGrids()->size() + 1, (LPARAM)&tie);
+    if (needAddDel) {
+        // Special tabs for add/remove
+        tie.pszText = LPSTR("+");
+        TabCtrl_InsertItem(gridTab, conf->afx_dev.GetGrids()->size(), (LPARAM)&tie);
+        tie.pszText = LPSTR("-");
+        TabCtrl_InsertItem(gridTab, conf->afx_dev.GetGrids()->size() + 1, (LPARAM)&tie);
+    }
 
     TabCtrl_SetMinTabWidth(gridTab, 10);
 

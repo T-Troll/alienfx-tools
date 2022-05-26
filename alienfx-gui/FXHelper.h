@@ -37,14 +37,12 @@ private:
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
 
-	void SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, bool force = false,
-					   AlienFX_SDK::afx_act* from_c = NULL, AlienFX_SDK::afx_act* to_c = NULL, double power = 0);
+	void SetGaugeLight(DWORD id, int x, int max, bool grad, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
+	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
 	bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void QueryUpdate(int did = -1, bool force = false);
 
 public:
-	//ConfigHandler* config;
-	//AlienFX_SDK::Mappings afx_dev;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
 	HANDLE queryEmpty = NULL;
@@ -55,10 +53,8 @@ public:
 	int activeMode = -1;
 	EventData eData, maxData;
 
-	FXHelper(/*ConfigHandler *conf*/);
+	FXHelper();
 	~FXHelper();
-	//bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
-	//void QueryUpdate(int did = -1, bool force = false);
 	AlienFX_SDK::afx_device *LocateDev(int pid);
 	size_t FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
@@ -69,7 +65,6 @@ public:
 	void TestLight(int did, int id, bool wp=false);
 	void ResetPower(int did);
 	void SetCounterColor(EventData *data, bool force = false);
-	void RefreshState(bool force = false);
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);

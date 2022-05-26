@@ -23,7 +23,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 		firstInit = true;
 		CreateTabControl(tab_list,
-			{"Colors", "Events", "Ambient", "Haptics", "Devices"},
+			{"Colors", "Events Monitoring", "Ambient", "Haptics", "Devices and Grids"},
 			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_DEVICES},
 			{ (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog, (DLGPROC)TabDevicesDialog }
 			);

@@ -21,7 +21,7 @@ void ResetDPIScale();
 
 HWND InitInstance(HINSTANCE, int);
 
-BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 //BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -263,7 +263,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	hInst = hInstance;
-	CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)DialogConfigStatic);
+	CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog);
 
 	if (mDlg) {
 
@@ -430,11 +430,7 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 		EnableWindow(mode_list, conf->enableMon);
 	}
-	ComboBox_AddString(mode_list, "Monitoring");
-	ComboBox_AddString(mode_list, "Ambient");
-	ComboBox_AddString(mode_list, "Haptics");
-	ComboBox_AddString(mode_list, "Off");
-	ComboBox_SetCurSel(mode_list, mode);
+	UpdateCombo(mode_list, { "Off", "Monitoring", "Ambient", "Haptics" }, mode);
 }
 
 void UpdateState() {
@@ -469,10 +465,9 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 		SendMessage(parent, TCM_INSERTITEM, i, (LPARAM)&tie);
 		pHdr->apProc[i] = func[i];
 	}
-
 }
 
-BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES),
 		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE);
@@ -492,7 +487,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		mDlg = hDlg;
 
 		CreateTabControl(tab_list,
-			{"Lights", "Fans", "Profiles", "Settings"},
+			{"Lights", "Fans and Power", "Profiles", "Settings"},
 			{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS},
 			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
 			);
@@ -539,7 +534,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 			break;
 		case IDC_BUTTON_REFRESH:
-			fxhl->RefreshState(true);
+			fxhl->Refresh();
 			ReloadProfileList();
 			break;
 		case IDC_BUTTON_SAVE:
@@ -622,7 +617,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			// go to tray...
 			if (!fxhl->unblockUpdates) {
 				fxhl->UnblockUpdates(true, true);
-				fxhl->RefreshState();
+				fxhl->Refresh();
 			}
 			ShowWindow(hDlg, SW_HIDE);
 		} break;
@@ -667,13 +662,13 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (conf->enableMon) {
 				pMenu = CreatePopupMenu();
 				mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
-				mInfo.dwTypeData = "Monitoring";
-				InsertMenuItem(pMenu, 0, false, &mInfo);
-				mInfo.dwTypeData = "Ambient";
-				InsertMenuItem(pMenu, 1, false, &mInfo);
-				mInfo.dwTypeData = "Haptics";
-				InsertMenuItem(pMenu, 2, false, &mInfo);
 				mInfo.dwTypeData = "Off";
+				InsertMenuItem(pMenu, 0, false, &mInfo);
+				mInfo.dwTypeData = "Monitoring";
+				InsertMenuItem(pMenu, 1, false, &mInfo);
+				mInfo.dwTypeData = "Ambient";
+				InsertMenuItem(pMenu, 2, false, &mInfo);
+				mInfo.dwTypeData = "Haptics";
 				InsertMenuItem(pMenu, 3, false, &mInfo);
 				CheckMenuItem(pMenu, conf->GetEffect(), MF_BYPOSITION | MF_CHECKED);
 				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
@@ -715,7 +710,7 @@ BOOL CALLBACK DialogConfigStatic(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
 		    return true;
 		case ID_TRAYMENU_REFRESH:
-			fxhl->RefreshState(true);
+			fxhl->Refresh();
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
@@ -1022,8 +1017,8 @@ groupset* CreateMapping(int lid) {
 
 void RemoveUnused(vector<groupset>* lightsets) {
 	for (auto it = lightsets->begin(); it < lightsets->end();)
-		if (!(it->color.size() + it->events.size() + it->perfs.size() +
-			it->powers.size() + it->ambients.size() + it->haptics.size())) {
+		if (!(it->color.size() + it->events[0].state + it->events[1].state +
+			it->events[2].state + it->ambients.size() + it->haptics.size())) {
 			lightsets->erase(it);
 			it = lightsets->begin();
 		}

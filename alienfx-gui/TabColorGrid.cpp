@@ -58,6 +58,15 @@ void ModifyColorDragZone(bool inverse = false, bool clear = false) {
                             });
                     }
                 }
+        // now check for power...
+        grp->have_power = find_if(grp->lights.begin(), grp->lights.end(),
+            [](auto t) {
+                return conf->afx_dev.GetMappingById(t.first, (WORD)t.second)->flags & ALIENFX_FLAG_POWER;
+            }) != grp->lights.end();
+
+        groupset* map = FindMapping(eItem);
+        if (map && map->gauge)
+            conf->SortGroupGauge(map);
     }
 }
 

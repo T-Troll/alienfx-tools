@@ -15,7 +15,7 @@ extern void SwitchLightTab(HWND, int);
 
 extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern void CreateGridBlock(HWND gridTab, DLGPROC);
+extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
 extern AlienFX_SDK::mapping* FindCreateMapping();
 extern void RedrawGridButtonZone(bool recalc = false);
@@ -292,6 +292,6 @@ void AmbUpdate(LPVOID param) {
     if (eve->capt && eve->capt->needUpdate && IsWindowVisible((HWND)param)) {
         //DebugPrint("Ambient UI update...\n");
         RedrawButtonZone((HWND)param);
-        eve->capt->needUpdate = false;
+        if (eve->capt) eve->capt->needUpdate = false;
     }
 }

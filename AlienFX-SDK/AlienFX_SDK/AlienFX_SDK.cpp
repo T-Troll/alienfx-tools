@@ -1210,9 +1210,6 @@ namespace AlienFX_SDK {
 			});
 		if (pos != groups.end())
 			return &(*pos);
-		//for (int i = 0; i < groups.size(); i++)
-		//	if (groups[i].gid == gID)
-		//		return &groups[i];
 		return nullptr;
 	}
 
@@ -1223,6 +1220,7 @@ namespace AlienFX_SDK {
 		devices.clear();
 		mappings.clear();
 		groups.clear();
+		grids.clear();
 
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
 		unsigned vindex; mapping map; devmap dev;
@@ -1260,7 +1258,12 @@ namespace AlienFX_SDK {
 				RegGetValueA(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
 				groups.push_back({dID, name});
 				for (int i = 0; i < nameLen / sizeof(DWORD); i += 2) {
-					groups.back().lights.push_back({ maps[i], maps[i + 1] });
+					mapping* map = GetMappingById(maps[i], (WORD)maps[i + 1]);
+					if (map) {
+						groups.back().lights.push_back({ maps[i], maps[i + 1] });
+						if (map->flags & ALIENFX_FLAG_POWER)
+							groups.back().have_power = true;
+					}
 				}
 				delete[] maps;
 			}

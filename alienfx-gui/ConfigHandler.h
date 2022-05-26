@@ -29,26 +29,14 @@ union FlagSet {
 	DWORD s = 0;
 };
 
-struct power_event {
-	AlienFX_SDK::afx_act from;
-	AlienFX_SDK::afx_act to;
-};
-
-struct perf_event {
+struct event {
+	bool state = false;
 	BYTE source = 0;
 	BYTE cut = 0;
 	BYTE mode = 0;
+	AlienFX_SDK::afx_act from;
+	AlienFX_SDK::afx_act to;
 	double coeff;
-	AlienFX_SDK::afx_act from;
-	AlienFX_SDK::afx_act to;
-};
-
-struct act_event {
-	BYTE source = 0;
-	BYTE cut = 0;
-	BYTE blink = 0;
-	AlienFX_SDK::afx_act from;
-	AlienFX_SDK::afx_act to;
 };
 
 struct old_event {
@@ -59,16 +47,19 @@ struct old_event {
 	vector<AlienFX_SDK::afx_act> map;
 };
 
+struct posgrid {
+	int x, y, index;
+};
+
 struct groupset {
 	AlienFX_SDK::group* group;
 	vector<AlienFX_SDK::afx_act> color;
-	vector<power_event> powers;
-	vector<perf_event> perfs;
-	vector<act_event> events;
+	event events[3];
 	vector<byte> ambients;
 	vector<freq_map> haptics;
+	AlienFX_SDK::lightgrid lightMap{ 0 };
 	bool fromColor = false;
-	bool spectrum = false;
+	bool gradient = false;
 	byte gauge = 0;
 };
 
@@ -161,6 +152,7 @@ public:
 	~ConfigHandler();
 	void Load();
 	void Save();
+	void SortGroupGauge(groupset* map);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);

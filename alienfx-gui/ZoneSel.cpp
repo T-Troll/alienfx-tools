@@ -9,16 +9,20 @@ void UpdateZoneList(HWND hDlg, byte flag = 0) {
 	ListView_DeleteAllItems(zone_list);
 	ListView_SetExtendedListViewStyle(zone_list, LVS_EX_FULLROWSELECT);
 	if (!ListView_GetColumnWidth(zone_list, 0)) {
-		LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
+		LVCOLUMNA lCol{ LVCF_TEXT | LVCF_FMT, LVCFMT_LEFT };
+		lCol.pszText = "Name";
 		ListView_InsertColumn(zone_list, 0, &lCol);
+		lCol.pszText = "L";
+		lCol.fmt = LVCFMT_RIGHT;
+		ListView_InsertColumn(zone_list, 1, &lCol);
 	}
 	for (int i = 0; i < conf->afx_dev.GetGroups()->size(); i++) {
 		AlienFX_SDK::group grp = conf->afx_dev.GetGroups()->at(i);
 		if (!flag || !grp.have_power) {
-			string name = grp.name + " (" + to_string(grp.lights.size()) + " lights)";
+			string name = "(" + to_string(grp.lights.size()) + ")";
 			lItem.iItem = pos;
 			lItem.lParam = grp.gid;
-			lItem.pszText = (LPSTR)name.c_str();
+			lItem.pszText = (LPSTR)grp.name.c_str();
 			if (grp.gid == eItem) {
 				lItem.state = LVIS_SELECTED;
 				rpos = pos;
@@ -26,10 +30,12 @@ void UpdateZoneList(HWND hDlg, byte flag = 0) {
 			else
 				lItem.state = 0;
 			ListView_InsertItem(zone_list, &lItem);
+			ListView_SetItemText(zone_list, pos, 1, (LPSTR)name.c_str());
 			pos++;
 		}
 	}
-	ListView_SetColumnWidth(zone_list, 0, LVSCW_AUTOSIZE_USEHEADER);
+	ListView_SetColumnWidth(zone_list, 0, LVSCW_AUTOSIZE);
+	ListView_SetColumnWidth(zone_list, 1, LVSCW_AUTOSIZE_USEHEADER);
 	ListView_EnsureVisible(zone_list, rpos, false);
 }
 
@@ -72,7 +78,6 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						conf->afx_dev.GetGroups()->erase(Iter);
 						break;
 					}
-				// ToDo: update UI
 				UpdateZoneList(hDlg);
 				/*conf->afx_dev.SaveMappings();
 				conf->Save();*/
@@ -80,11 +85,16 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			break;
 		}
 	} break;
+	//case WM_PAINT:
+	//	UpdateZoneList(hDlg);
+	//	return false;
+	//	break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_LIST_ZONES:
 			switch (((NMHDR*)lParam)->code) {
 			case LVN_ITEMACTIVATE: {
+				NMITEMACTIVATE* item = (NMITEMACTIVATE*)lParam;
 				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
 			} break;
 

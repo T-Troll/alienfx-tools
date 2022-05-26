@@ -6,6 +6,7 @@
 
 extern void SwitchTab(int);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
@@ -51,25 +52,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
             PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
-            char buffer[64];
-            LoadString(hInst, IDS_BOOST_OFF, buffer, 64);
-            ComboBox_AddString(boost_ac, buffer);
-            ComboBox_AddString(boost_dc, buffer);
-            LoadString(hInst, IDS_BOOST_ON, buffer, 64);
-            ComboBox_AddString(boost_ac, buffer);
-            ComboBox_AddString(boost_dc, buffer);
-            LoadString(hInst, IDS_BOOST_AGGRESSIVE, buffer, 64);
-            ComboBox_AddString(boost_ac, buffer);
-            ComboBox_AddString(boost_dc, buffer);
-            LoadString(hInst, IDS_BOOST_EFFICIENT, buffer, 64);
-            ComboBox_AddString(boost_ac, buffer);
-            ComboBox_AddString(boost_dc, buffer);
-            LoadString(hInst, IDS_BOOST_EFFAGGR, buffer, 64);
-            ComboBox_AddString(boost_ac, buffer);
-            ComboBox_AddString(boost_dc, buffer);
-
-            ComboBox_SetCurSel(boost_ac, acMode);
-            ComboBox_SetCurSel(boost_dc, dcMode);
+            vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
+            UpdateCombo(boost_ac, pModes, acMode);
+            UpdateCombo(boost_dc, pModes, dcMode);;
 
             ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
             ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);

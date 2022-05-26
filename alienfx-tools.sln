@@ -69,6 +69,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kiss_fft", "alienfx-gui\kis
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFx-Common", "AlienFx-Common\AlienFx-Common.vcxitems", "{E8C2E228-2B88-4546-9E3A-A95DF8CE249A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-conv", "alienfx-conv\alienfx-conv.vcxproj", "{2A69F644-02C6-4E27-A173-FF344172B5BD}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{05a1d711-23f5-4b90-9f62-ec3de2419b4d}*SharedItemsImports = 9
@@ -204,6 +206,14 @@ Global
 		{E6F98B66-1C66-4AFD-8A48-FAA1022F8196}.Release|x64.Build.0 = Release|x64
 		{E6F98B66-1C66-4AFD-8A48-FAA1022F8196}.Release|x86.ActiveCfg = Release|Win32
 		{E6F98B66-1C66-4AFD-8A48-FAA1022F8196}.Release|x86.Build.0 = Release|Win32
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Debug|x64.ActiveCfg = Debug|x64
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Debug|x64.Build.0 = Debug|x64
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Debug|x86.ActiveCfg = Debug|Win32
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Debug|x86.Build.0 = Debug|Win32
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Release|x64.ActiveCfg = Release|x64
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Release|x64.Build.0 = Release|x64
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Release|x86.ActiveCfg = Release|Win32
+		{2A69F644-02C6-4E27-A173-FF344172B5BD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

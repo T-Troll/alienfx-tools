@@ -13,7 +13,7 @@ extern void RemoveUnused(vector<groupset>*);
 
 extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern void CreateGridBlock(HWND gridTab, DLGPROC);
+extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
 extern AlienFX_SDK::mapping* FindCreateMapping();
 extern void RedrawGridButtonZone(bool recalc = false);
@@ -321,24 +321,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		DrawFreq(hDlg);
 		RedrawGridButtonZone();
 	} break;
-	//case WM_HSCROLL:
-	//{
-	//	switch (LOWORD(wParam)) {
-	//	case TB_THUMBTRACK: case TB_ENDTRACK:
-	//	{
-	//		if (map && fGrpItem >= 0) {
-	//			if ((HWND) lParam == hLowSlider) {
-	//				map->haptics[fGrpItem].lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
-	//				SetSlider(sTip1, map->haptics[fGrpItem].lowcut);
-	//			}
-	//			if ((HWND) lParam == hHiSlider) {
-	//				map->haptics[fGrpItem].hicut = (UCHAR) SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
-	//				SetSlider(sTip2, map->haptics[fGrpItem].hicut);
-	//			}
-	//		}
-	//	} break;
-	//	}
-	//} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:

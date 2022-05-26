@@ -66,7 +66,7 @@ void EventHandler::ChangePowerState()
 	if (!sameState) {
 		DebugPrint(("Power state changed to " + to_string(conf->statePower) + "\n").c_str());
 		fxh->ChangeState();
-		fxh->RefreshState();
+		fxh->Refresh();
 	}
 }
 
@@ -154,7 +154,7 @@ void EventHandler::ChangeEffectMode() {
 		if (conf->GetEffect() != effMode)
 			StopEffects();
 		else
-			fxh->RefreshState(true);
+			fxh->Refresh();
 		StartEffects();
 	}
 	else
@@ -163,15 +163,15 @@ void EventHandler::ChangeEffectMode() {
 
 void EventHandler::StopEffects() {
 	switch (effMode) {
-	case 0:	StopEvents(); break;
-	case 1: if (capt) {
+	case 1:	StopEvents(); break;
+	case 2: if (capt) {
 		delete capt; capt = NULL;
 	} break;
-	case 2: if (audio) {
+	case 3: if (audio) {
 		delete audio; audio = NULL;
 	} break;
 	}
-	effMode = 3;
+	effMode = 0;
 	fxh->Refresh(true);
 }
 
@@ -179,13 +179,13 @@ void EventHandler::StartEffects() {
 	if (conf->enableMon) {
 		// start new mode...
 		switch (effMode = conf->GetEffect()) {
-		case 0:
+		case 1:
 			StartEvents();
 			break;
-		case 1:
+		case 2:
 			if (!capt) capt = new CaptureHelper();
 			break;
-		case 2:
+		case 3:
 			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh);
 			break;
 		}
