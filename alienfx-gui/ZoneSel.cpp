@@ -51,14 +51,23 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		switch (LOWORD(wParam))
 		{
 		case IDC_BUT_ADD_ZONE: {
-			AlienFX_SDK::group* grp = conf->CreateGroup("New zone");
+			unsigned maxID = 0x10000;
+			while (find_if(conf->afx_dev.GetGroups()->begin(), conf->afx_dev.GetGroups()->end(),
+				[maxID](AlienFX_SDK::group t) {
+					return maxID == t.gid;
+				}) != conf->afx_dev.GetGroups()->end())
+				maxID++;
+			AlienFX_SDK::group* grp = new AlienFX_SDK::group({ maxID, "New zone #" + to_string(maxID & 0xffff) });
+
 			conf->afx_dev.GetGroups()->push_back(*grp);
 			eItem = grp->gid;
 			UpdateZoneList(hDlg);
+			SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 			//conf->afx_dev.SaveMappings();
 		} break;
 		case IDC_BUT_DEL_ZONE:
 			if (eItem > 0) {
+				bool nodelete = true;
 				// delete from all profiles...
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					auto pos = find_if((*Iter)->lightsets.begin(), (*Iter)->lightsets.end(),
@@ -66,19 +75,29 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							return t.group->gid == eItem;
 						});
 					if (pos != (*Iter)->lightsets.end())
-						(*Iter)->lightsets.erase(pos);
-				}
-				for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
-					if (Iter->gid == eItem) {
-						if ((Iter + 1) != conf->afx_dev.GetGroups()->end())
-							eItem = (Iter + 1)->gid;
+						if (nodelete && (*Iter)->id != conf->activeProfile->id)
+							if (MessageBox(NULL, ("This zone used into profile " + (*Iter)->name + "!\nDo you want to keep it?").c_str(), "Error",
+								MB_YESNO | MB_ICONWARNING) == IDYES) {
+								nodelete = false;
+							} else
+								(*Iter)->lightsets.erase(pos);
 						else
-							if (Iter != conf->afx_dev.GetGroups()->begin())
-								eItem = (Iter - 1)->gid;
-						conf->afx_dev.GetGroups()->erase(Iter);
-						break;
-					}
-				UpdateZoneList(hDlg);
+							(*Iter)->lightsets.erase(pos);
+				}
+				if (nodelete) {
+					for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
+						if (Iter->gid == eItem) {
+							if ((Iter + 1) != conf->afx_dev.GetGroups()->end())
+								eItem = (Iter + 1)->gid;
+							else
+								if (Iter != conf->afx_dev.GetGroups()->begin())
+									eItem = (Iter - 1)->gid;
+							conf->afx_dev.GetGroups()->erase(Iter);
+							break;
+						}
+					UpdateZoneList(hDlg);
+				}
+				SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 				/*conf->afx_dev.SaveMappings();
 				conf->Save();*/
 			}
@@ -111,13 +130,12 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					//RebuildEffectList(hDlg, mmap);
 					//RedrawGridButtonZone();
 				}
-				//else
+				else {
 				//	return false;
-				//	/*eItem = -1;
+					eItem = -1;
 				//	mmap = NULL;
-				//	RebuildEffectList(hDlg, mmap);
-				//	RedrawGridButtonZone();*/
-				//}
+					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+				}
 			} break;
 			case LVN_ENDLABELEDIT:
 			{
@@ -126,7 +144,8 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				if (grp && sItem->item.pszText) {
 					grp->name = sItem->item.pszText;
 					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
-					//ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 0, LVSCW_AUTOSIZE);
+					ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 0, LVSCW_AUTOSIZE);
+					ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 1, LVSCW_AUTOSIZE_USEHEADER);
 					return true;
 				}
 				else

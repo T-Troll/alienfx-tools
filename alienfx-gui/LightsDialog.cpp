@@ -27,6 +27,8 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_DEVICES},
 			{ (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog, (DLGPROC)TabDevicesDialog }
 			);
+		if (!conf->afx_dev.GetMappings()->size() || !conf->afx_dev.GetGrids()->size())
+			lastTab = TAB_DEVICES;
 		TabCtrl_SetCurSel(tab_list, lastTab);
 		OnSelChanged(tab_list);
 	} break;
@@ -34,7 +36,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		WINDOWPOS* pos = (WINDOWPOS*)lParam;
 		RECT oldRect;
 		GetWindowRect(hDlg, &oldRect);
-		if (!(pos->flags & (SWP_HIDEWINDOW | SWP_SHOWWINDOW)) && (pos->cx || pos->cy)) {
+		if (!(pos->flags & SWP_SHOWWINDOW) && (pos->cx || pos->cy)) {
 			int deltax = pos->cx - oldRect.right + oldRect.left,
 				deltay = pos->cy - oldRect.bottom + oldRect.top;
 			if (deltax || deltay) {
@@ -47,13 +49,17 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				firstInit = false;
 			}
 		}
+		else
+			return false;
 	} break;
 	case WM_NOTIFY: {
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_LIGHTS: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				OnSelChanged(tab_list);
-				lastTab = tabSel;
+				if (conf->afx_dev.GetMappings()->size() && conf->afx_dev.GetGrids()->size()) {
+					OnSelChanged(tab_list);
+					lastTab = tabSel;
+				}
 			}
 		} break;
 		}

@@ -4,7 +4,7 @@ extern void SwitchLightTab(HWND, int);
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern groupset* CreateMapping(int lid);
-extern groupset* FindMapping(int mid);
+extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
@@ -16,7 +16,6 @@ extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 extern void RedrawGridButtonZone(bool recalc = false);
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
-extern int gridTabSel;
 
 extern int eItem;
 
@@ -92,7 +91,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		sTip2 = CreateToolTip(s2_slider, sTip2);
 
 		CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
-		TabCtrl_SetCurSel(gridTab, gridTabSel);
+		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		OnGridSelChanged(gridTab);
 
 		//UpdateMonitoringInfo(hDlg, map);
@@ -263,11 +262,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_TAB_COLOR_GRID: {
 			switch (((NMHDR*)lParam)->code) {
 			case TCN_SELCHANGE: {
-				int newSel = TabCtrl_GetCurSel(gridTab);
-				if (newSel != gridTabSel) { // selection changed!
-					if (newSel < conf->afx_dev.GetGrids()->size())
-						OnGridSelChanged(gridTab);
-				}
+				if (TabCtrl_GetCurSel(gridTab) < conf->afx_dev.GetGrids()->size())
+					OnGridSelChanged(gridTab);
 			} break;
 			}
 		} break;

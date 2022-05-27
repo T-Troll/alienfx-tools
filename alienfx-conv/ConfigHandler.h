@@ -3,8 +3,8 @@
 #include <string>
 #include "AlienFX_SDK.h"
 #include "ConfigFan.h"
-//#include "ConfigAmbient.h"
-//#include "ConfigHaptics.h"
+#include "ConfigAmbient.h"
+#include "ConfigHaptics.h"
 
 // Profile flags pattern
 #define PROF_DEFAULT  0x1
@@ -19,13 +19,13 @@
 #define LEVENT_PERF  0x4
 #define LEVENT_ACT   0x8
 
-struct freq_map {
-	AlienFX_SDK::Colorcode colorfrom{ 0 };
-	AlienFX_SDK::Colorcode colorto{ 0 };
-	byte lowcut{ 0 };
-	byte hicut{ 255 };
-	vector<byte> freqID;
-};
+//struct freq_map {
+//	AlienFX_SDK::Colorcode colorfrom{ 0 };
+//	AlienFX_SDK::Colorcode colorto{ 0 };
+//	byte lowcut{ 0 };
+//	byte hicut{ 255 };
+//	vector<byte> freqID;
+//};
 
 union FlagSet {
 	struct {
@@ -42,9 +42,9 @@ struct event {
 	BYTE source = 0;
 	BYTE cut = 0;
 	BYTE mode = 0;
-	AlienFX_SDK::afx_act from;
-	AlienFX_SDK::afx_act to;
-	double coeff;
+	AlienFX_SDK::afx_act from{};
+	AlienFX_SDK::afx_act to{};
+	double coeff = 0;
 };
 
 struct old_event {
@@ -101,13 +101,12 @@ struct profile {
 class ConfigHandler
 {
 private:
-	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
+	HKEY hKeyMain = NULL, hKeyEvents = NULL, hKeyProfiles = NULL, hKeyZones = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
 	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD *eff);
 	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
-	//AlienFX_SDK::group* FindCreateGroup(int did, int lid);
-	groupset* FindCreateGroupSet(int profID, int groupID);
+	AlienFX_SDK::group* FindCreateGroup(int did, int lid, string name);
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -137,12 +136,12 @@ public:
 	AlienFX_SDK::Colorcode testColor{0,255};
 
 	// Ambient...
-	DWORD amb_mode = 0;
-	DWORD amb_shift = 40;
-	DWORD amb_grid = MAKELPARAM(4,3);
+	DWORD mode = 0;
+	DWORD shift = 40;
+	DWORD grid = MAKELPARAM(4,3);
 
 	// Haptics...
-	DWORD hap_inpType = 0;
+	DWORD inpType = 0;
 
 	// final states
 	byte finalBrightness = 255;
@@ -153,16 +152,14 @@ public:
 
 	// 3rd-party config blocks
 	ConfigFan *fan_conf = NULL;
+	ConfigAmbient *amb_conf = NULL;
+	ConfigHaptics *hap_conf = NULL;
 
+	//vector<lightset>* active_set;
 	vector<groupset>* active_set;
 	vector<profile*> profiles;
 	profile* activeProfile = NULL;
 	profile* foregroundProfile = NULL;
-
-	// Grid-related
-	AlienFX_SDK::lightgrid* mainGrid = NULL;
-	pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>* colorGrid = NULL;
-	int gridTabSel = 0;
 
 	// mapping block from SDK
 	AlienFX_SDK::Mappings afx_dev;
@@ -183,4 +180,6 @@ public:
 	bool IsDimmed();
 	void SetDimmed();
 	int  GetEffect();
+	void ClearEvents();
+	//AlienFX_SDK::group* CreateGroup(string name);
 };

@@ -186,7 +186,7 @@ void EventHandler::StartEffects() {
 			if (!capt) capt = new CaptureHelper();
 			break;
 		case 3:
-			if (!audio) audio = new WSAudioIn(conf->hap_conf, fxh);
+			if (!audio) audio = new WSAudioIn();
 			break;
 		}
 	}

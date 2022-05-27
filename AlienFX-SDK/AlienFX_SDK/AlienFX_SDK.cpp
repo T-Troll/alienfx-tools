@@ -64,7 +64,7 @@ namespace AlienFX_SDK {
 			// Need to send report before any command!
 			buffer[0] = reportID;
 			buffer[1] = 0x1;
-			int res = HidD_SetFeature(devHandle, buffer, length);
+			HidD_SetFeature(devHandle, buffer, length);
 		}
 
 		memcpy(&buffer[1], command, size);

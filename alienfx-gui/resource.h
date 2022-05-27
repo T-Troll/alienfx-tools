@@ -163,6 +163,11 @@
 #define IDC_STATIC_ZONES_E              1147
 #define IDC_CHECK_SPECTRUM              1149
 #define IDC_COMBO_GAUGE                 1150
+#define IDC_CP_COLORS                   1151
+#define IDC_CP_EVENTS                   1152
+#define IDC_CP_AMBIENT                  1153
+#define IDC_CHECK4                      1154
+#define IDC_CP_HAPTICS                  1154
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -194,7 +199,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        159
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1151
+#define _APS_NEXT_CONTROL_VALUE         1155
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

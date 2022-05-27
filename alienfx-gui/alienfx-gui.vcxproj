@@ -456,6 +456,7 @@
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DisableSpecificWarnings>4312</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -487,6 +488,7 @@
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <OmitFramePointers>true</OmitFramePointers>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <DisableSpecificWarnings>4312</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -570,9 +572,7 @@
   <ItemGroup>
     <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="CaptureHelper.h" />
-    <ClInclude Include="ConfigAmbient.h" />
     <ClInclude Include="ConfigHandler.h" />
-    <ClInclude Include="ConfigHaptics.h" />
     <ClInclude Include="DFT_gosu.h" />
     <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="EventHandler.h" />
@@ -589,9 +589,7 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
     </ClCompile>
     <ClCompile Include="ColorDialog.cpp" />
-    <ClCompile Include="ConfigAmbient.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
-    <ClCompile Include="ConfigHaptics.cpp" />
     <ClCompile Include="DevicesDialog.cpp" />
     <ClCompile Include="DFT_gosu.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>

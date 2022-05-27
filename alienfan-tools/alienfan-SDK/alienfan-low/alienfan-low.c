@@ -399,8 +399,8 @@ Return Value:
 
 BOOL
 GetAcpiDevice (
-    PCTSTR Name, 
-    LPBYTE PropertyBuffer, 
+    PCTSTR Name,
+    LPBYTE PropertyBuffer,
     DWORD Idx
 )
 /*++
@@ -422,7 +422,7 @@ FALSE           - Failed to get service full path
 --*/
 {
     HDEVINFO    hdev;
-    SP_DEVINFO_DATA devdata;    
+    SP_DEVINFO_DATA devdata;
     DWORD       PropertyRegDataType;
     DWORD       RequiedSize;
 
@@ -432,7 +432,7 @@ FALSE           - Failed to get service full path
 
     if (hdev != INVALID_HANDLE_VALUE) {
         ZeroMemory (&devdata, sizeof (devdata));
-        devdata.cbSize = sizeof (devdata);      
+        devdata.cbSize = sizeof (devdata);
         if (SetupDiEnumDeviceInfo(hdev, Idx, &devdata)) {
             if (SetupDiGetDeviceInstanceId(hdev, &devdata, &DevInstanceId[0], 200, NULL)) {
                 CopyMemory(DevInstanceId1, DevInstanceId, 201);
@@ -442,7 +442,7 @@ FALSE           - Failed to get service full path
                 }
             }
         }
-        SetupDiDestroyDeviceInfoList (hdev);    
+        SetupDiDestroyDeviceInfoList (hdev);
     }
     return res;
 }
@@ -608,10 +608,10 @@ Return Value:
 TRUE        - Open ACPI driver acpi.sys ready
 FALSE       - Failed to open acpi driver
 
---*/ 
+--*/
 {
     HANDLE      hDriver = NULL;
-    UINT        Idx;   
+    UINT        Idx;
     BYTE        PropertyBuffer[0x401];
     TCHAR       *pChar;
     CHAR        AcpiName[0x401];
@@ -645,7 +645,7 @@ FALSE       - Failed to open acpi driver
         return hDriver;
     }
 
-    while (GetAcpiDevice (_T("ACPI_HAL"), PropertyBuffer, Idx)) {           
+    while (GetAcpiDevice (_T("ACPI_HAL"), PropertyBuffer, Idx)) {
 
         Idx ++;
 
@@ -653,7 +653,7 @@ FALSE       - Failed to open acpi driver
             // unicode defined, need to change from unicode to uchar code..
             pChar = (TCHAR*)PropertyBuffer;
             //strcpy_s(AcpiName, 1024, (char *) PropertyBuffer);
-            WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, pChar, 400, AcpiName, 400, NULL, NULL); 
+            WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, pChar, 400, AcpiName, 400, NULL, NULL);
             acpi.pAcpiDeviceName = AcpiName;
         //}
 
@@ -784,7 +784,7 @@ Return Value:
         pArg = (ACPI_METHOD_ARGUMENT*)ACPI_METHOD_NEXT_ARGUMENT(pArg);
         pInputArgs->Size = (ULONG)((UINT64)pArg - (UINT64)pInputArgs);
     }
-    else {       
+    else {
         pInputArgs = malloc(pInputArgs->Size + sizeof(ACPI_METHOD_ARGUMENT) + Length + 1);
         if (pInputArgs == NULL) {
             free(pArgs);
@@ -853,7 +853,7 @@ Return Value:
         pArg = (ACPI_METHOD_ARGUMENT*)ACPI_METHOD_NEXT_ARGUMENT(pArg);
         pInputArgs->Size = (ULONG)((UINT64)pArg - (UINT64)pInputArgs);
     }
-    else {        
+    else {
         pInputArgs = malloc(pInputArgs->Size + sizeof(ACPI_METHOD_ARGUMENT) + Length + 1);
         if (pInputArgs == NULL) {
             free(pArgs);
@@ -868,7 +868,7 @@ Return Value:
         pInputArgs->ArgumentCount++;
         pArg->DataLength = (USHORT)Length;
         pArg->Type = ACPI_METHOD_ARGUMENT_BUFFER;
-        memcpy(pArg->Data, pBuf, Length);        
+        memcpy(pArg->Data, pBuf, Length);
         free(pArgs);
         pArg = (ACPI_METHOD_ARGUMENT*)ACPI_METHOD_NEXT_ARGUMENT(pArg);
         pInputArgs->Size = (ULONG)((UINT64)pArg - (UINT64)pInputArgs);

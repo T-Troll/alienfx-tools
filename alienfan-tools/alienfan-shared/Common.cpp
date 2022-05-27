@@ -59,7 +59,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 					size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
 					if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
 						res += ".0";
-					if (res != GetAppVersion()) {
+					if (res[0] == '6' && res != GetAppVersion()) {
 						// new version detected!
 						strcpy_s(niData->szInfoTitle, "Update available!");
 						strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());

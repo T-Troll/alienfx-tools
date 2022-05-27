@@ -1,4 +1,6 @@
 #include "WSAudioIn.h"
+#include "ConfigHandler.h"
+#include "FXHelper.h"
 
 // debug print
 #ifdef _DEBUG
@@ -17,12 +19,11 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
 
-//HANDLE hEvent = 0;// , astopEvent = 0, updateEvent = 0;
+extern ConfigHandler* conf;
+extern FXHelper* fxhl;
 
-WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper* fx)
+WSAudioIn::WSAudioIn()
 {
-	conf = cf;
-	fxha = fx;
 	waveD = new double[NUMPTS];
 
 	stopEvent = CreateEvent(NULL, true, false, NULL);
@@ -33,7 +34,7 @@ WSAudioIn::WSAudioIn(ConfigHaptics* cf, FXHelper* fx)
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
-	if (rate = init(conf->inpType)) {
+	if (rate = init(conf->hap_inpType)) {
 		dftGG->setSampleRate(rate);
 		startSampling();
 	}
@@ -239,7 +240,7 @@ DWORD WINAPI resample(LPVOID lpParam)
 		if (res == WAIT_OBJECT_0 + 1) {
 			src->freqs = src->dftGG->calc(src->waveD);
 			//DebugPrint("Haptics light update...\n");
-			src->fxha->RefreshHaptics(src->freqs);
+			fxhl->RefreshHaptics(src->freqs);
 		}
 	}
 

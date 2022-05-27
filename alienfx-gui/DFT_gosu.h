@@ -2,7 +2,9 @@
 #define DFT_gosu_H
 
 #include "kiss_fftr.h"
-#include "ConfigHaptics.h"
+
+#define NUMBARS 20
+#define NUMPTS 2048
 
 class DFT_gosu {
 

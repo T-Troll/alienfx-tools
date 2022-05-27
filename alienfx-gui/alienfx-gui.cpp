@@ -117,11 +117,9 @@ bool DoStopService(bool kind) {
 			{
 				// Evaluation attempt...
 				EvaluteToAdmin();
-				//{
-				//	CloseServiceHandle(schSCManager);
-				//	conf->block_power = true;
-				//}
-				//return false;
+				CloseServiceHandle(schSCManager);
+				conf->block_power = true;
+				return false;
 			}
 
 			// Send a stop code to the service.
@@ -350,7 +348,7 @@ void OnSelChanged(HWND hwndDlg)
 
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay != NULL) {
-		EndDialog(pHdr->hwndDisplay, IDOK);
+		//EndDialog(pHdr->hwndDisplay, IDOK);
 		DestroyWindow(pHdr->hwndDisplay);
 		pHdr->hwndDisplay = NULL;
 	}
@@ -585,7 +583,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		WINDOWPOS* pos = (WINDOWPOS*)lParam;
 		RECT oldRect;
 		GetWindowRect(mDlg, &oldRect);
-		if (!(pos->flags & (SWP_HIDEWINDOW | SWP_SHOWWINDOW)) && (pos->cx || pos->cy)) {
+		if (!(pos->flags & SWP_SHOWWINDOW) && (pos->cx || pos->cy)) {
 			int deltax = pos->cx - oldRect.right + oldRect.left,
 				deltay = pos->cy - oldRect.bottom + oldRect.top;
 			if (deltax || deltay) {
@@ -610,6 +608,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 			}
 		}
+		else
+			return false;
 	} break;
 	case WM_SIZE:
 		switch (wParam) {
@@ -969,42 +969,15 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 	return ret;
 }
 
-groupset* FindMapping(int mid)
+groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set)
 {
 	if (mid > 0) {
-		auto res = find_if(conf->active_set->begin(), conf->active_set->end(), [mid](groupset ls) {
+		auto res = find_if(set->begin(), set->end(), [mid](groupset ls) {
 			return ls.group->gid == mid;
 			});
-		return res == conf->active_set->end() ? nullptr : &(*res);
+		return res == set->end() ? nullptr : &(*res);
 	}
 	return nullptr;
-}
-
-int UpdateLightList(HWND light_list, byte flag = 0) {
-	int pos = -1;
-	//size_t lights = conf->afx_dev.GetMappings()->size();
-	size_t groups = conf->afx_dev.GetGroups()->size();
-
-	ListBox_ResetContent(light_list);
-
-	for (int i = 0; i < groups; i++) {
-		AlienFX_SDK::group grp = conf->afx_dev.GetGroups()->at(i);
-		string fname = grp.name + " (" + to_string(grp.lights.size()) + " lights)";
-		pos = ListBox_AddString(light_list, fname.c_str());
-		ListBox_SetItemData(light_list, i, grp.gid);
-		if (grp.gid == eItem)
-			ListBox_SetCurSel(light_list, pos = i);
-	}
-	//for (int i = 0; i < lights; i++) {
-	//	AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappings()->at(i);
-	//	if (fxhl->LocateDev(lgh->devid) && !(lgh->flags & flag)) {
-	//		pos = ListBox_AddString(light_list, lgh->name.c_str());
-	//		ListBox_SetItemData(light_list, pos, i);
-	//		if (i == eItem)
-	//			ListBox_SetCurSel(light_list, selpos = pos);
-	//	}
-	//}
-	return pos;
 }
 
 groupset* CreateMapping(int lid) {
@@ -1026,89 +999,23 @@ void RemoveUnused(vector<groupset>* lightsets) {
 			it++;
 }
 
-void RemoveHapMapping(int devid, int lightid) {
-	auto pos = find_if(conf->hap_conf->haptics.begin(), conf->hap_conf->haptics.end(),
-		[lightid, devid](haptics_map ls) {
-			return ls.lightid == lightid && ls.devid == devid;
-		});
-	if (pos != conf->hap_conf->haptics.end())
-		conf->hap_conf->haptics.erase(pos);
-}
-
-void RemoveAmbMapping(int devid, int lightid) {
-	auto pos = find_if(conf->amb_conf->zones.begin(), conf->amb_conf->zones.end(),
-		[lightid, devid](zone ls) {
-			return ls.lightid == lightid && ls.devid == devid;
-		});
-	if (pos != conf->amb_conf->zones.end())
-		conf->amb_conf->zones.erase(pos);
-}
-
-zone *FindAmbMapping(int lid) {
-	WORD did = 0;
-	if (!(lid < 0)) {
-		if (lid < 0x10000) {
-			if (conf->afx_dev.GetMappings()->size() <= lid) return nullptr;
-			did = conf->afx_dev.GetMappings()->at(lid)->devid;
-			lid = conf->afx_dev.GetMappings()->at(lid)->lightid;
-		}
-		auto res = find_if(conf->amb_conf->zones.begin(), conf->amb_conf->zones.end(), [lid, did](zone ls) {
-			return ls.lightid == lid && ls.devid == did;
-			});
-		return res == conf->amb_conf->zones.end() ? nullptr : &(*res);
-	}
-	return nullptr;
-}
-
-haptics_map *FindHapMapping(int lid) {
-	if (lid != -1) {
-		if (lid > 0xffff) {
-			// group
-			return conf->hap_conf->FindHapMapping(0, lid);
-		} else {
-			// mapping
-			if (conf->afx_dev.GetMappings()->size() <= lid) return nullptr;
-			return conf->hap_conf->FindHapMapping(conf->afx_dev.GetMappings()->at(lid)->devid,
-				conf->afx_dev.GetMappings()->at(lid)->lightid);
-		}
-	}
-	return nullptr;
-}
-
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
 	auto pos = find_if(grp->lights.begin(), grp->lights.end(),
 		[devid, lightid](auto t) {
 			return t.first == devid && t.second == lightid;
 		});
-	if (pos != grp->lights.end())
+	if (pos != grp->lights.end()) {
+		// is it power button?
+		if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
+			grp->have_power = false;
 		grp->lights.erase(pos);
+	}
 }
 
 void RemoveLightAndClean(int dPid, int eLid) {
 	// delete from all groups...
 	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
 		RemoveLightFromGroup(&(*iter), dPid, eLid);
-		// for now, better keep mappings.
-		//if (iter->lights.empty()) {
-		//	// remove from profiles...
-		//	for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
-		//		// erase mappings
-		//		for (auto it = (*Iter)->lightsets.begin(); it < (*Iter)->lightsets.end(); it++) {
-		//			if ()
-		//			for (auto lList = it->groups.begin(); lList < it->groups.end(); lList++)
-		//				if ((*lList)->gid == iter->gid) {
-		//					it->groups.erase(lList);
-		//					break;
-		//				}
-		//			if (it->groups.empty()) {
-		//				(*Iter)->lightsets.colors.erase(it);
-		//				it--;
-		//			}
-		//		}
-		//	}
-		//	conf->afx_dev.GetGroups()->erase(iter);
-		//	iter--;
-		//}
 	}
 }
 

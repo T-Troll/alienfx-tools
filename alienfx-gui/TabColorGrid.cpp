@@ -1,56 +1,43 @@
 #include "alienfx-gui.h"
 
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
-extern groupset* FindMapping(int mid);
+extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void UpdateZoneList(HWND hDlg, byte flag = 0);
 
-//extern void SetLightInfo(HWND hDlg);
-
 extern void InitGridButtonZone(HWND);
-//extern void RedrawGridButtonZone(HWND);
 extern void SetLightGridSize(HWND dlg, int x, int y);
 extern void RepaintGrid(HWND hDlg);
 void RedrawGridButtonZone(bool recalc = false);
 extern bool TranslateClick(HWND hDlg, LPARAM lParam);
 
-extern AlienFX_SDK::lightgrid* mainGrid;
-//extern int eLid, dIndex;//, devID;
-//extern bool whiteTest;
-//extern AlienFX_SDK::Mappings afx_dev;
-
-//extern AlienFX_SDK::mapping* FindCreateMapping();
-//extern void SetLightMap(HWND);
-
 extern POINT clkPoint, dragStart;
 extern RECT dragZone;
 extern DWORD oldClkValue;
-//
-extern HWND tipH, tipV, zsDlg;
-//
-extern int gridTabSel, eItem;
+
+extern HWND zsDlg;
+
+extern int eItem;
 
 HWND cgDlg = NULL;
 
-pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*> colorGrid[30][15];
+extern pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>* colorGrid;
 
 void ModifyColorDragZone(bool inverse = false, bool clear = false) {
     AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(eItem);
     if (grp) {
         for (int x = dragZone.left; x <= dragZone.right; x++)
             for (int y = dragZone.top; y <= dragZone.bottom; y++)
-                if (mainGrid->grid[ind(x, y)]) {
+                if (conf->mainGrid->grid[ind(x, y)]) {
                     auto pos = find_if(grp->lights.begin(), grp->lights.end(),
                         [x, y](auto t) {
-                            return t.first == LOWORD(mainGrid->grid[ind(x, y)]) &&
-                                t.second == HIWORD(mainGrid->grid[ind(x, y)]);
+                            return t.first == LOWORD(conf->mainGrid->grid[ind(x, y)]) &&
+                                t.second == HIWORD(conf->mainGrid->grid[ind(x, y)]);
                         });
                     if (inverse && pos != grp->lights.end()) {
                         grp->lights.erase(pos);
                         continue;
                     }
                     if (!clear && pos == grp->lights.end()) {
-                        grp->lights.push_back({ (DWORD)LOWORD(mainGrid->grid[ind(x, y)]), (DWORD)HIWORD(mainGrid->grid[ind(x, y)]) });
+                        grp->lights.push_back({ (DWORD)LOWORD(conf->mainGrid->grid[ind(x, y)]), (DWORD)HIWORD(conf->mainGrid->grid[ind(x, y)]) });
                         // Sort!
                         sort(grp->lights.begin(), grp->lights.end(),
                             [](auto t, auto t2) {
@@ -61,7 +48,7 @@ void ModifyColorDragZone(bool inverse = false, bool clear = false) {
         // now check for power...
         grp->have_power = find_if(grp->lights.begin(), grp->lights.end(),
             [](auto t) {
-                return conf->afx_dev.GetMappingById(t.first, (WORD)t.second)->flags & ALIENFX_FLAG_POWER;
+                return conf->afx_dev.GetFlags(t.first, (WORD)t.second) & ALIENFX_FLAG_POWER;
             }) != grp->lights.end();
 
         groupset* map = FindMapping(eItem);
@@ -71,32 +58,17 @@ void ModifyColorDragZone(bool inverse = false, bool clear = false) {
 }
 
 BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    HWND gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
-        gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
-
-    //WORD devID = dIndex < 0 ? 0 : conf->afx_dev.fxdevs[dIndex].desc->devid;
 
 	switch (message) {
 	case WM_INITDIALOG:
 	{
         cgDlg = hDlg;
-        if (!conf->afx_dev.GetGrids()->size()) {
-            DWORD* grid = new DWORD[20 * 8]{ 0 };
-            conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main", grid });
-        }
-        if (!mainGrid)
-            mainGrid = &conf->afx_dev.GetGrids()->front();
 
-        //tipH = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), tipH);
-        //tipV = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), tipV);
+        if (!conf->mainGrid)
+            conf->mainGrid = &conf->afx_dev.GetGrids()->front();
 
-        //SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(3, 22));
-        ////SendMessage(gridX, TBM_SETPOS, true, mainGrid->x);
-        EnableWindow(gridX, false);
-        EnableWindow(gridY, false);
-
-        //SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 10));
-        //SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
+        EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), false);
+        EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), false);
 
         RepaintGrid(hDlg);
 	} break;
@@ -106,7 +78,7 @@ BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDC_BUT_CLEARGRID:
             if (eItem > 0) {
                 AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(eItem);
-                dragZone = { 0, 0, mainGrid->x - 1, mainGrid->y - 1 };
+                dragZone = { 0, 0, conf->mainGrid->x - 1, conf->mainGrid->y - 1 };
                 ModifyColorDragZone(true, true);
                 RedrawGridButtonZone();
                 UpdateZoneList(zsDlg);
@@ -150,10 +122,10 @@ BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_DRAWITEM: {
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
-            DWORD gridVal = mainGrid->grid[(ditem->CtlID - 2000)];//% mainGrid->x][(ditem->CtlID - 2000) / mainGrid->x];
+            DWORD gridVal = conf->mainGrid->grid[ditem->CtlID - 2000];
             HBRUSH Brush = NULL, Brush2 = NULL;
             if (gridVal) {
-                pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*> lightcolors = colorGrid[(ditem->CtlID - 2000) % mainGrid->x][(ditem->CtlID - 2000) / mainGrid->x];
+                pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*> lightcolors = conf->colorGrid[ditem->CtlID - 2000];
                 if (lightcolors.first == NULL) {
                     // not setted
                     Brush = CreateSolidBrush(RGB(0, 0, 0));

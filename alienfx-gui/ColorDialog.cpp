@@ -4,7 +4,7 @@ extern void SwitchLightTab(HWND, int);
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern groupset* CreateMapping(int lid);
-extern groupset* FindMapping(int mid);
+extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RemoveUnused(vector<groupset>* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
@@ -20,9 +20,6 @@ extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is=false);
 extern void OnGridSelChanged(HWND);
 extern AlienFX_SDK::mapping* FindCreateMapping();
 extern void RedrawGridButtonZone(bool recalc = false);
-
-extern int gridTabSel;
-extern AlienFX_SDK::lightgrid* mainGrid;
 
 int effID = -1;
 
@@ -85,34 +82,11 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 			DeleteObject(colorBox);
 			lItem.iImage = i;
 			lItem.pszText = mmap->color[i].type != 6 ? (LPSTR)lightEffectNames[mmap->color[i].type].c_str() : "Power";
-			//switch (mmap->color[i].type) {
-			//case AlienFX_SDK::AlienFX_A_Color:
-			//	LoadString(hInst, IDS_TYPE_COLOR, efName, 16);
-			//	break;
-			//case AlienFX_SDK::AlienFX_A_Pulse:
-			//	LoadString(hInst, IDS_TYPE_PULSE, efName, 16);
-			//	break;
-			//case AlienFX_SDK::AlienFX_A_Morph:
-			//	LoadString(hInst, IDS_TYPE_MORPH, efName, 16);
-			//	break;
-			//case AlienFX_SDK::AlienFX_A_Spectrum:
-			//	LoadString(hInst, IDS_TYPE_SPECTRUM, efName, 16);
-			//	break;
-			//case AlienFX_SDK::AlienFX_A_Breathing:
-			//	LoadString(hInst, IDS_TYPE_BREATH, efName, 16);
-			//	break;
-			//case AlienFX_SDK::AlienFX_A_Rainbow:
-			//	LoadString(hInst, IDS_TYPE_RAINBOW, efName, 16);
-			//	break;
-			//case AlienFX_SDK::AlienFX_A_Power:
-			//	LoadString(hInst, IDS_TYPE_POWER, efName, 16);
-			//	break;
-			//}
-			//lItem.pszText = efName;
 			// check selection...
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
-			}
+			} else
+				lItem.state &= ~LVIS_SELECTED;
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
@@ -140,8 +114,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		ScreenToClient(hDlg, (LPPOINT)&mRect);
 		SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 
-		if (!conf->afx_dev.GetMappings()->size())
-			OnGridSelChanged(gridTab);
+		//if (!conf->afx_dev.GetMappings()->size() || !conf->afx_dev.GetGrids()->size())
+		//	OnSelChanged()
 
 		// Set types and gauge list...
 		UpdateCombo(GetDlgItem(hDlg, IDC_TYPE1), lightEffectNames);
@@ -157,13 +131,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 		// init grids...
 		CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
-		TabCtrl_SetCurSel(gridTab, gridTabSel);
+		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		OnGridSelChanged(gridTab);
-
-		// Restore selection....
-		//if (eItem >= 0) {
-		//	SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-		//}
 
 	} break;
 	case WM_APP + 2: {
@@ -196,6 +165,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					}
 					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
 					RebuildEffectList(hDlg, mmap);
+					RedrawGridButtonZone(true);
 				}
 			} break;
 			} break;
@@ -220,6 +190,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						mmap->color.push_back(act);
 						effID = (int)mmap->color.size() - 1;
 					}
+				RedrawGridButtonZone(true);
 				RebuildEffectList(hDlg, mmap);
 				fxhl->RefreshOne(mmap, true, true);
 			}
@@ -237,10 +208,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (mmap->color.empty()) {
 					RemoveUnused(conf->active_set);
 					RebuildEffectList(hDlg, NULL);
-					effID = -1;
+					RedrawGridButtonZone(true);
 					fxhl->Refresh();
 				} else {
 					RebuildEffectList(hDlg, mmap);
+					RedrawGridButtonZone(true);
 					fxhl->RefreshOne(mmap, false, true);
 				}
 			}
@@ -297,11 +269,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		case IDC_TAB_COLOR_GRID: {
 			switch (((NMHDR*)lParam)->code) {
 			case TCN_SELCHANGE: {
-				int newSel = TabCtrl_GetCurSel(gridTab);
-				if (newSel != gridTabSel) { // selection changed!
-					if (newSel < conf->afx_dev.GetGrids()->size())
-						OnGridSelChanged(gridTab);
-				}
+				if (TabCtrl_GetCurSel(gridTab) < conf->afx_dev.GetGrids()->size())
+					OnGridSelChanged(gridTab);
 			} break;
 			}
 		} break;

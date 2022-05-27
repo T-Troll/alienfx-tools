@@ -1,5 +1,6 @@
 #include "ConfigHandler.h"
-#include "resource.h"
+//#include "resource.h"
+//#include <Shlwapi.h>
 
 // debug print
 #ifdef _DEBUG
@@ -8,28 +9,36 @@
 #define DebugPrint(_x_)
 #endif
 
-extern groupset* FindMapping(int, vector<groupset>*);
-
 ConfigHandler::ConfigHandler() {
 
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
-	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
+	RegCreateKeyEx(hKeyMain, TEXT("Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyEvents, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
+	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
 	afx_dev.LoadMappings();
 
 	fan_conf = new ConfigFan();
+	amb_conf = new ConfigAmbient();
+	hap_conf = new ConfigHaptics();
 }
 
 ConfigHandler::~ConfigHandler() {
-	Save();
+	//Save();
 	if (fan_conf) delete fan_conf;
+	if (amb_conf) delete amb_conf;
+	if (hap_conf) delete hap_conf;
 
-	afx_dev.SaveMappings();
+	//afx_dev.SaveMappings();
 
 	RegCloseKey(hKeyMain);
-	RegCloseKey(hKeyZones);
+	RegCloseKey(hKeyEvents);
 	RegCloseKey(hKeyProfiles);
+}
+
+void ConfigHandler::ClearEvents()
+{
+	RegDeleteTreeA(hKeyMain, "Events");
 }
 
 void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD* eff) {
@@ -46,7 +55,7 @@ void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string
 		prof->triggerapp.push_back(app);
 	if (flags != -1) {
 		prof->flags = LOWORD(flags);
-		prof->effmode = HIWORD(flags);
+		prof->effmode = HIWORD(flags) == 3 ? 0 : HIWORD(flags) + 1;
 	}
 	if (eff) {
 		prof->globalEffect = (byte) LOWORD(eff[0]);
@@ -86,23 +95,28 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 	}
 }
 
-groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
+AlienFX_SDK::group* ConfigHandler::FindCreateGroup(int did, int lid, string name)
 {
-	profile* prof = FindProfile(profID);
-	if (prof) {
-		groupset* gset = FindMapping(groupID, &prof->lightsets);
-		if (!gset) {
-			AlienFX_SDK::group* grp = afx_dev.GetGroupById(groupID);
-			if (grp) {
-				prof->lightsets.push_back({ grp });
-				gset = &prof->lightsets.back();
-			}
-			else
-				return nullptr;
-		}
-		return gset;
+	AlienFX_SDK::mapping* lgh = afx_dev.GetMappingById(did, lid);
+	unsigned maxID = 0x10000;
+	while (afx_dev.GetGroupById(maxID))
+		maxID++;
+	AlienFX_SDK::group* grp = new AlienFX_SDK::group({ maxID, name + " " + (lgh ? lgh->name : "#" + to_string(maxID & 0xffff))});
+
+	grp->lights.push_back({ did, lid });
+	auto tGrp = find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
+		[grp](auto g) {
+			return g.lights.size() == 1 && g.lights[0] == grp->lights[0];
+		});
+	if (tGrp == afx_dev.GetGroups()->end()) {
+		afx_dev.GetGroups()->push_back(*grp);
+		delete grp;
+		grp = &afx_dev.GetGroups()->back();
+		grp->have_power = afx_dev.GetFlags(did, lid) & ALIENFX_FLAG_POWER;
 	}
-	return nullptr;
+	else
+		grp = &(*tGrp);
+	return grp;
 }
 
 profile* ConfigHandler::FindProfile(int id) {
@@ -147,10 +161,10 @@ bool ConfigHandler::SetStates() {
 }
 
 void ConfigHandler::SetIconState() {
-	// change tray icon...
-	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
-						stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
-						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+	//// change tray icon...
+	//niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
+	//					stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
+	//					IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 }
 
 bool ConfigHandler::IsDimmed() {
@@ -176,10 +190,7 @@ int ConfigHandler::GetEffect() {
 //AlienFX_SDK::group* ConfigHandler::CreateGroup(string name)
 //{
 //	unsigned maxID = 0x10000;
-//	while (find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
-//		[maxID](AlienFX_SDK::group t) {
-//			return maxID == t.gid;
-//		}) != afx_dev.GetGroups()->end())
+//	while (afx_dev.GetGroupById(maxID))
 //		maxID++;
 //	AlienFX_SDK::group* dev = new AlienFX_SDK::group({ maxID, name + " #" + to_string(maxID & 0xffff) });
 //
@@ -222,12 +233,12 @@ void ConfigHandler::Load() {
 	RegGetValue(hKeyMain, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
 	// Ambient....
-	GetReg("Ambient-Shift", &amb_shift);
-	GetReg("Ambient-Mode", &amb_mode);
-	GetReg("Ambient-Grid", &amb_grid, 0x30004);
+	GetReg("Ambient-Shift", &shift);
+	GetReg("Ambient-Mode", &mode);
+	GetReg("Ambient-Grid", &grid, 0x30004);
 
 	// Haptics....
-	GetReg("Haptics-Input", &hap_inpType);
+	GetReg("Haptics-Input", &inpType);
 
 	int vindex = 0;
 	char name[256];
@@ -243,21 +254,13 @@ void ConfigHandler::Load() {
 			vindex++;
 			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
 				updateProfileByID(pid, (char*)data, "", -1, NULL);
-				goto nextRecord;
 			}
-			//if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
-			//	DWORD newData = MAKELPARAM(LOWORD(*(DWORD*)data), HIWORD(*(DWORD*)data) == 3 ? 0 : *(DWORD*)data + 1);
-			//	updateProfileByID(pid, "", "", newData, NULL);
-			//	goto nextRecord;
-			//}
-			if (sscanf_s(name, "Profile-gflags-%d", &pid) == 1) {
+			if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
 				updateProfileByID(pid, "", "", *(DWORD*)data, NULL);
-				goto nextRecord;
 			}
 			if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
 				//PathStripPath((char*)data);
 				updateProfileByID(pid, "", (char*)data, -1, NULL);
-				goto nextRecord;
 			}
 			int senid, fanid;
 			if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
@@ -267,78 +270,73 @@ void ConfigHandler::Load() {
 					fan.points.push_back({data[i], data[i+1]});
 				}
 				updateProfileFansByID(pid, senid, &fan, -1);
-				goto nextRecord;
 			}
 			if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
 				updateProfileByID(pid, "", "", -1, (DWORD*)data);
-				goto nextRecord;
 			}
 			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 				updateProfileFansByID(pid, -1, NULL, *(DWORD*)data);
-				goto nextRecord;
 			}
-nextRecord:
 			delete[] data;
 		}
 	} while (ret == ERROR_SUCCESS);
 	vindex = 0;
-	// Zones...
+	// Event mappings...
 	do {
 		DWORD len = 255, lend = 0; lightset map;
 		// get id(s)...
-		if ((ret = RegEnumValueA( hKeyZones, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValueA( hKeyEvents, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
 			BYTE *inarray = new BYTE[lend]; len++;
-			int profID, groupID, recSize;
-			groupset* gset;
-			RegEnumValueA(hKeyZones, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
+			RegEnumValueA(hKeyEvents, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
 			vindex++;
-			if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				gset->fromColor = inarray[0];
-				gset->gauge = inarray[1];
-				gset->gradient = inarray[2];
-				gset->group->have_power = inarray[3];
-				if (gset->gauge)
-					SortGroupGauge(gset);
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				for (int i = 0; i < 3; i++)
-					gset->events[i] = ((event*)inarray)[i];
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				AlienFX_SDK::afx_act* clr = (AlienFX_SDK::afx_act*)inarray;
-				for (int i = 0; i < recSize; i++)
-					gset->color.push_back(clr[i]);
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-ambient-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				for (int i = 0; i < recSize; i++)
-					gset->ambients.push_back(inarray[i]);
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				byte* out = inarray;
-				for (int i = 0; i < recSize; i++) {
-					freq_map newFreq;
-					newFreq.colorfrom.ci = *(DWORD*)out; out += sizeof(DWORD);
-					newFreq.colorto.ci = *(DWORD*)out; out += sizeof(DWORD);
-					newFreq.hicut = *out; out++;
-					newFreq.lowcut = *out; out++;
-					byte freqsize = *out; out++;
-					for (int j = 0; j < freqsize; j++) {
-						newFreq.freqID.push_back(*out); out++;
+			if (sscanf_s((char*)name, "Set-%d-%d-%d", &map.devid, &map.lightid, &pid) == 3) {
+				BYTE* inPos = inarray;
+				for (int i = 0; i < 4; i++) {
+					FlagSet fs; fs.s = *((DWORD*)inPos);
+					map.flags |= fs.flags << i;
+					map.eve[i].cut = fs.cut;
+					map.eve[i].proc = fs.proc;
+					inPos += sizeof(DWORD);
+					map.eve[i].source = *inPos++;
+					BYTE mapSize = *inPos++;
+					map.eve[i].map.clear();
+					for (int j = 0; j < mapSize; j++) {
+						map.eve[i].map.push_back(*((AlienFX_SDK::afx_act*)inPos));
+						inPos += sizeof(AlienFX_SDK::afx_act);
 					}
-					gset->haptics.push_back(newFreq);
 				}
-				goto nextZone;
+				// now load new structure...
+				profile* prof = FindProfile(pid);
+				if (prof) {
+					groupset t;
+					t.color = map.eve[0].map;
+					t.fromColor = map.flags & LEVENT_COLOR;
+					if (map.devid) {
+						t.group = FindCreateGroup(map.devid, map.lightid, "Light");
+					}
+					else
+						t.group = afx_dev.GetGroupById(map.lightid);
+					if (map.flags & LEVENT_POWER) {
+						t.events[0] = { true, 0, 0, 0, map.eve[1].map[0], map.eve[1].map[1] };
+					}
+					if (map.flags & LEVENT_PERF) {
+						t.events[1] = { true, map.eve[2].source, map.eve[2].cut, map.eve[2].proc, map.eve[2].map[0], map.eve[2].map[1] };
+						if (map.eve[2].proc)
+							t.gauge = 1;
+					}
+					if (map.flags & LEVENT_ACT) {
+						t.events[2] = { true, map.eve[3].source, map.eve[3].cut, map.eve[3].proc, map.eve[3].map[0], map.eve[3].map[1] };
+					}
+					//SortGroupGauge(&t);
+					auto pos = find_if(prof->lightsets.begin(), prof->lightsets.end(),
+						[t](auto cp) {
+							return t.group->gid == cp.group->gid;
+						});
+					if (pos != prof->lightsets.end())
+						int i = 0;
+					prof->lightsets.push_back(t);
+				}
 			}
-			nextZone:
 			delete[] inarray;
 		}
 	} while (ret == ERROR_SUCCESS);
@@ -348,7 +346,7 @@ nextRecord:
 		profile* prof = new profile({0, 1, 0, {}, "Default"});
 		profiles.push_back(prof);
 	}
-
+	//defaultProfile = profiles.front();
 	if (profiles.size() == 1) {
 		profiles.front()->flags |= PROF_DEFAULT;
 	}
@@ -356,7 +354,60 @@ nextRecord:
 	if (!activeProfile) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
 
-	SetStates();
+	// Parse old mappings and haptics...
+	// Ambients...
+	for (auto it = amb_conf->zones.begin(); it < amb_conf->zones.end(); it++) {
+		AlienFX_SDK::group* grp = FindCreateGroup(it->devid, it->lightid, "Ambient");
+		for (auto cp = profiles.begin(); cp < profiles.end(); cp++) {
+			if ((*cp)->effmode == 2 || (*cp)->flags & PROF_DEFAULT) {
+				auto pos = find_if((*cp)->lightsets.begin(), (*cp)->lightsets.end(),
+					[grp](auto t) {
+						return t.group->gid == grp->gid;
+					});
+				groupset* tSet;
+				if (pos != (*cp)->lightsets.end())
+					tSet = &(*pos);
+				else {
+					tSet = new groupset{ grp };
+					(*cp)->lightsets.push_back(*tSet);
+					tSet = &(*cp)->lightsets.back();
+				}
+				tSet->ambients = it->map;
+			}
+		}
+	}
+	// Haptics...
+	for (auto it = hap_conf->haptics.begin(); it < hap_conf->haptics.end(); it++) {
+		AlienFX_SDK::group* grp = FindCreateGroup(it->devid, it->lightid,"Haptic");
+		for (auto cp = profiles.begin(); cp < profiles.end(); cp++) {
+			if ((*cp)->effmode == 3 || (*cp)->flags & PROF_DEFAULT) {
+				auto pos = find_if((*cp)->lightsets.begin(), (*cp)->lightsets.end(),
+					[grp](auto t) {
+						return t.group->gid == grp->gid;
+					});
+				groupset* tSet;
+				if (pos != (*cp)->lightsets.end())
+					tSet = &(*pos);
+				else {
+					tSet = new groupset{ grp };
+					(*cp)->lightsets.push_back(*tSet);
+					tSet = &(*cp)->lightsets.back();
+				}
+				tSet->haptics = it->freqs;
+				if (it->flags)
+					tSet->gauge = 1;
+			}
+		}
+	}
+
+	stateDimmed = IsDimmed();
+	stateOn = lightsOn;
+
+	// convert old haptic settings
+	inpType = hap_conf->inpType;
+	mode = amb_conf->mode;
+	shift = amb_conf->shift;
+	grid = MAKELPARAM(amb_conf->grid.x, amb_conf->grid.y);
 }
 
 profile* ConfigHandler::FindDefaultProfile() {
@@ -396,12 +447,12 @@ void ConfigHandler::Save() {
 	RegSetValueEx( hKeyMain, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
 
 	// Ambient
-	SetReg("Ambient-Shift", amb_shift);
-	SetReg("Ambient-Mode", amb_mode);
-	SetReg("Ambient-Grid", amb_grid);
+	SetReg("Ambient-Shift", shift);
+	SetReg("Ambient-Mode", mode);
+	SetReg("Ambient-Grid", grid);
 
 	// Haptics
-	SetReg("Haptics-Input", hap_inpType);
+	SetReg("Haptics-Input", inpType);
 
 	RegDeleteTreeA(hKeyMain, "Profiles");
 	RegCreateKeyEx(hKeyMain, "Profiles", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);// &dwDisposition);
@@ -411,17 +462,17 @@ void ConfigHandler::Save() {
 
 	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
 		string name = "Profile-" + to_string((*jIter)->id);
-		RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length());
+		RegSetValueExA( hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length() );
 		name = "Profile-flags-" + to_string((*jIter)->id);
 		DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode ? (*jIter)->effmode - 1 : 3);
-		RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		RegSetValueExA( hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
 		RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 
 		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
 			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
+			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE *)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
 		}
 
 		for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
@@ -441,7 +492,7 @@ void ConfigHandler::Save() {
 				AlienFX_SDK::afx_act* buffer = new AlienFX_SDK::afx_act[iIter->color.size()];
 				for (int i = 0; i < iIter->color.size(); i++)
 					buffer[i] = iIter->color[i];
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::afx_act));
+				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size()*sizeof(AlienFX_SDK::afx_act));
 				delete[] buffer;
 			}
 			if (iIter->events[0].state + iIter->events[1].state + iIter->events[2].state) { //events
@@ -460,8 +511,8 @@ void ConfigHandler::Save() {
 				fname = "Zone-haptics-" + name + "-" + to_string(iIter->haptics.size());
 				DWORD size = 0;
 				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++)
-					size += 2 * sizeof(DWORD) + 3 + (DWORD)it->freqID.size();
-				byte* buffer = new byte[size], * out = buffer;
+					size += 2 * sizeof(DWORD) + 3 + it->freqID.size();
+				byte* buffer = new byte[size], *out = buffer;
 				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++) {
 					*(DWORD*)out = it->colorfrom.ci; out += sizeof(DWORD);
 					*(DWORD*)out = it->colorto.ci; out += sizeof(DWORD);
@@ -484,7 +535,7 @@ void ConfigHandler::Save() {
 			buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
 			buffer[1] = (*jIter)->effColor1.ci;
 			buffer[2] = (*jIter)->effColor2.ci;
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));
+			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
 		}
 		// Fans....
 		if ((*jIter)->flags & PROF_FANS) {
@@ -500,11 +551,11 @@ void ConfigHandler::Save() {
 					name = "Profile-fans-" + to_string((*jIter)->id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
 					byte* outdata = new byte[fans->points.size() * 2];
 					for (int l = 0; l < fans->points.size(); l++) {
-						outdata[2 * l] = (byte)fans->points[l].temp;
-						outdata[(2 * l) + 1] = (byte)fans->points[l].boost;
+						outdata[2 * l] = (byte) fans->points[l].temp;
+						outdata[(2 * l) + 1] = (byte) fans->points[l].boost;
 					}
 
-					RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)fans->points.size() * 2);
+					RegSetValueExA( hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) fans->points.size() * 2 );
 					delete[] outdata;
 				}
 			}
@@ -516,15 +567,14 @@ void ConfigHandler::SortGroupGauge(groupset* map) {
 	if (map->lightMap.grid)
 		delete[] map->lightMap.grid;
 	ZeroMemory(&map->lightMap, sizeof(AlienFX_SDK::lightgrid));
-	if (map->gauge && afx_dev.GetGrids()->size()) {
+	if (map->gauge) {
 		int tempX = 0, tempY = 0;
 		vector<vector<DWORD>> tempGrid;
 		for (auto t = afx_dev.GetGrids()->begin(); t < afx_dev.GetGrids()->end(); t++) {
 			tempY = max(tempY, t->y); tempX = max(tempX, t->x);
 			tempGrid.resize(tempY, vector<DWORD>(tempX));
 		}
-		int minX = tempGrid[0].size(), minY = tempGrid.size(), maxX = 0, maxY = 0;
-		//DWORD lgt = MAKELPARAM(map->group->lights[i].first, map->group->lights[i].second);
+		int minX = tempGrid.size() ? tempGrid[0].size() : 0, minY = tempGrid.size(), maxX = 0, maxY = 0;
 		// fill grid...
 		for (auto lgh = map->group->lights.begin(); lgh < map->group->lights.end(); lgh++) {
 			DWORD lgt = MAKELPARAM(lgh->first, lgh->second);
@@ -541,8 +591,6 @@ void ConfigHandler::SortGroupGauge(groupset* map) {
 			}
 		}
 		// resize grid...
-		if (minY > maxY) // no lights in all grids!
-			return;
 		tempGrid.resize(maxY + 1);
 		tempGrid.erase(tempGrid.begin(), tempGrid.begin() + minY);
 		for (auto tY = tempGrid.begin(); tY < tempGrid.end(); ) {
@@ -553,7 +601,7 @@ void ConfigHandler::SortGroupGauge(groupset* map) {
 				[](auto t) {
 					return t;
 				}) == tY->end()) {
-				int pos = (int)(tY - tempGrid.begin());
+				int pos = tY - tempGrid.begin();
 				tempGrid.erase(tY);
 				tY = pos + tempGrid.begin();
 			}
@@ -572,7 +620,7 @@ void ConfigHandler::SortGroupGauge(groupset* map) {
 					i--;
 				}
 			}
-			map->lightMap.x = (byte)tempGrid[0].size(); map->lightMap.y = (byte)tempGrid.size();
+			map->lightMap.x = tempGrid[0].size(); map->lightMap.y = tempGrid.size();
 			map->lightMap.grid = new DWORD[map->lightMap.x * map->lightMap.y];
 			for (int y = 0; y < map->lightMap.y; y++)
 				for (int x = 0; x < map->lightMap.x; x++)

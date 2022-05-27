@@ -21,6 +21,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_09B1992F95E748E1845109AD2B634C5A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -69,8 +75,20 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8533FAE6D43944078DAC051060E0DCFF"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -101,6 +119,12 @@
         {
         "MsmKey" = "8:_C4B1307E827A4442ACD87D8B7EAF7F24"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -205,6 +229,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_055E075BF224A12F432351DF93952E0E"
+            {
+            "SourcePath" = "8:POWRPROF.dll"
+            "TargetName" = "8:POWRPROF.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_09B1992F95E748E1845109AD2B634C5A"
             {
             "SourcePath" = "8:..\\Doc\\alienfan-gui.md"
@@ -305,6 +349,46 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_83763AF12CFE41FE16B491DE99592F8F"
+            {
+            "SourcePath" = "8:VERSION.dll"
+            "TargetName" = "8:VERSION.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8F3090BEFD2084C54DFF0BFAD98DA84F"
+            {
+            "SourcePath" = "8:SETUPAPI.dll"
+            "TargetName" = "8:SETUPAPI.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C4B1307E827A4442ACD87D8B7EAF7F24"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-mon.md"
@@ -323,6 +407,26 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E57C9B0CB5862DCB6BAC31D289B34509"
+            {
+            "SourcePath" = "8:WININET.dll"
+            "TargetName" = "8:WININET.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
         }
@@ -782,7 +886,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1AA38565231A40689F298FEBA8022EB6"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -810,7 +914,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4B7975803E6C492C8F7D8B599766674C"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfan-gui.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfan-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -838,7 +942,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_678C7A24858C40D5841D4C44812C6A93"
             {
-            "SourcePath" = "8:..\\x64\\Release\\kdl.dll"
+            "SourcePath" = "8:..\\x64\\Debug\\kdl.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -866,7 +970,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8533FAE6D43944078DAC051060E0DCFF"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -950,7 +1054,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
             {
-            "SourcePath" = "8:..\\x64\\Release\\LightFX\\LightFX.dll"
+            "SourcePath" = "8:..\\x64\\Debug\\LightFX.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_39E2774D52CE4B619039352379796769"
@@ -978,7 +1082,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B4AC75ADC732414DA45BA869CD059423"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-mon.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-mon.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1006,7 +1110,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B829425435A04EFB81D071102204D8B4"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfan-cli.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfan-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"

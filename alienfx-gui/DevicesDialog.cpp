@@ -2,12 +2,9 @@
 #include "alienfx-controls.h"
 
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-extern void RemoveUnused(groupset* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveHapMapping(int devid, int lightid);
-extern void RemoveAmbMapping(int devid, int lightid);
 extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
 extern void RemoveLightAndClean(int dPid, int eLid);
 
@@ -15,9 +12,6 @@ extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
 extern AlienFX_SDK::mapping* FindCreateMapping();
-
-extern int gridTabSel;
-extern AlienFX_SDK::lightgrid* mainGrid;
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -47,6 +41,7 @@ void SetLightInfo(HWND hDlg) {
 		SetDlgItemText(hDlg, IDC_LIGHTID, "");
 	CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, clight && clight->flags & ALIENFX_FLAG_POWER);
 	CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, clight && clight->flags & ALIENFX_FLAG_INDICATOR);
+	OnGridSelChanged(GetDlgItem(hDlg, IDC_TAB_DEV_GRID));
 }
 
 void RedrawDevList(HWND hDlg) {
@@ -93,7 +88,7 @@ void UpdateDeviceInfo(HWND hDlg) {
 		AlienFX_SDK::afx_device *dev = &conf->afx_dev.fxdevs[dIndex];
 		BYTE status = dev->dev->AlienfxGetDeviceStatus();
 		char descript[128];
-		sprintf_s(descript,128, "VID_%04X, PID_%04X, APIv%d, %s",
+		sprintf_s(descript,128, "VID_%04X/PID_%04X, APIv%d, %s",
 			dev->desc->vid, dev->desc->devid, dev->dev->GetVersion(),
 			status && status != 0xff ? "Ok" : "Error!");
 		SetWindowText(GetDlgItem(hDlg, IDC_INFO_VID), descript);
@@ -104,6 +99,8 @@ void UpdateDeviceInfo(HWND hDlg) {
 		SetSlider(sTip2, dev->desc->white.r);
 		SetSlider(sTip3, dev->desc->white.r);
 		EnableWindow(GetDlgItem(hDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
+		eLid = 0;
+		SetLightInfo(hDlg);
 	}
 }
 
@@ -204,13 +201,13 @@ void ApplyDeviceMaps(bool force = false) {
 
 void SetNewGridName(HWND hDlg) {
 	// set text and close
-	mainGrid->name.resize(GetWindowTextLength(hDlg) + 1);
-	Edit_GetText(hDlg, (LPSTR)mainGrid->name.c_str(), 255);
+	conf->mainGrid->name.resize(GetWindowTextLength(hDlg) + 1);
+	Edit_GetText(hDlg, (LPSTR)conf->mainGrid->name.c_str(), 255);
 	ShowWindow(hDlg, SW_HIDE);
 	// change tab text
 	TCITEM tie{ TCIF_TEXT };
-	tie.pszText = (LPSTR)mainGrid->name.c_str();
-	TabCtrl_SetItem(GetDlgItem(GetParent(hDlg), IDC_TAB_DEV_GRID), gridTabSel, &tie);
+	tie.pszText = (LPSTR)conf->mainGrid->name.c_str();
+	TabCtrl_SetItem(GetDlgItem(GetParent(hDlg), IDC_TAB_DEV_GRID), conf->gridTabSel, &tie);
 	RedrawWindow(GetDlgItem(GetParent(hDlg), IDC_TAB_DEV_GRID), NULL, NULL, RDW_INVALIDATE);
 }
 
@@ -252,6 +249,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			== IDYES) {
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC) DetectionDialog);
 		}
+		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
+		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETTICFREQ, 16, 0);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -266,10 +265,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			//UpdateDeviceList(hDlg);
 			RedrawDevList(hDlg);
 		}
-		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
-		TabCtrl_SetCurSel(gridTab, gridTabSel);
-		OnGridSelChanged(gridTab);
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
+
 	} break;
 	case WM_COMMAND: {
 		WORD dPid = dIndex < 0 ? 0 : conf->afx_dev.fxdevs[dIndex].desc->devid;
@@ -278,24 +275,22 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_NEXT:
 			eLid++;
 			SetLightInfo(hDlg);
-			OnGridSelChanged(gridTab);
 			break;
 		case IDC_BUT_PREV:
-			if (eLid) eLid--;
-			SetLightInfo(hDlg);
-			OnGridSelChanged(gridTab);
+			if (eLid) {
+				eLid--;
+				SetLightInfo(hDlg);
+			}
 			break;
 		case IDC_BUT_LAST:
 			eLid = 0;
 			for (auto it = conf->afx_dev.fxdevs[dIndex].lights.begin(); it < conf->afx_dev.fxdevs[dIndex].lights.end(); it++)
 				eLid = max(eLid, (*it)->lightid);
 			SetLightInfo(hDlg);
-			OnGridSelChanged(gridTab);
 		break;
 		case IDC_BUT_FIRST:
 			eLid = 0;
 			SetLightInfo(hDlg);
-			OnGridSelChanged(gridTab);
 			break;
 		case IDC_EDIT_NAME:
 			switch (HIWORD(wParam)) {
@@ -321,7 +316,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 								it->grid[ind(x, y)] = 0;
 				// delete from all groups...
 				RemoveLightAndClean(dPid, eLid);
-				//int nLid = -1;
 				// delete from current dev block...
 				conf->afx_dev.fxdevs[dIndex].lights.erase(find_if(conf->afx_dev.fxdevs[dIndex].lights.begin(), conf->afx_dev.fxdevs[dIndex].lights.end(),
 					[](auto t) {
@@ -330,7 +324,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// delete from mappings...
 				conf->afx_dev.RemoveMapping(dPid, eLid);
 				conf->afx_dev.SaveMappings();
-				conf->Save();
 				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
 					fxhl->ResetPower(dPid);
 					MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning",
@@ -341,28 +334,29 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
 			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
-			if (eLid != -1) {
+			if (eLid >= 0) {
 				fxhl->TestLight(dIndex, eLid, whiteTest);
+				OnGridSelChanged(gridTab);
 			}
 		} break;
 		case IDC_ISPOWERBUTTON:
-			if (eLid != -1) {
+			if (eLid >= 0) {
 				AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(dPid, eLid);
 				if (lgh && IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED)
-					if (MessageBox(hDlg, "Setting light to Hardware Power button slow down updates and can hang you light system! Are you sure?", "Warning",
+					if (MessageBox(hDlg, "Setting light to Hardware Power will reset all it settings! Are you sure?", "Warning",
 								   MB_YESNO | MB_ICONWARNING) == IDYES) {
 						lgh->flags |= ALIENFX_FLAG_POWER;
 						// Check mappings and remove all power button data
 						RemoveLightAndClean(dPid, eLid);
-
 					} else
 						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
 				else {
 					// remove power button config from chip config if unchecked and confirmed
 					if (lgh) {
-						if (MessageBox(hDlg, "Hardware Power button disabled, you may need to reset light system! Do you want to reset Power button light as well?", "Warning",
+						if (MessageBox(hDlg, "You may need to reset light system!\nDo you want to set light as common?", "Warning",
 							MB_YESNO | MB_ICONWARNING) == IDYES)
 							fxhl->ResetPower(dPid);
+						RemoveLightAndClean(dPid, eLid);
 						lgh->flags &= ~ALIENFX_FLAG_POWER;
 					}
 				}
@@ -436,9 +430,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case NM_CLICK: {
 				if (clickOnTab) {
 					RECT tRect;
-					TabCtrl_GetItemRect(gridTab, gridTabSel, &tRect);
+					TabCtrl_GetItemRect(gridTab, conf->gridTabSel, &tRect);
 					MapWindowPoints(gridTab, hDlg, (LPPOINT)&tRect, 2);
-					SetDlgItemText(hDlg, IDC_EDIT_GRID, mainGrid->name.c_str());
+					SetDlgItemText(hDlg, IDC_EDIT_GRID, conf->mainGrid->name.c_str());
 					ShowWindow(GetDlgItem(hDlg, IDC_EDIT_GRID), SW_RESTORE);
 					SetWindowPos(GetDlgItem(hDlg, IDC_EDIT_GRID), NULL, tRect.left - 1, tRect.top - 1,
 						tRect.right - tRect.left > 60 ? tRect.right - tRect.left : 60, tRect.bottom - tRect.top + 2, SWP_SHOWWINDOW);
@@ -446,64 +440,52 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				} else
 					clickOnTab = true;
 			} break;
-			//case NM_RCLICK: {
-			//	RECT tRect;
-			//	TabCtrl_GetItemRect(gridTab, gridTabSel, &tRect);
-			//	MapWindowPoints(gridTab, hDlg, (LPPOINT)&tRect, 2);
-			//	SetDlgItemText(hDlg, IDC_EDIT_GRID, mainGrid->name.c_str());
-			//	ShowWindow(GetDlgItem(hDlg, IDC_EDIT_GRID), SW_RESTORE);
-			//	SetWindowPos(GetDlgItem(hDlg, IDC_EDIT_GRID), NULL, tRect.left - 1, tRect.top - 1,
-			//		tRect.right - tRect.left > 60 ? tRect.right - tRect.left : 60, tRect.bottom - tRect.top + 2, SWP_SHOWWINDOW);
-			//	SetFocus(GetDlgItem(hDlg, IDC_EDIT_GRID));
-			//} break;
 			case TCN_SELCHANGE: {
 				clickOnTab = false;
 				int newSel = TabCtrl_GetCurSel(gridTab);
-				if (newSel != gridTabSel) { // selection changed!
-					if (newSel < conf->afx_dev.GetGrids()->size())
+				if (newSel < conf->afx_dev.GetGrids()->size())
+					OnGridSelChanged(gridTab);
+				else
+					if (newSel == conf->afx_dev.GetGrids()->size()) {
+						// add grid
+						byte newGridIndex = 0;
+						for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); ) {
+							if (newGridIndex == it->id) {
+								newGridIndex++;
+								it = conf->afx_dev.GetGrids()->begin();
+							}
+							else
+								it++;
+						}
+						DWORD* newGrid = new DWORD[conf->mainGrid->x * conf->mainGrid->y]{ 0 };
+						conf->afx_dev.GetGrids()->push_back({ newGridIndex, conf->mainGrid->x, conf->mainGrid->y, "Grid #" + to_string(newGridIndex), newGrid });
+						conf->mainGrid = &conf->afx_dev.GetGrids()->back();
+						//RedrawGridList(hDlg);
+						TCITEM tie{ TCIF_TEXT };
+						tie.pszText = (LPSTR)conf->mainGrid->name.c_str();
+						TabCtrl_InsertItem(gridTab, conf->afx_dev.GetGrids()->size() - 1, (LPARAM)&tie);
+						TabCtrl_SetCurSel(gridTab, conf->afx_dev.GetGrids()->size() - 1);
 						OnGridSelChanged(gridTab);
+					}
 					else
-						if (newSel == conf->afx_dev.GetGrids()->size()) {
-							// add grid
-							byte newGridIndex = 0;
-							for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); ) {
-								if (newGridIndex == it->id) {
-									newGridIndex++;
-									it = conf->afx_dev.GetGrids()->begin();
-								}
-								else
-									it++;
-							}
-							DWORD* newGrid = new DWORD[mainGrid->x * mainGrid->y]{ 0 };
-							conf->afx_dev.GetGrids()->push_back({ newGridIndex, mainGrid->x, mainGrid->y, "Grid #" + to_string(newGridIndex), newGrid });
-							mainGrid = &conf->afx_dev.GetGrids()->back();
-							//RedrawGridList(hDlg);
-							TCITEM tie{ TCIF_TEXT };
-							tie.pszText = (LPSTR)mainGrid->name.c_str();
-							TabCtrl_InsertItem(gridTab, conf->afx_dev.GetGrids()->size() - 1, (LPARAM)&tie);
-							TabCtrl_SetCurSel(gridTab, conf->afx_dev.GetGrids()->size() - 1);
-							OnGridSelChanged(gridTab);
-						}
-						else
-						{
-							if (conf->afx_dev.GetGrids()->size() > 1) {
-								int newTab = gridTabSel;
-								for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); it++) {
-									if (it->id == mainGrid->id) {
-										// remove
-										if ((it + 1) == conf->afx_dev.GetGrids()->end())
-											newTab--;
-										delete[] it->grid;
-										conf->afx_dev.GetGrids()->erase(it);
-										TabCtrl_DeleteItem(gridTab, gridTabSel);
-										TabCtrl_SetCurSel(gridTab, newTab);
-										OnGridSelChanged(gridTab);
-										break;
-									}
+					{
+						if (conf->afx_dev.GetGrids()->size() > 1) {
+							int newTab = conf->gridTabSel;
+							for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); it++) {
+								if (it->id == conf->mainGrid->id) {
+									// remove
+									if ((it + 1) == conf->afx_dev.GetGrids()->end())
+										newTab--;
+									delete[] it->grid;
+									conf->afx_dev.GetGrids()->erase(it);
+									TabCtrl_DeleteItem(gridTab, conf->gridTabSel);
+									TabCtrl_SetCurSel(gridTab, newTab);
+									OnGridSelChanged(gridTab);
+									break;
 								}
 							}
 						}
-				}
+					}
 			} break;
 			}
 		} break;
@@ -521,8 +503,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					// Select other item...
 					dIndex = (int)lPoint->lParam;
 					UpdateDeviceInfo(hDlg);
-					eLid = 0;
-					SetLightInfo(hDlg);
 				}
 				else {
 					if (!ListView_GetSelectedCount(((NMHDR*)lParam)->hwndFrom))

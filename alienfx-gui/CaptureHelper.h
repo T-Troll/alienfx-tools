@@ -1,5 +1,4 @@
 #pragma once
-#include "ConfigAmbient.h"
 #include "FXHelper.h"
 
 #define GRIDSIZE 36 // 4x3 x 3

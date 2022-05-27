@@ -25,43 +25,6 @@ int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
 
 HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
 
-//HWND CreateToolTip(HWND hwndParent, HWND oldTip)
-//{
-//    // Create a tool tip.
-//    if (oldTip) DestroyWindow(oldTip);
-//
-//    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-//        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-//        0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
-//    //SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-//    //			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-//
-//    TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
-//    GetClientRect(hwndParent, &ti.rect);
-//    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-//    return hwndTT;
-//}
-
-//void SetTooltip(HWND tt, int x, int y) {
-//    TOOLINFO ti{ sizeof(ti) };
-//    if (tt) {
-//        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-//        string toolTip = "Temp: " + to_string(x) + ", Boost: " + to_string(y);
-//        ti.lpszText = (LPTSTR)toolTip.c_str();
-//        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-//    }
-//}
-//
-//void SetBoostTip(HWND tt, int rpm, int boost) {
-//    TOOLINFO ti{ sizeof(ti) };
-//    if (tt) {
-//        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-//        string toolTip = "Boost " + to_string(boost) + " @ " + to_string(rpm) + " RPM";
-//        ti.lpszText = (LPTSTR)toolTip.c_str();
-//        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-//    }
-//}
-
 fan_point Screen2Fan(LPARAM lParam) {
     return {
         (short)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
