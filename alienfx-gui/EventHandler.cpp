@@ -4,6 +4,7 @@
 #include <shlwapi.h>
 #pragma comment(lib, "pdh.lib")
 
+#include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "AlienFX_SDK.h"
 
@@ -14,19 +15,18 @@
 #define DebugPrint(_x_)
 #endif
 
+extern AlienFan_SDK::Control* acpi;
+extern EventHandler* eve;
+
 DWORD WINAPI CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
 
-EventHandler* even = NULL;
-
-EventHandler::EventHandler(ConfigHandler* confi, FXHelper* fx)
+EventHandler::EventHandler()
 {
-	conf = confi;
-	even = this;
-	fxh = fx;
-
 	StartProfiles();
 	StartEffects();
+	ChangePowerState();
+	StartFanMon();
 }
 
 EventHandler::~EventHandler()
@@ -45,10 +45,10 @@ void EventHandler::ChangePowerState()
 		// AC line
 		switch (state.BatteryFlag) {
 		case 8: // charging
-			sameState = fxh->SetMode(MODE_CHARGE);
+			sameState = fxhl->SetMode(MODE_CHARGE);
 			break;
 		default:
-			sameState = fxh->SetMode(MODE_AC);
+			sameState = fxhl->SetMode(MODE_AC);
 			break;
 		}
 	}
@@ -56,17 +56,17 @@ void EventHandler::ChangePowerState()
 		// Battery - check BatteryFlag for details
 		switch (state.BatteryFlag) {
 		case 1: // ok
-			sameState = fxh->SetMode(MODE_BAT);
+			sameState = fxhl->SetMode(MODE_BAT);
 			break;
 		case 2: case 4: // low/critical
-			sameState = fxh->SetMode(MODE_LOW);
+			sameState = fxhl->SetMode(MODE_LOW);
 			break;
 		}
 	}
 	if (!sameState) {
 		DebugPrint(("Power state changed to " + to_string(conf->statePower) + "\n").c_str());
-		fxh->ChangeState();
-		fxh->Refresh();
+		fxhl->ChangeState();
+		fxhl->Refresh();
 	}
 }
 
@@ -87,7 +87,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 		conf->dimmedScreen = false;
 		conf->stateScreen = true;
 	}
-	fxh->ChangeState();
+	fxhl->ChangeState();
 }
 
 void EventHandler::SwitchActiveProfile(profile* newID)
@@ -107,12 +107,12 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 
 			// change global effect
 			if (conf->haveV5) {
-				fxh->UnblockUpdates(false);
-				fxh->UpdateGlobalEffect();
-				fxh->UnblockUpdates(true);
+				fxhl->UnblockUpdates(false);
+				fxhl->UpdateGlobalEffect();
+				fxhl->UnblockUpdates(true);
 			}
 
-			fxh->ChangeState();
+			fxhl->ChangeState();
 			ChangeEffectMode();
 
 			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
@@ -126,7 +126,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 void EventHandler::StartEvents()
 {
 	if (!dwHandle) {
-		fxh->RefreshMon();
+		fxhl->RefreshMon();
 		// start thread...
 
 		DebugPrint("Event thread start.\n");
@@ -154,7 +154,7 @@ void EventHandler::ChangeEffectMode() {
 		if (conf->GetEffect() != effMode)
 			StopEffects();
 		else
-			fxh->Refresh();
+			fxhl->Refresh();
 		StartEffects();
 	}
 	else
@@ -172,7 +172,7 @@ void EventHandler::StopEffects() {
 	} break;
 	}
 	effMode = 0;
-	fxh->Refresh(true);
+	fxhl->Refresh(true);
 }
 
 void EventHandler::StartEffects() {
@@ -192,7 +192,7 @@ void EventHandler::StartEffects() {
 	}
 }
 
-void EventHandler::StartFanMon(AlienFan_SDK::Control *acpi) {
+void EventHandler::StartFanMon() {
 	if (conf->fanControl && acpi && !mon)
 		mon = new MonHelper(conf->fan_conf, acpi);
 }
@@ -238,7 +238,7 @@ profile* EventHandler::ScanTaskList() {
 					}
 					PathStripPath(szProcessName);
 					// is it related to profile?
-					if (newp = even->conf->FindProfileByApp(string(szProcessName)))
+					if (newp = conf->FindProfileByApp(string(szProcessName)))
 						if (!finalP || !(finalP->flags & PROF_PRIORITY))
 							finalP = newp;
 					CloseHandle(hProcess);
@@ -312,7 +312,7 @@ void EventHandler::CheckProfileWindow(HWND hwnd) {
 // Close - Check process list, switch if found and no foreground active.
 
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	even->CheckProfileWindow(hwnd);
+	eve->CheckProfileWindow(hwnd);
 }
 
 VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
@@ -322,7 +322,7 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 	if (hThread) {
 		DWORD prcId = GetProcessIdOfThread(hThread);
 		if (prcId &&
-			idChild == CHILDID_SELF && even->conf->foregroundProfile != even->conf->activeProfile) {
+			idChild == CHILDID_SELF && conf->foregroundProfile != conf->activeProfile) {
 			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
 				PROCESS_VM_READ,
 				FALSE, prcId);
@@ -340,21 +340,21 @@ VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd,
 			PathStripPath(szProcessName);
 
 			switch (dwEvent) {
-			case EVENT_OBJECT_CREATE:
+			case EVENT_OBJECT_CREATE: case EVENT_OBJECT_DESTROY:
 
-				if (even->conf->FindProfileByApp(string(szProcessName))) {
-					even->SwitchActiveProfile(even->ScanTaskList());
+				if (conf->FindProfileByApp(string(szProcessName))) {
+					eve->SwitchActiveProfile(eve->ScanTaskList());
 				}
 				break;
 
-			case EVENT_OBJECT_DESTROY:
+			//case EVENT_OBJECT_DESTROY:
 
-				if (even->conf->FindProfileByApp(string(szProcessName))) {
-					//DebugPrint((string("Process (") + szProcessName + ") status " + to_string(idChild) + "\n").c_str());
-					even->SwitchActiveProfile(even->ScanTaskList());
-				}
+			//	if (conf->FindProfileByApp(string(szProcessName))) {
+			//		//DebugPrint((string("Process (") + szProcessName + ") status " + to_string(idChild) + "\n").c_str());
+			//		eve->SwitchActiveProfile(eve->ScanTaskList());
+			//	}
 
-				break;
+			//	break;
 			}
 
 			CloseHandle(hProcess);
@@ -455,11 +455,11 @@ DWORD WINAPI CEventProc(LPVOID param)
 	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
 	DWORD cType = 0, valCount = 0;
 
-	while (WaitForSingleObject(src->stopEvents, src->conf->monDelay) == WAIT_TIMEOUT) {
+	while (WaitForSingleObject(src->stopEvents, conf->monDelay) == WAIT_TIMEOUT) {
 		// get indicators...
 		PdhCollectQueryData(hQuery);
 
-		if (!src->fxh->unblockUpdates)
+		if (!fxhl->unblockUpdates)
 			continue;
 
 		cData = { 0 };
@@ -475,7 +475,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			totalNet += counterValues[i].FmtValue.longValue;
 		}
 
-		src->fxh->maxData.NET = max(src->fxh->maxData.NET, totalNet);
+		fxhl->maxData.NET = max(fxhl->maxData.NET, totalNet);
 
 		// GPU load
 		valCount = GetValuesArray(hGPUCounter);
@@ -494,14 +494,14 @@ DWORD WINAPI CEventProc(LPVOID param)
 		if (src->mon) {
 			// Check fan RPMs
 			for (unsigned i = 0; i < src->mon->fanRpm.size(); i++) {
-				fan_overboost* overBoost = src->conf->fan_conf->FindBoost(i);
+				fan_overboost* overBoost = conf->fan_conf->FindBoost(i);
 				cData.Fan = max(cData.Fan, overBoost ? src->mon->fanRpm[i] * 100 / overBoost->maxRPM : src->mon->acpi->GetFanPercent(i));
 			}
 		}
 
 		// Now other temp sensor block and power block...
 		short totalPwr = 0;
-		if (src->conf->esif_temp) {
+		if (conf->esif_temp) {
 			if (src->mon) {
 				// Let's get temperatures from fan sensors
 				for (unsigned i = 0; i < src->mon->senValues.size(); i++)
@@ -519,9 +519,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 			for (unsigned i = 0; i < valCount; i++) {
 				totalPwr = (short)max(totalPwr, counterValues[i].FmtValue.longValue);
 			}
-			//src->fxh->maxData.PWR = max(src->fxh->maxData.PWR,(totalPwr & 0xff) << 1 + 1);
-			while (totalPwr > src->fxh->maxData.PWR)
-				src->fxh->maxData.PWR <<= 1;
+			//src->fxhl->maxData.PWR = max(src->fxhl->maxData.PWR,(totalPwr & 0xff) << 1 + 1);
+			while (totalPwr > fxhl->maxData.PWR)
+				fxhl->maxData.PWR <<= 1;
 		}
 
 		GlobalMemoryStatusEx(&memStat);
@@ -544,16 +544,16 @@ DWORD WINAPI CEventProc(LPVOID param)
 		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
-		src->fxh->maxData.CPU = max(src->fxh->maxData.CPU, cData.CPU);
+		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
 		cData.RAM = (byte) memStat.dwMemoryLoad;
-		src->fxh->maxData.RAM = max(src->fxh->maxData.RAM, cData.RAM);
-		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / src->fxh->maxData.NET > 0 ? (totalNet * 100) / src->fxh->maxData.NET : 1 : 0);
-		cData.PWR = (byte) min(100, totalPwr * 100 / src->fxh->maxData.PWR);
-		src->fxh->maxData.GPU = max(src->fxh->maxData.GPU, cData.GPU);
-		src->fxh->maxData.Temp = max(src->fxh->maxData.Temp, cData.Temp);
+		fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData.RAM);
+		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / fxhl->maxData.NET > 0 ? (totalNet * 100) / fxhl->maxData.NET : 1 : 0);
+		cData.PWR = (byte) min(100, totalPwr * 100 / fxhl->maxData.PWR);
+		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
+		fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
 
 		src->modifyProfile.lock();
-		src->fxh->SetCounterColor(&cData);
+		fxhl->SetCounterColor(&cData);
 		src->modifyProfile.unlock();
 
 		/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) +

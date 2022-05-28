@@ -55,9 +55,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared">
-    <Import Project="..\alienfan-tools\alienfan-shared\alienfan-shared.vcxitems" Label="Shared" />
-  </ImportGroup>
+  <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -157,9 +155,6 @@
     <ClInclude Include="ConfigHaptics.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\alienfan-tools\alienfan-SDK\alienfan-SDK.vcxproj">
-      <Project>{41343b7c-6c9f-4ad4-9d27-050b3d76290d}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK_noACPI.vcxproj">
       <Project>{2fc5da06-339f-48b8-acdf-34faa8dbfbb7}</Project>
     </ProjectReference>

@@ -14,8 +14,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
-// Lights grid
-AlienFX_SDK::lightgrid* mainGrid;
 
 void ResetDPIScale();
 
@@ -24,19 +22,13 @@ HWND InitInstance(HINSTANCE, int);
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//BOOL CALLBACK TabGroupsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
-
 // Fan control data
 AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
 
@@ -55,6 +47,9 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // last light selected
 int eItem = -1;
+
+// Lights grid
+//AlienFX_SDK::lightgrid* mainGrid;
 
 bool DoStopService(bool kind) {
 	SERVICE_STATUS_PROCESS ssp;
@@ -188,7 +183,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 		else {
 			//string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
-			MessageBox(NULL, "Fan control didn't start and will be disabled!", "Error",
+			MessageBox(NULL, "Fan control can't start and will be disabled!", "Error",
 				MB_OK | MB_ICONHAND);
 			delete acpi;
 			acpi = NULL;
@@ -205,9 +200,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (conf->esif_temp)
 			EvaluteToAdmin();
 
-		eve = new EventHandler(conf, fxhl);
-		eve->ChangePowerState();
-		eve->StartFanMon(acpi);
+		eve = new EventHandler();
 
 		ResetDPIScale();
 

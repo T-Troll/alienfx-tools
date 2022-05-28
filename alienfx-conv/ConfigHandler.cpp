@@ -11,25 +11,25 @@
 
 ConfigHandler::ConfigHandler() {
 
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
-	RegCreateKeyEx(hKeyMain, TEXT("Events"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyEvents, NULL);
-	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
-	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\Alienfxgui", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
+	RegCreateKeyEx(hKeyMain, "Events", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyEvents, NULL);
+	RegCreateKeyEx(hKeyMain, "Profiles", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
+	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
 	afx_dev.LoadMappings();
 
-	fan_conf = new ConfigFan();
+	//fan_conf = new ConfigFan();
 	amb_conf = new ConfigAmbient();
 	hap_conf = new ConfigHaptics();
 }
 
 ConfigHandler::~ConfigHandler() {
 	//Save();
-	if (fan_conf) delete fan_conf;
+	//if (fan_conf) delete fan_conf;
 	if (amb_conf) delete amb_conf;
 	if (hap_conf) delete hap_conf;
 
-	//afx_dev.SaveMappings();
+	afx_dev.SaveMappings();
 
 	RegCloseKey(hKeyMain);
 	RegCloseKey(hKeyEvents);
@@ -39,6 +39,8 @@ ConfigHandler::~ConfigHandler() {
 void ConfigHandler::ClearEvents()
 {
 	RegDeleteTreeA(hKeyMain, "Events");
+	RegDeleteTreeA(HKEY_CURRENT_USER, "SOFTWARE\\Alienfxambient");
+	RegDeleteTreeA(HKEY_CURRENT_USER, "SOFTWARE\\Alienfxhaptics");
 }
 
 void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD* eff) {
@@ -332,8 +334,6 @@ void ConfigHandler::Load() {
 						[t](auto cp) {
 							return t.group->gid == cp.group->gid;
 						});
-					if (pos != prof->lightsets.end())
-						int i = 0;
 					prof->lightsets.push_back(t);
 				}
 			}
@@ -423,6 +423,15 @@ void ConfigHandler::Save() {
 	//if (fan_conf) fan_conf->Save();
 	//if (amb_conf) amb_conf->Save();
 	//if (hap_conf) hap_conf->Save();
+
+	char name[256];
+	DWORD len = 256, lend;
+	if (RegEnumValueA(hKeyZones, 0, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS) { // have some keys!
+		printf("New settings already detected! Do you want to override it? ");
+		gets_s(name, 255);
+		if (name[0] != 'y' && name[0] != 'Y')
+			return;
+	}
 
 	SetReg("AutoStart", startWindows);
 	SetReg("Minimized", startMinimized);

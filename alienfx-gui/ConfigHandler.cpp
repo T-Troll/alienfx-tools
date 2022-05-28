@@ -173,19 +173,6 @@ int ConfigHandler::GetEffect() {
 	return enableMon ? activeProfile->effmode : 3;
 }
 
-//AlienFX_SDK::group* ConfigHandler::CreateGroup(string name)
-//{
-//	unsigned maxID = 0x10000;
-//	while (find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
-//		[maxID](AlienFX_SDK::group t) {
-//			return maxID == t.gid;
-//		}) != afx_dev.GetGroups()->end())
-//		maxID++;
-//	AlienFX_SDK::group* dev = new AlienFX_SDK::group({ maxID, name + " #" + to_string(maxID & 0xffff) });
-//
-//	return dev;
-//}
-
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
 	if (RegGetValueA(hKeyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)

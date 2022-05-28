@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include "AlienFX_SDK.h"
-#include "ConfigFan.h"
+//#include "ConfigFan.h"
 #include "ConfigAmbient.h"
 #include "ConfigHaptics.h"
 
@@ -84,6 +84,27 @@ struct lightset {
 	old_event	 eve[4];
 };
 
+struct fan_point {
+	short temp;
+	short boost;
+};
+
+struct fan_block {
+	short fanIndex;
+	vector<fan_point> points;
+};
+
+struct temp_block {
+	short sensorIndex;
+	vector<fan_block> fans;
+};
+
+struct fan_profile {
+	DWORD powerStage = 0;
+	DWORD GPUPower = 0;
+	vector<temp_block> fanControls;
+};
+
 struct profile {
 	unsigned id = 0;
 	WORD flags = 0;
@@ -151,7 +172,7 @@ public:
 	bool haveV5 = false;
 
 	// 3rd-party config blocks
-	ConfigFan *fan_conf = NULL;
+	//ConfigFan *fan_conf = NULL;
 	ConfigAmbient *amb_conf = NULL;
 	ConfigHaptics *hap_conf = NULL;
 

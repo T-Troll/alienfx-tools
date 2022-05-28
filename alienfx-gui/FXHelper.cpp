@@ -11,14 +11,11 @@ extern ConfigHandler* conf;
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
-FXHelper::FXHelper(/*ConfigHandler* conf*/) {
-	//config = conf;
-	//afx_dev.LoadMappings();
+FXHelper::FXHelper() {
 	Start();
 };
 FXHelper::~FXHelper() {
 	Stop();
-	//afx_dev.SaveMappings();
 };
 
 AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {

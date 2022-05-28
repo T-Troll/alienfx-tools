@@ -37,10 +37,10 @@ int main()
 		conf.ClearEvents();
 		printf("Events cleared!\n");
 	}
-	printf("Saving new configuration...");
+	printf("Saving new configuration...\n");
 	conf.afx_dev.SaveMappings();
 	conf.Save();
-	printf(" Done, press Enter to finish!\n");
+	printf("Done, press Enter to finish!\n");
 	gets_s(name, 255);
 }
 

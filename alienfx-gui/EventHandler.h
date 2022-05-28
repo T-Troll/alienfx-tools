@@ -23,23 +23,20 @@ public:
 	void SwitchActiveProfile(profile* newID);
 	void StartProfiles();
 	void StopProfiles();
-	//void ToggleEvents();
 	void ChangeEffectMode();
 	void StopEffects();
 	void StartEffects();
 
-	void StartFanMon(AlienFan_SDK::Control* acpi);
+	void StartFanMon();
 	void StopFanMon();
 
 	profile *ScanTaskList();
 
 	void CheckProfileWindow(HWND hwnd);
 
-	EventHandler(ConfigHandler*, FXHelper*);
+	EventHandler();
 	~EventHandler();
 
-	FXHelper* fxh = NULL;
-	ConfigHandler* conf = NULL;
 	MonHelper *mon = NULL;
 	CaptureHelper *capt = NULL;
 	WSAudioIn *audio = NULL;
