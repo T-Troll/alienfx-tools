@@ -46,7 +46,7 @@ void FXHelper::SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, 
 				} else
 					actions[0] = *from;
 			}
-			SetLight(grp->lights[i]->devid, grp->lights[i]->lightid, actions, force);
+			SetLight(grp->lights[i].first, grp->lights[i].second, actions, force);
 		}
 	}
 }

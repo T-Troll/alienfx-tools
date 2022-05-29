@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 
 extern void SwitchTab(int);
 extern bool SetColor(HWND hDlg, int id, lightset* mmap, AlienFX_SDK::afx_act* map);
@@ -11,6 +12,7 @@ extern void SetSlider(HWND tt, int value);
 extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 
 extern int eItem;
+extern EventHandler* eve;
 
 void UpdateEventUI(LPVOID);
 ThreadHelper* hapUIupdate;
@@ -232,7 +234,12 @@ void UpdateEventUI(LPVOID lpParam) {
 		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_RAM), (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
 		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_GPU), (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
 		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_PWR), (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " W").c_str());
-		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_FAN), (to_string(fxhl->eData.Fan * fxhl->maxData.Fan / 100) + " RPM").c_str());
+		if (eve->mon) {
+			int maxFans = 0;
+			for (auto i = eve->mon->fanRpm.begin(); i < eve->mon->fanRpm.end(); i++)
+				maxFans = max(maxFans, *i);
+			SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
+		}
 		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_BAT), (to_string(fxhl->eData.Batt) + " %").c_str());
 		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_NET), (to_string(fxhl->eData.NET * fxhl->maxData.NET / 102400) + " kb").c_str());
 		Static_SetText(GetDlgItem((HWND)lpParam, IDC_VAL_TEMP), (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());

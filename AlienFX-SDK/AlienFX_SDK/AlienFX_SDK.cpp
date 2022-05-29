@@ -64,7 +64,7 @@ namespace AlienFX_SDK {
 			// Need to send report before any command!
 			buffer[0] = reportID;
 			buffer[1] = 0x1;
-			int res = HidD_SetFeature(devHandle, buffer, length);
+			HidD_SetFeature(devHandle, buffer, length);
 		}
 
 		memcpy(&buffer[1], command, size);
@@ -1210,9 +1210,6 @@ namespace AlienFX_SDK {
 			});
 		if (pos != groups.end())
 			return &(*pos);
-		//for (int i = 0; i < groups.size(); i++)
-		//	if (groups[i].gid == gID)
-		//		return &groups[i];
 		return nullptr;
 	}
 
@@ -1223,6 +1220,7 @@ namespace AlienFX_SDK {
 		devices.clear();
 		mappings.clear();
 		groups.clear();
+		grids.clear();
 
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
 		unsigned vindex; mapping map; devmap dev;
@@ -1259,26 +1257,31 @@ namespace AlienFX_SDK {
 				maps = new DWORD[nameLen / sizeof(DWORD)];
 				RegGetValueA(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
 				groups.push_back({dID, name});
-				mapping *map;
 				for (int i = 0; i < nameLen / sizeof(DWORD); i += 2) {
-					if (map = GetMappingById(maps[i], LOWORD(maps[i + 1])))
-						groups.back().lights.push_back(map);
+					mapping* map = GetMappingById(maps[i], (WORD)maps[i + 1]);
+					if (map) {
+						groups.back().lights.push_back({ maps[i], maps[i + 1] });
+						if (map->flags & ALIENFX_FLAG_POWER)
+							groups.back().have_power = true;
+					}
 				}
 				delete[] maps;
 			}
 		}
-		//for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
-		//	if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
-		//		DWORD nameLen = 255, grid[MAXGRIDSIZE], sizes;
-		//		RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
-		//		nameLen = sizeof(DWORD);
-		//		RegGetValueA(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &sizes, &nameLen);
-		//		nameLen = MAXGRIDSIZE*sizeof(DWORD);
-		//		RegGetValueA(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &nameLen);
-		//		grids.push_back({ (byte)dID, (byte)(sizes >> 8), (byte)(sizes & 0xff), name });
-		//		memcpy(grids.back().grid, grid, MAXGRIDSIZE * sizeof(DWORD));
-		//	}
-		//}
+		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
+			if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
+				DWORD nameLen = 255, *grid, sizes;
+				RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
+				nameLen = sizeof(DWORD);
+				RegGetValueA(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &sizes, &nameLen);
+				byte x = (byte)(sizes >> 8), y = (byte)(sizes & 0xff);
+				nameLen = x*y*sizeof(DWORD);
+				grid = new DWORD[x * y];
+				RegGetValueA(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &nameLen);
+				grids.push_back({ (byte)dID, x, y, name, grid });
+				//memcpy(grids.back().grid, grid, MAXGRIDSIZE * sizeof(DWORD));
+			}
+		}
 		RegCloseKey(hKey1);
 	}
 
@@ -1323,8 +1326,8 @@ namespace AlienFX_SDK {
 			DWORD *grLights = new DWORD[groups[i].lights.size() * 2];
 
 			for (int j = 0; j < groups[i].lights.size(); j++) {
-				grLights[j * 2] = groups[i].lights[j]->devid;
-				grLights[j * 2 + 1] = groups[i].lights[j]->lightid;
+				grLights[j * 2] = groups[i].lights[j].first;
+				grLights[j * 2 + 1] = groups[i].lights[j].second;
 			}
 			RegSetValueExA( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD) groups[i].lights.size() * sizeof(DWORD) );
 
@@ -1332,15 +1335,15 @@ namespace AlienFX_SDK {
 			RegCloseKey(hKeyS);
 		}
 
-		//for (int i = 0; i < numGrids; i++) {
-		//	string name = "Grid" + to_string(grids[i].id);
-		//	RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
-		//	RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
-		//	DWORD sizes = ((DWORD)grids[i].x << 8) | grids[i].y;
-		//	RegSetValueExA(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
-		//	RegSetValueExA(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)&grids[i].grid, MAXGRIDSIZE * sizeof(DWORD));
-		//	RegCloseKey(hKeyS);
-		//}
+		for (int i = 0; i < numGrids; i++) {
+			string name = "Grid" + to_string(grids[i].id);
+			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
+			RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
+			DWORD sizes = ((DWORD)grids[i].x << 8) | grids[i].y;
+			RegSetValueExA(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
+			RegSetValueExA(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)grids[i].grid, grids[i].x * grids[i].y * sizeof(DWORD));
+			RegCloseKey(hKeyS);
+		}
 
 		RegCloseKey(hKey1);
 	}

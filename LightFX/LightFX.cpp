@@ -174,8 +174,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightDescription(const unsigned int dev, c
 bool IsInGroup(AlienFX_SDK::mapping* map, AlienFX_SDK::group* grp) {
 	if (map && grp)
 		for (int i = 0; i < grp->lights.size(); i++)
-			if (grp->lights[i]->devid == map->devid &&
-				grp->lights[i]->lightid == map->lightid)
+			if (grp->lights[i].first == map->devid &&
+				grp->lights[i].second == map->lightid)
 				return true;
 	return false;
 }
@@ -217,9 +217,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 			vector<byte> lights;
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (grp->lights[i]->devid == afx_map->fxdevs[j].dev->GetPID() &&
-						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER))
-						lights.push_back((byte) grp->lights[i]->lightid);
+					if (grp->lights[i].first == afx_map->fxdevs[j].dev->GetPID())
+						lights.push_back((byte) grp->lights[i].second);
 			} else {
 				for (int i = 0; gid < 0 && i < afx_map->fxdevs[j].lights.size(); i++) {
 					if (!(afx_map->fxdevs[j].lights[i]->flags & ALIENFX_FLAG_POWER))
@@ -268,9 +267,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const u
 		for (int j = 0; j < afx_map->fxdevs.size(); j++) {
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (grp->lights[i]->devid == afx_map->fxdevs[j].dev->GetPID() &&
-						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER)) {
-						actions.index = (byte) grp->lights[i]->lightid;
+					if (grp->lights[i].first == afx_map->fxdevs[j].dev->GetPID()) {
+						actions.index = (byte) grp->lights[i].second;
 						afx_map->fxdevs[j].dev->SetAction(&actions);
 					}
 			} else {

@@ -1107,7 +1107,7 @@ haptics_map *FindHapMapping(int lid) {
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
 	auto pos = find_if(grp->lights.begin(), grp->lights.end(),
 		[devid, lightid](auto t) {
-			return t->devid == devid && t->lightid == lightid;
+			return t.first == devid && t.second == lightid;
 		});
 	if (pos != grp->lights.end())
 		grp->lights.erase(pos);

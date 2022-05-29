@@ -349,7 +349,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					ListBox_SetItemData(grpList, ListBox_AddString(grpList, "(Light)"), eItem);
 					for (auto Iter = fxhl->afx_dev.GetGroups()->begin(); Iter < fxhl->afx_dev.GetGroups()->end(); Iter++)
 						for (auto lIter = Iter->lights.begin(); lIter < Iter->lights.end(); lIter++)
-							if ((*lIter)->devid == devid && (*lIter)->lightid == lightid) {
+							if (lIter->first == devid && lIter->second == lightid) {
 								lghGrp.push_back(&(*Iter));
 								ListBox_SetItemData(grpList, ListBox_AddString(grpList, Iter->name.c_str()), Iter->gid);
 							}
