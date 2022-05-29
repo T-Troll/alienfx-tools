@@ -170,6 +170,7 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				}
 			else
 				map->haptics[fGrpItem].freqID.push_back(cIndex);
+			cutMove = 0;
 			DrawFreq(GetParent(hDlg));
 		}
 		cutMove = 0;
@@ -177,6 +178,7 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEMOVE: {
 		if (wParam & MK_LBUTTON) {
 			switch (cutMove) {
+			//case 0: cutMove = 3;
 			case 1: map->haptics[fGrpItem].hicut = clickLevel; break;
 			case 2: map->haptics[fGrpItem].lowcut = clickLevel; break;
 			}

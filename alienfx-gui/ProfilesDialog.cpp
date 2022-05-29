@@ -62,6 +62,8 @@ void ReloadProfileView(HWND hDlg) {
 			ReloadProfSettings(hDlg, conf->profiles[i]);
 			rpos = i;
 		}
+		else
+			lItem.state = 0;
 		ListView_InsertItem(profile_list, &lItem);
 	}
 	ListView_SetColumnWidth(profile_list, 0, LVSCW_AUTOSIZE);

@@ -517,7 +517,10 @@ DWORD WINAPI CEventProc(LPVOID param)
 			// Powers
 			valCount = GetValuesArray(hPwrCounter);
 			for (unsigned i = 0; i < valCount; i++) {
-				totalPwr = (short)max(totalPwr, counterValues[i].FmtValue.longValue);
+				if (counterValues[i].FmtValue.longValue) {
+					totalPwr = (short)counterValues[i].FmtValue.longValue;
+					break;
+				}
 			}
 			//src->fxhl->maxData.PWR = max(src->fxhl->maxData.PWR,(totalPwr & 0xff) << 1 + 1);
 			while (totalPwr > fxhl->maxData.PWR)
@@ -544,13 +547,14 @@ DWORD WINAPI CEventProc(LPVOID param)
 		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
-		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
 		cData.RAM = (byte) memStat.dwMemoryLoad;
-		fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData.RAM);
 		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / fxhl->maxData.NET > 0 ? (totalNet * 100) / fxhl->maxData.NET : 1 : 0);
 		cData.PWR = (byte) min(100, totalPwr * 100 / fxhl->maxData.PWR);
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
 		fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
+		fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData.RAM);
+		//fxhl->maxData.Fan = max(fxhl->maxData.Fan, cData.Fan);
+		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
 
 		src->modifyProfile.lock();
 		fxhl->SetCounterColor(&cData);

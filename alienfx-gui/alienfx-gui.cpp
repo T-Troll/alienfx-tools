@@ -361,16 +361,12 @@ void OnSelChanged(HWND hwndDlg)
 	if (pHdr->hwndDisplay != NULL) {
 		RECT dRect;
 		GetClientRect(pHdr->hwndDisplay, &dRect);
-		if (dRect.right != rcDisplay.right - rcDisplay.left ||
-			dRect.bottom != rcDisplay.bottom - rcDisplay.top) {
-			DebugPrint("Resize needed!\n");
-			RECT mRect;
-			int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
-				deltay = dRect.bottom - (rcDisplay.bottom -rcDisplay.top);
-			//if (deltax < 0) deltax = 0;
-			//if (deltay < 0) deltay = 0;
-			GetWindowRect(GetParent(GetParent(pHdr->hwndDisplay)), &mRect);
-			SetWindowPos(GetParent(GetParent(pHdr->hwndDisplay)), NULL, 0, 0, mRect.right - mRect.left + deltax, mRect.bottom - mRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
+		int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
+			deltay = dRect.bottom - (rcDisplay.bottom - rcDisplay.top);
+		if (deltax || deltay) {
+			//DebugPrint("Resize needed!\n");
+			GetWindowRect(GetParent(GetParent(pHdr->hwndDisplay)), &dRect);
+			SetWindowPos(GetParent(GetParent(pHdr->hwndDisplay)), NULL, 0, 0, dRect.right - dRect.left + deltax, dRect.bottom - dRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
 			rcDisplay.right += deltax;
 			rcDisplay.bottom += deltay;
 		}
@@ -378,7 +374,7 @@ void OnSelChanged(HWND hwndDlg)
 			rcDisplay.left, rcDisplay.top,
 			rcDisplay.right - rcDisplay.left,
 			rcDisplay.bottom - rcDisplay.top,
-			SWP_SHOWWINDOW);
+			SWP_SHOWWINDOW | SWP_NOSIZE);
 	}
 	return;
 }
@@ -500,10 +496,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	} break;
 	case WM_COMMAND:
 	{
-		//if (LOWORD(wParam) >= ID_ACC_COLOR && LOWORD(wParam) <= ID_ACC_SETTINGS) {
-		//	SwitchTab(TAB_COLOR + LOWORD(wParam) - ID_ACC_COLOR);
-		//	break;
-		//}
 		switch (LOWORD(wParam))
 		{
 		case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:

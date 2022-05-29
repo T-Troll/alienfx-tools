@@ -372,6 +372,8 @@ void ReloadFanView(HWND list, int cID) {
             lItem.state = LVIS_SELECTED;
             SendMessage(fanWindow, WM_PAINT, 0, 0);
         }
+        else
+            lItem.state = 0;
         ListView_InsertItem(list, &lItem);
         if (sen && fan_conf->FindFanBlock(sen, i)) {
             fan_conf->lastSelectedSensor = -1;
@@ -423,6 +425,8 @@ void ReloadTempView(HWND list, int cID) {
             lItem.state = LVIS_SELECTED;
             rpos = i;
         }
+        else
+            lItem.state = 0;
         ListView_InsertItem(list, &lItem);
         ListView_SetItemText(list, i, 1, (LPSTR)acpi->sensors[i].name.c_str());
     }

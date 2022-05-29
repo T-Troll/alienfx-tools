@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 
 extern void SwitchLightTab(HWND, int);
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
@@ -17,6 +18,8 @@ extern void RedrawGridButtonZone(bool recalc = false);
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
 
+extern EventHandler* eve;
+
 extern int eItem;
 
 extern HWND zsDlg;
@@ -25,10 +28,6 @@ void UpdateEventUI(LPVOID);
 ThreadHelper* hapUIupdate;
 
 void UpdateMonitoringInfo(HWND hDlg, groupset *map) {
-	//HWND list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
-	//	list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
-	//	s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
-	//	s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
 	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, map && map->fromColor ? BST_CHECKED : BST_UNCHECKED );
 	bool setState = map && map->events[1].state;
@@ -161,12 +160,6 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (map)
 				map->events[2].mode = state;
 			break;
-		//case IDC_GAUGE:
-		//	if (map && map->perfs.size()) {
-		//		map->perfs[0].mode = state;
-		//		fxhl->RefreshMon();
-		//	}
-		//	break;
 		case IDC_BUTTON_CM1:
 			if (map && (!map->fromColor || map->color.size())) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[0].from);
@@ -285,7 +278,12 @@ void UpdateEventUI(LPVOID lpParam) {
 		SetDlgItemText((HWND)lpParam, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " W").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(fxhl->eData.Fan * fxhl->maxData.Fan / 100) + " RPM").c_str());
+		if (eve->mon) {
+			int maxFans = 0;
+			for (auto i = eve->mon->fanRpm.begin(); i < eve->mon->fanRpm.end(); i++)
+				maxFans = max(maxFans, *i);
+				SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
+		}
 		SetDlgItemText((HWND)lpParam, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET * fxhl->maxData.NET / 102400) + " kb").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());

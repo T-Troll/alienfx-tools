@@ -5,6 +5,7 @@ extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 
 extern void SetLightInfo(HWND hDlg);
+extern void RedrawDevList(HWND hDlg);
 
 extern int eLid, dIndex;//, devID;
 extern bool whiteTest;
@@ -94,9 +95,6 @@ void RedrawGridButtonZone(bool recalc = false) {
     GetWindowRect(GetDlgItem(cgDlg, IDC_BUTTON_ZONE), &pRect);
     MapWindowPoints(HWND_DESKTOP, cgDlg, (LPPOINT)&pRect, 2);
     RedrawWindow(cgDlg, &pRect, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-    //for (int i = 0; i < mainGrid->x * mainGrid->y; i++)
-    //    RedrawWindow(GetDlgItem(cgDlg, 2000 + i), 0, 0, RDW_INVALIDATE);
-    //RedrawWindow(cgDlg, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 void SetLightGridSize(HWND dlg, int x, int y) {
@@ -179,8 +177,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 20));
         //SendMessage(gridY, TBM_SETPOS, true, mainGrid->y);
 
-        //InitButtonZone(hDlg);
-        //RedrawButtonZone(hDlg);
         RepaintGrid(hDlg);
 	} break;
     case WM_COMMAND: {
@@ -225,17 +221,20 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     conf->mainGrid->grid[ind(dragZone.left,dragZone.top)] = 0;
                 else {
                     // change light to old one
-                    eLid = HIWORD(oldClkValue);
                     auto pos = find_if(conf->afx_dev.fxdevs.begin(), conf->afx_dev.fxdevs.end(),
                         [](auto t) {
                             return t.dev->GetPID() == LOWORD(oldClkValue);
                         });
-                    if (pos != conf->afx_dev.fxdevs.end())
+                    if (pos != conf->afx_dev.fxdevs.end() && dIndex != (pos - conf->afx_dev.fxdevs.begin())) {
                         dIndex = (int)(pos - conf->afx_dev.fxdevs.begin());
+                        RedrawDevList(GetParent(GetParent(hDlg)));
+                    }
+                    eLid = HIWORD(oldClkValue);
+                    SetLightInfo(GetParent(GetParent(hDlg)));
                 }
             }
             SetLightInfo(GetParent(GetParent(hDlg)));
-            RedrawGridButtonZone();
+            //RedrawGridButtonZone();
         }
         break;
     case WM_MOUSEMOVE:

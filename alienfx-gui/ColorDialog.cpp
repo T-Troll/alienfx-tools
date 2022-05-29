@@ -85,8 +85,9 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 			// check selection...
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
-			} else
-				lItem.state &= ~LVIS_SELECTED;
+			}
+			else
+				lItem.state = 0;
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
@@ -132,7 +133,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		// init grids...
 		CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
-		OnGridSelChanged(gridTab);
+		//OnGridSelChanged(gridTab);
 
 	} break;
 	case WM_APP + 2: {

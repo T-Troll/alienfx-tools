@@ -11,6 +11,7 @@ extern void RemoveLightAndClean(int dPid, int eLid);
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
+extern void RedrawGridButtonZone(bool recalc=true);
 extern AlienFX_SDK::mapping* FindCreateMapping();
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -21,7 +22,7 @@ struct devInfo {
 	bool selected = false;
 };
 
-int eLid = 0, dItem = -1, dIndex = 0;// , lMaxIndex = 0;
+int eLid = 0, dItem = -1, dIndex = -1;// , lMaxIndex = 0;
 bool whiteTest = false;
 vector<devInfo> csv_devs;
 WNDPROC oldproc;
@@ -41,7 +42,26 @@ void SetLightInfo(HWND hDlg) {
 		SetDlgItemText(hDlg, IDC_LIGHTID, "");
 	CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, clight && clight->flags & ALIENFX_FLAG_POWER);
 	CheckDlgButton(hDlg, IDC_CHECK_INDICATOR, clight && clight->flags & ALIENFX_FLAG_INDICATOR);
-	OnGridSelChanged(GetDlgItem(hDlg, IDC_TAB_DEV_GRID));
+	RedrawGridButtonZone();
+}
+
+void UpdateDeviceInfo(HWND hDlg) {
+	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
+		AlienFX_SDK::afx_device* dev = &conf->afx_dev.fxdevs[dIndex];
+		BYTE status = dev->dev->AlienfxGetDeviceStatus();
+		char descript[128];
+		sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d, %s",
+			dev->desc->vid, dev->desc->devid, dev->dev->GetVersion(),
+			status && status != 0xff ? "Ok" : "Error!");
+		SetWindowText(GetDlgItem(hDlg, IDC_INFO_VID), descript);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, dev->desc->white.r);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, dev->desc->white.g);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, dev->desc->white.b);
+		SetSlider(sTip1, dev->desc->white.r);
+		SetSlider(sTip2, dev->desc->white.r);
+		SetSlider(sTip3, dev->desc->white.r);
+		EnableWindow(GetDlgItem(hDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
+	}
 }
 
 void RedrawDevList(HWND hDlg) {
@@ -76,32 +96,12 @@ void RedrawDevList(HWND hDlg) {
 		if (lItem.lParam == dIndex) {
 			lItem.state = LVIS_SELECTED;
 			rpos = i;
-		}
+		} else
+			lItem.state = 0;
 		ListView_InsertItem(dev_list, &lItem);
 	}
 	ListView_SetColumnWidth(dev_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	ListView_EnsureVisible(dev_list, rpos, false);
-}
-
-void UpdateDeviceInfo(HWND hDlg) {
-	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
-		AlienFX_SDK::afx_device *dev = &conf->afx_dev.fxdevs[dIndex];
-		BYTE status = dev->dev->AlienfxGetDeviceStatus();
-		char descript[128];
-		sprintf_s(descript,128, "VID_%04X/PID_%04X, APIv%d, %s",
-			dev->desc->vid, dev->desc->devid, dev->dev->GetVersion(),
-			status && status != 0xff ? "Ok" : "Error!");
-		SetWindowText(GetDlgItem(hDlg, IDC_INFO_VID), descript);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, dev->desc->white.r);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, dev->desc->white.g);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, dev->desc->white.b);
-		SetSlider(sTip1, dev->desc->white.r);
-		SetSlider(sTip2, dev->desc->white.r);
-		SetSlider(sTip3, dev->desc->white.r);
-		EnableWindow(GetDlgItem(hDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
-		eLid = 0;
-		SetLightInfo(hDlg);
-	}
 }
 
 void LoadCSV(string name) {
@@ -217,15 +217,17 @@ LRESULT GridNameEdit(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_KEYUP: {
 		switch (wParam) {
 		case VK_RETURN: case VK_TAB: {
-			SetNewGridName(hDlg);
-			return 1;
+			ShowWindow(hDlg, SW_HIDE);
 		} break;
 		case VK_ESCAPE: {
-			// just close edit
+			// restore text
+			SetWindowText(hDlg, conf->mainGrid->name.c_str());
 			ShowWindow(hDlg, SW_HIDE);
-			return 1;
 		} break;
 		}
+	} break;
+	case WM_KILLFOCUS: {
+		SetNewGridName(hDlg);
 	} break;
 	}
 	return CallWindowProc(oldproc, hDlg, message, wParam, lParam);
@@ -262,10 +264,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
 		if (conf->afx_dev.fxdevs.size() > 0) {
 			if (dIndex < 0) dIndex = 0;
-			//UpdateDeviceList(hDlg);
 			RedrawDevList(hDlg);
 		}
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
+
+		RegisterHotKey(hDlg, 1, MOD_SHIFT, VK_LEFT);
+		RegisterHotKey(hDlg, 2, MOD_SHIFT, VK_RIGHT);
+		RegisterHotKey(hDlg, 3, MOD_SHIFT, VK_HOME);
+		RegisterHotKey(hDlg, 4, MOD_SHIFT, VK_END);
 
 	} break;
 	case WM_COMMAND: {
@@ -289,7 +295,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			SetLightInfo(hDlg);
 		break;
 		case IDC_BUT_FIRST:
-			eLid = 0;
+			eLid = 999;
+			for (auto it = conf->afx_dev.fxdevs[dIndex].lights.begin(); it < conf->afx_dev.fxdevs[dIndex].lights.end(); it++)
+				eLid = min(eLid, (*it)->lightid);
 			SetLightInfo(hDlg);
 			break;
 		case IDC_EDIT_NAME:
@@ -422,6 +430,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		default: return false;
 		}
 	} break;
+	case WM_HOTKEY:
+		switch (wParam) {
+		case 1: SendMessage(hDlg, WM_COMMAND, IDC_BUT_PREV, 0); break;
+		case 2: SendMessage(hDlg, WM_COMMAND, IDC_BUT_NEXT, 0); break;
+		case 3: SendMessage(hDlg, WM_COMMAND, IDC_BUT_FIRST, 0); break;
+		case 4: SendMessage(hDlg, WM_COMMAND, IDC_BUT_LAST, 0); break;
+		}
+		break;
 	case WM_NOTIFY: {
 		HWND gridTab = GetDlgItem(hDlg, IDC_TAB_DEV_GRID);
 		switch (((NMHDR*)lParam)->idFrom) {
@@ -501,8 +517,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
 				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
+					int oldIndex = dIndex;
 					dIndex = (int)lPoint->lParam;
 					UpdateDeviceInfo(hDlg);
+					//eLid = 0;
+					SetLightInfo(hDlg);
 				}
 				else {
 					if (!ListView_GetSelectedCount(((NMHDR*)lParam)->hwndFrom))
@@ -560,6 +579,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		fxhl->UnblockUpdates(true, true);
 		fxhl->Refresh();
+		UnregisterHotKey(hDlg, 1);
+		UnregisterHotKey(hDlg, 2);
+		UnregisterHotKey(hDlg, 3);
+		UnregisterHotKey(hDlg, 4);
 	} break;
 	default: return false;
 	}
