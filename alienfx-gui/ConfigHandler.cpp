@@ -232,11 +232,11 @@ void ConfigHandler::Load() {
 				updateProfileByID(pid, (char*)data, "", -1, NULL);
 				goto nextRecord;
 			}
-			//if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
-			//	DWORD newData = MAKELPARAM(LOWORD(*(DWORD*)data), HIWORD(*(DWORD*)data) == 3 ? 0 : *(DWORD*)data + 1);
-			//	updateProfileByID(pid, "", "", newData, NULL);
-			//	goto nextRecord;
-			//}
+			if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
+				DWORD newData = MAKELPARAM(LOWORD(*(DWORD*)data), HIWORD(*(DWORD*)data) == 3 ? 0 : *(DWORD*)data + 1);
+				updateProfileByID(pid, "", "", newData, NULL);
+				goto nextRecord;
+			}
 			if (sscanf_s(name, "Profile-gflags-%d", &pid) == 1) {
 				updateProfileByID(pid, "", "", *(DWORD*)data, NULL);
 				goto nextRecord;

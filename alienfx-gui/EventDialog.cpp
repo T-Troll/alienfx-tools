@@ -11,18 +11,11 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
-extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-
 extern void RedrawGridButtonZone(bool recalc = false);
-extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
-extern void OnGridSelChanged(HWND);
 
 extern EventHandler* eve;
 
 extern int eItem;
-
-extern HWND zsDlg;
 
 void UpdateEventUI(LPVOID);
 ThreadHelper* hapUIupdate;
@@ -52,9 +45,7 @@ void UpdateMonitoringInfo(HWND hDlg, groupset *map) {
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND //light_list = GetDlgItem(hDlg, IDC_LIGHTS_E),
-		gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID),
-		list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
+	HWND list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
 		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
 		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),
 		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
@@ -65,15 +56,6 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 	case WM_INITDIALOG:
 	{
-		zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
-		RECT mRect;
-		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES_E), &mRect);
-		ScreenToClient(hDlg, (LPPOINT)&mRect);
-		SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
-
-		if (!conf->afx_dev.GetMappings()->size())
-			OnGridSelChanged(gridTab);
-
 		// Set counter list...
 		UpdateCombo(list_counter,
 			{ "CPU load", "RAM load", "HDD load", "GPU load", "Network traffic", "Max. Temperature", "Battery level",
@@ -89,24 +71,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		sTip1 = CreateToolTip(s1_slider, sTip1);
 		sTip2 = CreateToolTip(s2_slider, sTip2);
 
-		CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
-		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
-		OnGridSelChanged(gridTab);
-
-		//UpdateMonitoringInfo(hDlg, map);
+		UpdateMonitoringInfo(hDlg, map);
 
 		// Start UI update thread...
 		hapUIupdate = new ThreadHelper(UpdateEventUI, hDlg);
 
-		//if (eItem >= 0) {
-		//	SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS_E, LBN_SELCHANGE), (LPARAM)light_list);
-		//}
-
 	} break;
 	case WM_APP + 2: {
-		map = FindMapping(eItem);
 		UpdateMonitoringInfo(hDlg, map);
-		//RedrawGridButtonZone();
 	} break;
 	case WM_COMMAND: {
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
@@ -250,20 +222,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 			break;
 		} break;
-	case WM_NOTIFY:
-		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_TAB_COLOR_GRID: {
-			switch (((NMHDR*)lParam)->code) {
-			case TCN_SELCHANGE: {
-				if (TabCtrl_GetCurSel(gridTab) < conf->afx_dev.GetGrids()->size())
-					OnGridSelChanged(gridTab);
-			} break;
-			}
-		} break;
-		}
-		break;
 	case WM_DESTROY:
-		DestroyWindow(zsDlg);
 		delete hapUIupdate;
 		break;
 	default: return false;
@@ -277,13 +236,15 @@ void UpdateEventUI(LPVOID lpParam) {
 		SetDlgItemText((HWND)lpParam, IDC_VAL_CPU, (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " W").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + "W").c_str());
 		if (eve->mon) {
 			int maxFans = 0;
 			for (auto i = eve->mon->fanRpm.begin(); i < eve->mon->fanRpm.end(); i++)
 				maxFans = max(maxFans, *i);
 				SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
 		}
+		else
+			SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, "disabled");
 		SetDlgItemText((HWND)lpParam, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET * fxhl->maxData.NET / 102400) + " kb").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());

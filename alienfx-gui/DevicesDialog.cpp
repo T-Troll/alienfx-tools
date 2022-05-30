@@ -16,15 +16,16 @@ extern AlienFX_SDK::mapping* FindCreateMapping();
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-struct devInfo {
-	AlienFX_SDK::devmap dev;
-	vector<AlienFX_SDK::mapping> maps;
+struct gearInfo {
+	string name;
+	vector <AlienFX_SDK::lightgrid> grids;
+	vector<AlienFX_SDK::afx_device> devs;
 	bool selected = false;
 };
 
 int eLid = 0, dItem = -1, dIndex = -1;// , lMaxIndex = 0;
 bool whiteTest = false;
-vector<devInfo> csv_devs;
+vector<gearInfo> csv_devs;
 WNDPROC oldproc;
 
 void SetLightInfo(HWND hDlg) {
@@ -106,8 +107,8 @@ void RedrawDevList(HWND hDlg) {
 
 void LoadCSV(string name) {
 	csv_devs.clear();
-	// load csv...
 	// Load mappings...
+	//DebugPrint(("Opening file " + name).c_str());
 	HANDLE file = CreateFile(name.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 	if (file != INVALID_HANDLE_VALUE) {
 		// read and parse...
@@ -119,7 +120,8 @@ void LoadCSV(string name) {
 		string content = (char *) filebuf;
 		delete[] filebuf;
 		string line;
-		devInfo tDev;
+		gearInfo tGear{ "" };
+		AlienFX_SDK::afx_device tDev;
 		while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 			vector<string> fields;
 			size_t pos = 0, posOld = 1;
@@ -132,27 +134,60 @@ void LoadCSV(string name) {
 				}
 				fields.push_back(line.substr(posOld, line.size() - posOld - 1));
 				switch (atoi(fields[0].c_str())) {
-				case 0: // device line
-					tDev.dev.vid = atoi(fields[1].c_str());
-					tDev.dev.devid = atoi(fields[2].c_str());
-					tDev.dev.name = fields[3];
-					// add to devs.
-					if (conf->afx_dev.GetDeviceById(tDev.dev.devid, tDev.dev.vid))
-						csv_devs.push_back(tDev);
-					else
-						tDev.dev.devid = 0;
-					break;
-				case 1: // lights line
-					if (tDev.dev.devid) {
-						WORD lightid = (WORD)atoi(fields[1].c_str()),
-							flags = (WORD)atoi(fields[2].c_str());
-						// add to maps
-						csv_devs.back().maps.push_back({tDev.dev.vid, tDev.dev.devid, lightid, flags, fields[3]});
+				case 0: { // device line
+					if (!tGear.selected) {
+						AlienFX_SDK::devmap* tDevDesc = new AlienFX_SDK::devmap({ (WORD)atoi(fields[1].c_str()), (WORD)atoi(fields[2].c_str()), fields[3] });
+						// add to devs.
+						if (conf->afx_dev.GetDeviceById(tDevDesc->devid, tDevDesc->vid)) {
+							tGear.devs.push_back({ NULL, tDevDesc });
+						}
+						else {
+							// Skip to next "3" block!
+							delete tDevDesc;
+							tGear.selected = true;
+						}
 					}
+				} break;
+				case 1: // lights line
+					if (!tGear.selected) {
+						WORD ltId = (WORD)atoi(fields[1].c_str());
+						DWORD gridval = MAKELPARAM(tGear.devs.back().desc->devid, ltId);
+						AlienFX_SDK::mapping* tMap = new AlienFX_SDK::mapping({ tGear.devs.back().desc->vid, tGear.devs.back().desc->devid,
+							ltId, (WORD)atoi(fields[2].c_str()), fields[3] });
+						// add to maps
+						tGear.devs.back().lights.push_back(tMap);
+						// grid maps
+						for (int i = 4; i < fields.size(); i += 2) {
+							int gid = atoi(fields[i].c_str());
+							auto pos = find_if(tGear.grids.begin(), tGear.grids.end(),
+								[gid](auto t) {
+									return t.id == gid;
+								});
+							if (pos != tGear.grids.end())
+								pos->grid[atoi(fields[i + 1].c_str())] = gridval;
+						}
+					}
+					break;
+				case 2: // Grid info
+					tGear.grids.push_back({ (byte)atoi(fields[1].c_str()), (byte)atoi(fields[2].c_str()), (byte)atoi(fields[3].c_str()), fields[4] });
+					tGear.grids.back().grid = new DWORD[tGear.grids.back().x * tGear.grids.back().y]{ 0 };
+					break;
+				case 3: // Device info
+					if (tGear.name != "" && !tGear.selected) {
+						tGear.name = tGear.devs.front().desc->name;
+						csv_devs.push_back(tGear);
+					}
+					tGear = { "" };
+					tGear.name = fields[1];
 					break;
 					//default: // wrong line, skip
 				}
 			}
+		}
+		if (!tGear.selected) {
+			if (tGear.name == "")
+				tGear.name = tGear.devs.front().desc->name;
+			csv_devs.push_back(tGear);
 		}
 		CloseHandle(file);
 	}
@@ -161,10 +196,9 @@ void LoadCSV(string name) {
 string OpenSaveFile(HWND hDlg, bool isOpen) {
 	// Load/save device and light mappings
 	OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA), hDlg, hInst, "Mapping files (*.csv)\0*.csv\0\0" };
-	string appName = "Current.csv";
-	appName.reserve(4096);
-	fstruct.lpstrFile = (LPSTR) appName.c_str();
-	fstruct.nMaxFile = 4096;
+	char appName[4096]{ "Current.csv" };
+	fstruct.lpstrFile = (LPSTR) appName;
+	fstruct.nMaxFile = 4095;
 	fstruct.lpstrInitialDir = ".\\Mappings";
 	fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT |
 		(isOpen ? OFN_FILEMUSTEXIST : OFN_PATHMUSTEXIST);
@@ -176,23 +210,27 @@ string OpenSaveFile(HWND hDlg, bool isOpen) {
 
 void ApplyDeviceMaps(bool force = false) {
 	// save mappings of selected.
-	for (UINT i = 0; i < csv_devs.size(); i++) {
-		if (force || csv_devs[i].selected) {
-			AlienFX_SDK::devmap *cDev = conf->afx_dev.GetDeviceById(csv_devs[i].dev.devid, csv_devs[i].dev.vid);
-			if (cDev) {
-				cDev->name = csv_devs[i].dev.name;
-			}
-			for (int j = 0; j < csv_devs[i].maps.size(); j++) {
-				AlienFX_SDK::mapping *oMap = conf->afx_dev.GetMappingById(csv_devs[i].maps[j].devid, csv_devs[i].maps[j].lightid);
-				if (oMap) {
-					oMap->vid = csv_devs[i].maps[j].vid;
-					oMap->name = csv_devs[i].maps[j].name;
-					oMap->flags = csv_devs[i].maps[j].flags;
-				} else {
-					AlienFX_SDK::mapping *nMap = new AlienFX_SDK::mapping(csv_devs[i].maps[j]);
-					conf->afx_dev.GetMappings()->push_back(nMap);
+	for (auto i = csv_devs.begin(); i < csv_devs.end(); i++) {
+		if (force || i->selected) {
+			for (auto td = i->devs.begin(); td < i->devs.end(); td++) {
+				AlienFX_SDK::devmap* cDev = conf->afx_dev.GetDeviceById(td->desc->devid, td->desc->vid);
+				if (cDev) {
+					cDev->name = td->desc->name;
+				}
+				for (auto j = td->lights.begin(); j < td->lights.end(); j++) {
+					AlienFX_SDK::mapping* oMap = conf->afx_dev.GetMappingById((*j)->devid, (*j)->lightid);
+					if (oMap) {
+						*oMap = { td->desc->vid, (*j)->devid, (*j)->lightid, (*j)->flags, (*j)->name };
+					}
+					else {
+						AlienFX_SDK::mapping* nMap = new AlienFX_SDK::mapping(**j);
+						conf->afx_dev.GetMappings()->push_back(nMap);
+					}
 				}
 			}
+			conf->afx_dev.GetGrids()->clear();
+			for (auto gg = i->grids.begin(); gg < i->grids.end(); gg++)
+				conf->afx_dev.GetGrids()->push_back(*gg);
 		}
 	}
 	conf->afx_dev.AlienFXAssignDevices();
@@ -404,18 +442,32 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// Now save mappings...
 				HANDLE file = CreateFile(appName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
 				if (file != INVALID_HANDLE_VALUE) {
-					for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++) {
-						/// Only connected devices stored!
+					if (conf->afx_dev.fxdevs.size()) {
 						DWORD writeBytes;
-						string line = "'0','" + to_string(conf->afx_dev.fxdevs[i].desc->vid) + "','"
-							+ to_string(conf->afx_dev.fxdevs[i].desc->devid) + "','" +
-							conf->afx_dev.fxdevs[i].desc->name + "'\r\n";
+						string line = "'3','" + conf->afx_dev.fxdevs.front().desc->name + "'\r\n";
 						WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-						for (int j = 0; j < conf->afx_dev.fxdevs[i].lights.size(); j++) {
-							AlienFX_SDK::mapping* cMap = conf->afx_dev.fxdevs[i].lights[j];
-							line = "'1','" + to_string(cMap->lightid) + "','"
-								+ to_string(cMap->flags) + "','" + cMap->name + "'\r\n";
+						for (auto i = conf->afx_dev.GetGrids()->begin(); i < conf->afx_dev.GetGrids()->end(); i++) {
+							line = "'2','" + to_string(i->id) + "','" + to_string(i->x) + "','" + to_string(i->y)
+								+ "','" + i->name + "'\r\n";
 							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
+						}
+						for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++) {
+							/// Only connected devices stored!
+							line = "'0','" + to_string(i->desc->vid) + "','" + to_string(i->desc->devid) + "','" + i->desc->name + "'\r\n";
+							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
+							for (auto j = i->lights.begin(); j < i->lights.end(); j++) {
+								line = "'1','" + to_string((*j)->lightid) + "','" + to_string((*j)->flags) + "','" + (*j)->name;
+								DWORD gridid = MAKELPARAM((*j)->devid, (*j)->lightid);
+								for (auto i = conf->afx_dev.GetGrids()->begin(); i < conf->afx_dev.GetGrids()->end(); i++) {
+									for (int pos = 0; pos < i->x * i->y; pos++) {
+										if (gridid == i->grid[pos]) {
+											line += "','" + to_string(i->id) + "','" + to_string(pos);
+										}
+									}
+								}
+								line += "'\r\n";
+								WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
+							}
 						}
 					}
 					CloseHandle(file);
@@ -592,18 +644,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 void UpdateSavedDevices(HWND hDlg) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_LIST_SUG);
 	// Now check current device list..
-	int pos = (-1);
 	ListBox_ResetContent(dev_list);
-	pos = ListBox_AddString(dev_list, "Manual");
-	ListBox_SetCurSel(dev_list, pos);
-	ListBox_SetItemData(dev_list, pos, -1);
+	ListBox_SetItemData(dev_list, ListBox_AddString(dev_list, "Manual"), -1);
+	ListBox_SetCurSel(dev_list, 0);
 	for (UINT i = 0; i < csv_devs.size(); i++) {
-		if (LOWORD(csv_devs[i].dev.devid) == conf->afx_dev.fxdevs[dIndex].dev->GetPID()) {
-				pos = ListBox_AddString(dev_list, csv_devs[i].dev.name.c_str());
-				ListBox_SetItemData(dev_list, pos, i);
-				if (csv_devs[i].selected)
-					ListBox_SetCurSel(dev_list, pos);
-		}
+		ListBox_SetItemData(dev_list, ListBox_AddString(dev_list, csv_devs[i].name.c_str()), i);
+		if (csv_devs[i].selected)
+			ListBox_SetCurSel(dev_list, i+1);
 	}
 }
 
@@ -613,17 +660,23 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		LoadCSV(string(".\\Mappings\\devices.csv"));
+		LoadCSV(".\\Mappings\\devices.csv");
 		// init values according to device list
-		RedrawDevList(hDlg);
+		//RedrawDevList(hDlg);
 		// Now init mappings...
-		UpdateSavedDevices(hDlg);
+		ListBox_ResetContent(sug_list);
+		ListBox_SetItemData(sug_list, ListBox_AddString(sug_list, "Manual"), -1);
+		ListBox_SetCurSel(sug_list, 0);
+		for (UINT i = 0; i < csv_devs.size(); i++) {
+			ListBox_SetItemData(sug_list, ListBox_AddString(sug_list, csv_devs[i].name.c_str()), i);
+			if (csv_devs[i].selected)
+				ListBox_SetCurSel(sug_list, i + 1);
+		}
 
 	} break;
 	case WM_COMMAND:
 	{
-		int //cDevID = (int)ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list)),
-			cSugID = (int)ListBox_GetItemData(sug_list, ListBox_GetCurSel(sug_list));
+
 		switch (LOWORD(wParam)) {
 		case IDOK:
 		{
@@ -634,26 +687,15 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDCANCEL:
 			EndDialog(hDlg, IDCANCEL);
 			break;
-		//case IDC_DEVICES:
-		//{
-		//	switch (HIWORD(wParam)) {
-		//	case CBN_SELCHANGE:
-		//	{
-		//		dIndex = cDevID;
-		//		UpdateSavedDevices(hDlg);
-		//	} break;
-		//	}
-		//} break;
 		case IDC_LIST_SUG:
 		{
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
+				int cSugID = (int)ListBox_GetItemData(sug_list, ListBox_GetCurSel(sug_list));
 				// clear checkmarks...
 				for (UINT i = 0; i < csv_devs.size(); i++) {
-					if (csv_devs[i].dev.devid == conf->afx_dev.fxdevs[dIndex].desc->devid) {
-						csv_devs[i].selected = false;
-					}
+					csv_devs[i].selected = false;
 				}
 				if (cSugID >= 0)
 					csv_devs[cSugID].selected = true;
@@ -665,26 +707,26 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_CLOSE:
 		EndDialog(hDlg, IDCANCEL);
 		break;
-	case WM_NOTIFY:
-		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_LIST_DEV:
-			switch (((NMHDR*)lParam)->code) {
-			case LVN_ITEMCHANGED:
-			{
-				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
-				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
-					// Select other item...
-					dIndex = (int)lPoint->lParam;
-					UpdateSavedDevices(hDlg);
-				}
-				else {
-					if (!ListView_GetSelectedCount(((NMHDR*)lParam)->hwndFrom))
-						RedrawDevList(hDlg);
-				}
-			} break;
-			}
-		}
-		break;
+	//case WM_NOTIFY:
+	//	switch (((NMHDR*)lParam)->idFrom) {
+	//	case IDC_LIST_DEV:
+	//		switch (((NMHDR*)lParam)->code) {
+	//		case LVN_ITEMCHANGED:
+	//		{
+	//			NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
+	//			if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
+	//				// Select other item...
+	//				dIndex = (int)lPoint->lParam;
+	//				UpdateSavedDevices(hDlg);
+	//			}
+	//			else {
+	//				if (!ListView_GetSelectedCount(((NMHDR*)lParam)->hwndFrom))
+	//					RedrawDevList(hDlg);
+	//			}
+	//		} break;
+	//		}
+	//	}
+	//	break;
     default: return false;
 	}
 	return true;

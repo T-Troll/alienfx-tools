@@ -104,9 +104,6 @@
     <ClCompile Include="TabDevGrid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TabColorGrid.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ZoneSel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

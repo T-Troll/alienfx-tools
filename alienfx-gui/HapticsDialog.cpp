@@ -10,14 +10,14 @@ extern groupset* CreateMapping(int lid);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RemoveUnused(vector<groupset>*);
 
-extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
-extern void OnGridSelChanged(HWND);
-extern AlienFX_SDK::mapping* FindCreateMapping();
+//extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
+//extern void OnGridSelChanged(HWND);
+//extern AlienFX_SDK::mapping* FindCreateMapping();
 extern void RedrawGridButtonZone(bool recalc = false);
 
-extern HWND zsDlg;
+//extern HWND zsDlg;
 
 extern EventHandler* eve;
 extern int eItem;
@@ -213,14 +213,14 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
-		RECT mRect;
-		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
-		ScreenToClient(hDlg, (LPPOINT)&mRect);
-		SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
+		//zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
+		//RECT mRect;
+		//GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
+		//ScreenToClient(hDlg, (LPPOINT)&mRect);
+		//SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 
-		if (!conf->afx_dev.GetMappings()->size())
-			OnGridSelChanged(gridTab);
+		//if (!conf->afx_dev.GetMappings()->size())
+		//	OnGridSelChanged(gridTab);
 
 		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_inpType ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_inpType ? BST_UNCHECKED : BST_CHECKED);
@@ -229,9 +229,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		hToolTip = CreateToolTip(GetDlgItem(hDlg, IDC_LEVELS), hToolTip);
 
 		// init grids...
-		CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
-		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
-		OnGridSelChanged(gridTab);
+		//CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
+		//TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
+		//OnGridSelChanged(gridTab);
 
 		SetFeqGroups(hDlg);
 
@@ -322,20 +322,20 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 		return false;
 	break;
-	case WM_NOTIFY:
-		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_TAB_COLOR_GRID: {
-			switch (((NMHDR*)lParam)->code) {
-			case TCN_SELCHANGE: {
-				if (TabCtrl_GetCurSel(gridTab) < conf->afx_dev.GetGrids()->size())
-					OnGridSelChanged(gridTab);
-			} break;
-			}
-		} break;
-		}
-		break;
+	//case WM_NOTIFY:
+	//	switch (((NMHDR*)lParam)->idFrom) {
+	//	case IDC_TAB_COLOR_GRID: {
+	//		switch (((NMHDR*)lParam)->code) {
+	//		case TCN_SELCHANGE: {
+	//			if (TabCtrl_GetCurSel(gridTab) < conf->afx_dev.GetGrids()->size())
+	//				OnGridSelChanged(gridTab);
+	//		} break;
+	//		}
+	//	} break;
+	//	}
+	//	break;
 	case WM_CLOSE: case WM_DESTROY:
-		DestroyWindow(zsDlg);
+		//DestroyWindow(zsDlg);
 		delete hapUIThread;
 	break;
 	default: return false;

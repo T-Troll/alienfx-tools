@@ -1,6 +1,6 @@
 #include "alienfx-gui.h"
 
-extern int eItem, effID;
+extern int eItem/*, effID*/;
 
 void UpdateZoneList(HWND hDlg, byte flag = 0) {
 	int rpos = -1, pos = 0;
@@ -124,7 +124,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					// Select other item...
 					if ((int)lPoint->lParam > 0)
 						eItem = (int)lPoint->lParam;// lbItem;
-					effID = 0;
+					//effID = 0;
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 					//mmap = FindMapping(eItem);
 					//RebuildEffectList(hDlg, mmap);

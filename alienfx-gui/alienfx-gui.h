@@ -28,7 +28,7 @@
 #define TAB_LIGHTS	 0
 
 typedef struct tag_dlghdr {
-	//HWND hwndTab;       // tab control
+	HWND hwndControl;       // control dialog
 	HWND hwndDisplay;   // current child dialog box
 	//RECT rcDisplay;     // display rectangle for the tab control
 	DLGTEMPLATE** apRes; // Dialog templates

@@ -26,6 +26,7 @@
 #define IDD_DIALOG_AUTODETECT           154
 #define IDD_DIALOG_LIGHTS               156
 #define IDD_ZONESELECTION               158
+#define IDD_LIGHT_TEMPLATE              159
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -160,13 +161,12 @@
 #define IDC_BUT_CLEARGRID               1144
 #define IDC_STATIC_ZONES                1145
 #define IDC_STATIC_ZONE_LABEL           1146
-#define IDC_STATIC_ZONES_E              1147
+#define IDC_STATIC_CONTROLS             1146
 #define IDC_CHECK_SPECTRUM              1149
 #define IDC_COMBO_GAUGE                 1150
 #define IDC_CP_COLORS                   1151
 #define IDC_CP_EVENTS                   1152
 #define IDC_CP_AMBIENT                  1153
-#define IDC_CHECK4                      1154
 #define IDC_CP_HAPTICS                  1154
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
@@ -197,7 +197,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        159
+#define _APS_NEXT_RESOURCE_VALUE        160
 #define _APS_NEXT_COMMAND_VALUE         32808
 #define _APS_NEXT_CONTROL_VALUE         1155
 #define _APS_NEXT_SYMED_VALUE           113

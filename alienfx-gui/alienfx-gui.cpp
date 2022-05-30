@@ -331,6 +331,25 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
+void ResizeTab(HWND tab, RECT &rcDisplay) {
+	RECT dRect;
+	GetClientRect(tab, &dRect);
+	int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
+		deltay = dRect.bottom - (rcDisplay.bottom - rcDisplay.top);
+	if (deltax || deltay) {
+		//DebugPrint("Resize needed!\n");
+		GetWindowRect(GetParent(GetParent(tab)), &dRect);
+		SetWindowPos(GetParent(GetParent(tab)), NULL, 0, 0, dRect.right - dRect.left + deltax, dRect.bottom - dRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
+		rcDisplay.right += deltax;
+		rcDisplay.bottom += deltay;
+	}
+	SetWindowPos(tab, NULL,
+		rcDisplay.left, rcDisplay.top,
+		rcDisplay.right - rcDisplay.left,
+		rcDisplay.bottom - rcDisplay.top,
+		SWP_SHOWWINDOW | SWP_NOSIZE);
+}
+
 void OnSelChanged(HWND hwndDlg)
 {
 	// Get the dialog header data.
@@ -359,22 +378,7 @@ void OnSelChanged(HWND hwndDlg)
 		pHdr->hwndDisplay = newDisplay;
 
 	if (pHdr->hwndDisplay != NULL) {
-		RECT dRect;
-		GetClientRect(pHdr->hwndDisplay, &dRect);
-		int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
-			deltay = dRect.bottom - (rcDisplay.bottom - rcDisplay.top);
-		if (deltax || deltay) {
-			//DebugPrint("Resize needed!\n");
-			GetWindowRect(GetParent(GetParent(pHdr->hwndDisplay)), &dRect);
-			SetWindowPos(GetParent(GetParent(pHdr->hwndDisplay)), NULL, 0, 0, dRect.right - dRect.left + deltax, dRect.bottom - dRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-			rcDisplay.right += deltax;
-			rcDisplay.bottom += deltay;
-		}
-		SetWindowPos(pHdr->hwndDisplay, NULL,
-			rcDisplay.left, rcDisplay.top,
-			rcDisplay.right - rcDisplay.left,
-			rcDisplay.bottom - rcDisplay.top,
-			SWP_SHOWWINDOW | SWP_NOSIZE);
+		ResizeTab(pHdr->hwndDisplay, rcDisplay);
 	}
 	return;
 }

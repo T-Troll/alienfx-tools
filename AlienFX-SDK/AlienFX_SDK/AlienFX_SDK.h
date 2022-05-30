@@ -76,8 +76,6 @@ namespace AlienFX_SDK {
 		bool have_power = false;
 	};
 
-#define MAXGRIDSIZE 450
-
 	struct lightgrid {
 		byte id;
 		byte x, y;
@@ -220,10 +218,10 @@ namespace AlienFX_SDK {
 		int GetVersion();
 	};
 
-	// Single device data - IDs, types, name, lights
+	// Single device data - device pointer, description pointer, lights
 	struct afx_device {
-		Functions *dev;
-		devmap *desc;
+		Functions* dev;
+		devmap* desc;
 		vector <mapping*> lights;
 	};
 

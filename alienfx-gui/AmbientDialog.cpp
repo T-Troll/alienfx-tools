@@ -8,16 +8,16 @@ extern groupset* CreateMapping(int lid);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RemoveUnused(vector<groupset>*);
 
-extern void SwitchLightTab(HWND, int);
+//extern void SwitchLightTab(HWND, int);
+//
+//extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+//extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
+//extern void OnGridSelChanged(HWND);
+//extern AlienFX_SDK::mapping* FindCreateMapping();
+//extern void RedrawGridButtonZone(bool recalc = false);
 
-extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
-extern void OnGridSelChanged(HWND);
-extern AlienFX_SDK::mapping* FindCreateMapping();
-extern void RedrawGridButtonZone(bool recalc = false);
-
-extern HWND zsDlg;
+//extern HWND zsDlg;
 
 extern EventHandler* eve;
 extern int eItem;
@@ -79,14 +79,14 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     switch (message) {
     case WM_INITDIALOG:
     {
-        zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
-        RECT mRect;
-        GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
-        ScreenToClient(hDlg, (LPPOINT)&mRect);
-        SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
+        //zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
+        //RECT mRect;
+        //GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
+        //ScreenToClient(hDlg, (LPPOINT)&mRect);
+        //SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 
-        if (!conf->afx_dev.GetMappings()->size())
-            OnGridSelChanged(gridTab);
+        //if (!conf->afx_dev.GetMappings()->size())
+        //    OnGridSelChanged(gridTab);
 
         // Mode...
         CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_mode ? BST_UNCHECKED : BST_CHECKED);
@@ -116,9 +116,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         SetSlider(sTip3, HIWORD(conf->amb_grid));
 
         // init grids...
-        CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
-        TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
-        OnGridSelChanged(gridTab);
+        //CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
+        //TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
+        //OnGridSelChanged(gridTab);
 
         InitButtonZone(hDlg);
 
@@ -194,9 +194,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
     } break;
     case WM_APP + 2: {
-        map = FindMapping(eItem);
+        //map = FindMapping(eItem);
         RedrawButtonZone(hDlg);
-        RedrawGridButtonZone();
+        //RedrawGridButtonZone();
     } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
@@ -259,7 +259,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             DrawEdge(ditem->hDC, &ditem->rcItem, selected ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT);
         }
     } break;
-    case WM_NOTIFY:
+    /*case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_TAB_COLOR_GRID: {
             switch (((NMHDR*)lParam)->code) {
@@ -270,9 +270,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             }
         } break;
         }
-        break;
+        break;*/
     case WM_CLOSE: case WM_DESTROY:
-        DestroyWindow(zsDlg);
+        //DestroyWindow(zsDlg);
         delete ambUIupdate;
     break;
     default: return false;
