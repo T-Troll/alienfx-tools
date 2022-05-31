@@ -408,7 +408,7 @@ void ReloadTempView(HWND list, int cID) {
     int rpos = 0;
     //HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
     ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
     if (!ListView_GetColumnWidth(list, 1)) {
         LVCOLUMNA lCol{ LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM, LVCFMT_LEFT, 100, (LPSTR)"Temp" };
         ListView_InsertColumn(list, 0, &lCol);
@@ -430,7 +430,9 @@ void ReloadTempView(HWND list, int cID) {
         ListView_InsertItem(list, &lItem);
         ListView_SetItemText(list, i, 1, (LPSTR)acpi->sensors[i].name.c_str());
     }
+    RECT cArea;
+    GetClientRect(list, &cArea);
     ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
-    ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
+    ListView_SetColumnWidth(list, 1, cArea.right - ListView_GetColumnWidth(list, 0));
     ListView_EnsureVisible(list, rpos, false);
 }

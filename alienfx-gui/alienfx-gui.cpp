@@ -48,8 +48,8 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 // last light selected
 int eItem = -1;
 
-// Lights grid
-//AlienFX_SDK::lightgrid* mainGrid;
+// Effect mode list
+vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics" };
 
 bool DoStopService(bool kind) {
 	SERVICE_STATUS_PROCESS ssp;
@@ -421,7 +421,7 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 		EnableWindow(mode_list, conf->enableMon);
 	}
-	UpdateCombo(mode_list, { "Off", "Monitoring", "Ambient", "Haptics" }, mode);
+	UpdateCombo(mode_list, effModes, mode);
 }
 
 void UpdateState() {
@@ -609,14 +609,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				fxhl->Refresh();
 			}
 			ShowWindow(hDlg, SW_HIDE);
+			eve->StartProfiles();
 		} break;
 		}
 		break;
 	case WM_ACTIVATE: {
 		if (LOWORD(wParam)) {
 			eve->StopProfiles();
-		} else
-			eve->StartProfiles();
+		} //else
+		//	eve->StartProfiles();
 	} break;
 	case WM_APP + 1: {
 		switch (lParam)
@@ -935,7 +936,7 @@ bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map) {
 	CloseHandle(crRefresh);
 	CloseHandle(stopColorRefresh);
 
-	fxhl->RefreshOne(mmap, false, true);
+	fxhl->RefreshOne(mmap);
 	RedrawButton(hDlg, id, Act2Code(map));
 
 	return ret;
@@ -969,13 +970,13 @@ groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set)
 	return nullptr;
 }
 
-groupset* CreateMapping(int lid) {
-	// create new mapping..
-	groupset newmap;
-	newmap.group = conf->afx_dev.GetGroupById(lid);
-	conf->active_set->push_back(newmap);
-	return &conf->active_set->back();
-}
+//groupset* CreateMapping(int lid) {
+//	// create new mapping..
+//	groupset newmap;
+//	newmap.group = conf->afx_dev.GetGroupById(lid);
+//	conf->active_set->push_back(newmap);
+//	return &conf->active_set->back();
+//}
 
 void RemoveUnused(vector<groupset>* lightsets) {
 	for (auto it = lightsets->begin(); it < lightsets->end();)

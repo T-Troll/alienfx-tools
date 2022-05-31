@@ -22,7 +22,7 @@ extern void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> re
 
 bool firstInit = false;
 int lastTab = 0;
-HWND zsDlg = NULL;
+extern HWND zsDlg;
 
 BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID);
@@ -40,7 +40,6 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		//OnGridSelChanged(gridTab);
-
 	} break;
 	case WM_APP + 2: {
 		DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA);
@@ -58,6 +57,9 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			}
 		} break;
 		}
+		break;
+	case WM_DESTROY:
+		DestroyWindow(zsDlg);
 		break;
 	default: return false;
 	}

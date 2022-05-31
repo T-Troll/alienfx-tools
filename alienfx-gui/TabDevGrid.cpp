@@ -4,7 +4,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void UpdateZoneList(HWND hDlg, byte flag = 0);
+extern void UpdateZoneList(byte flag = 0);
 
 extern void SetLightInfo(HWND hDlg);
 extern void RedrawDevList(HWND hDlg);
@@ -62,37 +62,38 @@ void RedrawGridButtonZone(bool recalc = false) {
         if (conf->colorGrid)
             delete conf->colorGrid;
         conf->colorGrid = new pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>[conf->mainGrid->x * conf->mainGrid->y]{};
-        for (auto cs = conf->activeProfile->lightsets.begin();
-            cs < conf->activeProfile->lightsets.end(); cs++) {
+        for (auto cs = conf->activeProfile->lightsets.begin(); cs < conf->activeProfile->lightsets.end(); cs++) {
             for (auto clgh = cs->group->lights.begin(); clgh < cs->group->lights.end(); clgh++) {
                 for (int x = 0; x < conf->mainGrid->x; x++)
-                    for (int y = 0; y < conf->mainGrid->y; y++)
-                        if (LOWORD(conf->mainGrid->grid[ind(x,y)]) == clgh->first &&
-                            HIWORD(conf->mainGrid->grid[ind(x,y)]) == clgh->second) {
+                    for (int y = 0; y < conf->mainGrid->y; y++) {
+                        int ind = ind(x, y);
+                        if (LOWORD(conf->mainGrid->grid[ind]) == clgh->first &&
+                            HIWORD(conf->mainGrid->grid[ind]) == clgh->second) {
                             if (conf->enableMon)
                                 switch (conf->GetEffect()) {
                                 case 1: { // monitoring
-                                    bool firstOne = true;
                                     for (int i = 0; i < 3; i++)
                                         if (cs->events[i].state) {
-                                            if (firstOne) {
-                                                conf->colorGrid[ind(x,y)].first = cs->fromColor && cs->color.size() ?
-                                                    &cs->color.front() : &cs->events[i].from;
-                                                firstOne = false;
+                                            if (!conf->colorGrid[ind].first && !cs->fromColor) {
+                                                conf->colorGrid[ind].first = &cs->events[i].from;
                                             }
-                                            conf->colorGrid[ind(x, y)].second = &cs->events[i].to;
+                                            conf->colorGrid[ind].second = &cs->events[i].to;
                                         }
                                 } break;
                                 case 3: // haptics
                                     if (cs->haptics.size()) {
-                                        conf->colorGrid[ind(x, y)] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
+                                        conf->colorGrid[ind] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
                                     }
                                     break;
                                 }
-                            if (!conf->colorGrid[ind(x, y)].first && cs->color.size()) {
-                                conf->colorGrid[ind(x, y)] = { &cs->color.front(), &cs->color.back() };
+                            if (cs->color.size()) {
+                                if (!conf->colorGrid[ind].first)
+                                    conf->colorGrid[ind].first = &cs->color.front();
+                                if (!conf->colorGrid[ind].second)
+                                    conf->colorGrid[ind].second = &cs->color.back();
                             }
                         }
+                    }
             }
         }
     }
@@ -238,7 +239,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     dragZone = { 0, 0, conf->mainGrid->x - 1, conf->mainGrid->y - 1 };
                     ModifyColorDragZone(true, true);
                     RedrawGridButtonZone();
-                    UpdateZoneList(zsDlg);
+                    UpdateZoneList();
                 }
             break;
         }
@@ -289,10 +290,9 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             }
             else {
                 ModifyColorDragZone(!(dragZone.bottom - dragZone.top || dragZone.right - dragZone.left));
-                UpdateZoneList(zsDlg);
+                UpdateZoneList();
                 RedrawGridButtonZone();
             }
-            //RedrawGridButtonZone();
         }
         break;
     case WM_MOUSEMOVE:

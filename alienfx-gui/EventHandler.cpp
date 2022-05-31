@@ -116,7 +116,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 			ChangeEffectMode();
 
 			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
-
 	} else {
 		DebugPrint((string("Same profile \"") + newID->name + "\", skipping switch.\n").c_str());
 	}
@@ -159,6 +158,7 @@ void EventHandler::ChangeEffectMode() {
 	}
 	else
 		StopEffects();
+	conf->SetToolTip();
 }
 
 void EventHandler::StopEffects() {
@@ -407,9 +407,9 @@ int GetValuesArray(HCOUNTER counter) {
 	}
 
 	if (pdhStatus != ERROR_SUCCESS) {
-		return 0;
+		return -1;
 	}
-	return count;
+	return count - 1;
 }
 
 DWORD WINAPI CEventProc(LPVOID param)
@@ -418,7 +418,6 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 	// locales block
 	HKL* locIDs = new HKL[10];
-	int locNum = GetKeyboardLayoutList(10, locIDs);
 
 	LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
 		COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
@@ -453,14 +452,15 @@ DWORD WINAPI CEventProc(LPVOID param)
 	PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 
 	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
-	DWORD cType = 0, valCount = 0;
+	DWORD cType = 0;
 
 	while (WaitForSingleObject(src->stopEvents, conf->monDelay) == WAIT_TIMEOUT) {
 		// get indicators...
-		PdhCollectQueryData(hQuery);
 
 		if (!fxhl->unblockUpdates)
 			continue;
+
+		PdhCollectQueryData(hQuery);
 
 		cData = { 0 };
 
@@ -468,25 +468,20 @@ DWORD WINAPI CEventProc(LPVOID param)
 		PdhGetFormattedCounterValue( hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal );
 
 		// Network load
-		valCount = GetValuesArray(hNETCounter);
-
 		long totalNet = 0;
-		for (unsigned i = 0; i < valCount; i++) {
+		for (int i = GetValuesArray(hNETCounter); i >= 0; i--) {
 			totalNet += counterValues[i].FmtValue.longValue;
 		}
 
 		fxhl->maxData.NET = max(fxhl->maxData.NET, totalNet);
 
 		// GPU load
-		valCount = GetValuesArray(hGPUCounter);
-
-		for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
+		for (int i = GetValuesArray(hGPUCounter); i >= 0 && counterValues[i].szName != NULL; i--) {
 			cData.GPU = (byte)max(cData.GPU, counterValues[i].FmtValue.longValue);
 		}
 
 		// Temperatures
-		valCount = GetValuesArray(hTempCounter);
-		for (unsigned i = 0; i < valCount; i++) {
+		for (int i = GetValuesArray(hTempCounter); i >= 0 ; i--) {
 			if (((int)cData.Temp) + 273 < counterValues[i].FmtValue.longValue)
 				cData.Temp = (byte) (counterValues[i].FmtValue.longValue - 273);
 		}
@@ -508,22 +503,20 @@ DWORD WINAPI CEventProc(LPVOID param)
 					cData.Temp = max(cData.Temp, src->mon->senValues[i]);
 			}
 
-			valCount = GetValuesArray(hTempCounter2);
 			// Added other set maximum temp...
-			for (unsigned i = 0; i < valCount; i++) {
+			for (int i = GetValuesArray(hTempCounter2); i >= 0; i--) {
 				cData.Temp = (byte)max(cData.Temp, counterValues[i].FmtValue.longValue);
 			}
 
 			// Powers
-			valCount = GetValuesArray(hPwrCounter);
-			for (unsigned i = 0; i < valCount; i++) {
+			for (int i = GetValuesArray(hPwrCounter); i >= 0; i--) {
 				if (counterValues[i].FmtValue.longValue) {
 					totalPwr = (short)counterValues[i].FmtValue.longValue;
-					break;
+					//break;
 				}
 			}
 			//src->fxhl->maxData.PWR = max(src->fxhl->maxData.PWR,(totalPwr & 0xff) << 1 + 1);
-			while (totalPwr > fxhl->maxData.PWR)
+			while (totalPwr >= fxhl->maxData.PWR)
 				fxhl->maxData.PWR <<= 1;
 		}
 
@@ -533,9 +526,9 @@ DWORD WINAPI CEventProc(LPVOID param)
 		HKL curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL));
 
 		if (curLocale) {
-			for (int i = 0; i < locNum; i++) {
+			for (int i = GetKeyboardLayoutList(10, locIDs); i >= 0; i--) {
 				if (curLocale == locIDs[i]) {
-					cData.KBD = i*100/locNum;
+					cData.KBD = i > 0 ? 100 : 0;
 					break;
 				}
 			}
@@ -543,17 +536,16 @@ DWORD WINAPI CEventProc(LPVOID param)
 
 		// Leveling...
 		cData.Temp = min(100, max(0, cData.Temp));
-		cData.Batt = min(100, max(0, state.BatteryLifePercent));
+		cData.Batt = state.BatteryLifePercent > 100 ? 0 : state.BatteryLifePercent;
 		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
 		cData.RAM = (byte) memStat.dwMemoryLoad;
-		cData.NET = (byte) (totalNet > 0 ? (totalNet * 100) / fxhl->maxData.NET > 0 ? (totalNet * 100) / fxhl->maxData.NET : 1 : 0);
-		cData.PWR = (byte) min(100, totalPwr * 100 / fxhl->maxData.PWR);
+		cData.NET = (byte) totalNet * 100 / fxhl->maxData.NET;
+		cData.PWR = (byte) totalPwr * 100 / fxhl->maxData.PWR;
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
 		fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
 		fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData.RAM);
-		//fxhl->maxData.Fan = max(fxhl->maxData.Fan, cData.Fan);
 		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
 
 		src->modifyProfile.lock();

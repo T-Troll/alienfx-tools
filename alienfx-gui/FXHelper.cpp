@@ -40,7 +40,6 @@ void FXHelper::SetGaugeLight(DWORD id, int x, int max, bool grad, vector<AlienFX
 				if (((double)x + 1) / max < power)
 					fAct[0] = actions.back();
 				else {
-					// recalc...
 					double newPower = (power - ((double)x) / max) * max;
 					fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
 					fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
@@ -54,26 +53,28 @@ void FXHelper::SetGaugeLight(DWORD id, int x, int max, bool grad, vector<AlienFX
 
 void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power, bool force) {
 	if (grp->group->lights.size()) {
-		switch (grp->gauge) {
-		case 0: // solid
-			for (int i = 0; i < grp->group->lights.size(); i++)
+		if (!grp->gauge || actions.size() < 2) {
+			for (int i = 0; i < grp->group->lights.size(); i++) // solid light
 				SetLight(grp->group->lights[i].first, grp->group->lights[i].second, actions, force);
-			break;
-		case 1: // horizontal
-			for (int x = 0; x < grp->lightMap.x; x++)
-				for (int y = 0; y < grp->lightMap.y; y++)
-					SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x, grp->lightMap.x, grp->gradient, actions, power, force);
-			break;
-		case 2: // vertical
-			for (int x = 0; x < grp->lightMap.x; x++)
-				for (int y = 0; y < grp->lightMap.y; y++)
-					SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], y, grp->lightMap.y, grp->gradient, actions, power, force);
-			break;
-		case 3: // diagonal
-			for (int x = 0; x < grp->lightMap.x; x++)
-				for (int y = 0; y < grp->lightMap.y; y++)
-					SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x + y , grp->lightMap.x + grp->lightMap.y, grp->gradient, actions, power, force);
-			break;
+		}
+		else {
+			switch (grp->gauge) {
+			case 1: // horizontal
+				for (int x = 0; x < grp->lightMap.x; x++)
+					for (int y = 0; y < grp->lightMap.y; y++)
+						SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x, grp->lightMap.x, grp->gradient, actions, power, force);
+				break;
+			case 2: // vertical
+				for (int x = 0; x < grp->lightMap.x; x++)
+					for (int y = 0; y < grp->lightMap.y; y++)
+						SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], y, grp->lightMap.y, grp->gradient, actions, power, force);
+				break;
+			case 3: // diagonal
+				for (int x = 0; x < grp->lightMap.x; x++)
+					for (int y = 0; y < grp->lightMap.y; y++)
+						SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x + y, grp->lightMap.x + grp->lightMap.y, grp->gradient, actions, power, force);
+				break;
+			}
 		}
 	}
 }
@@ -373,7 +374,7 @@ void FXHelper::Refresh(int forced)
 #endif
 
 	for (auto it = (*conf->active_set).begin(); it < (*conf->active_set).end(); it++) {
-		RefreshOne(&(*it), forced);
+		RefreshOne(&(*it), forced, false);
 	}
 	if (!forced) RefreshMon();
 
@@ -437,12 +438,15 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 
 void FXHelper::RefreshAmbient(UCHAR *img) {
 
+	if (!unblockUpdates || conf->monDelay > 200) {
+		DebugPrint("Ambient update skipped!\n");
+		return;
+	}
+
 	UINT shift = 255 - conf->amb_shift, gridsize = LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid);
 	vector<AlienFX_SDK::afx_act> actions;
 	actions.push_back({0});
 	bool wasChanged = false;
-
-	//Flush();
 
 	for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
 		if (it->ambients.size()) {
@@ -471,15 +475,15 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 }
 
 void FXHelper::RefreshHaptics(int *freq) {
-	vector<AlienFX_SDK::afx_act> actions;
-	actions.push_back({0});
-	bool wasChanged = false;
 
-	//Flush();
-	if (conf->monDelay > 200) {
+	if (!unblockUpdates || conf->monDelay > 200) {
 		DebugPrint("Haptics update skipped!\n");
 		return;
 	}
+
+	vector<AlienFX_SDK::afx_act> actions;
+	actions.push_back({0});
+	bool wasChanged = false;
 
 	for (auto mIter = conf->active_set->begin(); mIter < conf->active_set->end(); mIter++) {
 		if (mIter->haptics.size()) {
@@ -575,18 +579,18 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 								src->UpdateGlobalEffect(dev->dev);
 							}
 							else
-								if (devQ->dev_query.size() > 0) {
+								if (devQ->dev_query.size()) {
 									dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
 									dev->dev->UpdateColors();
 								}
-							devQ->dev_query.clear();
 						}
+						devQ->dev_query.clear();
 					}
 					//if (current.did == -1)
 					//	devs_query.clear();
 					if (src->lightQuery.size() > conf->afx_dev.GetMappings()->size() * 5) {
 						conf->monDelay += 50;
-						DebugPrint((string("Query so big (") +
+						DebugPrint(("Query so big (" +
 									to_string((int) src->lightQuery.size()) +
 									"), delay increased to " +
 									to_string(conf->monDelay) +

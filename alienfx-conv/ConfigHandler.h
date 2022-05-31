@@ -185,7 +185,7 @@ public:
 	// mapping block from SDK
 	AlienFX_SDK::Mappings afx_dev;
 
-	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE, WM_APP + 1 };
+	//NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1 };
 
 	ConfigHandler();
 	~ConfigHandler();
@@ -196,8 +196,8 @@ public:
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);
-	bool SetStates();
-	void SetIconState();
+	//bool SetStates();
+	//void SetIconState();
 	bool IsDimmed();
 	void SetDimmed();
 	int  GetEffect();

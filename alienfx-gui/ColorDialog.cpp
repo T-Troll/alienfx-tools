@@ -3,7 +3,6 @@
 extern void SwitchLightTab(HWND, int);
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
-extern groupset* CreateMapping(int lid);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RemoveUnused(vector<groupset>* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
@@ -120,58 +119,43 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		switch (LOWORD(wParam))
 		{
 		case IDC_TYPE1:
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				if (mmap != NULL) {
-					int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
-					mmap->color[effID].type = lType1;
-					RebuildEffectList(hDlg, mmap);
-					fxhl->RefreshOne(mmap, true, true);
-				}
+			if (HIWORD(wParam) == CBN_SELCHANGE && mmap) {
+				int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
+				mmap->color[effID].type = lType1;
+				RebuildEffectList(hDlg, mmap);
+				fxhl->RefreshOne(mmap, true);
 			}
 			break;
 		case IDC_BUTTON_C1:
-			switch (HIWORD(wParam))
-			{
-			case BN_CLICKED: {
-				if (eItem > 0) {
-					if (!mmap) {
-						// have selection, but no effect - let's create one!
-						mmap = CreateMapping(eItem);
-						effID = 0;
-					}
-					if (mmap->color.empty())
-						mmap->color.push_back({ 0 });
-					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
-					RebuildEffectList(hDlg, mmap);
-					RedrawGridButtonZone(true);
-				}
-			} break;
-			} break;
+			if (HIWORD(wParam) == BN_CLICKED && mmap) {
+				if (mmap->color.empty())
+					mmap->color.push_back({ 0 });
+				SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
+				RebuildEffectList(hDlg, mmap);
+				RedrawGridButtonZone(true);
+			}
+			break;
 		case IDC_BUT_ADD_EFFECT:
-			if (HIWORD(wParam) == BN_CLICKED) {
+			if (HIWORD(wParam) == BN_CLICKED && mmap) {
 				AlienFX_SDK::afx_act act{ 0 };
-				if (!mmap) {
-					// create new mapping..
-					mmap = CreateMapping(eItem);
-					if (mmap->color.size() && mmap->group->have_power) {
-						act.type = AlienFX_SDK::AlienFX_A_Power;
-						act.time = 3;
-						act.tempo = 0x64;
+				if (mmap->group->have_power) {
+					if (mmap->color.empty()) {
+						act = { AlienFX_SDK::AlienFX_A_Power, 3, 0x64 };
 						mmap->color.push_back(act);
 						mmap->color.push_back(act);
-					} else
-						mmap->color.push_back(act);
-					effID = 0;
-				} else
-					if (!mmap->group->have_power && mmap->color.size() < 9) {
-						if (effID < mmap->color.size())
+					}
+				}
+				else
+					if (mmap->color.size() < 9) {
+						if (effID < mmap->color.size()) {
 							act = mmap->color[effID];
+						}
 						mmap->color.push_back(act);
 						effID = (int)mmap->color.size() - 1;
 					}
 				RedrawGridButtonZone(true);
 				RebuildEffectList(hDlg, mmap);
-				fxhl->RefreshOne(mmap, true, true);
+				fxhl->RefreshOne(mmap, true);
 			}
 			break;
 		case IDC_BUTT_REMOVE_EFFECT:
@@ -180,33 +164,30 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					mmap->color.clear();
 				else {
 					mmap->color.pop_back();
-					if (effID)
-						effID--;
+					effID--;
 				}
 				// remove mapping if no colors and effects!
 				if (mmap->color.empty()) {
 					RemoveUnused(conf->active_set);
-					RebuildEffectList(hDlg, NULL);
-					RedrawGridButtonZone(true);
-					fxhl->Refresh();
-				} else {
-					RebuildEffectList(hDlg, mmap);
-					RedrawGridButtonZone(true);
-					fxhl->RefreshOne(mmap, false, true);
+					effID = 0;
 				}
+				fxhl->RefreshOne(mmap);
+				RebuildEffectList(hDlg, NULL);
+				RedrawGridButtonZone(true);
 			}
 			break;
 		case IDC_CHECK_SPECTRUM:
 			if (mmap) {
 				mmap->gradient = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-				fxhl->Refresh();
+				fxhl->RefreshOne(mmap);
 			}
 			break;
 		case IDC_COMBO_GAUGE:
 			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap&& mmap->gauge);
 				conf->SortGroupGauge(mmap);
-				fxhl->Refresh();
+				fxhl->RefreshOne(mmap);
 			}
 			break;
 		default: return false;
@@ -215,7 +196,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_VSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
-			if (mmap != NULL) {
+			if (mmap) {
 				if ((HWND)lParam == s1_slider) {
 					mmap->color[effID].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip1, mmap->color[effID].tempo);
@@ -256,12 +237,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			case NM_DBLCLK:
 			{
 				// change color.
-				if (eItem != -1) {
-					if (!mmap) {
-						// have selection, but no effect - let's create one!
-						mmap = CreateMapping(eItem);
-						effID = 0;
-					}
+				if (mmap) {
 					if (mmap->color.empty())
 						mmap->color.push_back({ 0 });
 					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);

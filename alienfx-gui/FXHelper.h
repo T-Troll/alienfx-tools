@@ -38,7 +38,7 @@ private:
 	HANDLE updateThread = NULL;
 
 	void SetGaugeLight(DWORD id, int x, int max, bool grad, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
-	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
+	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = -1.0, bool force = false);
 	bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void QueryUpdate(int did = -1, bool force = false);
 
@@ -60,7 +60,7 @@ public:
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
-	bool RefreshOne(groupset* map, int force = 0, bool update = false);
+	bool RefreshOne(groupset* map, int force = 0, bool update = true);
 	bool SetMode(int mode);
 	void TestLight(int did, int id, bool wp=false);
 	void ResetPower(int did);

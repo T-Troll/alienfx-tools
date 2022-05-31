@@ -70,11 +70,21 @@ void ReloadProfileView(HWND hDlg) {
 	ListView_EnsureVisible(profile_list, rpos, false);
 }
 
-void RemoveProfile(int id) {
-	conf->profiles.erase(find_if(conf->profiles.begin(), conf->profiles.end(),
-		[id](profile* pr) {
-			return pr->id == id;
-		}));
+void RemoveUnusedGroups() {
+	for (int i = 0; i < conf->afx_dev.GetGroups()->size(); i++) {
+		DWORD gid = conf->afx_dev.GetGroups()->at(i).gid;
+		if (find_if(conf->profiles.begin(), conf->profiles.end(),
+			[gid](profile* cp) {
+				return find_if(cp->lightsets.begin(), cp->lightsets.end(),
+					[gid](groupset t) {
+						return t.group->gid == gid;
+					}) != cp->lightsets.end();
+			}) == conf->profiles.end()) {
+			conf->afx_dev.GetGroups()->erase(conf->afx_dev.GetGroups()->begin() + i);
+			i--;
+		}
+	}
+
 }
 
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -152,6 +162,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_REMOVEPROFILE: {
 			if (!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
+				int pdelID = pCid;
 				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// is this active profile? Switch needed!
@@ -161,7 +172,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						pCid = conf->FindDefaultProfile()->id;
 						ReloadProfileList();
 					}
-					RemoveProfile(pCid);
+					conf->profiles.erase(find_if(conf->profiles.begin(), conf->profiles.end(),
+						[pdelID](profile* pr) {
+							return pr->id == pdelID;
+						}));
+					RemoveUnusedGroups();
 					ReloadProfileView(hDlg);
 				}
 			}
@@ -183,6 +198,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						it->haptics.clear();
 				}
 				RemoveUnused(&prof->lightsets);
+				RemoveUnusedGroups();
 				if (conf->activeProfile->id == prof->id)
 					fxhl->Refresh();
 			}
@@ -316,9 +332,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
 					pCid = (int) lPoint->lParam;
-					//prof = conf->FindProfile(pCid);
-					//if (prof)
-						ReloadProfSettings(hDlg, conf->FindProfile(pCid));// prof);
+					ReloadProfSettings(hDlg, conf->FindProfile(pCid));
 				} else {
 					pCid = -1;
 					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
@@ -327,7 +341,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
 					CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, BST_UNCHECKED);
 					ListBox_ResetContent(app_list);
-					ComboBox_SetCurSel(mode_list, 3);
+					ComboBox_SetCurSel(mode_list, 0);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -336,8 +350,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				profile* prof = conf->FindProfile((int)sItem->item.lParam);
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
-					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
-					//ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 0, LVSCW_AUTOSIZE);
+					//ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
 					ReloadProfileList();
 					return true;
 				} else

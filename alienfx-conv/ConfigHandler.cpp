@@ -145,29 +145,29 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 	return prof && prof->flags & PROF_PRIORITY;
 }
 
-bool ConfigHandler::SetStates() {
-	bool oldStateOn = stateOn, oldStateDim = stateDimmed, oldPBState = finalPBState;
-	// Lights on state...
-	stateOn = lightsOn && stateScreen && (!offOnBattery || statePower);
-	// Dim state...
-	stateDimmed = IsDimmed() || dimmedScreen || (dimmedBatt && !statePower);
-	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
-	finalPBState = finalBrightness > 0 ? (byte)dimPowerButton : (byte)offPowerButton;
-
-	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldPBState != (bool)finalPBState) {
-		SetIconState();
-		Shell_NotifyIcon(NIM_MODIFY, &niData);
-		return true;
-	}
-	return false;
-}
-
-void ConfigHandler::SetIconState() {
-	//// change tray icon...
-	//niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
-	//					stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
-	//					IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
-}
+//bool ConfigHandler::SetStates() {
+//	bool oldStateOn = stateOn, oldStateDim = stateDimmed, oldPBState = finalPBState;
+//	// Lights on state...
+//	stateOn = lightsOn && stateScreen && (!offOnBattery || statePower);
+//	// Dim state...
+//	stateDimmed = IsDimmed() || dimmedScreen || (dimmedBatt && !statePower);
+//	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
+//	finalPBState = finalBrightness > 0 ? (byte)dimPowerButton : (byte)offPowerButton;
+//
+//	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldPBState != (bool)finalPBState) {
+//		SetIconState();
+//		Shell_NotifyIcon(NIM_MODIFY, &niData);
+//		return true;
+//	}
+//	return false;
+//}
+//
+//void ConfigHandler::SetIconState() {
+//	//// change tray icon...
+//	//niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
+//	//					stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
+//	//					IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+//}
 
 bool ConfigHandler::IsDimmed() {
 	return dimmed || (!activeProfile->ignoreDimming && activeProfile->flags & PROF_DIMMED);

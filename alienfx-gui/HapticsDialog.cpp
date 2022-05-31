@@ -6,15 +6,9 @@ extern void SwitchLightTab(HWND, int);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 
-extern groupset* CreateMapping(int lid);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RemoveUnused(vector<groupset>*);
 
-//extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//extern BOOL CALLBACK TabColorGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
-//extern void OnGridSelChanged(HWND);
-//extern AlienFX_SDK::mapping* FindCreateMapping();
 extern void RedrawGridButtonZone(bool recalc = false);
 
 //extern HWND zsDlg;
@@ -260,14 +254,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUT_ADD_GROUP:
 		{
-			if (!map) {
-				map = CreateMapping(eItem);
+			if (map) {
+				map->haptics.push_back({});
+				fGrpItem = ListBox_AddString(grp_list, ("Group " + to_string(map->haptics.size())).c_str());
+				ListBox_SetCurSel(grp_list, fGrpItem);
+				DrawFreq(hDlg);
+				SetMappingData(hDlg, map);
 			}
-			map->haptics.push_back({});
-			fGrpItem = ListBox_AddString(grp_list, ("Group " + to_string(map->haptics.size())).c_str());
-			ListBox_SetCurSel(grp_list, fGrpItem);
-			DrawFreq(hDlg);
-			SetMappingData(hDlg, map);
 		} break;
 		case IDC_BUT_REM_GROUP:
 			if (map && fGrpItem >= 0) {
@@ -316,26 +309,10 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, c);
 			return true;
 		}
-		//case IDC_LEVELS:
-		//	DrawFreq(hDlg);
-		//	return true;
 		}
 		return false;
 	break;
-	//case WM_NOTIFY:
-	//	switch (((NMHDR*)lParam)->idFrom) {
-	//	case IDC_TAB_COLOR_GRID: {
-	//		switch (((NMHDR*)lParam)->code) {
-	//		case TCN_SELCHANGE: {
-	//			if (TabCtrl_GetCurSel(gridTab) < conf->afx_dev.GetGrids()->size())
-	//				OnGridSelChanged(gridTab);
-	//		} break;
-	//		}
-	//	} break;
-	//	}
-	//	break;
 	case WM_CLOSE: case WM_DESTROY:
-		//DestroyWindow(zsDlg);
 		delete hapUIThread;
 	break;
 	default: return false;

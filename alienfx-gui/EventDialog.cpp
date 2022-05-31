@@ -4,7 +4,6 @@
 extern void SwitchLightTab(HWND, int);
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
-extern groupset* CreateMapping(int lid);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
@@ -93,11 +92,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 			break;
 		case IDC_CHECK_PERF:
-			if (eItem >= 0) {
-				if (!map) {
-					map = CreateMapping(eItem);
-					map->events[2].cut = 90;
-				}
+			if (map) {
 				map->events[1].state = state;
 				UpdateMonitoringInfo(hDlg, map);
 			}
@@ -105,11 +100,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 			break;
 		case IDC_CHECK_POWER:
-			if (eItem >= 0) {
-				if (!map) {
-					map = CreateMapping(eItem);
-					map->events[2].cut = 90;
-				}
+			if (map) {
 				map->events[0].state = state;
 				UpdateMonitoringInfo(hDlg, map);
 			}
@@ -117,9 +108,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 			break;
 		case IDC_CHECK_STATUS:
-			if (eItem >= 0) {
-				if (!map) {
-					map = CreateMapping(eItem);
+			if (map) {
+				if (!map->events[2].cut) {
 					map->events[2].cut = 90;
 				}
 				map->events[2].state = state;
@@ -135,36 +125,42 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_BUTTON_CM1:
 			if (map && (!map->fromColor || map->color.size())) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[0].from);
+				RedrawGridButtonZone(true);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_CM4:
 			if (map) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[0].to);
+				RedrawGridButtonZone(true);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_CM2:
 			if (map && (!map->fromColor || map->color.size())) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[1].from);
+				RedrawGridButtonZone(true);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_CM5:
 			if (map) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[1].to);
+				RedrawGridButtonZone(true);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_CM3:
 			if (map && (!map->fromColor || map->color.size())) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[2].from);
+				RedrawGridButtonZone(true);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_CM6:
 			if (map) {
 				SetColor(hDlg, LOWORD(wParam), map, &map->events[2].to);
+				RedrawGridButtonZone(true);
 				fxhl->RefreshMon();
 			}
 			break;

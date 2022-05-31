@@ -9,6 +9,7 @@
 #endif
 
 extern groupset* FindMapping(int, vector<groupset>*);
+extern vector<string> effModes;
 
 ConfigHandler::ConfigHandler() {
 
@@ -140,10 +141,15 @@ bool ConfigHandler::SetStates() {
 
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldPBState != (bool)finalPBState) {
 		SetIconState();
-		Shell_NotifyIcon(NIM_MODIFY, &niData);
+		SetToolTip();
 		return true;
 	}
 	return false;
+}
+
+void ConfigHandler::SetToolTip() {
+	sprintf_s(niData.szTip, 128, "Profile: %s\nEffect: %s", activeProfile->name.c_str(), effModes[GetEffect()].c_str());
+	Shell_NotifyIcon(NIM_MODIFY, &niData);
 }
 
 void ConfigHandler::SetIconState() {
@@ -356,10 +362,6 @@ profile* ConfigHandler::FindDefaultProfile() {
 
 void ConfigHandler::Save() {
 
-	//if (fan_conf) fan_conf->Save();
-	//if (amb_conf) amb_conf->Save();
-	//if (hap_conf) hap_conf->Save();
-
 	SetReg("AutoStart", startWindows);
 	SetReg("Minimized", startMinimized);
 	SetReg("UpdateCheck", updateCheck);
@@ -391,10 +393,10 @@ void ConfigHandler::Save() {
 	SetReg("Haptics-Input", hap_inpType);
 
 	RegDeleteTreeA(hKeyMain, "Profiles");
-	RegCreateKeyEx(hKeyMain, "Profiles", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);// &dwDisposition);
+	RegCreateKeyEx(hKeyMain, "Profiles", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 
 	RegDeleteTreeA(hKeyMain, "Zones");
-	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);// &dwDisposition);
+	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
 	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
 		string name = "Profile-" + to_string((*jIter)->id);
