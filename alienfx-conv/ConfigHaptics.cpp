@@ -16,7 +16,7 @@ ConfigHaptics::~ConfigHaptics() {
 
 void ConfigHaptics::GetReg(char *name, DWORD *value, DWORD defValue) {
     DWORD size = sizeof(DWORD);
-    if (RegGetValueA(hMainKey, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+    if (RegGetValue(hMainKey, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
         *value = defValue;
 }
 
@@ -43,7 +43,7 @@ void ConfigHaptics::Load() {
     do {
         DWORD len = 255, lend = 25 * sizeof(DWORD); haptics_map map; freq_map freq;
         // get id(s)...
-        if ((ret = RegEnumValueA( hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE)inarray, &lend )) == ERROR_SUCCESS) {
+        if ((ret = RegEnumValue( hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE)inarray, &lend )) == ERROR_SUCCESS) {
             vindex++; int gIndex;
             if (sscanf_s(name, "Map%u-%u", &map.devid, &map.lightid) == 2 && (map.devid || map.lightid)) {
                 freq.colorfrom.ci = inarray[0];
@@ -83,7 +83,7 @@ void ConfigHaptics::Save() {
     SetReg("Axis", showAxis);
     SetReg("Input", inpType);
 
-    RegDeleteTreeA(hMainKey, "Mappings");
+    RegDeleteTree(hMainKey, "Mappings");
     RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     for (auto i = haptics.begin(); i < haptics.end(); i++) {
 
@@ -100,7 +100,7 @@ void ConfigHaptics::Save() {
                 bOut += 3;
                 for (int k = 0; k < i->freqs[j].freqID.size(); k++)
                     bOut[k] = i->freqs[j].freqID[k];
-                RegSetValueExA( hMappingKey, name.c_str(), 0, REG_BINARY, out, (DWORD) (i->freqs[0].freqID.size() + 2 * sizeof(DWORD) + 3));
+                RegSetValueEx( hMappingKey, name.c_str(), 0, REG_BINARY, out, (DWORD) (i->freqs[0].freqID.size() + 2 * sizeof(DWORD) + 3));
                 delete[] out;
             }
         }

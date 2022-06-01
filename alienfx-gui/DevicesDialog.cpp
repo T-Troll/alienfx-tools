@@ -284,11 +284,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		// First, reset all light devices and re-scan!
 		fxhl->UnblockUpdates(false, true);
 		// Do we have some lights?
-		if (!conf->afx_dev.GetMappings()->size() &&
-			MessageBox( hDlg, "Light names not defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO )
-			== IDYES) {
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC) DetectionDialog);
-		}
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -304,6 +299,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (dIndex < 0) dIndex = 0;
 			RedrawDevList(hDlg);
 		}
+
+		if (!conf->afx_dev.GetMappings()->size() &&
+			MessageBox(hDlg, "Light names not defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO)
+			== IDYES) {
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog);
+		}
+
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
 
 		RegisterHotKey(hDlg, 1, MOD_SHIFT, VK_LEFT);

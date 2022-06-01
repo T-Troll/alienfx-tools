@@ -25,13 +25,13 @@ int main()
 		printf("%d colors, %d effects, %d ambient, %d haptics)\n", colorsize, effsize, ambsize, hapsize );
 	}
 	char name[256]{ 0 };
-	printf("Do you want to clear light grids (it's needed if you set it from alienfx-pos)? ");
+	printf("Do you want to clear light grids (y/n)? ");
 	gets_s(name, 255);
 	if (name[0] == 'y' || name[0] == 'Y') {
 		conf.afx_dev.GetGrids()->clear();
 		printf("Grids cleared.\n");
 	}
-	printf("Do you want to clear old light settings (from version 5 tools)? ");
+	printf("Do you want to clear old format light settings (y/n)? ");
 	gets_s(name, 255);
 	if (name[0] == 'y' || name[0] == 'Y') {
 		conf.ClearEvents();

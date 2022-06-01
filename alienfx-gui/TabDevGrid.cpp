@@ -63,7 +63,8 @@ void RedrawGridButtonZone(bool recalc = false) {
             delete conf->colorGrid;
         conf->colorGrid = new pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>[conf->mainGrid->x * conf->mainGrid->y]{};
         for (auto cs = conf->activeProfile->lightsets.begin(); cs < conf->activeProfile->lightsets.end(); cs++) {
-            for (auto clgh = cs->group->lights.begin(); clgh < cs->group->lights.end(); clgh++) {
+            AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(cs->group);
+            for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
                 for (int x = 0; x < conf->mainGrid->x; x++)
                     for (int y = 0; y < conf->mainGrid->y; y++) {
                         int ind = ind(x, y);

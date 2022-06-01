@@ -38,7 +38,7 @@ fan_block* ConfigFan::FindFanBlock(temp_block* sen, int id) {
 
 void ConfigFan::GetReg(const char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
-	if (RegGetValueA(keyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+	if (RegGetValue(keyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
 		*value = defValue;
 }
 
@@ -52,8 +52,6 @@ void ConfigFan::Load() {
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LastPowerStage", &prof.powerStage);
-	//GetReg("LastPerfModeAC", &prof.perfModeAC);
-	//GetReg("LastPerfModeDC", &prof.perfModeDC);
 	GetReg("LastSensor", &lastSelectedSensor);
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("LastGPU", &prof.GPUPower);
@@ -66,7 +64,7 @@ void ConfigFan::Load() {
 
 	do {
 		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValueA( keySensors, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValue( keySensors, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
 			short sid, fid; len++;
 			if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) { // Sensor-fan block
 				temp_block* cSensor = FindSensor(sid);
@@ -76,7 +74,7 @@ void ConfigFan::Load() {
 				}
 				// Now load and add fan data..
 				byte* inarray = new byte[lend];
-				RegEnumValueA( keySensors, vindex, name, &len, NULL, NULL, inarray, &lend );
+				RegEnumValue( keySensors, vindex, name, &len, NULL, NULL, inarray, &lend );
 				fan_block cFan;
 				cFan.fanIndex = fid;
 				for (UINT i = 0; i < lend; i += 2) {
@@ -91,11 +89,11 @@ void ConfigFan::Load() {
 	vindex = 0;
 	do {
 		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValueA( keyMain, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValue( keyMain, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
 			int fid; len++;
 			if (sscanf_s(name, "Boost-%d", &fid) == 1) { // Boost block
 				byte* inarray = new byte[lend];
-				RegEnumValueA( keyMain, vindex, name, &len, NULL, NULL, inarray, &lend );
+				RegEnumValue( keyMain, vindex, name, &len, NULL, NULL, inarray, &lend );
 				boosts.push_back({(byte)fid, inarray[0],*(USHORT*)(inarray+1)});
 				delete[] inarray;
 			}
@@ -105,11 +103,11 @@ void ConfigFan::Load() {
 	vindex = 0;
 	do {
 		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValueA(keyPowers, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
 			int fid; len++;
 			if (sscanf_s(name, "Power-%d", &fid) == 1) { // Power names
 				char* inarray = new char[lend+1];
-				RegEnumValueA(keyPowers, vindex, name, &len, NULL, NULL, (byte *) inarray, &lend);
+				RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, (byte *) inarray, &lend);
 				powers.emplace(fid, inarray);
 				delete[] inarray;
 			}
@@ -136,7 +134,7 @@ void ConfigFan::Save() {
 	if (prof.fanControls.size() > 0) {
 		// clean old data
 		RegCloseKey(keySensors);
-		RegDeleteTreeA(keyMain, "Sensors");
+		RegDeleteTree(keyMain, "Sensors");
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan\\Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
 	}
 	// save profiles..
@@ -150,7 +148,7 @@ void ConfigFan::Save() {
 				outdata[(2 * k)+1] = (byte)prof.fanControls[i].fans[j].points[k].boost;
 			}
 
-			RegSetValueExA( keySensors, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) prof.fanControls[i].fans[j].points.size() * 2 );
+			RegSetValueEx( keySensors, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) prof.fanControls[i].fans[j].points.size() * 2 );
 			delete[] outdata;
 		}
 	}
@@ -160,12 +158,12 @@ void ConfigFan::Save() {
 		name = "Boost-" + to_string(boosts[i].fanID);
 		outarray[0] = boosts[i].maxBoost;
 		*(USHORT *) (outarray + sizeof(byte)) = boosts[i].maxRPM;
-		RegSetValueExA( keyMain, name.c_str(), 0, REG_BINARY, outarray, (DWORD) sizeof(byte) + sizeof(USHORT));
+		RegSetValueEx( keyMain, name.c_str(), 0, REG_BINARY, outarray, (DWORD) sizeof(byte) + sizeof(USHORT));
 	}
 	// save powers..
 	for (auto i = powers.begin(); i != powers.end(); i++) {
 		name = "Power-" + to_string(i->first);
-		RegSetValueExA(keyPowers, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD) i->second.length());
+		RegSetValueEx(keyPowers, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD) i->second.length());
 	}
 }
 

@@ -162,7 +162,7 @@ void ReloadSensorView() {
 	int pos = 0, rpos = 0;
 	HWND list = GetDlgItem(mDlg, IDC_SENSOR_LIST);
 	ListView_DeleteAllItems(list);
-	ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
 	if (!ListView_GetColumnWidth(list, 0)) {
 		LVCOLUMNA lCol{ LVCF_TEXT | LVCF_SUBITEM };
 		lCol.pszText = (LPSTR)"Min";
@@ -198,10 +198,14 @@ void ReloadSensorView() {
 			pos++;
 		}
 	}
-	ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
-	ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE);
-	ListView_SetColumnWidth(list, 2, LVSCW_AUTOSIZE);
-	ListView_SetColumnWidth(list, 3, LVSCW_AUTOSIZE_USEHEADER);
+	RECT cArea;
+	GetClientRect(list, &cArea);
+	int wd = 0;
+	for (int i = 0; i < 3; i++) {
+		ListView_SetColumnWidth(list, i, LVSCW_AUTOSIZE);
+		wd += ListView_GetColumnWidth(list, i);
+	}
+	ListView_SetColumnWidth(list, 3, cArea.right - wd);
 	ListView_EnsureVisible(list, rpos, false);
 	conf->needFullUpdate = false;
 }
@@ -456,13 +460,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					DestroyIcon(i->niData->hIcon);
 				delete i->niData;
 			}
-			//while (!conf->active_sensors[i].niData.empty()) {
-			//	Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData.back());
-			//	if (conf->active_sensors[i].niData.back()->hIcon)
-			//		DestroyIcon(conf->active_sensors[i].niData.back()->hIcon);
-			//	delete conf->active_sensors[i].niData.back();
-			//	conf->active_sensors[i].niData.pop_back();
-			//}
 		PostQuitMessage(0);
 		break;
 	case WM_NOTIFY:
@@ -532,27 +529,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 void UpdateTrayData(SENSOR* sen, byte index) {
 
 	NOTIFYICONDATA* niData = sen->niData;
-
-	//int resVal = sen->cur, cIndex = index;
 	char val[3];
-
-	////niData = sen->niData[index];
-
-	//for (int i = 0; i < index; i++)
-	//	resVal /= 100;
-
-	//if (index) {
-	//	if (resVal > 0)
-	//		sprintf_s(val, "%2d", resVal);
-	//	else
-	//		sprintf_s(val, " ");
-	//}
-	//else {
-	//	if (sen->cur < 100)
-	//		sprintf_s(val, "%2d", sen->cur);
-	//	else
-	//		sprintf_s(val, "%02d", sen->cur % 100);
-	//}
 
 	if (sen->cur != 100)
 		sprintf_s(val, "%2d", sen->cur > 100 ? sen->cur / 100 : sen->cur);
@@ -657,27 +634,6 @@ void UpdateMonUI(LPVOID lpParam) {
 						conf->active_sensors[i].niData = NULL;
 					}
 				}
-				//int maxVal = conf->active_sensors[i].max;
-				//for (int j = 0; j < conf->active_sensors[i].niData.size(); j++) {
-				//	// update tray counters
-				//	UpdateTrayData(&conf->active_sensors[i], j);
-				//	Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData[j]);
-				//	maxVal /= 100;
-				//}
-				//while (maxVal > 0 && maxVal != 100) {
-				//	// add tray counter
-				//	NOTIFYICONDATA* niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg,
-				//		(unsigned) (conf->active_sensors[i].niData.size() -1 ) << 8 + i + 1,
-				//		NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
-				//	conf->active_sensors[i].niData.push_back(niData);
-				//	UpdateTrayData(&conf->active_sensors[i], (byte)conf->active_sensors[i].niData.size() - 1);
-				//	if (!Shell_NotifyIcon(NIM_ADD, niData)) {
-				//		DestroyIcon(niData->hIcon);
-				//		delete niData;
-				//		conf->active_sensors[i].niData.pop_back();
-				//	}
-				//	maxVal /= 100;
-				//}
 			}
 		}
 		else {
@@ -688,13 +644,6 @@ void UpdateMonUI(LPVOID lpParam) {
 				delete conf->active_sensors[i].niData;
 				conf->active_sensors[i].niData = NULL;
 			}
-			//while (!conf->active_sensors[i].niData.empty()) {
-			//	Shell_NotifyIcon(NIM_DELETE, conf->active_sensors[i].niData.back());
-			//	if (conf->active_sensors[i].niData.back()->hIcon)
-			//		DestroyIcon(conf->active_sensors[i].niData.back()->hIcon);
-			//	delete conf->active_sensors[i].niData.back();
-			//	conf->active_sensors[i].niData.pop_back();
-			//}
 		}
 		conf->active_sensors[i].oldCur = conf->active_sensors[i].cur;
 	}

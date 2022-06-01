@@ -169,6 +169,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
 
 	conf = new ConfigHandler();
+	if (conf->haveOldConfig && MessageBox(NULL, "Old configuration detected. Do you want to convert it?", "Warning",
+		MB_YESNO | MB_ICONWARNING) == IDYES) {
+		// convert config call
+		ShellExecute(NULL, "open", "alienfx-conv.exe", NULL, ".", SW_NORMAL);
+		return 0;
+	}
 	conf->Load();
 
 	// check fans...
@@ -215,11 +221,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
 		//RegisterHotKey(mDlg, 6, 0, VK_F17);
 		//profile change hotkeys...
-		for (int i = 0; i < 9; i++)
-			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x31 + i); // 1,2,3...
+		for (int i = 0; i < 10; i++)
+			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		//power mode hotkeys
 		for (int i = 0; i < 6; i++)
-			RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+			RegisterHotKey(mDlg, 30+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
@@ -486,7 +492,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		ReloadModeList();
 		ReloadProfileList();
 
-		OnSelChanged(tab_list);
+		//OnSelChanged(tab_list);
 
 		conf->niData.hWnd = hDlg;
 		conf->SetIconState();
@@ -542,7 +548,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			{
 				conf->activeProfile->effmode = ComboBox_GetCurSel(mode_list);
 				eve->ChangeEffectMode();
-				OnSelChanged(tab_list);
+				if (tabSel == TAB_LIGHTS)
+					OnSelChanged(tab_list);
 			} break;
 			}
 		} break;
@@ -563,7 +570,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-					OnSelChanged(tab_list);
+				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !eve->mon)
+					TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
+				OnSelChanged(tab_list);
 			}
 		} break;
 		}
@@ -804,7 +813,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
-
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
 		eve->StopEffects();
@@ -812,13 +820,17 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:
-		if (wParam > 9 && wParam < 19 && wParam - 10 < conf->profiles.size()) {
-			eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
+		if (wParam > 9 && wParam < 21) {
+			if (wParam == 10)
+				eve->SwitchActiveProfile(conf->FindDefaultProfile());
+			else
+				if (wParam - 11 < conf->profiles.size())
+					eve->SwitchActiveProfile(conf->profiles[wParam - 11]);
 			ReloadProfileList();
 			break;
 		}
-		if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
-			conf->fan_conf->lastProf->powerStage = (DWORD)wParam - 20;
+		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->HowManyPower()) {
+			conf->fan_conf->lastProf->powerStage = (DWORD)wParam - 30;
 			acpi->SetPower(conf->fan_conf->lastProf->powerStage);
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
@@ -963,7 +975,7 @@ groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set)
 {
 	if (mid > 0) {
 		auto res = find_if(set->begin(), set->end(), [mid](groupset ls) {
-			return ls.group->gid == mid;
+			return ls.group == mid;
 			});
 		return res == set->end() ? nullptr : &(*res);
 	}
@@ -1006,6 +1018,7 @@ void RemoveLightAndClean(int dPid, int eLid) {
 	// delete from all groups...
 	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
 		RemoveLightFromGroup(&(*iter), dPid, eLid);
+		iter->have_power = false;
 	}
 }
 

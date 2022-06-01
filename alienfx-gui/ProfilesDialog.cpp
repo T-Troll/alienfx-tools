@@ -77,7 +77,7 @@ void RemoveUnusedGroups() {
 			[gid](profile* cp) {
 				return find_if(cp->lightsets.begin(), cp->lightsets.end(),
 					[gid](groupset t) {
-						return t.group->gid == gid;
+						return t.group == gid;
 					}) != cp->lightsets.end();
 			}) == conf->profiles.end()) {
 			conf->afx_dev.GetGroups()->erase(conf->afx_dev.GetGroups()->begin() + i);
@@ -206,7 +206,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_BUT_COPYACTIVE:
 			if (conf->activeProfile->id != prof->id) {
 				for (auto t = conf->activeProfile->lightsets.begin(); t < conf->activeProfile->lightsets.end(); t++) {
-					groupset* lset = FindMapping(t->group->gid, &prof->lightsets);
+					groupset* lset = FindMapping(t->group, &prof->lightsets);
 					if (!lset) {
 						prof->lightsets.push_back({ t->group });
 						lset = &prof->lightsets.back();

@@ -20,10 +20,9 @@ struct SENSOR {
 			byte intray;
 			byte inverse;
 		};
-		DWORD flags;
+		DWORD flags = 0;
 	};
 	DWORD traycolor = 0xffffff;
-	//vector<NOTIFYICONDATA*> niData;
 	NOTIFYICONDATA* niData;
 };
 

@@ -18,11 +18,12 @@ void UpdateZoneList(byte flag = 0) {
 		ListView_InsertColumn(zone_list, 1, &lCol);
 	}
 	for (auto i = conf->activeProfile->lightsets.begin(); i < conf->activeProfile->lightsets.end(); i++) {
-		string name = "(" + to_string(i->group->lights.size()) + ")";
+		AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(i->group);
+		string name = "(" + to_string(grp->lights.size()) + ")";
 		lItem.iItem = pos;
-		lItem.lParam = i->group->gid;
-		lItem.pszText = (LPSTR)i->group->name.c_str();
-		if (i->group->gid == eItem) {
+		lItem.lParam = i->group;
+		lItem.pszText = (LPSTR)grp->name.c_str();
+		if (grp->gid == eItem) {
 			lItem.state = LVIS_SELECTED;
 			rpos = pos;
 		}
@@ -55,7 +56,7 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		for (auto t = conf->afx_dev.GetGroups()->begin(); t < conf->afx_dev.GetGroups()->end(); t++) {
 			if (find_if(conf->activeProfile->lightsets.begin(), conf->activeProfile->lightsets.end(),
 				[t](auto cl) {
-					return cl.group->gid == t->gid;
+					return cl.group == t->gid;
 				}) == conf->activeProfile->lightsets.end())
 				ListBox_SetItemData(grouplist, ListBox_AddString(grouplist, t->name.c_str()), t->gid);
 		}
@@ -63,11 +64,10 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			// No groups in list, exit
 			AlienFX_SDK::group* grp = new AlienFX_SDK::group({ (DWORD)maxGrpID, "New zone #" + to_string((maxGrpID & 0xffff) + 1) });
 			conf->afx_dev.GetGroups()->push_back(*grp);
-			grp = &conf->afx_dev.GetGroups()->back();
-			conf->activeProfile->lightsets.push_back({ grp });
 			eItem = grp->gid;
+			conf->activeProfile->lightsets.push_back({ eItem });
 			EndDialog(hDlg, IDOK);
-		} //else
+		} else
 		{
 			RECT pRect;
 			GetWindowRect(zsDlg, &pRect);
@@ -91,13 +91,10 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				if (pos == conf->afx_dev.GetGroups()->end()) {
 					grp = new AlienFX_SDK::group({ (DWORD)newID, "New zone #" + to_string((newID & 0xffff) + 1) });
 					conf->afx_dev.GetGroups()->push_back(*grp);
-					grp = &conf->afx_dev.GetGroups()->back();
 				}
-				else
-					grp = &(*pos);
 
-				conf->activeProfile->lightsets.push_back({ grp });
-				eItem = grp->gid;
+				conf->activeProfile->lightsets.push_back({ newID });
+				eItem = newID;
 				EndDialog(hDlg, IDOK);
 			} break;
 			}
@@ -133,7 +130,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
 					auto pos = find_if((*Iter)->lightsets.begin(), (*Iter)->lightsets.end(),
 						[](auto t) {
-							return t.group->gid == eItem;
+							return t.group == eItem;
 						});
 					if (pos != (*Iter)->lightsets.end())
 						if (doDelete && (*Iter)->id != conf->activeProfile->id)
@@ -146,10 +143,10 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						else {
 							if ((*Iter)->id == conf->activeProfile->id) {
 								if (pos != (*Iter)->lightsets.begin())
-									neItem = (pos - 1)->group->gid;
+									neItem = (pos - 1)->group;
 								else
 									if ((pos + 1) != (*Iter)->lightsets.end())
-										neItem = (pos + 1)->group->gid;
+										neItem = (pos + 1)->group;
 									else
 										neItem = -1;
 							}
@@ -166,6 +163,8 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				}
 				eItem = neItem;
 				UpdateZoneList();
+				if (eItem < 0)
+					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 			}
 			break;
 		}

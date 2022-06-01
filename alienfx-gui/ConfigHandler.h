@@ -60,7 +60,7 @@ struct old_event {
 //};
 
 struct groupset {
-	AlienFX_SDK::group* group;
+	int group = 0;
 	vector<AlienFX_SDK::afx_act> color;
 	event events[3];
 	vector<byte> ambients;
@@ -135,6 +135,7 @@ public:
 	bool block_power = 0;
 	bool wasAWCC = false;
 	AlienFX_SDK::Colorcode testColor{0,255};
+	bool haveOldConfig = false;
 
 	// Ambient...
 	DWORD amb_mode = 0;

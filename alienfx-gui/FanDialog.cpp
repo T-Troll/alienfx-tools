@@ -83,11 +83,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
             fan_conf->obCheck = 1;
 
-        } else {
-            SwitchTab(TAB_SETTINGS);
-            return false;
         }
-        return true;
     } break;
     case WM_COMMAND:
     {

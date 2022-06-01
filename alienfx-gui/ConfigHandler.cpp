@@ -14,9 +14,14 @@ extern vector<string> effModes;
 ConfigHandler::ConfigHandler() {
 
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
-	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 
+	// do we have old configuration?
+	if (RegOpenKeyEx(hKeyMain, "Zones", 0, KEY_ALL_ACCESS, &hKeyZones) != ERROR_SUCCESS) {
+		if (haveOldConfig = RegOpenKeyEx(hKeyMain, "Events", 0, KEY_ALL_ACCESS, &hKeyZones) == ERROR_SUCCESS)
+			RegCloseKey(hKeyZones);
+		RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
+	}
 	afx_dev.LoadMappings();
 
 	fan_conf = new ConfigFan();
@@ -93,13 +98,8 @@ groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 	if (prof) {
 		groupset* gset = FindMapping(groupID, &prof->lightsets);
 		if (!gset) {
-			AlienFX_SDK::group* grp = afx_dev.GetGroupById(groupID);
-			if (grp) {
-				prof->lightsets.push_back({ grp });
-				gset = &prof->lightsets.back();
-			}
-			else
-				return nullptr;
+			prof->lightsets.push_back({ groupID });
+			gset = &prof->lightsets.back();
 		}
 		return gset;
 	}
@@ -181,7 +181,7 @@ int ConfigHandler::GetEffect() {
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
-	if (RegGetValueA(hKeyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+	if (RegGetValue(hKeyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
 		*value = defValue;
 }
 
@@ -229,10 +229,10 @@ void ConfigHandler::Load() {
 	// Profiles...
 	do {
 		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValueA(hKeyProfiles, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
 			lend++; len++;
 			BYTE *data = new BYTE[lend];
-			RegEnumValueA(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
+			RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
 			vindex++;
 			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
 				updateProfileByID(pid, (char*)data, "", -1, NULL);
@@ -279,18 +279,18 @@ nextRecord:
 	do {
 		DWORD len = 255, lend = 0; lightset map;
 		// get id(s)...
-		if ((ret = RegEnumValueA( hKeyZones, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValue( hKeyZones, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
 			BYTE *inarray = new BYTE[lend]; len++;
 			int profID, groupID, recSize;
 			groupset* gset;
-			RegEnumValueA(hKeyZones, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
+			RegEnumValue(hKeyZones, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
 			vindex++;
 			if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
 				(gset = FindCreateGroupSet(profID, groupID))) {
 				gset->fromColor = inarray[0];
 				gset->gauge = inarray[1];
 				gset->gradient = inarray[2];
-				gset->group->have_power = inarray[3];
+				//gset->group->have_power = inarray[3];
 				if (gset->gauge)
 					SortGroupGauge(gset);
 				goto nextZone;
@@ -392,57 +392,57 @@ void ConfigHandler::Save() {
 	// Haptics
 	SetReg("Haptics-Input", hap_inpType);
 
-	RegDeleteTreeA(hKeyMain, "Profiles");
+	RegDeleteTree(hKeyMain, "Profiles");
 	RegCreateKeyEx(hKeyMain, "Profiles", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 
-	RegDeleteTreeA(hKeyMain, "Zones");
+	RegDeleteTree(hKeyMain, "Zones");
 	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
 	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
 		string name = "Profile-" + to_string((*jIter)->id);
-		RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length());
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length());
 		name = "Profile-flags-" + to_string((*jIter)->id);
 		DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode ? (*jIter)->effmode - 1 : 3);
-		RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
-		RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 
 		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
 			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
 		}
 
 		for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
 			string fname;
-			name = to_string((*jIter)->id) + "-" + to_string(iIter->group->gid);
+			name = to_string((*jIter)->id) + "-" + to_string(iIter->group);
 			// flags...
 			fname = "Zone-flags-" + name;
 			DWORD value = 0; byte* buffer = (BYTE*)&value;
 			buffer[0] = iIter->fromColor;
 			buffer[1] = iIter->gauge;
 			buffer[2] = iIter->gradient;
-			buffer[3] = iIter->group->have_power;
-			RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
+			//buffer[3] = iIter->group->have_power;
+			RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 
 			if (iIter->color.size()) { // colors
 				fname = "Zone-colors-" + name + "-" + to_string(iIter->color.size());
 				AlienFX_SDK::afx_act* buffer = new AlienFX_SDK::afx_act[iIter->color.size()];
 				for (int i = 0; i < iIter->color.size(); i++)
 					buffer[i] = iIter->color[i];
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::afx_act));
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::afx_act));
 				delete[] buffer;
 			}
 			if (iIter->events[0].state + iIter->events[1].state + iIter->events[2].state) { //events
 				fname = "Zone-events-" + name;
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->events, (DWORD)3 * sizeof(event));
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->events, (DWORD)3 * sizeof(event));
 			}
 			if (iIter->ambients.size()) { // ambient
 				fname = "Zone-ambient-" + name + "-" + to_string(iIter->ambients.size());
 				byte* buffer = new byte[iIter->ambients.size()];
 				for (int i = 0; i < iIter->ambients.size(); i++)
 					buffer[i] = iIter->ambients[i];
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->ambients.size());
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->ambients.size());
 				delete[] buffer;
 			}
 			if (iIter->haptics.size()) { // haptics
@@ -461,7 +461,7 @@ void ConfigHandler::Save() {
 						*out = *itf; out++;
 					}
 				}
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, size);
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, size);
 				delete[] buffer;
 			}
 		}
@@ -473,14 +473,14 @@ void ConfigHandler::Save() {
 			buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
 			buffer[1] = (*jIter)->effColor1.ci;
 			buffer[2] = (*jIter)->effColor2.ci;
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));
 		}
 		// Fans....
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
 			name = "Profile-power-" + to_string((*jIter)->id);
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, (*jIter)->fansets.GPUPower);
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
 			for (int i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
 				temp_block* sens = &(*jIter)->fansets.fanControls[i];
@@ -493,7 +493,7 @@ void ConfigHandler::Save() {
 						outdata[(2 * l) + 1] = (byte)fans->points[l].boost;
 					}
 
-					RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)fans->points.size() * 2);
+					RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)fans->points.size() * 2);
 					delete[] outdata;
 				}
 			}
@@ -515,7 +515,8 @@ void ConfigHandler::SortGroupGauge(groupset* map) {
 		int minX = tempGrid[0].size(), minY = tempGrid.size(), maxX = 0, maxY = 0;
 		//DWORD lgt = MAKELPARAM(map->group->lights[i].first, map->group->lights[i].second);
 		// fill grid...
-		for (auto lgh = map->group->lights.begin(); lgh < map->group->lights.end(); lgh++) {
+		AlienFX_SDK::group* grp = afx_dev.GetGroupById(map->group);
+		for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
 			DWORD lgt = MAKELPARAM(lgh->first, lgh->second);
 			for (auto t = afx_dev.GetGrids()->begin(); t < afx_dev.GetGrids()->end(); t++) {
 				for (int ind = 0; ind < t->x * t->y; ind++)

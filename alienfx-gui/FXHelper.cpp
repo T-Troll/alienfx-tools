@@ -52,10 +52,11 @@ void FXHelper::SetGaugeLight(DWORD id, int x, int max, bool grad, vector<AlienFX
 }
 
 void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power, bool force) {
-	if (grp->group->lights.size()) {
+	AlienFX_SDK::group* cGrp = conf->afx_dev.GetGroupById(grp->group);
+	if (cGrp->lights.size()) {
 		if (!grp->gauge || actions.size() < 2) {
-			for (int i = 0; i < grp->group->lights.size(); i++) // solid light
-				SetLight(grp->group->lights[i].first, grp->group->lights[i].second, actions, force);
+			for (auto i = cGrp->lights.begin(); i < cGrp->lights.end(); i++) // solid light
+				SetLight(i->first, i->second, actions, force);
 		}
 		else {
 			switch (grp->gauge) {
@@ -131,7 +132,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		int lVal = 0, cVal = 0;
 		//AlienFX_SDK::afx_act from{ 99 }, fin{ 99 }, * gFin = NULL;
 		if (Iter->fromColor && Iter->color.size()) {
-			actions.push_back(Iter->group->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color.back() : Iter->color.front());
+			actions.push_back(conf->afx_dev.GetGroupById(Iter->group)->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color.back() : Iter->color.front());
 			actions.back().type = 0;
 		}
 		if (Iter->events[1].state) {
@@ -199,7 +200,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		if (noDiff)	continue;
 		wasChanged = true;
 
-		if (Iter->group->have_power)
+		if (conf->afx_dev.GetGroupById(Iter->group)->have_power)
 			if (activeMode == MODE_AC || activeMode == MODE_CHARGE) {
 				actions.push_back(Iter->color[1]);
 			} else {

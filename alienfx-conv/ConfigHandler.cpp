@@ -38,9 +38,9 @@ ConfigHandler::~ConfigHandler() {
 
 void ConfigHandler::ClearEvents()
 {
-	RegDeleteTreeA(hKeyMain, "Events");
-	RegDeleteTreeA(HKEY_CURRENT_USER, "SOFTWARE\\Alienfxambient");
-	RegDeleteTreeA(HKEY_CURRENT_USER, "SOFTWARE\\Alienfxhaptics");
+	RegDeleteTree(hKeyMain, "Events");
+	RegDeleteTree(HKEY_CURRENT_USER, "SOFTWARE\\Alienfxambient");
+	RegDeleteTree(HKEY_CURRENT_USER, "SOFTWARE\\Alienfxhaptics");
 }
 
 void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD* eff) {
@@ -201,7 +201,7 @@ int ConfigHandler::GetEffect() {
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
-	if (RegGetValueA(hKeyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+	if (RegGetValue(hKeyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
 		*value = defValue;
 }
 
@@ -249,10 +249,10 @@ void ConfigHandler::Load() {
 	// Profiles...
 	do {
 		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValueA(hKeyProfiles, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
 			lend++; len++;
 			BYTE *data = new BYTE[lend];
-			RegEnumValueA(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
+			RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
 			vindex++;
 			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
 				updateProfileByID(pid, (char*)data, "", -1, NULL);
@@ -287,9 +287,9 @@ void ConfigHandler::Load() {
 	do {
 		DWORD len = 255, lend = 0; lightset map;
 		// get id(s)...
-		if ((ret = RegEnumValueA( hKeyEvents, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
+		if ((ret = RegEnumValue( hKeyEvents, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
 			BYTE *inarray = new BYTE[lend]; len++;
-			RegEnumValueA(hKeyEvents, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
+			RegEnumValue(hKeyEvents, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
 			vindex++;
 			if (sscanf_s((char*)name, "Set-%d-%d-%d", &map.devid, &map.lightid, &pid) == 3) {
 				BYTE* inPos = inarray;
@@ -426,8 +426,8 @@ void ConfigHandler::Save() {
 
 	char name[256];
 	DWORD len = 256, lend;
-	if (RegEnumValueA(hKeyZones, 0, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS) { // have some keys!
-		printf("New settings already detected! Do you want to override it? ");
+	if (RegEnumValue(hKeyZones, 0, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS) { // have some keys!
+		printf("New settings detected! Do you want to override it (y/n)? ");
 		gets_s(name, 255);
 		if (name[0] != 'y' && name[0] != 'Y')
 			return;
@@ -463,25 +463,25 @@ void ConfigHandler::Save() {
 	// Haptics
 	SetReg("Haptics-Input", inpType);
 
-	RegDeleteTreeA(hKeyMain, "Profiles");
+	RegDeleteTree(hKeyMain, "Profiles");
 	RegCreateKeyEx(hKeyMain, "Profiles", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);// &dwDisposition);
 
-	RegDeleteTreeA(hKeyMain, "Zones");
+	RegDeleteTree(hKeyMain, "Zones");
 	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);// &dwDisposition);
 
 	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
 		string name = "Profile-" + to_string((*jIter)->id);
-		RegSetValueExA( hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length() );
+		RegSetValueEx( hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length() );
 		name = "Profile-flags-" + to_string((*jIter)->id);
 		DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode ? (*jIter)->effmode - 1 : 3);
-		RegSetValueExA( hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		RegSetValueEx( hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
-		RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 
 		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
 			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE *)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE *)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
 		}
 
 		for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
@@ -494,26 +494,26 @@ void ConfigHandler::Save() {
 			buffer[1] = iIter->gauge;
 			buffer[2] = iIter->gradient;
 			buffer[3] = iIter->group->have_power;
-			RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
+			RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 
 			if (iIter->color.size()) { // colors
 				fname = "Zone-colors-" + name + "-" + to_string(iIter->color.size());
 				AlienFX_SDK::afx_act* buffer = new AlienFX_SDK::afx_act[iIter->color.size()];
 				for (int i = 0; i < iIter->color.size(); i++)
 					buffer[i] = iIter->color[i];
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size()*sizeof(AlienFX_SDK::afx_act));
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size()*sizeof(AlienFX_SDK::afx_act));
 				delete[] buffer;
 			}
 			if (iIter->events[0].state + iIter->events[1].state + iIter->events[2].state) { //events
 				fname = "Zone-events-" + name;
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->events, (DWORD)3 * sizeof(event));
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->events, (DWORD)3 * sizeof(event));
 			}
 			if (iIter->ambients.size()) { // ambient
 				fname = "Zone-ambient-" + name + "-" + to_string(iIter->ambients.size());
 				byte* buffer = new byte[iIter->ambients.size()];
 				for (int i = 0; i < iIter->ambients.size(); i++)
 					buffer[i] = iIter->ambients[i];
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->ambients.size());
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->ambients.size());
 				delete[] buffer;
 			}
 			if (iIter->haptics.size()) { // haptics
@@ -532,7 +532,7 @@ void ConfigHandler::Save() {
 						*out = *itf; out++;
 					}
 				}
-				RegSetValueExA(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, size);
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, size);
 				delete[] buffer;
 			}
 		}
@@ -544,14 +544,14 @@ void ConfigHandler::Save() {
 			buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
 			buffer[1] = (*jIter)->effColor1.ci;
 			buffer[2] = (*jIter)->effColor2.ci;
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3*sizeof(DWORD));
 		}
 		// Fans....
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
 			name = "Profile-power-" + to_string((*jIter)->id);
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, (*jIter)->fansets.GPUPower);
-			RegSetValueExA(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
 			for (int i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
 				temp_block* sens = &(*jIter)->fansets.fanControls[i];
@@ -564,7 +564,7 @@ void ConfigHandler::Save() {
 						outdata[(2 * l) + 1] = (byte) fans->points[l].boost;
 					}
 
-					RegSetValueExA( hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) fans->points.size() * 2 );
+					RegSetValueEx( hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) fans->points.size() * 2 );
 					delete[] outdata;
 				}
 			}

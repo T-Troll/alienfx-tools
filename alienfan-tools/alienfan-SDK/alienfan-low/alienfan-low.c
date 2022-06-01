@@ -609,6 +609,9 @@ TRUE        - Open ACPI driver acpi.sys ready
 FALSE       - Failed to open acpi driver
 
 --*/
+
+//#include <fltuser.h>
+
 {
     HANDLE      hDriver = NULL;
     UINT        Idx;
@@ -655,6 +658,9 @@ FALSE       - Failed to open acpi driver
             //strcpy_s(AcpiName, 1024, (char *) PropertyBuffer);
             WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, pChar, 400, AcpiName, 400, NULL, NULL);
             acpi.pAcpiDeviceName = AcpiName;
+            // Let's test...
+            HANDLE hport;
+            //HRESULT t = FilterConnectCommunicationPort((LPCWSTR)PropertyBuffer, FLT_PORT_FLAG_SYNC_HANDLE, NULL, 0, NULL, &hport);
         //}
 
         acpi.uAcpiDeviceNameLength = (ULONG)strlen (acpi.pAcpiDeviceName);

@@ -33,7 +33,7 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 		CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gradient);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 	}
-	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !mmap->group->have_power);
+	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !conf->afx_dev.GetGroupById(mmap->group)->have_power);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap != NULL);
@@ -86,6 +86,7 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 	SetEffectData(hDlg, mmap);
 	ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
+	RedrawGridButtonZone(true);
 }
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -132,13 +133,12 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					mmap->color.push_back({ 0 });
 				SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
 				RebuildEffectList(hDlg, mmap);
-				RedrawGridButtonZone(true);
 			}
 			break;
 		case IDC_BUT_ADD_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap) {
 				AlienFX_SDK::afx_act act{ 0 };
-				if (mmap->group->have_power) {
+				if (conf->afx_dev.GetGroupById(mmap->group)->have_power) {
 					if (mmap->color.empty()) {
 						act = { AlienFX_SDK::AlienFX_A_Power, 3, 0x64 };
 						mmap->color.push_back(act);
@@ -153,14 +153,13 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						mmap->color.push_back(act);
 						effID = (int)mmap->color.size() - 1;
 					}
-				RedrawGridButtonZone(true);
 				RebuildEffectList(hDlg, mmap);
 				fxhl->RefreshOne(mmap, true);
 			}
 			break;
 		case IDC_BUTT_REMOVE_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap) {
-				if (mmap->group->have_power)
+				if (conf->afx_dev.GetGroupById(mmap->group)->have_power)
 					mmap->color.clear();
 				else {
 					mmap->color.pop_back();
@@ -171,9 +170,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					RemoveUnused(conf->active_set);
 					effID = 0;
 				}
-				fxhl->RefreshOne(mmap);
-				RebuildEffectList(hDlg, NULL);
-				RedrawGridButtonZone(true);
+				else {
+					fxhl->RefreshOne(mmap);
+				}
+				RebuildEffectList(hDlg, mmap);
 			}
 			break;
 		case IDC_CHECK_SPECTRUM:
