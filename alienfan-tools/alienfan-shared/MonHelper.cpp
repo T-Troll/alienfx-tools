@@ -21,10 +21,6 @@ MonHelper::MonHelper(ConfigFan* config) {
 	boostSets.resize(acpi->HowManyFans());
 	fanSleep.resize(acpi->HowManyFans());
 
-	//for (int i = 0; i < acpi->HowManySensors(); i++) {
-	//	maxTemps[i] = acpi->GetTempValue(i);
-	//}
-
 	Start();
 }
 
@@ -105,16 +101,15 @@ void CMonProc(LPVOID param) {
 				if (src->boostRaw[i] < 100 && src->boostSets[i] > 100) {
 					acpi->SetFanValue(i, 100, true);
 					src->fanSleep[i] = 6;
+					DebugPrint("Overboost started, locked for 3 sec!\n");
 				} else
 					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
 						if (src->boostRaw[i] > src->boostSets[i])
 							src->boostSets[i] += 31 * (src->boostRaw[i] - src->boostSets[i]) / 32;
 						acpi->SetFanValue(i, src->boostSets[i], true);
+						DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
+							+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}
-				//#ifdef _DEBUG
-				//					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";
-				//					OutputDebugString(msg.c_str());
-				//#endif
 			}
 			else
 				if (src->fanSleep[i])

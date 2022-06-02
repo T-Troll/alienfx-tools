@@ -60,6 +60,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HwAcc", "alienfan-tools\alienfan-SDK\HwAcc\HwAcc.vcxproj", "{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "alienfan-tools\alienfan-SDK\KDL\Hamakaze\KDU.vcxproj", "{46C8FB0F-C8BF-4932-B84C-A10B38904728}"
+	ProjectSection(ProjectDependencies) = postProject
+		{24663340-6C3F-479E-94C0-C2A847B1665C} = {24663340-6C3F-479E-94C0-C2A847B1665C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-shared", "alienfan-tools\alienfan-shared\alienfan-shared.vcxitems", "{05A1D711-23F5-4B90-9F62-EC3DE2419B4D}"
 EndProject
@@ -72,6 +75,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-conv", "alienfx-conv\alienfx-conv.vcxproj", "{2A69F644-02C6-4E27-A173-FF344172B5BD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "acpi-low", "acpi-low\acpi-low.vcxproj", "{C90A0A69-9E49-4987-BAB5-DA05F0DAFC5B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PCOMP", "alienfan-tools\alienfan-SDK\KDL\Utils\PCOMP\PCOMP.vcxproj", "{24663340-6C3F-479E-94C0-C2A847B1665C}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -316,6 +321,16 @@ Global
 		{C90A0A69-9E49-4987-BAB5-DA05F0DAFC5B}.Release|x86.ActiveCfg = Release|Win32
 		{C90A0A69-9E49-4987-BAB5-DA05F0DAFC5B}.Release|x86.Build.0 = Release|Win32
 		{C90A0A69-9E49-4987-BAB5-DA05F0DAFC5B}.Release|x86.Deploy.0 = Release|Win32
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Debug|ARM.ActiveCfg = Debug|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Debug|ARM64.ActiveCfg = Debug|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Debug|x64.ActiveCfg = Debug|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Debug|x64.Build.0 = Debug|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Debug|x86.ActiveCfg = Debug|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Release|ARM.ActiveCfg = Release|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Release|ARM64.ActiveCfg = Release|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Release|x64.ActiveCfg = Release|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Release|x64.Build.0 = Release|x64
+		{24663340-6C3F-479E-94C0-C2A847B1665C}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

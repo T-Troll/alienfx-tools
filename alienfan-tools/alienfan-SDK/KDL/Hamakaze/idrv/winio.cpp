@@ -232,9 +232,9 @@ PVOID WinIoMapMemory2(
     //
     // Debug warning.
     //
-    // EneTechIo (A) and EneTechIo (B) implement requestor check based on 
+    // EneTechIo (A) and EneTechIo (B) implement requestor check based on
     // timing between key generation and time of check on driver side.
-    // It is limited to 2 seconds, thus you should not put any breakpoints 
+    // It is limited to 2 seconds, thus you should not put any breakpoints
     // after key is generated and can only do that uppon EneTechIo device call completion.
     //
 
@@ -288,9 +288,9 @@ VOID WinIoUnmapMemory2(
     //
     // Debug warning.
     //
-    // EneTechIo (A) and EneTechIo (B) implement requestor check based on 
+    // EneTechIo (A) and EneTechIo (B) implement requestor check based on
     // timing between key generation and time of check on driver side.
-    // It is limited to 2 seconds, thus you should not put any breakpoints 
+    // It is limited to 2 seconds, thus you should not put any breakpoints
     // after key is generated and can only do that uppon EneTechIo device call completion.
     //
 
@@ -628,12 +628,14 @@ BOOL WINAPI WinIoRegisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param)
 {
-    ULONG DriverId = PtrToUlong(Param);
+    UNREFERENCED_PARAMETER(DeviceHandle);
+    UNREFERENCED_PARAMETER(Param);
+    //ULONG DriverId = PtrToUlong(Param);
 
     g_WinIoMapIOCTL = IOCTL_WINIO_MAP_USER_PHYSICAL_MEMORY;
     g_WinIoUnmapIOCTL = IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY;
 
-    switch (DriverId) {
+    //switch (DriverId) {
     /*case IDR_GLCKIO2:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
@@ -672,12 +674,12 @@ BOOL WINAPI WinIoRegisterDriver(
         g_WinIoUnmapIOCTL = IOCTL_ASUSIO_UNMAP_USER_PHYSICAL_MEMORY;
         break;*/
 
-    default:
+    //default:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
         g_PhysAddress64bit = TRUE;
-        break;
-    }
+    //    break;
+    //}
 
     return TRUE;
 }
