@@ -277,7 +277,7 @@ nextRecord:
 	vindex = 0;
 	// Zones...
 	do {
-		DWORD len = 255, lend = 0; lightset map;
+		DWORD len = 255, lend = 0;
 		// get id(s)...
 		if ((ret = RegEnumValue( hKeyZones, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
 			BYTE *inarray = new BYTE[lend]; len++;
@@ -290,9 +290,6 @@ nextRecord:
 				gset->fromColor = inarray[0];
 				gset->gauge = inarray[1];
 				gset->gradient = inarray[2];
-				//gset->group->have_power = inarray[3];
-				if (gset->gauge)
-					SortGroupGauge(gset);
 				goto nextZone;
 			}
 			if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
@@ -349,6 +346,7 @@ nextRecord:
 	if (!activeProfile) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
 
+	SortAllGauge();
 	SetStates();
 }
 
@@ -501,72 +499,80 @@ void ConfigHandler::Save() {
 	}
 }
 
-void ConfigHandler::SortGroupGauge(groupset* map) {
-	if (map->lightMap.grid)
-		delete[] map->lightMap.grid;
-	ZeroMemory(&map->lightMap, sizeof(AlienFX_SDK::lightgrid));
-	if (map->gauge && afx_dev.GetGrids()->size()) {
-		int tempX = 0, tempY = 0;
-		vector<vector<DWORD>> tempGrid;
+void ConfigHandler::SortAllGauge() {
+	for (auto t = afx_dev.GetGroups()->begin(); t < afx_dev.GetGroups()->end(); t++)
+		SortGroupGauge(t->gid);
+}
+
+zonemap* ConfigHandler::FindZoneMap(int gid) {
+	auto gpos = find_if(zoneMaps.begin(), zoneMaps.end(),
+		[gid](auto t) {
+			return t.gID == gid;
+		});
+	if (gpos != zoneMaps.end())
+		return &(*gpos);
+	return nullptr;
+}
+
+void ConfigHandler::SortGroupGauge(int gid) {
+	AlienFX_SDK::group* grp = afx_dev.GetGroupById(gid);
+	zonemap* zone = FindZoneMap(gid);
+	if (zone)
+		zone->lightMap.clear();
+	else
+		if (grp) {
+			zoneMaps.push_back({ (DWORD)gid });
+			zone = &zoneMaps.back();
+		}
+
+	if (!grp) return;
+
+	// scan lights in grid...
+	int minX = 999, minY = 999;
+	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
+		DWORD lgt = MAKELPARAM(lgh->first, lgh->second);
+		zonelight cl{ {lgh->first, lgh->second }, 255, 255 };
 		for (auto t = afx_dev.GetGrids()->begin(); t < afx_dev.GetGrids()->end(); t++) {
-			tempY = max(tempY, t->y); tempX = max(tempX, t->x);
-			tempGrid.resize(tempY, vector<DWORD>(tempX));
-		}
-		int minX = tempGrid[0].size(), minY = tempGrid.size(), maxX = 0, maxY = 0;
-		//DWORD lgt = MAKELPARAM(map->group->lights[i].first, map->group->lights[i].second);
-		// fill grid...
-		AlienFX_SDK::group* grp = afx_dev.GetGroupById(map->group);
-		for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
-			DWORD lgt = MAKELPARAM(lgh->first, lgh->second);
-			for (auto t = afx_dev.GetGrids()->begin(); t < afx_dev.GetGrids()->end(); t++) {
-				for (int ind = 0; ind < t->x * t->y; ind++)
-					if (t->grid[ind] == lgt) {
-						tempGrid[ind / t->x][ind % t->x] = t->grid[ind];
-						minX = min(minX, ind % t->x);
-						minY = min(minY, ind / t->x);
-						maxX = max(maxX, ind % t->x);
-						maxY = max(maxY, ind / t->x);
-						break;
-					}
-			}
-		}
-		// resize grid...
-		if (minY > maxY) // no lights in all grids!
-			return;
-		tempGrid.resize(maxY + 1);
-		tempGrid.erase(tempGrid.begin(), tempGrid.begin() + minY);
-		for (auto tY = tempGrid.begin(); tY < tempGrid.end(); ) {
-			tY->resize(maxX + 1);
-			tY->erase(tY->begin(), tY->begin() + minX);
-			// remove empty rows...
-			if (find_if(tY->begin(), tY->end(),
-				[](auto t) {
-					return t;
-				}) == tY->end()) {
-				int pos = (int)(tY - tempGrid.begin());
-				tempGrid.erase(tY);
-				tY = pos + tempGrid.begin();
-			}
-			else
-				tY++;
-		}
-		// remove empty columns
-		if (tempGrid.size()) {
-			for (int i = 0; i < tempGrid[0].size(); i++) {
-				if (find_if(tempGrid.begin(), tempGrid.end(),
-					[i](auto t) {
-						return t[i];
-					}) == tempGrid.end()) {
-					for (auto tg = tempGrid.begin(); tg < tempGrid.end(); tg++)
-						tg->erase(tg->begin() + i);
-					i--;
+			for (int ind = 0; ind < t->x * t->y; ind++)
+				if (t->grid[ind] == lgt) {
+					cl.x = min(cl.x, ind % t->x);
+					cl.y = min(cl.y, ind / t->x);
 				}
-			}
-			map->lightMap.x = (byte)tempGrid[0].size(); map->lightMap.y = (byte)tempGrid.size();
-			map->lightMap.grid = new DWORD[map->lightMap.x * map->lightMap.y];
-			for (int y = 0; y < map->lightMap.y; y++)
-				for (int x = 0; x < map->lightMap.x; x++)
-					map->lightMap.grid[y * map->lightMap.x + x] = tempGrid[y][x];
+		}
+		minX = min(minX, cl.x), minY = min(minY, cl.y);
+		zone->xMax = max(zone->xMax, cl.x); zone->yMax = max(zone->yMax, cl.y);
+		zone->lightMap.push_back(cl);
+	}
+
+	// now shrink axis...
+	for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++) {
+		t->x -= minX; t->y -= minY;
+	}
+	zone->xMax -= minX; zone->yMax -= minY;
+	for (int x = 1; x < zone->xMax; x++) {
+		if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
+			[x](auto t) {
+				return t.x == x;
+			}) == zone->lightMap.end()) {
+			byte minDelta = 255;
+			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+				if (t->x > x) minDelta = min(minDelta, t->x-x);
+			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+				if (t->x > x) t->x-=minDelta;
+			zone->xMax-=minDelta;
+		}
+	}
+	for (int y = 1; y < zone->yMax; y++) {
+		if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
+			[y](auto t) {
+				return t.y == y;
+			}) == zone->lightMap.end()) {
+			byte minDelta = 255;
+			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+				if (t->y > y) minDelta = min(minDelta, t->y - y);
+			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+				if (t->y > y) t->y-=minDelta;
+			zone->yMax-=minDelta;
 		}
 	}
 }

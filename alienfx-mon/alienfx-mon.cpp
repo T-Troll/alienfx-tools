@@ -24,6 +24,8 @@ bool isNewVersion = false;
 bool runUIUpdate = true;
 int selSensor = 0;
 
+AlienFan_SDK::Control* acpi = NULL;
+
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 ConfigMon* conf;
@@ -56,7 +58,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (wstring(lpCmdLine) == L"-d")
 		Sleep(5000);
 
-	senmon = new SenMonHelper(conf);
+	senmon = new SenMonHelper();
 
 	ResetDPIScale();
 

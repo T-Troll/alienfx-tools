@@ -1020,5 +1020,12 @@ void RemoveLightAndClean(int dPid, int eLid) {
 		RemoveLightFromGroup(&(*iter), dPid, eLid);
 		iter->have_power = false;
 	}
+	// Clean from grids...
+	DWORD lcode = MAKELPARAM(dPid, eLid);
+	for (auto g = conf->afx_dev.GetGrids()->begin(); g < conf->afx_dev.GetGrids()->end(); g++) {
+		for (int ind = 0; ind < g->x * g->y; ind++)
+			if (g->grid[ind] == lcode)
+				g->grid[ind] = 0;
+	}
 }
 

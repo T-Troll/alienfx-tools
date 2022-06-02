@@ -46,7 +46,7 @@ namespace AlienFX_SDK {
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, c.g);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, c.b);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, mask);
-		if (EvalAcpiMethodArgs(devHandle, "\\_SB.AMW1.SETC", acpiargs, (PVOID *) &resName)) {
+		if (EvalAcpiMethod(devHandle, "\\_SB.AMW1.SETC", (PVOID *) &resName, acpiargs)) {
 			free(resName);
 			return true;
 		}
@@ -291,7 +291,7 @@ namespace AlienFX_SDK {
 		{
 #ifndef NOACPILIGHTS
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-			if (!inSet && EvalAcpiMethod(devHandle, "\\_SB.AMW1.ICPC", (PVOID *) &resName)) {
+			if (!inSet && EvalAcpiMethod(devHandle, "\\_SB.AMW1.ICPC", (PVOID *) &resName, NULL)) {
 				free(resName);
 				result = true;
 			}
@@ -342,7 +342,7 @@ namespace AlienFX_SDK {
 			{
 #ifndef NOACPILIGHTS
 				PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-				if (EvalAcpiMethod(devHandle, "\\_SB.AMW1.RCPC", (PVOID *) &resName)) {
+				if (EvalAcpiMethod(devHandle, "\\_SB.AMW1.RCPC", (PVOID *) &resName, NULL)) {
 					free(resName);
 					res = true;
 				}

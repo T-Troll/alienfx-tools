@@ -3,8 +3,6 @@
 #include <string>
 #include "AlienFX_SDK.h"
 #include "ConfigFan.h"
-//#include "ConfigAmbient.h"
-//#include "ConfigHaptics.h"
 
 // Profile flags pattern
 #define PROF_DEFAULT  0x1
@@ -27,16 +25,6 @@ struct freq_map {
 	vector<byte> freqID;
 };
 
-union FlagSet {
-	struct {
-		BYTE flags;
-		BYTE cut;
-		BYTE proc;
-		BYTE reserved;
-	};
-	DWORD s = 0;
-};
-
 struct event {
 	bool state = false;
 	BYTE source = 0;
@@ -47,17 +35,16 @@ struct event {
 	double coeff;
 };
 
-struct old_event {
-	bool active = false;
-	BYTE source = 0;
-	BYTE cut = 0;
-	BYTE proc = 0;
-	vector<AlienFX_SDK::afx_act> map;
+struct zonelight {
+	pair<DWORD,DWORD> light;
+	byte x, y;
 };
 
-//struct posgrid {
-//	int x, y, index;
-//};
+struct zonemap {
+	DWORD gID;
+	byte xMax, yMax;
+	vector<zonelight> lightMap;
+};
 
 struct groupset {
 	int group = 0;
@@ -65,23 +52,9 @@ struct groupset {
 	event events[3];
 	vector<byte> ambients;
 	vector<freq_map> haptics;
-	AlienFX_SDK::lightgrid lightMap{ 0 };
 	bool fromColor = false;
 	bool gradient = false;
 	byte gauge = 0;
-};
-
-struct lightset {
-	union {
-		struct {
-			WORD pid;
-			WORD vid;
-		};
-		DWORD devid = 0;
-	};
-	unsigned lightid = 0;
-	BYTE     flags = 0;
-	old_event	 eve[4];
 };
 
 struct profile {
@@ -157,6 +130,7 @@ public:
 
 	vector<groupset>* active_set;
 	vector<profile*> profiles;
+	vector<zonemap> zoneMaps;
 	profile* activeProfile = NULL;
 	profile* foregroundProfile = NULL;
 
@@ -174,7 +148,9 @@ public:
 	~ConfigHandler();
 	void Load();
 	void Save();
-	void SortGroupGauge(groupset* map);
+	void SortAllGauge();
+	zonemap* FindZoneMap(int gid);
+	void SortGroupGauge(int gid);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);

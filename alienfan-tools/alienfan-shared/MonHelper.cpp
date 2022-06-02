@@ -9,9 +9,10 @@
 
 void CMonProc(LPVOID);
 
-MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
+extern AlienFan_SDK::Control* acpi;
+
+MonHelper::MonHelper(ConfigFan* config) {
 	conf = config;
-	acpi = acp;
 
 	maxTemps.resize(acpi->HowManySensors());
 	senValues.resize(acpi->HowManySensors());
@@ -66,17 +67,17 @@ void CMonProc(LPVOID param) {
 	// update values.....
 
 	// temps..
-	for (int i = 0; i < src->acpi->HowManySensors(); i++) {
-		src->senValues[i] = src->acpi->GetTempValue(i);
+	for (int i = 0; i < acpi->HowManySensors(); i++) {
+		src->senValues[i] = acpi->GetTempValue(i);
 		if (src->senValues[i] > src->maxTemps[i])
 			src->maxTemps[i] = src->senValues[i];
 	}
 
 	// fans...
-	for (int i = 0; i < src->acpi->HowManyFans(); i++) {
+	for (int i = 0; i < acpi->HowManyFans(); i++) {
 		src->boostSets[i] = -273;
-		src->boostRaw[i] = src->acpi->GetFanValue(i, true);
-		src->fanRpm[i] = src->acpi->GetFanRPM(i);
+		src->boostRaw[i] = acpi->GetFanValue(i, true);
+		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
 	// boosts..
@@ -90,7 +91,7 @@ void CMonProc(LPVOID param) {
 						int tBoost = (fIter->points[k - 1].boost +
 								((fIter->points[k].boost - fIter->points[k - 1].boost) *
 								(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-								(fIter->points[k].temp - fIter->points[k - 1].temp)) * src->acpi->boosts[fIter->fanIndex] / 100;
+								(fIter->points[k].temp - fIter->points[k - 1].temp)) * acpi->boosts[fIter->fanIndex] / 100;
 						if (tBoost > src->boostSets[fIter->fanIndex])
 							src->boostSets[fIter->fanIndex] = tBoost;
 						break;
@@ -98,17 +99,17 @@ void CMonProc(LPVOID param) {
 			}
 		}
 		// Now set if needed...
-		for (int i = 0; i < src->acpi->HowManyFans(); i++)
+		for (int i = 0; i < acpi->HowManyFans(); i++)
 			if (src->boostSets[i] >= 0 && !src->fanSleep[i]) {
 				// Check overboost tricks...
 				if (src->boostRaw[i] < 100 && src->boostSets[i] > 100) {
-					src->acpi->SetFanValue(i, 100, true);
+					acpi->SetFanValue(i, 100, true);
 					src->fanSleep[i] = 6;
 				} else
 					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
 						if (src->boostRaw[i] > src->boostSets[i])
 							src->boostSets[i] += 31 * (src->boostRaw[i] - src->boostSets[i]) / 32;
-						src->acpi->SetFanValue(i, src->boostSets[i], true);
+						acpi->SetFanValue(i, src->boostSets[i], true);
 					}
 				//#ifdef _DEBUG
 				//					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";

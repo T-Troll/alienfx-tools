@@ -58,17 +58,18 @@ extern "C" {
         EvalAcpiMethod(
             __in HANDLE hDriver,
             __in const char* puNameSeg,
-            __in PVOID *outputBuffer
+            __in PVOID *outputBuffer,
+            __in PVOID pArgs
         );
 
-    BOOLEAN
-        APIENTRY
-        EvalAcpiMethodArgs(
-            __in HANDLE hDriver,
-            __in const char* puNameSeg,
-            __in PVOID pArgs,
-            __in PVOID *outputBuffer
-        );
+    //BOOLEAN
+    //    APIENTRY
+    //    EvalAcpiMethodArgs(
+    //        __in HANDLE hDriver,
+    //        __in const char* puNameSeg,
+    //        __in PVOID pArgs,
+    //        __in PVOID *outputBuffer
+    //    );
 
     PVOID
         PutIntArg(

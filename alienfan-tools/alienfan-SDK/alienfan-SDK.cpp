@@ -74,6 +74,7 @@ namespace AlienFan_SDK {
 		fans.clear();
 		powers.clear();
 		boosts.clear();
+		maxrpm.clear();
 		CloseAcpiDevice(acc);
 #ifdef _SERVICE_WAY_
 		UnloadService();
@@ -101,7 +102,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-			if (EvalAcpiMethodArgs(acc, dev_c_controls[cDev].readCom.c_str(), acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethod(acc, dev_c_controls[cDev].readCom.c_str(), (PVOID *) &res, acpiargs) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -120,7 +121,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, value);
-			if (EvalAcpiMethodArgs(acc, dev_c_controls[cDev].writeCom.c_str(), acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethod(acc, dev_c_controls[cDev].writeCom.c_str(), (PVOID *) &res, acpiargs) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -137,7 +138,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com.com);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, operand);
-			if (EvalAcpiMethodArgs(acc, devs[aDev].mainCommand.c_str(), acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethod(acc, devs[aDev].mainCommand.c_str(), (PVOID *) &res, acpiargs) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -155,7 +156,7 @@ namespace AlienFan_SDK {
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0x100);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com);
 			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, (UCHAR*)&packed);
-			if (EvalAcpiMethodArgs(acc, devs[aDev].gpuCommand.c_str(), acpiargs, (PVOID *) &res) && res) {
+			if (EvalAcpiMethod(acc, devs[aDev].gpuCommand.c_str(), (PVOID *) &res, acpiargs) && res) {
 				int res_int = res->Argument[0].Argument;
 				free(res);
 				return res_int;
@@ -190,6 +191,7 @@ namespace AlienFan_SDK {
 							   && funcID > 0 || funcID > 0x130) { // bugfix for 0x132 fan for R7
 							fans.push_back(funcID & 0xff);
 							boosts.push_back(100);
+							maxrpm.push_back(0);
 							fIndex++;
 						}
 						//printf("%d fans detected, last reply %d\n", fIndex, funcID);
@@ -244,7 +246,7 @@ namespace AlienFan_SDK {
 					// Other temperature sensors
 					for (short i = 0; i < 10; i++) {
 						tempNamePattern[22] = i + '0';
-						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName) && resName) {
+						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName, NULL) && resName) {
 							char *c_name = new char[resName->Argument[0].DataLength+1];
 							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
 							sensors.push_back({i, c_name, false});
@@ -274,10 +276,13 @@ namespace AlienFan_SDK {
 	}
 	int Control::GetFanPercent(int fanID) {
 		if (fanID < fans.size())
-			if (devs[aDev].commandControlled)
-				return RunMainCommand(dev_controls[cDev].getFanPercent, (byte) fans[fanID]);
+			if (maxrpm[fanID])
+				return GetFanRPM(fanID) * 100 / maxrpm[fanID];
 			else
-				return ReadRamDirect(fans[fanID]);
+				if (devs[aDev].commandControlled)
+					return RunMainCommand(dev_controls[cDev].getFanPercent, (byte) fans[fanID]);
+				else
+					return ReadRamDirect(fans[fanID]);
 		return -1;
 	}
 	int Control::GetFanValue(int fanID, bool force) {
@@ -315,7 +320,7 @@ namespace AlienFan_SDK {
 				if (devs[aDev].commandControlled)
 					return RunMainCommand(dev_controls[cDev].getTemp, (byte) sensors[TempID].senIndex);
 				else {
-					if (EvalAcpiMethod(acc, dev_c_controls[cDev].getTemp[TempID].c_str(), (PVOID *) &res) && res) {
+					if (EvalAcpiMethod(acc, dev_c_controls[cDev].getTemp[TempID].c_str(), (PVOID *) &res, NULL) && res) {
 						int res_int = res->Argument[0].Argument;
 						free(res);
 						return res_int;
@@ -323,7 +328,7 @@ namespace AlienFan_SDK {
 				}
 			else {
 				tempValuePattern[22] = sensors[TempID].senIndex + '0';
-				if (EvalAcpiMethod(acc, tempValuePattern, (PVOID *) &res) && res) {
+				if (EvalAcpiMethod(acc, tempValuePattern, (PVOID *) &res, NULL) && res) {
 					int res_int = (res->Argument[0].Argument - 0xaac) / 0xa;
 					free(res);
 					return res_int;
@@ -394,7 +399,7 @@ namespace AlienFan_SDK {
 		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 		if (!inCommand)
 			Prepare();
-		if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SRST", (PVOID *) &resName)) {
+		if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SRST", (PVOID *) &resName, NULL)) {
 			free(resName);
 			Update();
 			return true;
@@ -403,7 +408,7 @@ namespace AlienFan_SDK {
 	}
 	bool Lights::Prepare() {
 		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-		if (!inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.ICPC", (PVOID *) &resName)) {
+		if (!inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.ICPC", (PVOID *) &resName, NULL)) {
 			free(resName);
 			inCommand = true;
 			return true;
@@ -412,7 +417,7 @@ namespace AlienFan_SDK {
 	}
 	bool Lights::Update() {
 		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-		if (inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.RCPC", (PVOID *) &resName)) {
+		if (inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.RCPC", (PVOID *) &resName, NULL)) {
 			free(resName);
 			inCommand = false;
 			return true;
@@ -429,7 +434,7 @@ namespace AlienFan_SDK {
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, g);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, b);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, id);
-		if (EvalAcpiMethodArgs(acpi->GetHandle(), "\\_SB.AMW1.SETC", acpiargs, (PVOID *) &resName)) {
+		if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SETC", (PVOID *) &resName, acpiargs)) {
 			free(resName);
 			return true;
 		}
@@ -443,7 +448,7 @@ namespace AlienFan_SDK {
 		}
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, mode);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, onoff);
-		if (EvalAcpiMethodArgs(acpi->GetHandle(), "\\_SB.AMW1.SETB", acpiargs, (PVOID *) &resName)) {
+		if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SETB", (PVOID *) &resName, acpiargs)) {
 			free(resName);
 			return true;
 		}

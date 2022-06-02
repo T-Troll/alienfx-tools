@@ -11,7 +11,7 @@ extern void RemoveLightAndClean(int dPid, int eLid);
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
-extern void RedrawGridButtonZone(bool recalc=true);
+extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 extern AlienFX_SDK::mapping* FindCreateMapping();
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -382,10 +382,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
 			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
-			if (eLid >= 0) {
+			if (eLid >= 0 && dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
 				fxhl->TestLight(dIndex, eLid, whiteTest);
-				OnGridSelChanged(gridTab);
 			}
+			RedrawGridButtonZone();
 		} break;
 		case IDC_ISPOWERBUTTON:
 			if (eLid >= 0) {
@@ -637,6 +637,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		UnregisterHotKey(hDlg, 2);
 		UnregisterHotKey(hDlg, 3);
 		UnregisterHotKey(hDlg, 4);
+		// ufff... recalculate ALL gauges!
+		conf->SortAllGauge();
 	} break;
 	default: return false;
 	}

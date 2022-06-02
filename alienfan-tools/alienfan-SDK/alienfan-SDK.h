@@ -145,6 +145,7 @@ namespace AlienFan_SDK {
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<USHORT> fans;
 		vector<byte> boosts;
+		vector<WORD> maxrpm;
 		vector<byte> powers;
 
 #ifdef _SERVICE_WAY_

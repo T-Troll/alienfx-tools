@@ -9,7 +9,7 @@ extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RemoveUnused(vector<groupset>*);
 
-extern void RedrawGridButtonZone(bool recalc = false);
+extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 //extern HWND zsDlg;
 
@@ -294,7 +294,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_APP + 2: {
 		SetFeqGroups(hDlg);
 		DrawFreq(hDlg);
-		RedrawGridButtonZone();
+		RedrawGridButtonZone(NULL, true);
 	} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {

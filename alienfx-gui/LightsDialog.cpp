@@ -14,7 +14,8 @@ extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
-extern void RedrawGridButtonZone(bool recalc = false);
+extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+extern void UpdateZoneList(byte flag = 0);
 
 extern void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func);
 //extern void OnSelChanged(HWND hwndDlg);
@@ -72,6 +73,7 @@ void OnLightSelChanged(HWND hwndDlg)
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
 
 	// Get the index of the selected tab.
+	int oldTab = lastTab;
 	lastTab = TabCtrl_GetCurSel(hwndDlg);
 
 	RECT rcDisplay;
@@ -97,12 +99,13 @@ void OnLightSelChanged(HWND hwndDlg)
 		if (!pHdr->hwndControl) {
 			pHdr->hwndControl = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[lastTab], pHdr->hwndDisplay, pHdr->apProc[lastTab]);
 			RECT mRect;
-			if (lastTab != TAB_DEVICES) {
+			GetWindowRect(GetDlgItem(pHdr->hwndDisplay, IDC_STATIC_CONTROLS), &mRect);
+			if (oldTab == TAB_DEVICES) {
 				ShowWindow(GetDlgItem(pHdr->hwndDisplay, IDC_TAB_COLOR_GRID), SW_SHOW);
 				ShowWindow(zsDlg, SW_SHOW);
-				GetWindowRect(GetDlgItem(pHdr->hwndDisplay, IDC_STATIC_CONTROLS), &mRect);
+				UpdateZoneList();
 			}
-			else {
+			if (lastTab == TAB_DEVICES) {
 				ShowWindow(GetDlgItem(pHdr->hwndDisplay, IDC_TAB_COLOR_GRID), SW_HIDE);
 				ShowWindow(zsDlg, SW_HIDE);
 				GetWindowRect(pHdr->hwndDisplay, &mRect);
@@ -110,24 +113,7 @@ void OnLightSelChanged(HWND hwndDlg)
 			ScreenToClient(pHdr->hwndDisplay, (LPPOINT)&mRect);
 			SetWindowPos(pHdr->hwndControl, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 		}
-
 		ResizeTab(pHdr->hwndDisplay, rcDisplay);
-		//RECT dRect;
-		//GetClientRect(pHdr->hwndDisplay, &dRect);
-		//int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
-		//	deltay = dRect.bottom - (rcDisplay.bottom - rcDisplay.top);
-		//if (deltax || deltay) {
-		//	//DebugPrint("Resize needed!\n");
-		//	GetWindowRect(GetParent(GetParent(pHdr->hwndDisplay)), &dRect);
-		//	SetWindowPos(GetParent(GetParent(pHdr->hwndDisplay)), NULL, 0, 0, dRect.right - dRect.left + deltax, dRect.bottom - dRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-		//	rcDisplay.right += deltax;
-		//	rcDisplay.bottom += deltay;
-		//}
-		//SetWindowPos(pHdr->hwndDisplay, NULL,
-		//	rcDisplay.left, rcDisplay.top,
-		//	rcDisplay.right - rcDisplay.left,
-		//	rcDisplay.bottom - rcDisplay.top,
-		//	SWP_SHOWWINDOW | SWP_NOSIZE);
 	}
 }
 

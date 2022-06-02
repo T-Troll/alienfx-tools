@@ -82,7 +82,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     if (acpi->IsActivated() && acpi->Probe()) {
         fan_conf->SetBoosts(acpi);
 
-        mon = new MonHelper(fan_conf, acpi);
+        mon = new MonHelper(fan_conf);
 
         // Perform application initialization:
 

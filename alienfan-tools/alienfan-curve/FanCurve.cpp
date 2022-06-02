@@ -120,10 +120,9 @@ void DrawFan()
             mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost/*mon->boostValues[fan_conf->lastSelectedFan]*/);
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
             // RPM
-            fan_overboost* maxBoost = fan_conf->FindBoost(fan_conf->lastSelectedFan);
-            string rpmText = "Fan curve (scale: " + to_string(maxBoost ? maxBoost->maxBoost : acpi->boosts[fan_conf->lastSelectedFan])
-                + ", boost: " + to_string(fanBoost) + ", "
-                + to_string(maxBoost ? acpi->GetFanRPM(fan_conf->lastSelectedFan) * 100 / maxBoost->maxRPM : acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
+            //fan_overboost* maxBoost = fan_conf->FindBoost(fan_conf->lastSelectedFan);
+            string rpmText = "Fan curve (scale: " + to_string(acpi->boosts[fan_conf->lastSelectedFan])
+                + ", boost: " + to_string(fanBoost) + ", " + to_string(acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
         }
         else {
@@ -188,14 +187,19 @@ int SetFanSteady(byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost() {
-    fan_overboost* fOver = fan_conf->FindBoost(bestBoostPoint.fanID);
-    if (fOver) {
-        fOver->maxBoost = bestBoostPoint.maxBoost;
-        fOver->maxRPM = max(bestBoostPoint.maxRPM, fOver->maxRPM);
+    auto pos = find_if(fan_conf->boosts.begin(), fan_conf->boosts.end(),
+        [](auto t) {
+            return t.fanID == bestBoostPoint.fanID;
+        });
+    if (pos != fan_conf->boosts.end()) {
+        pos->maxBoost = bestBoostPoint.maxBoost;
+        pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
     }
-    else
+    else {
         fan_conf->boosts.push_back(bestBoostPoint);
+    }
     acpi->boosts[bestBoostPoint.fanID] = bestBoostPoint.maxBoost;
+    acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
     fan_conf->Save();
 }
 

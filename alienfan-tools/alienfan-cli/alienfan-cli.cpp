@@ -54,14 +54,19 @@ int SetFanSteady(byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost() {
-    fan_overboost* fOver = fan_conf->FindBoost(bestBoostPoint.fanID);
-    if (fOver) {
-        fOver->maxBoost = bestBoostPoint.maxBoost;
-        fOver->maxRPM = max(bestBoostPoint.maxRPM, fOver->maxRPM);
+    auto pos = find_if(fan_conf->boosts.begin(), fan_conf->boosts.end(),
+        [](auto t) {
+            return t.fanID == bestBoostPoint.fanID;
+        });
+    if (pos != fan_conf->boosts.end()) {
+        pos->maxBoost = bestBoostPoint.maxBoost;
+        pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
     }
-    else
+    else {
         fan_conf->boosts.push_back(bestBoostPoint);
+    }
     acpi->boosts[bestBoostPoint.fanID] = bestBoostPoint.maxBoost;
+    acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
     fan_conf->Save();
 }
 

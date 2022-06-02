@@ -100,8 +100,8 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 			conf->active_set = &newID->lightsets;
 			conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 			if (mon) {
-				mon->acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-				mon->acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+				acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+				acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 			}
 			modifyProfile.unlock();
 
@@ -194,7 +194,7 @@ void EventHandler::StartEffects() {
 
 void EventHandler::StartFanMon() {
 	if (conf->fanControl && acpi && !mon)
-		mon = new MonHelper(conf->fan_conf, acpi);
+		mon = new MonHelper(conf->fan_conf);
 }
 
 void EventHandler::StopFanMon() {
@@ -489,8 +489,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 		if (src->mon) {
 			// Check fan RPMs
 			for (unsigned i = 0; i < src->mon->fanRpm.size(); i++) {
-				fan_overboost* overBoost = conf->fan_conf->FindBoost(i);
-				cData.Fan = max(cData.Fan, overBoost ? src->mon->fanRpm[i] * 100 / overBoost->maxRPM : src->mon->acpi->GetFanPercent(i));
+				cData.Fan = max(cData.Fan, acpi->GetFanPercent(i));
 			}
 		}
 

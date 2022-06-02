@@ -12,7 +12,7 @@ extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int
 
 extern int eItem;
 
-extern void RedrawGridButtonZone(bool recalc = false);
+extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 int effID = 0;
 
@@ -86,7 +86,7 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 	SetEffectData(hDlg, mmap);
 	ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
-	RedrawGridButtonZone(true);
+	RedrawGridButtonZone(NULL, true);
 }
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -110,7 +110,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
 		sTip1 = CreateToolTip(s1_slider, sTip1);
 		sTip2 = CreateToolTip(l1_slider, sTip2);
-		RebuildEffectList(hDlg, mmap);
+		//RebuildEffectList(hDlg, mmap);
 	} break;
 	case WM_APP + 2: {
 		effID = 0;
@@ -186,7 +186,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap&& mmap->gauge);
-				conf->SortGroupGauge(mmap);
+				//conf->SortGroupGauge(mmap);
 				fxhl->RefreshOne(mmap);
 			}
 			break;

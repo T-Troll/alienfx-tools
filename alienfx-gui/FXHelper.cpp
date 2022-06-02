@@ -25,57 +25,51 @@ AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 	return nullptr;
 };
 
-void FXHelper::SetGaugeLight(DWORD id, int x, int max, bool grad, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
+void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, bool grad, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {
-	if (id) {
-		vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
-		if (grad) {
-			double newPower = (double)x / max;
-			fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
-			fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
-			fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
-		}
-		else {
-			if (((double)x) / max < power) {
-				if (((double)x + 1) / max < power)
-					fAct[0] = actions.back();
-				else {
-					double newPower = (power - ((double)x) / max) * max;
-					fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
-					fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
-					fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
-				}
+	vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
+	if (grad) {
+		double newPower = (double)x / max;
+		fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
+		fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
+		fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
+	}
+	else {
+		if (((double)x) / max < power) {
+			if (((double)x + 1) / max < power)
+				fAct[0] = actions.back();
+			else {
+				double newPower = (power - ((double)x) / max) * max;
+				fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
+				fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
+				fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
 			}
 		}
-		SetLight(LOWORD(id), HIWORD(id), fAct, force);
 	}
+	SetLight(id.first, id.second, fAct, force);
 }
 
 void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power, bool force) {
 	AlienFX_SDK::group* cGrp = conf->afx_dev.GetGroupById(grp->group);
 	if (cGrp->lights.size()) {
-		if (!grp->gauge || actions.size() < 2) {
-			for (auto i = cGrp->lights.begin(); i < cGrp->lights.end(); i++) // solid light
+		zonemap* zone = conf->FindZoneMap(grp->group);
+		if (!grp->gauge || actions.size() < 2 || !zone) {
+			for (auto i = cGrp->lights.begin(); i < cGrp->lights.end(); i++)
 				SetLight(i->first, i->second, actions, force);
 		}
 		else {
-			switch (grp->gauge) {
-			case 1: // horizontal
-				for (int x = 0; x < grp->lightMap.x; x++)
-					for (int y = 0; y < grp->lightMap.y; y++)
-						SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x, grp->lightMap.x, grp->gradient, actions, power, force);
-				break;
-			case 2: // vertical
-				for (int x = 0; x < grp->lightMap.x; x++)
-					for (int y = 0; y < grp->lightMap.y; y++)
-						SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], y, grp->lightMap.y, grp->gradient, actions, power, force);
-				break;
-			case 3: // diagonal
-				for (int x = 0; x < grp->lightMap.x; x++)
-					for (int y = 0; y < grp->lightMap.y; y++)
-						SetGaugeLight(grp->lightMap.grid[y * grp->lightMap.x + x], x + y, grp->lightMap.x + grp->lightMap.y, grp->gradient, actions, power, force);
-				break;
-			}
+			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+				switch (grp->gauge) {
+				case 1: // horizontal
+					SetGaugeLight(t->light, t->x, zone->xMax, grp->gradient, actions, power, force);
+					break;
+				case 2: // vertical
+					SetGaugeLight(t->light, t->y, zone->yMax, grp->gradient, actions, power, force);
+					break;
+				case 3: // diagonal
+					SetGaugeLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->gradient, actions, power, force);
+					break;
+				}
 		}
 	}
 }
