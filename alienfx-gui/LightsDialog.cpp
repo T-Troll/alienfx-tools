@@ -18,8 +18,7 @@ extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 extern void UpdateZoneList(byte flag = 0);
 
 extern void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func);
-//extern void OnSelChanged(HWND hwndDlg);
-//extern int tabSel;
+extern void RepaintGrid(HWND hDlg);
 
 bool firstInit = false;
 int lastTab = 0;
@@ -85,9 +84,12 @@ void OnLightSelChanged(HWND hwndDlg)
 	rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
 
 	if (!pHdr->hwndDisplay)
-		pHdr->hwndDisplay = CreateDialogIndirect(hInst,
-			(DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_LIGHT_TEMPLATE), RT_DIALOG))),
-			hwndDlg, (DLGPROC)LightDlgFrame);
+		if (lastTab != TAB_DEVICES)
+			pHdr->hwndDisplay = CreateDialogIndirect(hInst,
+				(DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_LIGHT_TEMPLATE), RT_DIALOG))),
+				hwndDlg, (DLGPROC)LightDlgFrame);
+		else
+			pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[lastTab], hwndDlg, pHdr->apProc[lastTab]);
 
 	if (pHdr->hwndDisplay != NULL) {
 		// create control block dialog
@@ -95,21 +97,20 @@ void OnLightSelChanged(HWND hwndDlg)
 			DestroyWindow(pHdr->hwndControl);
 			pHdr->hwndControl = NULL;
 		}
-
-		if (!pHdr->hwndControl) {
+		if (lastTab == TAB_DEVICES) {
+			DestroyWindow(pHdr->hwndDisplay);
+			pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[lastTab], hwndDlg, pHdr->apProc[lastTab]);
+		}
+		else {
+			if (oldTab == TAB_DEVICES) {
+				DestroyWindow(pHdr->hwndDisplay);
+				pHdr->hwndDisplay = CreateDialogIndirect(hInst,
+					(DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_LIGHT_TEMPLATE), RT_DIALOG))),
+					hwndDlg, (DLGPROC)LightDlgFrame);
+			}
 			pHdr->hwndControl = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[lastTab], pHdr->hwndDisplay, pHdr->apProc[lastTab]);
 			RECT mRect;
 			GetWindowRect(GetDlgItem(pHdr->hwndDisplay, IDC_STATIC_CONTROLS), &mRect);
-			if (oldTab == TAB_DEVICES) {
-				ShowWindow(GetDlgItem(pHdr->hwndDisplay, IDC_TAB_COLOR_GRID), SW_SHOW);
-				ShowWindow(zsDlg, SW_SHOW);
-				UpdateZoneList();
-			}
-			if (lastTab == TAB_DEVICES) {
-				ShowWindow(GetDlgItem(pHdr->hwndDisplay, IDC_TAB_COLOR_GRID), SW_HIDE);
-				ShowWindow(zsDlg, SW_HIDE);
-				GetWindowRect(pHdr->hwndDisplay, &mRect);
-			}
 			ScreenToClient(pHdr->hwndDisplay, (LPPOINT)&mRect);
 			SetWindowPos(pHdr->hwndControl, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 		}

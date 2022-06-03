@@ -103,6 +103,7 @@ void RedrawDevList(HWND hDlg) {
 	}
 	ListView_SetColumnWidth(dev_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	ListView_EnsureVisible(dev_list, rpos, false);
+	UpdateDeviceInfo(hDlg);
 }
 
 void LoadCSV(string name) {
@@ -208,8 +209,9 @@ string OpenSaveFile(HWND hDlg, bool isOpen) {
 		return "";
 }
 
-void ApplyDeviceMaps(bool force = false) {
+void ApplyDeviceMaps(HWND hDlg, bool force = false) {
 	// save mappings of selected.
+	int oldGridID = conf->mainGrid->id;
 	for (auto i = csv_devs.begin(); i < csv_devs.end(); i++) {
 		if (force || i->selected) {
 			for (auto td = i->devs.begin(); td < i->devs.end(); td++) {
@@ -220,7 +222,8 @@ void ApplyDeviceMaps(bool force = false) {
 				for (auto j = td->lights.begin(); j < td->lights.end(); j++) {
 					AlienFX_SDK::mapping* oMap = conf->afx_dev.GetMappingById((*j)->devid, (*j)->lightid);
 					if (oMap) {
-						*oMap = { td->desc->vid, (*j)->devid, (*j)->lightid, (*j)->flags, (*j)->name };
+						oMap->flags = (*j)->flags;
+						oMap->name = (*j)->name;
 					}
 					else {
 						AlienFX_SDK::mapping* nMap = new AlienFX_SDK::mapping(**j);
@@ -228,13 +231,29 @@ void ApplyDeviceMaps(bool force = false) {
 					}
 				}
 			}
-			conf->afx_dev.GetGrids()->clear();
-			for (auto gg = i->grids.begin(); gg < i->grids.end(); gg++)
+			for (auto gg = i->grids.begin(); gg < i->grids.end(); gg++) {
+				auto pos = find_if(conf->afx_dev.GetGrids()->begin(), conf->afx_dev.GetGrids()->end(),
+					[gg](auto tg) {
+						return tg.id == gg->id;
+					});
+				if (pos != conf->afx_dev.GetGrids()->end())
+					conf->afx_dev.GetGrids()->erase(pos);
 				conf->afx_dev.GetGrids()->push_back(*gg);
+			}
 		}
+	}
+	auto pos = find_if(conf->afx_dev.GetGrids()->begin(), conf->afx_dev.GetGrids()->end(),
+		[oldGridID](auto tg) {
+			return tg.id == oldGridID;
+		});
+	if (pos != conf->afx_dev.GetGrids()->end()) {
+		conf->mainGrid = &(*pos);
 	}
 	conf->afx_dev.AlienFXAssignDevices();
 	csv_devs.clear();
+	RedrawDevList(hDlg);
+	OnGridSelChanged(GetDlgItem(hDlg, IDC_TAB_DEV_GRID));
+	SetLightInfo(hDlg);
 }
 
 void SetNewGridName(HWND hDlg) {
@@ -422,8 +441,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_DETECT:
 		{
 			// Try to detect lights from DB
-			if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC) DetectionDialog) == IDOK)
-				RedrawDevList(hDlg);
+			if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog) == IDOK) {
+				ApplyDeviceMaps(hDlg);
+			}
 		} break;
 		case IDC_BUT_LOADMAP:
 		{
@@ -432,8 +452,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if ((appName = OpenSaveFile(hDlg,true)).length()) {
 				// Now load mappings...
 				LoadCSV(appName);
-				ApplyDeviceMaps(true);
-				RedrawDevList(hDlg);
+				ApplyDeviceMaps(hDlg, true);
 			}
 		} break;
 		case IDC_BUT_SAVEMAP:
@@ -646,91 +665,66 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 }
 
 void UpdateSavedDevices(HWND hDlg) {
-	HWND dev_list = GetDlgItem(hDlg, IDC_LIST_SUG);
+	HWND list = GetDlgItem(hDlg, IDC_LIST_FOUND);
 	// Now check current device list..
-	ListBox_ResetContent(dev_list);
-	ListBox_SetItemData(dev_list, ListBox_AddString(dev_list, "Manual"), -1);
-	ListBox_SetCurSel(dev_list, 0);
-	for (UINT i = 0; i < csv_devs.size(); i++) {
-		ListBox_SetItemData(dev_list, ListBox_AddString(dev_list, csv_devs[i].name.c_str()), i);
-		if (csv_devs[i].selected)
-			ListBox_SetCurSel(dev_list, i+1);
+	ListView_DeleteAllItems(list);
+	ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_LABELTIP | LVS_EX_FULLROWSELECT);
+	if (!ListView_GetColumnWidth(list, 0)) {
+		LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
+		ListView_InsertColumn(list, 0, &lCol);
 	}
+	for (int i = 0; i < csv_devs.size(); i++) {
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
+		lItem.lParam = i;
+		lItem.pszText = (LPSTR)csv_devs[i].name.c_str();
+		if (csv_devs[i].selected)
+			lItem.state = 0x2000;
+		else
+			lItem.state = 0x1000;
+		ListView_InsertItem(list, &lItem);
+	}
+
+	ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE_USEHEADER);
 }
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	HWND //dev_list = GetDlgItem(hDlg, IDC_DEVICES),
-		sug_list = GetDlgItem(hDlg, IDC_LIST_SUG);
 	switch (message) {
 	case WM_INITDIALOG:
 	{
+		// add fake device for testing...
+		conf->afx_dev.GetDevices()->push_back({ 0x0461 , 20160, "Unknown mouse" });
 		LoadCSV(".\\Mappings\\devices.csv");
-		// init values according to device list
-		//RedrawDevList(hDlg);
-		// Now init mappings...
-		ListBox_ResetContent(sug_list);
-		ListBox_SetItemData(sug_list, ListBox_AddString(sug_list, "Manual"), -1);
-		ListBox_SetCurSel(sug_list, 0);
-		for (UINT i = 0; i < csv_devs.size(); i++) {
-			ListBox_SetItemData(sug_list, ListBox_AddString(sug_list, csv_devs[i].name.c_str()), i);
-			if (csv_devs[i].selected)
-				ListBox_SetCurSel(sug_list, i + 1);
-		}
-
+		UpdateSavedDevices(hDlg);
 	} break;
 	case WM_COMMAND:
 	{
 
 		switch (LOWORD(wParam)) {
-		case IDOK:
+		case IDOK: case IDCANCEL:
 		{
-			// save mappings of selected.
-			ApplyDeviceMaps();
-			EndDialog(hDlg, IDOK);
-		} break;
-		case IDCANCEL:
-			EndDialog(hDlg, IDCANCEL);
-			break;
-		case IDC_LIST_SUG:
-		{
-			switch (HIWORD(wParam)) {
-			case CBN_SELCHANGE:
-			{
-				int cSugID = (int)ListBox_GetItemData(sug_list, ListBox_GetCurSel(sug_list));
-				// clear checkmarks...
-				for (UINT i = 0; i < csv_devs.size(); i++) {
-					csv_devs[i].selected = false;
-				}
-				if (cSugID >= 0)
-					csv_devs[cSugID].selected = true;
-			} break;
-			}
+			EndDialog(hDlg, LOWORD(wParam));
 		} break;
 		}
 	} break;
+	case WM_NOTIFY:
+		switch (((NMHDR*)lParam)->idFrom) {
+		case IDC_LIST_FOUND:
+			switch (((NMHDR*)lParam)->code) {
+			case LVN_ITEMCHANGED:
+			{
+				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
+				if (lPoint->uNewState & 0x2000) {
+					csv_devs[lPoint->lParam].selected = true;
+				} else
+					if (lPoint->uNewState & 0x1000 && lPoint->uOldState & 0x2000) {
+						csv_devs[lPoint->lParam].selected = false;
+				}
+			} break;
+			} break;
+		} break;
 	case WM_CLOSE:
 		EndDialog(hDlg, IDCANCEL);
 		break;
-	//case WM_NOTIFY:
-	//	switch (((NMHDR*)lParam)->idFrom) {
-	//	case IDC_LIST_DEV:
-	//		switch (((NMHDR*)lParam)->code) {
-	//		case LVN_ITEMCHANGED:
-	//		{
-	//			NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
-	//			if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
-	//				// Select other item...
-	//				dIndex = (int)lPoint->lParam;
-	//				UpdateSavedDevices(hDlg);
-	//			}
-	//			else {
-	//				if (!ListView_GetSelectedCount(((NMHDR*)lParam)->hwndFrom))
-	//					RedrawDevList(hDlg);
-	//			}
-	//		} break;
-	//		}
-	//	}
-	//	break;
     default: return false;
 	}
 	return true;

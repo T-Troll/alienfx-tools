@@ -190,27 +190,27 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         }
                         SendMessage(fanWindow, WM_PAINT, 0, 0);
                     }
-                }
-                if (lPoint->uNewState & 0x1000 && lPoint->uOldState && 0x2000) { // unchecked
-                    if (fan_conf->lastSelectedSensor != -1) {
-                        temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
-                        if (sen) { // remove sensor block
-                            for (auto iFan = sen->fans.begin(); iFan < sen->fans.end(); iFan++)
-                                if (iFan->fanIndex == lPoint->iItem) {
-                                    sen->fans.erase(iFan);
-                                    break;
-                                }
-                            if (!sen->fans.size()) // remove sensor block!
-                                for (auto iSen = fan_conf->lastProf->fanControls.begin();
-                                     iSen < fan_conf->lastProf->fanControls.end(); iSen++)
-                                    if (iSen->sensorIndex == sen->sensorIndex) {
-                                        fan_conf->lastProf->fanControls.erase(iSen);
+                } else
+                    if (lPoint->uNewState & 0x1000 && lPoint->uOldState & 0x2000) { // unchecked
+                        if (fan_conf->lastSelectedSensor != -1) {
+                            temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+                            if (sen) { // remove sensor block
+                                for (auto iFan = sen->fans.begin(); iFan < sen->fans.end(); iFan++)
+                                    if (iFan->fanIndex == lPoint->iItem) {
+                                        sen->fans.erase(iFan);
                                         break;
                                     }
+                                if (!sen->fans.size()) // remove sensor block!
+                                    for (auto iSen = fan_conf->lastProf->fanControls.begin();
+                                         iSen < fan_conf->lastProf->fanControls.end(); iSen++)
+                                        if (iSen->sensorIndex == sen->sensorIndex) {
+                                            fan_conf->lastProf->fanControls.erase(iSen);
+                                            break;
+                                        }
+                            }
+                            SendMessage(fanWindow, WM_PAINT, 0, 0);
                         }
-                        SendMessage(fanWindow, WM_PAINT, 0, 0);
                     }
-                }
             } break;
             }
             break;

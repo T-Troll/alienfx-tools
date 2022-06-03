@@ -364,7 +364,7 @@ void ReloadFanView(HWND list, int cID) {
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES /*| LVS_EX_AUTOSIZECOLUMNS*/ | LVS_EX_FULLROWSELECT);
     if (!ListView_GetColumnWidth(list, 0)) {
-        LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
+        LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
         ListView_InsertColumn(list, 0, &lCol);
     }
     for (int i = 0; i < acpi->HowManyFans(); i++) {

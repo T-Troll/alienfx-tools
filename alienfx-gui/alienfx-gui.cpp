@@ -821,9 +821,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
+		conf->fan_conf->Save();
+		eve->StopProfiles();
 		eve->StopEffects();
 		eve->StopFanMon();
-		fxhl->Stop();
+		fxhl->UnblockUpdates(false);
+		//fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 21) {
