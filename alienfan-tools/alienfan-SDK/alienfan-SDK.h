@@ -60,8 +60,9 @@ namespace AlienFan_SDK {
 		short cDev = -1;
 		int systemID = 0;
 		bool activated = false;
+#ifdef _SERVICE_WAY_
 		SC_HANDLE scManager = NULL;
-
+#endif
 		int ReadRamDirect(DWORD);
 		int WriteRamDirect(DWORD, byte);
 
@@ -73,7 +74,6 @@ namespace AlienFan_SDK {
 		// Stop and unload service if driver loaded from service
 		void UnloadService();
 #endif
-
 		// Probe hardware, sensors, fans, power modes and fill structures.
 		// Result: true - compatible hardware found, false - not found.
 		bool Probe();

@@ -150,14 +150,14 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				//	from = Iter->perfs[0].from;
 				noDiff = false;
 				Iter->events[1].coeff = cVal > Iter->events[1].cut ? (cVal - Iter->events[1].cut) / (100.0 - Iter->events[1].cut) : 0.0;
-				if (Iter->gauge && !Iter->gradient)
-					actions.push_back(Iter->events[1].to);
-				else
-					actions.push_back({ 0,0,0,
-						(BYTE)(actions.front().r * (1 - Iter->events[1].coeff) + Iter->events[1].to.r * Iter->events[1].coeff),
-						(BYTE)(actions.front().g * (1 - Iter->events[1].coeff) + Iter->events[1].to.g * Iter->events[1].coeff),
-						(BYTE)(actions.front().b * (1 - Iter->events[1].coeff) + Iter->events[1].to.b * Iter->events[1].coeff) });
 			}
+			if (Iter->gauge && !Iter->gradient)
+				actions.push_back(Iter->events[1].to);
+			else
+				actions.push_back({ 0,0,0,
+					(BYTE)(actions.front().r * (1 - Iter->events[1].coeff) + Iter->events[1].to.r * Iter->events[1].coeff),
+					(BYTE)(actions.front().g * (1 - Iter->events[1].coeff) + Iter->events[1].to.g * Iter->events[1].coeff),
+					(BYTE)(actions.front().b * (1 - Iter->events[1].coeff) + Iter->events[1].to.b * Iter->events[1].coeff) });
 		}
 		if (Iter->events[2].state) {
 			// indicator

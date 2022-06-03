@@ -153,6 +153,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MinSpace</Optimization>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Lib>
       <SubSystem>Windows</SubSystem>

@@ -42,10 +42,8 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 }
 
 void RebuildEffectList(HWND hDlg, groupset* mmap) {
-	HWND eff_list = GetDlgItem(hDlg, IDC_LEFFECTS_LIST),
-		s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
-		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1),
-		type_c1 = GetDlgItem(hDlg, IDC_TYPE1);
+	HWND eff_list = GetDlgItem(hDlg, IDC_LEFFECTS_LIST);
+
 	ListView_DeleteAllItems(eff_list);
 	HIMAGELIST hOld = ListView_GetImageList(eff_list, LVSIL_SMALL);
 	if (hOld) {
@@ -110,7 +108,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
 		sTip1 = CreateToolTip(s1_slider, sTip1);
 		sTip2 = CreateToolTip(l1_slider, sTip2);
-		//RebuildEffectList(hDlg, mmap);
+		RebuildEffectList(hDlg, mmap);
 	} break;
 	case WM_APP + 2: {
 		effID = 0;

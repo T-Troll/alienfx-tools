@@ -35,12 +35,14 @@ extern "C" {
 
     BOOLEAN
         DemandService(
-            __in SC_HANDLE SchSCManager
+            __in SC_HANDLE SchSCManager,
+            __in char* SrvName
         );
 
     BOOLEAN
         StopService(
-            __in SC_HANDLE SchSCManager
+            __in SC_HANDLE SchSCManager,
+            __in char* SrvName
         );
 
     HANDLE

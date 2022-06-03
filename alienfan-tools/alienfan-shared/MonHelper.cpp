@@ -107,8 +107,8 @@ void CMonProc(LPVOID param) {
 						if (src->boostRaw[i] > src->boostSets[i])
 							src->boostSets[i] += 31 * (src->boostRaw[i] - src->boostSets[i]) / 32;
 						acpi->SetFanValue(i, src->boostSets[i], true);
-						DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
-							+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
+						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
+						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}
 			}
 			else

@@ -52,10 +52,12 @@ int eItem = -1;
 vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics" };
 
 bool DoStopService(bool kind) {
-	SERVICE_STATUS_PROCESS ssp;
-	ULONGLONG dwStartTime = GetTickCount64();
-	DWORD dwBytesNeeded;
-	DWORD dwTimeout = 10000; // 10-second time-out
+	//SERVICE_STATUS_PROCESS ssp;
+	//ULONGLONG dwStartTime = GetTickCount64();
+	//DWORD dwBytesNeeded;
+	//DWORD dwTimeout = 10000; // 10-second time-out
+
+	EvaluteToAdmin();
 
 	// Get a handle to the SCM database.
 
@@ -65,96 +67,98 @@ bool DoStopService(bool kind) {
 		return false;
 	}
 
-	// Get a handle to the service.
+	return kind ? StopService(schSCManager, "AWCCService") : DemandService(schSCManager, "AWCCService");
 
-	SC_HANDLE schService = OpenService( schSCManager, "AWCCService",  SERVICE_QUERY_STATUS);
+	//// Get a handle to the service.
 
-	if (!schService)
-	{
-		CloseServiceHandle(schSCManager);
-		return false;
-	}
+	//SC_HANDLE schService = OpenService( schSCManager, "AWCCService",  SERVICE_QUERY_STATUS);
 
-	// Make sure the service is not already stopped.
+	//if (!schService)
+	//{
+	//	CloseServiceHandle(schSCManager);
+	//	return false;
+	//}
 
-	if (QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
-	{
-		if (ssp.dwCurrentState == SERVICE_STOPPED)
-		{
-			if (kind) {
-				CloseServiceHandle(schService);
-				CloseServiceHandle(schSCManager);
-				conf->block_power = false;
-				return false;
-			}
-			else {
-				schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
+	//// Make sure the service is not already stopped.
 
-				if (schService != NULL)
-				{
-					StartService( schService, 0, NULL);
-					conf->block_power = true;
-					CloseServiceHandle(schService);
-					CloseServiceHandle(schSCManager);
-					return false;
-				}
-			}
-		}
+	//if (QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
+	//{
+	//	if (ssp.dwCurrentState == SERVICE_STOPPED)
+	//	{
+	//		if (kind) {
+	//			CloseServiceHandle(schService);
+	//			CloseServiceHandle(schSCManager);
+	//			conf->block_power = false;
+	//			return false;
+	//		}
+	//		else {
+	//			schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
 
-		// Evaluate UAC and re-open manager and service here.
+	//			if (schService != NULL)
+	//			{
+	//				StartService( schService, 0, NULL);
+	//				conf->block_power = true;
+	//				CloseServiceHandle(schService);
+	//				CloseServiceHandle(schSCManager);
+	//				return false;
+	//			}
+	//		}
+	//	}
 
-		CloseServiceHandle(schService);
+	//	// Evaluate UAC and re-open manager and service here.
 
-		if (conf->awcc_disable && kind) {
-			schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
+	//	CloseServiceHandle(schService);
 
-			if (!schService)
-			{
-				// Evaluation attempt...
-				EvaluteToAdmin();
-				CloseServiceHandle(schSCManager);
-				conf->block_power = true;
-				return false;
-			}
+	//	if (conf->awcc_disable && kind) {
+	//		schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
 
-			// Send a stop code to the service.
+	//		if (!schService)
+	//		{
+	//			// Evaluation attempt...
+	//			EvaluteToAdmin();
+	//			CloseServiceHandle(schSCManager);
+	//			conf->block_power = true;
+	//			return false;
+	//		}
 
-			if (!ControlService(schService, SERVICE_CONTROL_STOP, (LPSERVICE_STATUS)&ssp))
-			{
-				CloseServiceHandle(schService);
-				CloseServiceHandle(schSCManager);
-				return false;
-			}
+	//		// Send a stop code to the service.
 
-			// Wait for the service to stop.
+	//		if (!ControlService(schService, SERVICE_CONTROL_STOP, (LPSERVICE_STATUS)&ssp))
+	//		{
+	//			CloseServiceHandle(schService);
+	//			CloseServiceHandle(schSCManager);
+	//			return false;
+	//		}
 
-			while (ssp.dwCurrentState != SERVICE_STOPPED)
-			{
-				Sleep(ssp.dwWaitHint);
-				if (!QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
-				{
-					CloseServiceHandle(schService);
-					CloseServiceHandle(schSCManager);
-					return false;
-				}
+	//		// Wait for the service to stop.
 
-				if (ssp.dwCurrentState == SERVICE_STOPPED)
-					break;
+	//		while (ssp.dwCurrentState != SERVICE_STOPPED)
+	//		{
+	//			Sleep(ssp.dwWaitHint);
+	//			if (!QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
+	//			{
+	//				CloseServiceHandle(schService);
+	//				CloseServiceHandle(schSCManager);
+	//				return false;
+	//			}
 
-				if (GetTickCount64() - dwStartTime > dwTimeout)
-				{
-					CloseServiceHandle(schService);
-					CloseServiceHandle(schSCManager);
-					return false;
-				}
-			}
-		}
-		else conf->block_power = true;
-	}
+	//			if (ssp.dwCurrentState == SERVICE_STOPPED)
+	//				break;
 
-	CloseServiceHandle(schService);
-	CloseServiceHandle(schSCManager);
-	return true;
+	//			if (GetTickCount64() - dwStartTime > dwTimeout)
+	//			{
+	//				CloseServiceHandle(schService);
+	//				CloseServiceHandle(schSCManager);
+	//				return false;
+	//			}
+	//		}
+	//	}
+	//	else conf->block_power = true;
+	//}
+
+	//CloseServiceHandle(schService);
+	//CloseServiceHandle(schSCManager);
+	//return true;
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -201,7 +205,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (fxhl->FillAllDevs(acpi) || MessageBox(NULL, "No Alienware light devices detected!\nDo you want to continue?", "Error",
 											MB_YESNO | MB_ICONWARNING) == IDYES) {
-		conf->wasAWCC = DoStopService(true);
+
+		if (conf->awcc_disable)
+			conf->wasAWCC = DoStopService(true);
 
 		if (conf->esif_temp)
 			EvaluteToAdmin();

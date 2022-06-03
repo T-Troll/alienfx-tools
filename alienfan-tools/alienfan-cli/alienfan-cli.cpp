@@ -6,7 +6,6 @@
 #include <combaseapi.h>
 #include <PowrProf.h>
 #include "alienfan-SDK.h"
-//#include "alienfan-low.h"
 #include "ConfigFan.h"
 
 #pragma comment(lib, "PowrProf.lib")
@@ -144,18 +143,22 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v5.9.4\n");
+    printf("AlienFan-cli v6.0.0.5\n");
 
     bool supported = false;
 
+    AlienFan_SDK::Lights* lights = NULL;
+
     if (acpi->IsActivated()) {
 
-        AlienFan_SDK::Lights *lights = new AlienFan_SDK::Lights(acpi);
-
         if (supported = acpi->Probe()) {
+            if (!(lights = new AlienFan_SDK::Lights(acpi))->IsActivated()) {
+                delete lights;
+                lights = NULL;
+            }
             printf("Supported hardware v%d detected, %d fans, %d sensors, %d power states. Light control %s.\n",
-                   acpi->GetVersion(), (int) acpi->HowManyFans(), (int) acpi->sensors.size(), (int) acpi->HowManyPower(),
-                   (lights->IsActivated() ? "enabled" : "disabled"));
+                acpi->GetVersion(), (int)acpi->HowManyFans(), (int)acpi->sensors.size(), (int)acpi->HowManyPower(),
+                (lights ? "enabled" : "disabled"));
             fan_conf->SetBoosts(acpi);
         }
         else {
@@ -327,14 +330,14 @@ int main(int argc, char* argv[])
                         continue;
                     }
 
-                    if (command == "resetcolor" && lights->IsActivated()) { // Reset color system for Aurora
+                    if (command == "resetcolor" && lights) { // Reset color system for Aurora
                         if (lights->Reset())
                             printf("Lights reset complete\n");
                         else
                             printf("Lights reset failed\n");
                         continue;
                     }
-                    if (command == "setcolor" && lights->IsActivated() && CheckArgs(command, 4, args.size())) { // Set light color for Aurora
+                    if (command == "setcolor" && lights && CheckArgs(command, 4, args.size())) { // Set light color for Aurora
 
                         //byte mask = atoi(args[0].c_str()),
                         //    r = atoi(args[1].c_str()),
@@ -344,7 +347,7 @@ int main(int argc, char* argv[])
                         lights->Update();
                         continue;
                     }
-                    if (command == "setbrightness" && lights->IsActivated() && CheckArgs(command, 2, args.size())) { // set brightness for Aurora
+                    if (command == "setbrightness" && lights && CheckArgs(command, 2, args.size())) { // set brightness for Aurora
 
                         //byte num = atoi(args[0].c_str()),
                         //    mode = atoi(args[1].c_str());

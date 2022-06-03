@@ -173,20 +173,20 @@ namespace AlienFan_SDK {
 			sensors.clear();
 			fans.clear();
 			powers.clear();
-			//printf("Probing devices... ");
+			printf("Probing devices... ");
 			// Check device type...
 			for (int i = 0; i < NUM_DEVICES; i++) {
 				aDev = i;
 				cDev = devs[aDev].controlID;
 				// Probe...
-				if (systemID = RunMainCommand(devs[aDev].probe) > 0) {
+				if ((systemID = RunMainCommand(devs[aDev].probe)) > 0) {
 					// Alienware device detected!
-					//printf("Device ID %x found.\n", systemID);
+					printf("Device ID %x found.\n", systemID);
 					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
 						int fIndex = 0, funcID = 0;
 						// Scan for available fans...
-						//printf("Scanning data block...\n");
+						printf("Scanning data block...\n");
 						while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) < 0x100
 							   && funcID > 0 || funcID > 0x130) { // bugfix for 0x132 fan for R7
 							fans.push_back(funcID & 0xff);
@@ -194,7 +194,7 @@ namespace AlienFan_SDK {
 							maxrpm.push_back(0);
 							fIndex++;
 						}
-						//printf("%d fans detected, last reply %d\n", fIndex, funcID);
+						printf("%d fans detected, last reply %d\n", fIndex, funcID);
 						int firstSenIndex = fIndex;
 						// AWCC temperature sensors.
 						do {
@@ -211,14 +211,14 @@ namespace AlienFan_SDK {
 							fIndex++;
 						} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0x100
 								 && funcID < 0x1A0);
-						//printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
+						printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
 						if (aDev != 3 && funcID > 0) {
 							do {
 								// Power modes.
 								powers.push_back(funcID & 0xff);
 								fIndex++;
 							} while ((funcID = RunMainCommand(dev_controls[cDev].getPowerID, fIndex)) > 0);
-							//printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
+							printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
 						}
 						// patches...
 						switch (aDev) {
@@ -254,15 +254,17 @@ namespace AlienFan_SDK {
 							free(resName);
 						}
 					}
-					//printf("%d TZ sensors detected.\n", HowManySensors());
+					printf("%d TZ sensors detected.\n", HowManySensors());
 					// Set boost block
 					//for (int i = 0; i < fans.size(); i++)
 					//	boosts.push_back(devs[aDev].maxBoost);
 					return true;
 				}
+				else
+					printf("%d returned\n", systemID);
 			}
 			aDev = -1;
-			//printf("No device found.\n");
+			printf("No devices found.\n");
 		}
 		return false;
 	}

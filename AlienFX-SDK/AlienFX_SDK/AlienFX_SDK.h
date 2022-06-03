@@ -2,6 +2,7 @@
 #include <wtypesbase.h>
 #include <vector>
 #include <string>
+#include "alienfx-controls.h"
 
 using namespace std;
 

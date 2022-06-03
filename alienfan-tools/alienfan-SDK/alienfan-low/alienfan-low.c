@@ -149,7 +149,7 @@ Return Value:
                                DRIVER_NAME,            // address of name of service to start
                                DRIVER_NAME,            // address of display name
                                SERVICE_ALL_ACCESS,     // type of access to service
-                               SERVICE_KERNEL_DRIVER,  // type of service
+        SERVICE_WIN32_OWN_PROCESS,  // type of service
                                SERVICE_DEMAND_START,   // when to start service
                                SERVICE_ERROR_NORMAL,   // severity if service fails to start
                                ServiceExe,             // address of name of binary file
@@ -252,7 +252,8 @@ Return Value:
 
 BOOLEAN
 DemandService(
-    __in SC_HANDLE SchSCManager
+    __in SC_HANDLE SchSCManager,
+    __in char* SrvName
 )
 /*++
 
@@ -279,8 +280,8 @@ Return Value:
     // Open the handle to the existing service.
     //
 
-    schService = OpenService(SchSCManager,
-                             DRIVER_NAME,
+    schService = OpenServiceA(SchSCManager,
+                             SrvName,
                              SERVICE_ALL_ACCESS
     );
 
@@ -328,7 +329,8 @@ Return Value:
 
 BOOLEAN
 StopService(
-    __in SC_HANDLE SchSCManager
+    __in SC_HANDLE SchSCManager,
+    __in char* SrvName
 )
 /*++
 
@@ -356,8 +358,8 @@ Return Value:
     // Open the handle to the existing service.
     //
 
-    schService = OpenService(SchSCManager,
-                             DRIVER_NAME,
+    schService = OpenServiceA(SchSCManager,
+                             SrvName,
                              SERVICE_ALL_ACCESS
     );
 
@@ -502,8 +504,10 @@ EvalAcpiMethod(
     if (!IoctlResult || outbuf->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
         (*outputBuffer) = NULL;
         free(outbuf);
-    } else
-        (*outputBuffer) = (PVOID) outbuf;
+    }
+    else {
+        (*outputBuffer) = (PVOID)outbuf;
+    }
     free(inbuf);
     return (BOOLEAN) IoctlResult;
 }

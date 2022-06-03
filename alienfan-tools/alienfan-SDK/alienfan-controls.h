@@ -71,7 +71,7 @@ namespace AlienFan_SDK {
 			0, // controlID
 			0x14,   2, // Probe command
 		},
-		{ // Dell G5 SE
+		{ // Dell G5 SE and Alienware m15R6
 			"\\_SB.AMWW.WMAX", // main command
 			"\\_SB.PC00.PEG1.PEGP.GPS", // GPU command
 			//100, // Max. boost

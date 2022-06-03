@@ -1,6 +1,5 @@
 #define WIN32_LEAN_AND_MEAN
 #include "AlienFX_SDK.h"
-#include "alienfx-controls.h"
 #ifndef NOACPILIGHTS
 #include "../../alienfan-tools/alienfan-SDK/alienfan-SDK.h"
 #else
