@@ -94,18 +94,18 @@ void OnLightSelChanged(HWND hwndDlg)
 			DestroyWindow(pHdr->hwndControl);
 			pHdr->hwndControl = NULL;
 		}
-		if (tabLightSel == TAB_DEVICES && oldTab != TAB_DEVICES) {
+		if (tabLightSel == TAB_DEVICES) {
 			DestroyWindow(pHdr->hwndDisplay);
 			pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], hwndDlg, pHdr->apProc[tabLightSel]);
 			ResizeTab(pHdr->hwndDisplay, rcDisplay);
 			return;
-		}
-		if (tabLightSel != TAB_DEVICES && oldTab == TAB_DEVICES) {
-			DestroyWindow(pHdr->hwndDisplay);
-			pHdr->hwndDisplay = CreateDialogIndirect(hInst,
-				(DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_LIGHT_TEMPLATE), RT_DIALOG))),
-				hwndDlg, (DLGPROC)LightDlgFrame);
-		}
+		} else
+			if (oldTab == TAB_DEVICES) {
+				DestroyWindow(pHdr->hwndDisplay);
+				pHdr->hwndDisplay = CreateDialogIndirect(hInst,
+					(DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_LIGHT_TEMPLATE), RT_DIALOG))),
+					hwndDlg, (DLGPROC)LightDlgFrame);
+			}
 		pHdr->hwndControl = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], pHdr->hwndDisplay, pHdr->apProc[tabLightSel]);
 		RECT mRect;
 		GetWindowRect(GetDlgItem(pHdr->hwndDisplay, IDC_STATIC_CONTROLS), &mRect);
