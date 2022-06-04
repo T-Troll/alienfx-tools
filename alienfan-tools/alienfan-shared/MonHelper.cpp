@@ -53,7 +53,7 @@ void MonHelper::Stop() {
 		if (!oldPower)
 			// reset boost
 			for (int i = 0; i < acpi->fans.size(); i++)
-				acpi->SetFanValue(i, 0);
+				acpi->SetFanBoost(i, 0);
 	}
 }
 
@@ -72,7 +72,7 @@ void CMonProc(LPVOID param) {
 	// fans...
 	for (int i = 0; i < acpi->HowManyFans(); i++) {
 		src->boostSets[i] = -273;
-		src->boostRaw[i] = acpi->GetFanValue(i, true);
+		src->boostRaw[i] = acpi->GetFanBoost(i, true);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
@@ -99,14 +99,14 @@ void CMonProc(LPVOID param) {
 			if (src->boostSets[i] >= 0 && !src->fanSleep[i]) {
 				// Check overboost tricks...
 				if (src->boostRaw[i] < 100 && src->boostSets[i] > 100) {
-					acpi->SetFanValue(i, 100, true);
+					acpi->SetFanBoost(i, 100, true);
 					src->fanSleep[i] = 6;
 					DebugPrint("Overboost started, locked for 3 sec!\n");
 				} else
 					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
 						if (src->boostRaw[i] > src->boostSets[i])
 							src->boostSets[i] += 31 * (src->boostRaw[i] - src->boostSets[i]) / 32;
-						acpi->SetFanValue(i, src->boostSets[i], true);
+						acpi->SetFanBoost(i, src->boostSets[i], true);
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}

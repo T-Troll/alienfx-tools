@@ -6,12 +6,12 @@ extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void UpdateZoneList(byte flag = 0);
 
-extern void SetLightInfo(HWND hDlg);
-extern void RedrawDevList(HWND hDlg);
+extern void SetLightInfo();
+extern void RedrawDevList();
 
 extern int eLid, dIndex;
 extern bool whiteTest;
-extern int lastTab, eItem;
+extern int tabLightSel, eItem;
 
 extern HWND zsDlg;
 
@@ -35,22 +35,22 @@ AlienFX_SDK::mapping* FindCreateMapping() {
     return lgh;
 }
 
-void InitGridButtonZone(HWND dlg) {
+void InitGridButtonZone() {
     // delete zone buttons...
-    for (DWORD bID = 2000; GetDlgItem(dlg, bID); bID++)
-        DestroyWindow(GetDlgItem(dlg, bID));
+    for (DWORD bID = 2000; GetDlgItem(cgDlg, bID); bID++)
+        DestroyWindow(GetDlgItem(cgDlg, bID));
     // Create zone buttons...
-    HWND bblock = GetDlgItem(dlg, IDC_BUTTON_ZONE);
+    HWND bblock = GetDlgItem(cgDlg, IDC_BUTTON_ZONE);
     RECT bzone;
     GetClientRect(bblock, &bzone);
-    MapWindowPoints(bblock, dlg, (LPPOINT)&bzone, 1);
+    MapWindowPoints(bblock, cgDlg, (LPPOINT)&bzone, 1);
     bzone.right /= conf->mainGrid->x;
     bzone.bottom /= conf->mainGrid->y;
     LONGLONG bId = 2000;
     for (int y = 0; y < conf->mainGrid->y; y++)
         for (int x = 0; x < conf->mainGrid->x; x++) {
             HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW | WS_DISABLED,
-                bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, dlg, (HMENU)bId,
+                bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, cgDlg, (HMENU)bId,
                 GetModuleHandle(NULL), NULL);
             bId++;
         }
@@ -66,7 +66,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
         if (conf->colorGrid)
             delete conf->colorGrid;
         conf->colorGrid = new pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>[conf->mainGrid->x * conf->mainGrid->y]{};
-        for (auto cs = conf->activeProfile->lightsets.begin(); cs < conf->activeProfile->lightsets.end(); cs++) {
+        for (auto cs = conf->activeProfile->lightsets.rbegin(); cs < conf->activeProfile->lightsets.rend(); cs++) {
             AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(cs->group);
             for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
                 for (int x = full.left; x < full.right; x++)
@@ -114,7 +114,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
     RedrawWindow(cgDlg, &pRect, 0, RDW_INVALIDATE | /*RDW_UPDATENOW |*/ RDW_ALLCHILDREN);
 }
 
-void SetLightGridSize(HWND dlg, int x, int y) {
+void SetLightGridSize(int x, int y) {
     if (x != conf->mainGrid->x || y != conf->mainGrid->y) {
         DWORD* newgrid = new DWORD[x * y]{ 0 };
         for (int row = 0; row < min(conf->mainGrid->y, y); row++)
@@ -124,7 +124,7 @@ void SetLightGridSize(HWND dlg, int x, int y) {
         conf->mainGrid->grid = newgrid;
         conf->mainGrid->x = x;
         conf->mainGrid->y = y;
-        InitGridButtonZone(dlg);
+        InitGridButtonZone();
     }
 }
 
@@ -184,13 +184,13 @@ void ModifyColorDragZone(bool clear = false) {
     }
 }
 
-bool TranslateClick(HWND hDlg, LPARAM lParam) {
+bool TranslateClick(LPARAM lParam) {
     clkPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
     // check if in control window...
     RECT gRect;
-    MapWindowPoints(hDlg, HWND_DESKTOP, &clkPoint, 1);
-    GetClientRect(GetDlgItem(hDlg, IDC_BUTTON_ZONE), &gRect);
-    ScreenToClient(GetDlgItem(hDlg, IDC_BUTTON_ZONE), &clkPoint);
+    MapWindowPoints(cgDlg, HWND_DESKTOP, &clkPoint, 1);
+    GetClientRect(GetDlgItem(cgDlg, IDC_BUTTON_ZONE), &gRect);
+    ScreenToClient(GetDlgItem(cgDlg, IDC_BUTTON_ZONE), &clkPoint);
     if (PtInRect(&gRect, clkPoint)) {
         // start dragging...
         clkPoint = { clkPoint.x / (gRect.right / conf->mainGrid->x),
@@ -203,11 +203,11 @@ bool TranslateClick(HWND hDlg, LPARAM lParam) {
     }
 }
 
-void RepaintGrid(HWND hDlg) {
-    InitGridButtonZone(hDlg);
-    SendMessage(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), TBM_SETPOS, true, conf->mainGrid->x);
+void RepaintGrid() {
+    InitGridButtonZone();
+    SendMessage(GetDlgItem(cgDlg, IDC_SLIDER_HSCALE), TBM_SETPOS, true, conf->mainGrid->x);
     SetSlider(tipH, conf->mainGrid->x);
-    SendMessage(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), TBM_SETPOS, true, conf->mainGrid->y);
+    SendMessage(GetDlgItem(cgDlg, IDC_SLIDER_VSCALE), TBM_SETPOS, true, conf->mainGrid->y);
     SetSlider(tipV, conf->mainGrid->y);
     RedrawGridButtonZone(NULL, true);
 }
@@ -235,12 +235,12 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(3, 80));
         SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(3, 20));
 
-        if (lastTab != TAB_DEVICES) {
+        if (tabLightSel != TAB_DEVICES) {
             EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), false);
             EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), false);
         }
 
-        RepaintGrid(hDlg);
+        RepaintGrid();
 	} break;
     case WM_PAINT:
         cgDlg = hDlg;
@@ -249,7 +249,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         switch (LOWORD(wParam))
         {
         case IDC_BUT_CLEARGRID:
-            if (lastTab == TAB_DEVICES)
+            if (tabLightSel == TAB_DEVICES)
                 if (eLid >= 0) {
                     for (int ind = 0; ind < conf->mainGrid->x * conf->mainGrid->y; ind++)
                         if (conf->mainGrid->grid[ind] == MAKELPARAM(devID, eLid))
@@ -267,7 +267,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     } break;
     case WM_RBUTTONUP: {
         // remove grid mapping
-        if (lastTab == TAB_DEVICES && dragZone.top >=0) {
+        if (tabLightSel == TAB_DEVICES && dragZone.top >=0) {
             RECT oldDragZone = dragZone;
             for (int x = dragZone.left; x < dragZone.right; x++)
                 for (int y = dragZone.top; y < dragZone.bottom; y++)
@@ -278,14 +278,14 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     } break;
     case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: {
         // selection mark
-        TranslateClick(hDlg, lParam);
+        TranslateClick(lParam);
         dragZone = { clkPoint.x, clkPoint.y, clkPoint.x + 1, clkPoint.y + 1};
         dragStart = clkPoint;
     } break;
     case WM_LBUTTONUP:
         // end selection
         if (dragZone.top >= 0) {
-            if (lastTab == TAB_DEVICES) {
+            if (tabLightSel == TAB_DEVICES) {
                 DWORD oldLightValue = conf->mainGrid->grid[ind(dragZone.left, dragZone.top)];
                 if (dragZone.bottom - dragZone.top == 1 && dragZone.right - dragZone.left == 1 &&
                    oldLightValue && oldLightValue != MAKELPARAM(devID, eLid)) {
@@ -297,15 +297,15 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                         });
                     if (pos != conf->afx_dev.fxdevs.end() && dIndex != (pos - conf->afx_dev.fxdevs.begin())) {
                         dIndex = (int)(pos - conf->afx_dev.fxdevs.begin());
-                        RedrawDevList(GetParent(GetParent(hDlg)));
+                        RedrawDevList();
                     }
                     eLid = HIWORD(oldLightValue);
-                    SetLightInfo(GetParent(GetParent(hDlg)));
+                    SetLightInfo();
                 } else {
                     ModifyDragZone(devID, eLid);
                     dragZone = { -1,-1,-1,-1 };
                     FindCreateMapping();
-                    SetLightInfo(GetParent(GetParent(hDlg)));
+                    SetLightInfo();
                 }
             }
             else {
@@ -319,7 +319,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     case WM_MOUSEMOVE:
         if (wParam & MK_LBUTTON || wParam & MK_RBUTTON) {
             // drag
-            if (TranslateClick(hDlg, lParam) && dragZone.top >= 0) {
+            if (TranslateClick(lParam) && dragZone.top >= 0) {
                 RECT oldDragZone = dragZone;
                 dragZone = { min(clkPoint.x, dragStart.x), min(clkPoint.y, dragStart.y),
                     max(clkPoint.x + 1, dragStart.x + 1), max(clkPoint.y + 1, dragStart.y + 1) };
@@ -332,7 +332,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         switch (LOWORD(wParam)) {
         /*case TB_THUMBPOSITION: */case TB_ENDTRACK:
             if ((HWND)lParam == gridX) {
-                SetLightGridSize(hDlg, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), conf->mainGrid->y);
+                SetLightGridSize((int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), conf->mainGrid->y);
                 SetSlider(tipH, conf->mainGrid->x);
             }
             break;
@@ -346,7 +346,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         switch (LOWORD(wParam)) {
         /*case TB_THUMBPOSITION:*/ case TB_ENDTRACK:
             if ((HWND)lParam == gridY) {
-                SetLightGridSize(hDlg, conf->mainGrid->x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+                SetLightGridSize(conf->mainGrid->x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
                 SetSlider(tipV, conf->mainGrid->y);
             }
             break;
@@ -361,7 +361,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         if (ditem->CtlID >= 2000) {
             HBRUSH Brush = NULL, Brush2 = NULL;
             DWORD gridVal = conf->mainGrid->grid[(ditem->CtlID - 2000)];
-            if (lastTab == TAB_DEVICES) {
+            if (tabLightSel == TAB_DEVICES) {
                 WORD idVal = HIWORD(gridVal) << 4;
                 if (gridVal) {
                     if (HIWORD(gridVal) == eLid && LOWORD(gridVal) == devID)
@@ -485,6 +485,5 @@ void OnGridSelChanged(HWND hwndDlg)
     if (conf->gridTabSel < 0) conf->gridTabSel = 0;
     conf->mainGrid = &conf->afx_dev.GetGrids()->at(conf->gridTabSel);
 
-    // Repaint.
-    RepaintGrid(pHdr);
+    RepaintGrid();
 }

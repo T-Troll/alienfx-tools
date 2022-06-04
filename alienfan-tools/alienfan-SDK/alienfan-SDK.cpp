@@ -287,7 +287,7 @@ namespace AlienFan_SDK {
 					return ReadRamDirect(fans[fanID]);
 		return -1;
 	}
-	int Control::GetFanValue(int fanID, bool force) {
+	int Control::GetFanBoost(int fanID, bool force) {
 		if (fanID < fans.size()) {
 			if (devs[aDev].commandControlled) {
 				int value = RunMainCommand(dev_controls[cDev].getFanBoost, (byte) fans[fanID]);
@@ -297,7 +297,7 @@ namespace AlienFan_SDK {
 		}
 		return -1;
 	}
-	int Control::SetFanValue(int fanID, byte value, bool force) {
+	int Control::SetFanBoost(int fanID, byte value, bool force) {
 		if (fanID < fans.size()) {
 			if (devs[aDev].commandControlled) {
 				int finalValue = force ? value : (int) value * boosts[fanID] / 100;

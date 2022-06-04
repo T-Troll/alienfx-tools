@@ -207,7 +207,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			for (int i = 0; i < acpi->HowManyFans(); i++) { // BIOS fans, code 1-3
 				AddUpdateSensor(conf, 2, 1, i, acpi->GetFanRPM(i), (string)"Fan " + to_string(i+1) + " RPM");
 				AddUpdateSensor(conf, 2, 2, i, acpi->GetFanPercent(i), (string)"Fan " + to_string(i+1) + " percent");
-				AddUpdateSensor(conf, 2, 3, i, acpi->GetFanValue(i, true), (string)"Fan " + to_string(i + 1) + " boost");
+				AddUpdateSensor(conf, 2, 3, i, acpi->GetFanBoost(i, true), (string)"Fan " + to_string(i + 1) + " boost");
 			}
 		}
 	}

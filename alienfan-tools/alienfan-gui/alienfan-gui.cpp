@@ -532,7 +532,7 @@ void UpdateFanUI(LPVOID lpParam) {
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
         for (int i = 0; i < acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i) /*eve->mon->fanValues[i]*/) + ")";
+            string name = "Fan " + to_string(i + 1) + " (" + to_string(/*acpi->GetFanRPM(i)*/ mon->fanRpm[i]) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);

@@ -28,6 +28,7 @@
 #define IDD_ZONESELECTION               158
 #define IDD_LIGHT_TEMPLATE              159
 #define IDD_DIALOG_ADDGROUP             160
+#define IDD_DIALOG_WHITE                161
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -172,6 +173,7 @@
 #define IDC_LIST_GROUPS                 1155
 #define IDC_LIST1                       1156
 #define IDC_LIST_FOUND                  1156
+#define IDC_BUT_WHITE                   1158
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -201,9 +203,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        161
+#define _APS_NEXT_RESOURCE_VALUE        162
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1157
+#define _APS_NEXT_CONTROL_VALUE         1159
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

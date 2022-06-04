@@ -29,20 +29,22 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
-// Fan control data
-AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
+AlienFan_SDK::Control* acpi = NULL;
 
-HWND mDlg = 0;
+HWND mDlg = NULL, dDlg = NULL;
 
-// Dialogs data....
-// Common:
+// color selection:
 AlienFX_SDK::afx_act* mod;
 HANDLE stopColorRefresh = 0;
 
+// tooltips
 HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
 
-// ConfigStatic:
+// Tab selections:
 int tabSel = 0;
+int tabLightSel = 0;
+
+// Explorer restart event
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // last light selected
@@ -52,15 +54,8 @@ int eItem = -1;
 vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics" };
 
 bool DoStopService(bool kind) {
-	//SERVICE_STATUS_PROCESS ssp;
-	//ULONGLONG dwStartTime = GetTickCount64();
-	//DWORD dwBytesNeeded;
-	//DWORD dwTimeout = 10000; // 10-second time-out
-
 	EvaluteToAdmin();
-
 	// Get a handle to the SCM database.
-
 	SC_HANDLE schSCManager = OpenSCManager( NULL, NULL,GENERIC_READ);
 	if (NULL == schSCManager)
 	{
@@ -68,97 +63,26 @@ bool DoStopService(bool kind) {
 	}
 
 	return kind ? StopService(schSCManager, "AWCCService") : DemandService(schSCManager, "AWCCService");
-
-	//// Get a handle to the service.
-
-	//SC_HANDLE schService = OpenService( schSCManager, "AWCCService",  SERVICE_QUERY_STATUS);
-
-	//if (!schService)
-	//{
-	//	CloseServiceHandle(schSCManager);
-	//	return false;
-	//}
-
-	//// Make sure the service is not already stopped.
-
-	//if (QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
-	//{
-	//	if (ssp.dwCurrentState == SERVICE_STOPPED)
-	//	{
-	//		if (kind) {
-	//			CloseServiceHandle(schService);
-	//			CloseServiceHandle(schSCManager);
-	//			conf->block_power = false;
-	//			return false;
-	//		}
-	//		else {
-	//			schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
-
-	//			if (schService != NULL)
-	//			{
-	//				StartService( schService, 0, NULL);
-	//				conf->block_power = true;
-	//				CloseServiceHandle(schService);
-	//				CloseServiceHandle(schSCManager);
-	//				return false;
-	//			}
-	//		}
-	//	}
-
-	//	// Evaluate UAC and re-open manager and service here.
-
-	//	CloseServiceHandle(schService);
-
-	//	if (conf->awcc_disable && kind) {
-	//		schService = OpenService( schSCManager, "AWCCService", SERVICE_STOP | SERVICE_START | SERVICE_QUERY_STATUS);
-
-	//		if (!schService)
-	//		{
-	//			// Evaluation attempt...
-	//			EvaluteToAdmin();
-	//			CloseServiceHandle(schSCManager);
-	//			conf->block_power = true;
-	//			return false;
-	//		}
-
-	//		// Send a stop code to the service.
-
-	//		if (!ControlService(schService, SERVICE_CONTROL_STOP, (LPSERVICE_STATUS)&ssp))
-	//		{
-	//			CloseServiceHandle(schService);
-	//			CloseServiceHandle(schSCManager);
-	//			return false;
-	//		}
-
-	//		// Wait for the service to stop.
-
-	//		while (ssp.dwCurrentState != SERVICE_STOPPED)
-	//		{
-	//			Sleep(ssp.dwWaitHint);
-	//			if (!QueryServiceStatusEx( schService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
-	//			{
-	//				CloseServiceHandle(schService);
-	//				CloseServiceHandle(schSCManager);
-	//				return false;
-	//			}
-
-	//			if (ssp.dwCurrentState == SERVICE_STOPPED)
-	//				break;
-
-	//			if (GetTickCount64() - dwStartTime > dwTimeout)
-	//			{
-	//				CloseServiceHandle(schService);
-	//				CloseServiceHandle(schSCManager);
-	//				return false;
-	//			}
-	//		}
-	//	}
-	//	else conf->block_power = true;
-	//}
-
-	//CloseServiceHandle(schService);
-	//CloseServiceHandle(schSCManager);
-	//return true;
+}
+bool DetectFans() {
+	conf->fanControl = true;
+	conf->Save();
+	EvaluteToAdmin();
+	acpi = new AlienFan_SDK::Control();
+	bool isProbe = false;
+	if (acpi->IsActivated())
+		if(isProbe = acpi->Probe())
+			conf->fan_conf->SetBoosts(acpi);
+		else
+			MessageBox(NULL, "Compatible hardware not found, disabling fan control!", "Error", MB_OK | MB_ICONHAND);
+	else
+		MessageBox(NULL, "Fan control start failure, disabling fan control!", "Error", MB_OK | MB_ICONHAND);
+	if (!isProbe) {
+		delete acpi;
+		acpi = NULL;
+		conf->fanControl = false;
+	}
+	return isProbe;
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -184,21 +108,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// check fans...
 	if (conf->activeProfile->flags & PROF_FANS)
 		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
-	if (conf->fanControl) {
-		EvaluteToAdmin();
 
-		acpi = new AlienFan_SDK::Control();
-		if (acpi->IsActivated() && acpi->Probe()) {
-			conf->fan_conf->SetBoosts(acpi);
-		}
-		else {
-			//string errMsg = "Fan control didn't start and will be disabled!\ncode=" + to_string(acpi->wrongEnvironment ? acpi->GetHandle() ? 0 : acpi->GetHandle() == INVALID_HANDLE_VALUE ? 1 : 2 : 3);
-			MessageBox(NULL, "Fan control can't start and will be disabled!", "Error",
-				MB_OK | MB_ICONHAND);
-			delete acpi;
-			acpi = NULL;
-			conf->fanControl = false;
-		}
+	if (conf->fanControl) {
+		DetectFans();
 	}
 
 	fxhl = new FXHelper();
@@ -445,9 +357,9 @@ void UpdateState() {
 void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
-	ReloadProfileList();
-	if (tabSel == TAB_DEVICES)
-		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+	//ReloadProfileList();
+	//if (tabSel == TAB_DEVICES)
+	//	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
 
 void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func) {
@@ -576,8 +488,14 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !eve->mon)
-					TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
+				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !eve->mon) {
+					if (MessageBox(NULL, "Fan control disabled!\nDo you want to enable it?", "Warning",
+						MB_YESNO | MB_ICONWARNING) == IDYES)
+						if (DetectFans())
+							eve->StartFanMon();
+					if (!eve->mon)
+						TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
+				}
 				OnSelChanged(tab_list);
 			}
 		} break;
@@ -585,9 +503,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	} break;
 	case WM_WINDOWPOSCHANGING: {
 		WINDOWPOS* pos = (WINDOWPOS*)lParam;
-		RECT oldRect;
-		GetWindowRect(mDlg, &oldRect);
-		if (!(pos->flags & SWP_SHOWWINDOW) && (pos->cx || pos->cy)) {
+		if (!(pos->flags & (SWP_NOSIZE | SWP_SHOWWINDOW)) && (pos->cx || pos->cy)) {
+			RECT oldRect;
+			GetWindowRect(mDlg, &oldRect);
 			int deltax = pos->cx - oldRect.right + oldRect.left,
 				deltay = pos->cy - oldRect.bottom + oldRect.top;
 			if (deltax || deltay) {
@@ -619,9 +537,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case SIZE_MINIMIZED: {
 			// go to tray...
-			if (!fxhl->unblockUpdates) {
+			if (dDlg) {
 				fxhl->UnblockUpdates(true, true);
 				fxhl->Refresh();
+				UnregisterHotKey(dDlg, 1);
+				UnregisterHotKey(dDlg, 2);
+				UnregisterHotKey(dDlg, 3);
+				UnregisterHotKey(dDlg, 4);
+				// Recalculate ALL gauges!
+				conf->SortAllGauge();
 			}
 			ShowWindow(hDlg, SW_HIDE);
 			eve->StartProfiles();
@@ -640,6 +564,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
 			RestoreApp();
+			ReloadProfileList();
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
@@ -729,12 +654,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
 			eve->ChangeEffectMode();
-			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			conf->activeProfile->effmode = idx;
 			eve->ChangeEffectMode();
-			OnSelChanged(tab_list);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();

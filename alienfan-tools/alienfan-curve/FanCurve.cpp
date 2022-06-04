@@ -58,7 +58,7 @@ POINT Boost2Screen(fan_overboost* boost) {
 
 void DrawFan()
 {
-    if (fanWindow) {
+    if (fanWindow && mon) {
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
 
@@ -85,7 +85,7 @@ void DrawFan()
             // curve...
             temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             fan_block* fan = NULL;
-            int fanBoost = acpi->GetFanValue(fan_conf->lastSelectedFan);
+            int fanBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan);
             for (auto senI = fan_conf->lastProf->fanControls.begin();
                 senI < fan_conf->lastProf->fanControls.end(); senI++)
                 if (fan = fan_conf->FindFanBlock(&(*senI), fan_conf->lastSelectedFan)) {
@@ -108,7 +108,7 @@ void DrawFan()
                         SetDCBrushColor(hdc, RGB(255, 255, 0));
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         SelectObject(hdc, GetStockObject(DC_BRUSH));
-                        mark = Fan2Screen(mon->senValues[senI->sensorIndex], fanBoost/*mon->boostValues[fan_conf->lastSelectedFan]*/);
+                        mark = Fan2Screen(mon->senValues[senI->sensorIndex], fanBoost);
                         Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                     }
                 }
@@ -117,10 +117,8 @@ void DrawFan()
             SetDCBrushColor(hdc, RGB(255, 0, 0));
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
-            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost/*mon->boostValues[fan_conf->lastSelectedFan]*/);
+            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-            // RPM
-            //fan_overboost* maxBoost = fan_conf->FindBoost(fan_conf->lastSelectedFan);
             string rpmText = "Fan curve (scale: " + to_string(acpi->boosts[fan_conf->lastSelectedFan])
                 + ", boost: " + to_string(fanBoost) + ", " + to_string(acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
@@ -164,7 +162,7 @@ void DrawFan()
 }
 
 int SetFanSteady(byte boost, bool downtrend = false) {
-    acpi->SetFanValue(bestBoostPoint.fanID, boost, true);
+    acpi->SetFanBoost(bestBoostPoint.fanID, boost, true);
     // Check the trend...
     int fRpm, fDelta = -1, oDelta, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
     boostCheck.push_back({ bestBoostPoint.fanID, boost, (USHORT)bRpm });
@@ -204,7 +202,7 @@ void UpdateBoost() {
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = (int)lpParam, steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanValue(num, true);
+    int num = (int)lpParam, steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanBoost(num, true);
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
@@ -248,7 +246,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                     goto finish;
                 boost = bestBoostPoint.maxBoost;
             }
-            acpi->SetFanValue(num, oldBoost, true);
+            acpi->SetFanBoost(num, oldBoost, true);
             UpdateBoost();
             DrawFan();
         }

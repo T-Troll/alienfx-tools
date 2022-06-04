@@ -88,11 +88,11 @@ namespace AlienFan_SDK {
 
 		// Get boost value for the fan index fanID at fans[]. If force, raw value returned, otherwise cooked by boost
 		// Result: Error or raw value if forced, otherwise cooked by boost.
-		int GetFanValue(int fanID, bool force = false);
+		int GetFanBoost(int fanID, bool force = false);
 
 		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise cooked by boost.
 		// Result: value or error
-		int SetFanValue(int fanID, byte value, bool force = false);
+		int SetFanBoost(int fanID, byte value, bool force = false);
 
 		// Get temperature value for the sensor index TanID at sensors[]
 		// Result: temperature value or error

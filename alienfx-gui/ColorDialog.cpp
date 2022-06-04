@@ -157,20 +157,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_BUTT_REMOVE_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap) {
-				if (conf->afx_dev.GetGroupById(mmap->group)->have_power)
+				if (conf->afx_dev.GetGroupById(mmap->group)->have_power) {
 					mmap->color.clear();
+					effID = 0;
+				}
 				else {
 					mmap->color.pop_back();
 					effID--;
 				}
-				// remove mapping if no colors and effects!
-				if (mmap->color.empty()) {
-					RemoveUnused(conf->active_set);
-					effID = 0;
-				}
-				else {
-					fxhl->RefreshOne(mmap);
-				}
+				fxhl->RefreshOne(mmap);
 				RebuildEffectList(hDlg, mmap);
 			}
 			break;
@@ -184,7 +179,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap&& mmap->gauge);
-				//conf->SortGroupGauge(mmap);
 				fxhl->RefreshOne(mmap);
 			}
 			break;
