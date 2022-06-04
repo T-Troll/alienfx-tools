@@ -358,6 +358,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		// First, reset all light devices and re-scan!
 		fxhl->UnblockUpdates(false, true);
 		// Do we have some lights?
+		conf->afx_dev.AlienFXAssignDevices();
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		if (conf->afx_dev.fxdevs.size() > 0) {
@@ -487,7 +488,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// Try to detect lights from DB
 			if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog) == IDOK) {
-				ApplyDeviceMaps(hDlg);
+				ApplyDeviceMaps();
 			}
 		} break;
 		case IDC_BUT_LOADMAP:
