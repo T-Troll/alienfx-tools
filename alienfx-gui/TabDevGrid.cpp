@@ -24,13 +24,10 @@ HWND tipH = NULL, tipV = NULL;
 HWND cgDlg;
 
 AlienFX_SDK::mapping* FindCreateMapping() {
-    AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(conf->afx_dev.fxdevs[dIndex].dev->GetPID(), eLid);
+    AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid);
     if (!lgh) {
         // create new mapping
-        lgh = new AlienFX_SDK::mapping({ 0, (WORD)conf->afx_dev.fxdevs[dIndex].dev->GetPID(), (WORD)eLid, 0,
-            "Light " + to_string(eLid + 1) });
-        conf->afx_dev.GetMappings()->push_back(lgh);
-        conf->afx_dev.fxdevs[dIndex].lights.push_back(conf->afx_dev.GetMappings()->back());
+        conf->afx_dev.fxdevs[dIndex].lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
     }
     return lgh;
 }
@@ -216,7 +213,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     HWND gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
         gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
 
-    WORD devID = dIndex < 0 ? 0 : conf->afx_dev.fxdevs[dIndex].desc->devid;
+    WORD devID = dIndex < 0 ? 0 : conf->afx_dev.fxdevs[dIndex].pid;
 
 	switch (message) {
 	case WM_INITDIALOG:

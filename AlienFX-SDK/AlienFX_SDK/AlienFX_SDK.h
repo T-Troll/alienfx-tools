@@ -56,19 +56,19 @@ namespace AlienFX_SDK {
 	};
 
 	struct mapping { // Light information block
-		WORD vid = 0;
-		WORD devid;// = 0;
+		//WORD vid = 0;
+		//WORD devid;// = 0;
 		WORD lightid;// = 0;
 		WORD flags = 0;
 		string name;
 	};
 
-	struct devmap { // Device information block
-		WORD vid = 0;
-		WORD devid;// = 0;
-		string name;
-		Colorcode white = {255,255,255};
-	};
+	//struct devmap { // Device information block
+	//	WORD vid = 0;
+	//	WORD devid;// = 0;
+	//	string name;
+	//	Colorcode white = {255,255,255};
+	//};
 
 	struct group { // Light group information block
 		DWORD gid;// = 0;
@@ -192,7 +192,7 @@ namespace AlienFX_SDK {
 		// brightness - desired brightness (0 - off, 255 - full)
 		// mappings - needed to enable some lights for v1-v4 and for software emulation
 		// power - if true, power and indicator lights will be set too
-		bool ToggleState(BYTE brightness, vector <mapping*>* mappings, bool power);
+		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
 
 		// Global (whole device) effect control for APIv5
 		bool SetGlobalEffects(byte effType, byte tempo, afx_act act1, afx_act act2);
@@ -221,21 +221,24 @@ namespace AlienFX_SDK {
 
 	// Single device data - device pointer, description pointer, lights
 	struct afx_device {
-		Functions* dev;
-		devmap* desc;
-		vector <mapping*> lights;
+		WORD vid, pid;
+		Functions* dev = NULL;
+		string name;
+		Colorcode white = { 255,255,255 };
+		vector <mapping> lights;
 	};
 
 	class Mappings {
 	private:
-		vector <mapping*> mappings; // Lights data for all devices
-		vector <devmap> devices; // Device data found/present in system
+		//vector <mapping*> mappings; // Lights data for all devices
+		//vector <devmap> devices; // Device data found/present in system
 		vector <group> groups; // Defined light groups
 		vector <lightgrid> grids; // Grid zones info
 
 	public:
 
 		vector<afx_device> fxdevs;
+		bool haveLights = false;
 
 		~Mappings();
 
@@ -252,10 +255,10 @@ namespace AlienFX_SDK {
 		void SaveMappings();
 
 		// get saved devices names
-		vector<devmap>* GetDevices();
+		//vector<devmap>* GetDevices();
 
 		// get saved light names
-		vector <mapping*>* GetMappings();
+		vector <mapping>* GetMappings(DWORD devID);
 
 		// get defined groups
 		vector <group>* GetGroups();
@@ -263,23 +266,32 @@ namespace AlienFX_SDK {
 		// get defined grids
 		vector <lightgrid>* GetGrids() { return &grids; };
 
-		// get device structure by PID (devID)/VID
-		devmap* GetDeviceById(WORD devID, WORD vid = 0);
+		// get device structure by PID/VID (low/high WORD)
+		afx_device* GetDeviceById(DWORD devID);
+
+		// get or add device structure by PID/VID (low/high WORD)
+		afx_device* AddDeviceById(DWORD devID);
 
 		// find light mapping by PID (or PID/VID) and light ID
-		mapping* GetMappingById(DWORD devID, WORD LightID);
+		mapping* GetMappingById(afx_device* dev, WORD LightID);
 
 		// find light group by it's ID
 		group* GetGroupById(DWORD gid);
 
 		// add new light name into the list field-by-field
+		void AddMappingByDev(afx_device* dev, WORD lightID, const char* name, WORD flags);
+
+		// add new light name into the list field-by-field
 		void AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags);
 
 		// remove light mapping by id
-		void RemoveMapping(DWORD devID, WORD lightID);
+		void RemoveMapping(afx_device* dev, WORD lightID);
+
+		// get light flags (Power, indicator) by device pointer and light ID
+		int GetFlags(afx_device* dev, WORD lightid);
 
 		// get light flags (Power, indicator) by PID/VID and light ID
-		int GetFlags(DWORD devid, WORD lightid);
+		int GetFlags(DWORD devID, WORD lightid);
 	};
 
 }

@@ -97,10 +97,16 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 		afx_map->LoadMappings();
 	}
 	afx_map->AlienFXAssignDevices();
+	// remove devices not present
+	for (int i = 0; i < afx_map->fxdevs.size(); i++)
+		if (!afx_map->fxdevs[i].dev) {
+			afx_map->fxdevs.erase(i + afx_map->fxdevs.begin());
+			i--;
+		}
 	// now map lights to zones
 	FillGroupsFromGrid();
 
-	if (afx_map->fxdevs.size() && afx_map->GetMappings()->size())
+	if (afx_map->fxdevs.size())
 		return LFX_SUCCESS;
 	else
 		return LFX_ERROR_NODEVS;
@@ -122,8 +128,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetTiming(const int time) {
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetVersion(char *const name, const unsigned int namelen) {
 	if (CheckState() == LFX_SUCCESS) {
 		string vName = "V5.2";
-		for (int i = 0; i < afx_map->fxdevs.size(); i++) {
-			vName += ",API v" + to_string(afx_map->fxdevs[i].dev->GetVersion());
+		for (auto i = afx_map->fxdevs.begin(); i < afx_map->fxdevs.end(); i++) {
+			vName += ",API v" + to_string(i->dev->GetVersion());
 		}
 		if (namelen > vName.length()) {
 			strcpy_s(name, namelen, vName.c_str());
@@ -136,16 +142,16 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetVersion(char *const name, const unsigned i
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Reset() {
 	if (CheckState() == LFX_SUCCESS) {
-		for (int i = 0; i < afx_map->fxdevs.size(); i++)
-			afx_map->fxdevs[i].dev->Reset();
+		for (auto i = afx_map->fxdevs.begin(); i < afx_map->fxdevs.end(); i++)
+			i->dev->Reset();
 	}
 	return state;
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Update() {
 	if (CheckState() == LFX_SUCCESS) {
-		for (int i = 0; i < afx_map->fxdevs.size(); i++)
-			afx_map->fxdevs[i].dev->UpdateColors();
+		for (auto i = afx_map->fxdevs.begin(); i < afx_map->fxdevs.end(); i++)
+			i->dev->UpdateColors();
 	}
 	return state;
 }
@@ -163,7 +169,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumDevices(unsigned int *const num) {
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, char *const name, const unsigned int namelen, unsigned char *const devtype) {
 	if (CheckState(dev) == LFX_SUCCESS) {
-		string devName = afx_map->fxdevs[dev].desc ? afx_map->fxdevs[dev].desc->name : "Device #" + to_string(dev);
+		string devName = afx_map->fxdevs[dev].name.length() ? afx_map->fxdevs[dev].name : "Device #" + to_string(dev);
 		*devtype = LFX_DEVTYPE_UNKNOWN;
 		switch (afx_map->fxdevs[dev].dev->GetVersion()) {
 		case 0:*devtype = LFX_DEVTYPE_DESKTOP; break;
@@ -190,8 +196,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumLights(const unsigned int dev, unsigned
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightDescription(const unsigned int dev, const unsigned int lid, char *const name, const unsigned int namelen) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
-		if (namelen > afx_map->fxdevs[dev].lights[lid]->name.length()) {
-			strcpy_s(name, namelen, afx_map->fxdevs[dev].lights[lid]->name.c_str());
+		if (namelen > afx_map->fxdevs[dev].lights[lid].name.length()) {
+			strcpy_s(name, namelen, afx_map->fxdevs[dev].lights[lid].name.c_str());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}
@@ -209,14 +215,15 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightDescription(const unsigned int dev, c
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightLocation(const unsigned int dev, const unsigned int lid, PLFX_POSITION const pos) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
-		AlienFX_SDK::mapping *map = afx_map->fxdevs[dev].lights[lid];
+		AlienFX_SDK::mapping *map = &afx_map->fxdevs[dev].lights[lid];
+		DWORD pid = afx_map->fxdevs[dev].pid;
 		if (map) {
-			pos->x = LightInGroup(&groups[1], map->devid, map->lightid) >= 0 ? 0 :
-				LightInGroup(&groups[0], map->devid, map->lightid) >= 0 ? 2 : 1;
-			pos->y = LightInGroup(&groups[3], map->devid, map->lightid) >= 0 ? 0 :
-				LightInGroup(&groups[2], map->devid, map->lightid) >= 0 ? 2 : 1;
-			pos->z = LightInGroup(&groups[5], map->devid, map->lightid) >= 0 ? 0 :
-				LightInGroup(&groups[4], map->devid, map->lightid) >= 0 ? 2 : 1;
+			pos->x = LightInGroup(&groups[1], pid, map->lightid) >= 0 ? 0 :
+				LightInGroup(&groups[0], pid, map->lightid) >= 0 ? 2 : 1;
+			pos->y = LightInGroup(&groups[3], pid, map->lightid) >= 0 ? 0 :
+				LightInGroup(&groups[2], pid, map->lightid) >= 0 ? 2 : 1;
+			pos->z = LightInGroup(&groups[5], pid, map->lightid) >= 0 ? 0 :
+				LightInGroup(&groups[4], pid, map->lightid) >= 0 ? 2 : 1;
 		}
 	}
 	return state;
@@ -233,7 +240,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const u
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightColor(const unsigned int dev, const unsigned int lid, const PLFX_COLOR clr) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
 		TranslateColor(*clr);
-		afx_map->fxdevs[dev].dev->SetColor(afx_map->fxdevs[dev].lights[lid]->lightid, {final.blue, final.green, final.red});
+		afx_map->fxdevs[dev].dev->SetColor(afx_map->fxdevs[dev].lights[lid].lightid, {final.blue, final.green, final.red});
 	}
 	return state;
 }
@@ -245,20 +252,19 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 		TranslateColor({src.r,src.g,src.b,src.br});
 		int gid = GetGroupID(pos);
 		AlienFX_SDK::group *grp = gid < 0 ? NULL : &groups[gid];
-		for (int j = 0; j < afx_map->fxdevs.size(); j++) {
+		for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
 			vector<byte> lights;
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (grp->lights[i].first == afx_map->fxdevs[j].dev->GetPID() /*&&
-						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER)*/)
+					if (grp->lights[i].first == j->pid)
 						lights.push_back((byte) grp->lights[i].second);
 			} else {
-				for (int i = 0; gid < 0 && i < afx_map->fxdevs[j].lights.size(); i++) {
-					if (!(afx_map->fxdevs[j].lights[i]->flags & ALIENFX_FLAG_POWER))
-						lights.push_back((byte) afx_map->fxdevs[j].lights[i]->lightid);
+				for (auto i = j->lights.begin(); gid < 0 && i < j->lights.end(); i++) {
+					if (!(i->flags & ALIENFX_FLAG_POWER))
+						lights.push_back((byte) i->lightid);
 				}
 			}
-			afx_map->fxdevs[j].dev->SetMultiLights(&lights, {final.blue, final.green, final.red});
+			j->dev->SetMultiLights(&lights, {final.blue, final.green, final.red});
 		}
 	}
 	return state;
@@ -270,7 +276,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColor(const unsigned int dev, c
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColorEx(const unsigned int dev, const unsigned int lid, const unsigned int act, const PLFX_COLOR clr1, const PLFX_COLOR clr2) {
 	if (CheckState(dev,lid) == LFX_SUCCESS) {
-		AlienFX_SDK::act_block actions{(byte) afx_map->fxdevs[dev].lights[lid]->lightid};
+		AlienFX_SDK::act_block actions{(byte) afx_map->fxdevs[dev].lights[lid].lightid};
 		TranslateColor(*clr1);
 		BYTE fact = GetActionMode(act);
 		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
@@ -297,18 +303,18 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const u
 		actions.act.push_back({fact, gtempo, 7, final.red, final.green, final.blue});
 		int gid = GetGroupID(pos);
 		AlienFX_SDK::group *grp = gid < 0 ? NULL : &groups[gid];
-		for (int j = 0; j < afx_map->fxdevs.size(); j++) {
+		for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (grp->lights[i].first == afx_map->fxdevs[j].dev->GetPID() /*&&
+					if (grp->lights[i].first == j->pid /*&&
 						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER)*/) {
 						actions.index = (byte) grp->lights[i].second;
-						afx_map->fxdevs[j].dev->SetAction(&actions);
+						j->dev->SetAction(&actions);
 					}
 			} else {
-				for (int i = 0; gid < 0 && i < afx_map->fxdevs[j].lights.size(); i++) {
-					if (!(afx_map->fxdevs[j].lights[i]->flags & ALIENFX_FLAG_POWER))
-						afx_map->fxdevs[j].dev->SetAction(&actions);
+				for (auto i = j->lights.begin(); gid < 0 && i < j->lights.end(); i++) {
+					if (!(i->flags & ALIENFX_FLAG_POWER))
+						j->dev->SetAction(&actions);
 				}
 			}
 		}

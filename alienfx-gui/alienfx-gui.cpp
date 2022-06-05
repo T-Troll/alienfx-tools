@@ -137,7 +137,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		RegisterHotKey(mDlg, 3, 0, VK_F18);
 		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
-		//RegisterHotKey(mDlg, 6, 0, VK_F17);
+		RegisterHotKey(mDlg, 6, 0, VK_F17);
 		//profile change hotkeys...
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
@@ -797,15 +797,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->StartProfiles();
 			ReloadProfileList();
 			break;
-		//case 6: // G-key for Dell G-series power switch
-		//	if (conf->fanControl) {
-		//		if (acpi->GetPower())
-		//			conf->fan_conf->lastProf->powerStage = 0;
-		//		else
-		//			conf->fan_conf->lastProf->powerStage = 1;
-		//		acpi->SetPower(conf->fan_conf->lastProf->powerStage);
-		//	}
-		//	break;
+		case 6: // G-key for Dell G-series power switch
+			if (acpi)
+				acpi->ToggleGMode();
+			break;
 		default: return false;
 		}
 		break;
@@ -936,7 +931,8 @@ void RemoveUnused(vector<groupset>* lightsets) {
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
 	auto pos = find_if(grp->lights.begin(), grp->lights.end(),
 		[devid, lightid](auto t) {
-			return t.first == devid && t.second == lightid;
+			// WARNING: check is it pid or vid/pid!
+			return LOWORD(t.first) == devid && t.second == lightid;
 		});
 	if (pos != grp->lights.end()) {
 		// is it power button?

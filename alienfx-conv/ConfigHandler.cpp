@@ -99,25 +99,24 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 
 AlienFX_SDK::group* ConfigHandler::FindCreateGroup(int did, int lid, string name)
 {
-	AlienFX_SDK::mapping* lgh = afx_dev.GetMappingById(did, lid);
-	unsigned maxID = 0x10000;
-	while (afx_dev.GetGroupById(maxID))
-		maxID++;
-	AlienFX_SDK::group* grp = new AlienFX_SDK::group({ maxID, name + " " + (lgh ? lgh->name : "#" + to_string(maxID & 0xffff))});
+	AlienFX_SDK::group* grp = NULL;
 
-	grp->lights.push_back({ did, lid });
 	auto tGrp = find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
-		[grp](auto g) {
-			return g.lights.size() == 1 && g.lights[0] == grp->lights[0];
+		[did, lid](auto g) {
+			return g.lights.size() == 1 && g.lights.front().first == did && g.lights.front().second == lid;
 		});
 	if (tGrp == afx_dev.GetGroups()->end()) {
-		afx_dev.GetGroups()->push_back(*grp);
-		delete grp;
+		unsigned maxID = 0x10000;
+		while (afx_dev.GetGroupById(maxID))
+			maxID++;
+		AlienFX_SDK::mapping* lgh = afx_dev.GetMappingById(afx_dev.GetDeviceById(did), lid);
+		afx_dev.GetGroups()->push_back({ maxID, name + " " + (lgh ? lgh->name : "#" + to_string(maxID & 0xffff)) });
 		grp = &afx_dev.GetGroups()->back();
-		grp->have_power = afx_dev.GetFlags(did, lid) & ALIENFX_FLAG_POWER;
+		grp->have_power = lgh->flags & ALIENFX_FLAG_POWER;
 	}
 	else
 		grp = &(*tGrp);
+
 	return grp;
 }
 

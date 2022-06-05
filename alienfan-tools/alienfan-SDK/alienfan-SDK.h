@@ -114,6 +114,9 @@ namespace AlienFan_SDK {
 		// Result: success or error
 		int SetGPU(int power);
 
+		// Toggle G-mode on some systems
+		int ToggleGMode();
+
 		// Get low-level driver handle for direct operations
 		// Result: handle to driver or NULL
 		HANDLE GetHandle();

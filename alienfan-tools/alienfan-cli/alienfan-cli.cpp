@@ -128,6 +128,7 @@ setperf=<ac>,<dc>\t\tSet CPU performance boost\n\
 getfans[=<mode>]\t\tShow current fan boost level (0..100 - in percent) with selected mode\n\
 setfans=<fan1>[,<fanN>][,mode]\tSet fans boost level (0..100 - in percent) with selected mode\n\
 setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or auto)\n\
+togglegmode\t\t\tToggle G-mode on/off (at supported hardware)\n\
 resetcolor\t\t\tReset color system\n\
 setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
 setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
@@ -144,7 +145,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v6.0.0.5\n");
+    printf("AlienFan-cli v6.0.1\n");
 
     bool supported = false;
 
@@ -303,6 +304,10 @@ int main(int argc, char* argv[])
                         printf("Done!\n");
                         continue;
                     }
+                    if (command == "togglegmode") {
+                        printf("G-mode switch result %d", acpi->ToggleGMode());
+                        continue;
+                    }
                     if (command == "direct" && CheckArgs(command, 2, args.size())) {
                         AlienFan_SDK::ALIENFAN_COMMAND comm;
                         comm.com = (byte)strtoul(args[0].str.c_str(), NULL, 16);
@@ -341,14 +346,14 @@ int main(int argc, char* argv[])
                         lights->Update();
                         continue;
                     }
-                    if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
-                        PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-                        char command[] = "\\_SB.PCI0.LPC0.EC0._Q14";
-                        if (args[0].num > 0)
-                            command[22] = '5';
-                        printf("Test result %d" ,EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, NULL));
-                        continue;
-                    }
+                    //if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
+                    //    PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+                    //    char command[] = "\\_SB.PCI0.LPC0.EC0._Q14";
+                    //    if (args[0].num > 0)
+                    //        command[22] = '5';
+                    //    printf("Test result %d" ,EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, NULL));
+                    //    continue;
+                    //}
                     printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
                 }
             }

@@ -827,7 +827,7 @@ namespace AlienFX_SDK {
 		return true;
 	}
 
-	bool Functions::ToggleState(BYTE brightness, vector<mapping*> *mappings, bool power) {
+	bool Functions::ToggleState(BYTE brightness, vector<mapping> *mappings, bool power) {
 
 #ifdef _DEBUG
 		wchar_t buff[2048];
@@ -840,11 +840,9 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_L_V7: case API_L_ACPI:
 			if (!brightness)
-				for (int i = 0; mappings && i < mappings->size(); i++) {
-					mapping* cur = mappings->at(i);
-					if (LOWORD(cur->devid) == pid && (!cur->flags || power)) {
-						SetColor(cur->lightid, {0});
-					}
+				for (auto i = mappings->begin(); i < mappings->end(); i++) {
+					if (!i->flags || power)
+						SetColor(i->lightid, {0});
 				}
 			break;
 		case API_L_V6:
@@ -873,14 +871,11 @@ namespace AlienFX_SDK {
 			PrepareAndSend(COMMV4.prepareTurn, sizeof(COMMV4.prepareTurn));
 			vector<pair<byte, byte>> mods{{3,(byte)(0x64 - bright)}};
 			byte pos = 6, pindex = 0;
-			for (int i = 0; mappings && i < mappings->size(); i++) {
-				mapping* cur = mappings->at(i);
-				if (LOWORD(cur->devid) == pid && pos < length)
-					if (!cur->flags || power) {
-						mods.push_back({pos,(byte)cur->lightid});
-						pos++; pindex++;
-					}
-			}
+			for (auto i = mappings->begin(); i < mappings->end(); i++)
+				if (pos < length && (!i->flags || power)) {
+					mods.push_back({pos,(byte)i->lightid});
+					pos++; pindex++;
+				}
 			mods.push_back({5,pindex});
 			return PrepareAndSend(COMMV4.turnOn, sizeof(COMMV4.turnOn), mods);
 		} break;
@@ -1035,14 +1030,14 @@ namespace AlienFX_SDK {
 	}
 
 	Mappings::~Mappings() {
-		for (int i = 0; i < fxdevs.size(); i++) {
-			fxdevs[i].dev->AlienFXClose();
-			delete fxdevs[i].dev;
+		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
+			if (i->dev) {
+				i->dev->AlienFXClose();
+				delete i->dev;
+			}
 		}
 		fxdevs.clear();
 		groups.clear();
-		mappings.clear();
-		devices.clear();
 	}
 
 	vector<pair<WORD, WORD>> Mappings::AlienFXEnumDevices() {
@@ -1111,63 +1106,59 @@ namespace AlienFX_SDK {
 	}
 
 	void Mappings::AlienFXAssignDevices(HANDLE acc, byte brightness, byte power) {
+		haveLights = false;
 		vector<pair<WORD, WORD>> devList = AlienFXEnumDevices();
-		for (int i = 0; i < fxdevs.size(); i++) {
-			fxdevs[i].dev->AlienFXClose();
-			delete fxdevs[i].dev;
-		}
-		if (acc) devList.push_back({0,0});
-		fxdevs.clear();
+		for (int i = 0; i < fxdevs.size(); i++)
+			if (fxdevs[i].dev) {
+				fxdevs[i].dev->AlienFXClose();
+				fxdevs[i].dev = NULL;
+			}
+
 		for (int i = 0; i < devList.size(); i++) {
-			afx_device dev{new AlienFX_SDK::Functions()};
+			afx_device* dev = AddDeviceById(MAKELPARAM(devList[i].second, devList[i].first));
+			dev->dev = {new AlienFX_SDK::Functions()};
 			int pid = -1;
 			if (devList[i].second)
-				pid = dev.dev->AlienFXInitialize(devList[i].first, devList[i].second);
+				pid = dev->dev->AlienFXInitialize(devList[i].first, devList[i].second);
 			else
-				pid = dev.dev->AlienFXInitialize(acc);
+				pid = dev->dev->AlienFXInitialize(acc);
 			if (pid != -1) {
-				// attach device description...
-				dev.desc = GetDeviceById(pid, dev.dev->GetVid());
-				// now attach mappings...
-				for (int j = 0; j < GetMappings()->size(); j++)
-					if ((*GetMappings())[j]->devid == pid)
-						dev.lights.push_back((*GetMappings())[j]);
-				dev.dev->ToggleState(brightness, &mappings, power);
-				fxdevs.push_back(dev);
+				dev->dev->ToggleState(brightness, &dev->lights, power);
+				if (dev->lights.size())
+					haveLights = true;
 			}
 		}
 	}
 
-	devmap *Mappings::GetDeviceById(WORD devID, WORD vid) {
-		auto pos = find_if(devices.begin(), devices.end(),
-			[devID, vid](devmap t) {
-				return t.devid == devID && (!vid || t.vid == vid);
+	afx_device* Mappings::GetDeviceById(DWORD devID) {
+		auto pos = find_if(fxdevs.begin(), fxdevs.end(),
+			[devID](afx_device t) {
+				return t.pid == LOWORD(devID) && (!HIWORD(devID) || t.vid == HIWORD(devID));
 			} );
-		if (pos != devices.end())
+		if (pos != fxdevs.end())
 			return &(*pos);
-		//for (int i = 0; i < devices.size(); i++)
-		//	if (devices[i].devid == devID)
-		//		// vid check, if any
-		//		if (vid && devices[i].vid)
-		//			if (vid == devices[i].vid)
-		//				return &devices[i];
-		//			else
-		//				return nullptr;
-		//		else
-		//			return &devices[i];
 		return nullptr;
 	}
 
-	mapping *Mappings::GetMappingById(DWORD devID, WORD LightID) {
-		auto pos = find_if(mappings.begin(), mappings.end(),
-			[devID, LightID](mapping* t) {
-				return LOWORD(t->devid) == LOWORD(devID) && t->lightid == LightID;
-			} );
-		if (pos != mappings.end())
-			return *pos;
-		//for (int i = 0; i < mappings.size(); i++)
-		//	if (LOWORD(mappings[i]->devid) == LOWORD(devID) && mappings[i]->lightid == LightID)
-		//		return mappings[i];
+	afx_device* Mappings::AddDeviceById(DWORD devID)
+	{
+		afx_device* dev = GetDeviceById(devID);
+		if (!dev) {
+			fxdevs.push_back({ HIWORD(devID), LOWORD(devID) });
+			dev = &fxdevs.back();
+		}
+		return dev;
+	}
+
+	mapping *Mappings::GetMappingById(afx_device* dev, WORD LightID) {
+		if (dev) {
+			auto pos = find_if(dev->lights.begin(), dev->lights.end(),
+				[LightID](mapping t) {
+					return t.lightid == LightID;
+				});
+			if (pos != dev->lights.end())
+				return &(*pos);
+		}
 		return nullptr;
 	}
 
@@ -1175,30 +1166,40 @@ namespace AlienFX_SDK {
 		return &groups;
 	}
 
-	void Mappings::AddMapping(DWORD devID, WORD lightID, const char *name, WORD flags) {
-		mapping *map;
-		if (!(map = GetMappingById(devID, lightID))) {
-			WORD vid = 0;
-			if (!(vid = HIWORD(devID))) {
-				devmap *dev = GetDeviceById(LOWORD(devID), HIWORD(devID));
-				vid = dev ? dev->vid : 0;
+	void Mappings::AddMappingByDev(afx_device* dev, WORD lightID, const char *name, WORD flags) {
+		if (dev) {
+			mapping* map;
+			if (!(map = GetMappingById(dev, lightID))) {
+				dev->lights.push_back({ lightID });
+				map = &dev->lights.back();
 			}
-			map = new mapping{vid,LOWORD(devID),lightID};
-			mappings.push_back(map);
+			map->name = name;
+			map->flags = flags;
+			haveLights = true;
+		}
+	}
+
+	void Mappings::AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags) {
+		afx_device* dev = AddDeviceById(devID);
+		mapping* map;
+		if (!(map = GetMappingById(dev, lightID))) {
+			dev->lights.push_back({ lightID });
+			map = &dev->lights.back();
 		}
 		map->name = name;
 		map->flags = flags;
 	}
 
-	void Mappings::RemoveMapping(DWORD devID, WORD lightID)
+	void Mappings::RemoveMapping(afx_device* dev, WORD lightID)
 	{
-		auto del_map = find_if(mappings.begin(), mappings.end(),
-			[devID, lightID](auto t) {
-				return t->devid == devID && t->lightid == lightID;
-			});
-		if (del_map != mappings.end()) {
-			delete (*del_map);
-			mappings.erase(del_map);
+		if (dev) {
+			auto del_map = find_if(dev->lights.begin(), dev->lights.end(),
+				[lightID](auto t) {
+					return t.lightid == lightID;
+				});
+			if (del_map != dev->lights.end()) {
+				dev->lights.erase(del_map);
+			}
 		}
 	}
 
@@ -1216,25 +1217,22 @@ namespace AlienFX_SDK {
 	void Mappings::LoadMappings() {
 		HKEY   hKey1;
 
-		devices.clear();
-		mappings.clear();
 		groups.clear();
 		grids.clear();
 
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
-		unsigned vindex; mapping map; devmap dev;
+		unsigned vindex; mapping map; afx_device* dev;
 		char kName[255], name[255];
 		DWORD len = 255, lend = 255, dID;
-		WORD lID = 0;
+		WORD lID = 0, vid, pid;
 		for (vindex = 0; RegEnumValueA(hKey1, vindex, kName, &len, NULL, NULL, (LPBYTE) name, &lend) == ERROR_SUCCESS; vindex++) {
-			if (sscanf_s(kName, "Dev#%hd_%hd", &dev.vid, &dev.devid) == 2) {
-				dev.name = string(name);
-				devices.push_back(dev);
+			if (sscanf_s(kName, "Dev#%hd_%hd", &vid, &pid) == 2) {
+				dev = AddDeviceById(MAKELPARAM(pid, vid));
+				dev->name = string(name);
 			}
-			if (sscanf_s(kName, "DevWhite#%hd_%hd", &dev.vid, &dev.devid) == 2) {
-				devmap* tDev = GetDeviceById(dev.devid, dev.vid);
-				if (tDev)
-					tDev->white.ci = ((DWORD *) name)[0];
+			if (sscanf_s(kName, "DevWhite#%hd_%hd", &vid, &pid) == 2) {
+				dev = AddDeviceById(MAKELPARAM(pid, vid));
+				dev->white.ci = ((DWORD *) name)[0];
 			}
 			len = 255, lend = 255;
 		}
@@ -1257,14 +1255,15 @@ namespace AlienFX_SDK {
 				RegGetValueA(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
 				groups.push_back({dID, name});
 				for (int i = 0; i < nameLen / sizeof(DWORD); i += 2) {
-					mapping* map = GetMappingById(maps[i], (WORD)maps[i + 1]);
-					if (map) {
+					dev = GetDeviceById(maps[i]);
+					if (dev) {
+						int flags = GetFlags(dev, (WORD)maps[i + 1]);
 						groups.back().lights.push_back({ maps[i], maps[i + 1] });
-						if (map->flags & ALIENFX_FLAG_POWER)
+						if (flags & ALIENFX_FLAG_POWER)
 							groups.back().have_power = true;
 					}
 				}
-				delete[] maps;
+				delete maps;
 			}
 		}
 		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
@@ -1287,33 +1286,29 @@ namespace AlienFX_SDK {
 	void Mappings::SaveMappings() {
 		//DWORD  dwDisposition;
 		HKEY   hKey1, hKeyS;
-		size_t numdevs = devices.size();
-		size_t numlights = mappings.size();
 		size_t numGroups = groups.size();
 		size_t numGrids = grids.size();
-		if (!numdevs) return;
 
 		// Remove all maps!
 		RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"));
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);// &dwDisposition);
 
-		for (int i = 0; i < numdevs; i++) {
-			//preparing name
-			string name = "Dev#" + to_string(devices[i].vid) + "_" + to_string(devices[i].devid);
-			RegSetValueExA( hKey1, name.c_str(), 0, REG_SZ, (BYTE *) devices[i].name.c_str(), (DWORD) devices[i].name.length() );
-			name = "DevWhite#" + to_string(devices[i].vid) + "_" + to_string(devices[i].devid);
-			RegSetValueExA( hKey1, name.c_str(), 0, REG_DWORD, (BYTE *) &devices[i].white.ci, sizeof(DWORD));
-		}
+		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
+			// Saving device data..
+			string name = "Dev#" + to_string(i->vid) + "_" + to_string(i->pid);
+			RegSetValueExA( hKey1, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
+			name = "DevWhite#" + to_string(i->vid) + "_" + to_string(i->pid);
+			RegSetValueExA( hKey1, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
+			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {
+				// Saving all lights from current device
+				string name = "Light" + to_string(MAKELONG(i->pid, i->vid)) + "-" + to_string(cl->lightid);
+				RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
+				RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
 
-		for (int i = 0; i < numlights; i++) {
-			// new format
-			string name = "Light" + to_string(MAKELONG(mappings[i]->devid,mappings[i]->vid)) + "-" + to_string(mappings[i]->lightid);
-			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
-			RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE *) mappings[i]->name.c_str(), (DWORD) mappings[i]->name.length());
-
-			DWORD flags = mappings[i]->flags;
-			RegSetValueExA( hKeyS, "Flags", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD) );
-			RegCloseKey(hKeyS);
+				DWORD flags = cl->flags;
+				RegSetValueExA(hKeyS, "Flags", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
+				RegCloseKey(hKeyS);
+			}
 		}
 
 		for (int i = 0; i < numGroups; i++) {
@@ -1347,20 +1342,31 @@ namespace AlienFX_SDK {
 		RegCloseKey(hKey1);
 	}
 
-	std::vector<mapping*> *Mappings::GetMappings() {
-		return &mappings;
+	std::vector<mapping> *Mappings::GetMappings(DWORD devID) {
+		afx_device* dev = GetDeviceById(devID);
+		if (dev)
+			return &dev->lights;
+		return nullptr;
 	}
 
-	int Mappings::GetFlags(DWORD devid, WORD lightid) {
-		mapping* lgh = GetMappingById(devid, lightid);
+	int Mappings::GetFlags(afx_device* dev, WORD lightid) {
+		mapping* lgh = GetMappingById(dev, lightid);
 		if (lgh)
 			return lgh->flags;
 		return 0;
 	}
 
-	std::vector<devmap> *Mappings::GetDevices() {
-		return &devices;
+	int Mappings::GetFlags(DWORD devID, WORD lightid)
+	{
+		afx_device* dev = GetDeviceById(devID);
+		if (dev)
+			return GetFlags(dev, lightid);
+		return 0;
 	}
+
+	/*std::vector<devmap> *Mappings::GetDevices() {
+		return &devices;
+	}*/
 
 	int Functions::GetPID() {
 		return pid;

@@ -127,7 +127,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_DEVICES},
 			{ (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog, (DLGPROC)TabDevicesDialog }
 			);
-		if (!conf->afx_dev.GetMappings()->size() || !conf->afx_dev.GetGrids()->size())
+		if (!conf->afx_dev.haveLights || !conf->afx_dev.GetGrids()->size())
 			tabLightSel = TAB_DEVICES;
 		TabCtrl_SetCurSel(tab_list, tabLightSel);
 		OnLightSelChanged(tab_list);
@@ -156,7 +156,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_LIGHTS: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				if (conf->afx_dev.GetMappings()->size() && conf->afx_dev.GetGrids()->size()) {
+				if (conf->afx_dev.haveLights && conf->afx_dev.GetGrids()->size()) {
 					OnLightSelChanged(tab_list);
 				} else
 					TabCtrl_SetCurSel(tab_list, tabLightSel);

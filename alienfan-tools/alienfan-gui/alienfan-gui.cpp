@@ -93,7 +93,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //power mode hotkeys
         for (int i = 0; i < 6; i++)
             RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-        //RegisterHotKey(mDlg, 6, 0, VK_F17);
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
 
         HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
 
@@ -368,17 +368,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             acpi->SetPower(fan_conf->lastProf->powerStage);
             ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
         }
-        //switch (wParam) {
-        //case 6: // G-key for Dell G-series power switch
-        //{
-        //    if (acpi->GetPower())
-        //        fan_conf->lastProf->powerStage = 0;
-        //    else
-        //        fan_conf->lastProf->powerStage = 1;
-        //    acpi->SetPower(fan_conf->lastProf->powerStage);
-        //} break;
-        //}
-        break;
+        switch (wParam) {
+        case 6: // G-key for Dell G-series power switch
+            acpi->ToggleGMode();
+            break;
+        }
     } break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {

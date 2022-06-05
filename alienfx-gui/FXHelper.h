@@ -63,7 +63,7 @@ public:
 	bool RefreshOne(groupset* map, int force = 0, bool update = true);
 	bool SetMode(int mode);
 	void TestLight(int did, int id, bool wp=false);
-	void ResetPower(int did);
+	void ResetPower(AlienFX_SDK::afx_device* dev);
 	void SetCounterColor(EventData *data, bool force = false);
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);
