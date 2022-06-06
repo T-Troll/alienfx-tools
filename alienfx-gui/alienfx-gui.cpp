@@ -94,8 +94,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
-	//SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
-
 	conf = new ConfigHandler();
 	if (conf->haveOldConfig && MessageBox(NULL, "Old configuration detected. Do you want to convert it?", "Warning",
 		MB_YESNO | MB_ICONWARNING) == IDYES) {

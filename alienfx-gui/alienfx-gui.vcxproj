@@ -478,7 +478,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>Default</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -490,12 +490,14 @@
       <OmitFramePointers>true</OmitFramePointers>
       <DebugInformationFormat>None</DebugInformationFormat>
       <DisableSpecificWarnings>4312</DisableSpecificWarnings>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <GenerateDebugInformation>false</GenerateDebugInformation>
+      <Profile>false</Profile>
     </Link>
     <Manifest />
     <ResourceCompile />
@@ -569,6 +571,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

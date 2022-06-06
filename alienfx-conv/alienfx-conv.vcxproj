@@ -136,6 +136,10 @@
       <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
       <ConformanceMode>false</ConformanceMode>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <Optimization>MinSpace</Optimization>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
