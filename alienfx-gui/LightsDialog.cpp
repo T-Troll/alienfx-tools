@@ -95,8 +95,10 @@ void OnLightSelChanged(HWND hwndDlg)
 			pHdr->hwndControl = NULL;
 		}
 		if (tabLightSel == TAB_DEVICES) {
-			DestroyWindow(pHdr->hwndDisplay);
-			pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], hwndDlg, pHdr->apProc[tabLightSel]);
+			if (oldTab != TAB_DEVICES) {
+				DestroyWindow(pHdr->hwndDisplay);
+				pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], hwndDlg, pHdr->apProc[tabLightSel]);
+			}
 			ResizeTab(pHdr->hwndDisplay, rcDisplay);
 			return;
 		} else

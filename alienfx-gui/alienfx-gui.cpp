@@ -538,14 +538,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case SIZE_MINIMIZED: {
 			// go to tray...
 			if (dDlg) {
-				fxhl->UnblockUpdates(true, true);
-				fxhl->Refresh();
-				UnregisterHotKey(dDlg, 1);
-				UnregisterHotKey(dDlg, 2);
-				UnregisterHotKey(dDlg, 3);
-				UnregisterHotKey(dDlg, 4);
-				// Recalculate ALL gauges!
-				conf->SortAllGauge();
+				SendMessage(dDlg, WM_APP + 3, 0, 0);
 			}
 			ShowWindow(hDlg, SW_HIDE);
 			eve->StartProfiles();
@@ -724,7 +717,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVICEARRIVAL || wParam == DBT_DEVICEREMOVECOMPLETE) {
 			vector<pair<WORD, WORD>> devs = conf->afx_dev.AlienFXEnumDevices();
-			if (devs.size() != conf->afx_dev.fxdevs.size()) {
+			if (devs.size() != fxhl->numActiveDevs) {
 				// Device added or removed, need to rescan devices...
 				bool wasNotLocked = !fxhl->updateLock;
 				if (wasNotLocked) {

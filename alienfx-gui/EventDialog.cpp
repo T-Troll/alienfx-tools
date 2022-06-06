@@ -57,9 +57,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 		// Set counter list...
 		UpdateCombo(list_counter,
-			{ "CPU load", "RAM load", "HDD load", "GPU load", "Network traffic", "Max. Temperature", "Battery level",
+			{ "CPU load", "RAM load", "Storage load", "GPU load", "Network traffic", "Max. temperature", "Battery level",
 			"Fan RPM", "Power consumption" });
-		UpdateCombo(list_status, { "HDD activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" });
+		UpdateCombo(list_status, { "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" });
 
 		// Set sliders
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));

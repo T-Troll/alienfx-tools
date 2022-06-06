@@ -28,6 +28,7 @@ AlienFX_SDK::mapping* FindCreateMapping() {
     if (!lgh) {
         // create new mapping
         conf->afx_dev.fxdevs[dIndex].lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
+        conf->afx_dev.haveLights = true;
     }
     return lgh;
 }
@@ -142,17 +143,20 @@ void ModifyColorDragZone(bool clear = false) {
     if (grp) {
         for (int x = dragZone.left; x < dragZone.right; x++)
             for (int y = dragZone.top; y < dragZone.bottom; y++) {
-                auto pos = find_if(grp->lights.begin(), grp->lights.end(),
-                    [x, y](auto t) {
-                        return t.first == LOWORD(conf->mainGrid->grid[ind(x, y)]) &&
-                            t.second == HIWORD(conf->mainGrid->grid[ind(x, y)]);
-                    });
-                if (pos != grp->lights.end()) {
-                    markRemove.push_back(conf->mainGrid->grid[ind(x, y)]);
+                int ind = ind(x, y);
+                if (conf->mainGrid->grid[ind]) {
+                    auto pos = find_if(grp->lights.begin(), grp->lights.end(),
+                        [ind](auto t) {
+                            return t.first == LOWORD(conf->mainGrid->grid[ind]) &&
+                                t.second == HIWORD(conf->mainGrid->grid[ind]);
+                        });
+                    if (pos != grp->lights.end()) {
+                        markRemove.push_back(conf->mainGrid->grid[ind]);
+                    }
+                    else
+                        if (!clear)
+                            markAdd.push_back(conf->mainGrid->grid[ind]);
                 }
-                else
-                    if (!clear)
-                        markAdd.push_back(conf->mainGrid->grid[ind(x, y)]);
             }
         // now clear by remove list and add new...
         for (auto tr = markRemove.begin(); tr < markRemove.end(); tr++) {

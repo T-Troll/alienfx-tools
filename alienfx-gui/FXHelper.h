@@ -52,6 +52,7 @@ public:
 	bool updateLock = false;
 	int activeMode = -1;
 	EventData eData, maxData;
+	int numActiveDevs = 0;
 
 	FXHelper();
 	~FXHelper();

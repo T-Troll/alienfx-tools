@@ -352,7 +352,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		// First, reset all light devices and re-scan!
 		fxhl->UnblockUpdates(false, true);
 		// Do we have some lights?
-		conf->afx_dev.AlienFXAssignDevices();
+		//conf->afx_dev.AlienFXAssignDevices();
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		if (conf->afx_dev.fxdevs.size() > 0) {
@@ -667,17 +667,19 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		}
 		break;
-	case WM_DESTROY:
-	{
-		dDlg = NULL;
+	case WM_APP + 3: {
 		fxhl->UnblockUpdates(true, true);
 		fxhl->Refresh();
 		UnregisterHotKey(hDlg, 1);
 		UnregisterHotKey(hDlg, 2);
 		UnregisterHotKey(hDlg, 3);
 		UnregisterHotKey(hDlg, 4);
-		// Recalculate ALL gauges!
 		conf->SortAllGauge();
+	} break;
+	case WM_DESTROY:
+	{
+		SendMessage(hDlg, WM_APP + 3, 0, 0);
+		dDlg = NULL;
 	} break;
 	default: return false;
 	}

@@ -324,11 +324,14 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->SetStates();
 	conf->haveV5 = false;
+	numActiveDevs = 0;
 	conf->afx_dev.AlienFXAssignDevices(acc ? acc->GetHandle() : NULL, conf->finalBrightness, conf->finalPBState);
 	// global effects check
-	for (auto i= conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
-		if (i->dev && i->dev->GetVersion() == 5) {
-			conf->haveV5 = true; break;
+	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
+		if (i->dev) {
+			numActiveDevs++;
+			if (i->dev->GetVersion() == 5)
+				conf->haveV5 = true;
 		}
 	return conf->afx_dev.fxdevs.size();
 }
