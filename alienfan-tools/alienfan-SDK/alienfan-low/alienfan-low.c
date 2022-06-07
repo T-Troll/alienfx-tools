@@ -455,7 +455,7 @@ EvalAcpiMethod(
     __in HANDLE hDriver,
     __in const char* puNameSeg,
     __in PVOID *outputBuffer,
-    __in PVOID pArgs
+    __in_opt PVOID pArgs
 ) {
     BOOL                        IoctlResult;
     DWORD                       ReturnedLength, EvalMethod;

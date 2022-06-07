@@ -48,14 +48,20 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 
 void ConfigFan::Load() {
 
+	DWORD power;
+
 	GetReg("StartAtBoot", &startWithWindows);
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
-	GetReg("LastPowerStage", &prof.powerStage);
+	GetReg("LastPowerStage", &power);
 	GetReg("LastSensor", &lastSelectedSensor);
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("LastGPU", &prof.GPUPower);
 	GetReg("ObCheck", &obCheck);
+
+	// set power values
+	prof.powerStage = LOWORD(power);
+	prof.gmode = HIWORD(power);
 
 	// Now load sensor mappings...
 	unsigned vindex = 0;
@@ -124,7 +130,7 @@ void ConfigFan::Save() {
 
 	SetReg("StartAtBoot", startWithWindows);
 	SetReg("StartMinimized", startMinimized);
-	SetReg("LastPowerStage", prof.powerStage);
+	SetReg("LastPowerStage", MAKELPARAM(prof.powerStage, prof.gmode));
 	SetReg("UpdateCheck", updateCheck);
 	SetReg("LastSensor", lastSelectedSensor);
 	SetReg("LastFan", lastSelectedFan);

@@ -30,7 +30,8 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 			SetSlider(sTip2, mmap->color[effID].time);
 		}
 		// gauge and spectrum.
-		CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gradient);
+		CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->flags & GAUGE_GRADIENT);
+		CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->flags & GAUGE_REVERSE);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !conf->afx_dev.GetGroupById(mmap->group)->have_power);
@@ -38,6 +39,7 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap != NULL);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
 	RedrawButton(hDlg, IDC_BUTTON_C1, mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
 }
 
@@ -99,7 +101,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 		// Set types and gauge list...
 		UpdateCombo(GetDlgItem(hDlg, IDC_TYPE1), lightEffectNames);
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal" });
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)"});
 		// now sliders...
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -171,15 +173,21 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_CHECK_SPECTRUM:
 			if (mmap) {
-				mmap->gradient = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-				fxhl->RefreshOne(mmap);
+				mmap->flags = (mmap->flags & ~GAUGE_GRADIENT) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				fxhl->Refresh();
+			}
+			break;
+		case IDC_CHECK_REVERSE:
+			if (mmap) {
+				mmap->flags = (mmap->flags & ~GAUGE_REVERSE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? GAUGE_REVERSE : 0);
+				fxhl->Refresh();
 			}
 			break;
 		case IDC_COMBO_GAUGE:
 			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap&& mmap->gauge);
-				fxhl->RefreshOne(mmap);
+				fxhl->Refresh();
 			}
 			break;
 		default: return false;

@@ -212,7 +212,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						lset = &prof->lightsets.back();
 						lset->fromColor = t->fromColor;
 						lset->gauge = t->gauge;
-						lset->gradient = t->gradient;
+						lset->flags = t->flags;
 					}
 					if (IsDlgButtonChecked(hDlg, IDC_CP_COLORS) == BST_CHECKED)
 						lset->color = t->color;

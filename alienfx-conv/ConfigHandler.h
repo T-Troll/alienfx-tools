@@ -67,7 +67,7 @@ struct groupset {
 	vector<freq_map> haptics;
 	AlienFX_SDK::lightgrid lightMap{ 0 };
 	bool fromColor = false;
-	bool gradient = false;
+	bool flags = false;
 	byte gauge = 0;
 };
 

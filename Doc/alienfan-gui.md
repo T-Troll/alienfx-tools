@@ -1,10 +1,11 @@
 ## `alienfan-gui`
 
-![alienfan-gui](/Doc/img/alienfan.png?raw=true)
+![AlienFan-GUI](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/alienfan.png?raw=true)
 
 GUI application for fan control.  
 Then you start it, you will see 2 main windows - Temperatures (with current and maximal (press "x" button at list head to reset it to current values) readings) and Fans (with check boxes and current RPM), as well as separate Fan curve (graph).  
 Also, "Power mode" drop down available to select global power mode. Power modes are system-specific, so exact power limit values depends of you gear, you can use third-party tools to check it. You can edit mode name by selecting it and type new name.  
+"G-Mode" check box enables and disables G-Mode (power boost) for supported hardware (all G-Series, some Alienware).
 "GPU limit" slider define top maximal GPU power limit shift for some models. 0 (left) is no limit, 4 (right) - maximal limit. This feature only supported at some notebooks, and real limit can vary. You can use this value to keep more power at CPU or extend battery life.  
 "CPU Boost" drop downs can be used to select active Windows Power Plan boost mode (separately for AC and battery power). This settings is extremely useful for Ryzen CPU, but even for Intel it provide a little performance boost (+3% at "Aggressive" for my gear).  
 

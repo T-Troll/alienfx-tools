@@ -174,6 +174,9 @@
 #define IDC_LIST1                       1156
 #define IDC_LIST_FOUND                  1156
 #define IDC_BUT_WHITE                   1158
+#define IDC_CHECK_REVERSE               1159
+#define IDC_CHECK1                      1160
+#define IDC_CHECK_GMODE                 1160
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -205,7 +208,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        162
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1159
+#define _APS_NEXT_CONTROL_VALUE         1161
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

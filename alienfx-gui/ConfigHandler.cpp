@@ -76,7 +76,8 @@ void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block
 		}
 		if (flags != -1) {
 			prof->fansets.powerStage = LOWORD(flags);
-			prof->fansets.GPUPower = HIWORD(flags);
+			prof->fansets.GPUPower = LOBYTE(HIWORD(flags));
+			prof->fansets.gmode = HIBYTE(HIWORD(flags));
 		}
 		return;
 	} else {
@@ -289,7 +290,7 @@ nextRecord:
 				(gset = FindCreateGroupSet(profID, groupID))) {
 				gset->fromColor = inarray[0];
 				gset->gauge = inarray[1];
-				gset->gradient = inarray[2];
+				gset->flags = inarray[2];
 				goto nextZone;
 			}
 			if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
@@ -419,7 +420,7 @@ void ConfigHandler::Save() {
 			DWORD value = 0; byte* buffer = (BYTE*)&value;
 			buffer[0] = iIter->fromColor;
 			buffer[1] = iIter->gauge;
-			buffer[2] = iIter->gradient;
+			buffer[2] = iIter->flags;
 			//buffer[3] = iIter->group->have_power;
 			RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 
@@ -477,7 +478,8 @@ void ConfigHandler::Save() {
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
 			name = "Profile-power-" + to_string((*jIter)->id);
-			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, (*jIter)->fansets.GPUPower);
+			WORD ps = MAKEWORD((*jIter)->fansets.GPUPower, (*jIter)->fansets.gmode);
+			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
 			for (int i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {

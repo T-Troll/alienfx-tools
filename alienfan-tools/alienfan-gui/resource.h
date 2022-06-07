@@ -24,6 +24,7 @@
 #define IDC_AC_BOOST                    1124
 #define IDC_DC_BOOST                    1125
 #define IDC_BUT_OVER                    1130
+#define IDC_CHECK_GMODE                 1160
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define ID_SETTINGS_CHECKFORUP          32780

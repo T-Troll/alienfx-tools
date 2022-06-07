@@ -25,9 +25,8 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_DEVICE {
 		string mainCommand;
 		string gpuCommand;
-		//byte maxBoost;
 		bool commandControlled;
-		short controlID;
+		short delta;
 		ALIENFAN_COMMAND probe;
 	};
 
@@ -41,6 +40,8 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND getPower;
 		ALIENFAN_COMMAND setPower;
 		ALIENFAN_COMMAND setGPUPower;
+		ALIENFAN_COMMAND getGMode;
+		ALIENFAN_COMMAND setGMode;
 	};
 
 	struct ALIENFAN_COMMAND_CONTROL {
@@ -57,7 +58,7 @@ namespace AlienFan_SDK {
 	private:
 		HANDLE acc = NULL;
 		short aDev = -1;
-		short cDev = -1;
+		//short cDev = -1;
 		int systemID = 0;
 		bool activated = false;
 #ifdef _SERVICE_WAY_
@@ -115,7 +116,10 @@ namespace AlienFan_SDK {
 		int SetGPU(int power);
 
 		// Toggle G-mode on some systems
-		int ToggleGMode();
+		int SetGMode(bool state);
+
+		// Check G-mode state
+		int GetGMode();
 
 		// Get low-level driver handle for direct operations
 		// Result: handle to driver or NULL

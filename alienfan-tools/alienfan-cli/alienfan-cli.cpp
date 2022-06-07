@@ -128,7 +128,8 @@ setperf=<ac>,<dc>\t\tSet CPU performance boost\n\
 getfans[=<mode>]\t\tShow current fan boost level (0..100 - in percent) with selected mode\n\
 setfans=<fan1>[,<fanN>][,mode]\tSet fans boost level (0..100 - in percent) with selected mode\n\
 setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or auto)\n\
-togglegmode\t\t\tToggle G-mode on/off (at supported hardware)\n\
+setgmode=<mode>\t\t\tSet G-mode on/off (1-on, 0-off)\n\
+gmode\t\t\t\tShow G-mode state\n\
 resetcolor\t\t\tReset color system\n\
 setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
 setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
@@ -145,7 +146,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v6.0.1\n");
+    printf("AlienFan-cli v6.0.2\n");
 
     bool supported = false;
 
@@ -226,6 +227,11 @@ int main(int argc, char* argv[])
                             printf("Unlock failed!\n");
                         continue;
                     }
+                    if (command == "gmode") {
+                        int res = acpi->GetGMode();
+                        printf("G-mode state is %s\n", res ? res > 0 ? "On" : "Error" : "Off");
+                        continue;
+                    }
                     if (command == "setpower" && CheckArgs(command, 1, args.size())) {
 
                         if (args[0].num < acpi->HowManyPower()) {
@@ -304,8 +310,8 @@ int main(int argc, char* argv[])
                         printf("Done!\n");
                         continue;
                     }
-                    if (command == "togglegmode") {
-                        printf("G-mode switch result %d", acpi->ToggleGMode());
+                    if (command == "setgmode" && CheckArgs(command, 1, args.size())) {
+                        printf("G-mode set result %d", acpi->SetGMode(args[0].num));
                         continue;
                     }
                     if (command == "direct" && CheckArgs(command, 2, args.size())) {

@@ -69,14 +69,17 @@ Available effect modes are:
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do morph). But you can experiment.
 
-"Gauge" setting set zone to gauge mode, defining how to alter color lights depends on it position on grid.  
-Available modes are:
+"Gauge" block controls how to zone lights color will be altered depends on it position on the grid.  
+For gauge type drop down, available modes are:
 - Off - All zone lights will have the same color.
-- Horizontal - for some effects, zone will accept 2 colors, and work as a horizontal (from left to right) peak indicator using it.
-- Vertical - same as Horizontal, but peak direction is vertical (from top to bottom).
-- Diagonal - peak indicator from top-left point to bottom-right.
+- Horizontal - fill zone from left to right.
+- Vertical - fill zone from top to bottom.
+- Diagonal (left) - fill zone from top-left point to bottom-right.
+- Diagonal (right) - fill zone from top-right point to bottom-left.
 
-Gauge setting doesn't applied to raw color settings (effects only), except "Gradient" check box selected. In this case zone will have color gradient from the first to last action color defined for it. Direction of the gradient defined by "Gauge" setting.  
+"Reverse" check box invert filling direction to right-to-left and bottom-to-top.
+"Gradient" check box alter zone filling. In case zone have 2 colors, it will filled as gradient then enabled. For event/haptics gauge, it will filled by gradient color instead of peak indicator.
+
 Please keep in mind - defining zone as "Gradient" disables hardware color effects!
 
 ### Events Monitoring
@@ -190,6 +193,7 @@ Optionally, you can set current light name using name field into "Light" block.
 It's all about fan and some power settings control for your gear.
 
 First, take a look at "Power mode" drop-down - it can control system predefined power modes. For manual fan control switch it to "Manual". You can edit mode name by selecting it and type new name.  
+"G-Mode" check box enables and disables G-Mode (power boost) for supported hardware (all G-Series, some Alienware).
 "Temperature sensors" list present all hardware sensors found at your BIOS (some SSD sensors can absent into this list), and their current and maximal temperature values.
 "Fans" list presents all fans found into the system and their current RPMs.  
 "GPU limit" slider define top maximal GPU board power limit shift. 0 (left) is no limit, 4 (right) - maximal limit. This feature only supported at some notebooks, and real limit can vary. You can use this slider to keep more power at CPU or extend battery life.  

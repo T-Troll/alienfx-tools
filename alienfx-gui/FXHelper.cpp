@@ -25,27 +25,29 @@ AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 	return nullptr;
 };
 
-void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, bool grad, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
+void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, byte flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {
 	vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
-	if (grad) {
-		double newPower = (double)x / max;
-		fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
-		fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
-		fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
-	}
-	else {
+	if (flags & GAUGE_REVERSE)
+		x = max - x;
+	if (flags & GAUGE_GRADIENT)
+		power = (double)x / max;
+	else
 		if (((double)x) / max < power) {
-			if (((double)x + 1) / max < power)
+			if (((double)x + 1) / max < power) {
 				fAct[0] = actions.back();
+				goto setlight;
+			}
 			else {
-				double newPower = (power - ((double)x) / max) * max;
-				fAct[0].r = (byte)((1.0 - newPower) * actions.front().r + newPower * actions.back().r);
-				fAct[0].g = (byte)((1.0 - newPower) * actions.front().g + newPower * actions.back().g);
-				fAct[0].b = (byte)((1.0 - newPower) * actions.front().b + newPower * actions.back().b);
+				power = (power - ((double)x) / max) * max;
 			}
 		}
-	}
+	else
+		goto setlight;
+	fAct[0].r = (byte)((1.0 - power) * actions.front().r + power * actions.back().r);
+	fAct[0].g = (byte)((1.0 - power) * actions.front().g + power * actions.back().g);
+	fAct[0].b = (byte)((1.0 - power) * actions.front().b + power * actions.back().b);
+	setlight:
 	SetLight(id.first, id.second, fAct, force);
 }
 
@@ -61,13 +63,16 @@ void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions
 			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
 				switch (grp->gauge) {
 				case 1: // horizontal
-					SetGaugeLight(t->light, t->x, zone->xMax, grp->gradient, actions, power, force);
+					SetGaugeLight(t->light, t->x, zone->xMax, grp->flags, actions, power, force);
 					break;
 				case 2: // vertical
-					SetGaugeLight(t->light, t->y, zone->yMax, grp->gradient, actions, power, force);
+					SetGaugeLight(t->light, t->y, zone->yMax, grp->flags, actions, power, force);
 					break;
 				case 3: // diagonal
-					SetGaugeLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->gradient, actions, power, force);
+					SetGaugeLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+					break;
+				case 4:
+					SetGaugeLight(t->light, zone->xMax - t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
 					break;
 				}
 		}
@@ -150,7 +155,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				noDiff = false;
 				Iter->events[1].coeff = cVal > Iter->events[1].cut ? (cVal - Iter->events[1].cut) / (100.0 - Iter->events[1].cut) : 0.0;
 			}
-			if (Iter->gauge && !Iter->gradient)
+			if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
 				actions.push_back(Iter->events[1].to);
 			else
 				actions.push_back({ 0,0,0,

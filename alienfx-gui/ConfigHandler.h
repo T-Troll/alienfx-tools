@@ -5,17 +5,20 @@
 #include "ConfigFan.h"
 
 // Profile flags pattern
-#define PROF_DEFAULT  0x1
-#define PROF_PRIORITY 0x2
-#define PROF_DIMMED   0x4
-#define PROF_ACTIVE   0x8
-#define PROF_FANS     0x10
+#define PROF_DEFAULT		0x1
+#define PROF_PRIORITY		0x2
+#define PROF_DIMMED			0x4
+#define PROF_ACTIVE			0x8
+#define PROF_FANS			0x10
 #define PROF_GLOBAL_EFFECTS 0x20
 
-#define LEVENT_COLOR 0x1
-#define LEVENT_POWER 0x2
-#define LEVENT_PERF  0x4
-#define LEVENT_ACT   0x8
+#define LEVENT_COLOR	0x1
+#define LEVENT_POWER	0x2
+#define LEVENT_PERF		0x4
+#define LEVENT_ACT		0x8
+
+#define GAUGE_GRADIENT	0x1
+#define GAUGE_REVERSE	0x2
 
 struct freq_map {
 	AlienFX_SDK::Colorcode colorfrom{ 0 };
@@ -53,7 +56,7 @@ struct groupset {
 	vector<byte> ambients;
 	vector<freq_map> haptics;
 	bool fromColor = false;
-	bool gradient = false;
+	byte flags = 0;
 	byte gauge = 0;
 };
 

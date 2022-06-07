@@ -16,7 +16,8 @@ Available commands:
 - `getfans[=mode]` - Show current fan boost values.
 - `setfans=<fan1>,<fan2>...[,mode]` - Set fans RPM boost level (0..100 - in percent). Fan1 is for CPU fan, Fan2 for GPU one. Number of arguments should be the same as number of fans application detect
 - `setover[=fanID[,boost]]` - Set overboost for selected fan to boost (manual or auto)
-- `togglegmode` - Switch G-mode (power boost) on and off for supported hardware.
+- `setgmode=<mode>` - Switch G-mode (power boost) on and off for supported hardware. 1 is on, 0 is off.
+- `gmode` - Show current G-mode status (on, off, error - if not supported).
 - `resetcolor` - Reset color system
 - `setcolor=<mask>,r,g,b` - Set light(s) defined by mask to color
 - `setcolormode=<brightness>,<flag>` - Set light system brightness and mode. Valid brightness values are 1,3,4,6,7,9,10,12,13,15.
