@@ -376,14 +376,14 @@ namespace AlienFan_SDK {
 
 	int Control::SetGMode(bool state)
 	{
-		if (GetGMode() != (int)state) {
+		//if (GetGMode() != (int)state) {
 			PACPI_EVAL_OUTPUT_BUFFER res = NULL;
-			int op;
-			if ((op = EvalAcpiMethod(acc, "\\_SB.PCI0.LPC0.EC0._Q14", (PVOID*)&res, NULL)) < 0 )
-				op = RunMainCommand(dev_controls.setGMode, 1);
-			return op;
-		}
-		return state;
+			if (!EvalAcpiMethod(acc, "\\_SB.PCI0.LPC0.EC0._Q14", (PVOID*)&res, NULL))
+				return RunMainCommand(dev_controls.setGMode, state);
+			else
+				return GetGMode();
+		//}
+		//return state;
 	}
 
 	int Control::GetGMode() {

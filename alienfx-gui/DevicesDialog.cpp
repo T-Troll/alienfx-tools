@@ -109,13 +109,15 @@ void SetLightInfo() {
 void UpdateDeviceInfo() {
 	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
 		AlienFX_SDK::afx_device* dev = &conf->afx_dev.fxdevs[dIndex];
-		BYTE status = dev->dev->AlienfxGetDeviceStatus();
-		char descript[128];
-		sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d, %s",
-			dev->vid, dev->pid, dev->dev->GetVersion(),
-			status && status != 0xff ? "Ok" : "Error!");
-		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
-		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
+		if (dev->dev) {
+			BYTE status = dev->dev->AlienfxGetDeviceStatus();
+			char descript[128];
+			sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d, %s",
+				dev->vid, dev->pid, dev->dev->GetVersion(),
+				status && status != 0xff ? "Ok" : "Error!");
+			SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
+			EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
+		}
 	}
 }
 
@@ -149,6 +151,7 @@ void RedrawDevList() {
 			if (lItem.lParam == dIndex) {
 				lItem.state = LVIS_SELECTED;
 				rpos = i;
+				UpdateDeviceInfo();
 			}
 			else
 				lItem.state = 0;
@@ -157,7 +160,6 @@ void RedrawDevList() {
 	}
 	ListView_SetColumnWidth(dev_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	ListView_EnsureVisible(dev_list, rpos, false);
-	UpdateDeviceInfo();
 }
 
 void LoadCSV(string name) {
@@ -297,7 +299,7 @@ void ApplyDeviceMaps(bool force = false) {
 	if (pos != conf->afx_dev.GetGrids()->end()) {
 		conf->mainGrid = &(*pos);
 	}
-	//conf->afx_dev.AlienFXAssignDevices();
+	conf->afx_dev.AlienFXAssignDevices();
 	csv_devs.clear();
 	RedrawDevList();
 	OnGridSelChanged(GetDlgItem(dDlg, IDC_TAB_DEV_GRID));
@@ -349,18 +351,23 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
-		// First, reset all light devices and re-scan!
 		fxhl->UnblockUpdates(false, true);
 		// Do we have some lights?
 		//conf->afx_dev.AlienFXAssignDevices();
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		if (conf->afx_dev.fxdevs.size() > 0) {
-			if (dIndex < 0) dIndex = 0;
-			RedrawDevList();
+			if (dIndex >= conf->afx_dev.fxdevs.size() || !conf->afx_dev.fxdevs[dIndex].dev)
+				// find new index
+				for (dIndex = 0; dIndex < conf->afx_dev.fxdevs.size(); dIndex++) {
+					if (conf->afx_dev.fxdevs[dIndex].dev)
+						break;
+				}
+			if (dIndex >= 0)
+				RedrawDevList();
 		}
 
-		if (!conf->afx_dev.haveLights &&
+		if (!conf->afx_dev.activeLights &&
 			MessageBox(hDlg, "Lights and grids not defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO)
 			== IDYES) {
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog);
@@ -375,7 +382,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
 	} break;
 	case WM_COMMAND: {
-		//WORD dPid = dIndex < 0 ? 0 : conf->afx_dev.fxdevs[dIndex].desc->devid;
 		switch (LOWORD(wParam))
 		{
 		case IDC_BUT_NEXT:
@@ -430,6 +436,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					}));
 				// delete from mappings...
 				conf->afx_dev.RemoveMapping(&conf->afx_dev.fxdevs[dIndex], eLid);
+				conf->afx_dev.activeLights--;
 				conf->afx_dev.SaveMappings();
 				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
 					fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);

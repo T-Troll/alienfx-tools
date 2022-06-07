@@ -1106,26 +1106,27 @@ namespace AlienFX_SDK {
 	}
 
 	void Mappings::AlienFXAssignDevices(HANDLE acc, byte brightness, byte power) {
-		haveLights = false;
 		vector<pair<WORD, WORD>> devList = AlienFXEnumDevices();
+
 		for (int i = 0; i < fxdevs.size(); i++)
 			if (fxdevs[i].dev) {
 				fxdevs[i].dev->AlienFXClose();
 				fxdevs[i].dev = NULL;
 			}
 
+		activeLights = 0;
 		for (int i = 0; i < devList.size(); i++) {
 			afx_device* dev = AddDeviceById(MAKELPARAM(devList[i].second, devList[i].first));
 			dev->dev = {new AlienFX_SDK::Functions()};
-			int pid = -1;
+
 			if (devList[i].second)
-				pid = dev->dev->AlienFXInitialize(devList[i].first, devList[i].second);
+				dev->dev->AlienFXInitialize(devList[i].first, devList[i].second);
 			else
-				pid = dev->dev->AlienFXInitialize(acc);
-			if (pid != -1) {
+				dev->dev->AlienFXInitialize(acc);
+			if (dev->dev->GetPID() > 0) {
 				dev->dev->ToggleState(brightness, &dev->lights, power);
-				if (dev->lights.size())
-					haveLights = true;
+				activeLights += (int)dev->lights.size();
+
 			}
 		}
 	}
@@ -1175,7 +1176,6 @@ namespace AlienFX_SDK {
 			}
 			map->name = name;
 			map->flags = flags;
-			haveLights = true;
 		}
 	}
 

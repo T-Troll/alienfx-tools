@@ -238,7 +238,7 @@ namespace AlienFX_SDK {
 	public:
 
 		vector<afx_device> fxdevs;
-		bool haveLights = false;
+		int activeLights = 0;
 
 		~Mappings();
 

@@ -53,7 +53,7 @@ void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, byte flags, v
 
 void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power, bool force) {
 	AlienFX_SDK::group* cGrp = conf->afx_dev.GetGroupById(grp->group);
-	if (cGrp->lights.size()) {
+	if (cGrp && cGrp->lights.size()) {
 		zonemap* zone = conf->FindZoneMap(grp->group);
 		if (!grp->gauge || actions.size() < 2 || !zone) {
 			for (auto i = cGrp->lights.begin(); i < cGrp->lights.end(); i++)
@@ -128,84 +128,88 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		vector<AlienFX_SDK::afx_act> actions;
 		bool noDiff = true;
 		int lVal = 0, cVal = 0;
-		//AlienFX_SDK::afx_act from{ 99 }, fin{ 99 }, * gFin = NULL;
-		if (Iter->fromColor && Iter->color.size()) {
-			actions.push_back(conf->afx_dev.GetGroupById(Iter->group)->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color.back() : Iter->color.front());
-			actions.back().type = 0;
-		}
-		if (Iter->events[1].state) {
-			// counter
-			if (actions.empty())
-				actions.push_back(Iter->events[1].from);
-			switch (Iter->events[1].source) {
-			case 0: lVal = eData.CPU; cVal = data->CPU; break;
-			case 1: lVal = eData.RAM; cVal = data->RAM; break;
-			case 2: lVal = eData.HDD; cVal = data->HDD; break;
-			case 3: lVal = eData.GPU; cVal = data->GPU; break;
-			case 4: lVal = eData.NET; cVal = data->NET; break;
-			case 5: lVal = eData.Temp; cVal = data->Temp; break;
-			case 6: lVal = eData.Batt; cVal = data->Batt; break;
-			case 7: lVal = eData.Fan; cVal = data->Fan; break;
-			case 8: lVal = eData.PWR; cVal = data->PWR; break;
+		AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(Iter->group);
+		if (grp) {
+			if (Iter->fromColor && Iter->color.size()) {
+				actions.push_back(grp->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color.back() : Iter->color.front());
+				actions.back().type = 0;
 			}
-
-			if (force || (lVal != cVal && (lVal > Iter->events[1].cut || cVal > Iter->events[1].cut))) {
-				//if (from.type)
-				//	from = Iter->perfs[0].from;
-				noDiff = false;
-				Iter->events[1].coeff = cVal > Iter->events[1].cut ? (cVal - Iter->events[1].cut) / (100.0 - Iter->events[1].cut) : 0.0;
-			}
-			if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
-				actions.push_back(Iter->events[1].to);
-			else
-				actions.push_back({ 0,0,0,
-					(BYTE)(actions.front().r * (1 - Iter->events[1].coeff) + Iter->events[1].to.r * Iter->events[1].coeff),
-					(BYTE)(actions.front().g * (1 - Iter->events[1].coeff) + Iter->events[1].to.g * Iter->events[1].coeff),
-					(BYTE)(actions.front().b * (1 - Iter->events[1].coeff) + Iter->events[1].to.b * Iter->events[1].coeff) });
-		}
-		if (Iter->events[2].state) {
-			// indicator
-			if (actions.empty())
-				actions.push_back(Iter->events[2].from);
-			int ccut = Iter->events[2].cut;
-			bool blink = Iter->events[2].mode;
-			switch (Iter->events[2].source) {
-			case 0: lVal = eData.HDD; cVal = data->HDD; break;
-			case 1: lVal = eData.NET; cVal = data->NET; break;
-			case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
-			case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
-			case 4: lVal = eData.Batt - ccut; cVal = data->Batt - ccut; break;
-			case 5: lVal = eData.KBD; cVal = data->KBD; break;
-			}
-
-			if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
-				noDiff = false;
-				if (cVal > 0) {
-					actions.erase(actions.begin());
-					actions.push_back(Iter->events[2].to);
+			if (Iter->events[1].state) {
+				// counter
+				if (actions.empty())
+					actions.push_back(Iter->events[1].from);
+				switch (Iter->events[1].source) {
+				case 0: lVal = eData.CPU; cVal = data->CPU; break;
+				case 1: lVal = eData.RAM; cVal = data->RAM; break;
+				case 2: lVal = eData.HDD; cVal = data->HDD; break;
+				case 3: lVal = eData.GPU; cVal = data->GPU; break;
+				case 4: lVal = eData.NET; cVal = data->NET; break;
+				case 5: lVal = eData.Temp; cVal = data->Temp; break;
+				case 6: lVal = eData.Batt; cVal = data->Batt; break;
+				case 7: lVal = eData.Fan; cVal = data->Fan; break;
+				case 8: lVal = eData.PWR; cVal = data->PWR; break;
 				}
-			} else
-				if (blink && cVal > 0 ) {
+
+				if (force || (lVal != cVal && (lVal > Iter->events[1].cut || cVal > Iter->events[1].cut))) {
+					//if (from.type)
+					//	from = Iter->perfs[0].from;
 					noDiff = false;
-					if (blinkStage) {
+					Iter->events[1].coeff = cVal > Iter->events[1].cut ? (cVal - Iter->events[1].cut) / (100.0 - Iter->events[1].cut) : 0.0;
+				}
+				if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
+					actions.push_back(Iter->events[1].to);
+				else
+					actions.push_back({ 0,0,0,
+						(BYTE)(actions.front().r * (1 - Iter->events[1].coeff) + Iter->events[1].to.r * Iter->events[1].coeff),
+						(BYTE)(actions.front().g * (1 - Iter->events[1].coeff) + Iter->events[1].to.g * Iter->events[1].coeff),
+						(BYTE)(actions.front().b * (1 - Iter->events[1].coeff) + Iter->events[1].to.b * Iter->events[1].coeff) });
+			}
+			if (Iter->events[2].state) {
+				// indicator
+				if (actions.empty())
+					actions.push_back(Iter->events[2].from);
+				int ccut = Iter->events[2].cut;
+				bool blink = Iter->events[2].mode;
+				switch (Iter->events[2].source) {
+				case 0: lVal = eData.HDD; cVal = data->HDD; break;
+				case 1: lVal = eData.NET; cVal = data->NET; break;
+				case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
+				case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
+				case 4: lVal = eData.Batt - ccut; cVal = data->Batt - ccut; break;
+				case 5: lVal = eData.KBD; cVal = data->KBD; break;
+				}
+
+				if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
+					noDiff = false;
+					if (cVal > 0) {
 						actions.erase(actions.begin());
 						actions.push_back(Iter->events[2].to);
 					}
 				}
-		}
-
-		// check for change.
-		if (noDiff)	continue;
-		wasChanged = true;
-
-		if (conf->afx_dev.GetGroupById(Iter->group)->have_power)
-			if (activeMode == MODE_AC || activeMode == MODE_CHARGE) {
-				actions.push_back(Iter->color[1]);
-			} else {
-				actions.insert(actions.begin(), Iter->color[0]);
+				else
+					if (blink && cVal > 0) {
+						noDiff = false;
+						if (blinkStage) {
+							actions.erase(actions.begin());
+							actions.push_back(Iter->events[2].to);
+						}
+					}
 			}
 
-		SetGroupLight(&(*Iter), actions, Iter->events[1].state ? Iter->events[1].coeff : 0);
+			// check for change.
+			if (noDiff)	continue;
+			wasChanged = true;
+
+			if (grp->have_power)
+				if (activeMode == MODE_AC || activeMode == MODE_CHARGE) {
+					actions.push_back(Iter->color[1]);
+				}
+				else {
+					actions.insert(actions.begin(), Iter->color[0]);
+				}
+
+			SetGroupLight(&(*Iter), actions, Iter->events[1].state ? Iter->events[1].coeff : 0);
+		}
 	}
 	if (wasChanged) {
 		QueryUpdate();
@@ -317,8 +321,10 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 	if (!updateLock || lock) {
 		unblockUpdates = newState;
 		if (!unblockUpdates) {
-			SetEvent(haveNewElement);
-			while (updateThread && WaitForSingleObject(queryEmpty, 60000) == WAIT_TIMEOUT);
+			//SetEvent(haveNewElement);
+			//while (updateThread && WaitForSingleObject(queryEmpty, 60000) == WAIT_TIMEOUT);
+			while (updateThread && lightQuery.size())
+				Sleep(100);
 			DebugPrint("Lights pause on!\n");
 		} else {
 			DebugPrint("Lights pause off!\n");
@@ -347,7 +353,7 @@ void FXHelper::Start() {
 
 		stopQuery = CreateEvent(NULL, true, false, NULL);
 		haveNewElement = CreateEvent(NULL, false, false, NULL);
-		queryEmpty = CreateEvent(NULL, true, true, NULL);
+		//queryEmpty = CreateEvent(NULL, true, true, NULL);
 		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
 		UnblockUpdates(true, true);
 	}
@@ -364,7 +370,7 @@ void FXHelper::Stop() {
 		CloseHandle(updateThread);
 		CloseHandle(stopQuery);
 		CloseHandle(haveNewElement);
-		CloseHandle(queryEmpty);
+		//CloseHandle(queryEmpty);
 		updateThread = NULL;
 	}
 }
@@ -555,7 +561,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	AlienFX_SDK::afx_device* dev = NULL;
 
 	while (WaitForMultipleObjects(2, waitArray, false, 500) != WAIT_OBJECT_0) {
-		if (!src->lightQuery.empty()) ResetEvent(src->queryEmpty);
+		//if (!src->lightQuery.empty()) ResetEvent(src->queryEmpty);
 		while (!src->lightQuery.empty()) {
 			src->modifyQuery.lock();
 
@@ -594,9 +600,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						processedLights += devQ->dev_query.size();
 						devQ->dev_query.clear();
 					}
-					//if (current.did == -1)
-					//	devs_query.clear();
-					if (src->lightQuery.size() > processedLights * 5) {
+
+					if (src->lightQuery.size() > conf->afx_dev.activeLights * 5) {
 						conf->monDelay += 50;
 						DebugPrint(("Query so big (" +
 									to_string((int) src->lightQuery.size()) +
@@ -681,7 +686,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		//	DebugPrint((string("Query empty, delay decreased to ") + to_string(conf->monDelay) + " ms!\n").c_str());
 		//}
 		conf->monDelay = 200;
-		SetEvent(src->queryEmpty);
+		//SetEvent(src->queryEmpty);
 	}
 	return 0;
 }

@@ -60,7 +60,7 @@ struct old_event {
 //};
 
 struct groupset {
-	AlienFX_SDK::group* group;
+	DWORD group;
 	vector<AlienFX_SDK::afx_act> color;
 	event events[3];
 	vector<byte> ambients;
@@ -191,7 +191,7 @@ public:
 	~ConfigHandler();
 	void Load();
 	void Save();
-	void SortGroupGauge(groupset* map);
+	//void SortGroupGauge(groupset* map);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);

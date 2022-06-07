@@ -146,7 +146,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v6.0.2\n");
+    printf("AlienFan-cli v6.0.3\n");
 
     bool supported = false;
 
@@ -311,7 +311,7 @@ int main(int argc, char* argv[])
                         continue;
                     }
                     if (command == "setgmode" && CheckArgs(command, 1, args.size())) {
-                        printf("G-mode set result %d", acpi->SetGMode(args[0].num));
+                        printf("G-mode set result %d\n", acpi->SetGMode(args[0].num));
                         continue;
                     }
                     if (command == "direct" && CheckArgs(command, 2, args.size())) {

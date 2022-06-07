@@ -535,9 +535,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case SIZE_MINIMIZED: {
 			// go to tray...
-			if (dDlg) {
-				SendMessage(dDlg, WM_APP + 3, 0, 0);
-			}
+			SendMessage(dDlg, WM_APP + 3, 0, 0);
 			ShowWindow(hDlg, SW_HIDE);
 			eve->StartProfiles();
 		} break;
@@ -823,10 +821,11 @@ AlienFX_SDK::afx_act *Code2Act(AlienFX_SDK::Colorcode *c) {
 DWORD CColorRefreshProc(LPVOID param) {
 	AlienFX_SDK::afx_act last = *mod;
 	groupset* mmap = (groupset*)param;
-	while (WaitForSingleObject(stopColorRefresh, 200)) {
+	int delay = conf->afx_dev.GetGroupById(mmap->group)->have_power ? 1000 : 200;
+	while (WaitForSingleObject(stopColorRefresh, delay)) {
 		if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
 			last = *mod;
-			if (mmap) fxhl->RefreshOne(mmap, false, true);
+			if (mmap) fxhl->RefreshOne(mmap);
 		}
 	}
 	return 0;
@@ -877,7 +876,7 @@ bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map) {
 bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 	CHOOSECOLOR cc{ sizeof(cc), hDlg };
 	bool ret;
-	// Initialize CHOOSECOLOR
+
 	cc.lpCustColors = (LPDWORD) conf->customColors;
 	cc.rgbResult = RGB(clr->r, clr->g, clr->b);
 	cc.Flags = CC_FULLOPEN | CC_RGBINIT;

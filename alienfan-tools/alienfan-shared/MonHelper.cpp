@@ -76,7 +76,7 @@ void CMonProc(LPVOID param) {
 
 	// fans...
 	for (int i = 0; i < acpi->HowManyFans(); i++) {
-		src->boostSets[i] = -273;
+		src->boostSets[i] = 0;
 		src->boostRaw[i] = acpi->GetFanBoost(i, true);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
@@ -101,12 +101,12 @@ void CMonProc(LPVOID param) {
 		}
 		// Now set if needed...
 		for (int i = 0; i < acpi->HowManyFans(); i++)
-			if (src->boostSets[i] >= 0 && !src->fanSleep[i]) {
+			if (!src->fanSleep[i]) {
 				// Check overboost tricks...
-				if (src->boostRaw[i] < 100 && src->boostSets[i] > 100) {
+				if (src->boostRaw[i] < 90 && src->boostSets[i] > 100) {
 					acpi->SetFanBoost(i, 100, true);
 					src->fanSleep[i] = 6;
-					DebugPrint("Overboost started, locked for 3 sec!\n");
+					DebugPrint(("Overboost started, locked for 3 sec (old " +to_string(src->boostRaw[i]) + ", new " + to_string(src->boostSets[i]) +")!\n").c_str());
 				} else
 					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
 						if (src->boostRaw[i] > src->boostSets[i])
@@ -117,8 +117,7 @@ void CMonProc(LPVOID param) {
 					}
 			}
 			else
-				if (src->fanSleep[i])
-					src->fanSleep[i]--;
+				src->fanSleep[i]--;
 	}
 
 }

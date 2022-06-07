@@ -45,7 +45,7 @@ private:
 public:
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
-	HANDLE queryEmpty = NULL;
+	//HANDLE queryEmpty = NULL;
 	deque<LightQueryElement> lightQuery;
 	mutex modifyQuery;
 	bool unblockUpdates = true;

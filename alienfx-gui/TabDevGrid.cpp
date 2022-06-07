@@ -28,7 +28,7 @@ AlienFX_SDK::mapping* FindCreateMapping() {
     if (!lgh) {
         // create new mapping
         conf->afx_dev.fxdevs[dIndex].lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
-        conf->afx_dev.haveLights = true;
+        conf->afx_dev.activeLights++;
     }
     return lgh;
 }
@@ -66,38 +66,39 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
         conf->colorGrid = new pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>[conf->mainGrid->x * conf->mainGrid->y]{};
         for (auto cs = conf->activeProfile->lightsets.rbegin(); cs < conf->activeProfile->lightsets.rend(); cs++) {
             AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(cs->group);
-            for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
-                for (int x = full.left; x < full.right; x++)
-                    for (int y = full.top; y < full.bottom; y++) {
-                        int ind = ind(x, y);
-                        if (LOWORD(conf->mainGrid->grid[ind]) == clgh->first &&
-                            HIWORD(conf->mainGrid->grid[ind]) == clgh->second) {
-                            if (conf->enableMon)
-                                switch (conf->GetEffect()) {
-                                case 1: { // monitoring
-                                    for (int i = 0; i < 3; i++)
-                                        if (cs->events[i].state) {
-                                            if (!conf->colorGrid[ind].first && !cs->fromColor) {
-                                                conf->colorGrid[ind].first = &cs->events[i].from;
+            if (grp)
+                for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
+                    for (int x = full.left; x < full.right; x++)
+                        for (int y = full.top; y < full.bottom; y++) {
+                            int ind = ind(x, y);
+                            if (LOWORD(conf->mainGrid->grid[ind]) == clgh->first &&
+                                HIWORD(conf->mainGrid->grid[ind]) == clgh->second) {
+                                if (conf->enableMon)
+                                    switch (conf->GetEffect()) {
+                                    case 1: { // monitoring
+                                        for (int i = 0; i < 3; i++)
+                                            if (cs->events[i].state) {
+                                                if (!conf->colorGrid[ind].first && !cs->fromColor) {
+                                                    conf->colorGrid[ind].first = &cs->events[i].from;
+                                                }
+                                                conf->colorGrid[ind].second = &cs->events[i].to;
                                             }
-                                            conf->colorGrid[ind].second = &cs->events[i].to;
+                                    } break;
+                                    case 3: // haptics
+                                        if (cs->haptics.size()) {
+                                            conf->colorGrid[ind] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
                                         }
-                                } break;
-                                case 3: // haptics
-                                    if (cs->haptics.size()) {
-                                        conf->colorGrid[ind] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
+                                        break;
                                     }
-                                    break;
+                                if (cs->color.size()) {
+                                    if (!conf->colorGrid[ind].first)
+                                        conf->colorGrid[ind].first = &cs->color.front();
+                                    if (!conf->colorGrid[ind].second)
+                                        conf->colorGrid[ind].second = &cs->color.back();
                                 }
-                            if (cs->color.size()) {
-                                if (!conf->colorGrid[ind].first)
-                                    conf->colorGrid[ind].first = &cs->color.front();
-                                if (!conf->colorGrid[ind].second)
-                                    conf->colorGrid[ind].second = &cs->color.back();
                             }
                         }
-                    }
-            }
+                }
         }
     }
     RECT pRect;
