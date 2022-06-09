@@ -122,7 +122,6 @@
 #define IDC_BUT_DETECT                  1104
 #define IDC_CHECK_DIM                   1105
 #define IDC_INFO_VID                    1106
-#define IDC_CHECK_GLOBAL                1109
 #define IDC_SLIDER_RED                  1110
 #define IDC_SLIDER_GREEN                1111
 #define IDC_SLIDER_BLUE                 1112
@@ -173,6 +172,10 @@
 #define IDC_BUT_WHITE                   1158
 #define IDC_CHECK_REVERSE               1159
 #define IDC_CHECK_GMODE                 1160
+#define IDC_CHECK_LIGHTNAMES            1161
+#define IDC_COMBO_TRIGGERKEY            1162
+#define IDC_TRIGGER_POWER_AC            1163
+#define IDC_TRIGGER_POWER_BATTERY       1164
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -195,7 +198,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        162
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1161
+#define _APS_NEXT_CONTROL_VALUE         1165
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

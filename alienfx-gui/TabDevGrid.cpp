@@ -16,7 +16,7 @@ extern int tabLightSel, eItem;
 extern HWND zsDlg;
 
 POINT clkPoint, dragStart;
-RECT dragZone;
+RECT dragZone, buttonZone;
 DWORD oldClkValue;
 
 HWND tipH = NULL, tipV = NULL;
@@ -39,18 +39,23 @@ void InitGridButtonZone() {
         DestroyWindow(GetDlgItem(cgDlg, bID));
     // Create zone buttons...
     HWND bblock = GetDlgItem(cgDlg, IDC_BUTTON_ZONE);
-    RECT bzone;
-    GetClientRect(bblock, &bzone);
+    GetClientRect(bblock, &buttonZone);
+    RECT bzone = buttonZone;
     MapWindowPoints(bblock, cgDlg, (LPPOINT)&bzone, 1);
     bzone.right /= conf->mainGrid->x;
     bzone.bottom /= conf->mainGrid->y;
     LONGLONG bId = 2000;
     for (int y = 0; y < conf->mainGrid->y; y++)
         for (int x = 0; x < conf->mainGrid->x; x++) {
+            int xx = x+1;
+            if (conf->mainGrid->grid[ind(x, y)])
+                for (; conf->mainGrid->grid[ind(x, y)] == conf->mainGrid->grid[ind(xx, y)]; xx++);
             HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW | WS_DISABLED,
-                bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, cgDlg, (HMENU)bId,
+                bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, (xx-x) * bzone.right, bzone.bottom, cgDlg, (HMENU)bId,
                 GetModuleHandle(NULL), NULL);
+            SetWindowLongPtr(btn, GWLP_USERDATA, (LONG_PTR)(y * conf->mainGrid->x + x));
             bId++;
+            x = xx - 1;
         }
 }
 
@@ -101,7 +106,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
                 }
         }
     }
-    RECT pRect;
+    RECT pRect;// = buttonZone;
     GetWindowRect(GetDlgItem(cgDlg, IDC_BUTTON_ZONE), &pRect);
     MapWindowPoints(HWND_DESKTOP, cgDlg, (LPPOINT)&pRect, 2);
     int sizeX = (pRect.right - pRect.left) / conf->mainGrid->x,
@@ -275,7 +280,8 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 for (int y = dragZone.top; y < dragZone.bottom; y++)
                     conf->mainGrid->grid[ind(x, y)] = 0;
             dragZone = { -1,-1,-1,-1 };
-            RedrawGridButtonZone(&oldDragZone);
+            InitGridButtonZone();
+            //RedrawGridButtonZone(&oldDragZone);
         }
     } break;
     case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: {
@@ -297,14 +303,16 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                         [oldLightValue](auto t) {
                             return t.dev->GetPID() == LOWORD(oldLightValue);
                         });
-                    if (pos != conf->afx_dev.fxdevs.end() && dIndex != (pos - conf->afx_dev.fxdevs.begin())) {
+                    if (pos != conf->afx_dev.fxdevs.end() && pos->dev && dIndex != (pos - conf->afx_dev.fxdevs.begin())) {
                         dIndex = (int)(pos - conf->afx_dev.fxdevs.begin());
                         RedrawDevList();
                     }
                     eLid = HIWORD(oldLightValue);
+                    InitGridButtonZone();
                     SetLightInfo();
                 } else {
                     ModifyDragZone(devID, eLid);
+                    InitGridButtonZone();
                     dragZone = { -1,-1,-1,-1 };
                     FindCreateMapping();
                     SetLightInfo();
@@ -362,10 +370,14 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
             HBRUSH Brush = NULL, Brush2 = NULL;
-            DWORD gridVal = conf->mainGrid->grid[(ditem->CtlID - 2000)];
+            int ind = (int)GetWindowLongPtr(ditem->hwndItem, GWLP_USERDATA);
+            DWORD gridVal = conf->mainGrid->grid[ind];
             if (tabLightSel == TAB_DEVICES) {
                 WORD idVal = HIWORD(gridVal) << 4;
+                string name;
                 if (gridVal) {
+                    if (conf->showGridNames)
+                        name = conf->afx_dev.GetMappingById(conf->afx_dev.GetDeviceById(LOWORD(gridVal)), HIWORD(gridVal))->name;
                     if (HIWORD(gridVal) == eLid && LOWORD(gridVal) == devID)
                         Brush = CreateSolidBrush(RGB(conf->testColor.r, conf->testColor.g, conf->testColor.b));
                     else
@@ -374,18 +386,22 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 else
                     Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
                 FillRect(ditem->hDC, &ditem->rcItem, Brush);
+                if (conf->showGridNames) {
+                    SetBkMode(ditem->hDC, TRANSPARENT);
+                    DrawText(ditem->hDC, name.c_str(), -1, &ditem->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+                }
                 DeleteObject(Brush);
             }
             else {
                 if (gridVal) {
-                    pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*> lightcolors = conf->colorGrid[ditem->CtlID - 2000];
+                    pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*> lightcolors = conf->colorGrid[ind];
                     if (lightcolors.first == NULL) {
-                        // not setted
+                        // not active
                         Brush = CreateSolidBrush(RGB(0, 0, 0));
                         Brush2 = CreateSolidBrush(RGB(0, 0, 0));
                     }
                     else {
-                        // setted
+                        // active
                         Brush = CreateSolidBrush(RGB(lightcolors.first->r, lightcolors.first->g, lightcolors.first->b));
                         Brush2 = CreateSolidBrush(RGB(lightcolors.second->r, lightcolors.second->g, lightcolors.second->b));
                     }
@@ -419,7 +435,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 }
             }
             // Highlight if in selection zone
-            if (PtInRect(&dragZone, { (long)(ditem->CtlID - 2000) % conf->mainGrid->x, (long)(ditem->CtlID - 2000) / conf->mainGrid->x })) {
+            if (PtInRect(&dragZone, { (long)(ind % conf->mainGrid->x), (long)(ind / conf->mainGrid->x) })) {
                 DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, /*BF_MONO |*/ BF_RECT);
             }
             else

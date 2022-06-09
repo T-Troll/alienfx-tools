@@ -343,7 +343,12 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 		EnableWindow(mode_list, conf->enableMon);
 	}
-	UpdateCombo(mode_list, effModes, mode);
+	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3 });
+	if (conf->haveV5) {
+		ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
+		if (mode == 99)
+			ComboBox_SetCurSel(mode_list, effModes.size());
+	}
 }
 
 void UpdateState() {
@@ -432,7 +437,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
 		case IDM_HELP:
-			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/blob/master/Doc/alienfx-gui.md", NULL, NULL, SW_SHOWNORMAL);
+			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/alienfx-gui.md", NULL, NULL, SW_SHOWNORMAL);
 			break;
 		case IDM_CHECKUPDATE:
 			// check update....
@@ -449,20 +454,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();
 			conf->Save();
-			isNewVersion = false;
 			fxhl->Refresh(2); // set def. colors
-			conf->niData.uFlags |= NIF_INFO;
-			strcpy_s(conf->niData.szInfoTitle, "Configuration saved!");
-			strcpy_s(conf->niData.szInfo, "Configuration saved successfully.");
-			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
-			conf->niData.uFlags &= ~NIF_INFO;
+			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.");
 			break;
 		case IDC_EFFECT_MODE:
 		{
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				conf->activeProfile->effmode = ComboBox_GetCurSel(mode_list);
+				conf->activeProfile->effmode = (WORD) ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
 				eve->ChangeEffectMode();
 				if (tabSel == TAB_LIGHTS)
 					OnSelChanged(tab_list);

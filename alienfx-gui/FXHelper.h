@@ -50,7 +50,7 @@ public:
 	mutex modifyQuery;
 	bool unblockUpdates = true;
 	bool updateLock = false;
-	int activeMode = -1;
+	int activePowerMode = -1;
 	EventData eData, maxData;
 	int numActiveDevs = 0;
 
@@ -62,7 +62,7 @@ public:
 	void Stop();
 	void Refresh(int force = 0);
 	bool RefreshOne(groupset* map, int force = 0, bool update = true);
-	bool SetMode(int mode);
+	bool SetPowerMode(int mode);
 	void TestLight(int did, int id, bool wp=false);
 	void ResetPower(AlienFX_SDK::afx_device* dev);
 	void SetCounterColor(EventData *data, bool force = false);

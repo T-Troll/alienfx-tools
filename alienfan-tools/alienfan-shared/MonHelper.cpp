@@ -35,7 +35,7 @@ void MonHelper::Start() {
 			acpi->SetPower(conf->lastProf->powerStage);
 		acpi->SetGPU(conf->lastProf->GPUPower);
 		oldGmode = acpi->GetGMode();
-		if (oldGmode >= 0)
+		if (oldGmode >= 0 && oldGmode != conf->lastProf->gmode)
 			acpi->SetGMode(conf->lastProf->gmode);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");

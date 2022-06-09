@@ -38,7 +38,7 @@ ConfigHandler::~ConfigHandler() {
 	RegCloseKey(hKeyProfiles);
 }
 
-void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD* eff) {
+void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD tFlags, DWORD* eff) {
 	profile* prof = FindProfile(id);
 	if (!prof) {
 		// New profile
@@ -53,6 +53,14 @@ void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string
 	if (flags != -1) {
 		prof->flags = LOWORD(flags);
 		prof->effmode = HIWORD(flags);
+		if (prof->flags & PROF_GLOBAL_EFFECTS) {
+			prof->flags &= ~PROF_GLOBAL_EFFECTS;
+			prof->effmode = 99;
+		}
+	}
+	if (tFlags != -1) {
+		prof->triggerFlags = LOWORD(tFlags);
+		prof->triggerkey = HIWORD(tFlags);
 	}
 	if (eff) {
 		prof->globalEffect = (byte) LOWORD(eff[0]);
@@ -236,21 +244,25 @@ void ConfigHandler::Load() {
 			RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
 			vindex++;
 			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
-				updateProfileByID(pid, (char*)data, "", -1, NULL);
+				updateProfileByID(pid, (char*)data, "", -1, -1, NULL);
 				goto nextRecord;
 			}
-			if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
-				DWORD newData = MAKELPARAM(LOWORD(*(DWORD*)data), HIWORD(*(DWORD*)data) == 3 ? 0 : *(DWORD*)data + 1);
-				updateProfileByID(pid, "", "", newData, NULL);
+			//if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
+			//	DWORD newData = MAKELPARAM(LOWORD(*(DWORD*)data), HIWORD(*(DWORD*)data) == 3 ? 0 : *(DWORD*)data + 1);
+			//	updateProfileByID(pid, "", "", newData, NULL);
+			//	goto nextRecord;
+			//}
+			if (sscanf_s(name, "Profile-triggers-%d", &pid) == 1) {
+				updateProfileByID(pid, "", "", -1, *(DWORD*)data, NULL);
 				goto nextRecord;
 			}
 			if (sscanf_s(name, "Profile-gflags-%d", &pid) == 1) {
-				updateProfileByID(pid, "", "", *(DWORD*)data, NULL);
+				updateProfileByID(pid, "", "", *(DWORD*)data, -1, NULL);
 				goto nextRecord;
 			}
 			if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
 				//PathStripPath((char*)data);
-				updateProfileByID(pid, "", (char*)data, -1, NULL);
+				updateProfileByID(pid, "", (char*)data, -1, -1, NULL);
 				goto nextRecord;
 			}
 			int senid, fanid;
@@ -264,7 +276,7 @@ void ConfigHandler::Load() {
 				goto nextRecord;
 			}
 			if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
-				updateProfileByID(pid, "", "", -1, (DWORD*)data);
+				updateProfileByID(pid, "", "", -1, -1, (DWORD*)data);
 				goto nextRecord;
 			}
 			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
@@ -398,13 +410,17 @@ void ConfigHandler::Save() {
 	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
 	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
+		DWORD flagset;
 		string name = "Profile-" + to_string((*jIter)->id);
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length());
-		name = "Profile-flags-" + to_string((*jIter)->id);
+		/*name = "Profile-flags-" + to_string((*jIter)->id);
 		DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode ? (*jIter)->effmode - 1 : 3);
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));*/
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		name = "Profile-triggers-" + to_string((*jIter)->id);
+		flagset = MAKELONG((*jIter)->triggerFlags, (*jIter)->triggerkey);
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
 
 		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
@@ -466,14 +482,14 @@ void ConfigHandler::Save() {
 		}
 
 		// Global effects
-		if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
-			DWORD buffer[3];
-			name = "Profile-effect-" + to_string((*jIter)->id);
-			buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
-			buffer[1] = (*jIter)->effColor1.ci;
-			buffer[2] = (*jIter)->effColor2.ci;
-			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));
-		}
+		//if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
+		DWORD buffer[3];
+		name = "Profile-effect-" + to_string((*jIter)->id);
+		buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
+		buffer[1] = (*jIter)->effColor1.ci;
+		buffer[2] = (*jIter)->effColor2.ci;
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));
+		//}
 		// Fans....
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..

@@ -4,13 +4,16 @@
 #include "AlienFX_SDK.h"
 #include "ConfigFan.h"
 
-// Profile flags pattern
+// Profile flags
 #define PROF_DEFAULT		0x1
 #define PROF_PRIORITY		0x2
 #define PROF_DIMMED			0x4
 #define PROF_ACTIVE			0x8
 #define PROF_FANS			0x10
 #define PROF_GLOBAL_EFFECTS 0x20
+
+#define PROF_TRIGGER_AC		 0x1
+#define PROF_TRIGGER_BATTERY 0x2
 
 #define LEVENT_COLOR	0x1
 #define LEVENT_POWER	0x2
@@ -66,6 +69,8 @@ struct profile {
 	WORD effmode = 0;
 	vector<string> triggerapp;
 	string name;
+	WORD triggerkey = 0;
+	WORD triggerFlags;
 	vector<groupset> lightsets;
 	fan_profile fansets;
 	AlienFX_SDK::Colorcode effColor1, effColor2;
@@ -80,7 +85,7 @@ private:
 	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
-	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD *eff);
+	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD tFlags, DWORD* eff);
 	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
 	//AlienFX_SDK::group* FindCreateGroup(int did, int lid);
 	groupset* FindCreateGroupSet(int profID, int groupID);
@@ -112,6 +117,7 @@ public:
 	bool wasAWCC = false;
 	AlienFX_SDK::Colorcode testColor{0,255};
 	bool haveOldConfig = false;
+	bool showGridNames = false;
 
 	// Ambient...
 	DWORD amb_mode = 0;

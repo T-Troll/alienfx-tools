@@ -352,8 +352,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		dDlg = hDlg;
 		fxhl->UnblockUpdates(false, true);
-		// Do we have some lights?
-		//conf->afx_dev.AlienFXAssignDevices();
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		if (conf->afx_dev.fxdevs.size() > 0) {
@@ -379,6 +377,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		RegisterHotKey(hDlg, 2, MOD_SHIFT, VK_RIGHT);
 		RegisterHotKey(hDlg, 3, MOD_SHIFT, VK_HOME);
 		RegisterHotKey(hDlg, 4, MOD_SHIFT, VK_END);
+
+		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 
 	} break;
 	case WM_COMMAND: {
@@ -547,6 +547,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_WHITE), hDlg, (DLGPROC)WhiteBalanceDialog);
 		} break;
+		case IDC_CHECK_LIGHTNAMES: {
+			conf->showGridNames = !conf->showGridNames;
+			RedrawGridButtonZone();
+		}
 		default: return false;
 		}
 	} break;
@@ -598,12 +602,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						DWORD* newGrid = new DWORD[conf->mainGrid->x * conf->mainGrid->y]{ 0 };
 						conf->afx_dev.GetGrids()->push_back({ newGridIndex, conf->mainGrid->x, conf->mainGrid->y, "Grid #" + to_string(newGridIndex), newGrid });
 						conf->mainGrid = &conf->afx_dev.GetGrids()->back();
-						//RedrawGridList(hDlg);
 						TCITEM tie{ TCIF_TEXT };
 						tie.pszText = (LPSTR)conf->mainGrid->name.c_str();
 						TabCtrl_InsertItem(gridTab, conf->afx_dev.GetGrids()->size() - 1, (LPARAM)&tie);
 						TabCtrl_SetCurSel(gridTab, conf->afx_dev.GetGrids()->size() - 1);
 						OnGridSelChanged(gridTab);
+						RedrawWindow(gridTab, NULL, NULL, RDW_INVALIDATE);
 					}
 					else
 					{
@@ -619,6 +623,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 									TabCtrl_DeleteItem(gridTab, conf->gridTabSel);
 									TabCtrl_SetCurSel(gridTab, newTab);
 									OnGridSelChanged(gridTab);
+									RedrawWindow(gridTab, NULL, NULL, RDW_INVALIDATE);
 									break;
 								}
 							}

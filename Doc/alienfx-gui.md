@@ -180,6 +180,8 @@ Both Power button and indicators can be configured in settings to stay on then t
 "Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.  
 Other assigned lights will have random colors at grid and black color for physical lights.
 
+"Light names on grid" enables/disables printing of the light name over grid button. It's useful to check all lights position.
+
 Then you find light position at you physical device (it's highlighted), assign it to the grid - click or click-and drag at grid zone to do it.  
 Click again to remove grid sell from current light, right-click (or click-and-drag) to clear grid cell(s).  
 Left-click at already assigned cell to select corresponding light (and it's device).
@@ -234,18 +236,19 @@ Press "+" or "-" buttons to add or remove profile. New profile settings will be 
 You can double-click or press Enter on selected profile into the list to edit its name.  
 
 Each profile can have settings and application for trigger it. The settings are:
-- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off (The same as "Disable monitoring" before).
+- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Global, Off.
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
-- "Only then active" - If "Profile auto switch" enabled, and application defined in profile running, profile will only be selected if application window active (have focus).
 - "Priority profile" - If this flag enabled, this profile will be chosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
 - "Dim lights" - Then profile activated, all lights will be dimmed.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
-- "Global effects" - Enable global effects for this profile. This setting can be disabled if no APIv5 devices detected into system.
 
-"Global effects" only works for APIv5 (RGB keyboard) devices, activating it disable any other software effect.
+"Global effects" only works for APIv5 (RGB keyboard) devices, select corresponding effect type ("Global") to enable this block.
 
-"Trigger applications" list define application executables, which will activate selected profile if running and "Profile auto switch" is on.  
-Press "+" button to select new application, or select one from the list and press "-" button to delete it.
+The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
+- "Keyboard" drop down will activate this profile in case corresponding key is pressed. Release the key to switch back to other profile.  
+- "Power" block - if checked, profile will be activated if power source changed to checked state.  
+- "Trigger applications" list define application executables, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it.  
+- "Only then active" - profile will be activated only in case of any application running and foreground (active) and have focus.
 
 "Zones setting" block used operate with different setting blocks of the selected profile.
 Check all types of zones you need to operate (colors or effect settings), then press "Reset" button to remove it from selected profile, or "Copy active" button to copy it from active (selected in top drop down box) profile.
@@ -253,8 +256,9 @@ Check all types of zones you need to operate (colors or effect settings), then p
 In case "Profile auto switch" turned on at "Settings", active profile will be selected automatically according to this rules:
 - If any "Trigger application" from any profile running - "Default" profile selected.
 - If any "Trigger application" from profile with "Priority" setting running - this profile will be selected.
-- If any "Trigger application" from profile running, and it doesn't have "Only when active" flag, this profile selected (random one of them if more, then one application found).
+- If any "Trigger application" from profile running, and it doesn't have "Only when active" trigger, this profile selected (random one of them if more, then one application found in many).
 - If foreground application is one of the "Trigger application" of the profile with "Only when active" flag, and no other application belongs to profile with "Priority" flag running, this profile will be selected.
+- Pressing a key or changing power source will always select first profile with this triggers active. It will stay active until other profile switch happened.
 
 ## Settings
 

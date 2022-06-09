@@ -20,6 +20,9 @@ extern EventHandler* eve;
 
 DWORD WINAPI CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
+VOID CALLBACK CCreateProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
+//LRESULT CALLBACK LanguageProc(int nCode, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 EventHandler::EventHandler()
 {
@@ -45,10 +48,10 @@ void EventHandler::ChangePowerState()
 		// AC line
 		switch (state.BatteryFlag) {
 		case 8: // charging
-			sameState = fxhl->SetMode(MODE_CHARGE);
+			sameState = fxhl->SetPowerMode(MODE_CHARGE);
 			break;
 		default:
-			sameState = fxhl->SetMode(MODE_AC);
+			sameState = fxhl->SetPowerMode(MODE_AC);
 			break;
 		}
 	}
@@ -56,17 +59,24 @@ void EventHandler::ChangePowerState()
 		// Battery - check BatteryFlag for details
 		switch (state.BatteryFlag) {
 		case 1: // ok
-			sameState = fxhl->SetMode(MODE_BAT);
+			sameState = fxhl->SetPowerMode(MODE_BAT);
 			break;
 		case 2: case 4: // low/critical
-			sameState = fxhl->SetMode(MODE_LOW);
+			sameState = fxhl->SetPowerMode(MODE_LOW);
 			break;
 		}
 	}
 	if (!sameState) {
 		DebugPrint(("Power state changed to " + to_string(conf->statePower) + "\n").c_str());
 		fxhl->ChangeState();
-		fxhl->Refresh();
+		auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
+			[](auto cp) {
+				return cp->triggerFlags & (conf->statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY);
+			});
+		if (pos != conf->profiles.end())
+			SwitchActiveProfile(*pos);
+		else
+			fxhl->Refresh();
 	}
 }
 
@@ -281,7 +291,7 @@ void EventHandler::CheckProfileWindow(HWND hwnd) {
 		conf->foregroundProfile = newp ? newp : NULL;
 
 		if (newp || !conf->noDesktop || (pName != "ShellExperienceHost.exe"
-			&& pName != "alienfx-gui.exe"
+			//&& pName != "alienfx-gui.exe"
 			&& pName != "explorer.exe"
 			&& pName != "SearchApp.exe"
 #ifdef _DEBUG
@@ -297,70 +307,15 @@ void EventHandler::CheckProfileWindow(HWND hwnd) {
 					SwitchActiveProfile(newp);
 			}
 		}
+#ifdef _DEBUG
 		else {
 			DebugPrint("Forbidden app, switch blocked!\n");
 		}
+#endif
 		delete[] szProcessName;
 	}
 	else {
 		SwitchActiveProfile(ScanTaskList());
-	}
-}
-
-// Create - Check process ID, switch if found and no foreground active.
-// Foreground - Check process ID, switch if found, clear foreground if not.
-// Close - Check process list, switch if found and no foreground active.
-
-VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-	eve->CheckProfileWindow(hwnd);
-}
-
-VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
-
-	HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
-		FALSE, dwEventThread);
-	if (hThread) {
-		DWORD prcId = GetProcessIdOfThread(hThread);
-		if (prcId &&
-			idChild == CHILDID_SELF && conf->foregroundProfile != conf->activeProfile) {
-			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-				PROCESS_VM_READ,
-				FALSE, prcId);
-			DWORD nameSize = MAX_PATH, cFileName = nameSize;
-			TCHAR* szProcessName=new TCHAR[nameSize];
-			szProcessName[0]=0;
-			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize);// GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
-			while (nameSize==cFileName) {
-				nameSize=nameSize<<1;
-				delete[] szProcessName;
-				szProcessName=new TCHAR[nameSize];
-				cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
-			}
-
-			PathStripPath(szProcessName);
-
-			switch (dwEvent) {
-			case EVENT_OBJECT_CREATE: case EVENT_OBJECT_DESTROY:
-
-				if (conf->FindProfileByApp(string(szProcessName))) {
-					eve->SwitchActiveProfile(eve->ScanTaskList());
-				}
-				break;
-
-			//case EVENT_OBJECT_DESTROY:
-
-			//	if (conf->FindProfileByApp(string(szProcessName))) {
-			//		//DebugPrint((string("Process (") + szProcessName + ") status " + to_string(idChild) + "\n").c_str());
-			//		eve->SwitchActiveProfile(eve->ScanTaskList());
-			//	}
-
-			//	break;
-			}
-
-			CloseHandle(hProcess);
-			delete[] szProcessName;
-		}
-		CloseHandle(hThread);
 	}
 }
 
@@ -373,6 +328,8 @@ void EventHandler::StartProfiles()
 		// Need to switch if already running....
 		CheckProfileWindow(GetForegroundWindow());
 
+		//SetWindowsHookExW - keyboard and shell (lang. change).
+
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 								 EVENT_SYSTEM_FOREGROUND, NULL,
 								 CForegroundProc, 0, 0,
@@ -382,6 +339,8 @@ void EventHandler::StartProfiles()
 			EVENT_OBJECT_DESTROY, NULL,
 			CCreateProc, 0, 0,
 			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+
+		kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, KeyProc, NULL, 0);
 	}
 }
 
@@ -391,7 +350,7 @@ void EventHandler::StopProfiles()
 		DebugPrint("Profile hooks stop.\n");
 		UnhookWinEvent(hEvent);
 		UnhookWinEvent(cEvent);
-		cEvent = hEvent = 0;
+		//cEvent = hEvent = 0;
 	}
 }
 
@@ -412,7 +371,96 @@ int GetValuesArray(HCOUNTER counter) {
 	return count - 1;
 }
 
-DWORD WINAPI CEventProc(LPVOID param)
+// Callback and event processing hooks
+// Create - Check process ID, switch if found and no foreground active.
+// Foreground - Check process ID, switch if found, clear foreground if not.
+// Close - Check process list, switch if found and no foreground active.
+
+static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
+
+	HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
+		FALSE, dwEventThread);
+	if (hThread) {
+		DWORD prcId = GetProcessIdOfThread(hThread);
+		if (prcId &&
+			idChild == CHILDID_SELF && conf->foregroundProfile != conf->activeProfile) {
+			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+				PROCESS_VM_READ,
+				FALSE, prcId);
+			DWORD nameSize = MAX_PATH, cFileName = nameSize;
+			TCHAR* szProcessName = new TCHAR[nameSize];
+			szProcessName[0] = 0;
+			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize);// GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
+			while (nameSize == cFileName) {
+				nameSize = nameSize << 1;
+				delete[] szProcessName;
+				szProcessName = new TCHAR[nameSize];
+				cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
+			}
+
+			PathStripPath(szProcessName);
+
+			switch (dwEvent) {
+			case EVENT_OBJECT_CREATE: case EVENT_OBJECT_DESTROY:
+
+				if (conf->FindProfileByApp(string(szProcessName))) {
+					eve->SwitchActiveProfile(eve->ScanTaskList());
+				}
+				break;
+
+				//case EVENT_OBJECT_DESTROY:
+
+				//	if (conf->FindProfileByApp(string(szProcessName))) {
+				//		//DebugPrint((string("Process (") + szProcessName + ") status " + to_string(idChild) + "\n").c_str());
+				//		eve->SwitchActiveProfile(eve->ScanTaskList());
+				//	}
+
+				//	break;
+			}
+
+			CloseHandle(hProcess);
+			delete[] szProcessName;
+		}
+		CloseHandle(hThread);
+	}
+}
+
+static VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
+	eve->CheckProfileWindow(hwnd);
+}
+
+LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
+
+	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
+
+	switch (wParam) {
+	case WM_KEYDOWN:
+		switch (((LPKBDLLHOOKSTRUCT)lParam)->vkCode) {
+		case VK_LSHIFT:
+		case VK_LCONTROL:
+		case VK_LMENU:
+		case VK_LWIN:
+		case VK_RSHIFT:
+		case VK_RCONTROL:
+		case VK_RMENU: {
+			auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
+				[lParam](auto cp) {
+					return ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == cp->triggerkey;
+				});
+			if (pos != conf->profiles.end())
+				eve->SwitchActiveProfile(*pos);
+		} break;
+		}
+		break;
+	case WM_KEYUP:
+		eve->CheckProfileWindow(GetForegroundWindow());
+		break;
+	}
+
+	return res;
+}
+
+static DWORD WINAPI CEventProc(LPVOID param)
 {
 	EventHandler* src = (EventHandler*)param;
 

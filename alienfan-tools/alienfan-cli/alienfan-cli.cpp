@@ -146,7 +146,7 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v6.0.3\n");
+    printf("AlienFan-cli v6.1.0\n");
 
     bool supported = false;
 

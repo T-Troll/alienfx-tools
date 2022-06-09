@@ -131,7 +131,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(Iter->group);
 		if (grp) {
 			if (Iter->fromColor && Iter->color.size()) {
-				actions.push_back(grp->have_power && activeMode != MODE_AC && activeMode != MODE_CHARGE ? Iter->color.back() : Iter->color.front());
+				actions.push_back(grp->have_power && conf->statePower ? Iter->color.back() : Iter->color.front());
 				actions.back().type = 0;
 			}
 			if (Iter->events[1].state) {
@@ -201,7 +201,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 			wasChanged = true;
 
 			if (grp->have_power)
-				if (activeMode == MODE_AC || activeMode == MODE_CHARGE) {
+				if (conf->statePower) {
 					actions.push_back(Iter->color[1]);
 				}
 				else {
@@ -290,7 +290,7 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 				c2{ 0,0,0,conf->activeProfile->effColor2.r,
 				conf->activeProfile->effColor2.g,
 				conf->activeProfile->effColor2.b };
-			if (conf->activeProfile->flags & PROF_GLOBAL_EFFECTS)
+			if (conf->activeProfile->effmode == 99)
 				dev->SetGlobalEffects((byte)conf->activeProfile->globalEffect,
 					(byte)conf->activeProfile->globalDelay, c1, c2);
 			else
@@ -392,14 +392,14 @@ void FXHelper::Refresh(int forced)
 	QueryUpdate(-1, forced == 2);
 }
 
-bool FXHelper::SetMode(int mode)
+bool FXHelper::SetPowerMode(int mode)
 {
-	int t = activeMode;
-	activeMode = mode;
+	int t = activePowerMode;
+	activePowerMode = mode;
 	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
 		if (i->dev)
-			i->dev->powerMode = (activeMode == MODE_AC || activeMode == MODE_CHARGE);
-	return t == activeMode;
+			i->dev->powerMode = conf->statePower;
+	return t == activePowerMode;
 }
 
 bool FXHelper::RefreshOne(groupset* map, int force, bool update)
@@ -420,7 +420,7 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 			// use power event;
 			if (!map->fromColor)
 				actions = { map->events[0].from };
-			switch (activeMode) {
+			switch (activePowerMode) {
 			case MODE_BAT:
 				actions = { map->events[0].to };
 				break;
@@ -587,7 +587,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
-							if (dev->dev->GetVersion() == 5 && (conf->activeProfile->flags & PROF_GLOBAL_EFFECTS)) {
+							if (dev->dev->GetVersion() == 5 && (conf->activeProfile->effmode == 99)) {
 								DebugPrint("V5 global effect active!\n");
 								src->UpdateGlobalEffect(dev->dev);
 							}

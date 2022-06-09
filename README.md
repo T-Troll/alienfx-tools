@@ -89,12 +89,16 @@ Build process:
 - [ ] New events
   - [x] Input locale
   - [ ] Missed notifications (toasts)
-  - [ ] Keyboard events (positional effects, key press reaction)
+  - [x] Keyboard events (key press reaction)
+- [ ] Grid (positional) effects
+  - [ ] Static full-grid effects
+  - [ ] Dynamic full-grid effects
+  - [ ] Event or key-triggered full-grid effects
 - [ ] New devices support
   - [ ] Monitors
   - [x] Mouses
   - [ ] Keyboards
-- [ ] Keyboard mapper for easy RGB keyboard setup
+- [x] Keyboard mapper for easy RGB keyboard setup
 - [x] Overboost GUI
 - [x] Windows 11 support
 
