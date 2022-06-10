@@ -1,6 +1,6 @@
 ## `alienfan-gui`
 
-![alienfx-mon](/Doc/img/mon.png?raw=true)
+![alienfx-mon](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/mon.png?raw=true)
 
 GUI application for system monitoring and tray icons.  
 There are 3 main zones at main application window:

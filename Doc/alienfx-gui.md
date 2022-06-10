@@ -50,7 +50,7 @@ Rest of the screen is control block, it depends of function selected by tab:
 
 ### Colors
 
-!["Colors" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-colors-6.png?raw=true)
+!["Colors" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-colors-6.png?raw=true)
 
 `"Colors"` tab is set color and hardware effects for light. This setting will remain even if you exit application.
 
@@ -84,7 +84,7 @@ Please keep in mind - defining zone as "Gradient" disables hardware color effect
 
 ### Events Monitoring
 
-!["Events Monitoring" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-colors-6.png?raw=true)
+!["Events Monitoring" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-colors-6.png?raw=true)
 
 This tab designed to control "Monitoring" software effect - it change zone colors based on system states and events - like power source changes, system load, temperatures.  
 There are some different monitoring types and modes available:  
@@ -125,7 +125,7 @@ You can mix different monitoring type at once, f.e. different colours for same z
 
 ### Ambient tab
 
-!["Ambient" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-ambient-6.png?raw=true)
+!["Ambient" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-ambient-6.png?raw=true)
 
 `Ambient` tab setting up "Ambient" (Ambient lights) software effect mode - in this mode, zone colors will follow colors at you system screen.
 
@@ -138,7 +138,7 @@ Sliders below and right to screen area grid used to change grid density, providi
 
 ### Haptics tab
 
-!["Haptics" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-haptics-6.png?raw=true)
+!["Haptics" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-haptics-6.png?raw=true)
 
 It's about sound and audio haptics control.
 
@@ -154,7 +154,7 @@ Click color buttons for change group hi/low level colors.
 
 ### Devices and Grids
 
-!["Devices and Grids" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-devices-6.png?raw=true)
+!["Devices and Grids" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-devices-6.png?raw=true)
 
 This tab dedicated to assign device lights into grids, so it doesn't have Zones block.
 
@@ -190,7 +190,7 @@ Optionally, you can set current light name using name field into "Light" block.
 
 ## Fans and Power
 
-!["Fans and Power" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-fans-6.png?raw=true)
+!["Fans and Power" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-fans-6.png?raw=true)
 
 It's all about fan and some power settings control for your gear.
 
@@ -228,7 +228,7 @@ You can press "Stop Overboost" button at any time to stop overboost check.
 
 ## Profiles
 
-!["Profiles" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-profiles-6.png?raw=true)
+!["Profiles" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-profiles-6.png?raw=true)
 
 `"Profiles"` tab control profile settings, like selecting default profile, per-profile monitoring control and automatic switch to this profile then the defined application run.  
 
@@ -262,7 +262,7 @@ In case "Profile auto switch" turned on at "Settings", active profile will be se
 
 ## Settings
 
-!["Settings" tab](https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/img/gui-settings-6.png?raw=true)
+!["Settings" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-settings-6.png?raw=true)
 
 Global application and light system settings collected into this tab.
 
