@@ -50,7 +50,7 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 - (Optional) For the fan control, it's highly recommended to set correct overboost values and maximal fans RPM. You can do it at GUI apps first start or by running `alienfx-cli setover` command.
 - Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (all tools will have limited functionality without this step).  
 
-Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide-and-tips)) guide first!
+Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide)-for-release-v6.x.x.x)) guide first!
 
 ## Supported hardware:
 
