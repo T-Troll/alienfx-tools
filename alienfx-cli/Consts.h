@@ -6,6 +6,7 @@ struct ARG {
 };
 
 struct COMMAND {
+	const int id;
 	const char* name,
 		* desc;
 	const byte minArgs;
@@ -40,22 +41,22 @@ const ACTIONCODE actioncodes[]{
 };
 
 const COMMAND commands[]{
-	{"set-all","\tr,g,b[,br] - set all device lights",3},
-	{"set-one","\tpid,light,r,g,b[,br] - set one light",5},
-	{"set-zone","zone,r,g,b[,br] - set zone lights",4},
-	{"set-action","pid,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action",6},
-	{"set-zone-action","zone,action,r,g,b[,br,[action,r,g,b,br]] - set all zone lights and enable it's action",5},
-	{"set-power","light,r,g,b,r2,g2,b2 - set power button colors (low-level only)",7},
-	{"set-tempo","tempo - set tempo for actions and pause",1},
-	{"set-dev","\tpid - set active device for low-level",1},
-	{"set-dim","\tbr - set active device dimming level",1},
-	{"set-global","mode,r,g,b,r,g,b - set global effect mode (v5 devices only)",7},
-	{"low-level","switch to low-level SDK"},
-	{"high-level","switch to high-level SDK (Alienware LightFX)"},
-	{"probe","\t[ald[,lights][,devID[,lightID]] - probe lights to set names"},
-	{"status","\tshows devices and lights id's, names and statuses"},
-	{"lightson","turn all current device lights on"},
-	{"lightsoff","turn all current device lights off"},
-	{"reset","\treset current device state"},
-	{"loop","\trepeat commands from start, until user press CTRL+c"}
+	{0,"set-all","\tr,g,b[,br] - set all lights",3},
+	{1,"set-one","\tdev,light,r,g,b[,br] - set one light",5},
+	{2,"set-zone","zone,r,g,b[,br] - set zone lights",4},
+	{3,"set-action","dev,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action",6},
+	{4,"set-zone-action","zone,action,r,g,b[,br,[action,r,g,b,br]] - set all zone lights and enable it's action",5},
+	{5,"set-power","dev,light,r,g,b,r2,g2,b2 - set power button colors (low-level only)",8},
+	{6,"set-tempo","tempo - set tempo for actions and pause",1},
+	//{7,"set-dev","\tpid - set active device for low-level",1},
+	{8,"set-dim","\tdev,br - set active device dimming level",2},
+	{9,"set-global","mode,r,g,b,r,g,b - set global effect mode (v5 devices only)",7},
+	{10,"low-level","switch to low-level SDK"},
+	{11,"high-level","switch to high-level SDK (Alienware LightFX)"},
+	{12,"probe","\t[ald[,lights][,devID[,lightID]] - probe lights to set names"},
+	{13,"status","\tshows devices and lights id's, names and statuses"},
+	{14,"lightson","turn all lights on"},
+	{15,"lightsoff","turn all lights off"},
+	{16,"reset","\treset current device state"},
+	{17,"loop","\trepeat commands from start, until user press CTRL+c"}
 };

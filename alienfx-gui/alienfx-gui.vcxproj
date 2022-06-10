@@ -456,12 +456,14 @@
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DisableSpecificWarnings>4312</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>false</Profile>
     </Link>
     <Manifest />
     <ResourceCompile />
@@ -476,7 +478,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>Default</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -487,12 +489,15 @@
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <OmitFramePointers>true</OmitFramePointers>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <DisableSpecificWarnings>4312</DisableSpecificWarnings>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <GenerateDebugInformation>false</GenerateDebugInformation>
+      <Profile>false</Profile>
     </Link>
     <Manifest />
     <ResourceCompile />
@@ -549,6 +554,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -565,14 +571,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="CaptureHelper.h" />
-    <ClInclude Include="ConfigAmbient.h" />
     <ClInclude Include="ConfigHandler.h" />
-    <ClInclude Include="ConfigHaptics.h" />
     <ClInclude Include="DFT_gosu.h" />
     <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="EventHandler.h" />
@@ -589,9 +594,7 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
     </ClCompile>
     <ClCompile Include="ColorDialog.cpp" />
-    <ClCompile Include="ConfigAmbient.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
-    <ClCompile Include="ConfigHaptics.cpp" />
     <ClCompile Include="DevicesDialog.cpp" />
     <ClCompile Include="DFT_gosu.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
@@ -602,14 +605,16 @@
     <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="FanDialog.cpp" />
     <ClCompile Include="FXHelper.cpp" />
-    <ClCompile Include="GroupsDialog.cpp" />
     <ClCompile Include="HapticsDialog.cpp" />
+    <ClCompile Include="LightsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
+    <ClCompile Include="TabDevGrid.cpp" />
     <ClCompile Include="WSAudioIn.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
     </ClCompile>
+    <ClCompile Include="ZoneSel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="alienfx-gui.rc" />

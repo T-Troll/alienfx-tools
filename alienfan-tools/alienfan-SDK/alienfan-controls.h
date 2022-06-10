@@ -3,8 +3,9 @@
 #define NUM_DEVICES 6
 
 namespace AlienFan_SDK {
-	static const ALIENFAN_CONTROL dev_controls[2]{
-		{   0x14,   3, // PowerID
+	static const ALIENFAN_CONTROL dev_controls
+		{
+			0x14,   3, // PowerID
 			0x14,   5, // RPM
 			0x14,   6, // Percent
 			0x14, 0xc, // Boost
@@ -12,20 +13,10 @@ namespace AlienFan_SDK {
 			0x14,   4, // Temp
 			0x14, 0xb, // Get Power
 			0x15,   1, // Set Power
-			0x13,   4  // GPU power
-		},
-		{
-			0x10,   3, // PowerID
-			0x10,   5, // RPM
-			0x10,   6, // Percent
-			0x10, 0xc, // Boost
-			0x11,   2, // Set boost
-			0x10,   4, // Temp
-			0x10, 0xb, // Get Power
-			0x11,   1, // Set Power
-			0,   0  // GPU power
-		}
-	};
+			0x13,   4, // GPU power
+			0x25,	2, // Get G-Mode
+			0x25,	1, // Toggle G-Mode
+		};
 
 	static vector<string> temp_names{
 			"CPU Internal Thermistor",
@@ -36,7 +27,7 @@ namespace AlienFan_SDK {
 			"GPU External Thermistor"
 	};
 
-	static const ALIENFAN_COMMAND_CONTROL dev_c_controls[1]{
+	static const ALIENFAN_COMMAND_CONTROL dev_c_controls
 		{
 			0x8ab, // unlock
 			"\\_SB.PCI0.MMRB", // read RAM
@@ -51,14 +42,13 @@ namespace AlienFan_SDK {
 			"\\_SB.PCI0.LPCB.EC0.GVRT"
 	        },
 		    {0x902, 0x929}
-		}
+		//}
 	};
 
 	static const ALIENFAN_DEVICE devs[NUM_DEVICES]{
 		{ // Alienware m15/m17
 			"\\_SB.AMW1.WMAX", // main command
 			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
-			//105, // max. boost
 			true, // command controlled
 			0, // controlID
 			0x14,   2, // Probe command
@@ -66,15 +56,13 @@ namespace AlienFan_SDK {
 		{ // Dell G15
 			"\\_SB.AMW3.WMAX", // main command
 			"\\_SB.PCI0.GPP0.PEGP.GPS", // GPU command
-			//150, // Max. boost
 			true, // command controlled
 			0, // controlID
 			0x14,   2, // Probe command
 		},
-		{ // Dell G5 SE
+		{ // Dell G5 SE and Alienware m15R6
 			"\\_SB.AMWW.WMAX", // main command
 			"\\_SB.PC00.PEG1.PEGP.GPS", // GPU command
-			//100, // Max. boost
 			true, // command controlled
 			0, // controlID
 			0x14,   2, // Probe command
@@ -82,23 +70,20 @@ namespace AlienFan_SDK {
 		{ // Aurora R7
 			"\\_SB.AMW1.WMAX", // main command
 			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
-			//100, // Max. boost
 			true, // command controlled
 			1, // controlID
-			0x10,   2, // Probe command
+			0x14,   2, // Probe command
 		},
 		{ // Area 51R4
 			"\\_SB.WMI2.WMAX", // main command
 			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
-			//100, // Max. boost
 			true, // command controlled
 			1, // controlID
-			0x10,   2, // Probe command
+			0x14,   2, // Probe command
 		},
 		{ // Alienware 13R2, 15R2
 			"\\_SB.AMW0.WMBC", // main command
 			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
-			//99, // Max. boost
 			false, // command controlled
 			0, // controlID
 			0x14,   5, // Probe command

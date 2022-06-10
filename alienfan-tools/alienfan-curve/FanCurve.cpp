@@ -10,6 +10,8 @@ extern MonHelper* mon;
 extern HWND fanWindow, tipWindow;
 extern AlienFan_SDK::Control* acpi;
 
+extern void SetToolTip(HWND, string);
+
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
 bool fanMode = true;
@@ -22,43 +24,6 @@ vector<fan_overboost> boostCheck;
 int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
 
 HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
-
-HWND CreateToolTip(HWND hwndParent, HWND oldTip)
-{
-    // Create a tool tip.
-    if (oldTip) DestroyWindow(oldTip);
-
-    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-        0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
-    //SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-    //			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-    TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
-    GetClientRect(hwndParent, &ti.rect);
-    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-    return hwndTT;
-}
-
-void SetTooltip(HWND tt, int x, int y) {
-    TOOLINFO ti{ sizeof(ti) };
-    if (tt) {
-        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-        string toolTip = "Temp: " + to_string(x) + ", Boost: " + to_string(y);
-        ti.lpszText = (LPTSTR)toolTip.c_str();
-        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-    }
-}
-
-void SetBoostTip(HWND tt, int rpm, int boost) {
-    TOOLINFO ti{ sizeof(ti) };
-    if (tt) {
-        SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-        string toolTip = "Boost " + to_string(boost) + " @ " + to_string(rpm) + " RPM";
-        ti.lpszText = (LPTSTR)toolTip.c_str();
-        SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-    }
-}
 
 fan_point Screen2Fan(LPARAM lParam) {
     return {
@@ -93,7 +58,7 @@ POINT Boost2Screen(fan_overboost* boost) {
 
 void DrawFan()
 {
-    if (fanWindow) {
+    if (fanWindow && mon) {
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
 
@@ -120,7 +85,7 @@ void DrawFan()
             // curve...
             temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             fan_block* fan = NULL;
-            int fanBoost = acpi->GetFanValue(fan_conf->lastSelectedFan);
+            int fanBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan);
             for (auto senI = fan_conf->lastProf->fanControls.begin();
                 senI < fan_conf->lastProf->fanControls.end(); senI++)
                 if (fan = fan_conf->FindFanBlock(&(*senI), fan_conf->lastSelectedFan)) {
@@ -143,7 +108,7 @@ void DrawFan()
                         SetDCBrushColor(hdc, RGB(255, 255, 0));
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         SelectObject(hdc, GetStockObject(DC_BRUSH));
-                        mark = Fan2Screen(mon->senValues[senI->sensorIndex], fanBoost/*mon->boostValues[fan_conf->lastSelectedFan]*/);
+                        mark = Fan2Screen(mon->senValues[senI->sensorIndex], fanBoost);
                         Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                     }
                 }
@@ -152,13 +117,10 @@ void DrawFan()
             SetDCBrushColor(hdc, RGB(255, 0, 0));
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
-            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost/*mon->boostValues[fan_conf->lastSelectedFan]*/);
+            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-            // RPM
-            fan_overboost* maxBoost = fan_conf->FindBoost(fan_conf->lastSelectedFan);
-            string rpmText = "Fan curve (scale: " + to_string(maxBoost ? maxBoost->maxBoost : acpi->boosts[fan_conf->lastSelectedFan])
-                + ", boost: " + to_string(fanBoost) + ", "
-                + to_string(maxBoost ? acpi->GetFanRPM(fan_conf->lastSelectedFan) * 100 / maxBoost->maxRPM : acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
+            string rpmText = "Fan curve (scale: " + to_string(acpi->boosts[fan_conf->lastSelectedFan])
+                + ", boost: " + to_string(fanBoost) + ", " + to_string(acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
         }
         else {
@@ -200,7 +162,7 @@ void DrawFan()
 }
 
 int SetFanSteady(byte boost, bool downtrend = false) {
-    acpi->SetFanValue(bestBoostPoint.fanID, boost, true);
+    acpi->SetFanBoost(bestBoostPoint.fanID, boost, true);
     // Check the trend...
     int fRpm, fDelta = -1, oDelta, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
     boostCheck.push_back({ bestBoostPoint.fanID, boost, (USHORT)bRpm });
@@ -223,19 +185,24 @@ int SetFanSteady(byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost() {
-    fan_overboost* fOver = fan_conf->FindBoost(bestBoostPoint.fanID);
-    if (fOver) {
-        fOver->maxBoost = bestBoostPoint.maxBoost;
-        fOver->maxRPM = max(bestBoostPoint.maxRPM, fOver->maxRPM);
+    auto pos = find_if(fan_conf->boosts.begin(), fan_conf->boosts.end(),
+        [](auto t) {
+            return t.fanID == bestBoostPoint.fanID;
+        });
+    if (pos != fan_conf->boosts.end()) {
+        pos->maxBoost = bestBoostPoint.maxBoost;
+        pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
     }
-    else
+    else {
         fan_conf->boosts.push_back(bestBoostPoint);
+    }
     acpi->boosts[bestBoostPoint.fanID] = bestBoostPoint.maxBoost;
+    acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
     fan_conf->Save();
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = *((int*)lpParam), steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanValue(num, true);
+    int num = (int)lpParam, steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanBoost(num, true);
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
@@ -279,7 +246,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                     goto finish;
                 boost = bestBoostPoint.maxBoost;
             }
-            acpi->SetFanValue(num, oldBoost, true);
+            acpi->SetFanBoost(num, oldBoost, true);
             UpdateBoost();
             DrawFan();
         }
@@ -315,11 +282,11 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 *lastFanPoint = clk;
                 DrawFan();
             }
-            SetTooltip(toolTip, clk.temp, clk.boost);
+            SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
         }
         else {
-            SetBoostTip(toolTip, GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale,
-                (cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100);
+            SetToolTip(toolTip, "Boost " + to_string((cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100) + " @ " +
+                to_string(GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale) + " RPM");
         }
     } break;
     case WM_LBUTTONDOWN:
@@ -395,7 +362,7 @@ void ReloadFanView(HWND list, int cID) {
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES /*| LVS_EX_AUTOSIZECOLUMNS*/ | LVS_EX_FULLROWSELECT);
     if (!ListView_GetColumnWidth(list, 0)) {
-        LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
+        LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
         ListView_InsertColumn(list, 0, &lCol);
     }
     for (int i = 0; i < acpi->HowManyFans(); i++) {
@@ -407,6 +374,8 @@ void ReloadFanView(HWND list, int cID) {
             lItem.state = LVIS_SELECTED;
             SendMessage(fanWindow, WM_PAINT, 0, 0);
         }
+        else
+            lItem.state = 0;
         ListView_InsertItem(list, &lItem);
         if (sen && fan_conf->FindFanBlock(sen, i)) {
             fan_conf->lastSelectedSensor = -1;
@@ -441,7 +410,7 @@ void ReloadTempView(HWND list, int cID) {
     int rpos = 0;
     //HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
     ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
     if (!ListView_GetColumnWidth(list, 1)) {
         LVCOLUMNA lCol{ LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM, LVCFMT_LEFT, 100, (LPSTR)"Temp" };
         ListView_InsertColumn(list, 0, &lCol);
@@ -458,10 +427,14 @@ void ReloadTempView(HWND list, int cID) {
             lItem.state = LVIS_SELECTED;
             rpos = i;
         }
+        else
+            lItem.state = 0;
         ListView_InsertItem(list, &lItem);
         ListView_SetItemText(list, i, 1, (LPSTR)acpi->sensors[i].name.c_str());
     }
+    RECT cArea;
+    GetClientRect(list, &cArea);
     ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
-    ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
+    ListView_SetColumnWidth(list, 1, cArea.right - ListView_GetColumnWidth(list, 0));
     ListView_EnsureVisible(list, rpos, false);
 }

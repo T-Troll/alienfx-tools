@@ -22,7 +22,8 @@ struct temp_block {
 };
 
 struct fan_profile {
-	DWORD powerStage = 0;
+	WORD powerStage = 0;
+	WORD gmode = 0;
 	DWORD GPUPower = 0;
 	vector<temp_block> fanControls;
 };
@@ -61,6 +62,5 @@ public:
 	void Save();
 
 	void SetBoosts(AlienFan_SDK::Control *);
-	fan_overboost* FindBoost(int);
 };
 

@@ -39,13 +39,7 @@
     <ClInclude Include="CaptureHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConfigAmbient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DXGIManager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ConfigHaptics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DFT_gosu.h">
@@ -77,9 +71,6 @@
     <ClCompile Include="DevicesDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GroupsDialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ProfilesDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -92,9 +83,6 @@
     <ClCompile Include="CaptureHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigAmbient.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DXGIManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -104,13 +92,19 @@
     <ClCompile Include="HapticsDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigHaptics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DFT_gosu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WSAudioIn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LightsDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TabDevGrid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ZoneSel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

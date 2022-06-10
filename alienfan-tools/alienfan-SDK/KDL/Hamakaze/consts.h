@@ -37,7 +37,8 @@
 
 #define SHELL_POOL_TAG          '  oI'
 
-#define PROVIDER_RES_KEY        ' uwu' // Giving you enough uwu's.
+#include "key.h"
+//#define PROVIDER_RES_KEY        ' uwu' // Giving you enough uwu's.
 
 //
 // Driver id table

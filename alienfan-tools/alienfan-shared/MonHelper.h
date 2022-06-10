@@ -10,11 +10,11 @@ public:
 	ConfigFan* conf;
 
 	//HANDLE stopEvent = 0;
-	short oldPower = 0;
-	AlienFan_SDK::Control* acpi;
+	short oldPower = 0, oldGmode = 0;
+	//AlienFan_SDK::Control* acpi;
 	vector<int> senValues, fanRpm, boostRaw, boostSets, maxTemps, fanSleep;
 
-	MonHelper(ConfigFan*, AlienFan_SDK::Control*);
+	MonHelper(ConfigFan*);
 	~MonHelper();
 	void Start();
 	void Stop();

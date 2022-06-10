@@ -7,10 +7,8 @@ class SenMonHelper
 private:
 	HANDLE eHandle = 0, bHandle = 0;
 public:
-	ConfigMon* conf = NULL;
-	AlienFan_SDK::Control* acpi = NULL;
 	HANDLE stopEvents = NULL;
-	SenMonHelper(ConfigMon*);
+	SenMonHelper();
 	~SenMonHelper();
 	void StartMon();
 	void StopMon();

@@ -35,12 +35,14 @@ extern "C" {
 
     BOOLEAN
         DemandService(
-            __in SC_HANDLE SchSCManager
+            __in SC_HANDLE SchSCManager,
+            __in char* SrvName
         );
 
     BOOLEAN
         StopService(
-            __in SC_HANDLE SchSCManager
+            __in SC_HANDLE SchSCManager,
+            __in char* SrvName
         );
 
     HANDLE
@@ -58,17 +60,18 @@ extern "C" {
         EvalAcpiMethod(
             __in HANDLE hDriver,
             __in const char* puNameSeg,
-            __in PVOID *outputBuffer
+            __in PVOID *outputBuffer,
+            __in_opt PVOID pArgs
         );
 
-    BOOLEAN
-        APIENTRY
-        EvalAcpiMethodArgs(
-            __in HANDLE hDriver,
-            __in const char* puNameSeg,
-            __in PVOID pArgs,
-            __in PVOID *outputBuffer
-        );
+    //BOOLEAN
+    //    APIENTRY
+    //    EvalAcpiMethodArgs(
+    //        __in HANDLE hDriver,
+    //        __in const char* puNameSeg,
+    //        __in PVOID pArgs,
+    //        __in PVOID *outputBuffer
+    //    );
 
     PVOID
         PutIntArg(

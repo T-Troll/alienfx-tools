@@ -82,7 +82,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     if (acpi->IsActivated() && acpi->Probe()) {
         fan_conf->SetBoosts(acpi);
 
-        mon = new MonHelper(fan_conf, acpi);
+        mon = new MonHelper(fan_conf);
 
         // Perform application initialization:
 
@@ -93,7 +93,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //power mode hotkeys
         for (int i = 0; i < 6; i++)
             RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-        //RegisterHotKey(mDlg, 6, 0, VK_F17);
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
 
         HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
 
@@ -178,19 +178,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
         PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
-        ComboBox_AddString(boost_ac, "Off");
-        ComboBox_AddString(boost_dc, "Off");
-        ComboBox_AddString(boost_ac, "Enabled");
-        ComboBox_AddString(boost_dc, "Enabled");
-        ComboBox_AddString(boost_ac, "Aggressive");
-        ComboBox_AddString(boost_dc, "Aggressive");
-        ComboBox_AddString(boost_ac, "Efficient");
-        ComboBox_AddString(boost_dc, "Efficient");
-        ComboBox_AddString(boost_ac, "Efficient aggressive");
-        ComboBox_AddString(boost_dc, "Efficient aggressive");
-
-        ComboBox_SetCurSel(boost_ac, acMode);
-        ComboBox_SetCurSel(boost_dc, dcMode);
+        vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
+        UpdateCombo(boost_ac, pModes, acMode);
+        UpdateCombo(boost_dc, pModes, dcMode);;
 
         // So open fan control window...
         RECT cDlg;
@@ -335,6 +325,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Overboost");
             }
             break;
+        case IDC_CHECK_GMODE:
+            fan_conf->lastProf->gmode = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
+            if (mon->oldGmode >= 0)
+                acpi->SetGMode(fan_conf->lastProf->gmode);
+            break;
         }
     }
     break;
@@ -376,21 +371,18 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     } break;
     case WM_HOTKEY: {
         if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
-            fan_conf->lastProf->powerStage = (DWORD)wParam - 20;
+            fan_conf->lastProf->powerStage = (WORD)wParam - 20;
             acpi->SetPower(fan_conf->lastProf->powerStage);
             ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
         }
-        //switch (wParam) {
-        //case 6: // G-key for Dell G-series power switch
-        //{
-        //    if (acpi->GetPower())
-        //        fan_conf->lastProf->powerStage = 0;
-        //    else
-        //        fan_conf->lastProf->powerStage = 1;
-        //    acpi->SetPower(fan_conf->lastProf->powerStage);
-        //} break;
-        //}
-        break;
+        switch (wParam) {
+        case 6: // G-key for Dell G-series power switch
+            if (mon->oldGmode >= 0) {
+                fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
+                acpi->SetGMode(fan_conf->lastProf->gmode);
+            }
+            break;
+        }
     } break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
@@ -543,10 +535,12 @@ void UpdateFanUI(LPVOID lpParam) {
             string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
+        RECT cArea;
+        GetClientRect(tempList, &cArea);
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-        ListView_SetColumnWidth(tempList, 1, LVSCW_AUTOSIZE_USEHEADER);
+        ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         for (int i = 0; i < acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i) /*eve->mon->fanValues[i]*/) + ")";
+            string name = "Fan " + to_string(i + 1) + " (" + to_string(/*acpi->GetFanRPM(i)*/ mon->fanRpm[i]) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);

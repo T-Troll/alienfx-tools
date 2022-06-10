@@ -149,7 +149,7 @@ Return Value:
                                DRIVER_NAME,            // address of name of service to start
                                DRIVER_NAME,            // address of display name
                                SERVICE_ALL_ACCESS,     // type of access to service
-                               SERVICE_KERNEL_DRIVER,  // type of service
+        SERVICE_WIN32_OWN_PROCESS,  // type of service
                                SERVICE_DEMAND_START,   // when to start service
                                SERVICE_ERROR_NORMAL,   // severity if service fails to start
                                ServiceExe,             // address of name of binary file
@@ -252,7 +252,8 @@ Return Value:
 
 BOOLEAN
 DemandService(
-    __in SC_HANDLE SchSCManager
+    __in SC_HANDLE SchSCManager,
+    __in char* SrvName
 )
 /*++
 
@@ -279,8 +280,8 @@ Return Value:
     // Open the handle to the existing service.
     //
 
-    schService = OpenService(SchSCManager,
-                             DRIVER_NAME,
+    schService = OpenServiceA(SchSCManager,
+                             SrvName,
                              SERVICE_ALL_ACCESS
     );
 
@@ -328,7 +329,8 @@ Return Value:
 
 BOOLEAN
 StopService(
-    __in SC_HANDLE SchSCManager
+    __in SC_HANDLE SchSCManager,
+    __in char* SrvName
 )
 /*++
 
@@ -356,8 +358,8 @@ Return Value:
     // Open the handle to the existing service.
     //
 
-    schService = OpenService(SchSCManager,
-                             DRIVER_NAME,
+    schService = OpenServiceA(SchSCManager,
+                             SrvName,
                              SERVICE_ALL_ACCESS
     );
 
@@ -399,8 +401,8 @@ Return Value:
 
 BOOL
 GetAcpiDevice (
-    PCTSTR Name, 
-    LPBYTE PropertyBuffer, 
+    PCTSTR Name,
+    LPBYTE PropertyBuffer,
     DWORD Idx
 )
 /*++
@@ -422,7 +424,7 @@ FALSE           - Failed to get service full path
 --*/
 {
     HDEVINFO    hdev;
-    SP_DEVINFO_DATA devdata;    
+    SP_DEVINFO_DATA devdata;
     DWORD       PropertyRegDataType;
     DWORD       RequiedSize;
 
@@ -432,7 +434,7 @@ FALSE           - Failed to get service full path
 
     if (hdev != INVALID_HANDLE_VALUE) {
         ZeroMemory (&devdata, sizeof (devdata));
-        devdata.cbSize = sizeof (devdata);      
+        devdata.cbSize = sizeof (devdata);
         if (SetupDiEnumDeviceInfo(hdev, Idx, &devdata)) {
             if (SetupDiGetDeviceInstanceId(hdev, &devdata, &DevInstanceId[0], 200, NULL)) {
                 CopyMemory(DevInstanceId1, DevInstanceId, 201);
@@ -442,7 +444,7 @@ FALSE           - Failed to get service full path
                 }
             }
         }
-        SetupDiDestroyDeviceInfoList (hdev);    
+        SetupDiDestroyDeviceInfoList (hdev);
     }
     return res;
 }
@@ -452,132 +454,130 @@ APIENTRY
 EvalAcpiMethod(
     __in HANDLE hDriver,
     __in const char* puNameSeg,
-    __in PVOID *outputBuffer
+    __in PVOID *outputBuffer,
+    __in_opt PVOID pArgs
 ) {
     BOOL                        IoctlResult;
-    DWORD                       ReturnedLength, LastError;
+    DWORD                       ReturnedLength, EvalMethod;
 
-    ACPI_EVAL_INPUT_BUFFER_EX      pMethodWithoutInputEx = {0};
+    PACPI_EVAL_INPUT_BUFFER_EX      inbuf;
     PACPI_EVAL_OUTPUT_BUFFER       outbuf;
     PACPI_EVAL_OUTPUT_BUFFER       ActualData;
 
-	pMethodWithoutInputEx.Signature = ACPI_EVAL_INPUT_BUFFER_SIGNATURE_EX;
-    strcpy_s(pMethodWithoutInputEx.MethodName, 255, puNameSeg);
+    EvalMethod = pArgs ? IOCTL_GPD_EVAL_ACPI_WITH_DIRECT : IOCTL_GPD_EVAL_ACPI_WITHOUT_DIRECT;
 
-    outbuf = (PACPI_EVAL_OUTPUT_BUFFER) malloc(sizeof(ACPI_EVAL_OUTPUT_BUFFER));
-    //outbuf->Length = sizeof(ACPI_EVAL_OUTPUT_BUFFER);
+    if (pArgs)
+        inbuf = (PACPI_EVAL_INPUT_BUFFER_EX)pArgs;
+    else
+        inbuf = malloc(sizeof(ACPI_EVAL_INPUT_BUFFER_EX));
+    strcpy_s(inbuf->MethodName, strlen(puNameSeg) + 1, puNameSeg);
+
+    outbuf = (PACPI_EVAL_OUTPUT_BUFFER) malloc(sizeof(ACPI_EVAL_OUTPUT_BUFFER) + 256); // for arguments...
 
     IoctlResult = DeviceIoControl(
         hDriver,           // Handle to device
-        IOCTL_GPD_EVAL_ACPI_WITHOUT_DIRECT,    // IO Control code for Read
-        &pMethodWithoutInputEx,        // Buffer to driver.
-        sizeof(ACPI_EVAL_INPUT_BUFFER_EX), // Length of buffer in bytes.
+        EvalMethod,    // IO Control code for Read
+        inbuf,        // Buffer to driver.
+        pArgs ? ((PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)pArgs)->Size : sizeof(ACPI_EVAL_INPUT_BUFFER_EX), // Length of buffer in bytes.
         outbuf,     // Buffer from driver.
         sizeof(ACPI_EVAL_OUTPUT_BUFFER),
         &ReturnedLength,    // Bytes placed in DataBuffer.
         NULL                // NULL means wait till op. completes.
     );
     if (!IoctlResult) {
-        LastError = GetLastError();
-        if (LastError == ERROR_MORE_DATA) {
-            ActualData = (PACPI_EVAL_OUTPUT_BUFFER) malloc(outbuf->Length);
-            if (ActualData == NULL) {
-                return FALSE;
-            }
+        if (GetLastError() == ERROR_MORE_DATA) {
+            ReturnedLength = outbuf->Length;
+            free(outbuf);
+            outbuf = (PACPI_EVAL_OUTPUT_BUFFER)malloc(ReturnedLength);
             IoctlResult = DeviceIoControl(
                 hDriver,           // Handle to device
-                IOCTL_GPD_EVAL_ACPI_WITHOUT_DIRECT,    // IO Control code for Read
-                &pMethodWithoutInputEx,        // Buffer to driver.
-                sizeof(ACPI_EVAL_INPUT_BUFFER_EX), // Length of buffer in bytes.
-                ActualData,     // Buffer from driver.
-                outbuf->Length,
+                EvalMethod,    // IO Control code for Read
+                inbuf,        // Buffer to driver.
+                pArgs ? ((PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)pArgs)->Size : sizeof(ACPI_EVAL_INPUT_BUFFER_EX), // Length of buffer in bytes.
+                outbuf,     // Buffer from driver.
+                ReturnedLength,
                 &ReturnedLength,    // Bytes placed in DataBuffer.
                 NULL                // NULL means wait till op. completes.
             );
-            free(outbuf);
-            if (IoctlResult) {
-                if (outputBuffer != NULL) {
-                    if (ActualData->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
-                        (*outputBuffer) = NULL;
-                    } else
-                        (*outputBuffer) = (PVOID) ActualData;
-                }
-            }
-        } else
-            free(outbuf);
-    } else {
-        (*outputBuffer) = (PVOID) outbuf;
-    }
-
-    return (BOOLEAN) IoctlResult;
-}
-
-BOOLEAN
-APIENTRY
-EvalAcpiMethodArgs(
-    __in HANDLE hDriver,
-    __in const char* puNameSeg,
-    __in PVOID pArgs,
-    __in PVOID *outputBuffer
-) {
-    BOOL                        IoctlResult;
-    DWORD                       ReturnedLength, LastError;
-
-    PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX     pMethodEx;
-    PACPI_EVAL_OUTPUT_BUFFER               outbuf;
-    PACPI_EVAL_OUTPUT_BUFFER               ActualData;
-
-    pMethodEx = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) pArgs;
-
-    //pMethodEx->Signature = ACPI_EVAL_INPUT_BUFFER_COMPLEX_SIGNATURE_EX;
-    strcpy_s(pMethodEx->MethodName, 255, (char*)puNameSeg);
-    //pMethodEx->Size = sizeof(pArgs);
-    //memcpy_s(pMethodEx->Argument, sizeof(pArgs), pArgs, sizeof(pArgs));
-    outbuf = (PACPI_EVAL_OUTPUT_BUFFER) malloc(sizeof(ACPI_EVAL_OUTPUT_BUFFER));
-
-    IoctlResult = DeviceIoControl(
-        hDriver,           // Handle to device
-        IOCTL_GPD_EVAL_ACPI_WITH_DIRECT,    // IO Control code for Read
-        pMethodEx,        // Buffer to driver.
-        pMethodEx->Size, // Length of buffer in bytes.
-        outbuf,     // Buffer from driver.
-        sizeof(ACPI_EVAL_OUTPUT_BUFFER),
-        &ReturnedLength,    // Bytes placed in DataBuffer.
-        NULL                // NULL means wait till op. completes.
-    );
-    if (!IoctlResult) {
-        LastError = GetLastError();
-        if (LastError == ERROR_MORE_DATA) {
-            ActualData = (PACPI_EVAL_OUTPUT_BUFFER) malloc(outbuf->Length);
-            if (ActualData == NULL) {
-                return FALSE;
-            }
-            IoctlResult = DeviceIoControl(
-                hDriver,           // Handle to device
-                IOCTL_GPD_EVAL_ACPI_WITH_DIRECT,    // IO Control code for Read
-                pMethodEx,        // Buffer to driver.
-                pMethodEx->Size, // Length of buffer in bytes.
-                ActualData,     // Buffer from driver.
-                outbuf->Length,
-                &ReturnedLength,    // Bytes placed in DataBuffer.
-                NULL                // NULL means wait till op. completes.
-            );
-            free(outbuf);
-            if (IoctlResult) {
-                if (outputBuffer != NULL) {
-                    (*outputBuffer) = (PVOID) ActualData;
-                    if (ActualData->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
-                        (*outputBuffer) = NULL;
-                    }
-                }
-            }
         }
-    } else {
-        (*outputBuffer) = (PVOID) outbuf;
     }
-    free(pMethodEx);
+    if (!IoctlResult || outbuf->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
+        (*outputBuffer) = NULL;
+        free(outbuf);
+    }
+    else {
+        (*outputBuffer) = (PVOID)outbuf;
+    }
+    free(inbuf);
     return (BOOLEAN) IoctlResult;
 }
+
+//BOOLEAN
+//APIENTRY
+//EvalAcpiMethodArgs(
+//    __in HANDLE hDriver,
+//    __in const char* puNameSeg,
+//    __in PVOID pArgs,
+//    __in PVOID *outputBuffer
+//) {
+//    BOOL                        IoctlResult;
+//    DWORD                       ReturnedLength, LastError;
+//
+//    PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX     pMethodEx;
+//    PACPI_EVAL_OUTPUT_BUFFER               outbuf;
+//    PACPI_EVAL_OUTPUT_BUFFER               ActualData;
+//
+//    pMethodEx = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) pArgs;
+//
+//    //pMethodEx->Signature = ACPI_EVAL_INPUT_BUFFER_COMPLEX_SIGNATURE_EX;
+//    strcpy_s(pMethodEx->MethodName, strlen(puNameSeg) + 1, puNameSeg);
+//    //pMethodEx->Size = sizeof(pArgs);
+//    //memcpy_s(pMethodEx->Argument, sizeof(pArgs), pArgs, sizeof(pArgs));
+//    outbuf = (PACPI_EVAL_OUTPUT_BUFFER) malloc(sizeof(ACPI_EVAL_OUTPUT_BUFFER) + 256);
+//
+//    IoctlResult = DeviceIoControl(
+//        hDriver,           // Handle to device
+//        IOCTL_GPD_EVAL_ACPI_WITH_DIRECT,    // IO Control code for Read
+//        pMethodEx,        // Buffer to driver.
+//        pMethodEx->Size, // Length of buffer in bytes.
+//        outbuf,     // Buffer from driver.
+//        sizeof(ACPI_EVAL_OUTPUT_BUFFER) + 256,
+//        &ReturnedLength,    // Bytes placed in DataBuffer.
+//        NULL                // NULL means wait till op. completes.
+//    );
+//    if (!IoctlResult) {
+//        LastError = GetLastError();
+//        if (LastError == ERROR_MORE_DATA) {
+//            ActualData = (PACPI_EVAL_OUTPUT_BUFFER) malloc(outbuf->Length);
+//            if (ActualData == NULL) {
+//                return FALSE;
+//            }
+//            IoctlResult = DeviceIoControl(
+//                hDriver,           // Handle to device
+//                IOCTL_GPD_EVAL_ACPI_WITH_DIRECT,    // IO Control code for Read
+//                pMethodEx,        // Buffer to driver.
+//                pMethodEx->Size, // Length of buffer in bytes.
+//                ActualData,     // Buffer from driver.
+//                outbuf->Length,
+//                &ReturnedLength,    // Bytes placed in DataBuffer.
+//                NULL                // NULL means wait till op. completes.
+//            );
+//            free(outbuf);
+//            if (IoctlResult) {
+//                if (outputBuffer != NULL) {
+//                    (*outputBuffer) = (PVOID) ActualData;
+//                    if (ActualData->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) {
+//                        (*outputBuffer) = NULL;
+//                    }
+//                }
+//            }
+//        }
+//    } else {
+//        (*outputBuffer) = (PVOID) outbuf;
+//    }
+//    free(pMethodEx);
+//    return (BOOLEAN) IoctlResult;
+//}
 
 void
 APIENTRY
@@ -608,12 +608,13 @@ Return Value:
 TRUE        - Open ACPI driver acpi.sys ready
 FALSE       - Failed to open acpi driver
 
---*/ 
+--*/
+
+//#include <fltuser.h>
+
 {
     HANDLE      hDriver = NULL;
-    UINT        Idx;   
     BYTE        PropertyBuffer[0x401];
-    TCHAR       *pChar;
     CHAR        AcpiName[0x401];
     BOOL        IoctlResult = FALSE;
     ACPI_NAME   acpi;
@@ -631,7 +632,6 @@ FALSE       - Failed to open acpi driver
     acpi.dwBuildNumber  = osinfo.dwBuildNumber;
     acpi.dwPlatformId   = osinfo.dwPlatformId;
     acpi.pAcpiDeviceName = PropertyBuffer;
-    Idx = 0;
 
     if ((hDriver = CreateFile(
         _T("\\\\?\\GLOBALROOT\\Device\\HWACC0"), // _T("\\\\.\\HwAcc"), //
@@ -645,17 +645,10 @@ FALSE       - Failed to open acpi driver
         return hDriver;
     }
 
-    while (GetAcpiDevice (_T("ACPI_HAL"), PropertyBuffer, Idx)) {           
+    for (UINT Idx = 0; GetAcpiDevice(_T("ACPI_HAL"), PropertyBuffer, Idx); Idx++) {
 
-        Idx ++;
-
-        //if (sizeof(TCHAR) == sizeof(WCHAR)) {
-            // unicode defined, need to change from unicode to uchar code..
-            pChar = (TCHAR*)PropertyBuffer;
-            //strcpy_s(AcpiName, 1024, (char *) PropertyBuffer);
-            WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, pChar, 400, AcpiName, 400, NULL, NULL); 
-            acpi.pAcpiDeviceName = AcpiName;
-        //}
+        WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, (TCHAR*)PropertyBuffer, 400, AcpiName, 400, NULL, NULL);
+        acpi.pAcpiDeviceName = AcpiName;
 
         acpi.uAcpiDeviceNameLength = (ULONG)strlen (acpi.pAcpiDeviceName);
 
@@ -667,7 +660,7 @@ FALSE       - Failed to open acpi driver
 
     if (!IoctlResult) {
         CloseHandle(hDriver);
-        hDriver = NULL;
+        hDriver = INVALID_HANDLE_VALUE;
     }
 
     return hDriver;
@@ -784,7 +777,7 @@ Return Value:
         pArg = (ACPI_METHOD_ARGUMENT*)ACPI_METHOD_NEXT_ARGUMENT(pArg);
         pInputArgs->Size = (ULONG)((UINT64)pArg - (UINT64)pInputArgs);
     }
-    else {       
+    else {
         pInputArgs = malloc(pInputArgs->Size + sizeof(ACPI_METHOD_ARGUMENT) + Length + 1);
         if (pInputArgs == NULL) {
             free(pArgs);
@@ -853,7 +846,7 @@ Return Value:
         pArg = (ACPI_METHOD_ARGUMENT*)ACPI_METHOD_NEXT_ARGUMENT(pArg);
         pInputArgs->Size = (ULONG)((UINT64)pArg - (UINT64)pInputArgs);
     }
-    else {        
+    else {
         pInputArgs = malloc(pInputArgs->Size + sizeof(ACPI_METHOD_ARGUMENT) + Length + 1);
         if (pInputArgs == NULL) {
             free(pArgs);
@@ -868,7 +861,7 @@ Return Value:
         pInputArgs->ArgumentCount++;
         pArg->DataLength = (USHORT)Length;
         pArg->Type = ACPI_METHOD_ARGUMENT_BUFFER;
-        memcpy(pArg->Data, pBuf, Length);        
+        memcpy(pArg->Data, pBuf, Length);
         free(pArgs);
         pArg = (ACPI_METHOD_ARGUMENT*)ACPI_METHOD_NEXT_ARGUMENT(pArg);
         pInputArgs->Size = (ULONG)((UINT64)pArg - (UINT64)pInputArgs);

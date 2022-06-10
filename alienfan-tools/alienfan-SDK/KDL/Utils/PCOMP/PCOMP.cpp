@@ -29,10 +29,11 @@ extern "C" {
 #include "../../Shared/minirtl/minirtl.h"
 #include "../../Shared/minirtl/cmdline.h"
 #include "../../Shared/minirtl/_filename.h"
+#include "../../Hamakaze/key.h"
 }
 #endif
 
-#define PROVIDER_RES_KEY_DEFAULT        ' uwu'
+//#define PROVIDER_RES_KEY_DEFAULT        ' uwu'
 
 #define supHeapAlloc(Size) RtlAllocateHeap(NtCurrentPeb()->ProcessHeap, HEAP_ZERO_MEMORY, Size)
 #define supHeapFree(Ptr) RtlFreeHeap(NtCurrentPeb()->ProcessHeap, 0, Ptr)
@@ -273,7 +274,7 @@ VOID KDUCompressResource(
                     _strcat(newFileName, L".bin");
 
                     printf_s("[+] Saving resource as \"%wS\" with new size %llu bytes\r\n",
-                        newFileName, 
+                        newFileName,
                         writeSize);
 
                     if (!supWriteBufferToFile(newFileName,
@@ -281,8 +282,8 @@ VOID KDUCompressResource(
                         (DWORD)writeSize))
                     {
 
-                        printf_s("[!] Error writing to file \"%wS\", GetLastError %lu\r\n", 
-                            newFileName, 
+                        printf_s("[!] Error writing to file \"%wS\", GetLastError %lu\r\n",
+                            newFileName,
                             GetLastError());
 
                     }
@@ -312,6 +313,183 @@ VOID KDUCompressResource(
 
 }
 
+USHORT supChkSum(
+    ULONG PartialSum,
+    PUSHORT Source,
+    ULONG Length
+)
+{
+    while (Length--) {
+        PartialSum += *Source++;
+        PartialSum = (PartialSum >> 16) + (PartialSum & 0xffff);
+    }
+    return (USHORT)(((PartialSum >> 16) + PartialSum) & 0xffff);
+}
+
+/*
+* supVerifyMappedImageMatchesChecksum
+*
+* Purpose:
+*
+* Calculate PE file checksum and compare it with checksum in PE header.
+*
+*/
+BOOLEAN supVerifyMappedImageMatchesChecksum(
+    _In_ PVOID BaseAddress,
+    _In_ ULONG FileLength,
+    _Out_opt_ PULONG HeaderChecksum,
+    _Out_opt_ PULONG CalculatedChecksum
+)
+{
+    PUSHORT AdjustSum;
+    PIMAGE_NT_HEADERS NtHeaders;
+    ULONG HeaderSum;
+    ULONG CheckSum;
+    USHORT PartialSum;
+
+    PartialSum = supChkSum(0, (PUSHORT)BaseAddress, (FileLength + 1) >> 1);
+
+    NtHeaders = RtlImageNtHeader(BaseAddress);
+    if (NtHeaders) {
+        AdjustSum = (PUSHORT)(&NtHeaders->OptionalHeader.CheckSum);
+        PartialSum -= (PartialSum < AdjustSum[0]);
+        PartialSum -= AdjustSum[0];
+        PartialSum -= (PartialSum < AdjustSum[1]);
+        PartialSum -= AdjustSum[1];
+        HeaderSum = NtHeaders->OptionalHeader.CheckSum;
+    }
+    else {
+        HeaderSum = FileLength;
+        PartialSum = 0;
+    }
+
+    CheckSum = (ULONG)PartialSum + FileLength;
+
+    if (HeaderChecksum)
+        *HeaderChecksum = HeaderSum;
+    if (CalculatedChecksum)
+        *CalculatedChecksum = CheckSum;
+
+    return (CheckSum == HeaderSum);
+}
+
+PVOID KDUDecompressResource(
+    _In_ LPWSTR lpFileName,
+    //_Out_ PSIZE_T DecompressedSize,
+    _In_ ULONG DecryptKey,
+    _In_ BOOLEAN VerifyChecksum
+)
+{
+    BOOLEAN bValidData = FALSE;
+    DELTA_INPUT diDelta, diSource;
+    DELTA_OUTPUT doOutput;
+    PVOID resultPtr = NULL;// , dataBlob;
+    DWORD fileSize = 0;
+    PBYTE fileBuffer;
+
+    ULONG headerSum = 0, calcSum = 0;
+
+    //*DecompressedSize = 0;
+
+    RtlSecureZeroMemory(&diSource, sizeof(DELTA_INPUT));
+    RtlSecureZeroMemory(&diDelta, sizeof(DELTA_INPUT));
+    RtlSecureZeroMemory(&doOutput, sizeof(DELTA_OUTPUT));
+
+    printf_s("[+] Reading \"%wS\"\r\n", lpFileName);
+    fileBuffer = supReadFileToBuffer(lpFileName, &fileSize);
+
+    if (fileBuffer) {
+
+        printf_s("[+] %lu bytes read\r\n", fileSize);
+
+        PWSTR newFileName;
+        SIZE_T sz = _strlen(lpFileName) + (2 * MAX_PATH);
+
+        newFileName = (PWSTR)supHeapAlloc(sz);
+        if (newFileName == NULL) {
+
+            printf_s("[!] Could not allocate memory for filename, GetLastError %lu\r\n",
+                GetLastError());
+
+        }
+        else {
+
+            _filename_noext(newFileName, lpFileName);
+
+            EncodeBuffer(fileBuffer, (ULONG)fileSize, DecryptKey);
+
+            diDelta.Editable = FALSE;
+            diDelta.lpcStart = fileBuffer;
+            diDelta.uSize = fileSize;
+
+            if (ApplyDeltaB(DELTA_FILE_TYPE_RAW, diSource, diDelta, &doOutput)) {
+
+                SIZE_T newSize = doOutput.uSize;
+                PVOID decomPtr = doOutput.lpStart;
+
+                bValidData = supVerifyMappedImageMatchesChecksum(decomPtr,
+                    (ULONG)newSize,
+                    &headerSum,
+                    &calcSum);
+
+                if (VerifyChecksum) {
+
+                    if (bValidData == FALSE) {
+                        printf("[!] Error data checksum mismatch! Header sum 0x%lx, calculated sum 0x%lx\r\n",
+                            headerSum,
+                            calcSum);
+
+                    }
+                }
+                else {
+
+                    if (bValidData == FALSE) {
+                        printf_s("[~] Data checksum mismatch, header sum 0x%lx, calculated sum 0x%lx, trying to continue\r\n",
+                            headerSum, calcSum);
+                    }
+
+                    bValidData = TRUE; //ignore
+                }
+
+                if (bValidData) {
+                    _strcat(newFileName, L".org");
+
+                    printf_s("[+] Saving resource as \"%wS\" with new size %llu bytes\r\n",
+                        newFileName,
+                        newSize);
+
+                    if (!supWriteBufferToFile(newFileName,
+                        decomPtr,
+                        (DWORD)newSize))
+                    {
+
+                        printf_s("[!] Error writing to file \"%wS\", GetLastError %lu\r\n",
+                            newFileName,
+                            GetLastError());
+
+                    }
+
+                    supHeapFree(decomPtr);
+                    //resultPtr = (PVOID)supHeapAlloc(newSize);
+                    //if (resultPtr) {
+                    //    RtlCopyMemory(resultPtr, decomPtr, newSize);
+                    //    *DecompressedSize = newSize;
+                    //}
+                }
+
+                DeltaFree(doOutput.lpStart);
+            }
+        }
+    }
+    else {
+
+        printf("[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
+
+    }
+
+    return resultPtr;
+}
+
 /*
 * main
 *
@@ -322,7 +500,7 @@ VOID KDUCompressResource(
 */
 int main()
 {
-    LPWSTR  keyParam = NULL, fNameParam = NULL;
+    LPWSTR  keyParam = NULL, fNameParam = NULL, szCommand = NULL;
     LPWSTR* szArglist;
     INT     nArgs = 0;
 
@@ -331,28 +509,36 @@ int main()
     szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
     if (szArglist) {
 
-        if (nArgs > 1) {
-            fNameParam = szArglist[1];
-            keyParam = szArglist[2];
+        if (nArgs > 2) {
+            szCommand = szArglist[1];
+            fNameParam = szArglist[2];
+            keyParam = szArglist[3];
 
             if (keyParam) {
                 provKey = _strtoul(keyParam);
             }
-            
-            if (provKey == 0) provKey = PROVIDER_RES_KEY_DEFAULT;
+
+            if (provKey == 0) provKey = PROVIDER_RES_KEY;
 
             if (fNameParam) {
-                KDUCompressResource(fNameParam, provKey);
+                if (szCommand[0] == 'c')
+                    KDUCompressResource(fNameParam, provKey);
+                if (szCommand[0] == 'u')
+                    KDUDecompressResource(fNameParam, provKey, false);
+                char newH[512];
+                sprintf_s(newH, 512, "#define PROVIDER_RES_KEY %ld\r\n", provKey);
+                supWriteBufferToFile((LPWSTR)L"../key.h", newH, (DWORD)strlen(newH));
+                printf_s("[+] New encryption key is %ld", provKey);
             }
             else {
-                
+
                 printf_s("[!] Unrecognized parameter\r\n");
 
             }
         }
         else {
 
-            printf_s("[?] KDU Provider Compressor, usage: pcomp filename [key]\r\n[!] Input file not specified\r\n");
+            printf_s("[?] KDU Provider De/Compressor, usage: pcomp c/u filename [key]\r\n[!] Input file not specified\r\n");
 
         }
 

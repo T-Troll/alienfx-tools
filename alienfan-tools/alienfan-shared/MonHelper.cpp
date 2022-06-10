@@ -9,9 +9,10 @@
 
 void CMonProc(LPVOID);
 
-MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
+extern AlienFan_SDK::Control* acpi;
+
+MonHelper::MonHelper(ConfigFan* config) {
 	conf = config;
-	acpi = acp;
 
 	maxTemps.resize(acpi->HowManySensors());
 	senValues.resize(acpi->HowManySensors());
@@ -19,10 +20,6 @@ MonHelper::MonHelper(ConfigFan* config, AlienFan_SDK::Control* acp) {
 	boostRaw.resize(acpi->HowManyFans());
 	boostSets.resize(acpi->HowManyFans());
 	fanSleep.resize(acpi->HowManyFans());
-
-	//for (int i = 0; i < acpi->HowManySensors(); i++) {
-	//	maxTemps[i] = acpi->GetTempValue(i);
-	//}
 
 	Start();
 }
@@ -37,6 +34,9 @@ void MonHelper::Start() {
 		if ((oldPower = acpi->GetPower()) != conf->lastProf->powerStage)
 			acpi->SetPower(conf->lastProf->powerStage);
 		acpi->SetGPU(conf->lastProf->GPUPower);
+		oldGmode = acpi->GetGMode();
+		if (oldGmode >= 0 && oldGmode != conf->lastProf->gmode)
+			acpi->SetGMode(conf->lastProf->gmode);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
@@ -51,12 +51,14 @@ void MonHelper::Stop() {
 #endif
 		delete monThread;
 		monThread = NULL;
+		if (oldGmode >= 0)
+			acpi->SetGMode(oldGmode);
 		if (oldPower != conf->lastProf->powerStage)
 			acpi->SetPower(oldPower);
 		if (!oldPower)
 			// reset boost
 			for (int i = 0; i < acpi->fans.size(); i++)
-				acpi->SetFanValue(i, 0);
+				acpi->SetFanBoost(i, 0);
 	}
 }
 
@@ -66,17 +68,17 @@ void CMonProc(LPVOID param) {
 	// update values.....
 
 	// temps..
-	for (int i = 0; i < src->acpi->HowManySensors(); i++) {
-		src->senValues[i] = src->acpi->GetTempValue(i);
+	for (int i = 0; i < acpi->HowManySensors(); i++) {
+		src->senValues[i] = acpi->GetTempValue(i);
 		if (src->senValues[i] > src->maxTemps[i])
 			src->maxTemps[i] = src->senValues[i];
 	}
 
 	// fans...
-	for (int i = 0; i < src->acpi->HowManyFans(); i++) {
-		src->boostSets[i] = -273;
-		src->boostRaw[i] = src->acpi->GetFanValue(i, true);
-		src->fanRpm[i] = src->acpi->GetFanRPM(i);
+	for (int i = 0; i < acpi->HowManyFans(); i++) {
+		src->boostSets[i] = 0;
+		src->boostRaw[i] = acpi->GetFanBoost(i, true);
+		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
 	// boosts..
@@ -90,7 +92,7 @@ void CMonProc(LPVOID param) {
 						int tBoost = (fIter->points[k - 1].boost +
 								((fIter->points[k].boost - fIter->points[k - 1].boost) *
 								(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-								(fIter->points[k].temp - fIter->points[k - 1].temp)) * src->acpi->boosts[fIter->fanIndex] / 100;
+								(fIter->points[k].temp - fIter->points[k - 1].temp)) * acpi->boosts[fIter->fanIndex] / 100;
 						if (tBoost > src->boostSets[fIter->fanIndex])
 							src->boostSets[fIter->fanIndex] = tBoost;
 						break;
@@ -98,23 +100,24 @@ void CMonProc(LPVOID param) {
 			}
 		}
 		// Now set if needed...
-		for (int i = 0; i < src->acpi->HowManyFans(); i++)
-			if (src->boostSets[i] >= 0 && !src->fanSleep[i]) {
+		for (int i = 0; i < acpi->HowManyFans(); i++)
+			if (!src->fanSleep[i]) {
 				// Check overboost tricks...
-				if (src->boostRaw[i] < 100 && src->boostSets[i] > 100) {
-					src->acpi->SetFanValue(i, 100, true);
+				if (src->boostRaw[i] < 90 && src->boostSets[i] > 100) {
+					acpi->SetFanBoost(i, 100, true);
 					src->fanSleep[i] = 6;
+					DebugPrint(("Overboost started, locked for 3 sec (old " +to_string(src->boostRaw[i]) + ", new " + to_string(src->boostSets[i]) +")!\n").c_str());
 				} else
-				    if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100)
-						src->acpi->SetFanValue(i, src->boostSets[i], true);
-				//#ifdef _DEBUG
-				//					string msg = "Boost for fan#" + to_string(i) + " changed to " + to_string(boostSets[i]) + "\n";
-				//					OutputDebugString(msg.c_str());
-				//#endif
+					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
+						if (src->boostRaw[i] > src->boostSets[i])
+							src->boostSets[i] += 31 * (src->boostRaw[i] - src->boostSets[i]) / 32;
+						acpi->SetFanBoost(i, src->boostSets[i], true);
+						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
+						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
+					}
 			}
 			else
-				if (src->fanSleep[i])
-					src->fanSleep[i]--;
+				src->fanSleep[i]--;
 	}
 
 }

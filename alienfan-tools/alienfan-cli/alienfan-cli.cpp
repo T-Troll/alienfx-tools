@@ -34,7 +34,7 @@ fan_overboost bestBoostPoint, lastBoostPoint;
 
 int SetFanSteady(byte boost, bool downtrend = false) {
     printf("Probing Fan#%d at boost %d: ", bestBoostPoint.fanID, boost);
-    acpi->SetFanValue(bestBoostPoint.fanID, boost, true);
+    acpi->SetFanBoost(bestBoostPoint.fanID, boost, true);
     // Check the trend...
     int fRpm, fDelta = -1, oDelta, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
     lastBoostPoint = { (byte)bestBoostPoint.fanID, boost, (USHORT)bRpm };
@@ -54,20 +54,25 @@ int SetFanSteady(byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost() {
-    fan_overboost* fOver = fan_conf->FindBoost(bestBoostPoint.fanID);
-    if (fOver) {
-        fOver->maxBoost = bestBoostPoint.maxBoost;
-        fOver->maxRPM = max(bestBoostPoint.maxRPM, fOver->maxRPM);
+    auto pos = find_if(fan_conf->boosts.begin(), fan_conf->boosts.end(),
+        [](auto t) {
+            return t.fanID == bestBoostPoint.fanID;
+        });
+    if (pos != fan_conf->boosts.end()) {
+        pos->maxBoost = bestBoostPoint.maxBoost;
+        pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
     }
-    else
+    else {
         fan_conf->boosts.push_back(bestBoostPoint);
+    }
     acpi->boosts[bestBoostPoint.fanID] = bestBoostPoint.maxBoost;
+    acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
     fan_conf->Save();
 }
 
 void CheckFanOverboost(byte num) {
     int steps = 8, cSteps, boost = 100, cBoost = 100,
-        rpm, oldBoost = acpi->GetFanValue(num, true);
+        rpm, oldBoost = acpi->GetFanBoost(num, true);
     printf("Checking Fan#%d:\n", num);
     bestBoostPoint = { (byte)num, 100, 0 };
     rpm = SetFanSteady(boost);
@@ -105,7 +110,7 @@ void CheckFanOverboost(byte num) {
         boost = bestBoostPoint.maxBoost;
     }
     printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-    acpi->SetFanValue(num, oldBoost, true);
+    acpi->SetFanBoost(num, oldBoost, true);
     UpdateBoost();
 }
 
@@ -123,6 +128,8 @@ setperf=<ac>,<dc>\t\tSet CPU performance boost\n\
 getfans[=<mode>]\t\tShow current fan boost level (0..100 - in percent) with selected mode\n\
 setfans=<fan1>[,<fanN>][,mode]\tSet fans boost level (0..100 - in percent) with selected mode\n\
 setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or auto)\n\
+setgmode=<mode>\t\t\tSet G-mode on/off (1-on, 0-off)\n\
+gmode\t\t\t\tShow G-mode state\n\
 resetcolor\t\t\tReset color system\n\
 setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
 setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
@@ -139,18 +146,22 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v5.9.4\n");
+    printf("AlienFan-cli v6.1.0\n");
 
     bool supported = false;
 
+    AlienFan_SDK::Lights* lights = NULL;
+
     if (acpi->IsActivated()) {
 
-        AlienFan_SDK::Lights *lights = new AlienFan_SDK::Lights(acpi);
-
         if (supported = acpi->Probe()) {
+            if (!(lights = new AlienFan_SDK::Lights(acpi))->IsActivated()) {
+                delete lights;
+                lights = NULL;
+            }
             printf("Supported hardware v%d detected, %d fans, %d sensors, %d power states. Light control %s.\n",
-                   acpi->GetVersion(), (int) acpi->HowManyFans(), (int) acpi->sensors.size(), (int) acpi->HowManyPower(),
-                   (lights->IsActivated() ? "enabled" : "disabled"));
+                acpi->GetVersion(), (int)acpi->HowManyFans(), (int)acpi->sensors.size(), (int)acpi->HowManyPower(),
+                (lights ? "enabled" : "disabled"));
             fan_conf->SetBoosts(acpi);
         }
         else {
@@ -177,12 +188,7 @@ int main(int argc, char* argv[])
                         args.back().num = atoi(args.back().str.c_str());
                         vid = argPos;
                     }
-                    //int prms = 0;
-                    //cerr << "Executing " << command << " with " << values);
-                    /*if (command == "usage" || command == "help" || command == "?") {
-                        Usage();
-                        continue;
-                    }*/
+
                     if (command == "rpm") {
                         if (args.size() > 0 && args[0].num < acpi->HowManyFans()) {
                             printf("%d\n", acpi->GetFanRPM(args[0].num));
@@ -221,9 +227,13 @@ int main(int argc, char* argv[])
                             printf("Unlock failed!\n");
                         continue;
                     }
+                    if (command == "gmode") {
+                        int res = acpi->GetGMode();
+                        printf("G-mode state is %s\n", res ? res > 0 ? "On" : "Error" : "Off");
+                        continue;
+                    }
                     if (command == "setpower" && CheckArgs(command, 1, args.size())) {
 
-                        //BYTE unlockStage = atoi(args[0].c_str());
                         if (args[0].num < acpi->HowManyPower()) {
                             printf("Power set to %d (result %d)\n", args[0].num, acpi->SetPower(args[0].num));
                         }
@@ -233,13 +243,10 @@ int main(int argc, char* argv[])
                     }
                     if (command == "setgpu" && CheckArgs(command, 1, args.size())) {
 
-                        //BYTE gpuStage = atoi(args[0].c_str());
                         printf("GPU limit set to %d (result %d)\n", args[0].num, acpi->SetGPU(args[0].num));
                         continue;
                     }
                     if (command == "setperf" && CheckArgs(command, 2, args.size())) {
-                        //DWORD acMode = atoi(args[0].c_str()),
-                        //    dcMode = atoi(args[1].c_str());
                         if (args[0].num > 4 || args[1].num > 4)
                             printf("Incorrect value - should be 0..4\n");
                         else {
@@ -261,14 +268,14 @@ int main(int argc, char* argv[])
                     if (command == "getfans") {
                         bool direct = args.size() ? args[0].num : false;
                         for (int i = 0; i < acpi->HowManyFans(); i++)
-                            printf("Fan#%d boost %d\n", i, acpi->GetFanValue(i, direct));
+                            printf("Fan#%d boost %d\n", i, acpi->GetFanBoost(i, direct));
                         continue;
                     }
                     if (command == "setfans" && CheckArgs(command, acpi->HowManyFans(), args.size())) {
 
                         bool direct = args.size() > acpi->HowManyFans() ? args[acpi->HowManyFans()].num : false;
                         for (int i = 0; i < acpi->HowManyFans(); i++) {
-                            printf("Fan#%d boost set to %d (result %d)\n", i, args[i].num, acpi->SetFanValue(i, args[i].num, direct));
+                            printf("Fan#%d boost set to %d (result %d)\n", i, args[i].num, acpi->SetFanBoost(i, args[i].num, direct));
                         }
                         continue;
                     }
@@ -303,6 +310,10 @@ int main(int argc, char* argv[])
                         printf("Done!\n");
                         continue;
                     }
+                    if (command == "setgmode" && CheckArgs(command, 1, args.size())) {
+                        printf("G-mode set result %d\n", acpi->SetGMode(args[0].num));
+                        continue;
+                    }
                     if (command == "direct" && CheckArgs(command, 2, args.size())) {
                         AlienFan_SDK::ALIENFAN_COMMAND comm;
                         comm.com = (byte)strtoul(args[0].str.c_str(), NULL, 16);
@@ -322,32 +333,31 @@ int main(int argc, char* argv[])
                         continue;
                     }
 
-                    if (command == "resetcolor" && lights->IsActivated()) { // Reset color system for Aurora
+                    if (command == "resetcolor" && lights) { // Reset color system for Aurora
                         if (lights->Reset())
                             printf("Lights reset complete\n");
                         else
                             printf("Lights reset failed\n");
                         continue;
                     }
-                    if (command == "setcolor" && lights->IsActivated() && CheckArgs(command, 4, args.size())) { // Set light color for Aurora
+                    if (command == "setcolor" && lights && CheckArgs(command, 4, args.size())) { // Set light color for Aurora
 
-                        //byte mask = atoi(args[0].c_str()),
-                        //    r = atoi(args[1].c_str()),
-                        //    g = atoi(args[2].c_str()),
-                        //    b = atoi(args[3].c_str());
                         printf("SetColor result %d.\n", lights->SetColor(args[0].num, args[1].num, args[2].num, args[3].num));
                         lights->Update();
                         continue;
                     }
-                    if (command == "setbrightness" && lights->IsActivated() && CheckArgs(command, 2, args.size())) { // set brightness for Aurora
+                    if (command == "setbrightness" && lights && CheckArgs(command, 2, args.size())) { // set brightness for Aurora
 
-                        //byte num = atoi(args[0].c_str()),
-                        //    mode = atoi(args[1].c_str());
                         printf("SetBrightness result %d.\n", lights->SetMode(args[0].num, args[1].num));
                         lights->Update();
                         continue;
                     }
-                    //if (command == "test") { // pseudo block for test modules
+                    //if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
+                    //    PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+                    //    char command[] = "\\_SB.PCI0.LPC0.EC0._Q14";
+                    //    if (args[0].num > 0)
+                    //        command[22] = '5';
+                    //    printf("Test result %d" ,EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, NULL));
                     //    continue;
                     //}
                     printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());

@@ -76,6 +76,7 @@
     <PostBuildEvent>
       <Command>$(ProjectDir)Utils\GenAsIo2Unlock $(SolutionDir)$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
     </PostBuildEvent>
+    <PreBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -110,6 +111,7 @@
     <PostBuildEvent>
       <Command>$(ProjectDir)Utils\GenAsIo2Unlock $(SolutionDir)$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
     </PostBuildEvent>
+    <PreBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Shared\minirtl\cmdline.c" />
@@ -187,6 +189,7 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Utils\PCOMP\PCOMP.vcxproj" />
     <None Include="res\procexp.bin" />
     <None Include="res\RTCore64.bin" />
     <None Include="res\SB_SMBUS_SDK.bin" />

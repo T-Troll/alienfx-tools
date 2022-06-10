@@ -3,51 +3,64 @@
 #include <string>
 #include "AlienFX_SDK.h"
 #include "ConfigFan.h"
-#include "ConfigAmbient.h"
-#include "ConfigHaptics.h"
 
-// Profile flags pattern
-#define PROF_DEFAULT  0x1
-#define PROF_PRIORITY 0x2
-#define PROF_DIMMED   0x4
-#define PROF_ACTIVE   0x8
-#define PROF_FANS     0x10
+// Profile flags
+#define PROF_DEFAULT		0x1
+#define PROF_PRIORITY		0x2
+#define PROF_DIMMED			0x4
+#define PROF_ACTIVE			0x8
+#define PROF_FANS			0x10
 #define PROF_GLOBAL_EFFECTS 0x20
 
-#define LEVENT_COLOR 0x1
-#define LEVENT_POWER 0x2
-#define LEVENT_PERF  0x4
-#define LEVENT_ACT   0x8
+#define PROF_TRIGGER_AC		 0x1
+#define PROF_TRIGGER_BATTERY 0x2
 
-union FlagSet {
-	struct {
-		BYTE flags;
-		BYTE cut;
-		BYTE proc;
-		BYTE reserved;
-	};
-	DWORD s = 0;
+#define LEVENT_COLOR	0x1
+#define LEVENT_POWER	0x2
+#define LEVENT_PERF		0x4
+#define LEVENT_ACT		0x8
+
+#define GAUGE_GRADIENT	0x1
+#define GAUGE_REVERSE	0x2
+
+struct freq_map {
+	AlienFX_SDK::Colorcode colorfrom{ 0 };
+	AlienFX_SDK::Colorcode colorto{ 0 };
+	byte lowcut{ 0 };
+	byte hicut{ 255 };
+	vector<byte> freqID;
 };
 
 struct event {
-	//FlagSet fs;
+	bool state = false;
 	BYTE source = 0;
 	BYTE cut = 0;
-	BYTE proc = 0;
-	std::vector<AlienFX_SDK::afx_act> map;
+	BYTE mode = 0;
+	AlienFX_SDK::afx_act from;
+	AlienFX_SDK::afx_act to;
+	double coeff;
 };
 
-struct lightset {
-	union {
-		struct {
-			WORD pid;
-			WORD vid;
-		};
-		DWORD devid = 0;
-	};
-	unsigned lightid = 0;
-	BYTE     flags = 0;
-	event	 eve[4];
+struct zonelight {
+	pair<DWORD,DWORD> light;
+	byte x, y;
+};
+
+struct zonemap {
+	DWORD gID;
+	byte xMax, yMax;
+	vector<zonelight> lightMap;
+};
+
+struct groupset {
+	int group = 0;
+	vector<AlienFX_SDK::afx_act> color;
+	event events[3];
+	vector<byte> ambients;
+	vector<freq_map> haptics;
+	bool fromColor = false;
+	byte flags = 0;
+	byte gauge = 0;
 };
 
 struct profile {
@@ -56,7 +69,9 @@ struct profile {
 	WORD effmode = 0;
 	vector<string> triggerapp;
 	string name;
-	vector<lightset> lightsets;
+	WORD triggerkey = 0;
+	WORD triggerFlags;
+	vector<groupset> lightsets;
 	fan_profile fansets;
 	AlienFX_SDK::Colorcode effColor1, effColor2;
 	byte globalEffect = 0,
@@ -67,11 +82,13 @@ struct profile {
 class ConfigHandler
 {
 private:
-	HKEY hKey1 = NULL, hKey3 = NULL, hKey4 = NULL;
+	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
-	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD *eff);
+	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD tFlags, DWORD* eff);
 	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
+	//AlienFX_SDK::group* FindCreateGroup(int did, int lid);
+	groupset* FindCreateGroupSet(int profID, int groupID);
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -85,20 +102,30 @@ public:
 	DWORD enableProf = 0;
 	DWORD offPowerButton = 0;
 	DWORD offOnBattery = 0;
-	profile *activeProfile = NULL;
-	profile *foregroundProfile = NULL;
 	DWORD awcc_disable = 0;
 	DWORD esif_temp = 0;
-	DWORD block_power = 0;
 	DWORD gammaCorrection = 1;
-	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
-	DWORD monDelay = 200;
-	bool wasAWCC = false;
-	AlienFX_SDK::Colorcode testColor{0,255};
-	COLORREF customColors[16]{0};
 	DWORD fanControl = 0;
 	DWORD enableMon = 1;
 	DWORD noDesktop = 0;
+	COLORREF customColors[16]{ 0 };
+
+	// States
+	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
+	DWORD monDelay = 200;
+	bool block_power = 0;
+	bool wasAWCC = false;
+	AlienFX_SDK::Colorcode testColor{0,255};
+	bool haveOldConfig = false;
+	bool showGridNames = false;
+
+	// Ambient...
+	DWORD amb_mode = 0;
+	DWORD amb_shift = 40;
+	DWORD amb_grid = MAKELPARAM(4,3);
+
+	// Haptics...
+	DWORD hap_inpType = 0;
 
 	// final states
 	byte finalBrightness = 255;
@@ -109,23 +136,36 @@ public:
 
 	// 3rd-party config blocks
 	ConfigFan *fan_conf = NULL;
-	ConfigAmbient *amb_conf = NULL;
-	ConfigHaptics *hap_conf = NULL;
 
-	std::vector<lightset>* active_set;
-	std::vector<profile*> profiles;
+	vector<groupset>* active_set;
+	vector<profile*> profiles;
+	vector<zonemap> zoneMaps;
+	profile* activeProfile = NULL;
+	profile* foregroundProfile = NULL;
 
-	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE, WM_APP + 1 };
+	// Grid-related
+	AlienFX_SDK::lightgrid* mainGrid = NULL;
+	pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>* colorGrid = NULL;
+	int gridTabSel = 0;
+
+	// mapping block from SDK
+	AlienFX_SDK::Mappings afx_dev;
+
+	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1};
 
 	ConfigHandler();
 	~ConfigHandler();
 	void Load();
 	void Save();
+	void SortAllGauge();
+	zonemap* FindZoneMap(int gid);
+	void SortGroupGauge(int gid);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);
 	bool SetStates();
+	void SetToolTip();
 	void SetIconState();
 	bool IsDimmed();
 	void SetDimmed();

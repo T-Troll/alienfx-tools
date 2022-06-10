@@ -1,18 +1,16 @@
 #pragma once
 #ifndef WSAUDIO_H
 #define WSAUDIO_H
-//#include <windows.h>
+#include <windows.h>
 #include <Audioclient.h>
 #include <Mmdeviceapi.h>
-#include "ConfigHaptics.h"
-#include "FXHelper.h"
 #include "DFT_gosu.h"
 
 class WSAudioIn
 {
 public:
 
-	WSAudioIn(/*ConfigHaptics* cf, FXHelper* fx*/);
+	WSAudioIn();
 	~WSAudioIn();
 	void startSampling();
 	void stopSampling();
@@ -21,9 +19,7 @@ public:
 	void release();
 
 	// variables...
-	//FXHelper* fxha = NULL;
 	DFT_gosu* dftGG = NULL;
-	//ConfigHaptics *conf = NULL;
 	double* waveD;
 	int *freqs = NULL;
 

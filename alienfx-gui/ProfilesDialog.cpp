@@ -1,16 +1,27 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "common.h"
 #include <Shlwapi.h>
 
 extern void ReloadProfileList();
-extern void ReloadModeList(HWND, int);
+extern void ReloadModeList(HWND dlg=NULL, int mode = conf->GetEffect());
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
+//extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
+extern void RemoveUnused(vector<groupset>* lightsets);
+extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
 extern EventHandler* eve;
 int pCid = -1;
+
+void ReloadKeyList(HWND hDlg, WORD key) {
+	HWND key_list = GetDlgItem(hDlg, IDC_COMBO_TRIGGERKEY);
+	UpdateCombo(key_list,
+		{ "Off", "Left Shift", "Left Control", "Left Alt", "Windows key", "Right Shift", "Right Control", "Right Alt" }, key,
+		{ 0, VK_LSHIFT, VK_LCONTROL, VK_LMENU, VK_LWIN, VK_RSHIFT, VK_RCONTROL, VK_RMENU });
+}
 
 void ReloadProfSettings(HWND hDlg, profile *prof) {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
@@ -22,13 +33,19 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED);
 	CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE);
 	CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, prof->flags & PROF_FANS);
-	CheckDlgButton(hDlg, IDC_CHECK_GLOBAL, prof->flags & PROF_GLOBAL_EFFECTS);
-	ComboBox_SetCurSel(mode_list, prof->effmode);
+
+	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_AC, prof->triggerFlags & PROF_TRIGGER_AC);
+	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_BATTERY, prof->triggerFlags & PROF_TRIGGER_BATTERY);
+
+	//CheckDlgButton(hDlg, IDC_CHECK_GLOBAL, prof->flags & PROF_GLOBAL_EFFECTS);
+	ReloadModeList(mode_list, prof->effmode);
+	ReloadKeyList(hDlg, prof->triggerkey);
+	//ComboBox_SetCurSel(mode_list, prof->effmode);
 	ListBox_ResetContent(app_list);
 	for (int j = 0; j < prof->triggerapp.size(); j++)
 		ListBox_AddString(app_list, prof->triggerapp[j].c_str());
 	// set global effect, colors and delay
-	bool flag = prof->flags & PROF_GLOBAL_EFFECTS;
+	bool flag = prof->effmode == 99;// &PROF_GLOBAL_EFFECTS;
 	EnableWindow(eff_list, flag);
 	EnableWindow(eff_tempo, flag);
 	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), flag);
@@ -59,17 +76,29 @@ void ReloadProfileView(HWND hDlg) {
 			ReloadProfSettings(hDlg, conf->profiles[i]);
 			rpos = i;
 		}
+		else
+			lItem.state = 0;
 		ListView_InsertItem(profile_list, &lItem);
 	}
 	ListView_SetColumnWidth(profile_list, 0, LVSCW_AUTOSIZE);
 	ListView_EnsureVisible(profile_list, rpos, false);
 }
 
-void RemoveProfile(int id) {
-	conf->profiles.erase(find_if(conf->profiles.begin(), conf->profiles.end(),
-		[id](profile* pr) {
-			return pr->id == id;
-		}));
+void RemoveUnusedGroups() {
+	for (int i = 0; i < conf->afx_dev.GetGroups()->size(); i++) {
+		DWORD gid = conf->afx_dev.GetGroups()->at(i).gid;
+		if (find_if(conf->profiles.begin(), conf->profiles.end(),
+			[gid](profile* cp) {
+				return find_if(cp->lightsets.begin(), cp->lightsets.end(),
+					[gid](groupset t) {
+						return t.group == gid;
+					}) != cp->lightsets.end();
+			}) == conf->profiles.end()) {
+			conf->afx_dev.GetGroups()->erase(conf->afx_dev.GetGroups()->begin() + i);
+			i--;
+		}
+	}
+
 }
 
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -77,8 +106,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
 		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
-		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
-		p_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
+		key_list = GetDlgItem(hDlg, IDC_COMBO_TRIGGERKEY),
+		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO);
 
 	profile *prof = conf->FindProfile(pCid);
 
@@ -87,28 +116,28 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 	{
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->FindDefaultProfile()->id;
-		ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 3);
+		CheckDlgButton(hDlg, IDC_CP_COLORS, true);
+		CheckDlgButton(hDlg, IDC_CP_EVENTS, true);
+		CheckDlgButton(hDlg, IDC_CP_AMBIENT, true);
+		CheckDlgButton(hDlg, IDC_CP_HAPTICS, true);
+		//ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 0);
 		if (conf->haveV5) {
-			//ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "None"), 1);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Color"), 0);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Breathing"), 2);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Single-color Wave"), 3);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Dual-color Wave "), 4);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Pulse"), 8);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Mixed Pulse"), 9);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Night Rider"), 10);
-			ComboBox_SetItemData(eff_list, ComboBox_AddString(eff_list, "Laser"), 11);
+			UpdateCombo(eff_list,
+				{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
+				0, {0,2,3,4,8,9,10,11});
 			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
 			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
 			sTip2 = CreateToolTip(eff_tempo, sTip2);
-		} else
-			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);
+		} /*else
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);*/
 		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
 	{
 		if (!prof && LOWORD(wParam) != IDC_ADDPROFILE)
 			return false;
+
+		WORD state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 
 		switch (LOWORD(wParam))
 		{
@@ -119,6 +148,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				prof->globalEffect = (byte) ComboBox_GetItemData(eff_list, ComboBox_GetCurSel(eff_list));
 				if (prof->id == conf->activeProfile->id)
 					fxhl->UpdateGlobalEffect();
+			} break;
+			}
+		} break;
+		case IDC_COMBO_TRIGGERKEY: {
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				prof->triggerkey = (WORD)ComboBox_GetItemData(key_list, ComboBox_GetCurSel(key_list));
 			} break;
 			}
 		} break;
@@ -142,7 +179,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			if (!prof)
 				prof = conf->activeProfile;
-			profile* new_prof = new profile({ vacID, (WORD)(prof->flags & ~PROF_DEFAULT), prof->effmode, {}, "Profile " + to_string(vacID), prof->lightsets, prof->fansets });
+			profile* new_prof = new profile(*prof);
+			new_prof->id = vacID;
+			new_prof->flags &= ~PROF_DEFAULT;
+			new_prof->name = "Profile " + to_string(vacID);
 			conf->profiles.push_back(new_prof);
 			pCid = vacID;
 			ReloadProfileView(hDlg);
@@ -150,6 +190,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_REMOVEPROFILE: {
 			if (!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
+				int pdelID = pCid;
 				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// is this active profile? Switch needed!
@@ -159,7 +200,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						pCid = conf->FindDefaultProfile()->id;
 						ReloadProfileList();
 					}
-					RemoveProfile(pCid);
+					conf->profiles.erase(find_if(conf->profiles.begin(), conf->profiles.end(),
+						[pdelID](profile* pr) {
+							return pr->id == pdelID;
+						}));
+					RemoveUnusedGroups();
 					ReloadProfileView(hDlg);
 				}
 			}
@@ -168,21 +213,45 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						   MB_OK | MB_ICONERROR);
 		} break;
 		case IDC_BUT_PROFRESET:
-			if (MessageBox(hDlg, "Do you really want to reset all lights settings for this profile?", "Warning",
+			if (MessageBox(hDlg, "Do you really want to remove selected light settings from this profile?", "Warning",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
-				prof->lightsets.clear();
+				for (auto it = prof->lightsets.begin(); it < prof->lightsets.end(); it++) {
+					if (IsDlgButtonChecked(hDlg, IDC_CP_COLORS) == BST_CHECKED)
+						it->color.clear();
+					if (IsDlgButtonChecked(hDlg, IDC_CP_EVENTS) == BST_CHECKED)
+						it->events[0].state = it->events[1].state = it->events[2].state = false;
+					if (IsDlgButtonChecked(hDlg, IDC_CP_AMBIENT) == BST_CHECKED)
+						it->ambients.clear();
+					if (IsDlgButtonChecked(hDlg, IDC_CP_HAPTICS) == BST_CHECKED)
+						it->haptics.clear();
+				}
+				RemoveUnused(&prof->lightsets);
+				RemoveUnusedGroups();
+				if (conf->activeProfile->id == prof->id)
+					fxhl->Refresh();
 			}
 			break;
 		case IDC_BUT_COPYACTIVE:
 			if (conf->activeProfile->id != prof->id) {
-				profile* new_prof = new profile(*conf->activeProfile);
-				new_prof->id = prof->id;
-				new_prof->name = prof->name;
-				new_prof->flags &= ~PROF_DEFAULT;
-				new_prof->flags |= prof->flags & PROF_DEFAULT;
-				RemoveProfile(prof->id);
-				conf->profiles.push_back(new_prof);
-				ReloadProfileView(hDlg);
+				for (auto t = conf->activeProfile->lightsets.begin(); t < conf->activeProfile->lightsets.end(); t++) {
+					groupset* lset = FindMapping(t->group, &prof->lightsets);
+					if (!lset) {
+						prof->lightsets.push_back({ t->group });
+						lset = &prof->lightsets.back();
+						lset->fromColor = t->fromColor;
+						lset->gauge = t->gauge;
+						lset->flags = t->flags;
+					}
+					if (IsDlgButtonChecked(hDlg, IDC_CP_COLORS) == BST_CHECKED)
+						lset->color = t->color;
+					if (IsDlgButtonChecked(hDlg, IDC_CP_EVENTS) == BST_CHECKED)
+						for (int i = 0; i < 3; i++)
+							lset->events[i] = t->events[i];
+					if (IsDlgButtonChecked(hDlg, IDC_CP_AMBIENT) == BST_CHECKED)
+						lset->ambients = t->ambients;
+					if (IsDlgButtonChecked(hDlg, IDC_CP_HAPTICS) == BST_CHECKED)
+						lset->haptics = t->haptics;
+				}
 			}
 			break;
 		case IDC_APP_RESET:
@@ -211,19 +280,21 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				prof->effmode = ComboBox_GetCurSel(mode_list);
-				if (prof->effmode != 3) {
-					prof->flags &= ~PROF_GLOBAL_EFFECTS;
-					ReloadProfSettings(hDlg, prof);
-				}
-				if (prof->id == conf->activeProfile->id)
+				prof->effmode = (WORD)ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
+				//if (prof->effmode) {
+				//	prof->flags &= ~PROF_GLOBAL_EFFECTS;
+				//	ReloadProfSettings(hDlg, prof);
+				//}
+				if (prof->id == conf->activeProfile->id) {
 					eve->ChangeEffectMode();
+					ReloadModeList();
+				}
 			} break;
 			}
 		} break;
 		case IDC_CHECK_DEFPROFILE:
 		{
-			if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
+			if (state) {
 				profile *old_def = conf->FindDefaultProfile();
 				old_def->flags = old_def->flags & ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
@@ -234,34 +305,39 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 		} break;
 		case IDC_CHECK_PRIORITY:
-			prof->flags = (prof->flags & ~PROF_PRIORITY) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 1;
+			//prof->flags = (prof->flags & ~PROF_PRIORITY) | state << 1;
+			SetBitMask(prof->flags, PROF_PRIORITY, state);
 			// Update active profile, if needed
 			if (conf->enableProf)
 				eve->SwitchActiveProfile(eve->ScanTaskList());
 			break;
 		case IDC_CHECK_PROFDIM:
-			prof->flags = (prof->flags & ~PROF_DIMMED) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 2;
+			//prof->flags = (prof->flags & ~PROF_DIMMED) | state << 2;
+			SetBitMask(prof->flags, PROF_DIMMED, state);
 			prof->ignoreDimming = false;
 			if (prof->id == conf->activeProfile->id) {
-				//conf->SetStates();
 				fxhl->ChangeState();
 			}
 			break;
 		case IDC_CHECK_FOREGROUND:
-			prof->flags = (prof->flags & ~PROF_ACTIVE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 3;
+			//prof->flags = (prof->flags & ~PROF_ACTIVE) | state << 3;
+			SetBitMask(prof->flags, PROF_ACTIVE, state);
 			break;
-		case IDC_CHECK_GLOBAL:
-			prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
-			if (prof->flags & PROF_GLOBAL_EFFECTS)
-				prof->effmode = 3;
-			ReloadProfSettings(hDlg, prof);
-			if (prof->id == conf->activeProfile->id) {
-				fxhl->UpdateGlobalEffect();
-				fxhl->Refresh(true);
-			}
-			break;
+		//case IDC_CHECK_GLOBAL:
+		//	prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
+		//	if (prof->flags & PROF_GLOBAL_EFFECTS) {
+		//		prof->effmode = 0;
+		//		ReloadModeList();
+		//	}
+		//	ReloadProfSettings(hDlg, prof);
+		//	if (prof->id == conf->activeProfile->id) {
+		//		fxhl->UpdateGlobalEffect();
+		//		fxhl->Refresh(true);
+		//	}
+		//	break;
 		case IDC_CHECK_FANPROFILE:
-			prof->flags = (prof->flags & ~PROF_FANS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 4;
+			//prof->flags = (prof->flags & ~PROF_FANS) | state << 4;
+			SetBitMask(prof->flags, PROF_FANS, state);
 			if (prof->flags & PROF_FANS) {
 				// add current fan profile...
 				prof->fansets = conf->fan_conf->prof;
@@ -272,6 +348,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					conf->fan_conf->lastProf = &conf->fan_conf->prof;
 			}
 			break;
+		case IDC_TRIGGER_POWER_AC:
+			SetBitMask(prof->triggerFlags, PROF_TRIGGER_AC, state);
+			//prof->triggerFlags = (prof->triggerFlags & ~PROF_TRIGGER_AC) | state;
+			break;
+		case IDC_TRIGGER_POWER_BATTERY:
+			SetBitMask(prof->triggerFlags, PROF_TRIGGER_BATTERY, state);
+			//prof->triggerFlags = (prof->triggerFlags & ~PROF_TRIGGER_BATTERY) |state << 1;
+			break;
 		}
 	} break;
 	case WM_NOTIFY:
@@ -279,8 +363,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_LIST_PROFILES:
 			switch (((NMHDR*) lParam)->code) {
 			case LVN_ITEMACTIVATE: {
-				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*) lParam;
-				ListView_EditLabel(p_list, sItem->iItem);
+				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
 			} break;
 
 			case LVN_ITEMCHANGED:
@@ -289,9 +372,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
 					pCid = (int) lPoint->lParam;
-					prof = conf->FindProfile(pCid);
-					if (prof)
-						ReloadProfSettings(hDlg, prof);
+					ReloadProfSettings(hDlg, conf->FindProfile(pCid));
 				} else {
 					pCid = -1;
 					CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
@@ -300,7 +381,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
 					CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, BST_UNCHECKED);
 					ListBox_ResetContent(app_list);
-					ComboBox_SetCurSel(mode_list, 3);
+					ComboBox_SetCurSel(mode_list, 0);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -309,8 +390,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				profile* prof = conf->FindProfile((int)sItem->item.lParam);
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
-					ListView_SetItem(p_list, &sItem->item);
-					ListView_SetColumnWidth(p_list, 0, LVSCW_AUTOSIZE);
+					//ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
 					ReloadProfileList();
 					return true;
 				} else
@@ -337,7 +417,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	} break;
 	case WM_DRAWITEM:
 	{
-		if (prof && (prof->flags & PROF_GLOBAL_EFFECTS))
+		if (prof /*&& (prof->flags & PROF_GLOBAL_EFFECTS)*/)
 			switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 			case IDC_BUTTON_EFFCLR2:
 			{

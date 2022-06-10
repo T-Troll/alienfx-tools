@@ -15,8 +15,20 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_0165E8EA63344119802E79B2B6C77D87"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_0207635732654CE6A87615796F8EEC39"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -33,7 +45,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_1AA38565231A40689F298FEBA8022EB6"
+        "MsmKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -69,14 +81,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_8533FAE6D43944078DAC051060E0DCFF"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
-        "OwnerKey" = "8:_1AA38565231A40689F298FEBA8022EB6"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -88,12 +100,6 @@
         "Entry"
         {
         "MsmKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_B4AC75ADC732414DA45BA869CD059423"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -111,8 +117,20 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
-        "OwnerKey" = "8:_1AA38565231A40689F298FEBA8022EB6"
+        "MsmKey" = "8:_E287D1712A1A426DA4A815104949F017"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -217,6 +235,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_055E075BF224A12F432351DF93952E0E"
+            {
+            "SourcePath" = "8:POWRPROF.dll"
+            "TargetName" = "8:POWRPROF.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_09B1992F95E748E1845109AD2B634C5A"
             {
             "SourcePath" = "8:..\\Doc\\alienfan-gui.md"
@@ -317,6 +355,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_83763AF12CFE41FE16B491DE99592F8F"
+            {
+            "SourcePath" = "8:VERSION.dll"
+            "TargetName" = "8:VERSION.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8F3090BEFD2084C54DFF0BFAD98DA84F"
             {
             "SourcePath" = "8:SETUPAPI.dll"
@@ -357,10 +415,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ECA7B10455E9FEA298D65C36BC39D1CE"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E57C9B0CB5862DCB6BAC31D289B34509"
             {
-            "SourcePath" = "8:HID.DLL"
-            "TargetName" = "8:HID.DLL"
+            "SourcePath" = "8:WININET.dll"
+            "TargetName" = "8:WININET.dll"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
             "Condition" = "8:"
@@ -466,15 +524,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{E3C22857-A24A-413A-A084-A1D936C2DC0B}"
-        "PackageCode" = "8:{13F48599-45B2-4278-A81B-BA21E5A0F6C0}"
+        "ProductCode" = "8:{7382C583-280E-409B-9151-6AA29AFD298D}"
+        "PackageCode" = "8:{C053ED61-1501-4889-B21C-99CB279401E6}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:5.9.403"
+        "ProductVersion" = "8:6.1.0"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -484,7 +542,7 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:A set of tool to control RGB lights and fans for Alienware/Dell systems."
         "ARPURLINFOABOUT" = "8:https://github.com/T-Troll/alienfx-tools"
-        "ARPPRODUCTICON" = "8:_8533FAE6D43944078DAC051060E0DCFF"
+        "ARPPRODUCTICON" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "ARPIconIndex" = "3:132"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -531,20 +589,6 @@
         }
         "Shortcut"
         {
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_04B798934888418EA9AFB7DACD97D583"
-            {
-            "Name" = "8:AlienFX Monitor"
-            "Arguments" = "8:"
-            "Description" = "8:"
-            "ShowCmd" = "3:1"
-            "IconIndex" = "3:107"
-            "Transitive" = "11:FALSE"
-            "Target" = "8:_B4AC75ADC732414DA45BA869CD059423"
-            "Folder" = "8:_A84FD7F9318443A388193688867B14F6"
-            "WorkingFolder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Icon" = "8:_B4AC75ADC732414DA45BA869CD059423"
-            "Feature" = "8:"
-            }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_3482D9C905104BFD9CCC79D50E61D45F"
             {
             "Name" = "8:AlienFan Control"
@@ -559,7 +603,21 @@
             "Icon" = "8:_4B7975803E6C492C8F7D8B599766674C"
             "Feature" = "8:"
             }
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_569E6EDD81FD4344AA6D0897E23A9892"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_6974826E553949CE8DB34A8F2D7553E7"
+            {
+            "Name" = "8:AlienFX Monitor"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:107"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_FA7989C51ECD437AB3316446FB849F60"
+            "Folder" = "8:_A84FD7F9318443A388193688867B14F6"
+            "WorkingFolder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Icon" = "8:_FA7989C51ECD437AB3316446FB849F60"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_D8A3885A2FE346739A48C769930EE16F"
             {
             "Name" = "8:AlienFX Control"
             "Arguments" = "8:"
@@ -567,10 +625,10 @@
             "ShowCmd" = "3:1"
             "IconIndex" = "3:132"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_8533FAE6D43944078DAC051060E0DCFF"
+            "Target" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
             "Folder" = "8:_A84FD7F9318443A388193688867B14F6"
             "WorkingFolder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Icon" = "8:_8533FAE6D43944078DAC051060E0DCFF"
+            "Icon" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
             "Feature" = "8:"
             }
         }
@@ -832,9 +890,9 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1AA38565231A40689F298FEBA8022EB6"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_0165E8EA63344119802E79B2B6C77D87"
             {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-conv.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -854,7 +912,35 @@
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{FF6119EA-878F-4E7B-9FCD-8410A5D3FBF8}"
+            "OutputProjectGuid" = "8:{2A69F644-02C6-4E27-A173-FF344172B5BD}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1924518F6EA84AD696BCCE8E589E25C7"
+            {
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{E47811D5-E492-4B51-AD9A-A9B00939E3EC}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
@@ -916,34 +1002,6 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8533FAE6D43944078DAC051060E0DCFF"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{E47811D5-E492-4B51-AD9A-A9B00939E3EC}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9752947669754683929089279BB314AF"
             {
             "SourcePath" = "8:..\\x64\\Release\\HwAcc.sys"
@@ -967,34 +1025,6 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_A5006B6E23FC4C4F9295F32F8953E3D7"
-            {
-            "SourcePath" = "8:"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:ContentFiles"
-            "OutputProjectGuid" = "8:{E47811D5-E492-4B51-AD9A-A9B00939E3EC}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
@@ -1028,34 +1058,6 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B4AC75ADC732414DA45BA869CD059423"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\alienfx-mon.exe"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{583D215B-C1A5-4607-A26C-823EB6B28155}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B829425435A04EFB81D071102204D8B4"
             {
             "SourcePath" = "8:..\\x64\\Release\\alienfan-cli.exe"
@@ -1079,6 +1081,90 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{D6AD2E10-F61C-43F1-87EA-E77DEA12DD42}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C0BC3B8312E649958BC94F1632380DC9"
+            {
+            "SourcePath" = "8:"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:ContentFiles"
+            "OutputProjectGuid" = "8:{E47811D5-E492-4B51-AD9A-A9B00939E3EC}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E287D1712A1A426DA4A815104949F017"
+            {
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{FF6119EA-878F-4E7B-9FCD-8410A5D3FBF8}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FA7989C51ECD437AB3316446FB849F60"
+            {
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-mon.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{583D215B-C1A5-4607-A26C-823EB6B28155}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {

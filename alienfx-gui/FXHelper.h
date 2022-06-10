@@ -37,39 +37,35 @@ private:
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
 
-	void SetGroupLight(int groupID, vector<AlienFX_SDK::afx_act> actions, bool force = false,
-					   AlienFX_SDK::afx_act* from_c = NULL, AlienFX_SDK::afx_act* to_c = NULL, double power = 0);
+	void SetGaugeLight(pair<DWORD, DWORD> id, int x, int max, byte flags, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
+	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = -1.0, bool force = false);
 	bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void QueryUpdate(int did = -1, bool force = false);
 
 public:
-	ConfigHandler* config;
-	AlienFX_SDK::Mappings afx_dev;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
-	HANDLE queryEmpty = NULL;
+	//HANDLE queryEmpty = NULL;
 	deque<LightQueryElement> lightQuery;
 	mutex modifyQuery;
 	bool unblockUpdates = true;
 	bool updateLock = false;
-	int activeMode = -1;
+	int activePowerMode = -1;
 	EventData eData, maxData;
+	int numActiveDevs = 0;
 
-	FXHelper(ConfigHandler *conf);
+	FXHelper();
 	~FXHelper();
-	//bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
-	//void QueryUpdate(int did = -1, bool force = false);
 	AlienFX_SDK::afx_device *LocateDev(int pid);
 	size_t FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
-	bool RefreshOne(lightset* map, int force = 0, bool update = false);
-	bool SetMode(int mode);
+	bool RefreshOne(groupset* map, int force = 0, bool update = true);
+	bool SetPowerMode(int mode);
 	void TestLight(int did, int id, bool wp=false);
-	void ResetPower(int did);
+	void ResetPower(AlienFX_SDK::afx_device* dev);
 	void SetCounterColor(EventData *data, bool force = false);
-	void RefreshState(bool force = false);
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
@@ -78,5 +74,5 @@ public:
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
 	void UnblockUpdates(bool newState, bool lock = false);
 
-	ConfigHandler* GetConfig() { return config; };
+	//ConfigHandler* GetConfig() { return config; };
 };

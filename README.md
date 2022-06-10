@@ -50,7 +50,7 @@ It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys
 - (Optional) For the fan control, it's highly recommended to set correct overboost values and maximal fans RPM. You can do it at GUI apps first start or by running `alienfx-cli setover` command.
 - Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (all tools will have limited functionality without this step).  
 
-Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-%28Beginner%27s-guide%29-for-release-v6.x.x.x) guide first!
+Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide-and-tips)) guide first!
 
 ## Supported hardware:
 
@@ -89,12 +89,16 @@ Build process:
 - [ ] New events
   - [x] Input locale
   - [ ] Missed notifications (toasts)
-  - [ ] Keyboard events (positional effects, key press reaction)
+  - [x] Keyboard events (key press reaction)
+- [ ] Grid (positional) effects
+  - [ ] Static full-grid effects
+  - [ ] Dynamic full-grid effects
+  - [ ] Event or key-triggered full-grid effects
 - [ ] New devices support
   - [ ] Monitors
   - [x] Mouses
   - [ ] Keyboards
-- [ ] Keyboard mapper for easy RGB keyboard setup
+- [x] Keyboard mapper for easy RGB keyboard setup
 - [x] Overboost GUI
 - [x] Windows 11 support
 

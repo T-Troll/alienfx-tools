@@ -12,14 +12,14 @@ ConfigAmbient::ConfigAmbient() {
     Load();
 }
 ConfigAmbient::~ConfigAmbient() {
-    Save();
+    //Save();
     RegCloseKey(hMainKey);
     RegCloseKey(hMappingKey);
 }
 
 void ConfigAmbient::GetReg(char *name, DWORD *value, DWORD defValue) {
     DWORD size = sizeof(DWORD);
-    if (RegGetValueA(hMainKey, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+    if (RegGetValue(hMainKey, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
         *value = defValue;
 }
 
@@ -40,7 +40,7 @@ void ConfigAmbient::Load() {
     DWORD inarray[12 * sizeof(DWORD)]{0};
     char name[256];
     DWORD len = 255, lend = 12 * sizeof(DWORD); zone map;
-    for (int vindex = 0; RegEnumValueA(hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend) == ERROR_SUCCESS; vindex++) {
+    for (int vindex = 0; RegEnumValue(hMappingKey, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend) == ERROR_SUCCESS; vindex++) {
         // get id(s)...
         if (sscanf_s(name, "%d-%d", &map.devid, &map.lightid) == 2) {
             if (lend > 0) {
@@ -60,7 +60,7 @@ void ConfigAmbient::Save() {
     SetReg("Mode", mode);
     SetReg("Grid", MAKELPARAM(grid.x, grid.y));
 
-    RegDeleteTreeA(hMainKey, "Mappings");
+    RegDeleteTree(hMainKey, "Mappings");
     RegCreateKeyEx(hMainKey, TEXT("Mappings"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hMappingKey, NULL);
     for (int i = 0; i < zones.size(); i++) {
         //preparing name
@@ -72,7 +72,7 @@ void ConfigAmbient::Save() {
                 out[j] = zones[i].map[j];
             }
             size *= sizeof(DWORD);
-            RegSetValueExA( hMappingKey, name.c_str(), 0, REG_BINARY, (BYTE*)out, size );
+            RegSetValueEx( hMappingKey, name.c_str(), 0, REG_BINARY, (BYTE*)out, size );
         }
     }
 }

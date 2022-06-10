@@ -25,9 +25,8 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_DEVICE {
 		string mainCommand;
 		string gpuCommand;
-		//byte maxBoost;
 		bool commandControlled;
-		short controlID;
+		short delta;
 		ALIENFAN_COMMAND probe;
 	};
 
@@ -41,6 +40,8 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND getPower;
 		ALIENFAN_COMMAND setPower;
 		ALIENFAN_COMMAND setGPUPower;
+		ALIENFAN_COMMAND getGMode;
+		ALIENFAN_COMMAND setGMode;
 	};
 
 	struct ALIENFAN_COMMAND_CONTROL {
@@ -57,11 +58,12 @@ namespace AlienFan_SDK {
 	private:
 		HANDLE acc = NULL;
 		short aDev = -1;
-		short cDev = -1;
+		//short cDev = -1;
 		int systemID = 0;
 		bool activated = false;
+#ifdef _SERVICE_WAY_
 		SC_HANDLE scManager = NULL;
-
+#endif
 		int ReadRamDirect(DWORD);
 		int WriteRamDirect(DWORD, byte);
 
@@ -73,7 +75,6 @@ namespace AlienFan_SDK {
 		// Stop and unload service if driver loaded from service
 		void UnloadService();
 #endif
-
 		// Probe hardware, sensors, fans, power modes and fill structures.
 		// Result: true - compatible hardware found, false - not found.
 		bool Probe();
@@ -88,11 +89,11 @@ namespace AlienFan_SDK {
 
 		// Get boost value for the fan index fanID at fans[]. If force, raw value returned, otherwise cooked by boost
 		// Result: Error or raw value if forced, otherwise cooked by boost.
-		int GetFanValue(int fanID, bool force = false);
+		int GetFanBoost(int fanID, bool force = false);
 
 		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise cooked by boost.
 		// Result: value or error
-		int SetFanValue(int fanID, byte value, bool force = false);
+		int SetFanBoost(int fanID, byte value, bool force = false);
 
 		// Get temperature value for the sensor index TanID at sensors[]
 		// Result: temperature value or error
@@ -113,6 +114,12 @@ namespace AlienFan_SDK {
 		// Set system GPU limit level (0 - no limit, 3 - min. limit)
 		// Result: success or error
 		int SetGPU(int power);
+
+		// Toggle G-mode on some systems
+		int SetGMode(bool state);
+
+		// Check G-mode state
+		int GetGMode();
 
 		// Get low-level driver handle for direct operations
 		// Result: handle to driver or NULL
@@ -145,6 +152,7 @@ namespace AlienFan_SDK {
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<USHORT> fans;
 		vector<byte> boosts;
+		vector<WORD> maxrpm;
 		vector<byte> powers;
 
 #ifdef _SERVICE_WAY_

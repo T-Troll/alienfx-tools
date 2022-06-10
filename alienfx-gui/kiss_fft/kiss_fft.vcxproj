@@ -125,6 +125,10 @@
       <IntelJCCErratum>true</IntelJCCErratum>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

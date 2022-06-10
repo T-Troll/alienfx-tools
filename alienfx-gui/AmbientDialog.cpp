@@ -3,11 +3,9 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
-extern zone *FindAmbMapping(int lid);
-extern void RemoveAmbMapping(int devid, int lightid);
 
-extern void SwitchTab(int);
+extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+extern void RemoveUnused(vector<groupset>*);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -21,15 +19,15 @@ void InitButtonZone(HWND dlg) {
     for (DWORD bID = 2000; GetDlgItem(dlg, bID); bID++)
         DestroyWindow(GetDlgItem(dlg, bID));
     // Create zone buttons...
-    HWND bblock = GetDlgItem(dlg, IDC_BUTTON_ZONE);
+    HWND bblock = GetDlgItem(dlg, IDC_AMB_BUTTON_ZONE);
     RECT bzone;
     GetClientRect(bblock, &bzone);
     MapWindowPoints(bblock, dlg, (LPPOINT)&bzone, 1);
-    bzone.right /= conf->amb_conf->grid.x;
-    bzone.bottom /= conf->amb_conf->grid.y;
+    bzone.right /= LOWORD(conf->amb_grid);
+    bzone.bottom /= HIWORD(conf->amb_grid);
     LONGLONG bId = 2000;
-    for (int y = 0; y < conf->amb_conf->grid.y; y++)
-        for (int x = 0; x < conf->amb_conf->grid.x; x++) {
+    for (int y = 0; y < HIWORD(conf->amb_grid); y++)
+        for (int x = 0; x < LOWORD(conf->amb_grid); x++) {
             HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                 bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, dlg, (HMENU)bId, hInst, NULL);
             bId++;
@@ -37,76 +35,83 @@ void InitButtonZone(HWND dlg) {
 }
 
 void RedrawButtonZone(HWND dlg) {
-    for (int i = 0; i < conf->amb_conf->grid.x * conf->amb_conf->grid.y; i++)
-        RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
+    RECT pRect;
+    GetWindowRect(GetDlgItem(dlg, IDC_AMB_BUTTON_ZONE), &pRect);
+    MapWindowPoints(HWND_DESKTOP, dlg, (LPPOINT)&pRect, 2);
+    RedrawWindow(dlg, &pRect, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+    //for (int i = 0; i < LOWORD(conf->grid) * HIWORD(conf->grid); i++)
+    //    RedrawWindow(GetDlgItem(dlg, 2000 + i), 0, 0, RDW_INVALIDATE);
 }
 
 void SetGridSize(HWND dlg, int x, int y) {
     delete ambUIupdate;
     if (eve->capt) {
-        eve->capt->SetGridSize(x, y);
+        eve->capt->SetLightGridSize(x, y);
     }
     else {
-        conf->amb_conf->grid.x = x;
-        conf->amb_conf->grid.y = y;
+        conf->amb_grid = MAKELPARAM(x, y);
     }
     InitButtonZone(dlg);
     ambUIupdate = new ThreadHelper(AmbUpdate, dlg);
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
+    //HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR),
+        gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID),
         gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
         gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
 
-    zone *map = FindAmbMapping(eItem);
+    groupset* map = FindMapping(eItem);// FindAmbMapping(eItem);
 
     switch (message) {
     case WM_INITDIALOG:
     {
+        //zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
+        //RECT mRect;
+        //GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
+        //ScreenToClient(hDlg, (LPPOINT)&mRect);
+        //SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 
-        if (UpdateLightList(light_list, fxhl, 3) < 0) {
-            // no lights, switch to setup
-            SwitchTab(TAB_DEVICES);
-            return false;
-        }
+        //if (!conf->afx_dev.GetMappings()->size())
+        //    OnGridSelChanged(gridTab);
 
         // Mode...
-        CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_conf->mode ? BST_UNCHECKED : BST_CHECKED);
-        CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, conf->amb_conf->mode ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_mode ? BST_UNCHECKED : BST_CHECKED);
+        CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, conf->amb_mode ? BST_CHECKED : BST_UNCHECKED);
 
         CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection ? BST_CHECKED : BST_UNCHECKED);
 
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-        SendMessage(brSlider, TBM_SETPOS, true, conf->amb_conf->shift);
+        SendMessage(brSlider, TBM_SETPOS, true, conf->amb_shift);
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
 
         SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(1, 20));
-        SendMessage(gridX, TBM_SETPOS, true, conf->amb_conf->grid.x);
+        SendMessage(gridX, TBM_SETPOS, true, LOWORD(conf->amb_grid));
         //SendMessage(gridX, TBM_SETTICFREQ, 16, 0);
 
         SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(1, 12));
-        SendMessage(gridY, TBM_SETPOS, true, conf->amb_conf->grid.y);
+        SendMessage(gridY, TBM_SETPOS, true, HIWORD(conf->amb_grid));
         //SendMessage(gridY, TBM_SETTICFREQ, 16, 0);
 
         sTip1 = CreateToolTip(brSlider, sTip1);
-        SetSlider(sTip1, conf->amb_conf->shift);
+        SetSlider(sTip1, conf->amb_shift);
 
         sTip2 = CreateToolTip(gridX, sTip2);
-        SetSlider(sTip2, conf->amb_conf->grid.x);
+        SetSlider(sTip2, LOWORD(conf->amb_grid));
 
         sTip3 = CreateToolTip(gridY, sTip3);
-        SetSlider(sTip3, conf->amb_conf->grid.y);
+        SetSlider(sTip3, HIWORD(conf->amb_grid));
+
+        // init grids...
+        //CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
+        //TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
+        //OnGridSelChanged(gridTab);
+
+        InitButtonZone(hDlg);
 
         // Start UI update thread...
         ambUIupdate = new ThreadHelper(AmbUpdate, hDlg, 200);
-
-        if (eItem >= 0) {
-            SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-        }
-
-        InitButtonZone(hDlg);
 
     } break;
     case WM_COMMAND:
@@ -114,60 +119,32 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         if (LOWORD(wParam) >= 2000) { // grid button
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
-                if (eItem == (-1))
-                    break;
-                UINT id = LOWORD(wParam) - 2000;
-                if (!map) {
-                    map = new zone({ 0 });
-                    if (eItem > 0xffff) {
-                        // group
-                        map->lightid = eItem;
-                    }
+                if (map) {
+                    UINT id = LOWORD(wParam) - 2000;
+                    // add/remove mapping
+                    auto pos = map->ambients.begin();
+                    if ((pos = find_if(map->ambients.begin(), map->ambients.end(),
+                        [id](auto t) {
+                            return t == id;
+                        })) == map->ambients.end())
+                        map->ambients.push_back(id);
                     else {
-                        // light
-                        AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
-                        map->devid = lgh->devid;
-                        map->lightid = lgh->lightid;
+                        map->ambients.erase(pos);
+                        if (map->ambients.empty())
+                            RemoveUnused(conf->active_set);
                     }
-                    conf->amb_conf->zones.push_back(*map);
-                    map = &conf->amb_conf->zones.back();
+                    RedrawButtonZone(hDlg);
                 }
-                // add mapping
-                auto Iter = map->map.begin();
-                for (; Iter != map->map.end(); Iter++)
-                    if (*Iter == id)
-                        break;
-                if (Iter == map->map.end()) {
-                    // new mapping, add and select
-                    map->map.push_back(id);
-                }
-                else {
-                    map->map.erase(Iter);
-                    if (!map->map.size()) {
-                        // delete mapping!
-                        RemoveAmbMapping(map->devid, map->lightid);
-                    }
-                }
-                RedrawWindow(GetDlgItem(hDlg, LOWORD(wParam)), 0, 0, RDW_INVALIDATE);
                 break;
             }
         }
         switch (LOWORD(wParam)) {
-        case IDC_LIGHTS: // should reload mappings
-            switch (HIWORD(wParam)) {
-            case LBN_SELCHANGE:
-            {
-                eItem = (int)ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-                RedrawButtonZone(hDlg);
-            } break;
-            }
-            break;
         case IDC_RADIO_PRIMARY:
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
-                conf->amb_conf->mode = 0;
+                conf->amb_mode = 0;
                 if (eve->capt)
                     eve->capt->Restart();
                 break;
@@ -177,7 +154,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             case BN_CLICKED:
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_CHECKED);
-                conf->amb_conf->mode = 1;
+                conf->amb_mode = 1;
                 if (eve->capt)
                     eve->capt->Restart();
                 break;
@@ -191,17 +168,20 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         default: return false;
         }
     } break;
+    case WM_APP + 2: {
+        RedrawButtonZone(hDlg);
+    } break;
     case WM_HSCROLL:
         switch (LOWORD(wParam)) {
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == brSlider) {
-                conf->amb_conf->shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                SetSlider(sTip1, conf->amb_conf->shift);
+                conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                SetSlider(sTip1, conf->amb_shift);
                 break;
             }
             if ((HWND)lParam == gridX) {
-                SetGridSize(hDlg, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), conf->amb_conf->grid.y);
-                SetSlider(sTip2, conf->amb_conf->grid.x);
+                SetGridSize(hDlg, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), HIWORD(conf->amb_grid));
+                SetSlider(sTip2, LOWORD(conf->amb_grid));
                 break;
             }
             break;
@@ -220,8 +200,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         switch (LOWORD(wParam)) {
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == gridY) {
-                SetGridSize(hDlg, conf->amb_conf->grid.x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-                SetSlider(sTip3, conf->amb_conf->grid.y);
+                SetGridSize(hDlg, LOWORD(conf->amb_grid), (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+                SetSlider(sTip3, HIWORD(conf->amb_grid));
             }
             break;
         default:
@@ -242,10 +222,13 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             FillRect(ditem->hDC, &ditem->rcItem, Brush);
             DeleteObject(Brush);
             bool selected = false;
-            if (map)
-                for (auto Iter = map->map.begin(); Iter != map->map.end(); Iter++)
-                    if (*Iter == idx)
-                        selected = true;
+            if (map && map->ambients.size()) {
+                auto pos = find_if(map->ambients.begin(), map->ambients.end(),
+                    [idx](auto t) {
+                        return t == idx;
+                    });
+                selected = pos != map->ambients.end();
+            }
             DrawEdge(ditem->hDC, &ditem->rcItem, selected ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT);
         }
     } break;
@@ -261,6 +244,6 @@ void AmbUpdate(LPVOID param) {
     if (eve->capt /*&& eve->capt->needUpdate */&& IsWindowVisible((HWND)param)) {
         //DebugPrint("Ambient UI update...\n");
         RedrawButtonZone((HWND)param);
-        /*eve->capt->needUpdate = false;*/
+        if (eve->capt) eve->capt->needUpdate = false;
     }
 }

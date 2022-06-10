@@ -1,26 +1,29 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "Common.h"
 
-extern void SwitchTab(int);
+extern void SwitchLightTab(HWND, int);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
-extern int UpdateLightList(HWND light_list, FXHelper *fxhl, int flag = 0);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-extern haptics_map *FindHapMapping(int lid);
-extern void RemoveHapMapping(int devid, int lightid);
+
+extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+extern void RemoveUnused(vector<groupset>*);
+
+extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+
+//extern HWND zsDlg;
 
 extern EventHandler* eve;
 extern int eItem;
 
 int fGrpItem = -1;
+HWND hToolTip = NULL;
 
 void UpdateHapticsUI(LPVOID);
 ThreadHelper* hapUIThread;
 
-void DrawFreq(HWND hDlg, int *freq) {
-	unsigned i, rectop;
-	char szSize[5]; //for labels
+void DrawFreq(HWND hDlg) {
+	//unsigned rectop;
 
 	HWND hysto = GetDlgItem(hDlg, IDC_LEVELS);
 
@@ -40,49 +43,50 @@ void DrawFreq(HWND hDlg, int *freq) {
 		HGDIOBJ hOld = SelectObject(hdc, hbmMem);
 
 		//setting colors:
-		SetTextColor(hdc, RGB(255, 255, 255));
 		SelectObject(hdc, GetStockObject(WHITE_PEN));
 		SetBkMode(hdc, TRANSPARENT);
 
-		if (conf->hap_conf->showAxis) {
-			//draw x axis:
-			MoveToEx(hdc, 10, levels_rect.bottom - 21, (LPPOINT) NULL);
-			LineTo(hdc, levels_rect.right - 10, levels_rect.bottom - 21);
-			LineTo(hdc, levels_rect.right - 15, levels_rect.bottom - 26);
-			MoveToEx(hdc, levels_rect.right - 10, levels_rect.bottom - 21, (LPPOINT) NULL);
-			LineTo(hdc, levels_rect.right - 15, levels_rect.bottom - 16);
+		graphZone.top = 2;
+		graphZone.left = 1;
+		graphZone.bottom--;
 
-			//draw y axis:
-			MoveToEx(hdc, 10, levels_rect.bottom - 21, (LPPOINT) NULL);
-			LineTo(hdc, 10, 10);
-			LineTo(hdc, 15, 15);
-			MoveToEx(hdc, 10, 10, (LPPOINT) NULL);
-			LineTo(hdc, 5, 15);
-			int oldvalue = (-1);
-			double coeff = 22 / (log(22.0));
-			for (i = 0; i <= 22; i++) {
-				int frq = int(22 - round((log(22.0 - i) * coeff)));
-				if (frq > oldvalue) {
-					wsprintf(szSize, "%2d", frq);
-					TextOut(hdc, ((levels_rect.right - 20) * i) / 22 + 10, levels_rect.bottom - 20, szSize, 2);
-					oldvalue = frq;
-				}
+		groupset* map = FindMapping(eItem);
+		if (map && fGrpItem >= 0) {
+			SelectObject(hdc, GetStockObject(GRAY_BRUSH));
+			SelectObject(hdc, GetStockObject(NULL_PEN));
+			for (auto t = map->haptics[fGrpItem].freqID.begin(); t < map->haptics[fGrpItem].freqID.end(); t++) {
+				int leftpos = (graphZone.right * (*t)) / NUMBARS + graphZone.left,
+					rightpos = (graphZone.right * (*t + 1)) / NUMBARS - 2 + graphZone.left;
+				Rectangle(hdc, leftpos, graphZone.top, rightpos + 2, graphZone.bottom);
 			}
-			graphZone.top = 10;
-			graphZone.bottom -= 21;
-			graphZone.left = 10;
-			graphZone.right -= 20;
-		} else {
-			graphZone.top = 2;
-			graphZone.left = 1;
-			graphZone.bottom--;
+			SelectObject(hdc, GetStockObject(WHITE_PEN));
+			SelectObject(hdc, GetStockObject(WHITE_BRUSH));
 		}
-		if (freq)
-			for (i = 0; i < NUMBARS; i++) {
-				rectop = (255 - freq[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
-				Rectangle(hdc, (graphZone.right * i) / NUMBARS + graphZone.left, rectop,
-						  (graphZone.right * (i + 1)) / NUMBARS - 2 + graphZone.left, graphZone.bottom);
+		if (eve->audio && eve->audio->freqs) {
+			SelectObject(hdc, GetStockObject(WHITE_PEN));
+			SelectObject(hdc, GetStockObject(WHITE_BRUSH));
+			for (int i = 0; i < NUMBARS; i++) {
+				int leftpos = (graphZone.right * i) / NUMBARS + graphZone.left,
+					rightpos = (graphZone.right * (i + 1)) / NUMBARS - 2 + graphZone.left;
+				int rectop = (255 - eve->audio->freqs[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
+				Rectangle(hdc, leftpos, (255 - eve->audio->freqs[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top,
+					rightpos, graphZone.bottom);
 			}
+		}
+		if (map && fGrpItem >= 0) {
+			for (auto t = map->haptics[fGrpItem].freqID.begin(); t < map->haptics[fGrpItem].freqID.end(); t++) {
+				int leftpos = (graphZone.right * (*t)) / NUMBARS + graphZone.left,
+					rightpos = (graphZone.right * (*t + 1)) / NUMBARS - 2 + graphZone.left;
+				SetDCPenColor(hdc, RGB(255, 0, 0));
+				SelectObject(hdc, GetStockObject(DC_PEN));
+				int cutLevel = graphZone.bottom - ((graphZone.bottom - graphZone.top) * map->haptics[fGrpItem].hicut / 255);
+				Rectangle(hdc, leftpos, cutLevel, rightpos, cutLevel + 2);
+				SetDCPenColor(hdc, RGB(0, 255, 0));
+				SelectObject(hdc, GetStockObject(DC_PEN));
+				cutLevel = graphZone.bottom - ((graphZone.bottom - graphZone.top) * map->haptics[fGrpItem].lowcut / 255);
+				Rectangle(hdc, leftpos, cutLevel, rightpos, cutLevel - 2);
+			}
+		}
 
 		BitBlt(hdc_r, 0, 0, levels_rect.right - levels_rect.left, levels_rect.bottom - levels_rect.top, hdc, 0, 0, SRCCOPY);
 
@@ -96,255 +100,201 @@ void DrawFreq(HWND hDlg, int *freq) {
 	}
 }
 
-void SetMappingData(HWND hDlg, haptics_map* map) {
-	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
-	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
-	haptics_map hap; hap.freqs.push_back(freq_map());
-	if (!map) {
-		map = &hap;
-		fGrpItem = 0;
-	}
-	RedrawButton(hDlg, IDC_BUTTON_LPC, &map->freqs[fGrpItem].colorfrom);
-	RedrawButton(hDlg, IDC_BUTTON_HPC, &map->freqs[fGrpItem].colorto);
-	// load cuts...
-	SendMessage(hLowSlider, TBM_SETPOS, true, map->freqs[fGrpItem].lowcut);
-	SendMessage(hHiSlider, TBM_SETPOS, true, map->freqs[fGrpItem].hicut);
-	SetSlider(sTip1, map->freqs[fGrpItem].lowcut);
-	SetSlider(sTip2, map->freqs[fGrpItem].hicut);
-	CheckDlgButton(hDlg, IDC_GAUGE, map->flags & MAP_GAUGE ? BST_CHECKED : BST_UNCHECKED);
+void SetMappingData(HWND hDlg, groupset* map) {
+	RedrawButton(hDlg, IDC_BUTTON_LPC, map && map->haptics.size() ? &map->haptics[fGrpItem].colorfrom : NULL);
+	RedrawButton(hDlg, IDC_BUTTON_HPC, map && map->haptics.size() ? &map->haptics[fGrpItem].colorto : NULL);
+}
 
+void SetFeqGroups(HWND hDlg) {
+	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
+	groupset* map = FindMapping(eItem);
+	fGrpItem = -1;
+	if (map) {
+		// Set groups
+		ListBox_ResetContent(grp_list);
+		for (int j = 0; j < map->haptics.size(); j++) {
+			ListBox_AddString(grp_list, ("Group " + to_string(j + 1)).c_str());
+		}
+		if (map->haptics.size()) {
+			ListBox_SetCurSel(grp_list, 0);
+			fGrpItem = 0;
+		}
+	}
+	SetMappingData(hDlg, map);
+}
+
+int cutMove = 0;
+
+INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	RECT pos;
+	groupset* map = FindMapping(eItem);
+	GetClientRect(hDlg, &pos);
+	pos.right--;
+	pos.bottom;
+	byte cIndex = (byte)(GET_X_LPARAM(lParam) * NUMBARS / pos.right);
+	int clickLevel = min((pos.bottom - GET_Y_LPARAM(lParam)) * 255 / (pos.bottom - 3), 255);
+
+	switch (message) {
+	case WM_LBUTTONDOWN: {
+		if (map && map->haptics.size() && fGrpItem >= 0) {
+			auto idx = find_if(map->haptics[fGrpItem].freqID.begin(), map->haptics[fGrpItem].freqID.end(),
+				[cIndex](auto t) {
+					return cIndex == t;
+				});
+			if (idx != map->haptics[fGrpItem].freqID.end()) {
+				if (abs(clickLevel - map->haptics[fGrpItem].hicut) < 5)
+					cutMove = 1;
+				if (abs(clickLevel - map->haptics[fGrpItem].lowcut) < 5)
+					cutMove = 2;
+			}
+		}
+	} break;
+	case WM_LBUTTONUP: {
+		if (map && map->haptics.size() && fGrpItem >= 0) {
+			auto idx = find_if(map->haptics[fGrpItem].freqID.begin(), map->haptics[fGrpItem].freqID.end(),
+				[cIndex](auto t) {
+					return cIndex == t;
+				});
+			if (idx != map->haptics[fGrpItem].freqID.end())
+				switch (cutMove) {
+				case 0: map->haptics[fGrpItem].freqID.erase(idx); break;
+				case 1: map->haptics[fGrpItem].hicut = clickLevel; break;
+				case 2: map->haptics[fGrpItem].lowcut = clickLevel; break;
+				}
+			else
+				map->haptics[fGrpItem].freqID.push_back(cIndex);
+			cutMove = 0;
+			DrawFreq(GetParent(hDlg));
+		}
+		cutMove = 0;
+	} break;
+	case WM_MOUSEMOVE: {
+		if (wParam & MK_LBUTTON) {
+			switch (cutMove) {
+			//case 0: cutMove = 3;
+			case 1: map->haptics[fGrpItem].hicut = clickLevel; break;
+			case 2: map->haptics[fGrpItem].lowcut = clickLevel; break;
+			}
+			DrawFreq(GetParent(hDlg));
+		}
+		SetToolTip(hToolTip, "Freq: " + to_string(cIndex ? 22050 - (int)round((log(21 - cIndex) * 22030 / log(21))) : 20) +
+			"-" + to_string(22050 - (int)round((log(20 - cIndex) * 22030 / log(21)))) + " Hz, Level: " +
+			to_string(clickLevel * 100 / 255));
+	} break;
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hDlg, &ps);
+		DrawFreq(GetParent(hDlg));
+		EndPaint(hDlg, &ps);
+		return true;
+	} break;
+	case WM_NCHITTEST:
+		return HTCLIENT;
+	case WM_ERASEBKGND:
+		return true;
+		break;
+	}
+	return DefWindowProc(hDlg, message, wParam, lParam);
 }
 
 BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	HWND freq_list = GetDlgItem(hDlg, IDC_FREQ);
-	HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
-	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
-	HWND hLowSlider = GetDlgItem(hDlg, IDC_SLIDER_LOWCUT);
-	HWND hHiSlider = GetDlgItem(hDlg, IDC_SLIDER_HICUT);
+	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP),
+	     gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID);
 
-	haptics_map *map = FindHapMapping(eItem);
+	groupset *map = FindMapping(eItem);
 
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		if (UpdateLightList(light_list, fxhl, 3) < 0) {
-			// no lights, switch to setup
-			SwitchTab(TAB_DEVICES);
-			return false;
-		}
+		//zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
+		//RECT mRect;
+		//GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
+		//ScreenToClient(hDlg, (LPPOINT)&mRect);
+		//SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 
-		double coeff = 22030 / log(21);
-		int prevfreq = 20;
-		for (int i = 1; i < 21; i++) {
-			int frq = 22050 - (int) round((log(21 - i) * coeff));
-			string frqname = to_string(prevfreq) + "-" + to_string(frq) + "Hz";
-			prevfreq = frq;
-			ListBox_AddString(freq_list, frqname.c_str());
-		}
+		//if (!conf->afx_dev.GetMappings()->size())
+		//	OnGridSelChanged(gridTab);
 
-		SendMessage(hLowSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		SendMessage(hHiSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_inpType ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_inpType ? BST_UNCHECKED : BST_CHECKED);
 
-		SendMessage(hLowSlider, TBM_SETTICFREQ, 16, 0);
-		SendMessage(hHiSlider, TBM_SETTICFREQ, 16, 0);
+		SetWindowLongPtr(GetDlgItem(hDlg, IDC_LEVELS), GWLP_WNDPROC, (LONG_PTR)FreqLevels);
+		hToolTip = CreateToolTip(GetDlgItem(hDlg, IDC_LEVELS), hToolTip);
 
-		sTip1 = CreateToolTip(hLowSlider, sTip1);
-		sTip2 = CreateToolTip(hHiSlider, sTip2);
+		// init grids...
+		//CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
+		//TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
+		//OnGridSelChanged(gridTab);
 
-		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
-
-		CheckDlgButton(hDlg, IDC_SHOWAXIS, conf->hap_conf->showAxis ? BST_CHECKED : BST_UNCHECKED);
+		SetFeqGroups(hDlg);
 
 		// Start UI update thread...
 		hapUIThread = new ThreadHelper(UpdateHapticsUI, hDlg, 40);
-
-		if (eItem >= 0) {
-			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIGHTS, LBN_SELCHANGE), (LPARAM)light_list);
-		}
 	}
 	break;
-
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam)) {
-		case IDC_RADIO_OUTPUT:
-			conf->hap_conf->inpType = 0;
-			CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
+		case IDC_RADIO_OUTPUT: case IDC_RADIO_INPUT:
+			conf->hap_inpType = LOWORD(wParam) == IDC_RADIO_INPUT;
+			CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_inpType ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_inpType ? BST_UNCHECKED : BST_CHECKED);
 			if (eve->audio)
-				eve->audio->RestartDevice(conf->hap_conf->inpType);
+				eve->audio->RestartDevice(conf->hap_inpType);
 		break;
-		case IDC_RADIO_INPUT:
-			conf->hap_conf->inpType = 1;
-			CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_conf->inpType ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_conf->inpType ? BST_UNCHECKED : BST_CHECKED);
-		if (eve->audio)
-			eve->audio->RestartDevice(conf->hap_conf->inpType);
-		break;
-		case IDC_LIGHTS: // should reload mappings
-		switch (HIWORD(wParam)) {
-		case LBN_SELCHANGE:
-		{
-			eItem = (int) ListBox_GetItemData(light_list, ListBox_GetCurSel(light_list));
-			map = FindHapMapping(eItem);
-			EnableWindow(freq_list, false);
-			ListBox_SetSel(freq_list, FALSE, -1);
-			ListBox_ResetContent(grp_list);
-			fGrpItem = -1;
-			if (map) {
-				// Set groups
-				for (int j = 0; j < map->freqs.size(); j++) {
-					ListBox_AddString(grp_list, ("Group " + to_string(j+1)).c_str());
-				}
-				if (map->freqs.size()) {
-					fGrpItem = 0;
-					ListBox_SetCurSel(grp_list, fGrpItem);
-					SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_FREQ_GROUP, LBN_SELCHANGE), (LPARAM)grp_list);
-				}
-			}
-			SetMappingData(hDlg, map);
-		}
-		break;
-		}
-		break;
-		case IDC_FREQ_GROUP: // should reload mappings
+		case IDC_FREQ_GROUP:
 			switch (HIWORD(wParam)) {
 			case LBN_SELCHANGE:
-			{
-				if (map) {
-					fGrpItem = ListBox_GetCurSel(grp_list);
-					EnableWindow(freq_list, TRUE);
-					ListBox_SetSel(freq_list, FALSE, -1);
-					for (int j = 0; j < map->freqs[fGrpItem].freqID.size(); j++) {
-						ListBox_SetSel(freq_list, TRUE, map->freqs[fGrpItem].freqID[j]);
-					}
-				}
+				if (map) fGrpItem = ListBox_GetCurSel(grp_list);
+				DrawFreq(hDlg);
 				SetMappingData(hDlg, map);
-			} break;
+			break;
 			}
 			break;
-		case IDC_FREQ:
-		{ // should update mappings list
-			switch (HIWORD(wParam)) {
-			case LBN_SELCHANGE:
-			{
-				if (map && fGrpItem < map->freqs.size()) {
-					int fid = ListBox_GetCurSel(freq_list);
-					auto Iter = map->freqs[fGrpItem].freqID.begin();
-					for (; Iter != map->freqs[fGrpItem].freqID.end(); Iter++)
-						if (*Iter == fid)
-							break;
-					if (Iter == map->freqs[fGrpItem].freqID.end())
-						// new mapping, add and select
-						map->freqs[fGrpItem].freqID.push_back(fid);
-					else
-						map->freqs[fGrpItem].freqID.erase(Iter);
-				}
-			} break;
-			}
-		} break;
 		case IDC_BUT_ADD_GROUP:
 		{
-			freq_map tMap;
-			if (!map) {
-				map = new haptics_map();
-				if (eItem > 0xffff) {
-					// group
-					map->lightid = eItem;
-				} else {
-					// light
-					AlienFX_SDK::mapping* lgh = fxhl->afx_dev.GetMappings()->at(eItem);
-					map->devid = lgh->devid;
-					map->lightid = lgh->lightid;
-				}
-				conf->hap_conf->haptics.push_back(*map);
-				map = &conf->hap_conf->haptics.back();
+			if (map) {
+				map->haptics.push_back({});
+				fGrpItem = ListBox_AddString(grp_list, ("Group " + to_string(map->haptics.size())).c_str());
+				ListBox_SetCurSel(grp_list, fGrpItem);
+				DrawFreq(hDlg);
+				SetMappingData(hDlg, map);
 			}
-			map->freqs.push_back(tMap);
-			fGrpItem = ListBox_AddString(grp_list, ("Group " + to_string(map->freqs.size())).c_str());
-			ListBox_SetCurSel(grp_list, fGrpItem);
-			ListBox_SetSel(freq_list, FALSE, -1);
-			SetMappingData(hDlg, map);
-			EnableWindow(freq_list, true);
 		} break;
 		case IDC_BUT_REM_GROUP:
-		{
 			if (map && fGrpItem >= 0) {
-				auto gIter = map->freqs.begin();
-				map->freqs.erase(gIter + fGrpItem);
+				map->haptics.erase(map->haptics.begin() + fGrpItem);
 				ListBox_DeleteString(grp_list, fGrpItem);
-				if (fGrpItem) fGrpItem--;
+				fGrpItem--;
+				if (map->haptics.empty())
+					RemoveUnused(conf->active_set);
 				ListBox_SetCurSel(grp_list, fGrpItem);
-				if (!map->freqs.size()) {
-					// remove mapping
-					RemoveHapMapping(map->devid, map->lightid);
-					map = NULL; fGrpItem = -1;
-					EnableWindow(freq_list, false);
-				}
-				SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_FREQ_GROUP, LBN_SELCHANGE), (LPARAM)grp_list);
+				DrawFreq(hDlg);
+				SetMappingData(hDlg, map);
 			}
-		} break;
+			break;
 		case IDC_BUTTON_LPC:
-		switch (HIWORD(wParam)) {
-		case BN_CLICKED:
-		{
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_LPC, &map->freqs[fGrpItem].colorfrom);
+				SetColor(hDlg, IDC_BUTTON_LPC, &map->haptics[fGrpItem].colorfrom);
 			}
-		} break;
-		} break;
+			break;
 		case IDC_BUTTON_HPC:
-		switch (HIWORD(wParam)) {
-		case BN_CLICKED:
-		{
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_HPC, &map->freqs[fGrpItem].colorto);
+				SetColor(hDlg, IDC_BUTTON_HPC, &map->haptics[fGrpItem].colorto);
 			}
-		} break;
-		} break;
-		case IDC_GAUGE:
-		{
-			if (map)
-				map->flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-		} break;
+			break;
 		case IDC_BUTTON_REMOVE:
-		{
-			switch (HIWORD(wParam)) {
-			case BN_CLICKED:
-			{
-				if (map && fGrpItem >= 0) {
-					map->freqs[fGrpItem] = freq_map();
-					SetMappingData(hDlg, map);
-					ListBox_SetSel(freq_list, FALSE, -1);
-				}
-			} break;
+			if (map) {
+				map->haptics[fGrpItem].freqID.clear();
+				DrawFreq(hDlg);
 			}
-		} break;
-		case IDC_SHOWAXIS:
-		{
-			conf->hap_conf->showAxis = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-			DrawFreq(hDlg, eve->audio ? eve->audio->freqs : NULL);
-		} break;
 		}
 	} break;
-	case WM_HSCROLL:
-	{
-		switch (LOWORD(wParam)) {
-		case TB_THUMBTRACK: case TB_ENDTRACK:
-		{
-			if (map && fGrpItem >= 0) {
-				if ((HWND) lParam == hLowSlider) {
-					map->freqs[fGrpItem].lowcut = (UCHAR) SendMessage(hLowSlider, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, map->freqs[fGrpItem].lowcut);
-				}
-				if ((HWND) lParam == hHiSlider) {
-					map->freqs[fGrpItem].hicut = (UCHAR) SendMessage(hHiSlider, TBM_GETPOS, 0, 0);
-					SetSlider(sTip2, map->freqs[fGrpItem].hicut);
-				}
-			}
-		} break;
-		}
+	case WM_APP + 2: {
+		SetFeqGroups(hDlg);
+		DrawFreq(hDlg);
+		RedrawGridButtonZone(NULL, true);
 	} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
@@ -353,15 +303,12 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			AlienFX_SDK::Colorcode* c{NULL};
 			if (map && fGrpItem >= 0)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
-					c = &map->freqs[fGrpItem].colorfrom;
+					c = &map->haptics[fGrpItem].colorfrom;
 				else
-					c = &map->freqs[fGrpItem].colorto;
+					c = &map->haptics[fGrpItem].colorto;
 			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, c);
 			return true;
 		}
-		case IDC_LEVELS:
-			DrawFreq(hDlg, eve->audio ? eve->audio->freqs : NULL);
-			return true;
 		}
 		return false;
 	break;
@@ -377,6 +324,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 void UpdateHapticsUI(LPVOID lpParam) {
 	if (eve->audio && IsWindowVisible((HWND)lpParam)) {
 		//DebugPrint("Haptics UI update...\n");
-		DrawFreq((HWND)lpParam, eve->audio->freqs);
+		DrawFreq((HWND)lpParam);
 	}
 }

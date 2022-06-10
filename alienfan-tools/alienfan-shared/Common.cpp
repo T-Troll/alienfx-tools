@@ -1,12 +1,11 @@
 #include "Common.h"
-//#include <Windows.h>
+#include <windowsx.h>
 
 using namespace std;
 
 #pragma comment(lib,"Wininet.lib")
 
 extern HWND mDlg;
-extern string GetAppVersion();
 extern bool needUpdateFeedback, isNewVersion;
 
 void EvaluteToAdmin() {
@@ -38,12 +37,20 @@ void ResetDPIScale() {
 	}
 }
 
+void ShowNotification(NOTIFYICONDATA* niData, string title, string message) {
+	strcpy_s(niData->szInfoTitle, title.c_str());
+	strcpy_s(niData->szInfo, message.c_str());
+	niData->uFlags |= NIF_INFO;
+	Shell_NotifyIcon(NIM_MODIFY, niData);
+	niData->uFlags &= ~NIF_INFO;
+}
+
 DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	NOTIFYICONDATA* niData = (NOTIFYICONDATA*)lparam;
 	HINTERNET session, req;
 	char buf[2048];
 	DWORD byteRead;
-	bool isConnectionFailed = false;
+	bool isConnectionFailed = true;
 	// Wait connection for a while
 	if (!needUpdateFeedback)
 		Sleep(10000);
@@ -56,41 +63,27 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 				size_t pos = res.find("\"name\":"),
 					posf = res.find("\"", pos + 8);
 				if (pos != string::npos) {
+					isConnectionFailed = false;
 					res = res.substr(pos + 8, posf - pos - 8);
 					size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
 					if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
 						res += ".0";
-					if (res != GetAppVersion()) {
+					if (res[0] == '6' && res != GetAppVersion()) {
 						// new version detected!
-						strcpy_s(niData->szInfoTitle, "Update available!");
-						strcpy_s(niData->szInfo, ("Latest version is " + res).c_str());
+						ShowNotification(niData, "Update available!", "Latest version is " + res);
 						isNewVersion = true;
-					}
+					} else
+						if (needUpdateFeedback)
+							ShowNotification(niData, "You are up to date!", "You are using latest version.");
 				}
 			}
-			else
-				isConnectionFailed = true;
 			InternetCloseHandle(req);
 		}
-		else
-			isConnectionFailed = true;
 		InternetCloseHandle(session);
 	}
-	else
-		isConnectionFailed = true;
-	if (needUpdateFeedback && !isNewVersion) {
-		if (isConnectionFailed) {
-			strcpy_s(niData->szInfoTitle, "Update check failed!");
-			strcpy_s(niData->szInfo, "Can't connect to GitHub for update check.");
-		}
-		else {
-			strcpy_s(niData->szInfoTitle, "You are up to date!");
-			strcpy_s(niData->szInfo, "You are using latest version.");
-		}
+	if (needUpdateFeedback && isConnectionFailed) {
+		ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.");
 	}
-	niData->uFlags |= NIF_INFO;
-	Shell_NotifyIcon(NIM_MODIFY, niData);
-	niData->uFlags &= ~NIF_INFO;
 	return 0;
 }
 
@@ -128,10 +121,10 @@ string GetAppVersion() {
 
 				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
 
-				res = to_string(HIWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(HIWORD(lpFfi->dwFileVersionLS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionLS));
+				res = to_string(HIWORD(lpFfi->dwProductVersionMS)) + "."
+					+ to_string(LOWORD(lpFfi->dwProductVersionMS)) + "."
+					+ to_string(HIWORD(lpFfi->dwProductVersionLS)) + "."
+					+ to_string(LOWORD(lpFfi->dwProductVersionLS));
 
 				LocalFree(pResCopy);
 			}
@@ -139,4 +132,48 @@ string GetAppVersion() {
 		}
 	}
 	return res;
+}
+
+HWND CreateToolTip(HWND hwndParent, HWND oldTip)
+{
+	// Create a tool tip.
+	if (oldTip) DestroyWindow(oldTip);
+
+	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+		0, 0, 0, 0, hwndParent, NULL, GetModuleHandle(NULL), NULL);
+	//SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+	//			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
+	GetClientRect(hwndParent, &ti.rect);
+	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+	return hwndTT;
+}
+
+void SetToolTip(HWND tt, string value) {
+	TOOLINFO ti{ sizeof(TOOLINFO) };
+	if (tt) {
+		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+		ti.lpszText = (LPTSTR)value.c_str();
+		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+	}
+}
+
+void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
+	ComboBox_ResetContent(ctrl);
+	for (int i = 0; i < items.size(); i++) {
+		ComboBox_AddString(ctrl, items[i].c_str());
+		if (val.size()) {
+			ComboBox_SetItemData(ctrl, i, val[i]);
+			if (sel == val[i])
+				ComboBox_SetCurSel(ctrl, i);
+		} else
+			if (sel == i)
+				ComboBox_SetCurSel(ctrl, sel);
+	}
+}
+
+void SetBitMask(WORD& val, WORD mask, bool state) {
+	val = (val & ~mask) | (state * mask);
 }
