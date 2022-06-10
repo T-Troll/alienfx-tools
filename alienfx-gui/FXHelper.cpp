@@ -344,7 +344,7 @@ size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 			if (i->dev->GetVersion() == 5)
 				conf->haveV5 = true;
 		}
-	return conf->afx_dev.fxdevs.size();
+	return numActiveDevs;// conf->afx_dev.fxdevs.size();
 }
 
 void FXHelper::Start() {

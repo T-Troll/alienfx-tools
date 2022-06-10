@@ -387,7 +387,10 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		return RunMainCommand(dev_controls.getGMode);
+		if (GetPower() < 0)
+			return 1;
+		else
+			return RunMainCommand(dev_controls.getGMode);
 	}
 
 	HANDLE Control::GetHandle() {

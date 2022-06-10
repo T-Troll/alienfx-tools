@@ -580,15 +580,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (conf->enableMon) {
 				pMenu = CreatePopupMenu();
 				mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
-				mInfo.dwTypeData = "Off";
-				InsertMenuItem(pMenu, 0, false, &mInfo);
-				mInfo.dwTypeData = "Monitoring";
-				InsertMenuItem(pMenu, 1, false, &mInfo);
-				mInfo.dwTypeData = "Ambient";
-				InsertMenuItem(pMenu, 2, false, &mInfo);
-				mInfo.dwTypeData = "Haptics";
-				InsertMenuItem(pMenu, 3, false, &mInfo);
-				CheckMenuItem(pMenu, conf->GetEffect(), MF_BYPOSITION | MF_CHECKED);
+				int i = 0;
+				for (i=0; i < effModes.size(); i++) {
+					mInfo.dwTypeData = (LPSTR)effModes[i].c_str();
+					InsertMenuItem(pMenu, i, false, &mInfo);
+				}
+				if (conf->haveV5) {
+					mInfo.dwTypeData = "Global";
+					InsertMenuItem(pMenu, i, false, &mInfo);
+				}
+				CheckMenuItem(pMenu, conf->GetEffect() == 99 ? (UINT)effModes.size() : conf->GetEffect(), MF_BYPOSITION | MF_CHECKED);
 				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
 			}
 
@@ -644,7 +645,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangeEffectMode();
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
-			conf->activeProfile->effmode = idx;
+			conf->activeProfile->effmode = idx < effModes.size() ? idx : 99;
 			eve->ChangeEffectMode();
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
@@ -789,6 +790,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (acpi && eve->mon->oldGmode >= 0) {
 				conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
 				acpi->SetGMode(conf->fan_conf->lastProf->gmode);
+				if (IsWindowVisible(hDlg) && tabSel == TAB_FANS)
+					OnSelChanged(tab_list);
 			}
 			break;
 		default: return false;

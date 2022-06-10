@@ -31,6 +31,12 @@ extern HANDLE ocStopEvent;
 void UpdateFanUI(LPVOID);
 ThreadHelper* fanUIUpdate = NULL;
 
+void StartOverboost(HWND hDlg, int fan) {
+    EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
+    CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan, 0, NULL);
+    SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+}
+
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -60,6 +66,11 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
             ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
 
+            if (mon->oldGmode >= 0)
+                Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
+            else
+                EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), false);
+
             // So open fan control window...
             fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
             SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
@@ -78,9 +89,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 MB_YESNO | MB_ICONINFORMATION) == IDYES) {
                 // ask for boost check
                 EnableWindow(power_list, false);
-                int fanID = -1;
-                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fanID, 0, NULL);
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+                StartOverboost(hDlg, -1);
             }
             fan_conf->obCheck = 1;
 
@@ -151,9 +160,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_OVER:
             if (fanMode) {
-                EnableWindow(power_list, false);
-                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fan_conf->lastSelectedFan, 0, NULL);
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+                StartOverboost(hDlg, fan_conf->lastSelectedFan);
             }
             else {
                 SetEvent(ocStopEvent);

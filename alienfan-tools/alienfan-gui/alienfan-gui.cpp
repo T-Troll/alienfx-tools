@@ -78,39 +78,38 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     ResetDPIScale();
 
     acpi = new AlienFan_SDK::Control();
+    if (acpi->IsActivated())
+        if (acpi->Probe()) {
+            fan_conf->SetBoosts(acpi);
+            fan_conf->SetBoosts(acpi);
 
-    if (acpi->IsActivated() && acpi->Probe()) {
-        fan_conf->SetBoosts(acpi);
+            mon = new MonHelper(fan_conf);
 
-        mon = new MonHelper(fan_conf);
+            // Perform application initialization:
 
-        // Perform application initialization:
+            if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL))) {
+                return FALSE;
+            }
 
-        if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL ))) {
-            return FALSE;
+            //power mode hotkeys
+            for (int i = 0; i < 6; i++)
+                RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
+            RegisterHotKey(mDlg, 6, 0, VK_F17);
+
+            HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
+
+            // Main message loop:
+            while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+
+            delete mon;
         }
-
-        //power mode hotkeys
-        for (int i = 0; i < 6; i++)
-            RegisterHotKey(mDlg, 20+i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-        RegisterHotKey(mDlg, 6, 0, VK_F17);
-
-        HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
-
-        // Main message loop:
-        while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-        delete mon;
-    }
-    else {
-        MessageBox(NULL, "Driver can't start or supported hardware not detected!", "Fatal error",
-            MB_OK | MB_ICONSTOP);
-        fan_conf->startWithWindows = false;
-        WindowsStartSet(false, "AlienFan-GUI");
-    }
+        else
+            MessageBox(NULL, "Compatible hardware not found!", "Error", MB_OK | MB_ICONHAND);
+    else
+        MessageBox(NULL, "Fan control start failure!", "Error", MB_OK | MB_ICONHAND);
 
     delete acpi;
     fan_conf->Save();
@@ -136,6 +135,12 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     ShowWindow(dlg, nCmdShow);
 
     return dlg;
+}
+
+void StartOverboost(HWND hDlg, int fan) {
+    EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
+    CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan, 0, NULL);
+    SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
 }
 
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -204,6 +209,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
         ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
 
+        if (mon->oldGmode >= 0)
+            Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
+        else
+            EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), false);
+
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
@@ -215,10 +225,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Question",
             MB_YESNO | MB_ICONINFORMATION) == IDYES) {
             // ask for boost check
-            EnableWindow(power_list, false);
-            int fanID = -1;
-            CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fanID, 0, NULL);
-            SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+            StartOverboost(hDlg, -1);
         }
         fan_conf->obCheck = 1;
 
@@ -316,9 +323,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_OVER:
             if (fanMode) {
-                EnableWindow(power_list, false);
-                CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fan_conf->lastSelectedFan, 0, NULL);
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+                StartOverboost(hDlg, fan_conf->lastSelectedFan);
             }
             else {
                 SetEvent(ocStopEvent);
@@ -380,6 +385,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (mon->oldGmode >= 0) {
                 fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
                 acpi->SetGMode(fan_conf->lastProf->gmode);
+                if (IsWindowVisible(hDlg))
+                    RedrawWindow(hDlg, NULL, NULL, RDW_INVALIDATE);
             }
             break;
         }
