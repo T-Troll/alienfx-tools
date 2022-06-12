@@ -1727,17 +1727,36 @@ BOOL supManageDummyDll(
     PVOID dllHandle;
 
     LPWSTR lpFileName;
-    SIZE_T Length = (1024 + _strlen(lpDllName)) * sizeof(WCHAR);
+    //SIZE_T Length = (1024 + _strlen(lpDllName)) * sizeof(WCHAR);
 
     //
     // Allocate space for filename.
     //
-    lpFileName = (LPWSTR)supHeapAlloc(Length);
-    if (lpFileName == NULL) {
+    //lpFileName = (LPWSTR)supHeapAlloc(Length);
+    //if (lpFileName == NULL) {
+    //    SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+    //    return FALSE;
+    //}
+
+    PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+    SIZE_T length = 64 +
+        (_strlen(lpDllName) * sizeof(WCHAR)) +
+        CurrentDirectory->Length;
+
+    lpFileName = (LPWSTR)supHeapAlloc(length);
+    if (lpFileName) {
+        _strncpy(lpFileName,
+            length,
+            CurrentDirectory->Buffer,
+            length);
+
+        //_strcat(FileName, TEXT("\\"));
+        _strcat(lpFileName, lpDllName);
+    }
+    else {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return FALSE;
     }
-
 
     if (fRemove) {
 
@@ -1755,47 +1774,45 @@ BOOL supManageDummyDll(
     }
     else {
 
-        DWORD cch = supExpandEnvironmentStrings(L"%temp%\\", lpFileName, MAX_PATH);
+        /*DWORD cch = supExpandEnvironmentStrings(L"%temp%\\", lpFileName, MAX_PATH);
         if (cch == 0 || cch > MAX_PATH) {
             SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         }
-        else {
+        else {*/
 
-            //
-            // Extract file from resource and drop to the disk in %temp% directory.
-            //
-            dllHandle = (PVOID)GetModuleHandle(/*L"KDL.DLL"*/NULL);
+        //
+        // Extract file from resource and drop to the disk in %temp% directory.
+        //
+        dllHandle = (PVOID)GetModuleHandle(/*L"KDL.DLL"*/NULL);
 
-            dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI,
-                dllHandle,
-                &dataSize,
-                PROVIDER_RES_KEY,
-                TRUE);
+        dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI,
+            dllHandle,
+            &dataSize,
+            PROVIDER_RES_KEY,
+            TRUE);
 
-            if (dataBuffer) {
+        if (dataBuffer) {
 
-                _strcat(lpFileName, lpDllName);
-                if (dataSize == supWriteBufferToFile(lpFileName,
-                    dataBuffer,
-                    dataSize,
-                    TRUE,
-                    FALSE,
-                    NULL))
-                {
-                    //
-                    // Finally load file and trigger image notify callbacks.
-                    //
-                    if (LoadLibraryEx(lpFileName, NULL, 0))
-                        bResult = TRUE;
-                }
+            _strcat(lpFileName, lpDllName);
+            if (dataSize == supWriteBufferToFile(lpFileName,
+                dataBuffer,
+                dataSize,
+                TRUE,
+                FALSE,
+                NULL))
+            {
+                //
+                // Finally load file and trigger image notify callbacks.
+                //
+                if (LoadLibraryEx(lpFileName, NULL, 0))
+                    bResult = TRUE;
             }
-            else {
-                SetLastError(ERROR_FILE_INVALID);
-            }
-
         }
+        else {
+            SetLastError(ERROR_FILE_INVALID);
+        }
+        supHeapFree(lpFileName);
     }
-
     supHeapFree(lpFileName);
 
     return bResult;
