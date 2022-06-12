@@ -2,6 +2,7 @@
 #include "MonHelper.h"
 #include "alienfan-SDK.h"
 #include <windowsx.h>
+#include <common.h>
 
 #define DRAG_ZONE 2
 
@@ -11,6 +12,8 @@ extern HWND fanWindow, tipWindow;
 extern AlienFan_SDK::Control* acpi;
 
 extern void SetToolTip(HWND, string);
+
+extern NOTIFYICONDATA niData;
 
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
@@ -134,9 +137,7 @@ void DrawFan()
             }
             if (lastBoostPoint) {
                 SetDCPenColor(hdc, RGB(255, 255, 0));
-                SetDCBrushColor(hdc, RGB(255, 255, 0));
                 SelectObject(hdc, GetStockObject(DC_PEN));
-                SelectObject(hdc, GetStockObject(DC_BRUSH));
                 mark = Boost2Screen(lastBoostPoint);
                 Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                 string rpmText = to_string(lastBoostPoint->maxBoost) + " @ " + to_string(lastBoostPoint->maxRPM)
@@ -208,6 +209,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     acpi->Unlock();
     for (int i = 0; i < acpi->HowManyFans(); i++)
         if (num < 0 || num == i) {
+            fan_conf->lastSelectedFan = i;
             bestBoostPoint = { (byte)i, 100, 0 };
             boostScale = 10; fanMinScale = 4000; fanMaxScale = 500;
             if ((rpm = SetFanSteady(boost)) < 0)
@@ -250,8 +252,8 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             UpdateBoost();
             DrawFan();
         }
-    MessageBox(fanWindow, ("Overboost calculation done, best " + to_string(bestBoostPoint.maxBoost)
-        + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.").c_str(), "Done!", MB_OK | MB_ICONINFORMATION);
+    ShowNotification(&niData, "Overboost calculation done", " Final boost " + to_string(bestBoostPoint.maxBoost)
+        + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
 finish:
     lastBoostPoint = NULL;
     boostCheck.clear();

@@ -51,7 +51,7 @@ void MonHelper::Stop() {
 #endif
 		delete monThread;
 		monThread = NULL;
-		if (oldGmode >= 0)
+		if (oldGmode >= 0 && oldGmode != conf->lastProf->gmode)
 			acpi->SetGMode(oldGmode);
 		if (oldPower != conf->lastProf->powerStage)
 			acpi->SetPower(oldPower);

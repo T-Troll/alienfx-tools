@@ -14,6 +14,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
+bool needRemove = false;
 
 void ResetDPIScale();
 
@@ -71,12 +72,12 @@ bool DetectFans() {
 	acpi = new AlienFan_SDK::Control();
 	bool isProbe = false;
 	if (acpi->IsActivated())
-		if(isProbe = acpi->Probe())
+		if (isProbe = acpi->Probe())
 			conf->fan_conf->SetBoosts(acpi);
 		else
-			MessageBox(NULL, "Compatible hardware not found, disabling fan control!", "Error", MB_OK | MB_ICONHAND);
+			ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
 	else
-		MessageBox(NULL, "Fan control start failure, disabling fan control!", "Error", MB_OK | MB_ICONHAND);
+		ShowNotification(&conf->niData, "Error", "Fan control start failure, disabling fan control!", false);
 	if (!isProbe) {
 		delete acpi;
 		acpi = NULL;
@@ -94,6 +95,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
+	ResetDPIScale();
+
 	conf = new ConfigHandler();
 	if (conf->haveOldConfig && MessageBox(NULL, "Old configuration detected. Do you want to convert it?", "Warning",
 		MB_YESNO | MB_ICONWARNING) == IDYES) {
@@ -103,6 +106,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	conf->Load();
 
+	fxhl = new FXHelper();
+
+	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
+		return FALSE;
+
 	// check fans...
 	if (conf->activeProfile->flags & PROF_FANS)
 		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
@@ -111,56 +119,51 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		DetectFans();
 	}
 
-	fxhl = new FXHelper();
+	if (!fxhl->FillAllDevs(acpi) && !conf->fanControl)
+		ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
 
-	if (fxhl->FillAllDevs(acpi) || MessageBox(NULL, "No Alienware light devices detected!\nDo you want to continue?", "Error",
-											MB_YESNO | MB_ICONWARNING) == IDYES) {
+	if (conf->awcc_disable)
+		conf->wasAWCC = DoStopService(true);
 
-		if (conf->awcc_disable)
-			conf->wasAWCC = DoStopService(true);
+	if (conf->esif_temp)
+		EvaluteToAdmin();
 
-		if (conf->esif_temp)
-			EvaluteToAdmin();
+	eve = new EventHandler();
 
-		eve = new EventHandler();
+	//if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
+	//	return FALSE;
 
-		ResetDPIScale();
+	//register global hotkeys...
+	RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
+	RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
+	RegisterHotKey(mDlg, 3, 0, VK_F18);
+	RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
+	RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
+	RegisterHotKey(mDlg, 6, 0, VK_F17);
+	//profile change hotkeys...
+	for (int i = 0; i < 10; i++)
+		RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
+	//power mode hotkeys
+	for (int i = 0; i < 6; i++)
+		RegisterHotKey(mDlg, 30+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+	// Power notifications...
+	RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
-		if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
-			return FALSE;
+	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
-		//register global hotkeys...
-		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
-		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
-		RegisterHotKey(mDlg, 3, 0, VK_F18);
-		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
-		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
-		RegisterHotKey(mDlg, 6, 0, VK_F17);
-		//profile change hotkeys...
-		for (int i = 0; i < 10; i++)
-			RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
-		//power mode hotkeys
-		for (int i = 0; i < 6; i++)
-			RegisterHotKey(mDlg, 30+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
-		// Power notifications...
-		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
-
-		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
-
-		MSG msg;
-		// Main message loop:
-		while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-			if (!TranslateAccelerator(mDlg, hAccelTable, &msg))
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
+	MSG msg;
+	// Main message loop:
+	while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+		if (!TranslateAccelerator(mDlg, hAccelTable, &msg))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
-
-		delete eve;
-
-		if (conf->wasAWCC) DoStopService(false);
 	}
+
+	delete eve;
+
+	if (conf->wasAWCC) DoStopService(false);
 
 	delete fxhl;
 
@@ -278,7 +281,11 @@ void OnSelChanged(HWND hwndDlg)
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr( hwndDlg, GWLP_USERDATA);
 
 	// Get the index of the selected tab.
-	tabSel = TabCtrl_GetCurSel(hwndDlg);
+	int tabSel = TabCtrl_GetCurSel(hwndDlg);
+	if (tabSel == TAB_LIGHTS && !fxhl->numActiveDevs) {
+		TabCtrl_SetCurSel(hwndDlg, TAB_SETTINGS);
+		tabSel = TAB_SETTINGS;
+	}
 
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay != NULL) {
@@ -360,7 +367,7 @@ void UpdateState() {
 void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
-	//ReloadProfileList();
+	ReloadProfileList();
 	//if (tabSel == TAB_DEVICES)
 	//	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
@@ -455,7 +462,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->afx_dev.SaveMappings();
 			conf->Save();
 			fxhl->Refresh(2); // set def. colors
-			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.");
+			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", false);
 			break;
 		case IDC_EFFECT_MODE:
 		{
@@ -542,7 +549,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// go to tray...
 			SendMessage(dDlg, WM_APP + 3, 0, 0);
 			ShowWindow(hDlg, SW_HIDE);
-			//eve->StartProfiles();
 		} break;
 		}
 		break;
@@ -552,7 +558,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
 			RestoreApp();
-			ReloadProfileList();
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
@@ -604,18 +609,17 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
 		case NIN_BALLOONHIDE : case NIN_BALLOONTIMEOUT:
-			if (!isNewVersion) {
+			if (!isNewVersion && needRemove) {
 				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 				Shell_NotifyIcon(NIM_ADD, &conf->niData);
+				needRemove = false;
 			} else
 				isNewVersion = false;
 			break;
 		case NIN_BALLOONUSERCLICK:
 		{
 			if (isNewVersion) {
-				char uurl[MAX_PATH];
-				LoadString(hInst, IDS_UPDATEPAGE, uurl, MAX_PATH);
-				ShellExecute(NULL, "open", uurl, NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
 				isNewVersion = false;
 			}
 		} break;
@@ -672,15 +676,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
 			if (fxhl->FillAllDevs(acpi)) {
-				fxhl->UnblockUpdates(true);
 				conf->stateScreen = true;
-				eve->ChangePowerState();
-				//conf->SetStates();
-				eve->ChangeEffectMode();
-				eve->StartProfiles();
+				//eve->ChangePowerState();
+				conf->SetStates();
+				//eve->ChangeEffectMode();
+				//eve->StartProfiles();
 			}
-			if (eve->mon)
-				eve->mon->Start();
+			fxhl->Start();
+			eve = new EventHandler();
+
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
@@ -701,12 +705,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			conf->stateScreen = true;
 			fxhl->ChangeState();
-			eve->StopProfiles();
-			eve->StopEffects();
+			delete eve;
 			fxhl->Refresh(2);
-			fxhl->UnblockUpdates(false);
-			if (eve->mon)
-				eve->mon->Stop();
+			fxhl->Stop();
 			break;
 		}
 		break;
@@ -734,11 +735,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
 		conf->fan_conf->Save();
-		eve->StopProfiles();
-		eve->StopEffects();
-		eve->StopFanMon();
-		fxhl->UnblockUpdates(false);
-		//fxhl->Stop();
+		delete eve;
+		fxhl->Refresh(2);
+		//fxhl->UnblockUpdates(false);
+		fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 21) {

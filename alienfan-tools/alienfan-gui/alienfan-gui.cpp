@@ -36,10 +36,17 @@ int pLid = -1;
 
 GUID* sch_guid, perfset;
 
-NOTIFYICONDATA niData{0};
+NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
+                    (HICON)LoadImage(GetModuleHandle(NULL),
+                              MAKEINTRESOURCE(IDI_ALIENFANGUI),
+                              IMAGE_ICON,
+                              GetSystemMetrics(SM_CXSMICON),
+                              GetSystemMetrics(SM_CYSMICON),
+                              LR_DEFAULTCOLOR) };
 
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
+bool needRemove = false;
 
 void UpdateFanUI(LPVOID);
 ThreadHelper* fanThread;
@@ -76,11 +83,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     fan_conf = new ConfigFan();
 
     ResetDPIScale();
+    Shell_NotifyIcon(NIM_ADD, &niData);
 
     acpi = new AlienFan_SDK::Control();
     if (acpi->IsActivated())
         if (acpi->Probe()) {
-            fan_conf->SetBoosts(acpi);
+            Shell_NotifyIcon(NIM_DELETE, &niData);
             fan_conf->SetBoosts(acpi);
 
             mon = new MonHelper(fan_conf);
@@ -106,11 +114,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
             delete mon;
         }
-        else
-            MessageBox(NULL, "Compatible hardware not found!", "Error", MB_OK | MB_ICONHAND);
-    else
-        MessageBox(NULL, "Fan control start failure!", "Error", MB_OK | MB_ICONHAND);
-
+        else {
+            ShowNotification(&niData, "Error", "Compatible hardware not found, disabling fan control!", false);
+            WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
+            Sleep(5000);
+        }
+    else {
+        ShowNotification(&niData, "Error", "Fan control start failure, disabling fan control!", false);
+        WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
+        Sleep(5000);
+    }
+    Shell_NotifyIcon(NIM_DELETE, &niData);
     delete acpi;
     fan_conf->Save();
     delete fan_conf;
@@ -159,17 +173,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     switch (message) {
     case WM_INITDIALOG:
     {
-        niData.cbSize = sizeof(NOTIFYICONDATA);
-        niData.uID = IDI_ALIENFANGUI;
-        niData.uFlags = NIF_ICON | NIF_MESSAGE;
-        niData.uCallbackMessage = WM_APP + 1;
-        niData.hIcon =
-            (HICON) LoadImage(GetModuleHandle(NULL),
-                              MAKEINTRESOURCE(IDI_ALIENFANGUI),
-                              IMAGE_ICON,
-                              GetSystemMetrics(SM_CXSMICON),
-                              GetSystemMetrics(SM_CYSMICON),
-                              LR_DEFAULTCOLOR);
         niData.hWnd = hDlg;
         if (Shell_NotifyIcon(NIM_ADD, &niData) && fan_conf->updateCheck)
             CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
@@ -363,13 +366,21 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             HWND temp_list = GetDlgItem(hDlg, IDC_TEMP_LIST);
             ReloadTempView(hDlg, fan_conf->lastSelectedSensor);
         } break;
-        case WM_RBUTTONUP: case WM_CONTEXTMENU:
-        {
-            SendMessage(hDlg, WM_CLOSE, 0, 0);
-        } break;
+        case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
+            if (!isNewVersion && needRemove) {
+                Shell_NotifyIcon(NIM_DELETE, &niData);
+                Shell_NotifyIcon(NIM_ADD, &niData);
+                needRemove = false;
+            }
+            else
+                isNewVersion = false;
+            break;
         case NIN_BALLOONUSERCLICK:
         {
-            ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
+            if (isNewVersion) {
+                ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
+                isNewVersion = false;
+            }
         } break;
         }
         break;
@@ -385,8 +396,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (mon->oldGmode >= 0) {
                 fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
                 acpi->SetGMode(fan_conf->lastProf->gmode);
-                if (IsWindowVisible(hDlg))
-                    RedrawWindow(hDlg, NULL, NULL, RDW_INVALIDATE);
+                Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
             }
             break;
         }
@@ -474,8 +484,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
          } break;
         } break;
     case WM_CLOSE:
-        EndDialog(hDlg, IDOK);
-        Shell_NotifyIcon(NIM_DELETE, &niData);
+        //EndDialog(hDlg, IDOK);
+        //Shell_NotifyIcon(NIM_DELETE, &niData);
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
@@ -547,7 +557,7 @@ void UpdateFanUI(LPVOID lpParam) {
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
         ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         for (int i = 0; i < acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(/*acpi->GetFanRPM(i)*/ mon->fanRpm[i]) + ")";
+            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);

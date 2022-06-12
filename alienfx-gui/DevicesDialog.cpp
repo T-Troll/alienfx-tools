@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "alienfx-controls.h"
+#include <common.h>
 
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
@@ -440,8 +441,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				conf->afx_dev.SaveMappings();
 				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
 					fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);
-					MessageBox(hDlg, "Hardware Power button removed, you may need to reset light system!", "Warning",
-							   MB_OK);
+					ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!", true);
 				}
 				SetLightInfo();
 			}
@@ -456,23 +456,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_ISPOWERBUTTON:
 			if (eLid >= 0) {
 				AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid);
-				if (lgh && IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED)
-					if (MessageBox(hDlg, "Setting light to Hardware Power will reset all it settings! Are you sure?", "Warning",
-								   MB_YESNO | MB_ICONWARNING) == IDYES) {
+				if (lgh) {
+					if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
+						ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all it settings!", true);
 						lgh->flags |= ALIENFX_FLAG_POWER;
-						// Check mappings and remove all power button data
-						RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
-					} else
-						CheckDlgButton(hDlg, IDC_ISPOWERBUTTON, BST_UNCHECKED);
-				else {
-					// remove power button config from chip config if unchecked and confirmed
-					if (lgh) {
-						if (MessageBox(hDlg, "You may need to reset light system!\nDo you want to set light as common?", "Warning",
-							MB_YESNO | MB_ICONWARNING) == IDYES)
-							fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);
-						RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
+					}
+					else {
+						// remove power button config from chip config if unchecked and confirmed
+						ShowNotification(&conf->niData, "Warning", "You may need to reset light system!", true);
+						fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);
 						lgh->flags &= ~ALIENFX_FLAG_POWER;
 					}
+					RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
 				}
 			}
 			break;

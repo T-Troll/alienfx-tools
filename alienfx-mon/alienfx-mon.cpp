@@ -21,6 +21,7 @@ HINSTANCE hInst;                                // current instance
 HWND mDlg = 0;
 bool needUpdateFeedback = false;
 bool isNewVersion = false;
+bool needRemove = false;
 bool runUIUpdate = true;
 int selSensor = 0;
 

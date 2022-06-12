@@ -6,7 +6,7 @@ using namespace std;
 #pragma comment(lib,"Wininet.lib")
 
 extern HWND mDlg;
-extern bool needUpdateFeedback, isNewVersion;
+extern bool needUpdateFeedback, isNewVersion, needRemove;
 
 void EvaluteToAdmin() {
 	// Evaluation attempt...
@@ -37,7 +37,8 @@ void ResetDPIScale() {
 	}
 }
 
-void ShowNotification(NOTIFYICONDATA* niData, string title, string message) {
+void ShowNotification(NOTIFYICONDATA* niData, string title, string message, bool type) {
+	needRemove = type;
 	strcpy_s(niData->szInfoTitle, title.c_str());
 	strcpy_s(niData->szInfo, message.c_str());
 	niData->uFlags |= NIF_INFO;
@@ -70,11 +71,11 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 						res += ".0";
 					if (res[0] == '6' && res != GetAppVersion()) {
 						// new version detected!
-						ShowNotification(niData, "Update available!", "Latest version is " + res);
+						ShowNotification(niData, "Update available!", "Latest version is " + res, false);
 						isNewVersion = true;
 					} else
 						if (needUpdateFeedback)
-							ShowNotification(niData, "You are up to date!", "You are using latest version.");
+							ShowNotification(niData, "You are up to date!", "You are using latest version.", true);
 				}
 			}
 			InternetCloseHandle(req);
@@ -82,7 +83,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 		InternetCloseHandle(session);
 	}
 	if (needUpdateFeedback && isConnectionFailed) {
-		ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.");
+		ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.", true);
 	}
 	return 0;
 }
@@ -142,9 +143,6 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
 		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
 		0, 0, 0, 0, hwndParent, NULL, GetModuleHandle(NULL), NULL);
-	//SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
-	//			 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
 	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
 	GetClientRect(hwndParent, &ti.rect);
 	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);

@@ -20,6 +20,7 @@ int pLid = -1;
 extern bool fanMode;
 
 GUID* sch_guid, perfset;
+NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA) };
 
 extern INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
@@ -48,6 +49,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (eve->mon) {
             fan_conf = conf->fan_conf;
             mon = eve->mon;
+            niData = conf->niData;
 
             // set PerfBoost lists...
             HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
