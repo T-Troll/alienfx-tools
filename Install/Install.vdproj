@@ -75,6 +75,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
+        "OwnerKey" = "8:_0165E8EA63344119802E79B2B6C77D87"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_9752947669754683929089279BB314AF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -101,6 +107,12 @@
         {
         "MsmKey" = "8:_E287D1712A1A426DA4A815104949F017"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
+        "OwnerKey" = "8:_0165E8EA63344119802E79B2B6C77D87"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -311,6 +323,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8F3090BEFD2084C54DFF0BFAD98DA84F"
+            {
+            "SourcePath" = "8:SETUPAPI.dll"
+            "TargetName" = "8:SETUPAPI.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C4B1307E827A4442ACD87D8B7EAF7F24"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-mon.md"
@@ -329,6 +361,26 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ECA7B10455E9FEA298D65C36BC39D1CE"
+            {
+            "SourcePath" = "8:HID.DLL"
+            "TargetName" = "8:HID.DLL"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
         }
@@ -420,15 +472,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{F143622B-3B67-4BE8-B9ED-24F1793AED8A}"
-        "PackageCode" = "8:{105BE390-D052-4932-8C59-6E12F1C5E5A9}"
+        "ProductCode" = "8:{DF9C61D1-E948-460D-8529-000CFE44EF5D}"
+        "PackageCode" = "8:{5784C56B-0FE1-4191-AC81-9FCC83FD3847}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:6.1.100"
+        "ProductVersion" = "8:6.1.200"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -788,7 +840,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_0165E8EA63344119802E79B2B6C77D87"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-conv.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-conv.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -816,7 +868,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1924518F6EA84AD696BCCE8E589E25C7"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-gui.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -844,7 +896,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4B7975803E6C492C8F7D8B599766674C"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfan-gui.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfan-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -900,7 +952,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9752947669754683929089279BB314AF"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\HwAcc.sys"
+            "SourcePath" = "8:..\\x64\\Release\\HwAcc.sys"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -928,7 +980,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\LightFX.dll"
+            "SourcePath" = "8:..\\x64\\Release\\LightFX\\LightFX.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_39E2774D52CE4B619039352379796769"
@@ -956,7 +1008,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B829425435A04EFB81D071102204D8B4"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfan-cli.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfan-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1012,7 +1064,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E287D1712A1A426DA4A815104949F017"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1040,7 +1092,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FA7989C51ECD437AB3316446FB849F60"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-mon.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-mon.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"

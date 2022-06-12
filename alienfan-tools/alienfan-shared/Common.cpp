@@ -18,9 +18,8 @@ void EvaluteToAdmin() {
 			SHELLEXECUTEINFO sei{ sizeof(sei), 0, NULL, "runas", szPath, NULL, NULL, SW_NORMAL };
 			ShellExecuteEx(&sei);
 			if (mDlg)
-				EndDialog(mDlg, 1);
-			else
-				_exit(1);  // Quit itself
+				SendMessage(mDlg, WM_CLOSE, 0, 0);
+			_exit(1);  // Quit itself
 		}
 	}
 }

@@ -247,11 +247,11 @@ Each profile can have settings and application for trigger it. The settings are:
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
 - "Keyboard" drop down will activate this profile in case corresponding key is pressed. Release the key to switch back to other profile.  
 - "Power" block - if checked, profile will be activated if power source changed to checked state.  
-- "Trigger applications" list define application executables, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it.  
+- "Trigger applications" list define applications executable, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it.  
 - "Only then active" - profile will be activated only in case of any application running and foreground (active) and have focus.
 
 "Zones setting" block used operate with different setting blocks of the selected profile.
-Check all types of zones you need to operate (colors or effect settings), then press "Reset" button to remove it from selected profile, or "Copy active" button to copy it from active (selected in top drop down box) profile.
+Check all types of zones you need to operate (colors, effect or fan settings), then press "Reset" button to remove it from selected profile, or "Copy active" button to copy it from active (selected in top drop down box) profile.
 
 In case "Profile auto switch" turned on at "Settings", active profile will be selected automatically according to this rules:
 - If any "Trigger application" from any profile running - "Default" profile selected.

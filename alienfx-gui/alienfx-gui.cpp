@@ -55,15 +55,16 @@ int eItem = -1;
 vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics" };
 
 bool DoStopService(bool kind) {
-	EvaluteToAdmin();
-	// Get a handle to the SCM database.
-	SC_HANDLE schSCManager = OpenSCManager( NULL, NULL,GENERIC_READ);
-	if (NULL == schSCManager)
-	{
-		return false;
+	if (conf->awcc_disable) {
+		EvaluteToAdmin();
+		// Get a handle to the SCM database.
+		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
+		if (!schSCManager)
+			return false;
+		else
+			return kind ? StopService(schSCManager, "AWCCService") : DemandService(schSCManager, "AWCCService");
 	}
-
-	return kind ? StopService(schSCManager, "AWCCService") : DemandService(schSCManager, "AWCCService");
+	return false;
 }
 bool DetectFans() {
 	conf->fanControl = true;
@@ -86,6 +87,8 @@ bool DetectFans() {
 	return isProbe;
 }
 
+void SwitchTab(int);
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -106,14 +109,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	conf->Load();
 
+	if (conf->activeProfile->flags & PROF_FANS)
+		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
+
+	conf->wasAWCC = DoStopService(true);
+
+	if (conf->esif_temp)
+		EvaluteToAdmin();
+
 	fxhl = new FXHelper();
 
 	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 		return FALSE;
-
-	// check fans...
-	if (conf->activeProfile->flags & PROF_FANS)
-		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
 
 	if (conf->fanControl) {
 		DetectFans();
@@ -122,16 +129,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (!fxhl->FillAllDevs(acpi) && !conf->fanControl)
 		ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
 
-	if (conf->awcc_disable)
-		conf->wasAWCC = DoStopService(true);
-
-	if (conf->esif_temp)
-		EvaluteToAdmin();
-
 	eve = new EventHandler();
 
 	//if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 	//	return FALSE;
+	SwitchTab(TAB_LIGHTS);
 
 	//register global hotkeys...
 	RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
@@ -420,8 +422,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		ReloadModeList();
 		ReloadProfileList();
 
-		//OnSelChanged(tab_list);
-
 		conf->niData.hWnd = hDlg;
 		conf->SetIconState();
 
@@ -431,6 +431,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 
 		conf->SetStates();
+
 	} break;
 	case WM_COMMAND:
 	{
@@ -799,7 +800,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_CLOSE:
 		fxhl->Refresh(2);
-		EndDialog(hDlg, IDOK);
+		//EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:

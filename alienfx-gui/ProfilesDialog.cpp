@@ -9,7 +9,6 @@ extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-//extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 extern void RemoveUnused(vector<groupset>* lightsets);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
@@ -120,7 +119,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_CP_EVENTS, true);
 		CheckDlgButton(hDlg, IDC_CP_AMBIENT, true);
 		CheckDlgButton(hDlg, IDC_CP_HAPTICS, true);
-		//ReloadModeList(mode_list, conf->activeProfile? conf->activeProfile->effmode : 0);
+		CheckDlgButton(hDlg, IDC_CP_FANS, true);
 		if (conf->haveV5) {
 			UpdateCombo(eff_list,
 				{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
@@ -128,8 +127,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
 			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
 			sTip2 = CreateToolTip(eff_tempo, sTip2);
-		} /*else
-			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GLOBAL), false);*/
+		}
+
 		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
@@ -226,6 +225,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 				RemoveUnused(&prof->lightsets);
 				RemoveUnusedGroups();
+				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED)
+					prof->fansets = conf->fan_conf->prof;
 				if (conf->activeProfile->id == prof->id)
 					fxhl->Refresh();
 			}
@@ -251,6 +252,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					if (IsDlgButtonChecked(hDlg, IDC_CP_HAPTICS) == BST_CHECKED)
 						lset->haptics = t->haptics;
 				}
+				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED)
+					prof->fansets = conf->activeProfile->fansets;
 			}
 			break;
 		case IDC_APP_RESET:
@@ -280,10 +283,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case CBN_SELCHANGE:
 			{
 				prof->effmode = (WORD)ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
-				//if (prof->effmode) {
-				//	prof->flags &= ~PROF_GLOBAL_EFFECTS;
-				//	ReloadProfSettings(hDlg, prof);
-				//}
 				if (prof->id == conf->activeProfile->id) {
 					eve->ChangeEffectMode();
 					ReloadModeList();
@@ -304,14 +303,12 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 		} break;
 		case IDC_CHECK_PRIORITY:
-			//prof->flags = (prof->flags & ~PROF_PRIORITY) | state << 1;
 			SetBitMask(prof->flags, PROF_PRIORITY, state);
 			// Update active profile, if needed
 			if (conf->enableProf)
 				eve->SwitchActiveProfile(eve->ScanTaskList());
 			break;
 		case IDC_CHECK_PROFDIM:
-			//prof->flags = (prof->flags & ~PROF_DIMMED) | state << 2;
 			SetBitMask(prof->flags, PROF_DIMMED, state);
 			prof->ignoreDimming = false;
 			if (prof->id == conf->activeProfile->id) {
@@ -319,41 +316,25 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			}
 			break;
 		case IDC_CHECK_FOREGROUND:
-			//prof->flags = (prof->flags & ~PROF_ACTIVE) | state << 3;
 			SetBitMask(prof->flags, PROF_ACTIVE, state);
 			break;
-		//case IDC_CHECK_GLOBAL:
-		//	prof->flags = (prof->flags & ~PROF_GLOBAL_EFFECTS) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) << 5;
-		//	if (prof->flags & PROF_GLOBAL_EFFECTS) {
-		//		prof->effmode = 0;
-		//		ReloadModeList();
-		//	}
-		//	ReloadProfSettings(hDlg, prof);
-		//	if (prof->id == conf->activeProfile->id) {
-		//		fxhl->UpdateGlobalEffect();
-		//		fxhl->Refresh(true);
-		//	}
-		//	break;
 		case IDC_CHECK_FANPROFILE:
-			//prof->flags = (prof->flags & ~PROF_FANS) | state << 4;
 			SetBitMask(prof->flags, PROF_FANS, state);
 			if (prof->flags & PROF_FANS) {
 				// add current fan profile...
-				prof->fansets = conf->fan_conf->prof;
+				if (prof->fansets.fanControls.empty())
+					prof->fansets = conf->fan_conf->prof;
 			} else {
-				// remove fansets
-				prof->fansets.fanControls.clear();
+				// Switch fan control if needed
 				if (prof->id == conf->activeProfile->id)
 					conf->fan_conf->lastProf = &conf->fan_conf->prof;
 			}
 			break;
 		case IDC_TRIGGER_POWER_AC:
 			SetBitMask(prof->triggerFlags, PROF_TRIGGER_AC, state);
-			//prof->triggerFlags = (prof->triggerFlags & ~PROF_TRIGGER_AC) | state;
 			break;
 		case IDC_TRIGGER_POWER_BATTERY:
 			SetBitMask(prof->triggerFlags, PROF_TRIGGER_BATTERY, state);
-			//prof->triggerFlags = (prof->triggerFlags & ~PROF_TRIGGER_BATTERY) |state << 1;
 			break;
 		}
 	} break;

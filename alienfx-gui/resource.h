@@ -2,11 +2,9 @@
 // Microsoft Visual C++ generated include file.
 // Used by alienfx-gui.rc
 //
-#define IDS_APP_TITLE                   103
 #define IDD_ABOUTBOX                    103
 #define IDM_ABOUT                       104
 #define IDM_EXIT                        105
-#define IDS_UPDATEPAGE                  121
 #define IDD_GRIDBLOCK                   130
 #define IDD_MAINWINDOW                  131
 #define IDI_ALIENFXGUI                  132
@@ -168,6 +166,7 @@
 #define IDC_CP_AMBIENT                  1153
 #define IDC_CP_HAPTICS                  1154
 #define IDC_LIST_GROUPS                 1155
+#define IDC_CP_FANS                     1155
 #define IDC_LIST_FOUND                  1156
 #define IDC_BUT_WHITE                   1158
 #define IDC_CHECK_REVERSE               1159

@@ -287,7 +287,7 @@ void UpdateFanUI(LPVOID lpParam) {
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
         ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         for (int i = 0; i < acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(/*acpi->GetFanRPM(i)*/ eve->mon->fanRpm[i]) + ")";
+            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);
