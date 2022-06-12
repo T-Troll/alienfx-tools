@@ -63,7 +63,24 @@ LPWSTR VictimBuildName(
 )
 {
     LPWSTR FileName;
-    SIZE_T Length = (1024 + _strlen(VictimName)) * sizeof(WCHAR);
+
+    PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+    SIZE_T length = 64 +
+        (_strlen(VictimName) * sizeof(WCHAR)) +
+        CurrentDirectory->Length;
+
+    FileName = (LPWSTR)supHeapAlloc(length);
+    if (FileName) {
+        _strncpy(FileName,
+            length,
+            CurrentDirectory->Buffer,
+            length);
+
+        //_strcat(FileName, TEXT("\\"));
+        _strcat(FileName, VictimName);
+        _strcat(FileName, TEXT(".sys"));
+    }
+    /*SIZE_T Length = (1024 + _strlen(VictimName)) * sizeof(WCHAR);
 
     FileName = (LPWSTR)supHeapAlloc(Length);
     if (FileName == NULL) {
@@ -81,7 +98,7 @@ LPWSTR VictimBuildName(
             _strcat(FileName, VictimName);
             _strcat(FileName, L".sys");
         }
-    }
+    }*/
 
     return FileName;
 }
@@ -112,22 +129,22 @@ BOOL VictimCreate(
     if (driverFileName) {
 
         do {
-            
+
             if (supIsObjectExists((LPWSTR)L"\\Device", Name)) {
-                
-                //supPrintfEvent(kduEventError, 
+
+                //supPrintfEvent(kduEventError,
                 //    "[!] Victim driver already loaded, force reload\r\n");
 
-                //supPrintfEvent(kduEventError, 
+                //supPrintfEvent(kduEventError,
                 //    "[!] Attempt to unload %ws\r\n", Name);
 
                 NTSTATUS ntStatus;
                 if (!VictimLoadUnload(Name, driverFileName, FALSE, TRUE, &ntStatus)) {
-                    
-                    //supPrintfEvent(kduEventError, 
-                    //    "[!] Could not force unload victim, NTSTATUS(0x%lX) abort\r\n", 
+
+                    //supPrintfEvent(kduEventError,
+                    //    "[!] Could not force unload victim, NTSTATUS(0x%lX) abort\r\n",
                     //    ntStatus);
-                    
+
                     break;
                 }
                 //else {
@@ -135,8 +152,8 @@ BOOL VictimCreate(
                 //}
             }
 
-            drvBuffer = (PBYTE)KDULoadResource(ResourceId, 
-                ModuleBase, 
+            drvBuffer = (PBYTE)KDULoadResource(ResourceId,
+                ModuleBase,
                 &resourceSize,
                 PROVIDER_RES_KEY,
                 TRUE);
@@ -161,11 +178,11 @@ BOOL VictimCreate(
             supHeapFree(drvBuffer);
 
             if (resourceSize != writeBytes) {
-                
-                /*supPrintfEvent(kduEventError, 
-                    "[!] Could not extract victim driver, NTSTATUS(0x%lX) abort\r\n", 
+
+                /*supPrintfEvent(kduEventError,
+                    "[!] Could not extract victim driver, NTSTATUS(0x%lX) abort\r\n",
                     ntStatus);*/
-                
+
                 SetLastError(RtlNtStatusToDosError(ntStatus));
                 break;
             }
@@ -176,7 +193,7 @@ BOOL VictimCreate(
                 SetLastError(RtlNtStatusToDosError(ntStatus));
 
                 if (VictimHandle) {
-                   
+
                     ntStatus = supOpenDriver(Name, GENERIC_READ | GENERIC_WRITE, &deviceHandle);
                     if (NT_SUCCESS(ntStatus)) {
                         *VictimHandle = deviceHandle;

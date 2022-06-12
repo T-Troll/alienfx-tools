@@ -370,17 +370,17 @@ BOOL WINAPI MapMemRegisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param)
 {
-    ULONG DriverId = PtrToUlong(Param);
+    //ULONG DriverId = PtrToUlong(Param);
 
-    UNREFERENCED_PARAMETER(DeviceHandle);
+    //UNREFERENCED_PARAMETER(DeviceHandle);
 
-    switch (DriverId) {
-    case IDR_GDRV:
-    default:
-        g_MapMem_MapIoctl = IOCTL_GDRV_MAP_USER_PHYSICAL_MEMORY;
-        g_MapMem_UnmapIoctl = IOCTL_GDRV_UNMAP_USER_PHYSICAL_MEMORY;
-        break;
-    }
+    //switch (DriverId) {
+    //case IDR_GDRV:
+    //default:
+    //    g_MapMem_MapIoctl = IOCTL_GDRV_MAP_USER_PHYSICAL_MEMORY;
+    //    g_MapMem_UnmapIoctl = IOCTL_GDRV_UNMAP_USER_PHYSICAL_MEMORY;
+    //    break;
+    //}
 
     return TRUE;
 }

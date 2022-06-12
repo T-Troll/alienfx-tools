@@ -696,18 +696,18 @@ BOOL WINAPI WinIoUnregisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param)
 {
-    KDU_CONTEXT* Context = (KDU_CONTEXT*)Param;
+    //KDU_CONTEXT* Context = (KDU_CONTEXT*)Param;
 
-    UNREFERENCED_PARAMETER(DeviceHandle);
+    //UNREFERENCED_PARAMETER(DeviceHandle);
 
-    if (Context) {
+    //if (Context) {
 
-        if (Context->Provider->ResourceId == IDR_ENETECHIO64B) {
+    //    if (Context->Provider->ResourceId == IDR_ENETECHIO64B) {
 
-            return supManageDummyDll(DUMMYDLL, TRUE);
+    //        return supManageDummyDll(DUMMYDLL, TRUE);
 
-        }
-    }
+    //    }
+    //}
 
     return FALSE;
 }
