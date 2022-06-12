@@ -21,14 +21,13 @@ extern EventHandler* eve;
 DWORD WINAPI CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
 VOID CALLBACK CCreateProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
-LRESULT CALLBACK LanguageProc(int nCode, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 EventHandler::EventHandler()
 {
-	StartProfiles();
 	StartEffects();
 	ChangePowerState();
+	StartProfiles();
 	StartFanMon();
 }
 

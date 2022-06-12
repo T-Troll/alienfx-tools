@@ -10,7 +10,7 @@ class EventHandler
 private:
 	HANDLE dwHandle = 0;
 
-	HWINEVENTHOOK hEvent, cEvent;
+	HWINEVENTHOOK hEvent, cEvent = 0;
 	HHOOK kEvent, Levent;
 
 	int effMode = 3;

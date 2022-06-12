@@ -131,8 +131,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	eve = new EventHandler();
 
-	//if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
-	//	return FALSE;
 	SwitchTab(TAB_LIGHTS);
 
 	//register global hotkeys...
@@ -370,8 +368,6 @@ void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
 	ReloadProfileList();
-	//if (tabSel == TAB_DEVICES)
-	//	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
 
 void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func) {
@@ -512,36 +508,37 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		if (pos->flags & SWP_SHOWWINDOW) {
 			eve->StopProfiles();
 		} else
-		if (pos->flags & SWP_HIDEWINDOW) {
-			eve->StartProfiles();
-		} else
-		if (!(pos->flags & SWP_NOSIZE) && (pos->cx || pos->cy)) {
-			RECT oldRect;
-			GetWindowRect(mDlg, &oldRect);
-			int deltax = pos->cx - oldRect.right + oldRect.left,
-				deltay = pos->cy - oldRect.bottom + oldRect.top;
-			if (deltax || deltay) {
-				GetWindowRect(tab_list, &oldRect);
-				SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-				GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
-				SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
-				GetWindowRect(GetDlgItem(mDlg, IDC_EFFECT_MODE), &oldRect);
-				ScreenToClient(mDlg, (LPPOINT)&oldRect);
-				SetWindowPos(GetDlgItem(mDlg, IDC_EFFECT_MODE), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-				GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
-				ScreenToClient(mDlg, (LPPOINT)&oldRect);
-				SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
-				ScreenToClient(mDlg, (LPPOINT)&oldRect);
-				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, oldRect.left, oldRect.top + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &oldRect);
-				ScreenToClient(mDlg, (LPPOINT)&oldRect);
-				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-				GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &oldRect);
-				ScreenToClient(mDlg, (LPPOINT)&oldRect);
-				SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+			if (pos->flags & SWP_HIDEWINDOW) {
+				eve->StartProfiles();
 			}
-		}
+			else
+			if (!(pos->flags & SWP_NOSIZE) && (pos->cx || pos->cy)) {
+				RECT oldRect;
+				GetWindowRect(mDlg, &oldRect);
+				int deltax = pos->cx - oldRect.right + oldRect.left,
+					deltay = pos->cy - oldRect.bottom + oldRect.top;
+				if (deltax || deltay) {
+					GetWindowRect(tab_list, &oldRect);
+					SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
+					GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
+					SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
+					GetWindowRect(GetDlgItem(mDlg, IDC_EFFECT_MODE), &oldRect);
+					ScreenToClient(mDlg, (LPPOINT)&oldRect);
+					SetWindowPos(GetDlgItem(mDlg, IDC_EFFECT_MODE), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+					GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
+					ScreenToClient(mDlg, (LPPOINT)&oldRect);
+					SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+					GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
+					ScreenToClient(mDlg, (LPPOINT)&oldRect);
+					SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, oldRect.left, oldRect.top + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+					GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &oldRect);
+					ScreenToClient(mDlg, (LPPOINT)&oldRect);
+					SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+					GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &oldRect);
+					ScreenToClient(mDlg, (LPPOINT)&oldRect);
+					SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+				}
+			}
 		return false;
 	} break;
 	case WM_SIZE:

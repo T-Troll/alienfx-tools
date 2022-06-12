@@ -70,8 +70,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_BUT_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = state;
-			ReloadProfileList();
 			eve->StartProfiles();
+			ReloadProfileList();
 			break;
 		case IDC_CHECK_LON:
 			conf->lightsOn = state;
