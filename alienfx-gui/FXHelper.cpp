@@ -28,22 +28,23 @@ AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, byte flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {
 	vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
+	double pos = (double)x / (max + 1);
 	if (flags & GAUGE_REVERSE)
 		x = max - x;
 	if (flags & GAUGE_GRADIENT)
-		power = (double)x / max;
-	else
-		if (((double)x) / max < power) {
-			if (((double)x + 1) / max < power) {
+		power = pos;
+	else {
+		if (pos > power)
+			goto setlight;
+		else
+			if (pos + (1.0 / (max+ 1)) >= power) {
+				power = (power - ((double)x) / (max+1)) * (max+1);
+			}
+			else {
 				fAct[0] = actions.back();
 				goto setlight;
 			}
-			else {
-				power = (power - ((double)x) / max) * max;
-			}
-		}
-	else
-		goto setlight;
+	}
 	fAct[0].r = (byte)((1.0 - power) * actions.front().r + power * actions.back().r);
 	fAct[0].g = (byte)((1.0 - power) * actions.front().g + power * actions.back().g);
 	fAct[0].b = (byte)((1.0 - power) * actions.front().b + power * actions.back().b);
@@ -71,8 +72,14 @@ void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions
 				case 3: // diagonal
 					SetGaugeLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
 					break;
-				case 4:
+				case 4: // back diagonal
 					SetGaugeLight(t->light, zone->xMax - t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+					break;
+				case 5: // radial
+					float px = abs(((float)zone->xMax)/2 - t->x), py = abs(((float)zone->yMax)/2 - t->y);
+					int radius = (int)(sqrt(zone->xMax * zone->xMax + zone->yMax * zone->yMax) / 2),
+						weight = (int)sqrt(px * px + py * py);
+					SetGaugeLight(t->light, weight, radius, grp->flags, actions, power, force);
 					break;
 				}
 		}

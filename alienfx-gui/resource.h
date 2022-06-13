@@ -27,6 +27,8 @@
 #define IDD_LIGHT_TEMPLATE              159
 #define IDD_DIALOG_ADDGROUP             160
 #define IDD_DIALOG_WHITE                161
+#define IDD_DIALOG1                     162
+#define IDD_DIALOG_GRID                 162
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -195,7 +197,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        162
+#define _APS_NEXT_RESOURCE_VALUE        163
 #define _APS_NEXT_COMMAND_VALUE         32808
 #define _APS_NEXT_CONTROL_VALUE         1165
 #define _APS_NEXT_SYMED_VALUE           113

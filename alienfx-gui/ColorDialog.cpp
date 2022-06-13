@@ -101,7 +101,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 		// Set types and gauge list...
 		UpdateCombo(GetDlgItem(hDlg, IDC_TYPE1), lightEffectNames);
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)"});
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)", "Radial" });
 		// now sliders...
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
