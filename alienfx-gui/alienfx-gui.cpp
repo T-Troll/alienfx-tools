@@ -505,10 +505,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	} break;
 	case WM_WINDOWPOSCHANGING: {
 		WINDOWPOS* pos = (WINDOWPOS*)lParam;
-		if (pos->flags & SWP_SHOWWINDOW) {
+		if (pos->flags & SWP_SHOWWINDOW && eve) {
 			eve->StopProfiles();
 		} else
-			if (pos->flags & SWP_HIDEWINDOW) {
+			if (pos->flags & SWP_HIDEWINDOW && eve) {
 				eve->StartProfiles();
 			}
 			else
