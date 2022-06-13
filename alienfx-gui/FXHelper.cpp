@@ -28,17 +28,18 @@ AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, byte flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {
 	vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
-	double pos = (double)x / (max + 1);
 	if (flags & GAUGE_REVERSE)
 		x = max - x;
 	if (flags & GAUGE_GRADIENT)
-		power = pos;
+		power = (double)x / max;
 	else {
+		max++;
+		double pos = (double)x / max;
 		if (pos > power)
 			goto setlight;
 		else
-			if (pos + (1.0 / (max+ 1)) >= power) {
-				power = (power - ((double)x) / (max+1)) * (max+1);
+			if (pos + (1.0 / max) >= power) {
+				power = (power - ((double)x) / max) * max;
 			}
 			else {
 				fAct[0] = actions.back();
