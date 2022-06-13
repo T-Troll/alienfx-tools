@@ -27,8 +27,6 @@
 #define IDD_LIGHT_TEMPLATE              159
 #define IDD_DIALOG_ADDGROUP             160
 #define IDD_DIALOG_WHITE                161
-#define IDD_DIALOG1                     162
-#define IDD_DIALOG_GRID                 162
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
