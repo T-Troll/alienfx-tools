@@ -547,7 +547,8 @@ void ConfigHandler::SortGroupGauge(int gid) {
 	if (!grp) return;
 
 	// scan lights in grid...
-	int minX = 999, minY = 999;
+	//int minX = 999, minY = 999;
+	zone->gMinX = zone->gMinY = 200;
 	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
 		DWORD lgt = MAKELPARAM(lgh->first, lgh->second);
 		zonelight cl{ {lgh->first, lgh->second }, 255, 255 };
@@ -556,18 +557,19 @@ void ConfigHandler::SortGroupGauge(int gid) {
 				if (t->grid[ind] == lgt) {
 					cl.x = min(cl.x, ind % t->x);
 					cl.y = min(cl.y, ind / t->x);
+					zone->gMaxX = max(zone->gMaxX, ind % t->x);
+					zone->gMaxY = max(zone->gMaxY, ind / t->x);
 				}
 		}
-		minX = min(minX, cl.x), minY = min(minY, cl.y);
-		zone->xMax = max(zone->xMax, cl.x); zone->yMax = max(zone->yMax, cl.y);
+		zone->gMinX = min(zone->gMinX, cl.x), zone->gMinY = min(zone->gMinY, cl.y);
 		zone->lightMap.push_back(cl);
 	}
 
 	// now shrink axis...
 	for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++) {
-		t->x -= minX; t->y -= minY;
+		t->x -= zone->gMinX; t->y -= zone->gMinY;
 	}
-	zone->xMax -= minX; zone->yMax -= minY;
+	zone->xMax = zone->gMaxX - zone->gMinX; zone->yMax = zone->gMaxY - zone->gMinY;
 	for (int x = 1; x < zone->xMax; x++) {
 		if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
 			[x](auto t) {

@@ -10,7 +10,7 @@ extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
-ConfigFan* fan_conf = NULL;
+extern ConfigFan* fan_conf;
 MonHelper* mon = NULL;
 HWND fanWindow = NULL, tipWindow = NULL;
 extern HWND toolTip;
@@ -20,7 +20,7 @@ int pLid = -1;
 extern bool fanMode;
 
 GUID* sch_guid, perfset;
-NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA) };
+NOTIFYICONDATA* niData;
 
 extern INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
@@ -47,9 +47,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_INITDIALOG:
     {
         if (eve->mon) {
-            fan_conf = conf->fan_conf;
+            //fan_conf = conf->fan_conf;
             mon = eve->mon;
-            niData = conf->niData;
+            niData = &conf->niData;
 
             // set PerfBoost lists...
             HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),

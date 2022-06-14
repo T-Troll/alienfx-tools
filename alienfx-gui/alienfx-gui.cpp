@@ -31,6 +31,7 @@ FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
 AlienFan_SDK::Control* acpi = NULL;
+ConfigFan* fan_conf = NULL;
 
 HWND mDlg = NULL, dDlg = NULL;
 
@@ -109,8 +110,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	conf->Load();
 
+	fan_conf = conf->fan_conf;
+
 	if (conf->activeProfile->flags & PROF_FANS)
-		conf->fan_conf->lastProf = &conf->activeProfile->fansets;
+		fan_conf->lastProf = &conf->activeProfile->fansets;
 
 	conf->wasAWCC = DoStopService(true);
 

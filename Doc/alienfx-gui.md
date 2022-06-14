@@ -76,6 +76,7 @@ For gauge type drop down, available modes are:
 - Vertical - fill zone from top to bottom.
 - Diagonal (left) - fill zone from top-left point to bottom-right.
 - Diagonal (right) - fill zone from top-right point to bottom-left.
+- Radial - fill zone by ellipse from center to borders.
 
 "Reverse" check box invert filling direction to right-to-left and bottom-to-top.
 "Gradient" check box alter zone filling. In case zone have 2 colors, it will filled as gradient then enabled. For event/haptics gauge, it will filled by gradient color instead of peak indicator.

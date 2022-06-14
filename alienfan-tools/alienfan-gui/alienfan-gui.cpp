@@ -38,13 +38,7 @@ int pLid = -1;
 
 GUID* sch_guid, perfset;
 
-NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
-                    (HICON)LoadImage(GetModuleHandle(NULL),
-                              MAKEINTRESOURCE(IDI_ALIENFANGUI),
-                              IMAGE_ICON,
-                              GetSystemMetrics(SM_CXSMICON),
-                              GetSystemMetrics(SM_CYSMICON),
-                              LR_DEFAULTCOLOR) };
+NOTIFYICONDATA* niData = NULL;
 
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
@@ -85,12 +79,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     fan_conf = new ConfigFan();
 
     ResetDPIScale();
-    Shell_NotifyIcon(NIM_ADD, &niData);
+
+    NOTIFYICONDATA fanIcon{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
+        (HICON)LoadImage(GetModuleHandle(NULL),
+            MAKEINTRESOURCE(IDI_ALIENFANGUI),
+            IMAGE_ICON,
+            GetSystemMetrics(SM_CXSMICON),
+            GetSystemMetrics(SM_CYSMICON),
+            LR_DEFAULTCOLOR) };
+
+    niData = &fanIcon;
+
+    Shell_NotifyIcon(NIM_ADD, niData);
 
     acpi = new AlienFan_SDK::Control();
     if (acpi->IsActivated())
         if (acpi->Probe()) {
-            Shell_NotifyIcon(NIM_DELETE, &niData);
+            Shell_NotifyIcon(NIM_DELETE, niData);
             fan_conf->SetBoosts(acpi);
 
             mon = new MonHelper(fan_conf);
@@ -117,16 +122,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             delete mon;
         }
         else {
-            ShowNotification(&niData, "Error", "Compatible hardware not found, disabling fan control!", false);
+            ShowNotification(niData, "Error", "Compatible hardware not found, disabling fan control!", false);
             WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
             Sleep(5000);
         }
     else {
-        ShowNotification(&niData, "Error", "Fan control start failure, disabling fan control!", false);
+        ShowNotification(niData, "Error", "Fan control start failure, disabling fan control!", false);
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
         Sleep(5000);
     }
-    Shell_NotifyIcon(NIM_DELETE, &niData);
+    Shell_NotifyIcon(NIM_DELETE, niData);
     delete acpi;
     fan_conf->Save();
     delete fan_conf;
@@ -166,7 +171,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
-        Shell_NotifyIcon(NIM_ADD, &niData);
+        Shell_NotifyIcon(NIM_ADD, niData);
         if (fan_conf->updateCheck)
             CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
         return true;
@@ -175,8 +180,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     switch (message) {
     case WM_INITDIALOG:
     {
-        niData.hWnd = hDlg;
-        if (Shell_NotifyIcon(NIM_ADD, &niData) && fan_conf->updateCheck)
+        niData->hWnd = hDlg;
+        if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
             CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
 
         // set PerfBoost lists...
@@ -372,8 +377,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
             if (!isNewVersion && needRemove) {
-                Shell_NotifyIcon(NIM_DELETE, &niData);
-                Shell_NotifyIcon(NIM_ADD, &niData);
+                Shell_NotifyIcon(NIM_DELETE, niData);
+                Shell_NotifyIcon(NIM_ADD, niData);
                 needRemove = false;
             }
             else
@@ -586,8 +591,8 @@ void UpdateFanUI(LPVOID lpParam) {
         for (int i = 0; i < acpi->HowManyFans(); i++) {
             name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
         }
-        strcpy_s(niData.szTip, 128, name.c_str());
-        Shell_NotifyIcon(NIM_MODIFY, &niData);
+        strcpy_s(niData->szTip, 128, name.c_str());
+        Shell_NotifyIcon(NIM_MODIFY, niData);
     }
 }
 

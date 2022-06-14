@@ -13,7 +13,7 @@ extern AlienFan_SDK::Control* acpi;
 
 extern void SetToolTip(HWND, string);
 
-extern NOTIFYICONDATA niData;
+extern NOTIFYICONDATA* niData;
 
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
@@ -252,7 +252,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             UpdateBoost();
             DrawFan();
         }
-    ShowNotification(&niData, "Overboost calculation done", " Final boost " + to_string(bestBoostPoint.maxBoost)
+    ShowNotification(niData, "Overboost calculation done", " Final boost " + to_string(bestBoostPoint.maxBoost)
         + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
 finish:
     lastBoostPoint = NULL;
