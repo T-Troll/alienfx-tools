@@ -157,8 +157,8 @@ bool ConfigHandler::SetStates() {
 }
 
 void ConfigHandler::SetToolTip() {
-	sprintf_s(niData.szTip, 128, "Profile: %s\nEffect: %s", activeProfile->name.c_str(),
-		GetEffect() < effModes.size() ? effModes[GetEffect()].c_str() : "Global");
+	string name = "Profile: " + activeProfile->name + "\nEffect: " + (GetEffect() < effModes.size() ? effModes[GetEffect()] : "Global");
+	strcpy_s(niData.szTip, 128, name.c_str());
 	Shell_NotifyIcon(NIM_MODIFY, &niData);
 }
 

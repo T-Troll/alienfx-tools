@@ -4,6 +4,7 @@
     <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <HasSharedItems>true</HasSharedItems>
     <ItemsProjectGuid>{05a1d711-23f5-4b90-9f62-ec3de2419b4d}</ItemsProjectGuid>
+    <ItemsProjectName>alienfan-config</ItemsProjectName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -15,12 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ConfigFan.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)MonHelper.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ThreadHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)ConfigFan.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MonHelper.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ThreadHelper.h" />
   </ItemGroup>
 </Project>

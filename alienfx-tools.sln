@@ -52,7 +52,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "alienfan-tools\
 		{24663340-6C3F-479E-94C0-C2A847B1665C} = {24663340-6C3F-479E-94C0-C2A847B1665C}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-shared", "alienfan-tools\alienfan-shared\alienfan-shared.vcxitems", "{05A1D711-23F5-4B90-9F62-EC3DE2419B4D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-config", "alienfan-tools\alienfan-shared\alienfan-shared.vcxitems", "{05A1D711-23F5-4B90-9F62-EC3DE2419B4D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-curve", "alienfan-tools\alienfan-curve\alienfan-curve.vcxitems", "{79BE1884-5FDB-4851-BC17-39FB58101CBA}"
 EndProject
@@ -82,20 +82,22 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{32336D37-A0A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{E5255A7D-1A72-4A39-BCF9-E7AB0AD7F58E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-service", "alienfan-service\alienfan-service.vcxproj", "{AFDAC583-06A3-4F0C-B130-7F36136B2729}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-mon", "alienfan-tools\alienfan-mon\alienfan-mon.vcxitems", "{3E950E09-5324-4C38-929A-93215F83EFAA}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{05a1d711-23f5-4b90-9f62-ec3de2419b4d}*SharedItemsImports = 9
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
+		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		AlienFx-Common\AlienFx-Common.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
-		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
+		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3e950e09-5324-4c38-929a-93215f83efaa}*SharedItemsImports = 9
 		AlienFx-Common\AlienFx-Common.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{79be1884-5fdb-4851-bc17-39fb58101cba}*SharedItemsImports = 9
 		alienfx-LFX\alienfx-LFX.vcxitems*{cc4108ae-d644-45f9-95aa-67940d0fbeda}*SharedItemsImports = 9
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{d6ad2e10-f61c-43f1-87ea-e77dea12dd42}*SharedItemsImports = 4
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
+		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		AlienFx-Common\AlienFx-Common.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		AlienFx-Common\AlienFx-Common.vcxitems*{e8c2e228-2b88-4546-9e3a-a95df8ce249a}*SharedItemsImports = 9
@@ -168,8 +170,6 @@ Global
 		{2FC5DA06-339F-48B8-ACDF-34FAA8DBFBB7}.Debug|x64.Build.0 = Debug|x64
 		{2FC5DA06-339F-48B8-ACDF-34FAA8DBFBB7}.Release|x64.ActiveCfg = Release|x64
 		{2FC5DA06-339F-48B8-ACDF-34FAA8DBFBB7}.Release|x64.Build.0 = Release|x64
-		{AFDAC583-06A3-4F0C-B130-7F36136B2729}.Debug|x64.ActiveCfg = Debug|x64
-		{AFDAC583-06A3-4F0C-B130-7F36136B2729}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -195,6 +195,7 @@ Global
 		{90879993-7449-4A28-972E-7228D4C4D0A8} = {2CDD2140-AE19-4B03-8FE4-C502A8830B0C}
 		{2FC5DA06-339F-48B8-ACDF-34FAA8DBFBB7} = {2CDD2140-AE19-4B03-8FE4-C502A8830B0C}
 		{32336D37-A0A7-4F78-BE8D-D18666E992F1} = {5C915BD2-B67C-4E9A-9724-E3A2547E1214}
+		{3E950E09-5324-4C38-929A-93215F83EFAA} = {E5255A7D-1A72-4A39-BCF9-E7AB0AD7F58E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC1E1EF4-CAA0-4056-8067-A66F6680D024}

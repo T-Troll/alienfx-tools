@@ -30,6 +30,8 @@ MonHelper* mon = NULL;                          // Monitoring & changer object
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
 
+static vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
+
 extern HWND toolTip;
 
 int pLid = -1;
@@ -186,7 +188,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
         PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
-        vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
         UpdateCombo(boost_ac, pModes, acMode);
         UpdateCombo(boost_dc, pModes, dcMode);;
 
@@ -206,7 +207,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ShowWindow(fanWindow, SW_SHOWNA);
         }
 
-        fanThread = new ThreadHelper(UpdateFanUI, hDlg);
+        fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
         ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
         ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
@@ -357,6 +358,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_APP + 1:
     {
         switch (lParam) {
+        case WM_RBUTTONUP:
+            SendMessage(hDlg, WM_CLOSE, 0, 0);
+            break;
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP: {
             ShowWindow(fanWindow, SW_RESTORE);
@@ -542,25 +546,48 @@ void UpdateFanUI(LPVOID lpParam) {
     HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
         fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
         power_list = GetDlgItem((HWND)lpParam, IDC_COMBO_POWER);
-    if (fanMode) {
+    static bool wasBoostMode = false;
+    if (!fanMode) wasBoostMode = true;
+    if (fanMode && wasBoostMode) {
         EnableWindow(power_list, true);
         SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Overboost");
+        wasBoostMode = false;
     }
-    if (mon && IsWindowVisible((HWND)lpParam)) {
-        //DebugPrint("Fans UI update...\n");
-        for (int i = 0; i < acpi->HowManySensors(); i++) {
-            string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
-            ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+    if (mon) {
+        if (!mon->monThread) {
+            for (int i = 0; i < acpi->HowManySensors(); i++)
+                mon->senValues[i] = acpi->GetTempValue(i);
+            for (int i = 0; i < acpi->HowManyFans(); i++)
+                mon->fanRpm[i] = acpi->GetFanRPM(i);
         }
-        RECT cArea;
-        GetClientRect(tempList, &cArea);
-        ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-        ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+        if (IsWindowVisible((HWND)lpParam)) {
+            //DebugPrint("Fans UI update...\n");
+            for (int i = 0; i < acpi->HowManySensors(); i++) {
+                string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->senValues[i]) + ")";
+                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+            }
+            RECT cArea;
+            GetClientRect(tempList, &cArea);
+            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+            for (int i = 0; i < acpi->HowManyFans(); i++) {
+                string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
+                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+            }
+            SendMessage(fanWindow, WM_PAINT, 0, 0);
+        }
+        string name = "Power mode: ";
+        if (fan_conf->lastProf->powerStage) {
+            auto pwr = fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage]);
+            name += pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(fan_conf->lastProf->powerStage);
+        }
+        else
+            name += "Manual";
         for (int i = 0; i < acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
-            ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+            name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
         }
-        SendMessage(fanWindow, WM_PAINT, 0, 0);
+        strcpy_s(niData.szTip, 128, name.c_str());
+        Shell_NotifyIcon(NIM_MODIFY, &niData);
     }
 }
 

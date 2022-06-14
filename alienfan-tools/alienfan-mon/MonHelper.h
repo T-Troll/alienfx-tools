@@ -1,17 +1,12 @@
 #pragma once
 #include "alienfan-SDK.h"
 #include "ConfigFan.h"
-#include "ThreadHelper.h"
+#include "..\..\AlienFx-Common\ThreadHelper.h"
 
 class MonHelper {
-private:
-	ThreadHelper* monThread = NULL;
 public:
-	ConfigFan* conf;
-
-	//HANDLE stopEvent = 0;
+	ThreadHelper* monThread = NULL;
 	short oldPower = 0, oldGmode = 0;
-	//AlienFan_SDK::Control* acpi;
 	vector<int> senValues, fanRpm, boostRaw, boostSets, maxTemps, fanSleep;
 
 	MonHelper(ConfigFan*);

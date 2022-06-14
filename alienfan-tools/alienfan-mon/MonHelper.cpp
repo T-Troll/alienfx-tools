@@ -10,10 +10,9 @@
 void CMonProc(LPVOID);
 
 extern AlienFan_SDK::Control* acpi;
+extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper(ConfigFan* config) {
-	conf = config;
-
 	maxTemps.resize(acpi->HowManySensors());
 	senValues.resize(acpi->HowManySensors());
 	fanRpm.resize(acpi->HowManyFans());
@@ -31,12 +30,12 @@ MonHelper::~MonHelper() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		if ((oldPower = acpi->GetPower()) != conf->lastProf->powerStage)
-			acpi->SetPower(conf->lastProf->powerStage);
-		acpi->SetGPU(conf->lastProf->GPUPower);
+		if ((oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage)
+			acpi->SetPower(fan_conf->lastProf->powerStage);
+		acpi->SetGPU(fan_conf->lastProf->GPUPower);
 		oldGmode = acpi->GetGMode();
-		if (oldGmode >= 0 && oldGmode != conf->lastProf->gmode)
-			acpi->SetGMode(conf->lastProf->gmode);
+		if (oldGmode >= 0 && oldGmode != fan_conf->lastProf->gmode)
+			acpi->SetGMode(fan_conf->lastProf->gmode);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
@@ -51,9 +50,9 @@ void MonHelper::Stop() {
 #endif
 		delete monThread;
 		monThread = NULL;
-		if (oldGmode >= 0 && oldGmode != conf->lastProf->gmode)
+		if (oldGmode >= 0 && oldGmode != fan_conf->lastProf->gmode)
 			acpi->SetGMode(oldGmode);
-		if (oldPower != conf->lastProf->powerStage)
+		if (oldPower != fan_conf->lastProf->powerStage)
 			acpi->SetPower(oldPower);
 		if (!oldPower)
 			// reset boost
@@ -82,9 +81,9 @@ void CMonProc(LPVOID param) {
 	}
 
 	// boosts..
-	if (!src->conf->lastProf->powerStage) {
+	if (!fan_conf->lastProf->powerStage) {
 		// in manual mode only
-		for (auto cIter = src->conf->lastProf->fanControls.begin(); cIter < src->conf->lastProf->fanControls.end(); cIter++) {
+		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter < fan_conf->lastProf->fanControls.end(); cIter++) {
 			for (auto fIter = cIter->fans.begin(); fIter < cIter->fans.end(); fIter++) {
 				// Look for boost point for temp...
 				for (int k = 1; k < fIter->points.size(); k++)

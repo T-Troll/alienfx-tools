@@ -272,24 +272,35 @@ void UpdateFanUI(LPVOID lpParam) {
     HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
         fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
         power_list = GetDlgItem((HWND)lpParam, IDC_COMBO_POWER);
-    if (fanMode) {
+    static bool wasBoostMode = false;
+    if (!fanMode) wasBoostMode = true;
+    if (fanMode && wasBoostMode) {
         EnableWindow(power_list, true);
         SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Overboost");
+        wasBoostMode = false;
     }
-    if (eve->mon && IsWindowVisible((HWND)lpParam)) {
-        //DebugPrint("Fans UI update...\n");
-        for (int i = 0; i < acpi->HowManySensors(); i++) {
-            string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
-            ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+    if (mon) {
+        if (IsWindowVisible((HWND)lpParam)) {
+            if (!mon->monThread) {
+                for (int i = 0; i < acpi->HowManySensors(); i++)
+                    mon->senValues[i] = acpi->GetTempValue(i);
+                for (int i = 0; i < acpi->HowManyFans(); i++)
+                    mon->fanRpm[i] = acpi->GetFanRPM(i);
+            }
+            //DebugPrint("Fans UI update...\n");
+            for (int i = 0; i < acpi->HowManySensors(); i++) {
+                string name = to_string(mon->senValues[i]) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
+                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+            }
+            RECT cArea;
+            GetClientRect(tempList, &cArea);
+            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+            for (int i = 0; i < acpi->HowManyFans(); i++) {
+                string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
+                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+            }
+            SendMessage(fanWindow, WM_PAINT, 0, 0);
         }
-        RECT cArea;
-        GetClientRect(tempList, &cArea);
-        ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-        ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-        for (int i = 0; i < acpi->HowManyFans(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
-            ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-        }
-        SendMessage(fanWindow, WM_PAINT, 0, 0);
     }
 }
