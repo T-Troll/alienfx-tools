@@ -601,6 +601,7 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
     </ClCompile>
+    <ClCompile Include="GridEffectDialog.cpp" />
     <ClCompile Include="DXGIManager.cpp" />
     <ClCompile Include="EventDialog.cpp" />
     <ClCompile Include="EventHandler.cpp" />

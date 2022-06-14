@@ -578,9 +578,13 @@ void ConfigHandler::SortGroupGauge(int gid) {
 			byte minDelta = 255;
 			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
 				if (t->x > x) minDelta = min(minDelta, t->x-x);
-			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
-				if (t->x > x) t->x-=minDelta;
-			zone->xMax-=minDelta;
+			if (minDelta < 255) {
+				for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+					if (t->x > x) t->x -= minDelta;
+				zone->xMax -= minDelta;
+			}
+			else
+				zone->xMax = x - 1;
 		}
 	}
 	for (int y = 1; y < zone->yMax; y++) {
@@ -591,9 +595,13 @@ void ConfigHandler::SortGroupGauge(int gid) {
 			byte minDelta = 255;
 			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
 				if (t->y > y) minDelta = min(minDelta, t->y - y);
-			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
-				if (t->y > y) t->y-=minDelta;
-			zone->yMax-=minDelta;
+			if (minDelta < 255) {
+				for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+					if (t->y > y) t->y -= minDelta;
+				zone->yMax -= minDelta;
+			}
+			else
+				zone->yMax = y - 1;
 		}
 	}
 }

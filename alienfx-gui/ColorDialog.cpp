@@ -187,6 +187,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap&& mmap->gauge);
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
 				fxhl->Refresh();
 			}
 			break;

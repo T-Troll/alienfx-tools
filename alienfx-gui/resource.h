@@ -27,6 +27,7 @@
 #define IDD_LIGHT_TEMPLATE              159
 #define IDD_DIALOG_ADDGROUP             160
 #define IDD_DIALOG_WHITE                161
+#define IDD_DIALOG_GRIDEFFECT           163
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -175,6 +176,12 @@
 #define IDC_COMBO_TRIGGERKEY            1162
 #define IDC_TRIGGER_POWER_AC            1163
 #define IDC_TRIGGER_POWER_BATTERY       1164
+#define IDC_SLIDER2                     1168
+#define IDC_CHECK_CIRCLE                1169
+#define IDC_SLIDER3                     1170
+#define IDC_COMBO_TRIGGER               1172
+#define IDC_COMBO_GEFFTYPE              1173
+#define IDC_CHECK_ZONELIGHTS            1174
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -195,9 +202,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        163
+#define _APS_NEXT_RESOURCE_VALUE        164
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1165
+#define _APS_NEXT_CONTROL_VALUE         1175
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

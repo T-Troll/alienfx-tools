@@ -5,6 +5,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 extern void ResizeTab(HWND, RECT&);
 
@@ -125,10 +126,10 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 		firstInit = true;
 		CreateTabControl(tab_list,
-			{"Colors", "Events Monitoring", "Ambient", "Haptics", "Devices and Grids"},
-			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_DEVICES},
-			{ (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog, (DLGPROC)TabDevicesDialog }
-			);
+			{"Colors", "Events Monitoring", "Ambient", "Haptics", "Grid Effect", "Devices and Grids"},
+			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_GRIDEFFECT, IDD_DIALOG_DEVICES},
+			{ (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog,
+			(DLGPROC)TabGridDialog, (DLGPROC)TabDevicesDialog } );
 		if (!conf->afx_dev.activeLights || !conf->afx_dev.GetGrids()->size())
 			tabLightSel = TAB_DEVICES;
 		TabCtrl_SetCurSel(tab_list, tabLightSel);

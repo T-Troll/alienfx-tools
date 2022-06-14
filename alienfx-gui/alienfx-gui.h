@@ -16,21 +16,22 @@
 #endif
 
 // defines and structures...
-
 #define TAB_COLOR    0
 #define TAB_EVENTS   1
 #define TAB_AMBIENT  2
 #define TAB_HAPTICS  3
-#define TAB_PROFILES 2
-#define TAB_DEVICES  4
-#define TAB_FANS     1
-#define TAB_SETTINGS 3
+#define TAB_GRID	 4
+#define TAB_DEVICES  5
+
 #define TAB_LIGHTS	 0
+#define TAB_FANS     1
+#define TAB_PROFILES 2
+#define TAB_SETTINGS 3
+
 
 typedef struct tag_dlghdr {
 	HWND hwndControl;       // control dialog
 	HWND hwndDisplay;   // current child dialog box
-	//RECT rcDisplay;     // display rectangle for the tab control
 	DLGTEMPLATE** apRes; // Dialog templates
 	DLGPROC* apProc; // dialog functions
 } DLGHDR;
