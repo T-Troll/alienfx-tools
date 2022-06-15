@@ -583,6 +583,7 @@
     <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="FXHelper.h" />
+    <ClInclude Include="GridHelper.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="WSAudioIn.h" />
@@ -607,6 +608,7 @@
     <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="FanDialog.cpp" />
     <ClCompile Include="FXHelper.cpp" />
+    <ClCompile Include="GridHelper.cpp" />
     <ClCompile Include="HapticsDialog.cpp" />
     <ClCompile Include="LightsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />

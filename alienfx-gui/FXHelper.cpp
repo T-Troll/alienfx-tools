@@ -25,7 +25,7 @@ AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 	return nullptr;
 };
 
-void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, byte flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
+void FXHelper::SetGaugeLight(pair<DWORD,DWORD> id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {
 	vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
 	if (flags & GAUGE_REVERSE)

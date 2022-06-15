@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "common.h"
 
 extern void SwitchLightTab(HWND, int);
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
@@ -8,7 +9,7 @@ extern void RemoveUnused(vector<groupset>* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
+//extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern int eItem;
 
@@ -173,13 +174,14 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_CHECK_SPECTRUM:
 			if (mmap) {
-				mmap->flags = (mmap->flags & ~GAUGE_GRADIENT) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				SetBitMask(mmap->flags, GAUGE_GRADIENT, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				fxhl->Refresh();
 			}
 			break;
 		case IDC_CHECK_REVERSE:
 			if (mmap) {
-				mmap->flags = (mmap->flags & ~GAUGE_REVERSE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? GAUGE_REVERSE : 0);
+				SetBitMask(mmap->flags, GAUGE_REVERSE, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				//mmap->flags = (mmap->flags & ~GAUGE_REVERSE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? GAUGE_REVERSE : 0);
 				fxhl->Refresh();
 			}
 			break;

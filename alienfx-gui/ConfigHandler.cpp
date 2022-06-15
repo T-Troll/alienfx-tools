@@ -437,6 +437,7 @@ void ConfigHandler::Save() {
 			DWORD value = 0; byte* buffer = (BYTE*)&value;
 			buffer[0] = iIter->fromColor;
 			buffer[1] = iIter->gauge;
+			// ToDo: flags now bytes 2-3
 			buffer[2] = iIter->flags;
 			//buffer[3] = iIter->group->have_power;
 			RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));

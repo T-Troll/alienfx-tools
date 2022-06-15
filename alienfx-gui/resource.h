@@ -182,6 +182,9 @@
 #define IDC_COMBO_TRIGGER               1172
 #define IDC_COMBO_GEFFTYPE              1173
 #define IDC_CHECK_ZONELIGHTS            1174
+#define IDC_BUTTON_GEFROM               1175
+#define IDC_BUTTON_GEFROM2              1176
+#define IDC_BUTTON_GETO                 1176
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -204,7 +207,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        164
 #define _APS_NEXT_COMMAND_VALUE         32808
-#define _APS_NEXT_CONTROL_VALUE         1175
+#define _APS_NEXT_CONTROL_VALUE         1176
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

@@ -37,7 +37,7 @@ private:
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
 
-	void SetGaugeLight(pair<DWORD, DWORD> id, int x, int max, byte flags, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
+	void SetGaugeLight(pair<DWORD, DWORD> id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
 	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = -1.0, bool force = false);
 	bool SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void QueryUpdate(int did = -1, bool force = false);

@@ -23,6 +23,9 @@
 #define GAUGE_GRADIENT	0x1
 #define GAUGE_REVERSE	0x2
 
+#define GE_FLAG_CIRCLE	0x1
+#define GE_FLAG_ZONE	0x2
+
 struct freq_map {
 	AlienFX_SDK::Colorcode colorfrom{ 0 };
 	AlienFX_SDK::Colorcode colorto{ 0 };
@@ -52,14 +55,27 @@ struct zonemap {
 	vector<zonelight> lightMap;
 };
 
+struct grideffect {
+	byte trigger;
+	byte type;
+	byte speed;
+	byte size;
+	WORD flags;
+	AlienFX_SDK::Colorcode from;
+	AlienFX_SDK::Colorcode to;
+	bool passive = true;
+	byte gridX, gridY;
+};
+
 struct groupset {
 	int group = 0;
 	vector<AlienFX_SDK::afx_act> color;
 	event events[3];
 	vector<byte> ambients;
 	vector<freq_map> haptics;
+	grideffect effect;
 	bool fromColor = false;
-	byte flags = 0;
+	WORD flags = 0;
 	byte gauge = 0;
 };
 
