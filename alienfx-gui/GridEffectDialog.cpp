@@ -16,6 +16,9 @@ void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), mmap->effect.trigger);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), mmap->effect.type);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SIZE), TBM_SETPOS, true, mmap->effect.size);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SPEED), TBM_SETPOS, true, mmap->effect.speed);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), TBM_SETPOS, true, mmap->effect.width);
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
@@ -24,6 +27,9 @@ void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
 }
 
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	HWND size_slider = GetDlgItem(hDlg, IDC_SLIDER_SIZE),
+		speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
+		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH);
 
 	groupset* mmap = FindMapping(eItem);
 
@@ -34,7 +40,9 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Random", "Keyboard", "Event", "Haptics" });
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Gradient", "Running light", "Wave"});
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)", "Radial" });
-
+		SendMessage(size_slider, TBM_SETRANGE, true, MAKELPARAM(1, 255));
+		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(1, 255));
+		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 255));
 		UpdateEffectInfo(hDlg, mmap);
 
 	} break;
@@ -89,6 +97,21 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			break;
 		}
 	} break;
+	case WM_HSCROLL:
+		switch (LOWORD(wParam)) {
+		case TB_THUMBTRACK: case TB_ENDTRACK:
+			if (mmap) {
+				if ((HWND)lParam == speed_slider) {
+					mmap->effect.speed = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+				}
+				if ((HWND)lParam == size_slider) {
+					mmap->effect.size = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+				}
+				if ((HWND)lParam == width_slider) {
+					mmap->effect.width = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+				}
+			}
+		} break;
 	case WM_DRAWITEM:
 		if (mmap) {
 			AlienFX_SDK::Colorcode* c{ NULL };

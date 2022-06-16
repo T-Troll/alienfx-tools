@@ -1,4 +1,7 @@
+#include "alienfx-gui.h"
 #include "FXHelper.h"
+
+extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 
 // debug print
 #ifdef _DEBUG
@@ -223,6 +226,59 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		QueryUpdate();
 	}
 	memcpy(&eData, data, sizeof(EventData));
+}
+
+void FXHelper::SetGridEffect(groupset* grp)
+{
+	auto zone = conf->FindZoneMap(grp->group);
+	if (zone) {
+		AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID(zone->gridID);
+		if (grid) {
+			for (int x = zone->gMinX; x < zone->gMaxX; x++) // maybe <=
+				for (int y = zone->gMinY; y < zone->gMaxY; y++) {
+					// Check for zero or non-group
+					DWORD gridval = grid->grid[ind(x, y)];
+					if (gridval) {
+						switch (grp->gauge) {
+						case 1: // horizontal
+							if (x == grp->effect.gridX + grp->effect.phase)
+								// set second light
+								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.to) });
+							else
+								// set first light
+								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.from) });
+							break;
+						case 2: // vertical
+							if (y == grp->effect.gridY + grp->effect.phase)
+								// set second light
+								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.to) });
+							else
+								// set first light
+								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.from) });
+							break;
+						case 3: // diagonal
+							SetGaugeLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+							break;
+						case 4: // back diagonal
+							SetGaugeLight(t->light, zone->xMax - t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+							break;
+						case 5: // radial
+							float px = abs(((float)zone->xMax) / 2 - t->x), py = abs(((float)zone->yMax) / 2 - t->y);
+							int radius = (int)(sqrt(zone->xMax * zone->xMax + zone->yMax * zone->yMax) / 2),
+								weight = (int)sqrt(px * px + py * py);
+							SetGaugeLight(t->light, weight, radius, grp->flags, actions, power, force);
+							break;
+						}
+						if (abs(x - grp->effect.gridX) < grp->effect.phase && abs(y - grp->effect.gridY) < grp->effect.phase) {
+							// Calculate power, Set phase light
+						}
+						else {
+							// set from color
+						}
+					}
+				}
+		}
+	}
 }
 
 void FXHelper::QueryUpdate(int did, bool force)

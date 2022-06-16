@@ -266,6 +266,9 @@ namespace AlienFX_SDK {
 		// get defined grids
 		vector <lightgrid>* GetGrids() { return &grids; };
 
+		// get grid object by it's ID
+		lightgrid* GetGridByID(byte id);
+
 		// get device structure by PID/VID (low/high WORD)
 		afx_device* GetDeviceById(DWORD devID);
 

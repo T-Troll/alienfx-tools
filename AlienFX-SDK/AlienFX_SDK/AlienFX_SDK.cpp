@@ -1141,6 +1141,17 @@ namespace AlienFX_SDK {
 		return nullptr;
 	}
 
+	lightgrid* Mappings::GetGridByID(byte id)
+	{
+		auto pos = find_if(grids.begin(), grids.end(),
+			[id](auto t) {
+				return t.id == id;
+			});
+		if (pos != grids.end())
+			return &(*pos);
+		return nullptr;
+	}
+
 	afx_device* Mappings::AddDeviceById(DWORD devID)
 	{
 		afx_device* dev = GetDeviceById(devID);

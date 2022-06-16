@@ -7,7 +7,7 @@ class GridHelper {
 	GridHelper();
 	~GridHelper();
 public:
-	int tact = 0;
+	UINT tact = 0;
 	mt19937 rnd;
 	ThreadHelper* gridTrigger = NULL, *gridThread = NULL;
 };

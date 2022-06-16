@@ -196,7 +196,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		default: return false;
 		}
 	} break;
-	case WM_VSCROLL:
+	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			if (mmap) {

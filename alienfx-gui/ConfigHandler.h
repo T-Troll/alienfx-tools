@@ -51,20 +51,25 @@ struct zonelight {
 
 struct zonemap {
 	DWORD gID;
+	DWORD gridID;
 	byte xMax, yMax, gMinX, gMaxX, gMinY, gMaxY;
 	vector<zonelight> lightMap;
 };
 
 struct grideffect {
+	// static info
 	byte trigger;
 	byte type;
 	byte speed;
 	byte size;
+	byte width;
 	WORD flags;
 	AlienFX_SDK::Colorcode from;
 	AlienFX_SDK::Colorcode to;
+	// operational info
 	bool passive = true;
-	byte gridX, gridY;
+	byte gridX, gridY, phase;
+	UINT start_tact;
 };
 
 struct groupset {

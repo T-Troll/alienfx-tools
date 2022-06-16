@@ -536,32 +536,41 @@ zonemap* ConfigHandler::FindZoneMap(int gid) {
 
 void ConfigHandler::SortGroupGauge(int gid) {
 	AlienFX_SDK::group* grp = afx_dev.GetGroupById(gid);
+	if (!grp || grp->lights.empty()) return;
+
 	zonemap* zone = FindZoneMap(gid);
 	if (zone)
 		zone->lightMap.clear();
-	else
-		if (grp) {
-			zoneMaps.push_back({ (DWORD)gid });
-			zone = &zoneMaps.back();
-		}
+	else {
+		zoneMaps.push_back({ (DWORD)gid });
+		zone = &zoneMaps.back();
+	}
 
-	if (!grp) return;
+	// find operational grid...
+	DWORD lgt = MAKELPARAM(grp->lights.front().first, grp->lights.front().second);
+	AlienFX_SDK::lightgrid* opGrid = NULL;
+	for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
+		for (int ind = 0; ind < t->x * t->y; ind++)
+			if (t->grid[ind] == lgt) {
+				zone->gridID = t->id;
+				opGrid = &(*t);
+				break;
+			}
+	if (!opGrid)
+		return;
 
-	// scan lights in grid...
-	//int minX = 999, minY = 999;
-	zone->gMinX = zone->gMinY = 200;
+	// scan light positions in grid...
+	zone->gMinX = zone->gMinY = 255;
 	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
-		DWORD lgt = MAKELPARAM(lgh->first, lgh->second);
+		lgt = MAKELPARAM(lgh->first, lgh->second);
 		zonelight cl{ {lgh->first, lgh->second }, 255, 255 };
-		for (auto t = afx_dev.GetGrids()->begin(); t < afx_dev.GetGrids()->end(); t++) {
-			for (int ind = 0; ind < t->x * t->y; ind++)
-				if (t->grid[ind] == lgt) {
-					cl.x = min(cl.x, ind % t->x);
-					cl.y = min(cl.y, ind / t->x);
-					zone->gMaxX = max(zone->gMaxX, ind % t->x);
-					zone->gMaxY = max(zone->gMaxY, ind / t->x);
-				}
-		}
+		for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
+			if (opGrid->grid[ind] == lgt) {
+				cl.x = min(cl.x, ind % opGrid->x);
+				cl.y = min(cl.y, ind / opGrid->x);
+				zone->gMaxX = max(zone->gMaxX, ind % opGrid->x);
+				zone->gMaxY = max(zone->gMaxY, ind / opGrid->x);
+			}
 		zone->gMinX = min(zone->gMinX, cl.x), zone->gMinY = min(zone->gMinY, cl.y);
 		zone->lightMap.push_back(cl);
 	}

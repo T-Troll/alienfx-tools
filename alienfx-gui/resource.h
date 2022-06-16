@@ -176,14 +176,15 @@
 #define IDC_COMBO_TRIGGERKEY            1162
 #define IDC_TRIGGER_POWER_AC            1163
 #define IDC_TRIGGER_POWER_BATTERY       1164
-#define IDC_SLIDER2                     1168
+#define IDC_SLIDER_SPEED                1168
 #define IDC_CHECK_CIRCLE                1169
 #define IDC_SLIDER3                     1170
+#define IDC_SLIDER_SIZE                 1170
+#define IDC_SLIDER_WIDTH                1171
 #define IDC_COMBO_TRIGGER               1172
 #define IDC_COMBO_GEFFTYPE              1173
 #define IDC_CHECK_ZONELIGHTS            1174
 #define IDC_BUTTON_GEFROM               1175
-#define IDC_BUTTON_GEFROM2              1176
 #define IDC_BUTTON_GETO                 1176
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773

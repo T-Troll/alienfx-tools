@@ -293,13 +293,14 @@ void ApplyDeviceMaps(bool force = false) {
 			}
 		}
 	}
-	auto pos = find_if(conf->afx_dev.GetGrids()->begin(), conf->afx_dev.GetGrids()->end(),
-		[oldGridID](auto tg) {
-			return tg.id == oldGridID;
-		});
-	if (pos != conf->afx_dev.GetGrids()->end()) {
-		conf->mainGrid = &(*pos);
-	}
+	conf->mainGrid = conf->afx_dev.GetGridByID(oldGridID);
+	//auto pos = find_if(conf->afx_dev.GetGrids()->begin(), conf->afx_dev.GetGrids()->end(),
+	//	[oldGridID](auto tg) {
+	//		return tg.id == oldGridID;
+	//	});
+	//if (pos != conf->afx_dev.GetGrids()->end()) {
+	//	conf->mainGrid = &(*pos);
+	//}
 	conf->afx_dev.AlienFXAssignDevices();
 	csv_devs.clear();
 	RedrawDevList();
