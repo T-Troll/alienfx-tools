@@ -6,6 +6,9 @@
 
 typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 
+static char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR",
+			tempECDV[] = "\\_SB.PCI0.LPCB.ECDV.KDRT";
+
 namespace AlienFan_SDK {
 
 	Control::Control() {
@@ -168,7 +171,8 @@ namespace AlienFan_SDK {
 
 	bool Control::Probe() {
 		// Additional temp sensor name pattern
-		char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR";
+		//char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR";
+		//char tempECDV[] = "\\_SB.PCI0.LPCB.ECDV.KDRT";
 		if (activated) {
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 			sensors.clear();
@@ -206,7 +210,7 @@ namespace AlienFan_SDK {
 									name = temp_names[sIndex];
 								} else
 									name = "Sensor #" + to_string(sIndex);
-								sensors.push_back({(short) funcID, name, true});
+								sensors.push_back({(short) funcID, name, 1});
 							}
 							fIndex++;
 						} while ((funcID = RunMainCommand(dev_controls.getPowerID, fIndex)) > 0x100
@@ -249,11 +253,26 @@ namespace AlienFan_SDK {
 						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName, NULL) && resName) {
 							char *c_name = new char[resName->Argument[0].DataLength+1];
 							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
-							sensors.push_back({i, c_name, false});
+							sensors.push_back({i, c_name, 0});
 							delete[] c_name;
 							free(resName);
 						}
 					}
+					// ECDV temp sensors...
+					short numECDV = 0; bool okECDV = false;
+					do {
+						PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
+						acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
+						if (okECDV = EvalAcpiMethod(acc, tempECDV, (PVOID*)&resName, acpiargs)) {
+							if (resName->Argument[0].Argument != 255) {
+								sensors.push_back({ numECDV, "ECDV-" + to_string(numECDV + 1), 2 });
+								numECDV++;
+							}
+							else
+								okECDV = false;
+							free(resName);
+						}
+					} while (okECDV);
 					//printf("%d TZ sensors detected.\n", HowManySensors());
 					// Set boost block
 					//for (int i = 0; i < fans.size(); i++)
@@ -318,23 +337,35 @@ namespace AlienFan_SDK {
 		char tempValuePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._TMP";
 		PACPI_EVAL_OUTPUT_BUFFER res = NULL;
 		if (TempID < sensors.size()) {
-			if (sensors[TempID].isFromAWC)
+			switch (sensors[TempID].type) {
+			case 1: // AWCC
 				if (devs[aDev].commandControlled)
-					return RunMainCommand(dev_controls.getTemp, (byte) sensors[TempID].senIndex);
+					return RunMainCommand(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
 				else {
-					if (EvalAcpiMethod(acc, dev_c_controls.getTemp[TempID].c_str(), (PVOID *) &res, NULL) && res) {
+					if (EvalAcpiMethod(acc, dev_c_controls.getTemp[TempID].c_str(), (PVOID*)&res, NULL) && res) {
 						int res_int = res->Argument[0].Argument;
 						free(res);
 						return res_int;
 					}
 				}
-			else {
+				break;
+			case 0: // TZ
 				tempValuePattern[22] = sensors[TempID].senIndex + '0';
-				if (EvalAcpiMethod(acc, tempValuePattern, (PVOID *) &res, NULL) && res) {
+				if (EvalAcpiMethod(acc, tempValuePattern, (PVOID*)&res, NULL) && res) {
 					int res_int = (res->Argument[0].Argument - 0xaac) / 0xa;
 					free(res);
 					return res_int;
 				}
+				break;
+			case 2: { // tempECDV
+				PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
+				acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, sensors[TempID].senIndex);
+				if (EvalAcpiMethod(acc, tempECDV, (PVOID*)&res, acpiargs) && res) {
+					int res_int = res->Argument[0].Argument;
+					free(res);
+					return res_int;
+				}
+			} break;
 			}
 		}
 		return -1;

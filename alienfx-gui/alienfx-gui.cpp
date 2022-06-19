@@ -444,7 +444,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
 		case IDM_HELP:
-			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/blob/v6concept/Doc/alienfx-gui.md", NULL, NULL, SW_SHOWNORMAL);
+			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/blob/master/Doc/alienfx-gui.md", NULL, NULL, SW_SHOWNORMAL);
 			break;
 		case IDM_CHECKUPDATE:
 			// check update....
@@ -462,7 +462,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->afx_dev.SaveMappings();
 			conf->Save();
 			fxhl->Refresh(2); // set def. colors
-			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", false);
+			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", true);
 			break;
 		case IDC_EFFECT_MODE:
 		{

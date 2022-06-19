@@ -14,7 +14,7 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_SEN_INFO {
 		SHORT senIndex = 0;
 		string name;
-		bool isFromAWC = false;
+		byte type = 0; // 0 = TZ, 1 = AWCC, 2 = ECDV
 	};
 
 	struct ALIENFAN_COMMAND {

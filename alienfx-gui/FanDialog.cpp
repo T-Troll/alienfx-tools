@@ -94,8 +94,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 StartOverboost(hDlg, -1);
             }
             fan_conf->obCheck = 1;
-
         }
+        else
+            mon = NULL;
     } break;
     case WM_COMMAND:
     {

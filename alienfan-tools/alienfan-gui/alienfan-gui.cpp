@@ -25,7 +25,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
 ConfigFan* fan_conf = NULL;                     // Config...
-MonHelper* mon = NULL;                          // Monitoring & changer object
+MonHelper* mon = NULL;                          // Monitoring object
 
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
@@ -122,12 +122,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             delete mon;
         }
         else {
-            ShowNotification(niData, "Error", "Compatible hardware not found, disabling fan control!", false);
-            WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
-            Sleep(5000);
+            ShowNotification(niData, "Error", "Compatible hardware not found, terminating!", false);
         }
     else {
-        ShowNotification(niData, "Error", "Fan control start failure, disabling fan control!", false);
+        ShowNotification(niData, "Error", "Fan control start failure, terminating!", false);
+    }
+    if (!mon) {
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
         Sleep(5000);
     }
@@ -136,7 +136,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     fan_conf->Save();
     delete fan_conf;
 
-    return (int) msg.wParam;
+    return 0;
 }
 
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
