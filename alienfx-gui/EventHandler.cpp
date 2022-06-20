@@ -172,12 +172,15 @@ void EventHandler::ChangeEffectMode() {
 
 void EventHandler::StopEffects() {
 	switch (effMode) {
-	case 1:	StopEvents(); break;
-	case 2: if (capt) {
+	case 1:	StopEvents(); break; // Events
+	case 2: if (capt) { // Ambient
 		delete capt; capt = NULL;
 	} break;
-	case 3: if (audio) {
+	case 3: if (audio) { // Haptics
 		delete audio; audio = NULL;
+	} break;
+	case 4: if (grid) {
+		delete grid; grid = NULL;
 	} break;
 	}
 	effMode = 0;
@@ -197,6 +200,8 @@ void EventHandler::StartEffects() {
 		case 3:
 			if (!audio) audio = new WSAudioIn();
 			break;
+		case 4:
+			if (!grid) grid = new GridHelper();
 		}
 	}
 }

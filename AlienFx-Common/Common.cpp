@@ -157,6 +157,16 @@ void SetToolTip(HWND tt, string value) {
 	}
 }
 
+void SetSlider(HWND tt, int value) {
+	TOOLINFO ti{ sizeof(TOOLINFO) };
+	if (tt) {
+		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+		string toolTip = to_string(value);
+		ti.lpszText = (LPTSTR)toolTip.c_str();
+		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+	}
+}
+
 void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
 	ComboBox_ResetContent(ctrl);
 	for (int i = 0; i < items.size(); i++) {

@@ -53,7 +53,7 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 int eItem = -1;
 
 // Effect mode list
-vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics" };
+vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
 bool DoStopService(bool kind) {
 	if (conf->awcc_disable) {
@@ -214,15 +214,15 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 	ReleaseDC(tl, cnt);
 }
 
-void SetSlider(HWND tt, int value) {
-	TOOLINFO ti{ sizeof(TOOLINFO) };
-	if (tt) {
-		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM) &ti);
-		string toolTip = to_string(value);
-		ti.lpszText = (LPTSTR) toolTip.c_str();
-		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM) &ti);
-	}
-}
+//void SetSlider(HWND tt, int value) {
+//	TOOLINFO ti{ sizeof(TOOLINFO) };
+//	if (tt) {
+//		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM) &ti);
+//		string toolTip = to_string(value);
+//		ti.lpszText = (LPTSTR) toolTip.c_str();
+//		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM) &ti);
+//	}
+//}
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -353,7 +353,7 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 		EnableWindow(mode_list, conf->enableMon);
 	}
-	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3 });
+	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
 	if (conf->haveV5) {
 		ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
 		if (mode == 99)

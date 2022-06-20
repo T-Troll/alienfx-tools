@@ -203,17 +203,19 @@ void UpdateBoost() {
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = (int)lpParam, steps = 8, cSteps, boost = 100, cBoost = 100, crpm, rpm, oldBoost = acpi->GetFanBoost(num, true);
+    int num = (int)lpParam, cSteps, crpm, rpm;
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
     for (int i = 0; i < acpi->HowManyFans(); i++)
         if (num < 0 || num == i) {
+            int steps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num, true);
             fan_conf->lastSelectedFan = i;
-            bestBoostPoint = { (byte)i, 100, 0 };
-            boostScale = 10; fanMinScale = 4000; fanMaxScale = 500;
+            boostCheck.clear();
+            bestBoostPoint = { (byte)i, 100, 3000 };
+            boostScale = 10; fanMinScale = 3000; fanMaxScale = 500;
             if ((rpm = SetFanSteady(boost)) < 0)
-                goto finish;
+                break;
             fanMinScale = (rpm / 100) * 100;
             for (int steps = 8; steps; steps = steps >> 1) {
                 // Check for uptrend
@@ -239,7 +241,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             for (int steps = cSteps > 1 ? cSteps >> 1 : 1; steps; steps = steps >> 1) {
                 // Check for uptrend
                 boost -= steps;
-                while ((crpm = SetFanSteady(boost, true)) >= bestBoostPoint.maxRPM - 60) {
+                while ((crpm = SetFanSteady(boost, true)) >= bestBoostPoint.maxRPM - 80) {
                     bestBoostPoint.maxBoost = boost;
                     DrawFan();
                     boost -= steps;
@@ -251,12 +253,10 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             acpi->SetFanBoost(num, oldBoost, true);
             UpdateBoost();
             DrawFan();
+        finish:
+            ShowNotification(niData, "Overboost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
+                + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
         }
-    ShowNotification(niData, "Overboost calculation done", " Final boost " + to_string(bestBoostPoint.maxBoost)
-        + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
-finish:
-    lastBoostPoint = NULL;
-    boostCheck.clear();
     acpi->SetPower(fan_conf->lastProf->powerStage);
     fanMode = true;
     mon->Start();

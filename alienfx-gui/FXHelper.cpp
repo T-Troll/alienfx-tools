@@ -234,49 +234,48 @@ void FXHelper::SetGridEffect(groupset* grp)
 	if (zone) {
 		AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID(zone->gridID);
 		if (grid) {
+			vector<DWORD> setLights;
 			for (int x = zone->gMinX; x < zone->gMaxX; x++) // maybe <=
 				for (int y = zone->gMinY; y < zone->gMaxY; y++) {
 					// Check for zero or non-group
 					DWORD gridval = grid->grid[ind(x, y)];
 					if (gridval) {
+						double power = 0.0;
+						int dist = 0;
+						AlienFX_SDK::Colorcode fin;
 						switch (grp->gauge) {
 						case 1: // horizontal
-							if (x == grp->effect.gridX + grp->effect.phase)
-								// set second light
-								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.to) });
-							else
-								// set first light
-								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.from) });
+							dist = abs(x - grp->effect.gridX - grp->effect.phase);
 							break;
 						case 2: // vertical
-							if (y == grp->effect.gridY + grp->effect.phase)
-								// set second light
-								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.to) });
-							else
-								// set first light
-								SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&grp->effect.from) });
+							dist = abs(y - grp->effect.gridY - grp->effect.phase);
 							break;
 						case 3: // diagonal
-							SetGaugeLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+							dist = abs(x + y - grp->effect.gridX - grp->effect.gridY - grp->effect.phase);
 							break;
 						case 4: // back diagonal
-							SetGaugeLight(t->light, zone->xMax - t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+							dist = abs((zone->gMaxX - x) + y - grp->effect.gridX - grp->effect.gridY - grp->effect.phase);
 							break;
 						case 5: // radial
-							float px = abs(((float)zone->xMax) / 2 - t->x), py = abs(((float)zone->yMax) / 2 - t->y);
-							int radius = (int)(sqrt(zone->xMax * zone->xMax + zone->yMax * zone->yMax) / 2),
-								weight = (int)sqrt(px * px + py * py);
-							SetGaugeLight(t->light, weight, radius, grp->flags, actions, power, force);
-							break;
+							dist = abs(sqrt((grp->effect.gridX - x) * (grp->effect.gridX - x) +
+								(grp->effect.gridY - y) * (grp->effect.gridY - y)) - grp->effect.phase);
+						break;
 						}
-						if (abs(x - grp->effect.gridX) < grp->effect.phase && abs(y - grp->effect.gridY) < grp->effect.phase) {
-							// Calculate power, Set phase light
+						if (dist <= grp->effect.width) {
+							power = ((double)grp->effect.width - dist) / grp->effect.width;
+							fin.r = (byte)((1.0 - power) * grp->effect.from.r + power * grp->effect.to.r);
+							fin.g = (byte)((1.0 - power) * grp->effect.from.g + power * grp->effect.to.g);
+							fin.b = (byte)((1.0 - power) * grp->effect.from.b + power * grp->effect.to.b);
 						}
-						else {
-							// set from color
+						else
+							fin = grp->effect.from;
+						if (find(setLights.begin(), setLights.end(), gridval) == setLights.end()) {
+							SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&fin) });
+							setLights.push_back(gridval);
 						}
 					}
 				}
+			QueryUpdate();
 		}
 	}
 }

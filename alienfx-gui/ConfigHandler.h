@@ -58,11 +58,11 @@ struct zonemap {
 
 struct grideffect {
 	// static info
-	byte trigger;
-	byte type;
-	byte speed;
-	byte size;
-	byte width;
+	byte trigger = 0;
+	byte type = 0;
+	byte speed = 1;
+	byte size = 0;
+	byte width = 1;
 	WORD flags;
 	AlienFX_SDK::Colorcode from;
 	AlienFX_SDK::Colorcode to;

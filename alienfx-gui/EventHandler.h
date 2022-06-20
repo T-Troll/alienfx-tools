@@ -1,6 +1,7 @@
 #pragma once
 #include "ConfigHandler.h"
 #include "CaptureHelper.h"
+#include "GridHelper.h"
 #include "WSAudioIn.h"
 #include "alienfan-SDK.h"
 #include "MonHelper.h"
@@ -40,6 +41,7 @@ public:
 
 	MonHelper *mon = NULL;
 	CaptureHelper *capt = NULL;
+	GridHelper* grid = NULL;
 	WSAudioIn *audio = NULL;
 
 	HANDLE stopEvents = NULL;

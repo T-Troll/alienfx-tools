@@ -101,7 +101,7 @@ void CheckFanOverboost(byte num) {
     for (int steps = cSteps > 1 ? cSteps >> 1 : 1; steps; steps = steps >> 1) {
         // Check for uptrend
         boost -= steps;
-        while (SetFanSteady(boost, true) >= bestBoostPoint.maxRPM - 60) {
+        while (SetFanSteady(boost, true) >= bestBoostPoint.maxRPM - 80) {
             bestBoostPoint.maxBoost = boost;
             boost -= steps;
             printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);

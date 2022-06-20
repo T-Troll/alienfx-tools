@@ -7,7 +7,8 @@
 typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 
 static char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR",
-			tempECDV[] = "\\_SB.PCI0.LPCB.ECDV.KDRT";
+			tempECDV1[] = "\\_SB.PCI0.LPCB.ECDV.KDRT",
+			tempECDV2[] = "\\_SB.PC00.LPCB.ECDV.KDRT";
 
 namespace AlienFan_SDK {
 
@@ -260,19 +261,34 @@ namespace AlienFan_SDK {
 					}
 					// ECDV temp sensors...
 					short numECDV = 0; bool okECDV = false;
-					do {
-						PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-						acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
-						if (okECDV = EvalAcpiMethod(acc, tempECDV, (PVOID*)&resName, acpiargs)) {
-							if (resName->Argument[0].Argument != 255) {
+					PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
+					acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
+					if (EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs))
+						do {
+							if (okECDV = (resName->Argument[0].Argument != 255)) {
+								free(resName);
 								sensors.push_back({ numECDV, "ECDV-" + to_string(numECDV + 1), 2 });
 								numECDV++;
-							}
-							else
-								okECDV = false;
-							free(resName);
-						}
-					} while (okECDV);
+								acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
+								EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs);
+							} else
+								free(resName);
+						} while (okECDV);
+					else {
+						acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
+						if (EvalAcpiMethod(acc, tempECDV2, (PVOID*)&resName, acpiargs))
+							do {
+								if (okECDV = (resName->Argument[0].Argument != 255)) {
+									free(resName);
+									sensors.push_back({ numECDV, "ECDV-" + to_string(numECDV + 1), 3 });
+									numECDV++;
+									acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
+									EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs);
+								}
+								else
+									free(resName);
+							} while (okECDV);
+					}
 					//printf("%d TZ sensors detected.\n", HowManySensors());
 					// Set boost block
 					//for (int i = 0; i < fans.size(); i++)
@@ -297,7 +313,7 @@ namespace AlienFan_SDK {
 	}
 	int Control::GetFanPercent(int fanID) {
 		if (fanID < fans.size())
-			if (maxrpm[fanID])
+			if (fanID < maxrpm.size() && maxrpm[fanID])
 				return GetFanRPM(fanID) * 100 / maxrpm[fanID];
 			else
 				if (devs[aDev].commandControlled)
@@ -320,10 +336,6 @@ namespace AlienFan_SDK {
 		if (fanID < fans.size()) {
 			if (devs[aDev].commandControlled) {
 				int finalValue = force ? value : (int) value * boosts[fanID] / 100;
-				//#ifdef _DEBUG
-				//	wstring msg = L"Boost for fan#" + to_wstring(fanID) + L" changed to " + to_wstring(finalValue) + L"\n";
-				//	OutputDebugString(msg.c_str());
-				//#endif
 				return RunMainCommand(dev_controls.setFanBoost, (byte) fans[fanID], finalValue);
 			} else {
 				WriteRamDirect(fans[fanID] + 0x23, value + 1); // lock at 0 fix
@@ -357,10 +369,10 @@ namespace AlienFan_SDK {
 					return res_int;
 				}
 				break;
-			case 2: { // tempECDV
+			case 2: case 3: { // tempECDV
 				PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
 				acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, sensors[TempID].senIndex);
-				if (EvalAcpiMethod(acc, tempECDV, (PVOID*)&res, acpiargs) && res) {
+				if (EvalAcpiMethod(acc, sensors[TempID].type == 2 ? tempECDV1 : tempECDV2, (PVOID*)&res, acpiargs) && res) {
 					int res_int = res->Argument[0].Argument;
 					free(res);
 					return res_int;

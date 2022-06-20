@@ -6,7 +6,7 @@
 
 extern void SwitchTab(int);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
+//extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;

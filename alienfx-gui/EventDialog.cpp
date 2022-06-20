@@ -6,9 +6,9 @@ extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* ma
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
-extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
+//extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+//extern void SetSlider(HWND tt, int value);
+//extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 

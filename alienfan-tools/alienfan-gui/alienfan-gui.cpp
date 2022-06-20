@@ -173,7 +173,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         // Started/restarted explorer...
         Shell_NotifyIcon(NIM_ADD, niData);
         if (fan_conf->updateCheck)
-            CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
+            CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
         return true;
     }
 
@@ -182,7 +182,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         niData->hWnd = hDlg;
         if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
-            CreateThread(NULL, 0, CUpdateCheck, &niData, 0, NULL);
+            CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
 
         // set PerfBoost lists...
         HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
@@ -314,6 +314,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             fan_conf->updateCheck = !fan_conf->updateCheck;
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
             fan_conf->Save();
+            if (fan_conf->updateCheck)
+                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
         } break;
         case IDC_BUT_RESET:
         {
@@ -584,7 +586,7 @@ void UpdateFanUI(LPVOID lpParam) {
         string name = "Power mode: ";
         if (fan_conf->lastProf->powerStage) {
             auto pwr = fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage]);
-            name += pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(fan_conf->lastProf->powerStage);
+            name += (pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(fan_conf->lastProf->powerStage));
         }
         else
             name += "Manual";

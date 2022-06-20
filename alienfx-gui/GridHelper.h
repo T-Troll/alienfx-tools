@@ -4,9 +4,9 @@
 #include <random>
 
 class GridHelper {
+public:
 	GridHelper();
 	~GridHelper();
-public:
 	UINT tact = 0;
 	mt19937 rnd;
 	ThreadHelper* gridTrigger = NULL, *gridThread = NULL;
