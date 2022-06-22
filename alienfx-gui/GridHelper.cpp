@@ -6,11 +6,16 @@ void GridUpdate(LPVOID param) {
 		if (ce->effect.trigger && !ce->effect.passive) {
 			// calculate phase
 			// not exactly, need to count slower speed and over-zero tact
-			ce->effect.phase = abs((long)src->tact - (long)ce->effect.start_tact) * ce->effect.speed;
+			ce->effect.oldphase = ce->effect.phase;
+			ce->effect.phase = abs((long)src->tact - (long)ce->effect.start_tact);
+			ce->effect.phase = ce->effect.speed < 80 ? ce->effect.phase / (80 - ce->effect.speed) : ce->effect.phase * (ce->effect.speed - 79);
 			if (ce->effect.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
 				ce->effect.passive = true;
-				ce->effect.phase = 0;
+				//ce->effect.phase = 0;
 			}
+			else
+				if (ce->effect.phase > ce->effect.size) // circle
+					ce->effect.phase = 2*ce->effect.size - ce->effect.phase;
 			// Set lights
 			fxhl->SetGridEffect(&(*ce));
 		}
@@ -47,6 +52,7 @@ void GridTriggerWatch(LPVOID param) {
 				ce->effect.gridY = pntY(src->rnd);
 			} break;
 			}
+			ce->effect.oldphase = 0;
 			ce->effect.start_tact = src->tact;
 		}
 	}
@@ -57,7 +63,7 @@ GridHelper::GridHelper() {
 	// Also start keyboard hook if needed.
 	tact = 0;
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, 100);
-	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, 50);
+	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, 100);
 }
 
 GridHelper::~GridHelper()

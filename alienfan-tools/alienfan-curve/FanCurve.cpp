@@ -29,11 +29,13 @@ int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
 HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
 
 fan_point Screen2Fan(LPARAM lParam) {
+    if (!cArea.right) {
+        GetClientRect(fanWindow, &cArea);
+        cArea.right--; cArea.bottom--;
+    }
     return {
         (short)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
         (short)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
-        //(short)max(0, min(100, (100 * (GET_X_LPARAM(lParam) - cArea.left)) / (cArea.right - cArea.left))),
-        //(short)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / (cArea.bottom - cArea.top)))
     };
 }
 
@@ -41,8 +43,6 @@ POINT Fan2Screen(short temp, short boost) {
     return {
         temp* cArea.right / 100,
         (100 - boost)* cArea.bottom / 100
-        //temp * cArea.right / 100 + cArea.left,
-        //(100 - boost)* cArea.bottom / 100 + cArea.top
     };
 }
 
@@ -64,7 +64,10 @@ void DrawFan()
     if (fanWindow && mon) {
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
-
+        if (!cArea.right) {
+            GetClientRect(fanWindow, &cArea);
+            cArea.right--; cArea.bottom--;
+        }
         // Double buff...
         HDC hdc = CreateCompatibleDC(hdc_r);
         HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, cArea.right - cArea.left + 1, cArea.bottom - cArea.top + 1);
@@ -266,8 +269,10 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
 INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     fan_block* cFan = fan_conf->FindFanBlock(fan_conf->FindSensor(fan_conf->lastSelectedSensor), fan_conf->lastSelectedFan);
-    GetClientRect(hDlg, &cArea);
-    cArea.right--; cArea.bottom--;
+    if (!cArea.right) {
+        GetClientRect(fanWindow, &cArea);
+        cArea.right--; cArea.bottom--;
+    }
 
     switch (message) {
     case WM_PAINT: {
@@ -349,8 +354,8 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         SetFocus(GetParent(hDlg));
     } break;
-    case WM_NCHITTEST:
-        return HTCLIENT;
+    //case WM_NCHITTEST:
+    //    return HTCLIENT;
     case WM_ERASEBKGND:
         return true;
         break;

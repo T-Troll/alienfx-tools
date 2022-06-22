@@ -232,44 +232,68 @@ void FXHelper::SetGridEffect(groupset* grp)
 {
 	auto zone = conf->FindZoneMap(grp->group);
 	if (zone) {
-		AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID(zone->gridID);
+		AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID((byte)zone->gridID);
 		if (grid) {
 			vector<DWORD> setLights;
 			for (int x = zone->gMinX; x < zone->gMaxX; x++) // maybe <=
 				for (int y = zone->gMinY; y < zone->gMaxY; y++) {
 					// Check for zero or non-group
 					DWORD gridval = grid->grid[ind(x, y)];
+					if (gridval && grp->effect.flags & GE_FLAG_ZONE) { // zone lights only
+						auto gr = conf->afx_dev.GetGroupById(grp->group);
+						if (find_if(gr->lights.begin(), gr->lights.end(),
+							[gridval](auto t) {
+								return gridval == MAKELPARAM(t.first, t.second);
+							}) == gr->lights.end())
+							gridval = 0;
+					}
 					if (gridval) {
-						double power = 0.0;
-						int dist = 0;
+						double power;
+						int dist = 0, olddist = 0;
 						AlienFX_SDK::Colorcode fin;
 						switch (grp->gauge) {
 						case 1: // horizontal
 							dist = abs(x - grp->effect.gridX - grp->effect.phase);
+							olddist = abs(x - grp->effect.gridX - grp->effect.oldphase);
 							break;
 						case 2: // vertical
 							dist = abs(y - grp->effect.gridY - grp->effect.phase);
+							olddist = abs(y - grp->effect.gridY - grp->effect.oldphase);
 							break;
 						case 3: // diagonal
 							dist = abs(x + y - grp->effect.gridX - grp->effect.gridY - grp->effect.phase);
+							olddist = abs(x + y - grp->effect.gridX - grp->effect.gridY - grp->effect.oldphase);
 							break;
 						case 4: // back diagonal
 							dist = abs((zone->gMaxX - x) + y - grp->effect.gridX - grp->effect.gridY - grp->effect.phase);
+							olddist = abs((zone->gMaxX - x) + y - grp->effect.gridX - grp->effect.gridY - grp->effect.oldphase);
 							break;
 						case 5: // radial
-							dist = abs(sqrt((grp->effect.gridX - x) * (grp->effect.gridX - x) +
+							dist = abs((int)sqrt((grp->effect.gridX - x) * (grp->effect.gridX - x) +
 								(grp->effect.gridY - y) * (grp->effect.gridY - y)) - grp->effect.phase);
+							olddist = abs((int)sqrt((grp->effect.gridX - x) * (grp->effect.gridX - x) +
+								(grp->effect.gridY - y) * (grp->effect.gridY - y)) - grp->effect.oldphase);
 						break;
 						}
-						if (dist <= grp->effect.width) {
-							power = ((double)grp->effect.width - dist) / grp->effect.width;
-							fin.r = (byte)((1.0 - power) * grp->effect.from.r + power * grp->effect.to.r);
-							fin.g = (byte)((1.0 - power) * grp->effect.from.g + power * grp->effect.to.g);
-							fin.b = (byte)((1.0 - power) * grp->effect.from.b + power * grp->effect.to.b);
-						}
-						else
-							fin = grp->effect.from;
-						if (find(setLights.begin(), setLights.end(), gridval) == setLights.end()) {
+						if ((dist <= grp->effect.width || olddist <= grp->effect.width) &&
+							find(setLights.begin(), setLights.end(), gridval) == setLights.end()) {
+							if (dist <= grp->effect.width) {
+								switch (grp->effect.type) {
+								case 0: // running light
+									power = 1.0;
+									break;
+								case 1: // wave
+									power = ((double)grp->effect.width - dist) / grp->effect.width;
+									break;
+								case 2: // gradient
+									power = 1.0 - (((double)grp->effect.width - dist) / grp->effect.width); // just for fun for now
+								}
+								fin.r = (byte)((1.0 - power) * grp->effect.from.r + power * grp->effect.to.r);
+								fin.g = (byte)((1.0 - power) * grp->effect.from.g + power * grp->effect.to.g);
+								fin.b = (byte)((1.0 - power) * grp->effect.from.b + power * grp->effect.to.b);
+							}
+							else
+								fin = grp->effect.from;
 							SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&fin) });
 							setLights.push_back(gridval);
 						}

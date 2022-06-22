@@ -60,7 +60,7 @@ struct grideffect {
 	// static info
 	byte trigger = 0;
 	byte type = 0;
-	byte speed = 1;
+	byte speed = 80;
 	byte size = 0;
 	byte width = 1;
 	WORD flags;
@@ -68,7 +68,7 @@ struct grideffect {
 	AlienFX_SDK::Colorcode to;
 	// operational info
 	bool passive = true;
-	byte gridX, gridY, phase;
+	byte gridX, gridY, phase, oldphase;
 	UINT start_tact;
 };
 
