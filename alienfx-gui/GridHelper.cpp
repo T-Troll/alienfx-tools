@@ -1,5 +1,33 @@
 #include "GridHelper.h"
 
+LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
+
+	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
+
+	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
+		char keyname [32];
+		GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
+ 		for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
+			if (it->effect.trigger == 3) { // keyboard effect
+				// check grid
+				zonemap* zone = conf->FindZoneMap(it->group);
+				for (int x = zone->gMinX; x < zone->gMaxX; x++)
+					for (int y = zone->gMinY; y < zone->gMaxY; y++) {
+						DWORD gridval = conf->afx_dev.GetGridByID((byte)zone->gridID)->grid[ind(x, y)];
+						if (gridval && conf->afx_dev.GetMappingById(conf->afx_dev.GetDeviceById(LOWORD(gridval)), HIWORD(gridval))->name == (string)keyname) {
+							// start effect
+							it->effect.gridX = x;
+							it->effect.gridY = y;
+							it->effect.passive = false;
+							return res;
+						}
+					}
+			}
+	}
+
+	return res;
+}
+
 void GridUpdate(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
@@ -7,11 +35,10 @@ void GridUpdate(LPVOID param) {
 			// calculate phase
 			// not exactly, need to count slower speed and over-zero tact
 			ce->effect.oldphase = ce->effect.phase;
-			ce->effect.phase = abs((long)src->tact - (long)ce->effect.start_tact);
+			ce->effect.phase = (byte)abs((long)src->tact - (long)ce->effect.start_tact);
 			ce->effect.phase = ce->effect.speed < 80 ? ce->effect.phase / (80 - ce->effect.speed) : ce->effect.phase * (ce->effect.speed - 79);
 			if (ce->effect.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
 				ce->effect.passive = true;
-				//ce->effect.phase = 0;
 			}
 			else
 				if (ce->effect.phase > ce->effect.size) // circle
@@ -30,7 +57,6 @@ void GridTriggerWatch(LPVOID param) {
 			zonemap* cz = conf->FindZoneMap(ce->group);
 			switch (ce->effect.trigger) {
 			case 1: // Continues
-				ce->effect.passive = false;
 				switch (ce->gauge) {
 				case 1:	case 2:	case 3:
 					ce->effect.gridX = cz->gMinX; ce->effect.gridY = cz->gMinY;
@@ -43,13 +69,14 @@ void GridTriggerWatch(LPVOID param) {
 					ce->effect.gridY = cz->gMinY + (cz->gMaxY - cz->gMinY) / 2;
 					break;
 				}
+				ce->effect.passive = false;
 				break;
 			case 2: { // Random
 				uniform_int_distribution<int> pntX(cz->gMinX, cz->gMaxX);
 				uniform_int_distribution<int> pntY(cz->gMinY, cz->gMaxY);
-				ce->effect.passive = false;
 				ce->effect.gridX = pntX(src->rnd);
 				ce->effect.gridY = pntY(src->rnd);
+				ce->effect.passive = false;
 			} break;
 			}
 			ce->effect.oldphase = 0;
@@ -64,6 +91,7 @@ GridHelper::GridHelper() {
 	tact = 0;
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, 100);
 	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, 100);
+	kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
 }
 
 GridHelper::~GridHelper()
@@ -72,4 +100,5 @@ GridHelper::~GridHelper()
 	delete gridThread;
 	gridTrigger = gridThread = NULL;
 	// Clean haptics, events, hook
+	UnhookWindowsHookEx(kEvent);
 }

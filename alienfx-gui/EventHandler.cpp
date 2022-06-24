@@ -450,7 +450,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 		case VK_RSHIFT:
 		case VK_RCONTROL:
 		case VK_RMENU: {
-			if (!wasSwitched) {
+			if (!(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
 				auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
 					[lParam](auto cp) {
 						return ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == cp->triggerkey;

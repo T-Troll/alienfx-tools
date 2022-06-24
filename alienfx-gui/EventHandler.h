@@ -12,7 +12,7 @@ private:
 	HANDLE dwHandle = 0;
 
 	HWINEVENTHOOK hEvent, cEvent = 0;
-	HHOOK kEvent, Levent;
+	HHOOK kEvent;// , Levent;
 
 	int effMode = 3;
 

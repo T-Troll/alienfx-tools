@@ -9,5 +9,6 @@ public:
 	~GridHelper();
 	UINT tact = 0;
 	mt19937 rnd;
+	HHOOK kEvent = NULL;
 	ThreadHelper* gridTrigger = NULL, *gridThread = NULL;
 };
