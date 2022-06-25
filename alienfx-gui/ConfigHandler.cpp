@@ -157,7 +157,7 @@ bool ConfigHandler::SetStates() {
 }
 
 void ConfigHandler::SetToolTip() {
-	string name = "Profile: " + activeProfile->name + "\nEffect: " + (GetEffect() < effModes.size() ? effModes[GetEffect()] : "Global");
+	string name = "Profile: " + (activeProfile ? activeProfile->name : "Undefined") + "\nEffect: " + (GetEffect() < effModes.size() ? effModes[GetEffect()] : "Global");
 	strcpy_s(niData.szTip, 128, name.c_str());
 	Shell_NotifyIcon(NIM_MODIFY, &niData);
 }
@@ -186,7 +186,7 @@ void ConfigHandler::SetDimmed() {
 	dimmed = !dimmed;
 }
 int ConfigHandler::GetEffect() {
-	return enableMon ? activeProfile->effmode : 3;
+	return enableMon ? activeProfile->effmode : 0;
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {

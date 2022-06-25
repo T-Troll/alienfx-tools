@@ -172,8 +172,6 @@ namespace AlienFan_SDK {
 
 	bool Control::Probe() {
 		// Additional temp sensor name pattern
-		//char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR";
-		//char tempECDV[] = "\\_SB.PCI0.LPCB.ECDV.KDRT";
 		if (activated) {
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 			sensors.clear();
@@ -186,7 +184,7 @@ namespace AlienFan_SDK {
 				// Probe...
 				if ((systemID = RunMainCommand(devs[aDev].probe)) > 0) {
 					// Alienware device detected!
-					//printf("Device ID %x found.\n", systemID);
+					//printf("Device ID %x (API %d) found.\n", systemID, aDev);
 					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
 						int fIndex = 0, funcID = 0;
@@ -259,10 +257,12 @@ namespace AlienFan_SDK {
 							free(resName);
 						}
 					}
+					//printf("%d SEN blocks detected\n", sensors.size());
 					// ECDV temp sensors...
 					short numECDV = 0; bool okECDV = false;
 					PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
 					acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
+					//printf("Trying %s... ", tempECDV1);
 					if (EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs))
 						do {
 							if (okECDV = (resName->Argument[0].Argument != 255)) {
@@ -275,6 +275,7 @@ namespace AlienFan_SDK {
 								free(resName);
 						} while (okECDV);
 					else {
+						//printf("failed, trying %s...", tempECDV2);
 						acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
 						if (EvalAcpiMethod(acc, tempECDV2, (PVOID*)&resName, acpiargs))
 							do {
@@ -283,11 +284,13 @@ namespace AlienFan_SDK {
 									sensors.push_back({ numECDV, "ECDV-" + to_string(numECDV + 1), 3 });
 									numECDV++;
 									acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
-									EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs);
+									EvalAcpiMethod(acc, tempECDV2, (PVOID*)&resName, acpiargs);
 								}
 								else
 									free(resName);
 							} while (okECDV);
+						/*else
+							printf("Failed.");*/
 					}
 					//printf("%d TZ sensors detected.\n", HowManySensors());
 					// Set boost block
