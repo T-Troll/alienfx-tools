@@ -322,15 +322,17 @@ nextRecord:
 			}
 			if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
 				(gset = FindCreateGroupSet(profID, groupID))) {
-				byte* out = inarray;
+				byte* out = inarray, cbsize = 2 * sizeof(DWORD) + 3 * sizeof(BYTE);
+				freq_map newFreq;
 				for (int i = 0; i < recSize; i++) {
-					freq_map newFreq;
-					newFreq.colorfrom.ci = *(DWORD*)out; out += sizeof(DWORD);
+					memcpy(&newFreq, out, cbsize);
+					out += cbsize;
+					/*newFreq.colorfrom.ci = *(DWORD*)out; out += sizeof(DWORD);
 					newFreq.colorto.ci = *(DWORD*)out; out += sizeof(DWORD);
 					newFreq.hicut = *out; out++;
-					newFreq.lowcut = *out; out++;
-					byte freqsize = *out; out++;
-					for (int j = 0; j < freqsize; j++) {
+					newFreq.lowcut = *out; out++;*/
+					//byte freqsize = *out; out++;
+					for (int j = 0; j < newFreq.freqsize; j++) {
 						newFreq.freqID.push_back(*out); out++;
 					}
 					gset->haptics.push_back(newFreq);
@@ -456,16 +458,19 @@ void ConfigHandler::Save() {
 			}
 			if (iIter->haptics.size()) { // haptics
 				fname = "Zone-haptics-" + name + "-" + to_string(iIter->haptics.size());
-				DWORD size = 0;
+				DWORD size = 0, recSize = 2 * sizeof(DWORD) + 3;
 				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++)
-					size += 2 * sizeof(DWORD) + 3 + (DWORD)it->freqID.size();
+					size += recSize + (DWORD)it->freqID.size();
 				byte* buffer = new byte[size], * out = buffer;
 				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++) {
-					*(DWORD*)out = it->colorfrom.ci; out += sizeof(DWORD);
-					*(DWORD*)out = it->colorto.ci; out += sizeof(DWORD);
-					*out = it->hicut; out++;
-					*out = it->lowcut; out++;
-					*out = (byte)it->freqID.size(); out++;
+					it->freqsize = (byte) it->freqID.size();
+					memcpy(out, &(*it), recSize);
+					out += recSize;
+					//*(DWORD*)out = it->colorfrom.ci; out += sizeof(DWORD);
+					//*(DWORD*)out = it->colorto.ci; out += sizeof(DWORD);
+					//*out = it->hicut; out++;
+					//*out = it->lowcut; out++;
+					//*out = (byte)it->freqID.size(); out++;
 					for (auto itf = it->freqID.begin(); itf < it->freqID.end(); itf++) {
 						*out = *itf; out++;
 					}

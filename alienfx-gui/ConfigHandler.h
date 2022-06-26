@@ -29,8 +29,9 @@
 struct freq_map {
 	AlienFX_SDK::Colorcode colorfrom{ 0 };
 	AlienFX_SDK::Colorcode colorto{ 0 };
-	byte lowcut{ 0 };
 	byte hicut{ 255 };
+	byte lowcut{ 0 };
+	byte freqsize{ 0 };
 	vector<byte> freqID;
 };
 
