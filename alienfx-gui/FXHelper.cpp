@@ -253,26 +253,26 @@ void FXHelper::SetGridEffect(groupset* grp)
 						AlienFX_SDK::Colorcode fin;
 						switch (grp->gauge) {
 						case 1: // horizontal
-							dist = abs(x - grp->effect.gridX - grp->effect.phase);
-							olddist = abs(x - grp->effect.gridX - grp->effect.oldphase);
+							dist = abs(x - grp->gridop.gridX - grp->gridop.phase);
+							olddist = abs(x - grp->gridop.gridX - grp->gridop.oldphase);
 							break;
 						case 2: // vertical
-							dist = abs(y - grp->effect.gridY - grp->effect.phase);
-							olddist = abs(y - grp->effect.gridY - grp->effect.oldphase);
+							dist = abs(y - grp->gridop.gridY - grp->gridop.phase);
+							olddist = abs(y - grp->gridop.gridY - grp->gridop.oldphase);
 							break;
 						case 3: // diagonal
-							dist = abs(x + y - grp->effect.gridX - grp->effect.gridY - grp->effect.phase);
-							olddist = abs(x + y - grp->effect.gridX - grp->effect.gridY - grp->effect.oldphase);
+							dist = abs(x + y - grp->gridop.gridX - grp->gridop.gridY - grp->gridop.phase);
+							olddist = abs(x + y - grp->gridop.gridX - grp->gridop.gridY - grp->gridop.oldphase);
 							break;
 						case 4: // back diagonal
-							dist = abs((zone->gMaxX - x) + y - grp->effect.gridX - grp->effect.gridY - grp->effect.phase);
-							olddist = abs((zone->gMaxX - x) + y - grp->effect.gridX - grp->effect.gridY - grp->effect.oldphase);
+							dist = abs((zone->gMaxX - x) + y - grp->gridop.gridX - grp->gridop.gridY - grp->gridop.phase);
+							olddist = abs((zone->gMaxX - x) + y - grp->gridop.gridX - grp->gridop.gridY - grp->gridop.oldphase);
 							break;
 						case 5: // radial
-							dist = abs((int)sqrt((grp->effect.gridX - x) * (grp->effect.gridX - x) +
-								(grp->effect.gridY - y) * (grp->effect.gridY - y)) - grp->effect.phase);
-							olddist = abs((int)sqrt((grp->effect.gridX - x) * (grp->effect.gridX - x) +
-								(grp->effect.gridY - y) * (grp->effect.gridY - y)) - grp->effect.oldphase);
+							dist = abs((int)sqrt((grp->gridop.gridX - x) * (grp->gridop.gridX - x) +
+								(grp->gridop.gridY - y) * (grp->gridop.gridY - y)) - grp->gridop.phase);
+							olddist = abs((int)sqrt((grp->gridop.gridX - x) * (grp->gridop.gridX - x) +
+								(grp->gridop.gridY - y) * (grp->gridop.gridY - y)) - grp->gridop.oldphase);
 						break;
 						}
 						if ((dist <= grp->effect.width || olddist <= grp->effect.width) &&

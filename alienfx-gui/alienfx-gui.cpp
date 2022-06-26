@@ -133,6 +133,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
 
 	eve = new EventHandler();
+	eve->StartEffects();
+	eve->StartProfiles();
 
 	SwitchTab(TAB_LIGHTS);
 
@@ -436,10 +438,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	{
 		switch (LOWORD(wParam))
 		{
+		case IDC_BUT_PREV: case IDC_BUT_NEXT: case IDC_BUT_LAST: case IDC_BUT_FIRST:
+			if (dDlg)
+				SendMessage(dDlg, message, wParam, lParam);
+			break;
 		case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
-		{
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
-		} break;
+			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
 			break;
@@ -548,7 +553,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case SIZE_MINIMIZED: {
 			// go to tray...
-			SendMessage(dDlg, WM_APP + 3, 0, 0);
+			//SendMessage(dDlg, WM_APP + 3, 0, 0);
 			ShowWindow(hDlg, SW_HIDE);
 		} break;
 		}

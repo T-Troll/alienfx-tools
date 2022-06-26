@@ -2,7 +2,7 @@
 #include "EventHandler.h"
 #include "Common.h"
 
-extern void SwitchLightTab(HWND, int);
+//extern void SwitchLightTab(HWND, int);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 
@@ -10,8 +10,6 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RemoveUnused(vector<groupset>*);
 
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
-
-//extern HWND zsDlg;
 
 extern EventHandler* eve;
 extern int eItem;
@@ -23,7 +21,6 @@ void UpdateHapticsUI(LPVOID);
 ThreadHelper* hapUIThread;
 
 void DrawFreq(HWND hDlg) {
-	//unsigned rectop;
 
 	HWND hysto = GetDlgItem(hDlg, IDC_LEVELS);
 
@@ -105,7 +102,7 @@ void SetMappingData(HWND hDlg, groupset* map) {
 	RedrawButton(hDlg, IDC_BUTTON_HPC, map && map->haptics.size() ? &map->haptics[fGrpItem].colorto : NULL);
 }
 
-void SetFeqGroups(HWND hDlg) {
+void SetFreqGroups(HWND hDlg) {
 	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
 	groupset* map = FindMapping(eItem);
 	fGrpItem = -1;
@@ -182,17 +179,8 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			"-" + to_string(22050 - (int)round((log(20 - cIndex) * 22030 / log(21)))) + " Hz, Level: " +
 			to_string(clickLevel * 100 / 255));
 	} break;
-	case WM_PAINT: {
-		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hDlg, &ps);
+	case WM_PAINT:
 		DrawFreq(GetParent(hDlg));
-		EndPaint(hDlg, &ps);
-		return true;
-	} break;
-	case WM_NCHITTEST:
-		return HTCLIENT;
-	case WM_ERASEBKGND:
-		return true;
 		break;
 	}
 	return DefWindowProc(hDlg, message, wParam, lParam);
@@ -207,27 +195,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		//zsDlg = CreateDialog(hInst, (LPSTR)IDD_ZONESELECTION, hDlg, (DLGPROC)ZoneSelectionDialog);
-		//RECT mRect;
-		//GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_ZONES), &mRect);
-		//ScreenToClient(hDlg, (LPPOINT)&mRect);
-		//SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
-
-		//if (!conf->afx_dev.GetMappings()->size())
-		//	OnGridSelChanged(gridTab);
-
 		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_inpType ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_inpType ? BST_UNCHECKED : BST_CHECKED);
 
 		SetWindowLongPtr(GetDlgItem(hDlg, IDC_LEVELS), GWLP_WNDPROC, (LONG_PTR)FreqLevels);
 		hToolTip = CreateToolTip(GetDlgItem(hDlg, IDC_LEVELS), hToolTip);
 
-		// init grids...
-		//CreateGridBlock(gridTab, (DLGPROC)TabColorGrid);
-		//TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
-		//OnGridSelChanged(gridTab);
-
-		SetFeqGroups(hDlg);
+		SetFreqGroups(hDlg);
 
 		// Start UI update thread...
 		hapUIThread = new ThreadHelper(UpdateHapticsUI, hDlg, 40);
@@ -277,11 +251,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_LPC:
 			if (map) {
 				SetColor(hDlg, IDC_BUTTON_LPC, &map->haptics[fGrpItem].colorfrom);
+				RedrawGridButtonZone(NULL, true);
 			}
 			break;
 		case IDC_BUTTON_HPC:
 			if (map) {
 				SetColor(hDlg, IDC_BUTTON_HPC, &map->haptics[fGrpItem].colorto);
+				RedrawGridButtonZone(NULL, true);
 			}
 			break;
 		case IDC_BUTTON_REMOVE:
@@ -292,9 +268,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 	} break;
 	case WM_APP + 2: {
-		SetFeqGroups(hDlg);
+		SetFreqGroups(hDlg);
 		DrawFreq(hDlg);
-		RedrawGridButtonZone(NULL, true);
+		//RedrawGridButtonZone(NULL, true);
 	} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {

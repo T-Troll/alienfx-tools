@@ -25,9 +25,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 EventHandler::EventHandler()
 {
-	StartEffects();
 	ChangePowerState();
-	StartProfiles();
 	StartFanMon();
 }
 
@@ -602,7 +600,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
 		cData.RAM = (byte) memStat.dwMemoryLoad;
-		cData.NET = (byte) totalNet * 100 / fxhl->maxData.NET;
+		cData.NET = (byte) totalNet ? max(totalNet * 100 / fxhl->maxData.NET, 1) : 0;
 		cData.PWR = (byte) totalPwr * 100 / fxhl->maxData.PWR;
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
 		fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
@@ -610,7 +608,10 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
 
 		src->modifyProfile.lock();
-		fxhl->SetCounterColor(&cData);
+		if (src->grid)
+			src->grid->UpdateEvent(&cData);
+		else
+			fxhl->SetCounterColor(&cData);
 		src->modifyProfile.unlock();
 
 		/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) +

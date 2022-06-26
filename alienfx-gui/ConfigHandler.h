@@ -66,6 +66,9 @@ struct grideffect {
 	WORD flags;
 	AlienFX_SDK::Colorcode from;
 	AlienFX_SDK::Colorcode to;
+};
+
+struct grideffop {
 	// operational info
 	bool passive = true;
 	byte gridX, gridY, phase, oldphase;
@@ -79,6 +82,7 @@ struct groupset {
 	vector<byte> ambients;
 	vector<freq_map> haptics;
 	grideffect effect;
+	grideffop  gridop;
 	bool fromColor = false;
 	WORD flags = 0;
 	byte gauge = 0;

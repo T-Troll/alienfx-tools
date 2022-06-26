@@ -1,4 +1,7 @@
 #include "GridHelper.h"
+#include "EventHandler.h"
+
+extern EventHandler* eve;
 
 LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
@@ -16,9 +19,9 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 						DWORD gridval = conf->afx_dev.GetGridByID((byte)zone->gridID)->grid[ind(x, y)];
 						if (gridval && conf->afx_dev.GetMappingById(conf->afx_dev.GetDeviceById(LOWORD(gridval)), HIWORD(gridval))->name == (string)keyname) {
 							// start effect
-							it->effect.gridX = x;
-							it->effect.gridY = y;
-							it->effect.passive = false;
+							it->gridop.gridX = x;
+							it->gridop.gridY = y;
+							it->gridop.passive = false;
 							return res;
 						}
 					}
@@ -30,19 +33,19 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 void GridUpdate(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
-	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
-		if (ce->effect.trigger && !ce->effect.passive) {
+	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
+		if (ce->effect.trigger && !ce->gridop.passive) {
 			// calculate phase
 			// not exactly, need to count slower speed and over-zero tact
-			ce->effect.oldphase = ce->effect.phase;
-			ce->effect.phase = (byte)abs((long)src->tact - (long)ce->effect.start_tact);
-			ce->effect.phase = ce->effect.speed < 80 ? ce->effect.phase / (80 - ce->effect.speed) : ce->effect.phase * (ce->effect.speed - 79);
-			if (ce->effect.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
-				ce->effect.passive = true;
+			ce->gridop.oldphase = ce->gridop.phase;
+			ce->gridop.phase = (byte)abs((long)src->tact - (long)ce->gridop.start_tact);
+			ce->gridop.phase = ce->effect.speed < 80 ? ce->gridop.phase / (80 - ce->effect.speed) : ce->gridop.phase * (ce->effect.speed - 79);
+			if (ce->gridop.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
+				ce->gridop.passive = true;
 			}
 			else
-				if (ce->effect.phase > ce->effect.size) // circle
-					ce->effect.phase = 2*ce->effect.size - ce->effect.phase;
+				if (ce->gridop.phase > ce->effect.size) // circle
+					ce->gridop.phase = 2*ce->effect.size - ce->gridop.phase;
 			// Set lights
 			fxhl->SetGridEffect(&(*ce));
 		}
@@ -52,43 +55,42 @@ void GridUpdate(LPVOID param) {
 
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
-	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
-		if (ce->gauge && ce->effect.trigger && ce->effect.passive) {
+	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
+		if (ce->gauge && ce->effect.trigger && ce->gridop.passive) {
 			zonemap* cz = conf->FindZoneMap(ce->group);
 			switch (ce->effect.trigger) {
 			case 1: // Continues
 				switch (ce->gauge) {
 				case 1:	case 2:	case 3:
-					ce->effect.gridX = cz->gMinX; ce->effect.gridY = cz->gMinY;
+					ce->gridop.gridX = cz->gMinX; ce->gridop.gridY = cz->gMinY;
 					break;
 				case 4:
-					ce->effect.gridX = cz->gMaxX; ce->effect.gridY = cz->gMinY;
+					ce->gridop.gridX = cz->gMaxX; ce->gridop.gridY = cz->gMinY;
 					break;
 				case 5:
-					ce->effect.gridX = cz->gMinX + (cz->gMaxX - cz->gMinX) / 2;
-					ce->effect.gridY = cz->gMinY + (cz->gMaxY - cz->gMinY) / 2;
+					ce->gridop.gridX = cz->gMinX + (cz->gMaxX - cz->gMinX) / 2;
+					ce->gridop.gridY = cz->gMinY + (cz->gMaxY - cz->gMinY) / 2;
 					break;
 				}
-				ce->effect.passive = false;
+				ce->gridop.passive = false;
 				break;
 			case 2: { // Random
 				uniform_int_distribution<int> pntX(cz->gMinX, cz->gMaxX);
 				uniform_int_distribution<int> pntY(cz->gMinY, cz->gMaxY);
-				ce->effect.gridX = pntX(src->rnd);
-				ce->effect.gridY = pntY(src->rnd);
-				ce->effect.passive = false;
+				ce->gridop.gridX = pntX(src->rnd);
+				ce->gridop.gridY = pntY(src->rnd);
+				ce->gridop.passive = false;
 			} break;
 			}
-			ce->effect.oldphase = 0;
-			ce->effect.start_tact = src->tact;
+			ce->gridop.oldphase = 0;
+			ce->gridop.start_tact = src->tact;
 		}
 	}
 }
 
 GridHelper::GridHelper() {
-	// check current profile sets - do we need events or haptics?
-	// Also start keyboard hook if needed.
 	tact = 0;
+	eve->StartEvents();
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, 100);
 	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, 100);
 	kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
@@ -96,9 +98,44 @@ GridHelper::GridHelper() {
 
 GridHelper::~GridHelper()
 {
+	UnhookWindowsHookEx(kEvent);
+	eve->StopEvents();
 	delete gridTrigger;
 	delete gridThread;
 	gridTrigger = gridThread = NULL;
 	// Clean haptics, events, hook
-	UnhookWindowsHookEx(kEvent);
+}
+
+void GridHelper::UpdateEvent(EventData* data) {
+	for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
+		if (it->effect.trigger == 4 && it->events[2].state && it->gridop.passive) { // Event trigger
+			int ccut = it->events[2].cut, cVal = 0;
+			switch (it->events[2].source) {
+			case 0: cVal = data->HDD; break;
+			case 1: cVal = data->NET; break;
+			case 2: cVal = data->Temp - ccut; break;
+			case 3: cVal = data->RAM - ccut; break;
+			case 4: cVal = data->Batt - ccut; break;
+			case 5: cVal = data->KBD; break;
+			}
+
+			if (cVal > 0) {
+				// Triggering effect...
+				zonemap* cz = conf->FindZoneMap(it->group);
+				switch (it->gauge) {
+				case 1:	case 2:	case 3:
+					it->gridop.gridX = cz->gMinX; it->gridop.gridY = cz->gMinY;
+					break;
+				case 4:
+					it->gridop.gridX = cz->gMaxX; it->gridop.gridY = cz->gMinY;
+					break;
+				case 5:
+					it->gridop.gridX = cz->gMinX + (cz->gMaxX - cz->gMinX) / 2;
+					it->gridop.gridY = cz->gMinY + (cz->gMaxY - cz->gMinY) / 2;
+					break;
+				}
+				it->gridop.passive = false;
+			}
+		}
+	memcpy(&fxhl->eData, data, sizeof(EventData));
 }

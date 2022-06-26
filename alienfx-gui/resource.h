@@ -178,7 +178,6 @@
 #define IDC_TRIGGER_POWER_BATTERY       1164
 #define IDC_SLIDER_SPEED                1168
 #define IDC_CHECK_CIRCLE                1169
-#define IDC_SLIDER3                     1170
 #define IDC_SLIDER_SIZE                 1170
 #define IDC_SLIDER_WIDTH                1171
 #define IDC_COMBO_TRIGGER               1172
@@ -207,7 +206,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        164
-#define _APS_NEXT_COMMAND_VALUE         32808
+#define _APS_NEXT_COMMAND_VALUE         32814
 #define _APS_NEXT_CONTROL_VALUE         1176
 #define _APS_NEXT_SYMED_VALUE           113
 #endif

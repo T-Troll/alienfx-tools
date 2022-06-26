@@ -375,10 +375,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
 
-		RegisterHotKey(hDlg, 1, MOD_SHIFT, VK_LEFT);
-		RegisterHotKey(hDlg, 2, MOD_SHIFT, VK_RIGHT);
-		RegisterHotKey(hDlg, 3, MOD_SHIFT, VK_HOME);
-		RegisterHotKey(hDlg, 4, MOD_SHIFT, VK_END);
+		//RegisterHotKey(hDlg, 1, MOD_SHIFT, VK_LEFT);
+		//RegisterHotKey(hDlg, 2, MOD_SHIFT, VK_RIGHT);
+		//RegisterHotKey(hDlg, 3, MOD_SHIFT, VK_HOME);
+		//RegisterHotKey(hDlg, 4, MOD_SHIFT, VK_END);
 
 		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 
@@ -421,21 +421,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_CLEAR:// IDC_BUTTON_REML:
-			if (eLid >= 0 && MessageBox(hDlg, "Do you really want to remove current light name and all it's settings?", "Warning",
+			if (conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid) && MessageBox(hDlg, "Do you really want to remove current light name and all it's settings?", "Warning",
 						   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// Clear grid
 				DWORD gridID = MAKELPARAM(conf->afx_dev.fxdevs[dIndex].pid, eLid);
 				for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); it++)
-					for (int ind = 0; ind < it->x*it->y; ind++)
+					for (int ind = 0; ind < it->x * it->y; ind++)
 						if (it->grid[ind] == gridID)
 							it->grid[ind] = 0;
 				// delete from all groups...
 				RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
-				// delete from current dev block...
-				conf->afx_dev.fxdevs[dIndex].lights.erase(find_if(conf->afx_dev.fxdevs[dIndex].lights.begin(), conf->afx_dev.fxdevs[dIndex].lights.end(),
-					[](auto t) {
-						return t.lightid == eLid;
-					}));
 				// delete from mappings...
 				conf->afx_dev.RemoveMapping(&conf->afx_dev.fxdevs[dIndex], eLid);
 				conf->afx_dev.activeLights--;
@@ -550,16 +545,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		default: return false;
 		}
 	} break;
-	case WM_HOTKEY: {
-		DWORD message = 0;
-		switch (wParam) {
-		case 1: message = IDC_BUT_PREV; break;
-		case 2: message = IDC_BUT_NEXT; break;
-		case 3: message = IDC_BUT_FIRST; break;
-		case 4: message = IDC_BUT_LAST; break;
-		}
-		SendMessage(hDlg, WM_COMMAND, message, 0);
-	} break;
+	//case WM_HOTKEY: {
+	//	DWORD message = 0;
+	//	switch (wParam) {
+	//	case 1: message = IDC_BUT_PREV; break;
+	//	case 2: message = IDC_BUT_NEXT; break;
+	//	case 3: message = IDC_BUT_FIRST; break;
+	//	case 4: message = IDC_BUT_LAST; break;
+	//	}
+	//	SendMessage(hDlg, WM_COMMAND, message, 0);
+	//} break;
 	case WM_NOTIFY: {
 		HWND gridTab = GetDlgItem(hDlg, IDC_TAB_DEV_GRID);
 		switch (((NMHDR*)lParam)->idFrom) {
@@ -675,18 +670,21 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		}
 		break;
-	case WM_APP + 3: {
-		fxhl->UnblockUpdates(true, true);
-		fxhl->Refresh();
-		UnregisterHotKey(hDlg, 1);
-		UnregisterHotKey(hDlg, 2);
-		UnregisterHotKey(hDlg, 3);
-		UnregisterHotKey(hDlg, 4);
-		conf->SortAllGauge();
-	} break;
+	//case WM_APP + 3: {
+	//	fxhl->UnblockUpdates(true, true);
+	//	fxhl->Refresh();
+	//	UnregisterHotKey(hDlg, 1);
+	//	UnregisterHotKey(hDlg, 2);
+	//	UnregisterHotKey(hDlg, 3);
+	//	UnregisterHotKey(hDlg, 4);
+	//	conf->SortAllGauge();
+	//} break;
 	case WM_DESTROY:
 	{
-		SendMessage(hDlg, WM_APP + 3, 0, 0);
+		//SendMessage(hDlg, WM_APP + 3, 0, 0);
+		fxhl->UnblockUpdates(true, true);
+		fxhl->Refresh();
+		conf->SortAllGauge();
 		dDlg = NULL;
 	} break;
 	default: return false;

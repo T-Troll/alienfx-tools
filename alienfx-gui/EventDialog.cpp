@@ -1,15 +1,10 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-extern void SwitchLightTab(HWND, int);
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
-//extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-//extern void SetSlider(HWND tt, int value);
-//extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
-
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 extern EventHandler* eve;
@@ -24,7 +19,6 @@ void UpdateMonitoringInfo(HWND hDlg, groupset *map) {
 	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, map && map->fromColor ? BST_CHECKED : BST_UNCHECKED );
 	bool setState = map && map->events[1].state;
 	CheckDlgButton(hDlg, IDC_CHECK_PERF, setState ? BST_CHECKED : BST_UNCHECKED);
-	//CheckDlgButton(hDlg, IDC_GAUGE, map && map->perfs.size() && map->perfs[0].mode ? BST_CHECKED : BST_UNCHECKED);
 	SendMessage(GetDlgItem(hDlg, IDC_MINPVALUE), TBM_SETPOS, true, setState ? map->events[1].cut : 0);
 	SetSlider(sTip1, setState ? map->events[1].cut : 0);
 	ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COUNTERLIST), setState ? map->events[1].source : 0);
@@ -39,7 +33,6 @@ void UpdateMonitoringInfo(HWND hDlg, groupset *map) {
 
 	for (int bId = 0; bId < 6; bId++)
 		RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_CM1 + bId), NULL, NULL, RDW_INVALIDATE);
-	RedrawGridButtonZone(NULL, true);
 }
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

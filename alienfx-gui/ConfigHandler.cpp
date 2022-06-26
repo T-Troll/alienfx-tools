@@ -248,11 +248,6 @@ void ConfigHandler::Load() {
 				updateProfileByID(pid, (char*)data, "", -1, -1, NULL);
 				goto nextRecord;
 			}
-			//if (sscanf_s(name, "Profile-flags-%d", &pid) == 1) {
-			//	DWORD newData = MAKELPARAM(LOWORD(*(DWORD*)data), HIWORD(*(DWORD*)data) == 3 ? 0 : *(DWORD*)data + 1);
-			//	updateProfileByID(pid, "", "", newData, NULL);
-			//	goto nextRecord;
-			//}
 			if (sscanf_s(name, "Profile-triggers-%d", &pid) == 1) {
 				updateProfileByID(pid, "", "", -1, *(DWORD*)data, NULL);
 				goto nextRecord;
@@ -282,7 +277,7 @@ void ConfigHandler::Load() {
 			}
 			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 				updateProfileFansByID(pid, -1, NULL, *(DWORD*)data);
-				goto nextRecord;
+				//goto nextRecord;
 			}
 nextRecord:
 			delete[] data;
@@ -303,7 +298,7 @@ nextRecord:
 				(gset = FindCreateGroupSet(profID, groupID))) {
 				gset->fromColor = inarray[0];
 				gset->gauge = inarray[1];
-				gset->flags = inarray[2];
+				gset->flags = ((WORD*)inarray)[1];
 				goto nextZone;
 			}
 			if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
@@ -341,6 +336,11 @@ nextRecord:
 					gset->haptics.push_back(newFreq);
 				}
 				goto nextZone;
+			}
+			if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2 &&
+				(gset = FindCreateGroupSet(profID, groupID))) {
+				memcpy(&gset->effect, inarray, sizeof(grideffect));
+				//goto nextZone;
 			}
 			nextZone:
 			delete[] inarray;
@@ -414,9 +414,6 @@ void ConfigHandler::Save() {
 		DWORD flagset;
 		string name = "Profile-" + to_string((*jIter)->id);
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length());
-		/*name = "Profile-flags-" + to_string((*jIter)->id);
-		DWORD flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode ? (*jIter)->effmode - 1 : 3);
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));*/
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
@@ -434,12 +431,7 @@ void ConfigHandler::Save() {
 			name = to_string((*jIter)->id) + "-" + to_string(iIter->group);
 			// flags...
 			fname = "Zone-flags-" + name;
-			DWORD value = 0; byte* buffer = (BYTE*)&value;
-			buffer[0] = iIter->fromColor;
-			buffer[1] = iIter->gauge;
-			// ToDo: flags now bytes 2-3
-			buffer[2] = iIter->flags;
-			//buffer[3] = iIter->group->have_power;
+			DWORD value = MAKELPARAM(MAKEWORD(iIter->fromColor, iIter->gauge), iIter->flags);
 			RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 
 			if (iIter->color.size()) { // colors
@@ -480,6 +472,10 @@ void ConfigHandler::Save() {
 				}
 				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, size);
 				delete[] buffer;
+			}
+			if (iIter->effect.trigger) { // Grid effects
+				fname = "Zone-effect-" + name;
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)&iIter->effect, sizeof(grideffect));
 			}
 		}
 

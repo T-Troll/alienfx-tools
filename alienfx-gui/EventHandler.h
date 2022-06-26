@@ -12,22 +12,24 @@ private:
 	HANDLE dwHandle = 0;
 
 	HWINEVENTHOOK hEvent, cEvent = 0;
-	HHOOK kEvent;// , Levent;
+	HHOOK kEvent;
 
-	int effMode = 3;
-
-	void StartEvents();
-	void StopEvents();
+	int effMode = 0;
 
 public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state);
 	void SwitchActiveProfile(profile* newID);
+
 	void StartProfiles();
 	void StopProfiles();
+
 	void ChangeEffectMode();
 	void StopEffects();
 	void StartEffects();
+
+	void StartEvents();
+	void StopEvents();
 
 	void StartFanMon();
 	void StopFanMon();
@@ -41,7 +43,7 @@ public:
 
 	MonHelper *mon = NULL;
 	CaptureHelper *capt = NULL;
-	GridHelper* grid = NULL;
+	GridHelper *grid = NULL;
 	WSAudioIn *audio = NULL;
 
 	HANDLE stopEvents = NULL;
