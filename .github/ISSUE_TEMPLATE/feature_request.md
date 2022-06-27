@@ -16,5 +16,10 @@ A clear and concise description of what you want to happen.
 **Describe alternatives you've considered**
 A clear and concise description of any alternative solutions or features you've considered.
 
+**System (please complete the following information):**
+ - Model: [e.g. AlienWare m15R3]
+ - Model details: [e.g. per-key rgb keyboard]
+ - OS: [e.g. Windows 11 stable]
+
 **Additional context**
 Add any other context or screenshots about the feature request here.
