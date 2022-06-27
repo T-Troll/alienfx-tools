@@ -581,23 +581,24 @@ void FXHelper::RefreshHaptics(int *freq) {
 	}
 
 	vector<AlienFX_SDK::afx_act> actions;
-	actions.push_back({0});
+	//actions.push_back({0});
 	bool wasChanged = false;
 
 	for (auto mIter = conf->active_set->begin(); mIter < conf->active_set->end(); mIter++) {
 		if (mIter->haptics.size()) {
 			// Now for each freq block...
-			unsigned from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0;
+			unsigned from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0, groupsize = 0;
 			double f_power = 0.0;
 			for (auto fIter = mIter->haptics.begin(); fIter < mIter->haptics.end(); fIter++) {
 				if (!fIter->freqID.empty() && fIter->hicut > fIter->lowcut) {
 					double power = 0.0;
-
+					groupsize++;
 					// here need to check less bars...
 					for (auto iIter = fIter->freqID.begin(); iIter < fIter->freqID.end(); iIter++)
 						power += (freq[*iIter] > fIter->lowcut ? freq[*iIter] < fIter->hicut ?
 							freq[*iIter] - fIter->lowcut : fIter->hicut - fIter->lowcut : 0);
 					power = power / (fIter->freqID.size() * (fIter->hicut - fIter->lowcut));
+					f_power += power;
 
 					from_r += fIter->colorfrom.r;
 					from_g += fIter->colorfrom.g;
@@ -610,22 +611,19 @@ void FXHelper::RefreshHaptics(int *freq) {
 					cur_r += (byte)sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
 					cur_g += (byte)sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
 					cur_b += (byte)sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
-
-					f_power += power;
-
-					size_t groupsize = fIter->freqID.size();
-
-					f_power /= groupsize;
-
-					actions[0] = { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) };
-
-					AlienFX_SDK::afx_act from{ 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize) },
-						to{ 0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize) };
-
-					SetGroupLight(&(*mIter), actions, f_power);
-					wasChanged = true;
 				}
 			}
+
+			f_power /= groupsize;
+
+			if (mIter->gauge) {
+				actions = { { 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize)},
+					{0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize)} };
+			} else
+				actions = { { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) } };
+
+			SetGroupLight(&(*mIter), actions, f_power);
+			wasChanged = true;
 		}
 	}
 	if (wasChanged)

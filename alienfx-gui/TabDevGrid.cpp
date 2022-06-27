@@ -294,6 +294,8 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         TranslateClick(lParam);
         dragZone = { clkPoint.x, clkPoint.y, clkPoint.x + 1, clkPoint.y + 1};
         dragStart = clkPoint;
+        if (clkPoint.x >= 0)
+            RedrawGridButtonZone(&dragZone);
     } break;
     case WM_LBUTTONUP:
         // end selection
@@ -338,8 +340,11 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 RECT oldDragZone = dragZone;
                 dragZone = { min(clkPoint.x, dragStart.x), min(clkPoint.y, dragStart.y),
                     max(clkPoint.x + 1, dragStart.x + 1), max(clkPoint.y + 1, dragStart.y + 1) };
-                RedrawGridButtonZone(&oldDragZone);
-                RedrawGridButtonZone(&dragZone);
+                if (dragZone.top != oldDragZone.top || dragZone.left != oldDragZone.left
+                    || dragZone.bottom != oldDragZone.bottom || dragZone.right != oldDragZone.right) {
+                    RedrawGridButtonZone(&oldDragZone);
+                    RedrawGridButtonZone(&dragZone);
+                }
             }
         }
         break;

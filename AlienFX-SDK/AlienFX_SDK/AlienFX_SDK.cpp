@@ -743,7 +743,7 @@ namespace AlienFX_SDK {
 			}
 #ifdef _DEBUG
 			if (count == 20)
-				OutputDebugString(L"Power device ready timeout!\n");
+				OutputDebugString("Power device ready timeout!\n");
 #endif // _DEBUG
 
 			while (!IsDeviceReady()) Sleep(50);
@@ -830,8 +830,8 @@ namespace AlienFX_SDK {
 	bool Functions::ToggleState(BYTE brightness, vector<mapping> *mappings, bool power) {
 
 #ifdef _DEBUG
-		wchar_t buff[2048];
-		swprintf_s(buff, 2047, L"State update: PID: %#x, brightness: %d, Power: %d\n",
+		char buff[2048];
+		printf_s(buff, 2047, L"State update: PID: %#x, brightness: %d, Power: %d\n",
 			pid, brightness, power);
 		OutputDebugString(buff);
 #endif
@@ -1085,11 +1085,11 @@ namespace AlienFX_SDK {
 
 								if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
 #ifdef _DEBUG
-									wchar_t buff[2048];
-									swprintf_s(buff, 2047, L"Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+									char buff[2048];
+									printf_s(buff, 2047, "Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
 											   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
 									OutputDebugString(buff);
-									wprintf(L"%s", buff);
+									printf("%s", buff);
 #endif
 									pids.push_back({attributes->VendorID,attributes->ProductID});
 									break;
@@ -1236,7 +1236,7 @@ namespace AlienFX_SDK {
 		char kName[255], name[255];
 		DWORD len = 255, lend = 255, dID;
 		WORD lID = 0, vid, pid;
-		for (vindex = 0; RegEnumValueA(hKey1, vindex, kName, &len, NULL, NULL, (LPBYTE) name, &lend) == ERROR_SUCCESS; vindex++) {
+		for (vindex = 0; RegEnumValue(hKey1, vindex, kName, &len, NULL, NULL, (LPBYTE) name, &lend) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Dev#%hd_%hd", &vid, &pid) == 2) {
 				dev = AddDeviceById(MAKELPARAM(pid, vid));
 				dev->name = string(name);
@@ -1247,23 +1247,23 @@ namespace AlienFX_SDK {
 			}
 			len = 255, lend = 255;
 		}
-		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
+		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Light%d-%hd", &dID, &lID) == 2) {
 				DWORD nameLen = 255, flags;
-				RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
+				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
 				nameLen = sizeof(DWORD);
-				RegGetValueA(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &flags, &nameLen);
+				RegGetValue(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &flags, &nameLen);
 				AddMapping(dID, lID, name, LOWORD(flags));
 			}
 		}
-		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++)  {
+		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++)  {
 			if (sscanf_s((char *) kName, "Group%d", &dID) == 1) {
 				DWORD nameLen = 255, *maps;
-				RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
+				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
 				nameLen = 0;
-				RegGetValueA(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &nameLen);
+				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &nameLen);
 				maps = new DWORD[nameLen / sizeof(DWORD)];
-				RegGetValueA(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
+				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
 				groups.push_back({dID, name});
 				for (int i = 0; i < nameLen / sizeof(DWORD); i += 2) {
 					dev = GetDeviceById(maps[i]);
@@ -1277,16 +1277,16 @@ namespace AlienFX_SDK {
 				delete maps;
 			}
 		}
-		for (vindex = 0; RegEnumKeyA(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
+		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
 				DWORD nameLen = 255, *grid, sizes;
-				RegGetValueA(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
+				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
 				nameLen = sizeof(DWORD);
-				RegGetValueA(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &sizes, &nameLen);
+				RegGetValue(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &sizes, &nameLen);
 				byte x = (byte)(sizes >> 8), y = (byte)(sizes & 0xff);
 				nameLen = x*y*sizeof(DWORD);
 				grid = new DWORD[x * y];
-				RegGetValueA(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &nameLen);
+				RegGetValue(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &nameLen);
 				grids.push_back({ (byte)dID, x, y, name, grid });
 				//memcpy(grids.back().grid, grid, MAXGRIDSIZE * sizeof(DWORD));
 			}
@@ -1307,17 +1307,17 @@ namespace AlienFX_SDK {
 		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
 			// Saving device data..
 			string name = "Dev#" + to_string(i->vid) + "_" + to_string(i->pid);
-			RegSetValueExA( hKey1, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
+			RegSetValueEx( hKey1, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
 			name = "DevWhite#" + to_string(i->vid) + "_" + to_string(i->pid);
-			RegSetValueExA( hKey1, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
+			RegSetValueEx( hKey1, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
 			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {
 				// Saving all lights from current device
 				string name = "Light" + to_string(MAKELONG(i->pid, i->vid)) + "-" + to_string(cl->lightid);
-				RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
-				RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
+				RegCreateKey(hKey1, name.c_str(), &hKeyS);
+				RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
 
 				DWORD flags = cl->flags;
-				RegSetValueExA(hKeyS, "Flags", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
+				RegSetValueEx(hKeyS, "Flags", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
 				RegCloseKey(hKeyS);
 			}
 		}
@@ -1325,8 +1325,8 @@ namespace AlienFX_SDK {
 		for (int i = 0; i < numGroups; i++) {
 			string name = "Group" + to_string(groups[i].gid);
 
-			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
-			RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE *) groups[i].name.c_str(), (DWORD) groups[i].name.size());
+			RegCreateKey(hKey1, name.c_str(), &hKeyS);
+			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE *) groups[i].name.c_str(), (DWORD) groups[i].name.size());
 
 			DWORD *grLights = new DWORD[groups[i].lights.size() * 2];
 
@@ -1334,7 +1334,7 @@ namespace AlienFX_SDK {
 				grLights[j * 2] = groups[i].lights[j].first;
 				grLights[j * 2 + 1] = groups[i].lights[j].second;
 			}
-			RegSetValueExA( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD) groups[i].lights.size() * sizeof(DWORD) );
+			RegSetValueEx( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD) groups[i].lights.size() * sizeof(DWORD) );
 
 			delete[] grLights;
 			RegCloseKey(hKeyS);
@@ -1342,11 +1342,11 @@ namespace AlienFX_SDK {
 
 		for (int i = 0; i < numGrids; i++) {
 			string name = "Grid" + to_string(grids[i].id);
-			RegCreateKeyA(hKey1, name.c_str(), &hKeyS);
-			RegSetValueExA(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
+			RegCreateKey(hKey1, name.c_str(), &hKeyS);
+			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
 			DWORD sizes = ((DWORD)grids[i].x << 8) | grids[i].y;
-			RegSetValueExA(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
-			RegSetValueExA(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)grids[i].grid, grids[i].x * grids[i].y * sizeof(DWORD));
+			RegSetValueEx(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
+			RegSetValueEx(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)grids[i].grid, grids[i].x * grids[i].y * sizeof(DWORD));
 			RegCloseKey(hKeyS);
 		}
 
