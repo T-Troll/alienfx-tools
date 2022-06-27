@@ -141,7 +141,7 @@ Return Value:
 	UNICODE_STRING  ulDevicePath;
 	NTSTATUS        ntStatus;
 	ACPI_NAME       *pInput;
-	UINT            AcpiDeviceExtension;
+	//UINT            AcpiDeviceExtension;
 
 	PAGED_CODE();
 
@@ -169,12 +169,12 @@ Return Value:
 	if (!NT_SUCCESS(ntStatus)) {
 		return ntStatus;
 	}
+
+#ifndef _TINY_DRIVER_
 	pLDI->dwMajorVersion = pInput->dwMajorVersion;
 	pLDI->dwMinorVersion = pInput->dwMinorVersion;
 	pLDI->dwBuildNumber = pInput->dwBuildNumber;
 	pLDI->dwPlatformId = pInput->dwPlatformId;
-	// point the Acpi_Hal Device Extension for data retrieve
-	AcpiDeviceExtension = (UINT)(pLDI->LowDeviceObject)->DeviceExtension;
 
 	// searching for the ACPI data objects, insert the notification code....
 	// Not test on Win7 may failed on old win10
@@ -182,18 +182,18 @@ Return Value:
 	// KdBreakPoint();
 	if (pInput->dwMajorVersion >= 6) {
 		//pLDI->AcpiObject = (PVOID)(AcpiDeviceExtension + pLDI->uAcpiOffset);
-		// new way to get acpi acpi namespace is only verified on windows 10 after 2016
-#ifndef _TINY_DRIVER_
+		// new way to get acpi namespace is only verified on windows 10 after 2016
+		// point the Acpi_Hal Device Extension for data retrieve
+		UINT AcpiDeviceExtension = (UINT)(pLDI->LowDeviceObject)->DeviceExtension;
 		if (!(GetAcpiObjectBase(pLDI, AcpiDeviceExtension) == STATUS_SUCCESS))
 		{
 			return STATUS_NOT_SUPPORTED;
 		}
-#endif
 	}
 	else {
 		return STATUS_NOT_SUPPORTED;
 	}
-
+#endif
 	//DebugPrint(("HWACC: Open ACPI device done!"));
 
 	return ntStatus;

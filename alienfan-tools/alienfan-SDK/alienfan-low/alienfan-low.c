@@ -423,14 +423,14 @@ FALSE           - Failed to get service full path
 
 --*/
 {
-    HDEVINFO    hdev;
+    //HDEVINFO    hdev;
     SP_DEVINFO_DATA devdata;
     DWORD       PropertyRegDataType;
     DWORD       RequiedSize;
 
     BOOL res = FALSE;
 
-    hdev = SetupDiGetClassDevsEx (NULL, Name, NULL, DIGCF_ALLCLASSES, NULL, NULL, NULL);
+    HDEVINFO hdev = SetupDiGetClassDevsEx (NULL, Name, NULL, DIGCF_ALLCLASSES, NULL, NULL, NULL);
 
     if (hdev != INVALID_HANDLE_VALUE) {
         ZeroMemory (&devdata, sizeof (devdata));
@@ -619,19 +619,19 @@ FALSE       - Failed to open acpi driver
     BOOL        IoctlResult = FALSE;
     ACPI_NAME   acpi;
     ULONG       ReturnedLength = 0;
-    OSVERSIONINFO osinfo;
-    osinfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-    if (!GetVersionEx (&osinfo)) {
-        //  printf ("OS Major Version is %d, Minor Version is %d", osinfo.dwMajorVersion, osinfo.dwMinorVersion);
-        //printf("GetVersion failed\n");
-        return NULL;
-    }
+    //OSVERSIONINFO osinfo;
+    //osinfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+    //if (!GetVersionEx (&osinfo)) {
+    //    //  printf ("OS Major Version is %d, Minor Version is %d", osinfo.dwMajorVersion, osinfo.dwMinorVersion);
+    //    //printf("GetVersion failed\n");
+    //    return NULL;
+    //}
 
-    acpi.dwMajorVersion = osinfo.dwMajorVersion;
-    acpi.dwMinorVersion = osinfo.dwMinorVersion;
-    acpi.dwBuildNumber  = osinfo.dwBuildNumber;
-    acpi.dwPlatformId   = osinfo.dwPlatformId;
-    acpi.pAcpiDeviceName = PropertyBuffer;
+    //acpi.dwMajorVersion = osinfo.dwMajorVersion;
+    //acpi.dwMinorVersion = osinfo.dwMinorVersion;
+    //acpi.dwBuildNumber  = osinfo.dwBuildNumber;
+    //acpi.dwPlatformId   = osinfo.dwPlatformId;
+    //acpi.pAcpiDeviceName = PropertyBuffer;
 
     if ((hDriver = CreateFile(
         _T("\\\\?\\GLOBALROOT\\Device\\HWACC0"), // _T("\\\\.\\HwAcc"), //
@@ -645,18 +645,48 @@ FALSE       - Failed to open acpi driver
         return hDriver;
     }
 
-    for (UINT Idx = 0; GetAcpiDevice(_T("ACPI_HAL"), PropertyBuffer, Idx); Idx++) {
+    PVOID hdev = SetupDiGetClassDevsEx(NULL, _T("ACPI_HAL"), NULL, DIGCF_ALLCLASSES, NULL, NULL, NULL);
+    if (hdev != INVALID_HANDLE_VALUE) {
+        SP_DEVINFO_DATA devdata;
+        DWORD       PropertyRegDataType;
+        DWORD       RequiedSize;
 
-        WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, (TCHAR*)PropertyBuffer, 400, AcpiName, 400, NULL, NULL);
-        acpi.pAcpiDeviceName = AcpiName;
-
-        acpi.uAcpiDeviceNameLength = (ULONG)strlen (acpi.pAcpiDeviceName);
-
-        if (IoctlResult = DeviceIoControl(hDriver, (DWORD) IOCTL_GPD_OPEN_ACPI, &acpi, sizeof(ACPI_NAME), NULL, 0, &ReturnedLength, NULL)) {
-            //printf("IOControl OK for %d\n", Idx);
-            break;
+        for (int Idx = 0; ; Idx++) {
+            ZeroMemory(&devdata, sizeof(devdata));
+            devdata.cbSize = sizeof(devdata);
+            if (SetupDiEnumDeviceInfo(hdev, Idx, &devdata)) {
+                if (SetupDiGetDeviceInstanceId(hdev, &devdata, &DevInstanceId[0], 200, NULL)) {
+                    //CopyMemory(DevInstanceId1, DevInstanceId, 201);
+                    if (SetupDiGetDeviceRegistryProperty(hdev, &devdata, 0xE,
+                        &PropertyRegDataType, &PropertyBuffer[0], 0x400, &RequiedSize)) {
+                        wcstombs_s(NULL, AcpiName, 200, (wchar_t*)PropertyBuffer, 400);
+                        //WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, (TCHAR*)PropertyBuffer, 400, AcpiName, 400, NULL, NULL);
+                        acpi.pAcpiDeviceName = AcpiName;
+                        acpi.uAcpiDeviceNameLength = (ULONG)strlen(acpi.pAcpiDeviceName);
+                        // calling driver....
+                        if (IoctlResult = DeviceIoControl(hDriver, (DWORD)IOCTL_GPD_OPEN_ACPI, &acpi, sizeof(ACPI_NAME), NULL, 0, &ReturnedLength, NULL)) {
+                            //printf("IOControl OK for %d\n", Idx);
+                            break;
+                        }
+                    }
+                }
+            }
+            SetupDiDestroyDeviceInfoList(hdev);
         }
     }
+
+    //for (UINT Idx = 0; GetAcpiDevice(_T("ACPI_HAL"), PropertyBuffer, Idx); Idx++) {
+
+    //    WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, (TCHAR*)PropertyBuffer, 400, AcpiName, 400, NULL, NULL);
+    //    acpi.pAcpiDeviceName = AcpiName;
+
+    //    acpi.uAcpiDeviceNameLength = (ULONG)strlen (acpi.pAcpiDeviceName);
+
+    //    if (IoctlResult = DeviceIoControl(hDriver, (DWORD) IOCTL_GPD_OPEN_ACPI, &acpi, sizeof(ACPI_NAME), NULL, 0, &ReturnedLength, NULL)) {
+    //        //printf("IOControl OK for %d\n", Idx);
+    //        break;
+    //    }
+    //}
 
     if (!IoctlResult) {
         CloseHandle(hDriver);

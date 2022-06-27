@@ -50,9 +50,9 @@ namespace AlienFan_SDK {
 				cpath += L"\\HwAcc.sys";
 
 				//wprintf(L"Loading driver from %s...\n", cpath.c_str());
-				if (GetFileAttributes(cpath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+				if (GetFileAttributesW(cpath.c_str()) != INVALID_FILE_ATTRIBUTES) {
 
-					HMODULE kdl = LoadLibrary(L"kdl.dll");
+					HMODULE kdl = LoadLibrary("kdl.dll");
 					if (kdl) {
 						//printf("KDL loaded, trying... ");
 						ACPIF oacpi = (ACPIF) GetProcAddress(kdl, "LoadKernelDriver");
@@ -251,7 +251,7 @@ namespace AlienFan_SDK {
 						tempNamePattern[22] = i + '0';
 						if (EvalAcpiMethod(acc, tempNamePattern, (PVOID *) &resName, NULL) && resName) {
 							char *c_name = new char[resName->Argument[0].DataLength+1];
-							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (TCHAR *) resName->Argument[0].Data, resName->Argument[0].DataLength);
+							wcstombs_s(NULL, c_name, resName->Argument[0].DataLength, (wchar_t *) resName->Argument[0].Data, resName->Argument[0].DataLength);
 							sensors.push_back({i, c_name, 0});
 							delete[] c_name;
 							free(resName);

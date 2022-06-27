@@ -528,7 +528,7 @@ void ConfigHandler::Save() {
 				fname = "Zone-haptics-" + name + "-" + to_string(iIter->haptics.size());
 				DWORD size = 0;
 				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++)
-					size += 2 * sizeof(DWORD) + 3 + it->freqID.size();
+					size += 2 * sizeof(DWORD) + 3 + (DWORD)it->freqID.size();
 				byte* buffer = new byte[size], *out = buffer;
 				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++) {
 					*(DWORD*)out = it->colorfrom.ci; out += sizeof(DWORD);

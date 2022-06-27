@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,5,0
- PRODUCTVERSION 1,4,5,0
+ FILEVERSION 1,5,0,0
+ PRODUCTVERSION 1,5,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "T-Troll"
             VALUE "FileDescription", "ACPI interface low-level driver"
-            VALUE "FileVersion", "1.4.5.0"
+            VALUE "FileVersion", "1.5.0.0"
             VALUE "InternalName", "hwacc.sys"
             VALUE "LegalCopyright", "Copyright (C) 2021"
             VALUE "OriginalFilename", "hwacc.sys"
             VALUE "ProductName", "AlienFX-Tools"
-            VALUE "ProductVersion", "1.4.5.0"
+            VALUE "ProductVersion", "1.5.0.0"
         END
     END
     BLOCK "VarFileInfo"

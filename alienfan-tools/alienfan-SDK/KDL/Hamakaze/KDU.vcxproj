@@ -96,6 +96,7 @@
       <EnablePREfast>true</EnablePREfast>
       <DisableSpecificWarnings>6320</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

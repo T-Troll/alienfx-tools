@@ -22,29 +22,26 @@ using namespace std;
 void CheckDevices(bool show_all) {
 
 	GUID guid;
-	bool flag = false;
 	HANDLE tdevHandle;
 
 	HidD_GetHidGuid(&guid);
-	HDEVINFO hDevInfo = SetupDiGetClassDevsA(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+	HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 	if (hDevInfo == INVALID_HANDLE_VALUE)
 	{
 		return;
 	}
 	unsigned int dw = 0;
-	SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ 0 };
+	SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
 
-	while (!flag)
+	while (true)
 	{
-		deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 		if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
 		{
-			flag = true;
-			continue;
+			break;
 		}
 		dw++;
 		DWORD dwRequiredSize = 0;
-		if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
+		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
 		{
 			continue;
 		}
@@ -52,12 +49,12 @@ void CheckDevices(bool show_all) {
 		{
 			continue;
 		}
-		std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA_W> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA_W*)new char[dwRequiredSize]);
+		unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
 		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
-		if (SetupDiGetDeviceInterfaceDetailW(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
+		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
 		{
-			wstring devicePath = deviceInterfaceDetailData->DevicePath;
-			tdevHandle = CreateFileW(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+			string devicePath = deviceInterfaceDetailData->DevicePath;
+			tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
 			if (tdevHandle != INVALID_HANDLE_VALUE)
 			{

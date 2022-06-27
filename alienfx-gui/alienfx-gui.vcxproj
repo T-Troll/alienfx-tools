@@ -492,6 +492,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <DisableSpecificWarnings>4312</DisableSpecificWarnings>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

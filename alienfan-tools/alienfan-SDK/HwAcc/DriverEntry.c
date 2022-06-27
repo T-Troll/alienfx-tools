@@ -1,4 +1,4 @@
-// This is a kernel-mode driver
+// Kernel-mode ACPI driver
 #include <ntddk.h>
 #define NTSTRSAFE_LIB
 #include <ntstrsafe.h>
@@ -145,6 +145,9 @@ Return Value:
 #else
 	DriverObject->DriverUnload = UnloadDriver;
 #endif
+
+	// clean low-level driver state
+	((PLOCAL_DEVICE_INFO)deviceObject->DeviceExtension)->LowDeviceObject = NULL;
 
 	DebugPrint(("HWACC: Init done\n"));
 
@@ -332,13 +335,18 @@ Return Value:
 	}
 
 	pLDI = (PLOCAL_DEVICE_INFO)DeviceObject->DeviceExtension;    // Get local info struct
+
 	//inBufLength = pIrpStack->Parameters.DeviceIoControl.InputBufferLength;
 	//outBufLength = pIrpStack->Parameters.DeviceIoControl.OutputBufferLength;
 	switch (pIrpStack->Parameters.DeviceIoControl.IoControlCode)
 	{
 	case IOCTL_GPD_OPEN_ACPI:
 		//pDevObj = IoGetLowerDeviceObject (DeviceObject);
-		Status = OpenAcpiDevice(pLDI, pIrp);
+		if (!pLDI->LowDeviceObject) {
+			Status = OpenAcpiDevice(pLDI, pIrp);
+		}
+		else
+			Status = STATUS_SUCCESS;
 		break;
 	case IOCTL_GPD_EVAL_ACPI_WITHOUT_DIRECT:
 	    Status = EvalAcpiWithoutInputDirect(pLDI, pIrp, pIrpStack);
