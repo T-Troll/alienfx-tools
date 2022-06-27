@@ -25,7 +25,8 @@ It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used
 ## Disclaimer
 
 Starting from the release 4.2.1, **Anti-viruses can detect virus into project package**.  
-It's not a virus but a kernel hack to load the driver. You should add `HwAcc.sys` and `kdl.dll` into the antivirus exception list or do not use fan control (light control will work without these files).
+Please add application folder into antivirus exception list.  
+You can read why it happened [here](https://github.com/T-Troll/alienfx-tools/wiki/Why-antivirus-complain-about-some-alienfx-tools-components%3F).
 
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
@@ -90,17 +91,15 @@ Build process:
   - [x] Input locale
   - [ ] Missed notifications (toasts)
   - [x] Keyboard events (key press reaction)
-- [ ] Grid (positional) effects
-  - [ ] Static full-grid effects
-  - [ ] Dynamic full-grid effects
-  - [ ] Event or key-triggered full-grid effects
+- [x] Grid (positional) effects
+  - [x] Static full-grid effects
+  - [x] Dynamic full-grid effects
+  - [x] Event or key-triggered full-grid effects
 - [ ] New devices support
   - [ ] Monitors
   - [x] Mouses
   - [ ] Keyboards
-- [x] Keyboard mapper for easy RGB keyboard setup
-- [x] Overboost GUI
-- [x] Windows 11 support
+- [ ] Power and battery charge control
 
 ## License
 
