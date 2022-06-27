@@ -216,16 +216,6 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 	ReleaseDC(tl, cnt);
 }
 
-//void SetSlider(HWND tt, int value) {
-//	TOOLINFO ti{ sizeof(TOOLINFO) };
-//	if (tt) {
-//		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM) &ti);
-//		string toolTip = to_string(value);
-//		ti.lpszText = (LPTSTR) toolTip.c_str();
-//		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM) &ti);
-//	}
-//}
-
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);

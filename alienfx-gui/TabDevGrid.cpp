@@ -94,6 +94,11 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
                                             conf->colorGrid[ind] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
                                         }
                                         break;
+                                    case 4: // grid effects
+                                        if (cs->effect.trigger) {
+                                            conf->colorGrid[ind] = { Code2Act(&cs->effect.from), Code2Act(&cs->effect.to) };
+                                        }
+                                        break;
                                     }
                                 if (cs->color.size()) {
                                     if (!conf->colorGrid[ind].first)
