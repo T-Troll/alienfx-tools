@@ -113,9 +113,9 @@ void UpdateDeviceInfo() {
 		if (dev->dev) {
 			BYTE status = dev->dev->AlienfxGetDeviceStatus();
 			char descript[128];
-			sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d, %s",
-				dev->vid, dev->pid, dev->dev->GetVersion(),
-				status && status != 0xff ? "Ok" : "Error!");
+			sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d",
+				dev->vid, dev->pid, dev->dev->GetVersion()/*,
+				status && status != 0xff ? "Ok" : "Error!"*/);
 			SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 			EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
 		}

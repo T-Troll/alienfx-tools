@@ -322,9 +322,10 @@ nextRecord:
 			}
 			if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
 				(gset = FindCreateGroupSet(profID, groupID))) {
-				byte* out = inarray, cbsize = 2 * sizeof(DWORD) + 3 * sizeof(BYTE);
+				byte* out = inarray, cbsize = 2 * sizeof(DWORD) + 3;
 				freq_map newFreq;
 				for (int i = 0; i < recSize; i++) {
+					newFreq.freqID.clear();
 					memcpy(&newFreq, out, cbsize);
 					out += cbsize;
 					/*newFreq.colorfrom.ci = *(DWORD*)out; out += sizeof(DWORD);
@@ -333,7 +334,8 @@ nextRecord:
 					newFreq.lowcut = *out; out++;*/
 					//byte freqsize = *out; out++;
 					for (int j = 0; j < newFreq.freqsize; j++) {
-						newFreq.freqID.push_back(*out); out++;
+						if (find(newFreq.freqID.begin(), newFreq.freqID.end(), *out) == newFreq.freqID.end())
+							newFreq.freqID.push_back(*out); out++;
 					}
 					gset->haptics.push_back(newFreq);
 				}

@@ -48,14 +48,17 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 	HWND eff_list = GetDlgItem(hDlg, IDC_LEFFECTS_LIST);
 
 	ListView_DeleteAllItems(eff_list);
+	ListView_SetExtendedListViewStyle(eff_list, LVS_EX_FULLROWSELECT);
+
 	HIMAGELIST hOld = ListView_GetImageList(eff_list, LVSIL_SMALL);
 	if (hOld) {
 		ImageList_Destroy(hOld);
 	}
-	ListView_SetExtendedListViewStyle(eff_list, LVS_EX_FULLROWSELECT);
+
 	if (!ListView_GetColumnWidth(eff_list, 0)) {
 		LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
 		ListView_InsertColumn(eff_list, 0, &lCol);
+		ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);// width);
 	}
 	if (mmap) {
 		COLORREF* picData = NULL;
@@ -85,7 +88,7 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
 	}
 	SetEffectData(hDlg, mmap);
-	ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE);// width);
+	//ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
 	RedrawGridButtonZone(NULL, true);
 }

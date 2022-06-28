@@ -319,6 +319,19 @@ void SwitchLightTab(HWND dlg, int num) {
 	OnSelChanged(tab_list);
 }
 
+void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
+	if (mode_list == NULL) {
+		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
+		EnableWindow(mode_list, conf->enableMon);
+	}
+	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
+	if (conf->haveV5) {
+		ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
+		if (mode == 99)
+			ComboBox_SetCurSel(mode_list, effModes.size());
+	}
+}
+
 void ReloadProfileList() {
 	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(mDlg, IDC_PROFILES),
@@ -338,19 +351,10 @@ void ReloadProfileList() {
 	case TAB_LIGHTS: case TAB_FANS:
 		OnSelChanged(tab_list);
 	}
-}
 
-void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
-	if (mode_list == NULL) {
-		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
-		EnableWindow(mode_list, conf->enableMon);
-	}
-	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
-	if (conf->haveV5) {
-		ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
-		if (mode == 99)
-			ComboBox_SetCurSel(mode_list, effModes.size());
-	}
+	ReloadModeList();
+
+	DebugPrint("Profile list reloaded.\n");
 }
 
 void UpdateState() {
@@ -362,7 +366,7 @@ void UpdateState() {
 void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
-	ReloadProfileList();
+	//ReloadProfileList();
 }
 
 void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func) {
@@ -410,7 +414,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
 			);
 
-		ReloadModeList();
+		//ReloadModeList();
 		ReloadProfileList();
 
 		conf->niData.hWnd = hDlg;
@@ -477,6 +481,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			case CBN_SELCHANGE: {
 				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
+				eve->profileChanged = false;
 				ReloadModeList();
 				OnSelChanged(tab_list);
 			} break;
@@ -543,9 +548,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case SIZE_MINIMIZED: {
 			// go to tray...
-			//SendMessage(dDlg, WM_APP + 3, 0, 0);
 			ShowWindow(hDlg, SW_HIDE);
 		} break;
+		}
+		break;
+	case WM_ACTIVATE:
+		if (wParam & 3 && eve && eve->profileChanged) {
+			//DebugPrint(("Activated " + to_string(wParam) + "\n").c_str());
+			ReloadProfileList();
+			eve->profileChanged = false;
 		}
 		break;
 	case WM_APP + 1: {
@@ -662,7 +673,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 		} break;
 		}
-		ReloadProfileList();
+		//ReloadProfileList();
 	} break;
 	case WM_POWERBROADCAST:
 		switch (wParam) {

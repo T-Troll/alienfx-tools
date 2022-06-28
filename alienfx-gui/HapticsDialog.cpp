@@ -48,7 +48,7 @@ void DrawFreq(HWND hDlg) {
 		graphZone.bottom--;
 
 		groupset* map = FindMapping(eItem);
-		if (map && fGrpItem >= 0) {
+		if (map && fGrpItem >= 0 && fGrpItem < map->haptics.size()) {
 			SelectObject(hdc, GetStockObject(GRAY_BRUSH));
 			SelectObject(hdc, GetStockObject(NULL_PEN));
 			for (auto t = map->haptics[fGrpItem].freqID.begin(); t < map->haptics[fGrpItem].freqID.end(); t++) {
@@ -56,8 +56,8 @@ void DrawFreq(HWND hDlg) {
 					rightpos = (graphZone.right * (*t + 1)) / NUMBARS - 2 + graphZone.left;
 				Rectangle(hdc, leftpos, graphZone.top, rightpos + 2, graphZone.bottom);
 			}
-			SelectObject(hdc, GetStockObject(WHITE_PEN));
-			SelectObject(hdc, GetStockObject(WHITE_BRUSH));
+			//SelectObject(hdc, GetStockObject(WHITE_PEN));
+			//SelectObject(hdc, GetStockObject(WHITE_BRUSH));
 		}
 		if (eve->audio && eve->audio->freqs) {
 			SelectObject(hdc, GetStockObject(WHITE_PEN));
@@ -70,7 +70,7 @@ void DrawFreq(HWND hDlg) {
 					rightpos, graphZone.bottom);
 			}
 		}
-		if (map && fGrpItem >= 0) {
+		if (map && fGrpItem >= 0 && fGrpItem < map->haptics.size()) {
 			for (auto t = map->haptics[fGrpItem].freqID.begin(); t < map->haptics[fGrpItem].freqID.end(); t++) {
 				int leftpos = (graphZone.right * (*t)) / NUMBARS + graphZone.left,
 					rightpos = (graphZone.right * (*t + 1)) / NUMBARS - 2 + graphZone.left;
@@ -140,9 +140,9 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					return cIndex == t;
 				});
 			if (idx != map->haptics[fGrpItem].freqID.end()) {
-				if (abs(clickLevel - map->haptics[fGrpItem].hicut) < 5)
+				if (abs(clickLevel - map->haptics[fGrpItem].hicut) < 10)
 					cutMove = 1;
-				if (abs(clickLevel - map->haptics[fGrpItem].lowcut) < 5)
+				if (abs(clickLevel - map->haptics[fGrpItem].lowcut) < 10)
 					cutMove = 2;
 			}
 		}
@@ -155,7 +155,11 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				});
 			if (idx != map->haptics[fGrpItem].freqID.end())
 				switch (cutMove) {
-				case 0: map->haptics[fGrpItem].freqID.erase(idx); break;
+				case 0:
+					delete hapUIThread;
+					map->haptics[fGrpItem].freqID.erase(idx);
+					hapUIThread = new ThreadHelper(UpdateHapticsUI, GetParent(hDlg), 40);
+					break;
 				case 1: map->haptics[fGrpItem].hicut = clickLevel; break;
 				case 2: map->haptics[fGrpItem].lowcut = clickLevel; break;
 				}

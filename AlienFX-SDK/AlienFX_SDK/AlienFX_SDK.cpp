@@ -831,7 +831,7 @@ namespace AlienFX_SDK {
 
 #ifdef _DEBUG
 		char buff[2048];
-		printf_s(buff, 2047, L"State update: PID: %#x, brightness: %d, Power: %d\n",
+		sprintf_s(buff, 2047, "State update: PID: %#x, brightness: %d, Power: %d\n",
 			pid, brightness, power);
 		OutputDebugString(buff);
 #endif
@@ -1086,7 +1086,7 @@ namespace AlienFX_SDK {
 								if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
 #ifdef _DEBUG
 									char buff[2048];
-									printf_s(buff, 2047, "Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+									sprintf_s(buff, 2047, "Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
 											   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
 									OutputDebugString(buff);
 									printf("%s", buff);

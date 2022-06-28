@@ -612,18 +612,25 @@ void FXHelper::RefreshHaptics(int *freq) {
 					cur_g += (byte)sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
 					cur_b += (byte)sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
 				}
+				//else
+				//	DebugPrint("HiCut issue\n");
 			}
 
-			f_power /= groupsize;
+			if (groupsize) {
+				f_power /= groupsize;
 
-			if (mIter->gauge) {
-				actions = { { 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize)},
-					{0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize)} };
-			} else
-				actions = { { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) } };
+				if (mIter->gauge) {
+					actions = { { 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize)},
+						{0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize)} };
+				}
+				else
+					actions = { { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) } };
 
-			SetGroupLight(&(*mIter), actions, f_power);
-			wasChanged = true;
+				SetGroupLight(&(*mIter), actions, f_power);
+				wasChanged = true;
+			}
+			//else
+			//	DebugPrint("Skip group\n");
 		}
 	}
 	if (wasChanged)

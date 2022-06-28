@@ -50,5 +50,5 @@ public:
 
 	mutex modifyProfile;
 
-	//long maxNet = 1;
+	bool profileChanged = false;
 };
