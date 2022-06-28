@@ -32,6 +32,7 @@ You can read why it happened [here](https://github.com/T-Troll/alienfx-tools/wik
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
 - Windows 10 v1903 or later (64-bit only).
 - If you plan to use fan control, "Memory integrity" (Settings->Update&Security->Security->Device Security->Core isolation) should be disabled.
+- If you plan to use fan control (especially into Windows 11), "Fast startup" (Control panel->Power options->Power buttons) should be disabled.
 - `alienfan-gui` and `-cli` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privileges)
