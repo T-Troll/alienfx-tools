@@ -615,7 +615,7 @@ FALSE       - Failed to open acpi driver
 {
     HANDLE      hDriver = NULL;
     BYTE        PropertyBuffer[0x401];
-    CHAR        AcpiName[0x401];
+    //CHAR        AcpiName[0x401];
     BOOL        IoctlResult = FALSE;
     ACPI_NAME   acpi;
     ULONG       ReturnedLength = 0;
@@ -659,9 +659,9 @@ FALSE       - Failed to open acpi driver
                     //CopyMemory(DevInstanceId1, DevInstanceId, 201);
                     if (SetupDiGetDeviceRegistryProperty(hdev, &devdata, 0xE,
                         &PropertyRegDataType, &PropertyBuffer[0], 0x400, &RequiedSize)) {
-                        wcstombs_s(NULL, AcpiName, 200, (wchar_t*)PropertyBuffer, 400);
+                        //wcstombs_s(NULL, AcpiName, 200, (wchar_t*)PropertyBuffer, 400);
                         //WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK, (TCHAR*)PropertyBuffer, 400, AcpiName, 400, NULL, NULL);
-                        acpi.pAcpiDeviceName = AcpiName;
+                        acpi.pAcpiDeviceName = PropertyBuffer;
                         acpi.uAcpiDeviceNameLength = (ULONG)strlen(acpi.pAcpiDeviceName);
                         // calling driver....
                         if (IoctlResult = DeviceIoControl(hDriver, (DWORD)IOCTL_GPD_OPEN_ACPI, &acpi, sizeof(ACPI_NAME), NULL, 0, &ReturnedLength, NULL)) {
@@ -671,8 +671,9 @@ FALSE       - Failed to open acpi driver
                     }
                 }
             }
-            SetupDiDestroyDeviceInfoList(hdev);
+            else break;
         }
+        SetupDiDestroyDeviceInfoList(hdev);
     }
 
     //for (UINT Idx = 0; GetAcpiDevice(_T("ACPI_HAL"), PropertyBuffer, Idx); Idx++) {

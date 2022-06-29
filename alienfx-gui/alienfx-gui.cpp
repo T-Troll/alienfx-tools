@@ -69,8 +69,10 @@ bool DoStopService(bool kind) {
 }
 bool DetectFans() {
 	conf->fanControl = true;
-	conf->Save();
-	EvaluteToAdmin();
+	if (!IsUserAnAdmin()) {
+		conf->Save();
+		EvaluteToAdmin();
+	}
 	acpi = new AlienFan_SDK::Control();
 	bool isProbe = false;
 	if (acpi->IsActivated())

@@ -62,7 +62,7 @@ void SenMonHelper::ModifyMon()
 			delete acpi;
 			acpi = NULL;
 		}
-		conf->bSensors = false;
+		//conf->bSensors = false;
 	}
 }
 
@@ -196,7 +196,7 @@ DWORD WINAPI CEventProc(LPVOID param)
 			}
 		}
 
-		if (conf->bSensors) { // group 2
+		if (conf->bSensors && acpi) { // group 2
 			// Fan data and BIOS temperatures
 			int val;
 			for (int i = 0; i < acpi->HowManySensors(); i++) { // BIOS temps, code 0
