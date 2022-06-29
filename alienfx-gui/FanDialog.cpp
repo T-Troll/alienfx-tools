@@ -11,7 +11,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
 extern ConfigFan* fan_conf;
-MonHelper* mon = NULL;
+extern MonHelper* mon;
 HWND fanWindow = NULL, tipWindow = NULL;
 extern HWND toolTip;
 
@@ -46,9 +46,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     switch (message) {
     case WM_INITDIALOG:
     {
-        if (eve->mon) {
+        if (mon) {
             //fan_conf = conf->fan_conf;
-            mon = eve->mon;
+            //mon = eve->mon;
             niData = &conf->niData;
 
             // set PerfBoost lists...
@@ -95,8 +95,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
             fan_conf->obCheck = 1;
         }
-        else
-            mon = NULL;
+        //else
+        //    mon = NULL;
     } break;
     case WM_COMMAND:
     {
@@ -290,7 +290,7 @@ void UpdateFanUI(LPVOID lpParam) {
             }
             //DebugPrint("Fans UI update...\n");
             for (int i = 0; i < acpi->HowManySensors(); i++) {
-                string name = to_string(mon->senValues[i]) + " (" + to_string(eve->mon->maxTemps[i]) + ")";
+                string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
             }
             RECT cArea;

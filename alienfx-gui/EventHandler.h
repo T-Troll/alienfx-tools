@@ -18,7 +18,7 @@ private:
 
 public:
 	void ChangePowerState();
-	void ChangeScreenState(DWORD state);
+	void ChangeScreenState(DWORD state = 1);
 	void SwitchActiveProfile(profile* newID);
 
 	void StartProfiles();
@@ -41,7 +41,7 @@ public:
 	EventHandler();
 	~EventHandler();
 
-	MonHelper *mon = NULL;
+	//MonHelper *mon = NULL;
 	CaptureHelper *capt = NULL;
 	GridHelper *grid = NULL;
 	WSAudioIn *audio = NULL;

@@ -32,6 +32,7 @@ ConfigHandler* conf;
 EventHandler* eve;
 AlienFan_SDK::Control* acpi = NULL;
 ConfigFan* fan_conf = NULL;
+MonHelper* mon = NULL;
 
 HWND mDlg = NULL, dDlg = NULL;
 
@@ -495,12 +496,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !eve->mon) {
+				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !mon) {
 					if (MessageBox(NULL, "Fan control disabled!\nDo you want to enable it?", "Warning",
 						MB_YESNO | MB_ICONWARNING) == IDYES)
 						if (DetectFans())
 							eve->StartFanMon();
-					if (!eve->mon)
+					if (!mon)
 						TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
 				}
 				OnSelChanged(tab_list);
@@ -685,14 +686,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
 			if (fxhl->FillAllDevs(acpi)) {
-				conf->stateScreen = true;
-				//eve->ChangePowerState();
-				conf->SetStates();
+				eve->ChangeScreenState();
+				eve->ChangePowerState();
+				//conf->SetStates();
 				//eve->ChangeEffectMode();
 				//eve->StartProfiles();
 			}
 			fxhl->Start();
 			eve = new EventHandler();
+			eve->StartEffects();
+			eve->StartProfiles();
 
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		} break;
@@ -712,10 +715,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			DebugPrint("Sleep/hibernate initiated\n");
 
+			// need to restore lights if screen off (lid closed)
 			conf->stateScreen = true;
 			fxhl->ChangeState();
 			delete eve;
-			fxhl->Refresh(2);
+			//fxhl->Refresh(2);
 			fxhl->Stop();
 			break;
 		}
@@ -796,7 +800,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		case 6: // G-key for Dell G-series power switch
-			if (acpi && eve->mon->oldGmode >= 0) {
+			if (acpi && mon->oldGmode >= 0) {
 				conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
 				acpi->SetGMode(conf->fan_conf->lastProf->gmode);
 				if (IsWindowVisible(hDlg) && tabSel == TAB_FANS)

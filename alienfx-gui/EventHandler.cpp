@@ -17,6 +17,7 @@
 
 extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
+extern MonHelper* mon;
 
 DWORD WINAPI CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -344,6 +345,8 @@ void EventHandler::StartProfiles()
 			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
 		kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, KeyProc, NULL, 0);
+
+		SetForegroundWindow(GetForegroundWindow());
 	}
 }
 
@@ -547,9 +550,9 @@ static DWORD WINAPI CEventProc(LPVOID param)
 				cData.Temp = (byte) (counterValues[i].FmtValue.longValue - 273);
 		}
 
-		if (src->mon) {
+		if (mon) {
 			// Check fan RPMs
-			for (unsigned i = 0; i < src->mon->fanRpm.size(); i++) {
+			for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
 				cData.Fan = max(cData.Fan, acpi->GetFanPercent(i));
 			}
 		}
@@ -557,10 +560,10 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		// Now other temp sensor block and power block...
 		short totalPwr = 0;
 		if (conf->esif_temp) {
-			if (src->mon) {
+			if (mon) {
 				// Let's get temperatures from fan sensors
-				for (unsigned i = 0; i < src->mon->senValues.size(); i++)
-					cData.Temp = max(cData.Temp, src->mon->senValues[i]);
+				for (unsigned i = 0; i < mon->senValues.size(); i++)
+					cData.Temp = max(cData.Temp, mon->senValues[i]);
 			}
 
 			// Added other set maximum temp...

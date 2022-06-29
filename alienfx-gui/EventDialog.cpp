@@ -7,7 +7,8 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
-extern EventHandler* eve;
+//extern EventHandler* eve;
+extern MonHelper* mon;
 
 extern int eItem;
 
@@ -226,9 +227,9 @@ void UpdateEventUI(LPVOID lpParam) {
 		SetDlgItemText((HWND)lpParam, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + "W").c_str());
-		if (eve->mon) {
+		if (mon) {
 			int maxFans = 0;
-			for (auto i = eve->mon->fanRpm.begin(); i < eve->mon->fanRpm.end(); i++)
+			for (auto i = mon->fanRpm.begin(); i < mon->fanRpm.end(); i++)
 				maxFans = max(maxFans, *i);
 				SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
 		}
