@@ -75,11 +75,7 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 	if (sen = conf->FindSensor(grp, type, id)) {
 		sen->cur = val;
 		sen->min = sen->min == NO_SEN_VALUE ? val : min(sen->min, val);
-		//if (sen->cur < sen->min || sen->min == NO_SEN_VALUE)
-		//	sen->min = sen->cur;
 		sen->max = max(sen->max, val);
-		//if (sen->cur > sen->max)
-		//	sen->max = sen->cur;
 	}
 	else {
 		// add sensor

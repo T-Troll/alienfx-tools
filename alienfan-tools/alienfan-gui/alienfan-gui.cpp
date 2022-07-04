@@ -56,9 +56,9 @@ INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
 void ResetDPIScale();
 
-void ReloadFanView(HWND list, int cID);
-void ReloadPowerList(HWND list, int id);
-void ReloadTempView(HWND list, int cID);
+void ReloadFanView(HWND list);
+void ReloadPowerList(HWND list);
+void ReloadTempView(HWND list);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
 extern bool fanMode;
@@ -214,9 +214,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
-        ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
-        ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
-        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
+        ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
+        ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
+        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
 
         if (mon->oldGmode >= 0)
             Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
@@ -330,7 +330,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_MAX_RESET:
             mon->maxTemps = mon->senValues;
-            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
+            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
             break;
         case IDC_BUT_OVER:
             if (fanMode) {
@@ -375,7 +375,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ShowWindow(mDlg, SW_RESTORE);
             SetForegroundWindow(mDlg);
             HWND temp_list = GetDlgItem(hDlg, IDC_TEMP_LIST);
-            ReloadTempView(temp_list, fan_conf->lastSelectedSensor);
+            ReloadTempView(temp_list);
         } break;
         case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
             if (!isNewVersion && needRemove) {
@@ -400,7 +400,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
             acpi->SetPower(fan_conf->lastProf->powerStage);
-            ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
+            ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
@@ -474,7 +474,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         // Select other fan....
                         fan_conf->lastSelectedSensor = lPoint->iItem;
                         // Redraw fans
-                        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
+                        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
                         SendMessage(fanWindow, WM_PAINT, 0, 0);
                     }
                 }
