@@ -66,37 +66,42 @@ void ConfigMon::Load() {
 	char name[256];
 	int src, type, id;
 	DWORD len = 255, lend = 0;
-	LSTATUS ret = 0;
+	byte* data = NULL;
 	// Profiles...
 	for (int vindex = 0; RegEnumValue(hKey2, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		len++;
-		BYTE* data = new BYTE[lend];
+		if (data)
+			delete[] data;
+		data = new BYTE[lend];
 		RegEnumValue(hKey2, vindex, name, &len, NULL, NULL, data, &lend);
+		len = 255;
 		if (sscanf_s(name, "Name-%d-%d-%d", &src,&type,&id) == 3) {
 			CheckSensor(src, type, id)->name = string((char*)data);
-			goto nextEntry;
+			continue;
 		}
 		if (sscanf_s(name, "Tray-%d-%d-%d", &src, &type, &id) == 3) {
 			CheckSensor(src, type, id)->intray = (byte)*(DWORD*)data;
-			goto nextEntry;
+			continue;
 		}
 		if (sscanf_s(name, "State-%d-%d-%d", &src, &type, &id) == 3) {
 			CheckSensor(src, type, id)->disabled = (byte)*(DWORD*)data;
-			goto nextEntry;
+			continue;
 		}
 		if (sscanf_s(name, "Flags-%d-%d-%d", &src, &type, &id) == 3) {
 			CheckSensor(src, type, id)->flags = *(DWORD*)data;
-			goto nextEntry;
+			continue;
 		}
 		if (sscanf_s(name, "Color-%d-%d-%d", &src, &type, &id) == 3) {
 			CheckSensor(src, type, id)->traycolor = *(DWORD*)data;
-			goto nextEntry;
+			continue;
 		}
-		nextEntry:
-		len = 255;
-		delete[] data;
+		if (sscanf_s(name, "Alarm-%d-%d-%d", &src, &type, &id) == 3) {
+			CheckSensor(src, type, id)->alarmPoint = *(DWORD*)data;
+			//continue;
+		}
 	}
-
+	if (data)
+		delete[] data;
 }
 
 void ConfigMon::Save() {
@@ -123,6 +128,10 @@ void ConfigMon::Save() {
 		if (j->traycolor != 0xffffff) {
 			tName = "Color-" + name;
 			RegSetValueEx(hKey2, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->traycolor, sizeof(DWORD));
+		}
+		if (j->alarm) {
+			tName = "Alarm-" + name;
+			RegSetValueEx(hKey2, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->alarmPoint, sizeof(DWORD));
 		}
 	}
 }

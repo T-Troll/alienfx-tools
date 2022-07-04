@@ -108,9 +108,11 @@ AlienFX_SDK::group* ConfigHandler::FindCreateGroup(int did, int lid, string name
 {
 	AlienFX_SDK::group* grp = NULL;
 
+	DWORD lgh = MAKELPARAM(did, lid);
+
 	auto tGrp = find_if(afx_dev.GetGroups()->begin(), afx_dev.GetGroups()->end(),
-		[did, lid](auto g) {
-			return g.lights.size() == 1 && g.lights.front().first == did && g.lights.front().second == lid;
+		[lgh](auto g) {
+			return g.lights.size() == 1 && g.lights.front() == lgh;
 		});
 	if (tGrp == afx_dev.GetGroups()->end()) {
 		unsigned maxID = 0x10000;
@@ -119,7 +121,7 @@ AlienFX_SDK::group* ConfigHandler::FindCreateGroup(int did, int lid, string name
 		AlienFX_SDK::mapping* lgh = afx_dev.GetMappingById(afx_dev.GetDeviceById(did), lid);
 		afx_dev.GetGroups()->push_back({ maxID, name + " " + (lgh ? lgh->name : "#" + to_string(maxID & 0xffff)) });
 		grp = &afx_dev.GetGroups()->back();
-		grp->lights.push_back({ did, lid });
+		grp->lights.push_back(MAKELPARAM(did, lid));
 		grp->have_power = lgh->flags & ALIENFX_FLAG_POWER;
 	}
 	else

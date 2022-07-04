@@ -2,9 +2,9 @@
 #include "MonHelper.h"
 #include "alienfan-SDK.h"
 #include <windowsx.h>
-#include <common.h>
+#include "common.h"
 
-#define DRAG_ZONE 2
+#define DRAG_ZONE 3
 
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
@@ -96,11 +96,14 @@ void DrawFan()
                 senI < fan_conf->lastProf->fanControls.end(); senI++)
                 if (fan = fan_conf->FindFanBlock(&(*senI), fan_conf->lastSelectedFan)) {
                     // draw fan curve
+                    HPEN linePen;
                     if (sen && sen->sensorIndex == senI->sensorIndex)
-                        SetDCPenColor(hdc, RGB(0, 255, 0));
+                        //SetDCPenColor(hdc, RGB(0, 255, 0));
+                        linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
                     else
-                        SetDCPenColor(hdc, RGB(255, 255, 0));
-                    SelectObject(hdc, GetStockObject(DC_PEN));
+                        //SetDCPenColor(hdc, RGB(255, 255, 0));
+                        linePen = CreatePen(PS_DOT, 1, RGB(255, 255, 0));
+                    SelectObject(hdc, linePen);// GetStockObject(DC_PEN));
                     // First point
                     MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
                     for (int i = 0; i < fan->points.size(); i++) {
@@ -117,14 +120,17 @@ void DrawFan()
                         mark = Fan2Screen(mon->senValues[senI->sensorIndex], fanBoost);
                         Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                     }
+                    DeleteObject(linePen);
                 }
             // Red dot
-            SetDCPenColor(hdc, RGB(255, 0, 0));
-            SetDCBrushColor(hdc, RGB(255, 0, 0));
-            SelectObject(hdc, GetStockObject(DC_PEN));
-            SelectObject(hdc, GetStockObject(DC_BRUSH));
-            mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
-            Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+            if (sen) {
+                SetDCPenColor(hdc, RGB(255, 0, 0));
+                SetDCBrushColor(hdc, RGB(255, 0, 0));
+                SelectObject(hdc, GetStockObject(DC_PEN));
+                SelectObject(hdc, GetStockObject(DC_BRUSH));
+                mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
+                Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+            }
             string rpmText = "Fan curve (scale: " + to_string(acpi->boosts[fan_conf->lastSelectedFan])
                 + ", boost: " + to_string(fanBoost) + ", " + to_string(acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
@@ -363,9 +369,10 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hDlg, message, wParam, lParam);
 }
 
-void ReloadFanView(HWND list, int cID) {
+void ReloadFanView(HWND list) {
     temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
-    //HWND list = GetDlgItem(hDlg, IDC_FAN_LIST);
+    int oldSensor = fan_conf->lastSelectedSensor;
+    fan_conf->lastSelectedSensor = -1;
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES /*| LVS_EX_AUTOSIZECOLUMNS*/ | LVS_EX_FULLROWSELECT);
     if (!ListView_GetColumnWidth(list, 0)) {
@@ -373,29 +380,26 @@ void ReloadFanView(HWND list, int cID) {
         ListView_InsertColumn(list, 0, &lCol);
     }
     for (int i = 0; i < acpi->HowManyFans(); i++) {
-        LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
+        LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
         string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
-        lItem.lParam = i;
         lItem.pszText = (LPSTR)name.c_str();
-        if (i == cID) {
+        if (i == fan_conf->lastSelectedFan) {
             lItem.state = LVIS_SELECTED;
-            SendMessage(fanWindow, WM_PAINT, 0, 0);
         }
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
         if (sen && fan_conf->FindFanBlock(sen, i)) {
-            fan_conf->lastSelectedSensor = -1;
             ListView_SetCheckState(list, i, true);
-            fan_conf->lastSelectedSensor = sen->sensorIndex;
+            //ListView_SetItemState(list, i, INDEXTOSTATEIMAGEMASK(2), LVIS_STATEIMAGEMASK);
         }
     }
-
+    fan_conf->lastSelectedSensor = oldSensor;
     ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE_USEHEADER);
 }
 
 
-void ReloadPowerList(HWND list, int id) {
+void ReloadPowerList(HWND list) {
     //HWND list = GetDlgItem(hDlg, IDC_COMBO_POWER);
     ComboBox_ResetContent(list);
     for (int i = 0; i < acpi->HowManyPower(); i++) {
@@ -408,12 +412,12 @@ void ReloadPowerList(HWND list, int id) {
             name = "Manual";
         int pos = ComboBox_AddString(list, (LPARAM)(name.c_str()));
         ComboBox_SetItemData(list, pos, i);
-        if (i == id)
+        if (i == fan_conf->lastProf->powerStage)
             ComboBox_SetCurSel(list, pos);
     }
 }
 
-void ReloadTempView(HWND list, int cID) {
+void ReloadTempView(HWND list) {
     int rpos = 0;
     //HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
     ListView_DeleteAllItems(list);
@@ -430,7 +434,7 @@ void ReloadTempView(HWND list, int cID) {
         string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
         lItem.lParam = i;
         lItem.pszText = (LPSTR)name.c_str();
-        if (i == cID) {
+        if (i == fan_conf->lastSelectedSensor) {
             lItem.state = LVIS_SELECTED;
             rpos = i;
         }

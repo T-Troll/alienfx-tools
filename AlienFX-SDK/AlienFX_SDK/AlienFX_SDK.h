@@ -63,17 +63,10 @@ namespace AlienFX_SDK {
 		string name;
 	};
 
-	//struct devmap { // Device information block
-	//	WORD vid = 0;
-	//	WORD devid;// = 0;
-	//	string name;
-	//	Colorcode white = {255,255,255};
-	//};
-
 	struct group { // Light group information block
 		DWORD gid;// = 0;
 		string name;
-		vector<pair<DWORD,DWORD>> lights;
+		vector<DWORD> lights;
 		bool have_power = false;
 	};
 

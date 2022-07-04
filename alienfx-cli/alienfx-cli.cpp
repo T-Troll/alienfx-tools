@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v6.0.1\n");
+	printf("alienfx-cli v6.2.4\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -314,8 +314,8 @@ int main(int argc, char* argv[])
 					for (int j = 0; j < afx_map->fxdevs.size(); j++) {
 						vector<UCHAR> lights;
 						for (int i = 0; i < grp->lights.size(); i++) {
-							if (grp->lights[i].first == afx_map->fxdevs[j].pid)
-								lights.push_back((UCHAR)grp->lights[i].second);
+							if (LOWORD(grp->lights[i]) == afx_map->fxdevs[j].pid)
+								lights.push_back((byte) HIWORD(grp->lights[i]));
 						}
 						afx_map->fxdevs[j].dev->SetMultiLights(&lights, color);
 					}
@@ -381,8 +381,8 @@ int main(int argc, char* argv[])
 				}
 				for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
 					for (int i = 0; i < (grp ? grp->lights.size() : j->lights.size()); i++) {
-						if ((grp && grp->lights[i].first == j->pid) || !grp) {
-							act.index = (byte)(grp ? grp->lights[i].second : j->lights[i].lightid);
+						if ((grp && LOWORD(grp->lights[i]) == j->pid) || !grp) {
+							act.index = (byte)(grp ? HIWORD(grp->lights[i]) : j->lights[i].lightid);
 							j->dev->SetAction(&act);
 						}
 					}

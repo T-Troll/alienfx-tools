@@ -351,16 +351,16 @@ int main(int argc, char* argv[])
                         lights->Update();
                         continue;
                     }
-                    //if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
-                    //    PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-                    //    char command[] = "\\_SB.PCI0.LPCB.ECDV.KDRT";
-                    //    PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-                    //    acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, args[0].num);
-                    //    printf("Test result %d\n", EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, acpiargs));
-                    //    printf("Data inside is %d\n", resName->Argument[0].Argument);
-                    //    free(resName);
-                    //    continue;
-                    //}
+                    if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
+                        PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+                        char command[] = "\\_SB.PCI0.LPCB.EC0.DACT";
+                        PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
+                        acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, (int)strtoul(args[0].str.c_str(), NULL, 16));
+                        printf("Test result %d\n", EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, NULL));
+                        printf("Data inside is %d\n", resName->Argument[0].Argument);
+                        free(resName);
+                        continue;
+                    }
                     printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
                 }
             }

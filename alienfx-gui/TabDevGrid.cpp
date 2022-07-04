@@ -5,6 +5,7 @@ extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void UpdateZoneList(byte flag = 0);
+extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp);
 
 extern void SetLightInfo();
 extern void RedrawDevList();
@@ -72,12 +73,11 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
         for (auto cs = conf->activeProfile->lightsets.rbegin(); cs < conf->activeProfile->lightsets.rend(); cs++) {
             AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(cs->group);
             if (grp)
-                for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
+                //for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
                     for (int x = full.left; x < full.right; x++)
                         for (int y = full.top; y < full.bottom; y++) {
                             int ind = ind(x, y);
-                            if (LOWORD(conf->mainGrid->grid[ind]) == clgh->first &&
-                                HIWORD(conf->mainGrid->grid[ind]) == clgh->second) {
+                            if (IsLightInGroup(conf->mainGrid->grid[ind], grp)) {
                                 if (conf->enableMon)
                                     switch (conf->GetEffect()) {
                                     case 1: { // monitoring
@@ -108,7 +108,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
                                 }
                             }
                         }
-                }
+                //}
         }
     }
     RECT pRect;// = buttonZone;
@@ -156,40 +156,46 @@ void ModifyColorDragZone(bool clear = false) {
             for (int y = dragZone.top; y < dragZone.bottom; y++) {
                 int ind = ind(x, y);
                 if (conf->mainGrid->grid[ind]) {
-                    auto pos = find_if(grp->lights.begin(), grp->lights.end(),
+                    if (IsLightInGroup(conf->mainGrid->grid[ind], grp))
+                        markRemove.push_back(conf->mainGrid->grid[ind]);
+                    else
+                        if (!clear)
+                            markAdd.push_back(conf->mainGrid->grid[ind]);
+                    /*auto pos = find_if(grp->lights.begin(), grp->lights.end(),
                         [ind](auto t) {
-                            return t.first == LOWORD(conf->mainGrid->grid[ind]) &&
-                                t.second == HIWORD(conf->mainGrid->grid[ind]);
+                            return t == conf->mainGrid->grid[ind];
                         });
                     if (pos != grp->lights.end()) {
                         markRemove.push_back(conf->mainGrid->grid[ind]);
                     }
                     else
                         if (!clear)
-                            markAdd.push_back(conf->mainGrid->grid[ind]);
+                            markAdd.push_back(conf->mainGrid->grid[ind]);*/
                 }
             }
         // now clear by remove list and add new...
         for (auto tr = markRemove.begin(); tr < markRemove.end(); tr++) {
-            auto pos = find_if(grp->lights.begin(), grp->lights.end(),
-                [tr](auto t) {
-                    return t.first == LOWORD(*tr) && t.second == HIWORD(*tr);
-                });
-            if (pos != grp->lights.end())
-                grp->lights.erase(pos);
+            for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
+                if (*pos == *tr) {
+                    grp->lights.erase(pos);
+                    break;
+                }
+            //    [tr](auto t) {
+            //        return t == *tr;
+            //    });
+            //if (pos != grp->lights.end())
+            //    grp->lights.erase(pos);
         }
         for (auto tr = markAdd.begin(); tr < markAdd.end(); tr++) {
-            if (find_if(grp->lights.begin(), grp->lights.end(),
-                [tr](auto t) {
-                    return t.first == LOWORD(*tr) && t.second == HIWORD(*tr);
-                }) == grp->lights.end())
-                grp->lights.push_back({ LOWORD(*tr) , HIWORD(*tr) });
+            if (!IsLightInGroup(*tr, grp))
+                grp->lights.push_back(*tr);
         }
-        markRemove.clear();
+        //markAdd.clear();
+        //markRemove.clear();
         // now check for power...
         grp->have_power = find_if(grp->lights.begin(), grp->lights.end(),
             [](auto t) {
-                return conf->afx_dev.GetFlags(t.first, (WORD)t.second) & ALIENFX_FLAG_POWER;
+                return conf->afx_dev.GetFlags(LOWORD(t), HIWORD(t)) & ALIENFX_FLAG_POWER;
             }) != grp->lights.end();
 
         conf->SortGroupGauge(grp->gid);
@@ -436,11 +442,8 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 DeleteObject(Brush2);
                 if (gridVal)
                 {
-                    AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(eItem);
-                    if (grp && find_if(grp->lights.begin(), grp->lights.end(),
-                        [gridVal](auto lgh) {
-                            return lgh.first == LOWORD(gridVal) && lgh.second == HIWORD(gridVal);
-                        }) != grp->lights.end())
+                    //AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(eItem);
+                    if (IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem)))
                         DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
                 }
             }

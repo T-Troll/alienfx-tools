@@ -206,16 +206,16 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             DeleteObject(Brush);
             bool selected = false;
             if (map && map->ambients.size()) {
-                auto pos = find_if(map->ambients.begin(), map->ambients.end(),
-                    [idx](auto t) {
-                        return t == idx;
-                    });
-                selected = pos != map->ambients.end();
+                for (auto pos = map->ambients.begin(); pos < map->ambients.end(); pos++)
+                    if (*pos == idx) {
+                        selected = true;
+                        break;
+                    }
             }
             DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, selected ? BF_RECT : BF_MONO | BF_FLAT | BF_RECT);
         }
     } break;
-    case WM_CLOSE: case WM_DESTROY:
+    case WM_DESTROY:
         delete ambUIupdate;
     break;
     default: return false;

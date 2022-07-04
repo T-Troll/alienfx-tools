@@ -292,13 +292,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 		return false;
 	break;
-	case WM_CLOSE: case WM_DESTROY:
+	case WM_DESTROY:
 		delete hapUIThread;
 	break;
 	default: return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 void UpdateHapticsUI(LPVOID lpParam) {

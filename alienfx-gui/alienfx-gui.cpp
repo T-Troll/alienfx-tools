@@ -105,12 +105,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	ResetDPIScale();
 
 	conf = new ConfigHandler();
-	if (conf->haveOldConfig && MessageBox(NULL, "Old configuration detected. Do you want to convert it?", "Warning",
-		MB_YESNO | MB_ICONWARNING) == IDYES) {
-		// convert config call
-		ShellExecute(NULL, "open", "alienfx-conv.exe", NULL, ".", SW_NORMAL);
-		return 0;
-	}
+	//if (conf->haveOldConfig && MessageBox(NULL, "Old configuration detected. Do you want to convert it?", "Warning",
+	//	MB_YESNO | MB_ICONWARNING) == IDYES) {
+	//	// convert config call
+	//	ShellExecute(NULL, "open", "alienfx-conv.exe", NULL, ".", SW_NORMAL);
+	//	return 0;
+	//}
 	conf->Load();
 
 	fan_conf = conf->fan_conf;
@@ -497,8 +497,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
 				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !mon) {
-					if (MessageBox(NULL, "Fan control disabled!\nDo you want to enable it?", "Warning",
-						MB_YESNO | MB_ICONWARNING) == IDYES)
+					//if (MessageBox(NULL, "Fan control disabled!\nDo you want to enable it?", "Warning",
+					//	MB_YESNO | MB_ICONWARNING) == IDYES)
 						if (DetectFans())
 							eve->StartFanMon();
 					if (!mon)
@@ -907,27 +907,24 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 
 groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set)
 {
-	if (mid > 0) {
-		auto res = find_if(set->begin(), set->end(), [mid](groupset ls) {
-			return ls.group == mid;
-			});
-		return res == set->end() ? nullptr : &(*res);
-	}
+	for (auto res = set->begin(); res < set->end(); res++)
+		if (res->group == mid)
+			return &(*res);
 	return nullptr;
 }
 
-//groupset* CreateMapping(int lid) {
-//	// create new mapping..
-//	groupset newmap;
-//	newmap.group = conf->afx_dev.GetGroupById(lid);
-//	conf->active_set->push_back(newmap);
-//	return &conf->active_set->back();
-//}
+bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp) {
+	if (grp)
+		for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
+			if (*pos == lgh)
+				return true;
+	return false;
+}
 
 void RemoveUnused(vector<groupset>* lightsets) {
 	for (auto it = lightsets->begin(); it < lightsets->end();)
 		if (!(it->color.size() + it->events[0].state + it->events[1].state +
-			it->events[2].state + it->ambients.size() + it->haptics.size())) {
+			it->events[2].state + it->ambients.size() + it->haptics.size() + it->effect.type)) {
 			lightsets->erase(it);
 			it = lightsets->begin();
 		}
@@ -936,17 +933,15 @@ void RemoveUnused(vector<groupset>* lightsets) {
 }
 
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
-	auto pos = find_if(grp->lights.begin(), grp->lights.end(),
-		[devid, lightid](auto t) {
-			// WARNING: check is it pid or vid/pid!
-			return LOWORD(t.first) == devid && t.second == lightid;
-		});
-	if (pos != grp->lights.end()) {
-		// is it power button?
-		if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
-			grp->have_power = false;
-		grp->lights.erase(pos);
-	}
+	DWORD lgh = MAKELPARAM(devid, lightid);
+	for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
+		if (*pos == lgh) {
+			// is it power button?
+			if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
+				grp->have_power = false;
+			grp->lights.erase(pos);
+			return;
+		}
 }
 
 void RemoveLightAndClean(int dPid, int eLid) {

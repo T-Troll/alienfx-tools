@@ -169,6 +169,8 @@
 #define IDC_LIST_GROUPS                 1155
 #define IDC_CP_FANS                     1155
 #define IDC_LIST_FOUND                  1156
+#define IDC_CP_FANS2                    1156
+#define IDC_CP_GRID                     1156
 #define IDC_BUT_WHITE                   1158
 #define IDC_CHECK_REVERSE               1159
 #define IDC_CHECK_GMODE                 1160

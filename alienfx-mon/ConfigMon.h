@@ -19,9 +19,11 @@ struct SENSOR {
 			byte disabled;
 			byte intray;
 			byte inverse;
+			byte alarm;
 		};
 		DWORD flags = 0;
 	};
+	DWORD alarmPoint = 0;
 	DWORD traycolor = 0xffffff;
 	NOTIFYICONDATA* niData;
 };

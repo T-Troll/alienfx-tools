@@ -1,6 +1,7 @@
 #include "SenMonHelper.h"
 #include <Pdh.h>
 #include <PdhMsg.h>
+#include "common.h"
 
 #pragma comment(lib, "pdh.lib")
 
@@ -55,14 +56,16 @@ void SenMonHelper::ModifyMon()
 {
 	if (conf->bSensors) {
 		acpi = new AlienFan_SDK::Control();
-		conf->bSensors = acpi->IsActivated() && acpi->Probe();
+		if (!(conf->bSensors = acpi->IsActivated() && acpi->Probe())) {
+			delete acpi;
+			acpi = NULL;
+		}
 	}
 	else {
 		if (acpi) {
 			delete acpi;
 			acpi = NULL;
 		}
-		//conf->bSensors = false;
 	}
 }
 
@@ -83,6 +86,15 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 		sen = new SENSOR({ grp, type, id, name, val, val, val, NO_SEN_VALUE });
 		conf->active_sensors.push_back(*sen);
 		conf->needFullUpdate = true;
+	}
+	if (sen->alarm && sen->oldCur && sen->oldCur != NO_SEN_VALUE) {
+		// Check alarm
+		if ((sen->cur < sen->alarmPoint) + (sen->oldCur > sen->alarmPoint) == 2 ||
+			(sen->cur > sen->alarmPoint) + (sen->oldCur < sen->alarmPoint) == 2) {
+			// Set alarm
+			ShowNotification(&conf->niData, "Alarm triggered!", "Sensor \"" + sen->name +
+				"\" crossed the value " + to_string(sen->alarmPoint) + " (Current: " + to_string(sen->cur) + ")!", true);
+		}
 	}
 }
 

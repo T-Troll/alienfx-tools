@@ -17,7 +17,7 @@ extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 int effID = 0;
 
-vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
+const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
 
 void SetEffectData(HWND hDlg, groupset* mmap) {
 	bool hasEffects = false;

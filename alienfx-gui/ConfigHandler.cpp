@@ -17,11 +17,11 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 
 	// do we have old configuration?
-	if (RegOpenKeyEx(hKeyMain, "Zones", 0, KEY_ALL_ACCESS, &hKeyZones) != ERROR_SUCCESS) {
-		if (haveOldConfig = RegOpenKeyEx(hKeyMain, "Events", 0, KEY_ALL_ACCESS, &hKeyZones) == ERROR_SUCCESS)
-			RegCloseKey(hKeyZones);
+	//if (RegOpenKeyEx(hKeyMain, "Zones", 0, KEY_ALL_ACCESS, &hKeyZones) != ERROR_SUCCESS) {
+	//	if (haveOldConfig = RegOpenKeyEx(hKeyMain, "Events", 0, KEY_ALL_ACCESS, &hKeyZones) == ERROR_SUCCESS)
+	//		RegCloseKey(hKeyZones);
 		RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
-	}
+	//}
 	afx_dev.LoadMappings();
 
 	fan_conf = new ConfigFan();
@@ -38,67 +38,13 @@ ConfigHandler::~ConfigHandler() {
 	RegCloseKey(hKeyProfiles);
 }
 
-void ConfigHandler::updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD tFlags, DWORD* eff) {
+profile* ConfigHandler::FindCreateProfile(unsigned id) {
 	profile* prof = FindProfile(id);
 	if (!prof) {
-		// New profile
-		prof = new profile{id};
+		prof = new profile{ id };
 		profiles.push_back(prof);
 	}
-	// update profile..
-	if (!name.empty())
-		prof->name = name;
-	if (!app.empty())
-		prof->triggerapp.push_back(app);
-	if (flags != -1) {
-		prof->flags = LOWORD(flags);
-		prof->effmode = HIWORD(flags);
-		if (prof->flags & PROF_GLOBAL_EFFECTS) {
-			prof->flags &= ~PROF_GLOBAL_EFFECTS;
-			prof->effmode = 99;
-		}
-	}
-	if (tFlags != -1) {
-		prof->triggerFlags = LOWORD(tFlags);
-		prof->triggerkey = HIWORD(tFlags);
-	}
-	if (eff) {
-		prof->globalEffect = (byte) LOWORD(eff[0]);
-		prof->globalDelay = (byte) HIWORD(eff[0]);
-		prof->effColor1.ci = eff[1];
-		prof->effColor2.ci = eff[2];
-	}
-}
-
-void ConfigHandler::updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags) {
-
-	profile* prof = FindProfile(id);
-	if (prof) {
-		if (temp) {
-			for (int i = 0; i < prof->fansets.fanControls.size(); i++)
-				if (prof->fansets.fanControls[i].sensorIndex == senID) {
-					prof->fansets.fanControls[i].fans.push_back(*temp);
-					return;
-				}
-			prof->fansets.fanControls.push_back({(short) senID, {*temp}});
-		}
-		if (flags != -1) {
-			prof->fansets.powerStage = LOWORD(flags);
-			prof->fansets.GPUPower = LOBYTE(HIWORD(flags));
-			prof->fansets.gmode = HIBYTE(HIWORD(flags));
-		}
-		return;
-	} else {
-		prof = new profile{id};
-		if (temp) {
-			prof->fansets.fanControls.push_back({(short) senID, {*temp}});
-		}
-		if (flags != -1) {
-			prof->fansets.powerStage = LOWORD(flags);
-			prof->fansets.GPUPower = HIWORD(flags);
-		}
-		profiles.push_back(prof);
-	}
+	return prof;
 }
 
 groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
@@ -232,124 +178,142 @@ void ConfigHandler::Load() {
 	// Haptics....
 	GetReg("Haptics-Input", &hap_inpType);
 
-	int vindex = 0;
 	char name[256];
-	int pid = -1, appid = -1;
-	LSTATUS ret = 0;
+	int pid, appid, profID, groupID, recSize;
+	BYTE* data = NULL;
+	DWORD len = 255, lend = 0;
+	profile* prof;
+	groupset* gset;
+
 	// Profiles...
-	do {
-		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
-			lend++; len++;
-			BYTE *data = new BYTE[lend];
-			RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
-			vindex++;
-			if (sscanf_s(name, "Profile-%d", &pid) == 1) {
-				updateProfileByID(pid, (char*)data, "", -1, -1, NULL);
-				goto nextRecord;
-			}
-			if (sscanf_s(name, "Profile-triggers-%d", &pid) == 1) {
-				updateProfileByID(pid, "", "", -1, *(DWORD*)data, NULL);
-				goto nextRecord;
-			}
-			if (sscanf_s(name, "Profile-gflags-%d", &pid) == 1) {
-				updateProfileByID(pid, "", "", *(DWORD*)data, -1, NULL);
-				goto nextRecord;
-			}
-			if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
-				//PathStripPath((char*)data);
-				updateProfileByID(pid, "", (char*)data, -1, -1, NULL);
-				goto nextRecord;
-			}
-			int senid, fanid;
-			if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
-				// add fans...
-				fan_block fan{(short) fanid};
-				for (unsigned i = 0; i < lend; i += 2) {
-					fan.points.push_back({data[i], data[i+1]});
-				}
-				updateProfileFansByID(pid, senid, &fan, -1);
-				goto nextRecord;
-			}
-			if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
-				updateProfileByID(pid, "", "", -1, -1, (DWORD*)data);
-				goto nextRecord;
-			}
-			if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
-				updateProfileFansByID(pid, -1, NULL, *(DWORD*)data);
-				//goto nextRecord;
-			}
-nextRecord:
-			delete[] data;
+	for (int vindex = 0; RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+		len++;
+		if (data) delete[] data;
+		data = new BYTE[lend];
+		RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
+		len = 255;
+		if (sscanf_s(name, "Profile-%d", &pid) == 1) {
+			prof = FindCreateProfile(pid);
+			prof->name = (char*)data;
+			continue;
 		}
-	} while (ret == ERROR_SUCCESS);
-	vindex = 0;
-	// Zones...
-	do {
-		DWORD len = 255, lend = 0;
-		// get id(s)...
-		if ((ret = RegEnumValue( hKeyZones, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
-			BYTE *inarray = new BYTE[lend]; len++;
-			int profID, groupID, recSize;
-			groupset* gset;
-			RegEnumValue(hKeyZones, vindex, name, &len, NULL, NULL, (LPBYTE) inarray, &lend);
-			vindex++;
-			if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				gset->fromColor = inarray[0];
-				gset->gauge = inarray[1];
-				gset->flags = ((WORD*)inarray)[1];
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				for (int i = 0; i < 3; i++)
-					gset->events[i] = ((event*)inarray)[i];
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				AlienFX_SDK::afx_act* clr = (AlienFX_SDK::afx_act*)inarray;
-				for (int i = 0; i < recSize; i++)
-					gset->color.push_back(clr[i]);
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-ambient-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				for (int i = 0; i < recSize; i++)
-					gset->ambients.push_back(inarray[i]);
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				byte* out = inarray, cbsize = 2 * sizeof(DWORD) + 3;
-				freq_map newFreq;
-				for (int i = 0; i < recSize; i++) {
-					newFreq.freqID.clear();
-					memcpy(&newFreq, out, cbsize);
-					out += cbsize;
-					/*newFreq.colorfrom.ci = *(DWORD*)out; out += sizeof(DWORD);
-					newFreq.colorto.ci = *(DWORD*)out; out += sizeof(DWORD);
-					newFreq.hicut = *out; out++;
-					newFreq.lowcut = *out; out++;*/
-					//byte freqsize = *out; out++;
-					for (int j = 0; j < newFreq.freqsize; j++) {
-						if (find(newFreq.freqID.begin(), newFreq.freqID.end(), *out) == newFreq.freqID.end())
-							newFreq.freqID.push_back(*out); out++;
-					}
-					gset->haptics.push_back(newFreq);
-				}
-				goto nextZone;
-			}
-			if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2 &&
-				(gset = FindCreateGroupSet(profID, groupID))) {
-				memcpy(&gset->effect, inarray, sizeof(grideffect));
-				//goto nextZone;
-			}
-			nextZone:
-			delete[] inarray;
+		if (sscanf_s(name, "Profile-triggers-%d", &pid) == 1) {
+			prof = FindCreateProfile(pid);
+			prof->triggerFlags = LOWORD(*(DWORD*)data);
+			prof->triggerkey = HIWORD(*(DWORD*)data);
+			continue;
 		}
-	} while (ret == ERROR_SUCCESS);
+		if (sscanf_s(name, "Profile-gflags-%d", &pid) == 1) {
+			prof = FindCreateProfile(pid);
+			prof->flags = LOWORD(*(DWORD*)data);
+			prof->effmode = HIWORD(*(DWORD*)data);
+			continue;
+		}
+		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
+			//PathStripPath((char*)data);
+			prof = FindCreateProfile(pid);
+			prof->triggerapp.push_back((char*)data);
+			continue;
+		}
+		int senid, fanid;
+		if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
+			// add fans...
+			fan_block fan{ (short)fanid };
+			for (unsigned i = 0; i < lend; i += 2) {
+				fan.points.push_back({ data[i], data[i + 1] });
+			}
+			prof = FindCreateProfile(pid);
+			auto cf = find_if(prof->fansets.fanControls.begin(), prof->fansets.fanControls.end(),
+				[senid](auto t) {
+					return t.sensorIndex == senid;
+				});
+			if (cf != prof->fansets.fanControls.end()) {
+				cf->fans.push_back(fan);
+			}
+			else {
+				prof->fansets.fanControls.push_back({ (short)senid, {fan} });
+			}
+			continue;
+		}
+		if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
+			prof = FindCreateProfile(pid);
+			DWORD* tDat = (DWORD*)data;
+			prof->globalEffect = (byte)LOWORD(tDat[0]);
+			prof->globalDelay = (byte)HIWORD(tDat[0]);
+			prof->effColor1.ci = tDat[1];
+			prof->effColor2.ci = tDat[2];
+			continue;
+		}
+		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
+			prof = FindCreateProfile(pid);
+			prof->fansets.powerStage = LOWORD(*(DWORD*)data);
+			prof->fansets.GPUPower = LOBYTE(HIWORD(*(DWORD*)data));
+			prof->fansets.gmode = HIBYTE(HIWORD(*(DWORD*)data));
+		}
+	}
+
+	// Loading zones...
+	for (int vindex = 0; RegEnumValue(hKeyZones, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+		len++;
+		if (data) delete[] data;
+		data = new BYTE[lend];
+		//int profID, groupID, recSize;
+		//groupset* gset;
+		RegEnumValue(hKeyZones, vindex, name, &len, NULL, NULL, (LPBYTE)data, &lend);
+		len = 255;
+		if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
+			(gset = FindCreateGroupSet(profID, groupID))) {
+			gset->fromColor = data[0];
+			gset->gauge = data[1];
+			gset->flags = ((WORD*)data)[1];
+			continue;
+		}
+		if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
+			(gset = FindCreateGroupSet(profID, groupID))) {
+			for (int i = 0; i < 3; i++)
+				gset->events[i] = ((event*)data)[i];
+			continue;
+		}
+		if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
+			(gset = FindCreateGroupSet(profID, groupID))) {
+			AlienFX_SDK::afx_act* clr = (AlienFX_SDK::afx_act*)data;
+			for (int i = 0; i < recSize; i++)
+				gset->color.push_back(clr[i]);
+			continue;
+		}
+		if (sscanf_s((char*)name, "Zone-ambient-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
+			(gset = FindCreateGroupSet(profID, groupID))) {
+			for (int i = 0; i < recSize; i++)
+				gset->ambients.push_back(data[i]);
+			continue;
+		}
+		if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
+			(gset = FindCreateGroupSet(profID, groupID))) {
+			byte* out = data, cbsize = 2 * sizeof(DWORD) + 3;
+			freq_map newFreq;
+			for (int i = 0; i < recSize; i++) {
+				newFreq.freqID.clear();
+				memcpy(&newFreq, out, cbsize);
+				out += cbsize;
+				for (int j = 0; j < newFreq.freqsize; j++) {
+					if (find(newFreq.freqID.begin(), newFreq.freqID.end(), *out) == newFreq.freqID.end())
+						newFreq.freqID.push_back(*out); out++;
+				}
+				gset->haptics.push_back(newFreq);
+			}
+			continue;
+		}
+		if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2 &&
+			(gset = FindCreateGroupSet(profID, groupID))) {
+			memcpy(&gset->effect, data, sizeof(grideffect));
+			//goto nextZone;
+		}
+	//nextZone:
+	//	//delete[] data;
+	//	len = 255;
+	}
+
+	if (data) delete[] data;
 
 	if (!profiles.size()) {
 		// need new profile
@@ -550,11 +514,11 @@ void ConfigHandler::SortGroupGauge(int gid) {
 	}
 
 	// find operational grid...
-	DWORD lgt = MAKELPARAM(grp->lights.front().first, grp->lights.front().second);
+	//DWORD lgt = MAKELPARAM(grp->lights.front().first, grp->lights.front().second);
 	AlienFX_SDK::lightgrid* opGrid = NULL;
 	for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
 		for (int ind = 0; ind < t->x * t->y; ind++)
-			if (t->grid[ind] == lgt) {
+			if (t->grid[ind] == grp->lights.front()) {
 				zone->gridID = t->id;
 				opGrid = &(*t);
 				break;
@@ -565,10 +529,10 @@ void ConfigHandler::SortGroupGauge(int gid) {
 	// scan light positions in grid...
 	zone->gMinX = zone->gMinY = 255;
 	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
-		lgt = MAKELPARAM(lgh->first, lgh->second);
-		zonelight cl{ {lgh->first, lgh->second }, 255, 255 };
+		//lgt = MAKELPARAM(lgh->first, lgh->second);
+		zonelight cl{ *lgh, 255, 255 };
 		for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
-			if (opGrid->grid[ind] == lgt) {
+			if (opGrid->grid[ind] == *lgh) {
 				cl.x = min(cl.x, ind % opGrid->x);
 				cl.y = min(cl.y, ind / opGrid->x);
 				zone->gMaxX = max(zone->gMaxX, ind % opGrid->x);

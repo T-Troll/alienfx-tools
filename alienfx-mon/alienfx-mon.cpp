@@ -157,7 +157,8 @@ void RedrawButton(unsigned id, DWORD clr) {
 void UpdateItemInfo() {
 	CheckDlgButton(mDlg, IDC_CHECK_INTRAY, conf->active_sensors[selSensor].intray);
 	CheckDlgButton(mDlg, IDC_CHECK_INVERTED, conf->active_sensors[selSensor].inverse);
-	CheckDlgButton(mDlg, IDC_CHECK_HIDDEN, conf->active_sensors[selSensor].disabled);
+	CheckDlgButton(mDlg, IDC_CHECK_ALARM, conf->active_sensors[selSensor].alarm);
+	SetDlgItemInt(mDlg, IDC_ALARM_POINT, conf->active_sensors[selSensor].alarmPoint, false);
 	RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
 }
 
@@ -279,6 +280,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		Edit_SetText(GetDlgItem(hDlg, IDC_REFRESH_TIME), to_string(conf->refreshDelay).c_str());
 
+		FindValidSensor();
 		ReloadSensorView();
 
 		conf->niData.hWnd = hDlg;
@@ -341,6 +343,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (state)
 				EvaluteToAdmin();
 			senmon->ModifyMon();
+			CheckDlgButton(hDlg, IDC_BSENSORS, conf->bSensors);
 			break;
 		case IDC_BUTTON_RESET:
 			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
@@ -363,13 +366,22 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->active_sensors[selSensor].inverse = state;
 			conf->active_sensors[selSensor].oldCur = NO_SEN_VALUE;
 			break;
-		case IDC_CHECK_HIDDEN:
-			conf->active_sensors[selSensor].disabled = state;
+		case IDC_CHECK_ALARM:
+			conf->active_sensors[selSensor].alarm = state;
+			//conf->active_sensors[selSensor].oldCur = NO_SEN_VALUE;
+			break;
+		case IDC_BUT_HIDE:
+			conf->active_sensors[selSensor].disabled = !conf->showHidden;
 			FindValidSensor();
 			ReloadSensorView();
 			break;
+		case IDC_BUT_RESET:
+			conf->active_sensors[selSensor].max = conf->active_sensors[selSensor].min = conf->active_sensors[selSensor].cur;
+			conf->active_sensors[selSensor].oldCur = NO_SEN_VALUE;
+			break;
 		case IDC_SHOW_HIDDEN:
 			conf->showHidden = state;
+			SetDlgItemText(hDlg, IDC_BUT_HIDE, state ? "Unhide" : "Hide");
 			selSensor = 0;
 			FindValidSensor();
 			ReloadSensorView();
@@ -379,6 +391,11 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				conf->refreshDelay = GetDlgItemInt(hDlg, IDC_REFRESH_TIME, NULL, false);
 				if (muiThread)
 					muiThread->delay = conf->refreshDelay;
+			}
+			break;
+		case IDC_ALARM_POINT:
+			if (HIWORD(wParam) == EN_CHANGE) {
+				conf->active_sensors[selSensor].alarmPoint = GetDlgItemInt(hDlg, IDC_ALARM_POINT, NULL, false);
 			}
 			break;
 		}
@@ -415,8 +432,21 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		case NIN_BALLOONUSERCLICK:
 		{
-			ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
+			if (isNewVersion) {
+				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
+				isNewVersion = false;
+			} else
+				RestoreWindow(0);
 		} break;
+		case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
+			if (!isNewVersion && needRemove) {
+				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+				Shell_NotifyIcon(NIM_ADD, &conf->niData);
+				needRemove = false;
+			}
+			else
+				isNewVersion = false;
+			break;
 		}
 		break;
 	} break;

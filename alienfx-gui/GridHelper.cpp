@@ -61,12 +61,12 @@ void GridTriggerWatch(LPVOID param) {
 			switch (ce->effect.trigger) {
 			case 1: // Continues
 				switch (ce->gauge) {
-				case 1:	case 2:	case 3:
+				case 1:	case 2:	case 3: case 4:
 					ce->gridop.gridX = cz->gMinX; ce->gridop.gridY = cz->gMinY;
 					break;
-				case 4:
-					ce->gridop.gridX = cz->gMaxX; ce->gridop.gridY = cz->gMinY;
-					break;
+				//case 4:
+				//	ce->gridop.gridX = cz->gMaxX-1; ce->gridop.gridY = cz->gMinY;
+				//	break;
 				case 5:
 					ce->gridop.gridX = cz->gMinX + (cz->gMaxX - cz->gMinX) / 2;
 					ce->gridop.gridY = cz->gMinY + (cz->gMaxY - cz->gMinY) / 2;

@@ -1,6 +1,7 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include <powrprof.h>
+#include <commctrl.h>
 
 #pragma comment(lib, "PowrProf.lib")
 
@@ -24,9 +25,9 @@ NOTIFYICONDATA* niData;
 
 extern INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
-extern void ReloadFanView(HWND list, int cID);
-extern void ReloadPowerList(HWND list, int id);
-extern void ReloadTempView(HWND list, int cID);
+extern void ReloadFanView(HWND list);
+extern void ReloadPowerList(HWND list);
+extern void ReloadTempView(HWND list);
 extern HANDLE ocStopEvent;
 
 void UpdateFanUI(LPVOID);
@@ -64,9 +65,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             UpdateCombo(boost_ac, pModes, acMode);
             UpdateCombo(boost_dc, pModes, dcMode);;
 
-            ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
-            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
-            ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
+            ReloadPowerList(power_list);
+            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
+            ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
 
             if (mon->oldGmode >= 0)
                 Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
@@ -159,7 +160,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_MAX_RESET:
             mon->maxTemps = mon->senValues;
-            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST), fan_conf->lastSelectedSensor);
+            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
             break;
         case IDC_BUT_OVER:
             if (fanMode) {
@@ -184,19 +185,35 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_ITEMCHANGED:
             {
                 NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-                if (lPoint->uNewState & LVIS_FOCUSED) {
-                    // Select other item...
-                    if (lPoint->iItem != -1) {
-                        // Select other fan....
-                        fan_conf->lastSelectedFan = lPoint->iItem;
-
-                        // Redraw fans
-                        SendMessage(fanWindow, WM_PAINT, 0, 0);
-                    }
+                if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
+                    // Select other fan....
+                    fan_conf->lastSelectedFan = lPoint->iItem;
+                    // Redraw fans
+                    SendMessage(fanWindow, WM_PAINT, 0, 0);
+                    break;
                 }
-                if (lPoint->uNewState & 0x2000) { // checked, 0x1000 - unchecked
-                    if (fan_conf->lastSelectedSensor != -1) {
-                        temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+                if (fan_conf->lastSelectedSensor != -1 && lPoint->uNewState & 0x3000) {
+                    temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+                    switch (lPoint->uNewState & 0x3000) {
+                    case 0x1000:
+                        // Remove fan
+                        if (sen) { // remove sensor block
+                            for (auto iFan = sen->fans.begin(); iFan < sen->fans.end(); iFan++)
+                                if (iFan->fanIndex == lPoint->iItem) {
+                                    sen->fans.erase(iFan);
+                                    break;
+                                }
+                            if (!sen->fans.size()) // remove sensor block!
+                                for (auto iSen = fan_conf->lastProf->fanControls.begin();
+                                    iSen < fan_conf->lastProf->fanControls.end(); iSen++)
+                                    if (iSen->sensorIndex == sen->sensorIndex) {
+                                        fan_conf->lastProf->fanControls.erase(iSen);
+                                        break;
+                                    }
+                        }
+                        break;
+                    case 0x2000:
+                        // add fan
                         if (!sen) { // add new sensor block
                             fan_conf->lastProf->fanControls.push_back({ (short)fan_conf->lastSelectedSensor });
                             sen = &fan_conf->lastProf->fanControls.back();
@@ -204,29 +221,11 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         if (!fan_conf->FindFanBlock(sen, lPoint->iItem)) {
                             sen->fans.push_back({ (short)lPoint->iItem,{{0,0},{100,100}} });
                         }
-                        SendMessage(fanWindow, WM_PAINT, 0, 0);
+                        break;
                     }
-                } else
-                    if (lPoint->uNewState & 0x1000 && lPoint->uOldState & 0x2000) { // unchecked
-                        if (fan_conf->lastSelectedSensor != -1) {
-                            temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
-                            if (sen) { // remove sensor block
-                                for (auto iFan = sen->fans.begin(); iFan < sen->fans.end(); iFan++)
-                                    if (iFan->fanIndex == lPoint->iItem) {
-                                        sen->fans.erase(iFan);
-                                        break;
-                                    }
-                                if (!sen->fans.size()) // remove sensor block!
-                                    for (auto iSen = fan_conf->lastProf->fanControls.begin();
-                                         iSen < fan_conf->lastProf->fanControls.end(); iSen++)
-                                        if (iSen->sensorIndex == sen->sensorIndex) {
-                                            fan_conf->lastProf->fanControls.erase(iSen);
-                                            break;
-                                        }
-                            }
-                            SendMessage(fanWindow, WM_PAINT, 0, 0);
-                        }
-                    }
+                    ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, -1, 0, LVIS_SELECTED);
+                    ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
+                }
             } break;
             }
             break;
@@ -241,7 +240,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         // Select other fan....
                         fan_conf->lastSelectedSensor = lPoint->iItem;
                         // Redraw fans
-                        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST), fan_conf->lastSelectedFan);
+                        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
                         SendMessage(fanWindow, WM_PAINT, 0, 0);
                     }
                 }

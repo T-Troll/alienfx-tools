@@ -37,12 +37,10 @@ LFX_RESULT CheckState(int did = -1, int lid = -1) {
 }
 
 int LightInGroup(AlienFX_SDK::group* grp, int did, int lid) {
-	auto pos = find_if(grp->lights.begin(), grp->lights.end(),
-		[did, lid](auto t) {
-			return t.first == did && t.second == lid;
-		});
-	if (pos != grp->lights.end())
-		return (int)(pos - grp->lights.begin());
+	DWORD lgh = MAKELPARAM(did, lid);
+	for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
+		if (*pos == lgh)
+			return (int)(pos - grp->lights.begin());
 	return -1;
 }
 
@@ -55,16 +53,16 @@ void FillGroupsFromGrid() {
 			for (int y = 0; y < grid->y; y++) {
 				int did = LOWORD(grid->grid[y * grid->x + x]), lid = HIWORD(grid->grid[y * grid->x + x]);
 				if (x < dx && LightInGroup(&groups[1], did, lid) < 0) //left
-					groups[1].lights.push_back({ did, lid });
+					groups[1].lights.push_back(MAKELPARAM(did, lid));
 				if (grid->x - x < dx && LightInGroup(&groups[0], did, lid) < 0) // right
-					groups[0].lights.push_back({ did, lid });
+					groups[0].lights.push_back(MAKELPARAM(did, lid));
 				if (y < dy && LightInGroup(&groups[2], did, lid) < 0) { // upper and rear
-					groups[2].lights.push_back({ did, lid });
-					groups[5].lights.push_back({ did, lid });
+					groups[2].lights.push_back(MAKELPARAM(did, lid));
+					groups[5].lights.push_back(MAKELPARAM(did, lid));
 				}
 				if (grid->y - y < dy && LightInGroup(&groups[3], did, lid) < 0) { // lower and front
-					groups[3].lights.push_back({ did, lid });
-					groups[4].lights.push_back({ did, lid });
+					groups[3].lights.push_back(MAKELPARAM(did, lid));
+					groups[4].lights.push_back(MAKELPARAM(did, lid));
 				}
 			}
 	}
@@ -256,8 +254,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 			vector<byte> lights;
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (grp->lights[i].first == j->pid)
-						lights.push_back((byte) grp->lights[i].second);
+					if (LOWORD(grp->lights[i]) == j->pid)
+						lights.push_back((byte) HIWORD(grp->lights[i]));
 			} else {
 				for (auto i = j->lights.begin(); gid < 0 && i < j->lights.end(); i++) {
 					if (!(i->flags & ALIENFX_FLAG_POWER))
@@ -306,9 +304,9 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const u
 		for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (grp->lights[i].first == j->pid /*&&
+					if (LOWORD(grp->lights[i]) == j->pid /*&&
 						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER)*/) {
-						actions.index = (byte) grp->lights[i].second;
+						actions.index = (byte) HIWORD(grp->lights[i]);
 						j->dev->SetAction(&actions);
 					}
 			} else {

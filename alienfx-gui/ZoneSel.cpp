@@ -183,8 +183,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					// Select other item...
-					if ((int)lPoint->lParam > 0)
-						eItem = (int)lPoint->lParam;// lbItem;
+					eItem = (int)lPoint->lParam;
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 				}
 				else {

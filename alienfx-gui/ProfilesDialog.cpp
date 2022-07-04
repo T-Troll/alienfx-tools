@@ -115,11 +115,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 	{
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->FindDefaultProfile()->id;
-		CheckDlgButton(hDlg, IDC_CP_COLORS, true);
-		CheckDlgButton(hDlg, IDC_CP_EVENTS, true);
-		CheckDlgButton(hDlg, IDC_CP_AMBIENT, true);
-		CheckDlgButton(hDlg, IDC_CP_HAPTICS, true);
-		CheckDlgButton(hDlg, IDC_CP_FANS, true);
+		//CheckDlgButton(hDlg, IDC_CP_COLORS, true);
+		//CheckDlgButton(hDlg, IDC_CP_EVENTS, true);
+		//CheckDlgButton(hDlg, IDC_CP_AMBIENT, true);
+		//CheckDlgButton(hDlg, IDC_CP_HAPTICS, true);
+		//CheckDlgButton(hDlg, IDC_CP_FANS, true);
 		if (conf->haveV5) {
 			UpdateCombo(eff_list,
 				{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
@@ -222,11 +222,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						it->ambients.clear();
 					if (IsDlgButtonChecked(hDlg, IDC_CP_HAPTICS) == BST_CHECKED)
 						it->haptics.clear();
+					if (IsDlgButtonChecked(hDlg, IDC_CP_GRID) == BST_CHECKED)
+						it->effect.type = 0;
 				}
 				RemoveUnused(&prof->lightsets);
 				RemoveUnusedGroups();
-				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED)
-					prof->fansets = conf->fan_conf->prof;
+				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
+					prof->fansets = { 0 };
+				}
 				if (conf->activeProfile->id == prof->id)
 					fxhl->Refresh();
 			}
@@ -251,9 +254,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						lset->ambients = t->ambients;
 					if (IsDlgButtonChecked(hDlg, IDC_CP_HAPTICS) == BST_CHECKED)
 						lset->haptics = t->haptics;
+					if (IsDlgButtonChecked(hDlg, IDC_CP_GRID) == BST_CHECKED)
+						lset->effect = t->effect;
 				}
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED)
-					prof->fansets = conf->activeProfile->fansets;
+					if (conf->activeProfile->flags & PROF_FANS)
+						prof->fansets = conf->activeProfile->fansets;
+					else
+						prof->fansets = conf->fan_conf->prof;
 			}
 			break;
 		case IDC_APP_RESET:

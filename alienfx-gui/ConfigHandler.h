@@ -46,7 +46,7 @@ struct event {
 };
 
 struct zonelight {
-	pair<DWORD,DWORD> light;
+	DWORD light;
 	byte x, y;
 };
 
@@ -111,9 +111,10 @@ private:
 	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
-	void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD tFlags, DWORD* eff);
-	void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
+	//void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD tFlags, DWORD* eff);
+	//void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
 	groupset* FindCreateGroupSet(int profID, int groupID);
+	profile* FindCreateProfile(unsigned id);
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -141,7 +142,7 @@ public:
 	bool block_power = 0;
 	bool wasAWCC = false;
 	AlienFX_SDK::Colorcode testColor{0,255};
-	bool haveOldConfig = false;
+	//bool haveOldConfig = false;
 	bool showGridNames = false;
 
 	// Ambient...

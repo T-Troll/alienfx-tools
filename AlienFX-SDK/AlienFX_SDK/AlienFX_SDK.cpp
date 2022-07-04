@@ -1132,23 +1132,18 @@ namespace AlienFX_SDK {
 	}
 
 	afx_device* Mappings::GetDeviceById(DWORD devID) {
-		auto pos = find_if(fxdevs.begin(), fxdevs.end(),
-			[devID](afx_device t) {
-				return t.pid == LOWORD(devID) && (!HIWORD(devID) || t.vid == HIWORD(devID));
-			} );
-		if (pos != fxdevs.end())
-			return &(*pos);
+		for (auto pos = fxdevs.begin(); pos < fxdevs.end(); pos++)
+			if (pos->pid == LOWORD(devID) && (!HIWORD(devID) || pos->vid == HIWORD(devID))) {
+				return &(*pos);
+			}
 		return nullptr;
 	}
 
 	lightgrid* Mappings::GetGridByID(byte id)
 	{
-		auto pos = find_if(grids.begin(), grids.end(),
-			[id](auto t) {
-				return t.id == id;
-			});
-		if (pos != grids.end())
-			return &(*pos);
+		for (auto pos = grids.begin(); pos < grids.end(); pos++)
+			if (pos->id == id)
+				return &(*pos);
 		return nullptr;
 	}
 
@@ -1164,12 +1159,9 @@ namespace AlienFX_SDK {
 
 	mapping *Mappings::GetMappingById(afx_device* dev, WORD LightID) {
 		if (dev) {
-			auto pos = find_if(dev->lights.begin(), dev->lights.end(),
-				[LightID](mapping t) {
-					return t.lightid == LightID;
-				});
-			if (pos != dev->lights.end())
-				return &(*pos);
+			for (auto pos = dev->lights.begin(); pos < dev->lights.end(); pos++)
+				if (pos->lightid == LightID)
+					return &(*pos);
 		}
 		return nullptr;
 	}
@@ -1269,7 +1261,7 @@ namespace AlienFX_SDK {
 					dev = GetDeviceById(maps[i]);
 					if (dev) {
 						int flags = GetFlags(dev, (WORD)maps[i + 1]);
-						groups.back().lights.push_back({ maps[i], maps[i + 1] });
+						groups.back().lights.push_back(MAKELPARAM(LOWORD(maps[i]), maps[i + 1]));
 						if (flags & ALIENFX_FLAG_POWER)
 							groups.back().have_power = true;
 					}
@@ -1331,8 +1323,8 @@ namespace AlienFX_SDK {
 			DWORD *grLights = new DWORD[groups[i].lights.size() * 2];
 
 			for (int j = 0; j < groups[i].lights.size(); j++) {
-				grLights[j * 2] = groups[i].lights[j].first;
-				grLights[j * 2 + 1] = groups[i].lights[j].second;
+				grLights[j * 2] = LOWORD(groups[i].lights[j]);
+				grLights[j * 2 + 1] = HIWORD(groups[i].lights[j]);
 			}
 			RegSetValueEx( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD) groups[i].lights.size() * sizeof(DWORD) );
 

@@ -18,21 +18,18 @@ ConfigFan::~ConfigFan() {
 }
 
 temp_block* ConfigFan::FindSensor(int id) {
-	if (id >= 0) {
-		for (int i = 0; i < lastProf->fanControls.size(); i++)
-			if (lastProf->fanControls[i].sensorIndex == id) {
-				return &lastProf->fanControls[i];
-			}
-	}
+	for (auto tb = lastProf->fanControls.begin(); tb < lastProf->fanControls.end(); tb++)
+		if (tb->sensorIndex == id)
+			return &(*tb);
 	return NULL;
 }
 
 fan_block* ConfigFan::FindFanBlock(temp_block* sen, int id) {
-	if (sen && id >= 0)
-		for (int i = 0; i < sen->fans.size(); i++)
-			if (sen->fans[i].fanIndex == id) {
-				return &sen->fans[i];
-			}
+	if (sen) {
+		for (auto tb = sen->fans.begin(); tb < sen->fans.end(); tb++)
+			if (tb->fanIndex == id)
+				return &(*tb);
+	}
 	return NULL;
 }
 
@@ -64,65 +61,48 @@ void ConfigFan::Load() {
 	prof.gmode = HIWORD(power);
 
 	// Now load sensor mappings...
-	unsigned vindex = 0;
-	int ret = 0;
 	char name[256];
-
-	do {
-		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValue( keySensors, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
-			short sid, fid; len++;
-			if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) { // Sensor-fan block
-				temp_block* cSensor = FindSensor(sid);
-				if (!cSensor) { // Need to add new sensor block
-					prof.fanControls.push_back({ sid });
-					cSensor = &prof.fanControls.back();
-				}
-				// Now load and add fan data..
-				byte* inarray = new byte[lend];
-				RegEnumValue( keySensors, vindex, name, &len, NULL, NULL, inarray, &lend );
-				fan_block cFan;
-				cFan.fanIndex = fid;
-				for (UINT i = 0; i < lend; i += 2) {
-					cFan.points.push_back({ inarray[i], inarray[i + 1 ]});
-				}
-				cSensor->fans.push_back(cFan);
-				delete[] inarray;
+	DWORD len = 255, lend = 0; short fid;
+	for (int vindex = 0; RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+		short sid; len++;
+		if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
+			temp_block* cSensor = FindSensor(sid);
+			if (!cSensor) { // Need to add new sensor block
+				prof.fanControls.push_back({ sid });
+				cSensor = &prof.fanControls.back();
 			}
-		}
-		vindex++;
-	} while (ret == ERROR_SUCCESS);
-	vindex = 0;
-	do {
-		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValue( keyMain, vindex, name, &len, NULL, NULL, NULL, &lend )) == ERROR_SUCCESS) {
-			int fid; len++;
-			if (sscanf_s(name, "Boost-%d", &fid) == 1) { // Boost block
-				byte* inarray = new byte[lend];
-				RegEnumValue( keyMain, vindex, name, &len, NULL, NULL, inarray, &lend );
-				boosts.push_back({(byte)fid, inarray[0],*(USHORT*)(inarray+1)});
-				delete[] inarray;
+			// Now load and add fan data..
+			byte* inarray = new byte[lend];
+			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
+			fan_block cFan{ fid };
+			for (UINT i = 0; i < lend; i += 2) {
+				cFan.points.push_back({ inarray[i], inarray[i + 1] });
 			}
+			cSensor->fans.push_back(cFan);
+			delete[] inarray;
 		}
-		vindex++;
-	} while (ret == ERROR_SUCCESS);
-	vindex = 0;
-	do {
-		DWORD len = 255, lend = 0;
-		if ((ret = RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, NULL, &lend)) == ERROR_SUCCESS) {
-			int fid; len++;
-			if (sscanf_s(name, "Power-%d", &fid) == 1) { // Power names
-				char* inarray = new char[lend+1];
-				RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, (byte *) inarray, &lend);
-				powers.emplace(fid, inarray);
-				delete[] inarray;
-			}
+		len = 255;
+	}
+	for (int vindex = 0; RegEnumValue(keyMain, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+		if (sscanf_s(name, "Boost-%hd", &fid) == 1) { // Boost block
+			byte* inarray = new byte[lend];
+			len++;
+			RegEnumValue(keyMain, vindex, name, &len, NULL, NULL, inarray, &lend);
+			boosts.push_back({ (byte)fid, inarray[0],*(USHORT*)(inarray + 1) });
+			delete[] inarray;
 		}
-		vindex++;
-	} while (ret == ERROR_SUCCESS);
-
-	// If not enough boosts recorded....
-
+		len = 255;
+	}
+	for (int vindex = 0; RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+		if (sscanf_s(name, "Power-%hd", &fid) == 1) { // Power names
+			char* inarray = new char[lend + 1];
+			len++;
+			RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, (byte*)inarray, &lend);
+			powers.emplace((byte)fid, inarray);
+			delete[] inarray;
+		}
+		len = 255;
+	}
 }
 
 void ConfigFan::Save() {
@@ -174,8 +154,8 @@ void ConfigFan::Save() {
 }
 
 void ConfigFan::SetBoosts(AlienFan_SDK::Control* acpi) {
-	auto maxB = boosts.begin();
-	for (byte fID = 0; fID < acpi->boosts.size(); fID++) {
+	vector<fan_overboost>::iterator maxB;
+	for (byte fID = 0; fID < acpi->boosts.size(); fID++)
 		if ((maxB = find_if(boosts.begin(), boosts.end(),
 			[fID](auto t) {
 				return t.fanID == fID;
@@ -183,10 +163,6 @@ void ConfigFan::SetBoosts(AlienFan_SDK::Control* acpi) {
 			acpi->boosts[fID] = maxB->maxBoost;
 			acpi->maxrpm[fID] = maxB->maxRPM;
 		}
-		//else
-		//	// No boost found for fan, need to use ACPI data
-		//	boosts.push_back({ fID, acpi->boosts[fID], 5000 });
-	}
 }
 
 
