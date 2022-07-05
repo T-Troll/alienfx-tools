@@ -18,15 +18,15 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/nal.h"
+//#include "idrv/nal.h"
 #include "idrv/rtcore.h"
-#include "idrv/mapmem.h"
-#include "idrv/atszio.h"
-#include "idrv/winio.h"
-#include "idrv/winring0.h"
-#include "idrv/phymem.h"
-#include "idrv/lha.h"
-#include "idrv/directio64.h"
+//#include "idrv/mapmem.h"
+//#include "idrv/atszio.h"
+//#include "idrv/winio.h"
+//#include "idrv/winring0.h"
+//#include "idrv/phymem.h"
+//#include "idrv/lha.h"
+//#include "idrv/directio64.h"
 #include "kduplist.h"
 
 /*

@@ -133,15 +133,7 @@
     <ClCompile Include="drvmap.cpp" />
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />
-    <ClCompile Include="idrv\atszio.cpp" />
-    <ClCompile Include="idrv\directio64.cpp" />
-    <ClCompile Include="idrv\lha.cpp" />
-    <ClCompile Include="idrv\mapmem.cpp" />
-    <ClCompile Include="idrv\phymem.cpp" />
-    <ClCompile Include="idrv\winio.cpp" />
-    <ClCompile Include="idrv\nal.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
-    <ClCompile Include="idrv\winring0.cpp" />
     <ClCompile Include="KDL.c" />
     <ClCompile Include="kduprov.cpp" />
     <ClCompile Include="pagewalk.cpp" />
@@ -165,15 +157,7 @@
     <ClInclude Include="dsefix.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="hde\hde64.h" />
-    <ClInclude Include="idrv\atszio.h" />
-    <ClInclude Include="idrv\directio64.h" />
-    <ClInclude Include="idrv\lha.h" />
-    <ClInclude Include="idrv\mapmem.h" />
-    <ClInclude Include="idrv\phymem.h" />
-    <ClInclude Include="idrv\winio.h" />
-    <ClInclude Include="idrv\nal.h" />
     <ClInclude Include="idrv\rtcore.h" />
-    <ClInclude Include="idrv\winring0.h" />
     <ClInclude Include="KDL.h" />
     <ClInclude Include="key.h" />
     <ClInclude Include="shellcode.h" />
@@ -192,7 +176,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Utils\PCOMP\PCOMP.vcxproj" />
+    <None Include="res\DbUtil2_3.bin" />
     <None Include="res\procexp.bin" />
+    <None Include="res\PROCEXP152.bin" />
     <None Include="res\RTCore64.bin" />
     <None Include="res\SB_SMBUS_SDK.bin" />
   </ItemGroup>
