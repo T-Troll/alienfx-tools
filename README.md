@@ -123,5 +123,5 @@ Per-Key RGB devices testing and a lot of support by [rirozizo](https://github.co
 Aurora R7 testing by [Raoul Duke](https://github.com/raould).  
 Support for mouse and a lot of testing by [Billybobertjoe](https://github.com/Billybobertjoe)  
 A lot of G-mode ideas and testing from [Hellohi3654](https://github.com/Hellohi3654)  
-Alienware m15R6 device mapping and testing by [Professor-Plays](https://github.com/profpjlalvarenga)
+Alienware m15R6 device mapping and testing by [Professor-Plays](https://github.com/profpjlalvarenga)  
 Special thanks to [PhSMu](https://github.com/PhSMu) for ideas, Dell G-series testing, and artwork.
