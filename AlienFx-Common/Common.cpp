@@ -19,7 +19,8 @@ void EvaluteToAdmin() {
 			ShellExecuteEx(&sei);
 			if (mDlg)
 				SendMessage(mDlg, WM_CLOSE, 0, 0);
-			_exit(1);  // Quit itself
+			else
+				_exit(1);  // Quit itself
 		}
 	}
 }

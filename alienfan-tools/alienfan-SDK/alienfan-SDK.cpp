@@ -4,21 +4,27 @@
 #include "alienfan-SDK.h"
 #include "alienfan-controls.h"
 
+//#define _TRACE_
+
 typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 
 static char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR",
-			tempECDV1[] = "\\_SB.PCI0.LPCB.ECDV.KDRT",
-			tempECDV2[] = "\\_SB.PC00.LPCB.ECDV.KDRT";
+			tempECDV1[] = "\\_SB.PCI0.LPCB.ECDV.KDRT";// ,
+			//tempECDV2[] = "\\_SB.PC00.LPCB.ECDV.KDRT";
 
 namespace AlienFan_SDK {
 
 	Control::Control() {
 
-		//printf("Driver activation started.\n");
+#ifdef _TRACE_
+		printf("Driver activation started.\n");
+#endif
 		// do we already have service running?
 		activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
 		if (!activated) {
-			//printf("Device not activated, trying to load driver...\n");
+#ifdef _TRACE_
+			printf("Driver not activated, trying to load driver...\n");
+#endif
 			// We don't, so let's try to start it!
 #ifdef _SERVICE_WAY_
 			TCHAR  driverLocation[MAX_PATH]{0};
@@ -48,30 +54,42 @@ namespace AlienFan_SDK {
 				wstring cpath = currentPath;
 				cpath.resize(cpath.find_last_of(L"\\"));
 				cpath += L"\\HwAcc.sys";
-
-				//wprintf(L"Loading driver from %s...\n", cpath.c_str());
+#ifdef _TRACE_
+				wprintf(L"Loading driver from %s...\n", cpath.c_str());
+#endif
 				if (GetFileAttributesW(cpath.c_str()) != INVALID_FILE_ATTRIBUTES) {
 
 					HMODULE kdl = LoadLibrary("kdl.dll");
 					if (kdl) {
-						//printf("KDL loaded, trying... ");
+#ifdef _TRACE_
+						printf("KDL loaded, trying... ");
+#endif
 						ACPIF oacpi = (ACPIF) GetProcAddress(kdl, "LoadKernelDriver");
 						if (oacpi && oacpi((LPWSTR) cpath.c_str(), (LPWSTR) L"HwAcc")) {
-							//printf("Driver loaded, trying to open it... ");
+#ifdef _TRACE_
+							printf("Driver loaded, trying to open it... ");
+#endif
 							activated = (acc = OpenAcpiDevice()) != INVALID_HANDLE_VALUE && acc;
-							//printf("Loading complete - %s.\n", activated ? "success" : "failed");
+#ifdef _TRACE_
+							printf("Loading complete - %s.\n", activated ? "success" : "failed");
+#endif
 						}
 						// In any case, unload dll
 						FreeLibrary(kdl);
-					} //else
-						//printf("KDL library not found!\n");
-				} //else
-					//printf("Driver file not found!\n");
+					}
+#ifdef _TRACE_
+					else
+						printf("KDL library not loaded!\n");
+#endif
+				}
+#ifdef _TRACE_
+				else
+					printf("Driver file not found!\n");
+#endif
 #ifdef _SERVICE_WAY_
 			}
 #endif
 		}
-		//printf("Done.\n");
 	}
 	Control::~Control() {
 		sensors.clear();
@@ -174,22 +192,26 @@ namespace AlienFan_SDK {
 		// Additional temp sensor name pattern
 		if (activated) {
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-			sensors.clear();
-			fans.clear();
-			powers.clear();
-			//printf("Probing devices... ");
+			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
+			//sensors.clear();
+			//fans.clear();
+			//powers.clear();
+#ifdef _TRACE_
+			printf("Probing devices... ");
+#endif
 			// Check device type...
 			for (int i = 0; i < NUM_DEVICES; i++) {
 				aDev = i;
 				// Probe...
 				if ((systemID = RunMainCommand(devs[aDev].probe)) > 0) {
 					// Alienware device detected!
-					//printf("Device ID %x (API %d) found.\n", systemID, aDev);
+#ifdef _TRACE_
+					printf("Device ID %x (API %d) found.\n", systemID, aDev);
+#endif
 					powers.push_back(0); // Unlocked power
 					if (devs[aDev].commandControlled) {
 						int fIndex = 0, funcID = 0;
 						// Scan for available fans...
-						//printf("Scanning data block...\n");
 						while ((funcID = RunMainCommand(dev_controls.getPowerID, fIndex)) < 0x100
 							   && funcID > 0 || funcID > 0x130) { // bugfix for 0x132 fan for R7
 							fans.push_back(funcID & 0xff);
@@ -197,7 +219,9 @@ namespace AlienFan_SDK {
 							maxrpm.push_back(0);
 							fIndex++;
 						}
-						//printf("%d fans detected, last reply %d\n", fIndex, funcID);
+#ifdef _TRACE_
+						printf("%d fans detected, last reply %d\n", fIndex, funcID);
+#endif
 						int firstSenIndex = fIndex;
 						// AWCC temperature sensors.
 						do {
@@ -214,14 +238,18 @@ namespace AlienFan_SDK {
 							fIndex++;
 						} while ((funcID = RunMainCommand(dev_controls.getPowerID, fIndex)) > 0x100
 								 && funcID < 0x1A0);
-						//printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
+#ifdef _TRACE_
+						printf("%d sensors detected, last reply %d\n", HowManySensors(), funcID);
+#endif
 						if (aDev != 3 && funcID > 0) {
 							do {
 								// Power modes.
 								powers.push_back(funcID & 0xff);
 								fIndex++;
-							} while ((funcID = RunMainCommand(dev_controls.getPowerID, fIndex)) > 0);
-							//printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
+							} while ((funcID = RunMainCommand(dev_controls.getPowerID, fIndex)) && funcID > 0);
+#ifdef _TRACE_
+							printf("%d power modes detected, last reply %d\n", HowManyPower(), funcID);
+#endif
 						}
 						// patches...
 						switch (aDev) {
@@ -257,52 +285,36 @@ namespace AlienFan_SDK {
 							free(resName);
 						}
 					}
-					//printf("%d SEN blocks detected\n", sensors.size());
+#ifdef _TRACE_
+					printf("%zd SEN blocks detected\n", sensors.size());
+#endif
 					// ECDV temp sensors...
-					short numECDV = 0; bool okECDV = false;
-					PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-					acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
-					//printf("Trying %s... ", tempECDV1);
-					if (EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs))
+					for (byte sind = 2; sind < 4; sind++) {
+						short numECDV = 0; bool okECDV = false;
 						do {
-							if (okECDV = (resName->Argument[0].Argument != 255)) {
-								free(resName);
-								sensors.push_back({ numECDV, "ECDV-" + to_string(numECDV + 1), 2 });
-								numECDV++;
-								acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
-								EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs);
-							} else
-								free(resName);
-						} while (okECDV);
-					else {
-						//printf("failed, trying %s...", tempECDV2);
-						acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
-						if (EvalAcpiMethod(acc, tempECDV2, (PVOID*)&resName, acpiargs))
-							do {
-								if (okECDV = (resName->Argument[0].Argument != 255)) {
-									free(resName);
-									sensors.push_back({ numECDV, "ECDV-" + to_string(numECDV + 1), 3 });
+							acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
+							tempECDV1[7] = (sind == 2) ? 'I' : '0';
+							if (okECDV = EvalAcpiMethod(acc, tempECDV1, (PVOID*)&resName, acpiargs)) {
+								if (okECDV = (resName->Argument[0].Argument && resName->Argument[0].Argument < 110)) {
+									sensors.push_back({ numECDV, "ECDV-" + to_string(numECDV + 1), sind });
 									numECDV++;
-									acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, numECDV);
-									EvalAcpiMethod(acc, tempECDV2, (PVOID*)&resName, acpiargs);
 								}
-								else
-									free(resName);
-							} while (okECDV);
-						/*else
-							printf("Failed.");*/
+								free(resName);
+							}
+						} while (okECDV);
+#ifdef _TRACE_
+						printf("%d ECDV-%d sensors found.\n", numECDV, sind);
+#endif
 					}
-					//printf("%d TZ sensors detected.\n", HowManySensors());
-					// Set boost block
-					//for (int i = 0; i < fans.size(); i++)
-					//	boosts.push_back(devs[aDev].maxBoost);
 					return true;
 				}
 				//else
 				//	printf("%d returned\n", systemID);
 			}
 			aDev = -1;
-			//printf("No devices found.\n");
+#ifdef _TRACE_
+			printf("No devices found.\n");
+#endif
 		}
 		return false;
 	}
@@ -375,7 +387,8 @@ namespace AlienFan_SDK {
 			case 2: case 3: { // tempECDV
 				PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
 				acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, sensors[TempID].senIndex);
-				if (EvalAcpiMethod(acc, sensors[TempID].type == 2 ? tempECDV1 : tempECDV2, (PVOID*)&res, acpiargs) && res) {
+				tempECDV1[7] = (sensors[TempID].type == 2) ? 'I' : '0';
+				if (EvalAcpiMethod(acc, tempECDV1, (PVOID*)&res, acpiargs) && res) {
 					int res_int = res->Argument[0].Argument;
 					free(res);
 					return res_int;

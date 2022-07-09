@@ -47,7 +47,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-low", "alienfan-to
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HwAcc", "alienfan-tools\alienfan-SDK\HwAcc\HwAcc.vcxproj", "{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "alienfan-tools\alienfan-SDK\KDL\Hamakaze\KDU.vcxproj", "{46C8FB0F-C8BF-4932-B84C-A10B38904728}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KDL", "alienfan-tools\alienfan-SDK\KDL\Hamakaze\KDU.vcxproj", "{46C8FB0F-C8BF-4932-B84C-A10B38904728}"
 	ProjectSection(ProjectDependencies) = postProject
 		{24663340-6C3F-479E-94C0-C2A847B1665C} = {24663340-6C3F-479E-94C0-C2A847B1665C}
 	EndProjectSection
@@ -130,8 +130,8 @@ Global
 		{CC889C0D-369A-46F0-87B2-956DA96DDEFD}.Debug|x64.Build.0 = Debug|x64
 		{CC889C0D-369A-46F0-87B2-956DA96DDEFD}.Release|x64.ActiveCfg = Release|x64
 		{CC889C0D-369A-46F0-87B2-956DA96DDEFD}.Release|x64.Build.0 = Release|x64
-		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.ActiveCfg = Release|x64
-		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.Build.0 = Release|x64
+		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.ActiveCfg = Debug|x64
+		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Debug|x64.Build.0 = Debug|x64
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Release|x64.ActiveCfg = Release|x64
 		{5D74F1CA-7A53-4CBC-ADC4-E484814C4C6A}.Release|x64.Build.0 = Release|x64
 		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x64.ActiveCfg = Release|x64

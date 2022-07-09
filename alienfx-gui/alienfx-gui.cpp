@@ -58,6 +58,7 @@ vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
 bool DoStopService(bool kind) {
 	if (conf->awcc_disable) {
+		conf->Save();
 		EvaluteToAdmin();
 		// Get a handle to the SCM database.
 		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
@@ -129,7 +130,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 
 	if (conf->fanControl) {
-		DetectFans();
+		conf->fanControl = DetectFans();
 	}
 
 	if (!fxhl->FillAllDevs(acpi) && !conf->fanControl)
