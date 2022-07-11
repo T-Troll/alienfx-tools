@@ -91,9 +91,9 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 void SetLightInfo() {
 	AlienFX_SDK::mapping* clight = NULL;
+	fxhl->TestLight(dIndex, eLid);
 	if (dIndex >= 0 && (clight = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid))) {
 		SetDlgItemText(dDlg, IDC_EDIT_NAME, clight->name.c_str());
-		fxhl->TestLight(dIndex, eLid);
 	}
 	else {
 		SetDlgItemText(dDlg, IDC_EDIT_NAME, "<not used>");
@@ -111,13 +111,14 @@ void UpdateDeviceInfo() {
 	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
 		AlienFX_SDK::afx_device* dev = &conf->afx_dev.fxdevs[dIndex];
 		if (dev->dev) {
-			BYTE status = dev->dev->AlienfxGetDeviceStatus();
+			//BYTE status = dev->dev->AlienfxGetDeviceStatus();
 			char descript[128];
 			sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d",
 				dev->vid, dev->pid, dev->dev->GetVersion()/*,
 				status && status != 0xff ? "Ok" : "Error!"*/);
 			SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 			EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
+			SetLightInfo();
 		}
 	}
 }
@@ -141,7 +142,7 @@ void RedrawDevList() {
 				case 0: typeName = "Desktop"; break;
 				case 1: case 2: case 3: typeName = "Notebook"; break;
 				case 4: typeName = "Notebook/Tron"; break;
-				case 5: typeName = "Keyboard"; break;
+				case 5: case 8: typeName = "Keyboard"; break;
 				case 6: typeName = "Display"; break;
 				case 7: typeName = "Mouse"; break;
 				}
@@ -294,13 +295,6 @@ void ApplyDeviceMaps(bool force = false) {
 		}
 	}
 	conf->mainGrid = conf->afx_dev.GetGridByID(oldGridID);
-	//auto pos = find_if(conf->afx_dev.GetGrids()->begin(), conf->afx_dev.GetGrids()->end(),
-	//	[oldGridID](auto tg) {
-	//		return tg.id == oldGridID;
-	//	});
-	//if (pos != conf->afx_dev.GetGrids()->end()) {
-	//	conf->mainGrid = &(*pos);
-	//}
 	conf->afx_dev.AlienFXAssignDevices();
 	csv_devs.clear();
 	RedrawDevList();
@@ -374,12 +368,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
-
-		//RegisterHotKey(hDlg, 1, MOD_SHIFT, VK_LEFT);
-		//RegisterHotKey(hDlg, 2, MOD_SHIFT, VK_RIGHT);
-		//RegisterHotKey(hDlg, 3, MOD_SHIFT, VK_HOME);
-		//RegisterHotKey(hDlg, 4, MOD_SHIFT, VK_END);
-
 		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 
 	} break;
@@ -542,19 +530,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			conf->showGridNames = !conf->showGridNames;
 			RedrawGridButtonZone();
 		}
-		default: return false;
+		//default: return false;
 		}
 	} break;
-	//case WM_HOTKEY: {
-	//	DWORD message = 0;
-	//	switch (wParam) {
-	//	case 1: message = IDC_BUT_PREV; break;
-	//	case 2: message = IDC_BUT_NEXT; break;
-	//	case 3: message = IDC_BUT_FIRST; break;
-	//	case 4: message = IDC_BUT_LAST; break;
-	//	}
-	//	SendMessage(hDlg, WM_COMMAND, message, 0);
-	//} break;
 	case WM_NOTIFY: {
 		HWND gridTab = GetDlgItem(hDlg, IDC_TAB_DEV_GRID);
 		switch (((NMHDR*)lParam)->idFrom) {
@@ -629,21 +607,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
 				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, sItem->iItem);
 			} break;
-
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
-				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
+				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
-					int oldIndex = dIndex;
+					//int oldIndex = dIndex;
 					dIndex = (int)lPoint->lParam;
 					UpdateDeviceInfo();
 					//eLid = 0;
-					SetLightInfo();
-				}
-				else {
-					if (!ListView_GetSelectedCount(((NMHDR*)lParam)->hwndFrom))
-						RedrawDevList();
+					//SetLightInfo();
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -670,18 +643,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		}
 		break;
-	//case WM_APP + 3: {
-	//	fxhl->UnblockUpdates(true, true);
-	//	fxhl->Refresh();
-	//	UnregisterHotKey(hDlg, 1);
-	//	UnregisterHotKey(hDlg, 2);
-	//	UnregisterHotKey(hDlg, 3);
-	//	UnregisterHotKey(hDlg, 4);
-	//	conf->SortAllGauge();
-	//} break;
 	case WM_DESTROY:
 	{
-		//SendMessage(hDlg, WM_APP + 3, 0, 0);
 		fxhl->UnblockUpdates(true, true);
 		fxhl->Refresh();
 		conf->SortAllGauge();

@@ -82,6 +82,12 @@ namespace AlienFX_SDK {
 		case API_L_V7:
 			WriteFile(devHandle, buffer, length, &written, NULL);
 			return ReadFile(devHandle, buffer, length, &written, NULL);
+		case API_L_V9: {
+			if (size < 5)
+				return HidD_SetFeature(devHandle, buffer, 65);
+			else
+				return WriteFile(devHandle, buffer, length, &written, NULL);
+		}
 		}
 		return false;
 	}
@@ -205,8 +211,10 @@ namespace AlienFX_SDK {
 										version = 7;
 										break;
 									case 0x04f2:
-										version = 8;
-										reportID = 5;
+										//version = 8;
+										//reportID = 5;
+										version = 9;
+										reportID = 0xe;
 										break;
 									}
 									break;
@@ -347,7 +355,7 @@ namespace AlienFX_SDK {
 				}
 #endif
 			} break;
-			default: res = false;
+			default: res = true;
 			}
 			//std::cout << "Update!" << std::endl;
 			inSet = false;
@@ -361,8 +369,13 @@ namespace AlienFX_SDK {
 		bool val = false;
 		if (!inSet)
 			Reset();
-
 		switch (version) {
+		case API_L_V9: {
+			PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor));
+			Sleep(7); // Need wait for ACK
+			val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), { {5,(byte)index},{11,c.r},{12,c.g},{13,c.b} });
+			Sleep(7); // Need wait for ACK
+		} break;
 		case API_L_V8:
 		{
 			val = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), {{15,(byte)index},{3,c.r},{4,c.g},{5,c.b}});
@@ -472,6 +485,14 @@ namespace AlienFX_SDK {
 		bool val = true;
 		if (!inSet) Reset();
 		switch (version) {
+		case API_L_V9:
+			if (save) {
+				SetPowerAction(act);
+			} else
+				for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++) {
+					val = SetColor(nc->index, { nc->act[0].b, nc->act[0].g, nc->act[0].r });
+				}
+			break;
 		case API_L_V7:
 		{
 			if (save)
@@ -671,6 +692,12 @@ namespace AlienFX_SDK {
 				break;
 			}
 		switch (version) {
+		case API_L_V9:
+			PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
+			Sleep(7); // Need wait for ACK
+			PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
+			Sleep(7); // Need wait for ACK
+			break;
 		case API_L_V7:
 		{
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
@@ -838,6 +865,10 @@ namespace AlienFX_SDK {
 
 		bright = ((UINT) brightness * 0x64) / 0xff;
 		switch (version) {
+		case API_L_V9: {
+			byte br = brightness * 10 / 255;
+			return PrepareAndSend(COMMV9.setBrightness, sizeof(COMMV9.setBrightness), { {2, br} });
+		} break;
 		case API_L_V7: case API_L_ACPI:
 			if (!brightness)
 				for (auto i = mappings->begin(); i < mappings->end(); i++) {

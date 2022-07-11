@@ -224,15 +224,15 @@ int main(int argc, char* argv[])
 	afx_map->AlienFXAssignDevices();
 
 	if (have_high = (lfxUtil.InitLFX() == -1)) {
-		printf("Dell API ready, ");
+		printf("Dell API ready");
 		devType = 0;
 	} else
-		printf("Dell API not found, ");
+		printf("Dell API not found");
 
 	for (int i = 0; i < afx_map->fxdevs.size(); i++) {
 		if (afx_map->fxdevs[i].dev) {
 			have_low = true;
-			printf("Low-level device ready.\n");
+			printf(", Low-level device %d ready", i);
 			devType = 1;
 		}
 		else {
@@ -241,7 +241,9 @@ int main(int argc, char* argv[])
 		}
 	}
 	if (!have_low)
-		printf("Low-level not found.\n");
+		printf(", Low-level not found.\n");
+	else
+		printf(".\n");
 
 	if (devType == -1) {
 		printf("Both low-level and high-level devices not found, exiting!\n");

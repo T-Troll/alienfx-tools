@@ -28,6 +28,7 @@ namespace AlienFX_SDK {
 
 	// API version (was length):
     #define API_L_ACPI 0 //128
+	#define API_L_V9 9 //65
     #define API_L_V8 8 //65
     #define API_L_V7 7 //65
     #define API_L_V6 6 //65

@@ -110,6 +110,9 @@ void FXHelper::TestLight(int did, int id, bool wp)
 	conf->afx_dev.fxdevs[did].dev->UpdateColors();
 
 	if (id != -1) {
+		if (oldtest != -1)
+			conf->afx_dev.fxdevs[did].dev->SetColor(oldtest, c);
+		oldtest = id;
 		conf->afx_dev.fxdevs[did].dev->SetColor(id, conf->testColor);
 		conf->afx_dev.fxdevs[did].dev->UpdateColors();
 	}
@@ -763,25 +766,25 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (current.update) {
 				// update command
 				if (conf->stateOn) {
-					size_t processedLights = 0;
+					//size_t processedLights = 0;
 					for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
-						if ((dev = src->LocateDev(devQ->devID)) && (current.did == (-1) || devQ->devID == current.did)) {
+						if (current.did == (-1) || devQ->dev->pid == current.did) {
 //#ifdef _DEBUG
 //							char buff[2048];
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
-							if (dev->dev->GetVersion() == 5 && (conf->activeProfile->effmode == 99)) {
+							if (devQ->dev->dev->GetVersion() == 5 && (conf->activeProfile->effmode == 99)) {
 								DebugPrint("V5 global effect active!\n");
-								src->UpdateGlobalEffect(dev->dev);
+								src->UpdateGlobalEffect(devQ->dev->dev);
 							}
 							else
 								if (devQ->dev_query.size()) {
-									dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
-									dev->dev->UpdateColors();
+									devQ->dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
+									devQ->dev->dev->UpdateColors();
 								}
 						}
-						processedLights += devQ->dev_query.size();
+						//processedLights += devQ->dev_query.size();
 						devQ->dev_query.clear();
 					}
 
@@ -794,6 +797,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 									" ms!\n"
 									).c_str());
 					}
+					//else
+					//	DebugPrint(("Query size " + to_string(src->lightQuery.size()) + "\n").c_str());
 				}
 			} else {
 				// set light
@@ -852,13 +857,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					// fill query....
 					int qn;
 					for (qn = 0; qn < devs_query.size(); qn++)
-						if (devs_query[qn].devID == current.did) {
+						if (devs_query[qn].dev->pid == current.did) {
 							devs_query[qn].dev_query.push_back({(byte)current.lid, actions});
 								break;
 						}
 					if (qn == devs_query.size()) {
 						// create new query!
-						deviceQuery newQ{current.did, {{(byte) current.lid, actions}}};
+						deviceQuery newQ{dev, {{(byte) current.lid, actions}}};
+						newQ.dev_query.reserve(dev->lights.size());
 						devs_query.push_back(newQ);
 					}
 

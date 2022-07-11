@@ -271,7 +271,7 @@ void ResizeTab(HWND tab, RECT &rcDisplay) {
 		rcDisplay.left, rcDisplay.top,
 		rcDisplay.right - rcDisplay.left,
 		rcDisplay.bottom - rcDisplay.top,
-		SWP_SHOWWINDOW | SWP_NOSIZE);
+		SWP_SHOWWINDOW /*| SWP_NOSIZE*/);
 }
 
 void OnSelChanged(HWND hwndDlg)
@@ -280,7 +280,7 @@ void OnSelChanged(HWND hwndDlg)
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr( hwndDlg, GWLP_USERDATA);
 
 	// Get the index of the selected tab.
-	int tabSel = TabCtrl_GetCurSel(hwndDlg);
+	tabSel = TabCtrl_GetCurSel(hwndDlg);
 	if (tabSel == TAB_LIGHTS && !fxhl->numActiveDevs) {
 		TabCtrl_SetCurSel(hwndDlg, TAB_SETTINGS);
 		tabSel = TAB_SETTINGS;
@@ -308,7 +308,6 @@ void OnSelChanged(HWND hwndDlg)
 	if (pHdr->hwndDisplay != NULL) {
 		ResizeTab(pHdr->hwndDisplay, rcDisplay);
 	}
-	return;
 }
 
 void SwitchTab(int num) {
@@ -726,17 +725,19 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_DEVICECHANGE:
-		if (wParam == DBT_DEVICEARRIVAL || wParam == DBT_DEVICEREMOVECOMPLETE) {
+		if (wParam == DBT_DEVNODES_CHANGED) {
 			vector<pair<WORD, WORD>> devs = conf->afx_dev.AlienFXEnumDevices();
 			if (devs.size() != fxhl->numActiveDevs) {
 				// Device added or removed, need to rescan devices...
-				bool wasNotLocked = !fxhl->updateLock;
-				if (wasNotLocked) {
-					fxhl->UnblockUpdates(false, true);
-				}
+				fxhl->Stop();
+				//bool wasNotLocked = !fxhl->updateLock;
+				//if (wasNotLocked) {
+				//	fxhl->UnblockUpdates(false, true);
+				//}
 				fxhl->FillAllDevs(acpi);
-				if (wasNotLocked)
-					fxhl->UnblockUpdates(true, true);
+				fxhl->Start();
+				//if (wasNotLocked)
+				//	fxhl->UnblockUpdates(true, true);
 			}
 		}
 		break;

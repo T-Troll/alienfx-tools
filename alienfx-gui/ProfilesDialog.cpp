@@ -357,7 +357,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-				if (lPoint->uNewState && LVIS_FOCUSED && lPoint->iItem != -1) {
+				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
 					pCid = (int) lPoint->lParam;
 					ReloadProfSettings(hDlg, conf->FindProfile(pCid));

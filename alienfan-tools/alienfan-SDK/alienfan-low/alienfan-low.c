@@ -274,42 +274,33 @@ Return Value:
 --*/
 {
     SC_HANDLE   schService;
-    DWORD       err;
+    BOOLEAN ret = FALSE;
 
     //
     // Open the handle to the existing service.
     //
 
-    schService = OpenServiceA(SchSCManager,
-                             SrvName,
-                             SERVICE_ALL_ACCESS
-    );
-
-    if (schService == NULL) {
+    if (!(schService = OpenServiceA(SchSCManager,
+        SrvName,
+        SERVICE_ALL_ACCESS
+    )))
         return FALSE;
-    }
 
     //
     // Start the execution of the service (i.e. start the driver).
     //
 
-    if (!StartService(schService,     // service identifier
+    if (!(ret = (BOOLEAN)StartService(schService,     // service identifier
                       0,              // number of arguments
                       NULL            // pointer to arguments
-    )) {
-
-        err = GetLastError();
-
-        if (err == ERROR_SERVICE_ALREADY_RUNNING) {
+    ))) {
+        if (GetLastError() == ERROR_SERVICE_ALREADY_RUNNING) {
 
             //
             // Ignore this error.
             //
 
-            return TRUE;
-
-        } else {
-            return FALSE;
+            ret = TRUE;
         }
 
     }
@@ -317,13 +308,8 @@ Return Value:
     //
     // Close the service object.
     //
-
-    if (schService) {
-
-        CloseServiceHandle(schService);
-    }
-
-    return TRUE;
+    CloseServiceHandle(schService);
+    return ret;
 
 }
 
@@ -358,42 +344,25 @@ Return Value:
     // Open the handle to the existing service.
     //
 
-    schService = OpenServiceA(SchSCManager,
-                             SrvName,
-                             SERVICE_ALL_ACCESS
-    );
-
-    if (schService == NULL) {
+    if (!(schService = OpenServiceA(SchSCManager,
+        SrvName,
+        SERVICE_ALL_ACCESS
+    )))
         return FALSE;
-    }
 
     //
     // Request that the service stop.
     //
 
-    if (ControlService(schService,
-                       SERVICE_CONTROL_STOP,
-                       &serviceStatus
-    )) {
-
-        //
-        // Indicate success.
-        //
-
-        rCode = TRUE;
-
-    } else {
-        rCode = FALSE;
-    }
+    rCode = (BOOLEAN)ControlService(schService,
+        SERVICE_CONTROL_STOP,
+        &serviceStatus
+    );
 
     //
     // Close the service object.
     //
-
-    if (schService) {
-
-        CloseServiceHandle(schService);
-    }
+    CloseServiceHandle(schService);
 
     return rCode;
 

@@ -26,7 +26,8 @@ struct LightQueryElement {
 };
 
 struct deviceQuery {
-	int devID = 0;
+	//int devID = 0;
+	AlienFX_SDK::afx_device* dev;
 	vector<AlienFX_SDK::act_block> dev_query;
 };
 
@@ -36,6 +37,7 @@ private:
 
 	bool blinkStage = false;
 	HANDLE updateThread = NULL;
+	int oldtest = -1;
 
 	void SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
 	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = -1.0, bool force = false);

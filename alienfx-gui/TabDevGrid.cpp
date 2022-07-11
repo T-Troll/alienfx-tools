@@ -30,6 +30,7 @@ AlienFX_SDK::mapping* FindCreateMapping() {
         // create new mapping
         conf->afx_dev.fxdevs[dIndex].lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
         conf->afx_dev.activeLights++;
+        lgh = &conf->afx_dev.fxdevs[dIndex].lights.back();
     }
     return lgh;
 }
