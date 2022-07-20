@@ -59,12 +59,12 @@ namespace AlienFX_SDK {
 
 		FillMemory(buffer, MAX_BUFFERSIZE, version == API_L_V6 ? 0xff : 0);
 
-		if (version == API_L_V8) {
-			// Need to send report before any command!
-			buffer[0] = reportID;
-			buffer[1] = 0x1;
-			HidD_SetFeature(devHandle, buffer, length);
-		}
+		//if (version == API_L_V8) {
+		//	// Need to send report before any command!
+		//	buffer[0] = reportID;
+		//	buffer[1] = 0x1;
+		//	HidD_SetFeature(devHandle, buffer, length);
+		//}
 
 		memcpy(&buffer[1], command, size);
 		buffer[0] = reportID;
@@ -77,14 +77,18 @@ namespace AlienFX_SDK {
 			return HidD_SetOutputReport(devHandle, buffer, length);
 		case API_L_V5:
 			return HidD_SetFeature(devHandle, buffer, length);
-		case API_L_V6: case API_L_V8:
+		case API_L_V6:
 			return WriteFile(devHandle, buffer, length, &written, NULL);
 		case API_L_V7:
 			WriteFile(devHandle, buffer, length, &written, NULL);
 			return ReadFile(devHandle, buffer, length, &written, NULL);
-		case API_L_V9: {
-			if (size < 5)
-				return HidD_SetFeature(devHandle, buffer, 65);
+		case API_L_V8: case API_L_V9: {
+			bool res;
+			if (size < 5) {
+				res = HidD_SetFeature(devHandle, buffer, 65);
+				Sleep(6); // Need wait for ACK
+				return res;
+			}
 			else
 				return WriteFile(devHandle, buffer, length, &written, NULL);
 		}
@@ -214,7 +218,7 @@ namespace AlienFX_SDK {
 										//version = 8;
 										//reportID = 5;
 										version = 9;
-										reportID = 0xe;
+										reportID = 0;// 0xe;
 										break;
 									}
 									break;
@@ -314,16 +318,20 @@ namespace AlienFX_SDK {
 
 		if (inSet) {
 			switch (version) {
-			case API_L_V8:
-			{
-				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x10}});
-				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0xe0}});
-				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0x7}});
-				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x20}});
-				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0x10}});
-				PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x80}});
-				res = PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x4d}});
-			} break;
+			//case API_L_V9:
+			//	PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
+			//	PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
+			//	break;
+			//case API_L_V8:
+			//{
+			//	PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x10}});
+			//	PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0xe0}});
+			//	PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0x7}});
+			//	PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x20}});
+			//	PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{14, 0x10}});
+			//	PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x80}});
+			//	res = PrepareAndSend(COMMV8.control, sizeof(COMMV8.control), {{15, 0x4d}});
+			//} break;
 			//case API_L_V7:
 			//{
 			//	//PrepareAndSend(COMMV7.status, sizeof(COMMV7.status));
@@ -371,13 +379,13 @@ namespace AlienFX_SDK {
 			Reset();
 		switch (version) {
 		case API_L_V9: {
+			//PrepareAndSend(COMMV9.colorPreSet, sizeof(COMMV9.colorPreSet));
 			PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor));
-			Sleep(7); // Need wait for ACK
 			val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), { {5,(byte)index},{11,c.r},{12,c.g},{13,c.b} });
-			Sleep(7); // Need wait for ACK
 		} break;
 		case API_L_V8:
 		{
+			PrepareAndSend(COMMV8.status, sizeof(COMMV8.status));
 			val = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), {{15,(byte)index},{3,c.r},{4,c.g},{5,c.b}});
 		} break;
 		case API_L_V7:
@@ -692,12 +700,10 @@ namespace AlienFX_SDK {
 				break;
 			}
 		switch (version) {
-		case API_L_V9:
-			PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
-			Sleep(7); // Need wait for ACK
-			PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
-			Sleep(7); // Need wait for ACK
-			break;
+		//case API_L_V9:
+		//	PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
+		//	PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
+		//	break;
 		case API_L_V7:
 		{
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)

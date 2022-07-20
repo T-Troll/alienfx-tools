@@ -4,7 +4,7 @@
 
 namespace AlienFX_SDK {
 
-	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microship (monitors), Primax (mouses), Chocony (external keyboards)
+	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microship (monitors), Primax (mouses), Chicony (external keyboards)
 	const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461, 0x04f2};
 
 	static struct COMMV1 {
@@ -115,14 +115,16 @@ namespace AlienFX_SDK {
 		const byte colorSet[14]{0x5,0x01,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x0a,0x00,0x02,0x01};
 		// [2] - store byte, [3-5] - RGB1, [6-8] - RGB2, [12] - 1 set, 2 store, [15] - lightID
 	} COMMV8;
+
 	static struct COMMV9 {
 		const byte resetLow[3]{0x5,0x1,0x51};
 		const byte resetHigh[14]{0x5,0x1,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 };
 		// {0xe,0x3,0x0,0x1} - ???
 		const byte readyToColor[4]{ 0xe,0x1,0x0,0x1 };
+		//const byte colorPreSet[2]{ 0x17, 0xa };
 		const byte colorSet[18]{ 0xe,0x01,0x00,0x01,0xb1,0x81,0x00,0xa5,0x00,0x0a,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x01 };
-		// [5] - light id, [11-13] - RGB
+		// [5] - light id, [11-13] - RGB. It can be second RGB block for effect.
 		const byte setBrightness[1]{ 0x17 };
-		// [1] - brightness (0..f)
+		// [1] - brightness (0..a)
 	} COMMV9;
 }

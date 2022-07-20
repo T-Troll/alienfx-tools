@@ -24,6 +24,8 @@ HWND tipH = NULL, tipV = NULL;
 
 HWND cgDlg;
 
+extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
 AlienFX_SDK::mapping* FindCreateMapping() {
     AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid);
     if (!lgh) {
@@ -31,6 +33,12 @@ AlienFX_SDK::mapping* FindCreateMapping() {
         conf->afx_dev.fxdevs[dIndex].lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
         conf->afx_dev.activeLights++;
         lgh = &conf->afx_dev.fxdevs[dIndex].lights.back();
+        // for rgb keyboard, check key...
+        switch (conf->afx_dev.fxdevs[dIndex].dev->GetVersion()) {
+        case 5: case 8: case 9:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
+            break;
+        }
     }
     return lgh;
 }

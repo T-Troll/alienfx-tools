@@ -96,24 +96,26 @@ void FXHelper::TestLight(int did, int id, bool wp)
 {
 	vector<byte> opLights;
 
-	for (auto lIter = conf->afx_dev.fxdevs[did].lights.begin(); lIter != conf->afx_dev.fxdevs[did].lights.end(); lIter++)
-		if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
-			opLights.push_back((byte)lIter->lightid);
+	if (id != oldtest) {
+		for (auto lIter = conf->afx_dev.fxdevs[did].lights.begin(); lIter != conf->afx_dev.fxdevs[did].lights.end(); lIter++)
+			if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
+				opLights.push_back((byte)lIter->lightid);
 
-	bool dev_ready = false;
-	for (int c_count = 0; c_count < 200 && !(dev_ready = conf->afx_dev.fxdevs[did].dev->IsDeviceReady()); c_count++)
-		Sleep(20);
-	if (!dev_ready) return;
+		bool dev_ready = false;
+		for (int c_count = 0; c_count < 200 && !(dev_ready = conf->afx_dev.fxdevs[did].dev->IsDeviceReady()); c_count++)
+			Sleep(20);
+		if (!dev_ready) return;
 
-	AlienFX_SDK::Colorcode c = wp ? conf->afx_dev.fxdevs[did].white : AlienFX_SDK::Colorcode({0});
-	conf->afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
-	conf->afx_dev.fxdevs[did].dev->UpdateColors();
+		AlienFX_SDK::Colorcode c = wp ? conf->afx_dev.fxdevs[did].white : AlienFX_SDK::Colorcode({ 0 });
+		conf->afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
 
-	if (id != -1) {
 		if (oldtest != -1)
 			conf->afx_dev.fxdevs[did].dev->SetColor(oldtest, c);
 		oldtest = id;
-		conf->afx_dev.fxdevs[did].dev->SetColor(id, conf->testColor);
+
+		if (id != -1)
+			conf->afx_dev.fxdevs[did].dev->SetColor(id, conf->testColor);
+
 		conf->afx_dev.fxdevs[did].dev->UpdateColors();
 	}
 

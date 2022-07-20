@@ -26,9 +26,11 @@ struct gearInfo {
 
 extern HWND dDlg;
 
-int eLid = 0, dItem = -1, dIndex = -1;// , lMaxIndex = 0;
+int eLid = 0, dItem = -1, dIndex = -1;
 vector<gearInfo> csv_devs;
 WNDPROC oldproc;
+HHOOK dEvent;
+HWND kDlg = NULL;
 
 BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message)
@@ -121,6 +123,40 @@ void UpdateDeviceInfo() {
 			SetLightInfo();
 		}
 	}
+}
+
+LRESULT CALLBACK DetectKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
+
+	//LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
+
+	if (wParam == WM_KEYUP /*&& !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)*/) {
+		char keyname[32];
+		GetKeyNameText(MAKELPARAM(0, ((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
+		//UnhookWindowsHookEx(dEvent);
+		// set text...
+		auto lgh = FindCreateMapping();
+		lgh->name = keyname;
+		SendMessage(kDlg, WM_CLOSE, 0, 0);
+	}
+
+	return true;// res;
+}
+
+BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		kDlg = hDlg;
+		dEvent = SetWindowsHookExW(WH_KEYBOARD_LL, DetectKeyProc, NULL, 0);
+		break;
+	case WM_CLOSE:
+		UnhookWindowsHookEx(dEvent);
+		EndDialog(hDlg, IDCLOSE);
+		kDlg = NULL;
+		break;
+	default: return false;
+	}
+	return true;
 }
 
 void RedrawDevList() {
@@ -396,6 +432,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				eLid = min(eLid, it->lightid);
 			SetLightInfo();
 			break;
+		case IDC_BUT_KEY:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), hDlg, (DLGPROC)KeyPressDialog);
+			SetLightInfo();
+			break;
 		case IDC_EDIT_NAME:
 			switch (HIWORD(wParam)) {
 			case EN_CHANGE:
@@ -409,25 +449,27 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_CLEAR:// IDC_BUTTON_REML:
-			if (conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid) && MessageBox(hDlg, "Do you really want to remove current light name and all it's settings?", "Warning",
-						   MB_YESNO | MB_ICONWARNING) == IDYES) {
-				// Clear grid
-				DWORD gridID = MAKELPARAM(conf->afx_dev.fxdevs[dIndex].pid, eLid);
-				for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); it++)
-					for (int ind = 0; ind < it->x * it->y; ind++)
-						if (it->grid[ind] == gridID)
-							it->grid[ind] = 0;
-				// delete from all groups...
-				RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
-				// delete from mappings...
-				conf->afx_dev.RemoveMapping(&conf->afx_dev.fxdevs[dIndex], eLid);
-				conf->afx_dev.activeLights--;
-				conf->afx_dev.SaveMappings();
-				if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
-					fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);
-					ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!", true);
+			if (conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid)) {
+				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove current light name and all it's settings?", "Warning",
+					MB_YESNO | MB_ICONWARNING) == IDYES) {
+					// Clear grid
+					DWORD gridID = MAKELPARAM(conf->afx_dev.fxdevs[dIndex].pid, eLid);
+					for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); it++)
+						for (int ind = 0; ind < it->x * it->y; ind++)
+							if (it->grid[ind] == gridID)
+								it->grid[ind] = 0;
+					// delete from all groups...
+					RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
+					// delete from mappings...
+					conf->afx_dev.RemoveMapping(&conf->afx_dev.fxdevs[dIndex], eLid);
+					conf->afx_dev.activeLights--;
+					conf->afx_dev.SaveMappings();
+					if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
+						fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);
+						ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!", true);
+					}
+					SetLightInfo();
 				}
-				SetLightInfo();
 			}
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
@@ -611,12 +653,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
 				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
+					// De-select current light
+					fxhl->TestLight(dIndex, -1);
 					// Select other item...
-					//int oldIndex = dIndex;
 					dIndex = (int)lPoint->lParam;
 					UpdateDeviceInfo();
-					//eLid = 0;
-					//SetLightInfo();
 				}
 			} break;
 			case LVN_ENDLABELEDIT:

@@ -28,6 +28,8 @@
 #define IDD_DIALOG_ADDGROUP             160
 #define IDD_DIALOG_WHITE                161
 #define IDD_DIALOG_GRIDEFFECT           163
+#define IDD_DIALOG1                     164
+#define IDD_DIALOG_KEY                  164
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -169,7 +171,6 @@
 #define IDC_LIST_GROUPS                 1155
 #define IDC_CP_FANS                     1155
 #define IDC_LIST_FOUND                  1156
-#define IDC_CP_FANS2                    1156
 #define IDC_CP_GRID                     1156
 #define IDC_BUT_WHITE                   1158
 #define IDC_CHECK_REVERSE               1159
@@ -187,6 +188,7 @@
 #define IDC_CHECK_ZONELIGHTS            1174
 #define IDC_BUTTON_GEFROM               1175
 #define IDC_BUTTON_GETO                 1176
+#define IDC_BUT_KEY                     1176
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -207,9 +209,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        164
+#define _APS_NEXT_RESOURCE_VALUE        165
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1176
+#define _APS_NEXT_CONTROL_VALUE         1177
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif
