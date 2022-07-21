@@ -224,7 +224,7 @@ Then you find light position at you physical device (it's highlighted), assign i
 Click again to remove grid sell from current light, right-click (or click-and-drag) to clear grid cell(s).  
 Left-click at already assigned cell to select corresponding light (and it's device).
 
-Optionally, you can set current light name using name field into "Light" block.
+Optionally, you can set current light name using name field into "Light" block. Use "Key" button to assign light name by pressing corresponding keyboard key.
 
 ## Fans and Power
 
