@@ -99,7 +99,7 @@ Build process:
 - [ ] New devices support
   - [ ] Monitors
   - [x] Mouses
-  - [ ] Keyboards
+  - [x] Keyboards
 - [ ] Power and battery charge control
 
 ## License
