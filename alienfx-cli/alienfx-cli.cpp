@@ -78,8 +78,8 @@ void CheckDevices(bool show_all) {
 							case 0:
 							{
 								switch (caps.Usage) {
-								case 0xcc: apiver = "RGB keyboard, APIv5"; break;
-								default: supported = false; apiver = "Unknown.";
+								case 0xcc: apiver = "Keyboard, APIv5"; break;
+								default: supported = false; apiver = "Unknown";
 								}
 							} break;
 							case 8:
@@ -90,7 +90,7 @@ void CheckDevices(bool show_all) {
 								break;
 							case 12:
 								apiver = "Notebook, APIv3";
-								break; supported = true;
+								break;
 							case 34:
 								apiver = "Notebook/Desktop, APIv4";
 								break;
@@ -103,7 +103,7 @@ void CheckDevices(bool show_all) {
 									apiver = "Mouse, APIv7";
 									break;
 								case 4:
-									apiver = "Keyboard, APIv8";
+									apiver = "Keyboard, APIv8/APIv9";
 									break;
 								}
 								break;
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v6.2.4\n");
+	printf("alienfx-cli v6.4.2\n");
 	if (argc < 2)
 	{
 		printUsage();

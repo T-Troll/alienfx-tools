@@ -170,16 +170,6 @@ void ModifyColorDragZone(bool clear = false) {
                     else
                         if (!clear)
                             markAdd.push_back(conf->mainGrid->grid[ind]);
-                    /*auto pos = find_if(grp->lights.begin(), grp->lights.end(),
-                        [ind](auto t) {
-                            return t == conf->mainGrid->grid[ind];
-                        });
-                    if (pos != grp->lights.end()) {
-                        markRemove.push_back(conf->mainGrid->grid[ind]);
-                    }
-                    else
-                        if (!clear)
-                            markAdd.push_back(conf->mainGrid->grid[ind]);*/
                 }
             }
         // now clear by remove list and add new...
@@ -189,18 +179,11 @@ void ModifyColorDragZone(bool clear = false) {
                     grp->lights.erase(pos);
                     break;
                 }
-            //    [tr](auto t) {
-            //        return t == *tr;
-            //    });
-            //if (pos != grp->lights.end())
-            //    grp->lights.erase(pos);
         }
         for (auto tr = markAdd.begin(); tr < markAdd.end(); tr++) {
             if (!IsLightInGroup(*tr, grp))
                 grp->lights.push_back(*tr);
         }
-        //markAdd.clear();
-        //markRemove.clear();
         // now check for power...
         grp->have_power = find_if(grp->lights.begin(), grp->lights.end(),
             [](auto t) {
@@ -399,10 +382,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             DWORD gridVal = conf->mainGrid->grid[ind];
             if (tabLightSel == TAB_DEVICES) {
                 WORD idVal = HIWORD(gridVal) << 4;
-                string name;
                 if (gridVal) {
-                    if (conf->showGridNames)
-                        name = conf->afx_dev.GetMappingById(conf->afx_dev.GetDeviceById(LOWORD(gridVal)), HIWORD(gridVal))->name;
                     if (HIWORD(gridVal) == eLid && LOWORD(gridVal) == devID)
                         Brush = CreateSolidBrush(RGB(conf->testColor.r, conf->testColor.g, conf->testColor.b));
                     else
@@ -411,10 +391,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 else
                     Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
                 FillRect(ditem->hDC, &ditem->rcItem, Brush);
-                if (conf->showGridNames) {
-                    SetBkMode(ditem->hDC, TRANSPARENT);
-                    DrawText(ditem->hDC, name.c_str(), -1, &ditem->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
-                }
                 DeleteObject(Brush);
             }
             else {
@@ -449,12 +425,14 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 Polygon(ditem->hDC, triangle2, 3);
                 DeleteObject(Brush);
                 DeleteObject(Brush2);
-                if (gridVal)
-                {
-                    //AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(eItem);
-                    if (IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem)))
-                        DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
-                }
+                if (gridVal && IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem)))
+                    DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
+            }
+            // print name
+            if (conf->showGridNames && gridVal) {
+                string name = conf->afx_dev.GetMappingById(conf->afx_dev.GetDeviceById(LOWORD(gridVal)), HIWORD(gridVal))->name;
+                SetBkMode(ditem->hDC, TRANSPARENT);
+                DrawText(ditem->hDC, name.c_str(), -1, &ditem->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
             }
             // Highlight if in selection zone
             if (PtInRect(&dragZone, { (long)(ind % conf->mainGrid->x), (long)(ind / conf->mainGrid->x) })) {

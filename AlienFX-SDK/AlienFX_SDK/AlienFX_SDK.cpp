@@ -497,9 +497,8 @@ namespace AlienFX_SDK {
 			if (save) {
 				SetPowerAction(act);
 			} else
-				for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++) {
-					val = SetColor(nc->index, { nc->act[0].b, nc->act[0].g, nc->act[0].r });
-				}
+				for (auto nc = act->begin(); nc != act->end(); nc++)
+					val = SetAction(&(*nc));
 			break;
 		case API_L_V7:
 		{
@@ -538,7 +537,7 @@ namespace AlienFX_SDK {
 			if (save)
 				SetPowerAction(act);
 			else
-				for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
+				for (auto nc = act->begin(); nc != act->end(); nc++)
 					if (nc->act[0].type != AlienFX_A_Power)
 						val = SetAction(&(*nc));
 					else {
@@ -559,30 +558,48 @@ namespace AlienFX_SDK {
 	bool Functions::SetAction(act_block *act) {
 		bool res = false;
 
-		if (act->act.size() > 0) {
+		if (act->act.size()) {
 			if (!inSet) Reset();
 			switch (version) {
+			case API_L_V9: {
+				byte opType = 0x81;
+				switch (act->act[0].type) {
+				case AlienFX_A_Pulse: opType = 0x82; break;
+				case AlienFX_A_Morph: opType = 0x83; break;
+				case AlienFX_A_Breathing: opType = 0x87; break;
+				case AlienFX_A_Spectrum: opType = 0x88; break;
+				//case AlienFX_A_Rainbow: opType = 0x88; break;
+				}
+				vector<pair<byte, byte>> mods{ {5,act->index},{6,opType},{7,act->act[0].tempo},{11,act->act[0].r},{12,act->act[0].g},{13,act->act[0].b} };
+				// add second color if present
+				if (act->act.size() > 1) {
+					mods.insert(mods.end(), {
+						{ 14,act->act[1].r },
+						{ 15,act->act[1].g },
+						{ 16,act->act[1].b },
+						{ 18,2 } });
+				}
+				PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor));
+				PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
+			} break;
 			case API_L_V7:
 			{
 				byte opType = 1;
 				switch (act->act[0].type) {
-				//case AlienFX_A_Color: opType = 1; break;
 				case AlienFX_A_Pulse: opType = 5; break;
 				case AlienFX_A_Morph: opType = 3; break;
 				case AlienFX_A_Breathing: opType = 2; break;
 				case AlienFX_A_Spectrum: opType = 4; break;
 				case AlienFX_A_Rainbow: opType = 6; break;
 				}
-				if (act->act.size()) {
-					vector<pair<byte, byte>> mods{{5,opType},{6,bright},{7,act->index}};
-					for (int ca = 0; ca < act->act.size(); ca++) {
-						mods.insert(mods.end(), {
-							{ca*3+8, act->act[ca].r},
-						    {ca*3+9, act->act[ca].g},
-						    {ca*3+10, act->act[ca].b}});
-					}
-					PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), &mods);
+				vector<pair<byte, byte>> mods{{5,opType},{6,bright},{7,act->index}};
+				for (int ca = 0; ca < act->act.size(); ca++) {
+					mods.insert(mods.end(), {
+						{ca*3+8, act->act[ca].r},
+						{ca*3+9, act->act[ca].g},
+						{ca*3+10, act->act[ca].b}});
 				}
+				PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), &mods);
 			} break;
 			case API_L_V4:
 			{
@@ -593,10 +610,6 @@ namespace AlienFX_SDK {
 					// 3 actions per record..
 					byte opCode1 = 0xd0, opCode2 = act->act[ca].tempo;
 					switch (act->act[ca].type) {
-					/*case AlienFX_A_Color:
-						mods.push_back({bPos+2, 0xd0});
-						mods.push_back({bPos+4, 0xfa});
-						break;*/
 					case AlienFX_A_Pulse:
 						opCode1 = 0xdc;
 						break;
@@ -616,7 +629,6 @@ namespace AlienFX_SDK {
 						opCode1 = 0xe8;
 						break;
 					default:
-						//opCode1 = 0xd0;
 						opCode2 = 0xfa;
 					}
 					mods.insert(mods.end(), {
@@ -700,10 +712,10 @@ namespace AlienFX_SDK {
 				break;
 			}
 		switch (version) {
-		//case API_L_V9:
-		//	PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
-		//	PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
-		//	break;
+		case API_L_V9:
+			PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
+			PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
+			break;
 		case API_L_V7:
 		{
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)

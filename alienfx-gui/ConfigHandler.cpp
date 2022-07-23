@@ -168,6 +168,7 @@ void ConfigHandler::Load() {
 	GetReg("DimmingPower", &dimmingPower, 92);
 	GetReg("OffOnBattery", &offOnBattery);
 	GetReg("FanControl", &fanControl);
+	GetReg("ShowGridNames", &showGridNames);
 	RegGetValue(hKeyMain, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
 	// Ambient....
@@ -361,6 +362,7 @@ void ConfigHandler::Save() {
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("EsifTemp", esif_temp);
 	SetReg("FanControl", fanControl);
+	SetReg("ShowGridNames", showGridNames);
 
 	RegSetValueEx( hKeyMain, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
 

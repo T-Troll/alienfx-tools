@@ -38,6 +38,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_CHECK_DIM, conf->dimmed);
 		CheckDlgButton(hDlg, IDC_CHECK_UPDATE, conf->updateCheck);
 		CheckDlgButton(hDlg, IDC_OFFONBATTERY, conf->offOnBattery);
+		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -154,6 +155,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					fxhl->UnblockUpdates(true);
 				}
 			}
+			break;
+		case IDC_CHECK_LIGHTNAMES:
+			conf->showGridNames = !conf->showGridNames;
 			break;
 		default: return false;
 		}

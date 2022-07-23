@@ -404,8 +404,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
-		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
-
+		//CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -568,10 +567,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_WHITE), hDlg, (DLGPROC)WhiteBalanceDialog);
 		} break;
-		case IDC_CHECK_LIGHTNAMES: {
-			conf->showGridNames = !conf->showGridNames;
-			RedrawGridButtonZone();
-		}
+		//case IDC_CHECK_LIGHTNAMES: {
+		//	conf->showGridNames = !conf->showGridNames;
+		//	RedrawGridButtonZone();
+		//}
 		//default: return false;
 		}
 	} break;
