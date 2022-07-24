@@ -86,11 +86,14 @@ namespace AlienFX_SDK {
 			bool res;
 			if (size < 5) {
 				res = HidD_SetFeature(devHandle, buffer, 65);
-				Sleep(6); // Need wait for ACK
+				Sleep(3); // Need wait for ACK
 				return res;
 			}
-			else
-				return WriteFile(devHandle, buffer, length, &written, NULL);
+			else {
+				res = WriteFile(devHandle, buffer, length, &written, NULL);
+				Sleep(3); // Need wait for ACK
+				return res;
+			}
 		}
 		}
 		return false;
