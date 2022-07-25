@@ -114,7 +114,7 @@ if (!newID) newID = conf->FindDefaultProfile();
 			modifyProfile.unlock();
 
 			// change global effect
-			if (conf->haveV5) {
+			if (conf->haveGlobal) {
 				fxhl->UnblockUpdates(false);
 				fxhl->UpdateGlobalEffect();
 				fxhl->UnblockUpdates(true);

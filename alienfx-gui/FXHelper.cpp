@@ -24,9 +24,7 @@ FXHelper::~FXHelper() {
 
 AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
 	AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(pid);
-	if (dev && dev->dev)
-		return dev;
-	return nullptr;
+	return dev && dev->dev ? dev : nullptr;
 };
 
 void FXHelper::SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
@@ -92,30 +90,32 @@ void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions
 }
 
 
-void FXHelper::TestLight(int did, int id, bool wp)
+void FXHelper::TestLight(int did, int id, bool force, bool wp)
 {
 	vector<byte> opLights;
 
-	if (id != oldtest) {
+	bool dev_ready = false;
+	for (int c_count = 0; c_count < 200 && !(dev_ready = conf->afx_dev.fxdevs[did].dev->IsDeviceReady()); c_count++)
+		Sleep(20);
+	if (!dev_ready) return;
+
+	AlienFX_SDK::Colorcode c = wp ? conf->afx_dev.fxdevs[did].white : AlienFX_SDK::Colorcode({ 0 });
+
+	if (force) {
 		for (auto lIter = conf->afx_dev.fxdevs[did].lights.begin(); lIter != conf->afx_dev.fxdevs[did].lights.end(); lIter++)
 			if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
 				opLights.push_back((byte)lIter->lightid);
-
-		bool dev_ready = false;
-		for (int c_count = 0; c_count < 200 && !(dev_ready = conf->afx_dev.fxdevs[did].dev->IsDeviceReady()); c_count++)
-			Sleep(20);
-		if (!dev_ready) return;
-
-		AlienFX_SDK::Colorcode c = wp ? conf->afx_dev.fxdevs[did].white : AlienFX_SDK::Colorcode({ 0 });
 		conf->afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
+		conf->afx_dev.fxdevs[did].dev->UpdateColors();
+	}
 
+	if (id != oldtest) {
 		if (oldtest != -1)
 			conf->afx_dev.fxdevs[did].dev->SetColor(oldtest, c);
 		oldtest = id;
 
 		if (id != -1)
 			conf->afx_dev.fxdevs[did].dev->SetColor(id, conf->testColor);
-
 		conf->afx_dev.fxdevs[did].dev->UpdateColors();
 	}
 
@@ -238,7 +238,6 @@ void FXHelper::SetGridLight(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid
 	if (x < zone->gMaxX && x >= zone->gMinX && y < zone->gMaxY && y >= zone->gMinY) {
 		DWORD gridval = grid->grid[ind(x, y)];
 		if (gridval && grp->effect.flags & GE_FLAG_ZONE) { // zone lights only
-			//auto gr = conf->afx_dev.GetGroupById(grp->group);
 			if (!IsLightInGroup(gridval, conf->afx_dev.GetGroupById(grp->group))) {
 				gridval = 0;
 			}
@@ -334,68 +333,6 @@ void FXHelper::SetGridEffect(groupset* grp)
 			for (int dist = 0; dist <= grp->effect.width; dist++) {
 				SetGaugeGrid(grp, zone, grid, oldphase, dist, grp->effect.from, &setLights);
 			}
-			//for (int x = zone->gMinX; x < zone->gMaxX; x++) // maybe <=
-			//	for (int y = zone->gMinY; y < zone->gMaxY; y++) {
-			//		// Check for zero or non-group
-			//		DWORD gridval = grid->grid[ind(x, y)];
-			//		if (gridval && grp->effect.flags & GE_FLAG_ZONE) { // zone lights only
-			//			//auto gr = conf->afx_dev.GetGroupById(grp->group);
-			//			if (!IsLightInGroup(gridval, conf->afx_dev.GetGroupById(grp->group))) {
-			//				gridval = 0;
-			//			}
-			//		}
-			//		if (gridval) {
-			//			double power;
-			//			int dist = 0, olddist = 0;
-			//			AlienFX_SDK::Colorcode fin;
-			//			switch (grp->gauge) {
-			//			case 1: // horizontal
-			//				dist = abs(x - grp->gridop.gridX - phase);
-			//				olddist = abs(x - grp->gridop.gridX - oldphase);
-			//				break;
-			//			case 2: // vertical
-			//				dist = abs(y - grp->gridop.gridY - phase);
-			//				olddist = abs(y - grp->gridop.gridY - oldphase);
-			//				break;
-			//			case 3: // diagonal
-			//				dist = abs(x + y - grp->gridop.gridX - grp->gridop.gridY - phase);
-			//				olddist = abs(x + y - grp->gridop.gridX - grp->gridop.gridY - oldphase);
-			//				break;
-			//			case 4: // back diagonal
-			//				dist = abs((zone->gMaxX - x) + y - grp->gridop.gridX - grp->gridop.gridY - phase);
-			//				olddist = abs((zone->gMaxX - x) + y - grp->gridop.gridX - grp->gridop.gridY - oldphase);
-			//				break;
-			//			case 5: // radial
-			//				dist = abs((int)sqrt((grp->gridop.gridX - x) * (grp->gridop.gridX - x) +
-			//					(grp->gridop.gridY - y) * (grp->gridop.gridY - y)) - phase);
-			//				olddist = abs((int)sqrt((grp->gridop.gridX - x) * (grp->gridop.gridX - x) +
-			//					(grp->gridop.gridY - y) * (grp->gridop.gridY - y)) - oldphase);
-			//			break;
-			//			}
-			//			if ((dist <= grp->effect.width || olddist <= grp->effect.width) &&
-			//				find(setLights.begin(), setLights.end(), gridval) == setLights.end()) {
-			//				if (dist <= grp->effect.width) {
-			//					switch (grp->effect.type) {
-			//					case 0: // running light
-			//						power = 1.0;
-			//						break;
-			//					case 1: // wave
-			//						power = ((double)grp->effect.width - dist) / grp->effect.width;
-			//						break;
-			//					case 2: // gradient
-			//						power = 1.0 - (((double)grp->effect.width - dist) / grp->effect.width); // just for fun for now
-			//					}
-			//					fin.r = (byte)((1.0 - power) * grp->effect.from.r + power * grp->effect.to.r);
-			//					fin.g = (byte)((1.0 - power) * grp->effect.from.g + power * grp->effect.to.g);
-			//					fin.b = (byte)((1.0 - power) * grp->effect.from.b + power * grp->effect.to.b);
-			//				}
-			//				else
-			//					fin = grp->effect.from;
-			//				SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&fin) });
-			//				setLights.push_back(gridval);
-			//			}
-			//		}
-			//	}
 			QueryUpdate();
 		}
 	}
@@ -458,27 +395,24 @@ void FXHelper::ChangeState() {
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
-	if (conf->haveV5) {
+	if (conf->haveGlobal) {
 		if (!dev) {
+			// check ALL devices later, not first one only!
 			auto pos = find_if(conf->afx_dev.fxdevs.begin(), conf->afx_dev.fxdevs.end(),
 				[](auto t) {
-					return t.dev && t.dev->GetVersion() == 5;
+					return t.dev ? t.dev->IsHaveGlobal() : false;
 				});
 			if (pos != conf->afx_dev.fxdevs.end())
 				dev = pos->dev;
 		}
-		if (dev && dev->GetVersion() == 5) {
-			AlienFX_SDK::afx_act c1{ 0,0,0,conf->activeProfile->effColor1.r,
-				conf->activeProfile->effColor1.g,
-				conf->activeProfile->effColor1.b },
-				c2{ 0,0,0,conf->activeProfile->effColor2.r,
-				conf->activeProfile->effColor2.g,
-				conf->activeProfile->effColor2.b };
+		if (dev && dev->IsHaveGlobal()) {
 			if (conf->activeProfile->effmode == 99)
-				dev->SetGlobalEffects((byte)conf->activeProfile->globalEffect,
-					(byte)conf->activeProfile->globalDelay, c1, c2);
+				dev->SetGlobalEffects(conf->activeProfile->globalEffect, conf->activeProfile->globalMode, conf->activeProfile->globalDelay,
+					{ 0,0,0,conf->activeProfile->effColor1.r, conf->activeProfile->effColor1.g,	conf->activeProfile->effColor1.b },
+					{ 0,0,0,conf->activeProfile->effColor2.r, conf->activeProfile->effColor2.g,	conf->activeProfile->effColor2.b });
 			else
-				dev->SetGlobalEffects(1, 0, c1, c2);
+				// type should be 0 or 19 for v9 !!!
+				dev->SetGlobalEffects(1, 1, 0, { 0 }, { 0 });
 		}
 	}
 }
@@ -518,17 +452,17 @@ void FXHelper::UnblockUpdates(bool newState, bool lock) {
 
 size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->SetStates();
-	conf->haveV5 = false;
+	conf->haveGlobal = false;
 	numActiveDevs = 0;
 	conf->afx_dev.AlienFXAssignDevices(acc ? acc->GetHandle() : NULL, conf->finalBrightness, conf->finalPBState);
 	// global effects check
 	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
 		if (i->dev) {
 			numActiveDevs++;
-			if (i->dev->GetVersion() == 5)
-				conf->haveV5 = true;
+			if (i->dev->IsHaveGlobal())
+				conf->haveGlobal = true;
 		}
-	return numActiveDevs;// conf->afx_dev.fxdevs.size();
+	return numActiveDevs;
 }
 
 void FXHelper::Start() {
@@ -768,7 +702,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (current.update) {
 				// update command
 				if (conf->stateOn) {
-					//size_t processedLights = 0;
 					for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
 						if (current.did == (-1) || devQ->dev->pid == current.did) {
 //#ifdef _DEBUG
@@ -776,8 +709,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
-							if (devQ->dev->dev->GetVersion() == 5 && (conf->activeProfile->effmode == 99)) {
-								DebugPrint("V5 global effect active!\n");
+							if (devQ->dev->dev->IsHaveGlobal() && (conf->activeProfile->effmode == 99)) {
+								DebugPrint("Global effect active!\n");
 								src->UpdateGlobalEffect(devQ->dev->dev);
 							}
 							else
@@ -785,9 +718,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 									devQ->dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
 									devQ->dev->dev->UpdateColors();
 								}
+							devQ->dev_query.clear();
 						}
-						//processedLights += devQ->dev_query.size();
-						devQ->dev_query.clear();
 					}
 
 					if (src->lightQuery.size() > conf->afx_dev.activeLights * 5) {
@@ -796,15 +728,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 									to_string((int) src->lightQuery.size()) +
 									"), delay increased to " +
 									to_string(conf->monDelay) +
-									" ms!\n"
-									).c_str());
+									" ms!\n").c_str());
 					}
 					//else
 					//	DebugPrint(("Query size " + to_string(src->lightQuery.size()) + "\n").c_str());
 				}
 			} else {
 				// set light
-				if ((dev = src->LocateDev(current.did)) && dev->dev) {
+				if (dev = src->LocateDev(current.did)) {
 					vector<AlienFX_SDK::afx_act> actions;
 					WORD flags = conf->afx_dev.GetFlags(dev, current.lid);
 					for (int i = 0; i < current.actsize; i++) {

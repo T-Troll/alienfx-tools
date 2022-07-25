@@ -239,7 +239,8 @@ void ConfigHandler::Load() {
 		if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
 			DWORD* tDat = (DWORD*)data;
-			prof->globalEffect = (byte)LOWORD(tDat[0]);
+			prof->globalEffect = LOBYTE(LOWORD(tDat[0]));
+			prof->globalMode = HIBYTE(LOWORD(tDat[0]));
 			prof->globalDelay = (byte)HIWORD(tDat[0]);
 			prof->effColor1.ci = tDat[1];
 			prof->effColor2.ci = tDat[2];
@@ -307,11 +308,7 @@ void ConfigHandler::Load() {
 		if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			memcpy(&gset->effect, data, sizeof(grideffect));
-			//goto nextZone;
 		}
-	//nextZone:
-	//	//delete[] data;
-	//	len = 255;
 	}
 
 	if (data) delete[] data;
@@ -434,11 +431,6 @@ void ConfigHandler::Save() {
 					it->freqsize = (byte) it->freqID.size();
 					memcpy(out, &(*it), recSize);
 					out += recSize;
-					//*(DWORD*)out = it->colorfrom.ci; out += sizeof(DWORD);
-					//*(DWORD*)out = it->colorto.ci; out += sizeof(DWORD);
-					//*out = it->hicut; out++;
-					//*out = it->lowcut; out++;
-					//*out = (byte)it->freqID.size(); out++;
 					for (auto itf = it->freqID.begin(); itf < it->freqID.end(); itf++) {
 						*out = *itf; out++;
 					}
@@ -456,7 +448,7 @@ void ConfigHandler::Save() {
 		//if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
 		DWORD buffer[3];
 		name = "Profile-effect-" + to_string((*jIter)->id);
-		buffer[0] = MAKELONG((*jIter)->globalEffect, (*jIter)->globalDelay);
+		buffer[0] = MAKELPARAM(MAKEWORD((*jIter)->globalEffect, (*jIter)->globalMode), (*jIter)->globalDelay);
 		buffer[1] = (*jIter)->effColor1.ci;
 		buffer[2] = (*jIter)->effColor2.ci;
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));

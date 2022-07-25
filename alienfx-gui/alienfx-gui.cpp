@@ -288,7 +288,6 @@ void OnSelChanged(HWND hwndDlg)
 
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay != NULL) {
-		//EndDialog(pHdr->hwndDisplay, IDOK);
 		DestroyWindow(pHdr->hwndDisplay);
 		pHdr->hwndDisplay = NULL;
 	}
@@ -301,7 +300,7 @@ void OnSelChanged(HWND hwndDlg)
 	rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
 	rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
 
-	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]/*tdl*/);
+	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
 	if (pHdr->hwndDisplay == NULL)
 		pHdr->hwndDisplay = newDisplay;
 
@@ -328,7 +327,7 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 		EnableWindow(mode_list, conf->enableMon);
 	}
 	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
-	if (conf->haveV5) {
+	if (conf->haveGlobal) {
 		ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
 		if (mode == 99)
 			ComboBox_SetCurSel(mode_list, effModes.size());
@@ -369,7 +368,7 @@ void UpdateState() {
 void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
-	//ReloadProfileList();
+	ReloadProfileList();
 }
 
 void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func) {
@@ -552,6 +551,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case SIZE_MINIMIZED: {
 			// go to tray...
 			ShowWindow(hDlg, SW_HIDE);
+			SendMessage(dDlg, WM_DESTROY, 0, 0);
 		} break;
 		}
 		break;
@@ -600,7 +600,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					mInfo.dwTypeData = (LPSTR)effModes[i].c_str();
 					InsertMenuItem(pMenu, i, false, &mInfo);
 				}
-				if (conf->haveV5) {
+				if (conf->haveGlobal) {
 					mInfo.dwTypeData = "Global";
 					InsertMenuItem(pMenu, i, false, &mInfo);
 				}
@@ -730,14 +730,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (devs.size() != fxhl->numActiveDevs) {
 				// Device added or removed, need to rescan devices...
 				fxhl->Stop();
-				//bool wasNotLocked = !fxhl->updateLock;
-				//if (wasNotLocked) {
-				//	fxhl->UnblockUpdates(false, true);
-				//}
 				fxhl->FillAllDevs(acpi);
 				fxhl->Start();
-				//if (wasNotLocked)
-				//	fxhl->UnblockUpdates(true, true);
 			}
 		}
 		break;
@@ -820,7 +814,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DESTROY:
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		conf->Save();
-		PostQuitMessage(0); break;
+		PostQuitMessage(0);
+		break;
 	default: return false;
 	}
 	return true;

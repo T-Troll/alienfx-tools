@@ -169,7 +169,7 @@ public:
 	byte finalPBState = false;
 
 	// local flags...
-	bool haveV5 = false;
+	bool haveGlobal = false;
 
 	// 3rd-party config blocks
 	//ConfigFan *fan_conf = NULL;

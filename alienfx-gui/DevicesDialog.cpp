@@ -53,7 +53,7 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		SetSlider(sTip1, dev->white.r);
 		SetSlider(sTip2, dev->white.r);
 		SetSlider(sTip3, dev->white.r);
-		fxhl->TestLight(dIndex, eLid, true);
+		fxhl->TestLight(dIndex, eLid, true, true);
 		RECT pRect;
 		GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);
 		SetWindowPos(hDlg, NULL, pRect.right, pRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
@@ -77,13 +77,13 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					conf->afx_dev.fxdevs[dIndex].white.b = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip3, conf->afx_dev.fxdevs[dIndex].white.b);
 				}
-				fxhl->TestLight(dIndex, eLid, true);
+				fxhl->TestLight(dIndex, eLid, true, true);
 			} break;
 			}
 		}
 	} break;
 	case WM_CLOSE:
-		fxhl->TestLight(dIndex, eLid);
+		fxhl->TestLight(dIndex, eLid, true);
 		EndDialog(hDlg, IDCLOSE);
 		break;
 	default: return false;
@@ -393,13 +393,15 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					if (conf->afx_dev.fxdevs[dIndex].dev)
 						break;
 				}
-			if (dIndex >= 0)
+			if (dIndex >= 0) {
+				fxhl->TestLight(dIndex, -1, true);
 				RedrawDevList();
+			}
 		}
 
-		if (!conf->afx_dev.activeLights &&
+		if (!conf->afx_dev.activeLights /*&&
 			MessageBox(hDlg, "Lights and grids not defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO)
-			== IDYES) {
+			== IDYES*/) {
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog);
 		}
 
@@ -567,11 +569,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_WHITE), hDlg, (DLGPROC)WhiteBalanceDialog);
 		} break;
-		//case IDC_CHECK_LIGHTNAMES: {
-		//	conf->showGridNames = !conf->showGridNames;
-		//	RedrawGridButtonZone();
-		//}
-		//default: return false;
 		}
 	} break;
 	case WM_NOTIFY: {
@@ -653,11 +650,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
 				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
 					// De-select current light
-					fxhl->TestLight(dIndex, -1);
+					//fxhl->TestLight(dIndex, -1);
 					// Select other item...
 					dIndex = (int)lPoint->lParam;
+					fxhl->TestLight(dIndex, eLid, true);
 					UpdateDeviceInfo();
-				}
+				} else
+					fxhl->TestLight(dIndex, -1);
 			} break;
 			case LVN_ENDLABELEDIT:
 			{

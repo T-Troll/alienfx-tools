@@ -101,7 +101,8 @@ struct profile {
 	fan_profile fansets;
 	AlienFX_SDK::Colorcode effColor1, effColor2;
 	byte globalEffect = 0,
-         globalDelay = 5;
+         globalDelay = 5,
+		 globalMode = 1;
 	bool ignoreDimming;
 };
 
@@ -158,7 +159,7 @@ public:
 	byte finalPBState = false;
 
 	// local flags...
-	bool haveV5 = false;
+	bool haveGlobal = false;
 
 	// 3rd-party config blocks
 	ConfigFan *fan_conf = NULL;

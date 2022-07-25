@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v6.4.2\n");
+	printf("alienfx-cli v6.4.3\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -425,12 +425,15 @@ int main(int argc, char* argv[])
 			break;
 		case 9:
 			// set-global
-			if (devType)
-				for (auto t = afx_map->fxdevs.begin(); t < afx_map->fxdevs.end(); t++)
-					if (t->dev->GetVersion() == 5)
-						t->dev->SetGlobalEffects(args[0].num, sleepy,
-							{ 0,0,0, (byte)args[1].num, (byte)args[2].num, (byte)args[3].num },
-							{ 0,0,0, (byte)args[4].num, (byte)args[5].num, (byte)args[6].num });
+			if (devType && args[0].num < afx_map->fxdevs.size())
+				afx_map->fxdevs[args[0].num].dev->SetGlobalEffects(args[1].num, args[2].num, sleepy,
+					{ 0,0,0, (byte)args[3].num, (byte)args[4].num, (byte)args[5].num },
+					{ 0,0,0, (byte)args[6].num, (byte)args[7].num, (byte)args[8].num });
+				//for (auto t = afx_map->fxdevs.begin(); t < afx_map->fxdevs.end(); t++)
+				//	if (t->dev->GetVersion() == 5)
+				//		t->dev->SetGlobalEffects(args[0].num, sleepy,
+				//			{ 0,0,0, (byte)args[1].num, (byte)args[2].num, (byte)args[3].num },
+				//			{ 0,0,0, (byte)args[4].num, (byte)args[5].num, (byte)args[6].num });
 			break;
 		case 10:
 			// low-level

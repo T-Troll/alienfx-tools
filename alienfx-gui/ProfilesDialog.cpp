@@ -26,6 +26,7 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
 		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
+		eff_mode = GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
 	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT);
 	CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof->flags & PROF_PRIORITY);
@@ -44,18 +45,38 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	for (int j = 0; j < prof->triggerapp.size(); j++)
 		ListBox_AddString(app_list, prof->triggerapp[j].c_str());
 	// set global effect, colors and delay
-	bool flag = prof->effmode == 99;// &PROF_GLOBAL_EFFECTS;
-	EnableWindow(eff_list, flag);
-	EnableWindow(eff_tempo, flag);
-	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), flag);
-	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), flag);
+	EnableWindow(eff_list, conf->haveGlobal);
+	EnableWindow(eff_tempo, conf->haveGlobal);
+	EnableWindow(eff_mode, conf->haveGlobal);
+	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), conf->haveGlobal);
+	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), conf->haveGlobal);
 	// now sliders...
 	SendMessage(eff_tempo, TBM_SETPOS, true, prof->globalDelay);
 	SetSlider(sTip2, prof->globalDelay);
 	// now colors...
-	RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, flag ? &prof->effColor1 : 0);
-	RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, flag ? &prof->effColor2 : 0);
-	ComboBox_SetCurSel(eff_list, prof->globalEffect);
+	RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, conf->haveGlobal ? &prof->effColor1 : 0);
+	RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, conf->haveGlobal ? &prof->effColor2 : 0);
+	if (conf->haveGlobal) {
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE), { "Permanent", "Key press" }, prof->globalMode, { 1, 2 });
+		for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
+			if (i->dev && i->dev->IsHaveGlobal()) {
+				switch (i->dev->GetVersion()) {
+				case 5:
+					// for v5
+					UpdateCombo(eff_list,
+						{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
+						prof->globalEffect, { 0,2,3,4,8,9,10,11 });
+					break;
+				case 9:
+					// for v9
+					UpdateCombo(eff_list,
+						{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+						prof->globalEffect, { 0,1,2,3,7,8,15,16,17,19 });
+					break;
+				}
+				break;
+			}
+	}
 }
 
 void ReloadProfileView(HWND hDlg) {
@@ -72,7 +93,6 @@ void ReloadProfileView(HWND hDlg) {
 		lItem.pszText = (char*)conf->profiles[i]->name.c_str();
 		if (conf->profiles[i]->id == pCid) {
 			lItem.state = LVIS_SELECTED;
-			ReloadProfSettings(hDlg, conf->profiles[i]);
 			rpos = i;
 		}
 		else
@@ -105,6 +125,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
 		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
+		eff_mode = GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE),
 		key_list = GetDlgItem(hDlg, IDC_COMBO_TRIGGERKEY),
 		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO);
 
@@ -115,20 +136,30 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 	{
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->FindDefaultProfile()->id;
-		//CheckDlgButton(hDlg, IDC_CP_COLORS, true);
-		//CheckDlgButton(hDlg, IDC_CP_EVENTS, true);
-		//CheckDlgButton(hDlg, IDC_CP_AMBIENT, true);
-		//CheckDlgButton(hDlg, IDC_CP_HAPTICS, true);
-		//CheckDlgButton(hDlg, IDC_CP_FANS, true);
-		if (conf->haveV5) {
-			UpdateCombo(eff_list,
-				{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
-				0, {0,2,3,4,8,9,10,11});
-			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xa));
-			SendMessage(eff_tempo, TBM_SETTICFREQ, 1, 0);
+		if (conf->haveGlobal) {
+			//UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE), { "Permanent", "Key press" }, 0, { 1, 2 });
+			//for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
+			//	if (i->dev && i->dev->IsHaveGlobal()) {
+			//		switch (i->dev->GetVersion()) {
+			//		case 5:
+			//			// for v5
+			//			UpdateCombo(eff_list,
+			//				{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
+			//				0, { 0,2,3,4,8,9,10,11 });
+			//			break;
+			//		case 9:
+			//			// for v9
+			//			UpdateCombo(eff_list,
+			//				{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+			//				0, { 0,1,2,3,7,8,15,16,17,19 });
+			//			break;
+			//		}
+			//		break;
+			//	}
+			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xff));
+			SendMessage(eff_tempo, TBM_SETTICFREQ, 16, 0);
 			sTip2 = CreateToolTip(eff_tempo, sTip2);
 		}
-
 		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
@@ -145,6 +176,16 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case CBN_SELCHANGE:
 			{
 				prof->globalEffect = (byte) ComboBox_GetItemData(eff_list, ComboBox_GetCurSel(eff_list));
+				if (prof->id == conf->activeProfile->id)
+					fxhl->UpdateGlobalEffect();
+			} break;
+			}
+		} break;
+		case IDC_COMBO_GLOBALMODE: {
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				prof->globalMode = (byte)ComboBox_GetItemData(eff_mode, ComboBox_GetCurSel(eff_mode));
 				if (prof->id == conf->activeProfile->id)
 					fxhl->UpdateGlobalEffect();
 			} break;
@@ -357,7 +398,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
+				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					// Select other item...
 					pCid = (int) lPoint->lParam;
 					ReloadProfSettings(hDlg, conf->FindProfile(pCid));

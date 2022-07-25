@@ -188,8 +188,13 @@ namespace AlienFX_SDK {
 		// power - if true, power and indicator lights will be set too
 		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
 
-		// Global (whole device) effect control for APIv5
-		bool SetGlobalEffects(byte effType, byte tempo, afx_act act1, afx_act act2);
+		// Global (whole device) effect control for APIv5, v8, v9
+		// effType - effect type
+		// mode - effect mode (off, steady, keypress, etc)
+		// tempo - effect tempo
+		// act1 - first effect color
+		// act2 - second effect color (not for all effects)
+		bool SetGlobalEffects(byte effType, byte mode, byte tempo, afx_act act1, afx_act act2);
 
 		// return current device state
 		BYTE AlienfxGetDeviceStatus();
@@ -211,6 +216,9 @@ namespace AlienFX_SDK {
 
 		// get API version for current device
 		int GetVersion();
+
+		// check global effects avaliability
+		bool IsHaveGlobal();
 	};
 
 	// Single device data - device pointer, description pointer, lights

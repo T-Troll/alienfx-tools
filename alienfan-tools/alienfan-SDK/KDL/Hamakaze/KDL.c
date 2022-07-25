@@ -27,29 +27,29 @@ INT KDUProcessDrvMapSwitch(
 
     //printf_s("[*] Driver mapping using shellcode version: %lu\r\n", ShellVersion);
 
-    if (ShellVersion == KDU_SHELLCODE_V3) {
+    //if (ShellVersion == KDU_SHELLCODE_V3) {
 
-        if (DriverObjectName == NULL) {
+    //    if (DriverObjectName == NULL) {
 
-            /*supPrintfEvent(kduEventError, "[!] Driver object name is required when working with this shellcode\r\n"\
-                           "[?] Use the following commands to supply object name and optionally registry key name\r\n"\
-                           "\t-drvn [ObjectName] and/or\r\n"\
-                           "\t-drvr [ObjectKeyName]\r\n"\
-                           "\te.g. kdu -scv 3 -drvn MyName -map MyDriver.sys\r\n"
-            );*/
+    //        /*supPrintfEvent(kduEventError, "[!] Driver object name is required when working with this shellcode\r\n"\
+    //                       "[?] Use the following commands to supply object name and optionally registry key name\r\n"\
+    //                       "\t-drvn [ObjectName] and/or\r\n"\
+    //                       "\t-drvr [ObjectKeyName]\r\n"\
+    //                       "\te.g. kdu -scv 3 -drvn MyName -map MyDriver.sys\r\n"
+    //        );*/
 
-            return 0;
-        } /*else {
-            printf_s("[+] Driver object name: \"%ws\"\r\n", DriverObjectName);
-        }*/
+    //        return 0;
+    //    } /*else {
+    //        printf_s("[+] Driver object name: \"%ws\"\r\n", DriverObjectName);
+    //    }*/
 
-        //if (DriverRegistryPath) {
-        //    printf_s("[+] Registry key name: \"%ws\"\r\n", DriverRegistryPath);
-        //} else {
-        //    printf_s("[+] No driver registry key name specified, driver object name will be used instead\r\n");
-        //}
+    //    //if (DriverRegistryPath) {
+    //    //    printf_s("[+] Registry key name: \"%ws\"\r\n", DriverRegistryPath);
+    //    //} else {
+    //    //    printf_s("[+] No driver registry key name specified, driver object name will be used instead\r\n");
+    //    //}
 
-    }
+    //}
 
     PVOID pvImage = NULL;
     NTSTATUS ntStatus = supLoadFileForMapping(DriverFileName, &pvImage);
@@ -107,21 +107,21 @@ LoadKernelDriver(
     LPWSTR DriverDevice
 ) {
 
-    BOOLEAN hvciEnabled;
+    BOOLEAN hvciEnabled = TRUE;
     BOOLEAN hvciStrict;
     BOOLEAN hvciIUM;
 
-    OSVERSIONINFO osv = {0};
+    OSVERSIONINFO osv = { sizeof(osv) };
 
-    RtlSecureZeroMemory(&osv, sizeof(osv));
-    osv.dwOSVersionInfoSize = sizeof(osv);
+    //RtlSecureZeroMemory(&osv, sizeof(osv));
+    //osv.dwOSVersionInfoSize = sizeof(osv);
     RtlGetVersion((PRTL_OSVERSIONINFOW) &osv);
-    if ((osv.dwMajorVersion < 6) ||
-        (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0) ||
-        (osv.dwBuildNumber == 7600)) {
+    //if ((osv.dwMajorVersion < 6) ||
+    //    (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0) ||
+    //    (osv.dwBuildNumber == 7600)) {
 
-        return FALSE;
-    }
+    //    return FALSE;
+    //}
 
     //
         // Providers maybe *not* HVCI compatible.

@@ -67,7 +67,7 @@ public:
 	void Refresh(int force = 0);
 	bool RefreshOne(groupset* map, int force = 0, bool update = true);
 	bool SetPowerMode(int mode);
-	void TestLight(int did, int id, bool wp=false);
+	void TestLight(int did, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::afx_device* dev);
 	void SetCounterColor(EventData *data, bool force = false);
 	void SetGridEffect(groupset* grp);

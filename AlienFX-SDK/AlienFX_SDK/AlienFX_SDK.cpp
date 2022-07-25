@@ -86,12 +86,12 @@ namespace AlienFX_SDK {
 			bool res;
 			if (size < 5) {
 				res = HidD_SetFeature(devHandle, buffer, 65);
-				Sleep(3); // Need wait for ACK
+				Sleep(4); // Need wait for ACK
 				return res;
 			}
 			else {
 				res = WriteFile(devHandle, buffer, length, &written, NULL);
-				Sleep(3); // Need wait for ACK
+				Sleep(2); // Need wait for ACK
 				return res;
 			}
 		}
@@ -432,6 +432,30 @@ namespace AlienFX_SDK {
 		if (!inSet) Reset();
 
 		switch (version) {
+		case API_L_V9: {
+			int bPos = 5;
+			vector<pair<byte, byte>> mods;
+			for (auto nc = lights->begin(); nc != lights->end(); nc++)
+				if (bPos < length) {
+					mods.insert(mods.end(), { {bPos,*nc},{bPos + 1,0x81},{bPos + 2, 0},
+						{ bPos + 3, 0xa5}, { bPos + 4, 0 }, {bPos + 5, 0xa},
+						{ bPos + 6, c.r},{ bPos + 7,c.g},{ bPos + 8,c.b},
+						{ bPos + 13, 1} });
+					bPos += 15;
+				}
+				else {
+					// Send command and clear buffer...
+					PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,4} });
+					val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
+					mods.clear();
+					bPos = 5;
+					nc--;
+				}
+			if (bPos > 5) {
+				PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { { 2, (bPos - 5) / 15} });
+				val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
+			}
+		} break;
 		case API_L_V6:
 		{
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
@@ -496,13 +520,48 @@ namespace AlienFX_SDK {
 		bool val = true;
 		if (!inSet) Reset();
 		switch (version) {
-		case API_L_V9:
-			if (save) {
-				SetPowerAction(act);
-			} else
-				for (auto nc = act->begin(); nc != act->end(); nc++)
-					val = SetAction(&(*nc));
-			break;
+		case API_L_V9: {
+			int bPos = 5;
+			vector<pair<byte, byte>> mods;
+			for (auto nc = act->begin(); nc != act->end(); nc++)
+				//val = SetAction(&(*nc));
+				if (bPos < length) {
+					byte opType = 0x81;
+					switch (nc->act[0].type) {
+					case AlienFX_A_Pulse: opType = 0x82; break;
+					case AlienFX_A_Morph: opType = 0x83; break;
+					case AlienFX_A_Breathing: opType = 0x87; break;
+					case AlienFX_A_Spectrum: opType = 0x88; break;
+					case AlienFX_A_Rainbow: opType = 0x80; break; // DEBUG, check for OFF
+					}
+					mods.insert(mods.end(), { {bPos,nc->index},{bPos +1,opType},{bPos +2,nc->act[0].tempo},
+						{ bPos + 3, 0xa5}, { bPos + 4, 0 }, {bPos + 5, 0xa},
+						{ bPos + 6, nc->act[0].r},{ bPos + 7,nc->act[0].g},{ bPos + 8,nc->act[0].b} });
+					// add second color if present
+					if (nc->act.size() > 1) {
+						mods.insert(mods.end(), {
+							{ bPos + 9,nc->act[1].r },
+							{ bPos + 10,nc->act[1].g },
+							{ bPos + 11,nc->act[1].b },
+							{ bPos + 13,2 } });
+					}
+					else
+						mods.push_back({ bPos + 13, 1 });
+					bPos += 15;
+				}
+				else {
+					// Send command and clear buffer...
+					PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,4} });
+					val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
+					mods.clear();
+					bPos = 5;
+					nc--;
+				}
+			if (bPos > 5) {
+				PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { { 2, (bPos - 5) / 15} });
+				val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
+			}
+		} break;
 		case API_L_V7:
 		{
 			if (save)
@@ -518,12 +577,13 @@ namespace AlienFX_SDK {
 			for (auto nc = act->begin(); nc != act->end(); nc++) {
 				if (bPos < length) {
 					mods.insert(mods.end(), {
-						        {bPos,nc->index + 1},
-								{bPos+1,nc->act[0].r},
-								{bPos+2,nc->act[0].g},
-								{bPos+3,nc->act[0].b}});
+								{bPos,nc->index + 1},
+								{bPos + 1,nc->act[0].r},
+								{bPos + 2,nc->act[0].g},
+								{bPos + 3,nc->act[0].b} });
 					bPos += 4;
-				} else {
+				}
+				else {
 					// Send command and clear buffer...
 					val = PrepareAndSend(COMMV5.colorSet, sizeof(COMMV5.colorSet), mods);
 					mods.clear();
@@ -715,10 +775,10 @@ namespace AlienFX_SDK {
 				break;
 			}
 		switch (version) {
-		case API_L_V9:
-			PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
-			PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
-			break;
+		//case API_L_V9:
+		//	PrepareAndSend(COMMV9.resetLow, sizeof(COMMV9.resetLow));
+		//	PrepareAndSend(COMMV9.resetHigh, sizeof(COMMV9.resetHigh));
+		//	break;
 		case API_L_V7:
 		{
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
@@ -941,8 +1001,17 @@ namespace AlienFX_SDK {
 		return false;
 	}
 
-	bool Functions::SetGlobalEffects(byte effType, byte tempo, afx_act act1, afx_act act2) {
+	bool Functions::SetGlobalEffects(byte effType, byte mode, byte tempo, afx_act act1, afx_act act2) {
 		switch (version) {
+		case API_L_V9: {
+			PrepareAndSend(COMMV9.effectReady, sizeof(COMMV9.effectReady));
+			return PrepareAndSend(COMMV9.effectSet, sizeof(COMMV9.effectSet), {
+				{3, effType},
+				{4, act1.r}, {5, act1.g}, {6, act1.b},
+				{7, act2.r}, {8, act2.g}, {9, act2.b},
+				{10, tempo}, {13, mode}, {14, 2}
+				});
+		} break;
 		case API_L_V5:
 		{
 			if (inSet)
@@ -963,7 +1032,7 @@ namespace AlienFX_SDK {
 				UpdateColors();
 			return true;
 		} break;
-		default: return true;
+		//default: return true;
 		}
 		return false;
 	}
@@ -1433,5 +1502,12 @@ namespace AlienFX_SDK {
 
 	int Functions::GetVersion() {
 		return version;
+	}
+	bool Functions::IsHaveGlobal()
+	{
+		switch (version) {
+		case 5: case 8: case 9: return true;
+		}
+		return false;
 	}
 }
