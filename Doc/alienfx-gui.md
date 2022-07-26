@@ -218,7 +218,7 @@ Both Power button and indicators can be configured in settings to stay on then t
 "Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.  
 Other assigned lights will have random colors at grid and black color for physical lights.
 
-"Light names on grid" enables/disables printing of the light name over grid button. It's useful to check all lights position.
+"Key" button provide dialog window to select current light name by pressing any keyboard key. It's also will be done automatically in case per-key RGB device active.
 
 Then you find light position at you physical device (it's highlighted), assign it to the grid - click or click-and drag at grid zone to do it.  
 Click again to remove grid sell from current light, right-click (or click-and-drag) to clear grid cell(s).  
@@ -280,7 +280,7 @@ Each profile can have settings and application for trigger it. The settings are:
 - "Dim lights" - Then profile activated, all lights will be dimmed.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
 
-"Global effects" only works for APIv5 (RGB keyboard) devices, select corresponding effect type ("Global") to enable this block.
+"Global effects" only supported for APIv5, v8, v9 (RGB keyboard devices), select corresponding effect type ("Global") to start global effect then profile activated. Please keep in mind - enabled global effects will block any other color changes for device!
 
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
 - "Keyboard" drop down will activate this profile in case corresponding key is pressed. Release the key to switch back to other profile.  
@@ -327,6 +327,10 @@ Light dimming control at bottom:
   - "Dim Power/Indicator lights" - Power Button and Indicator lights will be dimmed as well - and have full brightness otherwise (default - off).
   - "Dim lights on battery" - Dim lights if system running at battery power, decreasing energy usage. Returns to full brightness if AC connected (default - on).
 - "Dimming power" - Brightness decrease level for dimming. Values can be from 0 to 255, default is 92.
+
+Interface settings:
+- "Light names on grid" - Shows/hide light name printing at grid buttons.
+
 
 ## Keyboard shortcuts 
 
