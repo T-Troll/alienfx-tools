@@ -512,6 +512,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case PBT_APMRESUMEAUTOMATIC:
             mon = new MonHelper(fan_conf);
             fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
+            if (fan_conf->updateCheck) {
+                needUpdateFeedback = false;
+                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+            }
             break;
         case PBT_APMSUSPEND:
             // Sleep initiated.
