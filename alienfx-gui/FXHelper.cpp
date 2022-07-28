@@ -192,7 +192,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				case 1: lVal = eData.NET; cVal = data->NET; break;
 				case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
 				case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
-				case 4: lVal = eData.Batt - ccut; cVal = data->Batt - ccut; break;
+				case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
 				case 5: lVal = eData.KBD; cVal = data->KBD; break;
 				}
 
@@ -709,15 +709,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
+							if (devQ->dev_query.size()) {
+								devQ->dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
+								devQ->dev->dev->UpdateColors();
+							}
 							if (devQ->dev->dev->IsHaveGlobal() && (conf->activeProfile->effmode == 99)) {
 								DebugPrint("Global effect active!\n");
 								src->UpdateGlobalEffect(devQ->dev->dev);
 							}
-							else
-								if (devQ->dev_query.size()) {
-									devQ->dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
-									devQ->dev->dev->UpdateColors();
-								}
 							devQ->dev_query.clear();
 						}
 					}
@@ -788,18 +787,28 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 
 					// fill query....
-					int qn;
-					for (qn = 0; qn < devs_query.size(); qn++)
-						if (devs_query[qn].dev->pid == current.did) {
-							devs_query[qn].dev_query.push_back({(byte)current.lid, actions});
-								break;
-						}
-					if (qn == devs_query.size()) {
-						// create new query!
-						deviceQuery newQ{dev, {{(byte) current.lid, actions}}};
-						newQ.dev_query.reserve(dev->lights.size());
-						devs_query.push_back(newQ);
+					auto qn = find_if(devs_query.begin(), devs_query.end(),
+						[current](auto t) {
+							return t.dev->pid == current.did;
+						});
+					if (qn != devs_query.end())
+						qn->dev_query.push_back({ (byte)current.lid, actions });
+					else {
+						devs_query.push_back({ dev, {{(byte)current.lid, actions}} });
 					}
+
+					//int qn;
+					//for (qn = 0; qn < devs_query.size(); qn++)
+					//	if (devs_query[qn].dev->pid == current.did) {
+					//		devs_query[qn].dev_query.push_back({(byte)current.lid, actions});
+					//			break;
+					//	}
+					//if (qn == devs_query.size()) {
+					//	// create new query!
+					//	deviceQuery newQ{dev, {{(byte) current.lid, actions}}};
+					//	newQ.dev_query.reserve(dev->lights.size());
+					//	devs_query.push_back(newQ);
+					//}
 
 				}
 			}

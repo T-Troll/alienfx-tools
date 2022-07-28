@@ -493,8 +493,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
          } break;
         } break;
     case WM_CLOSE:
-        //EndDialog(hDlg, IDOK);
-        //Shell_NotifyIcon(NIM_DELETE, &niData);
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
@@ -505,8 +503,22 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_ENDSESSION:
         // Shutdown/restart scheduled....
         fan_conf->Save();
-        mon->Stop();
+        delete fanThread;
+        delete mon;
+        LocalFree(sch_guid);
         return 0;
+    case WM_POWERBROADCAST:
+        switch (wParam) {
+        case PBT_APMRESUMEAUTOMATIC:
+            mon = new MonHelper(fan_conf);
+            fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
+            break;
+        case PBT_APMSUSPEND:
+            // Sleep initiated.
+            delete fanThread;
+            delete mon;
+            break;
+        }
     }
     return 0;
 }

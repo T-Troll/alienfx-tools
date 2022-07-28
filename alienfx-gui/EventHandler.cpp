@@ -28,6 +28,7 @@ EventHandler::EventHandler()
 {
 	ChangePowerState();
 	StartFanMon();
+	StartEffects();
 }
 
 EventHandler::~EventHandler()
@@ -111,14 +112,13 @@ if (!newID) newID = conf->FindDefaultProfile();
 				acpi->SetPower(conf->fan_conf->lastProf->powerStage);
 				acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 			}
-			modifyProfile.unlock();
-
 			// change global effect
-			if (conf->haveGlobal) {
-				fxhl->UnblockUpdates(false);
-				fxhl->UpdateGlobalEffect();
-				fxhl->UnblockUpdates(true);
-			}
+			//if (conf->haveGlobal) {
+			//	fxhl->UnblockUpdates(false);
+			//	fxhl->UpdateGlobalEffect();
+			//	fxhl->UnblockUpdates(true);
+			//}
+			modifyProfile.unlock();
 
 			fxhl->ChangeState();
 			ChangeEffectMode();
@@ -182,6 +182,11 @@ void EventHandler::StopEffects() {
 	case 4: if (grid) {
 		delete grid; grid = NULL;
 	} break;
+	case 99: if (conf->haveGlobal) {
+		fxhl->UnblockUpdates(false);
+		fxhl->UpdateGlobalEffect();
+		fxhl->UnblockUpdates(true);
+	} break;
 	}
 	effMode = 0;
 	fxhl->Refresh(true);
@@ -202,6 +207,13 @@ void EventHandler::StartEffects() {
 			break;
 		case 4:
 			if (!grid) grid = new GridHelper();
+			break;
+		//case 99:
+		//	if (conf->haveGlobal) {
+		//		fxhl->UnblockUpdates(false);
+		//		fxhl->UpdateGlobalEffect();
+		//		fxhl->UnblockUpdates(true);
+		//	}
 		}
 	}
 }
@@ -329,11 +341,6 @@ void EventHandler::StartProfiles()
 
 		DebugPrint("Profile hooks starting.\n");
 
-		// Need to switch if already running....
-		CheckProfileWindow(GetForegroundWindow());
-
-		//SetWindowsHookExW - keyboard and shell (lang. change).
-
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 								 EVENT_SYSTEM_FOREGROUND, NULL,
 								 CForegroundProc, 0, 0,
@@ -346,7 +353,10 @@ void EventHandler::StartProfiles()
 
 		kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, KeyProc, NULL, 0);
 
-		SetForegroundWindow(GetForegroundWindow());
+		// Need to switch if already running....
+		CheckProfileWindow(GetForegroundWindow());
+
+		//SetForegroundWindow(GetForegroundWindow());
 	}
 }
 
@@ -579,8 +589,10 @@ static DWORD WINAPI CEventProc(LPVOID param)
 				}
 			}
 			//src->fxhl->maxData.PWR = max(src->fxhl->maxData.PWR,(totalPwr & 0xff) << 1 + 1);
-			while (totalPwr >= fxhl->maxData.PWR)
-				fxhl->maxData.PWR <<= 1;
+			if (totalPwr > fxhl->maxData.PWR)
+				fxhl->maxData.PWR = totalPwr;
+			//while (totalPwr >= fxhl->maxData.PWR)
+			//	fxhl->maxData.PWR <<= 1;
 		}
 
 		GlobalMemoryStatusEx(&memStat);
@@ -600,7 +612,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		// Leveling...
 		cData.Temp = min(100, max(0, cData.Temp));
 		cData.Batt = state.BatteryLifePercent > 100 ? 0 : state.BatteryLifePercent;
-		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
+		cData.HDD = (byte) (cHDDVal.longValue > 1 ? cHDDVal.longValue : 0);
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
 		cData.RAM = (byte) memStat.dwMemoryLoad;

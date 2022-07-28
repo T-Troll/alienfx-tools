@@ -137,7 +137,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
 
 	eve = new EventHandler();
-	eve->StartEffects();
+	//eve->StartEffects();
 	eve->StartProfiles();
 
 	SwitchTab(TAB_LIGHTS);
@@ -496,10 +496,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
 				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !mon) {
-					//if (MessageBox(NULL, "Fan control disabled!\nDo you want to enable it?", "Warning",
-					//	MB_YESNO | MB_ICONWARNING) == IDYES)
-						if (DetectFans())
-							eve->StartFanMon();
+					if (DetectFans())
+						eve->StartFanMon();
 					if (!mon)
 						TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
 				}
@@ -682,28 +680,25 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
-
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
 			if (fxhl->FillAllDevs(acpi)) {
-				eve->ChangeScreenState();
-				eve->ChangePowerState();
-				//conf->SetStates();
-				//eve->ChangeEffectMode();
-				//eve->StartProfiles();
+				fxhl->Start();
 			}
-			fxhl->Start();
 			eve = new EventHandler();
-			eve->StartEffects();
 			eve->StartProfiles();
-
-			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+			if (conf->updateCheck) {
+				needUpdateFeedback = false;
+				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+			}
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
 			// ac/batt change
+			DebugPrint("Power source change initiated\n");
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
+			DebugPrint("Display state change initiated\n");
 			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*) lParam;
 			if (sParams->PowerSetting == GUID_MONITOR_POWER_ON || sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE
 				|| sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS) {
@@ -714,12 +709,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// Sleep initiated.
 
 			DebugPrint("Sleep/hibernate initiated\n");
-
 			// need to restore lights if screen off (lid closed)
 			conf->stateScreen = true;
 			fxhl->ChangeState();
 			delete eve;
-			//fxhl->Refresh(2);
 			fxhl->Stop();
 			break;
 		}
@@ -746,7 +739,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		conf->fan_conf->Save();
 		delete eve;
 		fxhl->Refresh(2);
-		//fxhl->UnblockUpdates(false);
 		fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:
@@ -808,7 +800,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_CLOSE:
 		fxhl->Refresh(2);
-		//EndDialog(hDlg, IDOK);
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:

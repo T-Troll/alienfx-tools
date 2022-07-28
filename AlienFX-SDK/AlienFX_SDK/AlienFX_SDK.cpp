@@ -85,13 +85,13 @@ namespace AlienFX_SDK {
 		case API_L_V8: case API_L_V9: {
 			bool res;
 			if (size < 5) {
-				res = HidD_SetFeature(devHandle, buffer, 65);
-				Sleep(4); // Need wait for ACK
+				res = HidD_SetFeature(devHandle, buffer, length);
+				Sleep(5); // Need wait for ACK
 				return res;
 			}
 			else {
 				res = WriteFile(devHandle, buffer, length, &written, NULL);
-				Sleep(2); // Need wait for ACK
+				Sleep(3); // Need wait for ACK
 				return res;
 			}
 		}
@@ -169,7 +169,8 @@ namespace AlienFX_SDK {
 			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 			if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL)) {
 				string devicePath = deviceInterfaceDetailData->DevicePath;
-				devHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+				devHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+					OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, NULL);
 
 				if (devHandle != INVALID_HANDLE_VALUE) {
 					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
