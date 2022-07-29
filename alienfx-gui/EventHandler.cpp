@@ -45,25 +45,18 @@ void EventHandler::ChangePowerState()
 	bool sameState = true;
 	if (conf->statePower = state.ACLineStatus) {
 		// AC line
-		switch (state.BatteryFlag) {
-		case 8: // charging
+		if (state.BatteryFlag & 8)
+			// charging
 			sameState = fxhl->SetPowerMode(MODE_CHARGE);
-			break;
-		default:
+		else
 			sameState = fxhl->SetPowerMode(MODE_AC);
-			break;
-		}
 	}
 	else {
 		// Battery - check BatteryFlag for details
-		switch (state.BatteryFlag) {
-		case 1: // ok
-			sameState = fxhl->SetPowerMode(MODE_BAT);
-			break;
-		case 2: case 4: // low/critical
+		if (state.BatteryFlag & 6)
 			sameState = fxhl->SetPowerMode(MODE_LOW);
-			break;
-		}
+		else
+			sameState = fxhl->SetPowerMode(MODE_BAT);
 	}
 	if (!sameState) {
 		DebugPrint(("Power state changed to " + to_string(conf->statePower) + "\n").c_str());

@@ -97,6 +97,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (map) {
 				map->events[0].state = state;
 				UpdateMonitoringInfo(hDlg, map);
+				fxhl->Refresh();
 			}
 			else
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);

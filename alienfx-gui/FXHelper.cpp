@@ -151,6 +151,13 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				actions.push_back(grp->have_power && conf->statePower ? Iter->color.back() : Iter->color.front());
 				actions.back().type = 0;
 			}
+			if (Iter->events[0].state) {
+				// Power, just need to prepare colors
+				if (actions.empty())
+					actions.push_back(Iter->events[0].from);
+				if (!conf->statePower)
+					actions[0] = Iter->events[0].to;
+			}
 			if (Iter->events[1].state) {
 				// counter
 				if (actions.empty())
@@ -175,11 +182,14 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 				}
 				if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
 					actions.push_back(Iter->events[1].to);
-				else
+				else {
 					actions.push_back({ 0,0,0,
 						(BYTE)(actions.front().r * (1 - Iter->events[1].coeff) + Iter->events[1].to.r * Iter->events[1].coeff),
 						(BYTE)(actions.front().g * (1 - Iter->events[1].coeff) + Iter->events[1].to.g * Iter->events[1].coeff),
 						(BYTE)(actions.front().b * (1 - Iter->events[1].coeff) + Iter->events[1].to.b * Iter->events[1].coeff) });
+					if (!Iter->gauge)
+						actions.erase(actions.begin());
+				}
 			}
 			if (Iter->events[2].state) {
 				// indicator
@@ -522,40 +532,45 @@ bool FXHelper::SetPowerMode(int mode)
 
 bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 {
-	vector<AlienFX_SDK::afx_act> actions;
+	vector<AlienFX_SDK::afx_act> actions = map->color;
 
 	if (!conf->stateOn || !map)
 		return false;
 
-	if (map->color.size()) {
-		actions = map->color;
-	}
+	//if (map->color.size()) {
+	//	actions = map->color;
+	//}
 
 	if (!force && conf->enableMon && conf->GetEffect() == 1) {
-		if (map->events[1].state || map->events[2].state)
-			return false;
 		if (map->events[0].state) {
 			// use power event;
 			if (!map->fromColor)
 				actions = { map->events[0].from };
 			switch (activePowerMode) {
+			case MODE_AC:
+				break;
 			case MODE_BAT:
 				actions = { map->events[0].to };
 				break;
 			case MODE_LOW:
 				actions.resize(1);
 				actions.push_back(map->events[0].to);
-				actions.front().type = AlienFX_SDK::AlienFX_A_Pulse;
-				actions.back().type = AlienFX_SDK::AlienFX_A_Pulse;
+				actions.front().type = actions.back().type = AlienFX_SDK::AlienFX_A_Pulse;
+				actions.front().time = actions.back().time = 3;
+				actions.front().tempo = actions.back().tempo = 0x64;
 				break;
 			case MODE_CHARGE:
 				actions.resize(1);
 				actions.push_back(map->events[0].to);
-				actions.front().type = AlienFX_SDK::AlienFX_A_Morph;
-				actions.back().type = AlienFX_SDK::AlienFX_A_Morph;
+				actions.front().type = actions.back().type = AlienFX_SDK::AlienFX_A_Morph;
+				actions.front().time = actions.back().time = 3;
+				actions.front().tempo = actions.back().tempo = 0x64;
 				break;
 			}
-		}
+		} else
+			if (map->events[1].state || map->events[2].state)
+				return false;
+
 	}
 
 	if (actions.size()) {
