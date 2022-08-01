@@ -75,6 +75,12 @@ DuplicatedOutput::~DuplicatedOutput() {
 DXGI_OUTPUT_DESC DuplicatedOutput::get_desc() {
 	DXGI_OUTPUT_DESC desc;
 	m_output->GetDesc(&desc);
+	// scaling bug override
+	DEVMODEW displayMode{ sizeof(DEVMODEW) };
+	//displayMode.dmSize = sizeof(DEVMODE);
+	EnumDisplaySettingsW(desc.DeviceName, ENUM_CURRENT_SETTINGS, &displayMode);
+	desc.DesktopCoordinates.right = desc.DesktopCoordinates.left + displayMode.dmPelsWidth;
+	desc.DesktopCoordinates.bottom = desc.DesktopCoordinates.top + displayMode.dmPelsHeight;
 	return desc;
 }
 
@@ -127,8 +133,8 @@ void DuplicatedOutput::release_frame() {
 bool DuplicatedOutput::is_primary() {
 	DXGI_OUTPUT_DESC output_desc;
 	m_output->GetDesc(&output_desc);
-	MONITORINFO monitor_info;
-	monitor_info.cbSize = sizeof(MONITORINFO);
+	MONITORINFO monitor_info{ sizeof(MONITORINFO) };
+	//monitor_info.cbSize = sizeof(MONITORINFO);
 	GetMonitorInfo(output_desc.Monitor, &monitor_info);
 
 	return monitor_info.dwFlags & MONITORINFOF_PRIMARY;
@@ -206,10 +212,10 @@ void DXGIManager::gather_output_duplications() {
 				continue;
 			}
 
-				m_out_dups.push_back(DuplicatedOutput(d3d11_device,
-					device_context,
-					output,
-					duplicated_output));
+			m_out_dups.push_back(DuplicatedOutput(d3d11_device,
+				device_context,
+				output,
+				duplicated_output));
 
 			//if (m_out_dups.size() > 2)
 			//	int i = 0;
@@ -260,7 +266,7 @@ RECT DXGIManager::get_output_rect() {
 CaptureResult DXGIManager::get_output_data(BYTE** out_buf, size_t* out_buf_size) {
 	IDXGISurface1* frame_surface;
 
-	if (m_output_duplication == NULL) {
+	if (!m_output_duplication) {
 		refresh_output();
 		return CR_FAIL;
 	}

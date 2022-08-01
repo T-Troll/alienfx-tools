@@ -707,11 +707,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		case PBT_APMSUSPEND:
 			// Sleep initiated.
-
 			DebugPrint("Sleep/hibernate initiated\n");
 			// need to restore lights if screen off (lid closed)
 			conf->stateScreen = true;
 			fxhl->ChangeState();
+			conf->Save();
 			delete eve;
 			fxhl->Stop();
 			break;
