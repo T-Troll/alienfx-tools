@@ -2,9 +2,10 @@
 
 //#define NUM_DEVICES 6
 
-const BSTR commandList[2] = {
+const BSTR commandList[3] = {
 	(BSTR)L"Thermal_Information", // 0x14
-	(BSTR)L"Thermal_Control" // 0x15
+	(BSTR)L"Thermal_Control", // 0x15
+	(BSTR)L"GameShiftStatus" // 0x25
 };
 
 namespace AlienFan_SDK {
@@ -19,17 +20,17 @@ namespace AlienFan_SDK {
 			0x0, 0xb, // Get Power
 			0x1,   1, // Set Power
 			//0x13,   4, // GPU power
-			//0x25,	2, // Get G-Mode
-			//0x25,	1, // Toggle G-Mode
+			0x2,	2, // Get G-Mode
+			0x2,	1, // Toggle G-Mode
 		};
 
 	static vector<string> temp_names{
 			"CPU Internal Thermistor",
-			"GPU Internal Thermistor",
-			"Motherboard Thermistor",
-			"CPU External Thermistor",
-			"Memory Thermistor",
-			"GPU External Thermistor"
+			"GPU Internal Thermistor"//,
+			//"Motherboard Thermistor",
+			//"CPU External Thermistor",
+			//"Memory Thermistor",
+			//"GPU External Thermistor"
 	};
 
 	//static const ALIENFAN_COMMAND_CONTROL dev_c_controls

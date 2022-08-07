@@ -115,11 +115,11 @@ void CheckFanOverboost(byte num) {
 
 void Usage() {
     printf("Usage: alienfan-cli [command[=value{,value}] [command...]]\n\
-Avaliable commands: \n\
+Available commands: \n\
 rpm[=id]\t\t\tShow fan(s) RPM\n\
-persent[=id]\t\t\tShow fan(s) RPM in perecent of maximum\n\
+percent[=id]\t\t\tShow fan(s) RPM in percent of maximum\n\
 temp[=id]\t\t\tShow known temperature sensors values\n\
-unlock\t\t\t\tUnclock fan controls\n\
+unlock\t\t\t\tUnlock fan controls\n\
 getpower\t\t\tDisplay current power state\n\
 setpower=<power mode>\t\tSet CPU power to this mode\n\
 setgpu=<value>\t\t\tSet GPU power limit\n\
@@ -139,13 +139,13 @@ directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
 \tMode can be 0 or absent for set cooked value, 1 for raw value\n\
-\tBrighness for ACPI lights can only have 10 values - 1,3,4,6,7,9,10,12,13,15\n\
+\tBrightness for ACPI lights can only have 10 values - 1,3,4,6,7,9,10,12,13,15\n\
 \tAll values in \"direct\" commands should be hex, not decimal!\n");
 }
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-cli v6.2.1.1\n");
+    printf("AlienFan-Cli v7.0.0\n");
 
     bool supported = false;
 

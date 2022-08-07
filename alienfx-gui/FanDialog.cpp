@@ -284,8 +284,11 @@ void UpdateFanUI(LPVOID lpParam) {
     if (mon) {
         if (IsWindowVisible((HWND)lpParam)) {
             if (!mon->monThread) {
-                for (int i = 0; i < acpi->HowManySensors(); i++)
+                for (int i = 0; i < acpi->HowManySensors(); i++) {
                     mon->senValues[i] = acpi->GetTempValue(i);
+                    if (mon->senValues[i] > mon->maxTemps[i])
+                        mon->maxTemps[i] = mon->senValues[i];
+                }
                 for (int i = 0; i < acpi->HowManyFans(); i++)
                     mon->fanRpm[i] = acpi->GetFanRPM(i);
             }

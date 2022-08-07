@@ -161,12 +161,12 @@ namespace AlienFan_SDK {
 			IWbemClassObject* m_InParamaters = NULL;
 			// now let's check methods
 			if (m_AWCCGetObj->GetMethod(commandList[0], NULL, &m_InParamaters, nullptr) == S_OK) {
-#ifdef _TRACE_
-				printf("System information available!\n");
-#endif
 				m_InParamaters->Release();
 				// Let's get device ID...
 				systemID = CallWMIMethod({ 0, 2 }, 0);
+#ifdef _TRACE_
+				printf("System information available, ID=%x!\n", systemID);
+#endif
 				int fIndex = 0, funcID = 0;
 				// Scan for available fans...
 				while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) < 0x100 && funcID > 0 || funcID > 0x130) { // bugfix for 0x132 fan for R7
@@ -219,6 +219,38 @@ namespace AlienFan_SDK {
 				m_InParamaters->Release();
 				aDev = 0;
 			}
+			if (m_AWCCGetObj->GetMethod(commandList[2], NULL, &m_InParamaters, nullptr) == S_OK) {
+#ifdef _TRACE_
+				printf("G-Mode available!\n");
+#endif
+				m_InParamaters->Release();
+				haveGmode = true;
+			}
+			// ESIF temperature sensors
+			IWbemClassObject* m_ESIFObject = NULL;
+			if (m_WbemServices->GetObject((BSTR)L"EsifDeviceInformation", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+				m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
+				//IWbemClassObject* spInstance;
+				//ULONG uNumOfInstances = 0;
+				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+				int numESIF = 0;
+				while (uNumOfInstances) {
+					VARIANT instPath, cTemp;
+					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
+					spInstance->Get((BSTR)L"Temperature", 0, &cTemp, 0, 0);
+					spInstance->Release();
+					if (cTemp.uintVal > 0) {
+						sensors.push_back({ (short)numESIF, "ESIF sensor #" + to_string(numESIF + 1), 0, instPath.bstrVal });
+						numESIF++;
+					}
+					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+				}
+				enum_obj->Release();
+				m_ESIFObject->Release();
+#ifdef _TRACE_
+				printf("ESIF data available, %d sensors added!\n", numESIF);
+#endif
+			}
 			return true;
 		}
 		return false;
@@ -266,30 +298,20 @@ namespace AlienFan_SDK {
 		return -1;
 	}
 	int Control::GetTempValue(int TempID) {
-		// Additional temp sensor value pattern
-		//char tempValuePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._TMP";
-		//PACPI_EVAL_OUTPUT_BUFFER res = NULL;
 		if (TempID < sensors.size()) {
 			switch (sensors[TempID].type) {
 			case 1: // AWCC
-				//if (devs[aDev].commandControlled)
-					return CallWMIMethod(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
-				//else {
-				//	if (EvalAcpiMethod(acc, dev_c_controls.getTemp[TempID].c_str(), (PVOID*)&res, NULL) && res) {
-				//		int res_int = res->Argument[0].Argument;
-				//		free(res);
-				//		return res_int;
-				//	}
-				//}
+				return CallWMIMethod(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
 				break;
-			//case 0: // TZ
-			//	tempValuePattern[22] = sensors[TempID].senIndex + '0';
-			//	if (EvalAcpiMethod(acc, tempValuePattern, (PVOID*)&res, NULL) && res) {
-			//		int res_int = (res->Argument[0].Argument - 0xaac) / 0xa;
-			//		free(res);
-			//		return res_int;
-			//	}
-			//	break;
+			case 0: {// ESIF
+				IWbemClassObject* esifObject = NULL;
+				if (m_WbemServices->GetObject(sensors[TempID].instance, NULL, nullptr, &esifObject, nullptr) == S_OK) {
+					VARIANT temp;
+					esifObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);
+					esifObject->Release();
+					return temp.uintVal;
+				}
+			} break;
 			//case 2: case 3: { // tempECDV
 			//	PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
 			//	acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, sensors[TempID].senIndex);
@@ -341,19 +363,18 @@ namespace AlienFan_SDK {
 
 	int Control::SetGMode(bool state)
 	{
-		/*PACPI_EVAL_OUTPUT_BUFFER res = NULL;
-		if (!EvalAcpiMethod(acc, "\\_SB.PCI0.LPC0.EC0._Q14", (PVOID*)&res, NULL))
-			return RunMainCommand(dev_controls.setGMode, state);
-		else*/
-			return GetGMode();
+		if (haveGmode)
+			return CallWMIMethod(dev_controls.setGMode, state);
+		return -1;
 	}
 
 	int Control::GetGMode() {
 		if (GetPower() < 0)
 			return 1;
 		else
-			return -1;
-			//return RunMainCommand(dev_controls.getGMode);
+			if (haveGmode)
+				return CallWMIMethod(dev_controls.getGMode);
+		return -1;
 	}
 
 	bool Control::IsActivated() {

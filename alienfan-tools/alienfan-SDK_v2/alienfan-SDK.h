@@ -15,6 +15,7 @@ namespace AlienFan_SDK {
 		SHORT senIndex = 0;
 		string name;
 		byte type = 0; // 0 = TZ (ESIF), 1 = AWCC, 2 = ECDV1, 3 = ECDV 2
+		BSTR instance; // for ESIF sensors
 	};
 
 	struct ALIENFAN_COMMAND {
@@ -40,8 +41,8 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND getPower;
 		ALIENFAN_COMMAND setPower;
 		//ALIENFAN_COMMAND setGPUPower;
-		//ALIENFAN_COMMAND getGMode;
-		//ALIENFAN_COMMAND setGMode;
+		ALIENFAN_COMMAND getGMode;
+		ALIENFAN_COMMAND setGMode;
 	};
 
 	struct ALIENFAN_COMMAND_CONTROL {
@@ -63,7 +64,7 @@ namespace AlienFan_SDK {
 		//short cDev = -1;
 		int systemID = 0;
 		bool activated = false;
-
+		bool haveGmode = false;
 		//int ReadRamDirect(DWORD);
 		//int WriteRamDirect(DWORD, byte);
 
