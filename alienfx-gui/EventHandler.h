@@ -50,5 +50,5 @@ public:
 
 	mutex modifyProfile;
 
-	bool profileChanged = false;
+	//bool profileChanged = false;
 };

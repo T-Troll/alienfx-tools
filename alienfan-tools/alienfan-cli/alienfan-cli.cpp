@@ -5,7 +5,7 @@
 #include <combaseapi.h>
 #include <PowrProf.h>
 #include "alienfan-SDK.h"
-#include "alienfan-low.h"
+//#include "alienfan-low.h"
 #include "ConfigFan.h"
 
 #pragma comment(lib, "PowrProf.lib")
@@ -322,15 +322,15 @@ int main(int argc, char* argv[])
                             value1 = (byte)strtol(args[2].str.c_str(), NULL, 16);
                         if (args.size() > 3)
                             value2 = (byte)strtol(args[3].str.c_str(), NULL, 16);
-                        printf("Direct call result: %d\n", acpi->RunMainCommand(comm, value1, value2));
+                        printf("Direct call result: %d\n", acpi->CallWMIMethod(comm, value1, value2));
                         continue;
                     }
-                    if (command == "directgpu" && CheckArgs(command, 2, args.size())) {
-                        USHORT command = (USHORT)strtoul(args[0].str.c_str(), NULL, 16);
-                        DWORD subcommand = strtoul(args[1].str.c_str(), NULL, 16);
-                        printf("DirectGPU call result: %d\n", acpi->RunGPUCommand(command, subcommand));
-                        continue;
-                    }
+                    //if (command == "directgpu" && CheckArgs(command, 2, args.size())) {
+                    //    USHORT command = (USHORT)strtoul(args[0].str.c_str(), NULL, 16);
+                    //    DWORD subcommand = strtoul(args[1].str.c_str(), NULL, 16);
+                    //    printf("DirectGPU call result: %d\n", acpi->RunGPUCommand(command, subcommand));
+                    //    continue;
+                    //}
 
                     if (command == "resetcolor" && lights) { // Reset color system for Aurora
                         if (lights->Reset())
@@ -351,14 +351,21 @@ int main(int argc, char* argv[])
                         lights->Update();
                         continue;
                     }
-                    if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
-                        PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-                        char command[] = "\\_SB.PCI0.LPCB.EC0.DACT";
-                        PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-                        acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, (int)strtoul(args[0].str.c_str(), NULL, 16));
-                        printf("Test result %d\n", EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, NULL));
-                        printf("Data inside is %d\n", resName->Argument[0].Argument);
-                        free(resName);
+                    //if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
+                    //    PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+                    //    char command[] = "\\_SB.PCI0.LPCB.EC0.DACT";
+                    //    PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
+                    //    acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, (int)strtoul(args[0].str.c_str(), NULL, 16));
+                    //    printf("Test result %d\n", EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, NULL));
+                    //    printf("Data inside is %d\n", resName->Argument[0].Argument);
+                    //    free(resName);
+                    //    continue;
+                    //}
+                    if (command == "dump") { // dump WMI functions
+                        BSTR name;
+                        // Command dump
+                        acpi->m_AWCCGetObj->GetObjectText(0, &name);
+                        wprintf(L"Names: %s\n", name);
                         continue;
                     }
                     printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());

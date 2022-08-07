@@ -54,12 +54,13 @@ LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
-void ResetDPIScale();
+extern void ResetDPIScale();
 
-void ReloadFanView(HWND list);
-void ReloadPowerList(HWND list);
-void ReloadTempView(HWND list);
+extern void ReloadFanView(HWND list);
+extern void ReloadPowerList(HWND list);
+extern void ReloadTempView(HWND list);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern void SetCurrentGmode();
 
 extern bool fanMode;
 extern HANDLE ocStopEvent;
@@ -264,9 +265,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 pLid = ComboBox_GetCurSel(power_list);
-                int pid = (int)ComboBox_GetItemData(power_list, pLid);
-                fan_conf->lastProf->powerStage = pid;
-                acpi->SetPower(pid);
+                //int pid = (int)ComboBox_GetItemData(power_list, pLid);
+                fan_conf->lastProf->powerStage = (WORD)ComboBox_GetItemData(power_list, pLid);
+                acpi->SetPower(fan_conf->lastProf->powerStage);
                 fan_conf->Save();
             } break;
             case CBN_EDITCHANGE:
@@ -343,8 +344,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_CHECK_GMODE:
             fan_conf->lastProf->gmode = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-            if (mon->oldGmode >= 0)
-                acpi->SetGMode(fan_conf->lastProf->gmode);
+            SetCurrentGmode();
             break;
         }
     }
@@ -404,11 +404,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
-            if (mon->oldGmode >= 0) {
-                fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
-                acpi->SetGMode(fan_conf->lastProf->gmode);
-                Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
-            }
+            fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
+            SetCurrentGmode();
+            Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
             break;
         }
     } break;

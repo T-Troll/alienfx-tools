@@ -59,13 +59,6 @@ namespace AlienFX_SDK {
 
 		FillMemory(buffer, MAX_BUFFERSIZE, version == API_L_V6 ? 0xff : 0);
 
-		//if (version == API_L_V8) {
-		//	// Need to send report before any command!
-		//	buffer[0] = reportID;
-		//	buffer[1] = 0x1;
-		//	HidD_SetFeature(devHandle, buffer, length);
-		//}
-
 		memcpy(&buffer[1], command, size);
 		buffer[0] = reportID;
 
@@ -86,12 +79,17 @@ namespace AlienFX_SDK {
 			bool res;
 			if (size < 5) {
 				res = HidD_SetFeature(devHandle, buffer, length);
-				Sleep(5); // Need wait for ACK
+				//res = HidD_GetInputReport(devHandle, buffer, length);
+				Sleep(6); // Need wait for ACK
+				//if (!res)
+				//	OutputDebugString("SF fails!\n");
 				return res;
 			}
 			else {
 				res = WriteFile(devHandle, buffer, length, &written, NULL);
-				Sleep(3); // Need wait for ACK
+				Sleep(2); // Need wait for ACK
+				//if (!res)
+				//	OutputDebugString("WF fails!\n");
 				return res;
 			}
 		}
@@ -222,7 +220,7 @@ namespace AlienFX_SDK {
 										//version = 8;
 										//reportID = 5;
 										version = 9;
-										reportID = 0;// 0xe;
+										reportID = 0xe;
 										break;
 									}
 									break;
@@ -522,10 +520,11 @@ namespace AlienFX_SDK {
 		if (!inSet) Reset();
 		switch (version) {
 		case API_L_V9: {
+			if (save)
+				break;
 			int bPos = 5;
 			vector<pair<byte, byte>> mods;
 			for (auto nc = act->begin(); nc != act->end(); nc++)
-				//val = SetAction(&(*nc));
 				if (bPos < length) {
 					byte opType = 0x81;
 					switch (nc->act[0].type) {
@@ -1248,7 +1247,6 @@ namespace AlienFX_SDK {
 			if (dev->dev->GetPID() > 0) {
 				dev->dev->ToggleState(brightness, &dev->lights, power);
 				activeLights += (int)dev->lights.size();
-
 			}
 		}
 	}
@@ -1409,14 +1407,14 @@ namespace AlienFX_SDK {
 	}
 
 	void Mappings::SaveMappings() {
-		//DWORD  dwDisposition;
+
 		HKEY   hKey1, hKeyS;
 		size_t numGroups = groups.size();
 		size_t numGrids = grids.size();
 
 		// Remove all maps!
 		RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"));
-		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);// &dwDisposition);
+		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
 
 		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
 			// Saving device data..
@@ -1488,10 +1486,6 @@ namespace AlienFX_SDK {
 			return GetFlags(dev, lightid);
 		return 0;
 	}
-
-	/*std::vector<devmap> *Mappings::GetDevices() {
-		return &devices;
-	}*/
 
 	int Functions::GetPID() {
 		return pid;

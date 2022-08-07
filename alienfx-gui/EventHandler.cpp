@@ -116,7 +116,7 @@ if (!newID) newID = conf->FindDefaultProfile();
 			fxhl->ChangeState();
 			ChangeEffectMode();
 
-			profileChanged = true;
+			//profileChanged = true;
 			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
 	} else {
 		DebugPrint((string("Same profile \"") + newID->name + "\", skipping switch.\n").c_str());

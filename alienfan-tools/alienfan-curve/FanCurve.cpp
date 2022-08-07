@@ -112,7 +112,7 @@ void DrawFan()
                         Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
                     }
                     // Yellow dots
-                    if (sen && senI->sensorIndex != sen->sensorIndex) {
+                    if (sen && senI->sensorIndex != sen->sensorIndex && senI->sensorIndex < mon->senValues.size()) {
                         SetDCPenColor(hdc, RGB(255, 255, 0));
                         SetDCBrushColor(hdc, RGB(255, 255, 0));
                         SelectObject(hdc, GetStockObject(DC_PEN));
@@ -448,4 +448,12 @@ void ReloadTempView(HWND list) {
     ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
     ListView_SetColumnWidth(list, 1, cArea.right - ListView_GetColumnWidth(list, 0));
     ListView_EnsureVisible(list, rpos, false);
+}
+
+void SetCurrentGmode() {
+    if (mon->oldGmode >= 0) {
+        acpi->SetGMode(fan_conf->lastProf->gmode);
+        if (!fan_conf->lastProf->gmode)
+            acpi->SetPower(fan_conf->lastProf->powerStage);
+    }
 }

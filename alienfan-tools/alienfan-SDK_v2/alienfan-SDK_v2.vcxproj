@@ -21,10 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{41343b7c-6c9f-4ad4-9d27-050b3d76290d}</ProjectGuid>
+    <ProjectGuid>{9321A480-9118-4173-B79D-45D8253C2C47}</ProjectGuid>
     <RootNamespace>alienfanSDK</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>alienfan-SDK_V1</ProjectName>
+    <ProjectName>alienfan-SDK_V2</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -44,7 +44,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -52,7 +52,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -177,11 +177,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfan-SDK.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="alienfan-low\alienfan-low.vcxproj">
-      <Project>{cc889c0d-369a-46f0-87b2-956da96ddefd}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

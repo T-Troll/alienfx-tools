@@ -84,19 +84,20 @@ void CMonProc(LPVOID param) {
 	if (!fan_conf->lastProf->powerStage) {
 		// in manual mode only
 		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter < fan_conf->lastProf->fanControls.end(); cIter++) {
-			for (auto fIter = cIter->fans.begin(); fIter < cIter->fans.end(); fIter++) {
-				// Look for boost point for temp...
-				for (int k = 1; k < fIter->points.size(); k++)
-					if (src->senValues[cIter->sensorIndex] <= fIter->points[k].temp) {
-						int tBoost = (fIter->points[k - 1].boost +
-								((fIter->points[k].boost - fIter->points[k - 1].boost) *
-								(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-								(fIter->points[k].temp - fIter->points[k - 1].temp)) * acpi->boosts[fIter->fanIndex] / 100;
-						if (tBoost > src->boostSets[fIter->fanIndex])
-							src->boostSets[fIter->fanIndex] = tBoost;
-						break;
-					}
-			}
+			if (cIter->sensorIndex < src->senValues.size())
+				for (auto fIter = cIter->fans.begin(); fIter < cIter->fans.end(); fIter++) {
+					// Look for boost point for temp...
+					for (int k = 1; k < fIter->points.size(); k++)
+						if (src->senValues[cIter->sensorIndex] <= fIter->points[k].temp) {
+							int tBoost = (fIter->points[k - 1].boost +
+									((fIter->points[k].boost - fIter->points[k - 1].boost) *
+									(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
+									(fIter->points[k].temp - fIter->points[k - 1].temp)) * acpi->boosts[fIter->fanIndex] / 100;
+							if (tBoost > src->boostSets[fIter->fanIndex])
+								src->boostSets[fIter->fanIndex] = tBoost;
+							break;
+						}
+				}
 		}
 		// Now set if needed...
 		for (int i = 0; i < acpi->HowManyFans(); i++)

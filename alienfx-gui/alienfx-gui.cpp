@@ -27,6 +27,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
+extern void SetCurrentGmode();
+
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
@@ -483,7 +485,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			case CBN_SELCHANGE: {
 				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
-				eve->profileChanged = false;
+				//eve->profileChanged = false;
 				ReloadModeList();
 				OnSelChanged(tab_list);
 			} break;
@@ -553,13 +555,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		}
 		break;
-	case WM_ACTIVATE:
-		if (wParam & 3 && eve && eve->profileChanged) {
-			//DebugPrint(("Activated " + to_string(wParam) + "\n").c_str());
-			ReloadProfileList();
-			eve->profileChanged = false;
-		}
-		break;
+	//case WM_ACTIVATE:
+	//	if (wParam & 3 && eve && eve->profileChanged) {
+	//		//DebugPrint(("Activated " + to_string(wParam) + "\n").c_str());
+	//		ReloadProfileList();
+	//		eve->profileChanged = false;
+	//	}
+	//	break;
 	case WM_APP + 1: {
 		switch (lParam)
 		{
@@ -788,12 +790,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		case 6: // G-key for Dell G-series power switch
-			if (acpi && mon->oldGmode >= 0) {
-				conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
-				acpi->SetGMode(conf->fan_conf->lastProf->gmode);
-				if (IsWindowVisible(hDlg) && tabSel == TAB_FANS)
-					OnSelChanged(tab_list);
-			}
+			conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
+			SetCurrentGmode();
+			if (IsWindowVisible(hDlg) && tabSel == TAB_FANS)
+				OnSelChanged(tab_list);
 			break;
 		default: return false;
 		}

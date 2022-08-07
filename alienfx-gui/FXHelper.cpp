@@ -508,8 +508,9 @@ void FXHelper::Refresh(int forced)
 
 #ifdef _DEBUG
 	if (forced) {
-		DebugPrint((string("Forced Refresh initiated in mode ") + to_string(forced) + "\n").c_str());
-	}
+		DebugPrint((("Forced Refresh initiated in mode ") + to_string(forced) + "\n").c_str());
+	} else
+		DebugPrint("Refresh initiated.\n");
 #endif
 
 	for (auto it = (*conf->active_set).begin(); it < (*conf->active_set).end(); it++) {
