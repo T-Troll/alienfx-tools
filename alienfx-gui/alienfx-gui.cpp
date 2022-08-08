@@ -3,7 +3,7 @@
 #include <Dbt.h>
 #include "EventHandler.h"
 #include "common.h"
-#include "alienfan-low.h"
+//#include "alienfan-low.h"
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -65,10 +65,23 @@ bool DoStopService(bool kind) {
 		EvaluteToAdmin();
 		// Get a handle to the SCM database.
 		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
-		if (!schSCManager)
+		SC_HANDLE schService = schSCManager ? OpenService(schSCManager, "AWCCService", SERVICE_ALL_ACCESS) : NULL;
+		SERVICE_STATUS  serviceStatus;
+		bool rCode = false;
+		if (!schSCManager || !schService)
 			return false;
-		else
-			return kind ? StopService(schSCManager, "AWCCService") : DemandService(schSCManager, "AWCCService");
+		if (kind) {
+			// stop service
+			rCode = (BOOLEAN)ControlService(schService,	SERVICE_CONTROL_STOP, &serviceStatus);
+		}
+		else {
+			// start service
+			rCode = (BOOLEAN)StartService(schService, 0, NULL);
+			if (!rCode && GetLastError() == ERROR_SERVICE_ALREADY_RUNNING)
+				rCode = true;
+		}
+		CloseServiceHandle(schService);
+		return rCode;
 	}
 	return false;
 }

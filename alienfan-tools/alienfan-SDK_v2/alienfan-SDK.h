@@ -23,13 +23,13 @@ namespace AlienFan_SDK {
 		byte sub;
 	};
 
-	struct ALIENFAN_DEVICE {
-		string mainCommand;
-		string gpuCommand;
-		bool commandControlled;
-		short delta;
-		ALIENFAN_COMMAND probe;
-	};
+	//struct ALIENFAN_DEVICE {
+	//	string mainCommand;
+	//	string gpuCommand;
+	//	bool commandControlled;
+	//	short delta;
+	//	ALIENFAN_COMMAND probe;
+	//};
 
 	struct ALIENFAN_CONTROL {
 		ALIENFAN_COMMAND getPowerID;
@@ -62,7 +62,7 @@ namespace AlienFan_SDK {
 		VARIANT m_instancePath;
 		short aDev = -1;
 		//short cDev = -1;
-		int systemID = 0;
+		DWORD systemID = 0;
 		bool activated = false;
 		bool haveGmode = false;
 		//int ReadRamDirect(DWORD);

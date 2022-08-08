@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "wbemuuid.lib")
 
-#define _TRACE_
+//#define _TRACE_
 
 //typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 //
@@ -207,6 +207,9 @@ namespace AlienFan_SDK {
 						powers.push_back(funcID & 0xff);
 						fIndex++;
 					} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) && funcID > 0);
+					// Hidden power mode for Dell G-series
+					if (HIWORD(systemID) == 500)
+						powers.push_back(0xAB);
 #ifdef _TRACE_
 					printf("%d Power modes found\n", (int)powers.size());
 #endif

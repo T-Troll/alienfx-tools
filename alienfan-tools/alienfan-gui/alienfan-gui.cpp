@@ -259,6 +259,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             } break;
             }
         } break;
+        case IDOK: {
+            HWND senList = GetDlgItem(hDlg, IDC_TEMP_LIST), editC = ListView_GetEditControl(senList);
+            if (editC) {
+                RECT rect;
+                ListView_GetSubItemRect(senList, ListView_GetSelectionMark(senList), 1, LVIR_LABEL, &rect);
+                SetWindowPos(editC, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+            }
+        } break;
         case IDC_COMBO_POWER:
         {
             switch (HIWORD(wParam)) {
@@ -461,11 +469,38 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             } break;
             }
             break;
-        case IDC_TEMP_LIST:
-            switch (((NMHDR*) lParam)->code) {
+        case IDC_TEMP_LIST: {
+            HWND tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
+            switch (((NMHDR*)lParam)->code) {
+            case LVN_BEGINLABELEDIT: {
+                NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
+                HWND editC = ListView_GetEditControl(tempList);
+                Edit_SetText(editC, acpi->sensors[sItem->item.lParam].name.c_str());
+            } break;
+            case LVN_ITEMACTIVATE:
+            {
+                NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
+                if (fanThread) {
+                    delete fanThread;
+                    fanThread = NULL;
+                }
+                HWND editC = ListView_EditLabel(tempList, sItem->iItem);
+                RECT rect;
+                ListView_GetSubItemRect(tempList, sItem->iItem, 1, LVIR_LABEL, &rect);
+                SetWindowPos(editC, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+            } break;
+            case LVN_ENDLABELEDIT:
+            {
+                NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
+                if (sItem->item.pszText) {
+                    acpi->sensors[sItem->item.lParam].name = sItem->item.pszText;
+                    ListView_SetItemText(tempList, sItem->item.iItem, 1, sItem->item.pszText);
+                }
+                fanThread = new ThreadHelper(UpdateFanUI, hDlg);
+            } break;
             case LVN_ITEMCHANGED:
             {
-                NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
+                NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
                 if (lPoint->uNewState & LVIS_FOCUSED) {
                     // Select other item...
                     if (lPoint->iItem != -1) {
@@ -478,7 +513,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 }
             } break;
             }
-            break;
+        } break;
         }
         break;
     case WM_HSCROLL:

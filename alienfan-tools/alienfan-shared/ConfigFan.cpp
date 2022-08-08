@@ -138,7 +138,7 @@ void ConfigFan::Save() {
 			delete[] outdata;
 		}
 	}
-	// save boosts..
+	// save boosts...
 	for (int i = 0; i < boosts.size(); i++) {
 		byte outarray[sizeof(byte) + sizeof(USHORT)] = {0};
 		name = "Boost-" + to_string(boosts[i].fanID);
@@ -146,7 +146,7 @@ void ConfigFan::Save() {
 		*(USHORT *) (outarray + sizeof(byte)) = boosts[i].maxRPM;
 		RegSetValueEx( keyMain, name.c_str(), 0, REG_BINARY, outarray, (DWORD) sizeof(byte) + sizeof(USHORT));
 	}
-	// save powers..
+	// save powers...
 	for (auto i = powers.begin(); i != powers.end(); i++) {
 		name = "Power-" + to_string(i->first);
 		RegSetValueEx(keyPowers, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD) i->second.length());

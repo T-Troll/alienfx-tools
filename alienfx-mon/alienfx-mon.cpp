@@ -531,7 +531,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					ListView_SetItemText(senList, sItem->item.iItem, 3, sItem->item.pszText);
 				}
 				runUIUpdate = true;
-				return false;
+				//return false;
 			} break;
 			}
 		} break;
