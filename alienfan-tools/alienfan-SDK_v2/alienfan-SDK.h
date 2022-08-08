@@ -57,7 +57,7 @@ namespace AlienFan_SDK {
 
 	class Control {
 	private:
-		IWbemServices* m_WbemServices;
+		//IWbemServices* m_WbemServices;
 		IWbemLocator* m_WbemLocator;
 		VARIANT m_instancePath;
 		short aDev = -1;
@@ -69,6 +69,7 @@ namespace AlienFan_SDK {
 		//int WriteRamDirect(DWORD, byte);
 
 	public:
+		IWbemServices* m_WbemServices;
 		Control();
 		~Control();
 

@@ -64,7 +64,7 @@ void ConfigFan::Load() {
 	char name[256];
 	DWORD len = 255, lend = 0; short fid;
 	for (int vindex = 0; RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		short sid; len++;
+		short sid; len = 255;
 		if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
 			temp_block* cSensor = FindSensor(sid);
 			if (!cSensor) { // Need to add new sensor block
@@ -74,14 +74,22 @@ void ConfigFan::Load() {
 			// Now load and add fan data..
 			byte* inarray = new byte[lend];
 			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
+			len = 255;
 			fan_block cFan{ fid };
 			for (UINT i = 0; i < lend; i += 2) {
 				cFan.points.push_back({ inarray[i], inarray[i + 1] });
 			}
 			cSensor->fans.push_back(cFan);
 			delete[] inarray;
+			continue;
 		}
-		len = 255;
+		if (sscanf_s(name, "SensorName-%hd", &sid) == 1) {
+			byte* inarray = new byte[lend];
+			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
+			len = 255;
+			sensors.emplace((byte)sid, (char*)inarray);
+			delete[] inarray;
+		}
 	}
 	for (int vindex = 0; RegEnumValue(keyMain, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		if (sscanf_s(name, "Boost-%hd", &fid) == 1) { // Boost block
@@ -150,6 +158,11 @@ void ConfigFan::Save() {
 	for (auto i = powers.begin(); i != powers.end(); i++) {
 		name = "Power-" + to_string(i->first);
 		RegSetValueEx(keyPowers, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD) i->second.length());
+	}
+	// save sensors...
+	for (auto i = sensors.begin(); i != sensors.end(); i++) {
+		name = "SensorName-" + to_string(i->first);
+		RegSetValueEx(keySensors, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD)i->second.length());
 	}
 }
 

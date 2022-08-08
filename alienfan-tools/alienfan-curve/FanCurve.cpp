@@ -441,7 +441,9 @@ void ReloadTempView(HWND list) {
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        ListView_SetItemText(list, i, 1, (LPSTR)acpi->sensors[i].name.c_str());
+        auto pwr = fan_conf->sensors.find(i);
+        name = pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[i].name;
+        ListView_SetItemText(list, i, 1, (LPSTR)name.c_str());
     }
     RECT cArea;
     GetClientRect(list, &cArea);

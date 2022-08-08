@@ -93,18 +93,22 @@ bool DetectFans() {
 	}
 	acpi = new AlienFan_SDK::Control();
 	bool isProbe = false;
-	if (acpi->IsActivated())
+	//if (acpi->IsActivated())
 		if (isProbe = acpi->Probe())
 			conf->fan_conf->SetBoosts(acpi);
-		else
+		else {
 			ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
-	else
-		ShowNotification(&conf->niData, "Error", "Fan control start failure, disabling fan control!", false);
-	if (!isProbe) {
-		delete acpi;
-		acpi = NULL;
-		conf->fanControl = false;
-	}
+			delete acpi;
+			acpi = NULL;
+			conf->fanControl = false;
+		}
+	//else
+	//	ShowNotification(&conf->niData, "Error", "Fan control start failure, disabling fan control!", false);
+	//if (!isProbe) {
+	//	delete acpi;
+	//	acpi = NULL;
+	//	conf->fanControl = false;
+	//}
 	return isProbe;
 }
 

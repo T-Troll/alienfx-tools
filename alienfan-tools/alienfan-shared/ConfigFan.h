@@ -52,6 +52,7 @@ public:
 
 	vector<fan_overboost> boosts;
 	map<byte, string> powers;
+	map<byte, string> sensors;
 
 	ConfigFan();
 	~ConfigFan();

@@ -244,7 +244,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_BEGINLABELEDIT: {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 HWND editC = ListView_GetEditControl(tempList);
-                Edit_SetText(editC, acpi->sensors[sItem->item.lParam].name.c_str());
+                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.lParam].name).c_str());
             } break;
             case LVN_ITEMACTIVATE:
             {
@@ -262,7 +263,11 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 if (sItem->item.pszText) {
-                    acpi->sensors[sItem->item.lParam].name = sItem->item.pszText;
+                    auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                    if (pwr == fan_conf->sensors.end())
+                        fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);
+                    else
+                        pwr->second = sItem->item.pszText;
                     ListView_SetItemText(tempList, sItem->item.iItem, 1, sItem->item.pszText);
                 }
                 fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg);

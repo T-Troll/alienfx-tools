@@ -132,15 +132,17 @@ gmode\t\t\t\tShow G-mode state\n\
 resetcolor\t\t\tReset color system\n\
 setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
 setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
-direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
-directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 \tPower mode can be in 0..N - according to power states detected\n\
 \tPerformance boost can be in 0..4 - disabled, enabled, aggressive, efficient, efficient aggressive\n\
 \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
 \tMode can be 0 or absent for set cooked value, 1 for raw value\n\
-\tBrightness for ACPI lights can only have 10 values - 1,3,4,6,7,9,10,12,13,15\n\
-\tAll values in \"direct\" commands should be hex, not decimal!\n");
+\tBrightness for ACPI lights can only have 10 values - 1,3,4,6,7,9,10,12,13,15\n");
+// direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
+// directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
+//\n\
+//\tAll values in \"direct\" commands should be hex, not decimal!
+
 }
 
 int main(int argc, char* argv[])
@@ -151,7 +153,7 @@ int main(int argc, char* argv[])
 
     AlienFan_SDK::Lights* lights = NULL;
 
-    if (acpi->IsActivated()) {
+    //if (acpi->IsActivated()) {
 
         if (supported = acpi->Probe()) {
             if (!(lights = new AlienFan_SDK::Lights(acpi))->IsActivated()) {
@@ -351,16 +353,6 @@ int main(int argc, char* argv[])
                         lights->Update();
                         continue;
                     }
-                    //if (command == "test" && CheckArgs(command, 1, args.size())) { // pseudo block for test modules
-                    //    PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-                    //    char command[] = "\\_SB.PCI0.LPCB.EC0.DACT";
-                    //    PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-                    //    acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX)PutIntArg(NULL, (int)strtoul(args[0].str.c_str(), NULL, 16));
-                    //    printf("Test result %d\n", EvalAcpiMethod(acpi->GetHandle(), command, (PVOID*)&resName, NULL));
-                    //    printf("Data inside is %d\n", resName->Argument[0].Argument);
-                    //    free(resName);
-                    //    continue;
-                    //}
                     if (command == "dump") { // dump WMI functions
                         BSTR name;
                         // Command dump
@@ -368,6 +360,17 @@ int main(int argc, char* argv[])
                         wprintf(L"Names: %s\n", name);
                         continue;
                     }
+                    //if (command == "test") { // dump WMI functions
+                    //    // ESIF temperature sensors
+                    //    IWbemClassObject* m_ESIFObject = NULL;
+                    //    if (acpi->m_WbemServices->GetObject((BSTR)L"EsifDeviceInformation", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+                    //        BSTR name;
+                    //        // Command dump
+                    //        m_ESIFObject->GetObjectText(0, &name);
+                    //        wprintf(L"Names: %s\n", name);
+                    //    }
+                    //    continue;
+                    //}
                     printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
                 }
             }
@@ -375,9 +378,9 @@ int main(int argc, char* argv[])
 
         delete lights;
 
-    } else {
-        printf("System configuration issue - see readme.md for details!\n");
-    }
+    //} else {
+    //    printf("System configuration issue - see readme.md for details!\n");
+    //}
 
     delete fan_conf;
     delete acpi;

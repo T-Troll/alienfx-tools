@@ -94,7 +94,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     Shell_NotifyIcon(NIM_ADD, niData);
 
     acpi = new AlienFan_SDK::Control();
-    if (acpi->IsActivated())
+    //if (acpi->IsActivated())
         if (acpi->Probe()) {
             Shell_NotifyIcon(NIM_DELETE, niData);
             fan_conf->SetBoosts(acpi);
@@ -123,11 +123,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             delete mon;
         }
         else {
-            ShowNotification(niData, "Error", "Compatible hardware not found, terminating!", false);
+            ShowNotification(niData, "Error", "Compatible hardware not found!", false);
         }
-    else {
-        ShowNotification(niData, "Error", "Fan control start failure, terminating!", false);
-    }
+    //else {
+    //    ShowNotification(niData, "Error", "Fan control start failure, terminating!", false);
+    //}
     if (!mon) {
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
         Sleep(5000);
@@ -475,7 +475,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_BEGINLABELEDIT: {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 HWND editC = ListView_GetEditControl(tempList);
-                Edit_SetText(editC, acpi->sensors[sItem->item.lParam].name.c_str());
+                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.lParam].name).c_str());
             } break;
             case LVN_ITEMACTIVATE:
             {
@@ -493,7 +494,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 if (sItem->item.pszText) {
-                    acpi->sensors[sItem->item.lParam].name = sItem->item.pszText;
+                    auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                    if (pwr == fan_conf->sensors.end())
+                        fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);
+                    else
+                        pwr->second = sItem->item.pszText;
                     ListView_SetItemText(tempList, sItem->item.iItem, 1, sItem->item.pszText);
                 }
                 fanThread = new ThreadHelper(UpdateFanUI, hDlg);
