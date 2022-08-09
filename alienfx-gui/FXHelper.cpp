@@ -443,20 +443,15 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 //	}
 //}
 
-void FXHelper::UnblockUpdates(bool newState, bool lock) {
-	if (lock)
-		updateLock = !newState;
-	if (!updateLock || lock) {
-		unblockUpdates = newState;
-		if (!unblockUpdates) {
-			//SetEvent(haveNewElement);
-			//while (updateThread && WaitForSingleObject(queryEmpty, 60000) == WAIT_TIMEOUT);
-			while (updateThread && lightQuery.size())
-				Sleep(100);
-			DebugPrint("Lights pause on!\n");
-		} else {
-			DebugPrint("Lights pause off!\n");
-		}
+void FXHelper::UnblockUpdates(bool newState) {
+
+	unblockUpdates = newState;
+	if (!unblockUpdates) {
+		while (updateThread && lightQuery.size())
+			Sleep(100);
+		DebugPrint("Lights pause on!\n");
+	} else {
+		DebugPrint("Lights pause off!\n");
 	}
 }
 
@@ -464,6 +459,7 @@ size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->SetStates();
 	conf->haveGlobal = false;
 	numActiveDevs = 0;
+	Stop();
 	conf->afx_dev.AlienFXAssignDevices(/*acc ? acc->GetHandle() : */NULL, conf->finalBrightness, conf->finalPBState);
 	// global effects check
 	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
@@ -472,6 +468,8 @@ size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 			if (i->dev->IsHaveGlobal())
 				conf->haveGlobal = true;
 		}
+	if (numActiveDevs)
+		Start();
 	return numActiveDevs;
 }
 
@@ -481,9 +479,8 @@ void FXHelper::Start() {
 
 		stopQuery = CreateEvent(NULL, true, false, NULL);
 		haveNewElement = CreateEvent(NULL, false, false, NULL);
-		//queryEmpty = CreateEvent(NULL, true, true, NULL);
 		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
-		UnblockUpdates(true, true);
+		//UnblockUpdates(true, true);
 	}
 }
 
@@ -491,7 +488,7 @@ void FXHelper::Stop() {
 	if (updateThread) {
 		DebugPrint("Light updates stopped.\n");
 
-		UnblockUpdates(false, true);
+		//UnblockUpdates(false, true);
 		SetEvent(stopQuery);
 		WaitForSingleObject(updateThread, 60000);
 		lightQuery.clear();

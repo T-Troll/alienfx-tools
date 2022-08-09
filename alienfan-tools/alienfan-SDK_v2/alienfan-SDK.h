@@ -9,6 +9,12 @@ using namespace std;
 
 #define byte BYTE
 
+#define DEV_FLAG_AVCC		1
+#define DEV_FLAG_INFO		2
+#define DEV_FLAG_CONTROL	4
+#define DEV_FLAG_GMODE		8
+#define DEV_FLAG_ESIF		0x10
+
 namespace AlienFan_SDK {
 
 	struct ALIENFAN_SEN_INFO {
@@ -45,31 +51,28 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND setGMode;
 	};
 
-	struct ALIENFAN_COMMAND_CONTROL {
-		short unlock;
-		string readCom;
-		string writeCom;
-		byte numtemps;
-		byte numfans;
-		vector<string> getTemp;
-		vector<short> fanID;
-	};
+	//struct ALIENFAN_COMMAND_CONTROL {
+	//	short unlock;
+	//	string readCom;
+	//	string writeCom;
+	//	byte numtemps;
+	//	byte numfans;
+	//	vector<string> getTemp;
+	//	vector<short> fanID;
+	//};
 
 	class Control {
 	private:
-		//IWbemServices* m_WbemServices;
 		IWbemLocator* m_WbemLocator;
 		VARIANT m_instancePath;
-		short aDev = -1;
-		//short cDev = -1;
+		byte devFlags = 0;
 		DWORD systemID = 0;
-		bool activated = false;
-		bool haveGmode = false;
+		//bool haveGmode = false;
 		//int ReadRamDirect(DWORD);
 		//int WriteRamDirect(DWORD, byte);
 
 	public:
-		IWbemServices* m_WbemServices;
+		IWbemServices* m_WbemServices = NULL;
 		Control();
 		~Control();
 
@@ -128,7 +131,7 @@ namespace AlienFan_SDK {
 		HANDLE GetHandle();
 
 		// True if driver activated and ready, false if not
-		bool IsActivated();
+		//bool IsActivated();
 
 		// Return number of fans into fans[] detected at Probe()
 		int HowManyFans();
@@ -139,9 +142,13 @@ namespace AlienFan_SDK {
 		// Return number of temperature sensors into sensors[] detected at Probe()
 		int HowManySensors();
 
-		// Return internal module version
-		int GetVersion();
+		// Return current device capability
+		inline byte GetDeviceFlags() { return devFlags; };
 
+		// Return current device ID
+		inline DWORD GetSystemID() { return systemID; };
+
+		// Call custom Alienware method trough WMI
 		int CallWMIMethod(ALIENFAN_COMMAND com, byte arg1 = 0, byte arg2 = 0);
 
 		//// Call ACPI system control method with given parameters - see ALIENFAN_DEVICE for details
@@ -164,8 +171,8 @@ namespace AlienFan_SDK {
 
 	class Lights {
 	private:
-		Control *acpi = NULL;
-		bool inCommand = false;
+		//Control *acpi = NULL;
+		//bool inCommand = false;
 		bool activated = false;
 	public:
 		Lights(Control *ac);

@@ -464,7 +464,7 @@ namespace AlienFan_SDK {
 	int Control::HowManySensors() {
 		return (int)sensors.size();
 	}
-	int Control::GetVersion() {
+	int Control::GetDeviceFlags() {
 		return aDev + 1;
 	}
 	Lights::Lights(Control *ac) {

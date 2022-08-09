@@ -138,7 +138,7 @@ namespace AlienFan_SDK {
 		int HowManySensors();
 
 		// Return internal module version
-		int GetVersion();
+		int GetDeviceFlags();
 
 		// Call ACPI system control method with given parameters - see ALIENFAN_DEVICE for details
 		// Result: reply from the driver or error

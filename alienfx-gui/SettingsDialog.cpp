@@ -139,9 +139,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (DetectFans()) {
 					eve->StartFanMon();
 					// check for ACPI lights
-					fxhl->UnblockUpdates(false);
 					fxhl->FillAllDevs(acpi);
-					fxhl->UnblockUpdates(true);
 				} else
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 			} else {
@@ -150,9 +148,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					eve->StopFanMon();
 					delete acpi;
 					acpi = NULL;
-					fxhl->UnblockUpdates(false);
 					fxhl->FillAllDevs(NULL);
-					fxhl->UnblockUpdates(true);
 				}
 			}
 			break;

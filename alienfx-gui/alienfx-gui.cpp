@@ -92,24 +92,15 @@ bool DetectFans() {
 		EvaluteToAdmin();
 	}
 	acpi = new AlienFan_SDK::Control();
-	bool isProbe = false;
-	//if (acpi->IsActivated())
-		if (isProbe = acpi->Probe())
-			conf->fan_conf->SetBoosts(acpi);
-		else {
-			ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
-			delete acpi;
-			acpi = NULL;
-			conf->fanControl = false;
-		}
-	//else
-	//	ShowNotification(&conf->niData, "Error", "Fan control start failure, disabling fan control!", false);
-	//if (!isProbe) {
-	//	delete acpi;
-	//	acpi = NULL;
-	//	conf->fanControl = false;
-	//}
-	return isProbe;
+	if (acpi->Probe())
+		conf->fan_conf->SetBoosts(acpi);
+	else {
+		ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
+		delete acpi;
+		acpi = NULL;
+		conf->fanControl = false;
+	}
+	return conf->fanControl;
 }
 
 void SwitchTab(int);
@@ -150,14 +141,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 
 	if (conf->fanControl) {
-		conf->fanControl = DetectFans();
+		DetectFans();
 	}
 
-	if (!fxhl->FillAllDevs(acpi) && !conf->fanControl)
+	if (!fxhl->FillAllDevs(acpi))
 		ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
 
 	eve = new EventHandler();
-	//eve->StartEffects();
 	eve->StartProfiles();
 
 	SwitchTab(TAB_LIGHTS);
@@ -702,9 +692,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
-			if (fxhl->FillAllDevs(acpi)) {
-				fxhl->Start();
-			}
+			fxhl->FillAllDevs(acpi);
 			eve = new EventHandler();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -742,9 +730,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			vector<pair<WORD, WORD>> devs = conf->afx_dev.AlienFXEnumDevices();
 			if (devs.size() != fxhl->numActiveDevs) {
 				// Device added or removed, need to rescan devices...
-				fxhl->Stop();
 				fxhl->FillAllDevs(acpi);
-				fxhl->Start();
 			}
 		}
 		break;

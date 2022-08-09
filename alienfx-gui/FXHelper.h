@@ -77,7 +77,7 @@ public:
 	//void Flush();
 	void ChangeState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
-	void UnblockUpdates(bool newState, bool lock = false);
+	void UnblockUpdates(bool newState);
 
 	//ConfigHandler* GetConfig() { return config; };
 };

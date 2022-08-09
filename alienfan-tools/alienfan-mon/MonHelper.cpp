@@ -33,9 +33,10 @@ void MonHelper::Start() {
 		if ((oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage)
 			acpi->SetPower(fan_conf->lastProf->powerStage);
 		acpi->SetGPU(fan_conf->lastProf->GPUPower);
-		oldGmode = acpi->GetGMode();
-		if (oldGmode >= 0 && oldGmode != fan_conf->lastProf->gmode)
-			acpi->SetGMode(fan_conf->lastProf->gmode);
+		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+			if ((oldGmode = acpi->GetGMode()) != fan_conf->lastProf->gmode)
+				acpi->SetGMode(fan_conf->lastProf->gmode);
+		}
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
@@ -50,7 +51,7 @@ void MonHelper::Stop() {
 #endif
 		delete monThread;
 		monThread = NULL;
-		if (oldGmode >= 0 && oldGmode != fan_conf->lastProf->gmode)
+		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && oldGmode != fan_conf->lastProf->gmode)
 			acpi->SetGMode(oldGmode);
 		if (oldPower != fan_conf->lastProf->powerStage)
 			acpi->SetPower(oldPower);

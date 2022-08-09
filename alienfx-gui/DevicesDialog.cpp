@@ -383,7 +383,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
-		fxhl->UnblockUpdates(false, true);
+		fxhl->Stop();
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		if (conf->afx_dev.fxdevs.size() > 0) {
@@ -684,9 +684,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 	{
-		fxhl->UnblockUpdates(true, true);
-		fxhl->Refresh();
+		fxhl->Start();
 		conf->SortAllGauge();
+		fxhl->Refresh();
 		dDlg = NULL;
 	} break;
 	default: return false;

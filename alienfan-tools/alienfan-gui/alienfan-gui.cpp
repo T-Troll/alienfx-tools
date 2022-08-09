@@ -94,47 +94,42 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     Shell_NotifyIcon(NIM_ADD, niData);
 
     acpi = new AlienFan_SDK::Control();
-    //if (acpi->IsActivated())
-        if (acpi->Probe()) {
-            Shell_NotifyIcon(NIM_DELETE, niData);
-            fan_conf->SetBoosts(acpi);
 
-            mon = new MonHelper(fan_conf);
+    if (acpi->Probe()) {
+        Shell_NotifyIcon(NIM_DELETE, niData);
+        fan_conf->SetBoosts(acpi);
 
-            // Perform application initialization:
+        mon = new MonHelper(fan_conf);
 
-            if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL))) {
-                return FALSE;
-            }
-
-            //power mode hotkeys
-            for (int i = 0; i < 6; i++)
-                RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-            RegisterHotKey(mDlg, 6, 0, VK_F17);
-
-            HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
-
-            // Main message loop:
-            while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-
-            delete mon;
+        if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL))) {
+            return FALSE;
         }
-        else {
-            ShowNotification(niData, "Error", "Compatible hardware not found!", false);
+
+        //power mode hotkeys
+        for (int i = 0; i < 6; i++)
+            RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
+
+        HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
+
+        // Main message loop:
+        while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
-    //else {
-    //    ShowNotification(niData, "Error", "Fan control start failure, terminating!", false);
-    //}
-    if (!mon) {
+
+        delete mon;
+    }
+    else {
+        ShowNotification(niData, "Error", "Compatible hardware not found!", false);
+    }
+
+    if (!acpi->GetDeviceFlags()) {
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
         Sleep(5000);
     }
     Shell_NotifyIcon(NIM_DELETE, niData);
     delete acpi;
-    fan_conf->Save();
     delete fan_conf;
 
     return 0;
@@ -213,11 +208,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ShowWindow(fanWindow, SW_SHOWNA);
         }
 
-        fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
-
         ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
         ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
         ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
+
+        fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
         if (mon->oldGmode >= 0)
             Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);

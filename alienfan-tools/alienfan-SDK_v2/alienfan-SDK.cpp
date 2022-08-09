@@ -1,5 +1,5 @@
 // alienfan-SDK.cpp : Defines the functions for the static library.
-//
+#define WIN32_LEAN_AND_MEAN
 
 #include "alienfan-SDK.h"
 #include "alienfan-controls.h"
@@ -33,17 +33,16 @@ namespace AlienFan_SDK {
 			nullptr);
 
 		CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
-		if (m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices) == S_OK) {
-			activated = true;
-		}
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
 		m_WbemLocator->Release();
 	}
+
 	Control::~Control() {
-		sensors.clear();
-		fans.clear();
-		powers.clear();
-		boosts.clear();
-		maxrpm.clear();
+		//sensors.clear();
+		//fans.clear();
+		//powers.clear();
+		//boosts.clear();
+		//maxrpm.clear();
 		m_WbemServices->Release();
 	}
 
@@ -145,7 +144,7 @@ namespace AlienFan_SDK {
 	}*/
 
 	bool Control::Probe() {
-		if (activated && m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK) {
+		if (m_WbemServices && m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK) {
 #ifdef _TRACE_
 			printf("AWCC section detected!\n");
 #endif
@@ -159,11 +158,13 @@ namespace AlienFan_SDK {
 			spInstance->Release();
 			enum_obj->Release();
 			IWbemClassObject* m_InParamaters = NULL;
+			devFlags |= DEV_FLAG_AVCC;
 			// now let's check methods
 			if (m_AWCCGetObj->GetMethod(commandList[0], NULL, &m_InParamaters, nullptr) == S_OK) {
 				m_InParamaters->Release();
 				// Let's get device ID...
 				systemID = CallWMIMethod({ 0, 2 }, 0);
+				devFlags |= DEV_FLAG_INFO;
 #ifdef _TRACE_
 				printf("System information available, ID=%x!\n", systemID);
 #endif
@@ -220,14 +221,14 @@ namespace AlienFan_SDK {
 				printf("Fan control available!\n");
 #endif
 				m_InParamaters->Release();
-				aDev = 0;
+				devFlags |= DEV_FLAG_CONTROL;
 			}
 			if (m_AWCCGetObj->GetMethod(commandList[2], NULL, &m_InParamaters, nullptr) == S_OK) {
 #ifdef _TRACE_
 				printf("G-Mode available!\n");
 #endif
 				m_InParamaters->Release();
-				haveGmode = true;
+				devFlags |= DEV_FLAG_GMODE;
 			}
 			// ESIF temperature sensors
 			IWbemClassObject* m_ESIFObject = NULL;
@@ -366,7 +367,7 @@ namespace AlienFan_SDK {
 
 	int Control::SetGMode(bool state)
 	{
-		if (haveGmode)
+		if (devFlags & DEV_FLAG_GMODE)
 			return CallWMIMethod(dev_controls.setGMode, state);
 		return -1;
 	}
@@ -375,14 +376,11 @@ namespace AlienFan_SDK {
 		if (GetPower() < 0)
 			return 1;
 		else
-			if (haveGmode)
+			if (devFlags & DEV_FLAG_GMODE)
 				return CallWMIMethod(dev_controls.getGMode);
 		return -1;
 	}
 
-	bool Control::IsActivated() {
-		return activated;
-	}
 	int Control::HowManyFans() {
 		return (int)fans.size();
 	}
@@ -392,14 +390,12 @@ namespace AlienFan_SDK {
 	int Control::HowManySensors() {
 		return (int)sensors.size();
 	}
-	int Control::GetVersion() {
-		return aDev + 1;
-	}
+
 	Lights::Lights(Control *ac) {
-		acpi = ac;
+		//acpi = ac;
 		// Probe lights...
-		if (Prepare())
-			activated = true;
+		//if (Prepare())
+		//	activated = true;
 	}
 	bool Lights::Reset() {
 		//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;

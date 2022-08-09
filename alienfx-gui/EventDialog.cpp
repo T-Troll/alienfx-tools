@@ -34,6 +34,8 @@ void UpdateMonitoringInfo(HWND hDlg, groupset *map) {
 
 	for (int bId = 0; bId < 6; bId++)
 		RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_CM1 + bId), NULL, NULL, RDW_INVALIDATE);
+
+	RedrawGridButtonZone(NULL, true);
 }
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

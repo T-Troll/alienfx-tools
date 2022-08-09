@@ -175,11 +175,11 @@ void EventHandler::StopEffects() {
 	case 4: if (grid) {
 		delete grid; grid = NULL;
 	} break;
-	case 99: if (conf->haveGlobal) {
-		fxhl->UnblockUpdates(false);
-		fxhl->UpdateGlobalEffect();
-		fxhl->UnblockUpdates(true);
-	} break;
+	//case 99: if (conf->haveGlobal) {
+	//	fxhl->UnblockUpdates(false);
+	//	fxhl->UpdateGlobalEffect();
+	//	fxhl->UnblockUpdates(true);
+	//} break;
 	}
 	effMode = 0;
 	fxhl->Refresh(true);
@@ -605,7 +605,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		// Leveling...
 		cData.Temp = min(100, max(0, cData.Temp));
 		cData.Batt = state.BatteryLifePercent > 100 ? 0 : state.BatteryLifePercent;
-		cData.HDD = (byte) (cHDDVal.longValue > 1 ? cHDDVal.longValue : 0);
+		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
 		cData.RAM = (byte) memStat.dwMemoryLoad;
