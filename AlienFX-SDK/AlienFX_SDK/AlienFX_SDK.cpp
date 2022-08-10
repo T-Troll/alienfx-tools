@@ -1,5 +1,9 @@
-#define WIN32_LEAN_AND_MEAN
+//#define WIN32_LEAN_AND_MEAN
 #include "AlienFX_SDK.h"
+extern "C" {
+#include <hidclass.h>
+#include <hidsdi.h>
+}
 #ifndef NOACPILIGHTS
 #include "../../alienfan-tools/alienfan-SDK/alienfan-SDK.h"
 #else
@@ -7,10 +11,6 @@
 #pragma comment(lib,"setupapi.lib")
 #endif
 #include <memory>
-extern "C" {
-#include <hidclass.h>
-#include <hidsdi.h>
-}
 
 #pragma comment(lib, "hid.lib")
 
@@ -37,8 +37,8 @@ namespace AlienFX_SDK {
 		return mods;
 	}
 
-	bool Functions::SetAcpiColor(byte mask, Colorcode c) {
 #ifndef NOACPILIGHTS
+	bool Functions::SetAcpiColor(byte mask, Colorcode c) {
 		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 		PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, c.r);
@@ -49,9 +49,9 @@ namespace AlienFX_SDK {
 			free(resName);
 			return true;
 		}
-#endif
 		return false;
 	}
+#endif
 
 	bool Functions::PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> *mods) {
 		byte buffer[MAX_BUFFERSIZE];
@@ -67,9 +67,11 @@ namespace AlienFX_SDK {
 
 		switch (version) {
 		case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V4:
-			return HidD_SetOutputReport(devHandle, buffer, length);
+			return DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
+			//return HidD_SetOutputReport(devHandle, buffer, length);
 		case API_L_V5:
-			return HidD_SetFeature(devHandle, buffer, length);
+			return DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
+			//return HidD_SetFeature(devHandle, buffer, length);
 		case API_L_V6:
 			return WriteFile(devHandle, buffer, length, &written, NULL);
 		case API_L_V7:
@@ -78,8 +80,8 @@ namespace AlienFX_SDK {
 		case API_L_V8: case API_L_V9: {
 			bool res;
 			if (size < 5) {
-				res = HidD_SetFeature(devHandle, buffer, length);
-				//res = HidD_GetInputReport(devHandle, buffer, length);
+				//res = HidD_SetFeature(devHandle, buffer, length);
+				res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
 				Sleep(6); // Need wait for ACK
 				//if (!res)
 				//	OutputDebugString("SF fails!\n");
@@ -415,10 +417,12 @@ namespace AlienFX_SDK {
 		{
 			val = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(1<<index, 3, c));
 		} break;
+#ifndef NOACPILIGHTS
 		case API_L_ACPI:
 		{
 			val = SetAcpiColor(1 << index, c);
 		} break;
+#endif
 		default: return false;
 		}
 		if (loop) Loop();
@@ -499,12 +503,14 @@ namespace AlienFX_SDK {
 			val = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(fmask, 3, c));
 			Loop();
 		} break;
+#ifndef NOACPILIGHTS
 		case API_L_ACPI:
 		{
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
 			val = SetAcpiColor((byte)fmask, c);
 		} break;
+#endif
 		default:
 		{
 			for (int nc = 0; nc < lights->size(); nc++)
@@ -1120,10 +1126,10 @@ namespace AlienFX_SDK {
 				return AlienfxWaitForReady() == ALIENFX_V2_READY;
 			}
 			return 0;
-		case API_L_ACPI:
+		default:// API_L_ACPI:
 			return !inSet;
 		}
-		return 1;
+		//return 1;
 	}
 
 	bool Functions::AlienFXClose() {

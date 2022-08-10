@@ -831,6 +831,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		//	DebugPrint((string("Query empty, delay decreased to ") + to_string(conf->monDelay) + " ms!\n").c_str());
 		//}
 		conf->monDelay = 200;
+		//DebugPrint("Query empty, delay reset\n");
 		//SetEvent(src->queryEmpty);
 	}
 	return 0;

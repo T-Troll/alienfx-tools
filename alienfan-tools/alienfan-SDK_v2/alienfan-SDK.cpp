@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "wbemuuid.lib")
 
-//#define _TRACE_
+#define _TRACE_
 
 //typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 //
@@ -21,7 +21,7 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 		printf("WMI activation started.\n");
 #endif
-		CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);// COINIT_APARTMENTTHREADED);
+		CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 		CoInitializeSecurity(nullptr,
 			-1,
 			nullptr,
@@ -86,16 +86,13 @@ namespace AlienFan_SDK {
 	int Control::CallWMIMethod(ALIENFAN_COMMAND com, byte arg1, byte arg2) {
 		BYTE operand[4]{ com.sub, arg1, arg2, 0 };
 		IWbemClassObject* m_InParamaters = NULL, * m_outParameters = NULL;
-		if (m_AWCCGetObj->GetMethod(commandList[com.com], NULL, &m_InParamaters, nullptr) == S_OK) {
+		if (m_AWCCGetObj->GetMethod(commandList[com.com], NULL, &m_InParamaters, NULL) == S_OK) {
 			VARIANT parameters = { 0 }, result{ 0 };
 			parameters.vt = VT_I4;
 			parameters.uintVal = *((DWORD*)operand);
 			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
 			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
-				commandList[com.com], 0, NULL,
-				m_InParamaters,
-				&m_outParameters,
-				NULL) == S_OK && m_outParameters) {
+				commandList[com.com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
 				m_InParamaters->Release();
 				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
 				m_outParameters->Release();

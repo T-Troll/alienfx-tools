@@ -122,8 +122,10 @@ namespace AlienFX_SDK {
 		// support function for mask-based devices (v1-v3)
 		vector<pair<byte, byte>> *SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = {0});
 
+#ifndef NOACPILIGHTS
 		// Support functions for ACPI calls (v0)
 		bool SetAcpiColor(byte mask, Colorcode c);
+#endif
 
 		// Support function to send data to USB device
 		bool PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> mods);

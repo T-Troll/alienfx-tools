@@ -32,7 +32,7 @@ WSAudioIn::WSAudioIn()
 
 	dftGG = new DFT_gosu();
 
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
 	if (rate = init(conf->hap_inpType)) {
 		dftGG->setSampleRate(rate);
@@ -235,12 +235,18 @@ DWORD WINAPI resample(LPVOID lpParam)
 
 	HANDLE waitArray[2]{src->stopEvent, src->updateEvent};
 	DWORD res = 0;
+	bool phase = true;
 
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0) {
 		if (res == WAIT_OBJECT_0 + 1) {
-			src->freqs = src->dftGG->calc(src->waveD);
-			//DebugPrint("Haptics light update...\n");
-			fxhl->RefreshHaptics(src->freqs);
+			if (phase) {
+				src->freqs = src->dftGG->calc(src->waveD);
+				//DebugPrint("Haptics light update...\n");
+				fxhl->RefreshHaptics(src->freqs);
+				phase = false;
+			}
+			else
+				phase = true;
 		}
 	}
 

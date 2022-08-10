@@ -13,7 +13,6 @@ public:
 	void Stop();
 	void Restart();
 	void SetLightGridSize(int, int);
-	bool isDirty = false;
 	bool needUpdate = false;
 	byte *imgz;
 private:

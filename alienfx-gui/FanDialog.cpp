@@ -70,10 +70,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
             ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
 
-            if (mon->oldGmode >= 0)
-                Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
-            else
-                EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), false);
+            EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
+            Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
 
             // So open fan control window...
             fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);

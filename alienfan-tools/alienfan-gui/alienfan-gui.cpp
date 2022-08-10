@@ -214,10 +214,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
-        if (mon->oldGmode >= 0)
-            Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
-        else
-            EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), false);
+        EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
+        Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);

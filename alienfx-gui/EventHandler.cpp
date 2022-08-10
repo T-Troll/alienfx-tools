@@ -226,7 +226,7 @@ void EventHandler::StopFanMon() {
 profile* EventHandler::ScanTaskList() {
 	DWORD maxProcess=256, maxFileName=MAX_PATH, cbNeeded, cProcesses, cFileName = maxFileName;
 	DWORD* aProcesses = new DWORD[maxProcess];
-	TCHAR *szProcessName = new TCHAR[maxFileName]{0};
+	TCHAR *szProcessName = new TCHAR[maxFileName];
 
 	profile* newp = NULL, *finalP = NULL;
 
@@ -280,7 +280,7 @@ void EventHandler::CheckProfileWindow(HWND hwnd) {
 			FALSE, prcId);
 
 		DWORD nameSize = MAX_PATH, cFileName = nameSize;
-		TCHAR* szProcessName = new TCHAR[nameSize]{ 0 };
+		TCHAR* szProcessName = new TCHAR[nameSize];
 
 		cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
 		while (nameSize == cFileName) {

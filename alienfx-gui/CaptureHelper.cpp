@@ -21,13 +21,11 @@ HANDLE clrStopEvent, lhEvent;
 CaptureHelper::CaptureHelper()
 {
 	imgz = new byte[LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid) * 3];
-	if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED) == S_OK) {
-		dxgi_manager = new DXGIManager();
-		dxgi_manager->set_timeout(100);
+	CoInitializeEx(NULL, COINIT_MULTITHREADED);
+	dxgi_manager = new DXGIManager();
+	dxgi_manager->set_timeout(100);
 
-		SetCaptureScreen(conf->amb_mode);
-	} else
-		isDirty = true;
+	SetCaptureScreen(conf->amb_mode);
 }
 
 CaptureHelper::~CaptureHelper()

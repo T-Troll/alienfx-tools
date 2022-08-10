@@ -2,7 +2,7 @@
 
 //#define NUM_DEVICES 6
 
-const BSTR commandList[3] = {
+static const BSTR commandList[3] = {
 	(BSTR)L"Thermal_Information", // 0x14
 	(BSTR)L"Thermal_Control", // 0x15
 	(BSTR)L"GameShiftStatus" // 0x25

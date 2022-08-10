@@ -453,7 +453,7 @@ void ReloadTempView(HWND list) {
 }
 
 void SetCurrentGmode() {
-    if (mon->oldGmode >= 0) {
+    if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
         acpi->SetGMode(fan_conf->lastProf->gmode);
         if (!fan_conf->lastProf->gmode)
             acpi->SetPower(fan_conf->lastProf->powerStage);
