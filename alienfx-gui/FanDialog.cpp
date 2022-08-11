@@ -49,8 +49,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_INITDIALOG:
     {
         if (mon) {
-            //fan_conf = conf->fan_conf;
-            //mon = eve->mon;
             niData = &conf->niData;
 
             // set PerfBoost lists...
@@ -83,9 +81,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg);
             //uiFanHandle = CreateThread(NULL, 0, UpdateFanUI, hDlg, 0, NULL);
 
-            SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
-            SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
-            SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
+            //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
+            //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
+            //SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
 
             if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Question",
                 MB_YESNO | MB_ICONINFORMATION) == IDYES) {
@@ -95,8 +93,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
             fan_conf->obCheck = 1;
         }
-        //else
-        //    mon = NULL;
     } break;
     case WM_COMMAND:
     {
@@ -288,15 +284,15 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         }
         break;
-    case WM_HSCROLL:
-        switch (LOWORD(wParam)) {
-        case TB_THUMBPOSITION: case TB_ENDTRACK: {
-            if ((HWND)lParam == power_gpu) {
-                fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                acpi->SetGPU(fan_conf->lastProf->GPUPower);
-            }
-        } break;
-        } break;
+    //case WM_HSCROLL:
+    //    switch (LOWORD(wParam)) {
+    //    case TB_THUMBPOSITION: case TB_ENDTRACK: {
+    //        if ((HWND)lParam == power_gpu) {
+    //            fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+    //            acpi->SetGPU(fan_conf->lastProf->GPUPower);
+    //        }
+    //    } break;
+    //    } break;
     case WM_DESTROY:
         if (fanUIUpdate) {
             delete fanUIUpdate;

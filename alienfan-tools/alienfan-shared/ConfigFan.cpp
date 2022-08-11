@@ -55,6 +55,7 @@ void ConfigFan::Load() {
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("LastGPU", &prof.GPUPower);
 	GetReg("ObCheck", &obCheck);
+	GetReg("DisableAWCC", &awcc_disable);
 
 	// set power values
 	prof.powerStage = LOWORD(power);
@@ -124,6 +125,7 @@ void ConfigFan::Save() {
 	SetReg("LastFan", lastSelectedFan);
 	SetReg("LastGPU", prof.GPUPower);
 	SetReg("ObCheck", obCheck);
+	SetReg("DisableAWCC", awcc_disable);
 
 	if (prof.fanControls.size() > 0) {
 		// clean old data

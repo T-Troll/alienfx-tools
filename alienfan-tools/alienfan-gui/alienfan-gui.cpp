@@ -81,6 +81,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     ResetDPIScale();
 
+    fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
+
     NOTIFYICONDATA fanIcon{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
         (HICON)LoadImage(GetModuleHandle(NULL),
             MAKEINTRESOURCE(IDI_ALIENFANGUI),
@@ -129,6 +131,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         Sleep(5000);
     }
     Shell_NotifyIcon(NIM_DELETE, niData);
+
+    DoStopService(fan_conf->wasAWCC, false);
+
     delete acpi;
     delete fan_conf;
 
@@ -220,10 +225,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
 
-        SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
-        SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
-        SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
+        //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
+        //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
+        //SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
 
         if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Question",
             MB_YESNO | MB_ICONINFORMATION) == IDYES) {
@@ -318,6 +324,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             fan_conf->Save();
             if (fan_conf->updateCheck)
                 CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+        } break;
+        case IDM_DISABLEAWCC: {
+            fan_conf->awcc_disable = !fan_conf->awcc_disable;
+            CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
+            fan_conf->Save();
+            fan_conf->wasAWCC = DoStopService((bool)fan_conf->awcc_disable != fan_conf->wasAWCC, fan_conf->wasAWCC);
         } break;
         case IDC_BUT_RESET:
         {
@@ -514,15 +526,15 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         }
         break;
-    case WM_HSCROLL:
-        switch (LOWORD(wParam)) {
-        case TB_THUMBPOSITION: case TB_ENDTRACK: {
-            if ((HWND)lParam == power_gpu) {
-                fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                acpi->SetGPU(fan_conf->lastProf->GPUPower);
-            }
-         } break;
-        } break;
+    //case WM_HSCROLL:
+    //    switch (LOWORD(wParam)) {
+    //    case TB_THUMBPOSITION: case TB_ENDTRACK: {
+    //        if ((HWND)lParam == power_gpu) {
+    //            fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+    //            acpi->SetGPU(fan_conf->lastProf->GPUPower);
+    //        }
+    //     } break;
+    //    } break;
     case WM_CLOSE:
         DestroyWindow(hDlg);
         break;

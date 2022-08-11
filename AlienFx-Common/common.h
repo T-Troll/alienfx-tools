@@ -8,6 +8,7 @@
 using namespace std;
 
 void EvaluteToAdmin();
+bool DoStopService(bool flag, bool kind);
 void ResetDPIScale();
 DWORD WINAPI CUpdateCheck(LPVOID);
 bool WindowsStartSet(bool, string);

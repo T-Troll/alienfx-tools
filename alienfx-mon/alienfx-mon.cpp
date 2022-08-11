@@ -334,14 +334,18 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_ESENSORS:
 			conf->eSensors = state;
 			RemoveSensors(1, state);
-			if (state)
+			if (state) {
+				conf->Save();
 				EvaluteToAdmin();
+			}
 			break;
 		case IDC_BSENSORS:
 			conf->bSensors = state;
 			RemoveSensors(2, state);
-			if (state)
+			if (state) {
+				conf->Save();
 				EvaluteToAdmin();
+			}
 			senmon->ModifyMon();
 			CheckDlgButton(hDlg, IDC_BSENSORS, conf->bSensors);
 			break;

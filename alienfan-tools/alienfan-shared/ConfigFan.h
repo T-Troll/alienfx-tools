@@ -46,6 +46,9 @@ public:
 	DWORD startMinimized = 0;
 	DWORD updateCheck = 1;
 	DWORD obCheck = 0;
+	DWORD awcc_disable = 0;
+
+	bool wasAWCC = false;
 
 	fan_profile prof;
 	fan_profile* lastProf = &prof;

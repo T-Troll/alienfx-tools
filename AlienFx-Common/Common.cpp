@@ -25,6 +25,32 @@ void EvaluteToAdmin() {
 	}
 }
 
+bool DoStopService(bool flag, bool kind) {
+	if (flag) {
+		EvaluteToAdmin();
+
+		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
+		SC_HANDLE schService = schSCManager ? OpenService(schSCManager, "AWCCService", SERVICE_ALL_ACCESS) : NULL;
+		SERVICE_STATUS  serviceStatus;
+		bool rCode = false;
+		if (!schSCManager || !schService)
+			return false;
+		if (kind) {
+			// stop service
+			rCode = (BOOLEAN)ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus);
+		}
+		else {
+			// start service
+			/*rCode = (BOOLEAN)*/StartService(schService, 0, NULL);
+			/*if (!rCode && GetLastError() == ERROR_SERVICE_ALREADY_RUNNING)
+				rCode = true;*/
+		}
+		CloseServiceHandle(schService);
+		return rCode;
+	}
+	return false;
+}
+
 void ResetDPIScale() {
 	HKEY dpiKey;
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),

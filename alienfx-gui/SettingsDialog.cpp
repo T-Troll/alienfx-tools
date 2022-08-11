@@ -119,12 +119,20 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_AWCC:
 			conf->awcc_disable = state;
-			conf->wasAWCC = DoStopService(conf->awcc_disable);
+			conf->Save();
+			// Was, disabled = start
+			// Was, enabled = nothing
+			// Not, disabled = nothing
+			// Not, enabled = stop
+			// 1st - nothing, 2nd - function
+			conf->wasAWCC = DoStopService((bool)conf->awcc_disable != conf->wasAWCC, conf->wasAWCC);
 			break;
 		case IDC_ESIFTEMP:
-			conf->esif_temp = state;
-			if (state)
-				EvaluteToAdmin(); // Check admin rights!
+			//conf->esif_temp = state;
+			if (conf->esif_temp = state) {
+				conf->Save();
+				EvaluteToAdmin();
+			}
 			break;
 		case IDC_CHECK_EXCEPTION:
 			conf->noDesktop = state;

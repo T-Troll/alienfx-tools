@@ -275,53 +275,56 @@ void EventHandler::CheckProfileWindow(HWND hwnd) {
 	if (hwnd) {
 		DWORD prcId = 0;
 		GetWindowThreadProcessId(hwnd, &prcId);
-		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
-			PROCESS_VM_READ,
-			FALSE, prcId);
+		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
 
-		DWORD nameSize = MAX_PATH, cFileName = nameSize;
-		TCHAR* szProcessName = new TCHAR[nameSize];
+		if (hProcess) {
+			DWORD nameSize = MAX_PATH, cFileName = nameSize;
+			TCHAR* szProcessName = new TCHAR[nameSize];
 
-		cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
-		while (nameSize == cFileName) {
-			nameSize = nameSize << 1;
-			delete[] szProcessName;
-			szProcessName = new TCHAR[nameSize];
-			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL/*hMod*/, szProcessName, nameSize);
-		}
-		CloseHandle(hProcess);
-		PathStripPath(szProcessName);
-
-		DebugPrint((string("Foreground switched to ") + szProcessName + "\n").c_str());
-
-		string pName = szProcessName;
-
-		profile* newp = conf->FindProfileByApp(pName, true);
-		conf->foregroundProfile = newp ? newp : NULL;
-
-		if (newp || !conf->noDesktop || (pName != "ShellExperienceHost.exe"
-			//&& pName != "alienfx-gui.exe"
-			&& pName != "explorer.exe"
-			&& pName != "SearchApp.exe"
-#ifdef _DEBUG
-			&& pName != "devenv.exe"
-#endif
-			)) {
-
-			if (!newp) {
-				SwitchActiveProfile(ScanTaskList());
+			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
+			while (nameSize == cFileName) {
+				nameSize = nameSize << 1;
+				delete[] szProcessName;
+				szProcessName = new TCHAR[nameSize];
+				cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize);
 			}
+			CloseHandle(hProcess);
+			PathStripPath(szProcessName);
+
+			DebugPrint((string("Foreground switched to ") + szProcessName + "\n").c_str());
+
+			string pName = szProcessName;
+
+			profile* newp = conf->FindProfileByApp(pName, true);
+			conf->foregroundProfile = newp ? newp : NULL;
+
+			if (newp || !conf->noDesktop || (pName != "ShellExperienceHost.exe"
+				//&& pName != "alienfx-gui.exe"
+				&& pName != "explorer.exe"
+				&& pName != "SearchApp.exe"
+#ifdef _DEBUG
+				&& pName != "devenv.exe"
+#endif
+				)) {
+
+				if (!newp) {
+					SwitchActiveProfile(ScanTaskList());
+				}
+				else {
+					if (conf->IsPriorityProfile(newp) || !conf->IsPriorityProfile(conf->activeProfile))
+						SwitchActiveProfile(newp);
+				}
+			}
+#ifdef _DEBUG
 			else {
-				if (conf->IsPriorityProfile(newp) || !conf->IsPriorityProfile(conf->activeProfile))
-					SwitchActiveProfile(newp);
+				DebugPrint("Forbidden app, switch blocked!\n");
 			}
-		}
-#ifdef _DEBUG
-		else {
-			DebugPrint("Forbidden app, switch blocked!\n");
-		}
 #endif
-		delete[] szProcessName;
+			delete[] szProcessName;
+		}
+		else {
+			DebugPrint("Foreground app unknown\n");
+		}
 	}
 	else {
 		SwitchActiveProfile(ScanTaskList());
@@ -388,15 +391,11 @@ int GetValuesArray(HCOUNTER counter) {
 
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 
-	HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
-		FALSE, dwEventThread);
+	HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, dwEventThread);
 	if (hThread) {
 		DWORD prcId = GetProcessIdOfThread(hThread);
-		if (prcId &&
-			idChild == CHILDID_SELF && conf->foregroundProfile != conf->activeProfile) {
-			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-				PROCESS_VM_READ,
-				FALSE, prcId);
+		if (prcId && idChild == CHILDID_SELF && conf->foregroundProfile != conf->activeProfile) {
+			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
 			DWORD nameSize = MAX_PATH, cFileName = nameSize;
 			TCHAR* szProcessName = new TCHAR[nameSize];
 			szProcessName[0] = 0;

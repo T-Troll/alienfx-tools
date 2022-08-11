@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "wbemuuid.lib")
 
-#define _TRACE_
+//#define _TRACE_
 
 //typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
 //
@@ -250,6 +250,12 @@ namespace AlienFan_SDK {
 				m_ESIFObject->Release();
 #ifdef _TRACE_
 				printf("ESIF data available, %d sensors added!\n", numESIF);
+#endif
+			}
+			if (m_WbemServices->GetObject((BSTR)L"AMD_ACPI", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+				m_ESIFObject->Release();
+#ifdef _TRACE_
+				printf("AMD data available, %d sensors added!\n", 0);
 #endif
 			}
 			return true;

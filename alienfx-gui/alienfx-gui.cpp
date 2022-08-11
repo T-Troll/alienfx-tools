@@ -59,32 +59,6 @@ int eItem = -1;
 // Effect mode list
 vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
-bool DoStopService(bool kind) {
-	if (conf->awcc_disable) {
-		conf->Save();
-		EvaluteToAdmin();
-		// Get a handle to the SCM database.
-		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
-		SC_HANDLE schService = schSCManager ? OpenService(schSCManager, "AWCCService", SERVICE_ALL_ACCESS) : NULL;
-		SERVICE_STATUS  serviceStatus;
-		bool rCode = false;
-		if (!schSCManager || !schService)
-			return false;
-		if (kind) {
-			// stop service
-			rCode = (BOOLEAN)ControlService(schService,	SERVICE_CONTROL_STOP, &serviceStatus);
-		}
-		else {
-			// start service
-			rCode = (BOOLEAN)StartService(schService, 0, NULL);
-			if (!rCode && GetLastError() == ERROR_SERVICE_ALREADY_RUNNING)
-				rCode = true;
-		}
-		CloseServiceHandle(schService);
-		return rCode;
-	}
-	return false;
-}
 bool DetectFans() {
 	conf->fanControl = true;
 	if (!IsUserAnAdmin()) {
@@ -130,7 +104,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (conf->activeProfile->flags & PROF_FANS)
 		fan_conf->lastProf = &conf->activeProfile->fansets;
 
-	conf->wasAWCC = DoStopService(true);
+	conf->wasAWCC = DoStopService(conf->awcc_disable, true);
 
 	if (conf->esif_temp)
 		EvaluteToAdmin();
@@ -182,7 +156,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	delete eve;
 
-	if (conf->wasAWCC) DoStopService(false);
+	DoStopService(conf->wasAWCC, false);
 
 	delete fxhl;
 
