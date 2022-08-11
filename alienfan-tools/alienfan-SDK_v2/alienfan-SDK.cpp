@@ -21,6 +21,7 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 		printf("WMI activation started.\n");
 #endif
+		IWbemLocator* m_WbemLocator;
 		CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 		CoInitializeSecurity(nullptr,
 			-1,
@@ -44,6 +45,7 @@ namespace AlienFan_SDK {
 		//boosts.clear();
 		//maxrpm.clear();
 		m_WbemServices->Release();
+		CoUninitialize();
 	}
 
 	//int Control::ReadRamDirect(DWORD offset) {

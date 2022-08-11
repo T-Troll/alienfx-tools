@@ -40,7 +40,7 @@ void MonHelper::Start() {
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
-		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
+		monThread = new ThreadHelper(CMonProc, this, 1000, THREAD_PRIORITY_BELOW_NORMAL);
 	}
 }
 

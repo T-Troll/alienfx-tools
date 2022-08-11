@@ -506,7 +506,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         pwr->second = sItem->item.pszText;
                     ListView_SetItemText(tempList, sItem->item.iItem, 1, sItem->item.pszText);
                 }
-                fanThread = new ThreadHelper(UpdateFanUI, hDlg);
+                fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
             } break;
             case LVN_ITEMCHANGED:
             {

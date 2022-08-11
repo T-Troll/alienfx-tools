@@ -63,7 +63,6 @@ namespace AlienFan_SDK {
 
 	class Control {
 	private:
-		IWbemLocator* m_WbemLocator;
 		VARIANT m_instancePath;
 		byte devFlags = 0;
 		DWORD systemID = 0;

@@ -78,7 +78,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             tipWindow = GetDlgItem(hDlg, IDC_FC_LABEL);
 
             // Start UI update thread...
-            fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg);
+            fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg, 500);
             //uiFanHandle = CreateThread(NULL, 0, UpdateFanUI, hDlg, 0, NULL);
 
             //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
@@ -264,7 +264,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         pwr->second = sItem->item.pszText;
                     ListView_SetItemText(tempList, sItem->item.iItem, 1, sItem->item.pszText);
                 }
-                fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg);
+                fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg, 500);
             } break;
             case LVN_ITEMCHANGED:
             {
