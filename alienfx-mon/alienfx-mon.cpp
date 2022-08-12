@@ -263,6 +263,10 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		Shell_NotifyIcon(NIM_ADD, &conf->niData);
 		if (conf->updateCheck)
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+		for (auto i = conf->active_sensors.begin(); i < conf->active_sensors.end(); i++) {
+			if (i->intray)
+				i->oldCur = NO_SEN_VALUE;
+		}
 		return true;
 	}
 
@@ -656,22 +660,24 @@ void UpdateMonUI(LPVOID lpParam) {
 	for (int i = 0; i < conf->active_sensors.size(); i++) {
 		if (conf->active_sensors[i].intray && !conf->active_sensors[i].disabled && conf->active_sensors[i].min > NO_SEN_VALUE) {
 			if (conf->active_sensors[i].cur != conf->active_sensors[i].oldCur) {
-				if (conf->active_sensors[i].niData) {
-					// update tray icon
-					UpdateTrayData(&conf->active_sensors[i], 0);
-					Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData);
-				}
-				else {
-					// add new tray icon
+				if (!conf->active_sensors[i].niData) {
+					// add tray icon
 					conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i + 1,
 						NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
-					UpdateTrayData(&conf->active_sensors[i], 0);
-					if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {
-						DestroyIcon(conf->active_sensors[i].niData->hIcon);
-						delete conf->active_sensors[i].niData;
-						conf->active_sensors[i].niData = NULL;
-					}
 				}
+				UpdateTrayData(&conf->active_sensors[i], 0);
+				if (!Shell_NotifyIcon(NIM_MODIFY, conf->active_sensors[i].niData))
+					Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData);
+				//else {
+				//	// add new tray icon
+				//	conf->active_sensors[i].niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)i + 1,
+				//		NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
+				//	if (!Shell_NotifyIcon(NIM_ADD, conf->active_sensors[i].niData)) {
+				//		DestroyIcon(conf->active_sensors[i].niData->hIcon);
+				//		delete conf->active_sensors[i].niData;
+				//		conf->active_sensors[i].niData = NULL;
+				//	}
+				//}
 			}
 		}
 		else {

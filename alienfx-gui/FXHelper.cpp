@@ -593,7 +593,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 
 	for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
 		if (it->ambients.size()) {
-			UINT r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size() * 255;
+			ULONG r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size() * 255;
 			for (auto cAmb = it->ambients.begin(); cAmb < it->ambients.end(); cAmb++) {
 				if (cAmb - it->ambients.begin() < gridsize) {
 					wasChanged = true;
@@ -605,7 +605,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 					dsize -= 255;
 				}
 			}
-			// Multilights and brightness correction...
+			// Multi-lights and brightness correction...
 			if (dsize) {
 				actions[0].r = (BYTE)((r * shift) / dsize);
 				actions[0].g = (BYTE)((g * shift) / dsize);
@@ -625,7 +625,6 @@ void FXHelper::RefreshHaptics(int *freq) {
 	}
 
 	vector<AlienFX_SDK::afx_act> actions;
-	//actions.push_back({0});
 	bool wasChanged = false;
 
 	for (auto mIter = conf->active_set->begin(); mIter < conf->active_set->end(); mIter++) {

@@ -182,7 +182,6 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 				shift = 0;
 				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) {
 					ZeroMemory(src->waveD, NUMPTS * sizeof(double));
-					//buffer full, send to process.
 					SetEvent(src->updateEvent);
 					//reset arrayPos
 					arrayPos = 0;
@@ -213,7 +212,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 				pCapCli->GetNextPacketSize(&packetLength);
 			}
 			break;
-		case WAIT_TIMEOUT: // no buffer data for 1 sec...
+		case WAIT_TIMEOUT: // no buffer data for 200 ms...
 			ZeroMemory(src->waveD, NUMPTS * sizeof(double));
 			//buffer full, send to process.
 			SetEvent(src->updateEvent);
@@ -233,20 +232,22 @@ DWORD WINAPI resample(LPVOID lpParam)
 {
 	WSAudioIn *src = (WSAudioIn *) lpParam;
 
-	HANDLE waitArray[2]{src->stopEvent, src->updateEvent};
-	DWORD res = 0;
-	bool phase = true;
+	//HANDLE waitArray[2]{src->stopEvent, src->updateEvent};
+	//DWORD res = 0;
+	//bool phase = true;
 
-	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0) {
-		if (res == WAIT_OBJECT_0 + 1) {
-			if (phase) {
+	while (WaitForSingleObject(src->stopEvent, 100) == WAIT_TIMEOUT) {
+	//while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0) {
+		if (WaitForSingleObject(src->updateEvent, 0) != WAIT_TIMEOUT) {
+		//if (res == WAIT_OBJECT_0 + 1) {
+			//if (phase) {
 				src->freqs = src->dftGG->calc(src->waveD);
 				//DebugPrint("Haptics light update...\n");
 				fxhl->RefreshHaptics(src->freqs);
-				phase = false;
-			}
-			else
-				phase = true;
+			//	phase = false;
+			//}
+			//else
+				//phase = true;
 		}
 	}
 

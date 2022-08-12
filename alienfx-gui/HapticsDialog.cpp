@@ -7,7 +7,7 @@ extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
 
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void RemoveUnused(vector<groupset>*);
+//extern void RemoveUnused(vector<groupset>*);
 
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
@@ -245,8 +245,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				map->haptics.erase(map->haptics.begin() + fGrpItem);
 				ListBox_DeleteString(grp_list, fGrpItem);
 				fGrpItem--;
-				if (map->haptics.empty())
-					RemoveUnused(conf->active_set);
+				//if (map->haptics.empty())
+				//	RemoveUnused(conf->active_set);
 				ListBox_SetCurSel(grp_list, fGrpItem);
 				DrawFreq(hDlg);
 				SetMappingData(hDlg, map);

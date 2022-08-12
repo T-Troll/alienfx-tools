@@ -383,6 +383,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
 		Shell_NotifyIcon(NIM_ADD, &conf->niData);
+		conf->SetToolTip();
 		if (conf->updateCheck)
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		return true;
@@ -407,6 +408,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		conf->SetIconState();
 
 		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
+			conf->SetToolTip();
 			// check update....
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		}
@@ -701,6 +703,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
+			DebugPrint("Device list changed\n");
 			vector<pair<WORD, WORD>> devs = conf->afx_dev.AlienFXEnumDevices();
 			if (devs.size() != fxhl->numActiveDevs) {
 				// Device added or removed, need to rescan devices...

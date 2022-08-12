@@ -133,15 +133,15 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							return t.group == eItem;
 						});
 					if (pos != (*Iter)->lightsets.end())
-						if (doDelete && (*Iter)->id != conf->activeProfile->id)
-							if (MessageBox(NULL, ("This zone used into profile " + (*Iter)->name + "!\nDo you want to keep it?").c_str(), "Error",
-								MB_YESNO | MB_ICONWARNING) == IDYES) {
+						if ((*Iter)->id != conf->activeProfile->id)
+							//if (MessageBox(NULL, ("This zone used into profile " + (*Iter)->name + "!\nDo you want to keep it?").c_str(), "Error",
+							//	MB_YESNO | MB_ICONWARNING) == IDYES) {
 								doDelete = false;
-							}
-							else
-								(*Iter)->lightsets.erase(pos);
+							//}
+							//else
+							//	(*Iter)->lightsets.erase(pos);
 						else {
-							if ((*Iter)->id == conf->activeProfile->id) {
+							//if ((*Iter)->id == conf->activeProfile->id) {
 								if (pos != (*Iter)->lightsets.begin())
 									neItem = (pos - 1)->group;
 								else
@@ -149,7 +149,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 										neItem = (pos + 1)->group;
 									else
 										neItem = -1;
-							}
+							//}
 							(*Iter)->lightsets.erase(pos);
 						}
 				}

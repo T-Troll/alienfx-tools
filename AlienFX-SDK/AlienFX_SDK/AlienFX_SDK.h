@@ -1,12 +1,12 @@
 #pragma once
-#include <wtypesbase.h>
+#include <wtypes.h>
 #include <vector>
 #include <string>
 #include "alienfx-controls.h"
 
 using namespace std;
 
-#define byte BYTE
+//#define byte BYTE
 
 namespace AlienFX_SDK {
 
@@ -54,6 +54,10 @@ namespace AlienFX_SDK {
 			byte br;
 		};
 		DWORD ci;
+	};
+
+	struct icommand {
+		byte i, val;
 	};
 
 	struct mapping { // Light information block
@@ -120,7 +124,7 @@ namespace AlienFX_SDK {
 		byte bright = 64; // Brightness for APIv6-v7
 
 		// support function for mask-based devices (v1-v3)
-		vector<pair<byte, byte>> *SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = {0});
+		vector<icommand> *SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = {0});
 
 #ifndef NOACPILIGHTS
 		// Support functions for ACPI calls (v0)
@@ -128,8 +132,8 @@ namespace AlienFX_SDK {
 #endif
 
 		// Support function to send data to USB device
-		bool PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> mods);
-		bool PrepareAndSend(const byte *command, byte size, vector<pair<byte, byte>> *mods = NULL);
+		bool PrepareAndSend(const byte *command, byte size, vector<icommand> mods);
+		bool PrepareAndSend(const byte *command, byte size, vector<icommand> *mods = NULL);
 
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, act_block act, bool needSave, bool needInverse = false);

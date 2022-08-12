@@ -125,7 +125,8 @@ void SetDimensions() {
 	h = dimensions.bottom - dimensions.top;
 	ww = w / LOWORD(conf->amb_grid); hh = h / HIWORD(conf->amb_grid);
 	stride = w * 4;
-	DebugPrint(("Screen resolution set to " + to_string(w) + "x" + to_string(h) + ".\n").c_str());
+	divider = w > 1920 ? 2 : 1;
+	DebugPrint(("Screen resolution set to " + to_string(w) + "x" + to_string(h) + ", div " + to_string(divider) + ".\n").c_str());
 }
 
 DWORD WINAPI CInProc(LPVOID param)

@@ -5,7 +5,7 @@
 extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void RemoveUnused(vector<groupset>* lightsets);
+//extern void RemoveUnused(vector<groupset>* lightsets);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);

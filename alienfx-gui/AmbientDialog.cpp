@@ -5,7 +5,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void RemoveUnused(vector<groupset>*);
+//extern void RemoveUnused(vector<groupset>*);
 
 extern EventHandler* eve;
 extern int eItem;
@@ -113,8 +113,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         map->ambients.push_back(id);
                     else {
                         map->ambients.erase(pos);
-                        if (map->ambients.empty())
-                            RemoveUnused(conf->active_set);
+                        //if (map->ambients.empty())
+                        //    RemoveUnused(conf->active_set);
                     }
                     RedrawButtonZone(hDlg);
                 }
