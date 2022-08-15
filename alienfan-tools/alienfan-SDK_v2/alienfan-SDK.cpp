@@ -8,12 +8,6 @@
 
 //#define _TRACE_
 
-//typedef BOOLEAN (WINAPI *ACPIF)(LPWSTR, LPWSTR);
-//
-//static char tempNamePattern[] = "\\_SB.PCI0.LPCB.EC0.SEN1._STR",
-//			tempECDV1[] = "\\_SB.PCI0.LPCB.ECDV.KDRT";// ,
-//			//tempECDV2[] = "\\_SB.PC00.LPCB.ECDV.KDRT";
-
 namespace AlienFan_SDK {
 
 	Control::Control() {
@@ -35,55 +29,16 @@ namespace AlienFan_SDK {
 
 		CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\OpenHardwareMonitor", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_OHMService);
 		m_WbemLocator->Release();
 	}
 
 	Control::~Control() {
-		//sensors.clear();
-		//fans.clear();
-		//powers.clear();
-		//boosts.clear();
-		//maxrpm.clear();
+		if (m_OHMService)
+			m_OHMService->Release();
 		m_WbemServices->Release();
 		CoUninitialize();
 	}
-
-	//int Control::ReadRamDirect(DWORD offset) {
-	//	if (activated && aDev != -1) {
-	//		PACPI_EVAL_OUTPUT_BUFFER res = NULL;
-	//		PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0xFF000000 | offset);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		if (EvalAcpiMethod(acc, dev_c_controls.readCom.c_str(), (PVOID *) &res, acpiargs) && res) {
-	//			int res_int = res->Argument[0].Argument;
-	//			free(res);
-	//			return res_int;
-	//		}
-	//	}
-	//	return -1;
-	//}
-
-	//int Control::WriteRamDirect(DWORD offset, byte value) {
-	//	if (activated && aDev != -1) {
-	//		PACPI_EVAL_OUTPUT_BUFFER res = NULL;
-	//		PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0xFF000000 | offset);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0);
-	//		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, value);
-	//		if (EvalAcpiMethod(acc, dev_c_controls.writeCom.c_str(), (PVOID *) &res, acpiargs) && res) {
-	//			int res_int = res->Argument[0].Argument;
-	//			free(res);
-	//			return res_int;
-	//		}
-	//	}
-	//	return -1;
-	//}
 
 	int Control::CallWMIMethod(ALIENFAN_COMMAND com, byte arg1, byte arg2) {
 		BYTE operand[4]{ com.sub, arg1, arg2, 0 };
@@ -105,42 +60,6 @@ namespace AlienFan_SDK {
 		}
 		return -1;
 	}
-
-	/*int Control::RunMainCommand(ALIENFAN_COMMAND com, byte value1, byte value2) {
-		if (activated && com.com && aDev != -1) {
-			PACPI_EVAL_OUTPUT_BUFFER res = NULL;
-			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-			BYTE operand[4]{com.sub, value1, value2, 0};
-			com.com -= devs[aDev].delta * 4;
-			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0);
-			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com.com);
-			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, operand);
-			if (EvalAcpiMethod(acc, devs[aDev].mainCommand.c_str(), (PVOID *) &res, acpiargs) && res) {
-				int res_int = res->Argument[0].Argument;
-				free(res);
-				return res_int;
-			}
-		}
-		return -1;
-	}
-
-	int Control::RunGPUCommand(short com, DWORD packed) {
-		if (activated && com && aDev != -1) {
-			PACPI_EVAL_OUTPUT_BUFFER res = NULL;
-			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-
-			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, 0);
-			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, 0x100);
-			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, com);
-			acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutBuffArg(acpiargs, 4, (UCHAR*)&packed);
-			if (EvalAcpiMethod(acc, devs[aDev].gpuCommand.c_str(), (PVOID *) &res, acpiargs) && res) {
-				int res_int = res->Argument[0].Argument;
-				free(res);
-				return res_int;
-			}
-		}
-		return -1;
-	}*/
 
 	bool Control::Probe() {
 		if (m_WbemServices && m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK) {
@@ -232,9 +151,24 @@ namespace AlienFan_SDK {
 			// ESIF temperature sensors
 			IWbemClassObject* m_ESIFObject = NULL;
 			if (m_WbemServices->GetObject((BSTR)L"EsifDeviceInformation", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+				// Get sensor names array
+				vector<string> senNames;
+				DWORD size = GetSystemFirmwareTable('ACPI', 'TDSS', NULL, 0);
+				byte* buf = new byte[size];
+				size = GetSystemFirmwareTable('ACPI', 'TDSS', buf, size);
+				for (DWORD i = 0; i < size - 5; i++) {
+					char name[5]{ 0 };
+					memcpy(name, &buf[i], 4);
+					if (!strcmp(name, "_STR")) {
+						int sPos = i + 8;
+						wstring senName = (wchar_t*)&buf[sPos];
+						string sName = string(senName.begin(), senName.end());
+						senNames.push_back(sName);
+						i = sPos + senName.length() * 2;
+					}
+				}
+				delete[] buf;
 				m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
-				//IWbemClassObject* spInstance;
-				//ULONG uNumOfInstances = 0;
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				int numESIF = 0;
 				while (uNumOfInstances) {
@@ -243,7 +177,9 @@ namespace AlienFan_SDK {
 					spInstance->Get((BSTR)L"Temperature", 0, &cTemp, 0, 0);
 					spInstance->Release();
 					if (cTemp.uintVal > 0) {
-						sensors.push_back({ (short)numESIF, "ESIF sensor #" + to_string(numESIF + 1), 0, instPath.bstrVal });
+						sensors.push_back({ (short)numESIF,
+							numESIF < senNames.size() ? senNames[numESIF] : "ESIF sensor #" + to_string(numESIF + 1),
+							0, instPath.bstrVal });
 						numESIF++;
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
@@ -258,6 +194,32 @@ namespace AlienFan_SDK {
 				m_ESIFObject->Release();
 #ifdef _TRACE_
 				printf("AMD data available, %d sensors added!\n", 0);
+#endif
+			}
+			if (m_OHMService && m_OHMService->GetObject((BSTR)L"Sensor", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+				m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
+				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+				int numOHM = 0;
+				while (uNumOfInstances) {
+					VARIANT instPath, type, name;
+					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
+					spInstance->Get((BSTR)L"SensorType", 0, &type, 0, 0);
+					spInstance->Get((BSTR)L"Name", 0, &name, 0, 0);
+					spInstance->Release();
+					wstring tn{ type.bstrVal };
+					if (tn == L"Temperature") {
+						wstring sname{ name.bstrVal };
+						sensors.push_back({ (short)numOHM,
+							string(sname.begin(), sname.end()),
+							4, instPath.bstrVal });
+						numOHM++;
+					}
+					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+				}
+				enum_obj->Release();
+				m_ESIFObject->Release();
+#ifdef _TRACE_
+				printf("OHM data available, %d sensors added!\n", numOHM);
 #endif
 			}
 			return true;
@@ -307,18 +269,27 @@ namespace AlienFan_SDK {
 		return -1;
 	}
 	int Control::GetTempValue(int TempID) {
+		IWbemClassObject* esifObject = NULL;
 		if (TempID < sensors.size()) {
 			switch (sensors[TempID].type) {
 			case 1: // AWCC
 				return CallWMIMethod(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
 				break;
 			case 0: {// ESIF
-				IWbemClassObject* esifObject = NULL;
 				if (m_WbemServices->GetObject(sensors[TempID].instance, NULL, nullptr, &esifObject, nullptr) == S_OK) {
 					VARIANT temp;
 					esifObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);
 					esifObject->Release();
 					return temp.uintVal;
+				}
+			} break;
+			case 4: {// OHM
+				if (m_OHMService && m_OHMService->GetObject(sensors[TempID].instance, NULL, nullptr, &esifObject, nullptr) == S_OK) {
+					VARIANT temp;
+					esifObject->Get((BSTR)L"Value", 0, &temp, 0, 0);
+					esifObject->Release();
+					float t = temp.fltVal;
+					return (int)temp.fltVal;
 				}
 			} break;
 			//case 2: case 3: { // tempECDV

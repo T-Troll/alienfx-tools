@@ -37,6 +37,7 @@ typedef struct tag_dlghdr {
 } DLGHDR;
 
 #define ind(_x, _y) (_y*conf->mainGrid->x+_x)
+//#define fan_conf conf->fan_conf
 
 extern HINSTANCE hInst;
 

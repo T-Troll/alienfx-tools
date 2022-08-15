@@ -237,33 +237,38 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             switch (((NMHDR*)lParam)->code) {
             case LVN_BEGINLABELEDIT: {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                HWND editC = ListView_GetEditControl(tempList);
-                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
-                Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.lParam].name).c_str());
-            } break;
-            case LVN_ITEMACTIVATE:
-            {
-                NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
                 if (fanUIUpdate) {
                     delete fanUIUpdate;
                     fanUIUpdate = NULL;
                 }
-                HWND editC = ListView_EditLabel(tempList, sItem->iItem);
+                HWND editC = ListView_GetEditControl(tempList);
+                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.lParam].name).c_str());
+            } break;
+            case LVN_ITEMACTIVATE: case NM_RETURN:
+            {
+                int pos = ListView_GetSelectionMark(tempList);
                 RECT rect;
-                ListView_GetSubItemRect(tempList, sItem->iItem, 1, LVIR_LABEL, &rect);
-                SetWindowPos(editC, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+                ListView_GetSubItemRect(tempList, pos, 1, LVIR_BOUNDS, &rect);
+                SetWindowPos(ListView_EditLabel(tempList, pos), HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
             } break;
             case LVN_ENDLABELEDIT:
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 if (sItem->item.pszText) {
                     auto pwr = fan_conf->sensors.find(sItem->item.lParam);
-                    if (pwr == fan_conf->sensors.end())
-                        fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);
-                    else
-                        pwr->second = sItem->item.pszText;
-                    ListView_SetItemText(tempList, sItem->item.iItem, 1, sItem->item.pszText);
+                    if (pwr == fan_conf->sensors.end()) {
+                        if (strlen(sItem->item.pszText))
+                            fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);
+                    }
+                    else {
+                        if (strlen(sItem->item.pszText))
+                            pwr->second = sItem->item.pszText;
+                        else
+                            fan_conf->sensors.erase(pwr);
+                    }
                 }
+                ReloadTempView(tempList);
                 fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg, 500);
             } break;
             case LVN_ITEMCHANGED:

@@ -20,8 +20,8 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_SEN_INFO {
 		SHORT senIndex = 0;
 		string name;
-		byte type = 0; // 0 = TZ (ESIF), 1 = AWCC, 2 = ECDV1, 3 = ECDV 2
-		BSTR instance; // for ESIF sensors
+		byte type = 0; // 0 = TZ (ESIF), 1 = AWCC, 2 = ECDV1, 3 = ECDV 2, 4 = OHM
+		BSTR instance; // for ESIF/OHM sensors
 	};
 
 	struct ALIENFAN_COMMAND {
@@ -71,7 +71,7 @@ namespace AlienFan_SDK {
 		//int WriteRamDirect(DWORD, byte);
 
 	public:
-		IWbemServices* m_WbemServices = NULL;
+		IWbemServices* m_WbemServices = NULL, *m_OHMService = NULL;
 		Control();
 		~Control();
 
