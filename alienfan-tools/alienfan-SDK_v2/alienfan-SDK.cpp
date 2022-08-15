@@ -160,11 +160,10 @@ namespace AlienFan_SDK {
 					char name[5]{ 0 };
 					memcpy(name, &buf[i], 4);
 					if (!strcmp(name, "_STR")) {
-						int sPos = i + 8;
+						DWORD sPos = i + 8;
 						wstring senName = (wchar_t*)&buf[sPos];
-						string sName = string(senName.begin(), senName.end());
-						senNames.push_back(sName);
-						i = sPos + senName.length() * 2;
+						senNames.push_back(string(senName.begin(), senName.end()));
+						i = sPos + (DWORD) senName.length() * 2;
 					}
 				}
 				delete[] buf;
@@ -187,7 +186,7 @@ namespace AlienFan_SDK {
 				enum_obj->Release();
 				m_ESIFObject->Release();
 #ifdef _TRACE_
-				printf("ESIF data available, %d sensors added!\n", numESIF);
+				printf("ESIF data available, %d sensors (%d names) added!\n", numESIF, (int)senNames.size());
 #endif
 			}
 			if (m_WbemServices->GetObject((BSTR)L"AMD_ACPI", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {

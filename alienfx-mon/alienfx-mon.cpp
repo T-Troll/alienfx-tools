@@ -56,8 +56,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		EvaluteToAdmin();
 
 	// Due to the fact task run delay broken in W10....
-	if (wstring(lpCmdLine) == L"-d")
-		Sleep(7000);
+	/*if (wstring(lpCmdLine) == L"-d")
+		Sleep(7000);*/
 
 	senmon = new SenMonHelper();
 

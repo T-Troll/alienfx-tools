@@ -21,8 +21,7 @@ Available commands:
 - `resetcolor` - Reset color system
 - `setcolor=<mask>,r,g,b` - Set light(s) defined by mask to color
 - `setcolormode=<brightness>,<flag>` - Set light system brightness and mode. Valid brightness values are 1,3,4,6,7,9,10,12,13,15.
-- `direct=<id>,<subid>[,val,val]` - Issue direct Alienware interface command (see below)  
-- `directgpu=<id>,<value>` - Issue direct GPU interface command (see below)
+- `dump` - List all avaliable Alienware methods (it's useful for new devices support)
 
 `setover` command probe and set maximal possible overboost for fans (test more, then 100% of the BIOS boost value) and how much it can be overboosted.  
 Without parameters, it check all fans into the system one-by one. With one parameter, it check only one fan defined by it. With two parameters, it set boost from second one and only check RPMs for it.
@@ -35,19 +34,4 @@ Without parameters, it check all fans into the system one-by one. With one param
 FanID and SensorID is a digit from 0 to fan/sensor count found into the system.
 
 **Warning:** Setting Power level to non-zero value can disable manual fan control!  
-
-`direct` command is for testing/calling various functions of the main Alienware ACPI function.  
-If default functions doesn't works, you can check and try to find you system subset.  
-
-For example: issuing command `direct=20,5,50` return fan RPM for fan #1 on laptop, but for desktop the command should be different.
-
-You can check possible commands and values yourself, opening you system ACPI dump file and searching for `Method(WMAX` function.  
-It accept up to 4 parameters - first is a command, second is a subcommand, and next is command parameters (1 or 2 bytes).  
-Looking inside this method at ACPI dump can reveal commands supported for you system and what they do.  
-For example, for Aurora R7 command `direct=3,N` return fan ID for fan N or -1 (fail) if fan absent.
-
-Don't forget to share commands you find!
-
-`directgpu` command doing the same for GPU subsystem, altering some GPU chip settings. Use with care!
-
-**Warning:** For both `direct` commands, all values are not decimal, but hex (like c8, a3, etc)! It made easy to test values found into ACPI dump.
+**Warning:** color-related commands (for Aurora R6/R7 light control) temporary unavailable (do nothing)!

@@ -17,7 +17,7 @@ Light control tools work with USB/ACPI hardware devices directly, not requiring 
 - Group lights, create light/fan Profiles for different situations, switch them by running games/applications.
 
 For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tool does not use direct EC (Embed controller) access and data modification.  
-It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used by AWCC).
+It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used by AWCC) trough the hole into Windows WMI.
 - It's safer - BIOS still monitors fans and has no risk fans will stop under full load.
 - It's universal - Most Alienware systems have the same interface.
 - In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control at all.
@@ -25,8 +25,10 @@ It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used
 ## Disclaimer
 
 Starting from the release 4.2.1, **Anti-viruses can detect virus into project package**.  
-Please add application folder into antivirus exception list.  
+Please add application folder into anti-virus exception list.  
 You can read why it happened [here](https://github.com/T-Troll/alienfx-tools/wiki/Why-antivirus-complain-about-some-alienfx-tools-components%3F).
+
+From release 7.0.0 anti-virus do not complain anymore (ACPI access method was changed).
 
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
@@ -50,6 +52,7 @@ You can read why it happened [here](https://github.com/T-Troll/alienfx-tools/wik
 - (Optional) For `alienfx-cli` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
 - Unpack the archive to any directory of your choice or just run the installer.  
 - (Optional) For the fan control, it's highly recommended to set correct overboost values and maximal fans RPM. You can do it at GUI apps first start or by running `alienfx-cli setover` command.
+- (Optional) You can install and run Open Hardware Monitor before running fan control apps - this provide more sensors to control.
 - Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (all tools will have limited functionality without this step).  
 
 Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide)-for-release-v6.x.x.x) guide first!
@@ -80,7 +83,7 @@ Join Discord [support server](https://discord.gg/XU6UJbN9J5)
 
 Prerequisites:
 - Visual Studio Community 2019
-- Microsoft Windows Driver Development Kit (WDK) v10.0 or higher
+- Microsoft Windows Driver Development Kit (WDK) v10.0 or higher (optional, for Fan SDK V1)
 
 Build process:
 - Clone repository
@@ -92,10 +95,6 @@ Build process:
   - [x] Input locale
   - [ ] Missed notifications (toasts)
   - [x] Keyboard events (key press reaction)
-- [x] Grid (positional) effects
-  - [x] Static full-grid effects
-  - [x] Dynamic full-grid effects
-  - [x] Event or key-triggered full-grid effects
 - [ ] New devices support
   - [ ] Monitors
   - [x] Mouses
@@ -114,8 +113,8 @@ High-level API code and alienfx-cli based on Kalbert312's [alienfx-cli](https://
 Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
-ACPI driver based on kdshk's [WindowsHwAccess](https://github.com/kdshk/WindowsHwAccess).  
-Kernel loading hack based on hfiref0x's [KDU](https://github.com/hfiref0x/KDU)
+ACPI driver for fan SDK V1 based on kdshk's [WindowsHwAccess](https://github.com/kdshk/WindowsHwAccess).  
+Kernel loading hack for fan SDK V1 based on hfiref0x's [KDU](https://github.com/hfiref0x/KDU)
 
 Special thanks to [DavidLapous](https://github.com/DavidLapous) for inspiration and advice!  
 Special thanks to [theotherJohnC](https://github.com/theotherJohnC) for the Performance Boost idea!  

@@ -61,8 +61,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 6,4,3,0
- PRODUCTVERSION 6,4,3,2
+ FILEVERSION 7,0,0,0
+ PRODUCTVERSION 7,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -78,12 +78,12 @@ BEGIN
         BLOCK "040004b0"
         BEGIN
             VALUE "FileDescription", "LightFX emulator"
-            VALUE "FileVersion", "6.4.3.0"
+            VALUE "FileVersion", "7.0.0.0"
             VALUE "InternalName", "LightFX.dll"
             VALUE "LegalCopyright", "Copyright (C) 2021"
             VALUE "OriginalFilename", "LightFX.dll"
             VALUE "ProductName", "AlienFX Tools"
-            VALUE "ProductVersion", "6.4.3.2"
+            VALUE "ProductVersion", "7.0.0.0"
         END
     END
     BLOCK "VarFileInfo"

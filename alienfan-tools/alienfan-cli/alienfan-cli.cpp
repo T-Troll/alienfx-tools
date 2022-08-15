@@ -344,57 +344,57 @@ int main(int argc, char* argv[])
                 wprintf(L"Names: %s\n", name);
                 continue;
             }
-            if (command == "test") { // dump WMI functions
-                //DWORD size = EnumSystemFirmwareTables('ACPI', NULL, 0);
-                //byte* buf2 = new byte[size];
-                //size = EnumSystemFirmwareTables('ACPI', buf2, size);
-                DWORD size = GetSystemFirmwareTable('ACPI', 'TDSS', NULL, 0);
-                byte* buf = new byte[size];
-                size = GetSystemFirmwareTable('ACPI', 'TDSS', buf, size);
-                for (int i = 0; i < size - 5; i++) {
-                    char name[5]{ 0 };
-                    memcpy(name, &buf[i], 4);
-                    if (!strcmp(name, "_STR")) {
-                        int sPos = i + 8;
-                        wstring senName = (wchar_t*)&buf[sPos];
-                        wprintf(L"STR found - %s (size %d)!\n", senName.c_str(),(int)senName.length());
-                        i = sPos + senName.length() * 2;
-                    }
-                }
-                delete[] buf;
-                // ESIF temperature sensors
-                //IWbemClassObject* m_ESIFObject = NULL;
-                //IWbemLocator* m_WbemLocator;
-                //IWbemServices* m_WbemServices = NULL;
-                //CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
-                //m_WbemLocator->ConnectServer((BSTR)L"ROOT\\CIMV2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
-                //m_WbemLocator->Release();
-                //if (m_WbemServices->GetObject((BSTR)L"WMI_FanSpeedControl", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
-                //    BSTR name;
-                //    VARIANT m_instancePath;
-                //    // Command dump
-                //    m_ESIFObject->GetObjectText(0, &name);
-                //    wprintf(L"Names: %s\n", name);
-                //    //IEnumWbemClassObject* enum_obj;
-                //    //acpi->m_WbemServices->CreateInstanceEnum((BSTR)L"POWER_DATA", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
-                //    //IWbemClassObject* spInstance;
-                //    //ULONG uNumOfInstances = 0;
-                //    //enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-                //    //spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
-                //    //spInstance->Release();
-                //    //enum_obj->Release();
-                //    //IWbemClassObject* m_outParameters = NULL;
-                //    //if (acpi->m_WbemServices->ExecMethod(m_instancePath.bstrVal,
-                //    //    (BSTR)L"GetData", 0, NULL, NULL, &m_outParameters, NULL) == S_OK && m_outParameters) {
-                //    //    //m_InParamaters->Release();
-                //    //    VARIANT result;
-                //    //    m_outParameters->Get(L"Data", 0, &result, nullptr, nullptr);
-                //    //    m_outParameters->Release();
-                //    //    printf("Result - %d", result.uintVal);
-                //    //}
-                //}
-                continue;
-            }
+            //if (command == "test") { // dump WMI functions
+            //    //DWORD size = EnumSystemFirmwareTables('ACPI', NULL, 0);
+            //    //byte* buf2 = new byte[size];
+            //    //size = EnumSystemFirmwareTables('ACPI', buf2, size);
+            //    DWORD size = GetSystemFirmwareTable('ACPI', 'TDSS', NULL, 0);
+            //    byte* buf = new byte[size];
+            //    size = GetSystemFirmwareTable('ACPI', 'TDSS', buf, size);
+            //    for (int i = 0; i < size - 5; i++) {
+            //        char name[5]{ 0 };
+            //        memcpy(name, &buf[i], 4);
+            //        if (!strcmp(name, "_STR")) {
+            //            int sPos = i + 8;
+            //            wstring senName = (wchar_t*)&buf[sPos];
+            //            wprintf(L"STR found - %s (size %d)!\n", senName.c_str(),(int)senName.length());
+            //            i = sPos + senName.length() * 2;
+            //        }
+            //    }
+            //    delete[] buf;
+            //    // ESIF temperature sensors
+            //    //IWbemClassObject* m_ESIFObject = NULL;
+            //    //IWbemLocator* m_WbemLocator;
+            //    //IWbemServices* m_WbemServices = NULL;
+            //    //CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
+            //    //m_WbemLocator->ConnectServer((BSTR)L"ROOT\\CIMV2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
+            //    //m_WbemLocator->Release();
+            //    //if (m_WbemServices->GetObject((BSTR)L"WMI_FanSpeedControl", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+            //    //    BSTR name;
+            //    //    VARIANT m_instancePath;
+            //    //    // Command dump
+            //    //    m_ESIFObject->GetObjectText(0, &name);
+            //    //    wprintf(L"Names: %s\n", name);
+            //    //    //IEnumWbemClassObject* enum_obj;
+            //    //    //acpi->m_WbemServices->CreateInstanceEnum((BSTR)L"POWER_DATA", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
+            //    //    //IWbemClassObject* spInstance;
+            //    //    //ULONG uNumOfInstances = 0;
+            //    //    //enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+            //    //    //spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
+            //    //    //spInstance->Release();
+            //    //    //enum_obj->Release();
+            //    //    //IWbemClassObject* m_outParameters = NULL;
+            //    //    //if (acpi->m_WbemServices->ExecMethod(m_instancePath.bstrVal,
+            //    //    //    (BSTR)L"GetData", 0, NULL, NULL, &m_outParameters, NULL) == S_OK && m_outParameters) {
+            //    //    //    //m_InParamaters->Release();
+            //    //    //    VARIANT result;
+            //    //    //    m_outParameters->Get(L"Data", 0, &result, nullptr, nullptr);
+            //    //    //    m_outParameters->Release();
+            //    //    //    printf("Result - %d", result.uintVal);
+            //    //    //}
+            //    //}
+            //    continue;
+            //}
             printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
         }
     }

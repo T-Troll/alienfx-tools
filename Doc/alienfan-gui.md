@@ -15,7 +15,7 @@ Also, "Power mode" drop down available to select global power mode. Power modes 
 How it works
 ```
 
-Fan control is temperature sensor-driven, so first select one of the temperature sensors.  
+Fan control is temperature sensor-driven, so first select one of the temperature sensors. You can also change sensor name by double-click on it. In case you remove sensor name (leaving it empty), it will be restored back to default BIOS one.  
 Then, choose fan(s) tied to it's reading - you can select from none to all in any combination.  
 Select check box for fan(s) you need.
 

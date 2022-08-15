@@ -241,7 +241,7 @@ First, take a look at "Power mode" drop-down - it can control system predefined 
 
 Additional "Fan curve" window at the right shows currently selected fan temperature/boost curve, as well as current boost.  
 
-Fan control is temperature sensor-driven, so first select one of temperature sensors.  
+Fan control is temperature sensor-driven, so first select one of the temperature sensors. You can also change sensor name by double-click on it. In case you remove sensor name (leaving it empty), it will be restored back to default BIOS one.  
 Then, select which fan(s) should react on its readings - you can select from none to all in any combination.  
 So, select check box for fan(s) you need.
 
