@@ -55,8 +55,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_STARTW:
 		{
 			conf->startWindows = state;
-			if (WindowsStartSet(state, "AlienFX-GUI"))
-				conf->Save();
+			WindowsStartSet(state, "AlienFX-GUI");
 		} break;
 		case IDC_CHECK_UPDATE:
 			conf->updateCheck = state;
@@ -91,7 +90,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->offPowerButton = !state;
 			if (!conf->lightsOn) {
 				if (state) {
-					//conf->offPowerButton = false;
 					conf->lightsOn = true;
 					fxhl->ChangeState();
 					conf->lightsOn = false;

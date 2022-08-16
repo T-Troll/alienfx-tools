@@ -118,8 +118,10 @@ bool WindowsStartSet(bool kind, string name) {
 	char pathBuffer[2048];
 	if (kind) {
 		GetModuleFileName(NULL, pathBuffer, 2047);
+		//string tname = "Register-ScheduledTask -TaskName \"" + name + "\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
+		//	+ string(pathBuffer) + /*"' -Argument '-d'*/"') -force -RunLevel Highest";
 		return ShellExecute(NULL, "runas", "powershell.exe", ("Register-ScheduledTask -TaskName \"" + name + "\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-			+ string(pathBuffer) + /*"' -Argument '-d')*/"' -force -RunLevel Highest").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;
+			+ string(pathBuffer) + /*"' -Argument '-d'*/"') -force -RunLevel Highest").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;
 	}
 	else {
 		return ShellExecute(NULL, "runas", "schtasks.exe", ("/delete /F /TN \"" + name + "\"").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;

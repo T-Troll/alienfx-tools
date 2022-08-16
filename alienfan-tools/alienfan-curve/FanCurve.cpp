@@ -112,9 +112,15 @@ void DrawFan()
                         Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
                     }
                     // Yellow dots
-                    if (sen && senI->sensorIndex != sen->sensorIndex && senI->sensorIndex < mon->senValues.size()) {
-                        SetDCPenColor(hdc, RGB(255, 255, 0));
-                        SetDCBrushColor(hdc, RGB(255, 255, 0));
+                    if (senI->sensorIndex < mon->senValues.size()) {
+                        if (senI->sensorIndex == fan_conf->lastSelectedSensor) {
+                            SetDCPenColor(hdc, RGB(255, 0, 0));
+                            SetDCBrushColor(hdc, RGB(255, 0, 0));
+                        }
+                        else {
+                            SetDCPenColor(hdc, RGB(255, 255, 0));
+                            SetDCBrushColor(hdc, RGB(255, 255, 0));
+                        }
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         SelectObject(hdc, GetStockObject(DC_BRUSH));
                         mark = Fan2Screen(mon->senValues[senI->sensorIndex], fanBoost);
@@ -123,14 +129,14 @@ void DrawFan()
                     DeleteObject(linePen);
                 }
             // Red dot
-            if (sen) {
-                SetDCPenColor(hdc, RGB(255, 0, 0));
-                SetDCBrushColor(hdc, RGB(255, 0, 0));
-                SelectObject(hdc, GetStockObject(DC_PEN));
-                SelectObject(hdc, GetStockObject(DC_BRUSH));
-                mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
-                Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-            }
+            //if (sen) {
+            //    SetDCPenColor(hdc, RGB(255, 0, 0));
+            //    SetDCBrushColor(hdc, RGB(255, 0, 0));
+            //    SelectObject(hdc, GetStockObject(DC_PEN));
+            //    SelectObject(hdc, GetStockObject(DC_BRUSH));
+            //    mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
+            //    Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+            //}
             string rpmText = "Fan curve (scale: " + to_string(acpi->boosts[fan_conf->lastSelectedFan])
                 + ", boost: " + to_string(fanBoost) + ", " + to_string(acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());

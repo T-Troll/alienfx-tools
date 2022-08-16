@@ -92,7 +92,7 @@ bool ConfigHandler::SetStates() {
 	// Dim state...
 	stateDimmed = IsDimmed() || dimmedScreen || (dimmedBatt && !statePower);
 	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
-	finalPBState = finalBrightness > 0 ? (byte)dimPowerButton : (byte)offPowerButton;
+	finalPBState = finalBrightness ? stateDimmed ? (byte)dimPowerButton : 1 : (byte)offPowerButton;
 
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldPBState != (bool)finalPBState) {
 		SetIconState();

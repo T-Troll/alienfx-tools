@@ -103,14 +103,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         mon = new MonHelper(fan_conf);
 
-        if (!(mDlg = InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL))) {
+        if (!(InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL))) {
             return FALSE;
         }
-
-        //power mode hotkeys
-        for (int i = 0; i < 6; i++)
-            RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-        RegisterHotKey(mDlg, 6, 0, VK_F17);
 
         HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
 
@@ -144,19 +139,23 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance; // Store instance handle in our global variable
 
-    HWND dlg;
-    dlg = CreateDialogParam(hInstance,//GetModuleHandle(NULL),         /// instance handle
-                            MAKEINTRESOURCE(IDD_MAIN_VIEW),    /// dialog box template
-                            NULL,                    /// handle to parent
-                            (DLGPROC)FanDialog, 0);
-    if (!dlg) return NULL;
+    if (mDlg = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
 
-    SendMessage(dlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
-    SendMessage(dlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFANGUI), IMAGE_ICON, 16, 16, 0));
+        SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
+        SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFANGUI), IMAGE_ICON, 16, 16, 0));
 
-    ShowWindow(dlg, nCmdShow);
+        //power mode hotkeys
+        for (int i = 0; i < 6; i++)
+            RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
 
-    return dlg;
+        ShowWindow(mDlg, nCmdShow);
+
+        // Reset path if started from other location...
+        //WindowsStartSet(fan_conf->startWithWindows, "AlienFan-GUI");
+    }
+
+    return mDlg;
 }
 
 void StartOverboost(HWND hDlg, int fan) {
@@ -186,32 +185,28 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
 
         // set PerfBoost lists...
-        HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
-             boost_dc = GetDlgItem(hDlg, IDC_DC_BOOST);
+        //HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
+        //     boost_dc = GetDlgItem(hDlg, IDC_DC_BOOST);
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
         PowerGetActiveScheme(NULL, &sch_guid);
         DWORD acMode, dcMode;
         PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
         PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
-        UpdateCombo(boost_ac, pModes, acMode);
-        UpdateCombo(boost_dc, pModes, dcMode);;
+        UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, acMode);
+        UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
 
         // So open fan control window...
         RECT cDlg;
         GetWindowRect(hDlg, &cDlg);
         int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
-        fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP,//WS_OVERLAPPED,
+        tipWindow = fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP,//WS_OVERLAPPED,
                                  cDlg.right, cDlg.top, wh, wh,
                                  hDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
         toolTip = CreateToolTip(fanWindow, NULL);
-        tipWindow = fanWindow;
-        if (fan_conf->startMinimized) {
-            ShowWindow(fanWindow, SW_HIDE);
-        } else {
-            ShowWindow(fanWindow, SW_SHOWNA);
-        }
+        //tipWindow = fanWindow;
+        ShowWindow(fanWindow, fan_conf->startMinimized ? SW_HIDE : SW_SHOWNA);
 
         ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
         ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
@@ -309,26 +304,22 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         {
             fan_conf->startWithWindows = !fan_conf->startWithWindows;
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
-            if (WindowsStartSet(fan_conf->startWithWindows, "AlienFan-GUI"))
-                fan_conf->Save();
+            WindowsStartSet(fan_conf->startWithWindows, "AlienFan-GUI");
         } break;
         case IDM_SETTINGS_STARTMINIMIZED:
         {
             fan_conf->startMinimized = !fan_conf->startMinimized;
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
-            fan_conf->Save();
         } break;
         case IDM_SETTINGS_UPDATE: {
             fan_conf->updateCheck = !fan_conf->updateCheck;
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
-            fan_conf->Save();
             if (fan_conf->updateCheck)
                 CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
         } break;
         case IDM_DISABLEAWCC: {
             fan_conf->awcc_disable = !fan_conf->awcc_disable;
             CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
-            fan_conf->Save();
             fan_conf->wasAWCC = DoStopService((bool)fan_conf->awcc_disable != fan_conf->wasAWCC, fan_conf->wasAWCC);
         } break;
         case IDC_BUT_RESET:
@@ -360,6 +351,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetCurrentGmode();
             break;
         }
+        fan_conf->Save();
     }
     break;
     case WM_SIZE:
@@ -385,8 +377,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case WM_LBUTTONUP: {
             ShowWindow(fanWindow, SW_RESTORE);
             SendMessage(fanWindow, WM_PAINT, 0, 0);
-            ShowWindow(mDlg, SW_RESTORE);
-            SetForegroundWindow(mDlg);
+            ShowWindow(hDlg, SW_RESTORE);
+            SetForegroundWindow(hDlg);
             HWND temp_list = GetDlgItem(hDlg, IDC_TEMP_LIST);
             ReloadTempView(temp_list);
         } break;
@@ -422,6 +414,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
             break;
         }
+        fan_conf->Save();
     } break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
@@ -545,16 +538,17 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_DESTROY:
         delete fanThread;
+        //fan_conf->Save();
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
-    case WM_ENDSESSION:
-        // Shutdown/restart scheduled....
-        fan_conf->Save();
-        delete fanThread;
-        delete mon;
-        LocalFree(sch_guid);
-        return 0;
+    //case WM_ENDSESSION:
+    //    // Shutdown/restart scheduled....
+    //    fan_conf->Save();
+    //    delete fanThread;
+    //    delete mon;
+    //    LocalFree(sch_guid);
+    //    return 0;
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:

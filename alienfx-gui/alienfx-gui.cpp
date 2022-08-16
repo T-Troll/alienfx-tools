@@ -126,22 +126,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	SwitchTab(TAB_LIGHTS);
 
-	//register global hotkeys...
-	RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
-	RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
-	RegisterHotKey(mDlg, 3, 0, VK_F18);
-	RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
-	RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9 );
-	RegisterHotKey(mDlg, 6, 0, VK_F17);
-	//profile change hotkeys...
-	for (int i = 0; i < 10; i++)
-		RegisterHotKey(mDlg, 10+i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
-	//power mode hotkeys
-	for (int i = 0; i < 6; i++)
-		RegisterHotKey(mDlg, 30+i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
-	// Power notifications...
-	RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
-
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
 	MSG msg;
@@ -172,12 +156,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	hInst = hInstance;
-	CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog);
 
-	if (mDlg) {
+	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
 
 		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
 		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
+
+		//register global hotkeys...
+		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
+		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
+		RegisterHotKey(mDlg, 3, 0, VK_F18);
+		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
+		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9);
+		RegisterHotKey(mDlg, 6, 0, VK_F17);
+		//profile change hotkeys...
+		for (int i = 0; i < 10; i++)
+			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
+		//power mode hotkeys
+		for (int i = 0; i < 6; i++)
+			RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+		// Power notifications...
+		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
 		ShowWindow(mDlg, nCmdShow);
 	}

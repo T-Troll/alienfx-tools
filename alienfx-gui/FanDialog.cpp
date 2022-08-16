@@ -7,7 +7,6 @@
 
 extern void SwitchTab(int);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-//extern void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
@@ -52,8 +51,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             niData = &conf->niData;
 
             // set PerfBoost lists...
-            HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
-                boost_dc = GetDlgItem(hDlg, IDC_DC_BOOST);
             IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
             PowerGetActiveScheme(NULL, &sch_guid);
             DWORD acMode, dcMode;
@@ -61,8 +58,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
             vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
-            UpdateCombo(boost_ac, pModes, acMode);
-            UpdateCombo(boost_dc, pModes, dcMode);;
+            UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, acMode);
+            UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
 
             ReloadPowerList(power_list);
             ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
@@ -79,7 +76,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
             // Start UI update thread...
             fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg, 500);
-            //uiFanHandle = CreateThread(NULL, 0, UpdateFanUI, hDlg, 0, NULL);
 
             //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
             //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
@@ -127,7 +123,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 pLid = ComboBox_GetCurSel(power_list);
                 fan_conf->lastProf->powerStage = (WORD)ComboBox_GetItemData(power_list, pLid);
                 acpi->SetPower(fan_conf->lastProf->powerStage);
-                fan_conf->Save();
             } break;
             case CBN_EDITCHANGE:
             {
@@ -138,7 +133,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     if (!ret.second)
                         // just update...
                         ret.first->second = buffer;
-                    fan_conf->Save();
                     ComboBox_DeleteString(power_list, pLid);
                     ComboBox_InsertString(power_list, pLid, buffer);
                     ComboBox_SetItemData(power_list, pLid, fan_conf->lastProf->powerStage);
@@ -319,31 +313,29 @@ void UpdateFanUI(LPVOID lpParam) {
         SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Overboost");
         wasBoostMode = false;
     }
-    if (mon) {
-        if (IsWindowVisible((HWND)lpParam)) {
-            if (!mon->monThread) {
-                for (int i = 0; i < acpi->HowManySensors(); i++) {
-                    mon->senValues[i] = acpi->GetTempValue(i);
-                    if (mon->senValues[i] > mon->maxTemps[i])
-                        mon->maxTemps[i] = mon->senValues[i];
-                }
-                for (int i = 0; i < acpi->HowManyFans(); i++)
-                    mon->fanRpm[i] = acpi->GetFanRPM(i);
-            }
-            //DebugPrint("Fans UI update...\n");
+    if (mon && IsWindowVisible((HWND)lpParam)) {
+        if (!mon->monThread) {
             for (int i = 0; i < acpi->HowManySensors(); i++) {
-                string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
-                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+                mon->senValues[i] = acpi->GetTempValue(i);
+                if (mon->senValues[i] > mon->maxTemps[i])
+                    mon->maxTemps[i] = mon->senValues[i];
             }
-            RECT cArea;
-            GetClientRect(tempList, &cArea);
-            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-            for (int i = 0; i < acpi->HowManyFans(); i++) {
-                string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
-                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-            }
-            SendMessage(fanWindow, WM_PAINT, 0, 0);
+            for (int i = 0; i < acpi->HowManyFans(); i++)
+                mon->fanRpm[i] = acpi->GetFanRPM(i);
         }
+        //DebugPrint("Fans UI update...\n");
+        for (int i = 0; i < acpi->HowManySensors(); i++) {
+            string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
+            ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+        }
+        RECT cArea;
+        GetClientRect(tempList, &cArea);
+        ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+        ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+        for (int i = 0; i < acpi->HowManyFans(); i++) {
+            string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
+            ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+        }
+        SendMessage(fanWindow, WM_PAINT, 0, 0);
     }
 }

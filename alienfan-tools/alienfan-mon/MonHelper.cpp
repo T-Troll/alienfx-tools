@@ -106,12 +106,12 @@ void CMonProc(LPVOID param) {
 				// Check overboost tricks...
 				if (src->boostRaw[i] < 90 && src->boostSets[i] > 100) {
 					acpi->SetFanBoost(i, 100, true);
-					src->fanSleep[i] = 6;
-					DebugPrint(("Overboost started, locked for 3 sec (old " +to_string(src->boostRaw[i]) + ", new " + to_string(src->boostSets[i]) +")!\n").c_str());
+					src->fanSleep[i] = (100 - src->boostRaw[i]) >> 2;
+					DebugPrint(("Overboost started, locked for " + to_string(src->fanSleep[i]) + " tacts (old " +to_string(src->boostRaw[i]) + ", new " + to_string(src->boostSets[i]) +")!\n").c_str());
 				} else
 					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
 						if (src->boostRaw[i] > src->boostSets[i])
-							src->boostSets[i] += 31 * (src->boostRaw[i] - src->boostSets[i]) / 32;
+							src->boostSets[i] += 31 * ((src->boostRaw[i] - src->boostSets[i]) >> 6);
 						acpi->SetFanBoost(i, src->boostSets[i], true);
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());

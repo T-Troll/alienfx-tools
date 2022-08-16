@@ -71,6 +71,7 @@ namespace AlienFan_SDK {
 		//int WriteRamDirect(DWORD, byte);
 
 	public:
+		//VARIANT m_instancePath;
 		IWbemServices* m_WbemServices = NULL, *m_OHMService = NULL;
 		Control();
 		~Control();

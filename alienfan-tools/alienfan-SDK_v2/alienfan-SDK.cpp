@@ -17,15 +17,10 @@ namespace AlienFan_SDK {
 #endif
 		IWbemLocator* m_WbemLocator;
 		CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
-		CoInitializeSecurity(nullptr,
-			-1,
-			nullptr,
-			nullptr,
-			RPC_C_AUTHN_LEVEL_CONNECT,
+		CoInitializeSecurity(nullptr, -1, nullptr, nullptr,
+			RPC_C_AUTHN_LEVEL_NONE, //RPC_C_AUTHN_LEVEL_CONNECT,
 			RPC_C_IMP_LEVEL_IMPERSONATE,
-			nullptr,
-			EOAC_NONE,
-			nullptr);
+			nullptr, EOAC_NONE, nullptr);
 
 		CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
@@ -68,7 +63,8 @@ namespace AlienFan_SDK {
 #endif
 			// need to get instance
 			IEnumWbemClassObject* enum_obj;
-			m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
+			m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj);
+			if (!enum_obj) return false;
 			IWbemClassObject* spInstance;
 			ULONG uNumOfInstances = 0;
 			enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
@@ -105,7 +101,7 @@ namespace AlienFan_SDK {
 					// Check temperature, disable if -1
 					int sIndex = fIndex - firstSenIndex;
 					if (CallWMIMethod(dev_controls.getTemp, (byte)funcID) > 0) {
-						if (sIndex < temp_names.size()) {
+						if (sIndex < 2/*temp_names.size()*/) {
 							name = temp_names[sIndex];
 						}
 						else

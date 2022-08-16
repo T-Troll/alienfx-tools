@@ -798,7 +798,6 @@ namespace AlienFX_SDK {
 			inSet = true;
 			// Now set....
 			if (pwr) {
-				//memcpy(buffer, COMMV4.setPower, sizeof(COMMV4.setPower));
 				for (BYTE cid = 0x5b; cid < 0x61; cid++) {
 					// Init query...
 					PrepareAndSend(COMMV4.setPower, sizeof(COMMV4.setPower), {{6,cid},{4,4}});
@@ -844,17 +843,15 @@ namespace AlienFX_SDK {
 					if (nc->act[0].type != AlienFX_A_Power) {
 						SetAction(&(*nc));
 					}
-				PrepareAndSend(COMMV4.setPower, sizeof(COMMV4.setPower), {{6,0x61},{4,2}});
-				PrepareAndSend(COMMV4.setPower, sizeof(COMMV4.setPower), {{6,0x61},{4,6}});
+				PrepareAndSend(COMMV4.setPower, sizeof(COMMV4.setPower), { {6,0x61},{4,2} });
+				PrepareAndSend(COMMV4.setPower, sizeof(COMMV4.setPower), { {6,0x61},{4,6} });
 			}
 			UpdateColors();
 
 			if (pwr) {
-				BYTE res = 0;
 				int count = 0;
-				while ((res = IsDeviceReady()) && res != 255 && count < 20) {
+				while ((signed char)IsDeviceReady() > 0 && count++ < 20) {
 					Sleep(50);
-					count++;
 				}
 #ifdef _DEBUG
 				if (count == 20)
@@ -1105,19 +1102,14 @@ namespace AlienFX_SDK {
 	}
 
 	BYTE Functions::IsDeviceReady() {
-		int status;
+		int status = AlienfxGetDeviceStatus();;
 		switch (version) {
 		case API_L_V5:
-			status = AlienfxGetDeviceStatus();
 			return status != ALIENFX_V5_WAITUPDATE;// == ALIENFX_V5_STARTCOMMAND || status == ALIENFX_V5_INCOMMAND;
 		case API_L_V4:
-			status = AlienfxGetDeviceStatus();
-			if (status)
-				return status == ALIENFX_V4_READY || status == ALIENFX_V4_WAITUPDATE || status == ALIENFX_V4_WASON;
-			else
-				return 0xff;
+			return status ? status == ALIENFX_V4_READY || status == ALIENFX_V4_WAITUPDATE || status == ALIENFX_V4_WASON : 0xff;
 		case API_L_V3: case API_L_V2: case API_L_V1:
-			switch (AlienfxGetDeviceStatus()) {
+			switch (status) {
 			case ALIENFX_V2_READY:
 				return 1;
 			case ALIENFX_V2_BUSY:
@@ -1130,7 +1122,6 @@ namespace AlienFX_SDK {
 		default:// API_L_ACPI:
 			return !inSet;
 		}
-		//return 1;
 	}
 
 	bool Functions::AlienFXClose() {
