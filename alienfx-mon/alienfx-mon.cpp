@@ -158,7 +158,8 @@ void UpdateItemInfo() {
 	CheckDlgButton(mDlg, IDC_CHECK_INTRAY, conf->active_sensors[selSensor].intray);
 	CheckDlgButton(mDlg, IDC_CHECK_INVERTED, conf->active_sensors[selSensor].inverse);
 	CheckDlgButton(mDlg, IDC_CHECK_ALARM, conf->active_sensors[selSensor].alarm);
-	SetDlgItemInt(mDlg, IDC_ALARM_POINT, conf->active_sensors[selSensor].alarmPoint, false);
+	CheckDlgButton(mDlg, IDC_CHECK_DIRECTION, conf->active_sensors[selSensor].direction);
+	SetDlgItemInt(mDlg, IDC_ALARM_POINT, conf->active_sensors[selSensor].ap, false);
 	RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
 }
 
@@ -376,7 +377,10 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_CHECK_ALARM:
 			conf->active_sensors[selSensor].alarm = state;
-			//conf->active_sensors[selSensor].oldCur = NO_SEN_VALUE;
+			conf->active_sensors[selSensor].ap = GetDlgItemInt(hDlg, IDC_ALARM_POINT, NULL, false);
+			break;
+		case IDC_CHECK_DIRECTION:
+			conf->active_sensors[selSensor].direction = state;
 			break;
 		case IDC_BUT_HIDE:
 			conf->active_sensors[selSensor].disabled = !conf->showHidden;
@@ -403,7 +407,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_ALARM_POINT:
 			if (HIWORD(wParam) == EN_CHANGE) {
-				conf->active_sensors[selSensor].alarmPoint = GetDlgItemInt(hDlg, IDC_ALARM_POINT, NULL, false);
+				conf->active_sensors[selSensor].ap = GetDlgItemInt(hDlg, IDC_ALARM_POINT, NULL, false);
 			}
 			break;
 		}

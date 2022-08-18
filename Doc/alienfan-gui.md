@@ -19,8 +19,9 @@ Fan control is temperature sensor-driven, so first select one of the temperature
 Then, choose fan(s) tied to it's reading - you can select from none to all in any combination.  
 Select check box for fan(s) you need.
 
-After you doing so, currently selected (checked or not) fan settings will be shown at "Fan Settings" window - you will see selected fan boost at the top, and the fan control curve (green lines).  
-Selected fan curve presented in green color, rest of the fans attached to the same sensor marked as yellow.  
+After you doing so, currently selected fan settings will be shown at "Fan Curve" window - you will see current fan boost at the top, and the fan control curve (green line).
+The rest of the sensors controlling the same fan marked as yellow dotted lines.  
+Big green and yellow points present proposed boost set for every curve, red one show current hardware boost settings.  
 Now play with fan control curve - it defines fan boost by temperature level. X axle is temperature, Y axle is boost level.  
 You can left click (and drag until mouse button release) into the curve window to add point or select close point (if any) and move it.  
 You can click right mouse button at the graph point to remove it.  

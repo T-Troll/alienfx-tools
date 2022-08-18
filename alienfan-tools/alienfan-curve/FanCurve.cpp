@@ -187,6 +187,7 @@ int SetFanSteady(byte boost, bool downtrend = false) {
     if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
         return -1;
     lastBoostPoint->maxRPM = acpi->GetFanRPM(bestBoostPoint.fanID);
+    DrawFan();
     do {
         pRpm = bRpm;
         bRpm = lastBoostPoint->maxRPM;
@@ -198,7 +199,6 @@ int SetFanSteady(byte boost, bool downtrend = false) {
         DrawFan();
     } while ((lastBoostPoint->maxRPM > bRpm || bRpm < pRpm || lastBoostPoint->maxRPM != pRpm)
         && (!downtrend || !(lastBoostPoint->maxRPM < bRpm && bRpm < pRpm)));
-    //lastBoostPoint->maxRPM = maxRPM;
     return lastBoostPoint->maxRPM = maxRPM;
 }
 
@@ -220,13 +220,13 @@ void UpdateBoost() {
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = *(int*)lpParam, cSteps, rpm, crpm;
+    int num = *(int*)lpParam, rpm, crpm;
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
     for (int i = 0; i < acpi->HowManyFans(); i++)
         if (num < 0 || num == i) {
-            int steps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num, true);
+            int cSteps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num, true);
             fan_conf->lastSelectedFan = i;
             boostCheck.clear();
             bestBoostPoint = { (byte)i, 100, 3000 };
@@ -234,7 +234,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             if ((rpm = SetFanSteady(boost)) < 0)
                 break;
             fanMinScale = (rpm / 100) * 100;
-            for (int steps = 8; steps; steps = steps >> 1) {
+            for (int steps = cSteps; steps; steps = steps >> 1) {
                 // Check for uptrend
                 while ((boost += steps) != cBoost)
                 {
@@ -257,7 +257,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             for (int steps = cSteps; steps; steps = steps >> 1) {
                 // Check for uptrend
                 boost -= steps;
-                while (boost > 100 && (crpm = SetFanSteady(boost, true)) >= bestBoostPoint.maxRPM - 55) {
+                while (boost > 100 && (crpm = SetFanSteady(boost)) >= bestBoostPoint.maxRPM - 55) {
                     bestBoostPoint.maxBoost = boost;
                     DrawFan();
                     boost -= steps;

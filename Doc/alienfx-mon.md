@@ -21,8 +21,10 @@ You can enable 2 more sensor sources (but both of them will require Administrato
 
 You can edit sensor name by double-click on it into sensor list.
 You can hide sensor from active list pressing "Hide" button, assign try icon, it's color and style using "Sensor settings" block.  
-"Alarm at" check box enable tray notification alarm then sensor value cross the defined cross border.  
 "Reset" button reset sensor min/max values to the current one.
+
+"Alarm at" check box enable tray notification alarm then sensor value higher, then defined border.  
+"Then lower" check box will alter alarm to trigger then value become lower, then border.  
 
 "Show hidden" check box switch list between active and hidden sensors. You can revive sensor back to main list pressing "Unhide" button there.
 

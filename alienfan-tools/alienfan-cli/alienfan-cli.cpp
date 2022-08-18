@@ -69,13 +69,12 @@ void UpdateBoost() {
 }
 
 void CheckFanOverboost(byte num) {
-    int cSteps, boost = 100, cBoost = 100,
-        rpm, oldBoost = acpi->GetFanBoost(num, true);
+    int cSteps = 8, boost = 100, cBoost = 100, rpm, oldBoost = acpi->GetFanBoost(num, true);
     printf("Checking Fan#%d:\n", num);
     bestBoostPoint = { (byte)num, 100, 0 };
     rpm = SetFanSteady(boost);
     printf("    \n");
-    for (int steps = 8; steps; steps = steps >> 1) {
+    for (int steps = cSteps; steps; steps = steps >> 1) {
         // Check for uptrend
         while ((boost+=steps) != cBoost)
         {
@@ -94,16 +93,16 @@ void CheckFanOverboost(byte num) {
         cBoost = boost + steps;
     }
     printf("High check done, best %d @ %d RPM, starting low check:\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-    boost = bestBoostPoint.maxBoost;
     for (int steps = cSteps; steps; steps = steps >> 1) {
         // Check for downtrend
         boost -= steps;
-        while (boost > 100 && SetFanSteady(boost, true) >= bestBoostPoint.maxRPM - 55) {
+        while (boost > 100 && SetFanSteady(boost) >= bestBoostPoint.maxRPM - 55) {
             bestBoostPoint.maxBoost = boost;
             boost -= steps;
             printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
         }
-        printf("(Step back)\n");
+        if (boost > 100)
+            printf("(Step back)\n");
         boost = bestBoostPoint.maxBoost;
     }
     printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
@@ -271,9 +270,10 @@ int main(int argc, char* argv[])
                     if (args[0].num < acpi->HowManyFans())
                         if (args.size() > 1) {
                             // manual fan set
-                            //acpi->Unlock();
-                            bestBoostPoint = { (byte)args[0].num, (byte)args[1].num, 4000 };
-                            //printf("Boost for fan #%d will be set to %d.\n", args[0].num, bestBoostPoint.maxBoost);
+                            acpi->Unlock();
+                            bestBoostPoint = { (byte)args[0].num, (byte)args[1].num, 0 };
+                            acpi->SetFanBoost(bestBoostPoint.fanID, 100, true);
+                            Sleep(2000);
                             SetFanSteady(bestBoostPoint.maxBoost);
                             UpdateBoost();
                             acpi->SetFanBoost(bestBoostPoint.fanID, 0);

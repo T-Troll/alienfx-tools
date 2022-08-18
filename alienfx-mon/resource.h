@@ -32,8 +32,9 @@
 #define IDC_BUT_HIDE                    1011
 #define IDC_CHECK_ALARM                 1012
 #define IDC_ALARM_POINT                 1013
-#define IDC_BUTTON3                     1014
 #define IDC_BUT_RESET                   1014
+#define IDC_CHECK3                      1015
+#define IDC_CHECK_DIRECTION             1015
 #define IDC_STARTW                      1016
 #define IDC_STARTM                      1017
 #define IDC_ESENSORS                    1039
@@ -54,7 +55,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1015
+#define _APS_NEXT_CONTROL_VALUE         1016
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

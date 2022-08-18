@@ -23,7 +23,13 @@ struct SENSOR {
 		};
 		DWORD flags = 0;
 	};
-	DWORD alarmPoint = 0;
+	union {
+		struct {
+			WORD ap;
+			WORD direction;
+		};
+		DWORD alarmPoint = 0;
+	};
 	DWORD traycolor = 0xffffff;
 	NOTIFYICONDATA* niData;
 };
