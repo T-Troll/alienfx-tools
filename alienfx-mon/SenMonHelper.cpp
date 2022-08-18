@@ -85,8 +85,8 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 	}
 	if (sen->alarm && sen->oldCur && sen->oldCur != NO_SEN_VALUE) {
 		// Check alarm
-		if ((sen->cur < sen->alarmPoint) + (sen->oldCur >= sen->alarmPoint) == 2 ||
-			(sen->cur > sen->alarmPoint) + (sen->oldCur <= sen->alarmPoint) == 2) {
+		if ((sen->cur < (int)sen->alarmPoint) + (sen->oldCur >= (int)sen->alarmPoint) == 2 ||
+			(sen->cur > (int)sen->alarmPoint) + (sen->oldCur <= (int)sen->alarmPoint) == 2) {
 			// Set alarm
 			ShowNotification(&conf->niData, "Alarm triggered!", "Sensor \"" + sen->name +
 				"\" crossed the value " + to_string(sen->alarmPoint) + " (Current: " + to_string(sen->cur) + ")!", true);

@@ -31,7 +31,7 @@ void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
 		if ((oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage)
-			acpi->SetPower(fan_conf->lastProf->powerStage);
+			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
 		acpi->SetGPU(fan_conf->lastProf->GPUPower);
 		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
 			if ((oldGmode = acpi->GetGMode()) != fan_conf->lastProf->gmode)
@@ -54,7 +54,7 @@ void MonHelper::Stop() {
 		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && oldGmode != fan_conf->lastProf->gmode)
 			acpi->SetGMode(oldGmode);
 		if (oldPower != fan_conf->lastProf->powerStage)
-			acpi->SetPower(oldPower);
+			acpi->SetPower(acpi->powers[oldPower]);
 		if (!oldPower)
 			// reset boost
 			for (int i = 0; i < acpi->fans.size(); i++)
@@ -106,12 +106,12 @@ void CMonProc(LPVOID param) {
 				// Check overboost tricks...
 				if (src->boostRaw[i] < 90 && src->boostSets[i] > 100) {
 					acpi->SetFanBoost(i, 100, true);
-					src->fanSleep[i] = (100 - src->boostRaw[i]) >> 2;
+					src->fanSleep[i] = ((100 - src->boostRaw[i]) >> 2) + 1;
 					DebugPrint(("Overboost started, locked for " + to_string(src->fanSleep[i]) + " tacts (old " +to_string(src->boostRaw[i]) + ", new " + to_string(src->boostSets[i]) +")!\n").c_str());
 				} else
 					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
 						if (src->boostRaw[i] > src->boostSets[i])
-							src->boostSets[i] += 31 * ((src->boostRaw[i] - src->boostSets[i]) >> 6);
+							src->boostSets[i] += 15 * ((src->boostRaw[i] - src->boostSets[i]) >> 4);
 						acpi->SetFanBoost(i, src->boostSets[i], true);
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());

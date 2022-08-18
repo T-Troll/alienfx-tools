@@ -72,15 +72,15 @@ namespace AlienFan_SDK {
 			spInstance->Release();
 			enum_obj->Release();
 			IWbemClassObject* m_InParamaters = NULL;
-			devFlags |= DEV_FLAG_AVCC;
+			devFlags |= DEV_FLAG_AWCC;
 			// now let's check methods
 			if (m_AWCCGetObj->GetMethod(commandList[0], NULL, &m_InParamaters, nullptr) == S_OK) {
 				m_InParamaters->Release();
 				// Let's get device ID...
-				systemID = CallWMIMethod({ 0, 2 }, 0);
-				devFlags |= DEV_FLAG_INFO;
+				//systemID = CallWMIMethod({ 0, 2 }, 0);
+				//devFlags |= DEV_FLAG_INFO;
 #ifdef _TRACE_
-				printf("System information available, ID=%x!\n", systemID);
+				printf("System information available\n");// , ID = % x!\n", systemID);
 #endif
 				int fIndex = 0, funcID = 0;
 				// Scan for available fans...
@@ -123,8 +123,8 @@ namespace AlienFan_SDK {
 						fIndex++;
 					} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) && funcID > 0);
 					// Hidden power mode for Dell G-series
-					if (HIWORD(systemID) == 500)
-						powers.push_back(0xAB);
+					//if (HIWORD(systemID) == 500)
+					//	powers.push_back(0xAB);
 #ifdef _TRACE_
 					printf("%d Power modes found\n", (int)powers.size());
 #endif
@@ -304,18 +304,20 @@ namespace AlienFan_SDK {
 	int Control::Unlock() {
 		return SetPower(0);
 	}
-	int Control::SetPower(int level) {
-		if (level < powers.size())
+	int Control::SetPower(byte level) {
+		//if (level < powers.size())
 			//if (devs[aDev].commandControlled)
-				return CallWMIMethod(dev_controls.setPower, powers[level]);
+				return CallWMIMethod(dev_controls.setPower, level);
 			//else {
 			//	return WriteRamDirect(dev_c_controls.unlock, powers[level]);
 			//}
-		return -1;
+		//return -1;
 	}
 	int Control::GetPower() {
 		//if (devs[aDev].commandControlled) {
 			int pl = CallWMIMethod(dev_controls.getPower);
+			if (pl == 0xAB) // G-mode active
+				return 0;
 			for (int i = 0; pl >= 0 && i < powers.size(); i++)
 				if (powers[i] == pl)
 					return i;
@@ -338,8 +340,11 @@ namespace AlienFan_SDK {
 
 	int Control::SetGMode(bool state)
 	{
-		if (devFlags & DEV_FLAG_GMODE)
+		if (devFlags & DEV_FLAG_GMODE) {
+			if (state)
+				SetPower(0xAB);
 			return CallWMIMethod(dev_controls.setGMode, state);
+		}
 		return -1;
 	}
 

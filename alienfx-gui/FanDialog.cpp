@@ -35,7 +35,7 @@ ThreadHelper* fanUIUpdate = NULL;
 
 void StartOverboost(HWND hDlg, int fan) {
     EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
-    CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan, 0, NULL);
+    CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fan, 0, NULL);
     SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
 }
 
@@ -122,7 +122,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 pLid = ComboBox_GetCurSel(power_list);
                 fan_conf->lastProf->powerStage = (WORD)ComboBox_GetItemData(power_list, pLid);
-                acpi->SetPower(fan_conf->lastProf->powerStage);
+                acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
             } break;
             case CBN_EDITCHANGE:
             {
@@ -236,8 +236,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     fanUIUpdate = NULL;
                 }
                 HWND editC = ListView_GetEditControl(tempList);
-                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
-                Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.lParam].name).c_str());
+                auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
+                Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[(byte)sItem->item.lParam].name).c_str());
             } break;
             case LVN_ITEMACTIVATE: case NM_RETURN:
             {
@@ -250,7 +250,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 if (sItem->item.pszText) {
-                    auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                    auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
                     if (pwr == fan_conf->sensors.end()) {
                         if (strlen(sItem->item.pszText))
                             fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);

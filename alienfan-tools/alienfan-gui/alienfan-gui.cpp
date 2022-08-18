@@ -160,7 +160,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 void StartOverboost(HWND hDlg, int fan) {
     EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
-    CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan, 0, NULL);
+    CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fan, 0, NULL);
     SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
 }
 
@@ -269,7 +269,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 pLid = ComboBox_GetCurSel(power_list);
                 //int pid = (int)ComboBox_GetItemData(power_list, pLid);
                 fan_conf->lastProf->powerStage = (WORD)ComboBox_GetItemData(power_list, pLid);
-                acpi->SetPower(fan_conf->lastProf->powerStage);
+                acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
                 fan_conf->Save();
             } break;
             case CBN_EDITCHANGE:
@@ -404,7 +404,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_HOTKEY: {
         if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
-            acpi->SetPower(fan_conf->lastProf->powerStage);
+            acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
             ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
         }
         switch (wParam) {
@@ -476,7 +476,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     fanThread = NULL;
                 }
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
                 Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.lParam].name).c_str());
             } break;
             case LVN_ITEMACTIVATE: case NM_RETURN:
@@ -491,7 +491,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 if (sItem->item.pszText) {
-                    auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                    auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
                     if (pwr == fan_conf->sensors.end()) {
                         if (strlen(sItem->item.pszText))
                             fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);
@@ -652,7 +652,7 @@ void UpdateFanUI(LPVOID lpParam) {
         for (int i = 0; i < acpi->HowManyFans(); i++) {
             name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
         }
-        strcpy_s(niData->szTip, 128, name.c_str());
+        strcpy_s(niData->szTip, 127, name.c_str());
         Shell_NotifyIcon(NIM_MODIFY, niData);
     }
 }

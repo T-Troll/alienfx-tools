@@ -102,7 +102,7 @@ if (!newID) newID = conf->FindDefaultProfile();
 			conf->active_set = &newID->lightsets;
 			conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 			if (mon) {
-				acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+				acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 				acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 			}
 			// change global effect

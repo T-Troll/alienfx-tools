@@ -9,7 +9,7 @@ using namespace std;
 
 #define byte BYTE
 
-#define DEV_FLAG_AVCC		1
+#define DEV_FLAG_AWCC		1
 #define DEV_FLAG_INFO		2
 #define DEV_FLAG_CONTROL	4
 #define DEV_FLAG_GMODE		8
@@ -65,7 +65,7 @@ namespace AlienFan_SDK {
 	private:
 		VARIANT m_instancePath;
 		byte devFlags = 0;
-		DWORD systemID = 0;
+		//DWORD systemID = 0;
 		//bool haveGmode = false;
 		//int ReadRamDirect(DWORD);
 		//int WriteRamDirect(DWORD, byte);
@@ -108,9 +108,9 @@ namespace AlienFan_SDK {
 		// Result: raw value set or error
 		int Unlock();
 
-		// Set system power profile to power index at powers[]
+		// Set system power profile to power level (value from powers[])
 		// Result: raw value set or error
-		int SetPower(int level);
+		int SetPower(byte level);
 
 		// Get current system power value index at powers[]
 		// Result: power value index in powers[]
@@ -146,7 +146,7 @@ namespace AlienFan_SDK {
 		inline byte GetDeviceFlags() { return devFlags; };
 
 		// Return current device ID
-		inline DWORD GetSystemID() { return systemID; };
+		//inline DWORD GetSystemID() { return systemID; };
 
 		// Call custom Alienware method trough WMI
 		int CallWMIMethod(ALIENFAN_COMMAND com, byte arg1 = 0, byte arg2 = 0);

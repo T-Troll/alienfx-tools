@@ -2,10 +2,11 @@
 
 //#define NUM_DEVICES 6
 
-static const BSTR commandList[3] = {
+static const BSTR commandList[4] = {
 	(BSTR)L"Thermal_Information", // 0x14
 	(BSTR)L"Thermal_Control", // 0x15
-	(BSTR)L"GameShiftStatus" // 0x25
+	(BSTR)L"GameShiftStatus", // 0x25
+	(BSTR)L"SystemInformation" // 0x1A
 };
 
 namespace AlienFan_SDK {

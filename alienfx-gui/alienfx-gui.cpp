@@ -735,7 +735,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->HowManyPower()) {
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
-			acpi->SetPower(conf->fan_conf->lastProf->powerStage);
+			acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
 			break;

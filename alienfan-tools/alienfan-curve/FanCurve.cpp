@@ -180,24 +180,26 @@ void DrawFan()
 int SetFanSteady(byte boost, bool downtrend = false) {
     acpi->SetFanBoost(bestBoostPoint.fanID, boost, true);
     // Check the trend...
-    int fRpm, fDelta = -1, oDelta, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
+    int pRpm, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID), maxRPM;
     boostCheck.push_back({ bestBoostPoint.fanID, boost, (USHORT)bRpm });
     lastBoostPoint = &boostCheck.back();
     DrawFan();
-    //if (WaitForSingleObject(ocStopEvent, 5000) != WAIT_TIMEOUT)
-    //    return -1;
+    if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
+        return -1;
+    lastBoostPoint->maxRPM = acpi->GetFanRPM(bestBoostPoint.fanID);
     do {
-        oDelta = fDelta;
-        if (WaitForSingleObject(ocStopEvent, 6000) != WAIT_TIMEOUT)
+        pRpm = bRpm;
+        bRpm = lastBoostPoint->maxRPM;
+        if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
             return -1;
-        fRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
-        fDelta = fRpm - bRpm;
-        lastBoostPoint->maxRPM = max(bRpm, fRpm);
-        bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, lastBoostPoint->maxRPM);
-        bRpm = fRpm;
+        lastBoostPoint->maxRPM = acpi->GetFanRPM(bestBoostPoint.fanID);
+        maxRPM = max(lastBoostPoint->maxRPM, bRpm);
+        bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
         DrawFan();
-    } while ((fDelta > 0 || oDelta < 0) && (!downtrend || !(fDelta < -40 && oDelta < -40)));
-    return lastBoostPoint->maxRPM;
+    } while ((lastBoostPoint->maxRPM > bRpm || bRpm < pRpm || lastBoostPoint->maxRPM != pRpm)
+        && (!downtrend || !(lastBoostPoint->maxRPM < bRpm && bRpm < pRpm)));
+    //lastBoostPoint->maxRPM = maxRPM;
+    return lastBoostPoint->maxRPM = maxRPM;
 }
 
 void UpdateBoost() {
@@ -212,13 +214,13 @@ void UpdateBoost() {
     else {
         fan_conf->boosts.push_back(bestBoostPoint);
     }
-    acpi->boosts[bestBoostPoint.fanID] = bestBoostPoint.maxBoost;
+    acpi->boosts[bestBoostPoint.fanID] = max(bestBoostPoint.maxBoost, 100);
     acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
     fan_conf->Save();
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = (int)lpParam, cSteps, crpm, rpm;
+    int num = *(int*)lpParam, cSteps, rpm, crpm;
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
@@ -241,7 +243,6 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                         cSteps = steps;
                         bestBoostPoint.maxBoost = boost;
                         DrawFan();
-                        //steps = steps << 1;
                     }
                     else {
                         if (crpm > 0)
@@ -253,10 +254,10 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                 boost = bestBoostPoint.maxBoost;
                 cBoost = boost + steps;
             }
-            for (int steps = cSteps > 1 ? cSteps >> 1 : 1; steps; steps = steps >> 1) {
+            for (int steps = cSteps; steps; steps = steps >> 1) {
                 // Check for uptrend
                 boost -= steps;
-                while ((crpm = SetFanSteady(boost, true)) >= bestBoostPoint.maxRPM - 80) {
+                while (boost > 100 && (crpm = SetFanSteady(boost, true)) >= bestBoostPoint.maxRPM - 55) {
                     bestBoostPoint.maxBoost = boost;
                     DrawFan();
                     boost -= steps;
@@ -272,7 +273,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             ShowNotification(niData, "Overboost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
                 + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
         }
-    acpi->SetPower(fan_conf->lastProf->powerStage);
+    acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
     fanMode = true;
     mon->Start();
     return 0;
@@ -462,6 +463,6 @@ void SetCurrentGmode() {
     if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
         acpi->SetGMode(fan_conf->lastProf->gmode);
         if (!fan_conf->lastProf->gmode)
-            acpi->SetPower(fan_conf->lastProf->powerStage);
+            acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
     }
 }
