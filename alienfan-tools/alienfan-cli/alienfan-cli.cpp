@@ -42,8 +42,8 @@ int SetFanSteady(byte boost, bool downtrend = false) {
         bRpm = fRpm;
         Sleep(3000);
         fRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
-        printf("\rProbing Fan#%d at boost %d: %4d-%4d-%4d (%+d, %+d)        ", bestBoostPoint.fanID, boost, pRpm, bRpm, fRpm, bRpm - pRpm, fRpm - bRpm);
-        //printf("\rProbing Fan#%d at boost %d: %4d (%+d)   \r", bestBoostPoint.fanID, boost, fRpm, fRpm - bRpm);
+        //printf("\rProbing Fan#%d at boost %d: %4d-%4d-%4d (%+d, %+d)        ", bestBoostPoint.fanID, boost, pRpm, bRpm, fRpm, bRpm - pRpm, fRpm - bRpm);
+        printf("\rProbing Fan#%d at boost %d: %4d (%+d)   \r", bestBoostPoint.fanID, boost, fRpm, fRpm - bRpm);
         maxRPM = max(bRpm, fRpm);
         bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
     } while ((fRpm > bRpm || bRpm < pRpm || fRpm != pRpm) && (!downtrend || !(fRpm < bRpm && bRpm < pRpm)));
