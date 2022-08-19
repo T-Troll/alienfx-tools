@@ -78,7 +78,7 @@ namespace AlienFan_SDK {
 				m_InParamaters->Release();
 				// Let's get device ID...
 				//systemID = CallWMIMethod({ 0, 2 }, 0);
-				//devFlags |= DEV_FLAG_INFO;
+				devFlags |= DEV_FLAG_INFO;
 #ifdef _TRACE_
 				printf("System information available\n");// , ID = % x!\n", systemID);
 #endif
@@ -224,10 +224,7 @@ namespace AlienFan_SDK {
 
 	int Control::GetFanRPM(int fanID) {
 		if (fanID < fans.size())
-			//if (devs[aDev].commandControlled)
-				return CallWMIMethod(dev_controls.getFanRPM, (byte) fans[fanID]);
-			//else
-			//	return ReadRamDirect(fans[fanID]) * 70; // max. 7000 RPM
+			return CallWMIMethod(dev_controls.getFanRPM, (byte) fans[fanID]);
 		return -1;
 	}
 	int Control::GetFanPercent(int fanID) {
@@ -235,31 +232,20 @@ namespace AlienFan_SDK {
 			if (fanID < maxrpm.size() && maxrpm[fanID])
 				return GetFanRPM(fanID) * 100 / maxrpm[fanID];
 			else
-				//if (devs[aDev].commandControlled)
-					return CallWMIMethod(dev_controls.getFanPercent, (byte) fans[fanID]);
-				//else
-				//	return ReadRamDirect(fans[fanID]);
+				return CallWMIMethod(dev_controls.getFanPercent, (byte) fans[fanID]);
 		return -1;
 	}
 	int Control::GetFanBoost(int fanID, bool force) {
 		if (fanID < fans.size()) {
-			//if (devs[aDev].commandControlled) {
-				int value = CallWMIMethod(dev_controls.getFanBoost, (byte) fans[fanID]);
-				return force ? value : value * 100 / boosts[fanID];
-			//} else
-			//	return ReadRamDirect(fans[fanID]);
+			int value = CallWMIMethod(dev_controls.getFanBoost, (byte) fans[fanID]);
+			return force ? value : value * 100 / boosts[fanID];
 		}
 		return -1;
 	}
 	int Control::SetFanBoost(int fanID, byte value, bool force) {
 		if (fanID < fans.size()) {
-			//if (devs[aDev].commandControlled) {
-				int finalValue = force ? value : (int) value * boosts[fanID] / 100;
-				return CallWMIMethod(dev_controls.setFanBoost, (byte) fans[fanID], finalValue);
-			//} else {
-			//	WriteRamDirect(fans[fanID] + 0x23, value + 1); // lock at 0 fix
-			//	return WriteRamDirect(fans[fanID], value);
-			//}
+			int finalValue = force ? value : (int) value * boosts[fanID] / 100;
+			return CallWMIMethod(dev_controls.setFanBoost, (byte) fans[fanID], finalValue);
 		}
 		return -1;
 	}
@@ -305,30 +291,14 @@ namespace AlienFan_SDK {
 		return SetPower(0);
 	}
 	int Control::SetPower(byte level) {
-		//if (level < powers.size())
-			//if (devs[aDev].commandControlled)
-				return CallWMIMethod(dev_controls.setPower, level);
-			//else {
-			//	return WriteRamDirect(dev_c_controls.unlock, powers[level]);
-			//}
-		//return -1;
+		return CallWMIMethod(dev_controls.setPower, level);
 	}
 	int Control::GetPower() {
-		//if (devs[aDev].commandControlled) {
-			int pl = CallWMIMethod(dev_controls.getPower);
-			if (pl == 0xAB) // G-mode active
-				return 0;
+		int pl = CallWMIMethod(dev_controls.getPower);
+		if (pl != 0xAB) // G-mode active
 			for (int i = 0; pl >= 0 && i < powers.size(); i++)
 				if (powers[i] == pl)
 					return i;
-		//} else {
-		//	// Always return Auto mode for system safety!
-		//	return 1;
-		//	//int pl = ReadRamDirect(dev_c_controls.unlock);
-		//	//for (int i = 0; pl >= 0 && i < powers.size(); i++)
-		//	//	if (powers[i] == pl)
-		//	//		return i;
-		//}
 		return -1;
 	}
 	int Control::SetGPU(int power) {

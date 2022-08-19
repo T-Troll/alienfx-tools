@@ -3,7 +3,7 @@
 extern int eItem;
 HWND zsDlg;
 
-void UpdateZoneList(byte flag = 0) {
+void UpdateZoneList() {
 	int rpos = -1, pos = 0;
 	HWND zone_list = GetDlgItem(zsDlg, IDC_LIST_ZONES);
 	LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE };
@@ -11,9 +11,7 @@ void UpdateZoneList(byte flag = 0) {
 	ListView_SetExtendedListViewStyle(zone_list, LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
 	if (!ListView_GetColumnWidth(zone_list, 0)) {
 		LVCOLUMNA lCol{ /*LVCF_TEXT |*/ LVCF_FMT, LVCFMT_LEFT };
-		//lCol.pszText = "Name";
 		ListView_InsertColumn(zone_list, 0, &lCol);
-		//lCol.pszText = "L";
 		lCol.fmt = LVCFMT_RIGHT;
 		ListView_InsertColumn(zone_list, 1, &lCol);
 	}
@@ -111,8 +109,10 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	case WM_INITDIALOG:
 	{
 		zsDlg = hDlg;
+		if (eItem < 0 && conf->activeProfile->lightsets.size())
+			eItem = conf->activeProfile->lightsets.front().group;
 		UpdateZoneList();
-		return false;
+		//return false;
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -187,8 +187,11 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 				}
 				else {
-					eItem = -1;
-					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+					if (!lPoint->uNewState && ListView_GetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_FOCUSED)) {
+						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
+					}
+					else
+						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, 0, LVIS_SELECTED);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:

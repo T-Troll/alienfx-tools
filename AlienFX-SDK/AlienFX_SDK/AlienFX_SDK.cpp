@@ -442,10 +442,9 @@ namespace AlienFX_SDK {
 			byte bPos = 5;
 			for (auto nc = lights->begin(); nc != lights->end(); nc++)
 				if (bPos < length) {
-					mods.insert(mods.end(), { {bPos,*nc},{(byte)(bPos + 1,0x81)},{(byte)(bPos + 2), 0},
-						{ (byte)(bPos + 3), 0xa5}, { (byte)(bPos + 4), 0 }, {(byte)(bPos + 5), 0xa},
-						{ (byte)(bPos + 6), c.r},{ (byte)(bPos + 7),c.g},{ (byte)(bPos + 8),c.b},
-						{ (byte)(bPos + 13), 1} });
+					mods.insert(mods.end(), { {bPos, *nc},{(byte)(bPos + 1),0x81},
+						{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 5), 0xa},
+						{ (byte)(bPos + 6),c.r},{ (byte)(bPos + 7),c.g},{ (byte)(bPos + 8),c.b} });
 					bPos += 15;
 				}
 				else {
@@ -542,18 +541,18 @@ namespace AlienFX_SDK {
 					case AlienFX_A_Rainbow: opType = 0x80; break; // DEBUG, check for OFF
 					}
 					mods.insert(mods.end(), { {bPos,nc->index},{(byte)(bPos + 1),opType},{(byte)(bPos + 2),nc->act[0].tempo},
-						{ (byte)(bPos + 3), 0xa5}, { (byte)(bPos + 4), 0 }, {(byte)(bPos + 5), 0xa},
+						{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),nc->act[0].time }, {(byte)(bPos + 5), 0xa},
 						{ (byte)(bPos + 6), nc->act[0].r},{ (byte)(bPos + 7),nc->act[0].g},{ (byte)(bPos + 8),nc->act[0].b} });
 					// add second color if present
 					if (nc->act.size() > 1) {
 						mods.insert(mods.end(), {
 							{ (byte)(bPos + 9),nc->act[1].r },
 							{ (byte)(bPos + 10),nc->act[1].g },
-							{ (byte)(bPos + 11),nc->act[1].b },
-							{ (byte)(bPos + 13),2 } });
+							{ (byte)(bPos + 11),nc->act[1].b }/*,
+							{ (byte)(bPos + 13),2 } */});
 					}
-					else
-						mods.push_back({ (byte)(bPos + 13), 1 });
+					//else
+					//	mods.push_back({ (byte)(bPos + 13), 1 });
 					bPos += 15;
 				}
 				else {
@@ -1056,6 +1055,11 @@ namespace AlienFX_SDK {
 			//if (HidD_GetInputReport(devHandle, buffer, length))
 			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
 				ret = buffer[2];
+#ifdef _DEBUG
+			else {
+				OutputDebugString(TEXT("System hangs!\n"));
+			}
+#endif
 		} break;
 		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
@@ -1069,11 +1073,7 @@ namespace AlienFX_SDK {
 				else ret = buffer[0];
 		} break;
 		}
-#ifdef _DEBUG
-		if (ret == 0) {
-			OutputDebugString(TEXT("System hangs!\n"));
-		}
-#endif
+
 		return ret;
 	}
 

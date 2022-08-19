@@ -97,26 +97,21 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 if (!newID) newID = conf->FindDefaultProfile();
 	if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
 	if (newID->id != conf->activeProfile->id) {
+
 			modifyProfile.lock();
 			conf->activeProfile = newID;
 			conf->active_set = &newID->lightsets;
 			conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
+			modifyProfile.unlock();
+
 			if (mon) {
 				acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 				acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 			}
-			// change global effect
-			//if (conf->haveGlobal) {
-			//	fxhl->UnblockUpdates(false);
-			//	fxhl->UpdateGlobalEffect();
-			//	fxhl->UnblockUpdates(true);
-			//}
-			modifyProfile.unlock();
 
 			fxhl->ChangeState();
 			ChangeEffectMode();
 
-			//profileChanged = true;
 			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
 	} else {
 		DebugPrint((string("Same profile \"") + newID->name + "\", skipping switch.\n").c_str());
@@ -446,29 +441,19 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 	switch (wParam) {
 	case WM_KEYDOWN:
-		switch (((LPKBDLLHOOKSTRUCT)lParam)->vkCode) {
-		case VK_LSHIFT:
-		case VK_LCONTROL:
-		case VK_LMENU:
-		case VK_LWIN:
-		case VK_RSHIFT:
-		case VK_RCONTROL:
-		case VK_RMENU: {
-			if (!(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
-				auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
-					[lParam](auto cp) {
-						return ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == cp->triggerkey;
-					});
-				if (pos != conf->profiles.end()) {
-					eve->SwitchActiveProfile(*pos);
-					wasSwitched = true;
-				}
+		if (!(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
+			auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
+				[lParam](auto cp) {
+					return ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == cp->triggerkey;
+				});
+			if (pos != conf->profiles.end()) {
+				eve->SwitchActiveProfile(*pos);
+				wasSwitched = true;
 			}
-		} break;
 		}
 		break;
 	case WM_KEYUP:
-		if (wasSwitched) {
+		if (wasSwitched && ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == conf->activeProfile->triggerkey) {
 			eve->CheckProfileWindow(GetForegroundWindow());
 			wasSwitched = false;
 		}

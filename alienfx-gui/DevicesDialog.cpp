@@ -189,7 +189,6 @@ void RedrawDevList() {
 			if (lItem.lParam == dIndex) {
 				lItem.state = LVIS_SELECTED;
 				rpos = i;
-				UpdateDeviceInfo();
 			}
 			else
 				lItem.state = 0;
@@ -394,7 +393,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						break;
 				}
 			if (dIndex >= 0) {
-				fxhl->TestLight(dIndex, -1, true);
+				fxhl->TestLight(dIndex, -1);
 				RedrawDevList();
 			}
 		}
@@ -648,15 +647,20 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
-				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
-					// De-select current light
-					//fxhl->TestLight(dIndex, -1);
-					// Select other item...
+				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					dIndex = (int)lPoint->lParam;
 					fxhl->TestLight(dIndex, eLid, true);
 					UpdateDeviceInfo();
-				} else
-					fxhl->TestLight(dIndex, -1);
+				}
+				else {
+					if (!lPoint->uNewState && ListView_GetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_FOCUSED)) {
+						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
+					}
+					else {
+						fxhl->TestLight(dIndex, -1);
+						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, 0, LVIS_SELECTED);
+					}
+				}
 			} break;
 			case LVN_ENDLABELEDIT:
 			{

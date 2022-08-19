@@ -4,7 +4,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void UpdateZoneList(byte flag = 0);
+extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp);
 
 extern void SetLightInfo();

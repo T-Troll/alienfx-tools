@@ -89,7 +89,7 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 			(sen->cur > (int)sen->ap) + (sen->oldCur <= (int)sen->ap) == 2)) {
 			// Set alarm
 			ShowNotification(&conf->niData, "Alarm triggered!", "Sensor \"" + sen->name +
-				"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->alarmPoint) + " (Current: " + to_string(sen->cur) + ")!", true);
+				"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->ap) + " (Current: " + to_string(sen->cur) + ")!", true);
 		}
 	}
 }

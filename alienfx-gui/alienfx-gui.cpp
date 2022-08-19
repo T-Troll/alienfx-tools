@@ -78,6 +78,7 @@ bool DetectFans() {
 }
 
 void SwitchTab(int);
+void ReloadProfileList();
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -121,10 +122,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (!fxhl->FillAllDevs(acpi))
 		ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
 
+	ReloadProfileList();
+
 	eve = new EventHandler();
 	eve->StartProfiles();
-
-	SwitchTab(TAB_LIGHTS);
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
@@ -298,11 +299,11 @@ void SwitchTab(int num) {
 	OnSelChanged(tab_list);
 }
 
-void SwitchLightTab(HWND dlg, int num) {
-	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_LIGHTS);
-	TabCtrl_SetCurSel(tab_list, num);
-	OnSelChanged(tab_list);
-}
+//void SwitchLightTab(HWND dlg, int num) {
+//	HWND tab_list = GetDlgItem(dlg, IDC_TAB_LIGHTS);
+//	TabCtrl_SetCurSel(tab_list, num);
+//	OnSelChanged(tab_list);
+//}
 
 void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 	if (mode_list == NULL) {
@@ -369,6 +370,7 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 	for (int i = 0; i < tabsize; i++) {
 		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
 		tie.pszText = (LPSTR)names[i].c_str();
+		//tie.cchTextMax = names[i].size()+1;
 		SendMessage(parent, TCM_INSERTITEM, i, (LPARAM)&tie);
 		pHdr->apProc[i] = func[i];
 	}
@@ -400,10 +402,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
 			);
 
-		//ReloadModeList();
-		ReloadProfileList();
-
-		conf->niData.hWnd = hDlg;
+				conf->niData.hWnd = hDlg;
 		conf->SetIconState();
 
 		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
@@ -705,7 +704,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Device list changed\n");
 			vector<pair<WORD, WORD>> devs = conf->afx_dev.AlienFXEnumDevices();
 			if (devs.size() != fxhl->numActiveDevs) {
-				// Device added or removed, need to rescan devices...
+				DebugPrint("Supported devices list changed!\n");
 				fxhl->FillAllDevs(acpi);
 			}
 		}

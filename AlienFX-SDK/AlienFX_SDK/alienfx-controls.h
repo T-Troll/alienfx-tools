@@ -127,11 +127,13 @@ namespace AlienFX_SDK {
 		// [14] - NumColors (0..3) into block?
 		const byte readyToColor[4]{ 0xe,0x1,0x0,0x1 };
 		// [2] - how much lights into next color block (1..4)
+		// [3] - profile number?
 		// [4] - how many blocks? (need to check)
-		const byte colorSet[18]{ 0xe,0x01,0x00,0x01,0x0, 0x81, 0x00, 0xa5, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+		const byte colorSet[10]{ 0xe,0x01,0x00,0x01,0x0,0x81,0x00,0xa5,0x00,0x0a };// , 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01	};
 		// [5] - light id
 		// [6] - Effect type (80 - off, 81 - color, 82 - Pulse, 83 - morph, 87 - breath, 88 - spectrum (undocumented))
 		// [7] - Effect speed (tempo)
+		// [9] - Effect length (time)
 		// [11-13] - RGB
 		// [14-16] - RGB2
 		// [18] - Number of RGB

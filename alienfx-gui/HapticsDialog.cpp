@@ -2,12 +2,9 @@
 #include "EventHandler.h"
 #include "Common.h"
 
-//extern void SwitchLightTab(HWND, int);
 extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-//extern void RemoveUnused(vector<groupset>*);
 
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
