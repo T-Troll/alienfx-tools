@@ -232,12 +232,12 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_INITDIALOG:
 	{
         cgDlg = hDlg;
-        if (!conf->afx_dev.GetGrids()->size()) {
+        /*if (!conf->afx_dev.GetGrids()->size()) {
             conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main" });
             conf->afx_dev.GetGrids()->back().grid = new DWORD[20 * 8]{ 0 };
         }
         if (!conf->mainGrid)
-            conf->mainGrid = &conf->afx_dev.GetGrids()->front();
+            conf->mainGrid = &conf->afx_dev.GetGrids()->front();*/
 
         tipH = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), tipH);
         tipV = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), tipV);
@@ -479,17 +479,21 @@ void CreateGridBlock(HWND gridTab, DLGPROC func, bool needAddDel) {
 
     TabCtrl_SetMinTabWidth(gridTab, 10);
 
-    HWND hwndDisplay = CreateDialogIndirect(GetModuleHandle(NULL),
-        (DLGTEMPLATE*)LockResource(LoadResource(GetModuleHandle(NULL), FindResource(NULL, MAKEINTRESOURCE(IDD_GRIDBLOCK), RT_DIALOG))),
-        gridTab, func);
+    if (!GetWindowLongPtr(gridTab, GWLP_USERDATA)) {
+        HWND hwndDisplay = CreateDialogIndirect(GetModuleHandle(NULL),
+            (DLGTEMPLATE*)LockResource(LoadResource(GetModuleHandle(NULL), FindResource(NULL, MAKEINTRESOURCE(IDD_GRIDBLOCK), RT_DIALOG))),
+            gridTab, func);
 
-    SetWindowLongPtr(gridTab, GWLP_USERDATA, (LONG_PTR)hwndDisplay);
+        SetWindowLongPtr(gridTab, GWLP_USERDATA, (LONG_PTR)hwndDisplay);
 
-    SetWindowPos(hwndDisplay, NULL,
-        rcDisplay.left, rcDisplay.top,
-        rcDisplay.right - rcDisplay.left,
-        rcDisplay.bottom - rcDisplay.top,
-        SWP_SHOWWINDOW);
+        SetWindowPos(hwndDisplay, NULL,
+            rcDisplay.left, rcDisplay.top,
+            rcDisplay.right - rcDisplay.left,
+            rcDisplay.bottom - rcDisplay.top,
+            SWP_SHOWWINDOW);
+    }
+
+    TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 }
 
 void OnGridSelChanged(HWND hwndDlg)

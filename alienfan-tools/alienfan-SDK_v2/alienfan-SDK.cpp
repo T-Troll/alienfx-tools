@@ -301,12 +301,12 @@ namespace AlienFan_SDK {
 					return i;
 		return -1;
 	}
-	int Control::SetGPU(int power) {
-		/*if (power >= 0 && power < 5 && devs[aDev].commandControlled) {
-			return RunGPUCommand(dev_controls.setGPUPower.com, power << 4 | dev_controls.setGPUPower.sub);
-		}*/
-		return -1;
-	}
+	//int Control::SetGPU(int power) {
+	//	/*if (power >= 0 && power < 5 && devs[aDev].commandControlled) {
+	//		return RunGPUCommand(dev_controls.setGPUPower.com, power << 4 | dev_controls.setGPUPower.sub);
+	//	}*/
+	//	return -1;
+	//}
 
 	int Control::SetGMode(bool state)
 	{
@@ -319,22 +319,13 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		if (GetPower() < 0)
-			return 1;
-		else
-			if (devFlags & DEV_FLAG_GMODE)
+		if (devFlags & DEV_FLAG_GMODE) {
+			if (GetPower() < 0)
+				return 1;
+			else
 				return CallWMIMethod(dev_controls.getGMode);
+		}
 		return -1;
-	}
-
-	int Control::HowManyFans() {
-		return (int)fans.size();
-	}
-	int Control::HowManyPower() {
-		return (int)powers.size();
-	}
-	int Control::HowManySensors() {
-		return (int)sensors.size();
 	}
 
 	Lights::Lights(Control *ac) {

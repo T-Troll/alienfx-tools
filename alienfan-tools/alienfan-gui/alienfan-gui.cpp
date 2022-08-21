@@ -185,8 +185,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
 
         // set PerfBoost lists...
-        //HWND boost_ac = GetDlgItem(hDlg, IDC_AC_BOOST),
-        //     boost_dc = GetDlgItem(hDlg, IDC_DC_BOOST);
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
         PowerGetActiveScheme(NULL, &sch_guid);
         DWORD acMode, dcMode;
@@ -238,7 +236,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
-        // Parse the menu selections:
+
         switch (wmId) {
         case IDC_AC_BOOST: case IDC_DC_BOOST: {
             switch (HIWORD(wParam)) {
@@ -347,7 +345,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
             break;
         case IDC_CHECK_GMODE:
-            fan_conf->lastProf->gmode = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
+            fan_conf->lastProf->gmode = (IsDlgButtonChecked(hDlg, wmId) == BST_CHECKED);
             SetCurrentGmode();
             break;
         }
@@ -402,7 +400,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     } break;
     case WM_HOTKEY: {
-        if (wParam > 19 && wParam < 26 && acpi && wParam - 20 < acpi->HowManyPower()) {
+        if (wParam > 19 && wParam - 20 < acpi->powers.size()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
             acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
             ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
@@ -618,17 +616,17 @@ void UpdateFanUI(LPVOID lpParam) {
     }
     if (mon) {
         if (!mon->monThread) {
-            for (int i = 0; i < acpi->HowManySensors(); i++) {
+            for (int i = 0; i < acpi->sensors.size(); i++) {
                 mon->senValues[i] = acpi->GetTempValue(i);
                 if (mon->senValues[i] > mon->maxTemps[i])
                     mon->maxTemps[i] = mon->senValues[i];
             }
-            for (int i = 0; i < acpi->HowManyFans(); i++)
+            for (int i = 0; i < acpi->fans.size(); i++)
                 mon->fanRpm[i] = acpi->GetFanRPM(i);
         }
         if (IsWindowVisible((HWND)lpParam)) {
             //DebugPrint("Fans UI update...\n");
-            for (int i = 0; i < acpi->HowManySensors(); i++) {
+            for (int i = 0; i < acpi->sensors.size(); i++) {
                 string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
             }
@@ -636,20 +634,23 @@ void UpdateFanUI(LPVOID lpParam) {
             GetClientRect(tempList, &cArea);
             ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
             ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-            for (int i = 0; i < acpi->HowManyFans(); i++) {
+            for (int i = 0; i < acpi->fans.size(); i++) {
                 string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
                 ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
             }
             SendMessage(fanWindow, WM_PAINT, 0, 0);
         }
         string name = "Power mode: ";
-        if (fan_conf->lastProf->powerStage) {
-            auto pwr = fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage]);
-            name += (pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(fan_conf->lastProf->powerStage));
-        }
+        if (fan_conf->lastProf->gmode)
+            name += "G-mode";
         else
-            name += "Manual";
-        for (int i = 0; i < acpi->HowManyFans(); i++) {
+            if (fan_conf->lastProf->powerStage) {
+                auto pwr = fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage]);
+                name += (pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(fan_conf->lastProf->powerStage));
+            }
+            else
+                name += "Manual";
+        for (int i = 0; i < acpi->fans.size(); i++) {
             name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
         }
         strcpy_s(niData->szTip, 127, name.c_str());

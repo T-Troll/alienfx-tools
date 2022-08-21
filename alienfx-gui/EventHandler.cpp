@@ -105,8 +105,11 @@ if (!newID) newID = conf->FindDefaultProfile();
 			modifyProfile.unlock();
 
 			if (mon) {
-				acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
-				acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+				if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
+					acpi->SetGMode(conf->fan_conf->lastProf->gmode);
+				if (!conf->fan_conf->lastProf->gmode)
+					acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
+				//acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
 			}
 
 			fxhl->ChangeState();

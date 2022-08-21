@@ -207,12 +207,12 @@ DWORD WINAPI CEventProc(LPVOID param)
 		if (conf->bSensors && acpi) { // group 2
 			// Fan data and BIOS temperatures
 			int val;
-			for (int i = 0; i < acpi->HowManySensors(); i++) { // BIOS temps, code 0
+			for (int i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
 				if (val = acpi->GetTempValue(i))
 					AddUpdateSensor(conf, 2, 0, i, val, acpi->sensors[i].name);
 			}
 
-			for (int i = 0; i < acpi->HowManyFans(); i++) { // BIOS fans, code 1-3
+			for (int i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3
 				AddUpdateSensor(conf, 2, 1, i, acpi->GetFanRPM(i), (string)"Fan " + to_string(i+1) + " RPM");
 				AddUpdateSensor(conf, 2, 2, i, acpi->GetFanPercent(i), (string)"Fan " + to_string(i+1) + " percent");
 				AddUpdateSensor(conf, 2, 3, i, acpi->GetFanBoost(i, true), (string)"Fan " + to_string(i + 1) + " boost");

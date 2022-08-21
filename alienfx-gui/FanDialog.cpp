@@ -315,16 +315,16 @@ void UpdateFanUI(LPVOID lpParam) {
     }
     if (mon && IsWindowVisible((HWND)lpParam)) {
         if (!mon->monThread) {
-            for (int i = 0; i < acpi->HowManySensors(); i++) {
+            for (int i = 0; i < acpi->sensors.size(); i++) {
                 mon->senValues[i] = acpi->GetTempValue(i);
                 if (mon->senValues[i] > mon->maxTemps[i])
                     mon->maxTemps[i] = mon->senValues[i];
             }
-            for (int i = 0; i < acpi->HowManyFans(); i++)
+            for (int i = 0; i < acpi->fans.size(); i++)
                 mon->fanRpm[i] = acpi->GetFanRPM(i);
         }
         //DebugPrint("Fans UI update...\n");
-        for (int i = 0; i < acpi->HowManySensors(); i++) {
+        for (int i = 0; i < acpi->sensors.size(); i++) {
             string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
@@ -332,7 +332,7 @@ void UpdateFanUI(LPVOID lpParam) {
         GetClientRect(tempList, &cArea);
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
         ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-        for (int i = 0; i < acpi->HowManyFans(); i++) {
+        for (int i = 0; i < acpi->fans.size(); i++) {
             string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }

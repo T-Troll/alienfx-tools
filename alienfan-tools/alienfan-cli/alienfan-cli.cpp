@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
         lights = new AlienFan_SDK::Lights(acpi);
 
         printf("Supported hardware detected, %d fans, %d sensors, %d power states%s%s.\n",
-            (int)acpi->HowManyFans(), (int)acpi->sensors.size(), (int)acpi->HowManyPower(),
+            (int)acpi->fans.size(), (int)acpi->sensors.size(), (int)acpi->powers.size(),
             (acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? ", G-Mode" : ""),
             (lights->IsActivated() ? ", Lights" : ""));
 
@@ -174,31 +174,31 @@ int main(int argc, char* argv[])
             }
 
             if (command == "rpm") {
-                if (args.size() > 0 && args[0].num < acpi->HowManyFans()) {
+                if (args.size() > 0 && args[0].num < acpi->fans.size()) {
                     printf("%d\n", acpi->GetFanRPM(args[0].num));
                 }
                 else {
-                    for (int i = 0; i < acpi->HowManyFans(); i++)
+                    for (int i = 0; i < acpi->fans.size(); i++)
                         printf("Fan#%d: %d\n", i, acpi->GetFanRPM(i));
                 }
                 continue;
             }
             if (command == "percent") {
-                if (args.size() > 0 && args[0].num < acpi->HowManyFans()) {
+                if (args.size() > 0 && args[0].num < acpi->fans.size()) {
                     printf("%d\n", acpi->GetFanPercent(args[0].num));
                 }
                 else {
-                    for (int i = 0; i < acpi->HowManyFans(); i++)
+                    for (int i = 0; i < acpi->fans.size(); i++)
                         printf("Fan#%d: %d%%\n", i, acpi->GetFanPercent(i));
                 }
                 continue;
             }
             if (command == "temp") {
-                if (args.size() > 0 && args[0].num < acpi->HowManySensors()) {
+                if (args.size() > 0 && args[0].num < acpi->sensors.size()) {
                     printf("%d\n", acpi->GetTempValue(args[0].num));
                 }
                 else {
-                    for (int i = 0; i < acpi->HowManySensors(); i++) {
+                    for (int i = 0; i < acpi->sensors.size(); i++) {
                         auto sname = fan_conf->sensors.find(i);
                         printf("%s: %d\n", (sname == fan_conf->sensors.end() ? acpi->sensors[i].name.c_str() : sname->second.c_str()), acpi->GetTempValue(i));
                     }
@@ -219,18 +219,18 @@ int main(int argc, char* argv[])
             }
             if (command == "setpower" && CheckArgs(command, 1, args.size())) {
 
-                if (args[0].num < acpi->HowManyPower()) {
+                if (args[0].num < acpi->powers.size()) {
                     printf("Power set to %d (result %d)\n", args[0].num, acpi->SetPower(acpi->powers[args[0].num]));
                 }
                 else
-                    printf("Power: incorrect value (should be 0..%d)\n", acpi->HowManyPower());
+                    printf("Power: incorrect value (should be 0..%d)\n", (int)acpi->powers.size());
                 continue;
             }
-            if (command == "setgpu" && CheckArgs(command, 1, args.size())) {
+            //if (command == "setgpu" && CheckArgs(command, 1, args.size())) {
 
-                printf("GPU limit set to %d (result %d)\n", args[0].num, acpi->SetGPU(args[0].num));
-                continue;
-            }
+            //    printf("GPU limit set to %d (result %d)\n", args[0].num, acpi->SetGPU(args[0].num));
+            //    continue;
+            //}
             if (command == "setperf" && CheckArgs(command, 2, args.size())) {
                 if (args[0].num > 4 || args[1].num > 4)
                     printf("Incorrect value - should be 0..4\n");
@@ -252,14 +252,14 @@ int main(int argc, char* argv[])
             }
             if (command == "getfans") {
                 bool direct = args.size() ? args[0].num : false;
-                for (int i = 0; i < acpi->HowManyFans(); i++)
+                for (int i = 0; i < acpi->fans.size(); i++)
                     printf("Fan#%d boost %d\n", i, acpi->GetFanBoost(i, direct));
                 continue;
             }
-            if (command == "setfans" && CheckArgs(command, acpi->HowManyFans(), args.size())) {
+            if (command == "setfans" && CheckArgs(command, (int)acpi->fans.size(), args.size())) {
 
-                bool direct = args.size() > acpi->HowManyFans() ? args[acpi->HowManyFans()].num : false;
-                for (int i = 0; i < acpi->HowManyFans(); i++) {
+                bool direct = args.size() > acpi->fans.size() ? args[acpi->fans.size()].num : false;
+                for (int i = 0; i < acpi->fans.size(); i++) {
                     printf("Fan#%d boost set to %d (result %d)\n", i, args[i].num, acpi->SetFanBoost(i, args[i].num, direct));
                 }
                 continue;
@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
                 int oldMode = acpi->GetPower();
                 acpi->Unlock();
                 if (args.size()) {
-                    if (args[0].num < acpi->HowManyFans())
+                    if (args[0].num < acpi->fans.size())
                         if (args.size() > 1) {
                             // manual fan set
                             acpi->Unlock();
@@ -285,11 +285,11 @@ int main(int argc, char* argv[])
                             // auto fan set
                             CheckFanOverboost(args[0].num);
                     else
-                        printf("Incorrect fan ID (should be 0..%d)!\n", acpi->HowManyFans() - 1);
+                        printf("Incorrect fan ID (should be 0..%d)!\n", (int)acpi->fans.size() - 1);
                 }
                 else {
                     // all fans
-                    for (int i = 0; i < acpi->HowManyFans(); i++)
+                    for (int i = 0; i < acpi->fans.size(); i++)
                         CheckFanOverboost(i);
                 }
                 if (oldMode >= 0)

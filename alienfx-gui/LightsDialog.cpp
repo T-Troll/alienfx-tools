@@ -36,16 +36,13 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid);
-		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
+		//TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		//OnGridSelChanged(gridTab);
 	} break;
 	case WM_APP + 2:
-		if (conf->mainGrid) {
-			DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA);
-			SendMessage(pHdr->hwndControl, WM_APP + 2, 0, 1);
-			RedrawGridButtonZone();
-		}
-		break;
+		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 1);
+		RedrawGridButtonZone();
+	break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_COLOR_GRID: {

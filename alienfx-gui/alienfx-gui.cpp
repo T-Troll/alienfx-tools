@@ -100,6 +100,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//}
 	conf->Load();
 
+	if (!conf->afx_dev.GetGrids()->size()) {
+		conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main" });
+		conf->afx_dev.GetGrids()->back().grid = new DWORD[20 * 8]{ 0 };
+	}
+	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
+
 	fan_conf = conf->fan_conf;
 
 	if (conf->activeProfile->flags & PROF_FANS)
@@ -111,6 +117,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		EvaluteToAdmin();
 
 	fxhl = new FXHelper();
+	eve = new EventHandler();
 
 	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 		return FALSE;
@@ -124,7 +131,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	ReloadProfileList();
 
-	eve = new EventHandler();
 	eve->StartProfiles();
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
@@ -732,7 +738,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		}
-		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->HowManyPower()) {
+		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->powers.size()) {
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 			if (tabSel == TAB_FANS)

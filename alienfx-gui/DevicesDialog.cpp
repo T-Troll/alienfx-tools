@@ -299,7 +299,7 @@ string OpenSaveFile(bool isOpen) {
 		return "";
 }
 
-void ApplyDeviceMaps(bool force = false) {
+void ApplyDeviceMaps(HWND gridTab = NULL, bool force = false) {
 	// save mappings of selected.
 	int oldGridID = conf->mainGrid->id;
 	for (auto i = csv_devs.begin(); i < csv_devs.end(); i++) {
@@ -332,9 +332,13 @@ void ApplyDeviceMaps(bool force = false) {
 	conf->mainGrid = conf->afx_dev.GetGridByID(oldGridID);
 	conf->afx_dev.AlienFXAssignDevices();
 	csv_devs.clear();
-	RedrawDevList();
-	OnGridSelChanged(GetDlgItem(dDlg, IDC_TAB_DEV_GRID));
-	SetLightInfo();
+	if (gridTab) {
+		TabCtrl_DeleteAllItems(gridTab);
+		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
+		OnGridSelChanged(gridTab);
+		RedrawDevList();
+		SetLightInfo();
+	}
 }
 
 void SetNewGridName(HWND hDlg) {
@@ -383,8 +387,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		dDlg = hDlg;
 		fxhl->Stop();
+
+		if (!conf->afx_dev.activeLights && DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog) == IDOK) {
+			ApplyDeviceMaps();
+		}
+
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
-		TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
+		//TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
 		if (conf->afx_dev.fxdevs.size() > 0) {
 			if (dIndex >= conf->afx_dev.fxdevs.size() || !conf->afx_dev.fxdevs[dIndex].dev)
 				// find new index
@@ -398,14 +407,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 		}
 
-		if (!conf->afx_dev.activeLights /*&&
-			MessageBox(hDlg, "Lights and grids not defined. Do you want to detect it?", "Warning", MB_ICONQUESTION | MB_YESNO)
-			== IDYES*/) {
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog);
-		}
-
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
-		//CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
+
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -510,7 +513,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// Try to detect lights from DB
 			if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog) == IDOK) {
-				ApplyDeviceMaps();
+				ApplyDeviceMaps(gridTab);
 			}
 		} break;
 		case IDC_BUT_LOADMAP:
@@ -520,7 +523,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if ((appName = OpenSaveFile(true)).length()) {
 				// Now load mappings...
 				LoadCSV(appName);
-				ApplyDeviceMaps(true);
+				ApplyDeviceMaps(gridTab, true);
 			}
 		} break;
 		case IDC_BUT_SAVEMAP:

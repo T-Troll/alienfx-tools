@@ -224,7 +224,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
-    for (int i = 0; i < acpi->HowManyFans(); i++)
+    for (int i = 0; i < acpi->fans.size(); i++)
         if (num < 0 || num == i) {
             int cSteps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num, true);
             fan_conf->lastSelectedFan = i;
@@ -386,7 +386,7 @@ void ReloadFanView(HWND list) {
         LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
         ListView_InsertColumn(list, 0, &lCol);
     }
-    for (int i = 0; i < acpi->HowManyFans(); i++) {
+    for (int i = 0; i < acpi->fans.size(); i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
         string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
         lItem.pszText = (LPSTR)name.c_str();
@@ -409,7 +409,7 @@ void ReloadFanView(HWND list) {
 void ReloadPowerList(HWND list) {
     //HWND list = GetDlgItem(hDlg, IDC_COMBO_POWER);
     ComboBox_ResetContent(list);
-    for (int i = 0; i < acpi->HowManyPower(); i++) {
+    for (int i = 0; i < acpi->powers.size(); i++) {
         string name;
         if (i) {
             auto pwr = fan_conf->powers.find(acpi->powers[i]);
@@ -436,7 +436,7 @@ void ReloadTempView(HWND list) {
         lCol.iSubItem = 1;
         ListView_InsertColumn(list, 1, &lCol);
     }
-    for (int i = 0; i < acpi->HowManySensors(); i++) {
+    for (int i = 0; i < acpi->sensors.size(); i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
         string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
         lItem.lParam = i;

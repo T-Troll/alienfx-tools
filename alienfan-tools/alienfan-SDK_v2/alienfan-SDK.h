@@ -29,14 +29,6 @@ namespace AlienFan_SDK {
 		byte sub;
 	};
 
-	//struct ALIENFAN_DEVICE {
-	//	string mainCommand;
-	//	string gpuCommand;
-	//	bool commandControlled;
-	//	short delta;
-	//	ALIENFAN_COMMAND probe;
-	//};
-
 	struct ALIENFAN_CONTROL {
 		ALIENFAN_COMMAND getPowerID;
 		ALIENFAN_COMMAND getFanRPM;
@@ -46,29 +38,15 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND getTemp;
 		ALIENFAN_COMMAND getPower;
 		ALIENFAN_COMMAND setPower;
-		//ALIENFAN_COMMAND setGPUPower;
 		ALIENFAN_COMMAND getGMode;
 		ALIENFAN_COMMAND setGMode;
 	};
-
-	//struct ALIENFAN_COMMAND_CONTROL {
-	//	short unlock;
-	//	string readCom;
-	//	string writeCom;
-	//	byte numtemps;
-	//	byte numfans;
-	//	vector<string> getTemp;
-	//	vector<short> fanID;
-	//};
 
 	class Control {
 	private:
 		VARIANT m_instancePath;
 		byte devFlags = 0;
 		//DWORD systemID = 0;
-		//bool haveGmode = false;
-		//int ReadRamDirect(DWORD);
-		//int WriteRamDirect(DWORD, byte);
 
 	public:
 		//VARIANT m_instancePath;
@@ -76,10 +54,6 @@ namespace AlienFan_SDK {
 		Control();
 		~Control();
 
-#ifdef _SERVICE_WAY_
-		// Stop and unload service if driver loaded from service
-		void UnloadService();
-#endif
 		// Probe hardware, sensors, fans, power modes and fill structures.
 		// Result: true - compatible hardware found, false - not found.
 		bool Probe();
@@ -118,29 +92,13 @@ namespace AlienFan_SDK {
 
 		// Set system GPU limit level (0 - no limit, 3 - min. limit)
 		// Result: success or error
-		int SetGPU(int power);
+		//int SetGPU(int power);
 
 		// Toggle G-mode on some systems
 		int SetGMode(bool state);
 
 		// Check G-mode state
 		int GetGMode();
-
-		// Get low-level driver handle for direct operations
-		// Result: handle to driver or NULL
-		HANDLE GetHandle();
-
-		// True if driver activated and ready, false if not
-		//bool IsActivated();
-
-		// Return number of fans into fans[] detected at Probe()
-		int HowManyFans();
-
-		// Return number of power levels into powers[] detected at Probe()
-		int HowManyPower();
-
-		// Return number of temperature sensors into sensors[] detected at Probe()
-		int HowManySensors();
 
 		// Return current device capability
 		inline byte GetDeviceFlags() { return devFlags; };
@@ -150,14 +108,6 @@ namespace AlienFan_SDK {
 
 		// Call custom Alienware method trough WMI
 		int CallWMIMethod(ALIENFAN_COMMAND com, byte arg1 = 0, byte arg2 = 0);
-
-		//// Call ACPI system control method with given parameters - see ALIENFAN_DEVICE for details
-		//// Result: reply from the driver or error
-		//int RunMainCommand(ALIENFAN_COMMAND com, byte value1 = 0, byte value2 = 0);
-
-		//// Call ACPI GPU control method with given parameters - see ALIENFAN_DEVICE for details
-		//// Result: reply from the driver or error
-		//int RunGPUCommand(short com, DWORD packed);
 
 		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
@@ -171,8 +121,6 @@ namespace AlienFan_SDK {
 
 	class Lights {
 	private:
-		//Control *acpi = NULL;
-		//bool inCommand = false;
 		bool activated = false;
 	public:
 		Lights(Control *ac);

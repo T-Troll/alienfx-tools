@@ -13,15 +13,15 @@ extern AlienFan_SDK::Control* acpi;
 extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper(ConfigFan* config) {
-	maxTemps.resize(acpi->HowManySensors());
-	senValues.resize(acpi->HowManySensors());
-	senBoosts.resize(acpi->HowManySensors());
+	maxTemps.resize(acpi->sensors.size());
+	senValues.resize(acpi->sensors.size());
+	senBoosts.resize(acpi->sensors.size());
 	for (auto i = senBoosts.begin(); i < senBoosts.end(); i++)
-		i->resize(acpi->HowManyFans());
-	fanRpm.resize(acpi->HowManyFans());
-	boostRaw.resize(acpi->HowManyFans());
-	boostSets.resize(acpi->HowManyFans());
-	fanSleep.resize(acpi->HowManyFans());
+		i->resize(acpi->fans.size());
+	fanRpm.resize(acpi->fans.size());
+	boostRaw.resize(acpi->fans.size());
+	boostSets.resize(acpi->fans.size());
+	fanSleep.resize(acpi->fans.size());
 
 	Start();
 }
@@ -33,13 +33,11 @@ MonHelper::~MonHelper() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
-			if ((oldGmode = acpi->GetGMode()) != fan_conf->lastProf->gmode)
-				acpi->SetGMode(fan_conf->lastProf->gmode);
-		if (!oldGmode && (oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage)
+		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && (oldGmode = acpi->GetGMode()) != fan_conf->lastProf->gmode)
+			acpi->SetGMode(fan_conf->lastProf->gmode);
+		if (!fan_conf->lastProf->gmode && (oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage)
 			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
 		//acpi->SetGPU(fan_conf->lastProf->GPUPower);
-		}
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
@@ -71,14 +69,14 @@ void CMonProc(LPVOID param) {
 	// update values.....
 
 	// temps..
-	for (int i = 0; i < acpi->HowManySensors(); i++) {
+	for (int i = 0; i < acpi->sensors.size(); i++) {
 		src->senValues[i] = acpi->GetTempValue(i);
 		if (src->senValues[i] > src->maxTemps[i])
 			src->maxTemps[i] = src->senValues[i];
 	}
 
 	// fans...
-	for (int i = 0; i < acpi->HowManyFans(); i++) {
+	for (int i = 0; i < acpi->fans.size(); i++) {
 		src->boostSets[i] = 0;
 		src->boostRaw[i] = acpi->GetFanBoost(i, true);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
@@ -105,7 +103,7 @@ void CMonProc(LPVOID param) {
 				}
 		}
 		// Now set if needed...
-		for (int i = 0; i < acpi->HowManyFans(); i++)
+		for (int i = 0; i < acpi->fans.size(); i++)
 			if (!src->fanSleep[i]) {
 				// Check overboost tricks...
 				if (src->boostRaw[i] < 90 && src->boostSets[i] > 100) {
