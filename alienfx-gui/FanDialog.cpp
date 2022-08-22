@@ -295,6 +295,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_DESTROY:
         if (fanUIUpdate) {
             delete fanUIUpdate;
+            fanUIUpdate = NULL;
             LocalFree(sch_guid);
         }
         break;

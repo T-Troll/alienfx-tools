@@ -113,8 +113,6 @@ High-level API code and alienfx-cli based on Kalbert312's [alienfx-cli](https://
 Spectrum Analyzer is based on Tnbuig's [Spectrum-Analyzer-15.6.11](https://github.com/tnbuig/Spectrum-Analyzer-15.6.11).  
 FFT subroutine utilizes [Kiss FFT](https://sourceforge.net/projects/kissfft/) library.  
 DXGi Screen capture based on Bryal's [DXGCap](https://github.com/bryal/DXGCap) example.  
-ACPI driver for fan SDK V1 based on kdshk's [WindowsHwAccess](https://github.com/kdshk/WindowsHwAccess).  
-Kernel loading hack for fan SDK V1 based on hfiref0x's [KDU](https://github.com/hfiref0x/KDU)
 
 Special thanks to [DavidLapous](https://github.com/DavidLapous) for inspiration and advice!  
 Special thanks to [theotherJohnC](https://github.com/theotherJohnC) for the Performance Boost idea!  

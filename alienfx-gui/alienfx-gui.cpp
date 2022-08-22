@@ -66,8 +66,10 @@ bool DetectFans() {
 		EvaluteToAdmin();
 	}
 	acpi = new AlienFan_SDK::Control();
-	if (acpi->Probe())
+	if (acpi->Probe()) {
 		conf->fan_conf->SetBoosts(acpi);
+		eve->StartFanMon();
+	}
 	else {
 		ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
 		delete acpi;
@@ -122,12 +124,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 		return FALSE;
 
-	if (conf->fanControl) {
-		DetectFans();
+	if (conf->fanControl && DetectFans()) {
+		fxhl->FillAllDevs(acpi);
 	}
 
-	if (!fxhl->FillAllDevs(acpi))
-		ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
+	//if (!fxhl->FillAllDevs(acpi))
+	//	ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
 
 	ReloadProfileList();
 
@@ -146,10 +148,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	delete eve;
+	delete fxhl;
 
 	DoStopService(conf->wasAWCC, false);
-
-	delete fxhl;
 
 	if (acpi) {
 		delete acpi;
@@ -673,7 +674,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
 			fxhl->FillAllDevs(acpi);
-			eve = new EventHandler();
+			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
 				needUpdateFeedback = false;
@@ -700,7 +701,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->stateScreen = true;
 			fxhl->ChangeState();
 			conf->Save();
-			delete eve;
+			eve->StopProfiles();
+			eve->StopEffects();
 			fxhl->Stop();
 			break;
 		}
@@ -921,7 +923,6 @@ void RemoveLightAndClean(int dPid, int eLid) {
 	// delete from all groups...
 	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
 		RemoveLightFromGroup(&(*iter), dPid, eLid);
-		iter->have_power = false;
 	}
 	// Clean from grids...
 	DWORD lcode = MAKELPARAM(dPid, eLid);

@@ -118,7 +118,10 @@ namespace AlienFX_SDK {
 
 	static struct COMMV9 {
 		const byte effectReady[3]{0x5,0x1,0x51};
+		// [2] - profile number
 		const byte effectSet[14]{0x5,0x1,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 };
+		//                                                                  0x00,     0x01,0x02
+		// [2] - profile number
 		// [3] - effect type (0x13 - color reset, valid from 0 to it)
 		// [4-6] - RGB1
 		// [7-9] - RGB2
@@ -126,10 +129,11 @@ namespace AlienFX_SDK {
 		// [13] - mode (1 - permanent, 2 - key press)
 		// [14] - NumColors (0..3) into block?
 		const byte readyToColor[4]{ 0xe,0x1,0x0,0x1 };
-		// [2] - how much lights into next color block (1..4)
+		// [2] - how much lights into next color block(s)
 		// [3] - profile number?
 		// [4] - how many blocks? (need to check)
 		const byte colorSet[10]{ 0xe,0x01,0x00,0x01,0x0,0x81,0x00,0xa5,0x00,0x0a };// , 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01	};
+		// [4] - packet number in group
 		// [5] - light id
 		// [6] - Effect type (80 - off, 81 - color, 82 - Pulse, 83 - morph, 87 - breath, 88 - spectrum (undocumented))
 		// [7] - Effect speed (tempo)

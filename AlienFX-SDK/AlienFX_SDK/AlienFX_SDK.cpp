@@ -90,7 +90,7 @@ namespace AlienFX_SDK {
 			}
 			else {
 				res = WriteFile(devHandle, buffer, length, &written, NULL);
-				Sleep(2); // Need wait for ACK
+				//Sleep(1); // Need wait for ACK
 				//if (!res)
 				//	OutputDebugString("WF fails!\n");
 				return res;
@@ -439,7 +439,8 @@ namespace AlienFX_SDK {
 
 		switch (version) {
 		case API_L_V9: {
-			byte bPos = 5;
+			byte bPos = 5, cnt = 1;
+			PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,(byte)lights->size()} });
 			for (auto nc = lights->begin(); nc != lights->end(); nc++)
 				if (bPos < length) {
 					mods.insert(mods.end(), { {bPos, *nc},{(byte)(bPos + 1),0x81},
@@ -449,14 +450,14 @@ namespace AlienFX_SDK {
 				}
 				else {
 					// Send command and clear buffer...
-					PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,4} });
+					mods.push_back({ 4, cnt++ });
 					val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
 					mods.clear();
 					bPos = 5;
 					nc--;
 				}
 			if (bPos > 5) {
-				PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { { 2, (byte)((bPos - 5) / 15)} });
+				mods.push_back({ 4, cnt });
 				val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
 			}
 		} break;
@@ -529,7 +530,8 @@ namespace AlienFX_SDK {
 		case API_L_V9: {
 			if (save)
 				break;
-			byte bPos = 5;
+			byte bPos = 5, cnt = 1;
+			PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,(byte)act->size()} });
 			for (auto nc = act->begin(); nc != act->end(); nc++)
 				if (bPos < length) {
 					byte opType = 0x81;
@@ -557,14 +559,16 @@ namespace AlienFX_SDK {
 				}
 				else {
 					// Send command and clear buffer...
-					PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,4} });
+					//PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,4} });
+					mods.push_back({ 4, cnt++ });
 					val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
 					mods.clear();
 					bPos = 5;
 					nc--;
 				}
 			if (bPos > 5) {
-				PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { { 2, (byte)((bPos - 5) / 15)} });
+				//PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { { 2, (byte)((bPos - 5) / 15)} });
+				mods.push_back({ 4, cnt });
 				val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
 			}
 		} break;

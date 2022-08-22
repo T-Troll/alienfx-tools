@@ -16,6 +16,7 @@ extern ConfigHandler* conf;
 DWORD WINAPI CLightsProc(LPVOID param);
 
 FXHelper::FXHelper() {
+	FillAllDevs(NULL);
 	Start();
 };
 FXHelper::~FXHelper() {

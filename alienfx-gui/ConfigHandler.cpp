@@ -50,7 +50,8 @@ profile* ConfigHandler::FindCreateProfile(unsigned id) {
 groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 {
 	profile* prof = FindProfile(profID);
-	if (prof) {
+	AlienFX_SDK::group* grp = afx_dev.GetGroupById(groupID);
+	if (prof && grp) {
 		groupset* gset = FindMapping(groupID, &prof->lightsets);
 		if (!gset) {
 			prof->lightsets.push_back({ groupID });

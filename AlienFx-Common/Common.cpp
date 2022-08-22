@@ -38,6 +38,7 @@ bool DoStopService(bool flag, bool kind) {
 		if (kind) {
 			// stop service
 			rCode = (BOOLEAN)ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus);
+			// ToDo: wait for stop
 		}
 		else {
 			// start service

@@ -160,8 +160,8 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
 				if (conf->afx_dev.activeLights && conf->afx_dev.GetGrids()->size()) {
 					OnLightSelChanged(tab_list);
-				} /*else
-					TabCtrl_SetCurSel(tab_list, tabLightSel);*/
+				} else
+					TabCtrl_SetCurSel(tab_list, tabLightSel);
 			}
 		} break;
 		}

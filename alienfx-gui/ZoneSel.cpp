@@ -1,6 +1,8 @@
 #include "alienfx-gui.h"
 
 extern int eItem;
+extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+
 HWND zsDlg;
 
 void UpdateZoneList() {
@@ -45,17 +47,11 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_INITDIALOG:
 	{
 		unsigned maxGrpID = 0x10000;
-		while (find_if(conf->afx_dev.GetGroups()->begin(), conf->afx_dev.GetGroups()->end(),
-			[maxGrpID](AlienFX_SDK::group t) {
-				return maxGrpID == t.gid;
-			}) != conf->afx_dev.GetGroups()->end())
+		while (conf->afx_dev.GetGroupById(maxGrpID))
 			maxGrpID++;
 		ListBox_SetItemData(grouplist, ListBox_AddString(grouplist, "<New Zone>"), maxGrpID);
 		for (auto t = conf->afx_dev.GetGroups()->begin(); t < conf->afx_dev.GetGroups()->end(); t++) {
-			if (find_if(conf->activeProfile->lightsets.begin(), conf->activeProfile->lightsets.end(),
-				[t](auto cl) {
-					return cl.group == t->gid;
-				}) == conf->activeProfile->lightsets.end())
+			if (!FindMapping(t->gid))
 				ListBox_SetItemData(grouplist, ListBox_AddString(grouplist, t->name.c_str()), t->gid);
 		}
 		if (ListBox_GetCount(grouplist) == 1) {
@@ -80,19 +76,10 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			switch (HIWORD(wParam)) {
 			case LBN_SELCHANGE:
 			{
-				int newID = (int)ListBox_GetItemData(grouplist, ListBox_GetCurSel(grouplist));
-				AlienFX_SDK::group* grp;
-				auto pos = find_if(conf->afx_dev.GetGroups()->begin(), conf->afx_dev.GetGroups()->end(),
-					[newID](AlienFX_SDK::group t) {
-						return newID == t.gid;
-					});
-				if (pos == conf->afx_dev.GetGroups()->end()) {
-					grp = new AlienFX_SDK::group({ (DWORD)newID, "New zone #" + to_string((newID & 0xffff) + 1) });
-					conf->afx_dev.GetGroups()->push_back(*grp);
-				}
-
-				conf->activeProfile->lightsets.push_back({ newID });
-				eItem = newID;
+				eItem = (int)ListBox_GetItemData(grouplist, ListBox_GetCurSel(grouplist));
+				if (!conf->afx_dev.GetGroupById(eItem))
+					conf->afx_dev.GetGroups()->push_back({ (DWORD)eItem, "New zone #" + to_string((eItem & 0xffff) + 1) });
+				conf->activeProfile->lightsets.push_back({ eItem });
 				EndDialog(hDlg, IDOK);
 			} break;
 			}
@@ -134,22 +121,15 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						});
 					if (pos != (*Iter)->lightsets.end())
 						if ((*Iter)->id != conf->activeProfile->id)
-							//if (MessageBox(NULL, ("This zone used into profile " + (*Iter)->name + "!\nDo you want to keep it?").c_str(), "Error",
-							//	MB_YESNO | MB_ICONWARNING) == IDYES) {
-								doDelete = false;
-							//}
-							//else
-							//	(*Iter)->lightsets.erase(pos);
+							doDelete = false;
 						else {
-							//if ((*Iter)->id == conf->activeProfile->id) {
-								if (pos != (*Iter)->lightsets.begin())
-									neItem = (pos - 1)->group;
+							if (pos != (*Iter)->lightsets.begin())
+								neItem = (pos - 1)->group;
+							else
+								if ((*Iter)->lightsets.size() > 1)
+									neItem = (pos + 1)->group;
 								else
-									if ((pos + 1) != (*Iter)->lightsets.end())
-										neItem = (pos + 1)->group;
-									else
-										neItem = -1;
-							//}
+									neItem = -1;
 							(*Iter)->lightsets.erase(pos);
 						}
 				}

@@ -27,7 +27,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 EventHandler::EventHandler()
 {
 	ChangePowerState();
-	StartFanMon();
+	//StartFanMon();
 	StartEffects();
 }
 
