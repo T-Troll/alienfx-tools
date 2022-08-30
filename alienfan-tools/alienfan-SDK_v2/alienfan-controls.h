@@ -21,8 +21,9 @@ namespace AlienFan_SDK {
 			0x0, 0xb, // Get Power
 			0x1,   1, // Set Power
 			//0x13,   4, // GPU power
-			0x2,	2, // Get G-Mode
-			0x2,	1, // Toggle G-Mode
+			0x2,   2, // Get G-Mode
+			0x2,   1, // Toggle G-Mode
+			0x3,   2  // Get system ID
 		};
 
 	static const string temp_names[2]{

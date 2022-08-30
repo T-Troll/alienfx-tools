@@ -478,6 +478,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_TESTCOLOR: {
 			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
 			if (eLid >= 0 && dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
+				fxhl->TestLight(dIndex, -1);
 				fxhl->TestLight(dIndex, eLid);
 			}
 			RedrawGridButtonZone();

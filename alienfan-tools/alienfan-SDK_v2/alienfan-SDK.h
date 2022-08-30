@@ -40,13 +40,14 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND setPower;
 		ALIENFAN_COMMAND getGMode;
 		ALIENFAN_COMMAND setGMode;
+		ALIENFAN_COMMAND getSysID;
 	};
 
 	class Control {
 	private:
 		VARIANT m_instancePath;
 		byte devFlags = 0;
-		//DWORD systemID = 0;
+		DWORD systemID = 0;
 
 	public:
 		//VARIANT m_instancePath;
@@ -104,7 +105,7 @@ namespace AlienFan_SDK {
 		inline byte GetDeviceFlags() { return devFlags; };
 
 		// Return current device ID
-		//inline DWORD GetSystemID() { return systemID; };
+		inline DWORD GetSystemID() { return systemID; };
 
 		// Call custom Alienware method trough WMI
 		int CallWMIMethod(ALIENFAN_COMMAND com, byte arg1 = 0, byte arg2 = 0);

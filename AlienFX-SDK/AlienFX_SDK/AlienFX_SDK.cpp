@@ -80,7 +80,7 @@ namespace AlienFX_SDK {
 			return ReadFile(devHandle, buffer, length, &written, NULL);
 		case API_L_V8: case API_L_V9: {
 			bool res;
-			if (size < 5) {
+			if (size == 4) {
 				//res = HidD_SetFeature(devHandle, buffer, length);
 				res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
 				Sleep(6); // Need wait for ACK
@@ -89,11 +89,11 @@ namespace AlienFX_SDK {
 				return res;
 			}
 			else {
-				res = WriteFile(devHandle, buffer, length, &written, NULL);
+				//res = WriteFile(devHandle, buffer, length, &written, NULL);
 				//Sleep(1); // Need wait for ACK
 				//if (!res)
 				//	OutputDebugString("WF fails!\n");
-				return res;
+				return WriteFile(devHandle, buffer, length, &written, NULL);//res
 			}
 		}
 		}
@@ -385,7 +385,6 @@ namespace AlienFX_SDK {
 			Reset();
 		switch (version) {
 		case API_L_V9: {
-			//PrepareAndSend(COMMV9.colorPreSet, sizeof(COMMV9.colorPreSet));
 			PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor));
 			val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), { {5,(byte)index},{11,c.r},{12,c.g},{13,c.b} });
 		} break;
@@ -433,7 +432,6 @@ namespace AlienFX_SDK {
 
 	bool Functions::SetMultiLights(vector<UCHAR> *lights, Colorcode c) {
 		bool val = false;
-		DWORD fmask = 0;
 		if (!inSet) Reset();
 		vector<icommand> mods;
 
@@ -463,6 +461,7 @@ namespace AlienFX_SDK {
 		} break;
 		case API_L_V6:
 		{
+			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
 			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), {
@@ -499,6 +498,7 @@ namespace AlienFX_SDK {
 		} break;
 		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
+			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
 			val = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(fmask, 3, c));
@@ -507,6 +507,7 @@ namespace AlienFX_SDK {
 #ifndef NOACPILIGHTS
 		case API_L_ACPI:
 		{
+			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
 			val = SetAcpiColor((byte)fmask, c);
@@ -514,8 +515,8 @@ namespace AlienFX_SDK {
 #endif
 		default:
 		{
-			for (int nc = 0; nc < lights->size(); nc++)
-				val = SetColor(lights->at(nc), c);
+			for (auto nc = lights->begin(); nc < lights->end(); nc++)
+				val = SetColor(*nc, c);
 		}
 		}
 		return val;
@@ -540,26 +541,25 @@ namespace AlienFX_SDK {
 					case AlienFX_A_Morph: opType = 0x83; break;
 					case AlienFX_A_Breathing: opType = 0x87; break;
 					case AlienFX_A_Spectrum: opType = 0x88; break;
-					case AlienFX_A_Rainbow: opType = 0x80; break; // DEBUG, check for OFF
+					//case AlienFX_A_Rainbow: opType = 0x86; break; // DEBUG, check for OFF
 					}
 					mods.insert(mods.end(), { {bPos,nc->index},{(byte)(bPos + 1),opType},{(byte)(bPos + 2),nc->act[0].tempo},
-						{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),nc->act[0].time }, {(byte)(bPos + 5), 0xa},
-						{ (byte)(bPos + 6), nc->act[0].r},{ (byte)(bPos + 7),nc->act[0].g},{ (byte)(bPos + 8),nc->act[0].b} });
-					// add second color if present
-					if (nc->act.size() > 1) {
-						mods.insert(mods.end(), {
-							{ (byte)(bPos + 9),nc->act[1].r },
-							{ (byte)(bPos + 10),nc->act[1].g },
-							{ (byte)(bPos + 11),nc->act[1].b }/*,
-							{ (byte)(bPos + 13),2 } */});
-					}
-					//else
-					//	mods.push_back({ (byte)(bPos + 13), 1 });
+						{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),nc->act[0].time }, {(byte)(bPos + 5), 0xa} });
+
+					//if (nc->act.size() > 1 && (nc->index == 0x19 || nc->index == 0x28 || nc->index == 0xb3))
+						// for Indicator, set 2nd (on) color
+					//	mods.insert(mods.end(), { { (byte)(bPos + 6), nc->act[1].r }, { (byte)(bPos + 7),nc->act[1].g }, { (byte)(bPos + 8),nc->act[1].b } });
+					//else {
+						mods.insert(mods.end(), { { (byte)(bPos + 6), nc->act[0].r},{ (byte)(bPos + 7),nc->act[0].g},{ (byte)(bPos + 8),nc->act[0].b} });
+						if (nc->act.size() > 1)
+							// add second color if present
+							mods.insert(mods.end(), { { (byte)(bPos + 9),nc->act[1].r }, { (byte)(bPos + 10),nc->act[1].g }, { (byte)(bPos + 11),nc->act[1].b } });
+					//}
+
 					bPos += 15;
 				}
 				else {
 					// Send command and clear buffer...
-					//PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { {2,4} });
 					mods.push_back({ 4, cnt++ });
 					val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
 					mods.clear();
@@ -567,10 +567,16 @@ namespace AlienFX_SDK {
 					nc--;
 				}
 			if (bPos > 5) {
-				//PrepareAndSend(COMMV9.readyToColor, sizeof(COMMV9.readyToColor), { { 2, (byte)((bPos - 5) / 15)} });
 				mods.push_back({ 4, cnt });
 				val = PrepareAndSend(COMMV9.colorSet, sizeof(COMMV9.colorSet), &mods);
 			}
+			// now set indicators second light
+			//for (auto nc = act->begin(); nc != act->end(); nc++)
+			//	switch (nc->index) {
+			//	case 0x19: case 0x28: case 0xb3:
+			//		SetColor(nc->index, { nc->act[0].b, nc->act[0].g, nc->act[0].r });
+			//	}
+
 		} break;
 		case API_L_V7:
 		{

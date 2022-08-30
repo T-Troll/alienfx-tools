@@ -144,15 +144,15 @@ setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.0.2.1\n");
+    printf("AlienFan-CLI v7.0.4\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
     if (acpi->Probe()) {
         lights = new AlienFan_SDK::Lights(acpi);
 
-        printf("Supported hardware detected, %d fans, %d sensors, %d power states%s%s.\n",
-            (int)acpi->fans.size(), (int)acpi->sensors.size(), (int)acpi->powers.size(),
+        printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s.\n",
+            acpi->GetSystemID(), (int)acpi->fans.size(), (int)acpi->sensors.size(), (int)acpi->powers.size(),
             (acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? ", G-Mode" : ""),
             (lights->IsActivated() ? ", Lights" : ""));
 
@@ -348,8 +348,8 @@ int main(int argc, char* argv[])
                 wprintf(L"Names: %s\n", name);
                 continue;
             }
-            //if (command == "test") { // dump WMI functions
-            //    printf("command %d arg %d - result %d\n", args[0].num, args[1].num, acpi->CallWMIMethod({ 3, (byte)args[0].num }, args[1].num));
+            if (command == "test") { // dump WMI functions
+                printf("command %d arg %d - result %d\n", args[0].num, args[1].num, acpi->CallWMIMethod({ 3, (byte)args[0].num }, args[1].num));
             ////    //DWORD size = EnumSystemFirmwareTables('ACPI', NULL, 0);
             ////    //byte* buf2 = new byte[size];
             ////    //size = EnumSystemFirmwareTables('ACPI', buf2, size);
@@ -398,8 +398,8 @@ int main(int argc, char* argv[])
             ////            printf("Result - %d", result.uintVal);
             ////        }
             ////    }
-            //    continue;
-            //}
+                continue;
+            }
             printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
         }
     }

@@ -164,6 +164,14 @@ void StartOverboost(HWND hDlg, int fan) {
     SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
 }
 
+void RestoreApp() {
+    ShowWindow(fanWindow, SW_RESTORE);
+    SendMessage(fanWindow, WM_PAINT, 0, 0);
+    ShowWindow(mDlg, SW_RESTORE);
+    SetForegroundWindow(mDlg);
+    ReloadTempView(GetDlgItem(mDlg, IDC_TEMP_LIST));
+}
+
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -368,18 +376,40 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_APP + 1:
     {
         switch (lParam) {
-        case WM_RBUTTONUP:
-            SendMessage(hDlg, WM_CLOSE, 0, 0);
-            break;
-        case WM_LBUTTONDBLCLK:
-        case WM_LBUTTONUP: {
-            ShowWindow(fanWindow, SW_RESTORE);
-            SendMessage(fanWindow, WM_PAINT, 0, 0);
-            ShowWindow(hDlg, SW_RESTORE);
+        case WM_RBUTTONUP: case WM_CONTEXTMENU:
+        {
+            POINT lpClickPoint;
+            HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_TRAYMENU));
+            tMenu = GetSubMenu(tMenu, 0);
+            MENUINFO mi{ sizeof(mi), MIM_STYLE, MNS_NOTIFYBYPOS };
+            SetMenuInfo(tMenu, &mi);
+            MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID };
+            HMENU pMenu;
+            pMenu = CreatePopupMenu();
+            mInfo.wID = ID_TRAYMENU_POWER_SELECTED;
+            for (int i = 0; i < acpi->powers.size(); i++) {
+                if (i)
+                    mInfo.dwTypeData = (LPSTR)fan_conf->powers.find(acpi->powers[i])->second.c_str();
+                else
+                    mInfo.dwTypeData = (LPSTR)"Manual";
+                InsertMenuItem(pMenu, i, false, &mInfo);
+                if (i == fan_conf->lastProf->powerStage)
+                    CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
+            }
+            ModifyMenu(tMenu, ID_MENU_POWER, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Power mode - " +
+                (fan_conf->lastProf->powerStage ? fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage])->second : "Manual")).c_str());
+            EnableMenuItem(tMenu, ID_MENU_GMODE, acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? MF_ENABLED : MF_DISABLED);
+            CheckMenuItem(tMenu, ID_MENU_GMODE, fan_conf->lastProf->gmode ? MF_CHECKED : MF_UNCHECKED);
+
+            GetCursorPos(&lpClickPoint);
             SetForegroundWindow(hDlg);
-            HWND temp_list = GetDlgItem(hDlg, IDC_TEMP_LIST);
-            ReloadTempView(temp_list);
+            TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
+                lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
         } break;
+        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONUP:
+            RestoreApp();
+            break;
         case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
             if (!isNewVersion && needRemove) {
                 Shell_NotifyIcon(NIM_DELETE, niData);
@@ -413,6 +443,28 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         }
         fan_conf->Save();
+    } break;
+    case WM_MENUCOMMAND: {
+        int idx = LOWORD(wParam);
+        switch (GetMenuItemID((HMENU)lParam, idx)) {
+        case ID_MENU_EXIT:
+            SendMessage(hDlg, WM_CLOSE, 0, 0);
+            return true;
+        case ID_MENU_RESTORE:
+            RestoreApp();
+            break;
+        case ID_MENU_GMODE:
+            fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
+            SetCurrentGmode();
+            break;
+        case ID_TRAYMENU_POWER_SELECTED:
+            if (idx != fan_conf->lastProf->powerStage) {
+                fan_conf->lastProf->powerStage = idx;
+                acpi->SetPower(acpi->powers[idx]);
+                fan_conf->Save();
+            }
+            break;
+        }
     } break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {

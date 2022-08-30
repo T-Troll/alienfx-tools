@@ -83,7 +83,7 @@ void CMonProc(LPVOID param) {
 	}
 
 	// boosts..
-	if (!fan_conf->lastProf->powerStage) {
+	if (!fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
 		// in manual mode only
 		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter < fan_conf->lastProf->fanControls.end(); cIter++) {
 			if (cIter->sensorIndex < src->senValues.size())
@@ -112,12 +112,17 @@ void CMonProc(LPVOID param) {
 					DebugPrint(("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts(old "
 						+ to_string(src->boostRaw[i]) + ", new " + to_string(src->boostSets[i]) +")!\n").c_str());
 				} else
-					if (src->boostSets[i] != src->boostRaw[i] || src->boostSets[i] > 100) {
+					if (src->boostSets[i] != src->boostRaw[i] /*|| src->boostSets[i] > 100*/) {
 						if (src->boostRaw[i] > src->boostSets[i])
 							src->boostSets[i] += 15 * ((src->boostRaw[i] - src->boostSets[i]) >> 4);
-						if (src->boostSets[i] > 100)
-							acpi->SetFanBoost(i, 100, true);
+
+						if (acpi->GetSystemID() == 3200 && src->boostSets[i] > 20 && src->boostRaw[i] <= 20) { // RPM stuck override
+							acpi->SetGMode(true);
+							acpi->SetGMode(false);
+						}
+
 						acpi->SetFanBoost(i, src->boostSets[i], true);
+
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}

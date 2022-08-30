@@ -77,10 +77,10 @@ namespace AlienFan_SDK {
 			if (m_AWCCGetObj->GetMethod(commandList[0], NULL, &m_InParamaters, nullptr) == S_OK) {
 				m_InParamaters->Release();
 				// Let's get device ID...
-				//systemID = CallWMIMethod({ 0, 2 }, 0);
+				systemID = CallWMIMethod(dev_controls.getSysID, 2);
 				devFlags |= DEV_FLAG_INFO;
 #ifdef _TRACE_
-				printf("System information available\n");// , ID = % x!\n", systemID);
+				printf("System information available, ID = %d!\n", systemID);
 #endif
 				int fIndex = 0, funcID = 0;
 				// Scan for available fans...

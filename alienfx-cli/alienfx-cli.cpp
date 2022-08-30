@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.0.3\n");
+	printf("alienfx-cli v7.0.4\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -291,9 +291,9 @@ int main(int argc, char* argv[])
 			Update();
 		} break;
 		case 1: {
-			AlienFX_SDK::Colorcode color{ (byte)args[2].num,
+			AlienFX_SDK::Colorcode color{ (byte)args[4].num,
 				(byte)args[3].num,
-				(byte)args[4].num,
+				(byte)args[2].num,
 				(byte)(args.size() > 5 ? args[5].num : 255) };
 			if (devType) {
 				SetBrighness(&color);
