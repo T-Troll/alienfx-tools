@@ -40,15 +40,17 @@ It will switch curve window to other mode - showing currently tested boost level
 This process can take some minutes, window with final results will be shown after the process ends, and they be used lately for this fan.  
 You can press "Stop Overboost" button at any time to stop overboost check.
 
-You can minimize application to tray pressing Minimize button (or the top one), left click on try icon restore application back, right click will close application.
-There are two settings into application top menu under "Settings":
+You can minimize application to tray pressing Minimize button (or the top one), left click on try icon restore application back, right click brings you the context menu for power mode/g-mode change.
+
+There are some settings into application top menu under "Settings":
 - "Start with windows" - If checked, application will run at system start.
 - "Start minimized" - If checked, application hide into tray icon after start.
 - "Check for update" - If checked, application will made online update check at start.
+- "Disable AWCC" - If checked and AWCC service running, it will be stopped and started back then application quit.
 
 ## Keyboard shortcuts 
 
 Global shortcuts (works all time application running):
 - CTRL+ALT+0..5 - switch active power mode. 0 is for Manual, 1..5 for system-defined
-- F17 (G-key for Dell G-series laptops) - cycle between manual and performance power mode
+- F17 (G-key for Dell G-series laptops) - Enable/disable G-Mode (performance mode)
 
