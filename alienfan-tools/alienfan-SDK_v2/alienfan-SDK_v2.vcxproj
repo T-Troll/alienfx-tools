@@ -159,6 +159,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <SubSystem>

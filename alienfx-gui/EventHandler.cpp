@@ -19,6 +19,8 @@ extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
 extern MonHelper* mon;
 
+extern void SetTrayTip();
+
 DWORD WINAPI CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
 VOID CALLBACK CCreateProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -158,7 +160,7 @@ void EventHandler::ChangeEffectMode() {
 	}
 	else
 		StopEffects();
-	conf->SetToolTip();
+	SetTrayTip();
 }
 
 void EventHandler::StopEffects() {

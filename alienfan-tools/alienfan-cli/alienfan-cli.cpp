@@ -65,7 +65,7 @@ void UpdateBoost() {
     }
     acpi->boosts[bestBoostPoint.fanID] = max(bestBoostPoint.maxBoost, 100);
     acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
-    fan_conf->Save();
+    //fan_conf->Save();
 }
 
 void CheckFanOverboost(byte num) {
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
             (acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? ", G-Mode" : ""),
             (lights->IsActivated() ? ", Lights" : ""));
 
-        fan_conf->SetBoosts(acpi);
+        fan_conf->SetBoostsAndNames(acpi);
         for (int cc = 1; cc < argc; cc++) {
             string arg = string(argv[cc]);
             size_t vid = arg.find_first_of('=');
@@ -348,8 +348,8 @@ int main(int argc, char* argv[])
                 wprintf(L"Names: %s\n", name);
                 continue;
             }
-            if (command == "test") { // dump WMI functions
-                printf("command %d arg %d - result %d\n", args[0].num, args[1].num, acpi->CallWMIMethod({ 3, (byte)args[0].num }, args[1].num));
+            //if (command == "test") { // dump WMI functions
+            //    printf("command %d arg %d - result %d\n", args[0].num, args[1].num, acpi->CallWMIMethod({ 3, (byte)args[0].num }, args[1].num));
             ////    //DWORD size = EnumSystemFirmwareTables('ACPI', NULL, 0);
             ////    //byte* buf2 = new byte[size];
             ////    //size = EnumSystemFirmwareTables('ACPI', buf2, size);
@@ -398,8 +398,8 @@ int main(int argc, char* argv[])
             ////            printf("Result - %d", result.uintVal);
             ////        }
             ////    }
-                continue;
-            }
+            /*    continue;
+            }*/
             printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
         }
     }

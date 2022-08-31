@@ -65,6 +65,6 @@ public:
 	void Load();
 	void Save();
 
-	void SetBoosts(AlienFan_SDK::Control *);
+	void SetBoostsAndNames(AlienFan_SDK::Control *);
 };
 

@@ -9,7 +9,7 @@
 #endif
 
 extern groupset* FindMapping(int, vector<groupset>*);
-extern vector<string> effModes;
+extern void SetTrayTip();
 
 ConfigHandler::ConfigHandler() {
 
@@ -97,17 +97,17 @@ bool ConfigHandler::SetStates() {
 
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldPBState != (bool)finalPBState) {
 		SetIconState();
-		SetToolTip();
+		SetTrayTip();
 		return true;
 	}
 	return false;
 }
 
-void ConfigHandler::SetToolTip() {
-	string name = "Profile: " + (activeProfile ? activeProfile->name : "Undefined") + "\nEffect: " + (GetEffect() < effModes.size() ? effModes[GetEffect()] : "Global");
-	strcpy_s(niData.szTip, 128, name.c_str());
-	Shell_NotifyIcon(NIM_MODIFY, &niData);
-}
+//void ConfigHandler::SetToolTip() {
+//	string name = "Profile: " + (activeProfile ? activeProfile->name : "Undefined") + "\nEffect: " + (GetEffect() < effModes.size() ? effModes[GetEffect()] : "Global");
+//	strcpy_s(niData.szTip, 128, name.c_str());
+//	Shell_NotifyIcon(NIM_MODIFY, &niData);
+//}
 
 void ConfigHandler::SetIconState() {
 	// change tray icon...
@@ -340,6 +340,8 @@ profile* ConfigHandler::FindDefaultProfile() {
 }
 
 void ConfigHandler::Save() {
+
+	if (fan_conf) fan_conf->Save();
 
 	SetReg("AutoStart", startWindows);
 	SetReg("Minimized", startMinimized);

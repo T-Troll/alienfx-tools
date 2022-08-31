@@ -17,7 +17,7 @@ DWORD WINAPI CLightsProc(LPVOID param);
 
 FXHelper::FXHelper() {
 	FillAllDevs(NULL);
-	Start();
+	//Start();
 };
 FXHelper::~FXHelper() {
 	Stop();
@@ -461,7 +461,7 @@ size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->haveGlobal = false;
 	numActiveDevs = 0;
 	Stop();
-	conf->afx_dev.AlienFXAssignDevices(/*acc ? acc->GetHandle() : */NULL, conf->finalBrightness, conf->finalPBState);
+	conf->afx_dev.AlienFXAssignDevices(/*acc ? acc->GetHandle() : */ NULL, conf->finalBrightness, conf->finalPBState);
 	// global effects check
 	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
 		if (i->dev) {

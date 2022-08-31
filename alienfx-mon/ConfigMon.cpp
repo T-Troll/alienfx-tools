@@ -11,16 +11,16 @@
 
 ConfigMon::ConfigMon() {
 
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxmon"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
-	RegCreateKeyEx(hKey1, TEXT("Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxmon"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
+	RegCreateKeyEx(hKeyMain, TEXT("Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeySensors, NULL);
 
 	Load();
 }
 
 ConfigMon::~ConfigMon() {
 	Save();
-	RegCloseKey(hKey1);
-	RegCloseKey(hKey2);
+	RegCloseKey(hKeySensors);
+	RegCloseKey(hKeyMain);
 }
 
 SENSOR* ConfigMon::FindSensor(int src, byte type, DWORD id)
@@ -33,12 +33,12 @@ SENSOR* ConfigMon::FindSensor(int src, byte type, DWORD id)
 
 void ConfigMon::GetReg(const char* name, DWORD* value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
-	if (RegGetValue(hKey1, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
+	if (RegGetValue(hKeyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
 		*value = defValue;
 }
 
 void ConfigMon::SetReg(const char* text, DWORD value) {
-	RegSetValueEx(hKey1, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
+	RegSetValueEx(hKeyMain, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 }
 
 SENSOR* ConfigMon::CheckSensor(int src, byte type, DWORD id)
@@ -68,12 +68,12 @@ void ConfigMon::Load() {
 	DWORD len = 255, lend = 0;
 	byte* data = NULL;
 	// Profiles...
-	for (int vindex = 0; RegEnumValue(hKey2, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+	for (int vindex = 0; RegEnumValue(hKeySensors, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		len++;
 		if (data)
 			delete[] data;
 		data = new BYTE[lend];
-		RegEnumValue(hKey2, vindex, name, &len, NULL, NULL, data, &lend);
+		RegEnumValue(hKeySensors, vindex, name, &len, NULL, NULL, data, &lend);
 		len = 255;
 		if (sscanf_s(name, "Name-%d-%d-%d", &src,&type,&id) == 3) {
 			CheckSensor(src, type, id)->name = string((char*)data);
@@ -114,24 +114,24 @@ void ConfigMon::Save() {
 	SetReg("bSensors", bSensors);
 	SetReg("Refresh", refreshDelay);
 
-	RegDeleteTree(hKey1, "Sensors");
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxmon\\Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, NULL);// &dwDisposition);
+	RegDeleteTree(hKeyMain, "Sensors");
+	RegCreateKeyEx(hKeyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeySensors, NULL);
 
 	for (auto j = active_sensors.begin(); j < active_sensors.end(); j++) {
 		string name = to_string(j->source) + "-" + to_string(j->type) + "-" + to_string(j->id);
 		string tName = "Name-" + name;
-		RegSetValueEx(hKey2, tName.c_str(), 0, REG_SZ, (BYTE*)j->name.c_str(), (DWORD)j->name.length());
+		RegSetValueEx(hKeySensors, tName.c_str(), 0, REG_SZ, (BYTE*)j->name.c_str(), (DWORD)j->name.length());
 		if (j->flags) {
 			tName = "Flags-" + name;
-			RegSetValueEx(hKey2, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->flags, sizeof(DWORD));
+			RegSetValueEx(hKeySensors, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->flags, sizeof(DWORD));
 		}
 		if (j->traycolor != 0xffffff) {
 			tName = "Color-" + name;
-			RegSetValueEx(hKey2, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->traycolor, sizeof(DWORD));
+			RegSetValueEx(hKeySensors, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->traycolor, sizeof(DWORD));
 		}
 		if (j->alarm) {
 			tName = "Alarm-" + name;
-			RegSetValueEx(hKey2, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->alarmPoint, sizeof(DWORD));
+			RegSetValueEx(hKeySensors, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->alarmPoint, sizeof(DWORD));
 		}
 	}
 }

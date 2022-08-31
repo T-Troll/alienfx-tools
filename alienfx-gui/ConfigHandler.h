@@ -112,8 +112,6 @@ private:
 	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
-	//void updateProfileByID(unsigned id, std::string name, std::string app, DWORD flags, DWORD tFlags, DWORD* eff);
-	//void updateProfileFansByID(unsigned id, unsigned senID, fan_block* temp, DWORD flags);
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id);
 public:
@@ -192,9 +190,9 @@ public:
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);
 	bool SetStates();
-	void SetToolTip();
+	//void SetToolTip();
 	void SetIconState();
 	bool IsDimmed();
 	void SetDimmed();
-	int  GetEffect();
+	int GetEffect();
 };

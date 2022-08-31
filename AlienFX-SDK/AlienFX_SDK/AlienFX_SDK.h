@@ -138,9 +138,14 @@ namespace AlienFX_SDK {
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, act_block act, bool needSave, bool needInverse = false);
 
+		//De-init
+		void AlienFXClose();
+
 	public:
 
 		bool powerMode = true; // current power mode for APIv1-v3
+
+		~Functions();
 
 		// Initialize device
 		// Returns PID of device used.
@@ -151,9 +156,6 @@ namespace AlienFX_SDK {
 		// Another init function, for Aurora ACPI init.
 		// acc is a handle to low-level ACPI driver (hwacc.sys) interface - see alienfan project.
 		int AlienFXInitialize(HANDLE acc);
-
-		//De-init
-		bool AlienFXClose();
 
 		// Switch to other AlienFX device
 		bool AlienFXChangeDevice(int vid, int pid, HANDLE acc = NULL);

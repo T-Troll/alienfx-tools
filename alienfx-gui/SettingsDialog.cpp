@@ -144,8 +144,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (state) {
 				if (DetectFans()) {
 					eve->StartFanMon();
-					// check for ACPI lights
-					fxhl->FillAllDevs(acpi);
 				} else
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 			} else {
@@ -154,9 +152,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					eve->StopFanMon();
 					delete acpi;
 					acpi = NULL;
-					fxhl->FillAllDevs(NULL);
 				}
 			}
+			// check for ACPI lights
+			fxhl->FillAllDevs(acpi);
 			break;
 		case IDC_CHECK_LIGHTNAMES:
 			conf->showGridNames = !conf->showGridNames;

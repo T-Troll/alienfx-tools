@@ -15,8 +15,6 @@ extern MonHelper* mon;
 HWND fanWindow = NULL, tipWindow = NULL;
 extern HWND toolTip;
 
-int pLid = -1;
-
 extern bool fanMode;
 
 GUID* sch_guid, perfset;
@@ -120,22 +118,19 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                pLid = ComboBox_GetCurSel(power_list);
-                fan_conf->lastProf->powerStage = (WORD)ComboBox_GetItemData(power_list, pLid);
+                fan_conf->lastProf->powerStage = (WORD)ComboBox_GetCurSel(power_list);
                 acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+                //fan_conf->Save();
             } break;
             case CBN_EDITCHANGE:
             {
                 char buffer[MAX_PATH];
-                GetWindowTextA(power_list, buffer, MAX_PATH);
-                if (pLid > 0) {
-                    auto ret = fan_conf->powers.emplace(acpi->powers[fan_conf->lastProf->powerStage], buffer);
-                    if (!ret.second)
-                        // just update...
-                        ret.first->second = buffer;
-                    ComboBox_DeleteString(power_list, pLid);
-                    ComboBox_InsertString(power_list, pLid, buffer);
-                    ComboBox_SetItemData(power_list, pLid, fan_conf->lastProf->powerStage);
+                GetWindowText(power_list, buffer, MAX_PATH);
+                if (fan_conf->lastProf->powerStage > 0) {
+                    fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage])->second = buffer;
+                    //fan_conf->Save();
+                    ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
+                    ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
                 }
                 break;
             }

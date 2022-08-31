@@ -37,8 +37,8 @@ struct SENSOR {
 class ConfigMon
 {
 private:
-	HKEY hKey1 = NULL,
-		hKey2 = NULL;
+	HKEY hKeyMain = NULL,
+		hKeySensors = NULL;
 	void GetReg(const char*, DWORD*, DWORD def = 0);
 	void SetReg(const char* text, DWORD value);
 

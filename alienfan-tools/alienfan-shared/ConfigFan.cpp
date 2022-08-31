@@ -126,12 +126,14 @@ void ConfigFan::Save() {
 	SetReg("ObCheck", obCheck);
 	SetReg("DisableAWCC", awcc_disable);
 
-	if (prof.fanControls.size() > 0) {
-		// clean old data
-		RegCloseKey(keySensors);
-		RegDeleteTree(keyMain, "Sensors");
-		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan\\Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
-	}
+	// clean old data
+	//RegCloseKey(keySensors);
+	RegDeleteTree(keyMain, "Sensors");
+	RegCreateKeyEx(keyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
+	//RegCloseKey(keyPowers);
+	RegDeleteTree(keyMain, "Powers");
+	RegCreateKeyEx(keyMain, "Powers", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
+
 	// save profiles..
 	for (int i = 0; i < prof.fanControls.size(); i++) {
 		for (int j = 0; j < prof.fanControls[i].fans.size(); j++) {
@@ -167,7 +169,7 @@ void ConfigFan::Save() {
 	}
 }
 
-void ConfigFan::SetBoosts(AlienFan_SDK::Control* acpi) {
+void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
 	vector<fan_overboost>::iterator maxB;
 	for (byte fID = 0; fID < acpi->boosts.size(); fID++)
 		if ((maxB = find_if(boosts.begin(), boosts.end(),
@@ -177,6 +179,9 @@ void ConfigFan::SetBoosts(AlienFan_SDK::Control* acpi) {
 			acpi->boosts[fID] = maxB->maxBoost;
 			acpi->maxrpm[fID] = maxB->maxRPM;
 		}
+	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
+		if (powers.find(*i) == powers.end())
+			powers.emplace(*i, *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual");
 }
 
 

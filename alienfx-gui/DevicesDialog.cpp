@@ -535,7 +535,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				// Now save mappings...
 				HANDLE file = CreateFile(appName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
 				if (file != INVALID_HANDLE_VALUE) {
-					conf->afx_dev.AlienFXAssignDevices();
+					//conf->afx_dev.AlienFXAssignDevices();
 					if (conf->afx_dev.fxdevs.size()) {
 						DWORD writeBytes;
 						string line = "'3','" + conf->afx_dev.fxdevs.front().name + "'\r\n";

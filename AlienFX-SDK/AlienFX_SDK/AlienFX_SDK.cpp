@@ -1134,12 +1134,15 @@ namespace AlienFX_SDK {
 		}
 	}
 
-	bool Functions::AlienFXClose() {
-		bool result = false;
+	Functions::~Functions() {
+		AlienFXClose();
+	}
+
+	void Functions::AlienFXClose() {
 		if (length != API_L_ACPI && devHandle != NULL) {
-			result = CloseHandle(devHandle);
+			CloseHandle(devHandle);
+			devHandle = NULL;
 		}
-		return result;
 	}
 
 	bool Functions::AlienFXChangeDevice(int nvid, int npid, HANDLE acc) {
@@ -1161,7 +1164,6 @@ namespace AlienFX_SDK {
 	Mappings::~Mappings() {
 		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
 			if (i->dev) {
-				i->dev->AlienFXClose();
 				delete i->dev;
 			}
 		}
@@ -1239,24 +1241,39 @@ namespace AlienFX_SDK {
 
 		for (int i = 0; i < fxdevs.size(); i++)
 			if (fxdevs[i].dev) {
-				fxdevs[i].dev->AlienFXClose();
+				delete fxdevs[i].dev;
 				fxdevs[i].dev = NULL;
 			}
 
 		activeLights = 0;
+		// check/add devices...
 		for (int i = 0; i < devList.size(); i++) {
 			afx_device* dev = AddDeviceById(MAKELPARAM(devList[i].second, devList[i].first));
-			dev->dev = {new AlienFX_SDK::Functions()};
-
-			if (devList[i].second)
+			//if (!dev->dev) {
+				dev->dev = new AlienFX_SDK::Functions();
 				dev->dev->AlienFXInitialize(devList[i].first, devList[i].second);
-			else
-				dev->dev->AlienFXInitialize(acc);
-			if (dev->dev->GetPID() > 0) {
 				dev->dev->ToggleState(brightness, &dev->lights, power);
+			//}
+			activeLights += (int)dev->lights.size();
+		}
+		// add ACPI, if any
+#ifndef NOACPILIGHTS
+		if (acc) {
+			Functions* devc = new AlienFX_SDK::Functions();
+			if (devc->AlienFXInitialize(acc) > 0) {
+				afx_device* dev = AddDeviceById(MAKELPARAM(API_L_ACPI, 0));
+				//if (!dev->dev) {
+					dev->dev = devc;
+					dev->dev->ToggleState(brightness, &dev->lights, power);
+				//}
+				//else
+				//	delete devC;
 				activeLights += (int)dev->lights.size();
 			}
+			else
+				delete devc;
 		}
+#endif
 	}
 
 	afx_device* Mappings::GetDeviceById(DWORD devID) {
@@ -1279,7 +1296,7 @@ namespace AlienFX_SDK {
 	{
 		afx_device* dev = GetDeviceById(devID);
 		if (!dev) {
-			fxdevs.push_back({ HIWORD(devID), LOWORD(devID) });
+			fxdevs.push_back({ HIWORD(devID), LOWORD(devID), NULL });
 			dev = &fxdevs.back();
 		}
 		return dev;

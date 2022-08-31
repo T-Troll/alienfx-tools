@@ -57,7 +57,7 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 int eItem = -1;
 
 // Effect mode list
-vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
+const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
 bool DetectFans() {
 	conf->fanControl = true;
@@ -67,7 +67,7 @@ bool DetectFans() {
 	}
 	acpi = new AlienFan_SDK::Control();
 	if (acpi->Probe()) {
-		conf->fan_conf->SetBoosts(acpi);
+		conf->fan_conf->SetBoostsAndNames(acpi);
 		eve->StartFanMon();
 	}
 	else {
@@ -383,6 +383,12 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 	}
 }
 
+void SetTrayTip() {
+	string name = "Profile: " + (conf->activeProfile ? conf->activeProfile->name : "Undefined") + "\nEffect: " + (conf->GetEffect() < effModes.size() ? effModes[conf->GetEffect()] : "Global");
+	strcpy_s(conf->niData.szTip, 128, name.c_str());
+	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+}
+
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES),
@@ -391,7 +397,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
 		Shell_NotifyIcon(NIM_ADD, &conf->niData);
-		conf->SetToolTip();
+		SetTrayTip();
 		if (conf->updateCheck)
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		return true;
@@ -413,7 +419,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		conf->SetIconState();
 
 		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
-			conf->SetToolTip();
+			SetTrayTip();
 			// check update....
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		}
@@ -452,6 +458,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();
+			//fan_conf->Save();
 			conf->Save();
 			fxhl->Refresh(2); // set def. colors
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", true);
@@ -563,9 +570,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(mi), MIM_STYLE, MNS_NOTIFYBYPOS };
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS };
 			SetMenuInfo(tMenu, &mi);
-			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID };
+			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
 			// add profiles...
 			if (!conf->enableProf) {
@@ -573,13 +580,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
 				for (int i = 0; i < conf->profiles.size(); i++) {
 					mInfo.dwTypeData = (LPSTR) conf->profiles[i]->name.c_str();
+					mInfo.fState = conf->profiles[i]->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
 					InsertMenuItem(pMenu, i, false, &mInfo);
-					if (conf->profiles[i]->id == conf->activeProfile->id)
-						CheckMenuItem(pMenu, i, MF_BYPOSITION | MF_CHECKED);
 				}
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
-			} else
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_STRING, NULL, ("Profile - " + conf->activeProfile->name).c_str());
+				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
+			}
 			// add effects menu...
 			if (conf->enableMon) {
 				pMenu = CreatePopupMenu();
@@ -587,14 +592,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				int i = 0;
 				for (i=0; i < effModes.size(); i++) {
 					mInfo.dwTypeData = (LPSTR)effModes[i].c_str();
+					mInfo.fState = i == conf->GetEffect() ? MF_CHECKED : MF_UNCHECKED;
 					InsertMenuItem(pMenu, i, false, &mInfo);
 				}
 				if (conf->haveGlobal) {
 					mInfo.dwTypeData = "Global";
+					mInfo.fState = conf->GetEffect() == 99 ? MF_CHECKED : MF_UNCHECKED;
 					InsertMenuItem(pMenu, i, false, &mInfo);
 				}
-				CheckMenuItem(pMenu, conf->GetEffect() == 99 ? (UINT)effModes.size() : conf->GetEffect(), MF_BYPOSITION | MF_CHECKED);
-				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
+				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_ENABLED | MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
 			}
 
 			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableMon ? MF_CHECKED : MF_UNCHECKED);
@@ -725,13 +731,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
-		conf->fan_conf->Save();
+		//conf->fan_conf->Save();
 		delete eve;
 		fxhl->Refresh(2);
 		fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:
-		if (wParam > 9 && wParam < 21) {
+		if (wParam > 9 && wParam < 21) { // Profile switch
 			if (wParam == 10)
 				eve->SwitchActiveProfile(conf->FindDefaultProfile());
 			else
@@ -740,7 +746,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		}
-		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->powers.size()) {
+		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->powers.size()) { // PowerMode switch
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 			if (tabSel == TAB_FANS)
@@ -932,4 +938,5 @@ void RemoveLightAndClean(int dPid, int eLid) {
 				g->grid[ind] = 0;
 	}
 }
+
 

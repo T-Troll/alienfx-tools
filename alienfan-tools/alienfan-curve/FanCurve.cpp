@@ -216,7 +216,7 @@ void UpdateBoost() {
     }
     acpi->boosts[bestBoostPoint.fanID] = max(bestBoostPoint.maxBoost, 100);
     acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
-    fan_conf->Save();
+    //fan_conf->Save();
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
@@ -346,7 +346,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             cFan->points.front().temp = 0;
             cFan->points.back().temp = 100;
             DrawFan();
-            fan_conf->Save();
+            //fan_conf->Save();
         }
         lastFanPoint = NULL;
         SetFocus(GetParent(hDlg));
@@ -363,7 +363,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
             DrawFan();
-            fan_conf->Save();
+            //fan_conf->Save();
         }
         SetFocus(GetParent(hDlg));
     } break;
@@ -409,17 +409,9 @@ void ReloadFanView(HWND list) {
 void ReloadPowerList(HWND list) {
     //HWND list = GetDlgItem(hDlg, IDC_COMBO_POWER);
     ComboBox_ResetContent(list);
-    for (int i = 0; i < acpi->powers.size(); i++) {
-        string name;
-        if (i) {
-            auto pwr = fan_conf->powers.find(acpi->powers[i]);
-            name = pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(i);
-        }
-        else
-            name = "Manual";
-        int pos = ComboBox_AddString(list, (LPARAM)(name.c_str()));
-        ComboBox_SetItemData(list, pos, i);
-        if (i == fan_conf->lastProf->powerStage)
+    for (auto i = fan_conf->powers.begin(); i != fan_conf->powers.end(); i++) {
+        int pos = ComboBox_AddString(list, (LPARAM)(i->second.c_str()));
+        if (pos == fan_conf->lastProf->powerStage)
             ComboBox_SetCurSel(list, pos);
     }
 }
