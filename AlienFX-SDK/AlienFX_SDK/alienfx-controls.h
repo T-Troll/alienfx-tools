@@ -92,9 +92,9 @@ namespace AlienFX_SDK {
 	} COMMV5;
 
 	static struct COMMV6 {
-		//const byte colorReset[3]{0x93,0x37,0x0e};
+		const byte colorReset[3]{0x93,0x37,0x0e};
 		//[3] - some command, can be 06 and 0e
-		const byte colorReset[4]{ 0x95,0,0,0 };
+		//const byte colorReset[4]{ 0x95,0,0,0 };
 		const byte colorSet[8]{0x92,0x37,0x0a,0x00,0x51,0x87,0xd0,0x04};
 		//[9] - light mask, [10,11,12] - RGB, [13] - Brightness (0..64), [14] - Mask
 		//[6] - command (87 - color, 88 - Pulse?, 8d - morph?), [8] - command type - 4 - color, 1 - morph?, 2 - pulse?

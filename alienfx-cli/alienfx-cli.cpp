@@ -103,7 +103,7 @@ void CheckDevices(bool show_all) {
 									apiver = "Mouse, APIv7";
 									break;
 								case 4:
-									apiver = "Keyboard, APIv8/APIv9";
+									apiver = "Keyboard, APIv8";
 									break;
 								}
 								break;
