@@ -28,8 +28,7 @@ namespace AlienFX_SDK {
 
 	// API version (was length):
     #define API_L_ACPI 0 //128
-	#define API_L_V9 9 //65
-    #define API_L_V8 8 //65
+	#define API_L_V8 9 //65
     #define API_L_V7 7 //65
     #define API_L_V6 6 //65
 	#define API_L_V5 5 //64
@@ -61,8 +60,6 @@ namespace AlienFX_SDK {
 	};
 
 	struct mapping { // Light information block
-		//WORD vid = 0;
-		//WORD devid;// = 0;
 		WORD lightid;// = 0;
 		WORD flags = 0;
 		string name;
@@ -121,7 +118,7 @@ namespace AlienFX_SDK {
 		byte chain = 1; // seq. number for APIv1-v3
 		byte version = -1; // interface version
 		byte reportID = 0; // HID ReportID (0 if auto)
-		byte bright = 64; // Brightness for APIv6-v7
+		byte bright = 64; // Brightness for APIv4 and v7
 
 		// support function for mask-based devices (v1-v3)
 		vector<icommand> *SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = {0});
@@ -196,7 +193,7 @@ namespace AlienFX_SDK {
 		// power - if true, power and indicator lights will be set too
 		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
 
-		// Global (whole device) effect control for APIv5, v8, v9
+		// Global (whole device) effect control for APIv5, v8
 		// effType - effect type
 		// mode - effect mode (off, steady, keypress, etc)
 		// tempo - effect tempo
@@ -240,15 +237,13 @@ namespace AlienFX_SDK {
 
 	class Mappings {
 	private:
-		//vector <mapping*> mappings; // Lights data for all devices
-		//vector <devmap> devices; // Device data found/present in system
 		vector <group> groups; // Defined light groups
 		vector <lightgrid> grids; // Grid zones info
 
 	public:
 
-		vector<afx_device> fxdevs;
-		int activeLights = 0;
+		vector<afx_device> fxdevs; // main devices/mappings array
+		int activeLights = 0; // total active lights into the system
 
 		~Mappings();
 

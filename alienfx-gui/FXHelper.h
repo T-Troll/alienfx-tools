@@ -60,7 +60,7 @@ public:
 
 	FXHelper();
 	~FXHelper();
-	AlienFX_SDK::afx_device *LocateDev(int pid);
+	//AlienFX_SDK::afx_device *LocateDev(int pid);
 	size_t FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();

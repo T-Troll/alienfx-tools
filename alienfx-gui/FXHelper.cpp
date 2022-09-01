@@ -23,10 +23,10 @@ FXHelper::~FXHelper() {
 	Stop();
 };
 
-AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
-	AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(pid);
-	return dev && dev->dev ? dev : nullptr;
-};
+//AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
+//	AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(pid);
+//	return dev && dev->dev ? dev : nullptr;
+//};
 
 void FXHelper::SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {
@@ -124,7 +124,7 @@ void FXHelper::TestLight(int did, int id, bool force, bool wp)
 
 void FXHelper::ResetPower(AlienFX_SDK::afx_device* dev)
 {
-	if (dev) {
+	if (dev && dev->dev) {
 		vector<AlienFX_SDK::act_block> act{ { (byte)63, {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} } };
 		dev->dev->SetPowerAction(&act);
 	}
@@ -387,28 +387,24 @@ inline void FXHelper::RefreshMon()
 
 void FXHelper::ChangeState() {
 	if (conf->SetStates()) {
-		UnblockUpdates(false);
-
 		for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++) {
 			if (i->dev) {
+				UnblockUpdates(false);
 				i->dev->ToggleState(conf->finalBrightness, &i->lights, conf->finalPBState);
+				UnblockUpdates(true);
 				if (conf->stateOn)
 					switch (i->dev->GetVersion()) {
 					case API_L_ACPI: case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V6: case API_L_V7:
-						UnblockUpdates(true);
 						Refresh();
-						UnblockUpdates(false);
 					}
 			}
 		}
-		UnblockUpdates(true);
 	}
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 	if (conf->haveGlobal) {
 		if (!dev) {
-			// check ALL devices later, not first one only!
 			auto pos = find_if(conf->afx_dev.fxdevs.begin(), conf->afx_dev.fxdevs.end(),
 				[](auto t) {
 					return t.dev ? t.dev->IsHaveGlobal() : false;
@@ -422,8 +418,7 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 					{ 0,0,0,conf->activeProfile->effColor1.r, conf->activeProfile->effColor1.g,	conf->activeProfile->effColor1.b },
 					{ 0,0,0,conf->activeProfile->effColor2.r, conf->activeProfile->effColor2.g,	conf->activeProfile->effColor2.b });
 			else
-				// type should be 0 or 19 for v9 !!!
-				dev->SetGlobalEffects(1, 1, 0, { 0 }, { 0 });
+				dev->SetGlobalEffects(1, dev->GetVersion() == 8 ? 0 : 1, 0, { 0 }, { 0 });
 		}
 	}
 }
@@ -747,7 +742,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} else {
 				// set light
-				if (dev = src->LocateDev(current.did)) {
+				if ((dev = conf->afx_dev.GetDeviceById(current.did)) && dev->dev) {
 					vector<AlienFX_SDK::afx_act> actions;
 					WORD flags = conf->afx_dev.GetFlags(dev, current.lid);
 					for (int i = 0; i < current.actsize; i++) {
@@ -757,18 +752,21 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							//action.r = (byte)(pow((float)action.r / 255.0, 2.2) * 255 + 0.5);
 							//action.g = (byte)(pow((float)action.g / 255.0, 2.2) * 255 + 0.5);
 							//action.b = (byte)(pow((float)action.b / 255.0, 2.2) * 255 + 0.5);
-							action.r = ((UINT) action.r * action.r * dev->white.r) / (255 * 255);
-							action.g = ((UINT) action.g * action.g * dev->white.g) / (255 * 255);
-							action.b = ((UINT) action.b * action.b * dev->white.b) / (255 * 255);
+							action.r = ((UINT)action.r * action.r * dev->white.r) / (255 * 255);
+							action.g = ((UINT)action.g * action.g * dev->white.g) / (255 * 255);
+							action.b = ((UINT)action.b * action.b * dev->white.b) / (255 * 255);
 						}
 						// Dimming...
-						// For v0-v3 devices only, v4+ have hardware dimming
-						if (dev->dev->GetVersion() < 4 && conf->stateDimmed && (!flags || conf->dimPowerButton)) {
-							unsigned delta = 255 - conf->dimmingPower;
-							action.r = ((UINT) action.r * delta) / 255;// >> 8;
-							action.g = ((UINT) action.g * delta) / 255;// >> 8;
-							action.b = ((UINT) action.b * delta) / 255;// >> 8;
-						}
+						// For v0-v3 and v7 devices only, other have hardware dimming
+						if (!flags || conf->dimPowerButton)
+							switch (dev->dev->GetVersion()) {
+							case 0: case 1: case 2: case 3: case 7: {
+								unsigned delta = 255 - conf->dimmingPower;
+								action.r = ((UINT)action.r * delta) / 255;// >> 8;
+								action.g = ((UINT)action.g * delta) / 255;// >> 8;
+								action.b = ((UINT)action.b * delta) / 255;// >> 8;
+							}
+							}
 						//DebugPrint(("Light for #" + to_string(current.did) + ", ID " + to_string(current.lid) +
 						//" to (" + to_string(action.r) + "," + to_string(action.g) + "," + to_string(action.b) + ")\n").c_str());
 						actions.push_back(action);
@@ -809,20 +807,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					else {
 						devs_query.push_back({ dev, {{(byte)current.lid, actions}} });
 					}
-
-					//int qn;
-					//for (qn = 0; qn < devs_query.size(); qn++)
-					//	if (devs_query[qn].dev->pid == current.did) {
-					//		devs_query[qn].dev_query.push_back({(byte)current.lid, actions});
-					//			break;
-					//	}
-					//if (qn == devs_query.size()) {
-					//	// create new query!
-					//	deviceQuery newQ{dev, {{(byte) current.lid, actions}}};
-					//	newQ.dev_query.reserve(dev->lights.size());
-					//	devs_query.push_back(newQ);
-					//}
-
 				}
 			}
 		}

@@ -96,7 +96,7 @@ void CheckDevices(bool show_all) {
 								break;
 							case 65:
 								switch (i) {
-								case 2:
+								case 0: case 2:
 									apiver = "Monitor, APIv6";
 									break;
 								case 3:
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.0.4\n");
+	printf("alienfx-cli v7.1.0\n");
 	if (argc < 2)
 	{
 		printUsage();
