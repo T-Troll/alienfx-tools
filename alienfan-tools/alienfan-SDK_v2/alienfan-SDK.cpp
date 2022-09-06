@@ -24,11 +24,23 @@ namespace AlienFan_SDK {
 
 		CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
-		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\OpenHardwareMonitor", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_OHMService);
+		// Windows bug with disk drives list
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
+		if (m_DiskService) {
+			IWbemClassObject* spInstance = NULL;
+			m_DiskService->GetObject((BSTR)L"MSFT_PhysicalDisk", NULL, nullptr, &spInstance, nullptr);
+			spInstance->Release();
+			m_DiskService->Release();
+		}
+		// End Windows bugfix
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage\\Providers_v2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\LibreHardwareMonitor", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_OHMService);
 		m_WbemLocator->Release();
 	}
 
 	Control::~Control() {
+		if (m_DiskService)
+			m_DiskService->Release();
 		if (m_OHMService)
 			m_OHMService->Release();
 		m_WbemServices->Release();
@@ -145,8 +157,7 @@ namespace AlienFan_SDK {
 				devFlags |= DEV_FLAG_GMODE;
 			}
 			// ESIF temperature sensors
-			IWbemClassObject* m_ESIFObject = NULL;
-			if (m_WbemServices->GetObject((BSTR)L"EsifDeviceInformation", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				// Get sensor names array
 				vector<string> senNames;
 				DWORD size = GetSystemFirmwareTable('ACPI', 'TDSS', NULL, 0);
@@ -163,11 +174,11 @@ namespace AlienFan_SDK {
 					}
 				}
 				delete[] buf;
-				m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
+				//m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				int numESIF = 0;
+				VARIANT instPath, cTemp;
 				while (uNumOfInstances) {
-					VARIANT instPath, cTemp;
 					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
 					spInstance->Get((BSTR)L"Temperature", 0, &cTemp, 0, 0);
 					spInstance->Release();
@@ -180,23 +191,41 @@ namespace AlienFan_SDK {
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
 				enum_obj->Release();
-				m_ESIFObject->Release();
+				//m_ESIFObject->Release();
 #ifdef _TRACE_
 				printf("ESIF data available, %d sensors (%d names) added!\n", numESIF, (int)senNames.size());
 #endif
 			}
-			if (m_WbemServices->GetObject((BSTR)L"AMD_ACPI", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
-				m_ESIFObject->Release();
+//			if (m_WbemServices->GetObject((BSTR)L"AMD_ACPI", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
+//				m_ESIFObject->Release();
+//#ifdef _TRACE_
+//				printf("AMD data available, %d sensors added!\n", 0);
+//#endif
+//			}
+			if (m_DiskService && m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+				IWbemClassObject* spInstance;
+				ULONG uNumOfInstances = 0;
+				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+				short ssdsen = 0;
+				VARIANT instPath;
+				while (uNumOfInstances) {
+					spInstance->Get((BSTR)L"StorageReliabilityCounter", 0, &instPath, 0, 0);
+					sensors.push_back({ ssdsen, "SSD " + to_string(ssdsen + 1) + " Sensor", 2, instPath.bstrVal });
+					spInstance->Release();
+					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+					ssdsen++;
+				}
+				enum_obj->Release();
 #ifdef _TRACE_
-				printf("AMD data available, %d sensors added!\n", 0);
+				printf("Disk data available, %d sensors added!\n", ssdsen);
 #endif
 			}
-			if (m_OHMService && m_OHMService->GetObject((BSTR)L"Sensor", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
-				m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
+			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+				//m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj);
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-				int numOHM = 0;
+				short numOHM = 0;
+				VARIANT instPath, type, name;
 				while (uNumOfInstances) {
-					VARIANT instPath, type, name;
 					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
 					spInstance->Get((BSTR)L"SensorType", 0, &type, 0, 0);
 					spInstance->Get((BSTR)L"Name", 0, &name, 0, 0);
@@ -204,7 +233,7 @@ namespace AlienFan_SDK {
 					wstring tn{ type.bstrVal };
 					if (tn == L"Temperature") {
 						wstring sname{ name.bstrVal };
-						sensors.push_back({ (short)numOHM,
+						sensors.push_back({ numOHM,
 							string(sname.begin(), sname.end()),
 							4, instPath.bstrVal });
 						numOHM++;
@@ -212,9 +241,9 @@ namespace AlienFan_SDK {
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
 				enum_obj->Release();
-				m_ESIFObject->Release();
+				//m_ESIFObject->Release();
 #ifdef _TRACE_
-				printf("OHM data available, %d sensors added!\n", numOHM);
+				printf("LHM data available, %d sensors added!\n", numOHM);
 #endif
 			}
 			return true;
@@ -250,25 +279,33 @@ namespace AlienFan_SDK {
 		return -1;
 	}
 	int Control::GetTempValue(int TempID) {
-		IWbemClassObject* esifObject = NULL;
+		IWbemClassObject* sensorObject = NULL;
 		if (TempID < sensors.size()) {
 			switch (sensors[TempID].type) {
 			case 1: // AWCC
 				return CallWMIMethod(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
 				break;
 			case 0: {// ESIF
-				if (m_WbemServices->GetObject(sensors[TempID].instance, NULL, nullptr, &esifObject, nullptr) == S_OK) {
+				if (m_WbemServices->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
 					VARIANT temp;
-					esifObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);
-					esifObject->Release();
+					sensorObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);
+					sensorObject->Release();
 					return temp.uintVal;
 				}
 			} break;
-			case 4: {// OHM
-				if (m_OHMService && m_OHMService->GetObject(sensors[TempID].instance, NULL, nullptr, &esifObject, nullptr) == S_OK) {
+			case 2: // SSD
+				if (m_DiskService && m_DiskService->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
 					VARIANT temp;
-					esifObject->Get((BSTR)L"Value", 0, &temp, 0, 0);
-					esifObject->Release();
+					sensorObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);
+					sensorObject->Release();
+					return temp.uintVal;
+				}
+				break;
+			case 4: {// OHM
+				if (m_OHMService && m_OHMService->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
+					VARIANT temp;
+					sensorObject->Get((BSTR)L"Value", 0, &temp, 0, 0);
+					sensorObject->Release();
 					float t = temp.fltVal;
 					return (int)temp.fltVal;
 				}

@@ -23,121 +23,108 @@ void CheckDevices(bool show_all) {
 
 	GUID guid;
 	HANDLE tdevHandle;
+	DWORD dw = 0;
+	SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
 
 	HidD_GetHidGuid(&guid);
 	HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-	if (hDevInfo == INVALID_HANDLE_VALUE)
-	{
-		return;
-	}
-	unsigned int dw = 0;
-	SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
-
-	while (true)
-	{
-		if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
+	if (hDevInfo != INVALID_HANDLE_VALUE) {
+		while (SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
 		{
-			break;
-		}
-		dw++;
-		DWORD dwRequiredSize = 0;
-		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL))
-		{
-			continue;
-		}
-		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-		{
-			continue;
-		}
-		unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
-		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
-		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL))
-		{
-			string devicePath = deviceInterfaceDetailData->DevicePath;
-			tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-
-			if (tdevHandle != INVALID_HANDLE_VALUE)
+			dw++;
+			DWORD dwRequiredSize = 0;
+			SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL);
 			{
-				std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
-				attributes->Size = sizeof(HIDD_ATTRIBUTES);
-				if (HidD_GetAttributes(tdevHandle, attributes.get()))
-				{
-					for (unsigned i = 0; i < NUM_VIDS; i++) {
-						if (attributes->VendorID == AlienFX_SDK::vids[i]) {
-
-							PHIDP_PREPARSED_DATA prep_caps;
-							HIDP_CAPS caps;
-							HidD_GetPreparsedData(tdevHandle, &prep_caps);
-							HidP_GetCaps(prep_caps, &caps);
-							HidD_FreePreparsedData(prep_caps);
-
-							string apiver;
-							bool supported = true;
-
-							switch (caps.OutputReportByteLength) {
-							case 0:
+				if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+					unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize]);
+					deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
+					if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL)) {
+						if ((tdevHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL)) != INVALID_HANDLE_VALUE)
+						{
+							std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
+							attributes->Size = sizeof(HIDD_ATTRIBUTES);
+							if (HidD_GetAttributes(tdevHandle, attributes.get()))
 							{
-								switch (caps.Usage) {
-								case 0xcc: apiver = "Keyboard, APIv5"; break;
-								default: supported = false; apiver = "Unknown";
+								for (unsigned i = 0; i < NUM_VIDS; i++) {
+									if (attributes->VendorID == AlienFX_SDK::vids[i]) {
+
+										PHIDP_PREPARSED_DATA prep_caps;
+										HIDP_CAPS caps;
+										HidD_GetPreparsedData(tdevHandle, &prep_caps);
+										HidP_GetCaps(prep_caps, &caps);
+										HidD_FreePreparsedData(prep_caps);
+
+										string apiver;
+										bool supported = true;
+
+										switch (caps.OutputReportByteLength) {
+										case 0:
+										{
+											switch (caps.Usage) {
+											case 0xcc: apiver = "Keyboard, APIv5"; break;
+											default: supported = false; apiver = "Unknown";
+											}
+										} break;
+										case 8:
+											apiver = "Notebook, APIv1";
+											break;
+										case 9:
+											apiver = "Notebook, APIv2";
+											break;
+										case 12:
+											apiver = "Notebook, APIv3";
+											break;
+										case 34:
+											apiver = "Notebook/Desktop, APIv4";
+											break;
+										case 65:
+											switch (i) {
+											case 0: case 2:
+												apiver = "Monitor, APIv6";
+												break;
+											case 3:
+												apiver = "Mouse, APIv7";
+												break;
+											case 4:
+												apiver = "Keyboard, APIv8";
+												break;
+											}
+											break;
+										default: supported = false; apiver = "Unknown";
+										}
+
+										if (show_all || supported) {
+
+											printf("===== Device VID_%04x, PID_%04x =====\n", attributes->VendorID, attributes->ProductID);
+											printf("Version %d, block size %d\n", attributes->VersionNumber, attributes->Size);
+
+											printf("Report Lengths: Output %d, Input %d, Feature %d\n", caps.OutputReportByteLength,
+												caps.InputReportByteLength,
+												caps.FeatureReportByteLength);
+											printf("Usage ID %#x, Usage page %#x, Output caps %d, Index %d\n", caps.Usage, caps.UsagePage,
+												caps.NumberOutputButtonCaps, caps.NumberOutputDataIndices);
+
+											printf("+++++ Detected as: ");
+
+											switch (i) {
+											case 0: printf("Alienware,"); break;
+											case 1: printf("DARFON,"); break;
+											case 2: printf("Microchip,"); break;
+											case 3: printf("Primax,"); break;
+											case 4: printf("Chicony,"); break;
+											}
+
+											printf(" %s +++++\n", apiver.c_str());
+										}
+									}
 								}
-							} break;
-							case 8:
-								apiver = "Notebook, APIv1";
-								break;
-							case 9:
-								apiver = "Notebook, APIv2";
-								break;
-							case 12:
-								apiver = "Notebook, APIv3";
-								break;
-							case 34:
-								apiver = "Notebook/Desktop, APIv4";
-								break;
-							case 65:
-								switch (i) {
-								case 0: case 2:
-									apiver = "Monitor, APIv6";
-									break;
-								case 3:
-									apiver = "Mouse, APIv7";
-									break;
-								case 4:
-									apiver = "Keyboard, APIv8";
-									break;
-								}
-								break;
-							default: supported = false; apiver = "Unknown";
 							}
-
-							if (show_all || supported) {
-
-								printf("===== Device VID_%04x, PID_%04x =====\n", attributes->VendorID, attributes->ProductID);
-								printf("Version %d, block size %d\n", attributes->VersionNumber, attributes->Size);
-
-								printf("Report Lengths: Output %d, Input %d, Feature %d\n", caps.OutputReportByteLength,
-									caps.InputReportByteLength,
-									caps.FeatureReportByteLength);
-								printf("Usage ID %#x, Usage page %#x, Output caps %d, Index %d\n", caps.Usage, caps.UsagePage,
-									caps.NumberOutputButtonCaps, caps.NumberOutputDataIndices);
-
-								printf("+++++ Detected as: ");
-
-								switch (i) {
-								case 0: printf("Alienware,"); break;
-								case 1: printf("DARFON,"); break;
-								case 2: printf("Microchip,"); break;
-								case 3: printf("Primax,"); break;
-								case 4: printf("Chicony,"); break;
-								}
-
-								printf(" %s +++++\n", apiver.c_str());
-							}
+							CloseHandle(tdevHandle);
 						}
 					}
+					deviceInterfaceDetailData.release();
 				}
 			}
-			CloseHandle(tdevHandle);
 		}
 	}
 }
@@ -213,7 +200,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.1.0\n");
+	printf("alienfx-cli v7.2.0\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -413,11 +400,6 @@ int main(int argc, char* argv[])
 				Update();
 			}
 			break;
-		//case 7:
-		//	// set-dev
-		//	FindDevice(args[0].num);
-		//	printf("Device #%d selected\n", cdev->GetPID());
-		//	break;
 		case 8:
 			// set-dim
 			if (devType && args[0].num < afx_map->fxdevs.size())
@@ -429,11 +411,6 @@ int main(int argc, char* argv[])
 				afx_map->fxdevs[args[0].num].dev->SetGlobalEffects(args[1].num, args[2].num, sleepy,
 					{ 0,0,0, (byte)args[3].num, (byte)args[4].num, (byte)args[5].num },
 					{ 0,0,0, (byte)args[6].num, (byte)args[7].num, (byte)args[8].num });
-				//for (auto t = afx_map->fxdevs.begin(); t < afx_map->fxdevs.end(); t++)
-				//	if (t->dev->GetVersion() == 5)
-				//		t->dev->SetGlobalEffects(args[0].num, sleepy,
-				//			{ 0,0,0, (byte)args[1].num, (byte)args[2].num, (byte)args[3].num },
-				//			{ 0,0,0, (byte)args[4].num, (byte)args[5].num, (byte)args[6].num });
 			break;
 		case 10:
 			// low-level
@@ -460,7 +437,7 @@ int main(int argc, char* argv[])
 						case 0: typeName = "Desktop"; break;
 						case 1: case 2: case 3: typeName = "Notebook"; break;
 						case 4: typeName = "Desktop/Notebook"; break;
-						case 5: typeName = "Keyboard"; break;
+						case 5: case 8: typeName = "Keyboard"; break;
 						case 6: typeName = "Display"; break;
 						case 7: typeName = "Mouse"; break;
 						}

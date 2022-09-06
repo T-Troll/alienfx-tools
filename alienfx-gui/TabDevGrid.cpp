@@ -232,12 +232,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_INITDIALOG:
 	{
         cgDlg = hDlg;
-        /*if (!conf->afx_dev.GetGrids()->size()) {
-            conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main" });
-            conf->afx_dev.GetGrids()->back().grid = new DWORD[20 * 8]{ 0 };
-        }
-        if (!conf->mainGrid)
-            conf->mainGrid = &conf->afx_dev.GetGrids()->front();*/
 
         tipH = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_HSCALE), tipH);
         tipV = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_VSCALE), tipV);
@@ -259,19 +253,19 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         switch (LOWORD(wParam))
         {
         case IDC_BUT_CLEARGRID:
-            if (tabLightSel == TAB_DEVICES)
+            if (tabLightSel == TAB_DEVICES) {
                 if (eLid >= 0) {
                     for (int ind = 0; ind < conf->mainGrid->x * conf->mainGrid->y; ind++)
                         if (conf->mainGrid->grid[ind] == MAKELPARAM(devID, eLid))
                             conf->mainGrid->grid[ind] = 0;
-                    RedrawGridButtonZone();
                 }
+            }
             else
-                if (eItem >= 0) {
-                    dragZone = { 0, 0, conf->mainGrid->x + 1, conf->mainGrid->y + 1 };
-                    ModifyColorDragZone(true);
+                if (eItem > 0) {
+                    conf->afx_dev.GetGroupById(eItem)->lights.clear();
                     UpdateZoneList();
                 }
+            RedrawGridButtonZone();
             break;
         }
     } break;
@@ -284,7 +278,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     conf->mainGrid->grid[ind(x, y)] = 0;
             dragZone = { -1,-1,-1,-1 };
             InitGridButtonZone();
-            //RedrawGridButtonZone(&oldDragZone);
         }
     } break;
     case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: {
@@ -328,6 +321,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 dragZone = { -1,-1,-1,-1 };
                 UpdateZoneList();
                 RedrawGridButtonZone(NULL, true);
+                fxhl->Refresh();
             }
         }
         break;

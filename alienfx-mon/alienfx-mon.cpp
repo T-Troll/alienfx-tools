@@ -542,8 +542,10 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					conf->active_sensors[selSensor].name = sItem->item.pszText;
 					ListView_SetItemText(senList, sItem->item.iItem, 3, sItem->item.pszText);
 				}
+				else {
+					conf->active_sensors[selSensor].name.clear();
+				}
 				runUIUpdate = true;
-				//return false;
 			} break;
 			}
 		} break;

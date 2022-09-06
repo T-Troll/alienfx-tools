@@ -96,7 +96,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
-if (!newID) newID = conf->FindDefaultProfile();
+	if (!newID) newID = conf->FindDefaultProfile();
 	if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
 	if (newID->id != conf->activeProfile->id) {
 
@@ -367,20 +367,35 @@ void EventHandler::StopProfiles()
 	}
 }
 
-PDH_FMT_COUNTERVALUE_ITEM *counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1];
 DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
+PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1], * counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[1];
 
-int GetValuesArray(HCOUNTER counter) {
+int GetValuesArray(HCOUNTER counter, HCOUNTER c2 = NULL) {
 	PDH_STATUS pdhStatus;
 	DWORD count;
-	while ((pdhStatus = PdhGetFormattedCounterArray( counter, PDH_FMT_LONG, &counterSize, &count, counterValues )) == PDH_MORE_DATA) {
+
+	if (c2) {
+		counterSize = sizeof(counterValuesMax);
+		while ((pdhStatus = PdhGetFormattedCounterArray(c2, PDH_FMT_LONG, &counterSize, &count, counterValuesMax)) == PDH_MORE_DATA) {
+			delete[] counterValuesMax;
+			counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
+		}
+
+		if (pdhStatus != ERROR_SUCCESS) {
+			return -1;
+		}
+	}
+
+	counterSize = sizeof(counterValues);
+	while ((pdhStatus = PdhGetFormattedCounterArray( counter, PDH_FMT_LONG, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {
 		delete[] counterValues;
-		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
+		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[counterSize/sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
 	}
 
 	if (pdhStatus != ERROR_SUCCESS) {
 		return -1;
 	}
+
 	return count - 1;
 }
 
@@ -477,6 +492,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 
 	LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
 		COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
+		COUNTER_PATH_NETMAX = "\\Network Interface(*)\\Current BandWidth",
 		COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",
 		COUNTER_PATH_HOT = "\\Thermal Zone Information(*)\\Temperature",
 		COUNTER_PATH_HOT2 = "\\EsifDeviceInformation(*)\\Temperature",
@@ -484,7 +500,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time";
 
 	HQUERY hQuery = NULL;
-	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
+	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
 	MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
 
@@ -502,6 +518,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 	PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
 	PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
 	PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
+	PdhAddCounter(hQuery, COUNTER_PATH_NETMAX, 0, &hNETMAXCounter);
 	PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
 	PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
 	PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
@@ -524,12 +541,10 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		PdhGetFormattedCounterValue( hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal );
 
 		// Network load
-		long totalNet = 0;
-		for (int i = GetValuesArray(hNETCounter); i >= 0; i--) {
-			totalNet += counterValues[i].FmtValue.longValue;
+		for (int i = GetValuesArray(hNETCounter, hNETMAXCounter); i >= 0; i--) {
+			if (counterValuesMax[i].FmtValue.longValue)
+				cData.NET = (byte) max(cData.NET, counterValues[i].FmtValue.longValue * 800 / counterValuesMax[i].FmtValue.longValue);
 		}
-
-		fxhl->maxData.NET = max(fxhl->maxData.NET, totalNet);
 
 		// GPU load
 		for (int i = GetValuesArray(hGPUCounter); i >= 0 && counterValues[i].szName != NULL; i--) {
@@ -538,7 +553,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 
 		// Temperatures
 		for (int i = GetValuesArray(hTempCounter); i >= 0 ; i--) {
-			if (((int)cData.Temp) + 273 < counterValues[i].FmtValue.longValue)
+			if (((int)cData.Temp) < counterValues[i].FmtValue.longValue - 273)
 				cData.Temp = (byte) (counterValues[i].FmtValue.longValue - 273);
 		}
 
@@ -557,24 +572,22 @@ static DWORD WINAPI CEventProc(LPVOID param)
 				for (unsigned i = 0; i < mon->senValues.size(); i++)
 					cData.Temp = max(cData.Temp, mon->senValues[i]);
 			}
-
-			// Added other set maximum temp...
-			for (int i = GetValuesArray(hTempCounter2); i >= 0; i--) {
-				cData.Temp = (byte)max(cData.Temp, counterValues[i].FmtValue.longValue);
+			else {
+				// ESIF temps (already in fans)
+				for (int i = GetValuesArray(hTempCounter2); i >= 0; i--) {
+					cData.Temp = (byte)max(cData.Temp, counterValues[i].FmtValue.longValue);
+				}
 			}
 
 			// Powers
 			for (int i = GetValuesArray(hPwrCounter); i >= 0; i--) {
 				if (counterValues[i].FmtValue.longValue) {
-					totalPwr = (short)counterValues[i].FmtValue.longValue;
-					//break;
+					totalPwr += (short)counterValues[i].FmtValue.longValue / 10;
 				}
 			}
-			//src->fxhl->maxData.PWR = max(src->fxhl->maxData.PWR,(totalPwr & 0xff) << 1 + 1);
+
 			if (totalPwr > fxhl->maxData.PWR)
 				fxhl->maxData.PWR = totalPwr;
-			//while (totalPwr >= fxhl->maxData.PWR)
-			//	fxhl->maxData.PWR <<= 1;
 		}
 
 		GlobalMemoryStatusEx(&memStat);
@@ -598,8 +611,9 @@ static DWORD WINAPI CEventProc(LPVOID param)
 		cData.Fan = min(100, cData.Fan);
 		cData.CPU = (byte) cCPUVal.longValue;
 		cData.RAM = (byte) memStat.dwMemoryLoad;
-		cData.NET = (byte) totalNet ? max(totalNet * 100 / fxhl->maxData.NET, 1) : 0;
+		//cData.NET = (byte) totalNet ? max(totalNet * 100 / fxhl->maxData.NET, 1) : 0;
 		cData.PWR = (byte) totalPwr * 100 / fxhl->maxData.PWR;
+		fxhl->maxData.NET = max(fxhl->maxData.NET, cData.NET);
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
 		fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
 		fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData.RAM);

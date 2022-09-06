@@ -3,11 +3,11 @@
 
 
 extern void ReloadProfileList();
-extern bool DoStopService(bool kind);
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
-extern void EvaluteToAdmin();
-extern bool WindowsStartSet(bool kind, string name);
+//extern bool DoStopService(bool kind);
+//extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+//extern void SetSlider(HWND tt, int value);
+//extern bool EvaluteToAdmin();
+//extern bool WindowsStartSet(bool kind, string name);
 extern bool DetectFans();
 
 extern EventHandler* eve;

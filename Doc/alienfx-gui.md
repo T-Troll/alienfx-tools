@@ -311,8 +311,8 @@ Application behavior control block at right:
 - "Check for update" - Enables online update check (default - on).
 - "Start minimized" - Hide application window in system tray after start (default - off).
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
-- "ESIF sensors" - Read hardware data from ESIF WMI block. If disabled, Power measure and Thermal zone temperature sensors not available. It will require "Run as administrator" privilege (default - off).
-- "Enable fan control" - Enables fan and power control functionality, if available for you hardware.
+- "Use BIOS sensors" - Read additional hardware data from Windows WMI and Alienware BIOS (if fan control enabled). It will require "Run as administrator" privilege (default - off).
+- "Enable fan control" - Enables fan and power control functionality, as well as some additional (Alienware BIOS) temperature sensors. It will require "Run as administrator" privilege (default - off).
 
 Light system control options at the left block:
 - "Turn on lights" - Global light control system switch. All lights will be off and black if disabled (default - on).

@@ -8,45 +8,43 @@ using namespace std;
 extern HWND mDlg;
 extern bool needUpdateFeedback, isNewVersion, needRemove;
 
-void EvaluteToAdmin() {
+bool UACPassed = true;
+
+bool EvaluteToAdmin() {
 	// Evaluation attempt...
-	char szPath[MAX_PATH];
-	if (!IsUserAnAdmin()) {
-		if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
-		{
+	if (UACPassed && !IsUserAnAdmin()) {
+		char szPath[MAX_PATH];
+		GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath));
 			// Launch itself as admin
-			SHELLEXECUTEINFO sei{ sizeof(sei), 0, NULL, "runas", szPath, NULL, NULL, SW_NORMAL };
-			ShellExecuteEx(&sei);
-			if (mDlg)
-				SendMessage(mDlg, WM_CLOSE, 0, 0);
-			else
+		SHELLEXECUTEINFO sei{ sizeof(sei), 0, NULL, "runas", szPath, NULL, NULL, SW_NORMAL };
+		if (UACPassed = ShellExecuteEx(&sei)) {
+			//if (mDlg)
+			//	SendMessage(mDlg, WM_CLOSE, 0, 0);
+			//else
 				_exit(1);  // Quit itself
 		}
+		return false;
 	}
+	return UACPassed;
 }
 
 bool DoStopService(bool flag, bool kind) {
-	if (flag) {
-		EvaluteToAdmin();
-
+	if (flag && EvaluteToAdmin()) {
 		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 		SC_HANDLE schService = schSCManager ? OpenService(schSCManager, "AWCCService", SERVICE_ALL_ACCESS) : NULL;
 		SERVICE_STATUS  serviceStatus;
 		bool rCode = false;
-		if (!schSCManager || !schService)
-			return false;
-		if (kind) {
-			// stop service
-			rCode = (BOOLEAN)ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus);
-			// ToDo: wait for stop
+		if (schSCManager && schService) {
+			if (kind) {
+				// stop service
+				rCode = (BOOLEAN)ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus);
+			}
+			else {
+				// start service
+				StartService(schService, 0, NULL);
+			}
+			CloseServiceHandle(schService);
 		}
-		else {
-			// start service
-			/*rCode = (BOOLEAN)*/StartService(schService, 0, NULL);
-			/*if (!rCode && GetLastError() == ERROR_SERVICE_ALREADY_RUNNING)
-				rCode = true;*/
-		}
-		CloseServiceHandle(schService);
 		return rCode;
 	}
 	return false;

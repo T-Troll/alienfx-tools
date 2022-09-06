@@ -144,7 +144,7 @@ setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.0.4\n");
+    printf("AlienFan-CLI v7.2.0\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -303,24 +303,6 @@ int main(int argc, char* argv[])
                     acpi->SetPower(acpi->powers[fan_conf->prof.powerStage]);
                 continue;
             }
-            //if (command == "direct" && CheckArgs(command, 2, args.size())) {
-            //    AlienFan_SDK::ALIENFAN_COMMAND comm;
-            //    comm.com = (byte)strtoul(args[0].str.c_str(), NULL, 16);
-            //    comm.sub = (byte)strtoul(args[1].str.c_str(), NULL, 16);
-            //    byte value1 = 0, value2 = 0;
-            //    if (args.size() > 2)
-            //        value1 = (byte)strtol(args[2].str.c_str(), NULL, 16);
-            //    if (args.size() > 3)
-            //        value2 = (byte)strtol(args[3].str.c_str(), NULL, 16);
-            //    printf("Direct call result: %d\n", acpi->CallWMIMethod(comm, value1, value2));
-            //    continue;
-            //}
-            //if (command == "directgpu" && CheckArgs(command, 2, args.size())) {
-            //    USHORT command = (USHORT)strtoul(args[0].str.c_str(), NULL, 16);
-            //    DWORD subcommand = strtoul(args[1].str.c_str(), NULL, 16);
-            //    printf("DirectGPU call result: %d\n", acpi->RunGPUCommand(command, subcommand));
-            //    continue;
-            //}
 
             if (command == "resetcolor" && lights->IsActivated()) { // Reset color system for Aurora
                 if (lights->Reset())
@@ -349,57 +331,46 @@ int main(int argc, char* argv[])
                 continue;
             }
             //if (command == "test") { // dump WMI functions
-            //    printf("command %d arg %d - result %d\n", args[0].num, args[1].num, acpi->CallWMIMethod({ 3, (byte)args[0].num }, args[1].num));
-            ////    //DWORD size = EnumSystemFirmwareTables('ACPI', NULL, 0);
-            ////    //byte* buf2 = new byte[size];
-            ////    //size = EnumSystemFirmwareTables('ACPI', buf2, size);
-            ////    /*DWORD size = GetSystemFirmwareTable('ACPI', 'TDSS', NULL, 0);
-            ////    byte* buf = new byte[size];
-            ////    size = GetSystemFirmwareTable('ACPI', 'TDSS', buf, size);
-            ////    for (int i = 0; i < size - 5; i++) {
-            ////        char name[5]{ 0 };
-            ////        memcpy(name, &buf[i], 4);
-            ////        if (!strcmp(name, "_STR")) {
-            ////            int sPos = i + 8;
-            ////            wstring senName = (wchar_t*)&buf[sPos];
-            ////            wprintf(L"STR found - %s (size %d)!\n", senName.c_str(),(int)senName.length());
-            ////            i = sPos + senName.length() * 2;
-            ////        }
-            ////    }
-            ////    delete[] buf;*/
-            ////    //// ESIF temperature sensors
-            ////    IWbemClassObject* m_ESIFObject = NULL;
-            ////    //IWbemLocator* m_WbemLocator;
-            ////    //IWbemServices* m_WbemServices = NULL;
-            ////    //CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
-            ////    //m_WbemLocator->ConnectServer((BSTR)L"ROOT\\CIMV2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
-            ////    //m_WbemLocator->Release();
-            ////    if (acpi->m_AWCCGetObj->GetObject((BSTR)L"MemoryOCControl", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
-            ////        BSTR name;
-            ////        //VARIANT m_instancePath;
-            ////        // Command dump
-            ////        //m_ESIFObject->GetObjectText(0, &name);
-            ////        //wprintf(L"Names: %s\n", name);
-            ////        //IEnumWbemClassObject* enum_obj;
-            ////        //acpi->m_WbemServices->CreateInstanceEnum((BSTR)L"POWER_DATA", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
-            ////        //IWbemClassObject* spInstance;
-            ////        //ULONG uNumOfInstances = 0;
-            ////        //enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-            ////        //spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
-            ////        //spInstance->Release();
-            ////        //enum_obj->Release();
-            ////        IWbemClassObject* m_outParameters = NULL;
-            ////        if (acpi->m_WbemServices->ExecMethod(acpi->m_instancePath.bstrVal,
-            ////            (BSTR)L"MemoryOCControl", 0, NULL, NULL, &m_outParameters, NULL) == S_OK && m_outParameters) {
-            ////            //m_InParamaters->Release();
-            ////            VARIANT result;
-            ////            m_outParameters->Get(L"Data", 0, &result, nullptr, nullptr);
-            ////            m_outParameters->Release();
-            ////            printf("Result - %d", result.uintVal);
-            ////        }
-            ////    }
-            /*    continue;
-            }*/
+            //    // SSD temperature sensors
+            //    IWbemClassObject* driveObject = NULL, * instObj = NULL;
+            //    IWbemLocator* m_WbemLocator;
+            //    IWbemServices* m_WbemServices = NULL;
+            //    CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
+            //    m_WbemLocator->ConnectServer((BSTR)L"root\\Microsoft\\Windows\\Storage\\Providers_v2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
+            //    m_WbemLocator->Release();
+            //    if (m_WbemServices->GetObject((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", NULL, nullptr, &driveObject, nullptr) == S_OK) {
+            //        //BSTR name;
+            //        VARIANT m_instancePath;
+            //        // Command dump
+            //        //m_ESIFObject->GetObjectText(0, &name);
+            //        //wprintf(L"Names: %s\n", name);
+            //        IEnumWbemClassObject* enum_obj;
+            //        m_WbemServices->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
+            //        IWbemClassObject* spInstance;
+            //        ULONG uNumOfInstances = 0;
+            //        enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+            //        while (uNumOfInstances) {
+            //            spInstance->Get((BSTR)L"StorageReliabilityCounter", 0, &m_instancePath, 0, 0);
+            //            m_WbemServices->GetObject(m_instancePath.bstrVal, NULL, nullptr, &instObj, nullptr);
+            //            instObj->Get((BSTR)L"Temperature", 0, &m_instancePath, 0, 0);
+            //            wprintf(L"Temp: %d\n", m_instancePath.uintVal);
+            //            instObj->Release();
+            //            spInstance->Release();
+            //            enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+            //        }
+            //        enum_obj->Release();
+            //        //IWbemClassObject* m_outParameters = NULL;
+            //        //if (acpi->m_WbemServices->ExecMethod(acpi->m_instancePath.bstrVal,
+            //        //    (BSTR)L"MemoryOCControl", 0, NULL, NULL, &m_outParameters, NULL) == S_OK && m_outParameters) {
+            //        //    //m_InParamaters->Release();
+            //        //    VARIANT result;
+            //        //    m_outParameters->Get(L"Data", 0, &result, nullptr, nullptr);
+            //        //    m_outParameters->Release();
+            //        //    printf("Result - %d", result.uintVal);
+            //        //}
+            //    }
+            //    continue;
+            //}
             printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
         }
     }

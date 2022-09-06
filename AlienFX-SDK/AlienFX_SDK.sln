@@ -18,6 +18,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFX_SDK_noACPI", "Alien
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-low", "..\alienfan-tools\alienfan-SDK\alienfan-low\alienfan-low.vcxproj", "{CC889C0D-369A-46F0-87B2-956DA96DDEFD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{71195927-9D2B-4898-96B8-4DB3296FA5C2}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		CheckDevices\CheckDevices.vcxitems*{685645dc-a6fb-47c6-a1bb-deed0d1b465c}*SharedItemsImports = 4

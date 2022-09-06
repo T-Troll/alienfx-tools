@@ -148,104 +148,92 @@ namespace AlienFX_SDK {
 	//Use this method for general devices, vid = 0 for any vid, pid = -1 for any pid. Do not use at the same time!
 	int Functions::AlienFXInitialize(int vid, int pidd) {
 		GUID guid;
-		bool flag = false;
+		bool flag = true;
 		pid = -1;
+		DWORD dw = 0;
+		SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
 
 		HidD_GetHidGuid(&guid);
 		HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-		if (hDevInfo == INVALID_HANDLE_VALUE) {
-			return pid;
-		}
-		unsigned int dw = 0;
-		SP_DEVICE_INTERFACE_DATA deviceInterfaceData{sizeof(SP_DEVICE_INTERFACE_DATA)};
+		if (hDevInfo != INVALID_HANDLE_VALUE) {
+			while (flag && SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData)) {
+				dw++;
+				DWORD dwRequiredSize = 0;
+				SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL);
 
-		while (!flag) {
-			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData)) {
-				flag = true;
-				continue;
-			}
-			dw++;
-			DWORD dwRequiredSize = 0;
-			if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL)) {
-				continue;
-			}
+				std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
+				deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+				if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL)) {
+					if ((devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+						OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, NULL)) != INVALID_HANDLE_VALUE) {
+						std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
+						attributes->Size = sizeof(HIDD_ATTRIBUTES);
+						if (HidD_GetAttributes(devHandle, attributes.get())) {
+							if (((!vid || attributes->VendorID == vid) && (pidd == -1 || attributes->ProductID == pidd))) {
+								// Check API version...
+								PHIDP_PREPARSED_DATA prep_caps;
+								HIDP_CAPS caps;
+								HidD_GetPreparsedData(devHandle, &prep_caps);
+								HidP_GetCaps(prep_caps, &caps);
+								HidD_FreePreparsedData(prep_caps);
 
-			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA *)new char[dwRequiredSize]);
-			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-			if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL)) {
-				string devicePath = deviceInterfaceDetailData->DevicePath;
-				devHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-					OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, NULL);
-
-				if (devHandle != INVALID_HANDLE_VALUE) {
-					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
-					attributes->Size = sizeof(HIDD_ATTRIBUTES);
-					if (HidD_GetAttributes(devHandle, attributes.get())) {
-						if (((!vid || attributes->VendorID == vid) && (pidd == -1 || attributes->ProductID == pidd))) {
-							// Check API version...
-							PHIDP_PREPARSED_DATA prep_caps;
-							HIDP_CAPS caps;
-							HidD_GetPreparsedData(devHandle, &prep_caps);
-							HidP_GetCaps(prep_caps, &caps);
-							HidD_FreePreparsedData(prep_caps);
-
-							if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
-
-								// Yes, now so easy...
-								length = caps.OutputReportByteLength;
-								reportID = 0;
-								switch (caps.OutputReportByteLength) {
-								case 0:
-									length = caps.FeatureReportByteLength;
-									version = API_L_V5;
-									reportID = 0xcc;
-									break;
-								case 8:
-									version = API_L_V1;
-									reportID = 2;
-									break;
-								case 9:
-									version = API_L_V2;
-									reportID = 2;
-									break;
-								case 12:
-									version = API_L_V3;
-									reportID = 2;
-									break;
-								case 34:
-									version = API_L_V4;
-									break;
-								case 65:
-									switch (attributes->VendorID) {
-									case 0x0424: case 0x187c:
-										version = API_L_V6;
-										// device init
-										//PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
+								if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
+									length = caps.OutputReportByteLength;
+									reportID = 0;
+									switch (caps.OutputReportByteLength) {
+									case 0:
+										length = caps.FeatureReportByteLength;
+										version = API_L_V5;
+										reportID = 0xcc;
 										break;
-									case 0x0461:
-										version = API_L_V7;
+									case 8:
+										version = API_L_V1;
+										reportID = 2;
 										break;
-									case 0x04f2:
-										version = API_L_V8;
-										reportID = 0xe;
+									case 9:
+										version = API_L_V2;
+										reportID = 2;
 										break;
+									case 12:
+										version = API_L_V3;
+										reportID = 2;
+										break;
+									case 34:
+										version = API_L_V4;
+										break;
+									case 65:
+										switch (attributes->VendorID) {
+										case 0x0424: case 0x187c:
+											version = API_L_V6;
+											// device init
+											PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
+											break;
+										case 0x0461:
+											version = API_L_V7;
+											break;
+										case 0x04f2:
+											version = API_L_V8;
+											reportID = 0xe;
+											break;
+										}
+										break;
+										//default: length = caps.OutputReportByteLength;
 									}
-									break;
-								//default: length = caps.OutputReportByteLength;
-								}
 
-								this->vid = attributes->VendorID;
-								pid = attributes->ProductID;
-								flag = true;
+									this->vid = attributes->VendorID;
+									pid = attributes->ProductID;
+									flag = false;
+								}
 							}
 						}
+						if (flag)
+							CloseHandle(devHandle);
 					}
-					if (!flag)
-						CloseHandle(devHandle);
 				}
+				deviceInterfaceDetailData.release();
 			}
+			SetupDiDestroyDeviceInfoList(hDevInfo);
 		}
-		SetupDiDestroyDeviceInfoList(hDevInfo);
 		return pid;
 	}
 
@@ -285,7 +273,7 @@ namespace AlienFX_SDK {
 		bool result = false;
 		switch (version) {
 		case API_L_V6:
-			result = PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
+			//result = PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
 			break;
 		case API_L_V5:
 		{
@@ -503,6 +491,18 @@ namespace AlienFX_SDK {
 			if (save)
 				break;
 			byte bPos = 5, cnt = 1;
+			// set indicators second light
+			// vector<byte> indi;
+			//for (auto nc = act->begin(); nc != act->end(); nc++)
+			//	switch (nc->index) {
+			//	case 0x19: case 0x28: case 0xb3:
+			//		indi.push_back(nc->index);
+			//	}
+			//if (indi.size()) {
+			//	SetMultiLights(&indi, { 0,0,255 });
+			//	SetColor(0, { 0 });
+			//}
+
 			PrepareAndSend(COMMV8.readyToColor, sizeof(COMMV8.readyToColor), { {2,(byte)act->size()} });
 			for (auto nc = act->begin(); nc != act->end(); nc++)
 				if (bPos < length) {
@@ -541,13 +541,6 @@ namespace AlienFX_SDK {
 				mods.push_back({ 4, cnt });
 				val = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), &mods);
 			}
-			// now set indicators second light
-			//for (auto nc = act->begin(); nc != act->end(); nc++)
-			//	switch (nc->index) {
-			//	case 0x19: case 0x28: case 0xb3:
-			//		SetColor(nc->index, { nc->act[0].b, nc->act[0].g, nc->act[0].r });
-			//	}
-
 		} break;
 		case API_L_V7:
 		{
@@ -1141,65 +1134,55 @@ namespace AlienFX_SDK {
 	vector<pair<WORD, WORD>> Mappings::AlienFXEnumDevices() {
 		vector<pair<WORD, WORD>> pids;
 		GUID guid;
-		bool flag = false;
 		HANDLE tdevHandle;
 
 		HidD_GetHidGuid(&guid);
 		HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-		if (hDevInfo == INVALID_HANDLE_VALUE) {
-			return pids;
-		}
-		unsigned int dw = 0;
-		SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
-
-		while (!flag) {
+		if (hDevInfo != INVALID_HANDLE_VALUE) {
+			DWORD dw = 0;
+			SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
 			deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
-			if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData)) {
-				flag = true;
-				continue;
-			}
-			dw++;
-			DWORD dwRequiredSize = 0;
-			if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL)) {
-				continue;
-			}
-			std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA *)new char[dwRequiredSize]);
-			deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-			if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL)) {
-				string devicePath = deviceInterfaceDetailData->DevicePath;
-				tdevHandle = CreateFile(devicePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
-				if (tdevHandle != INVALID_HANDLE_VALUE) {
-					std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
-					attributes->Size = sizeof(HIDD_ATTRIBUTES);
-					if (HidD_GetAttributes(tdevHandle, attributes.get())) {
-						for (unsigned i = 0; i < NUM_VIDS; i++) {
-							if (attributes->VendorID == vids[i]) {
-								PHIDP_PREPARSED_DATA prep_caps;
-								HIDP_CAPS caps;
-								HidD_GetPreparsedData(tdevHandle, &prep_caps);
-								HidP_GetCaps(prep_caps, &caps);
-								HidD_FreePreparsedData(prep_caps);
+			while (SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData)) {
+				dw++;
+				DWORD dwRequiredSize = 0;
+				SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL);
+				std::unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new char[dwRequiredSize]);
+				deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+				if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL)) {
+					if ((tdevHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL)) != INVALID_HANDLE_VALUE) {
+						std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
+						attributes->Size = sizeof(HIDD_ATTRIBUTES);
+						if (HidD_GetAttributes(tdevHandle, attributes.get())) {
+							for (unsigned i = 0; i < NUM_VIDS; i++) {
+								if (attributes->VendorID == vids[i]) {
+									PHIDP_PREPARSED_DATA prep_caps;
+									HIDP_CAPS caps;
+									HidD_GetPreparsedData(tdevHandle, &prep_caps);
+									HidP_GetCaps(prep_caps, &caps);
+									HidD_FreePreparsedData(prep_caps);
 
-								if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
+									if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
 #ifdef _DEBUG
-									char buff[2048];
-									sprintf_s(buff, 2047, "Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
-											   attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
-									OutputDebugString(buff);
-									printf("%s", buff);
+										char buff[2048];
+										sprintf_s(buff, 2047, "Scan: VID: %#x, PID: %#x, Version: %d, Length: %d\n",
+											attributes->VendorID, attributes->ProductID, attributes->VersionNumber, attributes->Size);
+										OutputDebugString(buff);
+										printf("%s", buff);
 #endif
-									pids.push_back({attributes->VendorID,attributes->ProductID});
-									break;
+										pids.push_back({ attributes->VendorID,attributes->ProductID });
+										break;
+									}
 								}
 							}
 						}
+						CloseHandle(tdevHandle);
 					}
-					CloseHandle(tdevHandle);
 				}
+				deviceInterfaceDetailData.release();
 			}
+			SetupDiDestroyDeviceInfoList(hDevInfo);
 		}
-		SetupDiDestroyDeviceInfoList(hDevInfo);
 		return pids;
 	}
 

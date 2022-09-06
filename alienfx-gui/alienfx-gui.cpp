@@ -61,20 +61,20 @@ const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"
 
 bool DetectFans() {
 	conf->fanControl = true;
-	if (!IsUserAnAdmin()) {
-		conf->Save();
-		EvaluteToAdmin();
-	}
-	acpi = new AlienFan_SDK::Control();
-	if (acpi->Probe()) {
-		conf->fan_conf->SetBoostsAndNames(acpi);
-		eve->StartFanMon();
-	}
-	else {
-		ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
-		delete acpi;
-		acpi = NULL;
-		conf->fanControl = false;
+	conf->Save();
+
+	if (EvaluteToAdmin()) {
+		acpi = new AlienFan_SDK::Control();
+		if (acpi->Probe()) {
+			conf->fan_conf->SetBoostsAndNames(acpi);
+			eve->StartFanMon();
+		}
+		else {
+			ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
+			delete acpi;
+			acpi = NULL;
+			conf->fanControl = false;
+		}
 	}
 	return conf->fanControl;
 }

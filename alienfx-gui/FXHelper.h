@@ -11,8 +11,8 @@
 #define MODE_LOW	4
 
 struct EventData {
-	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0;
-	long NET = 1;
+	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0;
+	//long NET = 1;
 	short PWR = 100, Fan = 0;
 };
 

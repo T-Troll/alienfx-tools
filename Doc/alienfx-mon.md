@@ -16,8 +16,8 @@ By default, only Windows Performance-based sensors are enabled.
 It includes CPU load in percent, Memory load in percent, HDD load in percent, current Battery level, current GPU load (between all GPUs in system) and CPU/GPU temperatures (on some systems).
 
 You can enable 2 more sensor sources (but both of them will require Administrator rights):
-- ESIF sensors. This includes additional temperature sensors, as well as power usage (total and per component) in Watt.
-- BIOS sensors. The values come from AlienFan subsystem and includes even more temperature sensors, system fans RPMS and the percent of maximal RPM (not precise at some systems).
+- BIOS sensors. This includes additional temperature sensors, as well as power usage (total and per component) in Watt.
+- Alienware sensors. The values come from Fan control subsystem and includes even more temperature sensors, system fans RPMS and the percent of maximal RPM (not precise at some systems).
 
 You can edit sensor name by double-click on it into sensor list.
 You can hide sensor from active list pressing "Hide" button, assign try icon, it's color and style using "Sensor settings" block.  

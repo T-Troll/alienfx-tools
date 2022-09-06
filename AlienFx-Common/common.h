@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void EvaluteToAdmin();
+bool EvaluteToAdmin();
 bool DoStopService(bool flag, bool kind);
 void ResetDPIScale();
 DWORD WINAPI CUpdateCheck(LPVOID);

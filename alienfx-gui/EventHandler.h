@@ -41,7 +41,6 @@ public:
 	EventHandler();
 	~EventHandler();
 
-	//MonHelper *mon = NULL;
 	CaptureHelper *capt = NULL;
 	GridHelper *grid = NULL;
 	WSAudioIn *audio = NULL;
@@ -49,6 +48,4 @@ public:
 	HANDLE stopEvents = NULL;
 
 	mutex modifyProfile;
-
-	//bool profileChanged = false;
 };

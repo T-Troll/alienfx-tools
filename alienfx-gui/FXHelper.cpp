@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "FXHelper.h"
+#include "EventHandler.h"
 
 extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp);
@@ -12,6 +13,7 @@ extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp);
 #endif
 
 extern ConfigHandler* conf;
+extern EventHandler* eve;
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
@@ -463,6 +465,9 @@ size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 			numActiveDevs++;
 			if (i->dev->IsHaveGlobal())
 				conf->haveGlobal = true;
+			if (i->dev->GetVersion() == API_L_V6)
+				// reset device will make all white...
+				Refresh();
 		}
 	if (numActiveDevs)
 		Start();
@@ -509,9 +514,15 @@ void FXHelper::Refresh(int forced)
 	for (auto it = (*conf->active_set).begin(); it < (*conf->active_set).end(); it++) {
 		RefreshOne(&(*it), forced, false);
 	}
-	if (!forced) RefreshMon();
 
 	QueryUpdate(-1, forced == 2);
+
+	if (!forced && eve)
+		switch (conf->GetEffect()) {
+		case 1: RefreshMon(); break;
+		case 2: RefreshAmbient(eve->capt->imgz); break;
+		case 3: RefreshHaptics(eve->audio->freqs); break;
+		}
 }
 
 bool FXHelper::SetPowerMode(int mode)

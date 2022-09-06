@@ -76,6 +76,10 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 		sen->cur = val;
 		sen->min = sen->min == NO_SEN_VALUE ? val : min(sen->min, val);
 		sen->max = max(sen->max, val);
+		if (sen->name.empty()) {
+			sen->name = name;
+			conf->needFullUpdate = true;
+		}
 	}
 	else {
 		// add sensor
@@ -173,38 +177,28 @@ DWORD WINAPI CEventProc(LPVOID param)
 			valCount = GetValuesArray(hGPUCounter); // GPU, code 4
 			long valLast = 0;
 			for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
-				if ((/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
-					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA))
+				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA))
 					valLast = max(valLast, counterValues[i].FmtValue.longValue);
 			}
 			AddUpdateSensor(conf, 0, 4, 0, valLast, "GPU load");
 
 			valCount = GetValuesArray(hTempCounter); // Temps, code 5
 			for (unsigned i = 0; i < valCount; i++) {
-				if (/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
-					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
+				if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
 					AddUpdateSensor(conf, 0, 5, i, counterValues[i].FmtValue.longValue - 273, counterValues[i].szName);
 			}
 		}
 
 		if (conf->eSensors) { // group 1
 			// ESIF temperatures and power
-			valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
-			// Added other tempset ...
-			for (unsigned i = 0; i < valCount; i++) {
-				if ((/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
-					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue)
-					AddUpdateSensor(conf, 1, 0, i, counterValues[i].FmtValue.longValue, (string)"Temp " + to_string(i));
-			}
 			valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
 			for (unsigned i = 0; i < valCount; i++) {
-				if (/*counterValues[i].FmtValue.CStatus == PDH_CSTATUS_NEW_DATA ||*/
-					counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
-					AddUpdateSensor(conf, 1, 1, i, counterValues[i].FmtValue.longValue/2, (string)"Power " + to_string(i)/*counterValues[i].szName*/);
+				if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
+					AddUpdateSensor(conf, 1, 1, i, counterValues[i].FmtValue.longValue/10, (string)"Power " + to_string(i));
 			}
 		}
 
-		if (conf->bSensors && acpi) { // group 2
+		if (acpi) { // group 2
 			// Fan data and BIOS temperatures
 			int val;
 			for (int i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
@@ -217,7 +211,15 @@ DWORD WINAPI CEventProc(LPVOID param)
 				AddUpdateSensor(conf, 2, 2, i, acpi->GetFanPercent(i), (string)"Fan " + to_string(i+1) + " percent");
 				AddUpdateSensor(conf, 2, 3, i, acpi->GetFanBoost(i, true), (string)"Fan " + to_string(i + 1) + " boost");
 			}
-		}
+		} else
+			if (conf->eSensors) {
+				// Added other tempset ...
+				valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
+				for (unsigned i = 0; i < valCount; i++) {
+					if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue)
+						AddUpdateSensor(conf, 1, 0, i, counterValues[i].FmtValue.longValue, (string)"Temp " + to_string(i));
+				}
+			}
 	}
 
 cleanup:

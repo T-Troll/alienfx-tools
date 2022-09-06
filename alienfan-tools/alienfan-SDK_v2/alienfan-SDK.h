@@ -20,8 +20,8 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_SEN_INFO {
 		SHORT senIndex = 0;
 		string name;
-		byte type = 0; // 0 = TZ (ESIF), 1 = AWCC, 2 = ECDV1, 3 = ECDV 2, 4 = OHM
-		BSTR instance; // for ESIF/OHM sensors
+		byte type = 0; // 0 = TZ (ESIF), 1 = AWCC, 2 - Disk, 4 = OHM
+		BSTR instance; // for ESIF/OHM/SSD sensors
 	};
 
 	struct ALIENFAN_COMMAND {
@@ -51,7 +51,7 @@ namespace AlienFan_SDK {
 
 	public:
 		//VARIANT m_instancePath;
-		IWbemServices* m_WbemServices = NULL, *m_OHMService = NULL;
+		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
 		Control();
 		~Control();
 

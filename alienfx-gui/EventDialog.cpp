@@ -229,7 +229,7 @@ void UpdateEventUI(LPVOID lpParam) {
 		SetDlgItemText((HWND)lpParam, IDC_VAL_CPU, (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + "W").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " W").c_str());
 		if (mon) {
 			int maxFans = 0;
 			for (auto i = mon->fanRpm.begin(); i < mon->fanRpm.end(); i++)
@@ -239,7 +239,7 @@ void UpdateEventUI(LPVOID lpParam) {
 		else
 			SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, "disabled");
 		SetDlgItemText((HWND)lpParam, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET * fxhl->maxData.NET / 102400) + " kb").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET) + " %").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
 	}
 }
