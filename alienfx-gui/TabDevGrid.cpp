@@ -424,9 +424,12 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             }
             // print name
             if (conf->showGridNames && gridVal) {
-                string name = conf->afx_dev.GetMappingById(conf->afx_dev.GetDeviceById(LOWORD(gridVal)), HIWORD(gridVal))->name;
-                SetBkMode(ditem->hDC, TRANSPARENT);
-                DrawText(ditem->hDC, name.c_str(), -1, &ditem->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+                AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(LOWORD(gridVal));
+                AlienFX_SDK::mapping* lgh;
+                if (dev && (lgh = conf->afx_dev.GetMappingById(dev, HIWORD(gridVal)))) {
+                    SetBkMode(ditem->hDC, TRANSPARENT);
+                    DrawText(ditem->hDC, lgh->name.c_str(), -1, &ditem->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+                }
             }
             // Highlight if in selection zone
             if (PtInRect(&dragZone, { (long)(ind % conf->mainGrid->x), (long)(ind / conf->mainGrid->x) })) {

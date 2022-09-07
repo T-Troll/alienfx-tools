@@ -16,7 +16,7 @@ extern "C" {
 
 namespace AlienFX_SDK {
 
-	vector<icommand> *Functions::SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2) {
+	vector<icommand> *Functions::SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2, byte tempo, byte length) {
 		vector<icommand> *mods = new vector<icommand>({{1, type},{2,(byte)chain},
 										 {3,(byte)((index & 0xFF0000) >> 16)},
 										 {4,(byte)((index & 0x00FF00) >> 8)},
@@ -34,11 +34,26 @@ namespace AlienFX_SDK {
 						{8,(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
 			break;
 		case API_L_V6: {
-			byte mask = (byte) (c1.r ^ c1.g ^ c1.b ^ index ^ 8);
+			byte mask;
 			mods->clear();
 			mods->insert(mods->end(), { {9,(byte)index},
-								 {10,c1.r},{11,c1.g},{12,c1.b},
-								 {13,bright},{14,mask} });
+								 {10,c1.r},{11,c1.g},{12,c1.b}});
+			switch (type) {
+			case AlienFX_A_Color:
+				mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index ^ 8);
+				mods->insert(mods->end(), { {13, bright}, {14,mask} });
+				break;
+			case AlienFX_A_Pulse:
+				mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index ^ tempo ^ 1);
+				mods->insert(mods->end(), { {3, 0xb}, {6, 0x88}, {8, 2}, {13, bright}, {14, tempo}, {15,mask} });
+				break;
+			case AlienFX_A_Morph: case AlienFX_A_Breathing:
+				mask = (byte)(c1.r ^ c1.g ^ c1.b ^ c2.r ^ c2.g ^c2.b ^ index ^ tempo ^ length ^ 6);
+				mods->insert(mods->end(), { {3, 0xf}, {6, 0x8c}, {8, 1},
+					{13,c2.r},{14,c2.g},{15,c2.b},
+					{16, bright}, {17, tempo}, {18, length}, {19,mask} });
+				break;
+			}
 		} break;
 		}
 		return mods;
@@ -64,7 +79,7 @@ namespace AlienFX_SDK {
 		byte buffer[MAX_BUFFERSIZE];
 		DWORD written;
 
-		FillMemory(buffer, MAX_BUFFERSIZE, version == API_L_V6 && size == 3 ? 0xff : 0);
+		FillMemory(buffer, MAX_BUFFERSIZE, version == API_L_V6 && size != 3 ? 0xff : 0);
 
 		memcpy(&buffer[1], command, size);
 		buffer[0] = reportID;
@@ -179,7 +194,10 @@ namespace AlienFX_SDK {
 
 								if (caps.OutputReportByteLength || caps.Usage == 0xcc) {
 									length = caps.OutputReportByteLength;
+									this->vid = attributes->VendorID;
+									pid = attributes->ProductID;
 									reportID = 0;
+									flag = false;
 									switch (caps.OutputReportByteLength) {
 									case 0:
 										length = caps.FeatureReportByteLength;
@@ -217,12 +235,8 @@ namespace AlienFX_SDK {
 											break;
 										}
 										break;
-										//default: length = caps.OutputReportByteLength;
+									default: flag = true;
 									}
-
-									this->vid = attributes->VendorID;
-									pid = attributes->ProductID;
-									flag = false;
 								}
 							}
 						}
@@ -363,7 +377,7 @@ namespace AlienFX_SDK {
 		} break;
 		case API_L_V6:
 		{
-			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(1<<index, 0, c));
+			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(1<<index, AlienFX_A_Color, c));
 		} break;
 		case API_L_V5:
 		{
@@ -590,7 +604,7 @@ namespace AlienFX_SDK {
 		default: //case API_L_ACPI:
 		{
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++) {
-				val = SetColor(nc->index, {nc->act[0].b, nc->act[0].g, nc->act[0].r});
+				val = SetAction(&(*nc));
 			}
 		} break;
 		}
@@ -622,7 +636,7 @@ namespace AlienFX_SDK {
 						{ 18,2 } });
 				}
 				PrepareAndSend(COMMV8.readyToColor, sizeof(COMMV8.readyToColor));
-				PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), &mods);
+				res = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), &mods);
 			} break;
 			case API_L_V7:
 			{
@@ -641,8 +655,14 @@ namespace AlienFX_SDK {
 						{(byte)(ca*3+9), act->act[ca].g},
 						{(byte)(ca*3+10), act->act[ca].b}});
 				}
-				PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), &mods);
+				res =PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), &mods);
 			} break;
+			case API_L_V6:
+				res = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(1 << act->index, act->act[0].type,
+					{ act->act[0].b, act->act[0].g, act->act[0].r },
+					act->act.size() > 1 ? Colorcode({ act->act[1].b, act->act[1].g, act->act[1].r }) : Colorcode({0}),
+					act->act[0].tempo, act->act[0].time	));
+				break;
 			case API_L_V4:
 			{
 				PrepareAndSend(COMMV4.colorSel, sizeof(COMMV4.colorSel), {{6,act->index}});
@@ -1072,7 +1092,7 @@ namespace AlienFX_SDK {
 	}
 
 	BYTE Functions::IsDeviceReady() {
-		int status = AlienfxGetDeviceStatus();;
+		int status = AlienfxGetDeviceStatus();
 		switch (version) {
 		case API_L_V5:
 			return status != ALIENFX_V5_WAITUPDATE;// == ALIENFX_V5_STARTCOMMAND || status == ALIENFX_V5_INCOMMAND;
@@ -1089,7 +1109,7 @@ namespace AlienFX_SDK {
 				return AlienfxWaitForReady() == ALIENFX_V2_READY;
 			}
 			return 0;
-		default:// API_L_ACPI:
+		default:
 			return !inSet;
 		}
 	}

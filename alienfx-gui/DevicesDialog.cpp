@@ -32,28 +32,39 @@ WNDPROC oldproc;
 HHOOK dEvent;
 HWND kDlg = NULL;
 
+AlienFX_SDK::afx_device* FindActiveDevice() {
+	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size())
+		if (conf->afx_dev.fxdevs[dIndex].dev)
+			return &conf->afx_dev.fxdevs[dIndex];
+	return nullptr;
+}
+
 BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	AlienFX_SDK::afx_device* dev = FindActiveDevice();
+
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-		AlienFX_SDK::afx_device* dev = &conf->afx_dev.fxdevs[dIndex];
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETTICFREQ, 16, 0);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETTICFREQ, 16, 0);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETTICFREQ, 16, 0);
-		sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1);
-		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2);
-		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, dev->white.r);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, dev->white.g);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, dev->white.b);
-		SetSlider(sTip1, dev->white.r);
-		SetSlider(sTip2, dev->white.r);
-		SetSlider(sTip3, dev->white.r);
-		fxhl->TestLight(dIndex, eLid, true, true);
+		if (dev) {
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETTICFREQ, 16, 0);
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETTICFREQ, 16, 0);
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETTICFREQ, 16, 0);
+			sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1);
+			sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2);
+			sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, dev->white.r);
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, dev->white.g);
+			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, dev->white.b);
+			SetSlider(sTip1, dev->white.r);
+			SetSlider(sTip2, dev->white.r);
+			SetSlider(sTip3, dev->white.r);
+			fxhl->TestLight(dev, eLid, true, true);
+		}
 		RECT pRect;
 		GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);
 		SetWindowPos(hDlg, NULL, pRect.right, pRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
@@ -61,7 +72,7 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	break;
 	case WM_HSCROLL:
 	{
-		if (dIndex >= 0) {
+		if (dev) {
 			switch (LOWORD(wParam)) {
 			case TB_THUMBTRACK: case TB_ENDTRACK:
 			{
@@ -77,13 +88,14 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					conf->afx_dev.fxdevs[dIndex].white.b = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip3, conf->afx_dev.fxdevs[dIndex].white.b);
 				}
-				fxhl->TestLight(dIndex, eLid, true, true);
+				fxhl->TestLight(dev, eLid, true, true);
 			} break;
 			}
 		}
 	} break;
 	case WM_CLOSE:
-		fxhl->TestLight(dIndex, eLid, true);
+		if (dev)
+			fxhl->TestLight(dev, eLid, true);
 		EndDialog(hDlg, IDCLOSE);
 		break;
 	default: return false;
@@ -93,46 +105,42 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 void SetLightInfo() {
 	AlienFX_SDK::mapping* clight = NULL;
-	fxhl->TestLight(dIndex, eLid);
-	if (dIndex >= 0 && (clight = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid))) {
-		SetDlgItemText(dDlg, IDC_EDIT_NAME, clight->name.c_str());
-	}
-	else {
-		SetDlgItemText(dDlg, IDC_EDIT_NAME, "<not used>");
-	}
-	if (eLid >= 0)
+	AlienFX_SDK::afx_device* dev = FindActiveDevice();
+	if (dev) {
+		fxhl->TestLight(dev, eLid);
+		if (clight = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid)) {
+			SetDlgItemText(dDlg, IDC_EDIT_NAME, clight->name.c_str());
+		}
+		else {
+			SetDlgItemText(dDlg, IDC_EDIT_NAME, "<not used>");
+		}
 		SetDlgItemInt(dDlg, IDC_LIGHTID, eLid, false);
-	else
-		SetDlgItemText(dDlg, IDC_LIGHTID, "");
-	CheckDlgButton(dDlg, IDC_ISPOWERBUTTON, clight && clight->flags & ALIENFX_FLAG_POWER);
-	CheckDlgButton(dDlg, IDC_CHECK_INDICATOR, clight && clight->flags & ALIENFX_FLAG_INDICATOR);
-	RedrawGridButtonZone();
+
+		CheckDlgButton(dDlg, IDC_ISPOWERBUTTON, clight && clight->flags & ALIENFX_FLAG_POWER);
+		CheckDlgButton(dDlg, IDC_CHECK_INDICATOR, clight && clight->flags & ALIENFX_FLAG_INDICATOR);
+		RedrawGridButtonZone();
+	}
 }
 
 void UpdateDeviceInfo() {
-	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
-		AlienFX_SDK::afx_device* dev = &conf->afx_dev.fxdevs[dIndex];
-		if (dev->dev) {
-			//BYTE status = dev->dev->AlienfxGetDeviceStatus();
-			char descript[128];
-			sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d",
-				dev->vid, dev->pid, dev->dev->GetVersion()/*,
-				status && status != 0xff ? "Ok" : "Error!"*/);
-			SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
-			EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
-			SetLightInfo();
-		}
+	AlienFX_SDK::afx_device* dev = FindActiveDevice();
+	if (dev) {
+		//BYTE status = dev->dev->AlienfxGetDeviceStatus();
+		char descript[128];
+		sprintf_s(descript, 128, "VID_%04X/PID_%04X, APIv%d",
+			dev->vid, dev->pid, dev->dev->GetVersion()/*,
+			status && status != 0xff ? "Ok" : "Error!"*/);
+		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
+		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev->GetVersion() && dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
+		SetLightInfo();
 	}
 }
 
 LRESULT CALLBACK DetectKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
-	//LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
-
-	if (wParam == WM_KEYUP /*&& !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)*/) {
+	if (wParam == WM_KEYUP) {
 		char keyname[32];
 		GetKeyNameText(MAKELPARAM(0, ((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
-		//UnhookWindowsHookEx(dEvent);
 		// set text...
 		auto lgh = FindCreateMapping();
 		lgh->name = keyname;
@@ -233,12 +241,15 @@ void LoadCSV(string name) {
 						WORD vid = (WORD)atoi(fields[1].c_str()),
 							pid = (WORD)atoi(fields[2].c_str());
 						AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(MAKELPARAM(pid, vid));
+						DebugPrint(("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ").c_str());
 						if (dev && dev->dev) {
 							tGear.devs.push_back({vid, pid, NULL, fields[3] });
+							DebugPrint("Matched.\n")
 						}
 						else {
 							// Skip to next "3" block!
 							tGear.selected = true;
+							DebugPrint("Skipped.\n");
 						}
 					}
 				} break;
@@ -270,8 +281,10 @@ void LoadCSV(string name) {
 					}
 					tGear = { "" };
 					tGear.name = fields[1];
+					DebugPrint(("Device " + tGear.name + ":\n").c_str());
 					break;
-					//default: // wrong line, skip
+				//default: // wrong line, skip
+				//	DebugPrint("Line skipped\n");
 				}
 			}
 		}
@@ -381,6 +394,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
 	static bool clickOnTab = false;
 
+	AlienFX_SDK::afx_device* dev = FindActiveDevice();
+
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -388,24 +403,23 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		dDlg = hDlg;
 		fxhl->Stop();
 
-		if (!conf->afx_dev.activeLights && DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog) == IDOK) {
-			ApplyDeviceMaps();
-		}
+		//if (!conf->afx_dev.activeLights && DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_AUTODETECT), hDlg, (DLGPROC)DetectionDialog) == IDOK) {
+		//	ApplyDeviceMaps();
+		//}
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
-		//TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
-		if (conf->afx_dev.fxdevs.size() > 0) {
-			if (dIndex >= conf->afx_dev.fxdevs.size() || !conf->afx_dev.fxdevs[dIndex].dev)
-				// find new index
-				for (dIndex = 0; dIndex < conf->afx_dev.fxdevs.size(); dIndex++) {
-					if (conf->afx_dev.fxdevs[dIndex].dev)
-						break;
-				}
-			if (dIndex >= 0) {
-				fxhl->TestLight(dIndex, -1);
-				RedrawDevList();
+
+		if (!dev)
+			// find new index
+			for (dIndex = 0; dIndex < conf->afx_dev.fxdevs.size(); dIndex++) {
+				if (conf->afx_dev.fxdevs[dIndex].dev)
+					break;
 			}
+
+		if (FindActiveDevice()) {
+			fxhl->TestLight(dev, -1);
 		}
+		RedrawDevList();
 
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
 
@@ -424,16 +438,20 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_LAST:
-			eLid = 0;
-			for (auto it = conf->afx_dev.fxdevs[dIndex].lights.begin(); it < conf->afx_dev.fxdevs[dIndex].lights.end(); it++)
-				eLid = max(eLid, it->lightid);
-			SetLightInfo();
+			if (dev) {
+				eLid = 0;
+				for (auto it = dev->lights.begin(); it < dev->lights.end(); it++)
+					eLid = max(eLid, it->lightid);
+				SetLightInfo();
+			}
 		break;
 		case IDC_BUT_FIRST:
-			eLid = 999;
-			for (auto it = conf->afx_dev.fxdevs[dIndex].lights.begin(); it < conf->afx_dev.fxdevs[dIndex].lights.end(); it++)
-				eLid = min(eLid, it->lightid);
-			SetLightInfo();
+			if (dev) {
+				eLid = 999;
+				for (auto it = dev->lights.begin(); it < dev->lights.end(); it++)
+					eLid = min(eLid, it->lightid);
+				SetLightInfo();
+			}
 			break;
 		case IDC_BUT_KEY:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), hDlg, (DLGPROC)KeyPressDialog);
@@ -452,23 +470,23 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_CLEAR:// IDC_BUTTON_REML:
-			if (conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid)) {
+			if (dev && conf->afx_dev.GetMappingById(dev, eLid)) {
 				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove current light name and all it's settings?", "Warning",
 					MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// Clear grid
-					DWORD gridID = MAKELPARAM(conf->afx_dev.fxdevs[dIndex].pid, eLid);
+					DWORD gridID = MAKELPARAM(dev->pid, eLid);
 					for (auto it = conf->afx_dev.GetGrids()->begin(); it < conf->afx_dev.GetGrids()->end(); it++)
 						for (int ind = 0; ind < it->x * it->y; ind++)
 							if (it->grid[ind] == gridID)
 								it->grid[ind] = 0;
 					// delete from all groups...
-					RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
+					RemoveLightAndClean(dev->pid, eLid);
 					// delete from mappings...
-					conf->afx_dev.RemoveMapping(&conf->afx_dev.fxdevs[dIndex], eLid);
+					conf->afx_dev.RemoveMapping(dev, eLid);
 					conf->afx_dev.activeLights--;
 					conf->afx_dev.SaveMappings();
 					if (IsDlgButtonChecked(hDlg, IDC_ISPOWERBUTTON) == BST_CHECKED) {
-						fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);
+						fxhl->ResetPower(dev);
 						ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!", true);
 					}
 					SetLightInfo();
@@ -477,34 +495,32 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
 			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
-			if (eLid >= 0 && dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size()) {
-				fxhl->TestLight(dIndex, -1);
-				fxhl->TestLight(dIndex, eLid);
+			if (dev) {
+				fxhl->TestLight(dev, -1);
+				fxhl->TestLight(dev, eLid);
 			}
 			RedrawGridButtonZone();
 		} break;
-		case IDC_ISPOWERBUTTON:
-			if (eLid >= 0) {
-				AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid);
-				if (lgh) {
-					if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
-						ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all it settings!", true);
-						lgh->flags |= ALIENFX_FLAG_POWER;
-					}
-					else {
-						// remove power button config from chip config if unchecked and confirmed
-						ShowNotification(&conf->niData, "Warning", "You may need to reset light system!", true);
-						fxhl->ResetPower(&conf->afx_dev.fxdevs[dIndex]);
-						lgh->flags &= ~ALIENFX_FLAG_POWER;
-					}
-					RemoveLightAndClean(conf->afx_dev.fxdevs[dIndex].pid, eLid);
+		case IDC_ISPOWERBUTTON: {
+			AlienFX_SDK::mapping* lgh;
+			if (dev && (lgh = conf->afx_dev.GetMappingById(dev, eLid))) {
+				if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
+					ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all it settings!", true);
+					lgh->flags |= ALIENFX_FLAG_POWER;
 				}
+				else {
+					// remove power button config from chip config if unchecked and confirmed
+					ShowNotification(&conf->niData, "Warning", "You may need to reset light system!", true);
+					fxhl->ResetPower(dev);
+					lgh->flags &= ~ALIENFX_FLAG_POWER;
+				}
+				RemoveLightAndClean(dev->pid, eLid);
 			}
-			break;
+		} break;
 		case IDC_CHECK_INDICATOR:
 		{
-			AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid);
-			if (lgh) {
+			AlienFX_SDK::mapping* lgh;
+			if (dev && (lgh = conf->afx_dev.GetMappingById(dev, eLid))) {
 				lgh->flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ?
 					lgh->flags | ALIENFX_FLAG_INDICATOR :
 					lgh->flags & ~ALIENFX_FLAG_INDICATOR;
@@ -653,7 +669,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					dIndex = (int)lPoint->lParam;
-					fxhl->TestLight(dIndex, eLid, true);
+					fxhl->TestLight(FindActiveDevice(), eLid, true);
 					UpdateDeviceInfo();
 				}
 				else {
@@ -661,7 +677,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
 					}
 					else {
-						fxhl->TestLight(dIndex, -1);
+						fxhl->TestLight(dev, -1);
 						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, 0, LVIS_SELECTED);
 					}
 				}
@@ -670,7 +686,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
 				if (sItem->item.pszText) {
-					conf->afx_dev.fxdevs[dIndex].name = sItem->item.pszText;
+					dev->name = sItem->item.pszText;
 					ListView_SetItem(GetDlgItem(hDlg, IDC_LIST_DEV), &sItem->item);
 					ListView_SetColumnWidth(GetDlgItem(hDlg, IDC_LIST_DEV), 0, LVSCW_AUTOSIZE);
 					return true;
@@ -692,8 +708,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 	{
-		fxhl->Start();
 		conf->SortAllGauge();
+		fxhl->Start();
 		fxhl->Refresh();
 		dDlg = NULL;
 	} break;

@@ -25,13 +25,17 @@ namespace AlienFan_SDK {
 		CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
 		// Windows bug with disk drives list
-		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
-		if (m_DiskService) {
-			IWbemClassObject* spInstance = NULL;
-			m_DiskService->GetObject((BSTR)L"MSFT_PhysicalDisk", NULL, nullptr, &spInstance, nullptr);
-			spInstance->Release();
-			m_DiskService->Release();
-		}
+		//m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
+		//if (m_DiskService) {
+		//	IWbemClassObject* spInstance = NULL;
+		//	IEnumWbemClassObject* enum_obj;
+		//	ULONG uNumOfInstances;
+		//	m_WbemServices->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDisk", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj);
+		//	enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+		//	spInstance->Release();
+		//	enum_obj->Release();
+		//	m_DiskService->Release();
+		//}
 		// End Windows bugfix
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage\\Providers_v2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\LibreHardwareMonitor", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_OHMService);

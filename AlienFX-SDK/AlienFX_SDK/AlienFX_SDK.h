@@ -121,7 +121,7 @@ namespace AlienFX_SDK {
 		byte bright = 64; // Brightness for APIv4 and v7
 
 		// support function for mask-based devices (v1-v3)
-		vector<icommand> *SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = {0});
+		vector<icommand>* SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = { 0 }, byte tempo = 0, byte length = 0);
 
 #ifndef NOACPILIGHTS
 		// Support functions for ACPI calls (v0)

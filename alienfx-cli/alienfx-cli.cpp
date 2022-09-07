@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.2.0\n");
+	printf("alienfx-cli v7.2.1\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -491,10 +491,6 @@ Tested light become green, and turned off after testing.\n\
 Just press Enter if no visible light at this ID to skip it.\n");
 				printf("Probing low-level access... ");
 
-				//AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
-				//AlienFX_SDK::Functions* afx_dev = new AlienFX_SDK::Functions();
-				//vector<pair<WORD, WORD>> pids = afx_map->AlienFXEnumDevices();
-
 				if (afx_map->fxdevs.size() > 0) {
 					printf("Found %d device(s)\n", (int)afx_map->fxdevs.size());
 					if (have_high) {
@@ -503,7 +499,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 					}
 
 					for (auto cDev = afx_map->fxdevs.begin(); cDev < afx_map->fxdevs.end(); cDev++)
-						if (devID == -1 || devID == cDev->pid) {
+						if (cDev->dev && (devID == -1 || devID == cDev->pid)) {
 							printf("Probing device VID_%04x, PID_%04x...", cDev->vid, cDev->pid);
 							cDev->dev->Reset();
 							printf("Old device name is %s, ", cDev->name.c_str());

@@ -155,7 +155,7 @@ void EventHandler::ChangeEffectMode() {
 		if (conf->GetEffect() != effMode)
 			StopEffects();
 		else
-			fxhl->Refresh();
+			fxhl->Refresh(true);
 		StartEffects();
 	}
 	else
@@ -530,7 +530,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 	while (WaitForSingleObject(src->stopEvents, conf->monDelay) == WAIT_TIMEOUT) {
 		// get indicators...
 
-		if (!fxhl->unblockUpdates)
+		if (!fxhl->updateThread)
 			continue;
 
 		PdhCollectQueryData(hQuery);

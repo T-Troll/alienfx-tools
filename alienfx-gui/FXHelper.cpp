@@ -93,35 +93,36 @@ void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions
 }
 
 
-void FXHelper::TestLight(int did, int id, bool force, bool wp)
+void FXHelper::TestLight(AlienFX_SDK::afx_device* dev, int id, bool force, bool wp)
 {
-	vector<byte> opLights;
+	if (dev) {
 
-	bool dev_ready = false;
-	for (int c_count = 0; c_count < 200 && !(dev_ready = conf->afx_dev.fxdevs[did].dev->IsDeviceReady()); c_count++)
-		Sleep(20);
-	if (!dev_ready) return;
+		/*bool dev_ready = false;
+		for (int c_count = 0; c_count < 200 && !(dev_ready = conf->afx_dev.fxdevs[did].dev->IsDeviceReady()); c_count++)
+			Sleep(20);
+		if (!dev_ready) return;*/
 
-	AlienFX_SDK::Colorcode c = wp ? conf->afx_dev.fxdevs[did].white : AlienFX_SDK::Colorcode({ 0 });
+		AlienFX_SDK::Colorcode c = wp ? dev->white : AlienFX_SDK::Colorcode({ 0 });
 
-	if (force) {
-		for (auto lIter = conf->afx_dev.fxdevs[did].lights.begin(); lIter != conf->afx_dev.fxdevs[did].lights.end(); lIter++)
-			if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
-				opLights.push_back((byte)lIter->lightid);
-		conf->afx_dev.fxdevs[did].dev->SetMultiLights(&opLights, c);
-		conf->afx_dev.fxdevs[did].dev->UpdateColors();
+		if (force) {
+			vector<byte> opLights;
+			for (auto lIter = dev->lights.begin(); lIter != dev->lights.end(); lIter++)
+				if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
+					opLights.push_back((byte)lIter->lightid);
+			dev->dev->SetMultiLights(&opLights, c);
+			dev->dev->UpdateColors();
+		}
+
+		if (id != oldtest) {
+			if (oldtest != -1)
+				dev->dev->SetColor(oldtest, c);
+			oldtest = id;
+
+			if (id != -1)
+				dev->dev->SetColor(id, conf->testColor);
+			dev->dev->UpdateColors();
+		}
 	}
-
-	if (id != oldtest) {
-		if (oldtest != -1)
-			conf->afx_dev.fxdevs[did].dev->SetColor(oldtest, c);
-		oldtest = id;
-
-		if (id != -1)
-			conf->afx_dev.fxdevs[did].dev->SetColor(id, conf->testColor);
-		conf->afx_dev.fxdevs[did].dev->UpdateColors();
-	}
-
 }
 
 void FXHelper::ResetPower(AlienFX_SDK::afx_device* dev)
@@ -137,10 +138,12 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 
 	blinkStage = !blinkStage;
 	bool wasChanged = false;
+
+#ifdef _DEBUG
 	if (force) {
 		DebugPrint("Forced Counter update initiated...\n");
-		//eData = {101,101,101,101,200,101,101,-1,-1,-1};
 	}
+#endif
 
 	vector<groupset> active = conf->activeProfile->lightsets;
 
@@ -353,7 +356,7 @@ void FXHelper::SetGridEffect(groupset* grp)
 
 void FXHelper::QueryUpdate(int did, bool force)
 {
-	if (unblockUpdates && conf->stateOn) {
+	if (conf->stateOn) {
 		LightQueryElement newBlock{did, 0, force, true};
 		modifyQuery.lock();
 		lightQuery.push_back(newBlock);
@@ -362,10 +365,10 @@ void FXHelper::QueryUpdate(int did, bool force)
 	}
 }
 
-bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force)
+void FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force)
 {
-	if (unblockUpdates && conf->stateOn && !actions.empty()) {
-		if (did) {
+	if (conf->stateOn && !actions.empty()) {
+//		if (did) {
 			LightQueryElement newBlock{ did, id, force, false, (byte)actions.size() };
 			for (int i = 0; i < newBlock.actsize; i++)
 				newBlock.actions[i] = actions[i];
@@ -375,9 +378,8 @@ bool FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 				modifyQuery.unlock();
 				SetEvent(haveNewElement);
 			}
-		}
+//		}
 	}
-	return true;
 }
 
 inline void FXHelper::RefreshMon()
@@ -389,18 +391,22 @@ inline void FXHelper::RefreshMon()
 
 void FXHelper::ChangeState() {
 	if (conf->SetStates()) {
+		Stop();
 		for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++) {
 			if (i->dev) {
-				UnblockUpdates(false);
+
 				i->dev->ToggleState(conf->finalBrightness, &i->lights, conf->finalPBState);
-				UnblockUpdates(true);
-				if (conf->stateOn)
-					switch (i->dev->GetVersion()) {
-					case API_L_ACPI: case API_L_V1: case API_L_V2: case API_L_V3: case API_L_V6: case API_L_V7:
+				switch (i->dev->GetVersion()) {
+				case API_L_V1: case API_L_V2: case API_L_V3:
+					if (conf->stateOn)
 						Refresh();
-					}
+					break;
+				case API_L_ACPI: case API_L_V6: case API_L_V7:
+					Refresh();
+				}
 			}
 		}
+		Start();
 	}
 }
 
@@ -441,17 +447,17 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 //	}
 //}
 
-void FXHelper::UnblockUpdates(bool newState) {
-
-	unblockUpdates = newState;
-	if (!unblockUpdates) {
-		while (updateThread && lightQuery.size())
-			Sleep(100);
-		DebugPrint("Lights pause on!\n");
-	} else {
-		DebugPrint("Lights pause off!\n");
-	}
-}
+//void FXHelper::UnblockUpdates(bool newState) {
+//
+//	unblockUpdates = newState;
+//	if (!unblockUpdates) {
+//		while (updateThread && lightQuery.size())
+//			Sleep(100);
+//		DebugPrint("Lights pause on!\n");
+//	} else {
+//		DebugPrint("Lights pause off!\n");
+//	}
+//}
 
 size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->SetStates();
@@ -481,7 +487,6 @@ void FXHelper::Start() {
 		stopQuery = CreateEvent(NULL, true, false, NULL);
 		haveNewElement = CreateEvent(NULL, false, false, NULL);
 		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
-		//UnblockUpdates(true, true);
 	}
 }
 
@@ -489,14 +494,12 @@ void FXHelper::Stop() {
 	if (updateThread) {
 		DebugPrint("Light updates stopped.\n");
 
-		//UnblockUpdates(false, true);
 		SetEvent(stopQuery);
 		WaitForSingleObject(updateThread, 60000);
 		lightQuery.clear();
 		CloseHandle(updateThread);
 		CloseHandle(stopQuery);
 		CloseHandle(haveNewElement);
-		//CloseHandle(queryEmpty);
 		updateThread = NULL;
 	}
 }
@@ -542,10 +545,6 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 	if (!conf->stateOn || !map)
 		return false;
 
-	//if (map->color.size()) {
-	//	actions = map->color;
-	//}
-
 	if (!force && conf->enableMon && conf->GetEffect() == 1) {
 		if (map->events[0].state) {
 			// use power event;
@@ -588,7 +587,7 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 
 void FXHelper::RefreshAmbient(UCHAR *img) {
 
-	if (!unblockUpdates || conf->monDelay > 200) {
+	if (!updateThread || conf->monDelay > 200) {
 		DebugPrint("Ambient update skipped!\n");
 		return;
 	}
@@ -626,7 +625,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 
 void FXHelper::RefreshHaptics(int *freq) {
 
-	if (!unblockUpdates || conf->monDelay > 200) {
+	if (!updateThread || conf->monDelay > 200) {
 		DebugPrint("Haptics update skipped!\n");
 		return;
 	}
@@ -702,13 +701,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 	AlienFX_SDK::afx_device* dev = NULL;
 
-	while (WaitForMultipleObjects(2, waitArray, false, 500) != WAIT_OBJECT_0) {
-		//if (!src->lightQuery.empty()) ResetEvent(src->queryEmpty);
+	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) != WAIT_OBJECT_0) {
 		while (!src->lightQuery.empty()) {
 			src->modifyQuery.lock();
 
 			if (&src->lightQuery.front())
 				current = src->lightQuery.front();
+			//else
+			//	DebugPrint("Incorrect front element!\n");
 
 			src->lightQuery.pop_front();
 			src->modifyQuery.unlock();
