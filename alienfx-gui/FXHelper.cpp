@@ -109,7 +109,7 @@ void FXHelper::TestLight(AlienFX_SDK::afx_device* dev, int id, bool force, bool 
 			for (auto lIter = dev->lights.begin(); lIter != dev->lights.end(); lIter++)
 				if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
 					opLights.push_back((byte)lIter->lightid);
-			dev->dev->SetMultiLights(&opLights, c);
+			dev->dev->SetMultiColor(&opLights, c);
 			dev->dev->UpdateColors();
 		}
 
@@ -397,11 +397,11 @@ void FXHelper::ChangeState() {
 
 				i->dev->ToggleState(conf->finalBrightness, &i->lights, conf->finalPBState);
 				switch (i->dev->GetVersion()) {
-				case API_L_V1: case API_L_V2: case API_L_V3:
+				case API_V1: case API_V2: case API_V3:
 					if (conf->stateOn)
 						Refresh();
 					break;
-				case API_L_ACPI: case API_L_V6: case API_L_V7:
+				case API_ACPI: case API_V6: case API_V7:
 					Refresh();
 				}
 			}
@@ -464,16 +464,16 @@ size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->haveGlobal = false;
 	numActiveDevs = 0;
 	Stop();
-	conf->afx_dev.AlienFXAssignDevices(/*acc ? acc->GetHandle() : */ NULL, conf->finalBrightness, conf->finalPBState);
+	conf->afx_dev.AlienFXAssignDevices(acc, conf->finalBrightness, conf->finalPBState);
 	// global effects check
 	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
 		if (i->dev) {
 			numActiveDevs++;
 			if (i->dev->IsHaveGlobal())
 				conf->haveGlobal = true;
-			if (i->dev->GetVersion() == API_L_V6)
-				// reset device will make all white...
-				Refresh();
+			//if (i->dev->GetVersion() == API_V6)
+			//	// reset device will make all white...
+			//	Refresh();
 		}
 	if (numActiveDevs)
 		Start();
@@ -729,7 +729,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 //							OutputDebugString(buff);
 //#endif
 							if (devQ->dev_query.size()) {
-								devQ->dev->dev->SetMultiColor(&devQ->dev_query, current.flags);
+								devQ->dev->dev->SetMultiAction(&devQ->dev_query, current.flags);
 								devQ->dev->dev->UpdateColors();
 							}
 							if (devQ->dev->dev->IsHaveGlobal() && (conf->activeProfile->effmode == 99)) {

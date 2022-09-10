@@ -55,13 +55,12 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::CallWMIMethod(ALIENFAN_COMMAND com, byte arg1, byte arg2) {
-		BYTE operand[4]{ com.sub, arg1, arg2, 0 };
-		IWbemClassObject* m_InParamaters/* = NULL*/, * m_outParameters = NULL;
+		IWbemClassObject* m_InParamaters, *m_outParameters = NULL;
 		VARIANT result{ VT_I4 };
 		result.intVal = -1;
 		if (m_AWCCGetObj->GetMethod(commandList[com.com], NULL, &m_InParamaters, NULL) == S_OK) {
 			VARIANT parameters = { VT_I4 };
-			parameters.uintVal = *((DWORD*)operand);
+			parameters.uintVal = ALIENFAN_INTERFACE{ com.sub, arg1, arg2 }.args;
 			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
 			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
 				commandList[com.com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {

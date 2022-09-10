@@ -262,7 +262,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 						lights.push_back((byte) i->lightid);
 				}
 			}
-			j->dev->SetMultiLights(&lights, {final.blue, final.green, final.red});
+			j->dev->SetMultiColor(&lights, {final.blue, final.green, final.red});
 		}
 	}
 	return state;

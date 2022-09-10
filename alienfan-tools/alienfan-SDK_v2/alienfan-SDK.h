@@ -43,6 +43,16 @@ namespace AlienFan_SDK {
 		ALIENFAN_COMMAND getSysID;
 	};
 
+	union ALIENFAN_INTERFACE {
+		struct {
+			byte sub,
+			     arg1,
+			     arg2,
+			     reserved;
+		};
+		DWORD args;
+	};
+
 	class Control {
 	private:
 		VARIANT m_instancePath;

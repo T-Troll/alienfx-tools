@@ -1,4 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
+#ifdef _DEBUG
+#define NOACPILIGHTS
+#endif
 #include <stdio.h>
 #include <string>
 #include "LFXUtil.h"
@@ -269,7 +272,7 @@ int main(int argc, char* argv[])
 						if (!(i->flags & ALIENFX_FLAG_POWER))
 							lights.push_back((byte)i->lightid);
 					}
-					cd->dev->SetMultiLights(&lights, color);
+					cd->dev->SetMultiColor(&lights, color);
 				}
 			}
 			else {
@@ -306,7 +309,7 @@ int main(int argc, char* argv[])
 							if (LOWORD(grp->lights[i]) == afx_map->fxdevs[j].pid)
 								lights.push_back((byte) HIWORD(grp->lights[i]));
 						}
-						afx_map->fxdevs[j].dev->SetMultiLights(&lights, color);
+						afx_map->fxdevs[j].dev->SetMultiColor(&lights, color);
 					}
 				}
 			}
