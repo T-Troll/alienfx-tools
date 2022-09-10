@@ -34,7 +34,7 @@ public:
 	void StartFanMon();
 	void StopFanMon();
 
-	profile *ScanTaskList();
+	void ScanTaskList();
 
 	void CheckProfileWindow(HWND hwnd);
 
@@ -44,6 +44,8 @@ public:
 	CaptureHelper *capt = NULL;
 	GridHelper *grid = NULL;
 	WSAudioIn *audio = NULL;
+
+	bool keyboardSwitchActive = false;
 
 	HANDLE stopEvents = NULL;
 

@@ -128,9 +128,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		fxhl->FillAllDevs(acpi);
 	}
 
-	//if (!fxhl->FillAllDevs(acpi))
-	//	ShowNotification(&conf->niData, "Error", "No Alienware light devices detected!", false);
-
 	ReloadProfileList();
 
 	eve->StartProfiles();
@@ -148,6 +145,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	delete eve;
+	fxhl->Refresh(2);
 	delete fxhl;
 
 	DoStopService(conf->wasAWCC, false);
@@ -273,8 +271,17 @@ void OnSelChanged(HWND hwndDlg)
 	// Get the index of the selected tab.
 	tabSel = TabCtrl_GetCurSel(hwndDlg);
 	if (tabSel == TAB_LIGHTS && !fxhl->numActiveDevs) {
-		TabCtrl_SetCurSel(hwndDlg, TAB_SETTINGS);
-		tabSel = TAB_SETTINGS;
+		TabCtrl_SetCurSel(hwndDlg, TAB_FANS);
+		tabSel = TAB_FANS;
+	}
+
+	if (tabSel == TAB_FANS && !acpi) {
+		if (DetectFans())
+			eve->StartFanMon();
+		if (!acpi) {
+			TabCtrl_SetCurSel(hwndDlg, TAB_SETTINGS);
+			tabSel = TAB_SETTINGS;
+		}
 	}
 
 	// Destroy the current child dialog box, if any.
@@ -300,14 +307,8 @@ void OnSelChanged(HWND hwndDlg)
 	}
 }
 
-void SwitchTab(int num) {
-	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN);
-	TabCtrl_SetCurSel(tab_list, num);
-	OnSelChanged(tab_list);
-}
-
-//void SwitchLightTab(HWND dlg, int num) {
-//	HWND tab_list = GetDlgItem(dlg, IDC_TAB_LIGHTS);
+//void SwitchTab(int num) {
+//	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN);
 //	TabCtrl_SetCurSel(tab_list, num);
 //	OnSelChanged(tab_list);
 //}
@@ -407,16 +408,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	{
 	case WM_INITDIALOG:
 	{
-		mDlg = hDlg;
+
+		conf->niData.hWnd = mDlg = hDlg;
+
+		conf->SetIconState();
 
 		CreateTabControl(tab_list,
 			{"Lights", "Fans and Power", "Profiles", "Settings"},
 			{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS},
 			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
 			);
-
-				conf->niData.hWnd = hDlg;
-		conf->SetIconState();
 
 		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
 			SetTrayTip();
@@ -458,7 +459,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();
-			//fan_conf->Save();
 			conf->Save();
 			fxhl->Refresh(2); // set def. colors
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", true);
@@ -481,7 +481,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			case CBN_SELCHANGE: {
 				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile(prid));
-				//eve->profileChanged = false;
 				ReloadModeList();
 				OnSelChanged(tab_list);
 			} break;
@@ -493,12 +492,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !mon) {
-					if (DetectFans())
-						eve->StartFanMon();
-					if (!mon)
-						TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
-				}
+				//if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !mon) {
+				//	if (DetectFans())
+				//		eve->StartFanMon();
+				//	if (!mon)
+				//		TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
+				//}
 				OnSelChanged(tab_list);
 			}
 		} break;
@@ -551,13 +550,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		}
 		break;
-	//case WM_ACTIVATE:
-	//	if (wParam & 3 && eve && eve->profileChanged) {
-	//		//DebugPrint(("Activated " + to_string(wParam) + "\n").c_str());
-	//		ReloadProfileList();
-	//		eve->profileChanged = false;
-	//	}
-	//	break;
 	case WM_APP + 1: {
 		switch (lParam)
 		{
@@ -642,8 +634,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
-			UpdateState();
 			eve->ChangeEffectMode();
+			UpdateState();
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 		    conf->SetDimmed();
@@ -652,15 +644,19 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
 			eve->ChangeEffectMode();
+			UpdateState();
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			conf->activeProfile->effmode = idx < effModes.size() ? idx : 99;
 			eve->ChangeEffectMode();
+			UpdateState();
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
 			eve->StartProfiles();
+			if (IsWindowVisible(hDlg))
+				ReloadProfileList();
 			break;
 		case ID_TRAYMENU_RESTORE:
 			RestoreApp();
@@ -668,10 +664,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case ID_TRAYMENU_PROFILE_SELECTED: {
 			if (conf->profiles[idx]->id != conf->activeProfile->id) {
 				eve->SwitchActiveProfile(conf->profiles[idx]);
+				if (IsWindowVisible(hDlg))
+					ReloadProfileList();
 			}
 		} break;
 		}
-		//ReloadProfileList();
 	} break;
 	case WM_POWERBROADCAST:
 		switch (wParam) {
@@ -731,7 +728,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
-		//conf->fan_conf->Save();
 		delete eve;
 		fxhl->Refresh(2);
 		fxhl->Stop();
@@ -792,7 +788,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_CLOSE:
-		fxhl->Refresh(2);
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:

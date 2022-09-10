@@ -5,7 +5,6 @@
 
 #pragma comment(lib, "PowrProf.lib")
 
-extern void SwitchTab(int);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
 extern EventHandler* eve;

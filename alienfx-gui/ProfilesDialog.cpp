@@ -230,29 +230,29 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_REMOVEPROFILE: {
 			if (!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
-				int pdelID = pCid;
-				if (MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning",
+				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
+					conf->profiles.erase(find_if(conf->profiles.begin(), conf->profiles.end(),
+						[](profile* pr) {
+							return pr->id == pCid;
+						}));
 					// is this active profile? Switch needed!
 					if (conf->activeProfile->id == pCid) {
 						// switch to default profile..
 						eve->SwitchActiveProfile(conf->FindDefaultProfile());
-						pCid = conf->FindDefaultProfile()->id;
-						ReloadProfileList();
+						pCid = conf->activeProfile->id;
 					}
-					conf->profiles.erase(find_if(conf->profiles.begin(), conf->profiles.end(),
-						[pdelID](profile* pr) {
-							return pr->id == pdelID;
-						}));
+					delete prof;
 					RemoveUnusedGroups();
 					ReloadProfileView(hDlg);
+					ReloadProfileList();
 				}
 			}
 			else
 				ShowNotification(&conf->niData, "Error", "Can't delete last or default profile!", true);
 		} break;
 		case IDC_BUT_PROFRESET:
-			if (MessageBox(hDlg, "Do you really want to remove selected light settings from this profile?", "Warning",
+			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove selected light settings from this profile?", "Warning",
 										   MB_YESNO | MB_ICONWARNING) == IDYES) {
 				for (auto it = prof->lightsets.begin(); it < prof->lightsets.end(); it++) {
 					if (IsDlgButtonChecked(hDlg, IDC_CP_COLORS) == BST_CHECKED)
@@ -269,7 +269,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				RemoveUnused(&prof->lightsets);
 				RemoveUnusedGroups();
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
-					prof->fansets = { 0 };
+					prof->fansets = { };
 				}
 				if (conf->activeProfile->id == prof->id)
 					fxhl->Refresh();
@@ -342,12 +342,15 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_DEFPROFILE:
 		{
 			if (state) {
-				profile *old_def = conf->FindDefaultProfile();
-				old_def->flags = old_def->flags & ~PROF_DEFAULT;
+				auto old_def = find_if(conf->profiles.begin(), conf->profiles.end(),
+					[](profile* prof) {
+						return (prof->flags & PROF_DEFAULT);
+					});
+				(*old_def)->flags = (*old_def)->flags & ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
-				if (conf->enableProf && old_def->id == conf->activeProfile->id)
-					// need to switch to this
-					eve->SwitchActiveProfile(prof);
+				//if (conf->enableProf && (*old_def)->id == conf->activeProfile->id)
+				//	// need to switch to this
+				//	eve->SwitchActiveProfile(prof);
 			} else
 				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 		} break;
@@ -355,7 +358,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SetBitMask(prof->flags, PROF_PRIORITY, state);
 			// Update active profile, if needed
 			if (conf->enableProf)
-				eve->SwitchActiveProfile(eve->ScanTaskList());
+				eve->ScanTaskList();
 			break;
 		case IDC_CHECK_PROFDIM:
 			SetBitMask(prof->flags, PROF_DIMMED, state);
@@ -419,11 +422,12 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				profile* prof = conf->FindProfile((int)sItem->item.lParam);
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
-					//ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
+					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
 					ReloadProfileList();
-					return true;
-				} else
-					return false;
+					//return true;
+				}
+				//else
+				//	return false;
 			} break;
 			}
 			break;

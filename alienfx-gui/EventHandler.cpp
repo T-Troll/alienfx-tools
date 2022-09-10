@@ -64,14 +64,8 @@ void EventHandler::ChangePowerState()
 	if (!sameState) {
 		DebugPrint(("Power state changed to " + to_string(conf->statePower) + "\n").c_str());
 		fxhl->ChangeState();
-		auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
-			[](auto cp) {
-				return cp->triggerFlags & (conf->statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY);
-			});
-		if (pos != conf->profiles.end())
-			SwitchActiveProfile(*pos);
-		else
-			fxhl->Refresh();
+		ScanTaskList();
+		fxhl->Refresh();
 	}
 }
 
@@ -97,6 +91,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
+	if (keyboardSwitchActive) return;
 	if (!newID) newID = conf->FindDefaultProfile();
 	if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
 	if (newID->id != conf->activeProfile->id) {
@@ -119,10 +114,11 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 			ChangeEffectMode();
 
 			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
-	} else {
-		DebugPrint((string("Same profile \"") + newID->name + "\", skipping switch.\n").c_str());
 	}
-	return;
+#ifdef _DEBUG
+	else
+		DebugPrint((string("Same profile \"") + newID->name + "\", skipping switch.\n").c_str());
+#endif
 }
 
 void EventHandler::StartEvents()
@@ -156,7 +152,7 @@ void EventHandler::ChangeEffectMode() {
 		if (conf->GetEffect() != effMode)
 			StopEffects();
 		else
-			fxhl->Refresh(true);
+			fxhl->Refresh();
 		StartEffects();
 	}
 	else
@@ -224,10 +220,10 @@ void EventHandler::StopFanMon() {
 	}
 }
 
-profile* EventHandler::ScanTaskList() {
-	DWORD maxProcess=256, maxFileName=MAX_PATH, cbNeeded, cProcesses, cFileName = maxFileName;
+void EventHandler::ScanTaskList() {
+	DWORD maxProcess=256, cbNeeded, cProcesses;
 	DWORD* aProcesses = new DWORD[maxProcess];
-	TCHAR *szProcessName = new TCHAR[maxFileName];
+	static char szProcessName[32768];
 
 	profile* newp = NULL, *finalP = NULL;
 
@@ -247,89 +243,66 @@ profile* EventHandler::ScanTaskList() {
 				HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
 					PROCESS_VM_READ,
 					FALSE, aProcesses[i]);
-				if (hProcess)
+				if (hProcess && GetProcessImageFileName(hProcess, szProcessName, 32767))
 				{
-					cFileName = GetProcessImageFileName(hProcess, szProcessName, maxFileName); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, maxFileName);
-					while (maxFileName==cFileName) {
-						maxFileName=maxFileName<<1;
-						delete[] szProcessName;
-						szProcessName=new TCHAR[maxFileName];
-						cFileName = GetProcessImageFileName(hProcess, szProcessName, maxFileName);// GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, maxFileName);
-					}
 					PathStripPath(szProcessName);
 					// is it related to profile?
-					if (newp = conf->FindProfileByApp(string(szProcessName)))
-						if (!finalP || !(finalP->flags & PROF_PRIORITY))
-							finalP = newp;
+					if ((newp = conf->FindProfileByApp(string(szProcessName))) && (!finalP || !(finalP->flags & PROF_PRIORITY)))
+						finalP = newp;
 					CloseHandle(hProcess);
 				}
 			}
 		}
 	}
-	delete[] szProcessName;
 	delete[] aProcesses;
-	return finalP;
+	SwitchActiveProfile(finalP);
 }
 
 void EventHandler::CheckProfileWindow(HWND hwnd) {
 
+	static char szProcessName[32768];
+
 	if (hwnd) {
-		DWORD prcId = 0;
+		DWORD prcId;
 		GetWindowThreadProcessId(hwnd, &prcId);
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
 
-		if (hProcess) {
-			DWORD nameSize = MAX_PATH, cFileName = nameSize;
-			TCHAR* szProcessName = new TCHAR[nameSize];
-
-			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL /*hMod*/, szProcessName, nameSize);
-			while (nameSize == cFileName) {
-				nameSize = nameSize << 1;
-				delete[] szProcessName;
-				szProcessName = new TCHAR[nameSize];
-				cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize);
-			}
+		if (hProcess && GetProcessImageFileName(hProcess, szProcessName, 32767)) {
 			CloseHandle(hProcess);
 			PathStripPath(szProcessName);
 
 			DebugPrint((string("Foreground switched to ") + szProcessName + "\n").c_str());
 
-			string pName = szProcessName;
-
-			profile* newp = conf->FindProfileByApp(pName, true);
-			conf->foregroundProfile = newp ? newp : NULL;
-
-			if (newp || !conf->noDesktop || (pName != "ShellExperienceHost.exe"
-				//&& pName != "alienfx-gui.exe"
-				&& pName != "explorer.exe"
-				&& pName != "SearchApp.exe"
+			if (!conf->noDesktop || (szProcessName != string("ShellExperienceHost.exe")
+				&& szProcessName != string("explorer.exe")
+				&& szProcessName != string("SearchApp.exe")
 #ifdef _DEBUG
-				&& pName != "devenv.exe"
+				&& szProcessName != string("devenv.exe")
 #endif
 				)) {
 
-				if (!newp) {
-					SwitchActiveProfile(ScanTaskList());
+				if (conf->foregroundProfile = conf->FindProfileByApp(szProcessName, true)) {
+					if (conf->IsPriorityProfile(conf->foregroundProfile) || !conf->IsPriorityProfile(conf->activeProfile))
+						SwitchActiveProfile(conf->foregroundProfile);
 				}
-				else {
-					if (conf->IsPriorityProfile(newp) || !conf->IsPriorityProfile(conf->activeProfile))
-						SwitchActiveProfile(newp);
-				}
+				else
+					ScanTaskList();
+
 			}
 #ifdef _DEBUG
 			else {
 				DebugPrint("Forbidden app, switch blocked!\n");
 			}
 #endif
-			delete[] szProcessName;
 		}
+#ifdef _DEBUG
 		else {
 			DebugPrint("Foreground app unknown\n");
 		}
+#endif
 	}
-	else {
-		SwitchActiveProfile(ScanTaskList());
-	}
+	else
+		ScanTaskList();
 }
 
 void EventHandler::StartProfiles()
@@ -365,6 +338,7 @@ void EventHandler::StopProfiles()
 		UnhookWinEvent(cEvent);
 		UnhookWindowsHookEx(kEvent);
 		cEvent = 0;
+		keyboardSwitchActive = false;
 	}
 }
 
@@ -407,44 +381,19 @@ int GetValuesArray(HCOUNTER counter, HCOUNTER c2 = NULL) {
 
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 
-	HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, dwEventThread);
-	if (hThread) {
+	static char szProcessName[32768];
+	HANDLE hThread;
+	if ((dwEvent == EVENT_OBJECT_CREATE || dwEvent == EVENT_OBJECT_DESTROY) &&
+		(hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, dwEventThread))) {
 		DWORD prcId = GetProcessIdOfThread(hThread);
-		if (prcId && idChild == CHILDID_SELF && conf->foregroundProfile != conf->activeProfile) {
+		if (prcId && idChild == CHILDID_SELF) {
 			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
-			DWORD nameSize = MAX_PATH, cFileName = nameSize;
-			TCHAR* szProcessName = new TCHAR[nameSize];
-			szProcessName[0] = 0;
-			cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize);// GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
-			while (nameSize == cFileName) {
-				nameSize = nameSize << 1;
-				delete[] szProcessName;
-				szProcessName = new TCHAR[nameSize];
-				cFileName = GetProcessImageFileName(hProcess, szProcessName, nameSize); //GetModuleFileNameEx(hProcess, NULL, szProcessName, nameSize);
+			if (GetProcessImageFileName(hProcess, szProcessName, 32767)) {
+				PathStripPath(szProcessName);
+				if (conf->FindProfileByApp(string(szProcessName)))
+					eve->ScanTaskList();
 			}
-
-			PathStripPath(szProcessName);
-
-			switch (dwEvent) {
-			case EVENT_OBJECT_CREATE: case EVENT_OBJECT_DESTROY:
-
-				if (conf->FindProfileByApp(string(szProcessName))) {
-					eve->SwitchActiveProfile(eve->ScanTaskList());
-				}
-				break;
-
-				//case EVENT_OBJECT_DESTROY:
-
-				//	if (conf->FindProfileByApp(string(szProcessName))) {
-				//		//DebugPrint((string("Process (") + szProcessName + ") status " + to_string(idChild) + "\n").c_str());
-				//		eve->SwitchActiveProfile(eve->ScanTaskList());
-				//	}
-
-				//	break;
-			}
-
 			CloseHandle(hProcess);
-			delete[] szProcessName;
 		}
 		CloseHandle(hThread);
 	}
@@ -454,29 +403,27 @@ static VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent,
 	eve->CheckProfileWindow(hwnd);
 }
 
-static bool wasSwitched = false;
-
 LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
 
 	switch (wParam) {
-	case WM_KEYDOWN:
-		if (!(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
+	case WM_KEYDOWN: case WM_SYSKEYDOWN:
+		if (!eve->keyboardSwitchActive) {
 			auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
 				[lParam](auto cp) {
-					return ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == cp->triggerkey;
+					return ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == cp->triggerkey && conf->SamePower(cp->triggerFlags, true);
 				});
 			if (pos != conf->profiles.end()) {
 				eve->SwitchActiveProfile(*pos);
-				wasSwitched = true;
+				eve->keyboardSwitchActive = true;
 			}
 		}
 		break;
-	case WM_KEYUP:
-		if (wasSwitched && ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == conf->activeProfile->triggerkey) {
+	case WM_KEYUP: case WM_SYSKEYUP:
+		if (eve->keyboardSwitchActive && ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == conf->activeProfile->triggerkey) {
+			eve->keyboardSwitchActive = false;
 			eve->CheckProfileWindow(GetForegroundWindow());
-			wasSwitched = false;
 		}
 		break;
 	}

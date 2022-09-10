@@ -183,6 +183,7 @@ public:
 	ConfigHandler();
 	~ConfigHandler();
 	void Load();
+	bool SamePower(WORD flags, bool anyFit = false);
 	void Save();
 	void SortAllGauge();
 	zonemap* FindZoneMap(int gid);

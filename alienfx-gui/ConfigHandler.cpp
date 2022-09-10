@@ -72,18 +72,20 @@ profile* ConfigHandler::FindProfile(int id) {
 
 profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
-	for (int j = 0; j < profiles.size(); j++)
-		if (active || !(profiles[j]->flags & PROF_ACTIVE)) {
-			for (int i = 0; i < profiles[j]->triggerapp.size(); i++)
-				if (profiles[j]->triggerapp[i] == appName)
-					// app is belong to profile!
-					return profiles[j];
-		}
-	return NULL;
+	auto prof = find_if(profiles.begin(), profiles.end(),
+		[this,appName,active](profile* p) {
+			return (active || !(p->flags & PROF_ACTIVE)) &&
+				SamePower(p->triggerFlags, true) &&
+				(find_if(p->triggerapp.begin(), p->triggerapp.end(),
+					[appName](string app) {
+						return app == appName;
+					}) != p->triggerapp.end());
+		});
+	return prof == profiles.end() ? NULL : *prof;
 }
 
 bool ConfigHandler::IsPriorityProfile(profile* prof) {
-	return prof && prof->flags & PROF_PRIORITY;
+	return prof && (prof->flags & PROF_PRIORITY);
 }
 
 bool ConfigHandler::SetStates() {
@@ -102,12 +104,6 @@ bool ConfigHandler::SetStates() {
 	}
 	return false;
 }
-
-//void ConfigHandler::SetToolTip() {
-//	string name = "Profile: " + (activeProfile ? activeProfile->name : "Undefined") + "\nEffect: " + (GetEffect() < effModes.size() ? effModes[GetEffect()] : "Global");
-//	strcpy_s(niData.szTip, 128, name.c_str());
-//	Shell_NotifyIcon(NIM_MODIFY, &niData);
-//}
 
 void ConfigHandler::SetIconState() {
 	// change tray icon...
@@ -331,11 +327,21 @@ void ConfigHandler::Load() {
 	SetStates();
 }
 
+bool ConfigHandler::SamePower(WORD flags, bool anyFit) {
+	return (flags & (statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY)) ||
+		(anyFit && !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)));
+}
+
 profile* ConfigHandler::FindDefaultProfile() {
 	auto res = find_if(profiles.begin(), profiles.end(),
-		[](profile* prof) {
-			return (prof->flags & PROF_DEFAULT);
-	});
+		[this](profile* prof) {
+			return !prof->triggerapp.size() && SamePower(prof->triggerFlags);
+		});
+	if (res == profiles.end())
+		res = find_if(profiles.begin(), profiles.end(),
+			[](profile* prof) {
+				return (prof->flags & PROF_DEFAULT);
+			});
 	return res == profiles.end() ? profiles.front() : *res;
 }
 
