@@ -144,7 +144,7 @@ setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.2.0\n");
+    printf("AlienFan-CLI v7.2.2\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 

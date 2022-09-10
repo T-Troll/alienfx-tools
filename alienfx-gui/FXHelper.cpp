@@ -523,8 +523,8 @@ void FXHelper::Refresh(int forced)
 	if (!forced && eve)
 		switch (conf->GetEffect()) {
 		case 1: RefreshMon(); break;
-		case 2: RefreshAmbient(eve->capt->imgz); break;
-		case 3: RefreshHaptics(eve->audio->freqs); break;
+		case 2: if (eve->capt) RefreshAmbient(eve->capt->imgz); break;
+		case 3: if (eve->audio) RefreshHaptics(eve->audio->freqs); break;
 		}
 }
 
@@ -587,7 +587,7 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update)
 
 void FXHelper::RefreshAmbient(UCHAR *img) {
 
-	if (!updateThread || conf->monDelay > 200) {
+	if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
 		DebugPrint("Ambient update skipped!\n");
 		return;
 	}
@@ -625,7 +625,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 
 void FXHelper::RefreshHaptics(int *freq) {
 
-	if (!updateThread || conf->monDelay > 200) {
+	if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
 		DebugPrint("Haptics update skipped!\n");
 		return;
 	}
@@ -705,7 +705,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		while (!src->lightQuery.empty()) {
 			src->modifyQuery.lock();
 
-			if (&src->lightQuery.front())
+			//if (&src->lightQuery.front())
 				current = src->lightQuery.front();
 			//else
 			//	DebugPrint("Incorrect front element!\n");
@@ -821,13 +821,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			}
 		}
-		//if (conf->monDelay > 200) {
-		//	conf->monDelay -= 10;
-		//	DebugPrint((string("Query empty, delay decreased to ") + to_string(conf->monDelay) + " ms!\n").c_str());
-		//}
-		conf->monDelay = 200;
+		conf->monDelay = DEFAULT_MON_DELAY;
 		//DebugPrint("Query empty, delay reset\n");
-		//SetEvent(src->queryEmpty);
 	}
 	return 0;
 }

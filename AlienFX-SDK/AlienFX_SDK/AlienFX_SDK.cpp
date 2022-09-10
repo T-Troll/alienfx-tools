@@ -34,24 +34,26 @@ namespace AlienFX_SDK {
 						{8,(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
 			break;
 		case API_L_V6: {
-			byte mask;
+			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
 			mods->clear();
 			mods->insert(mods->end(), { {9,(byte)index},
 								 {10,c1.r},{11,c1.g},{12,c1.b}});
 			switch (type) {
 			case AlienFX_A_Color:
-				mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index ^ 8);
+				mask ^= 8;
 				mods->insert(mods->end(), { {13, bright}, {14,mask} });
 				break;
 			case AlienFX_A_Pulse:
-				mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index ^ tempo ^ 1);
+				mask ^= byte(tempo ^ 1);
 				mods->insert(mods->end(), { {3, 0xb}, {6, 0x88}, {8, 2}, {13, bright}, {14, tempo}, {15,mask} });
 				break;
 			case AlienFX_A_Morph: case AlienFX_A_Breathing:
-				mask = (byte)(c1.r ^ c1.g ^ c1.b ^ c2.r ^ c2.g ^c2.b ^ index ^ tempo ^ length ^ 6);
+				if (type == AlienFX_A_Breathing)
+					c2 = { 0 };
+				mask ^= (byte)(c2.r ^ c2.g ^c2.b ^ tempo ^ 4);
 				mods->insert(mods->end(), { {3, 0xf}, {6, 0x8c}, {8, 1},
 					{13,c2.r},{14,c2.g},{15,c2.b},
-					{16, bright}, {17, tempo}, {18, length}, {19,mask} });
+					{16, bright}, {17, 2}, {18, tempo}, {19,mask} });
 				break;
 			}
 		} break;
@@ -125,7 +127,7 @@ namespace AlienFX_SDK {
 
 	bool Functions::SavePowerBlock(byte blID, act_block act, bool needSave, bool needInverse) {
 		byte mode;
-		switch (act.act[0].type) {
+		switch (act.act.front().type) {
 		case AlienFX_A_Pulse:
 			mode = 2; break;
 		case AlienFX_A_Morph:
@@ -135,19 +137,19 @@ namespace AlienFX_SDK {
 		PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
 		if (act.act.size() < 2)
 			PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(1 << act.index, mode,
-																			   {act.act[0].b, act.act[0].g, act.act[0].r}));
+																			   {act.act.front().b, act.act.front().g, act.act.front().r}));
 		else
 			PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(1 << act.index, mode,
-																			   {act.act[0].b, act.act[0].g, act.act[0].r},
-																			   {act.act[1].b, act.act[1].g, act.act[1].r}));
+																			   {act.act.front().b, act.act.front().g, act.act.front().r},
+																			   {act.act.back().b, act.act.back().g, act.act.back().r}));
 		PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
 		Loop();
 
 		if (needInverse) {
 			PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
-			PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(~((1 << act.index)), act.act[1].type,
-																			   {act.act[0].b, act.act[0].g, act.act[0].r},
-																			   {act.act[1].b, act.act[1].g, act.act[1].r}));
+			PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), SetMaskAndColor(~((1 << act.index)), act.act.back().type,
+																			   {act.act.front().b, act.act.front().g, act.act.front().r},
+																			   {act.act.back().b, act.act.back().g, act.act.back().r}));
 			PrepareAndSend(COMMV1.saveGroup, sizeof(COMMV1.saveGroup), {{2,blID}});
 			Loop();
 		}
@@ -224,7 +226,7 @@ namespace AlienFX_SDK {
 										case 0x0424: case 0x187c:
 											version = API_L_V6;
 											// device init
-											PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
+											PrepareAndSend(COMMV6.systemReset, sizeof(COMMV6.systemReset));
 											break;
 										case 0x0461:
 											version = API_L_V7;
@@ -273,7 +275,7 @@ namespace AlienFX_SDK {
 		//case API_L_V4: {
 		//	 //m15 require Input report as a confirmation, not output.
 		//	 //WARNING!!! In latest firmware, this can provide up to 10sec(!) slowdown, so i disable status read. It works without it as well.
-		//	HidD_SetOutputReport(devHandle, buffer, length);
+		//	HidD_SetInputReport(devHandle, buffer, length);
 		//} break;
 		case API_L_V3: case API_L_V2: case API_L_V1:
 		{
@@ -287,7 +289,7 @@ namespace AlienFX_SDK {
 		bool result = false;
 		switch (version) {
 		case API_L_V6:
-			//result = PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
+			result = PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
 			break;
 		case API_L_V5:
 		{
@@ -438,7 +440,7 @@ namespace AlienFX_SDK {
 			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
-			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(fmask, 0, c));
+			val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(fmask, AlienFX_A_Color, c));
 		} break;
 		case API_L_V5:
 		{
@@ -521,25 +523,19 @@ namespace AlienFX_SDK {
 			for (auto nc = act->begin(); nc != act->end(); nc++)
 				if (bPos < length) {
 					byte opType = 0x81;
-					switch (nc->act[0].type) {
+					switch (nc->act.front().type) {
 					case AlienFX_A_Pulse: opType = 0x82; break;
 					case AlienFX_A_Morph: opType = 0x83; break;
 					case AlienFX_A_Breathing: opType = 0x87; break;
 					case AlienFX_A_Spectrum: opType = 0x88; break;
 					//case AlienFX_A_Rainbow: opType = 0x86; break; // DEBUG, check for OFF
 					}
-					mods.insert(mods.end(), { {bPos,nc->index},{(byte)(bPos + 1),opType},{(byte)(bPos + 2),nc->act[0].tempo},
-						{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),nc->act[0].time }, {(byte)(bPos + 5), 0xa} });
-
-					//if (nc->act.size() > 1 && (nc->index == 0x19 || nc->index == 0x28 || nc->index == 0xb3))
-						// for Indicator, set 2nd (on) color
-					//	mods.insert(mods.end(), { { (byte)(bPos + 6), nc->act[1].r }, { (byte)(bPos + 7),nc->act[1].g }, { (byte)(bPos + 8),nc->act[1].b } });
-					//else {
-						mods.insert(mods.end(), { { (byte)(bPos + 6), nc->act[0].r},{ (byte)(bPos + 7),nc->act[0].g},{ (byte)(bPos + 8),nc->act[0].b} });
-						if (nc->act.size() > 1)
-							// add second color if present
-							mods.insert(mods.end(), { { (byte)(bPos + 9),nc->act[1].r }, { (byte)(bPos + 10),nc->act[1].g }, { (byte)(bPos + 11),nc->act[1].b } });
-					//}
+					mods.insert(mods.end(), { {bPos,nc->index},{(byte)(bPos + 1),opType},{(byte)(bPos + 2),nc->act.front().tempo},
+						{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),nc->act.front().time }, {(byte)(bPos + 5), 0xa},
+						{ (byte)(bPos + 6), nc->act.front().r},{ (byte)(bPos + 7),nc->act.front().g},{ (byte)(bPos + 8),nc->act.front().b} });
+					if (nc->act.size() > 1)
+						// add second color if present
+						mods.insert(mods.end(), { { (byte)(bPos + 9),nc->act.back().r }, { (byte)(bPos + 10),nc->act.back().g }, { (byte)(bPos + 11),nc->act.back().b } });
 
 					bPos += 15;
 				}
@@ -571,9 +567,9 @@ namespace AlienFX_SDK {
 				if (bPos < length) {
 					mods.insert(mods.end(), {
 								{bPos,(byte)(nc->index + 1)},
-								{(byte)(bPos + 1),nc->act[0].r},
-								{(byte)(bPos + 2),nc->act[0].g},
-								{(byte)(bPos + 3),nc->act[0].b} });
+								{(byte)(bPos + 1),nc->act.front().r},
+								{(byte)(bPos + 2),nc->act.front().g},
+								{(byte)(bPos + 3),nc->act.front().b} });
 					bPos += 4;
 				}
 				else {
@@ -594,7 +590,7 @@ namespace AlienFX_SDK {
 				SetPowerAction(act);
 			else
 				for (auto nc = act->begin(); nc != act->end(); nc++)
-					if (nc->act[0].type != AlienFX_A_Power)
+					if (nc->act.front().type != AlienFX_A_Power)
 						val = SetAction(&(*nc));
 					else {
 						vector<act_block> tact{{*nc}};
@@ -619,20 +615,21 @@ namespace AlienFX_SDK {
 			switch (version) {
 			case API_L_V8: {
 				byte opType = 0x81;
-				switch (act->act[0].type) {
+				switch (act->act.front().type) {
 				case AlienFX_A_Pulse: opType = 0x82; break;
 				case AlienFX_A_Morph: opType = 0x83; break;
 				case AlienFX_A_Breathing: opType = 0x87; break;
 				case AlienFX_A_Spectrum: opType = 0x88; break;
 				//case AlienFX_A_Rainbow: opType = 0x88; break;
 				}
-				vector<icommand> mods{ {5,act->index},{6,opType},{7,act->act[0].tempo},{11,act->act[0].r},{12,act->act[0].g},{13,act->act[0].b} };
+				vector<icommand> mods{ {5,act->index},{6,opType},{7,act->act.front().tempo},
+					{11,act->act.front().r},{12,act->act.front().g},{13,act->act.front().b} };
 				// add second color if present
 				if (act->act.size() > 1) {
 					mods.insert(mods.end(), {
-						{ 14,act->act[1].r },
-						{ 15,act->act[1].g },
-						{ 16,act->act[1].b },
+						{ 14,act->act.back().r },
+						{ 15,act->act.back().g },
+						{ 16,act->act.back().b },
 						{ 18,2 } });
 				}
 				PrepareAndSend(COMMV8.readyToColor, sizeof(COMMV8.readyToColor));
@@ -641,7 +638,7 @@ namespace AlienFX_SDK {
 			case API_L_V7:
 			{
 				byte opType = 1;
-				switch (act->act[0].type) {
+				switch (act->act.front().type) {
 				case AlienFX_A_Pulse: opType = 5; break;
 				case AlienFX_A_Morph: opType = 3; break;
 				case AlienFX_A_Breathing: opType = 2; break;
@@ -658,10 +655,10 @@ namespace AlienFX_SDK {
 				res =PrepareAndSend(COMMV7.control, sizeof(COMMV7.control), &mods);
 			} break;
 			case API_L_V6:
-				res = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(1 << act->index, act->act[0].type,
-					{ act->act[0].b, act->act[0].g, act->act[0].r },
-					act->act.size() > 1 ? Colorcode({ act->act[1].b, act->act[1].g, act->act[1].r }) : Colorcode({0}),
-					act->act[0].tempo, act->act[0].time	));
+				res = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(1 << act->index, act->act.front().type,
+					{ act->act.front().b, act->act.front().g, act->act.front().r },
+					{ act->act.back().b, act->act.back().g, act->act.back().r },
+					act->act.front().tempo, act->act.front().time));
 				break;
 			case API_L_V4:
 			{
@@ -715,12 +712,12 @@ namespace AlienFX_SDK {
 			} break;
 			case API_L_V3: case API_L_V2: case API_L_V1:
 			{
-				if (act->act[0].type != AlienFX_A_Color) {
+				if (act->act.front().type != AlienFX_A_Color) {
 					PrepareAndSend(COMMV1.setTempo, sizeof(COMMV1.setTempo), {
-						           {2,(byte) (((UINT) act->act[0].tempo << 3 & 0xff00) >> 8)},
-								   {3,(byte) ((UINT) act->act[0].tempo << 3 & 0xff)},
-								   {4,(byte) (((UINT) act->act[0].time << 5 & 0xff00) >> 8)},
-								   {5,(byte) ((UINT) act->act[0].time << 5 & 0xff)}});
+						           {2,(byte) (((UINT) act->act.front().tempo << 3 & 0xff00) >> 8)},
+								   {3,(byte) ((UINT) act->act.front().tempo << 3 & 0xff)},
+								   {4,(byte) (((UINT) act->act.front().time << 5 & 0xff00) >> 8)},
+								   {5,(byte) ((UINT) act->act.front().time << 5 & 0xff)}});
 				}
 				for (size_t ca = 0; ca < act->act.size(); ca++) {
 					vector<icommand> *mods;
@@ -736,7 +733,7 @@ namespace AlienFX_SDK {
 
 							} else {
 								mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r},
-													   {act->act[0].b, act->act[0].g, act->act[0].r});
+													   {act->act.front().b, act->act.front().g, act->act.front().r});
 							}
 					} break;
 					case AlienFX_A_Morph:
@@ -747,7 +744,7 @@ namespace AlienFX_SDK {
 
 						} else {
 							mods = SetMaskAndColor(1 << act->index, 1, {act->act[ca].b, act->act[ca].g, act->act[ca].r},
-												   {act->act[0].b, act->act[0].g, act->act[0].r});
+												   {act->act.front().b, act->act.front().g, act->act.front().r});
 						}
 					} break;
 					default:
@@ -759,7 +756,7 @@ namespace AlienFX_SDK {
 				}
 				Loop();
 			} break;
-			default: res = SetColor(act->index, {act->act[0].b, act->act[0].g, act->act[0].r});
+			default: res = SetColor(act->index, {act->act.front().b, act->act.front().g, act->act.front().r});
 			}
 		}
 		return res;
@@ -769,7 +766,7 @@ namespace AlienFX_SDK {
 		// Let's find power button (if any)
 		act_block *pwr = NULL;
 		for (vector<act_block>::iterator pwi = act->begin(); pwi != act->end(); pwi++)
-			if (pwi->act[0].type == AlienFX_A_Power) {
+			if (pwi->act.front().type == AlienFX_A_Power) {
 				pwr = &(*pwi);
 				break;
 			}
@@ -799,28 +796,28 @@ namespace AlienFX_SDK {
 					act_block tact{pwr->index};
 					switch (cid) {
 					case 0x5b: // Alarm
-						tact.act.push_back(pwr->act[0]);// afx_act{AlienFX_A_Power, 3, 0x64, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b});
+						tact.act.push_back(pwr->act.front());// afx_act{AlienFX_A_Power, 3, 0x64, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b});
 						tact.act.push_back(afx_act{AlienFX_A_Power, 3, 0x64, 0, 0, 0});
 						break;
 					case 0x5c: // AC power
-						tact.act.push_back(pwr->act[0]);// afx_act{AlienFX_A_Color, 0, 0, pwr->act[0].r, act[index].act[0].g, act[index].act[0].b});
-						tact.act[0].type = AlienFX_A_Color;
+						tact.act.push_back(pwr->act.front());// afx_act{AlienFX_A_Color, 0, 0, pwr->act.front().r, act[index].act.front().g, act[index].act.front().b});
+						tact.act.front().type = AlienFX_A_Color;
 						break;
 					case 0x5d: // Charge
-						tact.act.push_back(pwr->act[0]);// afx_act{AlienFX_A_Power, 3, 0x64, act[index].act[0].r, act[index].act[0].g, act[index].act[0].b});
-						tact.act.push_back(pwr->act[1]);// afx_act{AlienFX_A_Power, 3, 0x64, act[index].act[1].r, act[index].act[1].g, act[index].act[1].b});
+						tact.act.push_back(pwr->act.front());// afx_act{AlienFX_A_Power, 3, 0x64, act[index].act.front().r, act[index].act.front().g, act[index].act.front().b});
+						tact.act.push_back(pwr->act.back());// afx_act{AlienFX_A_Power, 3, 0x64, act[index].act.back().r, act[index].act.back().g, act[index].act.back().b});
 						break;
 					case 0x5e: // Low batt
-						tact.act.push_back(pwr->act[1]);// afx_act{AlienFX_A_Power, 3, 0x64, act[index].act[1].r, act[index].act[1].g, act[index].act[1].b});
+						tact.act.push_back(pwr->act.back());// afx_act{AlienFX_A_Power, 3, 0x64, act[index].act.back().r, act[index].act.back().g, act[index].act.back().b});
 						tact.act.push_back(afx_act{AlienFX_A_Power, 3, 0x64, 0, 0, 0});
 						break;
 					case 0x5f: // Batt power
-						tact.act.push_back(pwr->act[1]);// afx_act{AlienFX_A_Color, 0, 0, act[index].act[1].r, act[index].act[1].g, act[index].act[1].b});
-						tact.act[0].type = AlienFX_A_Color;
+						tact.act.push_back(pwr->act.back());// afx_act{AlienFX_A_Color, 0, 0, act[index].act.back().r, act[index].act.back().g, act[index].act.back().b});
+						tact.act.front().type = AlienFX_A_Color;
 						break;
 					case 0x60: // System sleep?
-						tact.act.push_back(pwr->act[1]);// afx_act{AlienFX_A_Color, 0, 0, act[index].act[1].r, act[index].act[1].g, act[index].act[1].b});
-						tact.act[0].type = AlienFX_A_Color;
+						tact.act.push_back(pwr->act.back());// afx_act{AlienFX_A_Color, 0, 0, act[index].act.back().r, act[index].act.back().g, act[index].act.back().b});
+						tact.act.front().type = AlienFX_A_Color;
 					}
 					SetAction(&tact);
 					// And finish
@@ -833,7 +830,7 @@ namespace AlienFX_SDK {
 				PrepareAndSend(COMMV4.setPower, sizeof(COMMV4.setPower), {{6,0x61},{4,1}});
 				// Default color set here...
 				for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
-					if (nc->act[0].type != AlienFX_A_Power) {
+					if (nc->act.front().type != AlienFX_A_Power) {
 						SetAction(&(*nc));
 					}
 				PrepareAndSend(COMMV4.setPower, sizeof(COMMV4.setPower), { {6,0x61},{4,2} });
@@ -860,7 +857,7 @@ namespace AlienFX_SDK {
 
 			// 08 01 - load on boot
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
-				if (nc->act[0].type != AlienFX_A_Power)
+				if (nc->act.front().type != AlienFX_A_Power)
 					SavePowerBlock(1, *nc, false);
 
 			if (!pwr || act->size() > 1) {
@@ -872,42 +869,40 @@ namespace AlienFX_SDK {
 				chain = 1;
 				// 08 02 - AC standby
 				act_block tact{pwr->index,
-							   {{AlienFX_A_Morph, 0 , 0, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b},
-								{2}}};
+							   {{AlienFX_A_Morph, 0 , 0, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b}, {2}}};
 				/*SavePowerBlock(2, tact, false);*/
 				//tact = {pwr->index,
 				//	   {{AlienFX_A_Morph, 0 , 0, 0, 0, 0},
-				//	   {2,0,0,pwr->act[1].r, pwr->act[1].g, pwr->act[1].b}}};
+				//	   {2,0,0,pwr->act.back().r, pwr->act.back().g, pwr->act.back().b}}};
 				SavePowerBlock(2, tact, true, true);
 				// 08 05 - AC power
 				tact = {pwr->index,
-						{{AlienFX_A_Color, 0 , 0, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b},
-						{0}}};
+						{{AlienFX_A_Color, 0 , 0, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b}, {0}}};
 				SavePowerBlock(5, tact, true);
 				// 08 06 - charge
 				tact = {pwr->index,
-						{{AlienFX_A_Morph, 0 , 0, pwr->act[0].r, pwr->act[0].g, pwr->act[0].b},
-						{0,0,0,pwr->act[1].r, pwr->act[1].g, pwr->act[1].b}}};
+						{{AlienFX_A_Morph, 0 , 0, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b},
+						{0,0,0,pwr->act.back().r, pwr->act.back().g, pwr->act.back().b}}};
 				SavePowerBlock(6, tact, false);
 				tact = {pwr->index,
-						{{AlienFX_A_Morph, 0 , 0, pwr->act[1].r, pwr->act[1].g, pwr->act[1].b},
-						{0,0,0,pwr->act[0].r, pwr->act[0].g, pwr->act[0].b}}};
+						{{AlienFX_A_Morph, 0 , 0, pwr->act.back().r, pwr->act.back().g, pwr->act.back().b},
+						{0,0,0,pwr->act.front().r, pwr->act.front().g, pwr->act.front().b}}};
 				SavePowerBlock(6, tact, true);
 				// 08 07 - Battery standby
 				tact = {pwr->index,
-						{{AlienFX_A_Morph, 0 , 0, pwr->act[1].r, pwr->act[1].g, pwr->act[1].b},
+						{{AlienFX_A_Morph, 0 , 0, pwr->act.back().r, pwr->act.back().g, pwr->act.back().b},
 						{2}}};
 				SavePowerBlock(7, tact, true, true);
 				// 08 08 - battery
-				tact.act[0].type = AlienFX_A_Color;
+				tact.act.front().type = AlienFX_A_Color;
 				SavePowerBlock(8, tact, true);
 				// 08 09 - battery critical
-				tact.act[0].type = AlienFX_A_Pulse;
+				tact.act.front().type = AlienFX_A_Pulse;
 				SavePowerBlock(9, tact, true);
 			}
 			// fix for massive light change
 			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
-				if (nc->act[0].type != AlienFX_A_Power) {
+				if (nc->act.front().type != AlienFX_A_Power) {
 					SetAction(&(*nc));
 				}
 
@@ -924,7 +919,7 @@ namespace AlienFX_SDK {
 		default:
 			// can't set action for other, just use color
 			if (pwr)
-				SetColor(pwr->index, {pwr->act[0].b, pwr->act[0].g, pwr->act[0].r});
+				SetColor(pwr->index, {pwr->act.front().b, pwr->act.front().g, pwr->act.front().r});
 		}
 		return true;
 	}

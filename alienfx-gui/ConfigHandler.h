@@ -26,6 +26,8 @@
 #define GE_FLAG_CIRCLE	0x1
 #define GE_FLAG_ZONE	0x2
 
+#define DEFAULT_MON_DELAY 300
+
 struct freq_map {
 	AlienFX_SDK::Colorcode colorfrom{ 0 };
 	AlienFX_SDK::Colorcode colorto{ 0 };
@@ -138,7 +140,7 @@ public:
 
 	// States
 	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
-	DWORD monDelay = 200;
+	DWORD monDelay = DEFAULT_MON_DELAY;
 	bool block_power = 0;
 	bool wasAWCC = false;
 	AlienFX_SDK::Colorcode testColor{0,255};

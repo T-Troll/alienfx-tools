@@ -10,17 +10,17 @@ using namespace std;
 #define byte BYTE
 
 #define DEV_FLAG_AWCC		1
-#define DEV_FLAG_INFO		2
-#define DEV_FLAG_CONTROL	4
+//#define DEV_FLAG_INFO		2
+//#define DEV_FLAG_CONTROL	4
 #define DEV_FLAG_GMODE		8
-#define DEV_FLAG_ESIF		0x10
+//#define DEV_FLAG_ESIF		0x10
 
 namespace AlienFan_SDK {
 
 	struct ALIENFAN_SEN_INFO {
-		SHORT senIndex = 0;
+		SHORT senIndex;
 		string name;
-		byte type = 0; // 0 = TZ (ESIF), 1 = AWCC, 2 - Disk, 4 = OHM
+		byte type; // 0 = TZ (ESIF), 1 = AWCC, 2 - Disk, 4 = OHM
 		BSTR instance; // for ESIF/OHM/SSD sensors
 	};
 
@@ -48,6 +48,7 @@ namespace AlienFan_SDK {
 		VARIANT m_instancePath;
 		byte devFlags = 0;
 		DWORD systemID = 0;
+		int Percent(int, int);
 
 	public:
 		//VARIANT m_instancePath;
@@ -112,7 +113,7 @@ namespace AlienFan_SDK {
 
 		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
-		vector<USHORT> fans;
+		vector<byte> fans;
 		vector<byte> boosts;
 		vector<WORD> maxrpm;
 		vector<byte> powers;

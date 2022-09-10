@@ -165,7 +165,7 @@ DWORD WINAPI CInProc(LPVOID param)
 		// Resize & calc
 		UINT tInd = 0;
 		if (w && h && (ret = dxgi_manager->get_output_data(&scrImg, &buf_size)) == CR_OK && scrImg) {
-			if (!(conf->monDelay > 200)) {
+			if (!(conf->monDelay > DEFAULT_MON_DELAY)) {
 				for (int dy = 0; dy < HIWORD(conf->amb_grid); dy++)
 					for (int dx = 0; dx < LOWORD(conf->amb_grid); dx++) {
 						UINT ptr = (dy * LOWORD(conf->amb_grid) + dx);
