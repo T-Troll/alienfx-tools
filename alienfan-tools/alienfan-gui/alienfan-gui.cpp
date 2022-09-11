@@ -177,8 +177,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
-        Shell_NotifyIcon(NIM_ADD, niData);
-        if (fan_conf->updateCheck)
+        if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
             CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
         return true;
     }

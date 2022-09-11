@@ -17,18 +17,13 @@ extern EventHandler* eve;
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
-FXHelper::FXHelper() {
-	FillAllDevs(NULL);
-	//Start();
-};
+//FXHelper::FXHelper() {
+//	//FillAllDevs(NULL);
+//	//Start();
+//};
 FXHelper::~FXHelper() {
 	Stop();
 };
-
-//AlienFX_SDK::afx_device* FXHelper::LocateDev(int pid) {
-//	AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(pid);
-//	return dev && dev->dev ? dev : nullptr;
-//};
 
 void FXHelper::SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {

@@ -142,11 +142,10 @@ namespace AlienFan_SDK {
 //				m_InParamaters->Release();
 //				devFlags |= DEV_FLAG_CONTROL;
 //			}
-			if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr/*&m_InParamaters*/, nullptr) == S_OK) {
+			if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK) {
 #ifdef _TRACE_
 				printf("G-Mode available!\n");
 #endif
-				//m_InParamaters->Release();
 				devFlags |= DEV_FLAG_GMODE;
 			}
 			VARIANT instPath;
@@ -212,7 +211,6 @@ namespace AlienFan_SDK {
 #endif
 			}
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
-				//m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj);
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				short numOHM = 0;
 				VARIANT type, name;
@@ -232,7 +230,6 @@ namespace AlienFan_SDK {
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
 				enum_obj->Release();
-				//m_ESIFObject->Release();
 #ifdef _TRACE_
 				printf("LHM data available, %d sensors added!\n", numOHM);
 #endif

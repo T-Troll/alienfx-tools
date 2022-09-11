@@ -132,8 +132,8 @@ namespace AlienFX_SDK {
 		vector<icommand>* SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = { 0 }, byte tempo = 0, byte length = 0);
 
 		// Support function to send data to USB device
-		bool PrepareAndSend(const byte *command, byte size, vector<icommand> mods);
 		bool PrepareAndSend(const byte *command, byte size, vector<icommand> *mods = NULL);
+		bool PrepareAndSend(const byte* command, byte size, vector<icommand> mods);
 
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, act_block act, bool needSave, bool needInverse = false);
@@ -163,6 +163,10 @@ namespace AlienFX_SDK {
 		// If pid is defined, device with vid/pid will be used, fist found otherwise.
 		int AlienFXInitialize(int vid, int pid = -1);
 
+
+		// Initialize device by path
+		// Returns PID of device if ok, -1 otherwise
+		int AlienFXInitialize(string devPath);
 
 #ifndef NOACPILIGHTS
 		// Another init function, for Aurora ACPI init.
@@ -239,6 +243,11 @@ namespace AlienFX_SDK {
 		vector <mapping> lights;
 	};
 
+	struct enum_device {
+		WORD vid, pid;
+		string path;
+	};
+
 	class Mappings {
 	private:
 		vector <group> groups; // Defined light groups
@@ -252,7 +261,7 @@ namespace AlienFX_SDK {
 		~Mappings();
 
 		// Enumerate all alienware devices into the system
-		vector<pair<WORD,WORD>> AlienFXEnumDevices();
+		vector<enum_device> AlienFXEnumDevices();
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
 		// acc - link to AlienFan_SDK::Control object

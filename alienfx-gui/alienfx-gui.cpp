@@ -124,13 +124,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 		return FALSE;
 
-	if (conf->fanControl && DetectFans()) {
-		fxhl->FillAllDevs(acpi);
-	}
+	if (conf->fanControl)
+		DetectFans();
 
-	ReloadProfileList();
+	fxhl->FillAllDevs(acpi);
 
 	eve->StartProfiles();
+
+	ReloadProfileList();
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
@@ -244,8 +245,13 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-void ResizeTab(HWND tab, RECT &rcDisplay) {
-	RECT dRect;
+void ResizeTab(HWND tab) {
+	RECT dRect, rcDisplay;
+	GetClientRect(GetParent(tab), &rcDisplay);
+	rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
+	rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
+	rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
+	rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
 	GetClientRect(tab, &dRect);
 	int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
 		deltay = dRect.bottom - (rcDisplay.bottom - rcDisplay.top);
@@ -285,74 +291,70 @@ void OnSelChanged(HWND hwndDlg)
 	}
 
 	// Destroy the current child dialog box, if any.
-	if (pHdr->hwndDisplay != NULL) {
+	if (pHdr->hwndDisplay) {
 		DestroyWindow(pHdr->hwndDisplay);
 		pHdr->hwndDisplay = NULL;
 	}
 
-	RECT rcDisplay;
-
-	GetClientRect(hwndDlg, &rcDisplay);
-	rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
-	rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
-	rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
-	rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
-
 	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
-	if (pHdr->hwndDisplay == NULL)
+	if (!pHdr->hwndDisplay)
 		pHdr->hwndDisplay = newDisplay;
 
-	if (pHdr->hwndDisplay != NULL) {
-		ResizeTab(pHdr->hwndDisplay, rcDisplay);
+	if (pHdr->hwndDisplay) {
+		ResizeTab(pHdr->hwndDisplay);
 	}
 }
 
-//void SwitchTab(int num) {
-//	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN);
-//	TabCtrl_SetCurSel(tab_list, num);
-//	OnSelChanged(tab_list);
-//}
-
 void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
-	if (mode_list == NULL) {
-		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
+	if (IsWindowVisible(mDlg)) {
+		if (mode_list == NULL) {
+			mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
+		}
+
 		EnableWindow(mode_list, conf->enableMon);
-	}
-	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
-	if (conf->haveGlobal) {
-		ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
-		if (mode == 99)
-			ComboBox_SetCurSel(mode_list, effModes.size());
+		UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
+
+		if (conf->haveGlobal) {
+			ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
+			if (mode == 99)
+				ComboBox_SetCurSel(mode_list, effModes.size());
+		}
+		if (tabSel == TAB_LIGHTS) {
+			OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+		}
 	}
 }
 
 void ReloadProfileList() {
-	HWND tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN),
-		profile_list = GetDlgItem(mDlg, IDC_PROFILES),
-		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
-	ComboBox_ResetContent(profile_list);
-	for (int i = 0; i < conf->profiles.size(); i++) {
-		ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i]->name.c_str()), conf->profiles[i]->id);
-		if (conf->profiles[i]->id == conf->activeProfile->id) {
-			ComboBox_SetCurSel(profile_list, i);
-			ComboBox_SetCurSel(mode_list, conf->profiles[i]->effmode);
+	if (IsWindowVisible(mDlg)) {
+		HWND //tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN),
+			profile_list = GetDlgItem(mDlg, IDC_PROFILES);// ,
+			//mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
+		ComboBox_ResetContent(profile_list);
+		for (int i = 0; i < conf->profiles.size(); i++) {
+			ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i]->name.c_str()), conf->profiles[i]->id);
+			if (conf->profiles[i]->id == conf->activeProfile->id) {
+				ComboBox_SetCurSel(profile_list, i);
+				//ComboBox_SetCurSel(mode_list, conf->profiles[i]->effmode);
+				ReloadModeList();
+				if (tabSel == TAB_FANS) {
+					OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+				}
+			}
 		}
+
+		//EnableWindow(mode_list, conf->enableMon);
+
+		DebugPrint("Profile list reloaded.\n");
 	}
-
-	EnableWindow(mode_list, conf->enableMon);
-
-	switch (tabSel) {
-	case TAB_LIGHTS: case TAB_FANS:
-		OnSelChanged(tab_list);
-	}
-
-	ReloadModeList();
-
-	DebugPrint("Profile list reloaded.\n");
 }
 
-void UpdateState() {
+void UpdateState(bool checkMode) {
 	fxhl->ChangeState();
+	eve->ChangeEffectMode();
+	if (checkMode) {
+		ReloadModeList();
+	}
 	if (tabSel == TAB_SETTINGS)
 		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
@@ -397,10 +399,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
-		Shell_NotifyIcon(NIM_ADD, &conf->niData);
-		SetTrayTip();
-		if (conf->updateCheck)
-			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+		if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
+			SetTrayTip();
+			if (conf->updateCheck)
+				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+		}
 		return true;
 	}
 
@@ -419,10 +422,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
 			);
 
-		if (Shell_NotifyIcon(NIM_ADD, &conf->niData) && conf->updateCheck) {
+		if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
 			SetTrayTip();
-			// check update....
-			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+			if (conf->updateCheck)
+				// check update....
+				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		}
 
 		conf->SetStates();
@@ -492,12 +496,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_MAIN: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				//if (TabCtrl_GetCurSel(tab_list) == TAB_FANS && !mon) {
-				//	if (DetectFans())
-				//		eve->StartFanMon();
-				//	if (!mon)
-				//		TabCtrl_SetCurSel(tab_list, TAB_SETTINGS);
-				//}
 				OnSelChanged(tab_list);
 			}
 		} break;
@@ -634,29 +632,25 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
-			eve->ChangeEffectMode();
-			UpdateState();
+			UpdateState(false);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 		    conf->SetDimmed();
-			UpdateState();
+			UpdateState(false);
 			break;
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableMon = !conf->enableMon;
-			eve->ChangeEffectMode();
-			UpdateState();
+			UpdateState(true);
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
 			conf->activeProfile->effmode = idx < effModes.size() ? idx : 99;
-			eve->ChangeEffectMode();
-			UpdateState();
+			UpdateState(true);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProf = !conf->enableProf;
 			eve->StartProfiles();
-			if (IsWindowVisible(hDlg))
-				ReloadProfileList();
+			ReloadProfileList();
 			break;
 		case ID_TRAYMENU_RESTORE:
 			RestoreApp();
@@ -664,8 +658,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case ID_TRAYMENU_PROFILE_SELECTED: {
 			if (conf->profiles[idx]->id != conf->activeProfile->id) {
 				eve->SwitchActiveProfile(conf->profiles[idx]);
-				if (IsWindowVisible(hDlg))
-					ReloadProfileList();
+				ReloadProfileList();
 			}
 		} break;
 		}
@@ -713,7 +706,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed\n");
-			vector<pair<WORD, WORD>> devs = conf->afx_dev.AlienFXEnumDevices();
+			vector<AlienFX_SDK::enum_device> devs = conf->afx_dev.AlienFXEnumDevices();
 			if (devs.size() != fxhl->numActiveDevs) {
 				DebugPrint("Supported devices list changed!\n");
 				fxhl->FillAllDevs(acpi);
@@ -752,11 +745,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case 1: // on/off
 			conf->lightsOn = !conf->lightsOn;
-			UpdateState();
+			UpdateState(false);
 			break;
 		case 2: // dim
 		    conf->SetDimmed();
-			UpdateState();
+			UpdateState(false);
 			break;
 		case 3: // off-dim-full circle
 			if (conf->lightsOn) {
@@ -765,12 +758,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				conf->SetDimmed();
 			} else
 				conf->lightsOn = true;
-			UpdateState();
+			UpdateState(false);
 			break;
 		case 4: // effects
 			conf->enableMon = !conf->enableMon;
-			eve->ChangeEffectMode();
-			ComboBox_SetCurSel(mode_list, conf->GetEffect());
+			UpdateState(true);
 			break;
 		case 5: // profile autoswitch
 			eve->StopProfiles();
@@ -781,7 +773,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case 6: // G-key for Dell G-series power switch
 			conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
 			SetCurrentGmode();
-			if (IsWindowVisible(hDlg) && tabSel == TAB_FANS)
+			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
 			break;
 		default: return false;

@@ -7,7 +7,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-extern void ResizeTab(HWND, RECT&);
+extern void ResizeTab(HWND);
 
 extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -36,8 +36,6 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		SetWindowPos(zsDlg, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid);
-		//TabCtrl_SetCurSel(gridTab, conf->gridTabSel);
-		//OnGridSelChanged(gridTab);
 	} break;
 	case WM_APP + 2:
 		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 1);
@@ -72,13 +70,10 @@ void OnLightSelChanged(HWND hwndDlg)
 	int oldTab = tabLightSel;
 	tabLightSel = TabCtrl_GetCurSel(hwndDlg);
 
-	RECT rcDisplay;
-
-	GetClientRect(hwndDlg, &rcDisplay);
-	rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
-	rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
-	rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
-	rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
+	if (!conf->afx_dev.activeLights || !conf->afx_dev.GetGrids()->size()) {
+		tabLightSel = TAB_DEVICES;
+		TabCtrl_SetCurSel(hwndDlg, tabLightSel);
+	}
 
 	if (!pHdr->hwndDisplay)
 		if (tabLightSel != TAB_DEVICES)
@@ -88,32 +83,36 @@ void OnLightSelChanged(HWND hwndDlg)
 		else
 			pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], hwndDlg, pHdr->apProc[tabLightSel]);
 
-	if (pHdr->hwndDisplay != NULL) {
+	if (pHdr->hwndDisplay) {
 		// create control block dialog
 		if (pHdr->hwndControl) {
 			DestroyWindow(pHdr->hwndControl);
 			pHdr->hwndControl = NULL;
 		}
 		if (tabLightSel == TAB_DEVICES) {
+			if (pHdr->hwndControl) {
+				DestroyWindow(pHdr->hwndControl);
+				pHdr->hwndControl = NULL;
+			}
 			if (oldTab != TAB_DEVICES) {
 				DestroyWindow(pHdr->hwndDisplay);
 				pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], hwndDlg, pHdr->apProc[tabLightSel]);
 			}
-			ResizeTab(pHdr->hwndDisplay, rcDisplay);
-			return;
-		} else
+		}
+		else {
 			if (oldTab == TAB_DEVICES) {
 				DestroyWindow(pHdr->hwndDisplay);
 				pHdr->hwndDisplay = CreateDialogIndirect(hInst,
 					(DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(IDD_LIGHT_TEMPLATE), RT_DIALOG))),
 					hwndDlg, (DLGPROC)LightDlgFrame);
 			}
-		pHdr->hwndControl = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], pHdr->hwndDisplay, pHdr->apProc[tabLightSel]);
-		RECT mRect;
-		GetWindowRect(GetDlgItem(pHdr->hwndDisplay, IDC_STATIC_CONTROLS), &mRect);
-		ScreenToClient(pHdr->hwndDisplay, (LPPOINT)&mRect);
-		SetWindowPos(pHdr->hwndControl, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
-		ResizeTab(pHdr->hwndDisplay, rcDisplay);
+			pHdr->hwndControl = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], pHdr->hwndDisplay, pHdr->apProc[tabLightSel]);
+			RECT mRect;
+			GetWindowRect(GetDlgItem(pHdr->hwndDisplay, IDC_STATIC_CONTROLS), &mRect);
+			ScreenToClient(pHdr->hwndDisplay, (LPPOINT)&mRect);
+			SetWindowPos(pHdr->hwndControl, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
+		}
+		ResizeTab(pHdr->hwndDisplay);
 	}
 }
 
@@ -129,9 +128,6 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_GRIDEFFECT, IDD_DIALOG_DEVICES},
 			{ (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog,
 			(DLGPROC)TabGridDialog, (DLGPROC)TabDevicesDialog } );
-		if (!conf->afx_dev.activeLights || !conf->afx_dev.GetGrids()->size())
-			tabLightSel = TAB_DEVICES;
-		TabCtrl_SetCurSel(tab_list, tabLightSel);
 		OnLightSelChanged(tab_list);
 	} break;
 	case WM_WINDOWPOSCHANGING: {
@@ -158,10 +154,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_LIGHTS: {
 			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				if (conf->afx_dev.activeLights && conf->afx_dev.GetGrids()->size()) {
 					OnLightSelChanged(tab_list);
-				} else
-					TabCtrl_SetCurSel(tab_list, tabLightSel);
 			}
 		} break;
 		}

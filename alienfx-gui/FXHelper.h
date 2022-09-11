@@ -56,7 +56,7 @@ public:
 	EventData eData, maxData;
 	int numActiveDevs = 0;
 
-	FXHelper();
+	//FXHelper();
 	~FXHelper();
 	//AlienFX_SDK::afx_device *LocateDev(int pid);
 	size_t FillAllDevs(AlienFan_SDK::Control* acc);
