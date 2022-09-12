@@ -321,7 +321,9 @@ void EventHandler::StartProfiles()
 			CCreateProc, 0, 0,
 			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
+#ifndef _DEBUG
 		kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, KeyProc, NULL, 0);
+#endif
 
 		// Need to switch if already running....
 		CheckProfileWindow(GetForegroundWindow());

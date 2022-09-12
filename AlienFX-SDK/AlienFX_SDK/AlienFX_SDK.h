@@ -2,7 +2,7 @@
 #include <wtypes.h>
 #include <vector>
 #include <string>
-#include "alienfx-controls.h"
+//#include "alienfx-controls.h"
 
 #ifndef NOACPILIGHTS
 #include "alienfan-SDK.h"
@@ -124,7 +124,7 @@ namespace AlienFX_SDK {
 		int pid = -1; // Device PID, -1 if not initialized
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
-		byte version = -1; // interface version
+		int version = -1; // interface version
 		byte reportID = 0; // HID ReportID (0 if auto)
 		byte bright = 64; // Brightness for APIv4 and v6
 
@@ -161,12 +161,12 @@ namespace AlienFX_SDK {
 		// Returns PID of device used.
 		// If vid is 0, first device found into the system will be used, otherwise first device of this VID.
 		// If pid is defined, device with vid/pid will be used, fist found otherwise.
-		int AlienFXInitialize(int vid, int pid = -1);
+		int AlienFXInitialize(int vidd = -1, int pidd = -1);
 
-
-		// Initialize device by path
+		// Check device and initialize path and vid/pid
+		// in case vid/pid -1 or absent, any vid/pid acceptable
 		// Returns PID of device if ok, -1 otherwise
-		int AlienFXInitialize(string devPath);
+		int AlienFXCheckDevice(string devPath, int vid = -1, int pid = -1);
 
 #ifndef NOACPILIGHTS
 		// Another init function, for Aurora ACPI init.
@@ -225,10 +225,13 @@ namespace AlienFX_SDK {
 		int GetPID();
 
 		// get VID for current device
-		int GetVid();
+		int GetVID();
 
 		// get API version for current device
 		int GetVersion();
+
+		// get data length for current device
+		int GetLength();
 
 		// check global effects availability
 		bool IsHaveGlobal();
@@ -261,7 +264,7 @@ namespace AlienFX_SDK {
 		~Mappings();
 
 		// Enumerate all alienware devices into the system
-		vector<enum_device> AlienFXEnumDevices();
+		vector<Functions*> AlienFXEnumDevices();
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
 		// acc - link to AlienFan_SDK::Control object

@@ -297,13 +297,13 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                    oldLightValue && oldLightValue != MAKELPARAM(devID, eLid)) {
                     // switch light
                     dragZone = { -1,-1,-1,-1 };
-                    auto pos = find_if(conf->afx_dev.fxdevs.begin(), conf->afx_dev.fxdevs.end(),
-                        [oldLightValue](auto t) {
-                            return t.dev->GetPID() == LOWORD(oldLightValue);
-                        });
-                    if (pos != conf->afx_dev.fxdevs.end() && pos->dev && dIndex != (pos - conf->afx_dev.fxdevs.begin())) {
-                        dIndex = (int)(pos - conf->afx_dev.fxdevs.begin());
-                        RedrawDevList();
+                    if (LOWORD(oldLightValue) != devID) {
+                        // Switch device, if possible
+                        for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++)
+                            if (conf->afx_dev.fxdevs[i].dev && conf->afx_dev.fxdevs[i].pid == LOWORD(oldLightValue)) {
+                                dIndex = i;
+                                RedrawDevList();
+                            }
                     }
                     eLid = HIWORD(oldLightValue);
                     InitGridButtonZone();

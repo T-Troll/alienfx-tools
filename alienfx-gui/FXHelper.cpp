@@ -92,11 +92,6 @@ void FXHelper::TestLight(AlienFX_SDK::afx_device* dev, int id, bool force, bool 
 {
 	if (dev) {
 
-		/*bool dev_ready = false;
-		for (int c_count = 0; c_count < 200 && !(dev_ready = conf->afx_dev.fxdevs[did].dev->IsDeviceReady()); c_count++)
-			Sleep(20);
-		if (!dev_ready) return;*/
-
 		AlienFX_SDK::Colorcode c = wp ? dev->white : AlienFX_SDK::Colorcode({ 0 });
 
 		if (force) {

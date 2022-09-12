@@ -22,113 +22,38 @@ namespace
 
 using namespace std;
 
-void CheckDevices(bool show_all) {
+AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
+bool have_low = false, have_high = false;
 
-	GUID guid;
-	HANDLE tdevHandle;
-	DWORD dw = 0;
-	SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
+void CheckDevices() {
 
-	HidD_GetHidGuid(&guid);
-	HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-	if (hDevInfo != INVALID_HANDLE_VALUE) {
-		while (SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData))
-		{
-			dw++;
-			DWORD dwRequiredSize = 0;
-			SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, NULL, 0, &dwRequiredSize, NULL);
-			{
-				if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-					unique_ptr<SP_DEVICE_INTERFACE_DETAIL_DATA> deviceInterfaceDetailData((SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize]);
-					deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
-					if (SetupDiGetDeviceInterfaceDetail(hDevInfo, &deviceInterfaceData, deviceInterfaceDetailData.get(), dwRequiredSize, NULL, NULL)) {
-						if ((tdevHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL)) != INVALID_HANDLE_VALUE)
-						{
-							std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES);
-							attributes->Size = sizeof(HIDD_ATTRIBUTES);
-							if (HidD_GetAttributes(tdevHandle, attributes.get()))
-							{
-								for (unsigned i = 0; i < NUM_VIDS; i++) {
-									if (attributes->VendorID == AlienFX_SDK::vids[i]) {
-
-										PHIDP_PREPARSED_DATA prep_caps;
-										HIDP_CAPS caps;
-										HidD_GetPreparsedData(tdevHandle, &prep_caps);
-										HidP_GetCaps(prep_caps, &caps);
-										HidD_FreePreparsedData(prep_caps);
-
-										string apiver;
-										bool supported = true;
-
-										switch (caps.OutputReportByteLength) {
-										case 0:
-										{
-											switch (caps.Usage) {
-											case 0xcc: apiver = "Keyboard, APIv5"; break;
-											default: supported = false; apiver = "Unknown";
-											}
-										} break;
-										case 8:
-											apiver = "Notebook, APIv1";
-											break;
-										case 9:
-											apiver = "Notebook, APIv2";
-											break;
-										case 12:
-											apiver = "Notebook, APIv3";
-											break;
-										case 34:
-											apiver = "Notebook/Desktop, APIv4";
-											break;
-										case 65:
-											switch (i) {
-											case 0: case 2:
-												apiver = "Monitor, APIv6";
-												break;
-											case 3:
-												apiver = "Mouse, APIv7";
-												break;
-											case 4:
-												apiver = "Keyboard, APIv8";
-												break;
-											}
-											break;
-										default: supported = false; apiver = "Unknown";
-										}
-
-										if (show_all || supported) {
-
-											printf("===== Device VID_%04x, PID_%04x =====\n", attributes->VendorID, attributes->ProductID);
-											printf("Version %d, block size %d\n", attributes->VersionNumber, attributes->Size);
-
-											printf("Report Lengths: Output %d, Input %d, Feature %d\n", caps.OutputReportByteLength,
-												caps.InputReportByteLength,
-												caps.FeatureReportByteLength);
-											printf("Usage ID %#x, Usage page %#x, Output caps %d, Index %d\n", caps.Usage, caps.UsagePage,
-												caps.NumberOutputButtonCaps, caps.NumberOutputDataIndices);
-
-											printf("+++++ Detected as: ");
-
-											switch (i) {
-											case 0: printf("Alienware,"); break;
-											case 1: printf("DARFON,"); break;
-											case 2: printf("Microchip,"); break;
-											case 3: printf("Primax,"); break;
-											case 4: printf("Chicony,"); break;
-											}
-
-											printf(" %s +++++\n", apiver.c_str());
-										}
-									}
-								}
-							}
-							CloseHandle(tdevHandle);
-						}
-					}
-					deviceInterfaceDetailData.release();
-				}
+	for (auto i = afx_map->fxdevs.begin(); i != afx_map->fxdevs.end(); i++) {
+		printf("===== Device VID_%04x, PID_%04x =====\n", i->vid, i->pid);
+		//if (i->dev) {
+			printf("Version %d, block size %d\n", i->dev->GetVersion(), i->dev->GetLength());
+			printf("+++++ Detected as: ");
+			switch (i->vid) {
+			case 0x187c: printf("Alienware,"); break;
+			case 0x0d62: printf("DARFON,"); break;
+			case 0x0424: printf("Microchip,"); break;
+			case 0x0461: printf("Primax,"); break;
+			case 0x04f2: printf("Chicony,"); break;
+			default: printf("Unknown,");
 			}
-		}
+			switch (i->dev->GetVersion()) {
+			case 0: printf(" Desktop,"); break;
+			case 1: case 2: case 3: printf(" Notebook,"); break;
+			case 4: printf(" Desktop/Notebook,"); break;
+			case 5: printf(" Notebook keyboard,"); break;
+			case 6: printf(" Display,"); break;
+			case 7: printf(" Mouse,"); break;
+			case 8: printf(" Keyboard,"); break;
+			}
+			printf(" APIv%d +++++\n", i->dev->GetVersion());
+		/*}
+		else
+			printf("+++++ Inactive +++++");*/
+
 	}
 }
 
@@ -162,7 +87,6 @@ void printUsage()
 	for (int i = 0; i < ARRAYSIZE(commands); i++)
 		printf("%s\t%s.\n", commands[i].name, commands[i].desc);
 	printf("\nProbe argument (can be combined):\n\
-\ta - All devices info\n\
 \tl - Define number of lights\n\
 \td - DeviceID and optionally LightID.\n\
 Zones:\tleft, right, top, bottom, front, rear (high-level) or ID of the Group (low-level).\n\
@@ -184,9 +108,6 @@ int CheckCommand(string name, int args) {
 	}
 	return -2;
 }
-
-AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
-bool have_low = false, have_high = false;
 
 void Update() {
 	if (have_low) {
@@ -470,10 +391,9 @@ int main(int argc, char* argv[])
 		case 12: {
 			// probe
 			int numlights = -1, devID = -1, lightID = -1;
-			bool show_all = false;
 			if (args.size()) {
 				int pos = 1;
-				show_all = args[0].str.find('a') != string::npos;
+				//show_all = args[0].str.find('a') != string::npos;
 				if (args[0].str.find('l') != string::npos && args.size() > 1) {
 					numlights = args[1].num;
 					pos++;
@@ -485,15 +405,13 @@ int main(int argc, char* argv[])
 				}
 			}
 			char name[256]{ 0 };
-			CheckDevices(show_all);
+			CheckDevices();
 			printf("Do you want to set devices and lights names?");
 			gets_s(name, 255);
 			if (name[0] == 'y' || name[0] == 'Y') {
 				printf("\nFor each light please enter LightFX SDK light ID or light name if ID is not available\n\
 Tested light become green, and turned off after testing.\n\
 Just press Enter if no visible light at this ID to skip it.\n");
-				printf("Probing low-level access... ");
-
 				if (afx_map->fxdevs.size() > 0) {
 					printf("Found %d device(s)\n", (int)afx_map->fxdevs.size());
 					if (have_high) {
@@ -501,8 +419,8 @@ Just press Enter if no visible light at this ID to skip it.\n");
 						lfxUtil.GetStatus();
 					}
 
-					for (auto cDev = afx_map->fxdevs.begin(); cDev < afx_map->fxdevs.end(); cDev++)
-						if (cDev->dev && (devID == -1 || devID == cDev->pid)) {
+					for (auto cDev = afx_map->fxdevs.begin(); cDev != afx_map->fxdevs.end(); cDev++) {
+						//if (cDev->dev && (devID == -1 || devID == cDev->pid)) {
 							printf("Probing device VID_%04x, PID_%04x...", cDev->vid, cDev->pid);
 							cDev->dev->Reset();
 							printf("Old device name is %s, ", cDev->name.c_str());

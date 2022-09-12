@@ -110,9 +110,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	fan_conf = conf->fan_conf;
 
-	if (conf->activeProfile->flags & PROF_FANS)
-		fan_conf->lastProf = &conf->activeProfile->fansets;
-
 	conf->wasAWCC = DoStopService(conf->awcc_disable, true);
 
 	if (conf->esif_temp)
@@ -124,12 +121,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
 		return FALSE;
 
-	if (conf->fanControl)
+	if (conf->activeProfile->flags & PROF_FANS)
+		fan_conf->lastProf = &conf->activeProfile->fansets;
+
+	if (conf->fanControl) {
 		DetectFans();
+	}
 
 	fxhl->FillAllDevs(acpi);
 
-	eve->StartProfiles();
+	if (conf->startMinimized)
+		eve->StartProfiles();
 
 	ReloadProfileList();
 
@@ -706,11 +708,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed\n");
-			vector<AlienFX_SDK::enum_device> devs = conf->afx_dev.AlienFXEnumDevices();
-			if (devs.size() != fxhl->numActiveDevs) {
-				DebugPrint("Supported devices list changed!\n");
+			//vector<AlienFX_SDK::Functions*> devs = conf->afx_dev.AlienFXEnumDevices();
+			//if (devs.size() != fxhl->numActiveDevs) {
+			//	DebugPrint("Supported devices list changed!\n");
 				fxhl->FillAllDevs(acpi);
-			}
+			//}
 		}
 		break;
 	case WM_DISPLAYCHANGE:
