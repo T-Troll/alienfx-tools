@@ -671,7 +671,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 
-			fxhl->FillAllDevs(acpi);
+			//fxhl->FillAllDevs(acpi);
 			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -710,7 +710,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Device list changed\n");
 			//vector<AlienFX_SDK::Functions*> devs = conf->afx_dev.AlienFXEnumDevices();
 			//if (devs.size() != fxhl->numActiveDevs) {
-			//	DebugPrint("Supported devices list changed!\n");
+				//DebugPrint("Supported devices list changed!\n");
 				fxhl->FillAllDevs(acpi);
 			//}
 		}

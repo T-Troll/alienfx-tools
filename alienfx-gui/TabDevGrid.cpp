@@ -27,7 +27,7 @@ HWND cgDlg;
 extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 AlienFX_SDK::mapping* FindCreateMapping() {
-    AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid);
+    AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingByDev(&conf->afx_dev.fxdevs[dIndex], eLid);
     if (!lgh) {
         // create new mapping
         conf->afx_dev.fxdevs[dIndex].lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
@@ -424,9 +424,9 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             }
             // print name
             if (conf->showGridNames && gridVal) {
-                AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(LOWORD(gridVal));
+                AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(LOWORD(gridVal), 0);
                 AlienFX_SDK::mapping* lgh;
-                if (dev && (lgh = conf->afx_dev.GetMappingById(dev, HIWORD(gridVal)))) {
+                if (dev && (lgh = conf->afx_dev.GetMappingByDev(dev, HIWORD(gridVal)))) {
                     SetBkMode(ditem->hDC, TRANSPARENT);
                     DrawText(ditem->hDC, lgh->name.c_str(), -1, &ditem->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
                 }

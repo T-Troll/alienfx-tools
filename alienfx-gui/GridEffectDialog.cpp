@@ -71,12 +71,13 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
-				fxhl->Refresh();
+				//fxhl->Refresh();
 			}
 			break;
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				fxhl->Refresh();
 			}
 			break;
 		case IDC_COMBO_GEFFTYPE:
@@ -86,13 +87,9 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			break;
 		case IDC_CHECK_SPECTRUM:
 			SetBitMask(mmap->flags, GAUGE_GRADIENT, state);
-			//mmap->flags = (mmap->flags & ~GAUGE_GRADIENT) | state;
-			fxhl->Refresh();
 			break;
 		case IDC_CHECK_REVERSE:
 			SetBitMask(mmap->flags, GAUGE_REVERSE, state);
-			//mmap->flags = (mmap->flags & ~GAUGE_REVERSE) | (state ? GAUGE_REVERSE : 0);
-			fxhl->Refresh();
 			break;
 		case IDC_CHECK_CIRCLE:
 			SetBitMask(mmap->effect.flags, GE_FLAG_CIRCLE, state);

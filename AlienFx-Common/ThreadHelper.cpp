@@ -13,10 +13,24 @@ ThreadHelper::ThreadHelper(LPVOID function, LPVOID param, int delay, int prt) {
 
 ThreadHelper::~ThreadHelper()
 {
-	SetEvent(tEvent);
-	WaitForSingleObject(tHandle, delay << 1);
+	Stop();
 	CloseHandle(tEvent);
-	CloseHandle(tHandle);
+}
+
+void ThreadHelper::Stop()
+{
+	if (tHandle) {
+		SetEvent(tEvent);
+		WaitForSingleObject(tHandle, delay << 1);
+		CloseHandle(tHandle);
+		tHandle = NULL;
+	}
+}
+
+void ThreadHelper::Start()
+{
+	if (!tHandle)
+		tHandle = CreateThread(NULL, 0, ThreadFunc, this, 0, NULL);
 }
 
 DWORD WINAPI ThreadFunc(LPVOID lpParam) {

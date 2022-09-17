@@ -108,7 +108,7 @@ void SetLightInfo() {
 	AlienFX_SDK::afx_device* dev = FindActiveDevice();
 	if (dev) {
 		fxhl->TestLight(dev, eLid);
-		if (clight = conf->afx_dev.GetMappingById(&conf->afx_dev.fxdevs[dIndex], eLid)) {
+		if (clight = conf->afx_dev.GetMappingByDev(&conf->afx_dev.fxdevs[dIndex], eLid)) {
 			SetDlgItemText(dDlg, IDC_EDIT_NAME, clight->name.c_str());
 		}
 		else {
@@ -240,7 +240,7 @@ void LoadCSV(string name) {
 					if (!tGear.selected) {
 						WORD vid = (WORD)atoi(fields[1].c_str()),
 							pid = (WORD)atoi(fields[2].c_str());
-						AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(MAKELPARAM(pid, vid));
+						AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(pid, vid);
 						DebugPrint(("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ").c_str());
 						if (dev && dev->dev) {
 							tGear.devs.push_back({vid, pid, NULL, fields[3] });
@@ -318,10 +318,10 @@ void ApplyDeviceMaps(HWND gridTab = NULL, bool force = false) {
 	for (auto i = csv_devs.begin(); i < csv_devs.end(); i++) {
 		if (force || i->selected) {
 			for (auto td = i->devs.begin(); td < i->devs.end(); td++) {
-				AlienFX_SDK::afx_device* cDev = conf->afx_dev.AddDeviceById(MAKELPARAM(td->pid, td->vid));
+				AlienFX_SDK::afx_device* cDev = conf->afx_dev.AddDeviceById(td->pid, td->vid);
 				cDev->name = td->name;
 				for (auto j = td->lights.begin(); j < td->lights.end(); j++) {
-					AlienFX_SDK::mapping* oMap = conf->afx_dev.GetMappingById(cDev, j->lightid);
+					AlienFX_SDK::mapping* oMap = conf->afx_dev.GetMappingByDev(cDev, j->lightid);
 					if (oMap) {
 						oMap->flags = j->flags;
 						oMap->name = j->name;
@@ -470,7 +470,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_CLEAR:// IDC_BUTTON_REML:
-			if (dev && conf->afx_dev.GetMappingById(dev, eLid)) {
+			if (dev && conf->afx_dev.GetMappingByDev(dev, eLid)) {
 				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove current light name and all it's settings?", "Warning",
 					MB_YESNO | MB_ICONWARNING) == IDYES) {
 					// Clear grid
@@ -503,7 +503,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_ISPOWERBUTTON: {
 			AlienFX_SDK::mapping* lgh;
-			if (dev && (lgh = conf->afx_dev.GetMappingById(dev, eLid))) {
+			if (dev && (lgh = conf->afx_dev.GetMappingByDev(dev, eLid))) {
 				if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
 					ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all it settings!", true);
 					lgh->flags |= ALIENFX_FLAG_POWER;
@@ -520,7 +520,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_CHECK_INDICATOR:
 		{
 			AlienFX_SDK::mapping* lgh;
-			if (dev && (lgh = conf->afx_dev.GetMappingById(dev, eLid))) {
+			if (dev && (lgh = conf->afx_dev.GetMappingByDev(dev, eLid))) {
 				lgh->flags = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ?
 					lgh->flags | ALIENFX_FLAG_INDICATOR :
 					lgh->flags & ~ALIENFX_FLAG_INDICATOR;

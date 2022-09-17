@@ -1084,13 +1084,9 @@ namespace AlienFX_SDK {
 	}
 
 	Functions::~Functions() {
-		AlienFXClose();
-	}
-
-	void Functions::AlienFXClose() {
-		if (length != API_ACPI && devHandle != NULL) {
+		if (devHandle) {
 			CloseHandle(devHandle);
-			devHandle = NULL;
+			//devHandle = NULL;
 		}
 	}
 
@@ -1158,7 +1154,6 @@ namespace AlienFX_SDK {
 	}
 
 	void Mappings::AlienFXAssignDevices(void* acc, byte brightness, byte power) {
-		vector<Functions*> devList = AlienFXEnumDevices();
 
 		for (int i = 0; i < fxdevs.size(); i++)
 			if (fxdevs[i].dev) {
@@ -1166,10 +1161,11 @@ namespace AlienFX_SDK {
 				fxdevs[i].dev = NULL;
 			}
 
+		vector<Functions*> devList = AlienFXEnumDevices();
 		activeLights = 0;
 		// check/add devices...
 		for (int i = 0; i < devList.size(); i++) {
-			afx_device* dev = AddDeviceById(MAKELPARAM(devList[i]->GetPID(), devList[i]->GetVID()));
+			afx_device* dev = AddDeviceById(devList[i]->GetPID(), devList[i]->GetVID());
 			dev->dev = devList[i];
 			dev->dev->ToggleState(brightness, &dev->lights, power);
 			activeLights += (int)dev->lights.size();
@@ -1190,9 +1186,9 @@ namespace AlienFX_SDK {
 #endif
 	}
 
-	afx_device* Mappings::GetDeviceById(DWORD devID) {
+	afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {
 		for (auto pos = fxdevs.begin(); pos < fxdevs.end(); pos++)
-			if (pos->pid == LOWORD(devID) && (!HIWORD(devID) || pos->vid == HIWORD(devID))) {
+			if (pos->pid == pid && (!vid || pos->vid == vid)) {
 				return &(*pos);
 			}
 		return nullptr;
@@ -1206,17 +1202,17 @@ namespace AlienFX_SDK {
 		return nullptr;
 	}
 
-	afx_device* Mappings::AddDeviceById(DWORD devID)
+	afx_device* Mappings::AddDeviceById(WORD pid, WORD vid)
 	{
-		afx_device* dev = GetDeviceById(devID);
+		afx_device* dev = GetDeviceById(pid, vid);
 		if (!dev) {
-			fxdevs.push_back({ HIWORD(devID), LOWORD(devID), NULL });
+			fxdevs.push_back({ vid, pid, NULL });
 			dev = &fxdevs.back();
 		}
 		return dev;
 	}
 
-	mapping *Mappings::GetMappingById(afx_device* dev, WORD LightID) {
+	mapping *Mappings::GetMappingByDev(afx_device* dev, WORD LightID) {
 		if (dev) {
 			for (auto pos = dev->lights.begin(); pos < dev->lights.end(); pos++)
 				if (pos->lightid == LightID)
@@ -1232,7 +1228,7 @@ namespace AlienFX_SDK {
 	void Mappings::AddMappingByDev(afx_device* dev, WORD lightID, const char *name, WORD flags) {
 		if (dev) {
 			mapping* map;
-			if (!(map = GetMappingById(dev, lightID))) {
+			if (!(map = GetMappingByDev(dev, lightID))) {
 				dev->lights.push_back({ lightID });
 				map = &dev->lights.back();
 			}
@@ -1242,9 +1238,9 @@ namespace AlienFX_SDK {
 	}
 
 	void Mappings::AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags) {
-		afx_device* dev = AddDeviceById(devID);
+		afx_device* dev = AddDeviceById(LOWORD(devID), HIWORD(devID));
 		mapping* map;
-		if (!(map = GetMappingById(dev, lightID))) {
+		if (!(map = GetMappingByDev(dev, lightID))) {
 			dev->lights.push_back({ lightID });
 			map = &dev->lights.back();
 		}
@@ -1289,11 +1285,11 @@ namespace AlienFX_SDK {
 		WORD lID = 0, vid, pid;
 		for (vindex = 0; RegEnumValue(hKey1, vindex, kName, &len, NULL, NULL, (LPBYTE) name, &lend) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Dev#%hd_%hd", &vid, &pid) == 2) {
-				dev = AddDeviceById(MAKELPARAM(pid, vid));
+				dev = AddDeviceById(pid, vid);
 				dev->name = string(name);
 			}
 			if (sscanf_s(kName, "DevWhite#%hd_%hd", &vid, &pid) == 2) {
-				dev = AddDeviceById(MAKELPARAM(pid, vid));
+				dev = AddDeviceById(pid, vid);
 				dev->white.ci = ((DWORD *) name)[0];
 			}
 			len = 255, lend = 255;
@@ -1304,6 +1300,7 @@ namespace AlienFX_SDK {
 				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
 				nameLen = sizeof(DWORD);
 				RegGetValue(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &flags, &nameLen);
+				// HIWORD(devID), LOWORD(devID)
 				AddMapping(dID, lID, name, LOWORD(flags));
 			}
 		}
@@ -1317,15 +1314,15 @@ namespace AlienFX_SDK {
 				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
 				groups.push_back({dID, name});
 				for (int i = 0; i < nameLen / sizeof(DWORD); i += 2) {
-					dev = GetDeviceById(maps[i]);
+					dev = GetDeviceById(LOWORD(maps[i]), HIWORD(maps[i]));
 					if (dev) {
-						int flags = GetFlags(dev, (WORD)maps[i + 1]);
+						//int flags = GetFlags(dev, (WORD)maps[i + 1]);
 						groups.back().lights.push_back(MAKELPARAM(LOWORD(maps[i]), maps[i + 1]));
-						if (flags & ALIENFX_FLAG_POWER)
+						if (GetFlags(dev, (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
 							groups.back().have_power = true;
 					}
 				}
-				delete maps;
+				delete[] maps;
 			}
 		}
 		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
@@ -1404,15 +1401,15 @@ namespace AlienFX_SDK {
 		RegCloseKey(hKey1);
 	}
 
-	std::vector<mapping> *Mappings::GetMappings(DWORD devID) {
-		afx_device* dev = GetDeviceById(devID);
+	vector<mapping> *Mappings::GetMappings(WORD pid, WORD vid) {
+		afx_device* dev = GetDeviceById(pid, vid);
 		if (dev)
 			return &dev->lights;
 		return nullptr;
 	}
 
 	int Mappings::GetFlags(afx_device* dev, WORD lightid) {
-		mapping* lgh = GetMappingById(dev, lightid);
+		mapping* lgh = GetMappingByDev(dev, lightid);
 		if (lgh)
 			return lgh->flags;
 		return 0;
@@ -1420,7 +1417,7 @@ namespace AlienFX_SDK {
 
 	int Mappings::GetFlags(DWORD devID, WORD lightid)
 	{
-		afx_device* dev = GetDeviceById(devID);
+		afx_device* dev = GetDeviceById(HIWORD(devID), LOWORD(devID));
 		if (dev)
 			return GetFlags(dev, lightid);
 		return 0;

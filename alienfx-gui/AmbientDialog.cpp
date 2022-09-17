@@ -42,7 +42,7 @@ void RedrawButtonZone(HWND dlg) {
 }
 
 void SetGridSize(HWND dlg, int x, int y) {
-    delete ambUIupdate;
+    ambUIupdate->Stop();
     if (eve->capt) {
         eve->capt->SetLightGridSize(x, y);
     }
@@ -50,7 +50,7 @@ void SetGridSize(HWND dlg, int x, int y) {
         conf->amb_grid = MAKELPARAM(x, y);
     }
     InitButtonZone(dlg);
-    ambUIupdate = new ThreadHelper(AmbUpdate, dlg);
+    ambUIupdate->Start();
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {

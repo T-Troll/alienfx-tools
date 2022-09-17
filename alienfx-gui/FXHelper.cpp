@@ -485,8 +485,10 @@ void FXHelper::Stop() {
 		DebugPrint("Light updates stopped.\n");
 
 		SetEvent(stopQuery);
+		if (lightQuery.size())
+			QueryUpdate();
 		WaitForSingleObject(updateThread, 60000);
-		lightQuery.clear();
+		//lightQuery.clear();
 		CloseHandle(updateThread);
 		CloseHandle(stopQuery);
 		CloseHandle(haveNewElement);
@@ -684,8 +686,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	vector<deviceQuery> devs_query;
 
 	// Power button state...
-	vector<AlienFX_SDK::afx_act> pbstate;
-	pbstate.resize(2);
+	AlienFX_SDK::afx_act pbstate[2];
+	//pbstate.resize(2);
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
@@ -743,19 +745,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} else {
 				// set light
-				if ((dev = conf->afx_dev.GetDeviceById(current.did)) && dev->dev) {
-					vector<AlienFX_SDK::afx_act> actions;
+				if ((dev = conf->afx_dev.GetDeviceById(LOWORD(current.did), 0)) && dev->dev) {
+					//vector<AlienFX_SDK::afx_act> actions;
 					WORD flags = conf->afx_dev.GetFlags(dev, current.lid);
 					for (int i = 0; i < current.actsize; i++) {
-						AlienFX_SDK::afx_act action = current.actions[i];
+						AlienFX_SDK::afx_act* action = &current.actions[i];
 						// gamma-correction...
 						if (conf->gammaCorrection) {
 							//action.r = (byte)(pow((float)action.r / 255.0, 2.2) * 255 + 0.5);
 							//action.g = (byte)(pow((float)action.g / 255.0, 2.2) * 255 + 0.5);
 							//action.b = (byte)(pow((float)action.b / 255.0, 2.2) * 255 + 0.5);
-							action.r = ((UINT)action.r * action.r * dev->white.r) / (255 * 255);
-							action.g = ((UINT)action.g * action.g * dev->white.g) / (255 * 255);
-							action.b = ((UINT)action.b * action.b * dev->white.b) / (255 * 255);
+							action->r = ((UINT)action->r * action->r * dev->white.r) / (255 * 255);
+							action->g = ((UINT)action->g * action->g * dev->white.g) / (255 * 255);
+							action->b = ((UINT)action->b * action->b * dev->white.b) / (255 * 255);
 						}
 						// Dimming...
 						// For v0-v3 and v7 devices only, other have hardware dimming
@@ -763,35 +765,37 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							switch (dev->dev->GetVersion()) {
 							case 0: case 1: case 2: case 3: case 7: {
 								unsigned delta = 255 - conf->dimmingPower;
-								action.r = ((UINT)action.r * delta) / 255;// >> 8;
-								action.g = ((UINT)action.g * delta) / 255;// >> 8;
-								action.b = ((UINT)action.b * delta) / 255;// >> 8;
+								action->r = ((UINT)action->r * delta) / 255;// >> 8;
+								action->g = ((UINT)action->g * delta) / 255;// >> 8;
+								action->b = ((UINT)action->b * delta) / 255;// >> 8;
 							}
 							}
 						//DebugPrint(("Light for #" + to_string(current.did) + ", ID " + to_string(current.lid) +
 						//" to (" + to_string(action.r) + "," + to_string(action.g) + "," + to_string(action.b) + ")\n").c_str());
-						actions.push_back(action);
+						//actions.push_back(action);
 					}
 
 					// Is it power button?
 					if (flags & ALIENFX_FLAG_POWER) {
 						// Should we update it?
+						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						if (!conf->block_power && current.actsize == 2 &&
 							(current.flags || /*(current.flags && dev->GetVersion() < 4) ||*/
-							 memcmp(&pbstate[0], &actions[0], sizeof(AlienFX_SDK::afx_act)) ||
-							 memcmp(&pbstate[1], &actions[1], sizeof(AlienFX_SDK::afx_act)))) {
+							 memcmp(pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act)) /*||
+							 memcmp(&pbstate[1], &current.actions[1], sizeof(AlienFX_SDK::afx_act))*/)) {
 
 							DebugPrint((string("Power button set to ") +
-										to_string(actions[0].r) + "-" +
-										to_string(actions[0].g) + "-" +
-										to_string(actions[0].b) + "/" +
-										to_string(actions[1].r) + "-" +
-										to_string(actions[1].g) + "-" +
-										to_string(actions[1].b) +
+										to_string(current.actions[0].r) + "-" +
+										to_string(current.actions[0].g) + "-" +
+										to_string(current.actions[0].b) + "/" +
+										to_string(current.actions[1].r) + "-" +
+										to_string(current.actions[1].g) + "-" +
+										to_string(current.actions[1].b) +
 										"\n").c_str());
 
-							pbstate = actions;
-							actions[0].type = actions[1].type = AlienFX_SDK::AlienFX_A_Power;
+							memcpy(pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act));
+							//pbstate = current.actions;
+							//current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						} else {
 							DebugPrint("Power button update skipped (blocked or same colors)\n");
 							continue;
@@ -803,10 +807,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						[current](auto t) {
 							return t.dev->pid == current.did;
 						});
+					// form actblock...
+					AlienFX_SDK::act_block ablock{ (byte)current.lid };
+					ablock.act.resize(current.actsize);
+					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::afx_act));
 					if (qn != devs_query.end())
-						qn->dev_query.push_back({ (byte)current.lid, actions });
+						qn->dev_query.push_back(ablock);
 					else {
-						devs_query.push_back({ dev, {{(byte)current.lid, actions}} });
+						devs_query.push_back({ dev, { ablock } });
 					}
 				}
 			}

@@ -434,7 +434,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 							for (int i = 0; i < fnumlights; i++)
 								if (lightID == -1 || lightID == i) {
 									printf("Testing light #%d", i);
-									AlienFX_SDK::mapping* lmap = afx_map->GetMappingById(&(*cDev), i);
+									AlienFX_SDK::mapping* lmap = afx_map->GetMappingByDev(&(*cDev), i);
 									if (lmap) {
 										printf(", old name %s ", lmap->name.c_str());
 									}

@@ -296,7 +296,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 
 		// Start UI update thread...
-		muiThread = new ThreadHelper(UpdateMonUI, hDlg, conf->refreshDelay);
+		muiThread = new ThreadHelper(UpdateMonUI, hDlg, conf->refreshDelay, THREAD_PRIORITY_ABOVE_NORMAL);
 
 	} break;
 	case WM_COMMAND:

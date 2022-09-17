@@ -5,8 +5,8 @@
 
 class GridHelper {
 private:
-	HHOOK kEvent = NULL;
-	ThreadHelper* gridTrigger = NULL, * gridThread = NULL;
+	HHOOK kEvent;
+	ThreadHelper* gridTrigger, * gridThread;
 public:
 	GridHelper();
 	~GridHelper();

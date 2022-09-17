@@ -69,7 +69,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		UpdateMonitoringInfo(hDlg, map);
 
 		// Start UI update thread...
-		hapUIupdate = new ThreadHelper(UpdateEventUI, hDlg);
+		hapUIupdate = new ThreadHelper(UpdateEventUI, hDlg, DEFAULT_MON_DELAY);
 
 	} break;
 	case WM_APP + 2: {

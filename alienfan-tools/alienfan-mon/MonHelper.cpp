@@ -37,7 +37,6 @@ void MonHelper::Start() {
 			acpi->SetGMode(fan_conf->lastProf->gmode);
 		if (!fan_conf->lastProf->gmode && (oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage)
 			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-		//acpi->SetGPU(fan_conf->lastProf->GPUPower);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
@@ -65,14 +64,16 @@ void MonHelper::Stop() {
 
 void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
-
-	// update values.....
-
+	bool modified = false;
+	// update values:
 	// temps..
 	for (int i = 0; i < acpi->sensors.size(); i++) {
-		src->senValues[i] = acpi->GetTempValue(i);
-		if (src->senValues[i] > src->maxTemps[i])
-			src->maxTemps[i] = src->senValues[i];
+		int temp = acpi->GetTempValue(i);
+		if (temp != src->senValues[i]) {
+			modified = true;
+			src->senValues[i] = temp;
+			src->maxTemps[i] = max(src->maxTemps[i], temp);
+		}
 	}
 
 	// fans...
@@ -83,7 +84,7 @@ void CMonProc(LPVOID param) {
 	}
 
 	// boosts..
-	if (!fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
+	if (modified && !fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
 		// in manual mode only
 		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter < fan_conf->lastProf->fanControls.end(); cIter++) {
 			if (cIter->sensorIndex < src->senValues.size())
@@ -117,8 +118,8 @@ void CMonProc(LPVOID param) {
 							src->boostSets[i] += 15 * ((src->boostRaw[i] - src->boostSets[i]) >> 4);
 						// fan RPM stuck patch v2
 						if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
-							int pct = acpi->GetFanPercent(i);
-							if (pct > 105 || pct < src->boostRaw[i] >> 1) {
+							int pct = acpi->GetFanPercent(i) << 3;
+							if (pct > 105 || pct < src->boostRaw[i]) {
 								acpi->SetGMode(true);
 								Sleep(300);
 								acpi->SetGMode(false);

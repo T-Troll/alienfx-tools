@@ -153,9 +153,9 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			if (idx != map->haptics[fGrpItem].freqID.end())
 				switch (cutMove) {
 				case 0:
-					delete hapUIThread;
+					hapUIThread->Stop();
 					map->haptics[fGrpItem].freqID.erase(idx);
-					hapUIThread = new ThreadHelper(UpdateHapticsUI, GetParent(hDlg), 40);
+					hapUIThread->Start();
 					break;
 				case 1: map->haptics[fGrpItem].hicut = clickLevel; break;
 				case 2: map->haptics[fGrpItem].lowcut = clickLevel; break;

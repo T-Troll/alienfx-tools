@@ -246,7 +246,7 @@ void ConfigHandler::Load() {
 		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
 			prof->fansets.powerStage = LOWORD(*(DWORD*)data);
-			prof->fansets.GPUPower = LOBYTE(HIWORD(*(DWORD*)data));
+			//prof->fansets.GPUPower = LOBYTE(HIWORD(*(DWORD*)data));
 			prof->fansets.gmode = HIBYTE(HIWORD(*(DWORD*)data));
 		}
 	}
@@ -466,7 +466,7 @@ void ConfigHandler::Save() {
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
 			name = "Profile-power-" + to_string((*jIter)->id);
-			WORD ps = MAKEWORD((*jIter)->fansets.GPUPower, (*jIter)->fansets.gmode);
+			WORD ps = MAKEWORD(0/*(*jIter)->fansets.GPUPower*/, (*jIter)->fansets.gmode);
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...

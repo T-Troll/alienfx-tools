@@ -225,10 +225,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             switch (((NMHDR*)lParam)->code) {
             case LVN_BEGINLABELEDIT: {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                if (fanUIUpdate) {
-                    delete fanUIUpdate;
-                    fanUIUpdate = NULL;
-                }
+                fanUIUpdate->Stop();
                 HWND editC = ListView_GetEditControl(tempList);
                 auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
                 Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[(byte)sItem->item.lParam].name).c_str());
@@ -257,7 +254,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     }
                 }
                 ReloadTempView(tempList);
-                fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg, 500);
+                fanUIUpdate->Start();
             } break;
             case LVN_ITEMCHANGED:
             {
@@ -289,7 +286,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_DESTROY:
         if (fanUIUpdate) {
             delete fanUIUpdate;
-            fanUIUpdate = NULL;
             LocalFree(sch_guid);
         }
         break;

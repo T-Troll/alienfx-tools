@@ -172,8 +172,8 @@ void RestoreApp() {
 
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
-        power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU);
+    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER)/*,
+        power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU)*/;
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
@@ -512,10 +512,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             HWND tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
             switch (((NMHDR*)lParam)->code) {
             case LVN_BEGINLABELEDIT: {
-                if (fanThread) {
-                    delete fanThread;
-                    fanThread = NULL;
-                }
+                fanThread->Stop();
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
                 Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.lParam].name).c_str());
@@ -545,7 +542,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     }
                 }
                 ReloadTempView(tempList);
-                fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
+                fanThread->Start();
             } break;
             case LVN_ITEMCHANGED:
             {
@@ -593,8 +590,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
-            mon = new MonHelper(fan_conf);
-            fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
+            mon->Start();
+            fanThread->Start();
             if (fan_conf->updateCheck) {
                 needUpdateFeedback = false;
                 CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
@@ -602,8 +599,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case PBT_APMSUSPEND:
             // Sleep initiated.
-            delete fanThread;
-            delete mon;
+            fanThread->Stop();
+            mon->Stop();
             fan_conf->Save();
             break;
         }

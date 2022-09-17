@@ -3,6 +3,13 @@
 
 extern EventHandler* eve;
 
+void StartGridRun(groupset* grp, int x, int y) {
+	grp->gridop.gridX = x;
+	grp->gridop.gridY = y;
+	grp->gridop.passive = false;
+	grp->gridop.oldphase = 0;
+}
+
 LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
@@ -12,19 +19,25 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 		GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
  		for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
 			if (it->effect.trigger == 3) { // keyboard effect
-				// check grid
-				zonemap* zone = conf->FindZoneMap(it->group);
-				for (int x = zone->gMinX; x < zone->gMaxX; x++)
-					for (int y = zone->gMinY; y < zone->gMaxY; y++) {
-						DWORD gridval = conf->afx_dev.GetGridByID((byte)zone->gridID)->grid[ind(x, y)];
-						if (gridval && conf->afx_dev.GetMappingById(conf->afx_dev.GetDeviceById(LOWORD(gridval)), HIWORD(gridval))->name == (string)keyname) {
-							// start effect
-							it->gridop.gridX = x;
-							it->gridop.gridY = y;
-							it->gridop.passive = false;
-							return res;
+				// Is it have a key pressed?
+				AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(it->group);
+				auto light = find_if(grp->lights.begin(), grp->lights.end(),
+					[keyname](DWORD lgh){
+						return conf->afx_dev.GetMappingByDev(conf->afx_dev.GetDeviceById(LOWORD(lgh), 0), HIWORD(lgh))->name == (string)keyname;
+					});
+				if (light != grp->lights.end()) {
+					// check grid
+					zonemap* zone = conf->FindZoneMap(it->group);
+					AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID((byte)zone->gridID);
+					for (int x = zone->gMinX; x < zone->gMaxX; x++)
+						for (int y = zone->gMinY; y < zone->gMaxY; y++) {
+							if (grid->grid[ind(x,y)] == *light) {
+								// start effect
+								StartGridRun(&(*it), x, y);
+								return res;
+							}
 						}
-					}
+				}
 			}
 	}
 
@@ -62,14 +75,13 @@ void GridTriggerWatch(LPVOID param) {
 			case 1: // Continues
 				switch (ce->gauge) {
 				case 1:	case 2:	case 3: case 4:
-					ce->gridop.gridX = cz->gMinX; ce->gridop.gridY = cz->gMinY;
+					StartGridRun(&(*ce), cz->gMinX, cz->gMinY);
 					break;
 				//case 4:
 				//	ce->gridop.gridX = cz->gMaxX-1; ce->gridop.gridY = cz->gMinY;
 				//	break;
 				case 5:
-					ce->gridop.gridX = cz->gMinX + (cz->gMaxX - cz->gMinX) / 2;
-					ce->gridop.gridY = cz->gMinY + (cz->gMaxY - cz->gMinY) / 2;
+					StartGridRun(&(*ce), cz->gMinX + (cz->gMaxX - cz->gMinX) / 2, cz->gMinY + (cz->gMaxY - cz->gMinY) / 2);
 					break;
 				}
 				ce->gridop.passive = false;
@@ -77,12 +89,9 @@ void GridTriggerWatch(LPVOID param) {
 			case 2: { // Random
 				uniform_int_distribution<int> pntX(cz->gMinX, cz->gMaxX);
 				uniform_int_distribution<int> pntY(cz->gMinY, cz->gMaxY);
-				ce->gridop.gridX = pntX(src->rnd);
-				ce->gridop.gridY = pntY(src->rnd);
-				ce->gridop.passive = false;
+				StartGridRun(&(*ce), pntX(src->rnd), pntY(src->rnd));
 			} break;
 			}
-			ce->gridop.oldphase = 0;
 			ce->gridop.start_tact = src->tact;
 		}
 	}
@@ -102,8 +111,6 @@ GridHelper::~GridHelper()
 	eve->StopEvents();
 	delete gridTrigger;
 	delete gridThread;
-	gridTrigger = gridThread = NULL;
-	// Clean haptics, events, hook
 }
 
 void GridHelper::UpdateEvent(EventData* data) {

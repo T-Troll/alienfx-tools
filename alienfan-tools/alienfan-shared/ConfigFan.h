@@ -24,7 +24,7 @@ struct temp_block {
 struct fan_profile {
 	WORD powerStage = 0;
 	WORD gmode = 0;
-	DWORD GPUPower = 0;
+	//DWORD GPUPower = 0;
 	vector<temp_block> fanControls;
 };
 

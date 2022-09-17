@@ -20,8 +20,6 @@
 #define IDC_BUT_RESET                   1007
 #define IDC_STATIC_VERSION              1009
 #define IDC_SYSLINK_HOMEPAGE            1010
-#define IDC_SLIDER_GPU                  1013
-#define IDC_STATIC_BOOST                1014
 #define IDC_MAX_RESET                   1016
 #define IDC_AC_BOOST                    1124
 #define IDC_DC_BOOST                    1125
@@ -29,8 +27,6 @@
 #define IDC_CHECK_GMODE                 1160
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
-#define ID_SETTINGS_CHECKFORUP          32780
-#define ID_SETTINGS_UPDATE              32781
 #define IDM_SETTINGS_UPDATE             32782
 #define ID_SETTINGS_DISABLEAWCC         32783
 #define IDM_DISABLEAWCC                 32784

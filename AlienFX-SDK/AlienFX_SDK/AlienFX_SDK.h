@@ -120,12 +120,12 @@ namespace AlienFX_SDK {
 
 		bool inSet = false;
 
-		int vid = -1; // Device VID, can be zero!
+		int vid = -1; // Device VID
 		int pid = -1; // Device PID, -1 if not initialized
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
 		int version = -1; // interface version
-		byte reportID = 0; // HID ReportID (0 if auto)
+		byte reportID = 0; // HID ReportID (0 for auto)
 		byte bright = 64; // Brightness for APIv4 and v6
 
 		// support function for mask-based devices (v1-v3, v6)
@@ -146,9 +146,6 @@ namespace AlienFX_SDK {
 
 		// After-reset delay for APIv1-v3
 		BYTE AlienfxWaitForBusy();
-
-		// Device de-init
-		void AlienFXClose();
 
 	public:
 
@@ -277,7 +274,7 @@ namespace AlienFX_SDK {
 		void SaveMappings();
 
 		// get saved light names
-		vector <mapping>* GetMappings(DWORD devID);
+		vector <mapping>* GetMappings(WORD pid, WORD vid);
 
 		// get defined groups
 		vector <group>* GetGroups();
@@ -289,13 +286,13 @@ namespace AlienFX_SDK {
 		lightgrid* GetGridByID(byte id);
 
 		// get device structure by PID/VID (low/high WORD)
-		afx_device* GetDeviceById(DWORD devID);
+		afx_device* GetDeviceById(WORD pid, WORD vid);
 
-		// get or add device structure by PID/VID (low/high WORD)
-		afx_device* AddDeviceById(DWORD devID);
+		// get or add device structure by PID/VID
+		afx_device* AddDeviceById(WORD pid, WORD vid);
 
 		// find light mapping by PID (or PID/VID) and light ID
-		mapping* GetMappingById(afx_device* dev, WORD LightID);
+		mapping* GetMappingByDev(afx_device* dev, WORD LightID);
 
 		// find light group by it's ID
 		group* GetGroupById(DWORD gid);
