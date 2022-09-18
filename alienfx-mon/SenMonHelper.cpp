@@ -149,7 +149,7 @@ void SenMonHelper::UpdateSensors()
 		valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
 		for (unsigned i = 0; i < valCount; i++) {
 			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
-				AddUpdateSensor(conf, 1, 1, i, counterValues[i].FmtValue.longValue/10, (string)"Power " + to_string(i));
+				AddUpdateSensor(conf, 1, 1, i, counterValues[i].FmtValue.longValue/10, "Power " + to_string(i));
 		}
 	}
 
@@ -162,9 +162,9 @@ void SenMonHelper::UpdateSensors()
 		}
 
 		for (int i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3
-			AddUpdateSensor(conf, 2, 1, i, acpi->GetFanRPM(i), (string)"Fan " + to_string(i+1) + " RPM");
-			AddUpdateSensor(conf, 2, 2, i, acpi->GetFanPercent(i), (string)"Fan " + to_string(i+1) + " percent");
-			AddUpdateSensor(conf, 2, 3, i, acpi->GetFanBoost(i, true), (string)"Fan " + to_string(i + 1) + " boost");
+			AddUpdateSensor(conf, 2, 1, i, acpi->GetFanRPM(i), "Fan " + to_string(i+1) + " RPM");
+			AddUpdateSensor(conf, 2, 2, i, acpi->GetFanPercent(i), "Fan " + to_string(i+1) + " percent");
+			AddUpdateSensor(conf, 2, 3, i, acpi->GetFanBoost(i, true), "Fan " + to_string(i + 1) + " boost");
 		}
 	} else
 		if (conf->eSensors) {
@@ -172,7 +172,7 @@ void SenMonHelper::UpdateSensors()
 			valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
 			for (unsigned i = 0; i < valCount; i++) {
 				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue)
-					AddUpdateSensor(conf, 1, 0, i, counterValues[i].FmtValue.longValue, (string)"Temp " + to_string(i));
+					AddUpdateSensor(conf, 1, 0, i, counterValues[i].FmtValue.longValue, "Temp " + to_string(i));
 			}
 		}
 }

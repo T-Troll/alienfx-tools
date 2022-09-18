@@ -140,7 +140,7 @@ void EventHandler::StopEvents()
 		DebugPrint("Event thread stop.\n");
 
 		SetEvent(stopEvents);
-		WaitForSingleObject(dwHandle, conf->monDelay << 1);
+		WaitForSingleObject(dwHandle, 3000);
 		CloseHandle(dwHandle);
 		CloseHandle(stopEvents);
 		dwHandle = 0;
@@ -347,9 +347,10 @@ void EventHandler::StopProfiles()
 DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
 PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1], * counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[1];
 
-int GetValuesArray(HCOUNTER counter, HCOUNTER c2 = NULL) {
+int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, int divider = 1, HCOUNTER c2 = NULL) {
 	PDH_STATUS pdhStatus;
 	DWORD count;
+	int retVal = 0;
 
 	if (c2) {
 		counterSize = sizeof(counterValuesMax);
@@ -358,9 +359,9 @@ int GetValuesArray(HCOUNTER counter, HCOUNTER c2 = NULL) {
 			counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
 		}
 
-		if (pdhStatus != ERROR_SUCCESS) {
-			return -1;
-		}
+		//if (pdhStatus != ERROR_SUCCESS) {
+		//	return -1;
+		//}
 	}
 
 	counterSize = sizeof(counterValues);
@@ -369,11 +370,20 @@ int GetValuesArray(HCOUNTER counter, HCOUNTER c2 = NULL) {
 		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[counterSize/sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
 	}
 
-	if (pdhStatus != ERROR_SUCCESS) {
-		return -1;
+	//if (pdhStatus != ERROR_SUCCESS) {
+	//	return -1;
+	//}
+
+	for (DWORD i = 0; i < count; i++) {
+		int cval = c2 && counterValuesMax[i].FmtValue.longValue ?
+			counterValues[i].FmtValue.longValue * 800 / counterValuesMax[i].FmtValue.longValue :
+			counterValues[i].FmtValue.longValue / divider - delta;
+		retVal = max(retVal, cval);
 	}
 
-	return count - 1;
+	maxVal = max(maxVal, retVal);
+
+	return retVal;
 }
 
 // Callback and event processing hooks
@@ -460,131 +470,109 @@ static DWORD WINAPI CEventProc(LPVOID param)
 
 	// Set data source...
 
-	if (PdhOpenQuery(NULL, 0, &hQuery) != ERROR_SUCCESS)
+	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS)
 	{
-		goto cleanup;
-	}
 
-	PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
-	PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
-	PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
-	PdhAddCounter(hQuery, COUNTER_PATH_NETMAX, 0, &hNETMAXCounter);
-	PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
-	PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
-	PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
-	PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
+		PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
+		PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
+		PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
+		PdhAddCounter(hQuery, COUNTER_PATH_NETMAX, 0, &hNETMAXCounter);
+		PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
+		PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
+		PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
+		PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 
-	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
-	DWORD cType = 0;
+		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
+		DWORD cType = 0;
 
-	while (WaitForSingleObject(src->stopEvents, conf->monDelay) == WAIT_TIMEOUT) {
-		// get indicators...
+		while (WaitForSingleObject(src->stopEvents, conf->monDelay) == WAIT_TIMEOUT) {
+			// get indicators...
 
-		if (!fxhl->updateThread)
-			continue;
+			if (!fxhl->updateThread)
+				continue;
 
-		PdhCollectQueryData(hQuery);
+			PdhCollectQueryData(hQuery);
 
-		cData = { 0 };
+			cData = { 0 };
 
-		PdhGetFormattedCounterValue( hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal );
-		PdhGetFormattedCounterValue( hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal );
+			PdhGetFormattedCounterValue(hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal);
+			PdhGetFormattedCounterValue(hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal);
 
-		// Network load
-		for (int i = GetValuesArray(hNETCounter, hNETMAXCounter); i >= 0; i--) {
-			if (counterValuesMax[i].FmtValue.longValue)
-				cData.NET = (byte) max(cData.NET, counterValues[i].FmtValue.longValue * 800 / counterValuesMax[i].FmtValue.longValue);
-		}
+			// Network load
+			cData.NET = GetValuesArray(hNETCounter, fxhl->maxData.NET, 0, 1, hNETMAXCounter);
 
-		// GPU load
-		for (int i = GetValuesArray(hGPUCounter); i >= 0 && counterValues[i].szName != NULL; i--) {
-			cData.GPU = (byte)max(cData.GPU, counterValues[i].FmtValue.longValue);
-		}
+			// GPU load
+			cData.GPU = GetValuesArray(hGPUCounter, fxhl->maxData.GPU);
 
-		// Temperatures
-		for (int i = GetValuesArray(hTempCounter); i >= 0 ; i--) {
-			if (((int)cData.Temp) < counterValues[i].FmtValue.longValue - 273)
-				cData.Temp = (byte) (counterValues[i].FmtValue.longValue - 273);
-		}
+			// Temperatures
+			cData.Temp = GetValuesArray(hTempCounter, fxhl->maxData.Temp, 273);
 
-		if (mon) {
-			// Check fan RPMs
-			for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
-				cData.Fan = max(cData.Fan, acpi->GetFanPercent(i));
-			}
-		}
-
-		// Now other temp sensor block and power block...
-		short totalPwr = 0;
-		if (conf->esif_temp) {
 			if (mon) {
-				// Let's get temperatures from fan sensors
-				for (unsigned i = 0; i < mon->senValues.size(); i++)
-					cData.Temp = max(cData.Temp, mon->senValues[i]);
-			}
-			else {
-				// ESIF temps (already in fans)
-				for (int i = GetValuesArray(hTempCounter2); i >= 0; i--) {
-					cData.Temp = (byte)max(cData.Temp, counterValues[i].FmtValue.longValue);
+				// Check fan RPMs
+				for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
+					cData.Fan = max(cData.Fan, acpi->GetFanPercent(i));
 				}
 			}
 
-			// Powers
-			for (int i = GetValuesArray(hPwrCounter); i >= 0; i--) {
-				if (counterValues[i].FmtValue.longValue) {
-					totalPwr += (short)counterValues[i].FmtValue.longValue / 10;
+			// Now other temp sensor block and power block...
+			short totalPwr = 0;
+			if (conf->esif_temp) {
+				if (mon) {
+					// Let's get temperatures from fan sensors
+					for (unsigned i = 0; i < mon->senValues.size(); i++)
+						cData.Temp = max(cData.Temp, mon->senValues[i]);
+				}
+				else {
+					// ESIF temps (already in fans)
+					cData.Temp = max(cData.Temp, GetValuesArray(hTempCounter2, fxhl->maxData.Temp));
+				}
+
+				// Powers
+				cData.PWR = GetValuesArray(hPwrCounter, fxhl->maxData.PWR, 0, 10);
+			}
+
+			GlobalMemoryStatusEx(&memStat);
+			GetSystemPowerStatus(&state);
+
+			HKL curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL));
+
+			if (curLocale) {
+				for (int i = GetKeyboardLayoutList(10, locIDs); i >= 0; i--) {
+					if (curLocale == locIDs[i]) {
+						cData.KBD = i > 0 ? 100 : 0;
+						break;
+					}
 				}
 			}
 
-			if (totalPwr > fxhl->maxData.PWR)
-				fxhl->maxData.PWR = totalPwr;
+			// Leveling...
+			cData.Temp = min(100, max(0, cData.Temp));
+			cData.Batt = /*state.BatteryLifePercent > 100 ? 0 : */state.BatteryLifePercent;
+			cData.HDD = (byte)max(0, 99 - cHDDVal.longValue);
+			cData.Fan = min(100, cData.Fan);
+			cData.CPU = (byte)cCPUVal.longValue;
+			cData.RAM = (byte)memStat.dwMemoryLoad;
+			//cData.NET = (byte) totalNet ? max(totalNet * 100 / fxhl->maxData.NET, 1) : 0;
+			cData.PWR = (byte)cData.PWR * 100 / fxhl->maxData.PWR;
+			//fxhl->maxData.NET = max(fxhl->maxData.NET, cData.NET);
+			//fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
+			//fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
+			fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData.RAM);
+			fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
+
+			src->modifyProfile.lock();
+			if (src->grid)
+				src->grid->UpdateEvent(&cData);
+			else
+				fxhl->SetCounterColor(&cData);
+			src->modifyProfile.unlock();
+
+			/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) +
+						", Power=" + to_string(cData.PWR) +
+						", Max. power=" + to_string(maxPower) + "\n").c_str());*/
 		}
-
-		GlobalMemoryStatusEx(&memStat);
-		GetSystemPowerStatus(&state);
-
-		HKL curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL));
-
-		if (curLocale) {
-			for (int i = GetKeyboardLayoutList(10, locIDs); i >= 0; i--) {
-				if (curLocale == locIDs[i]) {
-					cData.KBD = i > 0 ? 100 : 0;
-					break;
-				}
-			}
-		}
-
-		// Leveling...
-		cData.Temp = min(100, max(0, cData.Temp));
-		cData.Batt = state.BatteryLifePercent > 100 ? 0 : state.BatteryLifePercent;
-		cData.HDD = (byte) max(0, 99 - cHDDVal.longValue);
-		cData.Fan = min(100, cData.Fan);
-		cData.CPU = (byte) cCPUVal.longValue;
-		cData.RAM = (byte) memStat.dwMemoryLoad;
-		//cData.NET = (byte) totalNet ? max(totalNet * 100 / fxhl->maxData.NET, 1) : 0;
-		cData.PWR = (byte) totalPwr * 100 / fxhl->maxData.PWR;
-		fxhl->maxData.NET = max(fxhl->maxData.NET, cData.NET);
-		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
-		fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
-		fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData.RAM);
-		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
-
-		src->modifyProfile.lock();
-		if (src->grid)
-			src->grid->UpdateEvent(&cData);
-		else
-			fxhl->SetCounterColor(&cData);
-		src->modifyProfile.unlock();
-
-		/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) +
-					", Power=" + to_string(cData.PWR) +
-					", Max. power=" + to_string(maxPower) + "\n").c_str());*/
-	}
-
-cleanup:
-
-	if (hQuery)
 		PdhCloseQuery(hQuery);
+	}
 
 	delete[] locIDs;
 

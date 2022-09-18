@@ -114,9 +114,10 @@ namespace AlienFX_SDK {
 
 		HANDLE devHandle = NULL;
 
-#ifndef NOACPILIGHTS
-		AlienFan_SDK::Lights* device = NULL;
-#endif
+//#ifndef NOACPILIGHTS
+		void* device = NULL;
+		//AlienFan_SDK::Lights* device = NULL;
+//#endif
 
 		bool inSet = false;
 
