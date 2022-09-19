@@ -117,16 +117,16 @@ void CMonProc(LPVOID param) {
 						if (src->boostRaw[i] > src->boostSets[i])
 							src->boostSets[i] += 15 * ((src->boostRaw[i] - src->boostSets[i]) >> 4);
 						// fan RPM stuck patch v2
-						if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
-							int pct = acpi->GetFanPercent(i) << 3;
-							if (pct > 105 || pct < src->boostRaw[i]) {
-								acpi->SetGMode(true);
-								Sleep(300);
-								acpi->SetGMode(false);
-								acpi->SetPower((byte)fan_conf->lastProf->powerStage);
-								DebugPrint("RPM fix engaged!\n");
-							}
-						}
+						//if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
+						//	int pct = acpi->GetFanPercent(i) << 3;
+						//	if (pct > 105 || pct < src->boostRaw[i]) {
+						//		acpi->SetGMode(true);
+						//		Sleep(300);
+						//		acpi->SetGMode(false);
+						//		acpi->SetPower((byte)fan_conf->lastProf->powerStage);
+						//		DebugPrint("RPM fix engaged!\n");
+						//	}
+						//}
 
 						acpi->SetFanBoost(i, src->boostSets[i], true);
 

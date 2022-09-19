@@ -7,7 +7,6 @@ void StartGridRun(groupset* grp, int x, int y) {
 	grp->gridop.gridX = x;
 	grp->gridop.gridY = y;
 	grp->gridop.passive = false;
-	grp->gridop.oldphase = 0;
 }
 
 LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -84,7 +83,6 @@ void GridTriggerWatch(LPVOID param) {
 					StartGridRun(&(*ce), cz->gMinX + (cz->gMaxX - cz->gMinX) / 2, cz->gMinY + (cz->gMaxY - cz->gMinY) / 2);
 					break;
 				}
-				ce->gridop.passive = false;
 				break;
 			case 2: { // Random
 				uniform_int_distribution<int> pntX(cz->gMinX, cz->gMaxX);
@@ -93,6 +91,7 @@ void GridTriggerWatch(LPVOID param) {
 			} break;
 			}
 			ce->gridop.start_tact = src->tact;
+			ce->gridop.oldphase = 0;
 		}
 	}
 }
@@ -131,17 +130,16 @@ void GridHelper::UpdateEvent(EventData* data) {
 				zonemap* cz = conf->FindZoneMap(it->group);
 				switch (it->gauge) {
 				case 1:	case 2:	case 3:
-					it->gridop.gridX = cz->gMinX; it->gridop.gridY = cz->gMinY;
+					StartGridRun(&(*it), cz->gMinX, cz->gMinY);
 					break;
 				case 4:
-					it->gridop.gridX = cz->gMaxX; it->gridop.gridY = cz->gMinY;
+					StartGridRun(&(*it), cz->gMaxX, cz->gMinY);
 					break;
 				case 5:
-					it->gridop.gridX = cz->gMinX + (cz->gMaxX - cz->gMinX) / 2;
-					it->gridop.gridY = cz->gMinY + (cz->gMaxY - cz->gMinY) / 2;
+					StartGridRun(&(*it), cz->gMinX + (cz->gMaxX - cz->gMinX) / 2, cz->gMinY + (cz->gMaxY - cz->gMinY) / 2);
 					break;
 				}
-				it->gridop.passive = false;
+				//it->gridop.passive = false;
 			}
 		}
 	memcpy(&fxhl->eData, data, sizeof(EventData));

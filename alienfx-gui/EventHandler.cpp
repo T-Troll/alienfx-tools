@@ -6,7 +6,6 @@
 
 #include "alienfx-gui.h"
 #include "EventHandler.h"
-#include "AlienFX_SDK.h"
 
 // debug print
 #ifdef _DEBUG

@@ -1,8 +1,7 @@
 #pragma once
 #include <queue>
-#include "ConfigHandler.h"
-#include "Alienfan-sdk.h"
 #include <mutex>
+#include "ConfigHandler.h"
 
 // Power modes: AC = 0, Battery = 1, Charge = 2, Low Battery = 4
 #define MODE_AC		0

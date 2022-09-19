@@ -31,10 +31,7 @@ namespace AlienFan_SDK {
 		// Windows bug with disk drives list
 		if (m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService) == S_OK) {
 			IEnumWbemClassObject* enum_obj = NULL;
-			//ULONG uNumOfInstances;
 			if (m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDisk", 0, NULL, &enum_obj) == S_OK) {
-				//enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-				//spInstance->Release();
 				enum_obj->Release();
 			}
 			m_DiskService->Release();
@@ -46,6 +43,8 @@ namespace AlienFan_SDK {
 	}
 
 	Control::~Control() {
+		if (m_InParamaters)
+			m_InParamaters->Release();
 		if (m_DiskService)
 			m_DiskService->Release();
 		if (m_OHMService)
@@ -55,10 +54,10 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::CallWMIMethod(ALIENFAN_COMMAND com, byte arg1, byte arg2) {
-		IWbemClassObject* m_InParamaters, *m_outParameters = NULL;
+		IWbemClassObject* /*m_InParamaters, **/m_outParameters = NULL;
 		VARIANT result{ VT_I4 };
 		result.intVal = -1;
-		if (m_AWCCGetObj->GetMethod(commandList[com.com], NULL, &m_InParamaters, NULL) == S_OK) {
+		/*if (m_AWCCGetObj->GetMethod(commandList[com.com], NULL, &m_InParamaters, NULL) == S_OK) {*/
 			VARIANT parameters = { VT_I4 };
 			parameters.uintVal = ALIENFAN_INTERFACE{ com.sub, arg1, arg2 }.args;
 			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
@@ -67,8 +66,8 @@ namespace AlienFan_SDK {
 				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
 				m_outParameters->Release();
 			}
-			m_InParamaters->Release();
-		}
+			//m_InParamaters->Release();
+		//}
 		return result.intVal;
 	}
 
@@ -79,7 +78,7 @@ namespace AlienFan_SDK {
 #endif
 			// need to get instance
 			IEnumWbemClassObject* enum_obj;
-			IWbemClassObject* spInstance, * m_InParamaters = NULL;
+			IWbemClassObject* spInstance/*, * m_InParamaters = NULL*/;
 			ULONG uNumOfInstances = 0;
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) != S_OK)
 				return false;
@@ -89,11 +88,11 @@ namespace AlienFan_SDK {
 			enum_obj->Release();
 			devFlags |= DEV_FLAG_AWCC;
 			// now let's check methods
-			if (m_AWCCGetObj->GetMethod(commandList[0], NULL, nullptr/*&m_InParamaters*/, nullptr) == S_OK) {
-				//m_InParamaters->Release();
+			if (m_AWCCGetObj->GetMethod(commandList[0], NULL, nullptr, nullptr) == S_OK) {
+				// Fill m_InParameters...
+				m_AWCCGetObj->GetMethod(commandList[dev_controls.getSysID.com], NULL, &m_InParamaters, nullptr);
 				// Let's get device ID...
 				systemID = CallWMIMethod(dev_controls.getSysID, 2);
-				//devFlags |= DEV_FLAG_INFO;
 #ifdef _TRACE_
 				printf("System information available, ID = %d!\n", systemID);
 #endif

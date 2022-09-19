@@ -63,6 +63,7 @@ namespace AlienFan_SDK {
 	public:
 		//VARIANT m_instancePath;
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
+		IWbemClassObject* m_InParamaters = NULL;
 		Control();
 		~Control();
 
