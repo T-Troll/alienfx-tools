@@ -91,6 +91,14 @@ struct groupset {
 	byte gauge = 0;
 };
 
+struct deviceeffect {
+	DWORD devinfo;
+	AlienFX_SDK::Colorcode effColor1, effColor2;
+	byte globalEffect = 0,
+		globalDelay = 5,
+		globalMode = 1;
+};
+
 struct profile {
 	unsigned id = 0;
 	WORD flags = 0;
@@ -101,10 +109,7 @@ struct profile {
 	WORD triggerFlags;
 	vector<groupset> lightsets;
 	fan_profile fansets;
-	AlienFX_SDK::Colorcode effColor1, effColor2;
-	byte globalEffect = 0,
-         globalDelay = 5,
-		 globalMode = 1;
+	vector<deviceeffect> effects;
 	bool ignoreDimming;
 };
 

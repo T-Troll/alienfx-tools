@@ -235,12 +235,20 @@ void ConfigHandler::Load() {
 		}
 		if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
+			deviceeffect de{ 0 };
 			DWORD* tDat = (DWORD*)data;
-			prof->globalEffect = LOBYTE(LOWORD(tDat[0]));
-			prof->globalMode = HIBYTE(LOWORD(tDat[0]));
-			prof->globalDelay = (byte)HIWORD(tDat[0]);
-			prof->effColor1.ci = tDat[1];
-			prof->effColor2.ci = tDat[2];
+			de.globalEffect = LOBYTE(LOWORD(tDat[0]));
+			de.globalMode = HIBYTE(LOWORD(tDat[0]));
+			de.globalDelay = (byte)HIWORD(tDat[0]);
+			de.effColor1.ci = tDat[1];
+			de.effColor2.ci = tDat[2];
+			prof->effects.push_back(de);
+			continue;
+		}
+		DWORD did;
+		if (sscanf_s(name, "Profile-device-%d-%u", &pid, &did) == 2) {
+			prof = FindCreateProfile(pid);
+			prof->effects.push_back(*(deviceeffect*)data);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
@@ -454,14 +462,10 @@ void ConfigHandler::Save() {
 		}
 
 		// Global effects
-		//if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
-		DWORD buffer[3];
-		name = "Profile-effect-" + to_string((*jIter)->id);
-		buffer[0] = MAKELPARAM(MAKEWORD((*jIter)->globalEffect, (*jIter)->globalMode), (*jIter)->globalDelay);
-		buffer[1] = (*jIter)->effColor1.ci;
-		buffer[2] = (*jIter)->effColor2.ci;
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));
-		//}
+		for (auto it = (*jIter)->effects.begin(); it != (*jIter)->effects.begin(); it++) {
+			name = "Profile-device-" + to_string((*jIter)->id) + "-" + to_string(it->devinfo);
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*it), sizeof(deviceeffect));
+		}
 		// Fans....
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
