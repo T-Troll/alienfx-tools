@@ -761,7 +761,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						}
 						// Dimming...
 						// For v0-v3 and v7 devices only, other have hardware dimming
-						if (!flags || conf->dimPowerButton)
+						if (conf->IsDimmed() && (!flags || conf->dimPowerButton))
 							switch (dev->dev->GetVersion()) {
 							case 0: case 1: case 2: case 3: case 7: {
 								unsigned delta = 255 - conf->dimmingPower;
