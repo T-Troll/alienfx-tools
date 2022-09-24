@@ -1163,6 +1163,7 @@ namespace AlienFX_SDK {
 
 		vector<Functions*> devList = AlienFXEnumDevices();
 		activeLights = 0;
+		activeDevices = (int) devList.size();
 		// check/add devices...
 		for (int i = 0; i < devList.size(); i++) {
 			afx_device* dev = AddDeviceById(devList[i]->GetPID(), devList[i]->GetVID());

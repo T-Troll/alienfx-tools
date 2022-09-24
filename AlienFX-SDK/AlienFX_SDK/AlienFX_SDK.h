@@ -257,7 +257,8 @@ namespace AlienFX_SDK {
 	public:
 
 		vector<afx_device> fxdevs; // main devices/mappings array
-		int activeLights = 0; // total active lights into the system
+		int activeLights = 0,  // total number of active lights into the system
+			activeDevices = 0; // total number of active devices
 
 		~Mappings();
 

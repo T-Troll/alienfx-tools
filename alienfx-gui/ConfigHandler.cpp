@@ -205,6 +205,7 @@ void ConfigHandler::Load() {
 			prof = FindCreateProfile(pid);
 			prof->flags = LOWORD(*(DWORD*)data);
 			prof->effmode = HIWORD(*(DWORD*)data);
+			if (prof->effmode == 99) prof->effmode = 0;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
@@ -245,8 +246,7 @@ void ConfigHandler::Load() {
 			prof->effects.push_back(de);
 			continue;
 		}
-		DWORD did;
-		if (sscanf_s(name, "Profile-device-%d-%u", &pid, &did) == 2) {
+		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
 			prof = FindCreateProfile(pid);
 			prof->effects.push_back(*(deviceeffect*)data);
 			continue;
@@ -401,9 +401,11 @@ void ConfigHandler::Save() {
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
-		name = "Profile-triggers-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->triggerFlags, (*jIter)->triggerkey);
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		if (flagset) {
+			name = "Profile-triggers-" + to_string((*jIter)->id);
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		}
 
 		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
 			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
@@ -463,7 +465,7 @@ void ConfigHandler::Save() {
 
 		// Global effects
 		for (auto it = (*jIter)->effects.begin(); it != (*jIter)->effects.begin(); it++) {
-			name = "Profile-device-" + to_string((*jIter)->id) + "-" + to_string(it->devinfo);
+			name = "Profile-device-" + to_string((*jIter)->id) + "-" + to_string(it - (*jIter)->effects.begin());
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*it), sizeof(deviceeffect));
 		}
 		// Fans....

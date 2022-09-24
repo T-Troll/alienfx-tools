@@ -92,7 +92,7 @@ struct groupset {
 };
 
 struct deviceeffect {
-	DWORD devinfo;
+	WORD vid, pid;
 	AlienFX_SDK::Colorcode effColor1, effColor2;
 	byte globalEffect = 0,
 		globalDelay = 5,
@@ -163,10 +163,6 @@ public:
 	byte finalBrightness = 255;
 	byte finalPBState = false;
 
-	// local flags...
-	bool haveGlobal = false;
-
-	// 3rd-party config blocks
 	ConfigFan *fan_conf = NULL;
 
 	vector<groupset>* active_set;

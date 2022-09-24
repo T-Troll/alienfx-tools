@@ -15,6 +15,135 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern EventHandler* eve;
 int pCid = -1;
 
+vector<deviceeffect>::iterator FindDevEffect(profile* prof, int devNum, int type) {
+	return find_if(prof->effects.begin(), prof->effects.end(),
+		[devNum, type](auto t) {
+			return conf->afx_dev.fxdevs[devNum].pid == t.pid &&
+				conf->afx_dev.fxdevs[devNum].vid == t.vid &&
+				t.globalMode == type;
+		});
+}
+
+BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	HWND dev_list = GetDlgItem(hDlg, IDC_DE_LIST);
+	profile* prof = conf->FindProfile(pCid);
+	static int devNum = -1;
+
+	vector<deviceeffect>::iterator b1 = FindDevEffect(prof, devNum, 1),
+		b2 = FindDevEffect(prof, devNum, 2);
+
+	switch (message)
+	{
+	case WM_INITDIALOG:
+	{
+		for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++)
+			if (conf->afx_dev.fxdevs[i].dev && conf->afx_dev.fxdevs[i].dev->IsHaveGlobal()) {
+				int ind = ListBox_AddString(dev_list, conf->afx_dev.fxdevs[i].name.c_str());
+				ListBox_SetItemData(dev_list, ind, i);
+				if (i == devNum) {
+					ListBox_SetCurSel(dev_list, ind);
+				}
+			}
+	}
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDCLOSE: case IDCANCEL: EndDialog(hDlg, IDCLOSE); break;
+		case IDC_DE_LIST: {
+			if (devNum = ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list)) >= 0) {
+				// find settings and fill boxes...
+				switch (HIWORD(wParam)) {
+				case LBN_SELCHANGE:
+					switch (conf->afx_dev.fxdevs[devNum].dev->GetVersion()) {
+					case 5:
+						// for v5
+						UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
+							{ "Off", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
+							b1 == prof->effects.end() ? 0 : b1->globalEffect, { 0,2,3,4,8,9,10,11 });
+						EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), false);
+						break;
+					case 8:
+						// for v8
+						UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
+							{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+							b1 == prof->effects.end() ? 0 : b1->globalEffect, { 0,1,2,3,7,8,15,16,17,19 });
+						EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), true);
+						UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT),
+							{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+							b2 == prof->effects.end() ? 0 : b2->globalEffect, { 0,1,2,3,7,8,15,16,17,19 });
+						break;
+					}
+					break;
+				}
+			}
+		} break;
+		case IDC_GLOBAL_EFFECT: case IDC_GLOBAL_KEYEFFECT: {
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_GLOBAL_EFFECT ? b1 : b2;
+				byte newEffect = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
+				if (b != prof->effects.end()) {
+//					if (newEffect)
+						b->globalEffect = newEffect;
+					//else
+					//	prof->effects.erase(b);
+				}
+				else
+//					if (newEffect)
+						prof->effects.push_back({ conf->afx_dev.fxdevs[devNum].vid,
+							conf->afx_dev.fxdevs[devNum].pid, 0, 0,
+							newEffect, 5, (byte)(LOWORD(wParam) == IDC_GLOBAL_EFFECT ? 1 : 2) });
+				if (pCid == conf->activeProfile->id)
+					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+				if (!newEffect) {
+					prof->effects.erase(b);
+					fxhl->Refresh();
+				}
+			} break;
+			}
+		} break;
+		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR3:
+		{
+			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR1 ? b1 : b2;
+			if (b != prof->effects.end()) {
+				SetColor(hDlg, LOWORD(wParam), &b->effColor1);
+				if (pCid == conf->activeProfile->id)
+					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+			}
+		} break;
+		case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR4:
+		{
+			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR2 ? b1 : b2;
+			if (b != prof->effects.end()) {
+				SetColor(hDlg, LOWORD(wParam), &b->effColor2);
+				if (pCid == conf->activeProfile->id)
+					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+			}
+		} break;
+		} break;
+	case WM_DRAWITEM:
+		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
+		case IDC_BUTTON_EFFCLR1:
+			if (b1 != prof->effects.end()) {
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &b1->effColor1);
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &b1->effColor2);
+			}
+			break;
+		case IDC_BUTTON_EFFCLR3:
+			if (b2 != prof->effects.end()) {
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR3, &b2->effColor1);
+				RedrawButton(hDlg, IDC_BUTTON_EFFCLR4, &b2->effColor2);
+			}
+			break;
+		}
+		break;
+	default: return false;
+	}
+	return true;
+}
+
 void ReloadKeyList(HWND hDlg, WORD key) {
 	HWND key_list = GetDlgItem(hDlg, IDC_COMBO_TRIGGERKEY);
 	UpdateCombo(key_list,
@@ -45,38 +174,38 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	for (int j = 0; j < prof->triggerapp.size(); j++)
 		ListBox_AddString(app_list, prof->triggerapp[j].c_str());
 	// set global effect, colors and delay
-	EnableWindow(eff_list, conf->haveGlobal);
-	EnableWindow(eff_tempo, conf->haveGlobal);
-	EnableWindow(eff_mode, conf->haveGlobal);
-	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), conf->haveGlobal);
-	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), conf->haveGlobal);
-	// now sliders...
-	SendMessage(eff_tempo, TBM_SETPOS, true, prof->globalDelay);
-	SetSlider(sTip2, prof->globalDelay);
-	// now colors...
-	RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, conf->haveGlobal ? &prof->effColor1 : 0);
-	RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, conf->haveGlobal ? &prof->effColor2 : 0);
-	if (conf->haveGlobal) {
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE), { "Permanent", "Key press" }, prof->globalMode, { 1, 2 });
-		for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
-			if (i->dev && i->dev->IsHaveGlobal()) {
-				switch (i->dev->GetVersion()) {
-				case 5:
-					// for v5
-					UpdateCombo(eff_list,
-						{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
-						prof->globalEffect, { 0,2,3,4,8,9,10,11 });
-					break;
-				case 9:
-					// for v9
-					UpdateCombo(eff_list,
-						{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
-						prof->globalEffect, { 0,1,2,3,7,8,15,16,17,19 });
-					break;
-				}
-				break;
-			}
-	}
+	//EnableWindow(eff_list, conf->haveGlobal);
+	//EnableWindow(eff_tempo, conf->haveGlobal);
+	//EnableWindow(eff_mode, conf->haveGlobal);
+	//EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), conf->haveGlobal);
+	//EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), conf->haveGlobal);
+	//// now sliders...
+	//SendMessage(eff_tempo, TBM_SETPOS, true, prof->globalDelay);
+	//SetSlider(sTip2, prof->globalDelay);
+	//// now colors...
+	//RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, conf->haveGlobal ? &prof->effColor1 : 0);
+	//RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, conf->haveGlobal ? &prof->effColor2 : 0);
+	//if (conf->haveGlobal) {
+	//	UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE), { "Permanent", "Key press" }, prof->globalMode, { 1, 2 });
+	//	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
+	//		if (i->dev && i->dev->IsHaveGlobal()) {
+	//			switch (i->dev->GetVersion()) {
+	//			case 5:
+	//				// for v5
+	//				UpdateCombo(eff_list,
+	//					{ "Off", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
+	//					prof->globalEffect, { 0,2,3,4,8,9,10,11 });
+	//				break;
+	//			case 9:
+	//				// for v9
+	//				UpdateCombo(eff_list,
+	//					{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+	//					prof->globalEffect, { 0,1,2,3,7,8,15,16,17,19 });
+	//				break;
+	//			}
+	//			break;
+	//		}
+	//}
 }
 
 void ReloadProfileView(HWND hDlg) {
@@ -136,30 +265,30 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 	{
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->FindDefaultProfile()->id;
-		if (conf->haveGlobal) {
-			//UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE), { "Permanent", "Key press" }, 0, { 1, 2 });
-			//for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
-			//	if (i->dev && i->dev->IsHaveGlobal()) {
-			//		switch (i->dev->GetVersion()) {
-			//		case 5:
-			//			// for v5
-			//			UpdateCombo(eff_list,
-			//				{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
-			//				0, { 0,2,3,4,8,9,10,11 });
-			//			break;
-			//		case 9:
-			//			// for v9
-			//			UpdateCombo(eff_list,
-			//				{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
-			//				0, { 0,1,2,3,7,8,15,16,17,19 });
-			//			break;
-			//		}
-			//		break;
-			//	}
-			SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xff));
-			SendMessage(eff_tempo, TBM_SETTICFREQ, 16, 0);
-			sTip2 = CreateToolTip(eff_tempo, sTip2);
-		}
+		//if (conf->haveGlobal) {
+		//	UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE), { "Permanent", "Key press" }, 0, { 1, 2 });
+		//	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
+		//		if (i->dev && i->dev->IsHaveGlobal()) {
+		//			switch (i->dev->GetVersion()) {
+		//			case 5:
+		//				// for v5
+		//				UpdateCombo(eff_list,
+		//					{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
+		//					0, { 0,2,3,4,8,9,10,11 });
+		//				break;
+		//			case 9:
+		//				// for v9
+		//				UpdateCombo(eff_list,
+		//					{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+		//					0, { 0,1,2,3,7,8,15,16,17,19 });
+		//				break;
+		//			}
+		//			break;
+		//		}
+		//	SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xff));
+		//	SendMessage(eff_tempo, TBM_SETTICFREQ, 16, 0);
+		//	sTip2 = CreateToolTip(eff_tempo, sTip2);
+		//}
 		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
@@ -171,7 +300,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
 		switch (LOWORD(wParam))
 		{
-		case IDC_GLOBAL_EFFECT: {
+		case IDC_DEV_EFFECT:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_DEVICEEFFECTS), hDlg, (DLGPROC)DeviceEffectDialog);
+			break;
+		/*case IDC_GLOBAL_EFFECT: {
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
@@ -190,7 +322,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					fxhl->UpdateGlobalEffect();
 			} break;
 			}
-		} break;
+		} break;*/
 		case IDC_COMBO_TRIGGERKEY: {
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
@@ -199,7 +331,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			} break;
 			}
 		} break;
-		case IDC_BUTTON_EFFCLR1:
+		/*case IDC_BUTTON_EFFCLR1:
 		{
 			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
 			if (prof->id == conf->activeProfile->id)
@@ -210,7 +342,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
 			if (prof->id == conf->activeProfile->id)
 				fxhl->UpdateGlobalEffect();
-		} break;
+		} break;*/
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
 			for (int i = 0; i < conf->profiles.size(); i++)
@@ -433,33 +565,33 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		}
 		break;
-	case WM_HSCROLL:
-	{
-		if (prof)
-			switch (LOWORD(wParam)) {
-			case TB_THUMBPOSITION: case TB_ENDTRACK:
-			{
-				if ((HWND) lParam == eff_tempo) {
-					prof->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip2, prof->globalDelay);
-					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect();
-				}
-			} break;
-			}
-	} break;
-	case WM_DRAWITEM:
-	{
-		if (prof /*&& (prof->flags & PROF_GLOBAL_EFFECTS)*/)
-			switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
-			case IDC_BUTTON_EFFCLR2:
-			{
-				RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
-				RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
-				break;
-			}
-			}
-	} break;
+	//case WM_HSCROLL:
+	//{
+	//	if (prof)
+	//		switch (LOWORD(wParam)) {
+	//		case TB_THUMBPOSITION: case TB_ENDTRACK:
+	//		{
+	//			if ((HWND) lParam == eff_tempo) {
+	//				prof->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
+	//				SetSlider(sTip2, prof->globalDelay);
+	//				if (prof->id == conf->activeProfile->id)
+	//					fxhl->UpdateGlobalEffect();
+	//			}
+	//		} break;
+	//		}
+	//} break;
+	//case WM_DRAWITEM:
+	//{
+	//	if (prof /*&& (prof->flags & PROF_GLOBAL_EFFECTS)*/)
+	//		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
+	//		case IDC_BUTTON_EFFCLR2:
+	//		{
+	//			RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
+	//			RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
+	//			break;
+	//		}
+	//		}
+	//} break;
 	default: return false;
 	}
 	return true;

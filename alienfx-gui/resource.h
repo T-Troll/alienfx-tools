@@ -85,7 +85,9 @@
 #define IDC_BUTTON_EFFCLR2              1041
 #define IDC_SLIDER_BR                   1041
 #define IDC_FANCONTROL                  1042
+#define IDC_BUTTON_EFFCLR3              1042
 #define IDC_SYSLINK_HOMEPAGE            1043
+#define IDC_BUTTON_EFFCLR4              1043
 #define IDC_ISPOWERBUTTON               1044
 #define IDC_MINPVALUE                   1045
 #define IDC_CUTLEVEL                    1046
@@ -110,7 +112,10 @@
 #define IDC_GLOBAL_EFFECT               1088
 #define IDC_SLIDER_TEMPO                1089
 #define IDC_BUT_LOADMAP                 1090
+#define IDC_GLOBAL_EFFECT2              1090
+#define IDC_GLOBAL_KEYEFFECT            1090
 #define IDC_BUT_SAVEMAP                 1091
+#define IDC_SLIDER_TEMPO2               1091
 #define IDC_CHECK_FANPROFILE            1092
 #define IDC_EFFECT_MODE                 1093
 #define IDC_RADIO_OUTPUT                1094
@@ -191,7 +196,9 @@
 #define IDC_BUT_KEY                     1176
 #define IDC_COMBO_GLOBALMODE            1177
 #define IDC_LIST1                       1178
+#define IDC_DE_LIST                     1178
 #define IDC_BUTTON1                     1179
+#define IDC_DEV_EFFECT                  1179
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
