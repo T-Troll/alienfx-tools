@@ -189,6 +189,7 @@ public:
 	void SortAllGauge();
 	zonemap* FindZoneMap(int gid);
 	void SortGroupGauge(int gid);
+	//vector<deviceeffect>::iterator FindDevEffect(profile* prof, AlienFX_SDK::afx_device* dev, int type);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);

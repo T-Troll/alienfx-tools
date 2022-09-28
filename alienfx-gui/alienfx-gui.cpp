@@ -200,13 +200,12 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 	// BGR!
 	if (act) {
 		Brush = CreateSolidBrush(RGB(act->r, act->g, act->b));
-		FillRect(cnt, &rect, Brush);
-		DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	}
 	else {
 		Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-		FillRect(cnt, &rect, Brush);
 	}
+	FillRect(cnt, &rect, Brush);
+	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
 	ReleaseDC(tl, cnt);
 }
@@ -669,8 +668,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
-
-			//fxhl->FillAllDevs(acpi);
+			eve->StartFanMon();
 			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -700,6 +698,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->Save();
 			eve->StopProfiles();
 			eve->StopEffects();
+			eve->StopFanMon();
 			fxhl->Stop();
 			break;
 		}

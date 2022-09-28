@@ -112,10 +112,10 @@
 #define IDC_GLOBAL_EFFECT               1088
 #define IDC_SLIDER_TEMPO                1089
 #define IDC_BUT_LOADMAP                 1090
-#define IDC_GLOBAL_EFFECT2              1090
 #define IDC_GLOBAL_KEYEFFECT            1090
 #define IDC_BUT_SAVEMAP                 1091
 #define IDC_SLIDER_TEMPO2               1091
+#define IDC_SLIDER_KEYTEMPO             1091
 #define IDC_CHECK_FANPROFILE            1092
 #define IDC_EFFECT_MODE                 1093
 #define IDC_RADIO_OUTPUT                1094

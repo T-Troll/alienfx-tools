@@ -412,24 +412,6 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
 		}
 	}
-	/*if (conf->haveGlobal) {
-		if (!dev) {
-			auto pos = find_if(conf->afx_dev.fxdevs.begin(), conf->afx_dev.fxdevs.end(),
-				[](auto t) {
-					return t.dev ? t.dev->IsHaveGlobal() : false;
-				});
-			if (pos != conf->afx_dev.fxdevs.end())
-				dev = pos->dev;
-		}
-		if (dev && dev->IsHaveGlobal()) {
-			if (conf->activeProfile->effmode == 99)
-				dev->SetGlobalEffects(conf->activeProfile->globalEffect, conf->activeProfile->globalMode, conf->activeProfile->globalDelay,
-					{ 0,0,0,conf->activeProfile->effColor1.r, conf->activeProfile->effColor1.g,	conf->activeProfile->effColor1.b },
-					{ 0,0,0,conf->activeProfile->effColor2.r, conf->activeProfile->effColor2.g,	conf->activeProfile->effColor2.b });
-			else
-				dev->SetGlobalEffects(1, dev->GetVersion() == 8 ? 0 : 1, 0, { 0 }, { 0 });
-		}
-	}*/
 }
 
 //void FXHelper::Flush() {
@@ -723,10 +705,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 								devQ->dev->dev->SetMultiAction(&devQ->dev_query, current.flags);
 								devQ->dev->dev->UpdateColors();
 							}
-							if (devQ->dev->dev->IsHaveGlobal() && (conf->activeProfile->effmode == 99)) {
-								DebugPrint("Global effect active!\n");
+							if (devQ->dev->dev->IsHaveGlobal())
 								src->UpdateGlobalEffect(devQ->dev->dev);
-							}
 							devQ->dev_query.clear();
 						}
 					}

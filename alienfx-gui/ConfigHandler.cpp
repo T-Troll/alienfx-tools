@@ -464,7 +464,7 @@ void ConfigHandler::Save() {
 		}
 
 		// Global effects
-		for (auto it = (*jIter)->effects.begin(); it != (*jIter)->effects.begin(); it++) {
+		for (auto it = (*jIter)->effects.begin(); it != (*jIter)->effects.end(); it++) {
 			name = "Profile-device-" + to_string((*jIter)->id) + "-" + to_string(it - (*jIter)->effects.begin());
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*it), sizeof(deviceeffect));
 		}
@@ -591,3 +591,12 @@ void ConfigHandler::SortGroupGauge(int gid) {
 		}
 	}
 }
+
+//vector<deviceeffect>::iterator ConfigHandler::FindDevEffect(profile* prof, AlienFX_SDK::afx_device* dev, int type) {
+//	return find_if(prof->effects.begin(), prof->effects.end(),
+//		[dev, type](auto t) {
+//			return dev->pid == t.pid &&
+//				dev->vid == t.vid &&
+//				t.globalMode == type;
+//		});
+//}
