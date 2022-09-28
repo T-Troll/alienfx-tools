@@ -401,7 +401,7 @@ void FXHelper::ChangeState() {
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
-	for (auto it = conf->activeProfile->effects.begin(); it != conf->activeProfile->effects.end(); it++)
+	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++)
 	{
 		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;;
 
@@ -704,9 +704,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							if (devQ->dev_query.size()) {
 								devQ->dev->dev->SetMultiAction(&devQ->dev_query, current.flags);
 								devQ->dev->dev->UpdateColors();
+								if (devQ->dev->dev->IsHaveGlobal())
+									src->UpdateGlobalEffect(devQ->dev->dev);
 							}
-							if (devQ->dev->dev->IsHaveGlobal())
-								src->UpdateGlobalEffect(devQ->dev->dev);
 							devQ->dev_query.clear();
 						}
 					}

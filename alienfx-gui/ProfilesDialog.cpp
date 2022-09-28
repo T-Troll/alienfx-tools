@@ -60,11 +60,19 @@ void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
 					RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &b1->effColor1);
 					RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &b1->effColor2);
 				}
+				else {
+					RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, NULL);
+					RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, NULL);
+				}
 				if (b2 != prof->effects.end()) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b2->globalDelay);
 					SetSlider(sTip2, b2->globalDelay);
 					RedrawButton(hDlg, IDC_BUTTON_EFFCLR3, &b2->effColor1);
 					RedrawButton(hDlg, IDC_BUTTON_EFFCLR4, &b2->effColor2);
+				}
+				else {
+					RedrawButton(hDlg, IDC_BUTTON_EFFCLR3, NULL);
+					RedrawButton(hDlg, IDC_BUTTON_EFFCLR4, NULL);
 				}
 			}
 		}
@@ -98,7 +106,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		{
 		case IDCLOSE: case IDCANCEL: EndDialog(hDlg, IDCLOSE); break;
 		case IDC_DE_LIST: {
-			devNum = ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list));
+			devNum = (int) ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list));
 			RefreshDeviceList(hDlg, devNum, prof);
 		} break;
 		case IDC_GLOBAL_EFFECT: case IDC_GLOBAL_KEYEFFECT: {
@@ -161,6 +169,22 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 		}
 		break;
+	case WM_HSCROLL:
+	{
+		if (prof)
+			switch (LOWORD(wParam)) {
+			case TB_THUMBPOSITION: case TB_ENDTRACK:
+			{
+				vector<deviceeffect>::iterator b = (HWND)lParam == eff_tempo ? b1 : b2;
+				if (b != prof->effects.end()) {
+					b->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
+					SetSlider((HWND)lParam == eff_tempo ? sTip1 : sTip2, b->globalDelay);
+					if (prof->id == conf->activeProfile->id)
+						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+				}
+			} break;
+			}
+	} break;
 	default: return false;
 	}
 	return true;
@@ -249,30 +273,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 	{
 		pCid = conf->activeProfile ? conf->activeProfile->id : conf->FindDefaultProfile()->id;
-		//if (conf->haveGlobal) {
-		//	UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE), { "Permanent", "Key press" }, 0, { 1, 2 });
-		//	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
-		//		if (i->dev && i->dev->IsHaveGlobal()) {
-		//			switch (i->dev->GetVersion()) {
-		//			case 5:
-		//				// for v5
-		//				UpdateCombo(eff_list,
-		//					{ "Color", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
-		//					0, { 0,2,3,4,8,9,10,11 });
-		//				break;
-		//			case 9:
-		//				// for v9
-		//				UpdateCombo(eff_list,
-		//					{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
-		//					0, { 0,1,2,3,7,8,15,16,17,19 });
-		//				break;
-		//			}
-		//			break;
-		//		}
-		//	SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xff));
-		//	SendMessage(eff_tempo, TBM_SETTICFREQ, 16, 0);
-		//	sTip2 = CreateToolTip(eff_tempo, sTip2);
-		//}
 		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
@@ -287,26 +287,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_DEV_EFFECT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_DEVICEEFFECTS), hDlg, (DLGPROC)DeviceEffectDialog);
 			break;
-		/*case IDC_GLOBAL_EFFECT: {
-			switch (HIWORD(wParam)) {
-			case CBN_SELCHANGE:
-			{
-				prof->globalEffect = (byte) ComboBox_GetItemData(eff_list, ComboBox_GetCurSel(eff_list));
-				if (prof->id == conf->activeProfile->id)
-					fxhl->UpdateGlobalEffect();
-			} break;
-			}
-		} break;
-		case IDC_COMBO_GLOBALMODE: {
-			switch (HIWORD(wParam)) {
-			case CBN_SELCHANGE:
-			{
-				prof->globalMode = (byte)ComboBox_GetItemData(eff_mode, ComboBox_GetCurSel(eff_mode));
-				if (prof->id == conf->activeProfile->id)
-					fxhl->UpdateGlobalEffect();
-			} break;
-			}
-		} break;*/
 		case IDC_COMBO_TRIGGERKEY: {
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
@@ -315,18 +295,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			} break;
 			}
 		} break;
-		/*case IDC_BUTTON_EFFCLR1:
-		{
-			SetColor(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
-			if (prof->id == conf->activeProfile->id)
-				fxhl->UpdateGlobalEffect();
-		} break;
-		case IDC_BUTTON_EFFCLR2:
-		{
-			SetColor(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
-			if (prof->id == conf->activeProfile->id)
-				fxhl->UpdateGlobalEffect();
-		} break;*/
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
 			for (int i = 0; i < conf->profiles.size(); i++)
@@ -464,9 +432,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					});
 				(*old_def)->flags = (*old_def)->flags & ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
-				//if (conf->enableProf && (*old_def)->id == conf->activeProfile->id)
-				//	// need to switch to this
-				//	eve->SwitchActiveProfile(prof);
 			} else
 				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 		} break;
@@ -540,10 +505,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					prof->name = sItem->item.pszText;
 					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
 					ReloadProfileList();
-					//return true;
 				}
-				//else
-				//	return false;
 			} break;
 			}
 			break;
