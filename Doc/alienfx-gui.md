@@ -30,7 +30,6 @@ There are 4 Software effect modes available:
  - Ambient - Lights follow screen colors from you game or video player (well... any application or desktop).
  - Haptics - Lights will react on any sound played (captured by any game, audio/video player, messenger or even microphone).
  - Grid - Enables grid effect mode - spatial-based effects.
- - Global - Global effect (hardware spatial effects) mode (Per-key RGB systems only).
  - Off - Disable software effects.
 
 Enabling any effect will stop hardware per-light effects - it's a hardware limitation.
@@ -106,7 +105,7 @@ Zone will reflect a performance indicator, available indicators are:
 - Battery level - Battery charge level in percent - 2nd color for full battery, 1st one for completely drained.
 - Max. Fan RPM - Highest fan RPM (in percent of maximum) across all system fans. This indicator will only works if "Fan control" is enabled in "Settings".
 - Power consumption - Current system power drain level. This indicator will only works if "ESID sensors" enabled at "Settings".
-  
+
 You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change colour.  
 This monitoring type support "Gauge" setting for zone, acting as a peak indicator for value.
 
@@ -276,13 +275,16 @@ Press "+" or "-" buttons to add or remove profile. New profile settings will be 
 You can double-click or press Enter on selected profile into the list to edit its name.  
 
 Each profile can have settings and application for trigger it. The settings are:
-- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Global, Off.
+- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off.
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
 - "Priority profile" - If this flag enabled, this profile will be chosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
 - "Dim lights" - Then profile activated, all lights will be dimmed.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
 
-"Global effects" only supported for APIv5, v8, v9 (RGB keyboard devices), select corresponding effect type ("Global") to start global effect then profile activated. Please keep in mind - enabled global effects will block any other color changes for device!
+"Device effects" button open profile settings for device effect (supported for some devices like RGB keyboards):  
+![Device Effects](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui_deviceeffect.png?raw=true)  
+At this dialog, you can select device supporting per-device effects and set it parameters - types, colors, tempo.  
+APIv5 (per-key RGB notebook keyboards) support device effect, and APIv8 (external keyboards) support both device and key press effects.
 
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
 - "Keyboard" drop down will activate this profile in case corresponding key is pressed. Release the key to switch back to other profile.  

@@ -46,7 +46,6 @@
 #define IDC_CHECK_STATUS                1012
 #define IDC_BUT_CLEAR                   1012
 #define IDC_COUNTERLIST                 1013
-#define IDC_SLIDER_GPU                  1013
 #define IDC_STATUSLIST                  1014
 #define IDC_BUTTON_LPC                  1015
 #define IDC_STARTW                      1016
@@ -114,7 +113,6 @@
 #define IDC_BUT_LOADMAP                 1090
 #define IDC_GLOBAL_KEYEFFECT            1090
 #define IDC_BUT_SAVEMAP                 1091
-#define IDC_SLIDER_TEMPO2               1091
 #define IDC_SLIDER_KEYTEMPO             1091
 #define IDC_CHECK_FANPROFILE            1092
 #define IDC_EFFECT_MODE                 1093
@@ -194,8 +192,6 @@
 #define IDC_BUTTON_GEFROM               1175
 #define IDC_BUTTON_GETO                 1176
 #define IDC_BUT_KEY                     1176
-#define IDC_COMBO_GLOBALMODE            1177
-#define IDC_LIST1                       1178
 #define IDC_DE_LIST                     1178
 #define IDC_BUTTON1                     1179
 #define IDC_DEV_EFFECT                  1179
