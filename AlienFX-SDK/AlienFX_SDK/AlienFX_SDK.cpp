@@ -1155,35 +1155,43 @@ namespace AlienFX_SDK {
 
 	void Mappings::AlienFXAssignDevices(void* acc, byte brightness, byte power) {
 
-		for (int i = 0; i < fxdevs.size(); i++)
-			if (fxdevs[i].dev) {
-				delete fxdevs[i].dev;
-				fxdevs[i].dev = NULL;
-			}
-
 		vector<Functions*> devList = AlienFXEnumDevices();
-		activeLights = 0;
-		// check/add devices...
-		for (int i = 0; i < devList.size(); i++) {
-			afx_device* dev = AddDeviceById(devList[i]->GetPID(), devList[i]->GetVID());
-			dev->dev = devList[i];
-			dev->dev->ToggleState(brightness, &dev->lights, power);
-			activeLights += (int)dev->lights.size();
-		}
-		// add ACPI, if any
-#ifndef NOACPILIGHTS
-		if (acc) {
-			Functions* devc = new AlienFX_SDK::Functions();
-			if (devc->AlienFXInitialize((AlienFan_SDK::Control*)acc) > 0) {
-				afx_device* dev = AddDeviceById(MAKELPARAM(API_ACPI, 0));
-				dev->dev = devc;
+
+		if (activeDevices != devList.size()) {
+			for (int i = 0; i < fxdevs.size(); i++)
+				if (fxdevs[i].dev) {
+					delete fxdevs[i].dev;
+					fxdevs[i].dev = NULL;
+				}
+			activeLights = 0;
+			activeDevices = (int)devList.size();
+			// check/add devices...
+			for (int i = 0; i < devList.size(); i++) {
+				afx_device* dev = AddDeviceById(devList[i]->GetPID(), devList[i]->GetVID());
+				dev->dev = devList[i];
 				dev->dev->ToggleState(brightness, &dev->lights, power);
 				activeLights += (int)dev->lights.size();
 			}
-			else
-				delete devc;
-		}
+			// add ACPI, if any
+#ifndef NOACPILIGHTS
+			if (acc) {
+				Functions* devc = new AlienFX_SDK::Functions();
+				if (devc->AlienFXInitialize((AlienFan_SDK::Control*)acc) > 0) {
+					afx_device* dev = AddDeviceById(MAKELPARAM(API_ACPI, 0));
+					dev->dev = devc;
+					dev->dev->ToggleState(brightness, &dev->lights, power);
+					activeLights += (int)dev->lights.size();
+				}
+				else
+					delete devc;
+			}
 #endif
+		}
+		else {
+			for (int i = 0; i < devList.size(); i++) {
+				delete devList[i];
+			}
+		}
 	}
 
 	afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {

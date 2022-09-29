@@ -54,20 +54,17 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::CallWMIMethod(ALIENFAN_COMMAND com, byte arg1, byte arg2) {
-		IWbemClassObject* /*m_InParamaters, **/m_outParameters = NULL;
+		IWbemClassObject* m_outParameters = NULL;
 		VARIANT result{ VT_I4 };
 		result.intVal = -1;
-		/*if (m_AWCCGetObj->GetMethod(commandList[com.com], NULL, &m_InParamaters, NULL) == S_OK) {*/
-			VARIANT parameters = { VT_I4 };
-			parameters.uintVal = ALIENFAN_INTERFACE{ com.sub, arg1, arg2 }.args;
-			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
-			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
-				commandList[com.com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
-				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
-				m_outParameters->Release();
+		VARIANT parameters = { VT_I4 };
+		parameters.uintVal = ALIENFAN_INTERFACE{ com.sub, arg1, arg2 }.args;
+		m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
+		if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
+			commandList[com.com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
+			m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
+			m_outParameters->Release();
 			}
-			//m_InParamaters->Release();
-		//}
 		return result.intVal;
 	}
 
@@ -270,9 +267,11 @@ namespace AlienFan_SDK {
 		VARIANT temp;
 		if (TempID < sensors.size()) {
 			switch (sensors[TempID].type) {
-			case 1: // AWCC
-				return CallWMIMethod(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
-				break;
+			case 1: { // AWCC
+				int awt = CallWMIMethod(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
+				// Bugfix for AWCC temp - it can be up to 5000C!
+				return awt > 200 ? -1 : awt;
+			} break;
 			case 0:// ESIF
 				if (m_WbemServices->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
 					sensorObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);

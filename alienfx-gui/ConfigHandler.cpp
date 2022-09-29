@@ -205,6 +205,7 @@ void ConfigHandler::Load() {
 			prof = FindCreateProfile(pid);
 			prof->flags = LOWORD(*(DWORD*)data);
 			prof->effmode = HIWORD(*(DWORD*)data);
+			if (prof->effmode == 99) prof->effmode = 0;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
@@ -235,12 +236,19 @@ void ConfigHandler::Load() {
 		}
 		if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
+			deviceeffect de{ 0 };
 			DWORD* tDat = (DWORD*)data;
-			prof->globalEffect = LOBYTE(LOWORD(tDat[0]));
-			prof->globalMode = HIBYTE(LOWORD(tDat[0]));
-			prof->globalDelay = (byte)HIWORD(tDat[0]);
-			prof->effColor1.ci = tDat[1];
-			prof->effColor2.ci = tDat[2];
+			de.globalEffect = LOBYTE(LOWORD(tDat[0]));
+			de.globalMode = HIBYTE(LOWORD(tDat[0]));
+			de.globalDelay = (byte)HIWORD(tDat[0]);
+			de.effColor1.ci = tDat[1];
+			de.effColor2.ci = tDat[2];
+			prof->effects.push_back(de);
+			continue;
+		}
+		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
+			prof = FindCreateProfile(pid);
+			prof->effects.push_back(*(deviceeffect*)data);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
@@ -393,9 +401,11 @@ void ConfigHandler::Save() {
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
-		name = "Profile-triggers-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->triggerFlags, (*jIter)->triggerkey);
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		if (flagset) {
+			name = "Profile-triggers-" + to_string((*jIter)->id);
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		}
 
 		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
 			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
@@ -454,14 +464,10 @@ void ConfigHandler::Save() {
 		}
 
 		// Global effects
-		//if ((*jIter)->flags & PROF_GLOBAL_EFFECTS) {
-		DWORD buffer[3];
-		name = "Profile-effect-" + to_string((*jIter)->id);
-		buffer[0] = MAKELPARAM(MAKEWORD((*jIter)->globalEffect, (*jIter)->globalMode), (*jIter)->globalDelay);
-		buffer[1] = (*jIter)->effColor1.ci;
-		buffer[2] = (*jIter)->effColor2.ci;
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)buffer, 3 * sizeof(DWORD));
-		//}
+		for (auto it = (*jIter)->effects.begin(); it != (*jIter)->effects.end(); it++) {
+			name = "Profile-device-" + to_string((*jIter)->id) + "-" + to_string(it - (*jIter)->effects.begin());
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*it), sizeof(deviceeffect));
+		}
 		// Fans....
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
@@ -585,3 +591,12 @@ void ConfigHandler::SortGroupGauge(int gid) {
 		}
 	}
 }
+
+//vector<deviceeffect>::iterator ConfigHandler::FindDevEffect(profile* prof, AlienFX_SDK::afx_device* dev, int type) {
+//	return find_if(prof->effects.begin(), prof->effects.end(),
+//		[dev, type](auto t) {
+//			return dev->pid == t.pid &&
+//				dev->vid == t.vid &&
+//				t.globalMode == type;
+//		});
+//}

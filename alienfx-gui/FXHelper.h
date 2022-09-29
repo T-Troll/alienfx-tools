@@ -53,12 +53,12 @@ public:
 	//bool updateLock = false;
 	int activePowerMode = -1;
 	EventData eData, maxData;
-	int numActiveDevs = 0;
+	//int numActiveDevs = 0;
 
 	//FXHelper();
 	~FXHelper();
 	//AlienFX_SDK::afx_device *LocateDev(int pid);
-	size_t FillAllDevs(AlienFan_SDK::Control* acc);
+	int FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);

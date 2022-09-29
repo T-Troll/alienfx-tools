@@ -401,22 +401,15 @@ void FXHelper::ChangeState() {
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
-	if (conf->haveGlobal) {
-		if (!dev) {
-			auto pos = find_if(conf->afx_dev.fxdevs.begin(), conf->afx_dev.fxdevs.end(),
-				[](auto t) {
-					return t.dev ? t.dev->IsHaveGlobal() : false;
-				});
-			if (pos != conf->afx_dev.fxdevs.end())
-				dev = pos->dev;
-		}
-		if (dev && dev->IsHaveGlobal()) {
-			if (conf->activeProfile->effmode == 99)
-				dev->SetGlobalEffects(conf->activeProfile->globalEffect, conf->activeProfile->globalMode, conf->activeProfile->globalDelay,
-					{ 0,0,0,conf->activeProfile->effColor1.r, conf->activeProfile->effColor1.g,	conf->activeProfile->effColor1.b },
-					{ 0,0,0,conf->activeProfile->effColor2.r, conf->activeProfile->effColor2.g,	conf->activeProfile->effColor2.b });
-			else
-				dev->SetGlobalEffects(1, dev->GetVersion() == 8 ? 0 : 1, 0, { 0 }, { 0 });
+	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++)
+	{
+		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;;
+
+		if (cdev || (cdev->GetPID() == it->pid && cdev->GetVID() == it->vid)) {
+			// set this effect for device
+			cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->globalDelay,
+				{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
+				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
 		}
 	}
 }
@@ -449,25 +442,13 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
 //	}
 //}
 
-size_t FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
+int FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->SetStates();
-	conf->haveGlobal = false;
-	numActiveDevs = 0;
 	Stop();
 	conf->afx_dev.AlienFXAssignDevices(acc, conf->finalBrightness, conf->finalPBState);
-	// global effects check
-	for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++)
-		if (i->dev) {
-			numActiveDevs++;
-			if (i->dev->IsHaveGlobal())
-				conf->haveGlobal = true;
-			//if (i->dev->GetVersion() == API_V6)
-			//	// reset device will make all white...
-			//	Refresh();
-		}
-	if (numActiveDevs)
+	if (conf->afx_dev.activeDevices)
 		Start();
-	return numActiveDevs;
+	return conf->afx_dev.activeDevices;
 }
 
 void FXHelper::Start() {
@@ -723,10 +704,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							if (devQ->dev_query.size()) {
 								devQ->dev->dev->SetMultiAction(&devQ->dev_query, current.flags);
 								devQ->dev->dev->UpdateColors();
-							}
-							if (devQ->dev->dev->IsHaveGlobal() && (conf->activeProfile->effmode == 99)) {
-								DebugPrint("Global effect active!\n");
-								src->UpdateGlobalEffect(devQ->dev->dev);
+								if (devQ->dev->dev->IsHaveGlobal())
+									src->UpdateGlobalEffect(devQ->dev->dev);
 							}
 							devQ->dev_query.clear();
 						}
@@ -755,9 +734,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							//action.r = (byte)(pow((float)action.r / 255.0, 2.2) * 255 + 0.5);
 							//action.g = (byte)(pow((float)action.g / 255.0, 2.2) * 255 + 0.5);
 							//action.b = (byte)(pow((float)action.b / 255.0, 2.2) * 255 + 0.5);
-							action->r = ((UINT)action->r * action->r * dev->white.r) / (255 * 255);
-							action->g = ((UINT)action->g * action->g * dev->white.g) / (255 * 255);
-							action->b = ((UINT)action->b * action->b * dev->white.b) / (255 * 255);
+							action->r = ((UINT)action->r * action->r * dev->white.r) / 65025; // (255 * 255);
+							action->g = ((UINT)action->g * action->g * dev->white.g) / 65025; // (255 * 255);
+							action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
 						}
 						// Dimming...
 						// For v0-v3 and v7 devices only, other have hardware dimming

@@ -200,13 +200,12 @@ void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
 	// BGR!
 	if (act) {
 		Brush = CreateSolidBrush(RGB(act->r, act->g, act->b));
-		FillRect(cnt, &rect, Brush);
-		DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	}
 	else {
 		Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-		FillRect(cnt, &rect, Brush);
 	}
+	FillRect(cnt, &rect, Brush);
+	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
 	ReleaseDC(tl, cnt);
 }
@@ -277,7 +276,7 @@ void OnSelChanged(HWND hwndDlg)
 
 	// Get the index of the selected tab.
 	tabSel = TabCtrl_GetCurSel(hwndDlg);
-	if (tabSel == TAB_LIGHTS && !fxhl->numActiveDevs) {
+	if (tabSel == TAB_LIGHTS && !conf->afx_dev.activeDevices) {
 		TabCtrl_SetCurSel(hwndDlg, TAB_FANS);
 		tabSel = TAB_FANS;
 	}
@@ -315,11 +314,11 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 		EnableWindow(mode_list, conf->enableMon);
 		UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
 
-		if (conf->haveGlobal) {
+		/*if (conf->haveGlobal) {
 			ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
 			if (mode == 99)
 				ComboBox_SetCurSel(mode_list, effModes.size());
-		}
+		}*/
 		if (tabSel == TAB_LIGHTS) {
 			OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 		}
@@ -586,11 +585,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					mInfo.fState = i == conf->GetEffect() ? MF_CHECKED : MF_UNCHECKED;
 					InsertMenuItem(pMenu, i, false, &mInfo);
 				}
-				if (conf->haveGlobal) {
-					mInfo.dwTypeData = "Global";
-					mInfo.fState = conf->GetEffect() == 99 ? MF_CHECKED : MF_UNCHECKED;
-					InsertMenuItem(pMenu, i, false, &mInfo);
-				}
+				//if (conf->haveGlobal) {
+				//	mInfo.dwTypeData = "Global";
+				//	mInfo.fState = conf->GetEffect() == 99 ? MF_CHECKED : MF_UNCHECKED;
+				//	InsertMenuItem(pMenu, i, false, &mInfo);
+				//}
 				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_ENABLED | MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
 			}
 
@@ -669,8 +668,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
-
-			//fxhl->FillAllDevs(acpi);
+			eve->StartFanMon();
 			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -700,6 +698,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->Save();
 			eve->StopProfiles();
 			eve->StopEffects();
+			eve->StopFanMon();
 			fxhl->Stop();
 			break;
 		}

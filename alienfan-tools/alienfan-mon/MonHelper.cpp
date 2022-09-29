@@ -33,9 +33,9 @@ MonHelper::~MonHelper() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && (oldGmode = acpi->GetGMode()) != fan_conf->lastProf->gmode)
+		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && ((oldGmode = acpi->GetGMode()) != fan_conf->lastProf->gmode))
 			acpi->SetGMode(fan_conf->lastProf->gmode);
-		if (!fan_conf->lastProf->gmode && (oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage)
+		if (!fan_conf->lastProf->gmode && ((oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage))
 			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");

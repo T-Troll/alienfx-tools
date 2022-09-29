@@ -29,6 +29,7 @@
 #define IDD_DIALOG_WHITE                161
 #define IDD_DIALOG_GRIDEFFECT           163
 #define IDD_DIALOG_KEY                  164
+#define IDD_DIALOG_DEVICEEFFECTS        165
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -45,7 +46,6 @@
 #define IDC_CHECK_STATUS                1012
 #define IDC_BUT_CLEAR                   1012
 #define IDC_COUNTERLIST                 1013
-#define IDC_SLIDER_GPU                  1013
 #define IDC_STATUSLIST                  1014
 #define IDC_BUTTON_LPC                  1015
 #define IDC_STARTW                      1016
@@ -84,7 +84,9 @@
 #define IDC_BUTTON_EFFCLR2              1041
 #define IDC_SLIDER_BR                   1041
 #define IDC_FANCONTROL                  1042
+#define IDC_BUTTON_EFFCLR3              1042
 #define IDC_SYSLINK_HOMEPAGE            1043
+#define IDC_BUTTON_EFFCLR4              1043
 #define IDC_ISPOWERBUTTON               1044
 #define IDC_MINPVALUE                   1045
 #define IDC_CUTLEVEL                    1046
@@ -109,7 +111,9 @@
 #define IDC_GLOBAL_EFFECT               1088
 #define IDC_SLIDER_TEMPO                1089
 #define IDC_BUT_LOADMAP                 1090
+#define IDC_GLOBAL_KEYEFFECT            1090
 #define IDC_BUT_SAVEMAP                 1091
+#define IDC_SLIDER_KEYTEMPO             1091
 #define IDC_CHECK_FANPROFILE            1092
 #define IDC_EFFECT_MODE                 1093
 #define IDC_RADIO_OUTPUT                1094
@@ -188,8 +192,9 @@
 #define IDC_BUTTON_GEFROM               1175
 #define IDC_BUTTON_GETO                 1176
 #define IDC_BUT_KEY                     1176
-#define IDC_COMBO1                      1177
-#define IDC_COMBO_GLOBALMODE            1177
+#define IDC_DE_LIST                     1178
+#define IDC_BUTTON1                     1179
+#define IDC_DEV_EFFECT                  1179
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -210,9 +215,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        165
+#define _APS_NEXT_RESOURCE_VALUE        166
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1178
+#define _APS_NEXT_CONTROL_VALUE         1180
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif
