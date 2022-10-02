@@ -38,8 +38,7 @@ void StartOverboost(HWND hDlg, int fan) {
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
-        power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU);
+    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER);
 
     switch (message) {
     case WM_INITDIALOG:

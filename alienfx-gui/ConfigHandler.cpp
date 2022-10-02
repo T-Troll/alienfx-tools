@@ -234,18 +234,6 @@ void ConfigHandler::Load() {
 			}
 			continue;
 		}
-		if (sscanf_s(name, "Profile-effect-%d", &pid) == 1) {
-			prof = FindCreateProfile(pid);
-			deviceeffect de{ 0 };
-			DWORD* tDat = (DWORD*)data;
-			de.globalEffect = LOBYTE(LOWORD(tDat[0]));
-			de.globalMode = HIBYTE(LOWORD(tDat[0]));
-			de.globalDelay = (byte)HIWORD(tDat[0]);
-			de.effColor1.ci = tDat[1];
-			de.effColor2.ci = tDat[2];
-			prof->effects.push_back(de);
-			continue;
-		}
 		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
 			prof = FindCreateProfile(pid);
 			prof->effects.push_back(*(deviceeffect*)data);
@@ -264,8 +252,7 @@ void ConfigHandler::Load() {
 		len++;
 		if (data) delete[] data;
 		data = new BYTE[lend];
-		//int profID, groupID, recSize;
-		//groupset* gset;
+
 		RegEnumValue(hKeyZones, vindex, name, &len, NULL, NULL, (LPBYTE)data, &lend);
 		len = 255;
 		if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
@@ -275,10 +262,20 @@ void ConfigHandler::Load() {
 			gset->flags = ((WORD*)data)[1];
 			continue;
 		}
+		// Obsolete, remove soon
 		if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			for (int i = 0; i < 3; i++)
-				gset->events[i] = ((event*)data)[i];
+			for (int i = 0; i * sizeof(event) < lend; i++)
+				if (((event*)data)[i].state) {
+					((event*)data)[i].state = i;
+					gset->events.push_back(((event*)data)[i]);
+				}
+			continue;
+		}
+		if (sscanf_s((char*)name, "Zone-eventlist-%d-%d", &profID, &groupID) == 2 &&
+			(gset = FindCreateGroupSet(profID, groupID))) {
+			for (int i = 0; i * sizeof(event) < lend; i++)
+				gset->events.push_back(((event*)data)[i]);
 			continue;
 		}
 		if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
@@ -428,9 +425,9 @@ void ConfigHandler::Save() {
 				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::afx_act));
 				delete[] buffer;
 			}
-			if (iIter->events[0].state + iIter->events[1].state + iIter->events[2].state) { //events
-				fname = "Zone-events-" + name;
-				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->events, (DWORD)3 * sizeof(event));
+			if (iIter->events.size()) { //events
+				fname = "Zone-eventlist-" + name;
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->events.data(), (DWORD)iIter->events.size() * sizeof(event));
 			}
 			if (iIter->ambients.size()) { // ambient
 				fname = "Zone-ambient-" + name + "-" + to_string(iIter->ambients.size());

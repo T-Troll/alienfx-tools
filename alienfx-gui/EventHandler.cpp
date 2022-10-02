@@ -92,27 +92,28 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 {
 	if (keyboardSwitchActive) return;
 	if (!newID) newID = conf->FindDefaultProfile();
-	if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
+	//if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
 	if (newID->id != conf->activeProfile->id) {
+		// reset effects
+		fxhl->UpdateGlobalEffect(NULL, true);
+		modifyProfile.lock();
+		conf->activeProfile = newID;
+		conf->active_set = &newID->lightsets;
+		conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
+		modifyProfile.unlock();
 
-			modifyProfile.lock();
-			conf->activeProfile = newID;
-			conf->active_set = &newID->lightsets;
-			conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
-			modifyProfile.unlock();
+		if (mon) {
+			if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
+				acpi->SetGMode(conf->fan_conf->lastProf->gmode);
+			if (!conf->fan_conf->lastProf->gmode)
+				acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
+			//acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
+		}
 
-			if (mon) {
-				if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
-					acpi->SetGMode(conf->fan_conf->lastProf->gmode);
-				if (!conf->fan_conf->lastProf->gmode)
-					acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
-				//acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
-			}
+		fxhl->ChangeState();
+		ChangeEffectMode();
 
-			fxhl->ChangeState();
-			ChangeEffectMode();
-
-			DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
+		DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
 	}
 #ifdef _DEBUG
 	else
@@ -280,9 +281,11 @@ void EventHandler::CheckProfileWindow(HWND hwnd) {
 #endif
 				)) {
 
-				if (conf->foregroundProfile = conf->FindProfileByApp(szProcessName, true)) {
-					if (conf->IsPriorityProfile(conf->foregroundProfile) || !conf->IsPriorityProfile(conf->activeProfile))
-						SwitchActiveProfile(conf->foregroundProfile);
+				profile* newProf;
+
+				if (newProf = conf->FindProfileByApp(szProcessName, true)) {
+					if (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))
+						SwitchActiveProfile(newProf);
 				}
 				else
 					ScanTaskList();

@@ -141,82 +141,77 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 		vector<AlienFX_SDK::afx_act> actions;
 		bool noDiff = true;
 		int lVal = 0, cVal = 0;
+		double fCoeff = 0.0;
 		AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(Iter->group);
 		if (grp) {
 			if (Iter->fromColor && Iter->color.size()) {
 				actions.push_back(grp->have_power && conf->statePower ? Iter->color.back() : Iter->color.front());
 				actions.back().type = 0;
 			}
-			if (Iter->events[0].state) {
-				// Power, just need to prepare colors
+			for (auto e = Iter->events.begin(); e != Iter->events.end(); e++) {
 				if (actions.empty())
-					actions.push_back(Iter->events[0].from);
-				if (!conf->statePower)
-					actions[0] = Iter->events[0].to;
-			}
-			if (Iter->events[1].state) {
-				// counter
-				if (actions.empty())
-					actions.push_back(Iter->events[1].from);
-				switch (Iter->events[1].source) {
-				case 0: lVal = eData.CPU; cVal = data->CPU; break;
-				case 1: lVal = eData.RAM; cVal = data->RAM; break;
-				case 2: lVal = eData.HDD; cVal = data->HDD; break;
-				case 3: lVal = eData.GPU; cVal = data->GPU; break;
-				case 4: lVal = eData.NET; cVal = data->NET; break;
-				case 5: lVal = eData.Temp; cVal = data->Temp; break;
-				case 6: lVal = eData.Batt; cVal = data->Batt; break;
-				case 7: lVal = eData.Fan; cVal = data->Fan; break;
-				case 8: lVal = eData.PWR; cVal = data->PWR; break;
-				}
-
-				if (force || (lVal != cVal && (lVal > Iter->events[1].cut || cVal > Iter->events[1].cut))) {
-					//if (from.type)
-					//	from = Iter->perfs[0].from;
-					noDiff = false;
-					Iter->events[1].coeff = cVal > Iter->events[1].cut ? (cVal - Iter->events[1].cut) / (100.0 - Iter->events[1].cut) : 0.0;
-				}
-				if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
-					actions.push_back(Iter->events[1].to);
-				else {
-					actions.push_back({ 0,0,0,
-						(BYTE)(actions.front().r * (1 - Iter->events[1].coeff) + Iter->events[1].to.r * Iter->events[1].coeff),
-						(BYTE)(actions.front().g * (1 - Iter->events[1].coeff) + Iter->events[1].to.g * Iter->events[1].coeff),
-						(BYTE)(actions.front().b * (1 - Iter->events[1].coeff) + Iter->events[1].to.b * Iter->events[1].coeff) });
-					if (!Iter->gauge)
-						actions.erase(actions.begin());
-				}
-			}
-			if (Iter->events[2].state) {
-				// indicator
-				if (actions.empty())
-					actions.push_back(Iter->events[2].from);
-				int ccut = Iter->events[2].cut;
-				bool blink = Iter->events[2].mode;
-				switch (Iter->events[2].source) {
-				case 0: lVal = eData.HDD; cVal = data->HDD; break;
-				case 1: lVal = eData.NET; cVal = data->NET; break;
-				case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
-				case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
-				case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
-				case 5: lVal = eData.KBD; cVal = data->KBD; break;
-				}
-
-				if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
-					noDiff = false;
-					if (cVal > 0) {
-						actions.erase(actions.begin());
-						actions.push_back(Iter->events[2].to);
+					actions.push_back(e->from);
+				switch (e->state) {
+				case MON_TYPE_POWER: // power
+					if (!conf->statePower)
+						actions[0] = e->to;
+					break;
+				case MON_TYPE_PERF: // counter
+					switch (e->source) {
+					case 0: lVal = eData.CPU; cVal = data->CPU; break;
+					case 1: lVal = eData.RAM; cVal = data->RAM; break;
+					case 2: lVal = eData.HDD; cVal = data->HDD; break;
+					case 3: lVal = eData.GPU; cVal = data->GPU; break;
+					case 4: lVal = eData.NET; cVal = data->NET; break;
+					case 5: lVal = eData.Temp; cVal = data->Temp; break;
+					case 6: lVal = eData.Batt; cVal = data->Batt; break;
+					case 7: lVal = eData.Fan; cVal = data->Fan; break;
+					case 8: lVal = eData.PWR; cVal = data->PWR; break;
 					}
-				}
-				else
-					if (blink && cVal > 0) {
+
+					if (force || (lVal != cVal && (lVal > e->cut || cVal > e->cut))) {
 						noDiff = false;
-						if (blinkStage) {
+						fCoeff = e->coeff = cVal > e->cut ? (cVal - e->cut) / (100.0 - e->cut) : 0.0;
+					}
+					if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
+						actions.push_back(e->to);
+					else {
+						actions.push_back({ 0,0,0,
+							(BYTE)(actions.front().r * (1 - e->coeff) + e->to.r * e->coeff),
+							(BYTE)(actions.front().g * (1 - e->coeff) + e->to.g * e->coeff),
+							(BYTE)(actions.front().b * (1 - e->coeff) + e->to.b * e->coeff) });
+						if (!Iter->gauge)
 							actions.erase(actions.begin());
-							actions.push_back(Iter->events[2].to);
+					}
+					break;
+				case MON_TYPE_IND: { // indicator
+					int ccut = e->cut;
+					switch (e->source) {
+					case 0: lVal = eData.HDD; cVal = data->HDD; break;
+					case 1: lVal = eData.NET; cVal = data->NET; break;
+					case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
+					case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
+					case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
+					case 5: lVal = eData.KBD; cVal = data->KBD; break;
+					}
+
+					if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
+						noDiff = false;
+						if (cVal > 0) {
+							actions.erase(actions.begin());
+							actions.push_back(e->to);
 						}
 					}
+					else
+						if (e->mode && cVal > 0) {
+							noDiff = false;
+							if (blinkStage) {
+								actions.erase(actions.begin());
+								actions.push_back(e->to);
+							}
+						}
+				} break;
+				}
 			}
 
 			// check for change.
@@ -225,13 +220,13 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 
 			if (grp->have_power)
 				if (conf->statePower) {
-					actions.push_back(Iter->color[1]);
+					actions.push_back(Iter->color.back());
 				}
 				else {
-					actions.insert(actions.begin(), Iter->color[0]);
+					actions.insert(actions.begin(), Iter->color.front());
 				}
 
-			SetGroupLight(&(*Iter), actions, Iter->events[1].state ? Iter->events[1].coeff : 0);
+			SetGroupLight(&(*Iter), actions, fCoeff);
 		}
 	}
 	if (wasChanged) {
@@ -400,16 +395,19 @@ void FXHelper::ChangeState() {
 	}
 }
 
-void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev) {
+void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++)
 	{
 		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;;
 
 		if (cdev || (cdev->GetPID() == it->pid && cdev->GetVID() == it->vid)) {
 			// set this effect for device
-			cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->globalDelay,
-				{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
-				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
+			if (reset)
+				cdev->SetGlobalEffects(0, it->globalMode, it->globalDelay, { 0 }, { 0 });
+			else
+				cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->globalDelay,
+					{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
+					{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
 		}
 	}
 }
@@ -511,50 +509,32 @@ bool FXHelper::SetPowerMode(int mode)
 	return t == activePowerMode;
 }
 
-bool FXHelper::RefreshOne(groupset* map, int force, bool update)
-{
-	vector<AlienFX_SDK::afx_act> actions = map->color;
+bool FXHelper::RefreshOne(groupset* map, int force, bool update) {
 
-	if (!conf->stateOn || !map)
-		return false;
-
-	if (!force && conf->enableMon && conf->GetEffect() == 1) {
-		if (map->events[0].state) {
-			// use power event;
-			if (!map->fromColor)
-				actions = { map->events[0].from };
-			switch (activePowerMode) {
-			case MODE_AC:
+	if (conf->stateOn && map && map->color.size()) {
+		if (!force && conf->enableMon) {
+			size_t act = 0;
+			switch (conf->GetEffect()) {
+			case 1:
+				act = map->events.size();
 				break;
-			case MODE_BAT:
-				actions = { map->events[0].to };
+			case 2:
+				act = map->ambients.size();
 				break;
-			case MODE_LOW:
-				actions.resize(1);
-				actions.push_back(map->events[0].to);
-				actions.front().type = actions.back().type = AlienFX_SDK::AlienFX_A_Pulse;
-				actions.front().time = actions.back().time = 3;
-				actions.front().tempo = actions.back().tempo = 0x64;
+			case 3:
+				act = map->haptics.size();
 				break;
-			case MODE_CHARGE:
-				actions.resize(1);
-				actions.push_back(map->events[0].to);
-				actions.front().type = actions.back().type = AlienFX_SDK::AlienFX_A_Morph;
-				actions.front().time = actions.back().time = 3;
-				actions.front().tempo = actions.back().tempo = 0x64;
-				break;
+			case 4:
+				act = map->effect.trigger;
 			}
-		} else
-			if (map->events[1].state || map->events[2].state)
+			if (act)
 				return false;
-
-	}
-
-	if (actions.size()) {
-		SetGroupLight(map, actions, 0, force == 2);
+		}
+		SetGroupLight(map, map->color, 0, force == 2);
 		if (update)
 			QueryUpdate(-1, force == 2);
 	}
+
 	return true;
 }
 

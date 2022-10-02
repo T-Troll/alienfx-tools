@@ -114,32 +114,37 @@ GridHelper::~GridHelper()
 
 void GridHelper::UpdateEvent(EventData* data) {
 	for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
-		if (it->effect.trigger == 4 && it->events[2].state && it->gridop.passive) { // Event trigger
-			int ccut = it->events[2].cut, cVal = 0;
-			switch (it->events[2].source) {
-			case 0: cVal = data->HDD; break;
-			case 1: cVal = data->NET; break;
-			case 2: cVal = data->Temp - ccut; break;
-			case 3: cVal = data->RAM - ccut; break;
-			case 4: cVal = data->Batt - ccut; break;
-			case 5: cVal = data->KBD; break;
-			}
-
-			if (cVal > 0) {
-				// Triggering effect...
-				zonemap* cz = conf->FindZoneMap(it->group);
-				switch (it->gauge) {
-				case 1:	case 2:	case 3:
-					StartGridRun(&(*it), cz->gMinX, cz->gMinY);
-					break;
-				case 4:
-					StartGridRun(&(*it), cz->gMaxX, cz->gMinY);
-					break;
-				case 5:
-					StartGridRun(&(*it), cz->gMinX + (cz->gMaxX - cz->gMinX) / 2, cz->gMinY + (cz->gMaxY - cz->gMinY) / 2);
-					break;
+		if (it->effect.trigger == 4 && it->gridop.passive) { // Event trigger
+			auto ev = find_if(it->events.begin(), it->events.end(),
+				[](auto e) {
+					return e.state == MON_TYPE_IND;
+				});
+			if (ev != it->events.end()) {
+				int ccut = ev->cut, cVal = 0;
+				switch (ev->source) {
+				case 0: cVal = data->HDD; break;
+				case 1: cVal = data->NET; break;
+				case 2: cVal = data->Temp - ccut; break;
+				case 3: cVal = data->RAM - ccut; break;
+				case 4: cVal = data->Batt - ccut; break;
+				case 5: cVal = data->KBD; break;
 				}
-				//it->gridop.passive = false;
+
+				if (cVal > 0) {
+					// Triggering effect...
+					zonemap* cz = conf->FindZoneMap(it->group);
+					switch (it->gauge) {
+					case 1:	case 2:	case 3:
+						StartGridRun(&(*it), cz->gMinX, cz->gMinY);
+						break;
+					case 4:
+						StartGridRun(&(*it), cz->gMaxX, cz->gMinY);
+						break;
+					case 5:
+						StartGridRun(&(*it), cz->gMinX + (cz->gMaxX - cz->gMinX) / 2, cz->gMinY + (cz->gMaxY - cz->gMinY) / 2);
+						break;
+					}
+				}
 			}
 		}
 	memcpy(&fxhl->eData, data, sizeof(EventData));

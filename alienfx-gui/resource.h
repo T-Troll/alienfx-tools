@@ -47,6 +47,7 @@
 #define IDC_BUT_CLEAR                   1012
 #define IDC_COUNTERLIST                 1013
 #define IDC_STATUSLIST                  1014
+#define IDC_EVENT_SOURCE                1014
 #define IDC_BUTTON_LPC                  1015
 #define IDC_STARTW                      1016
 #define IDC_BUTTON_HPC                  1016
@@ -64,6 +65,7 @@
 #define IDC_BUTTON_CM2                  1030
 #define IDC_BUTTON_CM3                  1031
 #define IDC_BATTDIM                     1031
+#define IDC_BUTTON_COLORFROM            1031
 #define IDC_SLIDER_DIMMING              1032
 #define IDC_BUTTON_CM4                  1032
 #define IDC_BUTTON_CM5                  1033
@@ -72,6 +74,7 @@
 #define IDC_BUTTON_CM6                  1034
 #define IDC_PROFILES                    1034
 #define IDC_POWER_DIM                   1034
+#define IDC_BUTTON_COLORTO              1034
 #define IDC_ADDPROFILE                  1035
 #define IDC_BUT_PROFILESWITCH           1037
 #define IDC_AWCC                        1038
@@ -195,6 +198,13 @@
 #define IDC_DE_LIST                     1178
 #define IDC_BUTTON1                     1179
 #define IDC_DEV_EFFECT                  1179
+#define IDC_EVENT_TYPE                  1180
+#define IDC_BUT_EVENT_DOWN              1181
+#define IDC_BUTT_REMOVE_EVENT           1182
+#define IDC_EVENTS_LIST                 1183
+#define IDC_BUT_ADD_EVENT2              1184
+#define IDC_BUT_ADD_EVENT               1184
+#define IDC_BUTT_EVENT_UP               1185
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -217,7 +227,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        166
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1180
+#define _APS_NEXT_CONTROL_VALUE         1184
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

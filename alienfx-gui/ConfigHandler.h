@@ -12,6 +12,7 @@
 #define PROF_FANS			0x10
 #define PROF_GLOBAL_EFFECTS 0x20
 
+// Profile power triggers
 #define PROF_TRIGGER_AC		 0x1
 #define PROF_TRIGGER_BATTERY 0x2
 
@@ -19,6 +20,11 @@
 #define LEVENT_POWER	0x2
 #define LEVENT_PERF		0x4
 #define LEVENT_ACT		0x8
+
+// Monitoring types
+#define MON_TYPE_POWER	0
+#define MON_TYPE_PERF	1
+#define MON_TYPE_IND	2
 
 #define GAUGE_GRADIENT	0x1
 #define GAUGE_REVERSE	0x2
@@ -38,12 +44,8 @@ struct freq_map {
 };
 
 struct event {
-	bool state = false;
-	BYTE source = 0;
-	BYTE cut = 0;
-	BYTE mode = 0;
-	AlienFX_SDK::afx_act from;
-	AlienFX_SDK::afx_act to;
+	byte state, source, cut, mode;
+	AlienFX_SDK::afx_act from, to;
 	double coeff;
 };
 
@@ -81,7 +83,7 @@ struct grideffop {
 struct groupset {
 	int group = 0;
 	vector<AlienFX_SDK::afx_act> color;
-	event events[3];
+	vector<event> events;
 	vector<byte> ambients;
 	vector<freq_map> haptics;
 	grideffect effect;
@@ -169,7 +171,7 @@ public:
 	vector<profile*> profiles;
 	vector<zonemap> zoneMaps;
 	profile* activeProfile = NULL;
-	profile* foregroundProfile = NULL;
+	//profile* foregroundProfile = NULL;
 
 	// Grid-related
 	AlienFX_SDK::lightgrid* mainGrid = NULL;

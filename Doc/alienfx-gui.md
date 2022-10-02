@@ -86,7 +86,7 @@ Please keep in mind - defining zone as "Gradient" disables hardware color effect
 
 ### Events Monitoring
 
-!["Events Monitoring" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-colors-6.png?raw=true)
+!["Events Monitoring" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-monitoring-6.png?raw=true)
 
 This tab designed to control "Monitoring" software effect - it change zone colors based on system states and events - like power source changes, system load, temperatures.  
 There are some different monitoring types and modes available:  
@@ -284,7 +284,7 @@ Each profile can have settings and application for trigger it. The settings are:
 "Device effects" button open profile settings for device effect (supported for some devices like RGB keyboards):  
 ![Device Effects](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui_deviceeffect.png?raw=true)  
 At this dialog, you can select device supporting per-device effects and set it parameters - types, colors, tempo.  
-APIv5 (per-key RGB notebook keyboards) support device effect, and APIv8 (external keyboards) support both device and key press effects.
+APIv5 (per-key RGB notebook keyboards) support hardware effect, and APIv8 (external keyboards) support both hardware and key press effects.
 
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
 - "Keyboard" drop down will activate this profile in case corresponding key is pressed. Release the key to switch back to other profile.  

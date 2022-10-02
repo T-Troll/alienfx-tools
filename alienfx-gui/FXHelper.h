@@ -73,7 +73,8 @@ public:
 	void RefreshHaptics(int *freq);
 	//void Flush();
 	void ChangeState();
-	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
+	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);
+	//void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
 	//void UnblockUpdates(bool newState);
 
 	//ConfigHandler* GetConfig() { return config; };

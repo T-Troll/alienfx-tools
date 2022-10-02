@@ -90,12 +90,11 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
                                 if (conf->enableMon)
                                     switch (conf->GetEffect()) {
                                     case 1: { // monitoring
-                                        for (int i = 0; i < 3; i++)
-                                            if (cs->events[i].state) {
+                                        for (auto i = cs->events.begin(); i != cs->events.end(); i++) {
                                                 if (!conf->colorGrid[ind].first && !cs->fromColor) {
-                                                    conf->colorGrid[ind].first = &cs->events[i].from;
+                                                    conf->colorGrid[ind].first = &i->from;
                                                 }
-                                                conf->colorGrid[ind].second = &cs->events[i].to;
+                                                conf->colorGrid[ind].second = &i->to;
                                             }
                                     } break;
                                     case 3: // haptics

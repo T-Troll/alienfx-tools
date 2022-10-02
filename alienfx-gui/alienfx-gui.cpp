@@ -59,10 +59,12 @@ int eItem = -1;
 const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
 bool DetectFans() {
-	conf->fanControl = true;
-	conf->Save();
-
-	if (EvaluteToAdmin()) {
+	if (!IsUserAnAdmin()) {
+		conf->fanControl = true;
+		conf->Save();
+		EvaluteToAdmin();
+	}
+	else {
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->Probe()) {
 			conf->fan_conf->SetBoostsAndNames(acpi);
@@ -890,9 +892,8 @@ bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp) {
 }
 
 void RemoveUnused(vector<groupset>* lightsets) {
-	for (auto it = lightsets->begin(); it < lightsets->end();)
-		if (!(it->color.size() + it->events[0].state + it->events[1].state +
-			it->events[2].state + it->ambients.size() + it->haptics.size() + it->effect.type)) {
+	for (auto it = lightsets->begin(); it != lightsets->end();)
+		if (!(it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)) {
 			lightsets->erase(it);
 			it = lightsets->begin();
 		}

@@ -261,8 +261,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
-		eff_list = GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
-		eff_mode = GetDlgItem(hDlg, IDC_COMBO_GLOBALMODE),
 		key_list = GetDlgItem(hDlg, IDC_COMBO_TRIGGERKEY),
 		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO);
 
@@ -342,7 +340,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					if (IsDlgButtonChecked(hDlg, IDC_CP_COLORS) == BST_CHECKED)
 						it->color.clear();
 					if (IsDlgButtonChecked(hDlg, IDC_CP_EVENTS) == BST_CHECKED)
-						it->events[0].state = it->events[1].state = it->events[2].state = false;
+						it->events.clear();
 					if (IsDlgButtonChecked(hDlg, IDC_CP_AMBIENT) == BST_CHECKED)
 						it->ambients.clear();
 					if (IsDlgButtonChecked(hDlg, IDC_CP_HAPTICS) == BST_CHECKED)
@@ -373,8 +371,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					if (IsDlgButtonChecked(hDlg, IDC_CP_COLORS) == BST_CHECKED)
 						lset->color = t->color;
 					if (IsDlgButtonChecked(hDlg, IDC_CP_EVENTS) == BST_CHECKED)
-						for (int i = 0; i < 3; i++)
-							lset->events[i] = t->events[i];
+						lset->events = t->events;
 					if (IsDlgButtonChecked(hDlg, IDC_CP_AMBIENT) == BST_CHECKED)
 						lset->ambients = t->ambients;
 					if (IsDlgButtonChecked(hDlg, IDC_CP_HAPTICS) == BST_CHECKED)
@@ -511,33 +508,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		}
 		break;
-	//case WM_HSCROLL:
-	//{
-	//	if (prof)
-	//		switch (LOWORD(wParam)) {
-	//		case TB_THUMBPOSITION: case TB_ENDTRACK:
-	//		{
-	//			if ((HWND) lParam == eff_tempo) {
-	//				prof->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
-	//				SetSlider(sTip2, prof->globalDelay);
-	//				if (prof->id == conf->activeProfile->id)
-	//					fxhl->UpdateGlobalEffect();
-	//			}
-	//		} break;
-	//		}
-	//} break;
-	//case WM_DRAWITEM:
-	//{
-	//	if (prof /*&& (prof->flags & PROF_GLOBAL_EFFECTS)*/)
-	//		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
-	//		case IDC_BUTTON_EFFCLR2:
-	//		{
-	//			RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &prof->effColor1);
-	//			RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &prof->effColor2);
-	//			break;
-	//		}
-	//		}
-	//} break;
 	default: return false;
 	}
 	return true;

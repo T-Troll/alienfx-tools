@@ -35,7 +35,7 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !conf->afx_dev.GetGroupById(mmap->group)->have_power);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
-	EnableWindow(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap != NULL);
+	EnableWindow(GetDlgItem(hDlg, IDC_COMBO_GAUGE), (bool)mmap);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
 	RedrawButton(hDlg, IDC_BUTTON_C1, mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
