@@ -89,41 +89,43 @@ Please keep in mind - defining zone as "Gradient" disables hardware color effect
 !["Events Monitoring" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-monitoring-6.png?raw=true)
 
 This tab designed to control "Monitoring" software effect - it change zone colors based on system states and events - like power source changes, system load, temperatures.  
-There are some different monitoring types and modes available:  
 
-"Power State"  
-Zone will act as software power button, and reflect current power mode - AC, battery, charge, low battery level.  
+For each zone, you can assign the chain of effects applied to it.  
+For each effect in chain, color from previous effect used as a source value, then re-calculated using effect settings. Resulted color after all chain calculated applied to the zone lights.  
+In case "Use default color" check box enabled, first color for chain will be taken from "Color" tab, otherwise it will be taken from the "From" value of the first effect in chain.
+
+You can use "+" and "-" buttons to add/remove effect into the chain, and arrow buttons to move currently selected effect earlier or later.
+
+For each effect, 3 different monitoring types available:
+
+"Power"  
+Effect will act as software power button, and reflect current power mode - AC or battery.
 
 "Performance"  
-Zone will reflect a performance indicator, available indicators are:
+Effect will reflect selected performance indicator, available indicator sources are:
 - CPU load - CPU load color mix from 0% ("Idle") to 100% ("Full load")
-- RAM load - Zone color reflect used RAM percentage
+- RAM load - Reflect used RAM percentage
 - GPU load - Current GPU utilization percentage (top one across all GPUs if more, then one present GPUs into the system).
 - Storage load - It's not exactly a load, but IDLE time. If you HDD/SSD not load - it's "idle", 100% busy - full load, and mix between.
 - Network load - Current network traffic value against maximal value detected (across all network adapters into the system).
 - Max. temperature - Maximal temperature in Celsius degree across all temperature sensors detected into the system.
-- Battery level - Battery charge level in percent - 2nd color for full battery, 1st one for completely drained.
+- Battery level - Battery charge level in percent - "From" color for full battery, "To" color for completely drained.
 - Max. Fan RPM - Highest fan RPM (in percent of maximum) across all system fans. This indicator will only works if "Fan control" is enabled in "Settings".
-- Power consumption - Current system power drain level. This indicator will only works if "ESID sensors" enabled at "Settings".
+- Power consumption - Current system power drain level. This indicator will only works if "BIOS sensors" enabled at "Settings".
 
-You can use "Minimal value" slider to define zone of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change colour.  
-This monitoring type support "Gauge" setting for zone, acting as a peak indicator for value.
+You can use "Trigger level" slider to define value of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.  
+For gauge-enabled zones, performance effect acts as a peak indicator - lights below current value marked as "To" color, lights above as "From", active lights (fits value) use mixed color in between.
 
 "Event"  
-Zone color switches between on and off values if system event occurs:
+Effect color switches between "From" and "To" values in case system event occurs:
 - Storage activity - Switch zone color every disk activity event (Storage IDLE above zero).
 - Network activity - Switch zone color if any network traffic detected (across all adapters).
-- System overheat - Switch zone color if system temperature above trigger value.
-- Out of memory - Switch zone color if memory usage above trigger value.
-- Low battery - Switch light if battery charged below trigger value.
-- Language indicator - Light will have "off" color if first input language selected, and "on" color if any other selected.
+- System overheat - Switch zone color if system temperature above "Trigger level" value.
+- Out of memory - Switch zone color if memory usage above "Trigger level" value.
+- Low battery - Switch light if battery charged below "Trigger level" value.
+- Language indicator - Light will have "From" color if first input language selected, and "To" color if any other selected.
 
-Default trigger value is 95, you can change it using corresponding slider.  
-  "Blink" check box switch triggered value to blink between on-off colours about 5 times per second.
-
-"Use default color" check box, if activated, always use settings from "Colors" tab as a first color.
-
-You can mix different monitoring type at once, f.e. different colours for same zone for both CPU load and system overheat event. In this case Event colour always override Performance one then triggered, as well as both override Power state.
+"Blink" check box switch triggered value to blink between from-to colors about 5 times per second.
 
 ### Ambient tab
 
