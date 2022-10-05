@@ -57,7 +57,7 @@ Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-
 
 ## Supported hardware:
 
-Light control: Virtually any Alienware/Dell G-series notebook and desktop, some Alienware mouses, Alienware keyboards, Alienware monitors.
+Light control: Virtually any Alienware/Dell G-series notebook and desktop, some Alienware mouses, Alienware keyboards, Alienware monitors.  
 Fan control: Modern Alienware/Dell G-Series notebooks (any m-series, x-series, Area51m), Aurora R7 (and later model) desktops.
 
 Project Wiki has [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).  
