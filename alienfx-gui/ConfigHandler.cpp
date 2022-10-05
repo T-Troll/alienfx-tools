@@ -265,7 +265,7 @@ void ConfigHandler::Load() {
 		// Obsolete, remove soon
 		if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			for (int i = 0; i * sizeof(event) < lend; i++)
+			for (int i = 0; i < 4; i++)
 				if (((event*)data)[i].state) {
 					((event*)data)[i].state = i;
 					gset->events.push_back(((event*)data)[i]);

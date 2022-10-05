@@ -32,28 +32,26 @@ From release 7.0.0 anti-virus do not complain anymore (ACPI access method was ch
 
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
-- Windows 10 v1903 or later (64-bit only). Windows 11 not officially supported by fan control due to instability, use at you own risk!
-- If you plan to use fan control, "Memory integrity" (Settings->Update&Security->Security->Device Security->Core isolation) should be disabled.
-- If you plan to use fan control (especially into Windows 11), "Fast startup" (Control panel->Power options->Power buttons) should be disabled.
+- Windows 10 v1903 or later (64-bit only).
 - `alienfan-gui` and `-cli` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privileges)
-  - "Esif temperature" selected (access to ESIF values blocked from user account)
+  - "Use BIOS sensors" selected (access to ESIF values blocked from user account)
   - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
-- `alienfx-mon` require Administrator rights in case ESIF or BIOS monitoring enabled (the same reason as for `alienfx-gui`)
+- `alienfx-mon` require Administrator rights in case BIOS or Alienware monitoring enabled (the same reason as for `alienfx-gui`)
 - `alienfx-cli` does not require Administrator privilege and can be run at any level.
 - All the tools don't require an Internet connection, but `alienfan-gui`, `alienfx-mon` and `alienfx-gui` will connect to GitHub to check for updates if a connection is available.
 - All the tools does not collect and share any personal data. Some hardware data collected (but not shared) during hardware detection process.
 
 ## Installation
-- Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).  
+- Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).
+- Unpack the archive to any directory of your choice or just run the installer.
+- Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (light control tools will have limited functionality without this step).
 - (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes don't require it, so you need it if you plan to use `Ambient` effects only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
 - (Optional) For `alienfx-cli` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
-- Unpack the archive to any directory of your choice or just run the installer.  
 - (Optional) For the fan control, it's highly recommended to set correct overboost values and maximal fans RPM. You can do it at GUI apps first start or by running `alienfx-cli setover` command.
-- (Optional) You can install and run Open Hardware Monitor before running fan control apps - this provide more sensors to control.
-- Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (all tools will have limited functionality without this step).  
+- (Optional) You can install and run `Libre Hardware Monitor` before running fan control apps - this provide more sensors to control.
 
 Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide)-for-release-v6.x.x.x) guide first!
 
@@ -64,13 +62,15 @@ Fan control: Modern Alienware/Dell G-Series notebooks (any m-series, x-series, A
 
 Project Wiki has [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).  
 If your device is not supported, you can [help me support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).  
-For fan control - Send me the ACPI dump from [RW Everything](http://rweverything.com/) for analysis.
+For fan control - Open issue here or contact me via Discord support server.
 
 ## Known issues
 - Hardware light effects like breathing, spectrum, rainbow only supported at APIv4 (Tron) lights.
 - Hardware light effects and global effect didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
 - DirectX12 games didn't allow access to GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
 - Setting a hardware power button light, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to the "Devices" tab or quit with visible delay.
+- Fans still controlled by BIOS, so you can't stop it at high system load/temperatures.
+- Some BIOSes limit fan RPMs to lower values under heavy system load (Power subsystem have not enough reserves for fans).
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
 - **WARNING!** There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, preventing the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-gui` with "integrated GPU" setting at "Program settings" for the same monitor. It will not work at the default setting in this case.
 - **WARNING!** In rare case light system freeze, shutdown or hibernate your notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
@@ -83,7 +83,6 @@ Join Discord [support server](https://discord.gg/XU6UJbN9J5)
 
 Prerequisites:
 - Visual Studio Community 2019
-- Microsoft Windows Driver Development Kit (WDK) v10.0 or higher (optional, for Fan SDK V1)
 
 Build process:
 - Clone repository
@@ -95,8 +94,8 @@ Build process:
   - [x] Input locale
   - [ ] Missed notifications (toasts)
   - [x] Keyboard events (key press reaction)
-- [ ] New devices support
-  - [ ] Monitors
+- [x] New devices support
+  - [x] Monitors
   - [x] Mouses
   - [x] Keyboards
 - [ ] Power and battery charge control
