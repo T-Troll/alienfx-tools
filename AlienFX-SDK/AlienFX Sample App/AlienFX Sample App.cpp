@@ -1,45 +1,33 @@
-// AlienFX Sample App.cpp : Defines the entry point for the console application.
-
+// This define disable ACPI-based lights (Aurora R6/R7). You will need to use AlienFan_SDK to control it.
+#define NOACPILIGHTS
 #include "AlienFX_SDK.h"
 #include <iostream>
-//#include <windows.h>
-#include <stdio.h>
-#include <tchar.h>
-
 
 using namespace std;
 
 int main()
 {
-	AlienFX_SDK::Functions afx_dev;
 	AlienFX_SDK::Mappings afx_map;
-	int res;
-	vector<pair<WORD,WORD>> devs = afx_map.AlienFXEnumDevices();
+	// Loading stored devices and maps (optional, in case you need to know which lights every device has)
+	afx_map.LoadMappings();
+	for (auto it = afx_map.fxdevs.begin(); it != afx_map.fxdevs.end(); it++)
+		cout << "Stored device " << it->name << ", " << it->lights.size() << " lights\n";
+	// Now detect active devices...
+	vector<AlienFX_SDK::Functions*> devs = afx_map.AlienFXEnumDevices();
 	cout << devs.size() << " device(s) detected." << endl;
-	//for (int i = 0; i < devs.size(); i++) {
-		//if (afx_dev.AlienFXInitialize(0x0461, 0x4EC0) != -1) { // mouse
-		if (afx_dev.AlienFXInitialize(0x0424, 0x2745) != -1) { // monitor
-	    //if (afx_dev.AlienFXInitialize(0x04f2) != -1) { // keyboard
-			cout << hex << "VID: 0x" << afx_dev.GetVid() << ", PID: 0x" << afx_dev.GetPID() << ", API v" << afx_dev.GetVersion() << endl;
-			cout << "Now try light 2 to blue... ";
-			afx_dev.SetColor(2, {255});
-			afx_dev.UpdateColors();
-			cin.get();
-			cout << "Now try light 3 to mixed... ";
-			res = afx_dev.SetColor(3, {255, 255});
-			res = afx_dev.UpdateColors();
-			cin.get();
-			/*cout << "Ok, now lights off...";
-			afx_dev.ToggleState(0, NULL, false);
-			cin.get();
-			cout << "... and back on...";
-			afx_dev.ToggleState(255, NULL, false);
-			cin.get();*/
-			afx_dev.AlienFXClose();
-		} else
-			cout << "Can't init device!" << endl;
-	//}
-	//std::cin.get();
+	// And try to set it lights...
+	for (int i = 0; i < devs.size(); i++) {
+		cout << hex << "VID: 0x" << devs[i]->GetVID() << ", PID: 0x" << devs[i]->GetPID() << ", API v" << devs[i]->GetVersion() << endl;
+		cout << "Now trying light 2 to blue... ";
+		devs[i]->SetColor(2, { 255 });
+		devs[i]->UpdateColors();
+		cin.get();
+		cout << "Now trying light 3 to mixed... ";
+		devs[i]->SetColor(3, { 255, 255 });
+		devs[i]->UpdateColors();
+		cin.get();
+		delete devs[i];
+	}
 	return 0;
 }
 

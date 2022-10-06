@@ -107,10 +107,6 @@ namespace AlienFX_SDK {
 		return false;
 	}
 
-	//bool Functions::PrepareAndSend(const byte *command, byte size, vector<icommand> mods) {
-	//	return PrepareAndSend(command, size, &mods);
-	//}
-
 	bool Functions::SavePowerBlock(byte blID, act_block act, bool needSave, bool needInverse) {
 		byte mode;
 		switch (act.act.front().type) {
