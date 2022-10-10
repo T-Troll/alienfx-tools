@@ -6,7 +6,7 @@
 class MonHelper {
 public:
 	ThreadHelper* monThread = NULL;
-	short oldPower = 0, oldGmode = 0;
+	short oldPower = -1, oldGmode = 0;
 	vector<int> senValues, fanRpm, boostRaw, boostSets, maxTemps, fanSleep;
 	vector<vector<int>> senBoosts;
 

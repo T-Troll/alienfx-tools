@@ -48,7 +48,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(nCmdShow);
+	//UNREFERENCED_PARAMETER(nCmdShow);
+
+	ResetDPIScale(lpCmdLine);
 
 	conf = new ConfigMon();
 
@@ -60,8 +62,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		Sleep(7000);*/
 
 	senmon = new SenMonHelper();
-
-	ResetDPIScale();
 
     // Perform application initialization:
     if (!InitInstance (hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL))

@@ -9,7 +9,7 @@ using namespace std;
 
 bool EvaluteToAdmin();
 bool DoStopService(bool flag, bool kind);
-void ResetDPIScale();
+void ResetDPIScale(LPWSTR cmdLine);
 DWORD WINAPI CUpdateCheck(LPVOID);
 bool WindowsStartSet(bool, string);
 string GetAppVersion();

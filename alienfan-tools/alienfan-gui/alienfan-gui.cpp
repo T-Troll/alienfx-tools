@@ -68,15 +68,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
-    UNREFERENCED_PARAMETER(nCmdShow);
+    //UNREFERENCED_PARAMETER(lpCmdLine);
+    //UNREFERENCED_PARAMETER(nCmdShow);
+
+    ResetDPIScale(lpCmdLine);
 
     MSG msg{0};
 
     fan_conf = new ConfigFan();
-
-    ResetDPIScale();
-
     fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
 
     NOTIFYICONDATA fanIcon{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,

@@ -172,11 +172,6 @@ void EventHandler::StopEffects() {
 	case 4: if (grid) {
 		delete grid; grid = NULL;
 	} break;
-	//case 99: if (conf->haveGlobal) {
-	//	fxhl->UnblockUpdates(false);
-	//	fxhl->UpdateGlobalEffect();
-	//	fxhl->UnblockUpdates(true);
-	//} break;
 	}
 	effMode = 0;
 	fxhl->Refresh(true);
@@ -198,18 +193,12 @@ void EventHandler::StartEffects() {
 		case 4:
 			if (!grid) grid = new GridHelper();
 			break;
-		//case 99:
-		//	if (conf->haveGlobal) {
-		//		fxhl->UnblockUpdates(false);
-		//		fxhl->UpdateGlobalEffect();
-		//		fxhl->UnblockUpdates(true);
-		//	}
 		}
 	}
 }
 
 void EventHandler::StartFanMon() {
-	if (conf->fanControl && acpi && !mon)
+	if (acpi && !mon)
 		mon = new MonHelper(conf->fan_conf);
 }
 

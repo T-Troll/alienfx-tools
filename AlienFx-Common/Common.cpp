@@ -50,7 +50,7 @@ bool DoStopService(bool flag, bool kind) {
 	return false;
 }
 
-void ResetDPIScale() {
+void ResetDPIScale(LPWSTR cmdLine) {
 	HKEY dpiKey;
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers"),
 		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &dpiKey, NULL) == ERROR_SUCCESS) {
@@ -59,6 +59,9 @@ void ResetDPIScale() {
 		const char setValue[] = "~ GDIDPISCALING DPIUNAWARE";
 		RegSetValueEx(dpiKey, pathBuffer, 0, REG_SZ, (byte*)setValue, (DWORD)strlen(setValue));
 		RegCloseKey(dpiKey);
+	}
+	if (wcslen(cmdLine)) {
+		Sleep(_wtoi(cmdLine) * 1000);
 	}
 }
 

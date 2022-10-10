@@ -89,10 +89,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ int       nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpCmdLine);
-	UNREFERENCED_PARAMETER(nCmdShow);
+	//UNREFERENCED_PARAMETER(lpCmdLine);
+	//UNREFERENCED_PARAMETER(nCmdShow);
 
-	ResetDPIScale();
+	ResetDPIScale(lpCmdLine);
 
 	conf = new ConfigHandler();
 	//if (conf->haveOldConfig && MessageBox(NULL, "Old configuration detected. Do you want to convert it?", "Warning",
@@ -708,11 +708,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed\n");
-			//vector<AlienFX_SDK::Functions*> devs = conf->afx_dev.AlienFXEnumDevices();
-			//if (devs.size() != fxhl->numActiveDevs) {
-				//DebugPrint("Supported devices list changed!\n");
-				fxhl->FillAllDevs(acpi);
-			//}
+			fxhl->FillAllDevs(acpi);
+			fxhl->Refresh();
 		}
 		break;
 	case WM_DISPLAYCHANGE:

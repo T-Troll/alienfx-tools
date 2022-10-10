@@ -33,10 +33,13 @@ MonHelper::~MonHelper() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && ((oldGmode = acpi->GetGMode()) != fan_conf->lastProf->gmode))
+		oldGmode = acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? acpi->GetGMode() : 0;
+		if (!oldGmode && oldPower < 0)
+			oldPower = acpi->GetPower();
+		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && oldGmode != fan_conf->lastProf->gmode) {
 			acpi->SetGMode(fan_conf->lastProf->gmode);
-		if (!fan_conf->lastProf->gmode && ((oldPower = acpi->GetPower()) != fan_conf->lastProf->powerStage))
-			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+		//acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+		}
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
@@ -53,18 +56,22 @@ void MonHelper::Stop() {
 		monThread = NULL;
 		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && oldGmode != fan_conf->lastProf->gmode)
 			acpi->SetGMode(oldGmode);
-		if (!oldGmode && oldPower != fan_conf->lastProf->powerStage)
+		if (!oldGmode) {
 			acpi->SetPower(acpi->powers[oldPower]);
-		if (!oldGmode && !oldPower)
-			// reset boost
-			for (int i = 0; i < acpi->fans.size(); i++)
-				acpi->SetFanBoost(i, 0);
+			if (!oldPower)
+				// reset boost
+				for (int i = 0; i < acpi->fans.size(); i++)
+					acpi->SetFanBoost(i, 0);
+		}
 	}
 }
 
 void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
 	bool modified = false;
+	// let's check power...
+	if (!fan_conf->lastProf->gmode && acpi->GetPower() != fan_conf->lastProf->powerStage)
+		acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
 	// update values:
 	// temps..
 	for (int i = 0; i < acpi->sensors.size(); i++) {
