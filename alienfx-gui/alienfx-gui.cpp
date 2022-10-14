@@ -7,7 +7,6 @@
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-//#pragma comment(lib,"Version.lib")
 #pragma comment(lib,"comctl32.lib")
 
 // Global Variables:
@@ -80,7 +79,6 @@ bool DetectFans() {
 	return conf->fanControl;
 }
 
-void SwitchTab(int);
 void ReloadProfileList();
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -329,24 +327,18 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 
 void ReloadProfileList() {
 	if (IsWindowVisible(mDlg)) {
-		HWND //tab_list = GetDlgItem(mDlg, IDC_TAB_MAIN),
-			profile_list = GetDlgItem(mDlg, IDC_PROFILES);// ,
-			//mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
+		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
 		ComboBox_ResetContent(profile_list);
 		for (int i = 0; i < conf->profiles.size(); i++) {
 			ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i]->name.c_str()), conf->profiles[i]->id);
 			if (conf->profiles[i]->id == conf->activeProfile->id) {
 				ComboBox_SetCurSel(profile_list, i);
-				//ComboBox_SetCurSel(mode_list, conf->profiles[i]->effmode);
 				ReloadModeList();
 				if (tabSel == TAB_FANS) {
 					OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 				}
 			}
 		}
-
-		//EnableWindow(mode_list, conf->enableMon);
-
 		DebugPrint("Profile list reloaded.\n");
 	}
 }
@@ -734,7 +726,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		}
-		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->powers.size()) { // PowerMode switch
+		if (wParam > 29 && wParam < 36 && acpi && !conf->fan_conf->lastProf->gmode && wParam - 30 < acpi->powers.size()) { // PowerMode switch
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 			if (tabSel == TAB_FANS)

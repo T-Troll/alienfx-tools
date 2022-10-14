@@ -38,7 +38,8 @@ void StartOverboost(HWND hDlg, int fan) {
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER);
+    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
+        g_mode = GetDlgItem(hDlg, IDC_CHECK_GMODE);
 
     switch (message) {
     case WM_INITDIALOG:
@@ -61,8 +62,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
             ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
 
-            EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
-            Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
+            EnableWindow(g_mode, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
+            Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
 
             // So open fan control window...
             fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
@@ -118,7 +119,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 fan_conf->lastProf->powerStage = (WORD)ComboBox_GetCurSel(power_list);
                 acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-                //fan_conf->Save();
             } break;
             case CBN_EDITCHANGE:
             {
@@ -126,7 +126,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 GetWindowText(power_list, buffer, MAX_PATH);
                 if (fan_conf->lastProf->powerStage > 0) {
                     fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage])->second = buffer;
-                    //fan_conf->Save();
                     ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
                     ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
                 }
@@ -273,15 +272,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         }
         break;
-    //case WM_HSCROLL:
-    //    switch (LOWORD(wParam)) {
-    //    case TB_THUMBPOSITION: case TB_ENDTRACK: {
-    //        if ((HWND)lParam == power_gpu) {
-    //            fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-    //            acpi->SetGPU(fan_conf->lastProf->GPUPower);
-    //        }
-    //    } break;
-    //    } break;
     case WM_DESTROY:
         if (fanUIUpdate) {
             delete fanUIUpdate;

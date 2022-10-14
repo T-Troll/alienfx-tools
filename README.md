@@ -90,15 +90,11 @@ Build process:
 
 ## ToDo list
 
-- [ ] New events
-  - [x] Input locale
-  - [ ] Missed notifications (toasts)
-  - [x] Keyboard events (key press reaction)
-- [x] New devices support
-  - [x] Monitors
-  - [x] Mouses
-  - [x] Keyboards
+- [ ] KRDT temperature sensors (Intel)
+- [ ] Ryzen ACPI sensors/control (AMD)
+- [ ] Advanced grid effects
 - [ ] Power and battery charge control
+- [ ] Restore ACPI light API support (now disabled)
 
 ## License
 
