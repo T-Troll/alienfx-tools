@@ -4,6 +4,7 @@
 using namespace std;
 
 #pragma comment(lib,"Wininet.lib")
+#pragma comment(lib,"Version.lib")
 
 extern HWND mDlg;
 extern bool needUpdateFeedback, isNewVersion, needRemove;

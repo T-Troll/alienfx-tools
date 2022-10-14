@@ -11,8 +11,8 @@
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-#pragma comment(lib,"Version.lib")
-#pragma comment(lib, "PowrProf.lib")
+//#pragma comment(lib,"Version.lib")
+#pragma comment(lib,"PowrProf.lib")
 
 using namespace std;
 
@@ -50,7 +50,7 @@ LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
-extern void ResetDPIScale();
+//extern void ResetDPIScale();
 
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
@@ -163,16 +163,13 @@ void RestoreApp() {
     ShowWindow(fanWindow, SW_RESTORE);
     SendMessage(fanWindow, WM_PAINT, 0, 0);
     ShowWindow(mDlg, SW_RESTORE);
-    //ComboBox_SetCurSel(GetDlgItem(mDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
-    //Button_SetCheck(GetDlgItem(mDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
     SetForegroundWindow(mDlg);
-    //ReloadTempView(GetDlgItem(mDlg, IDC_TEMP_LIST));
 }
 
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER)/*,
-        power_gpu = GetDlgItem(hDlg, IDC_SLIDER_GPU)*/;
+    HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
+        g_mode = GetDlgItem(mDlg, IDC_CHECK_GMODE);
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
@@ -207,26 +204,21 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                                  hDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
         toolTip = CreateToolTip(fanWindow, NULL);
-        //tipWindow = fanWindow;
         ShowWindow(fanWindow, fan_conf->startMinimized ? SW_HIDE : SW_SHOWNA);
 
-        ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
+        ReloadPowerList(power_list);
         ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
         ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
-        EnableWindow(GetDlgItem(hDlg, IDC_CHECK_GMODE), acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
-        Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
+        EnableWindow(g_mode, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
+        Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
-
-        //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
-        //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
-        //SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
 
         if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Question",
             MB_YESNO | MB_ICONINFORMATION) == IDYES) {
@@ -347,7 +339,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetCurrentGmode();
             break;
         }
-        //fan_conf->Save();
     }
     break;
     case WM_SIZE:
@@ -420,17 +411,15 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (wParam > 19 && wParam - 20 < acpi->powers.size()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
             acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-            //ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
-            ComboBox_SetCurSel(GetDlgItem(mDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
+            ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
             fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
             SetCurrentGmode();
-            Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
+            Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
             break;
         }
-        //fan_conf->Save();
     } break;
     case WM_MENUCOMMAND: {
         int idx = LOWORD(wParam);
@@ -444,14 +433,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case ID_MENU_GMODE:
             fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
             SetCurrentGmode();
-            Button_SetCheck(GetDlgItem(hDlg, IDC_CHECK_GMODE), fan_conf->lastProf->gmode);
+            Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
             break;
         case ID_TRAYMENU_POWER_SELECTED:
             if (idx != fan_conf->lastProf->powerStage) {
                 fan_conf->lastProf->powerStage = idx;
                 acpi->SetPower(acpi->powers[idx]);
-                ComboBox_SetCurSel(GetDlgItem(mDlg, IDC_COMBO_POWER), fan_conf->lastProf->powerStage);
-                //ReloadPowerList(GetDlgItem(hDlg, IDC_COMBO_POWER));
+                ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             }
             break;
         }
@@ -518,8 +506,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             } break;
             case LVN_ITEMACTIVATE: case NM_RETURN:
             {
-                int pos = ListView_GetHotItem(tempList);//ListView_GetSelectionMark(tempList),
-                    //pos2 = ListView_GetHotItem(tempList);
+                int pos = ListView_GetHotItem(tempList);
                 RECT rect;
                 ListView_GetSubItemRect(tempList, pos, 1, LVIR_BOUNDS, &rect);
                 SetWindowPos(ListView_EditLabel(tempList, pos), HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
@@ -561,21 +548,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         }
         break;
-    //case WM_HSCROLL:
-    //    switch (LOWORD(wParam)) {
-    //    case TB_THUMBPOSITION: case TB_ENDTRACK: {
-    //        if ((HWND)lParam == power_gpu) {
-    //            fan_conf->lastProf->GPUPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-    //            acpi->SetGPU(fan_conf->lastProf->GPUPower);
-    //        }
-    //     } break;
-    //    } break;
     case WM_CLOSE:
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
         delete fanThread;
-        //fan_conf->Save();
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;

@@ -122,15 +122,12 @@ void ConfigFan::Save() {
 	SetReg("UpdateCheck", updateCheck);
 	SetReg("LastSensor", lastSelectedSensor);
 	SetReg("LastFan", lastSelectedFan);
-	//SetReg("LastGPU", prof.GPUPower);
 	SetReg("ObCheck", obCheck);
 	SetReg("DisableAWCC", awcc_disable);
 
 	// clean old data
-	//RegCloseKey(keySensors);
 	RegDeleteTree(keyMain, "Sensors");
 	RegCreateKeyEx(keyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
-	//RegCloseKey(keyPowers);
 	RegDeleteTree(keyMain, "Powers");
 	RegCreateKeyEx(keyMain, "Powers", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 
