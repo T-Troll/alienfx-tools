@@ -199,7 +199,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         RECT cDlg;
         GetWindowRect(hDlg, &cDlg);
         int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
-        tipWindow = fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP,//WS_OVERLAPPED,
+        tipWindow = fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP | WS_SIZEBOX,//WS_OVERLAPPED,
                                  cDlg.right, cDlg.top, wh, wh,
                                  hDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
@@ -514,8 +514,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_ENDLABELEDIT:
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                if (sItem->item.pszText) {
-                    auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
+                if (sItem->item.pszText && sItem->item.lParam < acpi->sensors.size()) {
+                    auto pwr = fan_conf->sensors.find(MAKEWORD(acpi->sensors[sItem->item.lParam].senIndex,
+                        acpi->sensors[sItem->item.lParam].type));
                     if (pwr == fan_conf->sensors.end()) {
                         if (strlen(sItem->item.pszText))
                             fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);

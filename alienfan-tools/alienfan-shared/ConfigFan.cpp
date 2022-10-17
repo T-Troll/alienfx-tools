@@ -83,11 +83,20 @@ void ConfigFan::Load() {
 			delete[] inarray;
 			continue;
 		}
+		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2) {
+			byte* inarray = new byte[lend];
+			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
+			len = 255;
+			sensors.emplace(MAKEWORD(fid, sid), (char*)inarray);
+			delete[] inarray;
+			continue;
+		}
+		// old format, deprecated...
 		if (sscanf_s(name, "SensorName-%hd", &sid) == 1) {
 			byte* inarray = new byte[lend];
 			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
 			len = 255;
-			sensors.emplace((byte)sid, (char*)inarray);
+			sensors.emplace(MAKEWORD(sid, 0xff), (char*)inarray);
 			delete[] inarray;
 		}
 	}
@@ -161,7 +170,7 @@ void ConfigFan::Save() {
 	}
 	// save sensors...
 	for (auto i = sensors.begin(); i != sensors.end(); i++) {
-		name = "SensorName-" + to_string(i->first);
+		name = "SensorName-" + to_string(HIBYTE(i->first)) + "-" + to_string(LOBYTE(i->first));
 		RegSetValueEx(keySensors, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD)i->second.length());
 	}
 }

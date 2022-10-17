@@ -144,7 +144,7 @@ namespace AlienFan_SDK {
 				devFlags |= DEV_FLAG_GMODE;
 			}
 			VARIANT instPath;
-			int numSen = 1;
+			//int numSen = 1;
 			// ESIF temperature sensors
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				// Get sensor names array
@@ -165,15 +165,14 @@ namespace AlienFan_SDK {
 				delete[] buf;*/
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				VARIANT cTemp;
-				while (uNumOfInstances) {
+				for (short ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
 					spInstance->Get((BSTR)L"Temperature", 0, &cTemp, 0, 0);
 					spInstance->Release();
 					if (cTemp.uintVal > 0) {
-						sensors.push_back({ 0/*(short)numESIF*/,
-							/*numESIF < senNames.size() ? senNames[numESIF] : */"ESIF sensor #" + to_string(numSen),
+						sensors.push_back({ ind,
+							/*numESIF < senNames.size() ? senNames[numESIF] : */"ESIF sensor #" + to_string(ind),
 							0, instPath.bstrVal });
-						numSen++;
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
@@ -193,13 +192,13 @@ namespace AlienFan_SDK {
 				ULONG uNumOfInstances = 0;
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				//short ssdsen = 0;
-				numSen = 1;
-				while (uNumOfInstances) {
+				//numSen = 1;
+				for (short ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"StorageReliabilityCounter", 0, &instPath, 0, 0);
-					sensors.push_back({ 0/*ssdsen*/, "SSD " + to_string(numSen) + " Sensor", 2, instPath.bstrVal });
+					sensors.push_back({ ind, "SSD " + to_string(ind) + " Sensor", 2, instPath.bstrVal });
 					spInstance->Release();
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-					numSen++;
+					//numSen++;
 				}
 				enum_obj->Release();
 #ifdef _TRACE_
@@ -208,9 +207,9 @@ namespace AlienFan_SDK {
 			}
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-				numSen = 1;
+				//numSen = 1;
 				VARIANT type, name;
-				while (uNumOfInstances) {
+				for (short ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
 					spInstance->Get((BSTR)L"SensorType", 0, &type, 0, 0);
 					spInstance->Get((BSTR)L"Name", 0, &name, 0, 0);
@@ -218,10 +217,10 @@ namespace AlienFan_SDK {
 					//wstring tn{ type.bstrVal };
 					if (type.bstrVal == wstring(L"Temperature")) {
 						wstring sname{ name.bstrVal };
-						sensors.push_back({ 0/*numSen*/,
+						sensors.push_back({ ind,
 							string(sname.begin(), sname.end()),
 							4, instPath.bstrVal });
-						numSen++;
+						//numSen++;
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}

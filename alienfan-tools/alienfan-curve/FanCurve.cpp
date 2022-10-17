@@ -61,13 +61,9 @@ POINT Boost2Screen(fan_overboost* boost) {
 
 void DrawFan()
 {
-    if (fanWindow && mon) {
+    if (fanWindow && mon && cArea.right) {
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
-        if (!cArea.right) {
-            GetClientRect(fanWindow, &cArea);
-            cArea.right--; cArea.bottom--;
-        }
         // Double buff...
         HDC hdc = CreateCompatibleDC(hdc_r);
         HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, cArea.right - cArea.left + 1, cArea.bottom - cArea.top + 1);
@@ -363,15 +359,16 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
             DrawFan();
-            //fan_conf->Save();
         }
         SetFocus(GetParent(hDlg));
     } break;
-    //case WM_NCHITTEST:
-    //    return HTCLIENT;
+    case WM_SIZE:
+        GetClientRect(fanWindow, &cArea);
+        cArea.right--; cArea.bottom--;
+        DrawFan();
+        break;
     case WM_ERASEBKGND:
         return true;
-        break;
     }
     return DefWindowProc(hDlg, message, wParam, lParam);
 }
@@ -418,7 +415,6 @@ void ReloadPowerList(HWND list) {
 
 void ReloadTempView(HWND list) {
     int rpos = 0;
-    //HWND list = GetDlgItem(hDlg, IDC_TEMP_LIST);
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
     if (!ListView_GetColumnWidth(list, 1)) {
@@ -440,7 +436,13 @@ void ReloadTempView(HWND list) {
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        auto pwr = fan_conf->sensors.find(i);
+        auto pwr = fan_conf->sensors.find(MAKEWORD(i, 0xff));
+        if (pwr != fan_conf->sensors.end()) {
+            // old format, convert it...
+            fan_conf->sensors.emplace(MAKEWORD(acpi->sensors[i].senIndex, acpi->sensors[i].type), pwr->second);
+            fan_conf->sensors.erase(pwr->first);
+        }
+        pwr = fan_conf->sensors.find(MAKEWORD(acpi->sensors[i].senIndex, acpi->sensors[i].type));
         name = pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[i].name;
         ListView_SetItemText(list, i, 1, (LPSTR)name.c_str());
     }
