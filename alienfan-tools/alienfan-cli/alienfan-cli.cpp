@@ -144,7 +144,7 @@ setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.2.3\n");
+    printf("AlienFan-CLI v7.4.2\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
                 }
                 else {
                     for (int i = 0; i < acpi->sensors.size(); i++) {
-                        auto sname = fan_conf->sensors.find(i);
+                        auto sname = fan_conf->sensors.find(MAKEWORD(acpi->sensors[i].senIndex, acpi->sensors[i].type));
                         printf("%s: %d\n", (sname == fan_conf->sensors.end() ? acpi->sensors[i].name.c_str() : sname->second.c_str()), acpi->GetTempValue(i));
                     }
                 }
