@@ -277,6 +277,7 @@ void OnSelChanged(HWND hwndDlg)
 	// Get the index of the selected tab.
 	tabSel = TabCtrl_GetCurSel(hwndDlg);
 	if (tabSel == TAB_LIGHTS && !conf->afx_dev.activeDevices) {
+		ShowNotification(&conf->niData, "Error", "No compatible light devices detected!", false);
 		TabCtrl_SetCurSel(hwndDlg, TAB_FANS);
 		tabSel = TAB_FANS;
 	}
@@ -314,11 +315,6 @@ void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 		EnableWindow(mode_list, conf->enableMon);
 		UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
 
-		/*if (conf->haveGlobal) {
-			ComboBox_SetItemData(mode_list, ComboBox_AddString(mode_list, "Global"), 99);
-			if (mode == 99)
-				ComboBox_SetCurSel(mode_list, effModes.size());
-		}*/
 		if (tabSel == TAB_LIGHTS) {
 			OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 		}
@@ -374,7 +370,6 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 	for (int i = 0; i < tabsize; i++) {
 		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
 		tie.pszText = (LPSTR)names[i].c_str();
-		//tie.cchTextMax = names[i].size()+1;
 		SendMessage(parent, TCM_INSERTITEM, i, (LPARAM)&tie);
 		pHdr->apProc[i] = func[i];
 	}
@@ -391,14 +386,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES),
 		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE);
 
-	if (message == newTaskBar) {
+	if (message == newTaskBar && AddTrayIcon(&conf->niData, conf->updateCheck)) {
 		// Started/restarted explorer...
-		if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
-			SetTrayTip();
-			if (conf->updateCheck)
-				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
-		}
-		return true;
+		SetTrayTip();
 	}
 
 	switch (message)
@@ -408,7 +398,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		conf->niData.hWnd = mDlg = hDlg;
 
-		conf->SetIconState();
+		//conf->SetIconState();
 
 		CreateTabControl(tab_list,
 			{"Lights", "Fans and Power", "Profiles", "Settings"},
@@ -416,14 +406,17 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
 			);
 
-		if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
-			SetTrayTip();
-			if (conf->updateCheck)
-				// check update....
-				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
-		}
-
 		conf->SetStates();
+
+		if (AddTrayIcon(&conf->niData, conf->updateCheck))
+			SetTrayTip();
+
+		//if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
+		//	SetTrayTip();
+		//	if (conf->updateCheck)
+		//		// check update....
+		//		CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+		//}
 
 	} break;
 	case WM_COMMAND:
@@ -579,11 +572,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					mInfo.fState = i == conf->GetEffect() ? MF_CHECKED : MF_UNCHECKED;
 					InsertMenuItem(pMenu, i, false, &mInfo);
 				}
-				//if (conf->haveGlobal) {
-				//	mInfo.dwTypeData = "Global";
-				//	mInfo.fState = conf->GetEffect() == 99 ? MF_CHECKED : MF_UNCHECKED;
-				//	InsertMenuItem(pMenu, i, false, &mInfo);
-				//}
 				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_ENABLED | MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
 			}
 

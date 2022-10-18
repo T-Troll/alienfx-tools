@@ -132,28 +132,28 @@ namespace AlienFan_SDK {
 		IWbemClassObject* m_AWCCGetObj = NULL;
 	};
 
-	class Lights {
-	private:
-		bool activated = false;
-	public:
-		Lights(Control *ac);
+	//class Lights {
+	//private:
+	//	bool activated = false;
+	//public:
+	//	Lights(Control *ac);
 
-		// Resets light subsystem
-		bool Reset();
+	//	// Resets light subsystem
+	//	bool Reset();
 
-		// Prepare for operations
-		bool Prepare();
+	//	// Prepare for operations
+	//	bool Prepare();
 
-		// Update lights state (end operation)
-		bool Update();
+	//	// Update lights state (end operation)
+	//	bool Update();
 
-		// Set color of lights mask defined by id to RGB
-		bool SetColor(byte id, byte r, byte g, byte b);
+	//	// Set color of lights mask defined by id to RGB
+	//	bool SetColor(byte id, byte r, byte g, byte b);
 
-		// Set light system mode (brightness, ???)
-		bool SetMode(byte mode, bool onoff);
+	//	// Set light system mode (brightness, ???)
+	//	bool SetMode(byte mode, bool onoff);
 
-		// Return color subsystem availability
-		bool IsActivated();
-	};
+	//	// Return color subsystem availability
+	//	bool IsActivated();
+	//};
 }

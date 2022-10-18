@@ -7,6 +7,7 @@ AWCC is not needed anymore - here are light weighted tools for Alienware systems
 - [LightFX](/Doc/LightFX.md) - Dell LightFX library emulator. Supports all Dell's API functions using my low-level SDK. It can be used for any LightFX/AlienFX-compatible game.
 - [AlienFan GUI control](/Doc/alienfan-gui.md) - simple fan and power control utility. Set your fan parameters according to any system temperature sensor, switch system power modes, etc.
 - [AlienFan-CLI](/Doc/alienfan-cli.md) - Command-line interface tool for control fans (and lights for some systems) as well as some power settings from the command line.
+- AlienFX-Config - Simple script to backup/restore/delete tools configuration from registry. Run `alienfx-config.cmd` without parameters for usage.
 
 ## How does it work?
 

@@ -125,9 +125,6 @@ setfans=<fan1>[,<fanN>][,mode]\tSet fans boost level (0..100 - in percent) with 
 setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or auto)\n\
 setgmode=<mode>\t\t\tSet G-mode on/off (1-on, 0-off)\n\
 gmode\t\t\t\tShow G-mode state\n\
-resetcolor\t\t\tReset color system\n\
-setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
-setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 \tPower mode can be in 0..N - according to power states detected\n\
 \tPerformance boost can be in 0..4 - disabled, enabled, aggressive, efficient, efficient aggressive\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
@@ -137,6 +134,9 @@ setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 // direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 // directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
 // setgpu=<value>\t\t\tSet GPU power limit\n\
+// resetcolor\t\t\tReset color system\n\
+// setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
+// setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 //\n\
 //\tAll values in \"direct\" commands should be hex, not decimal!
 
@@ -144,17 +144,17 @@ setbrightness=<dim>,<flag>\tSet light system brightness and mode\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.4.2\n");
+    printf("AlienFan-CLI v7.4.3\n");
 
-    AlienFan_SDK::Lights* lights = NULL;
+    //AlienFan_SDK::Lights* lights = NULL;
 
     if (acpi->Probe()) {
-        lights = new AlienFan_SDK::Lights(acpi);
+        //lights = new AlienFan_SDK::Lights(acpi);
 
         printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s.\n",
             acpi->GetSystemID(), (int)acpi->fans.size(), (int)acpi->sensors.size(), (int)acpi->powers.size(),
             (acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? ", G-Mode" : ""),
-            (lights->IsActivated() ? ", Lights" : ""));
+            ""/*(lights->IsActivated() ? ", Lights" : "")*/);
 
         fan_conf->SetBoostsAndNames(acpi);
         for (int cc = 1; cc < argc; cc++) {
@@ -304,25 +304,26 @@ int main(int argc, char* argv[])
                 continue;
             }
 
-            if (command == "resetcolor" && lights->IsActivated()) { // Reset color system for Aurora
-                if (lights->Reset())
-                    printf("Lights reset complete\n");
-                else
-                    printf("Lights reset failed\n");
-                continue;
-            }
-            if (command == "setcolor" && lights->IsActivated() && CheckArgs(command, 4, args.size())) { // Set light color for Aurora
+            //if (command == "resetcolor" && lights->IsActivated()) { // Reset color system for Aurora
+            //    if (lights->Reset())
+            //        printf("Lights reset complete\n");
+            //    else
+            //        printf("Lights reset failed\n");
+            //    continue;
+            //}
+            //if (command == "setcolor" && lights->IsActivated() && CheckArgs(command, 4, args.size())) { // Set light color for Aurora
 
-                printf("SetColor result %d.\n", lights->SetColor(args[0].num, args[1].num, args[2].num, args[3].num));
-                lights->Update();
-                continue;
-            }
-            if (command == "setbrightness" && lights->IsActivated() && CheckArgs(command, 2, args.size())) { // set brightness for Aurora
+            //    printf("SetColor result %d.\n", lights->SetColor(args[0].num, args[1].num, args[2].num, args[3].num));
+            //    lights->Update();
+            //    continue;
+            //}
+            //if (command == "setbrightness" && lights->IsActivated() && CheckArgs(command, 2, args.size())) { // set brightness for Aurora
 
-                printf("SetBrightness result %d.\n", lights->SetMode(args[0].num, args[1].num));
-                lights->Update();
-                continue;
-            }
+            //    printf("SetBrightness result %d.\n", lights->SetMode(args[0].num, args[1].num));
+            //    lights->Update();
+            //    continue;
+            //}
+
             if (command == "dump") { // dump WMI functions
                 BSTR name;
                 // Command dump
@@ -383,7 +384,7 @@ int main(int argc, char* argv[])
         Usage();
     }
 
-    delete lights;
+    //delete lights;
     delete acpi;
     delete fan_conf;
 

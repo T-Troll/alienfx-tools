@@ -330,72 +330,72 @@ namespace AlienFan_SDK {
 		return -1;
 	}
 
-	Lights::Lights(Control *ac) {
-		//acpi = ac;
-		// Probe lights...
-		//if (Prepare())
-		//	activated = true;
-	}
-	bool Lights::Reset() {
-		//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-		//if (!inCommand)
-		//	Prepare();
-		//if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SRST", (PVOID *) &resName, NULL)) {
-		//	free(resName);
-		//	Update();
-		//	return true;
-		//}
-		return false;
-	}
-	bool Lights::Prepare() {
-		//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-		//if (!inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.ICPC", (PVOID *) &resName, NULL)) {
-		//	free(resName);
-		//	inCommand = true;
-		//	return true;
-		//}
-		return false;
-	}
-	bool Lights::Update() {
-		//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-		//if (inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.RCPC", (PVOID *) &resName, NULL)) {
-		//	free(resName);
-		//	inCommand = false;
-		//	return true;
-		//}
-		return false;
-	}
-	bool Lights::SetColor(byte id, byte r, byte g, byte b) {
-		//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-		//PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
-		//if (!inCommand) {
-		//	Prepare();
-		//}
-		//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, r);
-		//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, g);
-		//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, b);
-		//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, id);
-		//if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SETC", (PVOID *) &resName, acpiargs)) {
-		//	free(resName);
-		//	return true;
-		//}
-		return false;
-	}
-	bool Lights::SetMode(byte mode, bool onoff) {
-		//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
-		//PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
-		//if (!inCommand) {
-		//	Prepare();
-		//}
-		//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, mode);
-		//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, onoff);
-		//if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SETB", (PVOID *) &resName, acpiargs)) {
-		//	free(resName);
-		//	return true;
-		//}
-		return false;
-	}
-	bool Lights::IsActivated() {
-		return activated;
-	}
+	//Lights::Lights(Control *ac) {
+	//	//acpi = ac;
+	//	// Probe lights...
+	//	//if (Prepare())
+	//	//	activated = true;
+	//}
+	//bool Lights::Reset() {
+	//	//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+	//	//if (!inCommand)
+	//	//	Prepare();
+	//	//if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SRST", (PVOID *) &resName, NULL)) {
+	//	//	free(resName);
+	//	//	Update();
+	//	//	return true;
+	//	//}
+	//	return false;
+	//}
+	//bool Lights::Prepare() {
+	//	//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+	//	//if (!inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.ICPC", (PVOID *) &resName, NULL)) {
+	//	//	free(resName);
+	//	//	inCommand = true;
+	//	//	return true;
+	//	//}
+	//	return false;
+	//}
+	//bool Lights::Update() {
+	//	//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+	//	//if (inCommand && EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.RCPC", (PVOID *) &resName, NULL)) {
+	//	//	free(resName);
+	//	//	inCommand = false;
+	//	//	return true;
+	//	//}
+	//	return false;
+	//}
+	//bool Lights::SetColor(byte id, byte r, byte g, byte b) {
+	//	//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+	//	//PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
+	//	//if (!inCommand) {
+	//	//	Prepare();
+	//	//}
+	//	//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, r);
+	//	//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, g);
+	//	//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, b);
+	//	//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, id);
+	//	//if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SETC", (PVOID *) &resName, acpiargs)) {
+	//	//	free(resName);
+	//	//	return true;
+	//	//}
+	//	return false;
+	//}
+	//bool Lights::SetMode(byte mode, bool onoff) {
+	//	//PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
+	//	//PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
+	//	//if (!inCommand) {
+	//	//	Prepare();
+	//	//}
+	//	//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, mode);
+	//	//acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, onoff);
+	//	//if (EvalAcpiMethod(acpi->GetHandle(), "\\_SB.AMW1.SETB", (PVOID *) &resName, acpiargs)) {
+	//	//	free(resName);
+	//	//	return true;
+	//	//}
+	//	return false;
+	//}
+	//bool Lights::IsActivated() {
+	//	return activated;
+	//}
 }

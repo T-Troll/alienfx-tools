@@ -7,7 +7,6 @@
 #define IDM_EXIT                        105
 #define IDI_ALIENFANGUI                 107
 #define IDC_MAINMENU                    108
-#define IDC_MAIN_ACC                    109
 #define ID_TRAYMENU_POWER_SELECTED      110
 #define IDD_MAIN_VIEW                   129
 #define IDR_DRIVER1                     133

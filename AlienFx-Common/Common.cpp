@@ -216,3 +216,10 @@ void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
 void SetBitMask(WORD& val, WORD mask, bool state) {
 	val = (val & ~mask) | (state * mask);
 }
+
+bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck) {
+	bool ret = Shell_NotifyIcon(NIM_ADD, iconData);
+	if (ret && needCheck)
+		CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
+	return ret;
+}

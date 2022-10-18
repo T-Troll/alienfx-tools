@@ -1084,6 +1084,11 @@ namespace AlienFX_SDK {
 			CloseHandle(devHandle);
 			//devHandle = NULL;
 		}
+#ifndef NOACPILIGHTS
+		if (device) {
+			delete device;
+		}
+#endif
 	}
 
 	/*bool Functions::AlienFXChangeDevice(int nvid, int npid, HANDLE acc) {
@@ -1153,7 +1158,7 @@ namespace AlienFX_SDK {
 
 		vector<Functions*> devList = AlienFXEnumDevices();
 
-		if (activeDevices != devList.size()) {
+		if (activeDevices != devList.size()) { // ToDo - add ACPI lights if present
 			for (int i = 0; i < fxdevs.size(); i++)
 				if (fxdevs[i].dev) {
 					delete fxdevs[i].dev;

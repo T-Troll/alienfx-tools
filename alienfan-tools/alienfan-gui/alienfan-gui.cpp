@@ -93,16 +93,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     acpi = new AlienFan_SDK::Control();
 
     if (acpi->Probe()) {
-        Shell_NotifyIcon(NIM_DELETE, niData);
+        //Shell_NotifyIcon(NIM_DELETE, niData);
         fan_conf->SetBoostsAndNames(acpi);
-
         mon = new MonHelper(fan_conf);
 
         if (!(InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL))) {
             return FALSE;
         }
-
-        HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_ACC));
 
         // Main message loop:
         while ((GetMessage(&msg, 0, 0, 0)) != 0) {
@@ -146,8 +143,6 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 
         ShowWindow(mDlg, nCmdShow);
 
-        // Reset path if started from other location...
-        //WindowsStartSet(fan_conf->startWithWindows, "AlienFan-GUI");
     }
 
     return mDlg;
@@ -173,17 +168,19 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
-        if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
-            CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
-        return true;
+        AddTrayIcon(niData, fan_conf->updateCheck);
+        //if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
+        //    CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+        //return true;
     }
 
     switch (message) {
     case WM_INITDIALOG:
     {
         niData->hWnd = hDlg;
-        if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
-            CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+        AddTrayIcon(niData, fan_conf->updateCheck);
+        //if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
+        //    CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
 
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
@@ -557,13 +554,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
-    //case WM_ENDSESSION:
-    //    // Shutdown/restart scheduled....
-    //    fan_conf->Save();
-    //    delete fanThread;
-    //    delete mon;
-    //    LocalFree(sch_guid);
-    //    return 0;
+    case WM_ENDSESSION:
+        // Shutdown/restart scheduled....
+        fan_conf->Save();
+        delete fanThread;
+        delete mon;
+        LocalFree(sch_guid);
+        return 0;
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
