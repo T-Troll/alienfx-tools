@@ -23,7 +23,7 @@ namespace
 using namespace std;
 
 AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
-bool have_low = false, have_high = false;
+bool have_high = false;
 
 void CheckDevices() {
 
@@ -110,10 +110,8 @@ int CheckCommand(string name, int args) {
 }
 
 void Update() {
-	if (have_low) {
-		for (int i = 0; i < afx_map->fxdevs.size(); i++)
-			afx_map->fxdevs[i].dev->UpdateColors();
-	}
+	for (int i = 0; i < afx_map->fxdevs.size(); i++)
+		afx_map->fxdevs[i].dev->UpdateColors();
 	if (have_high) {
 		lfxUtil.Update();
 	}
@@ -124,7 +122,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.4.3\n");
+	printf("alienfx-cli v7.4.3.1\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -141,22 +139,18 @@ int main(int argc, char* argv[])
 		printf("Dell API not found");
 
 	for (int i = 0; i < afx_map->fxdevs.size(); i++) {
-		if (afx_map->fxdevs[i].dev) {
-			have_low = true;
-			printf(", Low-level device %d ready", i);
-			devType = 1;
-		}
-		else {
+		if (!afx_map->fxdevs[i].dev) {
 			afx_map->fxdevs.erase(i + afx_map->fxdevs.begin());
 			i--;
 		}
 	}
-	if (!have_low)
-		printf(", Low-level not found.\n");
-	else
-		printf(".\n");
+	if (afx_map->fxdevs.size()) {
+		printf(", %d low-level devices found.\n", (int)afx_map->fxdevs.size());
+		devType = 1;
+	} else
+		printf(", Low-level devices not found.\n");
 
-	if (devType == -1) {
+	if (devType < 0) {
 		printf("Both low-level and high-level devices not found, exiting!\n");
 		goto deinit;
 	}
@@ -177,7 +171,6 @@ int main(int argc, char* argv[])
 			args.back().num = atoi(args.back().str.c_str());
 			vid = argPos;
 		}
-		//printf("Executing " command " with " values);
 		switch (CheckCommand(command, (int)args.size())) {
 		case 0: {
 			static AlienFX_SDK::Colorcode color{
@@ -224,13 +217,13 @@ int main(int argc, char* argv[])
 				SetBrighness(&color);
 				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
 				if (grp) {
-					for (int j = 0; j < afx_map->fxdevs.size(); j++) {
+					for (auto j = afx_map->fxdevs.begin(); j != afx_map->fxdevs.end(); j++) {
 						vector<UCHAR> lights;
-						for (int i = 0; i < grp->lights.size(); i++) {
-							if (LOWORD(grp->lights[i]) == afx_map->fxdevs[j].pid)
-								lights.push_back((byte) HIWORD(grp->lights[i]));
+						for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
+							if (LOWORD(*i) == j->pid)
+								lights.push_back((byte) HIWORD(*i));
 						}
-						afx_map->fxdevs[j].dev->SetMultiColor(&lights, color);
+						j->dev->SetMultiColor(&lights, color);
 					}
 				}
 			}
@@ -289,14 +282,15 @@ int main(int argc, char* argv[])
 			}
 			if (devType) {
 				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
-				if (act.act.size() < 2) {
-					act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
-				}
-				for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
-					for (int i = 0; i < (grp ? grp->lights.size() : j->lights.size()); i++) {
-						if ((grp && LOWORD(grp->lights[i]) == j->pid) || !grp) {
-							act.index = (byte)(grp ? HIWORD(grp->lights[i]) : j->lights[i].lightid);
-							j->dev->SetAction(&act);
+				if (grp) {
+					AlienFX_SDK::afx_device* dev;
+					if (act.act.size() < 2) {
+						act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
+					}
+					for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
+						if (dev = afx_map->GetDeviceById(LOWORD(*i), 0)) {
+							act.index = (byte)HIWORD(*i);
+							dev->dev->SetAction(&act);
 						}
 					}
 				}
@@ -306,6 +300,7 @@ int main(int argc, char* argv[])
 					clrs.push_back({ 0 });
 				lfxUtil.SetLFXZoneAction(actionCode, zoneCode, clrs[0].ci, clrs[1].ci);
 			}
+			Update();
 		} break;
 		case 5:
 			if (devType) {
@@ -338,7 +333,7 @@ int main(int argc, char* argv[])
 			break;
 		case 10:
 			// low-level
-			if (have_low) {
+			if (afx_map->fxdevs.size()) {
 				devType = 1;
 				printf("Low-level device selected\n");
 			}

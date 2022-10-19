@@ -13,7 +13,10 @@ extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+
 extern AlienFX_SDK::mapping* FindCreateMapping();
+
+extern AlienFan_SDK::Control* acpi;
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -320,16 +323,18 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 			for (auto td = i->devs.begin(); td < i->devs.end(); td++) {
 				AlienFX_SDK::afx_device* cDev = conf->afx_dev.AddDeviceById(td->pid, td->vid);
 				cDev->name = td->name;
-				for (auto j = td->lights.begin(); j < td->lights.end(); j++) {
-					AlienFX_SDK::mapping* oMap = conf->afx_dev.GetMappingByDev(cDev, j->lightid);
-					if (oMap) {
-						oMap->flags = j->flags;
-						oMap->name = j->name;
-					}
-					else {
-						cDev->lights.push_back(*j);
-					}
-				}
+				// Lights list should be reassigned!
+				cDev->lights = td->lights;
+				//for (auto j = td->lights.begin(); j < td->lights.end(); j++) {
+				//	AlienFX_SDK::mapping* oMap = conf->afx_dev.GetMappingByDev(cDev, j->lightid);
+				//	if (oMap) {
+				//		oMap->flags = j->flags;
+				//		oMap->name = j->name;
+				//	}
+				//	else {
+				//		cDev->lights.push_back(*j);
+				//	}
+				//}
 			}
 			for (auto gg = i->grids.begin(); gg < i->grids.end(); gg++) {
 				auto pos = find_if(conf->afx_dev.GetGrids()->begin(), conf->afx_dev.GetGrids()->end(),
@@ -343,8 +348,7 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 		}
 	}
 	conf->mainGrid = conf->afx_dev.GetGridByID(oldGridID);
-	conf->afx_dev.AlienFXAssignDevices();
-	TabCtrl_DeleteAllItems(gridTab);
+	conf->afx_dev.AlienFXAssignDevices(acpi, conf->finalBrightness, conf->finalPBState);
 	CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 	OnGridSelChanged(gridTab);
 	RedrawDevList();

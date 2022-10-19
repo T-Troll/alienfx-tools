@@ -61,7 +61,7 @@ bool DetectFans() {
 	if (!IsUserAnAdmin()) {
 		conf->fanControl = true;
 		conf->Save();
-		EvaluteToAdmin();
+		return EvaluteToAdmin();
 	}
 	else {
 		acpi = new AlienFan_SDK::Control();
@@ -109,10 +109,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	fan_conf = conf->fan_conf;
 
-	conf->wasAWCC = DoStopService(conf->awcc_disable, true);
-
-	if (conf->esif_temp)
+	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
 		EvaluteToAdmin();
+
+	conf->wasAWCC = DoStopService(conf->awcc_disable, true);
 
 	fxhl = new FXHelper();
 	eve = new EventHandler();
@@ -308,7 +308,7 @@ void OnSelChanged(HWND hwndDlg)
 
 void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
 	if (IsWindowVisible(mDlg)) {
-		if (mode_list == NULL) {
+		if (!mode_list) {
 			mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
 		}
 
@@ -690,6 +690,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Device list changed\n");
 			fxhl->FillAllDevs(acpi);
 			fxhl->Refresh();
+			ReloadModeList();
 		}
 		break;
 	case WM_DISPLAYCHANGE:

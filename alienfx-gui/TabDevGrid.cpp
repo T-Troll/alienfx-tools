@@ -453,6 +453,8 @@ void CreateGridBlock(HWND gridTab, DLGPROC func, bool needAddDel) {
     RECT rcDisplay;
     TCITEM tie{ TCIF_TEXT };
 
+    TabCtrl_DeleteAllItems(gridTab);
+
     GetClientRect(gridTab, &rcDisplay);
 
     rcDisplay.left = GetSystemMetrics(SM_CXBORDER);

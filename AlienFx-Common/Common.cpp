@@ -19,12 +19,8 @@ bool EvaluteToAdmin() {
 			// Launch itself as admin
 		SHELLEXECUTEINFO sei{ sizeof(sei), 0, NULL, "runas", szPath, NULL, NULL, SW_NORMAL };
 		if (UACPassed = ShellExecuteEx(&sei)) {
-			//if (mDlg)
-			//	SendMessage(mDlg, WM_CLOSE, 0, 0);
-			//else
-				_exit(1);  // Quit itself
+			_exit(1);  // Quit itself
 		}
-		return false;
 	}
 	return UACPassed;
 }

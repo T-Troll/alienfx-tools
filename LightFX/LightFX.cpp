@@ -13,14 +13,10 @@ LFX_RESULT state;
 //map<WORD,vector<LFX_COLOR> > lastState;
 
 void TranslateColor(LFX_COLOR src) {
-	// gamma-correction...
+	// gamma-correction and brightness...
 	final.red = ((unsigned) src.red * src.red * src.brightness) / (255 * 255);
 	final.green = ((unsigned) src.green * src.green * src.brightness) / (255 * 255);
 	final.blue = ((unsigned) src.blue * src.blue * src.brightness) / (255 * 255);
-	// brightness...
-	//final.red = (((unsigned) final.red * src.brightness)) / 255;// >> 8;
-	//final.green = (((unsigned) final.green * src.brightness)) / 255;// >> 8;
-	//final.blue = (((unsigned) final.blue * src.brightness)) / 255;// >> 8;
 }
 
 LFX_RESULT CheckState(int did = -1, int lid = -1) {
@@ -83,8 +79,8 @@ short GetGroupID(unsigned int mask) {
 
 BYTE GetActionMode(unsigned act) {
 	switch (act) {
-	case LFX_ACTION_PULSE: return AlienFX_SDK::Action::AlienFX_A_Pulse; break;
-	case LFX_ACTION_MORPH: return AlienFX_SDK::Action::AlienFX_A_Morph; break;
+	case LFX_ACTION_PULSE: return AlienFX_SDK::Action::AlienFX_A_Pulse;
+	case LFX_ACTION_MORPH: return AlienFX_SDK::Action::AlienFX_A_Morph;
 	}
 	return AlienFX_SDK::AlienFX_A_Color;
 }
@@ -101,11 +97,12 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 			afx_map->fxdevs.erase(i + afx_map->fxdevs.begin());
 			i--;
 		}
-	// now map lights to zones
-	FillGroupsFromGrid();
 
-	if (afx_map->fxdevs.size())
+	if (afx_map->fxdevs.size()) {
+		// now map lights to zones
+		FillGroupsFromGrid();
 		return LFX_SUCCESS;
+	}
 	else
 		return LFX_ERROR_NODEVS;
 }

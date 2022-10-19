@@ -116,7 +116,6 @@ namespace AlienFX_SDK {
 
 //#ifndef NOACPILIGHTS
 		void* device = NULL;
-		//AlienFan_SDK::Lights* device = NULL;
 //#endif
 
 		bool inSet = false;
@@ -184,7 +183,7 @@ namespace AlienFX_SDK {
 		// basic color set with ID index for current device. loop - does it need loop command after?
 		bool SetColor(unsigned index, Colorcode c, bool loop = true);
 
-		// Set multiply lights to the same color. This only works for new API devices, and emulated for old ones.
+		// Set multiply lights to the same color. This only works for some API devices, and emulated for other ones.
 		// lights - pointer to vector of light IDs need to be set.
 		// c - color to set (brightness ignored)
 		bool SetMultiColor(vector<byte> *lights, Colorcode c);
@@ -263,7 +262,8 @@ namespace AlienFX_SDK {
 		~Mappings();
 
 		// Enumerate all alienware devices into the system
-		vector<Functions*> AlienFXEnumDevices();
+		// acc - link to AlienFan_SDK::Control object
+		vector<Functions*> AlienFXEnumDevices(void* acc);
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
 		// acc - link to AlienFan_SDK::Control object
