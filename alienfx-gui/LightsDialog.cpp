@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include <common.h>
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -71,6 +72,7 @@ void OnLightSelChanged(HWND hwndDlg)
 	tabLightSel = TabCtrl_GetCurSel(hwndDlg);
 
 	if (!conf->afx_dev.activeLights || !conf->afx_dev.GetGrids()->size()) {
+		ShowNotification(&conf->niData, "Warning", "No lights or grid defined, please set it up!", true);
 		tabLightSel = TAB_DEVICES;
 		TabCtrl_SetCurSel(hwndDlg, tabLightSel);
 	}

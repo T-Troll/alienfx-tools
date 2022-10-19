@@ -312,7 +312,7 @@ string OpenSaveFile(bool isOpen) {
 		return "";
 }
 
-void ApplyDeviceMaps(HWND gridTab = NULL, bool force = false) {
+void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 	// save mappings of selected.
 	int oldGridID = conf->mainGrid->id;
 	for (auto i = csv_devs.begin(); i < csv_devs.end(); i++) {
@@ -344,14 +344,12 @@ void ApplyDeviceMaps(HWND gridTab = NULL, bool force = false) {
 	}
 	conf->mainGrid = conf->afx_dev.GetGridByID(oldGridID);
 	conf->afx_dev.AlienFXAssignDevices();
+	TabCtrl_DeleteAllItems(gridTab);
+	CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
+	OnGridSelChanged(gridTab);
+	RedrawDevList();
+	SetLightInfo();
 	csv_devs.clear();
-	if (gridTab) {
-		TabCtrl_DeleteAllItems(gridTab);
-		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
-		OnGridSelChanged(gridTab);
-		RedrawDevList();
-		SetLightInfo();
-	}
 }
 
 void SetNewGridName(HWND hDlg) {

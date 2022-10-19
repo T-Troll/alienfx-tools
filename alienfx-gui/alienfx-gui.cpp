@@ -277,7 +277,7 @@ void OnSelChanged(HWND hwndDlg)
 	// Get the index of the selected tab.
 	tabSel = TabCtrl_GetCurSel(hwndDlg);
 	if (tabSel == TAB_LIGHTS && !conf->afx_dev.activeDevices) {
-		ShowNotification(&conf->niData, "Error", "No compatible light devices detected!", false);
+		ShowNotification(&conf->niData, "Error", "No compatible light devices detected!", true);
 		TabCtrl_SetCurSel(hwndDlg, TAB_FANS);
 		tabSel = TAB_FANS;
 	}
