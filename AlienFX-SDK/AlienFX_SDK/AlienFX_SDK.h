@@ -135,6 +135,9 @@ namespace AlienFX_SDK {
 		bool PrepareAndSend(const byte *command, byte size, vector<icommand> *mods = NULL);
 		bool PrepareAndSend(const byte* command, byte size, vector<icommand> mods);
 
+		// Add new light effect block for v8
+		void AddDataBlock(byte pos, vector<icommand>* mods, act_block* act);
+
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, act_block act, bool needSave, bool needInverse = false);
 

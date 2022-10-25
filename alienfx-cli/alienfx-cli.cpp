@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.4.3.1\n");
+	printf("alienfx-cli v7.4.3.2\n");
 	if (argc < 2)
 	{
 		printUsage();

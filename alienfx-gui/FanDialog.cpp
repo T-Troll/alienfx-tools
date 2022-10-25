@@ -238,7 +238,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_ENDLABELEDIT:
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                if (sItem->item.pszText && sItem->item.lParam < acpi->sensors.size()) {
+                if (sItem->item.pszText && (unsigned)sItem->item.lParam < acpi->sensors.size()) {
                     auto pwr = fan_conf->sensors.find(MAKEWORD(acpi->sensors[sItem->item.lParam].senIndex,
                         acpi->sensors[sItem->item.lParam].type));
                     if (pwr == fan_conf->sensors.end()) {

@@ -398,9 +398,9 @@ void FXHelper::ChangeState() {
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++)
 	{
-		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;;
+		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;
 
-		if (cdev || (cdev->GetPID() == it->pid && cdev->GetVID() == it->vid)) {
+		if (cdev && (cdev->GetPID() == it->pid && cdev->GetVID() == it->vid)) {
 			// set this effect for device
 			if (reset)
 				cdev->SetGlobalEffects(0, it->globalMode, it->globalDelay, { 0 }, { 0 });
@@ -675,18 +675,16 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				// update command
 				if (conf->stateOn) {
 					for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
-						if (current.did == (-1) || devQ->dev->pid == current.did) {
+						if (devQ->dev_query.size() && (current.did == (-1) || devQ->dev->pid == current.did)) {
 //#ifdef _DEBUG
 //							char buff[2048];
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
-							if (devQ->dev_query.size()) {
-								devQ->dev->dev->SetMultiAction(&devQ->dev_query, current.flags);
-								devQ->dev->dev->UpdateColors();
-								if (devQ->dev->dev->IsHaveGlobal())
-									src->UpdateGlobalEffect(devQ->dev->dev);
-							}
+							devQ->dev->dev->SetMultiAction(&devQ->dev_query, current.flags);
+							devQ->dev->dev->UpdateColors();
+							if (devQ->dev->dev->IsHaveGlobal())
+								src->UpdateGlobalEffect(devQ->dev->dev);
 							devQ->dev_query.clear();
 						}
 					}
@@ -705,7 +703,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			} else {
 				// set light
 				if ((dev = conf->afx_dev.GetDeviceById(LOWORD(current.did), 0)) && dev->dev) {
-					//vector<AlienFX_SDK::afx_act> actions;
 					WORD flags = conf->afx_dev.GetFlags(dev, current.lid);
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::afx_act* action = &current.actions[i];
@@ -738,10 +735,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					if (flags & ALIENFX_FLAG_POWER) {
 						// Should we update it?
 						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
-						if (!conf->block_power && current.actsize == 2 &&
-							(current.flags || /*(current.flags && dev->GetVersion() < 4) ||*/
-							 memcmp(pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act)) /*||
-							 memcmp(&pbstate[1], &current.actions[1], sizeof(AlienFX_SDK::afx_act))*/)) {
+						current.actsize = 2;
+						if (!conf->block_power && (current.flags || memcmp(pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act)))) {
 
 							DebugPrint((string("Power button set to ") +
 										to_string(current.actions[0].r) + "-" +
@@ -753,8 +748,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 										"\n").c_str());
 
 							memcpy(pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act));
-							//pbstate = current.actions;
-							//current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						} else {
 							DebugPrint("Power button update skipped (blocked or same colors)\n");
 							continue;
@@ -772,9 +765,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::afx_act));
 					if (qn != devs_query.end())
 						qn->dev_query.push_back(ablock);
-					else {
+					else
 						devs_query.push_back({ dev, { ablock } });
-					}
 				}
 			}
 		}

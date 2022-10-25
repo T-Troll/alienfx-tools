@@ -52,7 +52,6 @@ void ConfigFan::Load() {
 	GetReg("LastPowerStage", &power);
 	GetReg("LastSensor", &lastSelectedSensor);
 	GetReg("LastFan", &lastSelectedFan);
-	//GetReg("LastGPU", &prof.GPUPower);
 	GetReg("ObCheck", &obCheck);
 	GetReg("DisableAWCC", &awcc_disable);
 

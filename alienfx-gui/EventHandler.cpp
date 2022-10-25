@@ -92,7 +92,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 {
 	if (keyboardSwitchActive) return;
 	if (!newID) newID = conf->FindDefaultProfile();
-	//if (conf->foregroundProfile && newID->id != conf->foregroundProfile->id) conf->foregroundProfile = NULL;
 	if (newID->id != conf->activeProfile->id) {
 		// reset effects
 		fxhl->UpdateGlobalEffect(NULL, true);
@@ -102,13 +101,8 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 		modifyProfile.unlock();
 
-		if (mon) {
-			if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
+		if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE && acpi->GetGMode() != conf->fan_conf->lastProf->gmode)
 				acpi->SetGMode(conf->fan_conf->lastProf->gmode);
-			if (!conf->fan_conf->lastProf->gmode)
-				acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
-			//acpi->SetGPU(conf->fan_conf->lastProf->GPUPower);
-		}
 
 		fxhl->ChangeState();
 		ChangeEffectMode();

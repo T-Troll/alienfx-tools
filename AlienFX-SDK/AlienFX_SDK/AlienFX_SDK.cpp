@@ -391,6 +391,23 @@ namespace AlienFX_SDK {
 		return val;
 	}
 
+	void Functions::AddDataBlock(byte bPos, vector<icommand>* mods, act_block* nc) {
+		byte opType = 0x81;
+		switch (nc->act.front().type) {
+		case AlienFX_A_Pulse: opType = 0x82; break;
+		case AlienFX_A_Morph: opType = 0x83; break;
+		case AlienFX_A_Breathing: opType = 0x87; break;
+		case AlienFX_A_Spectrum: opType = 0x88; break;
+		//case AlienFX_A_Rainbow: opType = 0x81; break; // DEBUG, check for OFF
+		}
+		mods->insert(mods->end(), { {bPos,nc->index},{(byte)(bPos + 1),opType},{(byte)(bPos + 2),nc->act.front().tempo},
+			{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),nc->act.front().time }, {(byte)(bPos + 5), 0xa},
+			{ (byte)(bPos + 6), nc->act.front().r},{ (byte)(bPos + 7),nc->act.front().g},{ (byte)(bPos + 8),nc->act.front().b} });
+		if (nc->act.size() > 1)
+			// add second color if present
+			mods->insert(mods->end(), { { (byte)(bPos + 9),nc->act.back().r }, { (byte)(bPos + 10),nc->act.back().g }, { (byte)(bPos + 11),nc->act.back().b } });
+	}
+
 	bool Functions::SetMultiColor(vector<UCHAR> *lights, Colorcode c) {
 		bool val = false;
 		if (!inSet) Reset();
@@ -407,9 +424,8 @@ namespace AlienFX_SDK {
 					bPos = 5;
 				}
 
-				mods.insert(mods.end(), { {bPos, *nc},{(byte)(bPos + 1),0x81},
-					{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 5), 0xa},
-					{ (byte)(bPos + 6),c.r},{ (byte)(bPos + 7),c.g},{ (byte)(bPos + 8),c.b} });
+				act_block act{ *nc, { {0,0,0,c.r,c.g,c.b} } };
+				AddDataBlock(bPos, &mods, &act);
 				bPos += 15;
 			}
 			if (bPos > 5) {
@@ -485,17 +501,16 @@ namespace AlienFX_SDK {
 
 	bool Functions::SetMultiAction(vector<act_block> *act, bool save) {
 
-		bool val = true;
 		if (!inSet) Reset();
+		if (save)
+			return SetPowerAction(act);
+		bool val = true;
 		switch (version) {
 		case API_V8: {
-			if (save)
-				break;
 			byte bPos = 5, cnt = 1;
 			vector<icommand> mods;
 			PrepareAndSend(COMMV8.readyToColor, sizeof(COMMV8.readyToColor), { {2,(byte)act->size()} });
 			for (auto nc = act->begin(); nc != act->end(); nc++) {
-				byte opType = 0x81;
 				if (bPos + 15 > length) {
 					// Send command and clear buffer...
 					mods.push_back({ 4, cnt++ });
@@ -503,20 +518,7 @@ namespace AlienFX_SDK {
 					bPos = 5;
 				}
 
-				switch (nc->act.front().type) {
-				case AlienFX_A_Pulse: opType = 0x82; break;
-				case AlienFX_A_Morph: opType = 0x83; break;
-				case AlienFX_A_Breathing: opType = 0x87; break;
-				case AlienFX_A_Spectrum: opType = 0x88; break;
-				//case AlienFX_A_Rainbow: opType = 0x81; break; // DEBUG, check for OFF
-				}
-				mods.insert(mods.end(), { {bPos,nc->index},{(byte)(bPos + 1),opType},{(byte)(bPos + 2),nc->act.front().tempo},
-					{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),nc->act.front().time }, {(byte)(bPos + 5), 0xa},
-					{ (byte)(bPos + 6), nc->act.front().r},{ (byte)(bPos + 7),nc->act.front().g},{ (byte)(bPos + 8),nc->act.front().b} });
-				if (nc->act.size() > 1)
-					// add second color if present
-					mods.insert(mods.end(), { { (byte)(bPos + 9),nc->act.back().r }, { (byte)(bPos + 10),nc->act.back().g }, { (byte)(bPos + 11),nc->act.back().b } });
-
+				AddDataBlock(bPos, &mods, &(*nc));
 				bPos += 15;
 			}
 			if (bPos > 5) {
@@ -524,18 +526,8 @@ namespace AlienFX_SDK {
 				val = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), &mods);
 			}
 		} break;
-		//case API_V7:
-		//{
-		//	if (save)
-		//		SetPowerAction(act);
-		//	else
-		//		for (auto nc = act->begin(); nc != act->end(); nc++)
-		//				val = SetAction(&(*nc));
-		//} break;
 		case API_V5:
 		{
-			if (save)
-				break;
 			byte bPos = 4;
 			vector<icommand> mods;
 			for (auto nc = act->begin(); nc != act->end(); nc++) {
@@ -556,32 +548,16 @@ namespace AlienFX_SDK {
 				val = PrepareAndSend(COMMV5.colorSet, sizeof(COMMV5.colorSet), &mods);
 			Loop();
 		}break;
-		//case API_V1: case API_V2: case API_V3: case API_V4:
-		//{
-		//	if (save)
-		//		SetPowerAction(act);
-		//	else
-		//		for (auto nc = act->begin(); nc != act->end(); nc++)
-		//			if (nc->act.front().type != AlienFX_A_Power)
-		//				val = SetAction(&(*nc));
-		//			else {
-		//				vector<act_block> tact{{*nc}};
-		//				val = SetPowerAction(&tact);
-		//			}
-		//} break;
 		default:
 		{
-			if (save)
-				val = SetPowerAction(act);
-			else
-				for (auto nc = act->begin(); nc != act->end(); nc++) {
-					if (nc->act.front().type != AlienFX_A_Power)
-						val = SetAction(&(*nc));
-					else {
-						vector<act_block> tact{ {*nc} };
-						val = SetPowerAction(&tact);
-					}
+			for (auto nc = act->begin(); nc != act->end(); nc++) {
+				if (nc->act.front().type != AlienFX_A_Power)
+					val = SetAction(&(*nc));
+				else {
+					vector<act_block> tact{ {*nc} };
+					val = SetPowerAction(&tact);
 				}
+			}
 		} break;
 		}
 		return val;
@@ -594,24 +570,7 @@ namespace AlienFX_SDK {
 			if (!inSet) Reset();
 			switch (version) {
 			case API_V8: {
-				byte opType = 0x81;
-				switch (act->act.front().type) {
-				case AlienFX_A_Pulse: opType = 0x82; break;
-				case AlienFX_A_Morph: opType = 0x83; break;
-				case AlienFX_A_Breathing: opType = 0x87; break;
-				case AlienFX_A_Spectrum: opType = 0x88; break;
-				//case AlienFX_A_Rainbow: opType = 0x88; break;
-				}
-				mods = { {5,act->index},{6,opType},{7,act->act.front().tempo},
-					{11,act->act.front().r},{12,act->act.front().g},{13,act->act.front().b} };
-				// add second color if present
-				if (act->act.size() > 1) {
-					mods.insert(mods.end(), {
-						{ 14,act->act.back().r },
-						{ 15,act->act.back().g },
-						{ 16,act->act.back().b },
-						{ 18,2 } });
-				}
+				AddDataBlock(5, &mods, act);
 				PrepareAndSend(COMMV8.readyToColor, sizeof(COMMV8.readyToColor));
 				res = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), &mods);
 			} break;
@@ -741,13 +700,10 @@ namespace AlienFX_SDK {
 				break;
 			}
 		switch (version) {
-		//case API_L_V9:
-		//	PrepareAndSend(COMMV8.resetLow, sizeof(COMMV8.resetLow));
-		//	PrepareAndSend(COMMV8.resetHigh, sizeof(COMMV8.resetHigh));
-		//	break;
+		// ToDo - APIv8 profile save
 		case API_V7:
 		{
-			for (vector<act_block>::iterator nc = act->begin(); nc != act->end(); nc++)
+			for (auto nc = act->begin(); nc != act->end(); nc++)
 					SetAction(&(*nc));
 			PrepareAndSend(COMMV7.update, sizeof(COMMV7.update));
 		} break;
@@ -988,7 +944,6 @@ namespace AlienFX_SDK {
 				UpdateColors();
 			return true;
 		} break;
-		//default: return true;
 		}
 		return false;
 	}
@@ -1170,7 +1125,7 @@ namespace AlienFX_SDK {
 
 		activeLights = 0;
 		activeDevices = (int)devList.size();
-		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
+		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
 			if (i->dev) {
 				// is device still present?
 				auto nDev = find_if(devList.begin(), devList.end(),
@@ -1187,6 +1142,7 @@ namespace AlienFX_SDK {
 					activeLights += (int)i->lights.size();
 				}
 			}
+		}
 		// add new devices...
 		for (auto i = devList.begin(); i != devList.end(); i++) {
 			afx_device* dev = AddDeviceById((*i)->GetPID(), (*i)->GetVID());
