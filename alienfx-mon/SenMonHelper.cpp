@@ -2,6 +2,7 @@
 #include "common.h"
 
 #include <map>
+#include <string>
 
 #pragma comment(lib, "pdh.lib")
 
@@ -132,12 +133,12 @@ void SenMonHelper::UpdateSensors()
 		AddUpdateSensor(conf, 0, 3, 0, state.BatteryLifePercent, "Battery");
 
 		valCount = GetValuesArray(hGPUCounter); // GPU, code 4
-		std::map<std::wstring, long> data;
+		std::map<std::string, long> data;
 		for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
 			if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)) {
-				std::wstring path = std::wstring(counterValues[i].szName);
-				size_t begin = path.find(L"_engtype_");
-				std::wstring key = path.substr(begin + 9, path.size() - begin - 9);
+				std::string path = std::string(counterValues[i].szName);
+				size_t begin = path.find("_engtype_");
+				std::string key = path.substr(begin + 9, path.size() - begin - 9);
 				if (data.find(key) == data.end()) {
 					data[key] = 0;
 				}
