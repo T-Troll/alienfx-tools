@@ -1,6 +1,8 @@
 #include "SenMonHelper.h"
 #include "common.h"
 
+#include <map>
+
 #pragma comment(lib, "pdh.lib")
 
 // debug print
@@ -130,12 +132,25 @@ void SenMonHelper::UpdateSensors()
 		AddUpdateSensor(conf, 0, 3, 0, state.BatteryLifePercent, "Battery");
 
 		valCount = GetValuesArray(hGPUCounter); // GPU, code 4
-		long valLast = 0;
+		std::map<std::wstring, long> data;
 		for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
-			if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA))
-				valLast = max(valLast, counterValues[i].FmtValue.longValue);
+			if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)) {
+				std::wstring path = std::wstring(counterValues[i].szName);
+            	size_t begin = path.find(L"_engtype_");
+            	std::wstring key = path.substr(begin + 9, path.size() - begin - 9);
+            	if (data.find(key) == data.end()) {
+                	data[key] = 0;
+            	}
+            	data[key] += counterValues[i].FmtValue.longValue;
+			}
 		}
-		AddUpdateSensor(conf, 0, 4, 0, valLast, "GPU load");
+		long percentage = 0;
+    	for (auto iter = data.begin(); iter != data.end(); iter++) {
+        	if (iter->second > percentage) {
+        		percentage = iter->second;
+        	}
+    	}
+		AddUpdateSensor(conf, 0, 4, 0, percentage, "GPU load");
 
 		valCount = GetValuesArray(hTempCounter); // Temps, code 5
 		for (unsigned i = 0; i < valCount; i++) {
