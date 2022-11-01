@@ -136,20 +136,20 @@ void SenMonHelper::UpdateSensors()
 		for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
 			if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)) {
 				std::wstring path = std::wstring(counterValues[i].szName);
-            	size_t begin = path.find(L"_engtype_");
-            	std::wstring key = path.substr(begin + 9, path.size() - begin - 9);
-            	if (data.find(key) == data.end()) {
-                	data[key] = 0;
-            	}
-            	data[key] += counterValues[i].FmtValue.longValue;
+				size_t begin = path.find(L"_engtype_");
+				std::wstring key = path.substr(begin + 9, path.size() - begin - 9);
+				if (data.find(key) == data.end()) {
+					data[key] = 0;
+				}
+				data[key] += counterValues[i].FmtValue.longValue;
 			}
 		}
 		long percentage = 0;
-    	for (auto iter = data.begin(); iter != data.end(); iter++) {
-        	if (iter->second > percentage) {
-        		percentage = iter->second;
-        	}
-    	}
+		for (auto iter = data.begin(); iter != data.end(); iter++) {
+			if (iter->second > percentage) {
+				percentage = iter->second;
+			}
+		}
 		AddUpdateSensor(conf, 0, 4, 0, percentage, "GPU load");
 
 		valCount = GetValuesArray(hTempCounter); // Temps, code 5
