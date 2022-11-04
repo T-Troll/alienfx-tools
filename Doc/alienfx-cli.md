@@ -17,11 +17,8 @@ The following commands are available:
 - `set-zone-action=<action>,<zone>,r,g,b[,br,r,g,b[,br]]` Set zone light to color provided and enable action.
 - `set-power=<dev>,<light>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `set-tempo=<tempo>` Set next action tempo (in milliseconds).
-- `set-global=<dev>,<type>,<mode>,r,g,b,r2,g2,b2` Set global effect mode (v5, v8, v9 devices)
-- `set-dim=<dev>,brightness` Set active device hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only).
-- `lightson` Turn all lights on.
-- `lightsoff` Turn all lights off.
-- `reset` Reset current device.
+- `set-global=<dev>,<type>,<mode>,r,g,b,r2,g2,b2` Set global effect mode (v5 and v8 devices)
+- `set-dim=[<dev>,]brightness` Set device (or all devices) hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only).
 - `low-level` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `high-level` Next commands pass trough high-level API (Alienware LightFX), if it's available.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.

@@ -24,6 +24,7 @@ using namespace std;
 
 AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 bool have_high = false;
+byte globalBright = 255;
 
 string GetDeviceType(int version) {
 	switch (version) {
@@ -181,7 +182,7 @@ int main(int argc, char* argv[])
 					(byte)args[2].num,
 					(byte)args[1].num,
 					(byte)args[0].num,
-					(byte)(args.size() > 3 ? args[3].num : 255) };
+					(byte)(args.size() > 3 ? args[3].num : globalBright) };
 			if (devType) {
 				SetBrighness(&color);
 				for (auto cd = afx_map->fxdevs.begin(); cd < afx_map->fxdevs.end(); cd++) {
@@ -202,7 +203,7 @@ int main(int argc, char* argv[])
 			AlienFX_SDK::Colorcode color{ (byte)args[4].num,
 				(byte)args[3].num,
 				(byte)args[2].num,
-				(byte)(args.size() > 5 ? args[5].num : 255) };
+				(byte)(args.size() > 5 ? args[5].num : globalBright) };
 			if (devType) {
 				SetBrighness(&color);
 				if (args[0].num < afx_map->fxdevs.size())
@@ -215,7 +216,7 @@ int main(int argc, char* argv[])
 		} break;
 		case 2: {
 			AlienFX_SDK::Colorcode color{ (byte)args[3].num, (byte)args[2].num, (byte)args[1].num,
-										(byte)(args.size() > 4 ? args[4].num : 255) };
+										(byte)(args.size() > 4 ? args[4].num : globalBright) };
 			unsigned zoneCode = GetZoneCode(args[0], devType);
 			if (devType) {
 				SetBrighness(&color);
@@ -225,7 +226,7 @@ int main(int argc, char* argv[])
 						vector<UCHAR> lights;
 						for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
 							if (LOWORD(*i) == j->pid)
-								lights.push_back((byte) HIWORD(*i));
+								lights.push_back((byte)HIWORD(*i));
 						}
 						j->dev->SetMultiColor(&lights, color);
 					}
@@ -243,7 +244,7 @@ int main(int argc, char* argv[])
 			for (int argPos = 2; argPos + 4 < args.size(); argPos += 5) {
 				actionCode = GetActionCode(args[argPos], devType);
 				AlienFX_SDK::Colorcode c{ (byte)args[argPos + 1].num, (byte)args[argPos + 2].num, (byte)args[argPos + 3].num,
-										(byte)(argPos + 4 < args.size() ? args[argPos + 4].num : 255) };
+										(byte)(argPos + 4 < args.size() ? args[argPos + 4].num : globalBright) };
 				if (devType) {
 					SetBrighness(&c);
 					act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)actionCode, (BYTE)sleepy, 7, (BYTE)c.b, (BYTE)c.g, (BYTE)c.r }));
@@ -274,7 +275,7 @@ int main(int argc, char* argv[])
 			vector<AlienFX_SDK::Colorcode> clrs;
 			for (int argPos = 1; argPos + 4 < args.size(); argPos += 5) {
 				AlienFX_SDK::Colorcode c{ (byte)args[argPos + 3].num, (byte)args[argPos + 2].num, (byte)args[argPos + 1].num,
-										(byte)(argPos + 4 < args.size() ? args[argPos + 4].num : 255) };
+										(byte)(argPos + 4 < args.size() ? args[argPos + 4].num : globalBright) };
 				if (devType) {
 					SetBrighness(&c);
 					act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)GetActionCode(args[argPos], devType), (BYTE)sleepy, 7, (BYTE)c.r, (BYTE)c.g, (BYTE)c.b }));
@@ -323,8 +324,14 @@ int main(int argc, char* argv[])
 			break;
 		case 8:
 			// set-dim
-			if (devType && args[0].num < afx_map->fxdevs.size())
-				afx_map->fxdevs[args[0].num].dev->ToggleState(args[0].num, &afx_map->fxdevs[args[0].num].lights, false);
+			if (devType)
+				if (args.size() == 2 && args[0].num < afx_map->fxdevs.size())
+					afx_map->fxdevs[args[0].num].dev->ToggleState(args[1].num, &afx_map->fxdevs[args[0].num].lights, false);
+				else
+					for (int i = 0; i < afx_map->fxdevs.size(); i++)
+						afx_map->fxdevs[i].dev->ToggleState(args.back().num, &afx_map->fxdevs[i].lights, false);
+			else
+				globalBright = args.back().num;
 			break;
 		case 9:
 			// set-global
@@ -449,26 +456,26 @@ Just press Enter if no visible light at this ID to skip it.\n");
 				}
 			}
 		} break;
-		case 14:
-			// lights on
-			if (devType)
-				for (int i = 0; i < afx_map->fxdevs.size(); i++)
-					afx_map->fxdevs[i].dev->ToggleState(255, &afx_map->fxdevs[i].lights, false);
-			break;
-		case 15:
-			// lights off
-			if (devType)
-				for (int i = 0; i < afx_map->fxdevs.size(); i++)
-					afx_map->fxdevs[i].dev->ToggleState(0, &afx_map->fxdevs[i].lights, false);
-			break;
-		case 16:
-			// reset
-			if (devType)
-				for (int i = 0; i < afx_map->fxdevs.size(); i++)
-					afx_map->fxdevs[i].dev->Reset();
-			else
-				lfxUtil.Reset();
-			break;
+		//case 14:
+		//	// lights on
+		//	if (devType)
+		//		for (int i = 0; i < afx_map->fxdevs.size(); i++)
+		//			afx_map->fxdevs[i].dev->ToggleState(255, &afx_map->fxdevs[i].lights, false);
+		//	break;
+		//case 15:
+		//	// lights off
+		//	if (devType)
+		//		for (int i = 0; i < afx_map->fxdevs.size(); i++)
+		//			afx_map->fxdevs[i].dev->ToggleState(0, &afx_map->fxdevs[i].lights, false);
+		//	break;
+		//case 16:
+		//	// reset
+		//	if (devType)
+		//		for (int i = 0; i < afx_map->fxdevs.size(); i++)
+		//			afx_map->fxdevs[i].dev->Reset();
+		//	else
+		//		lfxUtil.Reset();
+		//	break;
 		case 17:
 			// update
 			cc = 1;

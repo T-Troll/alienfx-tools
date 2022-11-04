@@ -99,7 +99,7 @@ You can use "+" and "-" buttons to add/remove effect into the chain, and arrow b
 For each effect, 3 different monitoring types available:
 
 "Power"  
-Effect will act as software power button, and reflect current power mode - AC or battery.
+Effect will act as software power button, and reflect current power state - AC or battery. It will blink between colors then charging and blink between battery color and black then charge is low.
 
 "Performance"  
 Effect will reflect selected performance indicator, available indicator sources are:
@@ -125,7 +125,7 @@ Effect color switches between "From" and "To" values in case system event occurs
 - Low battery - Switch light if battery charged below "Trigger level" value.
 - Language indicator - Light will have "From" color if first input language selected, and "To" color if any other selected.
 
-"Blink" check box switch triggered value to blink between from-to colors about 5 times per second.
+"Blink" check box switch triggered value to blink between from-to colors about 2 times per second.
 
 ### Ambient tab
 
