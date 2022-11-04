@@ -25,6 +25,18 @@ using namespace std;
 AlienFX_SDK::Mappings* afx_map = new AlienFX_SDK::Mappings();
 bool have_high = false;
 
+string GetDeviceType(int version) {
+	switch (version) {
+	case 0: return "Desktop";
+	case 1: case 2: case 3: return "Notebook";
+	case 4: return "Desktop/Notebook";
+	case 5: case 8: return "Keyboard";
+	case 6: return "Display";
+	case 7: return "Mouse";
+	}
+	return "Unknown";
+}
+
 void CheckDevices() {
 
 	for (auto i = afx_map->fxdevs.begin(); i != afx_map->fxdevs.end(); i++) {
@@ -40,15 +52,7 @@ void CheckDevices() {
 			case 0x04f2: printf("Chicony,"); break;
 			default: printf("Unknown,");
 			}
-			switch (i->dev->GetVersion()) {
-			case 0: printf(" Desktop,"); break;
-			case 1: case 2: case 3: printf(" Notebook,"); break;
-			case 4: printf(" Desktop/Notebook,"); break;
-			case 5: printf(" Notebook keyboard,"); break;
-			case 6: printf(" Display,"); break;
-			case 7: printf(" Mouse,"); break;
-			case 8: printf(" Keyboard,"); break;
-			}
+			printf(" %s,", GetDeviceType(i->dev->GetVersion()).c_str());
 			printf(" APIv%d +++++\n", i->dev->GetVersion());
 		/*}
 		else
@@ -99,7 +103,7 @@ int CheckCommand(string name, int args) {
 	for (int i = 0; i < ARRAYSIZE(commands); i++) {
 		if (name == commands[i].name) {
 			if (commands[i].minArgs > args) {
-				printf("%s: Incorrect number of arguments (at least %d needed)\n", commands[i].name, commands[i].minArgs);
+				printf("%s: Incorrect arguments count (at least %d needed)\n", commands[i].name, commands[i].minArgs);
 				return -1;
 			}
 			else
@@ -122,7 +126,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.4.3.2\n");
+	printf("alienfx-cli v7.4.4\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -268,7 +272,6 @@ int main(int argc, char* argv[])
 			unsigned actionCode = GetActionCode(args[1], devType);
 			AlienFX_SDK::act_block act;
 			vector<AlienFX_SDK::Colorcode> clrs;
-			//int argPos = 1;
 			for (int argPos = 1; argPos + 4 < args.size(); argPos += 5) {
 				AlienFX_SDK::Colorcode c{ (byte)args[argPos + 3].num, (byte)args[argPos + 2].num, (byte)args[argPos + 1].num,
 										(byte)(argPos + 4 < args.size() ? args[argPos + 4].num : 255) };
@@ -278,7 +281,6 @@ int main(int argc, char* argv[])
 				}
 				else
 					clrs.push_back(c);
-				//argPos += 5;
 			}
 			if (devType) {
 				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
@@ -349,20 +351,8 @@ int main(int argc, char* argv[])
 			// status
 			if (devType) {
 				for (auto i = afx_map->fxdevs.begin(); i < afx_map->fxdevs.end(); i++) {
-					printf("Device #%d - %s, ", (int)(i - afx_map->fxdevs.begin()), i->name.c_str());
-					string typeName = "Unknown";
-					if (i->dev)
-						switch (i->dev->GetVersion()) {
-						case 0: typeName = "Desktop"; break;
-						case 1: case 2: case 3: typeName = "Notebook"; break;
-						case 4: typeName = "Desktop/Notebook"; break;
-						case 5: case 8: typeName = "Keyboard"; break;
-						case 6: typeName = "Display"; break;
-						case 7: typeName = "Mouse"; break;
-						}
-
-					printf("%s, VID#%d, PID#%d, APIv%d, %d lights\n", typeName.c_str(),
-						i->vid, i->pid, i->dev->GetVersion(), (int) i->lights.size());
+					printf("Device #%d - %s, %s, VID#%d, PID#%d, APIv%d, %d lights\n", (int)(i - afx_map->fxdevs.begin()), i->name.c_str(),
+						GetDeviceType(i->dev->GetVersion()).c_str(), i->vid, i->pid, i->dev->GetVersion(), (int) i->lights.size());
 
 					for (int k = 0; k < i->lights.size(); k++) {
 						printf("  Light ID#%d - %s%s%s\n", i->lights[k].lightid,
@@ -388,7 +378,6 @@ int main(int argc, char* argv[])
 			int numlights = -1, devID = -1, lightID = -1;
 			if (args.size()) {
 				int pos = 1;
-				//show_all = args[0].str.find('a') != string::npos;
 				if (args[0].str.find('l') != string::npos && args.size() > 1) {
 					numlights = args[1].num;
 					pos++;
@@ -415,65 +404,65 @@ Just press Enter if no visible light at this ID to skip it.\n");
 					}
 
 					for (auto cDev = afx_map->fxdevs.begin(); cDev != afx_map->fxdevs.end(); cDev++) {
-						//if (cDev->dev && (devID == -1 || devID == cDev->pid)) {
-							printf("Probing device VID_%04x, PID_%04x...", cDev->vid, cDev->pid);
-							cDev->dev->Reset();
-							printf("Old device name is %s, ", cDev->name.c_str());
-							printf("Enter device name or LightFX id: ");
-							gets_s(name, 255);
-							cDev->name = isdigit(name[0]) && have_high ? lfxUtil.GetDevInfo(atoi(name))->desc
-								: name[0] == 0 ? cDev->name : name;
-							printf("Final device name is %s\n", cDev->name.c_str());
-							// How many lights to check?
-							int fnumlights = numlights == -1 ? cDev->vid == 0x0d62 ? 0x88 : 23 : numlights;
-							for (int i = 0; i < fnumlights; i++)
-								if (lightID == -1 || lightID == i) {
-									printf("Testing light #%d", i);
-									AlienFX_SDK::mapping* lmap = afx_map->GetMappingByDev(&(*cDev), i);
+						printf("Probing device VID_%04x, PID_%04x...", cDev->vid, cDev->pid);
+						cDev->dev->Reset();
+						printf("Old device name is %s, ", cDev->name.c_str());
+						printf("Enter device name or LightFX id: ");
+						gets_s(name, 255);
+						cDev->name = isdigit(name[0]) && have_high ? lfxUtil.GetDevInfo(atoi(name))->desc
+							: name[0] == 0 ? cDev->name : name;
+						printf("Final device name is %s\n", cDev->name.c_str());
+						// How many lights to check?
+						int fnumlights = numlights == -1 ? cDev->vid == 0x0d62 ? 0x88 : 23 : numlights;
+						for (int i = 0; i < fnumlights; i++)
+							if (lightID == -1 || lightID == i) {
+								printf("Testing light #%d", i);
+								AlienFX_SDK::mapping* lmap = afx_map->GetMappingByDev(&(*cDev), i);
+								if (lmap) {
+									printf(", old name %s ", lmap->name.c_str());
+								}
+								printf("(ENTER for skip): ");
+								cDev->dev->SetColor(i, { 0, 255, 0 });
+								cDev->dev->UpdateColors();
+								Sleep(100);
+								gets_s(name, 255);
+								if (name[0] != 0) {
+									//not skipped
 									if (lmap) {
-										printf(", old name %s ", lmap->name.c_str());
-									}
-									printf("(ENTER for skip): ");
-									cDev->dev->SetColor(i, { 0, 255, 0 });
-									cDev->dev->UpdateColors();
-									Sleep(100);
-									gets_s(name, 255);
-									if (name[0] != 0) {
-										//not skipped
-										if (lmap) {
-											lmap->name = name;
-										}
-										else {
-											cDev->lights.push_back({ (WORD)i, 0, name });
-										}
-										afx_map->SaveMappings();
-										//}
-										printf("Final name is %s, ", name);
+										lmap->name = name;
 									}
 									else {
-										printf("Skipped, ");
+										cDev->lights.push_back({ (WORD)i, 0, name });
 									}
-									cDev->dev->SetColor(i, { 0, 0, 255 });
-									cDev->dev->UpdateColors();
-									//afx_dev->Reset();
-									Sleep(100);
 									afx_map->SaveMappings();
+									printf("Final name is %s, ", name);
 								}
-						}
+								else {
+									printf("Skipped, ");
+								}
+								cDev->dev->SetColor(i, { 0, 0, 255 });
+								cDev->dev->UpdateColors();
+								Sleep(100);
+								afx_map->SaveMappings();
+							}
+					}
 				}
 			}
 		} break;
 		case 14:
+			// lights on
 			if (devType)
 				for (int i = 0; i < afx_map->fxdevs.size(); i++)
 					afx_map->fxdevs[i].dev->ToggleState(255, &afx_map->fxdevs[i].lights, false);
 			break;
 		case 15:
+			// lights off
 			if (devType)
 				for (int i = 0; i < afx_map->fxdevs.size(); i++)
 					afx_map->fxdevs[i].dev->ToggleState(0, &afx_map->fxdevs[i].lights, false);
 			break;
 		case 16:
+			// reset
 			if (devType)
 				for (int i = 0; i < afx_map->fxdevs.size(); i++)
 					afx_map->fxdevs[i].dev->Reset();
@@ -481,6 +470,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 				lfxUtil.Reset();
 			break;
 		case 17:
+			// update
 			cc = 1;
 			Update();
 			break;

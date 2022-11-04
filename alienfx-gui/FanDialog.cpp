@@ -24,7 +24,6 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
-extern void SetCurrentGmode();
 extern HANDLE ocStopEvent;
 
 void UpdateFanUI(LPVOID);
@@ -118,7 +117,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 fan_conf->lastProf->powerStage = (WORD)ComboBox_GetCurSel(power_list);
-                acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+                //acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
             } break;
             case CBN_EDITCHANGE:
             {
@@ -161,9 +160,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_CHECK_GMODE:
             fan_conf->lastProf->gmode = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
-            SetCurrentGmode();
-            if (mon->oldGmode >= 0)
-                acpi->SetGMode(fan_conf->lastProf->gmode);
+            mon->SetCurrentGmode(fan_conf->lastProf->gmode);
             break;
         }
     } break;

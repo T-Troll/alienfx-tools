@@ -268,6 +268,8 @@ namespace AlienFX_SDK {
 		// acc - link to AlienFan_SDK::Control object
 		vector<Functions*> AlienFXEnumDevices(void* acc);
 
+		void AlienFXApplyDevices(vector<Functions*> devList, byte brightness, byte power);
+
 		// Load device data and assign it to structure, as well as init devices and set brightness
 		// acc - link to AlienFan_SDK::Control object
 		void AlienFXAssignDevices(void* acc = NULL, byte brightness=255, byte power=false);

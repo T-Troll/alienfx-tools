@@ -348,7 +348,11 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 		}
 	}
 	conf->mainGrid = conf->afx_dev.GetGridByID(oldGridID);
-	conf->afx_dev.AlienFXAssignDevices(acpi, conf->finalBrightness, conf->finalPBState);
+	// conf->afx_dev.AlienFXAssignDevices(acpi, conf->finalBrightness, conf->finalPBState);
+	// so heavy, just need to calculate new active lights!
+	conf->afx_dev.activeLights = 0;
+	for (auto it = conf->afx_dev.fxdevs.begin(); it != conf->afx_dev.fxdevs.end(); it++)
+		if (it->dev) conf->afx_dev.activeLights += (int)it->lights.size();
 	CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 	OnGridSelChanged(gridTab);
 	RedrawDevList();

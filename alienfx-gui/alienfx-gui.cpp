@@ -26,8 +26,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-extern void SetCurrentGmode();
-
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
@@ -115,10 +113,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	conf->wasAWCC = DoStopService(conf->awcc_disable, true);
 
 	fxhl = new FXHelper();
-	eve = new EventHandler();
-
-	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
-		return FALSE;
 
 	if (conf->activeProfile->flags & PROF_FANS)
 		fan_conf->lastProf = &conf->activeProfile->fansets;
@@ -128,9 +122,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	fxhl->FillAllDevs(acpi);
+	fxhl->Refresh();
+
+	eve = new EventHandler();
 
 	if (conf->startMinimized)
 		eve->StartProfiles();
+
+	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
+		return FALSE;
 
 	ReloadProfileList();
 
@@ -398,8 +398,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		conf->niData.hWnd = mDlg = hDlg;
 
-		//conf->SetIconState();
-
 		CreateTabControl(tab_list,
 			{"Lights", "Fans and Power", "Profiles", "Settings"},
 			{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS},
@@ -410,13 +408,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		if (AddTrayIcon(&conf->niData, conf->updateCheck))
 			SetTrayTip();
-
-		//if (Shell_NotifyIcon(NIM_ADD, &conf->niData)) {
-		//	SetTrayTip();
-		//	if (conf->updateCheck)
-		//		// check update....
-		//		CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
-		//}
 
 	} break;
 	case WM_COMMAND:
@@ -650,6 +641,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
+			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
+			fxhl->Start();
 			eve->StartFanMon();
 			eve->StartEffects();
 			eve->StartProfiles();
@@ -674,23 +667,34 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case PBT_APMSUSPEND:
 			// Sleep initiated.
 			DebugPrint("Sleep/hibernate initiated\n");
-			// need to restore lights if screen off (lid closed)
-			conf->stateScreen = true;
-			fxhl->ChangeState();
+			// need to restore lights if followed screen
+			if (conf->lightsOn && conf->offWithScreen) {
+				conf->stateScreen = true;
+				fxhl->ChangeState();
+			}
 			conf->Save();
 			eve->StopProfiles();
 			eve->StopEffects();
-			eve->StopFanMon();
 			fxhl->Stop();
+			eve->StopFanMon();
 			break;
 		}
 		break;
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
-			DebugPrint("Device list changed\n");
-			fxhl->FillAllDevs(acpi);
-			fxhl->Refresh();
-			ReloadModeList();
+			DebugPrint("Device list changed \n");
+			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(acpi);
+			if (devList.size() != conf->afx_dev.activeDevices) {
+				DebugPrint("Active list changed!\n");
+				HANDLE updated = fxhl->updateThread;
+				fxhl->Stop();
+				conf->afx_dev.AlienFXApplyDevices(devList, conf->finalBrightness, conf->finalPBState);
+				if (conf->afx_dev.activeDevices && updated) {
+					fxhl->Start();
+					fxhl->Refresh();
+				}
+				OnSelChanged(tab_list);
+			}
 		}
 		break;
 	case WM_DISPLAYCHANGE:
@@ -715,9 +719,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		}
-		if (wParam > 29 && wParam < 36 && acpi && !conf->fan_conf->lastProf->gmode && wParam - 30 < acpi->powers.size()) { // PowerMode switch
+		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->powers.size()) { // PowerMode switch
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
-			acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
+			//acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
 			break;
@@ -728,7 +732,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(false);
 			break;
 		case 2: // dim
-		    conf->SetDimmed();
+			conf->SetDimmed();
 			UpdateState(false);
 			break;
 		case 3: // off-dim-full circle
@@ -736,7 +740,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				if (conf->IsDimmed())
 					conf->lightsOn = false;
 				conf->SetDimmed();
-			} else
+			}
+			else
 				conf->lightsOn = true;
 			UpdateState(false);
 			break;
@@ -751,10 +756,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		case 6: // G-key for Dell G-series power switch
-			conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
-			SetCurrentGmode();
-			if (tabSel == TAB_FANS)
-				OnSelChanged(tab_list);
+			if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+				conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
+				mon->SetCurrentGmode(conf->fan_conf->lastProf->gmode);
+				if (tabSel == TAB_FANS)
+					OnSelChanged(tab_list);
+			}
 			break;
 		default: return false;
 		}

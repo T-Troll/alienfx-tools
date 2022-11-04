@@ -44,27 +44,12 @@ void EventHandler::ChangePowerState()
 {
 	SYSTEM_POWER_STATUS state;
 	GetSystemPowerStatus(&state);
-	bool sameState = true;
-	if (conf->statePower = state.ACLineStatus) {
-		// AC line
-		if (state.BatteryFlag & 8)
-			// charging
-			sameState = fxhl->SetPowerMode(MODE_CHARGE);
-		else
-			sameState = fxhl->SetPowerMode(MODE_AC);
-	}
-	else {
-		// Battery - check BatteryFlag for details
-		if (state.BatteryFlag & 6)
-			sameState = fxhl->SetPowerMode(MODE_LOW);
-		else
-			sameState = fxhl->SetPowerMode(MODE_BAT);
-	}
-	if (!sameState) {
-		DebugPrint(("Power state changed to " + to_string(conf->statePower) + "\n").c_str());
+	if ((byte)conf->statePower != state.ACLineStatus) {
+		conf->statePower = state.ACLineStatus;
+		DebugPrint("Power state changed!\n");
 		fxhl->ChangeState();
-		ScanTaskList();
-		fxhl->Refresh();
+		if (cEvent)
+			CheckProfileWindow(GetForegroundWindow());
 	}
 }
 
@@ -168,7 +153,7 @@ void EventHandler::StopEffects() {
 	} break;
 	}
 	effMode = 0;
-	fxhl->Refresh(true);
+	fxhl->Refresh();
 }
 
 void EventHandler::StartEffects() {
@@ -533,6 +518,8 @@ static DWORD WINAPI CEventProc(LPVOID param)
 			// Leveling...
 			cData.Temp = min(100, max(0, cData.Temp));
 			cData.Batt = /*state.BatteryLifePercent > 100 ? 0 : */state.BatteryLifePercent;
+			cData.ACP = state.ACLineStatus;
+			cData.BST = state.BatteryFlag;
 			cData.HDD = (byte)max(0, 99 - cHDDVal.longValue);
 			cData.Fan = min(100, cData.Fan);
 			cData.CPU = (byte)cCPUVal.longValue;

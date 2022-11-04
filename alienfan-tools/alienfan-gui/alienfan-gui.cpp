@@ -56,7 +56,6 @@ extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetCurrentGmode();
 
 extern bool fanMode;
 extern HANDLE ocStopEvent;
@@ -93,7 +92,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     acpi = new AlienFan_SDK::Control();
 
     if (acpi->Probe()) {
-        //Shell_NotifyIcon(NIM_DELETE, niData);
+        Shell_NotifyIcon(NIM_DELETE, niData);
         fan_conf->SetBoostsAndNames(acpi);
         mon = new MonHelper(fan_conf);
 
@@ -164,14 +163,11 @@ void RestoreApp() {
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
-        g_mode = GetDlgItem(mDlg, IDC_CHECK_GMODE);
+        gmode_chk = GetDlgItem(hDlg, IDC_CHECK_GMODE);
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
         AddTrayIcon(niData, fan_conf->updateCheck);
-        //if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
-        //    CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
-        //return true;
     }
 
     switch (message) {
@@ -179,8 +175,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         niData->hWnd = hDlg;
         AddTrayIcon(niData, fan_conf->updateCheck);
-        //if (Shell_NotifyIcon(NIM_ADD, niData) && fan_conf->updateCheck)
-        //    CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
 
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
@@ -209,16 +203,16 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
-        EnableWindow(g_mode, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
-        Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
+        EnableWindow(gmode_chk, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
+        Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
 
-        if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Question",
-            MB_YESNO | MB_ICONINFORMATION) == IDYES) {
+        if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Fan settings",
+            MB_YESNO | MB_ICONQUESTION) == IDYES) {
             // ask for boost check
             StartOverboost(hDlg, -1);
         }
@@ -258,7 +252,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 fan_conf->lastProf->powerStage = (WORD)ComboBox_GetCurSel(power_list);
-                acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+                //acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
                 //fan_conf->Save();
             } break;
             case CBN_EDITCHANGE:
@@ -333,7 +327,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_CHECK_GMODE:
             fan_conf->lastProf->gmode = (IsDlgButtonChecked(hDlg, wmId) == BST_CHECKED);
-            SetCurrentGmode();
+            mon->SetCurrentGmode(fan_conf->lastProf->gmode);
             break;
         }
     }
@@ -407,14 +401,16 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_HOTKEY: {
         if (wParam > 19 && wParam - 20 < acpi->powers.size()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
-            acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+            //acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
-            fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
-            SetCurrentGmode();
-            Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
+            if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+                fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
+                mon->SetCurrentGmode(fan_conf->lastProf->gmode);
+                Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
+            }
             break;
         }
     } break;
@@ -429,13 +425,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case ID_MENU_GMODE:
             fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
-            SetCurrentGmode();
-            Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
+            mon->SetCurrentGmode(fan_conf->lastProf->gmode);
+            Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
             break;
         case ID_TRAYMENU_POWER_SELECTED:
             if (idx != fan_conf->lastProf->powerStage) {
                 fan_conf->lastProf->powerStage = idx;
-                acpi->SetPower(acpi->powers[idx]);
+                //acpi->SetPower(acpi->powers[idx]);
                 ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             }
             break;
@@ -658,15 +654,9 @@ void UpdateFanUI(LPVOID lpParam) {
         string name = "Power mode: ";
         if (fan_conf->lastProf->gmode)
             name += "G-mode";
-        else {
-            //if (fan_conf->lastProf->powerStage) {
-            //auto pwr = fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage]);
-            //name += (pwr != fan_conf->powers.end() ? pwr->second : "Level " + to_string(fan_conf->lastProf->powerStage));
-            //}
-            //else
-            //    name += "Manual";
+        else
             name += fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage])->second;
-        }
+
         for (int i = 0; i < acpi->fans.size(); i++) {
             name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
         }

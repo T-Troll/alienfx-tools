@@ -9,7 +9,6 @@
 #define IDC_MAINMENU                    108
 #define ID_TRAYMENU_POWER_SELECTED      110
 #define IDD_MAIN_VIEW                   129
-#define IDR_DRIVER1                     133
 #define IDR_TRAYMENU                    134
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -27,13 +26,7 @@
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDM_SETTINGS_UPDATE             32782
-#define ID_SETTINGS_DISABLEAWCC         32783
 #define IDM_DISABLEAWCC                 32784
-#define ID_RESTORE                      32785
-#define ID_RESTORE_RESTORE              32786
-#define ID_RESTORE_POWER                32787
-#define ID_RESTORE_G                    32788
-#define ID_RESTORE_EXIT                 32789
 #define ID_MENU_RESTORE                 32790
 #define ID_MENU_POWER                   32791
 #define ID_MENU_GMODE                   32792

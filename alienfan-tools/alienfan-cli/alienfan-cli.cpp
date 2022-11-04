@@ -22,7 +22,7 @@ ConfigFan* fan_conf = new ConfigFan();
 
 bool CheckArgs(string cName, int minArgs, size_t nargs) {
     if (minArgs > nargs) {
-        printf("%s: Incorrect arguments (should be %d)\n", cName.c_str(), minArgs);
+        printf("%s: Incorrect arguments count (at least %d needed)\n", cName.c_str(), minArgs);
         return false;
     }
     return true;
@@ -144,7 +144,7 @@ gmode\t\t\t\tShow G-mode state\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.4.3\n");
+    printf("AlienFan-CLI v7.4.4\n");
 
     //AlienFan_SDK::Lights* lights = NULL;
 
@@ -298,9 +298,14 @@ int main(int argc, char* argv[])
                 continue;
             }
             if (command == "setgmode" && CheckArgs(command, 1, args.size())) {
-                printf("G-mode set result %d\n", acpi->SetGMode(args[0].num));
-                if (!args[0].num)
-                    acpi->SetPower(acpi->powers[fan_conf->prof.powerStage]);
+                if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && acpi->GetGMode() != args[0].num) {
+                    if (acpi->GetSystemID() == 2933 && args[0].num) // G5 5510 fix
+                        acpi->SetPower(acpi->powers[1]);
+                    acpi->SetGMode(args[0].num);
+                    if (!args[0].num)
+                        acpi->SetPower(acpi->powers[fan_conf->prof.powerStage]);
+                    printf("G-mode %s\n", args[0].num ? "On" : "Off");
+                }
                 continue;
             }
 

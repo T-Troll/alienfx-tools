@@ -3,19 +3,13 @@
 #include <mutex>
 #include "ConfigHandler.h"
 
-// Power modes: AC = 0, Battery = 1, Charge = 2, Low Battery = 4
-#define MODE_AC		0
-#define MODE_BAT	1
-#define MODE_CHARGE	2
-#define MODE_LOW	4
-
 struct EventData {
-	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1;
+	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255;
 	short Fan = 0;
 };
 
 struct LightQueryElement {
-	int did = 0;
+	AlienFX_SDK::afx_device* dev = NULL;
 	int lid = 0;
 	DWORD flags = 0;
 	bool update = false;
@@ -46,24 +40,20 @@ public:
 	HANDLE updateThread = NULL;
 	HANDLE stopQuery = NULL;
 	HANDLE haveNewElement = NULL;
-	//HANDLE queryEmpty = NULL;
-	deque<LightQueryElement> lightQuery;
+	queue<LightQueryElement> lightQuery;
 	mutex modifyQuery;
-	//bool unblockUpdates = true;
-	//bool updateLock = false;
-	int activePowerMode = -1;
+	//int activePowerMode = -1;
 	EventData eData, maxData;
-	//int numActiveDevs = 0;
 
-	//FXHelper();
+	FXHelper();
+
 	~FXHelper();
-	//AlienFX_SDK::afx_device *LocateDev(int pid);
 	int FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
 	bool RefreshOne(groupset* map, int force = 0, bool update = true);
-	bool SetPowerMode(int mode);
+	//bool SetPowerMode(int mode);
 	void TestLight(AlienFX_SDK::afx_device* dev, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::afx_device* dev);
 	void SetCounterColor(EventData *data, bool force = false);
@@ -71,11 +61,6 @@ public:
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
-	//void Flush();
 	void ChangeState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);
-	//void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL);
-	//void UnblockUpdates(bool newState);
-
-	//ConfigHandler* GetConfig() { return config; };
 };

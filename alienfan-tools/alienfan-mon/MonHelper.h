@@ -14,5 +14,6 @@ public:
 	~MonHelper();
 	void Start();
 	void Stop();
+	void SetCurrentGmode(WORD newMode);
 };
 

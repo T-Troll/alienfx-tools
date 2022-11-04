@@ -36,33 +36,42 @@ void MonHelper::Start() {
 		oldGmode = acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? acpi->GetGMode() : 0;
 		if (!oldGmode && oldPower < 0)
 			oldPower = acpi->GetPower();
-		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && oldGmode != fan_conf->lastProf->gmode) {
-			acpi->SetGMode(fan_conf->lastProf->gmode);
-		//acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+		if (oldGmode != fan_conf->lastProf->gmode) {
+			SetCurrentGmode(fan_conf->lastProf->gmode);
 		}
+		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
-		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 	}
 }
 
 void MonHelper::Stop() {
 	if (monThread) {
-#ifdef _DEBUG
-		OutputDebugString("Mon thread stop.\n");
-#endif
 		delete monThread;
 		monThread = NULL;
 		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && oldGmode != fan_conf->lastProf->gmode)
-			acpi->SetGMode(oldGmode);
-		if (!oldGmode) {
+			SetCurrentGmode(oldGmode);
+		if (!oldGmode && oldPower >= 0) {
 			acpi->SetPower(acpi->powers[oldPower]);
 			if (!oldPower)
 				// reset boost
 				for (int i = 0; i < acpi->fans.size(); i++)
 					acpi->SetFanBoost(i, 0);
 		}
+#ifdef _DEBUG
+		OutputDebugString("Mon thread stop.\n");
+#endif
+	}
+}
+
+void MonHelper::SetCurrentGmode(WORD newMode) {
+	if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && acpi->GetGMode() != newMode) {
+		if (acpi->GetSystemID() == 2933 && newMode) // G5 5510 fix
+			acpi->SetPower(acpi->powers[1]);
+		acpi->SetGMode(newMode);
+		if (!newMode)
+			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
 	}
 }
 

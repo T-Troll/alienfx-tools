@@ -13,9 +13,9 @@ private:
 	HWINEVENTHOOK hEvent, cEvent = 0;
 	HHOOK kEvent;
 
+public:
 	int effMode = 0;
 
-public:
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state = 1);
 	void SwitchActiveProfile(profile* newID);

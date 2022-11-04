@@ -453,12 +453,3 @@ void ReloadTempView(HWND list) {
     ListView_EnsureVisible(list, rpos, false);
 }
 
-void SetCurrentGmode() {
-    if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
-        if (acpi->GetSystemID() == 2933 && fan_conf->lastProf->gmode) // G5 5510 fix
-            acpi->SetPower(acpi->powers[1]);
-        acpi->SetGMode(fan_conf->lastProf->gmode);
-        if (!fan_conf->lastProf->gmode)
-            acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-    }
-}
