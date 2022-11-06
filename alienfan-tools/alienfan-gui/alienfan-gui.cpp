@@ -277,6 +277,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDC_BUT_CLOSE: case IDM_EXIT:
             SendMessage(hDlg, WM_CLOSE, 0, 0);
             break;
+        case IDM_SAVE:
+            fan_conf->Save();
+            ShowNotification(niData, "Configuration saved!", "Configuration saved successfully.", true);
+            break;
         case IDM_SETTINGS_STARTWITHWINDOWS:
         {
             fan_conf->startWithWindows = !fan_conf->startWithWindows;
@@ -294,7 +298,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (fan_conf->updateCheck)
                 CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
         } break;
-        case IDM_DISABLEAWCC: {
+        case IDM_SETTINGS_DISABLEAWCC: {
             fan_conf->awcc_disable = !fan_conf->awcc_disable;
             CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
             fan_conf->wasAWCC = DoStopService((bool)fan_conf->awcc_disable != fan_conf->wasAWCC, fan_conf->wasAWCC);
@@ -492,7 +496,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_BEGINLABELEDIT: {
                 fanThread->Stop();
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                auto pwr = fan_conf->sensors.find((WORD)sItem->item.lParam);
                 Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.iItem].name).c_str());
             } break;
             case LVN_ITEMACTIVATE: case NM_RETURN:
@@ -506,10 +510,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 if (sItem->item.pszText) {
-                    auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                    auto pwr = fan_conf->sensors.find((WORD)sItem->item.lParam);
                     if (pwr == fan_conf->sensors.end()) {
                         if (strlen(sItem->item.pszText))
-                            fan_conf->sensors.emplace(sItem->item.lParam, sItem->item.pszText);
+                            fan_conf->sensors.emplace((WORD)sItem->item.lParam, sItem->item.pszText);
                     }
                     else {
                         if (strlen(sItem->item.pszText))

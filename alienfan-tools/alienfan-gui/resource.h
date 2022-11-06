@@ -31,6 +31,9 @@
 #define ID_MENU_POWER                   32791
 #define ID_MENU_GMODE                   32792
 #define ID_MENU_EXIT                    32793
+#define ID_SAVE                         32794
+#define IDM_SAVE                        32795
+#define IDM_SETTINGS_DISABLEAWCC        32796
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -39,7 +42,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        135
-#define _APS_NEXT_COMMAND_VALUE         32794
+#define _APS_NEXT_COMMAND_VALUE         32797
 #define _APS_NEXT_CONTROL_VALUE         1017
 #define _APS_NEXT_SYMED_VALUE           111
 #endif

@@ -4,7 +4,7 @@
 #include <windowsx.h>
 #include "common.h"
 
-#define DRAG_ZONE 3
+#define DRAG_ZONE 2
 
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
@@ -20,7 +20,7 @@ extern HINSTANCE hInst;
 bool fanMode = true;
 RECT cArea{ 0 };
 
-fan_point* lastFanPoint = NULL;
+vector<fan_point>::iterator lastFanPoint;
 fan_overboost* lastBoostPoint = NULL, bestBoostPoint{ 0 };
 vector<fan_overboost> boostCheck;
 
@@ -83,7 +83,7 @@ void DrawFan()
                 LineTo(hdc, cArea.right, cy);
             }
 
-        if (fanMode /*&& fan_conf->lastSelectedFan != -1*/) {
+        if (fanMode) {
             // curve...
             temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             fan_block* fan = NULL;
@@ -292,8 +292,9 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_MOUSEMOVE: {
         if (fanMode) {
             fan_point clk = Screen2Fan(lParam);
-            if (lastFanPoint && wParam & MK_LBUTTON) {
-                *lastFanPoint = clk;
+            if (wParam & MK_LBUTTON) {
+                lastFanPoint->boost = clk.boost;
+                lastFanPoint->temp = clk.temp;
                 DrawFan();
             }
             SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
@@ -305,20 +306,25 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     } break;
     case WM_LBUTTONDOWN:
     {
+        SetCapture(hDlg);
         if (fanMode && cFan) {
-            SetCapture(hDlg);
             // check and add point
             fan_point clk = Screen2Fan(lParam);
-            for (auto fPi = cFan->points.begin(); fPi < cFan->points.end(); fPi++) {
-                if (abs(fPi->temp - clk.temp) <= DRAG_ZONE && abs(fPi->boost - clk.boost) <= DRAG_ZONE) {
-                    // Starting drag'n'drop...
-                    lastFanPoint = &(*fPi);
-                    break;
-                }
-                if (fPi->temp > clk.temp) {
-                    // Insert point here...
-                    lastFanPoint = &(*cFan->points.insert(fPi, clk));
-                    break;
+            // 100C always move last point
+            if (clk.temp == 100)
+                lastFanPoint = cFan->points.end() - 1;
+            else {
+                lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
+                    [clk](auto t) {
+                        return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
+                    });
+                if (lastFanPoint == cFan->points.end()) {
+                    // insert element
+                    if (clk.temp != 100)
+                        lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
+                            [clk](auto t) {
+                                return t.temp > clk.temp;
+                            }), clk);
                 }
             }
             DrawFan();
@@ -340,9 +346,8 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             cFan->points.front().temp = 0;
             cFan->points.back().temp = 100;
             DrawFan();
-            //fan_conf->Save();
         }
-        lastFanPoint = NULL;
+        //lastFanPoint = NULL;
         SetFocus(GetParent(hDlg));
     } break;
     case WM_RBUTTONUP: {

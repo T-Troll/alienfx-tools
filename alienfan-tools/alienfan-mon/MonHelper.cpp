@@ -109,10 +109,13 @@ void CMonProc(LPVOID param) {
 					int cBoost = fIter->points.back().boost;
 					for (int k = 1; k < fIter->points.size(); k++)
 						if (src->senValues[cIter->sensorIndex] <= fIter->points[k].temp) {
-							cBoost = (fIter->points[k - 1].boost +
-								((fIter->points[k].boost - fIter->points[k - 1].boost) *
-									(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-								(fIter->points[k].temp - fIter->points[k - 1].temp));
+							if (fIter->points[k].temp != fIter->points[k - 1].temp)
+								cBoost = (fIter->points[k - 1].boost +
+									((fIter->points[k].boost - fIter->points[k - 1].boost) *
+										(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
+									(fIter->points[k].temp - fIter->points[k - 1].temp));
+							else
+								cBoost = fIter->points[k].boost;
 							break;
 						}
 					if (cBoost > src->boostSets[fIter->fanIndex])
