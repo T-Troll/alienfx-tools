@@ -77,8 +77,9 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 	}
 	else {
 		// add sensor
-		sen = new SENSOR({ grp, type, id, name, val, val, val, NO_SEN_VALUE });
-		conf->active_sensors.push_back(*sen);
+		//sen = new SENSOR({ grp, type, id, name, val, val, val, NO_SEN_VALUE });
+		conf->active_sensors.push_back({ grp, type, id, name, val, val, val, NO_SEN_VALUE }/**sen*/);
+		sen = &conf->active_sensors.back();
 		conf->needFullUpdate = true;
 	}
 	if (sen->alarm && sen->oldCur && sen->oldCur != NO_SEN_VALUE) {

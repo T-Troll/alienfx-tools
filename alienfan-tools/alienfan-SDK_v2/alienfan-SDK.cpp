@@ -79,19 +79,18 @@ namespace AlienFan_SDK {
 			IEnumWbemClassObject* enum_obj;
 			IWbemClassObject* spInstance;
 			ULONG uNumOfInstances = 0;
-			if (m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) != S_OK)
-				return false;
-			enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-			spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
-			spInstance->Release();
-			enum_obj->Release();
-			devFlags |= DEV_FLAG_AWCC;
-			// now let's check methods
-			if (m_AWCCGetObj->GetMethod(commandList[dev_controls.getSysID.com], NULL, &m_InParamaters, nullptr) == S_OK) {
+			if (m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+				spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
+				spInstance->Release();
+				enum_obj->Release();
+				devFlags |= DEV_FLAG_AWCC;
+				// Prepare InParameters...
+				m_AWCCGetObj->GetMethod(commandList[dev_controls.getPowerID.com], NULL, &m_InParamaters, nullptr);
 				// Let's get device ID...
 				systemID = CallWMIMethod(dev_controls.getSysID, 2);
 #ifdef _TRACE_
-				printf("System information available, ID = %d!\n", systemID);
+				printf("System ID = %d!\n", systemID);
 #endif
 				int fIndex = 0, funcID;
 				// Scan for available fans...
@@ -105,17 +104,15 @@ namespace AlienFan_SDK {
 				printf("%d Fans found\n", fIndex);
 #endif
 
-				int firstIndex = fIndex;
 				// AWCC temperature sensors.
 				do {
-					int sIndex = fIndex - firstIndex;
-					if (CallWMIMethod(dev_controls.getTemp, (byte)funcID) > 0) {
-						sensors.push_back({ (short)funcID, sIndex < 2 ? temp_names[sIndex] : "Sensor #" + to_string(sIndex), 1 });
-					}
+					//if (CallWMIMethod(dev_controls.getTemp, (byte)funcID) > 0) {
+						sensors.push_back({ (short)funcID, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()), 1 });
+					//}
 					fIndex++;
 				} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) > 0x100 && funcID < 0x1A0);
 #ifdef _TRACE_
-				printf("%d AWCC Temperature sensors found\n", fIndex - firstIndex);
+				printf("%d AWCC Temperature sensors found\n", (int)sensors.size());
 #endif
 
 				// Power modes.
@@ -130,13 +127,6 @@ namespace AlienFan_SDK {
 #endif
 				}
 			}
-//			if (m_AWCCGetObj->GetMethod(commandList[1], NULL, &m_InParamaters, nullptr) == S_OK) {
-//#ifdef _TRACE_
-//				printf("Fan control available!\n");
-//#endif
-//				m_InParamaters->Release();
-//				devFlags |= DEV_FLAG_CONTROL;
-//			}
 			if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK) {
 #ifdef _TRACE_
 				printf("G-Mode available!\n");
@@ -144,7 +134,6 @@ namespace AlienFan_SDK {
 				devFlags |= DEV_FLAG_GMODE;
 			}
 			VARIANT instPath;
-			//int numSen = 1;
 			// ESIF temperature sensors
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				// Get sensor names array
@@ -181,24 +170,15 @@ namespace AlienFan_SDK {
 				printf("ESIF data available, %d sensors added!\n", numSen);
 #endif
 			}
-//			if (m_WbemServices->GetObject((BSTR)L"AMD_ACPI", NULL, nullptr, &m_ESIFObject, nullptr) == S_OK) {
-//				m_ESIFObject->Release();
-//#ifdef _TRACE_
-//				printf("AMD data available, %d sensors added!\n", 0);
-//#endif
-//			}
 			if (m_DiskService && m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				IWbemClassObject* spInstance;
 				ULONG uNumOfInstances = 0;
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-				//short ssdsen = 0;
-				//numSen = 1;
 				for (short ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"StorageReliabilityCounter", 0, &instPath, 0, 0);
 					sensors.push_back({ ind, "SSD " + to_string(ind) + " Sensor", 2, instPath.bstrVal });
 					spInstance->Release();
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-					//numSen++;
 				}
 				enum_obj->Release();
 #ifdef _TRACE_
@@ -207,20 +187,17 @@ namespace AlienFan_SDK {
 			}
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-				//numSen = 1;
 				VARIANT type, name;
 				for (short ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
 					spInstance->Get((BSTR)L"SensorType", 0, &type, 0, 0);
 					spInstance->Get((BSTR)L"Name", 0, &name, 0, 0);
 					spInstance->Release();
-					//wstring tn{ type.bstrVal };
 					if (type.bstrVal == wstring(L"Temperature")) {
 						wstring sname{ name.bstrVal };
 						sensors.push_back({ ind,
 							string(sname.begin(), sname.end()),
 							4, instPath.bstrVal });
-						//numSen++;
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}

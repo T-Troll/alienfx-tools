@@ -222,8 +222,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 fanUIUpdate->Stop();
                 HWND editC = ListView_GetEditControl(tempList);
-                auto pwr = fan_conf->sensors.find((byte)sItem->item.lParam);
-                Edit_SetText(editC, (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[(byte)sItem->item.lParam].name).c_str());
+                auto pwr = fan_conf->sensors.find(sItem->item.lParam);
+                Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.iItem].name).c_str());
             } break;
             case LVN_ITEMACTIVATE: case NM_RETURN:
             {
@@ -235,12 +235,11 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_ENDLABELEDIT:
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                if (sItem->item.pszText && (unsigned)sItem->item.lParam < acpi->sensors.size()) {
-                    auto pwr = fan_conf->sensors.find(MAKEWORD(acpi->sensors[sItem->item.lParam].senIndex,
-                        acpi->sensors[sItem->item.lParam].type));
+                if (sItem->item.pszText) {
+                    auto pwr = fan_conf->sensors.find(sItem->item.lParam);
                     if (pwr == fan_conf->sensors.end()) {
                         if (strlen(sItem->item.pszText))
-                            fan_conf->sensors.emplace((byte)sItem->item.lParam, sItem->item.pszText);
+                            fan_conf->sensors.emplace(sItem->item.lParam, sItem->item.pszText);
                     }
                     else {
                         if (strlen(sItem->item.pszText))

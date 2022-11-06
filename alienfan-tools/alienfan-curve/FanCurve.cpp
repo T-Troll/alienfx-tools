@@ -87,19 +87,17 @@ void DrawFan()
             // curve...
             temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             fan_block* fan = NULL;
-            int fanBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan);
+            int fanBoost = mon->boostRaw[fan_conf->lastSelectedFan] * 100 / acpi->boosts[fan_conf->lastSelectedFan];//acpi->GetFanBoost(fan_conf->lastSelectedFan);
             for (auto senI = fan_conf->lastProf->fanControls.begin();
                 senI < fan_conf->lastProf->fanControls.end(); senI++)
                 if (fan = fan_conf->FindFanBlock(&(*senI), fan_conf->lastSelectedFan)) {
                     // draw fan curve
                     HPEN linePen;
                     if (sen && sen->sensorIndex == senI->sensorIndex)
-                        //SetDCPenColor(hdc, RGB(0, 255, 0));
                         linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
                     else
-                        //SetDCPenColor(hdc, RGB(255, 255, 0));
                         linePen = CreatePen(PS_DOT, 1, RGB(255, 255, 0));
-                    SelectObject(hdc, linePen);// GetStockObject(DC_PEN));
+                    SelectObject(hdc, linePen);
                     // First point
                     MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
                     for (int i = 0; i < fan->points.size(); i++) {
@@ -427,7 +425,7 @@ void ReloadTempView(HWND list) {
     for (int i = 0; i < acpi->sensors.size(); i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
         string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[i]) + ")";
-        lItem.lParam = i;
+        lItem.lParam = MAKEWORD(acpi->sensors[i].senIndex, acpi->sensors[i].type);
         lItem.pszText = (LPSTR)name.c_str();
         if (i == fan_conf->lastSelectedSensor) {
             lItem.state = LVIS_SELECTED;

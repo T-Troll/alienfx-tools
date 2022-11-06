@@ -30,7 +30,8 @@ EventHandler::EventHandler()
 	eve = this;
 	ChangePowerState();
 	//StartFanMon();
-	StartEffects();
+	//StartEffects();
+	ChangeEffectMode();
 }
 
 EventHandler::~EventHandler()

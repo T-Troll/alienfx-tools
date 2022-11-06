@@ -6,7 +6,7 @@
 
 using namespace std;
 
-#define NO_SEN_VALUE -300
+#define NO_SEN_VALUE -1
 
 struct SENSOR {
 	int source;

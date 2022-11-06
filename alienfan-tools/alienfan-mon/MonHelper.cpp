@@ -106,32 +106,34 @@ void CMonProc(LPVOID param) {
 			if (cIter->sensorIndex < src->senValues.size())
 				for (auto fIter = cIter->fans.begin(); fIter < cIter->fans.end(); fIter++) {
 					// Look for boost point for temp...
+					int cBoost = fIter->points.back().boost;
 					for (int k = 1; k < fIter->points.size(); k++)
 						if (src->senValues[cIter->sensorIndex] <= fIter->points[k].temp) {
-							int cBoost = (fIter->points[k - 1].boost +
-									((fIter->points[k].boost - fIter->points[k - 1].boost) *
+							cBoost = (fIter->points[k - 1].boost +
+								((fIter->points[k].boost - fIter->points[k - 1].boost) *
 									(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-									(fIter->points[k].temp - fIter->points[k - 1].temp)) * acpi->boosts[fIter->fanIndex] / 100;
-							if (cBoost > src->boostSets[fIter->fanIndex])
-								src->boostSets[fIter->fanIndex] = cBoost;
-							src->senBoosts[cIter->sensorIndex][fIter->fanIndex] = cBoost * 100 / acpi->boosts[fIter->fanIndex];
+								(fIter->points[k].temp - fIter->points[k - 1].temp));
 							break;
 						}
+					if (cBoost > src->boostSets[fIter->fanIndex])
+						src->boostSets[fIter->fanIndex] = cBoost;
+					src->senBoosts[cIter->sensorIndex][fIter->fanIndex] = cBoost;
 				}
 		}
 		// Now set if needed...
 		for (int i = 0; i < acpi->fans.size(); i++)
 			if (!src->fanSleep[i]) {
+				int rawBoost = src->boostSets[i] * acpi->boosts[i] / 100;
 				// Check overboost tricks...
-				if (src->boostRaw[i] < 90 && src->boostSets[i] > 100) {
+				if (src->boostRaw[i] < 90 && rawBoost > 100) {
 					acpi->SetFanBoost(i, 100, true);
 					src->fanSleep[i] = ((100 - src->boostRaw[i]) >> 3) + 2;
 					DebugPrint(("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts(old "
-						+ to_string(src->boostRaw[i]) + ", new " + to_string(src->boostSets[i]) +")!\n").c_str());
+						+ to_string(src->boostRaw[i]) + ", new " + to_string(rawBoost) +")!\n").c_str());
 				} else
-					if (src->boostSets[i] != src->boostRaw[i] /*|| src->boostSets[i] > 100*/) {
-						if (src->boostRaw[i] > src->boostSets[i])
-							src->boostSets[i] += 15 * ((src->boostRaw[i] - src->boostSets[i]) >> 4);
+					if (rawBoost != src->boostRaw[i] /*|| src->boostSets[i] > 100*/) {
+						if (src->boostRaw[i] > rawBoost)
+							rawBoost += 15 * ((src->boostRaw[i] - rawBoost) >> 4);
 						// fan RPM stuck patch v2
 						//if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
 						//	int pct = acpi->GetFanPercent(i) << 3;
@@ -144,7 +146,7 @@ void CMonProc(LPVOID param) {
 						//	}
 						//}
 
-						acpi->SetFanBoost(i, src->boostSets[i], true);
+						acpi->SetFanBoost(i, rawBoost, true);
 
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());

@@ -42,7 +42,6 @@ public:
 	HANDLE haveNewElement = NULL;
 	queue<LightQueryElement> lightQuery;
 	mutex modifyQuery;
-	//int activePowerMode = -1;
 	EventData eData, maxData;
 
 	FXHelper();
@@ -52,8 +51,7 @@ public:
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
-	bool RefreshOne(groupset* map, int force = 0, bool update = true);
-	//bool SetPowerMode(int mode);
+	void RefreshOne(groupset* map, int force = 0, bool update = true);
 	void TestLight(AlienFX_SDK::afx_device* dev, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::afx_device* dev);
 	void SetCounterColor(EventData *data, bool force = false);

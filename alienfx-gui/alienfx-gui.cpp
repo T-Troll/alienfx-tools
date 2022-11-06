@@ -8,6 +8,7 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma comment(lib,"comctl32.lib")
+#pragma comment(lib,"msimg32.lib")
 
 // Global Variables:
 HINSTANCE hInst;
@@ -122,7 +123,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	fxhl->FillAllDevs(acpi);
-	fxhl->Refresh();
 
 	eve = new EventHandler();
 

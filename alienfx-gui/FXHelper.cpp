@@ -476,12 +476,12 @@ void FXHelper::Refresh(int forced)
 		}
 }
 
-bool FXHelper::RefreshOne(groupset* map, int force, bool update) {
+void FXHelper::RefreshOne(groupset* map, int force, bool update) {
 
 	if (conf->stateOn && map && map->color.size()) {
-		if (!force && conf->enableMon) {
+		if (!force && conf->enableMon && eve) {
 			size_t act = 0;
-			switch (conf->GetEffect()) {
+			switch (eve->effMode) {
 			case 1:
 				act = map->events.size();
 				break;
@@ -495,14 +495,12 @@ bool FXHelper::RefreshOne(groupset* map, int force, bool update) {
 				act = map->effect.trigger;
 			}
 			if (act)
-				return false;
+				return;
 		}
 		SetGroupLight(map, map->color, 0, force == 2);
 		if (update)
 			QueryUpdate(-1, force == 2);
 	}
-
-	return true;
 }
 
 void FXHelper::RefreshAmbient(UCHAR *img) {

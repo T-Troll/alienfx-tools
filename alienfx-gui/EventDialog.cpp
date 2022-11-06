@@ -92,10 +92,7 @@ void RebuildEventList(HWND hDlg, groupset* mmap) {
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND /*list_counter = GetDlgItem(hDlg, IDC_COUNTERLIST),
-		list_status = GetDlgItem(hDlg, IDC_STATUSLIST),
-		s1_slider = GetDlgItem(hDlg, IDC_MINPVALUE),*/
-		s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
+	HWND s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
 	groupset* map = FindMapping(eItem);
 	event* ev = GetEventData(map);
@@ -187,7 +184,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				if (eventID)
 					eventID--;
 				RebuildEventList(hDlg, map);
-				fxhl->RefreshMon();
+				fxhl->Refresh();
 			}
 			break;
 		case IDC_BUTT_EVENT_UP:

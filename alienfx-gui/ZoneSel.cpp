@@ -145,6 +145,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				UpdateZoneList();
 				if (eItem < 0)
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+				fxhl->Refresh();
 			}
 			break;
 		}

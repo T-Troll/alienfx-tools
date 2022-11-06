@@ -24,6 +24,8 @@ HWND tipH = NULL, tipV = NULL;
 
 HWND cgDlg;
 
+int minGridX, minGridY, maxGridX, maxGridY;
+
 extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 AlienFX_SDK::mapping* FindCreateMapping() {
@@ -44,6 +46,9 @@ AlienFX_SDK::mapping* FindCreateMapping() {
 }
 
 void InitGridButtonZone() {
+    // init sizes
+    minGridX = conf->mainGrid->x; minGridY = conf->mainGrid->y;
+    maxGridX = maxGridY = -1;
     // delete zone buttons...
     for (DWORD bID = 2000; GetDlgItem(cgDlg, bID); bID++)
         DestroyWindow(GetDlgItem(cgDlg, bID));
@@ -58,8 +63,14 @@ void InitGridButtonZone() {
     for (int y = 0; y < conf->mainGrid->y; y++)
         for (int x = 0; x < conf->mainGrid->x; x++) {
             int xx = x+1;
-            if (conf->mainGrid->grid[ind(x, y)])
+            if (conf->mainGrid->grid[ind(x, y)]) {
                 for (; conf->mainGrid->grid[ind(x, y)] == conf->mainGrid->grid[ind(xx, y)]; xx++);
+                // now ajust sizes
+                minGridX = min(minGridX, x);
+                minGridY = min(minGridY, y);
+                maxGridX = max(maxGridX, x);
+                maxGridY = max(maxGridY, y);
+            }
             HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW | WS_DISABLED,
                 bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, (xx-x) * bzone.right, bzone.bottom, cgDlg, (HMENU)bId,
                 GetModuleHandle(NULL), NULL);
@@ -132,17 +143,26 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
 }
 
 void SetLightGridSize(int x, int y) {
-    if (x != conf->mainGrid->x || y != conf->mainGrid->y) {
-        DWORD* newgrid = new DWORD[x * y]{ 0 };
-        for (int row = 0; row < min(conf->mainGrid->y, y); row++)
-            memcpy(newgrid + row * x, conf->mainGrid->grid + row * conf->mainGrid->x,
-                min(conf->mainGrid->x, x) * sizeof(DWORD));
-        delete[] conf->mainGrid->grid;
-        conf->mainGrid->grid = newgrid;
-        conf->mainGrid->x = x;
-        conf->mainGrid->y = y;
-        InitGridButtonZone();
+    int minX = 0, minY = 0;
+    if (x <= maxGridX) {
+        // cut from left
+        minX = min(minGridX, maxGridX - x + 1);
+        x = max(x, maxGridX - minGridX + 1);
     }
+    if (y <= maxGridY) {
+        // cut from top
+        minY = min(minGridY, maxGridY - y + 1);
+        y = max(y, maxGridY - minGridY + 1);
+    }
+    DWORD* newgrid = new DWORD[x * y]{ 0 };
+    for (int row = 0; row < min(conf->mainGrid->y, y); row++)
+        memcpy(newgrid + row * x, conf->mainGrid->grid + (row + minY) * conf->mainGrid->x + minX,
+            min(conf->mainGrid->x, x) * sizeof(DWORD));
+    delete[] conf->mainGrid->grid;
+    conf->mainGrid->grid = newgrid;
+    conf->mainGrid->x = x;
+    conf->mainGrid->y = y;
+    InitGridButtonZone();
 }
 
 void ModifyDragZone(WORD did, WORD lid) {
@@ -344,6 +364,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         /*case TB_THUMBPOSITION: */case TB_ENDTRACK:
             if ((HWND)lParam == gridX) {
                 SetLightGridSize((int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), conf->mainGrid->y);
+                SendMessage((HWND)lParam, TBM_SETPOS, true, conf->mainGrid->x);
                 SetSlider(tipH, conf->mainGrid->x);
             }
             break;
@@ -358,6 +379,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         /*case TB_THUMBPOSITION:*/ case TB_ENDTRACK:
             if ((HWND)lParam == gridY) {
                 SetLightGridSize(conf->mainGrid->x, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+                SendMessage((HWND)lParam, TBM_SETPOS, true, conf->mainGrid->y);
                 SetSlider(tipV, conf->mainGrid->y);
             }
             break;
@@ -370,7 +392,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     case WM_DRAWITEM: {
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
-            HBRUSH Brush = NULL, Brush2 = NULL;
+            HBRUSH Brush = NULL;// , Brush2 = NULL;
             int ind = (int)GetWindowLongPtr(ditem->hwndItem, GWLP_USERDATA);
             DWORD gridVal = conf->mainGrid->grid[ind];
             if (tabLightSel == TAB_DEVICES) {
@@ -380,44 +402,31 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                         Brush = CreateSolidBrush(RGB(conf->testColor.r, conf->testColor.g, conf->testColor.b));
                     else
                         Brush = CreateSolidBrush(RGB(0xff - (idVal << 1), 0, idVal & 0xff));
+                    FillRect(ditem->hDC, &ditem->rcItem, Brush);
+                    DeleteObject(Brush);
                 }
-                else
-                    Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-                FillRect(ditem->hDC, &ditem->rcItem, Brush);
-                DeleteObject(Brush);
+                /*else
+                    Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));*/
+                //FillRect(ditem->hDC, &ditem->rcItem, Brush);
+                //DeleteObject(Brush);
             }
             else {
                 if (gridVal) {
+                    GRADIENT_RECT gRect{ 0,1 };
+                    TRIVERTEX vertex[2]{ {ditem->rcItem.left, ditem->rcItem.top},
+                        {ditem->rcItem.right, ditem->rcItem.bottom} };
                     pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*> lightcolors = conf->colorGrid[ind];
-                    if (lightcolors.first == NULL) {
-                        // not active
-                        Brush = CreateSolidBrush(RGB(0, 0, 0));
-                        Brush2 = CreateSolidBrush(RGB(0, 0, 0));
-                    }
-                    else {
+                    if (lightcolors.first) {
                         // active
-                        Brush = CreateSolidBrush(RGB(lightcolors.first->r, lightcolors.first->g, lightcolors.first->b));
-                        Brush2 = CreateSolidBrush(RGB(lightcolors.second->r, lightcolors.second->g, lightcolors.second->b));
+                        vertex[0].Red = lightcolors.first->r << 8;
+                        vertex[0].Green = lightcolors.first->g << 8;
+                        vertex[0].Blue = lightcolors.first->b << 8;
+                        vertex[1].Red = lightcolors.second->r << 8;
+                        vertex[1].Green = lightcolors.second->g << 8;
+                        vertex[1].Blue = lightcolors.second->b << 8;
                     }
+                    GradientFill(ditem->hDC, vertex, 2, &gRect, 1, GRADIENT_FILL_RECT_H);
                 }
-                else {
-                    Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-                    Brush2 = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-                }
-                POINT triangle[3] = { {ditem->rcItem.left, ditem->rcItem.bottom},
-                    {ditem->rcItem.left, ditem->rcItem.top},
-                    {ditem->rcItem.right, ditem->rcItem.top}
-                }, triangle2[3] = { {ditem->rcItem.right, ditem->rcItem.top},
-                    {ditem->rcItem.right, ditem->rcItem.bottom},
-                    {ditem->rcItem.left, ditem->rcItem.bottom}
-                };
-                SelectObject(ditem->hDC, GetStockObject(NULL_PEN));
-                SelectObject(ditem->hDC, Brush);
-                Polygon(ditem->hDC, triangle, 3);
-                SelectObject(ditem->hDC, Brush2);
-                Polygon(ditem->hDC, triangle2, 3);
-                DeleteObject(Brush);
-                DeleteObject(Brush2);
                 if (gridVal && IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem)))
                     DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
             }
