@@ -47,6 +47,7 @@ public:
 	DWORD updateCheck = 1;
 	DWORD obCheck = 0;
 	DWORD awcc_disable = 0;
+	DWORD keyShortcuts = 1;
 
 	bool wasAWCC = false;
 

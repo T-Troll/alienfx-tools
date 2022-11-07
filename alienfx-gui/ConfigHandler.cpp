@@ -166,6 +166,7 @@ void ConfigHandler::Load() {
 	GetReg("OffOnBattery", &offOnBattery);
 	GetReg("FanControl", &fanControl);
 	GetReg("ShowGridNames", &showGridNames);
+	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	RegGetValue(hKeyMain, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
 	// Ambient....
@@ -374,7 +375,7 @@ void ConfigHandler::Save() {
 	SetReg("EsifTemp", esif_temp);
 	SetReg("FanControl", fanControl);
 	SetReg("ShowGridNames", showGridNames);
-
+	SetReg("KeyboardShortcut", keyShortcuts);
 	RegSetValueEx( hKeyMain, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
 
 	// Ambient

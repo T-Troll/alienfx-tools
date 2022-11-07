@@ -7,7 +7,7 @@ namespace AlienFX_SDK {
 	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microship (monitors), Primax (mouses), Chicony (external keyboards)
 	//const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461, 0x04f2};
 
-	static struct COMMV1 {
+	static struct COMMV1 { // old devices
 		const byte reset[2]{0x07, 0x04};
 		// [2] - 0x1 - power & indi, 0x2 - sleep, 0x3 - off, 0x4 - on
 		const byte loop[1]{0x04};
@@ -29,7 +29,7 @@ namespace AlienFX_SDK {
 		const byte setTempo[1]{0x0e};
 	} COMMV1;
 
-	static struct COMMV4 {
+	static struct COMMV4 { // common tron
 		const byte control[6]{ 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0xff };
 		// [4] - control type (1..6), 3 - update, 1 - reset
 		// [5] - unknown. ff for reset, 0 for others
@@ -53,7 +53,7 @@ namespace AlienFX_SDK {
 		// [6-33] - light IDs (like colorSel)
 	} COMMV4;
 
-	static struct COMMV5 {
+	static struct COMMV5 { // notebook rgb keyboards
 		// Start command block
 		const byte reset[1]{0x94};
 		const byte status[1]{0x93};
@@ -94,7 +94,7 @@ namespace AlienFX_SDK {
 		//					 0xff, 0x00, 0x01};
 	} COMMV5;
 
-	static struct COMMV6 {
+	static struct COMMV6 { // monitors
 		//const byte systemReset[3]{0x93,0x37,0x0e};
 		//[3] - some command, can be 06 and 0e
 		const byte systemReset[4]{ 0x95,0,0,0 };
@@ -110,7 +110,7 @@ namespace AlienFX_SDK {
 		// 1,8c - [10,11,12] - RGB, [13,14,15] - RGB2, [16] - brightness, [17,18] - tempo, [19] - checksum
 	} COMMV6;
 
-	static struct COMMV7 {
+	static struct COMMV7 { // mouses
 		const byte update[8]{0x40,0x60,0x07,0x00,0xc0,0x4e,0x00,0x01};
 		//[8] = 1 - update finish, [9] = 1 - update color (after set)
 		const byte status[5]{0x40,0x03,0x01,0x00,0x01};
@@ -118,7 +118,7 @@ namespace AlienFX_SDK {
 		//[5] - effect mode, [6] - brightness, [7] - lightID, [8..10] - rgb1, [11..13] - rgb2...
 	} COMMV7;
 
-	static struct COMMV8 {
+	static struct COMMV8 { // external keyboards
 		const byte effectReady[4]{0x5,0x1,0x51,0x00};
 		// [2] - profile number
 		const byte effectSet[14]{0x5,0x1,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 };

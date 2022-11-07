@@ -55,6 +55,8 @@
 #define IDC_STARTM                      1017
 #define IDC_BUTTON_REMOVE               1017
 #define IDC_LIST_DEV                    1018
+#define IDC_STARTM2                     1018
+#define IDC_HOTKEYS                     1018
 #define IDC_BUT_LAST                    1019
 #define IDC_BUTTON_REFRESH              1021
 #define IDC_BUTTON_MINIMIZE             1022
@@ -202,7 +204,6 @@
 #define IDC_BUT_EVENT_DOWN              1181
 #define IDC_BUTT_REMOVE_EVENT           1182
 #define IDC_EVENTS_LIST                 1183
-#define IDC_BUT_ADD_EVENT2              1184
 #define IDC_BUT_ADD_EVENT               1184
 #define IDC_BUTT_EVENT_UP               1185
 #define ID_TRAYMENU_RESTORE             32772

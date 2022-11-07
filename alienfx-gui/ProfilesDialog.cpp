@@ -395,9 +395,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			}
 		} break;
 		case IDC_APP_BROWSE: {
-			// fileopen dialogue...
 			OPENFILENAMEA fstruct{ sizeof(OPENFILENAMEA), hDlg, hInst, "Applications (*.exe)\0*.exe\0\0" };
-			char appName[4096]; appName[0] = 0;
+			static char appName[4096]; appName[0] = 0;
 			fstruct.lpstrFile = (LPSTR) appName;
 			fstruct.nMaxFile = 4095;
 			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
@@ -435,8 +434,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_PRIORITY:
 			SetBitMask(prof->flags, PROF_PRIORITY, state);
 			// Update active profile, if needed
-			if (conf->enableProf)
-				eve->ScanTaskList();
+			//if (conf->enableProf)
+			//	eve->ScanTaskList();
 			break;
 		case IDC_CHECK_PROFDIM:
 			SetBitMask(prof->flags, PROF_DIMMED, state);

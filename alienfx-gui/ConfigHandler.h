@@ -143,6 +143,7 @@ public:
 	DWORD enableMon = 1;
 	DWORD noDesktop = 0;
 	DWORD showGridNames = 0;
+	DWORD keyShortcuts = 1;
 	COLORREF customColors[16]{ 0 };
 
 	// States

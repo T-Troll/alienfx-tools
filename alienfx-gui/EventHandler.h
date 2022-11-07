@@ -12,6 +12,8 @@ private:
 
 	HWINEVENTHOOK hEvent, cEvent = 0;
 	HHOOK kEvent;
+	DWORD maxProcess = 256;
+	DWORD* aProcesses;
 
 public:
 	int effMode = 0;
@@ -35,7 +37,7 @@ public:
 
 	void ScanTaskList();
 
-	void CheckProfileWindow(HWND hwnd);
+	void CheckProfileWindow();
 
 	EventHandler();
 	~EventHandler();

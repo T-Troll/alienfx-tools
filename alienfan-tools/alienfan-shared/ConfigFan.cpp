@@ -54,7 +54,7 @@ void ConfigFan::Load() {
 	GetReg("LastFan", &lastSelectedFan);
 	GetReg("ObCheck", &obCheck);
 	GetReg("DisableAWCC", &awcc_disable);
-
+	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	// set power values
 	prof.powerStage = LOWORD(power);
 	prof.gmode = HIWORD(power);
@@ -132,7 +132,7 @@ void ConfigFan::Save() {
 	SetReg("LastFan", lastSelectedFan);
 	SetReg("ObCheck", obCheck);
 	SetReg("DisableAWCC", awcc_disable);
-
+	SetReg("KeyboardShortcut", keyShortcuts);
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");
 	RegCreateKeyEx(keyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);

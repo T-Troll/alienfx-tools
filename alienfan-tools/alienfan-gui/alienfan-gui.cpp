@@ -124,6 +124,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return 0;
 }
 
+void SetHotkeys() {
+    if (fan_conf->keyShortcuts) {
+        //power mode hotkeys
+        for (int i = 0; i < acpi->powers.size(); i++)
+            RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
+    }
+    else
+    {
+        UnregisterHotKey(mDlg, 6);
+        for (int i = 0; i < acpi->powers.size(); i++)
+            UnregisterHotKey(mDlg, 20 + i);
+    }
+}
+
 HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance;
@@ -133,10 +148,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
         SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
         SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFANGUI), IMAGE_ICON, 16, 16, 0));
 
-        //power mode hotkeys
-        for (int i = 0; i < 6; i++)
-            RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-        RegisterHotKey(mDlg, 6, 0, VK_F17);
+        SetHotkeys();
 
         ShowWindow(mDlg, nCmdShow);
 
@@ -208,6 +220,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
 
         if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Fan settings",
             MB_YESNO | MB_ICONQUESTION) == IDYES) {
@@ -298,6 +311,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (fan_conf->updateCheck)
                 CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
         } break;
+        case IDM_SETTINGS_KEYBOARDSHORTCUTS:
+            fan_conf->keyShortcuts = !fan_conf->keyShortcuts;
+            SetHotkeys();
+            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
+            break;
         case IDM_SETTINGS_DISABLEAWCC: {
             fan_conf->awcc_disable = !fan_conf->awcc_disable;
             CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
@@ -401,7 +419,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     } break;
     case WM_HOTKEY: {
-        if (wParam > 19 && wParam - 20 < acpi->powers.size()) {
+        if (wParam > 19 /*&& wParam - 20 < acpi->powers.size()*/) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
             //acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);

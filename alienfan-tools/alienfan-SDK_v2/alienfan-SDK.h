@@ -95,12 +95,12 @@ namespace AlienFan_SDK {
 		// Result: raw value set or error
 		int Unlock();
 
-		// Set system power profile to power level (value from powers[])
+		// Set system power profile to defined power code (NOT level)
 		// Result: raw value set or error
 		int SetPower(byte level);
 
 		// Get current system power value index at powers[]
-		// Result: power value index in powers[]
+		// Result: power value index in powers[] or error
 		int GetPower();
 
 		// Set system GPU limit level (0 - no limit, 3 - min. limit)

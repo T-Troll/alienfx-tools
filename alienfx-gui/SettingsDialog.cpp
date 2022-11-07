@@ -9,6 +9,7 @@ extern void ReloadProfileList();
 //extern bool EvaluteToAdmin();
 //extern bool WindowsStartSet(bool kind, string name);
 extern bool DetectFans();
+extern void SetHotkeys();
 
 extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
@@ -39,6 +40,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_CHECK_UPDATE, conf->updateCheck);
 		CheckDlgButton(hDlg, IDC_OFFONBATTERY, conf->offOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
+		CheckDlgButton(hDlg, IDC_HOTKEYS, conf->keyShortcuts);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -143,6 +145,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->fanControl = state;
 			if (state) {
 				if (DetectFans()) {
+					SetHotkeys();
 					eve->StartFanMon();
 				} else
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
@@ -155,10 +158,14 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			}
 			// check for ACPI lights
-			fxhl->FillAllDevs(acpi);
+			//fxhl->FillAllDevs(acpi);
 			break;
 		case IDC_CHECK_LIGHTNAMES:
 			conf->showGridNames = !conf->showGridNames;
+			break;
+		case IDC_HOTKEYS:
+			conf->keyShortcuts = !conf->keyShortcuts;
+			SetHotkeys();
 			break;
 		default: return false;
 		}

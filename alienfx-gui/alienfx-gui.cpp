@@ -161,15 +161,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
-HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-	hInst = hInstance;
-
-	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
-
-		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
-		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
-
+void SetHotkeys() {
+	if (conf->keyShortcuts) {
 		//register global hotkeys...
 		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
 		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
@@ -181,8 +174,36 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		//power mode hotkeys
-		for (int i = 0; i < 6; i++)
-			RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+		if (acpi)
+			for (int i = 0; i < acpi->powers.size(); i++)
+				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+	}
+	else {
+		//unregister global hotkeys...
+		UnregisterHotKey(mDlg, 1);
+		UnregisterHotKey(mDlg, 2);
+		UnregisterHotKey(mDlg, 3);
+		UnregisterHotKey(mDlg, 4);
+		UnregisterHotKey(mDlg, 5);
+		UnregisterHotKey(mDlg, 6);
+		//profile/power change hotkeys...
+		for (int i = 0; i < 10; i++) {
+			UnregisterHotKey(mDlg, 10 + i);
+			UnregisterHotKey(mDlg, 30 + i);
+		}
+	}
+}
+
+HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
+{
+	hInst = hInstance;
+
+	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
+
+		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
+		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
+
+		SetHotkeys();
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 
@@ -719,7 +740,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		}
-		if (wParam > 29 && wParam < 36 && acpi && wParam - 30 < acpi->powers.size()) { // PowerMode switch
+		if (wParam > 29 && wParam < 36 && acpi /*&& wParam - 30 < acpi->powers.size()*/) { // PowerMode switch
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			//acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 			if (tabSel == TAB_FANS)
