@@ -314,11 +314,12 @@ Application behavior control block at right:
 - "Start with Windows" - Start application at Windows start. It will not work if application request run as admin level (see below) (default - off).
 - "Check for update" - Enables online update check (default - on).
 - "Start minimized" - Hide application window in system tray after start (default - off).
+- "Keyboard shortcuts" - Enables global keyboard hotkeys (default - on).
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Use BIOS sensors" - Read additional hardware data from Windows WMI and Alienware BIOS (if fan control enabled). It will require "Run as administrator" privilege (default - off).
 - "Enable fan control" - Enables fan and power control functionality, as well as some additional (Alienware BIOS) temperature sensors. It will require "Run as administrator" privilege (default - off).
 
-Light system control options at the left block:
+Light system control options at the left:
 - "Turn on lights" - Global light control system switch. All lights will be off and black if disabled (default - on).
   - "Keep Power/indicator on" - Power and Indicator lights stay on even if lights turned off (default - on).
   - "Turn off for battery" - Lights will turned off at battery power and back on at AC. (default - off). 

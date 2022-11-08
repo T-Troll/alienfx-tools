@@ -43,14 +43,15 @@ You can press "Stop Overboost" button at any time to stop overboost check.
 You can minimize application to tray pressing Minimize button (or the top one), left click on try icon restore application back, right click brings you the context menu for power mode/g-mode change.
 
 There are some settings into application top menu under "Settings":
-- "Start with windows" - If checked, application will run at system start.
-- "Start minimized" - If checked, application hide into tray icon after start.
-- "Check for update" - If checked, application will made online update check at start.
-- "Disable AWCC" - If checked and AWCC service running, it will be stopped and started back then application quit.
+- "Start with windows" - Application will run at system start.
+- "Start minimized" - Application hide into tray icon after start.
+- "Keyboard shortcuts" - Global keyboard hotkeys enabled.
+- "Check for update" - Application will made online update check at start.
+- "Disable AWCC" - In case AWCC service running, it will be stopped and started back then application quit.
 
-## Keyboard shortcuts 
+## Keyboard shortcuts
 
 Global shortcuts (works all time application running):
-- CTRL+ALT+0..5 - switch active power mode. 0 is for Manual, 1..5 for system-defined
+- CTRL+ALT+0..N - switch active power mode. 0 is for Manual, 1..N for system-defined
 - F17 (G-key for Dell G-series laptops) - Enable/disable G-Mode (performance mode)
 
