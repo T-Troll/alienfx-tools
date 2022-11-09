@@ -34,7 +34,7 @@ private:
 	void SetGridLight(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int x, int y, AlienFX_SDK::Colorcode fin, vector<DWORD>* setLights);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int phase, int dist, AlienFX_SDK::Colorcode fin, vector<DWORD>* setLights);
 	void SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
-	void QueryUpdate(int did = -1, bool force = false);
+	void QueryUpdate(bool force = false);
 
 public:
 	HANDLE updateThread = NULL;
@@ -51,7 +51,7 @@ public:
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);
-	void RefreshOne(groupset* map, int force = 0, bool update = true);
+	void RefreshOne(groupset* map, bool update = true, int force = 0);
 	void TestLight(AlienFX_SDK::afx_device* dev, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::afx_device* dev);
 	void SetCounterColor(EventData *data, bool force = false);
@@ -59,6 +59,7 @@ public:
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
+	void RefreshGrid(int tact);
 	void ChangeState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);
 };

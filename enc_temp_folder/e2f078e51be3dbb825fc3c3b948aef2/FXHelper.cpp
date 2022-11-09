@@ -728,15 +728,15 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						}
 					}
 
-					// form actblock...
-					AlienFX_SDK::act_block ablock{ (byte)current.lid };
-					ablock.act.resize(current.actsize);
-					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::afx_act));
-					// find query....
+					// fill query....
 					auto qn = find_if(devs_query.begin(), devs_query.end(),
 						[current](auto t) {
 							return t.dev->pid == current.dev->pid;
 						});
+					// form actblock...
+					AlienFX_SDK::act_block ablock{ (byte)current.lid };
+					ablock.act.resize(current.actsize);
+					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::afx_act));
 					if (qn != devs_query.end()) {
 						// do we have another set for same light?
 						auto lp = find_if(qn->dev_query.begin(), qn->dev_query.end(),

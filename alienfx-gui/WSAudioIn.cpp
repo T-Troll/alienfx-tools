@@ -2,13 +2,6 @@
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 
-// debug print
-#ifdef _DEBUG
-#define DebugPrint(_x_) OutputDebugString(_x_);
-#else
-#define DebugPrint(_x_)
-#endif
-
 DWORD WINAPI WSwaveInProc(LPVOID);
 DWORD WINAPI resample(LPVOID);
 

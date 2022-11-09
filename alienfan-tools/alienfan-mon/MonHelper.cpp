@@ -2,7 +2,7 @@
 
 // debug print
 #ifdef _DEBUG
-#define DebugPrint(_x_) OutputDebugString(_x_);
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 #else
 #define DebugPrint(_x_)
 #endif
@@ -131,8 +131,8 @@ void CMonProc(LPVOID param) {
 				if (src->boostRaw[i] < 90 && rawBoost > 100) {
 					acpi->SetFanBoost(i, 100, true);
 					src->fanSleep[i] = ((100 - src->boostRaw[i]) >> 3) + 2;
-					DebugPrint(("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts(old "
-						+ to_string(src->boostRaw[i]) + ", new " + to_string(rawBoost) +")!\n").c_str());
+					DebugPrint("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts(old "
+						+ to_string(src->boostRaw[i]) + ", new " + to_string(rawBoost) +")!\n");
 				} else
 					if (rawBoost != src->boostRaw[i] /*|| src->boostSets[i] > 100*/) {
 						if (src->boostRaw[i] > rawBoost)

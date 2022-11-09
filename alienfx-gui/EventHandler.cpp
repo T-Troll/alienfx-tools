@@ -9,7 +9,7 @@
 
 // debug print
 #ifdef _DEBUG
-#define DebugPrint(_x_) OutputDebugString(_x_);
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 #else
 #define DebugPrint(_x_)
 #endif
@@ -95,11 +95,11 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		fxhl->ChangeState();
 		ChangeEffectMode();
 
-		DebugPrint((string("Profile switched to ") + to_string(newID->id) + " (" + newID->name + ")\n").c_str());
+		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");
 	}
 #ifdef _DEBUG
 	else
-		DebugPrint((string("Same profile \"") + newID->name + "\", skipping switch.\n").c_str());
+		DebugPrint("Same profile \"" + newID->name + "\", skipping switch.\n");
 #endif
 }
 
@@ -224,7 +224,7 @@ void EventHandler::ScanTaskList() {
 	}
 #ifdef _DEBUG
 	if (finalP) {
-		DebugPrint(("TaskScan: new profile is " + finalP->name + "\n").c_str());
+		DebugPrint("TaskScan: new profile is " + finalP->name + "\n");
 	}
 	else
 		DebugPrint("TaskScan: no profile\n");
@@ -245,7 +245,7 @@ void EventHandler::CheckProfileWindow() {
 		CloseHandle(hProcess);
 		PathStripPath(szProcessName);
 
-		DebugPrint((string("Foreground switched to ") + szProcessName + "\n").c_str());
+		DebugPrint(string("Foreground switched to ") + szProcessName + "\n");
 
 		if (!conf->noDesktop || (szProcessName != string("ShellExperienceHost.exe")
 			&& szProcessName != string("explorer.exe")

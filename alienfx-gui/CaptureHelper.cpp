@@ -6,7 +6,7 @@ DWORD WINAPI CFXProc(LPVOID);
 
 // debug print
 #ifdef _DEBUG
-#define DebugPrint(_x_) OutputDebugString(_x_);
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 #else
 #define DebugPrint(_x_)
 #endif
@@ -20,7 +20,7 @@ HANDLE clrStopEvent, lhEvent;
 
 CaptureHelper::CaptureHelper()
 {
-	imgz = new byte[LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid) * 3];
+	imgz = new byte[LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid) * 6];
 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	dxgi_manager = new DXGIManager();
 	dxgi_manager->set_timeout(100);
@@ -71,7 +71,7 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 	Stop();
 	conf->amb_grid = MAKELPARAM(x, y);
 	delete[] imgz;
-	imgz = new byte[x * y * 3];
+	imgz = new byte[x * y * 6];
 	Start();
 }
 
@@ -126,33 +126,26 @@ void SetDimensions() {
 	ww = w / LOWORD(conf->amb_grid); hh = h / HIWORD(conf->amb_grid);
 	stride = w * 4;
 	divider = w > 1920 ? 2 : 1;
-	DebugPrint(("Screen resolution set to " + to_string(w) + "x" + to_string(h) + ", div " + to_string(divider) + ".\n").c_str());
+	DebugPrint("Screen resolution set to " + to_string(w) + "x" + to_string(h) + ", div " + to_string(divider) + ".\n");
 }
 
 DWORD WINAPI CInProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
 
-	DWORD gridSize = LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid), gridDataSize = gridSize * 3;
-
-	byte* imgo = new byte[gridDataSize];
-
+	DWORD gridSize = LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid), gridDataSize = gridSize * 3, ret = 0;
+	byte* imgo = src->imgz + gridDataSize;
 	size_t buf_size;
-
-	DWORD ret = 0;
 
 	lhEvent = CreateEvent(NULL, false, false, NULL);
 
-	HANDLE lightHandle = CreateThread(NULL, 0, CFXProc, src->imgz, 0, NULL);
-
-	SetDimensions();
+	HANDLE lightHandle = CreateThread(NULL, 0, CFXProc, src->imgz, 0, NULL), pThread[16], pfEvent[16];;
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
 	procData callData[16];
 
-	HANDLE pThread[16];
-	HANDLE pfEvent[16];
+	SetDimensions();
 
 	// prepare threads and data...
 	for (UINT i = 0; i < 16; i++) {
@@ -175,7 +168,7 @@ DWORD WINAPI CInProc(LPVOID param)
 							WaitForMultipleObjects(16, pfEvent, true, 1000);
 #else
 							if (WaitForMultipleObjects(16, pfEvent, true, 1000) != WAIT_OBJECT_0)
-								DebugPrint(("Ambient thread execution fails at " + to_string(ptr) + "\n").c_str());
+								DebugPrint("Ambient thread execution fails at " + to_string(ptr) + "\n");
 #endif
 						}
 						callData[tInd].dx = dx;
@@ -217,10 +210,7 @@ DWORD WINAPI CInProc(LPVOID param)
 	WaitForSingleObject(lightHandle, 1000);
 	CloseHandle(lightHandle);
 
-	//delete[] pThread;
-	//delete[] pfEvent;
-	//delete[] callData;
-	delete[] imgo;
+	//delete[] imgo;
 
 	return 0;
 }

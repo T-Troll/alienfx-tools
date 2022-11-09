@@ -10,7 +10,7 @@
 
 // debug print
 #ifdef _DEBUG
-#define DebugPrint(_x_) OutputDebugString(_x_);
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 #else
 #define DebugPrint(_x_)
 #endif

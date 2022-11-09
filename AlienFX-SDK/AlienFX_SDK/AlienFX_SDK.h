@@ -129,7 +129,7 @@ namespace AlienFX_SDK {
 		byte bright = 64; // Brightness for APIv4 and v6
 
 		// support function for mask-based devices (v1-v3, v6)
-		vector<icommand>* SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = { 0 }, byte tempo = 0, byte length = 0);
+		vector<icommand>* SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = { 0 }, byte tempo = 0);
 
 		// Support function to send data to USB device
 		bool PrepareAndSend(const byte *command, byte size, vector<icommand> *mods = NULL);

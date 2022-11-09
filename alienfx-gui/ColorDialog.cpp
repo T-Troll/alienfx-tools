@@ -125,7 +125,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				mmap->color[effID].type = lType1;
 				RebuildEffectList(hDlg, mmap);
-				fxhl->RefreshOne(mmap, true);
+				fxhl->RefreshOne(mmap);
 			}
 			break;
 		case IDC_BUTTON_C1:
@@ -155,7 +155,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						effID = (int)mmap->color.size() - 1;
 					}
 				RebuildEffectList(hDlg, mmap);
-				fxhl->RefreshOne(mmap, true);
+				fxhl->RefreshOne(mmap);
 			}
 			break;
 		case IDC_BUTT_REMOVE_EFFECT:
@@ -208,7 +208,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					mmap->color[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip2, mmap->color[effID].time);
 				}
-				fxhl->RefreshOne(mmap, true, true);
+				fxhl->RefreshOne(mmap);
 			}
 			break;
 		} break;

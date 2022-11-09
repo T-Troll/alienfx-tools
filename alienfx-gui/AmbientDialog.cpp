@@ -160,6 +160,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if ((HWND)lParam == brSlider) {
                 conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 SetSlider(sTip1, conf->amb_shift);
+                if (eve->capt)
+                    ZeroMemory(eve->capt->imgz, LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid) * 3);
                 break;
             }
             if ((HWND)lParam == gridX) {
@@ -197,22 +199,19 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
             int idx = ditem->CtlID - 2000;
-            HBRUSH Brush;
-            if (eve->capt)
-                Brush = CreateSolidBrush(RGB(eve->capt->imgz[idx * 3 + 2], eve->capt->imgz[idx * 3 + 1], eve->capt->imgz[idx * 3]));
-            else
-                Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-            FillRect(ditem->hDC, &ditem->rcItem, Brush);
-            DeleteObject(Brush);
             bool selected = false;
             if (map && map->ambients.size()) {
-                for (auto pos = map->ambients.begin(); pos < map->ambients.end(); pos++)
-                    if (*pos == idx) {
-                        selected = true;
-                        break;
-                    }
+                selected = find_if(map->ambients.begin(), map->ambients.end(),
+                    [idx](auto t) {
+                        return t == idx;
+                    }) != map->ambients.end();
             }
-            DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, selected ? BF_RECT : BF_MONO | BF_FLAT | BF_RECT);
+            HBRUSH Brush = CreateSolidBrush(eve->capt ?
+                RGB(eve->capt->imgz[idx * 3 + 2], eve->capt->imgz[idx * 3 + 1], eve->capt->imgz[idx * 3]) :
+                GetSysColor(COLOR_BTNFACE));
+            FillRect(ditem->hDC, &ditem->rcItem, Brush);
+            DeleteObject(Brush);
+            DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, selected ? BF_RECT : BF_FLAT | BF_RECT);
         }
     } break;
     case WM_DESTROY:

@@ -262,14 +262,10 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
 		AddTrayIcon(&conf->niData, conf->updateCheck);
-		/*Shell_NotifyIcon(NIM_ADD, &conf->niData);
-		if (conf->updateCheck)
-			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);*/
 		for (auto i = conf->active_sensors.begin(); i < conf->active_sensors.end(); i++) {
 			if (i->intray)
 				i->oldCur = NO_SEN_VALUE;
 		}
-		//return true;
 	}
 
 	switch (message)

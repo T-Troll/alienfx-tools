@@ -130,6 +130,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_GRIDEFFECT, IDD_DIALOG_DEVICES},
 			{ (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog,
 			(DLGPROC)TabGridDialog, (DLGPROC)TabDevicesDialog } );
+		TabCtrl_SetCurSel(tab_list, tabLightSel);
 		OnLightSelChanged(tab_list);
 	} break;
 	case WM_WINDOWPOSCHANGING: {

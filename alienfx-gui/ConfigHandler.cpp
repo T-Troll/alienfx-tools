@@ -1,13 +1,6 @@
 #include "ConfigHandler.h"
 #include "resource.h"
 
-// debug print
-#ifdef _DEBUG
-#define DebugPrint(_x_) OutputDebugString(_x_);
-#else
-#define DebugPrint(_x_)
-#endif
-
 extern groupset* FindMapping(int, vector<groupset>*);
 extern void SetTrayTip();
 

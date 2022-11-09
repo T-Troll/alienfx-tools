@@ -244,7 +244,7 @@ void LoadCSV(string name) {
 						WORD vid = (WORD)atoi(fields[1].c_str()),
 							pid = (WORD)atoi(fields[2].c_str());
 						AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(pid, vid);
-						DebugPrint(("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ").c_str());
+						DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
 						if (dev && dev->dev) {
 							tGear.devs.push_back({vid, pid, NULL, fields[3] });
 							DebugPrint("Matched.\n")
@@ -284,7 +284,7 @@ void LoadCSV(string name) {
 					}
 					tGear = { "" };
 					tGear.name = fields[1];
-					DebugPrint(("Device " + tGear.name + ":\n").c_str());
+					DebugPrint("Device " + tGear.name + ":\n");
 					break;
 				//default: // wrong line, skip
 				//	DebugPrint("Line skipped\n");

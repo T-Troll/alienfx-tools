@@ -13,11 +13,13 @@ extern "C" {
 
 namespace AlienFX_SDK {
 
-	vector<icommand> *Functions::SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2, byte tempo, byte length) {
-		vector<icommand> *mods = new vector<icommand>({{1, type},{2,(byte)chain},
-										 {3,(byte)((index & 0xFF0000) >> 16)},
-										 {4,(byte)((index & 0x00FF00) >> 8)},
-										 {5,(byte)(index & 0x0000FF)}});
+	vector<icommand> *Functions::SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2, byte tempo) {
+		vector<icommand>* mods;
+		if (version == API_V6)
+			mods = new vector<icommand>({ {9,(byte)index}, { 10,c1.r }, { 11,c1.g }, { 12,c1.b } });
+		else
+			mods = new vector<icommand>({ {1, type}, { 2,(byte)chain },
+			{ 3,(byte)((index & 0xFF0000) >> 16) }, { 4,(byte)((index & 0x00FF00) >> 8) }, { 5,(byte)(index & 0x0000FF) }});
 		switch (version) {
 		case API_V1:
 			mods->insert(mods->end(),{{6,c1.r},{7,c1.g},{8,c1.b}});
@@ -32,8 +34,6 @@ namespace AlienFX_SDK {
 			break;
 		case API_V6: {
 			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
-			mods->insert(mods->end(), { {9,(byte)index},
-								 {10,c1.r},{11,c1.g},{12,c1.b}});
 			switch (type) {
 			case AlienFX_A_Color:
 				mask ^= 8;
@@ -332,7 +332,7 @@ namespace AlienFX_SDK {
 			{
 				res = PrepareAndSend(COMMV1.update, sizeof(COMMV1.update));
 				AlienfxWaitForBusy();
-				chain = 1;
+				//chain = 1;
 			} break;
 #ifndef NOACPILIGHTS
 			case API_ACPI:
@@ -597,7 +597,7 @@ namespace AlienFX_SDK {
 				res = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(1 << act->index, act->act.front().type,
 					{ act->act.front().b, act->act.front().g, act->act.front().r },
 					{ act->act.back().b, act->act.back().g, act->act.back().r },
-					act->act.front().tempo, act->act.front().time));
+					act->act.front().tempo));
 				break;
 			case API_V4:
 			{

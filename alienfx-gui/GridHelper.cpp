@@ -44,25 +44,26 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
-	GridHelper* src = (GridHelper*)param;
-	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
-		if (ce->effect.trigger && !ce->gridop.passive) {
-			// calculate phase
-			// not exactly, need to count slower speed and over-zero tact
-			ce->gridop.oldphase = ce->gridop.phase;
-			ce->gridop.phase = (byte)abs((long)src->tact - (long)ce->gridop.start_tact);
-			ce->gridop.phase = ce->effect.speed < 80 ? ce->gridop.phase / (80 - ce->effect.speed) : ce->gridop.phase * (ce->effect.speed - 79);
-			if (ce->gridop.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
-				ce->gridop.passive = true;
-			}
-			else
-				if (ce->gridop.phase > ce->effect.size) // circle
-					ce->gridop.phase = 2*ce->effect.size - ce->gridop.phase;
-			// Set lights
-			fxhl->SetGridEffect(&(*ce));
-		}
-	}
-	src->tact++;
+	//GridHelper* src = (GridHelper*)param;
+	fxhl->RefreshGrid(((GridHelper*)param)->tact++);
+	//for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
+	//	if (ce->effect.trigger && !ce->gridop.passive) {
+	//		// calculate phase
+	//		// not exactly, need to count slower speed and over-zero tact
+	//		ce->gridop.oldphase = ce->gridop.phase;
+	//		ce->gridop.phase = (byte)abs((long)src->tact - (long)ce->gridop.start_tact);
+	//		ce->gridop.phase = ce->effect.speed < 80 ? ce->gridop.phase / (80 - ce->effect.speed) : ce->gridop.phase * (ce->effect.speed - 79);
+	//		if (ce->gridop.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
+	//			ce->gridop.passive = true;
+	//		}
+	//		else
+	//			if (ce->gridop.phase > ce->effect.size) // circle
+	//				ce->gridop.phase = 2*ce->effect.size - ce->gridop.phase;
+	//		// Set lights
+	//		fxhl->SetGridEffect(&(*ce));
+	//	}
+	//}
+	//src->tact++;
 }
 
 void GridTriggerWatch(LPVOID param) {
