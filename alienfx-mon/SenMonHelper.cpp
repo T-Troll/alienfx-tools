@@ -44,6 +44,7 @@ SenMonHelper::~SenMonHelper()
 		PdhCloseQuery(hQuery);
 	if (acpi)
 		delete acpi;
+	delete[] counterValues;
 }
 
 void SenMonHelper::ModifyMon()
@@ -74,29 +75,25 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 			sen->name = name;
 			conf->needFullUpdate = true;
 		}
+		if (sen->alarm && sen->oldCur && sen->oldCur != NO_SEN_VALUE) {
+			// Check alarm
+			if ((sen->direction ? (sen->cur < (int)sen->ap) + (sen->oldCur >= (int)sen->ap) == 2 :
+				(sen->cur > (int)sen->ap) + (sen->oldCur <= (int)sen->ap) == 2)) {
+				// Set alarm
+				ShowNotification(&conf->niData, "Alarm triggered!", "Sensor \"" + sen->name +
+					"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->ap) + " (Current: " + to_string(sen->cur) + ")!", true);
+			}
+		}
 	}
 	else {
 		// add sensor
-		//sen = new SENSOR({ grp, type, id, name, val, val, val, NO_SEN_VALUE });
-		conf->active_sensors.push_back({ grp, type, id, name, val, val, val, NO_SEN_VALUE }/**sen*/);
+		conf->active_sensors.push_back({ grp, type, id, name, val, val, val, NO_SEN_VALUE });
 		sen = &conf->active_sensors.back();
 		conf->needFullUpdate = true;
 	}
-	if (sen->alarm && sen->oldCur && sen->oldCur != NO_SEN_VALUE) {
-		// Check alarm
-		if ((sen->direction ? (sen->cur < (int)sen->ap) + (sen->oldCur >= (int)sen->ap) == 2 :
-			(sen->cur > (int)sen->ap) + (sen->oldCur <= (int)sen->ap) == 2)) {
-			// Set alarm
-			ShowNotification(&conf->niData, "Alarm triggered!", "Sensor \"" + sen->name +
-				"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->ap) + " (Current: " + to_string(sen->cur) + ")!", true);
-		}
-	}
 }
 
-PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1];
-DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
-
-int GetValuesArray(HCOUNTER counter) {
+int SenMonHelper::GetValuesArray(HCOUNTER counter) {
 	PDH_STATUS pdhStatus;
 	DWORD count;
 	while ((pdhStatus = PdhGetFormattedCounterArray(counter, PDH_FMT_LONG /*| PDH_FMT_NOSCALE*/, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {

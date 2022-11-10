@@ -1257,23 +1257,18 @@ namespace AlienFX_SDK {
 	void Mappings::RemoveMapping(afx_device* dev, WORD lightID)
 	{
 		if (dev) {
-			auto del_map = find_if(dev->lights.begin(), dev->lights.end(),
-				[lightID](auto t) {
-					return t.lightid == lightID;
-				});
-			if (del_map != dev->lights.end()) {
-				dev->lights.erase(del_map);
-			}
+			for (auto del_map = dev->lights.begin(); del_map != dev->lights.end(); del_map++)
+				if (del_map->lightid == lightID) {
+					dev->lights.erase(del_map);
+					return;
+				}
 		}
 	}
 
 	group *Mappings::GetGroupById(DWORD gID) {
-		auto pos = find_if(groups.begin(), groups.end(),
-			[gID](group t) {
-				return t.gid == gID;
-			});
-		if (pos != groups.end())
-			return &(*pos);
+		for (auto pos = groups.begin(); pos != groups.end(); pos++)
+			if (pos->gid == gID)
+				return &(*pos);
 		return nullptr;
 	}
 

@@ -13,30 +13,27 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
 
-	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
+	if (wParam == WM_KEYDOWN /*&& !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)*/) {
 		char keyname [32];
 		GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
  		for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
-			if (it->effect.trigger == 3) { // keyboard effect
+			if (it->effect.trigger == 3 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
 				AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(it->group);
-				auto light = find_if(grp->lights.begin(), grp->lights.end(),
-					[keyname](DWORD lgh){
-						return conf->afx_dev.GetMappingByDev(conf->afx_dev.GetDeviceById(LOWORD(lgh), 0), HIWORD(lgh))->name == (string)keyname;
-					});
-				if (light != grp->lights.end()) {
-					// check grid
-					zonemap* zone = conf->FindZoneMap(it->group);
-					AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID((byte)zone->gridID);
-					for (int x = zone->gMinX; x < zone->gMaxX; x++)
-						for (int y = zone->gMinY; y < zone->gMaxY; y++) {
-							if (grid->grid[ind(x,y)] == *light) {
-								// start effect
-								StartGridRun(&(*it), x, y);
-								return res;
+				for (auto light = grp->lights.begin(); light != grp->lights.end(); light++)
+					if (conf->afx_dev.GetMappingByDev(conf->afx_dev.GetDeviceById(LOWORD(*light), 0), HIWORD(*light))->name == (string)keyname) {
+						zonemap* zone = conf->FindZoneMap(it->group);
+						AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID((byte)zone->gridID);
+						for (int x = zone->gMinX; x < zone->gMaxX; x++)
+							for (int y = zone->gMinY; y < zone->gMaxY; y++) {
+								if (grid->grid[ind(x, y)] == *light) {
+									// start effect
+									StartGridRun(&(*it), x, y);
+									return res;
+								}
 							}
-						}
-				}
+						break;
+					}
 			}
 	}
 
@@ -44,26 +41,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
-	//GridHelper* src = (GridHelper*)param;
 	fxhl->RefreshGrid(((GridHelper*)param)->tact++);
-	//for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
-	//	if (ce->effect.trigger && !ce->gridop.passive) {
-	//		// calculate phase
-	//		// not exactly, need to count slower speed and over-zero tact
-	//		ce->gridop.oldphase = ce->gridop.phase;
-	//		ce->gridop.phase = (byte)abs((long)src->tact - (long)ce->gridop.start_tact);
-	//		ce->gridop.phase = ce->effect.speed < 80 ? ce->gridop.phase / (80 - ce->effect.speed) : ce->gridop.phase * (ce->effect.speed - 79);
-	//		if (ce->gridop.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
-	//			ce->gridop.passive = true;
-	//		}
-	//		else
-	//			if (ce->gridop.phase > ce->effect.size) // circle
-	//				ce->gridop.phase = 2*ce->effect.size - ce->gridop.phase;
-	//		// Set lights
-	//		fxhl->SetGridEffect(&(*ce));
-	//	}
-	//}
-	//src->tact++;
 }
 
 void GridTriggerWatch(LPVOID param) {
@@ -116,37 +94,35 @@ GridHelper::~GridHelper()
 void GridHelper::UpdateEvent(EventData* data) {
 	for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
 		if (it->effect.trigger == 4 && it->gridop.passive) { // Event trigger
-			auto ev = find_if(it->events.begin(), it->events.end(),
-				[](auto e) {
-					return e.state == MON_TYPE_IND;
-				});
-			if (ev != it->events.end()) {
-				int ccut = ev->cut, cVal = 0;
-				switch (ev->source) {
-				case 0: cVal = data->HDD; break;
-				case 1: cVal = data->NET; break;
-				case 2: cVal = data->Temp - ccut; break;
-				case 3: cVal = data->RAM - ccut; break;
-				case 4: cVal = data->Batt - ccut; break;
-				case 5: cVal = data->KBD; break;
-				}
+			for (auto ev = it->events.begin(); ev != it->events.end(); ev++)
+				if (ev->state == MON_TYPE_IND) {
+					int ccut = ev->cut, cVal = 0;
+					switch (ev->source) {
+					case 0: cVal = data->HDD; break;
+					case 1: cVal = data->NET; break;
+					case 2: cVal = data->Temp - ccut; break;
+					case 3: cVal = data->RAM - ccut; break;
+					case 4: cVal = data->Batt - ccut; break;
+					case 5: cVal = data->KBD; break;
+					}
 
-				if (cVal > 0) {
-					// Triggering effect...
-					zonemap* cz = conf->FindZoneMap(it->group);
-					switch (it->gauge) {
-					case 1:	case 2:	case 3:
-						StartGridRun(&(*it), cz->gMinX, cz->gMinY);
-						break;
-					case 4:
-						StartGridRun(&(*it), cz->gMaxX, cz->gMinY);
-						break;
-					case 5:
-						StartGridRun(&(*it), cz->gMinX + (cz->gMaxX - cz->gMinX) / 2, cz->gMinY + (cz->gMaxY - cz->gMinY) / 2);
+					if (cVal > 0) {
+						// Triggering effect...
+						zonemap* cz = conf->FindZoneMap(it->group);
+						switch (it->gauge) {
+						case 1:	case 2:	case 3:
+							StartGridRun(&(*it), cz->gMinX, cz->gMinY);
+							break;
+						case 4:
+							StartGridRun(&(*it), cz->gMaxX, cz->gMinY);
+							break;
+						case 5:
+							StartGridRun(&(*it), cz->gMinX + (cz->gMaxX - cz->gMinX) / 2, cz->gMinY + (cz->gMaxY - cz->gMinY) / 2);
+							break;
+						}
 						break;
 					}
 				}
-			}
 		}
 	memcpy(&fxhl->eData, data, sizeof(EventData));
 }

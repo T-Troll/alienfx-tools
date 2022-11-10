@@ -30,8 +30,6 @@ EventHandler::EventHandler()
 	eve = this;
 	aProcesses = new DWORD[maxProcess];
 	ChangePowerState();
-	//StartFanMon();
-	//StartEffects();
 	ChangeEffectMode();
 }
 
@@ -395,14 +393,12 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	switch (wParam) {
 	case WM_KEYDOWN: case WM_SYSKEYDOWN:
 		if (!eve->keyboardSwitchActive) {
-			auto pos = find_if(conf->profiles.begin(), conf->profiles.end(),
-				[lParam](auto cp) {
-					return ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == cp->triggerkey && conf->SamePower(cp->triggerFlags, true);
-				});
-			if (pos != conf->profiles.end()) {
-				eve->SwitchActiveProfile(*pos);
-				eve->keyboardSwitchActive = true;
-			}
+			for (auto pos = conf->profiles.begin(); pos != conf->profiles.end(); pos++)
+				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == (*pos)->triggerkey && conf->SamePower((*pos)->triggerFlags, true)) {
+					eve->SwitchActiveProfile(*pos);
+					eve->keyboardSwitchActive = true;
+					break;
+				}
 		}
 		break;
 	case WM_KEYUP: case WM_SYSKEYUP:

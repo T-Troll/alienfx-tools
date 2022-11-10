@@ -297,18 +297,16 @@ void OnSelChanged(HWND hwndDlg)
 
 	// Get the index of the selected tab.
 	tabSel = TabCtrl_GetCurSel(hwndDlg);
-	if (tabSel == TAB_LIGHTS && !conf->afx_dev.activeDevices) {
+	if (tabSel == TAB_LIGHTS && conf->afx_dev.fxdevs.empty()) {
 		ShowNotification(&conf->niData, "Error", "No compatible light devices detected!", true);
-		TabCtrl_SetCurSel(hwndDlg, TAB_FANS);
-		tabSel = TAB_FANS;
+		TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
 	}
 
 	if (tabSel == TAB_FANS && !acpi) {
 		if (DetectFans())
 			eve->StartFanMon();
 		if (!acpi) {
-			TabCtrl_SetCurSel(hwndDlg, TAB_SETTINGS);
-			tabSel = TAB_SETTINGS;
+			TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
 		}
 	}
 
@@ -897,6 +895,18 @@ bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp) {
 	return false;
 }
 
+bool IsGroupUnused(DWORD gid) {
+	bool inSet = true;
+	for (auto prof = conf->profiles.begin(); inSet && prof != conf->profiles.end(); prof++) {
+		for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
+			if (ls->group == gid) {
+				inSet = false;
+				break;
+			}
+	}
+	return inSet;
+}
+
 void RemoveUnused(vector<groupset>* lightsets) {
 	for (auto it = lightsets->begin(); it != lightsets->end();)
 		if (!(it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)) {
@@ -908,15 +918,12 @@ void RemoveUnused(vector<groupset>* lightsets) {
 }
 
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
-	DWORD lgh = MAKELPARAM(devid, lightid);
-	for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-		if (*pos == lgh) {
-			// is it power button?
-			if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
-				grp->have_power = false;
-			grp->lights.erase(pos);
-			return;
-		}
+	auto pos = find(grp->lights.begin(), grp->lights.end(), MAKELPARAM(devid, lightid));
+	if (pos != grp->lights.end()) {
+		if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
+			grp->have_power = false;
+		grp->lights.erase(pos);
+	}
 }
 
 void RemoveLightAndClean(int dPid, int eLid) {

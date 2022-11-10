@@ -71,8 +71,8 @@ void OnLightSelChanged(HWND hwndDlg)
 	int oldTab = tabLightSel;
 	tabLightSel = TabCtrl_GetCurSel(hwndDlg);
 
-	if (!conf->afx_dev.activeLights || !conf->afx_dev.GetGrids()->size()) {
-		ShowNotification(&conf->niData, "Warning", "No lights or grid defined, please set it up!", true);
+	if (conf->afx_dev.fxdevs.empty() || conf->afx_dev.GetGrids()->empty()) {
+		ShowNotification(&conf->niData, "Warning", "No devices or grids, please set it up!", true);
 		tabLightSel = TAB_DEVICES;
 		TabCtrl_SetCurSel(hwndDlg, tabLightSel);
 	}

@@ -36,11 +36,12 @@ AlienFX_SDK::mapping* FindCreateMapping() {
         conf->afx_dev.activeLights++;
         lgh = &conf->afx_dev.fxdevs[dIndex].lights.back();
         // for rgb keyboard, check key...
-        switch (conf->afx_dev.fxdevs[dIndex].dev->GetVersion()) {
-        case 5: case 8: case 9:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
-            break;
-        }
+        if (conf->afx_dev.fxdevs[dIndex].dev)
+            switch (conf->afx_dev.fxdevs[dIndex].dev->GetVersion()) {
+            case 5: case 8: case 9:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
+                break;
+            }
     }
     return lgh;
 }

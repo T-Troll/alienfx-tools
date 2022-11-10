@@ -57,7 +57,7 @@ void UpdateBoost() {
             return t.fanID == bestBoostPoint.fanID;
         });
     if (pos != fan_conf->boosts.end()) {
-        pos->maxBoost = bestBoostPoint.maxBoost;
+        pos->maxBoost = max(bestBoostPoint.maxBoost, 100);
         pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
     }
     else {
@@ -65,7 +65,6 @@ void UpdateBoost() {
     }
     acpi->boosts[bestBoostPoint.fanID] = max(bestBoostPoint.maxBoost, 100);
     acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
-    //fan_conf->Save();
 }
 
 void CheckFanOverboost(byte num) {
@@ -144,7 +143,7 @@ gmode\t\t\t\tShow G-mode state\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.4.4.1\n");
+    printf("AlienFan-CLI v7.4.6\n");
 
     //AlienFan_SDK::Lights* lights = NULL;
 

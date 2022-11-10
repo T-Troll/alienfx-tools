@@ -86,7 +86,7 @@ void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions
 
 void FXHelper::TestLight(AlienFX_SDK::afx_device* dev, int id, bool force, bool wp)
 {
-	if (dev) {
+	if (dev && dev->dev) {
 
 		AlienFX_SDK::Colorcode c = wp ? dev->white : AlienFX_SDK::Colorcode({ 0 });
 
@@ -734,7 +734,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::afx_act));
 					// find query....
 					auto qn = find_if(devs_query.begin(), devs_query.end(),
-						[current](auto t) {
+						[ablock,current](auto t) {
 							return t.dev->pid == current.dev->pid;
 						});
 					if (qn != devs_query.end()) {

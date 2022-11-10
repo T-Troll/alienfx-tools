@@ -16,6 +16,9 @@ private:
 		COUNTER_PATH_PWR = "\\EsifDeviceInformation(*)\\RAPL Power",
 		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time";
 
+	PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1];
+	DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
+
 	HQUERY hQuery = NULL;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
@@ -24,6 +27,8 @@ private:
 	SYSTEM_POWER_STATUS state;
 
 	DWORD cType = 0, valCount = 0;
+
+	int GetValuesArray(HCOUNTER counter);
 public:
 	HANDLE stopEvents = NULL;
 	SenMonHelper();

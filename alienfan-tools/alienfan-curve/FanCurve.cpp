@@ -202,7 +202,7 @@ void UpdateBoost() {
             return t.fanID == bestBoostPoint.fanID;
         });
     if (pos != fan_conf->boosts.end()) {
-        pos->maxBoost = bestBoostPoint.maxBoost;
+        pos->maxBoost = max(bestBoostPoint.maxBoost, 100);
         pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
     }
     else {
@@ -311,22 +311,21 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             // check and add point
             fan_point clk = Screen2Fan(lParam);
             // 100C always move last point
-            if (clk.temp == 100)
-                lastFanPoint = cFan->points.end() - 1;
-            else {
+            //if (clk.temp == 100)
+            //    lastFanPoint = cFan->points.end() - 1;
+            //else {
                 lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
                     [clk](auto t) {
                         return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
                     });
                 if (lastFanPoint == cFan->points.end()) {
                     // insert element
-                    if (clk.temp != 100)
-                        lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
-                            [clk](auto t) {
-                                return t.temp > clk.temp;
-                            }), clk);
+                    lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
+                        [clk](auto t) {
+                            return t.temp > clk.temp;
+                        }), clk);
                 }
-            }
+            //}
             DrawFan();
         }
     } break;

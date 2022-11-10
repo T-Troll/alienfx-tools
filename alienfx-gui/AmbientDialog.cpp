@@ -105,44 +105,30 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 if (map) {
                     UINT id = LOWORD(wParam) - 2000;
                     // add/remove mapping
-                    auto pos = map->ambients.begin();
-                    if ((pos = find_if(map->ambients.begin(), map->ambients.end(),
+                    auto pos = find_if(map->ambients.begin(), map->ambients.end(),
                         [id](auto t) {
                             return t == id;
-                        })) == map->ambients.end())
+                        });
+                    if (pos == map->ambients.end())
                         map->ambients.push_back(id);
-                    else {
+                    else
                         map->ambients.erase(pos);
-                        //if (map->ambients.empty())
-                        //    RemoveUnused(conf->active_set);
-                    }
                     RedrawButtonZone(hDlg);
                 }
                 break;
             }
         }
         switch (LOWORD(wParam)) {
-        case IDC_RADIO_PRIMARY:
+        case IDC_RADIO_PRIMARY: case IDC_RADIO_SECONDARY:
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
-                CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_CHECKED);
-                CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_UNCHECKED);
-                conf->amb_mode = 0;
+                conf->amb_mode = LOWORD(wParam) == IDC_RADIO_PRIMARY ? 0 : 1;
+                CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_mode ? BST_UNCHECKED : BST_CHECKED);
+                CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, conf->amb_mode ? BST_CHECKED : BST_UNCHECKED);
                 if (eve->capt)
                     eve->capt->Restart();
                 break;
             } break;
-        case IDC_RADIO_SECONDARY:
-            switch (HIWORD(wParam)) {
-            case BN_CLICKED:
-                CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, BST_UNCHECKED);
-                CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, BST_CHECKED);
-                conf->amb_mode = 1;
-                if (eve->capt)
-                    eve->capt->Restart();
-                break;
-            }
-            break;
         case IDC_BUTTON_RESET:
             if (eve->capt) {
                 eve->capt->Restart();
@@ -159,40 +145,29 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == brSlider) {
                 conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                SetSlider(sTip1, conf->amb_shift);
                 if (eve->capt)
                     ZeroMemory(eve->capt->imgz, LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid) * 3);
                 break;
             }
             if ((HWND)lParam == gridX) {
                 SetGridSize(hDlg, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), HIWORD(conf->amb_grid));
-                SetSlider(sTip2, LOWORD(conf->amb_grid));
-                break;
             }
+        }
+        if ((HWND)lParam == brSlider) {
+            SetSlider(sTip1, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
             break;
-        default:
-            if ((HWND)lParam == brSlider) {
-                SetSlider(sTip1, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-                break;
-            }
-            if ((HWND)lParam == gridX) {
-                SetSlider(sTip2, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-                break;
-            }
+        }
+        if ((HWND)lParam == gridX) {
+            SetSlider(sTip2, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
         }
         break;
     case WM_VSCROLL:
-        switch (LOWORD(wParam)) {
-        case TB_THUMBPOSITION: case TB_ENDTRACK:
-            if ((HWND)lParam == gridY) {
+        if ((HWND)lParam == gridY) {
+            switch (LOWORD(wParam)) {
+            case TB_THUMBPOSITION: case TB_ENDTRACK:
                 SetGridSize(hDlg, LOWORD(conf->amb_grid), (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-                SetSlider(sTip3, HIWORD(conf->amb_grid));
             }
-            break;
-        default:
-            if ((HWND)lParam == gridY) {
-                SetSlider(sTip3, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-            }
+            SetSlider(sTip3, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
         }
         break;
     case WM_DRAWITEM: {
@@ -201,10 +176,11 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             int idx = ditem->CtlID - 2000;
             bool selected = false;
             if (map && map->ambients.size()) {
-                selected = find_if(map->ambients.begin(), map->ambients.end(),
-                    [idx](auto t) {
-                        return t == idx;
-                    }) != map->ambients.end();
+                for (auto amb = map->ambients.begin(); amb != map->ambients.end(); amb++)
+                    if (*amb == idx) {
+                        selected = true;
+                        break;
+                    }
             }
             HBRUSH Brush = CreateSolidBrush(eve->capt ?
                 RGB(eve->capt->imgz[idx * 3 + 2], eve->capt->imgz[idx * 3 + 1], eve->capt->imgz[idx * 3]) :

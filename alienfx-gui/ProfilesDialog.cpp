@@ -10,18 +10,27 @@ extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveUnused(vector<groupset>* lightsets);
+extern bool IsGroupUnused(DWORD gid);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
 extern EventHandler* eve;
 int pCid = -1;
 
 vector<deviceeffect>::iterator FindDevEffect(profile* prof, int devNum, int type) {
-	return devNum < 0 ? prof->effects.end() : find_if(prof->effects.begin(), prof->effects.end(),
-		[devNum, type](auto t) {
-			return conf->afx_dev.fxdevs[devNum].pid == t.pid &&
-				conf->afx_dev.fxdevs[devNum].vid == t.vid &&
-				t.globalMode == type;
-		});
+	for (auto effect = prof->effects.begin(); devNum >=0 && effect != prof->effects.end(); effect++)
+		if (conf->afx_dev.fxdevs[devNum].pid == effect->pid &&
+			conf->afx_dev.fxdevs[devNum].vid == effect->vid &&
+			effect->globalMode == type)
+			return effect;
+	return prof->effects.end();
+}
+
+void RemoveUnusedGroups() {
+	for (int i = 0; i < conf->afx_dev.GetGroups()->size(); i++)
+		if (IsGroupUnused(conf->afx_dev.GetGroups()->at(i).gid)) {
+			conf->afx_dev.GetGroups()->erase(conf->afx_dev.GetGroups()->begin() + i);
+			i--;
+		}
 }
 
 void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
@@ -238,23 +247,6 @@ void ReloadProfileView(HWND hDlg) {
 	}
 	ListView_SetColumnWidth(profile_list, 0, LVSCW_AUTOSIZE);
 	ListView_EnsureVisible(profile_list, rpos, false);
-}
-
-void RemoveUnusedGroups() {
-	for (int i = 0; i < conf->afx_dev.GetGroups()->size(); i++) {
-		DWORD gid = conf->afx_dev.GetGroups()->at(i).gid;
-		if (find_if(conf->profiles.begin(), conf->profiles.end(),
-			[gid](profile* cp) {
-				return find_if(cp->lightsets.begin(), cp->lightsets.end(),
-					[gid](groupset t) {
-						return t.group == gid;
-					}) != cp->lightsets.end();
-			}) == conf->profiles.end()) {
-			conf->afx_dev.GetGroups()->erase(conf->afx_dev.GetGroups()->begin() + i);
-			i--;
-		}
-	}
-
 }
 
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

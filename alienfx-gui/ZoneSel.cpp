@@ -2,6 +2,7 @@
 
 extern int eItem;
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+extern bool IsGroupUnused(DWORD gid);
 
 HWND zsDlg;
 
@@ -111,35 +112,26 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		} break;
 		case IDC_BUT_DEL_ZONE:
 			if (eItem > 0) {
-				bool doDelete = true;
-				int neItem = eItem;
-				// delete from all profiles...
-				for (auto Iter = conf->profiles.begin(); Iter != conf->profiles.end(); Iter++) {
-					auto pos = find_if((*Iter)->lightsets.begin(), (*Iter)->lightsets.end(),
-						[](auto t) {
-							return t.group == eItem;
-						});
-					if (pos != (*Iter)->lightsets.end())
-						if ((*Iter)->id != conf->activeProfile->id)
-							doDelete = false;
-						else {
-							if (pos != (*Iter)->lightsets.begin())
-								neItem = (pos - 1)->group;
+				int neItem;
+				for (auto iter = conf->activeProfile->lightsets.begin(); iter != conf->activeProfile->lightsets.end(); iter++) {
+					if (iter->group == eItem) {
+						if (iter != conf->activeProfile->lightsets.begin())
+							neItem = (iter - 1)->group;
+						else
+							if (conf->activeProfile->lightsets.size() > 1)
+								neItem = (iter + 1)->group;
 							else
-								if ((*Iter)->lightsets.size() > 1)
-									neItem = (pos + 1)->group;
-								else
-									neItem = -1;
-							(*Iter)->lightsets.erase(pos);
-						}
+								neItem = -1;
+						conf->activeProfile->lightsets.erase(iter);
+						break;
+					}
 				}
-				if (doDelete) {
-					auto Iter = find_if(conf->afx_dev.GetGroups()->begin(), conf->afx_dev.GetGroups()->end(),
-						[](auto t) {
-							return t.gid == eItem;
-						});
-					if (Iter != conf->afx_dev.GetGroups()->end())
-						conf->afx_dev.GetGroups()->erase(Iter);
+				if (IsGroupUnused(eItem)) {
+					for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
+						if (Iter->gid == eItem) {
+							conf->afx_dev.GetGroups()->erase(Iter);
+							break;
+						}
 				}
 				eItem = neItem;
 				UpdateZoneList();

@@ -65,16 +65,13 @@ profile* ConfigHandler::FindProfile(int id) {
 
 profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
-	auto prof = find_if(profiles.begin(), profiles.end(),
-		[this,appName,active](profile* p) {
-			return (active || !(p->flags & PROF_ACTIVE)) &&
-				SamePower(p->triggerFlags, true) &&
-				(find_if(p->triggerapp.begin(), p->triggerapp.end(),
-					[appName](string app) {
-						return app == appName;
-					}) != p->triggerapp.end());
-		});
-	return prof == profiles.end() ? NULL : *prof;
+	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
+		if ((*prof)->triggerapp.size() && (active || !((*prof)->flags & PROF_ACTIVE)) && SamePower((*prof)->triggerFlags, true)) {
+			for (auto name = (*prof)->triggerapp.begin(); name < (*prof)->triggerapp.end(); name++)
+				if (*name == appName)
+					return *prof;
+		}
+	return NULL;
 }
 
 bool ConfigHandler::IsPriorityProfile(profile* prof) {
@@ -332,16 +329,13 @@ bool ConfigHandler::SamePower(WORD flags, bool anyFit) {
 }
 
 profile* ConfigHandler::FindDefaultProfile() {
-	auto res = find_if(profiles.begin(), profiles.end(),
-		[this](profile* prof) {
-			return !prof->triggerapp.size() && SamePower(prof->triggerFlags);
-		});
-	if (res == profiles.end())
-		res = find_if(profiles.begin(), profiles.end(),
-			[](profile* prof) {
-				return (prof->flags & PROF_DEFAULT);
-			});
-	return res == profiles.end() ? profiles.front() : *res;
+	for (auto res = profiles.begin(); res != profiles.end(); res++)
+		if (!(*res)->triggerapp.size() && SamePower((*res)->triggerFlags))
+			return *res;
+	for (auto res = profiles.begin(); res != profiles.end(); res++)
+		if ((*res)->flags & PROF_DEFAULT)
+			return *res;
+	return profiles.front();
 }
 
 void ConfigHandler::Save() {
@@ -492,12 +486,9 @@ void ConfigHandler::SortAllGauge() {
 }
 
 zonemap* ConfigHandler::FindZoneMap(int gid) {
-	auto gpos = find_if(zoneMaps.begin(), zoneMaps.end(),
-		[gid](auto t) {
-			return t.gID == gid;
-		});
-	if (gpos != zoneMaps.end())
-		return &(*gpos);
+	for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
+		if (gpos->gID == gid)
+			return &(*gpos);
 	return nullptr;
 }
 
@@ -582,12 +573,3 @@ void ConfigHandler::SortGroupGauge(int gid) {
 		}
 	}
 }
-
-//vector<deviceeffect>::iterator ConfigHandler::FindDevEffect(profile* prof, AlienFX_SDK::afx_device* dev, int type) {
-//	return find_if(prof->effects.begin(), prof->effects.end(),
-//		[dev, type](auto t) {
-//			return dev->pid == t.pid &&
-//				dev->vid == t.vid &&
-//				t.globalMode == type;
-//		});
-//}

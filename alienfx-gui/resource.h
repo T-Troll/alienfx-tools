@@ -55,7 +55,6 @@
 #define IDC_STARTM                      1017
 #define IDC_BUTTON_REMOVE               1017
 #define IDC_LIST_DEV                    1018
-#define IDC_STARTM2                     1018
 #define IDC_HOTKEYS                     1018
 #define IDC_BUT_LAST                    1019
 #define IDC_BUTTON_REFRESH              1021
@@ -200,6 +199,7 @@
 #define IDC_DE_LIST                     1178
 #define IDC_BUTTON1                     1179
 #define IDC_DEV_EFFECT                  1179
+#define IDC_BUT_DEVCLEAR                1179
 #define IDC_EVENT_TYPE                  1180
 #define IDC_BUT_EVENT_DOWN              1181
 #define IDC_BUTT_REMOVE_EVENT           1182

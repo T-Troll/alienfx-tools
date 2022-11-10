@@ -202,10 +202,15 @@ Grids block is different, then other light tabs, it have some additional feature
 - You can double-click grid name to edit it.
 - You can use "+" and "-" tabs to add new grid/remove current one.
 
-Top-left zone is about devices control - you can select device from list (double-click to change it's name). Press "Set white balance" button to change white color correction for selected device (useful for some old 4-bit-per-color devices).  
-Button block is about settings load/save - press "Detect devices" to look for your device list into application database, use "Save Grids and Lights" and "Load Grids and Lights" to save/load current settings into .csv file (for backup or sharing).
+Top-left zone is about devices control - you can select device from list (double-click to change it's name).  
+You can see selected device parameters (IDs, number of assigned lights and API version - or "inactive" if device not connected now).
 
-Top-right zone controls currently selected (at selected device) light.  
+Pressing "Clear device" button removes all lights from current device, and, in case the device is in "inactive" status, remove it completely.  
+Press "Set white balance" button to change white color correction for selected device (useful for some old 4-bit-per-color devices).
+
+Button block into the center is about settings management - press "Detect devices" to look for your devices into application database, use "Save Grids and Lights" and "Load Grids and Lights" to save/load current settings into .csv file (for backup or sharing).
+
+Top-right zone controls currently selected light for selected device.  
 Physical light ID provided after "Light:" mark, next 4 buttons used for navigation between lights:
 - "|<" (or press Shift+Home) - navigate to first assigned light of the current device.
 - "<" (or Shift+Left) - select previous light (by ID).
@@ -219,13 +224,11 @@ Both Power button and indicators can be configured in settings to stay on then t
 "Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.  
 Other assigned lights will have random colors at grid and black color for physical lights.
 
-"Key" button provide dialog window to select current light name by pressing any keyboard key. It's also will be done automatically in case per-key RGB device active.
+"Key" button provide dialog window to select current light name by pressing any keyboard key. It's also will be done automatically in case per-key RGB device active. You can also set current light name typing it at name field into "Light" block.
 
 Then you find light position at you physical device (it's highlighted), assign it to the grid - click or click-and drag at grid zone to do it.  
 Click again to remove grid sell from current light, right-click (or click-and-drag) to clear grid cell(s).  
 Left-click at already assigned cell to select corresponding light (and it's device).
-
-Optionally, you can set current light name using name field into "Light" block. Use "Key" button to assign light name by pressing corresponding keyboard key.
 
 ## Fans and Power
 

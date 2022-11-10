@@ -25,9 +25,9 @@ ConfigMon::~ConfigMon() {
 
 SENSOR* ConfigMon::FindSensor(int src, byte type, DWORD id)
 {
-	for (int i = 0; i < active_sensors.size(); i++)
-		if (active_sensors[i].source == src && active_sensors[i].type == type && active_sensors[i].id == id)
-			return &active_sensors[i];
+	for (auto i = active_sensors.begin(); i != active_sensors.end(); i++)
+		if (i->source == src && i->type == type && i->id == id)
+			return &(*i);
 	return NULL;
 }
 

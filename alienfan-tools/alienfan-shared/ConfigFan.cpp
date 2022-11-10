@@ -177,13 +177,12 @@ void ConfigFan::Save() {
 void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
 	vector<fan_overboost>::iterator maxB;
 	for (byte fID = 0; fID < acpi->boosts.size(); fID++)
-		if ((maxB = find_if(boosts.begin(), boosts.end(),
-			[fID](auto t) {
-				return t.fanID == fID;
-			})) != boosts.end()) {
-			acpi->boosts[fID] = maxB->maxBoost;
-			acpi->maxrpm[fID] = maxB->maxRPM;
-		}
+		for (auto maxB = boosts.begin(); maxB != boosts.end(); maxB++)
+			if (maxB->fanID == fID) {
+				acpi->boosts[fID] = maxB->maxBoost;
+				acpi->maxrpm[fID] = maxB->maxRPM;
+				break;
+			}
 	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
 		if (powers.find(*i) == powers.end())
 			powers.emplace(*i, *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual");
