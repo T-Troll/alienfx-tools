@@ -50,5 +50,5 @@ public:
 
 	HANDLE stopEvents = NULL;
 
-	mutex modifyProfile;
+	mutex modifyProfile, monInUse;
 };

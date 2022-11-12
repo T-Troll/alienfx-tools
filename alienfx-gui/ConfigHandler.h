@@ -57,8 +57,13 @@ struct zonelight {
 struct zonemap {
 	DWORD gID;
 	DWORD gridID;
-	byte xMax, yMax, gMinX, gMaxX, gMinY, gMaxY;
+	byte xMax=0, yMax=0, gMinX=255, gMaxX=0, gMinY=255, gMaxY=0;
 	vector<zonelight> lightMap;
+};
+
+struct gridClr {
+	AlienFX_SDK::afx_act* first;
+	AlienFX_SDK::afx_act* last;
 };
 
 struct grideffect {
@@ -76,7 +81,7 @@ struct grideffect {
 struct grideffop {
 	// operational info
 	bool passive = true;
-	byte gridX, gridY, phase, oldphase;
+	int gridX, gridY, phase = -1, oldphase=-1;
 	UINT start_tact;
 };
 
@@ -88,6 +93,7 @@ struct groupset {
 	vector<freq_map> haptics;
 	grideffect effect;
 	grideffop  gridop;
+	//zonemap* zone;
 	bool fromColor = false;
 	WORD flags = 0;
 	byte gauge = 0;
@@ -172,11 +178,10 @@ public:
 	vector<profile*> profiles;
 	vector<zonemap> zoneMaps;
 	profile* activeProfile = NULL;
-	//profile* foregroundProfile = NULL;
 
 	// Grid-related
 	AlienFX_SDK::lightgrid* mainGrid = NULL;
-	pair<AlienFX_SDK::afx_act*, AlienFX_SDK::afx_act*>* colorGrid = NULL;
+	gridClr* colorGrid = NULL;
 	int gridTabSel = 0;
 
 	// mapping block from SDK

@@ -110,10 +110,10 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 void SetLightInfo() {
-	AlienFX_SDK::mapping* clight = NULL;
 	AlienFX_SDK::afx_device* dev = FindActiveDevice();
 	if (dev) {
 		fxhl->TestLight(dev, eLid);
+		AlienFX_SDK::mapping* clight;
 		if (clight = conf->afx_dev.GetMappingByDev(dev, eLid)) {
 			SetDlgItemText(dDlg, IDC_EDIT_NAME, clight->name.c_str());
 		}
@@ -146,8 +146,8 @@ LRESULT CALLBACK DetectKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 		char keyname[32];
 		GetKeyNameText(MAKELPARAM(0, ((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
 		// set text...
-		auto lgh = FindCreateMapping();
-		lgh->name = keyname;
+		auto lgh = conf->afx_dev.GetMappingByDev(FindActiveDevice(), eLid);
+		if (lgh) lgh->name = keyname;
 		SendMessage(kDlg, WM_CLOSE, 0, 0);
 	}
 
@@ -434,6 +434,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_KEY:
+			FindCreateMapping();
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), hDlg, (DLGPROC)KeyPressDialog);
 			UpdateDeviceInfo();
 			break;
@@ -441,9 +442,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			switch (HIWORD(wParam)) {
 			case EN_CHANGE:
 				if (Edit_GetModify(GetDlgItem(hDlg, IDC_EDIT_NAME))) {
-					AlienFX_SDK::mapping* lgh = FindCreateMapping();
+					lgh = FindCreateMapping();
 					lgh->name.resize(128);
-					GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)lgh->name.c_str(), 127);
+					GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)lgh->name.data(), 127);
 					lgh->name.shrink_to_fit();
 					UpdateDeviceInfo();
 				}

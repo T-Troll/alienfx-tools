@@ -178,16 +178,17 @@ void EventHandler::StartEffects() {
 }
 
 void EventHandler::StartFanMon() {
-	if (acpi && !mon)
+	if (acpi && !mon) {
 		mon = new MonHelper(conf->fan_conf);
+	}
 }
 
 void EventHandler::StopFanMon() {
 	if (mon) {
-		StopEffects();
+		monInUse.lock();
 		delete mon;
 		mon = NULL;
-		StartEffects();
+		monInUse.unlock();
 	}
 }
 
@@ -476,7 +477,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 			// Temperatures
 			cData.Temp = GetValuesArray(hTempCounter, fxhl->maxData.Temp, 273);
 
-			if (mon) {
+			if (acpi) {
 				// Check fan RPMs
 				for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
 					cData.Fan = max(cData.Fan, acpi->GetFanPercent(i));
@@ -486,6 +487,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 			// Now other temp sensor block and power block...
 			short totalPwr = 0;
 			if (conf->esif_temp) {
+				src->monInUse.lock();
 				if (mon) {
 					// Let's get temperatures from fan sensors
 					for (unsigned i = 0; i < mon->senValues.size(); i++)
@@ -495,7 +497,7 @@ static DWORD WINAPI CEventProc(LPVOID param)
 					// ESIF temps (already in fans)
 					cData.Temp = max(cData.Temp, GetValuesArray(hTempCounter2, fxhl->maxData.Temp));
 				}
-
+				src->monInUse.unlock();
 				// Powers
 				cData.PWR = GetValuesArray(hPwrCounter, fxhl->maxData.PWR, 0, 10);
 			}
@@ -532,11 +534,12 @@ static DWORD WINAPI CEventProc(LPVOID param)
 			fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData.CPU);
 
 			src->modifyProfile.lock();
-			if (src->grid)
-				src->grid->UpdateEvent(&cData);
-			else
+			if (!src->grid)
+			//	src->grid->UpdateEvent(&cData);
+			//else
 				fxhl->SetCounterColor(&cData);
 			src->modifyProfile.unlock();
+			memcpy(&fxhl->eData, &cData, sizeof(EventData));
 
 			/*DebugPrint((string("Counters: Temp=") + to_string(cData.Temp) +
 						", Power=" + to_string(cData.PWR) +

@@ -494,22 +494,29 @@ zonemap* ConfigHandler::FindZoneMap(int gid) {
 
 void ConfigHandler::SortGroupGauge(int gid) {
 	AlienFX_SDK::group* grp = afx_dev.GetGroupById(gid);
+
+	//remove_if(zoneMaps.begin(), zoneMaps.end(),
+	//	[gid](auto t) {
+	//		return t.gID == gid;
+	//	});
+
+	for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
+		if (gpos->gID == gid) {
+			zoneMaps.erase(gpos);
+			break;
+		}
+
 	if (!grp || grp->lights.empty()) return;
 
-	zonemap* zone = FindZoneMap(gid);
-	if (zone)
-		zone->lightMap.clear();
-	else {
-		zoneMaps.push_back({ (DWORD)gid });
-		zone = &zoneMaps.back();
-	}
+	zoneMaps.push_back({ (DWORD)gid });
+	auto zone = &zoneMaps.back();
 
 	// find operational grid...
-	//DWORD lgt = MAKELPARAM(grp->lights.front().first, grp->lights.front().second);
+	DWORD lgt = grp->lights.front();
 	AlienFX_SDK::lightgrid* opGrid = NULL;
 	for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
 		for (int ind = 0; ind < t->x * t->y; ind++)
-			if (t->grid[ind] == grp->lights.front()) {
+			if (t->grid[ind] == lgt) {
 				zone->gridID = t->id;
 				opGrid = &(*t);
 				break;
@@ -518,9 +525,7 @@ void ConfigHandler::SortGroupGauge(int gid) {
 		return;
 
 	// scan light positions in grid...
-	zone->gMinX = zone->gMinY = 255;
 	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
-		//lgt = MAKELPARAM(lgh->first, lgh->second);
 		zonelight cl{ *lgh, 255, 255 };
 		for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
 			if (opGrid->grid[ind] == *lgh) {

@@ -291,6 +291,7 @@ void UpdateFanUI(LPVOID lpParam) {
         wasBoostMode = false;
     }
     if (mon && IsWindowVisible((HWND)lpParam)) {
+        eve->monInUse.lock();
         if (!mon->monThread) {
             for (int i = 0; i < acpi->sensors.size(); i++) {
                 mon->senValues[i] = acpi->GetTempValue(i);
@@ -314,5 +315,6 @@ void UpdateFanUI(LPVOID lpParam) {
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);
+        eve->monInUse.unlock();
     }
 }

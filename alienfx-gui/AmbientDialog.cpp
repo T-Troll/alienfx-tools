@@ -174,20 +174,15 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
             int idx = ditem->CtlID - 2000;
-            bool selected = false;
-            if (map && map->ambients.size()) {
-                for (auto amb = map->ambients.begin(); amb != map->ambients.end(); amb++)
-                    if (*amb == idx) {
-                        selected = true;
-                        break;
-                    }
-            }
             HBRUSH Brush = CreateSolidBrush(eve->capt ?
                 RGB(eve->capt->imgz[idx * 3 + 2], eve->capt->imgz[idx * 3 + 1], eve->capt->imgz[idx * 3]) :
                 GetSysColor(COLOR_BTNFACE));
             FillRect(ditem->hDC, &ditem->rcItem, Brush);
+            if (map && map->ambients.size() && find(map->ambients.begin(), map->ambients.end(), idx) != map->ambients.end())
+                DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
+            else
+                FrameRect(ditem->hDC, &ditem->rcItem, GetSysColorBrush(COLOR_GRAYTEXT));
             DeleteObject(Brush);
-            DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, selected ? BF_RECT : BF_FLAT | BF_RECT);
         }
     } break;
     case WM_DESTROY:

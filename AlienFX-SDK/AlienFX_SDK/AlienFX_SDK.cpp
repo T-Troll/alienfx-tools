@@ -198,6 +198,7 @@ namespace AlienFX_SDK {
 						reportID = 0;
 						// device init
 						PrepareAndSend(COMMV6.systemReset, sizeof(COMMV6.systemReset));
+						PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
 						break;
 					case 0x0461:
 						version = API_V7;
@@ -285,9 +286,9 @@ namespace AlienFX_SDK {
 	bool Functions::Reset() {
 		bool result = false;
 		switch (version) {
-		case API_V6:
-			result = PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
-			break;
+		//case API_V6:
+		//	result = PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
+		//	break;
 		case API_V5:
 		{
 			result = PrepareAndSend(COMMV5.reset, sizeof(COMMV5.reset));

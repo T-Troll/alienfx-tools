@@ -10,7 +10,7 @@ private:
 public:
 	GridHelper();
 	~GridHelper();
-	void UpdateEvent(EventData*);
+	//void UpdateEvent(EventData*);
 	UINT tact = 0;
 	mt19937 rnd;
 };

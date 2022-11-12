@@ -132,14 +132,13 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 #endif
 
 	vector<groupset> active = conf->activeProfile->lightsets;
-
+	AlienFX_SDK::group* grp;
 	for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
 		vector<AlienFX_SDK::afx_act> actions;
 		bool noDiff = true;
 		int lVal = 0, cVal = 0;
 		double fCoeff = 0.0;
-		AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(Iter->group);
-		if (grp) {
+		if (grp = conf->afx_dev.GetGroupById(Iter->group)) {
 			if (Iter->fromColor && Iter->color.size()) {
 				actions.push_back(grp->have_power && conf->statePower ? Iter->color.back() : Iter->color.front());
 				actions.back().type = 0;
@@ -235,68 +234,54 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 	if (wasChanged) {
 		QueryUpdate();
 	}
-	memcpy(&eData, data, sizeof(EventData));
+	//memcpy(&eData, data, sizeof(EventData));
 }
 
-void FXHelper::SetGridLight(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int x, int y, AlienFX_SDK::Colorcode fin, vector<DWORD>* setLights) {
-	if (x < zone->gMaxX && x >= zone->gMinX && y < zone->gMaxY && y >= zone->gMinY) {
-		DWORD gridval = grid->grid[ind(x, y)];
-		if (gridval && grp->effect.flags & GE_FLAG_ZONE) { // zone lights only
-			if (!IsLightInGroup(gridval, conf->afx_dev.GetGroupById(grp->group))) {
-				gridval = 0;
-			}
+void FXHelper::SetGridLight(zonemap* zone, AlienFX_SDK::lightgrid* grid, int x, int y, AlienFX_SDK::Colorcode fin) {
+	for (auto lgh = zone->lightMap.begin(); lgh != zone->lightMap.end(); lgh++)
+		if (lgh->x == x && lgh->y == y) {
+			SetLight(LOWORD(lgh->light), HIWORD(lgh->light), { *Code2Act(&fin) });
+			return;
 		}
-		if (gridval && find(setLights->begin(), setLights->end(), gridval) == setLights->end()) {
-			SetLight(LOWORD(gridval), HIWORD(gridval), { *Code2Act(&fin) });
-			setLights->push_back(gridval);
-		}
-	}
 }
 
-void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int phase, int dist, AlienFX_SDK::Colorcode fin, vector<DWORD>* setLights) {
+void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int phase, AlienFX_SDK::Colorcode fin) {
 	switch (grp->gauge) {
-	case 1: // horizontal
-		for (int y = zone->gMinY; y < zone->gMaxY; y++) { // GridOp point!
-			SetGridLight(grp, zone, grid, grp->gridop.gridX + phase + dist, y, fin, setLights);
-			if (dist) {
-				SetGridLight(grp, zone, grid, grp->gridop.gridX + phase - dist, y, fin, setLights);
+	case 0: // solid
+		for (int x = 0; x <= zone->xMax; x++)
+			for (int y = 0; y <= zone->yMax; y++) {
+				SetGridLight(zone, grid, x, y, fin);
 			}
+		break;
+	case 1: // horizontal
+		for (int y = 0; y <= zone->yMax; y++) {
+			SetGridLight(zone, grid, grp->gridop.gridX + phase, y, fin);
 		}
 		break;
 	case 2: // vertical
-		for (int x = zone->gMinX; x < zone->gMaxX; x++) {
-			SetGridLight(grp, zone, grid, x, grp->gridop.gridY + phase + dist, fin, setLights);
-			if (dist) {
-				SetGridLight(grp, zone, grid, x, grp->gridop.gridY + phase - dist, fin, setLights);
-			}
+		for (int x = 0; x <= zone->xMax; x++) {
+			SetGridLight(zone, grid, x, grp->gridop.gridY + phase, fin);
 		}
 		break;
 	case 3: // diagonal
-		for (int x = zone->gMinX; x < zone->gMaxX; x++)
-			for (int y = zone->gMinY; y < zone->gMaxY; y++) {
-				if (x + y - grp->gridop.gridX - grp->gridop.gridY == phase + dist)
-					SetGridLight(grp, zone, grid, x, y, fin, setLights);
-				if (dist && x + y - grp->gridop.gridX - grp->gridop.gridY == phase - dist)
-					SetGridLight(grp, zone, grid, x, y, fin, setLights);
-			}
+		for (int x = 0; x <= zone->xMax; x++)
+			for (int y = 0; y <= zone->yMax; y++)
+				if (x + y - grp->gridop.gridX - grp->gridop.gridY == phase )
+					SetGridLight(zone, grid, x, y, fin);
 		break;
 	case 4: // back diagonal
-		for (int x = zone->gMinX; x < zone->gMaxX; x++)
-			for (int y = zone->gMinY; y < zone->gMaxY; y++) {
-				if (zone->gMaxX - x + y - grp->gridop.gridX - grp->gridop.gridY == phase + dist)
-					SetGridLight(grp, zone, grid, x, y, fin, setLights);
-				if (dist && zone->gMaxX - x + y - grp->gridop.gridX - grp->gridop.gridY == phase - dist)
-					SetGridLight(grp, zone, grid, x, y, fin, setLights);
-			}
+		for (int x = 0; x <= zone->xMax; x++)
+			for (int y = 0; y <= zone->yMax; y++)
+				if (x + zone->yMax - y == phase)
+					SetGridLight(zone, grid, x, y, fin);
 		break;
 	case 5: // radial
-		for (int x = zone->gMinX; x < zone->gMaxX; x++)
-			for (int y = zone->gMinY; y < zone->gMaxY; y++) {
-				int radius = (int)sqrt((x - grp->gridop.gridX) * (x - grp->gridop.gridX) + (y - grp->gridop.gridY) * (x - grp->gridop.gridY));
-				if (radius == phase + dist)
-					SetGridLight(grp, zone, grid, x, y, fin, setLights);
-				if (dist && radius == phase - dist)
-					SetGridLight(grp, zone, grid, x, y, fin, setLights);
+		for (int x = 0; x <= zone->xMax; x++)
+			for (int y = 0; y <= zone->yMax; y++) {
+				int radius = abs(x - grp->gridop.gridX) + abs(y - grp->gridop.gridY);
+				if ((abs(x - grp->gridop.gridX) == phase && abs(y - grp->gridop.gridY) <= phase )
+					|| (abs(y - grp->gridop.gridY) == phase && abs(x - grp->gridop.gridX) <= phase))
+					SetGridLight(zone, grid, x, y, fin);
 			}
 		break;
 	}
@@ -308,38 +293,72 @@ void FXHelper::SetGridEffect(groupset* grp)
 	if (zone) {
 		AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID((byte)zone->gridID);
 		if (grid) {
-			vector<DWORD> setLights;
 			double power = 1.0;
 			AlienFX_SDK::Colorcode fin;
-			int phase = grp->flags & GAUGE_REVERSE ? grp->effect.size - grp->gridop.phase : grp->gridop.phase,
-				oldphase = grp->flags & GAUGE_REVERSE ? grp->effect.size - grp->gridop.oldphase : grp->gridop.oldphase;
 			// Only involve lights at "width" from phase point!
-			// First phase lights...
-			for (int dist = 0; dist <= grp->effect.width; dist++) {
+			for (int dist = 0; grp->gridop.oldphase >= 0 && dist < grp->effect.width; dist++) {
+				SetGaugeGrid(grp, zone, grid, grp->gridop.oldphase + dist - grp->effect.width/2, grp->effect.from);
+			}
+			for (int dist = 0; grp->gridop.phase >= 0 && dist < grp->effect.width; dist++) {
 				// make final color for this distance
 				switch (grp->effect.type) {
 				case 0: // running light
 					power = 1.0;
 					break;
 				case 1: // wave
-					power = ((double)grp->effect.width - dist) / grp->effect.width; // maybe 0.5 for next!
+					power = (grp->effect.width - (double)dist) / grp->effect.width;
 					break;
 				case 2: // gradient
-					power = 1.0 - (((double)dist) / grp->effect.width); // just for fun for now
+					power = (double)(abs(dist)) / grp->effect.width; // just for fun for now
 				}
 				fin.r = (byte)((1.0 - power) * grp->effect.from.r + power * grp->effect.to.r);
 				fin.g = (byte)((1.0 - power) * grp->effect.from.g + power * grp->effect.to.g);
 				fin.b = (byte)((1.0 - power) * grp->effect.from.b + power * grp->effect.to.b);
 				// make a list of position depends on type
-				SetGaugeGrid(grp, zone, grid, phase, dist, fin, &setLights);
+				SetGaugeGrid(grp, zone, grid, grp->gridop.phase + dist, fin);
 			}
-			// Then oldphase lights for reset
-			for (int dist = 0; dist <= grp->effect.width; dist++) {
-				SetGaugeGrid(grp, zone, grid, oldphase, dist, grp->effect.from, &setLights);
-			}
-			QueryUpdate();
 		}
 	}
+}
+
+void FXHelper::RefreshGrid(int tact) {
+	if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
+		DebugPrint("Grid update skipped!\n");
+		return;
+	}
+	bool wasChanged = false;
+	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
+		if (!ce->gridop.passive) {
+			// calculate phase
+			int cTact = abs((long)tact - (long)ce->gridop.start_tact);
+			ce->gridop.phase = ce->effect.speed < 80 ? cTact / (80 - ce->effect.speed) : cTact * (ce->effect.speed - 79);
+			int effsize = (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size);
+			if (ce->gridop.phase > effsize) {
+				if (ce->effect.trigger == 1)
+					ce->gridop.phase %= effsize;
+				else {
+					ce->gridop.passive = true;
+					ce->gridop.phase = -1;
+					//SetGroupLight(&(*ce), { *Code2Act(&ce->effect.from) });
+					//wasChanged = true;
+					//continue;
+				}
+			}
+			if (ce->gridop.phase > ce->effect.size) // circle
+				ce->gridop.phase = effsize - ce->gridop.phase;
+			if (ce->flags & GAUGE_REVERSE)
+				ce->gridop.phase = ce->effect.size - ce->gridop.phase;
+
+			// Set lights
+			if (ce->gridop.oldphase != ce->gridop.phase) {
+				fxhl->SetGridEffect(&(*ce));
+				wasChanged = true;
+			}
+			ce->gridop.oldphase = ce->gridop.phase;
+		}
+	}
+	if (wasChanged)
+		QueryUpdate();
 }
 
 void FXHelper::QueryUpdate(bool force)
@@ -373,7 +392,7 @@ void FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, b
 
 inline void FXHelper::RefreshMon()
 {
-	if (conf->enableMon && conf->GetEffect() == 1)
+	if (updateThread && conf->enableMon && conf->GetEffect() == 1)
 		SetCounterColor(&eData, true);
 }
 
@@ -474,24 +493,6 @@ void FXHelper::Refresh(int forced)
 void FXHelper::RefreshOne(groupset* map, bool update, int force) {
 
 	if (conf->stateOn && map && map->color.size()) {
-		/*if (!force && conf->enableMon && eve) {
-			size_t act = 0;
-			switch (eve->effMode) {
-			case 1:
-				act = map->events.size();
-				break;
-			case 2:
-				act = map->ambients.size();
-				break;
-			case 3:
-				act = map->haptics.size();
-				break;
-			case 4:
-				act = map->effect.trigger;
-			}
-			if (act)
-				return;
-		}*/
 		SetGroupLight(map, map->color, 0, force == 2);
 		if (update)
 			QueryUpdate(force == 2);
@@ -600,29 +601,6 @@ void FXHelper::RefreshHaptics(int *freq) {
 		QueryUpdate();
 }
 
-void FXHelper::RefreshGrid(int tact) {
-	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
-		if (ce->effect.trigger && !ce->gridop.passive) {
-			// calculate phase
-			// not exactly, need to count slower speed and over-zero tact
-			ce->gridop.oldphase = ce->gridop.phase;
-			ce->gridop.phase = (byte)abs((long)tact - (long)ce->gridop.start_tact);
-			ce->gridop.phase = ce->effect.speed < 80 ? ce->gridop.phase / (80 - ce->effect.speed) : ce->gridop.phase * (ce->effect.speed - 79);
-			if (ce->gridop.phase > (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size)) {
-				ce->gridop.passive = true;
-			}
-			else
-				if (ce->gridop.phase > ce->effect.size) // circle
-					ce->gridop.phase = 2 * ce->effect.size - ce->gridop.phase;
-			// Set lights
-			fxhl->SetGridEffect(&(*ce));
-		}
-	}
-}
-
-// Power button state...
-AlienFX_SDK::afx_act pbstate[2];
-
 DWORD WINAPI CLightsProc(LPVOID param) {
 	FXHelper* src = (FXHelper*) param;
 	LightQueryElement current;
@@ -710,7 +688,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// Should we update it?
 						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						current.actsize = 2;
-						if (!conf->block_power && (current.flags || memcmp(pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act)))) {
+						if (!conf->block_power && (current.flags || memcmp(src->pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act)))) {
 
 							DebugPrint("Power button set to " +
 										to_string(current.actions[0].r) + "-" +
@@ -721,7 +699,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 										to_string(current.actions[1].b) +
 										"\n");
 
-							memcpy(pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act));
+							memcpy(src->pbstate, current.actions, 2 * sizeof(AlienFX_SDK::afx_act));
 						} else {
 							DebugPrint("Power button update skipped (blocked or same colors)\n");
 							continue;

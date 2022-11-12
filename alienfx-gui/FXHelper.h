@@ -31,8 +31,8 @@ private:
 
 	void SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
 	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = -1.0, bool force = false);
-	void SetGridLight(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int x, int y, AlienFX_SDK::Colorcode fin, vector<DWORD>* setLights);
-	void SetGaugeGrid(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int phase, int dist, AlienFX_SDK::Colorcode fin, vector<DWORD>* setLights);
+	void SetGridLight(zonemap* zone, AlienFX_SDK::lightgrid* grid, int x, int y, AlienFX_SDK::Colorcode fin);
+	void SetGaugeGrid(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int phase, AlienFX_SDK::Colorcode fin);
 	void SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void QueryUpdate(bool force = false);
 
@@ -43,6 +43,8 @@ public:
 	queue<LightQueryElement> lightQuery;
 	mutex modifyQuery;
 	EventData eData, maxData;
+	// Power button state...
+	AlienFX_SDK::afx_act pbstate[2];
 
 	FXHelper();
 
