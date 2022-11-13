@@ -4,18 +4,19 @@
 extern EventHandler* eve;
 
 void StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
+	int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);
 	switch (grp->gauge) {
 	case 0: case 1:
-		grp->effect.size = max(x, cz->xMax - x);
+		grp->effect.size = cx;
 		break;
 	case 2:
-		grp->effect.size = max(y, cz->yMax - y);
+		grp->effect.size = cy;
 		break;
 	case 3: case 4:
-		grp->effect.size = cz->xMax + cz->yMax;
+		grp->effect.size = cx + cy;
 		break;
 	case 5:
-		grp->effect.size = max(max(x, cz->xMax-x), max(y, cz->yMax - y));
+		grp->effect.size = max(cx, cy);
 		break;
 	}
 	grp->gridop.gridX = x;
@@ -39,22 +40,6 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 						StartGridRun(&(*it), zone, pos->x, pos->y);
 						break;
 					}
-				//AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(it->group);
-				//for (auto light = grp->lights.begin(); light != grp->lights.end(); light++)
-				//	if (conf->afx_dev.GetMappingByDev(conf->afx_dev.GetDeviceById(LOWORD(*light), 0), HIWORD(*light))->name == (string)keyname) {
-				//		zonemap* zone = conf->FindZoneMap(it->group);
-				//		AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID((byte)zone->gridID);
-				//		for (int x = zone->gMinX; x < zone->gMaxX; x++)
-				//			for (int y = zone->gMinY; y < zone->gMaxY; y++) {
-				//				if (grid->grid[ind(x, y)] == *light) {
-				//					// start effect
-				//					StartGridRun(&(*it), x, y);
-				//					break;
-				//					//return res;
-				//				}
-				//			}
-				//		break;
-				//	}
 			}
 	}
 

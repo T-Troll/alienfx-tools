@@ -31,8 +31,8 @@ private:
 
 	void SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
 	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = -1.0, bool force = false);
-	void SetGridLight(zonemap* zone, AlienFX_SDK::lightgrid* grid, int x, int y, AlienFX_SDK::Colorcode fin);
-	void SetGaugeGrid(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int phase, AlienFX_SDK::Colorcode fin);
+	//void SetGridLight(zonemap* zone, int x, int y, AlienFX_SDK::Colorcode fin);
+	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Colorcode fin);
 	void SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void QueryUpdate(bool force = false);
 

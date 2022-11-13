@@ -237,53 +237,34 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 	//memcpy(&eData, data, sizeof(EventData));
 }
 
-void FXHelper::SetGridLight(zonemap* zone, AlienFX_SDK::lightgrid* grid, int x, int y, AlienFX_SDK::Colorcode fin) {
-	for (auto lgh = zone->lightMap.begin(); lgh != zone->lightMap.end(); lgh++)
-		if (lgh->x == x && lgh->y == y) {
+void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Colorcode fin) {
+	for (auto lgh = zone->lightMap.begin(); lgh != zone->lightMap.end(); lgh++) {
+		switch (grp->gauge) {
+		case 0: // solid
 			SetLight(LOWORD(lgh->light), HIWORD(lgh->light), { *Code2Act(&fin) });
-			return;
+			break;
+		case 1: // horizontal
+			if (lgh->x == phase)
+				SetLight(LOWORD(lgh->light), HIWORD(lgh->light), { *Code2Act(&fin) });
+			break;
+		case 2: // vertical
+			if (lgh->y == phase)
+				SetLight(LOWORD(lgh->light), HIWORD(lgh->light), { *Code2Act(&fin) });
+			break;
+		case 3: // diagonal
+			if (lgh->x + lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase)
+				SetLight(LOWORD(lgh->light), HIWORD(lgh->light), { *Code2Act(&fin) });
+			break;
+		case 4: // back diagonal
+			if (lgh->x + zone->yMax - lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase) // ToDo - add start point!
+				SetLight(LOWORD(lgh->light), HIWORD(lgh->light), { *Code2Act(&fin) });
+			break;
+		case 5: // radial
+			if ((abs(lgh->x - grp->gridop.gridX) == phase && abs(lgh->y - grp->gridop.gridY) <= phase)
+				|| (abs(lgh->y - grp->gridop.gridY) == phase && abs(lgh->x - grp->gridop.gridX) <= phase))
+				SetLight(LOWORD(lgh->light), HIWORD(lgh->light), { *Code2Act(&fin) });
+			break;
 		}
-}
-
-void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, AlienFX_SDK::lightgrid* grid, int phase, AlienFX_SDK::Colorcode fin) {
-	switch (grp->gauge) {
-	case 0: // solid
-		for (int x = 0; x <= zone->xMax; x++)
-			for (int y = 0; y <= zone->yMax; y++) {
-				SetGridLight(zone, grid, x, y, fin);
-			}
-		break;
-	case 1: // horizontal
-		for (int y = 0; y <= zone->yMax; y++) {
-			SetGridLight(zone, grid, grp->gridop.gridX + phase, y, fin);
-		}
-		break;
-	case 2: // vertical
-		for (int x = 0; x <= zone->xMax; x++) {
-			SetGridLight(zone, grid, x, grp->gridop.gridY + phase, fin);
-		}
-		break;
-	case 3: // diagonal
-		for (int x = 0; x <= zone->xMax; x++)
-			for (int y = 0; y <= zone->yMax; y++)
-				if (x + y - grp->gridop.gridX - grp->gridop.gridY == phase )
-					SetGridLight(zone, grid, x, y, fin);
-		break;
-	case 4: // back diagonal
-		for (int x = 0; x <= zone->xMax; x++)
-			for (int y = 0; y <= zone->yMax; y++)
-				if (x + zone->yMax - y == phase)
-					SetGridLight(zone, grid, x, y, fin);
-		break;
-	case 5: // radial
-		for (int x = 0; x <= zone->xMax; x++)
-			for (int y = 0; y <= zone->yMax; y++) {
-				int radius = abs(x - grp->gridop.gridX) + abs(y - grp->gridop.gridY);
-				if ((abs(x - grp->gridop.gridX) == phase && abs(y - grp->gridop.gridY) <= phase )
-					|| (abs(y - grp->gridop.gridY) == phase && abs(x - grp->gridop.gridX) <= phase))
-					SetGridLight(zone, grid, x, y, fin);
-			}
-		break;
 	}
 }
 
@@ -291,32 +272,34 @@ void FXHelper::SetGridEffect(groupset* grp)
 {
 	auto zone = conf->FindZoneMap(grp->group);
 	if (zone) {
-		AlienFX_SDK::lightgrid* grid = conf->afx_dev.GetGridByID((byte)zone->gridID);
-		if (grid) {
-			double power = 1.0;
-			AlienFX_SDK::Colorcode fin;
-			// Only involve lights at "width" from phase point!
-			for (int dist = 0; grp->gridop.oldphase >= 0 && dist < grp->effect.width; dist++) {
-				SetGaugeGrid(grp, zone, grid, grp->gridop.oldphase + dist - grp->effect.width/2, grp->effect.from);
+		double power = 1.0;
+		AlienFX_SDK::Colorcode fin;
+		// Check for gradient zones - in this case all zone updated
+		// Only involve lights at "width" from phase point!
+		if (grp->gridop.oldphase >= 0)
+			for (int dist = 0; dist < grp->effect.width; dist++)
+				SetGaugeGrid(grp, zone, grp->gridop.oldphase + dist, grp->effect.from);
+		else {
+			SetGroupLight(grp, { *Code2Act(&grp->effect.from) });
+		}
+		int halfW = grp->effect.width / 2 + 1;
+		for (int dist = 1; grp->gridop.phase >= 0 && dist <= grp->effect.width; dist++) {
+			// make final color for this distance
+			switch (grp->effect.type) {
+			case 0: // running light
+				power = 1.0;
+				break;
+			case 1: // wave
+				power = 1.0 - (double)abs(halfW - dist) / halfW;
+				break;
+			case 2: // gradient
+				power = 1.0 - (double)(dist - 1) / grp->effect.width; // just for fun for now
 			}
-			for (int dist = 0; grp->gridop.phase >= 0 && dist < grp->effect.width; dist++) {
-				// make final color for this distance
-				switch (grp->effect.type) {
-				case 0: // running light
-					power = 1.0;
-					break;
-				case 1: // wave
-					power = (grp->effect.width - (double)dist) / grp->effect.width;
-					break;
-				case 2: // gradient
-					power = (double)(abs(dist)) / grp->effect.width; // just for fun for now
-				}
-				fin.r = (byte)((1.0 - power) * grp->effect.from.r + power * grp->effect.to.r);
-				fin.g = (byte)((1.0 - power) * grp->effect.from.g + power * grp->effect.to.g);
-				fin.b = (byte)((1.0 - power) * grp->effect.from.b + power * grp->effect.to.b);
-				// make a list of position depends on type
-				SetGaugeGrid(grp, zone, grid, grp->gridop.phase + dist, fin);
-			}
+			fin.r = (byte)((1.0 - power) * grp->effect.from.r + power * grp->effect.to.r);
+			fin.g = (byte)((1.0 - power) * grp->effect.from.g + power * grp->effect.to.g);
+			fin.b = (byte)((1.0 - power) * grp->effect.from.b + power * grp->effect.to.b);
+			// make a list of position depends on type
+			SetGaugeGrid(grp, zone, grp->gridop.phase + dist - 1, fin);
 		}
 	}
 }
@@ -340,7 +323,7 @@ void FXHelper::RefreshGrid(int tact) {
 					ce->gridop.passive = true;
 					ce->gridop.phase = -1;
 					//SetGroupLight(&(*ce), { *Code2Act(&ce->effect.from) });
-					//wasChanged = true;
+					wasChanged = true;
 					//continue;
 				}
 			}
@@ -724,7 +707,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						if (lp == qn->dev_query.end())
 							qn->dev_query.push_back(ablock);
 						else {
-							DebugPrint("Light already in query, updating data.\n");
+							//DebugPrint("Light already in query, updating data.\n");
 							lp->act = ablock.act;
 						}
 					}
