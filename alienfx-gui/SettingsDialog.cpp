@@ -77,7 +77,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_LON:
 			conf->lightsOn = state;
-			fxhl->ChangeState();
+			fxhl->SetState();
 			eve->ChangeEffectMode();
 			break;
 		case IDC_CHECK_GAMMA:
@@ -93,10 +93,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (!conf->lightsOn) {
 				if (state) {
 					conf->lightsOn = true;
-					fxhl->ChangeState();
+					fxhl->SetState();
 					conf->lightsOn = false;
 				}
-				fxhl->ChangeState();
+				fxhl->SetState();
 			}
 			break;
 		case IDC_POWER_DIM:
@@ -106,16 +106,16 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					DWORD oldDimmed = conf->dimmed;
 					conf->dimmed = false;
 					conf->dimPowerButton = true;
-					fxhl->ChangeState();
+					fxhl->SetState();
 					conf->dimPowerButton = false;
 					conf->dimmed = oldDimmed;
 				}
-				fxhl->ChangeState();
+				fxhl->SetState();
 			}
 			break;
 		case IDC_OFFONBATTERY:
 			conf->offOnBattery = state;
-			fxhl->ChangeState();
+			fxhl->SetState();
 			break;
 		case IDC_AWCC:
 			conf->awcc_disable = state;
@@ -139,7 +139,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_DIM:
 			conf->dimmed = state;
-			fxhl->ChangeState();
+			fxhl->SetState();
 			break;
 		case IDC_FANCONTROL:
 			conf->fanControl = state;
@@ -177,7 +177,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip1, conf->dimmingPower);
 				if (conf->IsDimmed())
-					fxhl->ChangeState();
+					fxhl->SetState();
 			}
 		} break;
 		} break;

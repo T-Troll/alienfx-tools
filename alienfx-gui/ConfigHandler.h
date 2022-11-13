@@ -194,9 +194,9 @@ public:
 	void Load();
 	bool SamePower(WORD flags, bool anyFit = false);
 	void Save();
-	void SortAllGauge();
+	//void SortAllGauge();
 	zonemap* FindZoneMap(int gid);
-	void SortGroupGauge(int gid);
+	zonemap* SortGroupGauge(int gid);
 	//vector<deviceeffect>::iterator FindDevEffect(profile* prof, AlienFX_SDK::afx_device* dev, int type);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();

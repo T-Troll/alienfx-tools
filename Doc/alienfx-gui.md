@@ -162,34 +162,35 @@ Click color buttons for change group hi/low level colors.
 
 Grid effects is a group of software light effects, operating not with lights only, but also using it position on grid. It's like "Global effect" on some RGB keyboards, but have flexible controls and can reflect some system events.
 
-Each effect have trigger to start, position to start, type, and phase.  
-Then effect triggered, it's starting to change light colors from the trigger point according to direction, increasing it until "size" parameter reached, then stops.
+Each effect have trigger to initiate, position to start, type, and phase.  
+Then effect triggered, it's starting to change light colors from the trigger point according to direction, until it meet it's stop condition.
 
-At "Grid Effect" tab, selected zone, in general, define not the lights involved into effect, but it's borders on grid. So, create a zone covering all grid for full operation, or use one of the zones to limit effect area to the part of the grid.
+First, you should define trigger - the event which launch effect for selected zone. Currently, available triggers are:
+- Off - grid effect disabled (default)
+- Continues - grid effect always start at the beginning point of the zone (depend on its direction type), and continue to run until this setting or effect mode changed.
+- Random - grid effect start at random point inside zone, processing all zone and start again into new point, until this mode or effect mode changed.
+- Keyboard - grid effect start from the position of the light with the name same as pressed key, run one time then stop until key is pressed again.
+- Event - grid effect start if one of monitoring event happened (see Event Monitoring tab) and continues until event off.
 
-Next, you should define trigger - the event which launch effect for this zone. Currently, available triggers are:
-- Off - grid effect disabled for zone (default)
-- Continues - grid effect always start at the beginning point of the zone (depend on its direction)
-- Random - grid effect start at random point inside zone
-- Keyboard - grid effect start from the position of the light with the name same as pressed key.
-- Event - grid effect start if one of monitoring event happened (see Event Monitoring tab).
+For Keyboard trigger, light names should be the same as key name (please use capital letters, "A" right, "a" wrong), and common English key names from the capital letter (f.e. "Space", "Esc").
 
-Continues and Random triggers are always on, so effect start again after finished. Other triggers are one-time, so effect stop then finished.  
-For Keyboard trigger, light names should be the same as key name (please use capital letters, "A" right, "a" not), and common English other key names from the capital (f.e. "Space", "Esc").
+Effect processing driven by phases (100 ms each), so it has 10 phases per second.
 
-Possible effect types:
-- Running light - phase point(s) have "to" color, the rest have "from" color.
-- Wave - Lights across phase point have a gradient between "From" and "To" colors based on "Width" parameter.
-- Gradient - The same like "Wave", but gradient is from "To" color at borders into "From" color into the center.
+"Speed" slider is about how fast an effect runs (change it condition). Possible value is from -80 (condition changed every 80 phases) to +80 (condition changed to 80 each phase).  
+"Width" slider defines how many lights will be involved into color change.
 
-The direction block is the same as "Gauge" block at "Colors" tab, it defines effect phase grow direction and type.
+Effect types define how changing zone (defined by point and width) will be painted:
+- Running light - all lights into changing zone will have the same color, defined by "To" color.
+- Wave - lights into changing zone will have "wave" gradient between "From" color at the borders and "To" color in the middle.
+- Gradient - lights into changing zone will have gradient from "To" color to "From color".
 
-"Speed" is how fast an effect grows (change it phase). Possible value is from -80 (1/80 cell per phase) to +80 (80 cell in phase).  
-"Size" is maximal effect size before stop (in cells).  
-"Width" defines how many positions around phase point will be involved into color change (in cells).
+There are some check boxes for zone processing control:
+- Gradient - zone fill be filled by gradient color between "From" and "To" from the start point to current state point.
+- Reverse - reverses processing direction (f.e from left to right or from center to border).
+- Circle - after reaching processing limit, effect reverse direction until initial state reached.
 
-"Circle" check box enables effect rollback - so after reaching size defined by "Size", it is starting to decrease phase until reach initial state.  
-"Zone lights only" - in case this check box enabled, only lights including into zone will participate into effect, otherwise all lights defined by zone borders. Example: you have defined a zone with "WASD" lights. Without this check box, QWEASD lights will be involved, but only "WASD" if enabled.
+"Direction" drop down define processing direction, the same as "Gauge" at "Color" tab.  
+If direction is set to "Off", all zone lights will morph between "From" and "To" colors as phase changed.
 
 ### Devices and Grids
 

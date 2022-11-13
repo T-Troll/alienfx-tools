@@ -72,13 +72,17 @@ For fan control - Open issue here or contact me via Discord support server.
 - Setting a hardware power button light, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to the "Devices" tab or quit with visible delay.
 - Fans still controlled by BIOS, so you can't stop it at high system load/temperatures.
 - Some BIOSes limit fan RPMs to lower values under heavy system load (Power subsystem have not enough reserves for fans).
+- In case BIOS drives mode set to "Raid", SSD temperatures into fan control will be fake (always 60C) at some systems.
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
 - **WARNING!** There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, preventing the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-gui` with "integrated GPU" setting at "Program settings" for the same monitor. It will not work at the default setting in this case.
 - **WARNING!** In rare case light system freeze, shutdown or hibernate your notebook (some lights can stay on after shutdown), disconnect power adapter and wait about 15 seconds (or until all lights turn off), then start it back.
 
-## Support
+## Project Support and support for the project
 
-Join Discord [support server](https://discord.gg/XU6UJbN9J5)
+Join Discord [support server](https://discord.gg/XU6UJbN9J5) in case you have any questions.
+
+Author does not accept any donates, except you can share any Alienware/Dell hardware for testing. Contact me in Discord about it.  
+Feel free to promote this project online if you like it instead!
 
 ## How to build from source code
 

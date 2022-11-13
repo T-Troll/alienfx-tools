@@ -172,6 +172,8 @@ void ModifyDragZone(WORD did, WORD lid) {
                 if (!conf->mainGrid->grid[ind(x,y)])
                     conf->mainGrid->grid[ind(x,y)] = newVal;
         }
+    conf->zoneMaps.clear();
+    InitGridButtonZone();
 }
 
 void ModifyColorDragZone(bool clear = false) {
@@ -288,7 +290,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         // remove grid mapping
         if (tabLightSel == TAB_DEVICES && dragZone.top >=0) {
             ModifyDragZone(0, 0);
-            InitGridButtonZone();
+            //InitGridButtonZone();
         }
         else
             ModifyColorDragZone(true);
@@ -323,7 +325,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     eLid = HIWORD(oldLightValue);
                 } else {
                     ModifyDragZone(devID, eLid);
-                    InitGridButtonZone();
+                    //InitGridButtonZone();
                     FindCreateMapping();
                     // for rgb keyboards, check key...
                     if (dev->dev && dev->dev->IsHaveGlobal())

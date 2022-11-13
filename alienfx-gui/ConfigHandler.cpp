@@ -319,7 +319,7 @@ void ConfigHandler::Load() {
 	if (!activeProfile) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
 
-	SortAllGauge();
+	//SortAllGauge();
 	SetStates();
 }
 
@@ -480,19 +480,19 @@ void ConfigHandler::Save() {
 	}
 }
 
-void ConfigHandler::SortAllGauge() {
-	for (auto t = afx_dev.GetGroups()->begin(); t < afx_dev.GetGroups()->end(); t++)
-		SortGroupGauge(t->gid);
-}
+//void ConfigHandler::SortAllGauge() {
+//	for (auto t = afx_dev.GetGroups()->begin(); t < afx_dev.GetGroups()->end(); t++)
+//		SortGroupGauge(t->gid);
+//}
 
 zonemap* ConfigHandler::FindZoneMap(int gid) {
 	for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
 		if (gpos->gID == gid)
 			return &(*gpos);
-	return nullptr;
+	return SortGroupGauge(gid);
 }
 
-void ConfigHandler::SortGroupGauge(int gid) {
+zonemap* ConfigHandler::SortGroupGauge(int gid) {
 	AlienFX_SDK::group* grp = afx_dev.GetGroupById(gid);
 
 	//remove_if(zoneMaps.begin(), zoneMaps.end(),
@@ -506,10 +506,10 @@ void ConfigHandler::SortGroupGauge(int gid) {
 			break;
 		}
 
-	if (!grp || grp->lights.empty()) return;
-
-	zoneMaps.push_back({ (DWORD)gid });
+	zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
 	auto zone = &zoneMaps.back();
+
+	if (!grp || grp->lights.empty()) return zone;
 
 	// find operational grid...
 	DWORD lgt = grp->lights.front();
@@ -521,8 +521,7 @@ void ConfigHandler::SortGroupGauge(int gid) {
 				opGrid = &(*t);
 				break;
 			}
-	if (!opGrid)
-		return;
+	if (!opGrid) return zone;
 
 	// scan light positions in grid...
 	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
@@ -577,4 +576,5 @@ void ConfigHandler::SortGroupGauge(int gid) {
 				zone->yMax = y - 1;
 		}
 	}
+	return zone;
 }

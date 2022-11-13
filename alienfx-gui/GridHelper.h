@@ -10,7 +10,8 @@ private:
 public:
 	GridHelper();
 	~GridHelper();
-	//void UpdateEvent(EventData*);
+	void StartCommonRun(groupset* ce, zonemap* cz);
+	void StartGridRun(groupset* grp, zonemap* cz, int x, int y);
 	UINT tact = 0;
 	mt19937 rnd;
 };

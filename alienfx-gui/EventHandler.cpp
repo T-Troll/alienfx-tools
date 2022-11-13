@@ -48,7 +48,7 @@ void EventHandler::ChangePowerState()
 	if ((byte)conf->statePower != state.ACLineStatus) {
 		conf->statePower = state.ACLineStatus;
 		DebugPrint("Power state changed!\n");
-		fxhl->ChangeState();
+		fxhl->SetState();
 		if (cEvent)
 			CheckProfileWindow();
 	}
@@ -71,7 +71,7 @@ void EventHandler::ChangeScreenState(DWORD state)
 		conf->dimmedScreen = false;
 		conf->stateScreen = true;
 	}
-	fxhl->ChangeState();
+	fxhl->SetState();
 }
 
 void EventHandler::SwitchActiveProfile(profile* newID)
@@ -90,7 +90,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE && acpi->GetGMode() != conf->fan_conf->lastProf->gmode)
 				acpi->SetGMode(conf->fan_conf->lastProf->gmode);
 
-		fxhl->ChangeState();
+		fxhl->SetState();
 		ChangeEffectMode();
 
 		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");

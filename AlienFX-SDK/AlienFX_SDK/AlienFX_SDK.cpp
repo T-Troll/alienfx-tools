@@ -198,7 +198,7 @@ namespace AlienFX_SDK {
 						reportID = 0;
 						// device init
 						PrepareAndSend(COMMV6.systemReset, sizeof(COMMV6.systemReset));
-						PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
+						//PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
 						break;
 					case 0x0461:
 						version = API_V7;
@@ -861,8 +861,8 @@ namespace AlienFX_SDK {
 		if (inSet) UpdateColors();
 		switch (version) {
 		case API_V8: {
-			byte br = brightness * 10 / 255;
-			return PrepareAndSend(COMMV8.setBrightness, sizeof(COMMV8.setBrightness), { {2, br} });
+			bright = brightness * 10 / 0xff;
+			return PrepareAndSend(COMMV8.setBrightness, sizeof(COMMV8.setBrightness), { {2, bright} });
 		} break;
 		// This is not used in GUI, and don't work correctly in CLI
 		/*case API_V7: case API_ACPI:

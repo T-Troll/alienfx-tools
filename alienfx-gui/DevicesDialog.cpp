@@ -709,7 +709,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 	{
-		conf->SortAllGauge();
+		//conf->SortAllGauge();
 		fxhl->Start();
 		fxhl->Refresh();
 		dDlg = NULL;

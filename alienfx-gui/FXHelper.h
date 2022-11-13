@@ -32,7 +32,7 @@ private:
 	void SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power = 0, bool force = false);
 	void SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power = -1.0, bool force = false);
 	//void SetGridLight(zonemap* zone, int x, int y, AlienFX_SDK::Colorcode fin);
-	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Colorcode fin);
+	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::afx_act fin);
 	void SetLight(int did, int id, vector<AlienFX_SDK::afx_act> actions, bool force = false);
 	void QueryUpdate(bool force = false);
 
@@ -44,11 +44,12 @@ public:
 	mutex modifyQuery;
 	EventData eData, maxData;
 	// Power button state...
-	AlienFX_SDK::afx_act pbstate[2];
+	AlienFX_SDK::afx_act pbstate[2]{ 0 };
 
 	FXHelper();
 
 	~FXHelper();
+	AlienFX_SDK::afx_act BlendPower(double power, AlienFX_SDK::afx_act* from, AlienFX_SDK::afx_act* to);
 	int FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
@@ -62,6 +63,6 @@ public:
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
 	void RefreshGrid(int tact);
-	void ChangeState();
+	void SetState();
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);
 };

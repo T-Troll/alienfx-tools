@@ -12,19 +12,11 @@ void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
 		CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->flags & GAUGE_GRADIENT);
 		CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->flags & GAUGE_REVERSE);
 		CheckDlgButton(hDlg, IDC_CHECK_CIRCLE, mmap->effect.flags & GE_FLAG_CIRCLE);
-		CheckDlgButton(hDlg, IDC_CHECK_ZONELIGHTS, mmap->effect.flags & GE_FLAG_ZONE);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), mmap->effect.trigger);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), mmap->effect.type);
-		if (!mmap->effect.size) {
-			zonemap* zone = conf->FindZoneMap(mmap->group);
-			if (zone)
-				mmap->effect.size = max(zone->gMaxX - zone->gMinX, zone->gMaxY - zone->gMinY);
-		}
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SIZE), TBM_SETPOS, true, mmap->effect.size);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SPEED), TBM_SETPOS, true, mmap->effect.speed - 80);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), TBM_SETPOS, true, mmap->effect.width);
-		SetSlider(sTip1, mmap->effect.size);
 		SetSlider(sTip2, mmap->effect.speed - 80);
 		SetSlider(sTip3, mmap->effect.width);
 	}
@@ -35,8 +27,7 @@ void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
 }
 
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	HWND size_slider = GetDlgItem(hDlg, IDC_SLIDER_SIZE),
-		speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
+	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
 		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH);
 
 	groupset* mmap = FindMapping(eItem);
@@ -45,13 +36,11 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	{
 	case WM_INITDIALOG:
 	{
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Random", "Keyboard", "Event"/*, "Haptics"*/});
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Random", "Keyboard", "Event"});
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient" });
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)", "Radial" });
-		SendMessage(size_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
 		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(-80, 80));
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
-		sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_SIZE), sTip1);
 		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_SPEED), sTip2);
 		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), sTip3);
 		UpdateEffectInfo(hDlg, mmap);
@@ -77,6 +66,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				mmap->gridop.passive = true;
 			}
 			break;
 		case IDC_COMBO_GEFFTYPE:
@@ -93,9 +83,6 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_CHECK_CIRCLE:
 			SetBitMask(mmap->effect.flags, GE_FLAG_CIRCLE, state);
 			break;
-		case IDC_CHECK_ZONELIGHTS:
-			SetBitMask(mmap->effect.flags, GE_FLAG_ZONE, state);
-			break;
 		case IDC_BUTTON_GEFROM:
 			SetColor(hDlg, LOWORD(wParam), &mmap->effect.from);
 			break;
@@ -111,10 +98,6 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				if ((HWND)lParam == speed_slider) {
 					mmap->effect.speed = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0) + 80;
 					SetSlider(sTip2, mmap->effect.speed - 80);
-				}
-				if ((HWND)lParam == size_slider) {
-					mmap->effect.size = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, mmap->effect.size);
 				}
 				if ((HWND)lParam == width_slider) {
 					mmap->effect.width = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);

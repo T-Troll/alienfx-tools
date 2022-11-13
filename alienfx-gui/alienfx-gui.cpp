@@ -359,7 +359,7 @@ void ReloadProfileList() {
 }
 
 void UpdateState(bool checkMode) {
-	fxhl->ChangeState();
+	fxhl->SetState();
 	eve->ChangeEffectMode();
 	if (checkMode) {
 		ReloadModeList();
@@ -689,7 +689,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// need to restore lights if followed screen
 			if (conf->lightsOn && conf->offWithScreen) {
 				conf->stateScreen = true;
-				fxhl->ChangeState();
+				fxhl->SetState();
 			}
 			conf->Save();
 			eve->StopProfiles();
