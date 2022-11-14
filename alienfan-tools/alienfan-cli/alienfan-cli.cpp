@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
                 }
                 else {
                     for (int i = 0; i < acpi->sensors.size(); i++) {
-                        auto sname = fan_conf->sensors.find(MAKEWORD(acpi->sensors[i].senIndex, acpi->sensors[i].type));
+                        auto sname = fan_conf->sensors.find(acpi->sensors[i].sid);
                         printf("%s: %d\n", (sname == fan_conf->sensors.end() ? acpi->sensors[i].name.c_str() : sname->second.c_str()), acpi->GetTempValue(i));
                     }
                 }

@@ -7,8 +7,9 @@ class MonHelper {
 public:
 	ThreadHelper* monThread = NULL;
 	short oldPower = -1, oldGmode = 0;
-	vector<int> senValues, fanRpm, boostRaw, boostSets, maxTemps, fanSleep;
-	vector<vector<int>> senBoosts;
+	vector<short> fanRpm, boostRaw, boostSets, fanSleep;
+	map<WORD, short> senValues, maxTemps;
+	vector<map<WORD, short>> senBoosts;
 
 	MonHelper(ConfigFan*);
 	~MonHelper();

@@ -29,9 +29,9 @@ AlienFX_SDK::afx_act FXHelper::BlendPower(double power, AlienFX_SDK::afx_act* fr
 	};
 }
 
-void FXHelper::SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
+void FXHelper::SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::afx_act> actions, double power, bool force)
 {
-	vector<AlienFX_SDK::afx_act> fAct{ actions.front() };
+	AlienFX_SDK::afx_act fAct;
 	if (flags & GAUGE_REVERSE)
 		x = max - x;
 	if (flags & GAUGE_GRADIENT)
@@ -39,50 +39,52 @@ void FXHelper::SetGaugeLight(DWORD id, int x, int max, WORD flags, vector<AlienF
 	else {
 		max++;
 		double pos = (double)x / max;
-		if (pos > power)
+		if (pos > power) {
+			fAct = actions.front();
 			goto setlight;
+		}
 		else
-			if (pos + (1.0 / max) >= power) {
-				power = (power - ((double)x) / max) * max;
+			if (double(x+1) / max > power) {
+				power = (power - pos) * max;
 			}
 			else {
-				fAct[0] = actions.back();
+				fAct = actions.back();
 				goto setlight;
 			}
 	}
-	fAct[0] = BlendPower(power, &actions.front(), &actions.back());
+	fAct = BlendPower(power, &actions.front(), &actions.back());
 	setlight:
-	SetLight(LOWORD(id), HIWORD(id), fAct, force);
+	SetLight(LOWORD(id), HIWORD(id), { fAct }, force);
 }
 
-void FXHelper::SetGroupLight(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power, bool force) {
+void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::afx_act> actions, double power, bool force) {
 	AlienFX_SDK::group* cGrp = conf->afx_dev.GetGroupById(grp->group);
 	if (cGrp && cGrp->lights.size()) {
-		zonemap* zone = conf->FindZoneMap(grp->group);
 		if (!grp->gauge || actions.size() < 2 /*|| !zone*/) {
 			for (auto i = cGrp->lights.begin(); i < cGrp->lights.end(); i++)
 				SetLight(LOWORD(*i), HIWORD(*i), actions, force);
 		}
 		else {
+			zonemap* zone = conf->FindZoneMap(grp->group);
 			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
 				switch (grp->gauge) {
 				case 1: // horizontal
-					SetGaugeLight(t->light, t->x, zone->xMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, t->x, zone->xMax, grp->flags, actions, power, force);
 					break;
 				case 2: // vertical
-					SetGaugeLight(t->light, t->y, zone->yMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, t->y, zone->yMax, grp->flags, actions, power, force);
 					break;
 				case 3: // diagonal
-					SetGaugeLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
 					break;
 				case 4: // back diagonal
-					SetGaugeLight(t->light, zone->xMax - t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, zone->xMax - t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
 					break;
 				case 5: // radial
 					float px = abs(((float)zone->xMax)/2 - t->x), py = abs(((float)zone->yMax)/2 - t->y);
 					int radius = (int)(sqrt(zone->xMax * zone->xMax + zone->yMax * zone->yMax) / 2),
 						weight = (int)sqrt(px * px + py * py);
-					SetGaugeLight(t->light, weight, radius, grp->flags, actions, power, force);
+					SetZoneLight(t->light, weight, radius, grp->flags, actions, power, force);
 					break;
 				}
 		}
@@ -231,7 +233,7 @@ void FXHelper::SetCounterColor(EventData *data, bool force)
 					actions.insert(actions.begin(), Iter->color.front());
 				}
 
-			SetGroupLight(&(*Iter), actions, fCoeff);
+			SetZone(&(*Iter), actions, fCoeff);
 		}
 	}
 	if (wasChanged) {
@@ -269,19 +271,17 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 
 void FXHelper::SetGridEffect(groupset* grp)
 {
-	auto zone = conf->FindZoneMap(grp->group);
-
 	double power;
 	AlienFX_SDK::afx_act from = *Code2Act(&grp->effect.from), to = *Code2Act(&grp->effect.to);
 
 	if (grp->gauge) {
-
+		auto zone = conf->FindZoneMap(grp->group);
 		// Old phase cleanup
 		if (grp->gridop.oldphase >= 0)
 			for (int dist = 0; dist < grp->effect.width; dist++)
 				SetGaugeGrid(grp, zone, grp->gridop.oldphase + dist, from);
 		else
-			SetGroupLight(grp, { from });
+			SetZone(grp, { from });
 
 		// Check for gradient zones - in this case all phases updated!
 		if (grp->flags & GAUGE_GRADIENT && grp->gridop.phase > 0) {
@@ -311,10 +311,10 @@ void FXHelper::SetGridEffect(groupset* grp)
 	else {
 		// flat morph emulation
 		if (grp->gridop.phase < 0)
-			SetGroupLight(grp, { from });
+			SetZone(grp, { from });
 		else {
 			power = (double)grp->gridop.phase / grp->effect.size;
-			SetGroupLight(grp, { BlendPower(power, &from, &to) });
+			SetZone(grp, { BlendPower(power, &from, &to) });
 		}
 	}
 }
@@ -337,7 +337,7 @@ void FXHelper::RefreshGrid(int tact) {
 				else {
 					ce->gridop.passive = true;
 					ce->gridop.phase = -1;
-					//SetGroupLight(&(*ce), { *Code2Act(&ce->effect.from) });
+					//SetZone(&(*ce), { *Code2Act(&ce->effect.from) });
 					wasChanged = true;
 					//continue;
 				}
@@ -491,7 +491,7 @@ void FXHelper::Refresh(int forced)
 void FXHelper::RefreshOne(groupset* map, bool update, int force) {
 
 	if (conf->stateOn && map && map->color.size()) {
-		SetGroupLight(map, map->color, 0, force == 2);
+		SetZone(map, map->color, 0, force == 2);
 		if (update)
 			QueryUpdate(force == 2);
 	}
@@ -529,7 +529,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 				actions[0].r = (BYTE)((r * shift) / dsize);
 				actions[0].g = (BYTE)((g * shift) / dsize);
 				actions[0].b = (BYTE)((b * shift) / dsize);
-				SetGroupLight(&(*it), actions);
+				SetZone(&(*it), actions);
 			}
 		}
 	if (wasChanged)
@@ -588,7 +588,7 @@ void FXHelper::RefreshHaptics(int *freq) {
 				else
 					actions = { { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) } };
 
-				SetGroupLight(&(*mIter), actions, f_power / groupsize);
+				SetZone(&(*mIter), actions, f_power / groupsize);
 				wasChanged = true;
 			}
 			//else

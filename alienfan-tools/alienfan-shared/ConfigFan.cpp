@@ -16,19 +16,20 @@ ConfigFan::~ConfigFan() {
 	RegCloseKey(keyMain);
 }
 
-temp_block* ConfigFan::FindSensor(int id) {
-	for (auto tb = lastProf->fanControls.begin(); tb < lastProf->fanControls.end(); tb++)
-		if (tb->sensorIndex == id)
-			return &(*tb);
+vector<fan_point>* ConfigFan::FindSensor() {
+	fan_block* fan = FindFanBlock(lastSelectedFan);
+	if (fan) {
+		auto sen = fan->sensors.find(lastSelectedSensor);
+		if (sen != fan->sensors.end())
+			return &sen->second;
+	}
 	return NULL;
 }
 
-fan_block* ConfigFan::FindFanBlock(temp_block* sen, int id) {
-	if (sen) {
-		for (auto tb = sen->fans.begin(); tb < sen->fans.end(); tb++)
-			if (tb->fanIndex == id)
-				return &(*tb);
-	}
+fan_block* ConfigFan::FindFanBlock(short id) {
+	for (auto tb = lastProf->fanControls.begin(); tb != lastProf->fanControls.end(); tb++)
+		if (tb->fanIndex == id)
+			return &(*tb);
 	return NULL;
 }
 
@@ -50,8 +51,8 @@ void ConfigFan::Load() {
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LastPowerStage", &power);
-	GetReg("LastSensor", &lastSelectedSensor);
-	GetReg("LastFan", &lastSelectedFan);
+	//GetReg("LastSensor", &lastSelectedSensor);
+	//GetReg("LastFan", &lastSelectedFan);
 	GetReg("ObCheck", &obCheck);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
@@ -62,30 +63,53 @@ void ConfigFan::Load() {
 	// Now load sensor mappings...
 	char name[256];
 	DWORD len = 255, lend = 0; short fid;
-	for (int vindex = 0; RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		short sid; len = 255;
-		if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
-			temp_block* cSensor = FindSensor(sid);
-			if (!cSensor) { // Need to add new sensor block
-				prof.fanControls.push_back({ sid });
-				cSensor = &prof.fanControls.back();
+	for (int vindex = 0; RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+		short sid; //len = 255;
+		if (sscanf_s(name, "Fan-%hd-%hd", &fid, &sid) == 2) {
+			fan_block* fan = FindFanBlock(fid);
+			if (!fan) {
+				prof.fanControls.push_back({ (byte)fid });
+				fan = &prof.fanControls.back();
 			}
-			// Now load and add fan data..
+			// Now load and add sensor data..
 			byte* inarray = new byte[lend];
-			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
-			len = 255;
-			fan_block cFan{ fid };
+			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
+			//len = 255;
+			vector<fan_point> curve;
 			for (UINT i = 0; i < lend; i += 2) {
-				cFan.points.push_back({ inarray[i], inarray[i + 1] });
+				curve.push_back({ inarray[i], inarray[i + 1] });
 			}
-			cSensor->fans.push_back(cFan);
+			// Find sensor...
+			fan->sensors[sid] = curve;
+			delete[] inarray;
+			continue;
+		}
+		if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
+			// find fan block...
+			fan_block* fan = FindFanBlock(fid);
+			if (!fan) {
+				prof.fanControls.push_back({ fid });
+				fan = &prof.fanControls.back();
+			}
+			// Load sensor data...
+			byte* inarray = new byte[lend];
+			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
+			//len = 255;
+			// ToDo: Find correct SID here!
+			//sen_block cSen{ MAKEWORD(255,sid) };
+			vector<fan_point> curve;
+			for (UINT i = 0; i < lend; i += 2) {
+				curve.push_back({ inarray[i], inarray[i + 1] });
+			}
+			// Find sensor...
+			fan->sensors[sid + 0xff00] = curve;
 			delete[] inarray;
 			continue;
 		}
 		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2) {
 			byte* inarray = new byte[lend];
-			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
-			len = 255;
+			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
+			//len = 255;
 			sensors.emplace(MAKEWORD(fid, sid), (char*)inarray);
 			delete[] inarray;
 			continue;
@@ -93,31 +117,31 @@ void ConfigFan::Load() {
 		// old format, deprecated...
 		if (sscanf_s(name, "SensorName-%hd", &sid) == 1) {
 			byte* inarray = new byte[lend];
-			RegEnumValue(keySensors, vindex, name, &len, NULL, NULL, inarray, &lend);
-			len = 255;
+			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
+			//len = 255;
 			sensors.emplace(MAKEWORD(sid, 0xff), (char*)inarray);
 			delete[] inarray;
 		}
 	}
-	for (int vindex = 0; RegEnumValue(keyMain, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+	for (int vindex = 0; RegEnumValue(keyMain, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		if (sscanf_s(name, "Boost-%hd", &fid) == 1) { // Boost block
 			byte* inarray = new byte[lend];
-			len++;
-			RegEnumValue(keyMain, vindex, name, &len, NULL, NULL, inarray, &lend);
+			//len++;
+			RegEnumValue(keyMain, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
 			boosts.push_back({ (byte)fid, inarray[0],*(USHORT*)(inarray + 1) });
 			delete[] inarray;
 		}
-		len = 255;
+		//len = 255;
 	}
-	for (int vindex = 0; RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+	for (int vindex = 0; RegEnumValue(keyPowers, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		if (sscanf_s(name, "Power-%hd", &fid) == 1) { // Power names
 			char* inarray = new char[lend + 1];
-			len++;
-			RegEnumValue(keyPowers, vindex, name, &len, NULL, NULL, (byte*)inarray, &lend);
+			//len++;
+			RegEnumValue(keyPowers, vindex, name, &(len = 255), NULL, NULL, (byte*)inarray, &lend);
 			powers.emplace((byte)fid, inarray);
 			delete[] inarray;
 		}
-		len = 255;
+		//len = 255;
 	}
 }
 
@@ -128,8 +152,8 @@ void ConfigFan::Save() {
 	SetReg("StartMinimized", startMinimized);
 	SetReg("LastPowerStage", MAKELPARAM(prof.powerStage, prof.gmode));
 	SetReg("UpdateCheck", updateCheck);
-	SetReg("LastSensor", lastSelectedSensor);
-	SetReg("LastFan", lastSelectedFan);
+	//SetReg("LastSensor", lastSelectedSensor);
+	//SetReg("LastFan", lastSelectedFan);
 	SetReg("ObCheck", obCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);
@@ -139,18 +163,17 @@ void ConfigFan::Save() {
 	RegDeleteTree(keyMain, "Powers");
 	RegCreateKeyEx(keyMain, "Powers", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 
-	// save profiles..
-	for (int i = 0; i < prof.fanControls.size(); i++) {
-		for (int j = 0; j < prof.fanControls[i].fans.size(); j++) {
-			name = "Sensor-" + to_string(prof.fanControls[i].sensorIndex) + "-"
-				+ to_string(prof.fanControls[i].fans[j].fanIndex);
-			byte* outdata = new byte[prof.fanControls[i].fans[j].points.size() * 2];
-			for (int k = 0; k < prof.fanControls[i].fans[j].points.size(); k++) {
-				outdata[2 * k] = (byte)prof.fanControls[i].fans[j].points[k].temp;
-				outdata[(2 * k)+1] = (byte)prof.fanControls[i].fans[j].points[k].boost;
+	// save profile..
+	for (auto i = prof.fanControls.begin(); i != prof.fanControls.end(); i++) {
+		for (auto j = i->sensors.begin(); j != i->sensors.end(); j++) {
+			name = "Fan-" + to_string(i->fanIndex) + "-" + to_string(j->first);
+			byte* outdata = new byte[j->second.size() * 2];
+			for (int k = 0; k < j->second.size(); k++) {
+				outdata[2 * k] = (byte)j->second[k].temp;
+				outdata[(2 * k)+1] = (byte)j->second[k].boost;
 			}
 
-			RegSetValueEx( keySensors, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) prof.fanControls[i].fans[j].points.size() * 2 );
+			RegSetValueEx( keySensors, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) j->second.size() * 2 );
 			delete[] outdata;
 		}
 	}
@@ -186,6 +209,28 @@ void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
 	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
 		if (powers.find(*i) == powers.end())
 			powers.emplace(*i, *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual");
+
+	// old formats convert
+	// sensor names...
+	map<WORD, string> newSenNames;
+	for (auto i = sensors.begin(); i != sensors.end(); i++)
+		if (HIBYTE(i->first) == 0xff) {
+			newSenNames[acpi->sensors[LOBYTE(i->first)].sid] = i->second;
+		}
+		else
+			newSenNames[i->first] = i->second;
+	sensors = newSenNames;
+	// fan mappings
+	for (auto fn = lastProf->fanControls.begin(); fn != lastProf->fanControls.end(); fn++) {
+		map<WORD, vector<fan_point>> newSenData;
+		for (auto sen = fn->sensors.begin(); sen != fn->sensors.end(); sen++)
+			if (HIBYTE(sen->first) == 0xff) {
+				newSenData[acpi->sensors[LOBYTE(sen->first)].sid] = sen->second;
+			}
+			else
+				newSenData[sen->first] = sen->second;
+		fn->sensors = newSenData;
+	}
 }
 
 

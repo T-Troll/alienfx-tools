@@ -11,25 +11,25 @@ struct fan_point {
 	short boost;
 };
 
-struct fan_block {
-	short fanIndex;
+struct sen_block {
+	WORD sensor;
 	vector<fan_point> points;
 };
 
-struct temp_block {
-	short sensorIndex;
-	vector<fan_block> fans;
+struct fan_block {
+	short fanIndex;
+	map<WORD,vector<fan_point>> sensors;
 };
 
 struct fan_profile {
 	WORD powerStage = 0;
 	WORD gmode = 0;
 	//DWORD GPUPower = 0;
-	vector<temp_block> fanControls;
+	vector<fan_block> fanControls;
 };
 
 struct fan_overboost {
-	byte fanID;
+	//byte fanID;
 	byte maxBoost;
 	USHORT maxRPM;
 };
@@ -40,8 +40,8 @@ private:
 	void GetReg(const char *name, DWORD *value, DWORD defValue = 0);
 	void SetReg(const char *text, DWORD value);
 public:
-	DWORD lastSelectedFan = -1;
-	DWORD lastSelectedSensor = -1;
+	byte lastSelectedFan = 0;
+	WORD lastSelectedSensor = 0;
 	DWORD startWithWindows = 0;
 	DWORD startMinimized = 0;
 	DWORD updateCheck = 1;
@@ -54,14 +54,15 @@ public:
 	fan_profile prof;
 	fan_profile* lastProf = &prof;
 
-	vector<fan_overboost> boosts;
+	map<byte, fan_overboost> boosts;
 	map<byte, string> powers;
 	map<WORD, string> sensors;
 
 	ConfigFan();
 	~ConfigFan();
-	temp_block* FindSensor(int);
-	fan_block* FindFanBlock(temp_block*, int);
+
+	vector<fan_point>* FindSensor();
+	fan_block* FindFanBlock(short);
 
 	void Load();
 	void Save();

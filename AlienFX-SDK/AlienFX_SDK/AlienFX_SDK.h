@@ -152,15 +152,15 @@ namespace AlienFX_SDK {
 
 	public:
 
-		// current power mode for APIv1-v3
+		// current power mode (AC/Battery) for APIv1-v3
 		bool powerMode = true;
 
 		~Functions();
 
 		// Initialize device
+		// If vid is 0, first device found into the system will be used, otherwise device with this VID.
+		// If pid is not zero, device with vid/pid will be used.
 		// Returns PID of device used.
-		// If vid is 0, first device found into the system will be used, otherwise first device of this VID.
-		// If pid is defined, device with vid/pid will be used, fist found otherwise.
 		int AlienFXInitialize(int vidd = -1, int pidd = -1);
 
 		// Check device and initialize path and vid/pid
@@ -265,13 +265,20 @@ namespace AlienFX_SDK {
 		~Mappings();
 
 		// Enumerate all alienware devices into the system
-		// acc - link to AlienFan_SDK::Control object
+		// acc - link to AlienFan_SDK::Control object for ACPI lights
+		// returns vector of active device objects
 		vector<Functions*> AlienFXEnumDevices(void* acc);
 
+		// Apply device vector to fxdevs structure
+		// devList - list of active devices
+		// brightness - default device brightness
+		// power - set brightness to power/indicator lights as well
 		void AlienFXApplyDevices(vector<Functions*> devList, byte brightness, byte power);
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
 		// acc - link to AlienFan_SDK::Control object
+		// brightness - default device brightness
+		// power - set brightness to power/indicator lights as well
 		void AlienFXAssignDevices(void* acc = NULL, byte brightness=255, byte power=false);
 
 		// load light names from registry
@@ -280,43 +287,45 @@ namespace AlienFX_SDK {
 		// save light names into registry
 		void SaveMappings();
 
-		// get saved light names
+		// get saved light structures from device
 		vector <mapping>* GetMappings(WORD pid, WORD vid);
 
-		// get defined groups
+		// get defined groups vector
 		vector <group>* GetGroups();
 
-		// get defined grids
+		// get defined grids vector
 		vector <lightgrid>* GetGrids() { return &grids; };
 
 		// get grid object by it's ID
 		lightgrid* GetGridByID(byte id);
 
-		// get device structure by PID/VID (low/high WORD)
+		// get device structure by PID/VID.
+		// VID can be zero for any VID
 		afx_device* GetDeviceById(WORD pid, WORD vid);
 
 		// get or add device structure by PID/VID
+		// VID can be zero for any VID
 		afx_device* AddDeviceById(WORD pid, WORD vid);
 
-		// find light mapping by PID (or PID/VID) and light ID
+		// find light mapping into device structure by light ID
 		mapping* GetMappingByDev(afx_device* dev, WORD LightID);
 
 		// find light group by it's ID
 		group* GetGroupById(DWORD gid);
 
-		// add new light name into the list field-by-field
+		// add new light structure for device
 		void AddMappingByDev(afx_device* dev, WORD lightID, const char* name, WORD flags);
 
-		// add new light name into the list field-by-field
+		// add new light structure for device with this DevID (PID/VID)
 		void AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags);
 
-		// remove light mapping by id
+		// remove light mapping from device by id
 		void RemoveMapping(afx_device* dev, WORD lightID);
 
-		// get light flags (Power, indicator) by device pointer and light ID
+		// get light flags (Power, indicator, etc) from light structure
 		int GetFlags(afx_device* dev, WORD lightid);
 
-		// get light flags (Power, indicator) by PID/VID and light ID
+		// get light flags (Power, indicator) by DevID (PID/VID)
 		int GetFlags(DWORD devID, WORD lightid);
 	};
 

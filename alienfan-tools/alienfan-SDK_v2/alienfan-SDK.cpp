@@ -107,7 +107,7 @@ namespace AlienFan_SDK {
 				// AWCC temperature sensors.
 				do {
 					//if (CallWMIMethod(dev_controls.getTemp, (byte)funcID) > 0) {
-						sensors.push_back({ (short)funcID, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()), 1 });
+						sensors.push_back({ MAKEWORD((byte)funcID, 1), sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
 					//}
 					fIndex++;
 				} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) > 0x100 && funcID < 0x1A0);
@@ -154,14 +154,13 @@ namespace AlienFan_SDK {
 				delete[] buf;*/
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				VARIANT cTemp;
-				for (short ind = 1; uNumOfInstances; ind++) {
+				for (byte ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
 					spInstance->Get((BSTR)L"Temperature", 0, &cTemp, 0, 0);
 					spInstance->Release();
 					if (cTemp.uintVal > 0) {
-						sensors.push_back({ ind,
-							/*numESIF < senNames.size() ? senNames[numESIF] : */"ESIF sensor #" + to_string(ind),
-							0, instPath.bstrVal });
+						sensors.push_back({ MAKEWORD(ind,0),
+							/*numESIF < senNames.size() ? senNames[numESIF] : */"ESIF sensor #" + to_string(ind), instPath.bstrVal });
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
@@ -174,10 +173,13 @@ namespace AlienFan_SDK {
 				IWbemClassObject* spInstance;
 				ULONG uNumOfInstances = 0;
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-				for (short ind = 1; uNumOfInstances; ind++) {
+				for (byte ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"StorageReliabilityCounter", 0, &instPath, 0, 0);
-					sensors.push_back({ ind, "SSD " + to_string(ind) + " Sensor", 2, instPath.bstrVal });
+					sensors.push_back({ MAKEWORD(ind, 2), "SSD " + to_string(ind) + " Sensor", instPath.bstrVal });
 					spInstance->Release();
+					// zero-temp sensor check
+					if (!GetTempValue((int)sensors.size() - 1))
+						sensors.pop_back();
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
 				enum_obj->Release();
@@ -188,16 +190,14 @@ namespace AlienFan_SDK {
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				VARIANT type, name;
-				for (short ind = 1; uNumOfInstances; ind++) {
+				for (byte ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"__Path", 0, &instPath, 0, 0);
 					spInstance->Get((BSTR)L"SensorType", 0, &type, 0, 0);
 					spInstance->Get((BSTR)L"Name", 0, &name, 0, 0);
 					spInstance->Release();
 					if (type.bstrVal == wstring(L"Temperature")) {
 						wstring sname{ name.bstrVal };
-						sensors.push_back({ ind,
-							string(sname.begin(), sname.end()),
-							4, instPath.bstrVal });
+						sensors.push_back({ MAKEWORD(ind, 4), string(sname.begin(), sname.end()), instPath.bstrVal });
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
@@ -242,12 +242,7 @@ namespace AlienFan_SDK {
 		IWbemClassObject* sensorObject = NULL;
 		VARIANT temp;
 		if (TempID < sensors.size()) {
-			switch (sensors[TempID].type) {
-			case 1: { // AWCC
-				int awt = CallWMIMethod(dev_controls.getTemp, (byte)sensors[TempID].senIndex);
-				// Bugfix for AWCC temp - it can be up to 5000C!
-				return awt > 200 ? -1 : awt;
-			} break;
+			switch (HIBYTE(sensors[TempID].sid)) {
 			case 0:// ESIF
 				if (m_WbemServices->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
 					sensorObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);
@@ -255,6 +250,11 @@ namespace AlienFan_SDK {
 					return temp.uintVal;
 				}
 				break;
+			case 1: { // AWCC
+				int awt = CallWMIMethod(dev_controls.getTemp, LOBYTE(sensors[TempID].sid));
+				// Bugfix for AWCC temp - it can be up to 5000C!
+				return awt > 200 ? -1 : awt;
+			} break;
 			case 2: // SSD
 				if (m_DiskService && m_DiskService->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
 					sensorObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);

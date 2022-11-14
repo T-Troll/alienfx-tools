@@ -13,15 +13,16 @@ extern AlienFan_SDK::Control* acpi;
 extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper(ConfigFan* config) {
-	maxTemps.resize(acpi->sensors.size());
-	senValues.resize(acpi->sensors.size());
-	senBoosts.resize(acpi->sensors.size());
-	for (auto i = senBoosts.begin(); i < senBoosts.end(); i++)
-		i->resize(acpi->fans.size());
-	fanRpm.resize(acpi->fans.size());
-	boostRaw.resize(acpi->fans.size());
-	boostSets.resize(acpi->fans.size());
-	fanSleep.resize(acpi->fans.size());
+	//for (auto i = acpi->sensors.begin(); i != acpi->sensors.end(); i++) {
+	//	senValues.emplace(i->sid, -1);
+	//	maxTemps.emplace(i->sid, -1);
+	//}
+	size_t fansize = acpi->fans.size();
+	senBoosts.resize(fansize);
+	fanRpm.resize(fansize);
+	boostRaw.resize(fansize);
+	boostSets.resize(fansize);
+	fanSleep.resize(fansize);
 
 	Start();
 }
@@ -85,10 +86,11 @@ void CMonProc(LPVOID param) {
 	// temps..
 	for (int i = 0; i < acpi->sensors.size(); i++) {
 		int temp = acpi->GetTempValue(i);
-		if (temp != src->senValues[i]) {
+		// find or create maps...
+		if (temp != src->senValues[acpi->sensors[i].sid]) {
 			modified = true;
-			src->senValues[i] = temp;
-			src->maxTemps[i] = max(src->maxTemps[i], temp);
+			src->senValues[acpi->sensors[i].sid] = temp;
+			src->maxTemps[acpi->sensors[i].sid] = max(src->maxTemps[acpi->sensors[i].sid], temp);
 		}
 	}
 
@@ -102,41 +104,37 @@ void CMonProc(LPVOID param) {
 	// boosts..
 	if (modified && !fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
 		// in manual mode only
-		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter < fan_conf->lastProf->fanControls.end(); cIter++) {
-			if (cIter->sensorIndex < src->senValues.size())
-				for (auto fIter = cIter->fans.begin(); fIter < cIter->fans.end(); fIter++) {
-					// Look for boost point for temp...
-					int cBoost = fIter->points.back().boost;
-					for (int k = 1; k < fIter->points.size(); k++)
-						if (src->senValues[cIter->sensorIndex] <= fIter->points[k].temp) {
-							if (fIter->points[k].temp != fIter->points[k - 1].temp)
-								cBoost = (fIter->points[k - 1].boost +
-									((fIter->points[k].boost - fIter->points[k - 1].boost) *
-										(src->senValues[cIter->sensorIndex] - fIter->points[k - 1].temp)) /
-									(fIter->points[k].temp - fIter->points[k - 1].temp));
-							else
-								cBoost = fIter->points[k].boost;
-							break;
-						}
-					if (cBoost > src->boostSets[fIter->fanIndex])
-						src->boostSets[fIter->fanIndex] = cBoost;
-					src->senBoosts[cIter->sensorIndex][fIter->fanIndex] = cBoost;
-				}
-		}
-		// Now set if needed...
-		for (int i = 0; i < acpi->fans.size(); i++)
-			if (!src->fanSleep[i]) {
-				int rawBoost = src->boostSets[i] * acpi->boosts[i] / 100;
+		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter != fan_conf->lastProf->fanControls.end(); cIter++) {
+			for (auto fIter = cIter->sensors.begin(); fIter != cIter->sensors.end(); fIter++) {
+				int cBoost = fIter->second.back().boost;
+				for (int k = 1; k < fIter->second.size(); k++)
+					if (src->senValues[fIter->first] <= fIter->second[k].temp) {
+						if (fIter->second[k].temp != fIter->second[k - 1].temp)
+							cBoost = (fIter->second[k - 1].boost +
+								((fIter->second[k].boost - fIter->second[k - 1].boost) *
+									(src->senValues[fIter->first] - fIter->second[k - 1].temp)) /
+								(fIter->second[k].temp - fIter->second[k - 1].temp));
+						else
+							cBoost = fIter->second[k].boost;
+						break;
+					}
+				if (cBoost > src->boostSets[cIter->fanIndex])
+					src->boostSets[cIter->fanIndex] = cBoost;
+				src->senBoosts[cIter->fanIndex][fIter->first] = cBoost;
+			}
+			if (!src->fanSleep[cIter->fanIndex]) {
+				int rawBoost = src->boostSets[cIter->fanIndex] * acpi->boosts[cIter->fanIndex] / 100;
 				// Check overboost tricks...
-				if (src->boostRaw[i] < 90 && rawBoost > 100) {
-					acpi->SetFanBoost(i, 100, true);
-					src->fanSleep[i] = ((100 - src->boostRaw[i]) >> 3) + 2;
-					DebugPrint("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts(old "
-						+ to_string(src->boostRaw[i]) + ", new " + to_string(rawBoost) +")!\n");
-				} else
-					if (rawBoost != src->boostRaw[i] /*|| src->boostSets[i] > 100*/) {
-						if (src->boostRaw[i] > rawBoost)
-							rawBoost += 15 * ((src->boostRaw[i] - rawBoost) >> 4);
+				if (src->boostRaw[cIter->fanIndex] < 90 && rawBoost > 100) {
+					acpi->SetFanBoost(cIter->fanIndex, 100, true);
+					src->fanSleep[cIter->fanIndex] = ((100 - src->boostRaw[cIter->fanIndex]) >> 3) + 2;
+					DebugPrint("Overboost started, fan " + to_string(cIter->fanIndex) + " locked for " + to_string(src->fanSleep[cIter->fanIndex]) + " tacts(old "
+						+ to_string(src->boostRaw[cIter->fanIndex]) + ", new " + to_string(rawBoost) + ")!\n");
+				}
+				else
+					if (rawBoost != src->boostRaw[cIter->fanIndex] /*|| src->boostSets[i] > 100*/) {
+						if (src->boostRaw[cIter->fanIndex] > rawBoost)
+							rawBoost += 15 * ((src->boostRaw[cIter->fanIndex] - rawBoost) >> 4);
 						// fan RPM stuck patch v2
 						//if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
 						//	int pct = acpi->GetFanPercent(i) << 3;
@@ -149,14 +147,49 @@ void CMonProc(LPVOID param) {
 						//	}
 						//}
 
-						acpi->SetFanBoost(i, rawBoost, true);
+						acpi->SetFanBoost(cIter->fanIndex, rawBoost, true);
 
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}
 			}
 			else
-				src->fanSleep[i]--;
+				src->fanSleep[cIter->fanIndex]--;
+		}
+		//// Now set if needed...
+		//for (int i = 0; i < acpi->fans.size(); i++)
+		//	if (!src->fanSleep[i]) {
+		//		int rawBoost = src->boostSets[i] * acpi->boosts[i] / 100;
+		//		// Check overboost tricks...
+		//		if (src->boostRaw[i] < 90 && rawBoost > 100) {
+		//			acpi->SetFanBoost(i, 100, true);
+		//			src->fanSleep[i] = ((100 - src->boostRaw[i]) >> 3) + 2;
+		//			DebugPrint("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts(old "
+		//				+ to_string(src->boostRaw[i]) + ", new " + to_string(rawBoost) +")!\n");
+		//		} else
+		//			if (rawBoost != src->boostRaw[i] /*|| src->boostSets[i] > 100*/) {
+		//				if (src->boostRaw[i] > rawBoost)
+		//					rawBoost += 15 * ((src->boostRaw[i] - rawBoost) >> 4);
+		//				// fan RPM stuck patch v2
+		//				//if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
+		//				//	int pct = acpi->GetFanPercent(i) << 3;
+		//				//	if (pct > 105 || pct < src->boostRaw[i]) {
+		//				//		acpi->SetGMode(true);
+		//				//		Sleep(300);
+		//				//		acpi->SetGMode(false);
+		//				//		acpi->SetPower((byte)fan_conf->lastProf->powerStage);
+		//				//		DebugPrint("RPM fix engaged!\n");
+		//				//	}
+		//				//}
+
+		//				acpi->SetFanBoost(i, rawBoost, true);
+
+		//				//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
+		//				//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
+		//			}
+		//	}
+		//	else
+		//		src->fanSleep[i]--;
 	}
 
 }

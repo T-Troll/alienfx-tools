@@ -92,6 +92,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     acpi = new AlienFan_SDK::Control();
 
     if (acpi->Probe()) {
+        fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
         Shell_NotifyIcon(NIM_DELETE, niData);
         fan_conf->SetBoostsAndNames(acpi);
         mon = new MonHelper(fan_conf);
@@ -323,13 +324,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_BUT_RESET:
         {
-            temp_block *cur = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
-            if (cur) {
-                fan_block *fan = fan_conf->FindFanBlock(cur, fan_conf->lastSelectedFan);
-                if (fan) {
-                    fan->points = {{0,0},{100,100}};
-                    SendMessage(fanWindow, WM_PAINT, 0, 0);
-                }
+            fan_block* fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
+            if (fan) {
+                fan->sensors.clear();
+                ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
+                //SendMessage(fanWindow, WM_PAINT, 0, 0);
             }
         } break;
         case IDC_MAX_RESET:
@@ -471,35 +470,26 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     SendMessage(fanWindow, WM_PAINT, 0, 0);
                     break;
                 }
-                if (fan_conf->lastSelectedSensor != -1 && lPoint->uNewState & 0x3000) {
-                    temp_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
+                if (lPoint->uOldState != 0 && lPoint->uNewState & 0x3000) {
+                    fan_block* fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
                     switch (lPoint->uNewState & 0x3000) {
                     case 0x1000:
-                        // Remove fan
-                        if (sen) { // remove sensor block
-                            for (auto iFan = sen->fans.begin(); iFan < sen->fans.end(); iFan++)
-                                if (iFan->fanIndex == lPoint->iItem) {
-                                    sen->fans.erase(iFan);
+                        if (fan)
+                            // Remove sensor
+                            for (auto cSen = fan->sensors.begin(); cSen != fan->sensors.end(); cSen++)
+                                if (cSen->first == fan_conf->lastSelectedSensor) {
+                                    fan->sensors.erase(cSen);
                                     break;
                                 }
-                            if (!sen->fans.size()) // remove sensor block!
-                                for (auto iSen = fan_conf->lastProf->fanControls.begin();
-                                    iSen < fan_conf->lastProf->fanControls.end(); iSen++)
-                                    if (iSen->sensorIndex == sen->sensorIndex) {
-                                        fan_conf->lastProf->fanControls.erase(iSen);
-                                        break;
-                                    }
-                        }
                         break;
                     case 0x2000:
                         // add fan
-                        if (!sen) { // add new sensor block
-                            fan_conf->lastProf->fanControls.push_back({ (short)fan_conf->lastSelectedSensor });
-                            sen = &fan_conf->lastProf->fanControls.back();
+                        if (!fan) { // add new fan block
+                            fan_conf->lastProf->fanControls.push_back({ (short)fan_conf->lastSelectedFan });
+                            fan = &fan_conf->lastProf->fanControls.back();
                         }
-                        if (!fan_conf->FindFanBlock(sen, lPoint->iItem)) {
-                            sen->fans.push_back({ (short)lPoint->iItem,{{0,0},{100,100}} });
-                        }
+                        if (fan->sensors.find(fan_conf->lastSelectedSensor) == fan->sensors.end())
+                            fan->sensors[fan_conf->lastSelectedSensor] = {{0,0},{100,100}};
                         break;
                     }
                     ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, -1, 0, LVIS_SELECTED);
@@ -550,7 +540,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     // Select other item...
                     if (lPoint->iItem != -1) {
                         // Select other fan....
-                        fan_conf->lastSelectedSensor = lPoint->iItem;
+                        fan_conf->lastSelectedSensor = (WORD)lPoint->lParam;
                         // Redraw fans
                         ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
                         SendMessage(fanWindow, WM_PAINT, 0, 0);
@@ -647,9 +637,8 @@ void UpdateFanUI(LPVOID lpParam) {
     if (mon) {
         if (!mon->monThread) {
             for (int i = 0; i < acpi->sensors.size(); i++) {
-                mon->senValues[i] = acpi->GetTempValue(i);
-                if (mon->senValues[i] > mon->maxTemps[i])
-                    mon->maxTemps[i] = mon->senValues[i];
+                mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
+                mon->maxTemps[acpi->sensors[i].sid] = max(mon->senValues[acpi->sensors[i].sid], mon->maxTemps[acpi->sensors[i].sid]);
             }
             for (int i = 0; i < acpi->fans.size(); i++)
                 mon->fanRpm[i] = acpi->GetFanRPM(i);
@@ -657,7 +646,7 @@ void UpdateFanUI(LPVOID lpParam) {
         if (IsWindowVisible((HWND)lpParam)) {
             //DebugPrint("Fans UI update...\n");
             for (int i = 0; i < acpi->sensors.size(); i++) {
-                string name = to_string(mon->senValues[i]) + " (" + to_string(mon->maxTemps[i]) + ")";
+                string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
             }
             RECT cArea;
@@ -674,7 +663,7 @@ void UpdateFanUI(LPVOID lpParam) {
         if (fan_conf->lastProf->gmode)
             name += "G-mode";
         else
-            name += fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage])->second;
+            name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
 
         for (int i = 0; i < acpi->fans.size(); i++) {
             name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
