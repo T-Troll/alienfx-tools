@@ -16,7 +16,7 @@ ConfigFan::~ConfigFan() {
 	RegCloseKey(keyMain);
 }
 
-vector<fan_point>* ConfigFan::FindSensor() {
+sen_block* ConfigFan::FindSensor() {
 	fan_block* fan = FindFanBlock(lastSelectedFan);
 	if (fan) {
 		auto sen = fan->sensors.find(lastSelectedSensor);
@@ -26,8 +26,9 @@ vector<fan_point>* ConfigFan::FindSensor() {
 	return NULL;
 }
 
-fan_block* ConfigFan::FindFanBlock(short id) {
-	for (auto tb = lastProf->fanControls.begin(); tb != lastProf->fanControls.end(); tb++)
+fan_block* ConfigFan::FindFanBlock(short id, fan_profile* prof) {
+	if (!prof) prof = lastProf;
+	for (auto tb = prof->fanControls.begin(); tb != prof->fanControls.end(); tb++)
 		if (tb->fanIndex == id)
 			return &(*tb);
 	return NULL;
@@ -41,6 +42,20 @@ void ConfigFan::GetReg(const char *name, DWORD *value, DWORD defValue) {
 
 void ConfigFan::SetReg(const char *text, DWORD value) {
 	RegSetValueEx( keyMain, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
+}
+
+void ConfigFan::AddSensorCurve(fan_profile *prof, WORD fid, WORD sid, byte* data, DWORD lend) {
+	fan_block* fan = FindFanBlock(fid, prof);
+	if (!fan) {
+		prof->fanControls.push_back({ (byte)fid });
+		fan = &prof->fanControls.back();
+	}
+	// Now load and add sensor data..
+	sen_block curve = { true };
+	for (UINT i = 0; i < lend; i += 2) {
+		curve.points.push_back({ data[i], data[i + 1] });
+	}
+	fan->sensors[sid] = curve;
 }
 
 void ConfigFan::Load() {
@@ -62,86 +77,47 @@ void ConfigFan::Load() {
 
 	// Now load sensor mappings...
 	char name[256];
-	DWORD len = 255, lend = 0; short fid;
+	byte* inarray = NULL;
+	DWORD len = 255, lend = 0; short fid, sid;
 	for (int vindex = 0; RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		short sid; //len = 255;
-		if (sscanf_s(name, "Fan-%hd-%hd", &fid, &sid) == 2) {
-			fan_block* fan = FindFanBlock(fid);
-			if (!fan) {
-				prof.fanControls.push_back({ (byte)fid });
-				fan = &prof.fanControls.back();
-			}
-			// Now load and add sensor data..
-			byte* inarray = new byte[lend];
-			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
-			//len = 255;
-			vector<fan_point> curve;
-			for (UINT i = 0; i < lend; i += 2) {
-				curve.push_back({ inarray[i], inarray[i + 1] });
-			}
-			// Find sensor...
-			fan->sensors[sid] = curve;
+		if (inarray)
 			delete[] inarray;
+		inarray = new byte[lend];
+		RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
+		if (sscanf_s(name, "Fan-%hd-%hd", &fid, &sid) == 2) {
+			AddSensorCurve(&prof, fid, sid, inarray, lend);
 			continue;
 		}
 		if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
-			// find fan block...
-			fan_block* fan = FindFanBlock(fid);
-			if (!fan) {
-				prof.fanControls.push_back({ fid });
-				fan = &prof.fanControls.back();
-			}
-			// Load sensor data...
-			byte* inarray = new byte[lend];
-			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
-			//len = 255;
-			// ToDo: Find correct SID here!
-			//sen_block cSen{ MAKEWORD(255,sid) };
-			vector<fan_point> curve;
-			for (UINT i = 0; i < lend; i += 2) {
-				curve.push_back({ inarray[i], inarray[i + 1] });
-			}
-			// Find sensor...
-			fan->sensors[sid + 0xff00] = curve;
-			delete[] inarray;
+			AddSensorCurve(&prof, fid, sid | 0xff00, inarray, lend);
 			continue;
 		}
-		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2) {
-			byte* inarray = new byte[lend];
-			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
-			//len = 255;
+		sid = 0xff;
+		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2 || sscanf_s(name, "SensorName-%hd", &fid) == 1) {
 			sensors.emplace(MAKEWORD(fid, sid), (char*)inarray);
-			delete[] inarray;
 			continue;
 		}
 		// old format, deprecated...
-		if (sscanf_s(name, "SensorName-%hd", &sid) == 1) {
-			byte* inarray = new byte[lend];
-			RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
-			//len = 255;
-			sensors.emplace(MAKEWORD(sid, 0xff), (char*)inarray);
-			delete[] inarray;
-		}
+		//if (sscanf_s(name, "SensorName-%hd", &sid) == 1) {
+		//	sensors.emplace(MAKEWORD(sid, 0xff), (char*)inarray);
+		//}
 	}
+	if (inarray) delete[] inarray;
 	for (int vindex = 0; RegEnumValue(keyMain, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		if (sscanf_s(name, "Boost-%hd", &fid) == 1) { // Boost block
-			byte* inarray = new byte[lend];
-			//len++;
+			inarray = new byte[lend];
 			RegEnumValue(keyMain, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
-			boosts.push_back({ (byte)fid, inarray[0],*(USHORT*)(inarray + 1) });
+			boosts[(byte)fid] = { inarray[0],*(WORD*)(inarray + 1) };
 			delete[] inarray;
 		}
-		//len = 255;
 	}
 	for (int vindex = 0; RegEnumValue(keyPowers, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		if (sscanf_s(name, "Power-%hd", &fid) == 1) { // Power names
 			char* inarray = new char[lend + 1];
-			//len++;
 			RegEnumValue(keyPowers, vindex, name, &(len = 255), NULL, NULL, (byte*)inarray, &lend);
 			powers.emplace((byte)fid, inarray);
 			delete[] inarray;
 		}
-		//len = 255;
 	}
 }
 
@@ -166,23 +142,25 @@ void ConfigFan::Save() {
 	// save profile..
 	for (auto i = prof.fanControls.begin(); i != prof.fanControls.end(); i++) {
 		for (auto j = i->sensors.begin(); j != i->sensors.end(); j++) {
-			name = "Fan-" + to_string(i->fanIndex) + "-" + to_string(j->first);
-			byte* outdata = new byte[j->second.size() * 2];
-			for (int k = 0; k < j->second.size(); k++) {
-				outdata[2 * k] = (byte)j->second[k].temp;
-				outdata[(2 * k)+1] = (byte)j->second[k].boost;
-			}
+			if (j->second.active) {
+				name = "Fan-" + to_string(i->fanIndex) + "-" + to_string(j->first);
+				byte* outdata = new byte[j->second.points.size() * 2];
+				for (int k = 0; k < j->second.points.size(); k++) {
+					outdata[2 * k] = (byte)j->second.points[k].temp;
+					outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
+				}
 
-			RegSetValueEx( keySensors, name.c_str(), 0, REG_BINARY, (BYTE*) outdata, (DWORD) j->second.size() * 2 );
-			delete[] outdata;
+				RegSetValueEx(keySensors, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)j->second.points.size() * 2);
+				delete[] outdata;
+			}
 		}
 	}
 	// save boosts...
-	for (int i = 0; i < boosts.size(); i++) {
+	for (auto i = boosts.begin(); i != boosts.end(); i++) {
 		byte outarray[sizeof(byte) + sizeof(USHORT)] = {0};
-		name = "Boost-" + to_string(boosts[i].fanID);
-		outarray[0] = boosts[i].maxBoost;
-		*(USHORT *) (outarray + sizeof(byte)) = boosts[i].maxRPM;
+		name = "Boost-" + to_string(i->first);
+		outarray[0] = i->second.maxBoost;
+		*(USHORT *) (outarray + sizeof(byte)) = i->second.maxRPM;
 		RegSetValueEx( keyMain, name.c_str(), 0, REG_BINARY, outarray, (DWORD) sizeof(byte) + sizeof(USHORT));
 	}
 	// save powers...
@@ -197,13 +175,26 @@ void ConfigFan::Save() {
 	}
 }
 
+void ConfigFan::ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi) {
+	for (auto fn = prof->fanControls.begin(); fn != prof->fanControls.end(); fn++) {
+		map<WORD, sen_block> newSenData;
+		for (auto sen = fn->sensors.begin(); sen != fn->sensors.end(); sen++)
+			if (HIBYTE(sen->first) == 0xff) {
+				newSenData[acpi->sensors[LOBYTE(sen->first)].sid] = sen->second;
+			}
+			else
+				newSenData[sen->first] = sen->second;
+		fn->sensors = newSenData;
+	}
+}
+
 void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
 	vector<fan_overboost>::iterator maxB;
 	for (byte fID = 0; fID < acpi->boosts.size(); fID++)
 		for (auto maxB = boosts.begin(); maxB != boosts.end(); maxB++)
-			if (maxB->fanID == fID) {
-				acpi->boosts[fID] = maxB->maxBoost;
-				acpi->maxrpm[fID] = maxB->maxRPM;
+			if (maxB->first == fID) {
+				acpi->boosts[fID] = maxB->second.maxBoost;
+				acpi->maxrpm[fID] = maxB->second.maxRPM;
 				break;
 			}
 	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
@@ -221,16 +212,7 @@ void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
 			newSenNames[i->first] = i->second;
 	sensors = newSenNames;
 	// fan mappings
-	for (auto fn = lastProf->fanControls.begin(); fn != lastProf->fanControls.end(); fn++) {
-		map<WORD, vector<fan_point>> newSenData;
-		for (auto sen = fn->sensors.begin(); sen != fn->sensors.end(); sen++)
-			if (HIBYTE(sen->first) == 0xff) {
-				newSenData[acpi->sensors[LOBYTE(sen->first)].sid] = sen->second;
-			}
-			else
-				newSenData[sen->first] = sen->second;
-		fn->sensors = newSenData;
-	}
+	ConvertSenMappings(lastProf, acpi);
 }
 
 

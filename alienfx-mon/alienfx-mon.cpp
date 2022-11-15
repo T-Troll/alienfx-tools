@@ -23,7 +23,7 @@ bool needUpdateFeedback = false;
 bool isNewVersion = false;
 bool needRemove = false;
 bool runUIUpdate = true;
-int selSensor = 0;
+DWORD selSensor;
 
 AlienFan_SDK::Control* acpi = NULL;
 
@@ -42,6 +42,24 @@ void ResetDPIScale();
 void UpdateMonUI(LPVOID);
 ThreadHelper* muiThread = NULL;
 
+void FindValidSensor() {
+	auto sen = find_if(conf->active_sensors.begin(), conf->active_sensors.end(), 
+		[](auto t) {
+			return t.first == selSensor;
+		});
+	if (sen == conf->active_sensors.end())
+		sen = conf->active_sensors.begin();
+	auto sen2 = sen;
+	while (sen != conf->active_sensors.end() && sen->second.disabled != conf->showHidden) sen++;
+	if (sen != conf->active_sensors.end()) {
+		selSensor = sen->first;
+	}
+	else {
+		while (sen2 != conf->active_sensors.begin() && sen->second.disabled != conf->showHidden) sen2--;
+		selSensor = sen2->first;
+	}
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -57,9 +75,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (conf->eSensors || conf->bSensors)
 		EvaluteToAdmin();
 
-	// Due to the fact task run delay broken in W10....
-	/*if (wstring(lpCmdLine) == L"-d")
-		Sleep(7000);*/
+	FindValidSensor();
 
 	senmon = new SenMonHelper();
 
@@ -139,19 +155,9 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 void RedrawButton(unsigned id, DWORD clr) {
 	RECT rect;
-	HBRUSH Brush = NULL;
-	HWND tl = GetDlgItem(mDlg, id);
-	GetWindowRect(tl, &rect);
-	HDC cnt = GetDC(tl);
-	rect.bottom -= rect.top;
-	rect.right -= rect.left;
-	rect.top = rect.left = 0;
-	// BGR!
-	Brush = CreateSolidBrush(clr);
-	FillRect(cnt, &rect, Brush);
-	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
-	DeleteObject(Brush);
-	ReleaseDC(tl, cnt);
+	GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_COLOR), &rect);
+	MapWindowPoints(HWND_DESKTOP, mDlg, (LPPOINT)&rect, 2);
+	RedrawWindow(mDlg, &rect, 0, RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 
 void UpdateItemInfo() {
@@ -178,57 +184,71 @@ void ReloadSensorView() {
 		lCol.pszText = (LPSTR)"Max";
 		lCol.iSubItem = 2;
 		ListView_InsertColumn(list, 2, &lCol);
-		lCol.pszText = (LPSTR)"Name";
+		lCol.pszText = (LPSTR)"Source";
 		lCol.iSubItem = 3;
 		ListView_InsertColumn(list, 3, &lCol);
+		lCol.pszText = (LPSTR)"Name";
+		lCol.iSubItem = 4;
+		ListView_InsertColumn(list, 4, &lCol);
 	}
 
-	for (int i = 0; i < conf->active_sensors.size(); i++) {
-		if (!conf->showHidden ^ conf->active_sensors[i].disabled) {
-			string name = conf->active_sensors[i].min > NO_SEN_VALUE ? to_string(conf->active_sensors[i].min) : "--";
+	SENID sid;
+	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
+		sid.sid = i->first;
+		if ((!conf->showHidden ^ i->second.disabled) && ((conf->wSensors && sid.source == 0) ||
+			(conf->eSensors && sid.source == 1 && (!conf->bSensors || sid.type == 1)) ||
+			(conf->bSensors && sid.source == 2))) {
+			string name = i->second.min > NO_SEN_VALUE ? to_string(i->second.min) : "--";
 			LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, pos };
-			lItem.lParam = i;
+			lItem.lParam = i->first;
 			lItem.pszText = (LPSTR)name.c_str();
 			ListView_InsertItem(list, &lItem);
-			if (i == selSensor) {
+			if (i->first == selSensor) {
 				ListView_SetItemState(list, pos, LVIS_SELECTED, LVIS_SELECTED);
 				rpos = pos;
 				UpdateItemInfo();
 			}
-			name = conf->active_sensors[i].min > NO_SEN_VALUE ? to_string(conf->active_sensors[i].cur) : "--";
+			name = i->second.min > NO_SEN_VALUE ? to_string(i->second.cur) : "--";
 			ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-			name = conf->active_sensors[i].min > NO_SEN_VALUE ? to_string(conf->active_sensors[i].max) : "--";
+			name = i->second.min > NO_SEN_VALUE ? to_string(i->second.max) : "--";
 			ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
-			ListView_SetItemText(list, pos, 3, (LPSTR)conf->active_sensors[i].name.c_str());
+			switch (sid.source) {
+			case 0: name = "W"; break;
+			case 1: name = "B"; break;
+			case 2: name = "A"; break;
+			}
+			name += to_string(sid.type) + " " + to_string(sid.id);
+			ListView_SetItemText(list, pos, 3, (LPSTR)name.c_str());
+			ListView_SetItemText(list, pos, 4, (LPSTR)i->second.name.c_str());
 			pos++;
 		}
 	}
 	RECT cArea;
 	GetClientRect(list, &cArea);
 	int wd = 0;
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		ListView_SetColumnWidth(list, i, LVSCW_AUTOSIZE);
 		wd += ListView_GetColumnWidth(list, i);
 	}
-	ListView_SetColumnWidth(list, 3, cArea.right - wd);
+	ListView_SetColumnWidth(list, 4, cArea.right - wd);
 	ListView_EnsureVisible(list, rpos, false);
 	conf->needFullUpdate = false;
 }
 
-void RemoveSensors(int src, bool state) {
-	for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
-		if (iter->source == src) {
-			iter->disabled = !state;
-			iter->oldCur = NO_SEN_VALUE;
-		}
-	conf->needFullUpdate = true;
+void ModifySensors() {
+	if (conf->bSensors || conf->eSensors) {
+		conf->Save();
+		EvaluteToAdmin();
+	}
+	senmon->ModifyMon();
+	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
+	ReloadSensorView();
 }
 
 bool SetColor(int id, DWORD* clr) {
 	CHOOSECOLOR cc{ sizeof(cc), mDlg };
 	bool ret;
 	DWORD custColors[16]{ 0 };
-	// Initialize CHOOSECOLOR
 	cc.lpCustColors = custColors;
 	cc.rgbResult = *clr;
 	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
@@ -240,21 +260,20 @@ bool SetColor(int id, DWORD* clr) {
 	return ret;
 }
 
-void RestoreWindow(int id) {
-	if (id) selSensor = (id & 0xff) - 1;
+void RestoreWindow(DWORD id) {
+	if (id) selSensor = id;
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
 	RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
 	ReloadSensorView();
 }
 
-void FindValidSensor() {
-	for (; selSensor < conf->active_sensors.size() &&
-		!(!conf->showHidden ^ conf->active_sensors[selSensor].disabled); selSensor++);
-	if (selSensor == conf->active_sensors.size()) {
-		for (selSensor--; selSensor > 0 && !(!conf->showHidden ^ conf->active_sensors[selSensor].disabled);	selSensor--);
+void ResetMinMax() {
+	for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
+		iter->second.max = iter->second.min = iter->second.cur;
+		iter->second.oldCur = NO_SEN_VALUE;
 	}
-	if (selSensor < 0) selSensor = 0;
+	ReloadSensorView();
 }
 
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -262,9 +281,9 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
 		AddTrayIcon(&conf->niData, conf->updateCheck);
-		for (auto i = conf->active_sensors.begin(); i < conf->active_sensors.end(); i++) {
-			if (i->intray)
-				i->oldCur = NO_SEN_VALUE;
+		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
+			if (i->second.intray)
+				i->second.oldCur = NO_SEN_VALUE;
 		}
 	}
 
@@ -282,7 +301,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		Edit_SetText(GetDlgItem(hDlg, IDC_REFRESH_TIME), to_string(conf->refreshDelay).c_str());
 
-		FindValidSensor();
 		ReloadSensorView();
 
 		conf->niData.hWnd = hDlg;
@@ -293,6 +311,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 
 		// Start UI update thread...
+		UpdateMonUI(0);
 		muiThread = new ThreadHelper(UpdateMonUI, hDlg, conf->refreshDelay, THREAD_PRIORITY_ABOVE_NORMAL);
 
 	} break;
@@ -306,7 +325,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			HWND editC = ListView_GetEditControl(senList);
 			if (editC) {
 				RECT rect;
-				ListView_GetSubItemRect(senList, ListView_GetSelectionMark(senList), 3, LVIR_LABEL, &rect);
+				ListView_GetSubItemRect(senList, ListView_GetSelectionMark(senList), 4, LVIR_LABEL, &rect);
 				SetWindowPos(editC, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 			}
 		} break;
@@ -331,32 +350,18 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_WSENSORS:
 			conf->wSensors = state;
-			RemoveSensors(0, state);
+			ModifySensors();
 			break;
 		case IDC_ESENSORS:
 			conf->eSensors = state;
-			RemoveSensors(1, state);
-			if (state) {
-				conf->Save();
-				EvaluteToAdmin();
-			}
+			ModifySensors();
 			break;
 		case IDC_BSENSORS:
 			conf->bSensors = state;
-			RemoveSensors(2, state);
-			if (state) {
-				conf->Save();
-				EvaluteToAdmin();
-			}
-			senmon->ModifyMon();
-			CheckDlgButton(hDlg, IDC_BSENSORS, conf->bSensors);
+			ModifySensors();
 			break;
 		case IDC_BUTTON_RESET:
-			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
-				iter->max = iter->min = iter->cur;
-				iter->oldCur = NO_SEN_VALUE;
-			}
-			ReloadSensorView();
+			ResetMinMax();
 			break;
 		case IDC_BUTTON_MINIMIZE:
 			ShowWindow(hDlg, SW_HIDE);
@@ -391,7 +396,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_SHOW_HIDDEN:
 			conf->showHidden = state;
 			SetDlgItemText(hDlg, IDC_BUT_HIDE, state ? "Unhide" : "Hide");
-			selSensor = 0;
 			FindValidSensor();
 			ReloadSensorView();
 			break;
@@ -413,8 +417,11 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 		case IDC_BUTTON_COLOR:
 		{
-			if (selSensor < conf->active_sensors.size())
-				RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
+			DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
+			HBRUSH Brush = CreateSolidBrush(conf->active_sensors[selSensor].traycolor);
+			FillRect(ditem->hDC, &ditem->rcItem, Brush);
+			DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_RAISED, BF_RECT);
+			DeleteObject(Brush);
 		} break;
 		}
 		break;
@@ -423,7 +430,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (lParam) {
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
-			RestoreWindow((int)wParam);
+			RestoreWindow((DWORD)wParam);
 			break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
@@ -460,25 +467,18 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	} break;
 	case WM_MENUCOMMAND: {
-		int idx = LOWORD(wParam);
-		switch (GetMenuItemID((HMENU)lParam, idx)) {
+		switch (GetMenuItemID((HMENU)lParam, (int)wParam)) {
 		case ID__EXIT:
 			SendMessage(hDlg, WM_CLOSE, 0, 0);
 			break;
 		case ID__RESTORE:
-			RestoreWindow((int)wParam);
+			RestoreWindow(0);
 			break;
 		case ID__PAUSE:
 			conf->paused = !conf->paused;
-			//if (conf->paused)
-			//	senmon->StopMon();
-			//else
-			//	senmon->StartMon();
 			break;
 		case ID__RESETMIN:
-			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
-				iter->max = iter->min = iter->cur;
-			ReloadSensorView();
+			ResetMinMax();
 			break;
 		}
 	} break;
@@ -496,12 +496,12 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		delete muiThread;
 		// Remove icons from tray...
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-		for (auto i = conf->active_sensors.begin(); i < conf->active_sensors.end(); i++)
-			if (i->niData) {
-				Shell_NotifyIcon(NIM_DELETE, i->niData);
-				if (i->niData->hIcon)
-					DestroyIcon(i->niData->hIcon);
-				delete i->niData;
+		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
+			if (i->second.niData) {
+				Shell_NotifyIcon(NIM_DELETE, i->second.niData);
+				if (i->second.niData->hIcon)
+					DestroyIcon(i->second.niData->hIcon);
+				delete i->second.niData;
 			}
 		PostQuitMessage(0);
 		break;
@@ -511,24 +511,24 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			HWND senList = GetDlgItem(hDlg, (int)((NMHDR*)lParam)->idFrom);
 			switch (((NMHDR*)lParam)->code) {
 			case LVN_BEGINLABELEDIT: {
+				runUIUpdate = false;
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
 				HWND editC = ListView_GetEditControl(senList);
-				Edit_SetText(editC, conf->active_sensors[sItem->item.lParam].name.c_str());
+				Edit_SetText(editC, conf->active_sensors[(DWORD)sItem->item.lParam].name.c_str());
 			} break;
 			case LVN_ITEMACTIVATE:
 			{
-				runUIUpdate = false;
 				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
 				HWND editC = ListView_EditLabel(senList, sItem->iItem);
 				RECT rect;
-				ListView_GetSubItemRect(senList, sItem->iItem, 3, LVIR_LABEL, &rect);
+				ListView_GetSubItemRect(senList, sItem->iItem, 4, LVIR_LABEL, &rect);
 				SetWindowPos(editC, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 			} break;
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
 				if (lPoint->uNewState & LVIS_FOCUSED) {
-					selSensor = (int)lPoint->lParam;
+					selSensor = (DWORD)lPoint->lParam;
 					UpdateItemInfo();
 				}
 			} break;
@@ -537,11 +537,11 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
 				if (sItem->item.pszText) {
 					conf->active_sensors[selSensor].name = sItem->item.pszText;
-					ListView_SetItemText(senList, sItem->item.iItem, 3, sItem->item.pszText);
+					ListView_SetItemText(senList, sItem->item.iItem, 4, sItem->item.pszText);
 				}
-				else {
-					conf->active_sensors[selSensor].name.clear();
-				}
+				//else {
+				//	conf->active_sensors[selSensor].name.clear();
+				//}
 				runUIUpdate = true;
 			} break;
 			}
@@ -552,16 +552,14 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
-			//DebugPrint("Resume from Sleep/hibernate initiated\n");
-			//senmon->StartMon();
+			for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
+				if (i->second.intray) i->second.oldCur = NO_SEN_VALUE;
+			conf->needFullUpdate = true;
 			if (conf->updateCheck)
 				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		} break;
-		case PBT_APMSUSPEND:
-			// Sleep initiated.
-			//DebugPrint("Sleep/hibernate initiated\n");
-			//senmon->StopMon();
-			break;
+		//case PBT_APMSUSPEND:
+		//	break;
 		}
 		break;
 	case WM_ENDSESSION:
@@ -642,71 +640,55 @@ void UpdateMonUI(LPVOID lpParam) {
 		}
 		else
 			conf->needFullUpdate = true;
-		//if (IsWindowVisible(mDlg) && runUIUpdate) {
-		//	//DebugPrint("Fans UI update...\n");
-		//	if (conf->needFullUpdate) {
-		//		ReloadSensorView();
-		//	}
-		//	else {
-		//		if (!conf->showHidden) {
-		//			int pos = 0;
-		//			for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
-		//				if (!iter->disabled) {
-		//					if (iter->min != NO_SEN_VALUE && iter->cur != iter->oldCur) {
-		//						string name = to_string(iter->min);
-		//						ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
-		//						name = to_string(iter->cur);
-		//						ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-		//						name = to_string(iter->max);
-		//						ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
-		//						//ListView_SetItemText(list, i, 3, (LPSTR)iter->name.c_str());
-		//					}
-		//					pos++;
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
-		//else
-		//	conf->needFullUpdate = true;
 		int pos = 0;
 		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
-			//int pos = i - conf->active_sensors.begin();
-			if (!i->disabled) {
+			if (!i->second.disabled) {
 				// Update UI...
-				if (visible && !conf->showHidden && runUIUpdate && i->cur != i->oldCur && i->min != NO_SEN_VALUE) {
-					string name = to_string(i->min);
+				if (visible && !conf->showHidden && runUIUpdate && i->second.cur != i->second.oldCur && i->second.min != NO_SEN_VALUE) {
+					string name = to_string(i->second.min);
 					ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
-					name = to_string(i->cur);
+					name = to_string(i->second.cur);
 					ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-					name = to_string(i->max);
+					name = to_string(i->second.max);
 					ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
 				}
 				pos++;
 				// Update tray icons...
-				if (i->intray) {
-					if (i->cur != i->oldCur && i->min != NO_SEN_VALUE) {
-						if (!i->niData) {
+				if (i->second.intray) {
+					if (i->second.cur != i->second.oldCur && i->second.min != NO_SEN_VALUE) {
+						if (!i->second.niData) {
 							// add tray icon
-							i->niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (unsigned)(i - conf->active_sensors.begin()),
+							i->second.niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (DWORD)(i->first),
 								NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
 						}
-						UpdateTrayData(&(*i), 0);
-						if (!Shell_NotifyIcon(NIM_MODIFY, i->niData))
-							Shell_NotifyIcon(NIM_ADD, i->niData);
-						i->oldCur = i->cur;
+						UpdateTrayData(&i->second, 0);
+						if (!Shell_NotifyIcon(NIM_MODIFY, i->second.niData))
+							Shell_NotifyIcon(NIM_ADD, i->second.niData);
+						i->second.oldCur = i->second.cur;
 					}
 				}
 				else {
 					// remove tray icon
-					if (i->niData) {
-						Shell_NotifyIcon(NIM_DELETE, i->niData);
-						DestroyIcon(i->niData->hIcon);
-						delete i->niData;
-						i->niData = NULL;
+					if (i->second.niData) {
+						Shell_NotifyIcon(NIM_DELETE, i->second.niData);
+						DestroyIcon(i->second.niData->hIcon);
+						delete i->second.niData;
+						i->second.niData = NULL;
 					}
 				}
 			}
+		}
+		if (visible && runUIUpdate) {
+			// resize
+			RECT cArea;
+			GetClientRect(list, &cArea);
+			int wd = 0;
+			for (int i = 0; i < 4; i++) {
+				ListView_SetColumnWidth(list, i, LVSCW_AUTOSIZE);
+				wd += ListView_GetColumnWidth(list, i);
+			}
+			ListView_SetColumnWidth(list, 4, cArea.right - wd);
+			//ListView_EnsureVisible(list, rpos, false);
 		}
 	}
 }

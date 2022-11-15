@@ -175,77 +175,58 @@ void ConfigHandler::Load() {
 	groupset* gset;
 
 	// Profiles...
-	for (int vindex = 0; RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		len++;
+	for (int vindex = 0; RegEnumValue(hKeyProfiles, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		if (data) delete[] data;
 		data = new BYTE[lend];
-		RegEnumValue(hKeyProfiles, vindex, name, &len, NULL, NULL, data, &lend);
-		len = 255;
+		RegEnumValue(hKeyProfiles, vindex, name, &(len = 255), NULL, NULL, data, &lend);
 		if (sscanf_s(name, "Profile-%d", &pid) == 1) {
-			prof = FindCreateProfile(pid);
-			prof->name = (char*)data;
+			FindCreateProfile(pid)->name = (char*)data;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-triggers-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
-			prof->triggerFlags = LOWORD(*(DWORD*)data);
-			prof->triggerkey = HIWORD(*(DWORD*)data);
+			prof->triggerFlags = ((WORD*)data)[0];
+			prof->triggerkey = ((WORD*)data)[1];
 			continue;
 		}
 		if (sscanf_s(name, "Profile-gflags-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
-			prof->flags = LOWORD(*(DWORD*)data);
-			prof->effmode = HIWORD(*(DWORD*)data);
+			prof->flags = ((WORD*)data)[0];;
+			prof->effmode = ((WORD*)data)[1];
+			// old format, obsolete
 			if (prof->effmode == 99) prof->effmode = 0;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
-			//PathStripPath((char*)data);
-			prof = FindCreateProfile(pid);
-			prof->triggerapp.push_back((char*)data);
+			FindCreateProfile(pid)->triggerapp.push_back((char*)data);
 			continue;
 		}
 		int senid, fanid;
+		if (sscanf_s(name, "Profile-fan-%d-%d-%d", &pid, &fanid, &senid) == 3) {
+			fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid, data, lend);
+			continue;
+		}
 		if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
-			// add fans...
-			fan_block fan{ (short)fanid };
-			for (unsigned i = 0; i < lend; i += 2) {
-				fan.points.push_back({ data[i], data[i + 1] });
-			}
-			prof = FindCreateProfile(pid);
-			auto cf = find_if(prof->fansets.fanControls.begin(), prof->fansets.fanControls.end(),
-				[senid](auto t) {
-					return t.sensorIndex == senid;
-				});
-			if (cf != prof->fansets.fanControls.end()) {
-				cf->fans.push_back(fan);
-			}
-			else {
-				prof->fansets.fanControls.push_back({ (short)senid, {fan} });
-			}
+			fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid | 0xff00, data, lend);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
-			prof = FindCreateProfile(pid);
-			prof->effects.push_back(*(deviceeffect*)data);
+			FindCreateProfile(pid)->effects.push_back(*(deviceeffect*)data);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
-			prof->fansets.powerStage = LOWORD(*(DWORD*)data);
+			prof->fansets.powerStage = ((WORD*)data)[0];
 			//prof->fansets.GPUPower = LOBYTE(HIWORD(*(DWORD*)data));
-			prof->fansets.gmode = HIBYTE(HIWORD(*(DWORD*)data));
+			prof->fansets.gmode = HIBYTE(((WORD*)data)[1]);
 		}
 	}
 
 	// Loading zones...
-	for (int vindex = 0; RegEnumValue(hKeyZones, vindex, name, &len, NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		len++;
+	for (int vindex = 0; RegEnumValue(hKeyZones, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
 		if (data) delete[] data;
 		data = new BYTE[lend];
-
-		RegEnumValue(hKeyZones, vindex, name, &len, NULL, NULL, (LPBYTE)data, &lend);
-		len = 255;
+		RegEnumValue(hKeyZones, vindex, name, &(len = 255), NULL, NULL, (LPBYTE)data, &lend);
 		if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			gset->fromColor = data[0];
@@ -315,6 +296,7 @@ void ConfigHandler::Load() {
 	if (profiles.size() == 1) {
 		profiles.front()->flags |= PROF_DEFAULT;
 	}
+
 	activeProfile = FindProfile(activeProfileID);
 	if (!activeProfile) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
@@ -461,19 +443,20 @@ void ConfigHandler::Save() {
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
-			for (int i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
-				temp_block* sens = &(*jIter)->fansets.fanControls[i];
-				for (int k = 0; k < sens->fans.size(); k++) {
-					fan_block* fans = &sens->fans[k];
-					name = "Profile-fans-" + to_string((*jIter)->id) + "-" + to_string(sens->sensorIndex) + "-" + to_string(fans->fanIndex);
-					byte* outdata = new byte[fans->points.size() * 2];
-					for (int l = 0; l < fans->points.size(); l++) {
-						outdata[2 * l] = (byte)fans->points[l].temp;
-						outdata[(2 * l) + 1] = (byte)fans->points[l].boost;
-					}
+			for (auto i = (*jIter)->fansets.fanControls.begin(); i != (*jIter)->fansets.fanControls.end(); i++) {
+				for (auto j = i->sensors.begin(); j != i->sensors.end(); j++) {
+					if (j->second.active) {
+						name = "Fan-" + to_string(i->fanIndex) + "-" + to_string(j->first);
+						byte* outdata = new byte[j->second.points.size() * 2];
+						for (int k = 0; k < j->second.points.size(); k++) {
+							outdata[2 * k] = (byte)j->second.points[k].temp;
+							outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
+						}
+						name = "Profile-fan-" + to_string((*jIter)->id) + "-" + to_string(i->fanIndex) + "-" + to_string(j->first);
 
-					RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)fans->points.size() * 2);
-					delete[] outdata;
+						RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)j->second.points.size() * 2);
+						delete[] outdata;
+					}
 				}
 			}
 		}
@@ -499,12 +482,6 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 	//	[gid](auto t) {
 	//		return t.gID == gid;
 	//	});
-
-	for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
-		if (gpos->gID == gid) {
-			zoneMaps.erase(gpos);
-			break;
-		}
 
 	zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
 	auto zone = &zoneMaps.back();

@@ -87,7 +87,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
         if (conf->colorGrid)
             delete[] conf->colorGrid;
         conf->colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y]{};
-        for (auto cs = conf->activeProfile->lightsets.rbegin(); cs < conf->activeProfile->lightsets.rend(); cs++) {
+        for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
             AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(cs->group);
             if (grp)
                 //for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
@@ -204,10 +204,20 @@ void ModifyColorDragZone(bool clear = false) {
                 grp->lights.push_back(*tr);
         }
         // now check for power...
-        grp->have_power = find_if(grp->lights.begin(), grp->lights.end(),
-            [](auto t) {
-                return conf->afx_dev.GetFlags(LOWORD(t), HIWORD(t)) & ALIENFX_FLAG_POWER;
-            }) != grp->lights.end();
+        for (auto gpos = grp->lights.begin(); gpos != grp->lights.end(); gpos++) {
+            if (grp->have_power = conf->afx_dev.GetFlags(LOWORD(*gpos), HIWORD(*gpos)) & ALIENFX_FLAG_POWER)
+                break;
+        }
+        //grp->have_power = find_if(grp->lights.begin(), grp->lights.end(),
+        //    [](auto t) {
+        //        return conf->afx_dev.GetFlags(LOWORD(t), HIWORD(t)) & ALIENFX_FLAG_POWER;
+        //    }) != grp->lights.end();
+
+        for (auto gpos = conf->zoneMaps.begin(); gpos != conf->zoneMaps.end(); gpos++)
+            if (gpos->gID == grp->gid) {
+                conf->zoneMaps.erase(gpos);
+                break;
+            }
 
         conf->SortGroupGauge(grp->gid);
         UpdateZoneList();

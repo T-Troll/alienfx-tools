@@ -106,18 +106,27 @@ void CMonProc(LPVOID param) {
 		// in manual mode only
 		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter != fan_conf->lastProf->fanControls.end(); cIter++) {
 			for (auto fIter = cIter->sensors.begin(); fIter != cIter->sensors.end(); fIter++) {
-				int cBoost = fIter->second.back().boost;
-				for (int k = 1; k < fIter->second.size(); k++)
-					if (src->senValues[fIter->first] <= fIter->second[k].temp) {
-						if (fIter->second[k].temp != fIter->second[k - 1].temp)
-							cBoost = (fIter->second[k - 1].boost +
-								((fIter->second[k].boost - fIter->second[k - 1].boost) *
-									(src->senValues[fIter->first] - fIter->second[k - 1].temp)) /
-								(fIter->second[k].temp - fIter->second[k - 1].temp));
+				int cBoost = fIter->second.points.back().boost;
+				for (auto k = fIter->second.points.begin() + 1; k != fIter->second.points.end(); k++)
+					if (src->senValues[fIter->first] <= k->temp) {
+						if (k->temp != (k - 1)->temp)
+							cBoost = ((k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[fIter->first] - (k - 1)->temp))
+								/ (k->temp - (k - 1)->temp));
 						else
-							cBoost = fIter->second[k].boost;
+							cBoost = k->boost;
 						break;
 					}
+				//for (int k = 1; k < fIter->second.points.size(); k++)
+				//	if (src->senValues[fIter->first] <= fIter->second[k].temp) {
+				//		if (fIter->second[k].temp != fIter->second[k - 1].temp)
+				//			cBoost = (fIter->second[k - 1].boost +
+				//				((fIter->second[k].boost - fIter->second[k - 1].boost) *
+				//					(src->senValues[fIter->first] - fIter->second[k - 1].temp)) /
+				//				(fIter->second[k].temp - fIter->second[k - 1].temp));
+				//		else
+				//			cBoost = fIter->second[k].boost;
+				//		break;
+				//	}
 				if (cBoost > src->boostSets[cIter->fanIndex])
 					src->boostSets[cIter->fanIndex] = cBoost;
 				src->senBoosts[cIter->fanIndex][fIter->first] = cBoost;

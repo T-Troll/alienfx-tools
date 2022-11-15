@@ -58,6 +58,7 @@ extern void ReloadTempView(HWND list);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
 extern bool fanMode;
+extern bool fanUpdateBlock;
 extern HANDLE ocStopEvent;
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 
@@ -325,7 +326,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDC_BUT_RESET:
         {
             fan_block* fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
-            if (fan) {
+            if (fan && (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all fan curves?", "Warning",
+                MB_YESNO | MB_ICONWARNING) == IDYES)) {
                 fan->sensors.clear();
                 ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
                 //SendMessage(fanWindow, WM_PAINT, 0, 0);
@@ -459,6 +461,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_FAN_LIST:
+            if (fanUpdateBlock)
+                break;
             switch (((NMHDR*)lParam)->code) {
             case LVN_ITEMCHANGED:
             {
@@ -466,35 +470,36 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
                     // Select other fan....
                     fan_conf->lastSelectedFan = lPoint->iItem;
-                    // Redraw fans
-                    SendMessage(fanWindow, WM_PAINT, 0, 0);
                     break;
                 }
-                if (lPoint->uOldState != 0 && lPoint->uNewState & 0x3000) {
-                    fan_block* fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
+                if (lPoint->uNewState & 0x3000) {
+                    fan_block* fan = fan_conf->FindFanBlock(lPoint->iItem);
                     switch (lPoint->uNewState & 0x3000) {
                     case 0x1000:
                         if (fan)
                             // Remove sensor
                             for (auto cSen = fan->sensors.begin(); cSen != fan->sensors.end(); cSen++)
                                 if (cSen->first == fan_conf->lastSelectedSensor) {
-                                    fan->sensors.erase(cSen);
+                                    //fan->sensors.erase(cSen);
+                                    cSen->second.active = false;
                                     break;
                                 }
                         break;
                     case 0x2000:
                         // add fan
                         if (!fan) { // add new fan block
-                            fan_conf->lastProf->fanControls.push_back({ (short)fan_conf->lastSelectedFan });
+                            fan_conf->lastProf->fanControls.push_back({ (short)lPoint->iItem });
                             fan = &fan_conf->lastProf->fanControls.back();
                         }
                         if (fan->sensors.find(fan_conf->lastSelectedSensor) == fan->sensors.end())
-                            fan->sensors[fan_conf->lastSelectedSensor] = {{0,0},{100,100}};
+                            fan->sensors[fan_conf->lastSelectedSensor] = { true, { {0,0},{100,100} } };
+                        else
+                            fan->sensors[fan_conf->lastSelectedSensor].active = true;
                         break;
                     }
-                    ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, -1, 0, LVIS_SELECTED);
                     ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
                 }
+                SendMessage(fanWindow, WM_PAINT, 0, 0);
             } break;
             }
             break;
@@ -518,19 +523,15 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
                 if (sItem->item.pszText) {
-                    auto pwr = fan_conf->sensors.find((WORD)sItem->item.lParam);
-                    if (pwr == fan_conf->sensors.end()) {
-                        if (strlen(sItem->item.pszText))
-                            fan_conf->sensors.emplace((WORD)sItem->item.lParam, sItem->item.pszText);
-                    }
+                    if (strlen(sItem->item.pszText))
+                        fan_conf->sensors[(WORD)sItem->item.lParam] = sItem->item.pszText;
                     else {
-                        if (strlen(sItem->item.pszText))
-                            pwr->second = sItem->item.pszText;
-                        else
+                        auto pwr = fan_conf->sensors.find((WORD)sItem->item.lParam);
+                        if (pwr != fan_conf->sensors.end())
                             fan_conf->sensors.erase(pwr);
                     }
+                    ReloadTempView(tempList);
                 }
-                ReloadTempView(tempList);
                 fanThread->Start();
             } break;
             case LVN_ITEMCHANGED:

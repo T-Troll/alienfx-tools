@@ -1,5 +1,6 @@
 #pragma once
-#include <vector>
+#include <map>
+//#include <vector>
 #include <string>
 #include <wtypes.h>
 #include "resource.h"
@@ -8,12 +9,20 @@ using namespace std;
 
 #define NO_SEN_VALUE -1
 
+struct SENID {
+	union {
+		struct {
+			WORD id;
+			byte type;
+			byte source;
+		};
+		DWORD sid;
+	};
+};
+
 struct SENSOR {
-	int source;
-	byte type;
-	DWORD id;
 	string name;
-	int min, max, cur, oldCur;
+	int min = NO_SEN_VALUE, max, cur, oldCur = NO_SEN_VALUE;
 	union {
 		struct {
 			byte disabled;
@@ -41,9 +50,6 @@ private:
 		hKeySensors = NULL;
 	void GetReg(const char*, DWORD*, DWORD def = 0);
 	void SetReg(const char* text, DWORD value);
-
-	SENSOR* CheckSensor(int src, byte type, DWORD id);
-
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -57,7 +63,7 @@ public:
 	bool paused = false;
 	bool showHidden = false;
 
-	std::vector<SENSOR> active_sensors;
+	map<DWORD,SENSOR> active_sensors;
 
 	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE, WM_APP + 1, (HICON)LoadImage(GetModuleHandle(NULL),
 					MAKEINTRESOURCE(IDI_ALIENFXMON),
@@ -71,5 +77,6 @@ public:
 	void Load();
 	void Save();
 
-	SENSOR* FindSensor(int, byte, DWORD);
+	//SENSOR* FindSensor(byte, byte, WORD);
+	SENSOR* FindSensor(DWORD sid);
 };

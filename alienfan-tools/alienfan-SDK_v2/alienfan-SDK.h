@@ -18,7 +18,13 @@ using namespace std;
 namespace AlienFan_SDK {
 
 	struct ALIENFAN_SEN_INFO {
-		WORD sid; // LOBYTE - index, HIBYTE - type: 0 = ESIF, 1 = AWCC, 2 - Disk, 3 - KRDT, 4 = OHM
+		union {
+			struct {
+				byte index;
+				byte type;
+			};
+			WORD sid; // LOBYTE - index, HIBYTE - type: 0 = ESIF, 1 = AWCC, 2 - Disk, 3 - KRDT, 4 = OHM
+		};
 		string name;
 		BSTR instance; // for ESIF/OHM/SSD sensors
 	};

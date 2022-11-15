@@ -18,6 +18,7 @@ extern NOTIFYICONDATA* niData;
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
 bool fanMode = true;
+bool fanUpdateBlock = false;
 RECT cArea{ 0 };
 
 vector<fan_point>::iterator lastFanPoint;
@@ -59,20 +60,6 @@ POINT Boost2Screen(fan_overboost* boost) {
         return { 0 };
 }
 
-//WORD SenIndexToID(byte senIndex) {
-//    if (senIndex < acpi->sensors.size())
-//        return MAKEWORD(acpi->sensors[senIndex].senIndex, acpi->sensors[senIndex].type);
-//    else
-//        return 0xff;
-//}
-//
-//byte SenIDToIndex(WORD sid) {
-//    for (int i = 0; i < acpi->sensors.size(); i++)
-//        if (sid == MAKEWORD(acpi->sensors[i].senIndex, acpi->sensors[i].type))
-//            return i;
-//    return 0xff;
-//}
-
 void DrawFan()
 {
     if (fanWindow && mon && cArea.right) {
@@ -107,33 +94,35 @@ void DrawFan()
             if (fan) {
                 HPEN linePen;
                 for (auto senI = fan->sensors.begin(); senI != fan->sensors.end(); senI++) {
-                    // draw fan curve
-                    if (senI->first == fan_conf->lastSelectedSensor)
-                        linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-                    else
-                        linePen = CreatePen(PS_DOT, 1, RGB(255, 255, 0));
-                    SelectObject(hdc, linePen);
-                    // First point
-                    MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
-                    for (auto i = senI->second.begin(); i != senI->second.end(); i++) {
-                        mark = Fan2Screen(i->temp, i->boost);
-                        LineTo(hdc, mark.x, mark.y);
-                        Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
+                    if (senI->second.active) {
+                        // draw fan curve
+                        if (senI->first == fan_conf->lastSelectedSensor)
+                            linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
+                        else
+                            linePen = CreatePen(PS_DOT, 1, RGB(255, 255, 0));
+                        SelectObject(hdc, linePen);
+                        // First point
+                        MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
+                        for (auto i = senI->second.points.begin(); i != senI->second.points.end(); i++) {
+                            mark = Fan2Screen(i->temp, i->boost);
+                            LineTo(hdc, mark.x, mark.y);
+                            Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
+                        }
+                        // Yellow dots
+                        if (fan_conf->lastSelectedSensor == senI->first) {
+                            SetDCPenColor(hdc, RGB(0, 255, 0));
+                            SetDCBrushColor(hdc, RGB(0, 255, 0));
+                        }
+                        else {
+                            SetDCPenColor(hdc, RGB(255, 255, 0));
+                            SetDCBrushColor(hdc, RGB(255, 255, 0));
+                        }
+                        SelectObject(hdc, GetStockObject(DC_PEN));
+                        SelectObject(hdc, GetStockObject(DC_BRUSH));
+                        mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[fan->fanIndex][senI->first]);
+                        Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+                        DeleteObject(linePen);
                     }
-                    // Yellow dots
-                    if (fan_conf->lastSelectedSensor == senI->first) {
-                        SetDCPenColor(hdc, RGB(0, 255, 0));
-                        SetDCBrushColor(hdc, RGB(0, 255, 0));
-                    }
-                    else {
-                        SetDCPenColor(hdc, RGB(255, 255, 0));
-                        SetDCBrushColor(hdc, RGB(255, 255, 0));
-                    }
-                    SelectObject(hdc, GetStockObject(DC_PEN));
-                    SelectObject(hdc, GetStockObject(DC_BRUSH));
-                    mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[fan->fanIndex][senI->first]);
-                    Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-                    DeleteObject(linePen);
                 }
             }
             // Red dot
@@ -183,23 +172,23 @@ void DrawFan()
     }
 }
 
-int SetFanSteady(byte boost, bool downtrend = false) {
-    acpi->SetFanBoost(bestBoostPoint.fanID, boost, true);
+int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
+    acpi->SetFanBoost(fanID, boost, true);
     // Check the trend...
-    int pRpm, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID), maxRPM;
-    boostCheck.push_back({ bestBoostPoint.fanID, boost, (USHORT)bRpm });
+    int pRpm, bRpm = acpi->GetFanRPM(fanID), maxRPM;
+    boostCheck.push_back({ boost, (USHORT)bRpm });
     lastBoostPoint = &boostCheck.back();
     DrawFan();
     if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
         return -1;
-    lastBoostPoint->maxRPM = acpi->GetFanRPM(bestBoostPoint.fanID);
+    lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
     DrawFan();
     do {
         pRpm = bRpm;
         bRpm = lastBoostPoint->maxRPM;
         if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
             return -1;
-        lastBoostPoint->maxRPM = acpi->GetFanRPM(bestBoostPoint.fanID);
+        lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
         maxRPM = max(lastBoostPoint->maxRPM, bRpm);
         bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
         DrawFan();
@@ -209,20 +198,11 @@ int SetFanSteady(byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost(byte fanID) {
-    auto pos = find_if(fan_conf->boosts.begin(), fan_conf->boosts.end(),
-        [](auto t) {
-            return t.fanID == bestBoostPoint.fanID;
-        });
-    if (pos != fan_conf->boosts.end()) {
-        pos->maxBoost = max(bestBoostPoint.maxBoost, 100);
-        pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
-    }
-    else {
-        fan_conf->boosts.push_back(bestBoostPoint);
-    }
-    acpi->boosts[bestBoostPoint.fanID] = max(bestBoostPoint.maxBoost, 100);
-    acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
-    //fan_conf->Save();
+    fan_conf->boosts[fanID].maxBoost = max(bestBoostPoint.maxBoost, 100);
+    fan_conf->boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, fan_conf->boosts[fanID].maxRPM);
+
+    acpi->boosts[fanID] = max(bestBoostPoint.maxBoost, 100);
+    acpi->maxrpm[fanID] = max(fan_conf->boosts[fanID].maxRPM, acpi->maxrpm[fanID]);
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
@@ -235,16 +215,16 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             int cSteps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num, true);
             fan_conf->lastSelectedFan = i;
             boostCheck.clear();
-            bestBoostPoint = { (byte)i, 100, 3000 };
+            bestBoostPoint = { 100, 3000 };
             boostScale = 10; fanMinScale = 3000; fanMaxScale = 500;
-            if ((rpm = SetFanSteady(boost)) < 0)
+            if ((rpm = SetFanSteady(i, boost)) < 0)
                 break;
             fanMinScale = (rpm / 100) * 100;
             for (int steps = cSteps; steps; steps = steps >> 1) {
                 // Check for uptrend
                 while ((boost += steps) != cBoost)
                 {
-                    if ((crpm = SetFanSteady(boost, true)) > rpm) {
+                    if ((crpm = SetFanSteady(i, boost, true)) > rpm) {
                         rpm = lastBoostPoint->maxRPM;
                         cSteps = steps;
                         bestBoostPoint.maxBoost = boost;
@@ -263,7 +243,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             for (int steps = cSteps; steps; steps = steps >> 1) {
                 // Check for uptrend
                 boost -= steps;
-                while (boost > 100 && (crpm = SetFanSteady(boost)) >= bestBoostPoint.maxRPM - 55) {
+                while (boost > 100 && (crpm = SetFanSteady(i, boost)) >= bestBoostPoint.maxRPM - 55) {
                     bestBoostPoint.maxBoost = boost;
                     DrawFan();
                     boost -= steps;
@@ -273,7 +253,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                 boost = bestBoostPoint.maxBoost;
             }
             acpi->SetFanBoost(num, oldBoost, true);
-            UpdateBoost();
+            UpdateBoost(i);
             DrawFan();
         finish:
             ShowNotification(niData, "Overboost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
@@ -287,7 +267,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
 
 INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    vector<fan_point>* cFan = fan_conf->FindSensor();
+    sen_block* cFan = fan_conf->FindSensor();
     if (!cArea.right) {
         GetClientRect(fanWindow, &cArea);
         cArea.right--; cArea.bottom--;
@@ -322,13 +302,13 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (fanMode && cFan) {
             // check and add point
             fan_point clk = Screen2Fan(lParam);
-            lastFanPoint = find_if(cFan->begin(), cFan->end(),
+            lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
                 [clk](auto t) {
                     return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
                 });
-            if (lastFanPoint == cFan->end()) {
+            if (lastFanPoint == cFan->points.end()) {
                 // insert element
-                lastFanPoint = cFan->insert(find_if(cFan->begin(), cFan->end(),
+                lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
                     [clk](auto t) {
                         return t.temp > clk.temp;
                     }), clk);
@@ -340,30 +320,30 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         ReleaseCapture();
         // re-sort and de-duplicate array.
         if (fanMode && cFan) {
-            for (auto fPi = cFan->begin(); fPi < cFan->end() - 1; fPi++) {
+            for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++) {
                 if (fPi->temp > (fPi + 1)->temp) {
                     fan_point t = *fPi;
                     *fPi = *(fPi + 1);
                     *(fPi + 1) = t;
                 }
                 if (fPi->temp == (fPi + 1)->temp && fPi->boost == (fPi + 1)->boost)
-                    cFan->erase(fPi + 1);
+                    cFan->points.erase(fPi + 1);
             }
-            cFan->front().temp = 0;
-            cFan->back().temp = 100;
+            cFan->points.front().temp = 0;
+            cFan->points.back().temp = 100;
             DrawFan();
         }
         SetFocus(GetParent(hDlg));
     } break;
     case WM_RBUTTONUP: {
         // remove point from curve...
-        if (fanMode && cFan && cFan->size() > 2) {
+        if (fanMode && cFan && cFan->points.size() > 2) {
             // check and remove point
             fan_point clk = Screen2Fan(lParam);
-            for (auto fPi = cFan->begin() + 1; fPi < cFan->end() - 1; fPi++)
+            for (auto fPi = cFan->points.begin() + 1; fPi < cFan->points.end() - 1; fPi++)
                 if (abs(fPi->temp - clk.temp) <= DRAG_ZONE && abs(fPi->boost - clk.boost) <= DRAG_ZONE) {
                     // Remove this element...
-                    cFan->erase(fPi);
+                    cFan->points.erase(fPi);
                     break;
                 }
             DrawFan();
@@ -382,6 +362,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 void ReloadFanView(HWND list) {
+    fanUpdateBlock = true;
     ListView_DeleteAllItems(list);
     ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES /*| LVS_EX_AUTOSIZECOLUMNS*/ | LVS_EX_FULLROWSELECT);
     if (!ListView_GetColumnWidth(list, 0)) {
@@ -399,11 +380,12 @@ void ReloadFanView(HWND list) {
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        if (fan && fan->sensors.find(fan_conf->lastSelectedSensor) != fan->sensors.end()) {
+        if (fan && fan->sensors.find(fan_conf->lastSelectedSensor) != fan->sensors.end() && fan->sensors[fan_conf->lastSelectedSensor].active) {
             ListView_SetCheckState(list, i, true);
         }
     }
     ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE_USEHEADER);
+    fanUpdateBlock = false;
 }
 
 

@@ -452,7 +452,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_DEVCLEAR:
-			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to clear all device information?", "Warning",
+			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all device information?", "Warning",
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// remove all lights
 				for (auto lgh = dev->lights.begin(); lgh != dev->lights.end(); lgh++) {
@@ -482,7 +482,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUT_CLEAR:
 			if (lgh) {
-				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove light?", "Warning",
+				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to remove light?", "Warning",
 					MB_YESNO | MB_ICONWARNING) == IDYES) {
 					if (lgh->flags & ALIENFX_FLAG_POWER) {
 						fxhl->ResetPower(dev);
@@ -507,7 +507,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_ISPOWERBUTTON: {
 			if (lgh) {
 				if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
-					ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all it settings!", true);
+					ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all light settings!", true);
 					lgh->flags |= ALIENFX_FLAG_POWER;
 				}
 				else {

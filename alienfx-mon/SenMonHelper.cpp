@@ -5,7 +5,7 @@
 
 // debug print
 #ifdef _DEBUG
-#define DebugPrint(_x_) OutputDebugString(_x_);
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 #else
 #define DebugPrint(_x_)
 #endif
@@ -18,24 +18,10 @@ extern AlienFan_SDK::Control* acpi;
 
 SenMonHelper::SenMonHelper()
 {
-	ModifyMon();
-
 	// Set data source...
 	PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
+	ModifyMon();
 
-	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS)
-	{
-		PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
-		PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
-
-		// Bugfix for incorrect value order
-		PdhCollectQueryData(hQuery);
-	}
 }
 
 SenMonHelper::~SenMonHelper()
@@ -49,11 +35,32 @@ SenMonHelper::~SenMonHelper()
 
 void SenMonHelper::ModifyMon()
 {
+	if ((conf->wSensors || conf->eSensors) && PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
+		if (conf->wSensors) {
+			PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
+			PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
+			PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
+			PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
+			PdhAddCounter(hQuery, COUNTER_PATH_TEMP, 0, &hTempCounter);
+		}
+		if (conf->eSensors) {
+			PdhAddCounter(hQuery, COUNTER_PATH_ESIF, 0, &hTempCounter2);
+			PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
+		}
+		// Bugfix for incorrect value order
+		PdhCollectQueryData(hQuery);
+	} else
+		if (hQuery) {
+			PdhCloseQuery(hQuery);
+			hQuery = NULL;
+		}
 	if (conf->bSensors) {
-		acpi = new AlienFan_SDK::Control();
-		if (!(conf->bSensors = acpi->Probe())) {
-			delete acpi;
-			acpi = NULL;
+		if (!acpi) {
+			acpi = new AlienFan_SDK::Control();
+			if (!(conf->bSensors = acpi->Probe())) {
+				delete acpi;
+				acpi = NULL;
+			}
 		}
 	}
 	else {
@@ -64,10 +71,14 @@ void SenMonHelper::ModifyMon()
 	}
 }
 
-void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, string name) {
+void AddUpdateSensor(ConfigMon* conf, SENID sid, long val, string name) {
 	SENSOR* sen;
-	if (val > 10000 || val < NO_SEN_VALUE) return;
-	if (sen = conf->FindSensor(grp, type, id)) {
+	if (val > 10000 || val <= NO_SEN_VALUE) return;
+	if (sen = conf->FindSensor(sid.sid)) {
+		if (sen->name.empty()) {
+			sen->name = name;
+			conf->needFullUpdate = true;
+		}
 		sen->cur = val;
 		sen->min = sen->min == NO_SEN_VALUE ? val : min(sen->min, val);
 		sen->max = max(sen->max, val);
@@ -87,8 +98,7 @@ void AddUpdateSensor(ConfigMon* conf, int grp, byte type, DWORD id, long val, st
 	}
 	else {
 		// add sensor
-		conf->active_sensors.push_back({ grp, type, id, name, val, val, val, NO_SEN_VALUE });
-		sen = &conf->active_sensors.back();
+		conf->active_sensors[sid.sid] = { name, val, val, val, NO_SEN_VALUE };
 		conf->needFullUpdate = true;
 	}
 }
@@ -111,21 +121,22 @@ void SenMonHelper::UpdateSensors()
 {
 	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
 
-	// get indicators...
-	PdhCollectQueryData(hQuery);
+	if (conf->wSensors || conf->eSensors)
+		// get indicators...
+		PdhCollectQueryData(hQuery);
 
 	if (conf->wSensors) { // group 0
 		if (PdhGetFormattedCounterValue(hCPUCounter, PDH_FMT_LONG, &cType, &cCPUVal) == ERROR_SUCCESS) // CPU, code 0
-			AddUpdateSensor(conf, 0, 0, 0, cCPUVal.longValue, "CPU load");
+			AddUpdateSensor(conf, { 0, 0, 0 }, cCPUVal.longValue, "CPU load");
 
 		GlobalMemoryStatusEx(&memStat); // RAM, code 1
-		AddUpdateSensor(conf, 0, 1, 0, memStat.dwMemoryLoad, "Memory usage");
+		AddUpdateSensor(conf, { 0, 1, 0 }, memStat.dwMemoryLoad, "Memory usage");
 
 		if (PdhGetFormattedCounterValue(hHDDCounter, PDH_FMT_LONG, &cType, &cHDDVal) == ERROR_SUCCESS) // HDD, code 2
-			AddUpdateSensor(conf, 0, 2, 0, 100 - cHDDVal.longValue, "HDD load");
+			AddUpdateSensor(conf, { 0, 2, 0 }, 100 - cHDDVal.longValue, "HDD load");
 
 		GetSystemPowerStatus(&state); // Battery, code 3
-		AddUpdateSensor(conf, 0, 3, 0, state.BatteryLifePercent, "Battery");
+		AddUpdateSensor(conf, { 0, 3, 0 }, state.BatteryLifePercent, "Battery");
 
 		valCount = GetValuesArray(hGPUCounter); // GPU, code 4
 		long valLast = 0;
@@ -133,44 +144,42 @@ void SenMonHelper::UpdateSensors()
 			if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA))
 				valLast = max(valLast, counterValues[i].FmtValue.longValue);
 		}
-		AddUpdateSensor(conf, 0, 4, 0, valLast, "GPU load");
+		AddUpdateSensor(conf, { 0, 4, 0 }, valLast, "GPU load");
 
 		valCount = GetValuesArray(hTempCounter); // Temps, code 5
-		for (unsigned i = 0; i < valCount; i++) {
+		for (WORD i = 0; i < valCount; i++) {
 			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
-				AddUpdateSensor(conf, 0, 5, i, counterValues[i].FmtValue.longValue - 273, counterValues[i].szName);
+				AddUpdateSensor(conf, { i, 5, 0 }, counterValues[i].FmtValue.longValue - 273, counterValues[i].szName);
 		}
 	}
 
 	if (conf->eSensors) { // group 1
 		// ESIF temperatures and power
 		valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
-		for (unsigned i = 0; i < valCount; i++) {
+		for (WORD i = 0; i < valCount; i++) {
 			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
-				AddUpdateSensor(conf, 1, 1, i, counterValues[i].FmtValue.longValue/10, "Power " + to_string(i));
+				AddUpdateSensor(conf, { i, 1, 1 }, counterValues[i].FmtValue.longValue / 10, "Power " + to_string(i));
 		}
 	}
 
 	if (acpi) { // group 2
 		// Fan data and BIOS temperatures
-		int val;
-		for (int i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
-			if (val = acpi->GetTempValue(i))
-				AddUpdateSensor(conf, 2, 0, i, val, acpi->sensors[i].name);
+		for (WORD i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
+			AddUpdateSensor(conf, { i, 0, 2 }, acpi->GetTempValue(i), acpi->sensors[i].name);
 		}
 
-		for (int i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3
-			AddUpdateSensor(conf, 2, 1, i, acpi->GetFanRPM(i), "Fan " + to_string(i+1) + " RPM");
-			AddUpdateSensor(conf, 2, 2, i, acpi->GetFanPercent(i), "Fan " + to_string(i+1) + " percent");
-			AddUpdateSensor(conf, 2, 3, i, acpi->GetFanBoost(i, true), "Fan " + to_string(i + 1) + " boost");
+		for (WORD i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3
+			AddUpdateSensor(conf, { i, 1, 2 }, acpi->GetFanRPM(i), "Fan " + to_string(i + 1) + " RPM");
+			AddUpdateSensor(conf, { i, 2, 2 }, acpi->GetFanPercent(i), "Fan " + to_string(i + 1) + " percent");
+			AddUpdateSensor(conf, { i, 3, 2 }, acpi->GetFanBoost(i, true), "Fan " + to_string(i + 1) + " boost");
 		}
 	} else
 		if (conf->eSensors) {
 			// Added other tempset ...
 			valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
-			for (unsigned i = 0; i < valCount; i++) {
+			for (WORD i = 0; i < valCount; i++) {
 				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue)
-					AddUpdateSensor(conf, 1, 0, i, counterValues[i].FmtValue.longValue, "Temp " + to_string(i));
+					AddUpdateSensor(conf, { i, 0, 1 }, counterValues[i].FmtValue.longValue, "Temp " + to_string(i));
 			}
 		}
 }

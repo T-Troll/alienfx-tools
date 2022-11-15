@@ -30,54 +30,46 @@ bool CheckArgs(string cName, int minArgs, size_t nargs) {
 
 fan_overboost bestBoostPoint;
 
-int SetFanSteady(byte boost, bool downtrend = false) {
-    printf("Probing Fan#%d at boost %d: ", bestBoostPoint.fanID, boost);
-    acpi->SetFanBoost(bestBoostPoint.fanID, boost, true);
+int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
+    printf("Probing Fan#%d at boost %d: ", fanID, boost);
+    acpi->SetFanBoost(fanID, boost, true);
     // Check the trend...
-    int pRpm, maxRPM, bRpm = acpi->GetFanRPM(bestBoostPoint.fanID), fRpm;
+    int pRpm, maxRPM, bRpm = acpi->GetFanRPM(fanID), fRpm;
     Sleep(3000);
-    fRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
+    fRpm = acpi->GetFanRPM(fanID);
     do {
         pRpm = bRpm;
         bRpm = fRpm;
         Sleep(3000);
-        fRpm = acpi->GetFanRPM(bestBoostPoint.fanID);
+        fRpm = acpi->GetFanRPM(fanID);
         //printf("\rProbing Fan#%d at boost %d: %4d-%4d-%4d (%+d, %+d)        ", bestBoostPoint.fanID, boost, pRpm, bRpm, fRpm, bRpm - pRpm, fRpm - bRpm);
-        printf("\rProbing Fan#%d at boost %d: %4d (%+d)   \r", bestBoostPoint.fanID, boost, fRpm, fRpm - bRpm);
+        printf("\rProbing Fan#%d at boost %d: %4d (%+d)   \r", fanID, boost, fRpm, fRpm - bRpm);
         maxRPM = max(bRpm, fRpm);
         bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
     } while ((fRpm > bRpm || bRpm < pRpm || fRpm != pRpm) && (!downtrend || !(fRpm < bRpm && bRpm < pRpm)));
-    printf("Probing Fan#%d at boost %d done, %d RPM ", bestBoostPoint.fanID, boost, maxRPM);
+    printf("Probing Fan#%d at boost %d done, %d RPM ", fanID, boost, maxRPM);
     return maxRPM;
 }
 
-void UpdateBoost() {
-    auto pos = find_if(fan_conf->boosts.begin(), fan_conf->boosts.end(),
-        [](auto t) {
-            return t.fanID == bestBoostPoint.fanID;
-        });
-    if (pos != fan_conf->boosts.end()) {
-        pos->maxBoost = max(bestBoostPoint.maxBoost, 100);
-        pos->maxRPM = max(bestBoostPoint.maxRPM, pos->maxRPM);
-    }
-    else {
-        fan_conf->boosts.push_back(bestBoostPoint);
-    }
-    acpi->boosts[bestBoostPoint.fanID] = max(bestBoostPoint.maxBoost, 100);
-    acpi->maxrpm[bestBoostPoint.fanID] = max(bestBoostPoint.maxRPM, acpi->maxrpm[bestBoostPoint.fanID]);
+void UpdateBoost(byte fanID) {
+    fan_conf->boosts[fanID].maxBoost = max(bestBoostPoint.maxBoost, 100);
+    fan_conf->boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, fan_conf->boosts[fanID].maxRPM);
+
+    acpi->boosts[fanID] = max(bestBoostPoint.maxBoost, 100);
+    acpi->maxrpm[fanID] = max(fan_conf->boosts[fanID].maxRPM, acpi->maxrpm[fanID]);
 }
 
 void CheckFanOverboost(byte num) {
     int cSteps = 8, boost = 100, cBoost = 100, rpm, oldBoost = acpi->GetFanBoost(num, true);
     printf("Checking Fan#%d:\n", num);
-    bestBoostPoint = { (byte)num, 100, 0 };
-    rpm = SetFanSteady(boost);
+    bestBoostPoint = { 100, 0 };
+    rpm = SetFanSteady(num, boost);
     printf("    \n");
     for (int steps = cSteps; steps; steps = steps >> 1) {
         // Check for uptrend
         while ((boost+=steps) != cBoost)
         {
-            if (SetFanSteady(boost, true) > rpm) {
+            if (SetFanSteady(num, boost, true) > rpm) {
                 rpm = bestBoostPoint.maxRPM;
                 cSteps = steps;
                 bestBoostPoint.maxBoost = boost;
@@ -95,7 +87,7 @@ void CheckFanOverboost(byte num) {
     for (int steps = cSteps; steps; steps = steps >> 1) {
         // Check for downtrend
         boost -= steps;
-        while (boost > 100 && SetFanSteady(boost) >= bestBoostPoint.maxRPM - 55) {
+        while (boost > 100 && SetFanSteady(num, boost) >= bestBoostPoint.maxRPM - 55) {
             bestBoostPoint.maxBoost = boost;
             boost -= steps;
             printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
@@ -106,7 +98,7 @@ void CheckFanOverboost(byte num) {
     }
     printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
     acpi->SetFanBoost(num, oldBoost, true);
-    UpdateBoost();
+    UpdateBoost(num);
 }
 
 void Usage() {
@@ -267,22 +259,23 @@ int main(int argc, char* argv[])
                 int oldMode = acpi->GetPower();
                 acpi->Unlock();
                 if (args.size()) {
-                    if (args[0].num < acpi->fans.size())
+                    byte fanID = args[0].num;
+                    if (fanID < acpi->fans.size())
                         if (args.size() > 1) {
                             // manual fan set
                             acpi->Unlock();
-                            bestBoostPoint = { (byte)args[0].num, (byte)args[1].num, 0 };
-                            acpi->SetFanBoost(bestBoostPoint.fanID, 100, true);
+                            bestBoostPoint = { (byte)args[1].num, 0 };
+                            acpi->SetFanBoost(fanID, 100, true);
                             Sleep(2000);
-                            SetFanSteady(bestBoostPoint.maxBoost);
-                            UpdateBoost();
-                            acpi->SetFanBoost(bestBoostPoint.fanID, 0);
+                            SetFanSteady(fanID, bestBoostPoint.maxBoost);
+                            UpdateBoost(fanID);
+                            acpi->SetFanBoost(fanID, 0);
                             printf("\nBoost for fan #%d set to %d @ %d RPM.\n",
-                                args[0].num, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+                                fanID, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
                         }
                         else
                             // auto fan set
-                            CheckFanOverboost(args[0].num);
+                            CheckFanOverboost(fanID);
                     else
                         printf("Incorrect fan ID (should be 0..%d)!\n", (int)acpi->fans.size() - 1);
                 }
@@ -376,7 +369,7 @@ int main(int argc, char* argv[])
             //    }
             //    continue;
             //}
-            printf("Unknown command - %s, use \"usage\" or \"help\" for information\n", command.c_str());
+            printf("Unknown command - %s, run without parameters for help.\n", command.c_str());
         }
     }
     else {

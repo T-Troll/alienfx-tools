@@ -66,10 +66,15 @@ bool DetectFans() {
 		acpi = new AlienFan_SDK::Control();
 		if (acpi->Probe()) {
 			conf->fan_conf->SetBoostsAndNames(acpi);
+			// Obsolete format conversion
+			for (auto cp = conf->profiles.begin(); cp != conf->profiles.end(); cp++)
+				if ((*cp)->flags & PROF_FANS)
+					conf->fan_conf->ConvertSenMappings(&(*cp)->fansets, acpi);
 			eve->StartFanMon();
+			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		}
 		else {
-			ShowNotification(&conf->niData, "Error", "Compatible hardware not found, disabling fan control!", false);
+			ShowNotification(&conf->niData, "Error", "Compatible hardware not found, fan control disabled!", false);
 			delete acpi;
 			acpi = NULL;
 			conf->fanControl = false;

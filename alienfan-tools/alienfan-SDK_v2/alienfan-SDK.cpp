@@ -107,7 +107,7 @@ namespace AlienFan_SDK {
 				// AWCC temperature sensors.
 				do {
 					//if (CallWMIMethod(dev_controls.getTemp, (byte)funcID) > 0) {
-						sensors.push_back({ MAKEWORD((byte)funcID, 1), sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
+					sensors.push_back({ {(byte)funcID, 1}, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
 					//}
 					fIndex++;
 				} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) > 0x100 && funcID < 0x1A0);
@@ -159,7 +159,7 @@ namespace AlienFan_SDK {
 					spInstance->Get((BSTR)L"Temperature", 0, &cTemp, 0, 0);
 					spInstance->Release();
 					if (cTemp.uintVal > 0) {
-						sensors.push_back({ MAKEWORD(ind,0),
+						sensors.push_back({ { ind,0 },
 							/*numESIF < senNames.size() ? senNames[numESIF] : */"ESIF sensor #" + to_string(ind), instPath.bstrVal });
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
@@ -175,7 +175,7 @@ namespace AlienFan_SDK {
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				for (byte ind = 1; uNumOfInstances; ind++) {
 					spInstance->Get((BSTR)L"StorageReliabilityCounter", 0, &instPath, 0, 0);
-					sensors.push_back({ MAKEWORD(ind, 2), "SSD " + to_string(ind) + " Sensor", instPath.bstrVal });
+					sensors.push_back({ {ind, 2}, "SSD " + to_string(ind) + " Sensor", instPath.bstrVal });
 					spInstance->Release();
 					// zero-temp sensor check
 					if (!GetTempValue((int)sensors.size() - 1))
@@ -197,7 +197,7 @@ namespace AlienFan_SDK {
 					spInstance->Release();
 					if (type.bstrVal == wstring(L"Temperature")) {
 						wstring sname{ name.bstrVal };
-						sensors.push_back({ MAKEWORD(ind, 4), string(sname.begin(), sname.end()), instPath.bstrVal });
+						sensors.push_back({ { ind, 4 } , string(sname.begin(), sname.end()), instPath.bstrVal });
 					}
 					enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				}
@@ -242,7 +242,7 @@ namespace AlienFan_SDK {
 		IWbemClassObject* sensorObject = NULL;
 		VARIANT temp;
 		if (TempID < sensors.size()) {
-			switch (HIBYTE(sensors[TempID].sid)) {
+			switch (sensors[TempID].type) {
 			case 0:// ESIF
 				if (m_WbemServices->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
 					sensorObject->Get((BSTR)L"Temperature", 0, &temp, 0, 0);
@@ -251,7 +251,7 @@ namespace AlienFan_SDK {
 				}
 				break;
 			case 1: { // AWCC
-				int awt = CallWMIMethod(dev_controls.getTemp, LOBYTE(sensors[TempID].sid));
+				int awt = CallWMIMethod(dev_controls.getTemp, sensors[TempID].index);
 				// Bugfix for AWCC temp - it can be up to 5000C!
 				return awt > 200 ? -1 : awt;
 			} break;

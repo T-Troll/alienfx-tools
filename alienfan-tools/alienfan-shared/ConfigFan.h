@@ -12,13 +12,13 @@ struct fan_point {
 };
 
 struct sen_block {
-	WORD sensor;
+	bool active = true;
 	vector<fan_point> points;
 };
 
 struct fan_block {
 	short fanIndex;
-	map<WORD,vector<fan_point>> sensors;
+	map<WORD, sen_block> sensors;
 };
 
 struct fan_profile {
@@ -29,7 +29,6 @@ struct fan_profile {
 };
 
 struct fan_overboost {
-	//byte fanID;
 	byte maxBoost;
 	USHORT maxRPM;
 };
@@ -61,12 +60,13 @@ public:
 	ConfigFan();
 	~ConfigFan();
 
-	vector<fan_point>* FindSensor();
-	fan_block* FindFanBlock(short);
+	sen_block* FindSensor();
+	fan_block* FindFanBlock(short, fan_profile* prof = NULL);
+	void AddSensorCurve(fan_profile* prof, WORD fid, WORD sid, byte* data, DWORD lend);
+	void ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi);
+	void SetBoostsAndNames(AlienFan_SDK::Control*);
 
 	void Load();
 	void Save();
-
-	void SetBoostsAndNames(AlienFan_SDK::Control *);
 };
 
