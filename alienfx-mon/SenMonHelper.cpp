@@ -35,22 +35,33 @@ SenMonHelper::~SenMonHelper()
 
 void SenMonHelper::ModifyMon()
 {
-	if ((conf->wSensors || conf->eSensors) && PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
+	if ((conf->wSensors || conf->eSensors) && (hQuery || PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS)) {
 		if (conf->wSensors) {
 			PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
 			PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
-			PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
 			PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
 			PdhAddCounter(hQuery, COUNTER_PATH_TEMP, 0, &hTempCounter);
+		}
+		else {
+			PdhRemoveCounter(hCPUCounter);
+			PdhRemoveCounter(hHDDCounter);
+			PdhRemoveCounter(hGPUCounter);
+			PdhRemoveCounter(hTempCounter);
 		}
 		if (conf->eSensors) {
 			PdhAddCounter(hQuery, COUNTER_PATH_ESIF, 0, &hTempCounter2);
 			PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 		}
+		else {
+			PdhRemoveCounter(hTempCounter2);
+			PdhRemoveCounter(hPwrCounter);
+		}
+		DebugPrint("PDH query on.\n");
 		// Bugfix for incorrect value order
 		PdhCollectQueryData(hQuery);
 	} else
 		if (hQuery) {
+			DebugPrint("PDH query off.\n");
 			PdhCloseQuery(hQuery);
 			hQuery = NULL;
 		}
@@ -61,12 +72,14 @@ void SenMonHelper::ModifyMon()
 				delete acpi;
 				acpi = NULL;
 			}
+			DebugPrint("ACPI on.\n");
 		}
 	}
 	else {
 		if (acpi) {
 			delete acpi;
 			acpi = NULL;
+			DebugPrint("ACPI off.\n");
 		}
 	}
 }
@@ -75,18 +88,14 @@ void AddUpdateSensor(ConfigMon* conf, SENID sid, long val, string name) {
 	SENSOR* sen;
 	if (val > 10000 || val <= NO_SEN_VALUE) return;
 	if (sen = conf->FindSensor(sid.sid)) {
-		if (sen->name.empty()) {
-			sen->name = name;
+		if (sen->sname.empty()) {
+			sen->sname = name;
 			conf->needFullUpdate = true;
 		}
 		sen->cur = val;
 		sen->min = sen->min == NO_SEN_VALUE ? val : min(sen->min, val);
 		sen->max = max(sen->max, val);
-		if (sen->name.empty()) {
-			sen->name = name;
-			conf->needFullUpdate = true;
-		}
-		if (sen->alarm && sen->oldCur && sen->oldCur != NO_SEN_VALUE) {
+		if (sen->alarm && sen->oldCur != NO_SEN_VALUE) {
 			// Check alarm
 			if ((sen->direction ? (sen->cur < (int)sen->ap) + (sen->oldCur >= (int)sen->ap) == 2 :
 				(sen->cur > (int)sen->ap) + (sen->oldCur <= (int)sen->ap) == 2)) {
@@ -165,7 +174,7 @@ void SenMonHelper::UpdateSensors()
 	if (acpi) { // group 2
 		// Fan data and BIOS temperatures
 		for (WORD i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
-			AddUpdateSensor(conf, { i, 0, 2 }, acpi->GetTempValue(i), acpi->sensors[i].name);
+			AddUpdateSensor(conf, { acpi->sensors[i].sid, 0, 2 }, acpi->GetTempValue(i), acpi->sensors[i].name);
 		}
 
 		for (WORD i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3

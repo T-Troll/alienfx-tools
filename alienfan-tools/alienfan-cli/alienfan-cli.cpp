@@ -57,6 +57,8 @@ void UpdateBoost(byte fanID) {
 
     acpi->boosts[fanID] = max(bestBoostPoint.maxBoost, 100);
     acpi->maxrpm[fanID] = max(fan_conf->boosts[fanID].maxRPM, acpi->maxrpm[fanID]);
+
+    fan_conf->Save();
 }
 
 void CheckFanOverboost(byte num) {

@@ -246,7 +246,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     // Select other item...
                     if (lPoint->iItem != -1) {
                         // Select other fan....
-                        fan_conf->lastSelectedSensor = lPoint->iItem;
+                        fan_conf->lastSelectedSensor = lPoint->lParam;
                         // Redraw fans
                         ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
                         SendMessage(fanWindow, WM_PAINT, 0, 0);

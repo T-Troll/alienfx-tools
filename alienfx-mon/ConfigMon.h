@@ -21,8 +21,8 @@ struct SENID {
 };
 
 struct SENSOR {
-	string name;
-	int min = NO_SEN_VALUE, max, cur, oldCur = NO_SEN_VALUE;
+	string sname;
+	int min = NO_SEN_VALUE, max = 0, cur = 0, oldCur = NO_SEN_VALUE;
 	union {
 		struct {
 			byte disabled;
@@ -39,8 +39,9 @@ struct SENSOR {
 		};
 		DWORD alarmPoint = 0;
 	};
+	string name;
 	DWORD traycolor = 0xffffff;
-	NOTIFYICONDATA* niData;
+	NOTIFYICONDATA* niData = NULL;
 };
 
 class ConfigMon
