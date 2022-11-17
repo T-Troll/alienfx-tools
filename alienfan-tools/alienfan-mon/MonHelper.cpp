@@ -68,12 +68,12 @@ void MonHelper::Stop() {
 
 void MonHelper::SetCurrentGmode(WORD newMode) {
 	if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && acpi->GetGMode() != newMode) {
+		fan_conf->lastProf->gmode = newMode;
 		if (acpi->GetSystemID() == 2933 && newMode) // G5 5510 fix
 			acpi->SetPower(acpi->powers[1]);
 		acpi->SetGMode(newMode);
 		if (!newMode)
 			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-		fan_conf->lastProf->gmode = newMode;
 	}
 }
 
@@ -97,7 +97,7 @@ void CMonProc(LPVOID param) {
 
 	// fans...
 	for (int i = 0; i < acpi->fans.size(); i++) {
-		src->boostSets[i] = 0;
+		//src->boostSets[i] = 0;
 		src->boostRaw[i] = acpi->GetFanBoost(i, true);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
@@ -106,6 +106,7 @@ void CMonProc(LPVOID param) {
 	if (modified && !fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
 		// in manual mode only
 		for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter != fan_conf->lastProf->fanControls.end(); cIter++) {
+			src->boostSets[cIter->fanIndex] = 0;
 			for (auto fIter = cIter->sensors.begin(); fIter != cIter->sensors.end(); fIter++) {
 				int cBoost = fIter->second.points.back().boost;
 				for (auto k = fIter->second.points.begin() + 1; k != fIter->second.points.end(); k++)
@@ -117,17 +118,6 @@ void CMonProc(LPVOID param) {
 							cBoost = k->boost;
 						break;
 					}
-				//for (int k = 1; k < fIter->second.points.size(); k++)
-				//	if (src->senValues[fIter->first] <= fIter->second[k].temp) {
-				//		if (fIter->second[k].temp != fIter->second[k - 1].temp)
-				//			cBoost = (fIter->second[k - 1].boost +
-				//				((fIter->second[k].boost - fIter->second[k - 1].boost) *
-				//					(src->senValues[fIter->first] - fIter->second[k - 1].temp)) /
-				//				(fIter->second[k].temp - fIter->second[k - 1].temp));
-				//		else
-				//			cBoost = fIter->second[k].boost;
-				//		break;
-				//	}
 				if (cBoost > src->boostSets[cIter->fanIndex])
 					src->boostSets[cIter->fanIndex] = cBoost;
 				src->senBoosts[cIter->fanIndex][fIter->first] = cBoost;
@@ -166,40 +156,6 @@ void CMonProc(LPVOID param) {
 			else
 				src->fanSleep[cIter->fanIndex]--;
 		}
-		//// Now set if needed...
-		//for (int i = 0; i < acpi->fans.size(); i++)
-		//	if (!src->fanSleep[i]) {
-		//		int rawBoost = src->boostSets[i] * acpi->boosts[i] / 100;
-		//		// Check overboost tricks...
-		//		if (src->boostRaw[i] < 90 && rawBoost > 100) {
-		//			acpi->SetFanBoost(i, 100, true);
-		//			src->fanSleep[i] = ((100 - src->boostRaw[i]) >> 3) + 2;
-		//			DebugPrint("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts(old "
-		//				+ to_string(src->boostRaw[i]) + ", new " + to_string(rawBoost) +")!\n");
-		//		} else
-		//			if (rawBoost != src->boostRaw[i] /*|| src->boostSets[i] > 100*/) {
-		//				if (src->boostRaw[i] > rawBoost)
-		//					rawBoost += 15 * ((src->boostRaw[i] - rawBoost) >> 4);
-		//				// fan RPM stuck patch v2
-		//				//if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
-		//				//	int pct = acpi->GetFanPercent(i) << 3;
-		//				//	if (pct > 105 || pct < src->boostRaw[i]) {
-		//				//		acpi->SetGMode(true);
-		//				//		Sleep(300);
-		//				//		acpi->SetGMode(false);
-		//				//		acpi->SetPower((byte)fan_conf->lastProf->powerStage);
-		//				//		DebugPrint("RPM fix engaged!\n");
-		//				//	}
-		//				//}
-
-		//				acpi->SetFanBoost(i, rawBoost, true);
-
-		//				//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
-		//				//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
-		//			}
-		//	}
-		//	else
-		//		src->fanSleep[i]--;
 	}
 
 }

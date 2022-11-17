@@ -261,25 +261,23 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_COMBO_POWER:
         {
+            int newMode = ComboBox_GetCurSel(power_list);
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                int newMode = ComboBox_GetCurSel(power_list);
-                if (newMode > acpi->powers.size())
-                    // G-Mode on
-                    mon->SetCurrentGmode(true);
-                else {
-                    mon->SetCurrentGmode(false);
-                    fan_conf->lastProf->powerStage = (WORD)ComboBox_GetCurSel(power_list);
-                }
+                // G-Mode check
+                mon->SetCurrentGmode(!(newMode < acpi->powers.size()));
+                if (newMode < acpi->powers.size())
+                    fan_conf->lastProf->powerStage = newMode;
             } break;
             case CBN_EDITCHANGE:
-                if (fan_conf->lastProf->powerStage > 0 && fan_conf->lastProf->powerStage < acpi->powers.size()) {
+                int newMode = ComboBox_GetCurSel(power_list);
+                if (newMode > 0 && newMode < acpi->powers.size()) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
-                    fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
-                    ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
-                    ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
+                    fan_conf->powers[newMode] = buffer;
+                    ComboBox_DeleteString(power_list, newMode);
+                    ComboBox_InsertString(power_list, newMode, buffer);
                 }
                 break;
             }
@@ -420,16 +418,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     } break;
     case WM_HOTKEY: {
-        if (wParam > 19 /*&& wParam - 20 < acpi->powers.size()*/) {
+        if (wParam > 19 && wParam - 20 < acpi->powers.size()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
-            //acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
-            if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
-                mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
-            }
+            mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
+            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
             break;
         }
     } break;
@@ -444,6 +440,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case ID_MENU_GMODE:
             mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
+            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
             break;
         case ID_TRAYMENU_POWER_SELECTED:
             fan_conf->lastProf->powerStage = idx;
