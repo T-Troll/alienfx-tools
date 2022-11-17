@@ -1,10 +1,10 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
+extern bool SetColor(HWND hDlg, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 extern MonHelper* mon;
@@ -143,14 +143,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		case IDC_BUTTON_COLORFROM:
 			if (ev && (!map->fromColor || map->color.size())) {
-				SetColor(hDlg, LOWORD(wParam), map, &ev->from);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), map, &ev->from);
 				RedrawGridButtonZone(NULL, true);
 				fxhl->RefreshMon();
 			}
 			break;
 		case IDC_BUTTON_COLORTO:
 			if (ev) {
-				SetColor(hDlg, LOWORD(wParam), map, &ev->to);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), map, &ev->to);
 				RedrawGridButtonZone(NULL, true);
 				fxhl->RefreshMon();
 			}
@@ -210,7 +210,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		}
 	} break;
 	case WM_DRAWITEM: {
-		AlienFX_SDK::Colorcode* c{ NULL };
+		AlienFX_SDK::Colorcode* c = NULL;
 		if (ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:
@@ -221,7 +221,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				break;
 			}
 		}
-		RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c);
+		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
 	} break;
 	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {

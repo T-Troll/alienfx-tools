@@ -1,10 +1,10 @@
 #include "alienfx-gui.h"
 #include "common.h"
 
-extern bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map);
+extern bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND ctrl, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 
@@ -38,7 +38,7 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 	EnableWindow(GetDlgItem(hDlg, IDC_COMBO_GAUGE), (bool)mmap);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
-	RedrawButton(hDlg, IDC_BUTTON_C1, mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
 }
 
 void RebuildEffectList(HWND hDlg, groupset* mmap) {
@@ -132,7 +132,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (HIWORD(wParam) == BN_CLICKED && mmap) {
 				if (mmap->color.empty())
 					mmap->color.push_back({ 0 });
-				SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[effID]);
 				RebuildEffectList(hDlg, mmap);
 			}
 			break;
@@ -213,15 +213,12 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		} break;
 	case WM_DRAWITEM:
-		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-		case IDC_BUTTON_C1: {
-			AlienFX_SDK::Colorcode* c{ NULL };
-			if (mmap && effID < mmap->color.size()) {
-				c = Act2Code(&mmap->color[effID]);
-			}
-			RedrawButton(hDlg, IDC_BUTTON_C1, c);
-		} break;
-		default: return false;
+/*		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+		case IDC_BUTTON_C1: */{
+			AlienFX_SDK::Colorcode* c = mmap && effID < mmap->color.size() ? c = Act2Code(&mmap->color[effID]) : NULL;
+			RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
+		//} break;
+		//default: return false;
 		}
 		break;
 	case WM_NOTIFY:
@@ -243,7 +240,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (mmap) {
 					if (mmap->color.empty())
 						mmap->color.push_back({ 0 });
-					SetColor(hDlg, IDC_BUTTON_C1, mmap, &mmap->color[effID]);
+					SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[effID]);
 					RebuildEffectList(hDlg, mmap);
 				}
 			} break;

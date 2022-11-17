@@ -1,13 +1,16 @@
 # alienfx-cli 
 
-`alienfx-cli` is a command-line interface to control AliennFX/LightFX devices.
+`alienfx-cli` is a command-line interface to control AlienFX/LightFX devices.  
+It can use both low-level (USB driver) access by default, but you can switch to high-level SDK (Alienware LightFX) issuing `high-level` command.
 
 ## Usage
 
-Run `alienfx-cli.exe` with a command and any options for that command. `alienfx-cli` uses low-level (USB driver) access by default, but you can switch to high-level SDK (Alienware LightFX) issuing `high-level` command. 
+Run `alienfx-cli.exe` without parameters for help.
+
 ```
 alienfx-cli.exe [command=option,option,option] ... [command=option,option,option] [loop]
 ```
+
 The following commands are available:
 - `status` Showing AlienFX device IDs and their lights IDs and status. Output is different for low- and high- level SDKs.
 - `set-all=r,g,b[,br]` Sets all AlienFX lights to the specified color. Ex: `set-all=255,0,0` for red lights, `set-all=255,0,0,128` for dimmed red. NB: For low-level, it requires lights setup using `alienfx-probe`/-gui to work correctly!
@@ -24,16 +27,15 @@ The following commands are available:
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.
 - `probe[=-a|=<lights>]` Probe light devices present into the system and set devices and light names.
 
-Supported Zones: `left, right, top, bottom, front, rear` for high-level, any group ID (see in `status`) for low-level. 
-Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For APIv4 and APIv9 devices, `breath, spectrum, rainbow` also supported. APIv5 not supported.  
+Supported Zones: `left, right, top, bottom, front, rear` for high-level, any zone ID (see list in `status`) for low-level. 
+Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For APIv4 and APIv8 devices, `breath, spectrum, rainbow` also supported. APIv5 not supported.  
 Supported global effect types:  
 For APIv5 - 0 - Color(off), 2 - Breathing, 3 - Single-color Wave, 4 - Dual-color Wave, 8 - Pulse, 9 -Mixed Pulse, 10 - Night Rider, 11 - Laser.  
-For APIv9 - 0 - Black(Off), 1 - Morph, 2- Pulse, 3 - Back morph, 7 - Breath, 8 - Rainbow, 15 - Wave, 16 - Rainbow wave, 17 - Circle wave, 19 - Reset to firmware default.  
-Supported global effect modes (APIv9 only): 1 - Permanent effect, 2 - On key press only.
+For APIv8 - 0 - Black(Off), 1 - Morph, 2- Pulse, 3 - Back morph, 7 - Breath, 8 - Rainbow, 15 - Wave, 16 - Rainbow wave, 17 - Circle wave, 19 - Reset to firmware default.  
+Supported global effect modes (APIv8 only): 1 - Permanent effect, 2 - On key press only.
 
-
-For `probe` command, `a` for show additional device info, `l` for define number of lights, `d` for deviceID and (optionally) lightid. Can be combined or absent.  
+For `probe` command, `l` for define number of lights, `d` for deviceID and (optionally) lightid. Can be combined or absent.  
 By default, first 23 lights (or 136 for keyboard devices) for all devices will be checked.
 
 You can check possible "dev" and "light" ID values using `status` command. For "dev", values out of range is ignored. for "light", you can use any value between 0 and 255.  
-`set-all`, `lightson`, `lightsoff` commands alter all lights for all detected devices.
+`set-all` command alter all lights for all detected devices.

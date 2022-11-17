@@ -137,7 +137,7 @@ gmode\t\t\t\tShow G-mode state\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.4.6\n");
+    printf("AlienFan-CLI v7.6.0\n");
 
     //AlienFan_SDK::Lights* lights = NULL;
 

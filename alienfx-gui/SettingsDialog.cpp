@@ -3,11 +3,6 @@
 
 
 extern void ReloadProfileList();
-//extern bool DoStopService(bool kind);
-//extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-//extern void SetSlider(HWND tt, int value);
-//extern bool EvaluteToAdmin();
-//extern bool WindowsStartSet(bool kind, string name);
 extern bool DetectFans();
 extern void SetHotkeys();
 
@@ -93,10 +88,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (!conf->lightsOn) {
 				if (state) {
 					conf->lightsOn = true;
-					fxhl->SetState();
+					fxhl->SetState(true);
 					conf->lightsOn = false;
 				}
-				fxhl->SetState();
+				fxhl->SetState(true);
 			}
 			break;
 		case IDC_POWER_DIM:
@@ -105,12 +100,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (!state) {
 					DWORD oldDimmed = conf->dimmed;
 					conf->dimmed = false;
-					conf->dimPowerButton = true;
-					fxhl->SetState();
-					conf->dimPowerButton = false;
+					fxhl->SetState(true);
 					conf->dimmed = oldDimmed;
 				}
-				fxhl->SetState();
+				fxhl->SetState(true);
 			}
 			break;
 		case IDC_OFFONBATTERY:
@@ -177,7 +170,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip1, conf->dimmingPower);
 				if (conf->IsDimmed())
-					fxhl->SetState();
+					fxhl->SetState(true);
 			}
 		} break;
 		} break;

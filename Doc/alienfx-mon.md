@@ -37,6 +37,6 @@ Settings block at the right part of application window provide additional functi
 - "Start with Windows" - application will be run at Windows start
 - "Check for updates" - application will check GitHub for newer version at start
 - "Start minimized" - application will hide to system tray after start
-- "Refresh every..." - pause between sensor information updates
+- "Refresh every ... ms" - pause between sensor information updates
 
 

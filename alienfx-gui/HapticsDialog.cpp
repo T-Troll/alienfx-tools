@@ -2,8 +2,8 @@
 #include "EventHandler.h"
 #include "Common.h"
 
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
-extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
@@ -95,8 +95,9 @@ void DrawFreq(HWND hDlg) {
 }
 
 void SetMappingData(HWND hDlg, groupset* map) {
-	RedrawButton(hDlg, IDC_BUTTON_LPC, map && map->haptics.size() ? &freqBlock->colorfrom : NULL);
-	RedrawButton(hDlg, IDC_BUTTON_HPC, map && map->haptics.size() ? &freqBlock->colorto : NULL);
+	DrawFreq(hDlg);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_LPC), map && map->haptics.size() ? &freqBlock->colorfrom : NULL);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_HPC), map && map->haptics.size() ? &freqBlock->colorto : NULL);
 }
 
 void SetFreqGroups(HWND hDlg) {
@@ -224,7 +225,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case LBN_SELCHANGE:
 				if (map) {
 					fGrpItem = ListBox_GetCurSel(grp_list);
-					DrawFreq(hDlg);
+					//DrawFreq(hDlg);
 					SetMappingData(hDlg, map);
 				}
 			break;
@@ -236,7 +237,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				map->haptics.push_back({});
 				fGrpItem = ListBox_AddString(grp_list, ("Group " + to_string(map->haptics.size())).c_str());
 				ListBox_SetCurSel(grp_list, fGrpItem);
-				DrawFreq(hDlg);
+				//DrawFreq(hDlg);
 				SetMappingData(hDlg, map);
 				RedrawGridButtonZone(NULL, true);
 			}
@@ -248,27 +249,27 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if (fGrpItem == map->haptics.size())
 					fGrpItem--;
 				ListBox_SetCurSel(grp_list, fGrpItem);
-				DrawFreq(hDlg);
+				//DrawFreq(hDlg);
 				SetMappingData(hDlg, map);
 				RedrawGridButtonZone(NULL, true);
 			}
 			break;
 		case IDC_BUTTON_LPC:
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_LPC, &freqBlock->colorfrom);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_LPC), &freqBlock->colorfrom);
 				RedrawGridButtonZone(NULL, true);
 			}
 			break;
 		case IDC_BUTTON_HPC:
 			if (map) {
-				SetColor(hDlg, IDC_BUTTON_HPC, &freqBlock->colorto);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_HPC), &freqBlock->colorto);
 				RedrawGridButtonZone(NULL, true);
 			}
 			break;
 		case IDC_BUTTON_REMOVE:
 			if (map) {
 				freqBlock->freqID.clear();
-				DrawFreq(hDlg);
+				//DrawFreq(hDlg);
 				SetMappingData(hDlg, map);
 				RedrawGridButtonZone(NULL, true);
 			}
@@ -276,24 +277,25 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	} break;
 	case WM_APP + 2: {
 		SetFreqGroups(hDlg);
-		DrawFreq(hDlg);
+		//DrawFreq(hDlg);
 		//RedrawGridButtonZone(NULL, true);
 	} break;
 	case WM_DRAWITEM:
-		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
-		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
+		//switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
+		//case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
 		{
-			AlienFX_SDK::Colorcode* c{NULL};
+			AlienFX_SDK::Colorcode* c = NULL;
 			if (map && fGrpItem >= 0)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
 					c = &freqBlock->colorfrom;
 				else
 					c = &freqBlock->colorto;
-			RedrawButton(hDlg, ((DRAWITEMSTRUCT *) lParam)->CtlID, c);
+			RedrawButton(((DRAWITEMSTRUCT *) lParam)->hwndItem, c);
 			return true;
 		}
-		}
-		return false;
+		break;
+		//}
+		//return false;
 	break;
 	case WM_DESTROY:
 		delete hapUIThread;

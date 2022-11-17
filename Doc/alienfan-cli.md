@@ -3,8 +3,8 @@
 It's a simple CLI fan control utility for now, providing the same functionality as AWCC (well... a bit more already).
 ACPI calls can't control fans directly for modern gear (but can set direct fan percent at older one), so all you can do is set fan boost (Increase RPM above BIOS level).
 Run `alienfan-cli [command[=value{,value}] [command...]]`. After start, it detect you gear and show number of fans, temperature sensors and power modes available.
+
 Available commands:
-- `usage`, `help` - Show short help
 - `rpm[=fanID]` - Show fan RPM(s) for all fans or for fan with this ID only.
 - `percent[=fanID]` - Show current fan RPM(s) in percent of maximum (some systems have non-linear scale) for all fans or for fan with this ID only.
 - `temp=[sensorID]` - Show known temperature sensor name and value for all sensors or for selected only.
@@ -18,9 +18,6 @@ Available commands:
 - `setover[=fanID[,boost]]` - Set overboost for selected fan to boost (manual or auto)
 - `setgmode=<mode>` - Switch G-mode (power boost) on and off for supported hardware. 1 is on, 0 is off.
 - `gmode` - Show current G-mode status (on, off, error - if not supported).
-- `resetcolor` - Reset color system
-- `setcolor=<mask>,r,g,b` - Set light(s) defined by mask to color
-- `setcolormode=<brightness>,<flag>` - Set light system brightness and mode. Valid brightness values are 1,3,4,6,7,9,10,12,13,15.
 - `dump` - List all avaliable Alienware methods (it's useful for new devices support)
 
 `setover` command probe and set maximal possible overboost for fans (test more, then 100% of the BIOS boost value) and how much it can be overboosted.  

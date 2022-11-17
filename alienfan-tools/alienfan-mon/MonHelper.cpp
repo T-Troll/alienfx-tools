@@ -73,6 +73,7 @@ void MonHelper::SetCurrentGmode(WORD newMode) {
 		acpi->SetGMode(newMode);
 		if (!newMode)
 			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+		fan_conf->lastProf->gmode = newMode;
 	}
 }
 

@@ -2,8 +2,8 @@
 #include "common.h"
 
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
 
 extern int eItem;
 
@@ -22,8 +22,8 @@ void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
-	RedrawButton(hDlg, IDC_BUTTON_GEFROM, mmap ? &mmap->effect.from : NULL);
-	RedrawButton(hDlg, IDC_BUTTON_GETO, mmap ? &mmap->effect.to : NULL);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GEFROM), mmap ? &mmap->effect.from : NULL);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GETO), mmap ? &mmap->effect.to : NULL);
 }
 
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -84,10 +84,10 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			SetBitMask(mmap->effect.flags, GE_FLAG_CIRCLE, state);
 			break;
 		case IDC_BUTTON_GEFROM:
-			SetColor(hDlg, LOWORD(wParam), &mmap->effect.from);
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_GEFROM), &mmap->effect.from);
 			break;
 		case IDC_BUTTON_GETO:
-			SetColor(hDlg, LOWORD(wParam), &mmap->effect.to);
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_GETO), &mmap->effect.to);
 			break;
 		}
 	} break;
@@ -107,16 +107,17 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		} break;
 	case WM_DRAWITEM:
 		if (mmap) {
-			AlienFX_SDK::Colorcode* c{ NULL };
-			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_GEFROM:
-				c = &mmap->effect.from;
-				break;
-			case IDC_BUTTON_GETO:
-				c = &mmap->effect.to;
-				break;
-			}
-			RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID, c);
+			AlienFX_SDK::Colorcode* c = ((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_BUTTON_GEFROM ? &mmap->effect.from : &mmap->effect.to;
+			//switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+			//case IDC_BUTTON_GEFROM:
+			//	c = &mmap->effect.from;
+			//	break;
+			//case IDC_BUTTON_GETO:
+			//	c = &mmap->effect.to;
+			//	break;
+			//}
+			RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
 		}
 	    break;
 	default: return false;

@@ -235,41 +235,52 @@ Left-click at already assigned cell to select corresponding light (and it's devi
 
 !["Fans and Power" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-fans-6.png?raw=true)
 
-It's all about fan and some power settings control for your gear.
+Fan and BIOS power profile settings can be defined at this tab.
 
 First, take a look at "Power mode" drop-down - it can control system predefined power modes. For manual fan control switch it to "Manual". You can edit mode name by selecting it and type new name.  
-"G-Mode" check box enables and disables G-Mode (power boost) for supported hardware (all G-Series, some Alienware).
-"Temperature sensors" list present all hardware sensors found at your BIOS (some SSD sensors can absent into this list), and their current and maximal temperature values.
-"Fans" list presents all fans found into the system and their current RPMs.  
-"GPU limit" slider define top maximal GPU board power limit shift. 0 (left) is no limit, 4 (right) - maximal limit. This feature only supported at some notebooks, and real limit can vary. You can use this slider to keep more power at CPU or extend battery life.  
-"CPU Boost" drop-downs can be used to select active Windows Power Plan boost mode (separately for AC and battery power). This settings is extremely useful for Ryzen CPU, but even for Intel it provide a little performance boost (+3% at "Aggressive" for my gear).  
+First power mode always named "Manual", and the last power mode is a special one, named "G-mode" (if supported at you system). It's accelerate performance of the system, but set fans to maximal RPMs available.
 
-Additional "Fan curve" window at the right shows currently selected fan temperature/boost curve, as well as current boost.  
+**Important:** Fans can only be controlled if Power Mode set to "Manual", and will be defined by BIOS value at other modes!
+
+"CPU mode" drop downs can be used to select active Windows Power Plan boost mode (separately for AC and battery power). This settings is extremely useful for Ryzen CPU, but even for Intel it provide a little performance boost (+3% at "Aggressive" for my gear).  
+
+"Temperature sensors" list present all hardware sensors found at your BIOS (some SSD sensors can absent into this list), and their current and maximal temperature values.  
+You can change sensor name by double-click on it. In case you remove sensor name (leaving it empty), it will be restored back to default BIOS one.
+
+"Fans" list presents all fans found into the system and their current RPMs.
+
+"X" button above sensors list reset maximal temperature sensors value to current one.  
+"X" button above fans list REMOVE ALL CURVES for currently selected fan.
+
+"Check Max. boost" button will check possibility of currently selected fan to increase RPM even more, then 100% boost.  
+It will switch curve window to other mode - showing currently tested boost level and resulting RPM.  
+This process can take some minutes, window with final results will be shown after the process ends, and they be used lately for this fan.  
+You can press "Stop check" button at any time to stop max. boost check.
+
+"Check Max. RPM" button is highly recommended to use if you don't want or can't check for Max. boost. It check top RPMs for 100% boost, then record result. This fix the situation fan percent is not correct (some BIOSes report it incorrectly).
+
+There are "Fan curve" graph at the right. It shows currently selected fan temperature/boost curve, as well as current boost.  
+You will see current fan boost at the top if it, and the active fan control curve (green line). The rest of the sensors controlling the same fan marked as yellow dotted lines.  
+Big green and yellow dots present temperature and proposed boost set for every sensor controlling this fan, red one show current hardware boost settings an selected sensor temperature.  
+
+```
+How to use it
+```
 
 Fan control is temperature sensor-driven, so first select one of the temperature sensors. You can also change sensor name by double-click on it. In case you remove sensor name (leaving it empty), it will be restored back to default BIOS one.  
 Then, select which fan(s) should react on its readings - you can select from none to all in any combination.  
 So, select check box for fan(s) you need.
 
-After you doing so, currently selected fan settings will be shown at "Fan Curve" window - you will see current fan boost at the top, and the fan control curve (green line).
-The rest of the sensors controlling the same fan marked as yellow dotted lines.  
-Big green and yellow points present proposed boost set for every curve, red one show current hardware boost settings.  
+After you doing so, currently selected fan settings will be shown at "Fan Curve" window (and the active sensor curve will be green).  
 Now play with fan control curve - it defines fan boost by temperature level. X axle is temperature, Y axle is boost level.  
-You can left click (and drag until release mouse button) into the curve window to add point or select close point (if any) and move it.  
+You can left click (and drag until release mouse button) into the curve window to add point or select close point (if any) to move it.  
 You can click right mouse button at the graph point to remove it.  
-Big red dot represent current boost and temperature position, yellow dots present current temperatures for other sensors involved into control of this fan.  
 
 Please keep in mind:
+- Fan control is indirect at modern systems. You **can not** set exact fan RPMs, but can modify it using "boost" curves.
 - You can't remove first or last point of the curve.
 - If you move first or last point, it will keep its temperature after button release - but you can set other boost level for it.
 - Then fan controlled by more, then one sensor, boost will be set to the maximal value across them.  
-
-"X" button above sensors list reset maximal temperature sensors value to current one.  
-"X" button above fans list reset currently selected fan curve to default one (0-100 boost).
-
-"Overboost" button will check possibility of currently selected fan to increase RPM even more, then default BIOS 100% boost.  
-It will switch curve window to other mode - showing currently tested boost level and resulting RPM.  
-This process can take some minutes, window with final results will be shown after the process ends, and they be used lately for this fan.  
-You can press "Stop Overboost" button at any time to stop overboost check.
 
 ## Profiles
 
@@ -334,10 +345,9 @@ Light system control options at the left:
   - "Do not switch for desktop" - Profile will not be changed in case start menu/tray/desktop activated by user (default - off).
 
 Light dimming control at bottom:
-- "Dim lights" - Dim system lights brightness to desired level (default - off).
+- "Dim lights" - Dim system lights brightness to desired level (default - off). Slider at the right select desired dimming level (left - lower dimming, right - higher dimming).
   - "Dim Power/Indicator lights" - Power Button and Indicator lights will be dimmed as well - and have full brightness otherwise (default - off).
   - "Dim lights on battery" - Dim lights if system running at battery power, decreasing energy usage. Returns to full brightness if AC connected (default - on).
-- "Dimming power" - Brightness decrease level for dimming. Values can be from 0 to 255, default is 92.
 
 Interface settings:
 - "Light names on grid" - Shows/hide light name printing at grid buttons.

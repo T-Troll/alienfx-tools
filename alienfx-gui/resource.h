@@ -152,6 +152,8 @@
 #define IDC_BUT_OVER                    1130
 #define IDC_VAL_NET                     1131
 #define IDC_OFFONBATTERY                1131
+#define IDC_BUT_OVER2                   1131
+#define IDC_BUT_MAXRPM                  1131
 #define IDC_VAL_BAT                     1132
 #define IDC_FAN_RESET                   1132
 #define IDC_VAL_TEMP                    1133

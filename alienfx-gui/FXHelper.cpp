@@ -394,8 +394,8 @@ inline void FXHelper::RefreshMon()
 		SetCounterColor(&eData, true);
 }
 
-void FXHelper::SetState() {
-	if (conf->SetStates()) {
+void FXHelper::SetState(bool force) {
+	if (conf->SetStates() || force) {
 		HANDLE updates = updateThread;
 		Stop();
 		for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++) {

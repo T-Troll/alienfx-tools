@@ -217,23 +217,15 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return mDlg;
 }
 
-void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode* act) {
+void RedrawButton(HWND ctrl, AlienFX_SDK::Colorcode* act) {
 	RECT rect;
-	HBRUSH Brush = NULL;
-	HWND tl = GetDlgItem(hDlg, id);
-	GetClientRect(tl, &rect);
-	HDC cnt = GetWindowDC(tl);
-	// BGR!
-	if (act) {
-		Brush = CreateSolidBrush(RGB(act->r, act->g, act->b));
-	}
-	else {
-		Brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-	}
+	HBRUSH Brush = act ? CreateSolidBrush(RGB(act->r, act->g, act->b)) : CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+	GetClientRect(ctrl, &rect);
+	HDC cnt = GetWindowDC(ctrl);
 	FillRect(cnt, &rect, Brush);
 	DrawEdge(cnt, &rect, EDGE_RAISED, BF_RECT);
 	DeleteObject(Brush);
-	ReleaseDC(tl, cnt);
+	ReleaseDC(ctrl, cnt);
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -781,8 +773,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case 6: // G-key for Dell G-series power switch
 			if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
-				conf->fan_conf->lastProf->gmode = !conf->fan_conf->lastProf->gmode;
-				mon->SetCurrentGmode(conf->fan_conf->lastProf->gmode);
+				mon->SetCurrentGmode(!conf->fan_conf->lastProf->gmode);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);
 			}
@@ -842,8 +833,8 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map) {
-	CHOOSECOLOR cc{ sizeof(cc), hDlg, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
+bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::afx_act* map) {
+	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
 	bool ret;
 
@@ -862,13 +853,13 @@ bool SetColor(HWND hDlg, int id, groupset* mmap, AlienFX_SDK::afx_act* map) {
 	CloseHandle(stopColorRefresh);
 
 	fxhl->RefreshOne(mmap);
-	RedrawButton(hDlg, id, Act2Code(map));
+	RedrawButton(ctrl, Act2Code(map));
 
 	return ret;
 }
 
-bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
-	CHOOSECOLOR cc{ sizeof(cc), hDlg };
+bool SetColor(HWND ctrl, AlienFX_SDK::Colorcode *clr) {
+	CHOOSECOLOR cc{ sizeof(cc), ctrl };
 	bool ret;
 
 	cc.lpCustColors = (LPDWORD) conf->customColors;
@@ -880,7 +871,7 @@ bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode *clr) {
 		clr->g = cc.rgbResult >> 8 & 0xff;
 		clr->b = cc.rgbResult >> 16 & 0xff;
 	}
-	RedrawButton(hDlg, id, clr);
+	RedrawButton(ctrl, clr);
 	return ret;
 }
 

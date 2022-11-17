@@ -5,8 +5,8 @@
 
 extern void ReloadProfileList();
 extern void ReloadModeList(HWND dlg=NULL, int mode = conf->GetEffect());
-extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveUnused(vector<groupset>* lightsets);
@@ -66,23 +66,16 @@ void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
 				if (b1 != prof->effects.end()) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b1->globalDelay);
 					SetSlider(sTip1, b1->globalDelay);
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, &b1->effColor1);
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, &b1->effColor2);
 				}
-				else {
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR1, NULL);
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR2, NULL);
-				}
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), b1 != prof->effects.end() ? &b1->effColor1 : NULL);
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), b1 != prof->effects.end() ? &b1->effColor2 : NULL);
+
 				if (b2 != prof->effects.end()) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b2->globalDelay);
 					SetSlider(sTip2, b2->globalDelay);
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR3, &b2->effColor1);
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR4, &b2->effColor2);
 				}
-				else {
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR3, NULL);
-					RedrawButton(hDlg, IDC_BUTTON_EFFCLR4, NULL);
-				}
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), b2 != prof->effects.end() ? &b2->effColor1 : NULL);
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), b2 != prof->effects.end() ? &b2->effColor2 : NULL);
 			}
 		}
 }
@@ -133,7 +126,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					b = prof->effects.end() - 1;
 				}
 				if (pCid == conf->activeProfile->id) {
-					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+					//fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 					fxhl->Refresh();
 				}
 				if (!newEffect) {
@@ -143,39 +136,42 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			} break;
 			}
 		} break;
-		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR3:
+		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR4:
 		{
-			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR1 ? b1 : b2;
+			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR2 ? b1 : b2;
 			if (b != prof->effects.end()) {
-				SetColor(hDlg, LOWORD(wParam), &b->effColor1);
+				SetColor(GetDlgItem(hDlg, LOWORD(wParam)), LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR3 ?
+					&b->effColor1 : &b->effColor2);
 				if (pCid == conf->activeProfile->id)
-					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+					fxhl->Refresh();// UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 			}
 		} break;
-		case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR4:
+		/*case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR4:
 		{
 			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR2 ? b1 : b2;
 			if (b != prof->effects.end()) {
-				SetColor(hDlg, LOWORD(wParam), &b->effColor2);
+				SetColor(GetDlgItem(hDlg, LOWORD(wParam)), &b->effColor2);
 				if (pCid == conf->activeProfile->id)
 					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 			}
-		} break;
+		} break;*/
 		} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
-		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR2:
-			if (b1 != prof->effects.end()) {
-				RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID,
-					((DRAWITEMSTRUCT*)lParam)->CtlID  == IDC_BUTTON_EFFCLR1 ? &b1->effColor1 : &b1->effColor2);
+		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR4:
+			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR2 ? b1 : b2;
+			if (b != prof->effects.end()) {
+				RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem,
+					((DRAWITEMSTRUCT*)lParam)->CtlID  == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR3 ? 
+						&b->effColor1 : &b->effColor2);
 			}
 			break;
-		case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR4:
-			if (b2 != prof->effects.end()) {
-				RedrawButton(hDlg, ((DRAWITEMSTRUCT*)lParam)->CtlID,
-					((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_BUTTON_EFFCLR3 ? &b2->effColor1 : &b2->effColor2);
-			}
-			break;
+		//case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR4:
+		//	if (b2 != prof->effects.end()) {
+		//		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem,
+		//			((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_BUTTON_EFFCLR3 ? &b2->effColor1 : &b2->effColor2);
+		//	}
+		//	break;
 		}
 		break;
 	case WM_HSCROLL:

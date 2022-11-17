@@ -86,11 +86,7 @@ void DrawFan()
 
         if (fanMode) {
             // curve...
-            //fan_block* sen = fan_conf->FindSensor(fan_conf->lastSelectedSensor);
             fan_block* fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
-            //WORD sid = SenIndexToID(fan_conf->lastSelectedSensor);
-            //sen_block* sen = fan_conf->FindSensor(fan, MAKEWORD(acpi->sensors[fan_conf->lastSelectedSensor].type, acpi->sensors[fan_conf->lastSelectedSensor].senIndex));
-            int fanBoost = mon->boostRaw[fan_conf->lastSelectedFan] * 100 / acpi->boosts[fan_conf->lastSelectedFan];//acpi->GetFanBoost(fan_conf->lastSelectedFan);
             if (fan) {
                 HPEN linePen;
                 for (auto senI = fan->sensors.begin(); senI != fan->sensors.end(); senI++) {
@@ -130,6 +126,7 @@ void DrawFan()
             SetDCBrushColor(hdc, RGB(255, 0, 0));
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
+            int fanBoost = (int)round(mon->boostRaw[fan_conf->lastSelectedFan] * 100.0 / acpi->boosts[fan_conf->lastSelectedFan]);
             mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
             Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
             string rpmText = "Fan curve (scale: " + to_string(acpi->boosts[fan_conf->lastSelectedFan])
@@ -150,7 +147,7 @@ void DrawFan()
                 SelectObject(hdc, GetStockObject(DC_PEN));
                 mark = Boost2Screen(lastBoostPoint);
                 Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
-                string rpmText = to_string(lastBoostPoint->maxBoost) + " @ " + to_string(lastBoostPoint->maxRPM)
+                string rpmText = "Last " + to_string(lastBoostPoint->maxBoost) + " @ " + to_string(lastBoostPoint->maxRPM)
                     + " RPM (Max. " + to_string(bestBoostPoint.maxBoost) + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM)";
                 SetWindowText(tipWindow, rpmText.c_str());
             }
@@ -198,15 +195,32 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost(byte fanID) {
-    fan_conf->boosts[fanID].maxBoost = max(bestBoostPoint.maxBoost, 100);
-    fan_conf->boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, fan_conf->boosts[fanID].maxRPM);
+    fan_overboost* fo = &fan_conf->boosts[fanID];
+    fo->maxBoost = max(bestBoostPoint.maxBoost, 100);
+    fo->maxRPM = max(bestBoostPoint.maxRPM, fo->maxRPM);
 
     acpi->boosts[fanID] = max(bestBoostPoint.maxBoost, 100);
-    acpi->maxrpm[fanID] = max(fan_conf->boosts[fanID].maxRPM, acpi->maxrpm[fanID]);
+    acpi->maxrpm[fanID] = max(fo->maxRPM, acpi->maxrpm[fanID]);
+}
+
+DWORD WINAPI CheckFanRPM(LPVOID lpParam) {
+    int fanID = (int)lpParam;
+    mon->Stop();
+    fanMode = false;
+    acpi->Unlock();
+    boostCheck.clear();
+    bestBoostPoint = { 100, 3000 };
+    SetFanSteady(fanID, 100);
+    UpdateBoost(fanID);
+    ShowNotification(niData, "Max. RPM calculation done", "Fan #" + to_string(fanID + 1) + ": " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
+    acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+    fanMode = true;
+    mon->Start();
+    return 0;
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = *(int*)lpParam, rpm, crpm;
+    int num = (int)lpParam, rpm, crpm;
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
@@ -252,11 +266,11 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                     goto finish;
                 boost = bestBoostPoint.maxBoost;
             }
+        finish:
             acpi->SetFanBoost(num, oldBoost, true);
             UpdateBoost(i);
             DrawFan();
-        finish:
-            ShowNotification(niData, "Overboost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
+            ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
                 + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
         }
     acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
@@ -394,6 +408,11 @@ void ReloadPowerList(HWND list) {
     for (auto i = fan_conf->powers.begin(); i != fan_conf->powers.end(); i++) {
         int pos = ComboBox_AddString(list, (LPARAM)(i->second.c_str()));
         if (pos == fan_conf->lastProf->powerStage)
+            ComboBox_SetCurSel(list, pos);
+    }
+    if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+        int pos = ComboBox_AddString(list, (LPARAM)("G-Mode"));
+        if (fan_conf->lastProf->gmode)
             ComboBox_SetCurSel(list, pos);
     }
 }

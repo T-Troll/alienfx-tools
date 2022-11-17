@@ -50,8 +50,6 @@ LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
-//extern void ResetDPIScale();
-
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
@@ -60,7 +58,8 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern bool fanMode;
 extern bool fanUpdateBlock;
 extern HANDLE ocStopEvent;
-DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
+extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
+extern DWORD WINAPI CheckFanRPM(LPVOID lpParam);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -159,10 +158,14 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
     return mDlg;
 }
 
-void StartOverboost(HWND hDlg, int fan) {
+void StartOverboost(HWND hDlg, int fan, bool type) {
     EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
-    CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)&fan, 0, NULL);
-    SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop Overboost");
+    if (type) {
+        CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan, 0, NULL);
+        SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
+    }
+    else
+        CreateThread(NULL, 0, CheckFanRPM, (LPVOID)fan, 0, NULL);
 }
 
 void RestoreApp() {
@@ -175,7 +178,7 @@ void RestoreApp() {
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
-        gmode_chk = GetDlgItem(hDlg, IDC_CHECK_GMODE);
+        tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
@@ -215,8 +218,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
-        EnableWindow(gmode_chk, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
-        Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
+        //EnableWindow(gmode_chk, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
+        //Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -227,7 +230,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Fan settings",
             MB_YESNO | MB_ICONQUESTION) == IDYES) {
             // ask for boost check
-            StartOverboost(hDlg, -1);
+            StartOverboost(hDlg, -1, true);
         }
         fan_conf->obCheck = 1;
 
@@ -252,34 +255,33 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case IDOK: {
-            HWND senList = GetDlgItem(hDlg, IDC_TEMP_LIST), editC = ListView_GetEditControl(senList);
-            if (editC) {
-                RECT rect;
-                ListView_GetSubItemRect(senList, ListView_GetSelectionMark(senList), 1, LVIR_LABEL, &rect);
-                SetWindowPos(editC, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
-            }
+            RECT rect;
+            ListView_GetSubItemRect(tempList, ListView_GetSelectionMark(tempList), 1, LVIR_LABEL, &rect);
+            SetWindowPos(ListView_GetEditControl(tempList), HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
         } break;
         case IDC_COMBO_POWER:
         {
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                fan_conf->lastProf->powerStage = (WORD)ComboBox_GetCurSel(power_list);
-                //acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-                //fan_conf->Save();
+                int newMode = ComboBox_GetCurSel(power_list);
+                if (newMode > acpi->powers.size())
+                    // G-Mode on
+                    mon->SetCurrentGmode(true);
+                else {
+                    mon->SetCurrentGmode(false);
+                    fan_conf->lastProf->powerStage = (WORD)ComboBox_GetCurSel(power_list);
+                }
             } break;
             case CBN_EDITCHANGE:
-            {
-                char buffer[MAX_PATH];
-                GetWindowText(power_list, buffer, MAX_PATH);
-                if (fan_conf->lastProf->powerStage > 0) {
-                    fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage])->second = buffer;
-                    //fan_conf->Save();
+                if (fan_conf->lastProf->powerStage > 0 && fan_conf->lastProf->powerStage < acpi->powers.size()) {
+                    char buffer[MAX_PATH];
+                    GetWindowText(power_list, buffer, MAX_PATH);
+                    fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
                     ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
                     ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
                 }
                 break;
-            }
             }
         } break;
         case IDC_BUT_MINIMIZE:
@@ -330,7 +332,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 MB_YESNO | MB_ICONWARNING) == IDYES)) {
                 fan->sensors.clear();
                 ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
-                //SendMessage(fanWindow, WM_PAINT, 0, 0);
             }
         } break;
         case IDC_MAX_RESET:
@@ -339,16 +340,15 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_OVER:
             if (fanMode) {
-                StartOverboost(hDlg, fan_conf->lastSelectedFan);
+                StartOverboost(hDlg, fan_conf->lastSelectedFan, true);
             }
             else {
                 SetEvent(ocStopEvent);
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Overboost");
             }
             break;
-        case IDC_CHECK_GMODE:
-            fan_conf->lastProf->gmode = (IsDlgButtonChecked(hDlg, wmId) == BST_CHECKED);
-            mon->SetCurrentGmode(fan_conf->lastProf->gmode);
+        case IDC_BUT_MAXRPM:
+            if (fanMode)
+                StartOverboost(hDlg, fan_conf->lastSelectedFan, false);
             break;
         }
     }
@@ -428,9 +428,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
             if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
-                fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
-                mon->SetCurrentGmode(fan_conf->lastProf->gmode);
-                Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
+                mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
             }
             break;
         }
@@ -445,16 +443,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             RestoreApp();
             break;
         case ID_MENU_GMODE:
-            fan_conf->lastProf->gmode = !fan_conf->lastProf->gmode;
-            mon->SetCurrentGmode(fan_conf->lastProf->gmode);
-            Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
+            mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
             break;
         case ID_TRAYMENU_POWER_SELECTED:
-            if (idx != fan_conf->lastProf->powerStage) {
-                fan_conf->lastProf->powerStage = idx;
-                //acpi->SetPower(acpi->powers[idx]);
-                ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
-            }
+            fan_conf->lastProf->powerStage = idx;
+            ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             break;
         }
     } break;
@@ -470,6 +463,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
                     // Select other fan....
                     fan_conf->lastSelectedFan = lPoint->iItem;
+                    SendMessage(fanWindow, WM_PAINT, 0, 0);
                     break;
                 }
                 if (lPoint->uNewState & 0x3000) {
@@ -480,7 +474,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                             // Remove sensor
                             for (auto cSen = fan->sensors.begin(); cSen != fan->sensors.end(); cSen++)
                                 if (cSen->first == fan_conf->lastSelectedSensor) {
-                                    //fan->sensors.erase(cSen);
                                     cSen->second.active = false;
                                     break;
                                 }
@@ -499,12 +492,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     }
                     ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
                 }
-                SendMessage(fanWindow, WM_PAINT, 0, 0);
             } break;
             }
             break;
         case IDC_TEMP_LIST: {
-            HWND tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
             switch (((NMHDR*)lParam)->code) {
             case LVN_BEGINLABELEDIT: {
                 fanThread->Stop();
@@ -537,15 +528,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case LVN_ITEMCHANGED:
             {
                 NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-                if (lPoint->uNewState & LVIS_FOCUSED) {
-                    // Select other item...
-                    if (lPoint->iItem != -1) {
-                        // Select other fan....
+                if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
+                        // Select other sensor....
                         fan_conf->lastSelectedSensor = (WORD)lPoint->lParam;
                         // Redraw fans
                         ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
                         SendMessage(fanWindow, WM_PAINT, 0, 0);
-                    }
                 }
             } break;
             }
@@ -632,7 +620,7 @@ void UpdateFanUI(LPVOID lpParam) {
     if (!fanMode) wasBoostMode = true;
     if (fanMode && wasBoostMode) {
         EnableWindow(power_list, true);
-        SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Overboost");
+        SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Check\n Max. boost");
         wasBoostMode = false;
     }
     if (mon) {

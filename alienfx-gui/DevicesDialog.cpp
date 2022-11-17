@@ -2,8 +2,8 @@
 #include "alienfx-controls.h"
 #include <common.h>
 
-extern bool SetColor(HWND hDlg, int id, AlienFX_SDK::Colorcode*);
-extern void RedrawButton(HWND hDlg, unsigned id, AlienFX_SDK::Colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
@@ -499,7 +499,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
-			SetColor(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_TESTCOLOR), &conf->testColor);
 			fxhl->TestLight(dev, -1);
 			fxhl->TestLight(dev, eLid);
 			RedrawGridButtonZone();
@@ -700,12 +700,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 	} break;
 	case WM_DRAWITEM:
-		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-		case IDC_BUTTON_TESTCOLOR:
-		{
-			RedrawButton(hDlg, IDC_BUTTON_TESTCOLOR, &conf->testColor);
-		} break;
-		}
+		//switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
+		//case IDC_BUTTON_TESTCOLOR:
+		//{
+			RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, &conf->testColor);
+		//} break;
+		//}
 		break;
 	case WM_DESTROY:
 	{

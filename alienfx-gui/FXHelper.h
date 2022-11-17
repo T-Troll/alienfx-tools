@@ -63,6 +63,6 @@ public:
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
 	void RefreshGrid(int tact);
-	void SetState();
+	void SetState(bool force = false);
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);
 };

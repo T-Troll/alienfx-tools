@@ -94,7 +94,7 @@ void ConfigFan::Load() {
 		}
 		sid = 0xff;
 		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2 || sscanf_s(name, "SensorName-%hd", &fid) == 1) {
-			sensors.emplace(MAKEWORD(fid, sid), (char*)inarray);
+			sensors[MAKEWORD(fid, sid)] = (char*)inarray;
 			continue;
 		}
 		// old format, deprecated...
