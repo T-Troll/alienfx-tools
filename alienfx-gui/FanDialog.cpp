@@ -115,23 +115,22 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_COMBO_POWER:
         {
-            int newMode = ComboBox_GetCurSel(power_list);
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
+                int newMode = ComboBox_GetCurSel(power_list);
                 // G-Mode check
                 mon->SetCurrentGmode(!(newMode < acpi->powers.size()));
                 if (newMode < acpi->powers.size())
                     fan_conf->lastProf->powerStage = newMode;
             } break;
             case CBN_EDITCHANGE:
-                int newMode = ComboBox_GetCurSel(power_list);
-                if (newMode > 0 && newMode < acpi->powers.size()) {
+                if (!fan_conf->lastProf->gmode && fan_conf->lastProf->powerStage > 0) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
-                    fan_conf->powers[newMode] = buffer;
-                    ComboBox_DeleteString(power_list, newMode);
-                    ComboBox_InsertString(power_list, newMode, buffer);
+                    fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
+                    ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
+                    ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
                 }
                 break;
             }
