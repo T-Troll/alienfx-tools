@@ -48,7 +48,8 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
-	fxhl->RefreshGrid(((GridHelper*)param)->tact++);
+	if (conf->lightsNoDelay)
+		fxhl->RefreshGrid(((GridHelper*)param)->tact++);
 }
 
 void GridHelper::StartCommonRun(groupset* ce, zonemap* cz) {

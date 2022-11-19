@@ -42,9 +42,6 @@
     <ClInclude Include="DXGIManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DFT_gosu.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="WSAudioIn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -93,9 +90,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HapticsDialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DFT_gosu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WSAudioIn.cpp">

@@ -1,7 +1,6 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 
-
 extern void ReloadProfileList();
 extern bool DetectFans();
 extern void SetHotkeys();

@@ -194,9 +194,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 }
 
 void AmbUpdate(LPVOID param) {
-    if (eve->capt && eve->capt->needUpdate && IsWindowVisible((HWND)param)) {
+    if (eve->capt && eve->capt->needUIUpdate && IsWindowVisible((HWND)param)) {
         //DebugPrint("Ambient UI update...\n");
-        eve->capt->needUpdate = false;
+        eve->capt->needUIUpdate = false;
         RedrawButtonZone((HWND)param);
     }
 }

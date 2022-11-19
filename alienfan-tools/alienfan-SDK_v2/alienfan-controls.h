@@ -1,13 +1,14 @@
 #pragma once
 
-static const BSTR commandList[4] = {
+
+namespace AlienFan_SDK {
+	static const BSTR commandList[4] = {
 	(BSTR)L"Thermal_Information", // 0x14
 	(BSTR)L"Thermal_Control", // 0x15
 	(BSTR)L"GameShiftStatus", // 0x25
 	(BSTR)L"SystemInformation" // 0x1A
-};
+	};
 
-namespace AlienFan_SDK {
 	static const ALIENFAN_CONTROL dev_controls
 		{
 			0x0,   3, // PowerID
@@ -24,7 +25,7 @@ namespace AlienFan_SDK {
 			0x3,   2  // Get system ID
 		};
 
-	static const string temp_names[2]{
+	static const char* temp_names[2]{
 			"CPU Internal Thermistor",
 			"GPU Internal Thermistor"//,
 			//"Motherboard Thermistor",

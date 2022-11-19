@@ -1,10 +1,15 @@
 #pragma once
 #ifndef WSAUDIO_H
 #define WSAUDIO_H
-#include <windows.h>
+//#include <windows.h>
 #include <Audioclient.h>
 #include <Mmdeviceapi.h>
-#include "DFT_gosu.h"
+#include "alienfx-gui.h"
+#include "kiss_fftr.h"
+
+#define NUMBARS 20
+#define NUMPTS 2048
+
 
 class WSAudioIn
 {
@@ -15,21 +20,23 @@ public:
 	void startSampling();
 	void stopSampling();
 	void RestartDevice(int type);
-	int  init(int type);
+	void init(int type);
 	void release();
 
-	// variables...
-	DFT_gosu* dftGG = NULL;
-	double* waveD;
-	int *freqs = NULL;
-
-	//HWND dlg = NULL;
+	double waveD[NUMPTS];
+	int freqs[NUMBARS];
 
 	IAudioCaptureClient* pCaptureClient = NULL;
 
 	WAVEFORMATEX* pwfx;
 
-	HANDLE stopEvent, updateEvent, hEvent;
+	HANDLE stopEvent, hEvent, cEvent;
+
+	bool needUpdate = false, clearBuffer = false;
+
+	// FFT variables
+	//int sampleRate = 44100;
+	double blackman[NUMPTS];// , * hanning;
 
 private:
 	IMMDevice* inpDev;
@@ -38,11 +45,11 @@ private:
 	IAudioClockAdjustment* pRateClient = NULL;
 	ISimpleAudioVolume* pAudioVolume = NULL;
 
-	HANDLE dwHandle = 0;
-
-	int rate;
+	HANDLE dwHandle = NULL, fftHandle;
 
 	IMMDevice* GetDefaultMultimediaDevice(EDataFlow DevType);
+
+	ThreadHelper* lightUpdate;
 };
 
 #endif

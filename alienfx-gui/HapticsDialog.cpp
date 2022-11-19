@@ -186,7 +186,7 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		DrawFreq(GetParent(hDlg));
 		break;
 	}
-	return DefWindowProc(hDlg, message, wParam, lParam);
+	return DefWindowProc(hDlg, message, wParam, lParam);;
 }
 
 BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -207,7 +207,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		SetFreqGroups(hDlg);
 
 		// Start UI update thread...
-		hapUIThread = new ThreadHelper(UpdateHapticsUI, hDlg, 40);
+		hapUIThread = new ThreadHelper(UpdateHapticsUI, hDlg, 50);
 	}
 	break;
 	case WM_COMMAND:
@@ -281,8 +281,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		//RedrawGridButtonZone(NULL, true);
 	} break;
 	case WM_DRAWITEM:
-		//switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
-		//case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
+		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
+		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
 		{
 			AlienFX_SDK::Colorcode* c = NULL;
 			if (map && fGrpItem >= 0)
@@ -294,8 +294,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			return true;
 		}
 		break;
-		//}
-		//return false;
+		}
+		return false;
 	break;
 	case WM_DESTROY:
 		delete hapUIThread;

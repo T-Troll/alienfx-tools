@@ -113,6 +113,7 @@ namespace AlienFX_SDK {
 	private:
 
 		HANDLE devHandle = NULL;
+		OVERLAPPED callBack;
 
 //#ifndef NOACPILIGHTS
 		void* device = NULL;

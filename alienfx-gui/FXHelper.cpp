@@ -320,10 +320,10 @@ void FXHelper::SetGridEffect(groupset* grp)
 }
 
 void FXHelper::RefreshGrid(int tact) {
-	if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
-		DebugPrint("Grid update skipped!\n");
-		return;
-	}
+	//if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
+	//	DebugPrint("Grid update skipped!\n");
+	//	return;
+	//}
 	bool wasChanged = false;
 	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
 		if (!ce->gridop.passive) {
@@ -445,6 +445,7 @@ int FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 
 void FXHelper::Start() {
 	if (!updateThread) {
+		conf->lightsNoDelay = true;
 		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
 		DebugPrint("Light updates started.\n");
 	}
@@ -455,6 +456,7 @@ void FXHelper::Stop() {
 		if (lightQuery.size())
 			QueryUpdate();
 		SetEvent(stopQuery);
+		conf->lightsNoDelay = false;
 		WaitForSingleObject(updateThread, 60000);
 		CloseHandle(updateThread);
 		updateThread = NULL;
@@ -499,10 +501,10 @@ void FXHelper::RefreshOne(groupset* map, bool update, int force) {
 
 void FXHelper::RefreshAmbient(UCHAR *img) {
 
-	if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
-		DebugPrint("Ambient update skipped!\n");
-		return;
-	}
+	//if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
+	//	DebugPrint("Ambient update skipped!\n");
+	//	return;
+	//}
 
 	UINT shift = 255 - conf->amb_shift, gridsize = LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid);
 	vector<AlienFX_SDK::afx_act> actions;
@@ -537,11 +539,6 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 }
 
 void FXHelper::RefreshHaptics(int *freq) {
-
-	if (!updateThread || conf->monDelay > DEFAULT_MON_DELAY) {
-		DebugPrint("Haptics update skipped!\n");
-		return;
-	}
 
 	vector<AlienFX_SDK::afx_act> actions;
 	bool wasChanged = false;
@@ -639,15 +636,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 
 				if (src->lightQuery.size() > conf->afx_dev.activeLights * 5) {
-					conf->monDelay += 50;
-					DebugPrint(("Query so big (" +
-								to_string((int) src->lightQuery.size()) +
-								"), delay increased to " +
-								to_string(conf->monDelay) +
-								" ms!\n").c_str());
+					conf->lightsNoDelay = false;
+					DebugPrint("Query so big, delayed!\n");
 				}
-				//else
-				//	DebugPrint(("Query size " + to_string(src->lightQuery.size()) + "\n").c_str());
+
 			} else {
 				// set light
 				if (current.dev->dev) {
@@ -726,7 +718,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			}
 		}
-		conf->monDelay = DEFAULT_MON_DELAY;
+		conf->lightsNoDelay = true;
 		//DebugPrint("Query empty, delay reset\n");
 	}
 	return 0;

@@ -1,46 +1,45 @@
 #include "WSAudioIn.h"
-#include "ConfigHandler.h"
-#include "FXHelper.h"
+
+#ifndef PI
+#define PI 3.141592653589793238462643383279502884197169399375
+#endif
 
 DWORD WINAPI WSwaveInProc(LPVOID);
-DWORD WINAPI resample(LPVOID);
+DWORD WINAPI FFTProc(LPVOID);
+void resample(LPVOID);
 
-const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
-const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
-const IID IID_IAudioClient = __uuidof(IAudioClient);
-const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
-const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
-const IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
-
-extern ConfigHandler* conf;
-extern FXHelper* fxhl;
+const static CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
+const static IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
+const static IID IID_IAudioClient = __uuidof(IAudioClient);
+const static IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
+const static IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
+const static IID IID_IAudioClockAdjustment = __uuidof(IAudioClockAdjustment);
 
 WSAudioIn::WSAudioIn()
 {
-	waveD = new double[NUMPTS];
-
-	stopEvent = CreateEvent(NULL, true, false, NULL);
-	updateEvent = CreateEvent(NULL, false, false, NULL);
-	hEvent = CreateEvent(NULL, false, false, NULL);
-
-	dftGG = new DFT_gosu();
-
 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-	if (rate = init(conf->hap_inpType)) {
-		dftGG->setSampleRate(rate);
-		startSampling();
+	// Preparing data...
+	for (int i = 0; i < NUMPTS; i++) {
+		double p = (double)i / double(NUMPTS - 1);
+		blackman[i] = (0.42 - 0.5 * cos(2 * PI * p) + 0.8 * cos(4 * PI * p));
+		//double inv = 1 / (double)NUMPTS;
+		//hanning[i] = sqrt(cos((PI * inv) * (i - (double)(NUMPTS - 1) / 2)));
 	}
+
+	stopEvent = CreateEvent(NULL, true, false, NULL);
+	hEvent = CreateEvent(NULL, false, false, NULL);
+	cEvent = CreateEvent(NULL, false, false, NULL);
+
+	init(conf->hap_inpType);
 }
 
 WSAudioIn::~WSAudioIn()
 {
 	release();
 	CloseHandle(stopEvent);
-	CloseHandle(updateEvent);
 	CloseHandle(hEvent);
-	delete dftGG;
-	delete[] waveD;
+	CloseHandle(cEvent);
 	CoUninitialize();
 }
 
@@ -48,7 +47,8 @@ void WSAudioIn::startSampling()
 {
 	// creating listener thread...
 	if (pAudioClient && !dwHandle) {
-		//astopEvent = CreateEvent(NULL, true, false, NULL);
+		lightUpdate = new ThreadHelper(resample, this, 100);
+		fftHandle = CreateThread(NULL, 0, FFTProc, this, 0, NULL);
 		dwHandle = CreateThread( NULL, 0, WSwaveInProc, this, 0, NULL);
 		pAudioClient->Start();
 	}
@@ -57,11 +57,14 @@ void WSAudioIn::startSampling()
 void WSAudioIn::stopSampling()
 {
 	if (dwHandle) {
+		delete lightUpdate;
 		SetEvent(stopEvent);
 		WaitForSingleObject(dwHandle, 6000);
+		WaitForSingleObject(fftHandle, 6000);
 		pAudioClient->Stop();
 		ResetEvent(stopEvent);
 		CloseHandle(dwHandle);
+		CloseHandle(fftHandle);
 		dwHandle = 0;
 	}
 }
@@ -69,50 +72,33 @@ void WSAudioIn::stopSampling()
 void WSAudioIn::RestartDevice(int type)
 {
 	release();
-
-	if (rate = init(type)) {
-		dftGG->setSampleRate(rate);
-		startSampling();
-	}
+	init(type);
 }
 
-int WSAudioIn::init(int type)
+void WSAudioIn::init(int type)
 {
+	static const REFERENCE_TIME hnsRequestedDuration = 500000; // 50 ms buffer
 	DWORD ret = 0;
 	// get device
-	if (!type)
-		inpDev = GetDefaultMultimediaDevice(eRender);
-	else
-		inpDev = GetDefaultMultimediaDevice(eCapture);
-	if (!inpDev) return 0;
+	if ((inpDev = GetDefaultMultimediaDevice(type ? eCapture : eRender)) &&
+		inpDev->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient) == S_OK) {
 
-	//open it for render...
-	inpDev->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
+		pAudioClient->GetMixFormat(&pwfx);
 
-	if (!pAudioClient) return 0;
-
-	pAudioClient->GetMixFormat(&pwfx);
-
-	REFERENCE_TIME hnsRequestedDuration = 10000000 / 5;
-	if (!type)
-		ret = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+		if (pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+			type ? AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM :
 			AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
-			hnsRequestedDuration, 0, pwfx, NULL);
-	else
-		ret = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-			AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
-			hnsRequestedDuration, 0, pwfx, NULL);
-	if (ret) {
-		return 0;
+			hnsRequestedDuration, 0, pwfx, NULL) == S_OK) {
+
+			pAudioClient->GetMixFormat(&pwfx);
+
+			pAudioClient->SetEventHandle(hEvent);
+			pAudioClient->GetService(IID_IAudioCaptureClient, (void**)&pCaptureClient);
+
+			//sampleRate = pwfx->nSamplesPerSec;
+			startSampling();
+		}
 	}
-
-	pAudioClient->GetMixFormat(&pwfx);
-
-	pAudioClient->SetEventHandle(hEvent);
-	pAudioClient->GetService(
-		IID_IAudioCaptureClient,
-		(void**)&pCaptureClient);
-	return pwfx->nSamplesPerSec;
 }
 
 void WSAudioIn::release()
@@ -129,10 +115,10 @@ void WSAudioIn::release()
 
 IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
 {
-	IMMDeviceEnumerator* pEnumerator = NULL;
+	IMMDeviceEnumerator* pEnumerator;
 	IMMDevice* pDevice = NULL;
 
-	UINT ret = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator);
+	CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator);
 	if (pEnumerator) {
 		pEnumerator->GetDefaultAudioEndpoint(DevType, eConsole, &pDevice);
 		pEnumerator->Release();
@@ -145,104 +131,144 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 {
 	WSAudioIn *src = (WSAudioIn *) lpParam;
 
-	UINT32 packetLength = 0;
-	UINT32 numFramesAvailable = 0;
-	int arrayPos = 0, shift = 0;
+	UINT32 packetLength;
+	UINT32 numFramesAvailable;
+	int arrayPos = 0, shift;
 
 	UINT bytesPerChannel = src->pwfx->wBitsPerSample >> 3;
-	UINT nChannel = src->pwfx->nChannels;
-	UINT blockAlign = src->pwfx->nBlockAlign;
 
 	BYTE* pData;
 	DWORD flags, res = 0;
-	double* waveT = new double[NUMPTS];
+	double* waveT = src->waveD;
 
-	IAudioCaptureClient *pCapCli = src->pCaptureClient;
-
-	HANDLE updHandle = CreateThread(NULL, 0, resample, src, 0, NULL);
 	HANDLE hArray[2]{src->stopEvent, src->hEvent};
 
 	while ((res = WaitForMultipleObjects(2, hArray, false, 200)) != WAIT_OBJECT_0) {
 		switch (res) {
 		case WAIT_OBJECT_0+1:
 			// got new buffer....
-			pCapCli->GetNextPacketSize(&packetLength);
+			src->pCaptureClient->GetNextPacketSize(&packetLength);
 			while (packetLength != 0) {
-				int ret = pCapCli->GetBuffer(
-					(BYTE**) &pData,
-					&numFramesAvailable,
-					&flags, NULL, NULL);
+				src->pCaptureClient->GetBuffer((BYTE**) &pData, &numFramesAvailable, &flags, NULL, NULL);
 				shift = 0;
 				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) {
-					ZeroMemory(src->waveD, NUMPTS * sizeof(double));
-					SetEvent(src->updateEvent);
-					//reset arrayPos
+					if (!src->clearBuffer) {
+						ZeroMemory(src->freqs, NUMBARS * sizeof(int));
+						src->clearBuffer = true;
+						src->needUpdate = true;
+					}
 					arrayPos = 0;
-					shift = 0;
 				} else {
+					src->clearBuffer = false;
 					for (UINT i = 0; i < numFramesAvailable; i++) {
 						INT64 finVal = 0;
-						for (UINT k = 0; k < nChannel; k++) {
+						for (UINT k = 0; k < src->pwfx->nChannels; k++) {
 							INT32 val = 0;
 							for (int j = bytesPerChannel - 1; j >= 0; j--) {
-								val = (val << 8) + pData[i * blockAlign + k * bytesPerChannel + j];
+								val = (val << 8) + pData[i * src->pwfx->nBlockAlign + k * bytesPerChannel + j];
 							}
 							finVal += val;
 						}
 						waveT[arrayPos + i - shift] = (double) (finVal);
 						if (arrayPos + i - shift == NUMPTS - 1) {
 							//buffer full, send to process.
-							memcpy(src->waveD, waveT, NUMPTS * sizeof(double));
-							SetEvent(src->updateEvent);
-							//reset arrayPos
+							SetEvent(src->cEvent);
 							arrayPos = 0;
 							shift = i - shift;
 						}
 					}
 					arrayPos += numFramesAvailable - shift;
 				}
-				pCapCli->ReleaseBuffer(numFramesAvailable);
-				pCapCli->GetNextPacketSize(&packetLength);
+				src->pCaptureClient->ReleaseBuffer(numFramesAvailable);
+				src->pCaptureClient->GetNextPacketSize(&packetLength);
 			}
 			break;
 		case WAIT_TIMEOUT: // no buffer data for 200 ms...
-			ZeroMemory(src->waveD, NUMPTS * sizeof(double));
-			//buffer full, send to process.
-			SetEvent(src->updateEvent);
-			//reset arrayPos
+			if (!src->clearBuffer) {
+				ZeroMemory(src->freqs, NUMBARS * sizeof(int));
+				src->clearBuffer = true;
+				src->needUpdate = true;
+			}
 			arrayPos = 0;
-			shift = 0;
 			break;
 		}
 	}
-	WaitForSingleObject(updHandle, 3000);
-	CloseHandle(updHandle);
-	delete[] waveT;
 	return 0;
 }
 
-DWORD WINAPI resample(LPVOID lpParam)
+void resample(LPVOID lpParam)
 {
 	WSAudioIn *src = (WSAudioIn *) lpParam;
 
-	//HANDLE waitArray[2]{src->stopEvent, src->updateEvent};
-	//DWORD res = 0;
-	//bool phase = true;
+	if (conf->lightsNoDelay && src->needUpdate) {
+		src->needUpdate = false;
+		fxhl->RefreshHaptics(src->freqs);
+	}
+}
 
-	while (WaitForSingleObject(src->stopEvent, 100) == WAIT_TIMEOUT) {
-	//while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0) {
-		if (WaitForSingleObject(src->updateEvent, 0) != WAIT_TIMEOUT) {
-		//if (res == WAIT_OBJECT_0 + 1) {
-			//if (phase) {
-				src->freqs = src->dftGG->calc(src->waveD);
-				//DebugPrint("Haptics light update...\n");
-				fxhl->RefreshHaptics(src->freqs);
-			//	phase = false;
-			//}
-			//else
-				//phase = true;
+DWORD WINAPI FFTProc(LPVOID lpParam)
+{
+	WSAudioIn* src = (WSAudioIn*)lpParam;
+	HANDLE hArray[2]{ src->stopEvent, src->cEvent };
+
+	// Preparing FFT...
+	void* kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
+	kiss_fft_scalar* padded_in = (kiss_fft_scalar*)malloc(NUMPTS * sizeof(kiss_fft_scalar));
+	kiss_fft_cpx* padded_out = (kiss_fft_cpx*)malloc(NUMPTS * sizeof(kiss_fft_cpx));
+	double x2[NUMPTS];
+	double peak = 0;
+
+	DWORD res;
+
+	while ((res = WaitForMultipleObjects(2, hArray, false, 200)) != WAIT_OBJECT_0) {
+		if (res != WAIT_TIMEOUT) {
+			for (int n = 0; n < NUMPTS; n++) {
+				padded_in[n] = (kiss_fft_scalar)(src->waveD[n] * src->blackman[n]);
+			}
+
+			kiss_fftr(kiss_cfg, padded_in, padded_out);
+
+			double minP = INT_MAX, maxP = 0;
+			double mult = 1.3394/* sqrt3(2)*/, f = 1.0;
+			int idx = 2;
+			for (int n = 0; n < NUMBARS; n++) {
+				double v = 0;
+				for (int m = 0; m < f; m++) {
+					if (idx < NUMPTS / 2)
+						v += sqrt(padded_out[idx + 1].r * padded_out[idx + 1].r + padded_out[idx + 1].i * padded_out[idx + 1].i);
+					idx++;
+				}
+
+				x2[n] = v / (int)f * 6 * (n + 1);
+				f *= mult;
+
+				minP = min(x2[n], minP);
+				maxP = max(x2[n], maxP);
+			}
+
+			if (peak > maxP)
+				peak = (maxP < peak - peak / 16) ? peak - peak / 256 : peak;
+			else
+				peak = maxP;
+			peak = max(peak, minP);
+
+			double coeff = peak > 0.00001 ? 255.0 / peak : 0.0;
+
+			//#ifdef _DEBUG
+				//char buff[2048];
+				//sprintf_s(buff, 2047, "Peak:%f, Coeff:%f, Min:%f, Max:%f, P(1):%f, P(2):%f\n", peak, coeff, minP, maxP, x2[0], x2[1]);
+				//OutputDebugString(buff);
+			//#endif
+
+			// Normalize
+			for (int n = 0; n < NUMBARS; n++) {
+				src->freqs[n] = (int)(x2[n] * coeff);
+			}
+			src->needUpdate = true;
 		}
 	}
-
+	free(padded_in);
+	free(padded_out);
+	kiss_fft_free(kiss_cfg);
 	return 0;
 }

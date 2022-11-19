@@ -580,7 +580,6 @@
     <ClInclude Include="alienfx-gui.h" />
     <ClInclude Include="CaptureHelper.h" />
     <ClInclude Include="ConfigHandler.h" />
-    <ClInclude Include="DFT_gosu.h" />
     <ClInclude Include="DXGIManager.hpp" />
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="FXHelper.h" />
@@ -599,10 +598,6 @@
     <ClCompile Include="ColorDialog.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="DevicesDialog.cpp" />
-    <ClCompile Include="DFT_gosu.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
-      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
-    </ClCompile>
     <ClCompile Include="GridEffectDialog.cpp" />
     <ClCompile Include="DXGIManager.cpp" />
     <ClCompile Include="EventDialog.cpp" />

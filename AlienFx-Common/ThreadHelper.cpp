@@ -22,7 +22,7 @@ void ThreadHelper::Stop()
 {
 	if (tHandle) {
 		SetEvent(tEvent);
-		WaitForSingleObject(tHandle, delay << 1);
+		WaitForSingleObject(tHandle, delay << 8);
 		CloseHandle(tHandle);
 		tHandle = NULL;
 	}

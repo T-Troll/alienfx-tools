@@ -147,18 +147,18 @@ namespace AlienFX_SDK {
 	int Functions::AlienFXCheckDevice(string devPath, int vidd, int pidd)
 	{
 		if ((devHandle = CreateFile(devPath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-			OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, NULL)) != INVALID_HANDLE_VALUE) {
+			OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN | SECURITY_ANONYMOUS/*FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH*/, NULL)) != INVALID_HANDLE_VALUE) {
 			PHIDP_PREPARSED_DATA prep_caps;
 			HIDP_CAPS caps;
 			std::unique_ptr<HIDD_ATTRIBUTES> attributes(new HIDD_ATTRIBUTES({ sizeof(HIDD_ATTRIBUTES) }));
 			if (HidD_GetAttributes(devHandle, attributes.get()) &&
-				(vidd == -1 || attributes->VendorID == vidd) &&
-				(pidd == -1 || attributes->ProductID == pidd)) {
+				(vidd == -1 || attributes->VendorID == vidd) && (pidd == -1 || attributes->ProductID == pidd)) {
 				HidD_GetPreparsedData(devHandle, &prep_caps);
 				HidP_GetCaps(prep_caps, &caps);
 				HidD_FreePreparsedData(prep_caps);
 				length = caps.OutputReportByteLength;
 				vid = attributes->VendorID;
+				pid = attributes->ProductID;
 				switch (length) {
 				case 0: {
 					if (caps.Usage == 0xcc && vid == 0x0d62) {
@@ -198,7 +198,6 @@ namespace AlienFX_SDK {
 						reportID = 0;
 						// device init
 						PrepareAndSend(COMMV6.systemReset, sizeof(COMMV6.systemReset));
-						//PrepareAndSend(COMMV6.colorReset, sizeof(COMMV6.colorReset));
 						break;
 					case 0x0461:
 						version = API_V7;
@@ -210,14 +209,14 @@ namespace AlienFX_SDK {
 						break;
 					}
 					break;
-				default: CloseHandle(devHandle); devHandle = NULL;
 				}
-				pid = version < 0 ? version : attributes->ProductID;
-				return pid;
 			}
-			CloseHandle(devHandle);
-			devHandle = NULL;
 			attributes.release();
+			if (version < 0) {
+				CloseHandle(devHandle); devHandle = NULL;
+			}
+			else
+				return pid;
 		}
 		return -1;
 	}
@@ -944,7 +943,7 @@ namespace AlienFX_SDK {
 	}
 
 	BYTE Functions::AlienfxGetDeviceStatus() {
-		byte ret = 0;
+
 		byte buffer[MAX_BUFFERSIZE]{reportID};
 		DWORD written;
 		switch (version) {
@@ -954,13 +953,13 @@ namespace AlienFX_SDK {
 			buffer[1] = 0x93;
 			//if (HidD_GetFeature(devHandle, buffer, length))
 			if (DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, &written, NULL))
-				ret = buffer[2];
+				return buffer[2];
 		} break;
 		case API_V4:
 		{
 			//if (HidD_GetInputReport(devHandle, buffer, length))
 			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				ret = buffer[2];
+				return buffer[2];
 #ifdef _DEBUG
 			else {
 				OutputDebugString(TEXT("System hangs!\n"));
@@ -974,13 +973,11 @@ namespace AlienFX_SDK {
 			buffer[0] = 0x01;
 			//HidD_GetInputReport(devHandle, buffer, length);
 			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				if (buffer[0] == 0x01)
-					ret = 0x06;
-				else ret = buffer[0];
+				return buffer[0] == 0x01 ? 0x06 : buffer[0];
 		} break;
 		}
 
-		return ret;
+		return 0;
 	}
 
 	BYTE Functions::AlienfxWaitForReady() {
@@ -993,7 +990,7 @@ namespace AlienFX_SDK {
 			break;
 		case API_V4:
 			while (!(status = IsDeviceReady()))
-				Sleep(50);
+				Sleep(20);
 			break;
 		default:
 			status = AlienfxGetDeviceStatus();
@@ -1010,8 +1007,8 @@ namespace AlienFX_SDK {
 			}
 			break;
 		case API_V4:
-			for (int i = 0; i < 20 && (status = IsDeviceReady()); i++)
-				Sleep(50);
+			for (int i = 0; i < 500 && (status = IsDeviceReady()); i++)
+				Sleep(20);
 			break;
 		default:
 			status = AlienfxGetDeviceStatus();
@@ -1025,7 +1022,14 @@ namespace AlienFX_SDK {
 		case API_V5:
 			return status != ALIENFX_V5_WAITUPDATE;
 		case API_V4:
+#ifdef _DEBUG
+			status = status ? status == ALIENFX_V4_READY || status == ALIENFX_V4_WAITUPDATE || status == ALIENFX_V4_WASON : 0xff;
+			if (!status)
+				OutputDebugString("Device not ready!\n");
+			return status;
+#else
 			return status ? status == ALIENFX_V4_READY || status == ALIENFX_V4_WAITUPDATE || status == ALIENFX_V4_WASON : 0xff;
+#endif
 		case API_V3: case API_V2: case API_V1:
 			switch (status) {
 			case ALIENFX_V2_READY:
@@ -1053,30 +1057,12 @@ namespace AlienFX_SDK {
 #endif
 	}
 
-	/*bool Functions::AlienFXChangeDevice(int nvid, int npid, HANDLE acc) {
-		int res;
-		if (pid != (-1) && length != API_ACPI && devHandle != NULL)
-			CloseHandle(devHandle);
-		if (nvid == API_ACPI)
-			res = AlienFXInitialize(acc);
-		else
-			res = AlienFXInitialize(nvid, npid);
-		if (res != (-1)) {
-			pid = npid;
-			Reset();
-			return true;
-		}
-		return false;
-	}*/
-
 	Mappings::~Mappings() {
 		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
 			if (i->dev) {
 				delete i->dev;
 			}
 		}
-		//fxdevs.clear();
-		//groups.clear();
 	}
 
 	vector<Functions*> Mappings::AlienFXEnumDevices(void* acc) {

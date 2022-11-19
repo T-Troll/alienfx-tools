@@ -1,8 +1,7 @@
 #include "CaptureHelper.h"
-#include "DXGIManager.hpp"
 
 DWORD WINAPI CInProc(LPVOID);
-DWORD WINAPI CFXProc(LPVOID);
+void CFXProc(LPVOID);
 
 // debug print
 #ifdef _DEBUG
@@ -14,9 +13,7 @@ DWORD WINAPI CFXProc(LPVOID);
 extern ConfigHandler *conf;
 extern FXHelper *fxhl;
 
-DXGIManager* dxgi_manager = NULL;
-
-HANDLE clrStopEvent, lhEvent;
+HANDLE clrStopEvent;
 
 CaptureHelper::CaptureHelper()
 {
@@ -46,6 +43,7 @@ void CaptureHelper::Start()
 {
 	if (!dwHandle) {
 		clrStopEvent = CreateEvent(NULL, true, false, NULL);
+		lThread = new ThreadHelper(CFXProc, this, 200);
 		dwHandle = CreateThread( NULL, 0, CInProc, this, 0, NULL);
 	}
 }
@@ -54,6 +52,7 @@ void CaptureHelper::Stop()
 {
 	if (dwHandle) {
 		SetEvent(clrStopEvent);
+		delete lThread;
 		WaitForSingleObject(dwHandle, 5000);
 		CloseHandle(dwHandle);
 		CloseHandle(clrStopEvent);
@@ -119,7 +118,7 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	return 0;
 }
 
-void SetDimensions() {
+void CaptureHelper::SetDimensions() {
 	RECT dimensions = dxgi_manager->get_output_rect();
 	w = dimensions.right - dimensions.left;
 	h = dimensions.bottom - dimensions.top;
@@ -137,15 +136,13 @@ DWORD WINAPI CInProc(LPVOID param)
 	byte* imgo = src->imgz + gridDataSize;
 	size_t buf_size;
 
-	lhEvent = CreateEvent(NULL, false, false, NULL);
-
-	HANDLE lightHandle = CreateThread(NULL, 0, CFXProc, src->imgz, 0, NULL), pThread[16], pfEvent[16];;
+	HANDLE pThread[16], pfEvent[16];;
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 
 	procData callData[16];
 
-	SetDimensions();
+	src->SetDimensions();
 
 	// prepare threads and data...
 	for (UINT i = 0; i < 16; i++) {
@@ -157,47 +154,42 @@ DWORD WINAPI CInProc(LPVOID param)
 	while (WaitForSingleObject(clrStopEvent, 50) == WAIT_TIMEOUT) {
 		// Resize & calc
 		UINT tInd = 0;
-		if (w && h && (ret = dxgi_manager->get_output_data(&scrImg, &buf_size)) == CR_OK && scrImg) {
-			if (!(conf->monDelay > DEFAULT_MON_DELAY)) {
-				for (int dy = 0; dy < HIWORD(conf->amb_grid); dy++)
-					for (int dx = 0; dx < LOWORD(conf->amb_grid); dx++) {
-						UINT ptr = (dy * LOWORD(conf->amb_grid) + dx);
-						tInd = ptr % 16;
-						if (ptr > 0 && !tInd) {
+		if (w && h && (ret = src->dxgi_manager->get_output_data(&scrImg, &buf_size)) == CR_OK && scrImg) {
+			for (int dy = 0; dy < HIWORD(conf->amb_grid); dy++)
+				for (int dx = 0; dx < LOWORD(conf->amb_grid); dx++) {
+					UINT ptr = (dy * LOWORD(conf->amb_grid) + dx);
+					tInd = ptr % 16;
+					if (ptr > 0 && !tInd) {
 #ifndef _DEBUG
-							WaitForMultipleObjects(16, pfEvent, true, 1000);
+						WaitForMultipleObjects(16, pfEvent, true, 1000);
 #else
-							if (WaitForMultipleObjects(16, pfEvent, true, 1000) != WAIT_OBJECT_0)
-								DebugPrint("Ambient thread execution fails at " + to_string(ptr) + "\n");
+						if (WaitForMultipleObjects(16, pfEvent, true, 1000) != WAIT_OBJECT_0)
+							DebugPrint("Ambient thread execution fails at " + to_string(ptr) + "\n");
 #endif
-						}
-						callData[tInd].dx = dx;
-						callData[tInd].dy = dy;
-						callData[tInd].dst = imgo + ptr * 3;
-						SetEvent(callData[tInd].pEvent);
 					}
+					callData[tInd].dx = dx;
+					callData[tInd].dy = dy;
+					callData[tInd].dst = imgo + ptr * 3;
+					SetEvent(callData[tInd].pEvent);
+				}
 #ifndef _DEBUG
-				WaitForMultipleObjects(tInd + 1, pfEvent, true, 1000);
+			WaitForMultipleObjects(tInd + 1, pfEvent, true, 1000);
 #else
-				if (WaitForMultipleObjects(tInd+1, pfEvent, true, 1000) != WAIT_OBJECT_0)
-					DebugPrint("Ambient thread execution fails at last set\n");
+			if (WaitForMultipleObjects(tInd+1, pfEvent, true, 1000) != WAIT_OBJECT_0)
+				DebugPrint("Ambient thread execution fails at last set\n");
 #endif
 
-				if (memcmp(src->imgz, imgo, gridDataSize)) {
-					memcpy(src->imgz, imgo, gridDataSize);
-					SetEvent(lhEvent);
-					src->needUpdate = true;
-				}
-			} else {
-				DebugPrint("Ambient update skipped!\n");
+			if (memcmp(src->imgz, imgo, gridDataSize)) {
+				memcpy(src->imgz, imgo, gridDataSize);
+				src->needUpdate = src->needUIUpdate = true;
 			}
 		}
 		else {
 			if (ret != CR_TIMEOUT) {
 				DebugPrint("Ambient feed restart!\n");
-				dxgi_manager->refresh_output();
+				src->dxgi_manager->refresh_output();
 				Sleep(150);
-				SetDimensions();
+				src->SetDimensions();
 			}
 		}
 	}
@@ -207,23 +199,14 @@ DWORD WINAPI CInProc(LPVOID param)
 	for (DWORD i = 0; i < 16; i++) {
 		CloseHandle(pThread[i]);
 	}
-	WaitForSingleObject(lightHandle, 1000);
-	CloseHandle(lightHandle);
-
-	//delete[] imgo;
 
 	return 0;
 }
 
-DWORD WINAPI CFXProc(LPVOID param) {
-	HANDLE waitArray[2]{lhEvent, clrStopEvent};
-	DWORD res = 0;
-
-	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
-		if (res == WAIT_OBJECT_0) {
-			//DebugPrint("Ambient light update...\n");
-			fxhl->RefreshAmbient((UCHAR*)param);
-		}
+void CFXProc(LPVOID param) {
+	CaptureHelper* src = (CaptureHelper*)param;
+	if (conf->lightsNoDelay && src->needUpdate) {
+		src->needUpdate = false;
+		fxhl->RefreshAmbient(src->imgz);
 	}
-	return 0;
 }
