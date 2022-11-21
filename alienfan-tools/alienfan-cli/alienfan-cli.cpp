@@ -312,7 +312,37 @@ int main(int argc, char* argv[])
             wprintf(L"Names: %s\n", name);
             continue;
         }
-        //if (command == "test") { // dump WMI functions
+        if (command == "test") { // dump WMI functions
+            IWbemClassObject* driveObject = NULL, *instObj = NULL;
+            IWbemLocator* m_WbemLocator;
+            IWbemServices* m_WbemServices = NULL;
+            IEnumWbemClassObject* enum_obj;
+            CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
+            m_WbemLocator->ConnectServer((BSTR)L"root\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
+            m_WbemLocator->Release();
+            if (m_WbemServices->GetObject((BSTR)L"WMI_FanSpeedControl", NULL, nullptr, &driveObject, nullptr) == S_OK) {
+                BSTR name;
+                VARIANT m_instancePath, wSpeed{ VT_UI2 };
+                IWbemClassObject* m_InParamaters = NULL;
+                IWbemClassObject* m_outParameters = NULL;
+                // Command dump
+                driveObject->GetObjectText(0, &name);
+                wprintf(L"Names: %s\n", name);
+                //m_WbemServices->CreateInstanceEnum((BSTR)L"WMI_FanSpeedControl", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj);
+                //IWbemClassObject* spInstance;
+                //ULONG uNumOfInstances = 0;
+                //enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+                driveObject->Get(L"InstanceName", 0, &m_instancePath, nullptr, nullptr);
+                //spInstance->Release();
+                //enum_obj->Release();
+                driveObject->GetMethod((BSTR)L"ECSetCPUFan", NULL, &m_InParamaters, nullptr);
+                wSpeed.intVal = 0;
+                m_InParamaters->Put(L"wSpeed", NULL, &wSpeed, VT_UI2);
+                m_WbemServices->ExecMethod((BSTR)L"WMI_FanSpeedControl",
+                    (BSTR)L"ECSetCPUFan", 0, NULL, m_InParamaters, &m_outParameters, NULL);
+                m_outParameters->Get(L"wSpeed", 0, &wSpeed, nullptr, nullptr);
+                m_outParameters->Release();
+            }
         //    // SSD temperature sensors
         //    IWbemClassObject* driveObject = NULL, * instObj = NULL;
         //    IWbemLocator* m_WbemLocator;
@@ -351,8 +381,8 @@ int main(int argc, char* argv[])
         //        //    printf("Result - %d", result.uintVal);
         //        //}
         //    }
-        //    continue;
-        //}
+            continue;
+        }
         printf("Unknown command - %s, run without parameters for help.\n", command.c_str());
     }
 
