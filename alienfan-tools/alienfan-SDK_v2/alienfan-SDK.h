@@ -10,10 +10,8 @@ using namespace std;
 #define byte BYTE
 
 #define DEV_FLAG_AWCC		1
-//#define DEV_FLAG_INFO		2
-//#define DEV_FLAG_CONTROL	4
+#define DEV_FLAG_CONTROL	4
 #define DEV_FLAG_GMODE		8
-//#define DEV_FLAG_ESIF		0x10
 
 namespace AlienFan_SDK {
 
@@ -29,23 +27,23 @@ namespace AlienFan_SDK {
 		BSTR instance; // for ESIF/OHM/SSD sensors
 	};
 
-	struct ALIENFAN_COMMAND {
-		byte com;
-		byte sub;
-	};
+	//struct ALIENFAN_COMMAND {
+	//	byte com;
+	//	byte sub;
+	//};
 
 	struct ALIENFAN_CONTROL {
-		ALIENFAN_COMMAND getPowerID;
-		ALIENFAN_COMMAND getFanRPM;
-		ALIENFAN_COMMAND getFanPercent;
-		ALIENFAN_COMMAND getFanBoost;
-		ALIENFAN_COMMAND setFanBoost;
-		ALIENFAN_COMMAND getTemp;
-		ALIENFAN_COMMAND getPower;
-		ALIENFAN_COMMAND setPower;
-		ALIENFAN_COMMAND getGMode;
-		ALIENFAN_COMMAND setGMode;
-		ALIENFAN_COMMAND getSysID;
+		byte getPowerID[2];
+		byte getFanRPM[2];
+		byte getFanPercent[2];
+		byte getFanBoost[2];
+		byte setFanBoost[2];
+		byte getTemp[2];
+		byte getPower[2];
+		byte setPower[2];
+		byte getGMode[2];
+		byte setGMode[2];
+		byte getSysID[2];
 	};
 
 	union ALIENFAN_INTERFACE {
@@ -63,6 +61,7 @@ namespace AlienFan_SDK {
 		VARIANT m_instancePath;
 		byte devFlags = 0;
 		DWORD systemID = 0;
+		//byte sysType = 0;
 		int Percent(int, int);
 
 	public:
@@ -125,7 +124,7 @@ namespace AlienFan_SDK {
 		inline DWORD GetSystemID() { return systemID; };
 
 		// Call custom Alienware method trough WMI
-		int CallWMIMethod(ALIENFAN_COMMAND com, byte arg1 = 0, byte arg2 = 0);
+		int CallWMIMethod(const byte* com, byte arg1 = 0, byte arg2 = 0);
 
 		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;

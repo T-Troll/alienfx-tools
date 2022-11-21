@@ -55,18 +55,20 @@ namespace AlienFan_SDK {
 		CoUninitialize();
 	}
 
-	int Control::CallWMIMethod(ALIENFAN_COMMAND com, byte arg1, byte arg2) {
-		IWbemClassObject* m_outParameters = NULL;
+	int Control::CallWMIMethod(const byte* com, byte arg1, byte arg2) {
 		VARIANT result{ VT_I4 };
 		result.intVal = -1;
-		VARIANT parameters = { VT_I4 };
-		parameters.uintVal = ALIENFAN_INTERFACE{ com.sub, arg1, arg2 }.args;
-		m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
-		if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
-			commandList[com.com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
-			m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
-			m_outParameters->Release();
+		if (m_InParamaters) {
+			IWbemClassObject* m_outParameters = NULL;
+			VARIANT parameters = { VT_I4 };
+			parameters.uintVal = ALIENFAN_INTERFACE{ com[1], arg1, arg2 }.args;
+			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
+			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
+				commandList[com[0]], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
+				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
+				m_outParameters->Release();
 			}
+		}
 		return result.intVal;
 	}
 
@@ -79,59 +81,67 @@ namespace AlienFan_SDK {
 			IEnumWbemClassObject* enum_obj;
 			IWbemClassObject* spInstance;
 			ULONG uNumOfInstances = 0;
+
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+
 				spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
 				spInstance->Release();
 				enum_obj->Release();
 				devFlags |= DEV_FLAG_AWCC;
-				// Prepare InParameters...
-				m_AWCCGetObj->GetMethod(commandList[dev_controls.getPowerID.com], NULL, &m_InParamaters, nullptr);
-				// Let's get device ID...
-				systemID = CallWMIMethod(dev_controls.getSysID, 2);
+
+				if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK) {
 #ifdef _TRACE_
-				printf("System ID = %d!\n", systemID);
+					printf("G-Mode available\n");
 #endif
-				int fIndex = 0, funcID;
-				// Scan for available fans...
-				while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) < 0x100 && (funcID > 0 || funcID > 0x130)) { // bugfix for 0x132 fan for R7
-					fans.push_back(funcID & 0xff);
-					boosts.push_back(100);
-					maxrpm.push_back(0);
-					fIndex++;
+					devFlags |= DEV_FLAG_GMODE;
 				}
-#ifdef _TRACE_
-				printf("%d Fans found\n", fIndex);
-#endif
 
-				// AWCC temperature sensors.
-				do {
-					//if (CallWMIMethod(dev_controls.getTemp, (byte)funcID) > 0) {
-					sensors.push_back({ {(byte)funcID, 1}, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
-					//}
-					fIndex++;
-				} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) > 0x100 && funcID < 0x1A0);
+				// check system is compatible and fill inParams
+				if (m_AWCCGetObj->GetMethod(commandList[dev_controls.getPowerID[0]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
 #ifdef _TRACE_
-				printf("%d AWCC Temperature sensors found\n", (int)sensors.size());
+					printf("Fan Control available\n");
 #endif
-
-				// Power modes.
-				powers.push_back(0); // Manual mode
-				if (funcID > 0) {
-					do {
-						powers.push_back(funcID & 0xff);
+					devFlags |= DEV_FLAG_CONTROL;
+					systemID = CallWMIMethod(dev_controls.getSysID, 2);
+#ifdef _TRACE_
+					printf("System ID = %d\n", systemID);
+#endif
+					int fIndex = 0, funcID;
+					// Scan for available fans...
+					while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) < 0x100 && (funcID > 0 || funcID > 0x130)) { // bugfix for 0x132 fan for R7
+						fans.push_back(funcID & 0xff);
+						boosts.push_back(100);
+						maxrpm.push_back(0);
 						fIndex++;
-					} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) && funcID > 0);
+					}
 #ifdef _TRACE_
-					printf("%d Power modes found\n", (int)powers.size());
+					printf("%d Fans found\n", fIndex);
 #endif
-				}
-			}
-			if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK) {
+
+					// AWCC temperature sensors.
+					do {
+						sensors.push_back({ {(byte)funcID, 1}, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
+						fIndex++;
+					} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) > 0x100 && funcID < 0x1A0);
 #ifdef _TRACE_
-				printf("G-Mode available!\n");
+					printf("%d AWCC Temperature sensors found\n", (int)sensors.size());
 #endif
-				devFlags |= DEV_FLAG_GMODE;
+
+					// Power modes.
+					powers.push_back(0); // Manual mode
+					if (funcID > 0) {
+						do {
+							powers.push_back(funcID & 0xff);
+							fIndex++;
+						} while ((funcID = CallWMIMethod(dev_controls.getPowerID, fIndex)) && funcID > 0);
+#ifdef _TRACE_
+						printf("%d Power modes found\n", (int)powers.size());
+#endif
+					}
+					}
+				else
+					return false;
 			}
 			VARIANT instPath;
 			// ESIF temperature sensors
@@ -166,7 +176,7 @@ namespace AlienFan_SDK {
 				}
 				enum_obj->Release();
 #ifdef _TRACE_
-				printf("ESIF data available, %d sensors added!\n", numSen);
+				printf("ESIF data available, %d sensors total\n", (int)sensors.size());
 #endif
 			}
 			if (m_DiskService && m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
@@ -184,7 +194,7 @@ namespace AlienFan_SDK {
 				}
 				enum_obj->Release();
 #ifdef _TRACE_
-				printf("Disk data available, %d sensors added!\n", numSen);
+				printf("Disk data available, %d sensors total\n", (int)sensors.size());
 #endif
 			}
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
@@ -203,12 +213,11 @@ namespace AlienFan_SDK {
 				}
 				enum_obj->Release();
 #ifdef _TRACE_
-				printf("LHM data available, %d sensors added!\n", numOHM);
+				printf("LHM data available, %d sensors total\n", (int)sensors.size());
 #endif
 			}
-			return true;
 		}
-		return false;
+		return devFlags;
 	}
 
 	int Control::GetFanRPM(int fanID) {

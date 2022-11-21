@@ -67,7 +67,8 @@ void ShowNotification(NOTIFYICONDATA* niData, string title, string message, bool
 	strcpy_s(niData->szInfoTitle, title.c_str());
 	strcpy_s(niData->szInfo, message.c_str());
 	niData->uFlags |= NIF_INFO;
-	Shell_NotifyIcon(NIM_MODIFY, niData);
+	if (!Shell_NotifyIcon(NIM_MODIFY, niData))
+		Shell_NotifyIcon(NIM_ADD, niData);
 	niData->uFlags &= ~NIF_INFO;
 }
 
@@ -214,8 +215,12 @@ void SetBitMask(WORD& val, WORD mask, bool state) {
 }
 
 bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck) {
-	bool ret = Shell_NotifyIcon(NIM_ADD, iconData);
-	if (ret && needCheck)
-		CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
-	return ret;
+	bool haveIcon = Shell_NotifyIcon(NIM_MODIFY, iconData);
+	if (!haveIcon) {
+		while (!Shell_NotifyIcon(NIM_ADD, iconData))
+			Sleep(100);
+		if (needCheck)
+			CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
+	}
+	return haveIcon;
 }

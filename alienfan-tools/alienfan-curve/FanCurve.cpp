@@ -13,7 +13,7 @@ extern AlienFan_SDK::Control* acpi;
 
 extern void SetToolTip(HWND, string);
 
-extern NOTIFYICONDATA* niData;
+NOTIFYICONDATA* niData;
 
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
@@ -86,10 +86,10 @@ void DrawFan()
 
         if (fanMode) {
             // curve...
-            fan_block* fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
+            auto fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
             if (fan) {
                 HPEN linePen;
-                for (auto senI = fan->sensors.begin(); senI != fan->sensors.end(); senI++) {
+                for (auto senI = fan->begin(); senI != fan->end(); senI++) {
                     if (senI->second.active) {
                         // draw fan curve
                         if (senI->first == fan_conf->lastSelectedSensor)
@@ -115,7 +115,7 @@ void DrawFan()
                         }
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         SelectObject(hdc, GetStockObject(DC_BRUSH));
-                        mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[fan->fanIndex][senI->first]);
+                        mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[fan_conf->lastSelectedFan][senI->first]);
                         Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
                         DeleteObject(linePen);
                     }
@@ -204,14 +204,15 @@ void UpdateBoost(byte fanID) {
 }
 
 DWORD WINAPI CheckFanRPM(LPVOID lpParam) {
-    int fanID = (int)lpParam;
+    byte fanID = (byte)(ULONG64)lpParam;
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
     boostCheck.clear();
     bestBoostPoint = { 100, 3000 };
     SetFanSteady(fanID, 100);
-    UpdateBoost(fanID);
+    fan_conf->boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, acpi->maxrpm[fanID]);
+    acpi->maxrpm[fanID] = fan_conf->boosts[fanID].maxRPM;
     ShowNotification(niData, "Max. RPM calculation done", "Fan #" + to_string(fanID + 1) + ": " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
     acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
     fanMode = true;
@@ -220,11 +221,11 @@ DWORD WINAPI CheckFanRPM(LPVOID lpParam) {
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = (int)lpParam, rpm, crpm;
+    int num = (int)(ULONG64)lpParam, rpm, crpm;
     mon->Stop();
     fanMode = false;
     acpi->Unlock();
-    for (int i = 0; i < acpi->fans.size(); i++)
+    for (byte i = 0; i < acpi->fans.size(); i++)
         if (num < 0 || num == i) {
             int cSteps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num, true);
             fan_conf->lastSelectedFan = i;
@@ -387,14 +388,14 @@ void ReloadFanView(HWND list) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
         string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
         lItem.pszText = (LPSTR)name.c_str();
-        fan_block* fan = fan_conf->FindFanBlock(i);
-        if (fan && fan->fanIndex == fan_conf->lastSelectedFan) {
+        if (i == fan_conf->lastSelectedFan) {
             lItem.state = LVIS_SELECTED;
         }
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        if (fan && fan->sensors.find(fan_conf->lastSelectedSensor) != fan->sensors.end() && fan->sensors[fan_conf->lastSelectedSensor].active) {
+        if (fan_conf->lastProf->fanControls[i].find(fan_conf->lastSelectedSensor) != fan_conf->lastProf->fanControls[i].end() 
+            && fan_conf->lastProf->fanControls[i][fan_conf->lastSelectedSensor].active) {
             ListView_SetCheckState(list, i, true);
         }
     }
@@ -451,3 +452,74 @@ void ReloadTempView(HWND list) {
     ListView_EnsureVisible(list, rpos, false);
 }
 
+void TempUIEvent(NMLVDISPINFO* lParam, ThreadHelper* fanUIUpdate, HWND tempList, HWND fanList) {
+    switch (lParam->hdr.code) {
+    case LVN_BEGINLABELEDIT: {
+        fanUIUpdate->Stop();
+        auto pwr = fan_conf->sensors.find((WORD)lParam->item.lParam);
+        Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[lParam->item.iItem].name).c_str());
+    } break;
+    case LVN_ITEMACTIVATE: case NM_RETURN:
+    {
+        int pos = ListView_GetSelectionMark(tempList);
+        RECT rect;
+        ListView_GetSubItemRect(tempList, pos, 1, LVIR_BOUNDS, &rect);
+        SetWindowPos(ListView_EditLabel(tempList, pos), HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+    } break;
+    case LVN_ENDLABELEDIT:
+    {
+        if (lParam->item.pszText) {
+            if (strlen(lParam->item.pszText))
+                fan_conf->sensors[(WORD)lParam->item.lParam] = lParam->item.pszText;
+            else {
+                auto pwr = fan_conf->sensors.find((WORD)lParam->item.lParam);
+                if (pwr != fan_conf->sensors.end())
+                    fan_conf->sensors.erase(pwr);
+            }
+            ReloadTempView(tempList);
+        }
+        fanUIUpdate->Start();
+    } break;
+    case LVN_ITEMCHANGED:
+    {
+        if (((LPNMLISTVIEW)lParam)->uNewState & LVIS_SELECTED && ((LPNMLISTVIEW)lParam)->iItem != -1) {
+            // Select other sensor....
+            fan_conf->lastSelectedSensor = (WORD)((LPNMLISTVIEW)lParam)->lParam;
+            // Redraw fans
+            ReloadFanView(fanList);
+            DrawFan();
+        }
+    } break;
+    }
+}
+
+void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
+    if (!fanUpdateBlock && lParam->hdr.code == LVN_ITEMCHANGED)
+    {
+        if (lParam->uNewState & LVIS_SELECTED && lParam->iItem != -1) {
+            // Select other fan....
+            fan_conf->lastSelectedFan = lParam->iItem;
+            DrawFan();
+            return;
+        }
+        if (lParam->uNewState & 0x3000) {
+            auto fan = &fan_conf->lastProf->fanControls[lParam->iItem];
+            switch (lParam->uNewState & 0x3000) {
+            case 0x1000:
+                // Remove sensor
+                for (auto cSen = fan->begin(); cSen != fan->end(); cSen++)
+                    if (cSen->first == fan_conf->lastSelectedSensor) {
+                        cSen->second.active = false;
+                        break;
+                    }
+                break;
+            case 0x2000:
+                (*fan)[fan_conf->lastSelectedSensor].active = true;
+                if ((*fan)[fan_conf->lastSelectedSensor].points.empty())
+                    (*fan)[fan_conf->lastSelectedSensor].points = { {0,0},{100,100} };
+            }
+            DrawFan();
+            ListView_SetItemState(fanList, lParam->iItem, LVIS_SELECTED, LVIS_SELECTED);
+        }
+    }
+}

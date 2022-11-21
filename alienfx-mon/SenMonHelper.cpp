@@ -82,6 +82,7 @@ void SenMonHelper::ModifyMon()
 			DebugPrint("ACPI off.\n");
 		}
 	}
+	conf->needFullUpdate = true;
 }
 
 void AddUpdateSensor(ConfigMon* conf, SENID sid, long val, string name) {

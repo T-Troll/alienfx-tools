@@ -23,7 +23,6 @@
 #define IDC_DC_BOOST                    1125
 #define IDC_BUT_OVER                    1130
 #define IDC_BUT_MAXRPM                  1131
-#define IDC_CHECK_GMODE                 1160
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDM_SETTINGS_UPDATE             32782

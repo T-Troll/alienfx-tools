@@ -74,7 +74,7 @@ bool DetectFans() {
 			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		}
 		else {
-			ShowNotification(&conf->niData, "Error", "Compatible hardware not found, fan control disabled!", false);
+			ShowNotification(&conf->niData, "Error", "Alienware fan control not found and disabled!", false);
 			delete acpi;
 			acpi = NULL;
 			conf->fanControl = false;
@@ -97,12 +97,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	ResetDPIScale(lpCmdLine);
 
 	conf = new ConfigHandler();
-	//if (conf->haveOldConfig && MessageBox(NULL, "Old configuration detected. Do you want to convert it?", "Warning",
-	//	MB_YESNO | MB_ICONWARNING) == IDYES) {
-	//	// convert config call
-	//	ShellExecute(NULL, "open", "alienfx-conv.exe", NULL, ".", SW_NORMAL);
-	//	return 0;
-	//}
 	conf->Load();
 
 	if (!conf->afx_dev.GetGrids()->size()) {
@@ -295,7 +289,7 @@ void OnSelChanged(HWND hwndDlg)
 	// Get the index of the selected tab.
 	tabSel = TabCtrl_GetCurSel(hwndDlg);
 	if (tabSel == TAB_LIGHTS && conf->afx_dev.fxdevs.empty()) {
-		ShowNotification(&conf->niData, "Error", "No compatible light devices detected!", true);
+		ShowNotification(&conf->niData, "Error", "Alienware light device not found!", true);
 		TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
 	}
 

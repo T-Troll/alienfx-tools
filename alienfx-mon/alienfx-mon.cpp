@@ -214,7 +214,7 @@ void ReloadSensorView() {
 		lCol.iSubItem = 4;
 		ListView_InsertColumn(list, 4, &lCol);
 	}
-
+	FindValidSensor();
 	SENID sid;
 	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
 		sid.sid = i->first;
@@ -277,19 +277,30 @@ void ReloadSensorView() {
 	conf->needFullUpdate = false;
 }
 
+void RemoveTrayIcons() {
+	delete muiThread;
+	// Remove icons from tray...
+	Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
+		if (i->second.niData) {
+			Shell_NotifyIcon(NIM_DELETE, i->second.niData);
+			if (i->second.niData->hIcon)
+				DestroyIcon(i->second.niData->hIcon);
+			delete i->second.niData;
+		}
+}
+
 void ModifySensors() {
-	if (conf->bSensors || conf->eSensors) {
+	if (!IsUserAnAdmin() && (conf->bSensors || conf->eSensors)) {
+		RemoveTrayIcons();
 		conf->Save();
 		EvaluteToAdmin();
 	}
+	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
 	conf->paused = true;
 	senmon->ModifyMon();
 	senmon->UpdateSensors();
 	conf->paused = false;
-	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
-	FindValidSensor();
-	conf->needFullUpdate = true;
-	//ReloadSensorView();
 }
 
 bool SetColor(int id, DWORD* clr) {
@@ -329,6 +340,13 @@ void ResetMinMax(DWORD id = 0xffffffff) {
 	//ReloadSensorView();
 }
 
+void ResetTraySensors() {
+	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
+		if (i->second.intray)
+			i->second.oldCur = NO_SEN_VALUE;
+	}
+}
+
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND senList = GetDlgItem(hDlg, IDC_SENSOR_LIST);
 	auto pos = conf->active_sensors.find(selSensor);
@@ -337,10 +355,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...
 		AddTrayIcon(&conf->niData, conf->updateCheck);
-		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
-			if (i->second.intray)
-				i->second.oldCur = NO_SEN_VALUE;
-		}
+		ResetTraySensors();
 	}
 
 	switch (message)
@@ -358,13 +373,8 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		Edit_SetText(GetDlgItem(hDlg, IDC_REFRESH_TIME), to_string(conf->refreshDelay).c_str());
 
 		AddTrayIcon(&conf->niData, conf->updateCheck);
-
 		// Start UI update thread...
 		muiThread = new ThreadHelper(UpdateMonUI, hDlg, conf->refreshDelay, THREAD_PRIORITY_ABOVE_NORMAL);
-
-		//if (conf->active_sensors.size())
-		//	selSensor = conf->active_sensors.begin()->first;
-		FindValidSensor();
 		ReloadSensorView();
 	} break;
 	case WM_COMMAND:
@@ -443,7 +453,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_BUT_HIDE:
 			if (sen) {
 				sen->disabled = !conf->showHidden;
-				FindValidSensor();
 				ReloadSensorView();
 			}
 			break;
@@ -454,7 +463,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_SHOW_HIDDEN:
 			conf->showHidden = state;
 			SetDlgItemText(hDlg, IDC_BUT_HIDE, state ? "Unhide" : "Hide");
-			FindValidSensor();
 			ReloadSensorView();
 			break;
 		case IDC_REFRESH_TIME:
@@ -507,8 +515,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (isNewVersion) {
 				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
 				isNewVersion = false;
-			} /*else
-				RestoreWindow(0);*/
+			}
 		} break;
 		case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
 			if (!isNewVersion && needRemove) {
@@ -549,16 +556,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:
-		delete muiThread;
-		// Remove icons from tray...
-		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
-			if (i->second.niData) {
-				Shell_NotifyIcon(NIM_DELETE, i->second.niData);
-				if (i->second.niData->hIcon)
-					DestroyIcon(i->second.niData->hIcon);
-				delete i->second.niData;
-			}
+		RemoveTrayIcons();
 		PostQuitMessage(0);
 		break;
 	case WM_NOTIFY:
@@ -572,7 +570,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			} break;
 			case LVN_ITEMACTIVATE: case NM_RETURN:// case NM_CLICK:
 			{
-				//runUIUpdate = false;
 				int pos = ListView_GetSelectionMark(senList);
 				RECT rect;
 				ListView_GetSubItemRect(senList, pos, 4, LVIR_LABEL, &rect);
@@ -605,8 +602,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
-			for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
-				if (i->second.intray) i->second.oldCur = NO_SEN_VALUE;
+			ResetTraySensors();
 			conf->needFullUpdate = true;
 			if (conf->updateCheck)
 				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
@@ -684,7 +680,7 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 
 void UpdateMonUI(LPVOID lpParam) {
 	HWND list = GetDlgItem(mDlg, IDC_SENSOR_LIST);
-	bool visible = IsWindowVisible(mDlg);
+	bool visible = IsWindowVisible(mDlg) && runUIUpdate;
 	if (!conf->paused) {
 		senmon->UpdateSensors();
 		if (visible) {
@@ -696,7 +692,7 @@ void UpdateMonUI(LPVOID lpParam) {
 		int pos = 0;
 		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
 			// Update UI...
-			if (visible && runUIUpdate) {
+			if (visible) {
 				if (IsSensorValid(i, conf->showHidden)) {
 					if (i->second.cur != i->second.oldCur && i->second.min != NO_SEN_VALUE) {
 						string name = to_string(i->second.min);
@@ -731,13 +727,12 @@ void UpdateMonUI(LPVOID lpParam) {
 					DestroyIcon(i->second.niData->hIcon);
 					delete i->second.niData;
 					i->second.niData = NULL;
-					//i->second.oldCur = NO_SEN_VALUE;
-					// Unresponce icon workaround
+					// Unresponsive icon workaround
 					Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 				}
 			}
 		}
-		if (visible && runUIUpdate) {
+		if (visible) {
 			// resize
 			RECT cArea;
 			GetClientRect(list, &cArea);

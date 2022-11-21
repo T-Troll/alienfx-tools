@@ -154,7 +154,7 @@ void ConfigHandler::Load() {
 	GetReg("EsifTemp", &esif_temp);
 	GetReg("DimmingPower", &dimmingPower, 92);
 	GetReg("OffOnBattery", &offOnBattery);
-	GetReg("FanControl", &fanControl);
+	GetReg("FanControl", &fanControl, 1);
 	GetReg("ShowGridNames", &showGridNames);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	RegGetValue(hKeyMain, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
@@ -443,16 +443,16 @@ void ConfigHandler::Save() {
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
-			for (auto i = (*jIter)->fansets.fanControls.begin(); i != (*jIter)->fansets.fanControls.end(); i++) {
-				for (auto j = i->sensors.begin(); j != i->sensors.end(); j++) {
+			for (auto i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
+				for (auto j = (*jIter)->fansets.fanControls[i].begin(); j != (*jIter)->fansets.fanControls[i].end(); j++) {
 					if (j->second.active) {
-						name = "Fan-" + to_string(i->fanIndex) + "-" + to_string(j->first);
+						//name = "Fan-" + to_string(i) + "-" + to_string(j->first);
 						byte* outdata = new byte[j->second.points.size() * 2];
 						for (int k = 0; k < j->second.points.size(); k++) {
 							outdata[2 * k] = (byte)j->second.points[k].temp;
 							outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
 						}
-						name = "Profile-fan-" + to_string((*jIter)->id) + "-" + to_string(i->fanIndex) + "-" + to_string(j->first);
+						name = "Profile-fan-" + to_string((*jIter)->id) + "-" + to_string(i) + "-" + to_string(j->first);
 
 						RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)j->second.points.size() * 2);
 						delete[] outdata;

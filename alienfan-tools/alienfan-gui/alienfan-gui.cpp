@@ -34,7 +34,15 @@ extern HWND toolTip;
 
 GUID* sch_guid, perfset;
 
-NOTIFYICONDATA* niData = NULL;
+NOTIFYICONDATA niDataFC{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
+        (HICON)LoadImage(GetModuleHandle(NULL),
+            MAKEINTRESOURCE(IDI_ALIENFANGUI),
+            IMAGE_ICON,
+            GetSystemMetrics(SM_CXSMICON),
+            GetSystemMetrics(SM_CYSMICON),
+            LR_DEFAULTCOLOR) };
+extern NOTIFYICONDATA* niData;
+
 
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
@@ -53,6 +61,8 @@ INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
+extern void TempUIEvent(NMLVDISPINFO* lParam, ThreadHelper* fanUIUpdate, HWND tempList, HWND fanList);
+extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
 extern bool fanMode;
@@ -77,23 +87,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     fan_conf = new ConfigFan();
     fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
 
-    NOTIFYICONDATA fanIcon{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
-        (HICON)LoadImage(GetModuleHandle(NULL),
-            MAKEINTRESOURCE(IDI_ALIENFANGUI),
-            IMAGE_ICON,
-            GetSystemMetrics(SM_CXSMICON),
-            GetSystemMetrics(SM_CYSMICON),
-            LR_DEFAULTCOLOR) };
-
-    niData = &fanIcon;
-
-    Shell_NotifyIcon(NIM_ADD, niData);
-
-    acpi = new AlienFan_SDK::Control();
-
-    if (acpi->Probe()) {
+    if ((acpi = new AlienFan_SDK::Control())->Probe()) {
         fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
-        Shell_NotifyIcon(NIM_DELETE, niData);
+        Shell_NotifyIcon(NIM_DELETE, &niDataFC);
         fan_conf->SetBoostsAndNames(acpi);
         mon = new MonHelper(fan_conf);
 
@@ -110,12 +106,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         delete mon;
     }
     else {
-        ShowNotification(niData, "Error", "Compatible hardware not found!", false);
+        ShowNotification(&niDataFC, "Error", "Compatible hardware not found!", false);
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
         Sleep(5000);
     }
 
-    Shell_NotifyIcon(NIM_DELETE, niData);
+    Shell_NotifyIcon(NIM_DELETE, &niDataFC);
 
     DoStopService(fan_conf->wasAWCC, false);
 
@@ -161,11 +157,11 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 void StartOverboost(HWND hDlg, int fan, bool type) {
     EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
     if (type) {
-        CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)fan, 0, NULL);
+        CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)(ULONG64)fan, 0, NULL);
         SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
     }
     else
-        CreateThread(NULL, 0, CheckFanRPM, (LPVOID)fan, 0, NULL);
+        CreateThread(NULL, 0, CheckFanRPM, (LPVOID)(ULONG64)fan, 0, NULL);
 }
 
 void RestoreApp() {
@@ -178,18 +174,20 @@ void RestoreApp() {
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
-        tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
+        tempList = GetDlgItem(hDlg, IDC_TEMP_LIST),
+        fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
-        AddTrayIcon(niData, fan_conf->updateCheck);
+        AddTrayIcon(&niDataFC, fan_conf->updateCheck);
     }
 
     switch (message) {
     case WM_INITDIALOG:
     {
-        niData->hWnd = hDlg;
-        AddTrayIcon(niData, fan_conf->updateCheck);
+        niDataFC.hWnd = hDlg;
+        niData = &niDataFC;
+        AddTrayIcon(&niDataFC, fan_conf->updateCheck);
 
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
@@ -213,8 +211,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         ShowWindow(fanWindow, fan_conf->startMinimized ? SW_HIDE : SW_SHOWNA);
 
         ReloadPowerList(power_list);
-        ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
-        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
+        ReloadTempView(tempList);
+        //ReloadFanView(fanList);
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
@@ -227,7 +225,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
 
-        if (!fan_conf->obCheck && MessageBox(NULL, "Fan overboost values not defined!\nDo you want to set it now (it will took some minutes)?", "Fan settings",
+        if (!fan_conf->obCheck && MessageBox(NULL, "Do you want to set max. boost now (it will took some minutes)?", "Fan settings",
             MB_YESNO | MB_ICONQUESTION) == IDYES) {
             // ask for boost check
             StartOverboost(hDlg, -1, true);
@@ -293,7 +291,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SAVE:
             fan_conf->Save();
-            ShowNotification(niData, "Configuration saved!", "Configuration saved successfully.", true);
+            ShowNotification(&niDataFC, "Configuration saved!", "Configuration saved successfully.", true);
             break;
         case IDM_SETTINGS_STARTWITHWINDOWS:
         {
@@ -310,7 +308,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             fan_conf->updateCheck = !fan_conf->updateCheck;
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
             if (fan_conf->updateCheck)
-                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+                CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
         } break;
         case IDM_SETTINGS_KEYBOARDSHORTCUTS:
             fan_conf->keyShortcuts = !fan_conf->keyShortcuts;
@@ -324,16 +322,15 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_BUT_RESET:
         {
-            fan_block* fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
-            if (fan && (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all fan curves?", "Warning",
-                MB_YESNO | MB_ICONWARNING) == IDYES)) {
-                fan->sensors.clear();
-                ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
+            if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all fan curves?", "Warning",
+                MB_YESNO | MB_ICONWARNING) == IDYES) {
+                fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].clear();
+                ReloadFanView(fanList);
             }
         } break;
         case IDC_MAX_RESET:
             mon->maxTemps = mon->senValues;
-            ReloadTempView(GetDlgItem(hDlg, IDC_TEMP_LIST));
+            ReloadTempView(tempList);
             break;
         case IDC_BUT_OVER:
             if (fanMode) {
@@ -399,8 +396,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
             if (!isNewVersion && needRemove) {
-                Shell_NotifyIcon(NIM_DELETE, niData);
-                Shell_NotifyIcon(NIM_ADD, niData);
+                Shell_NotifyIcon(NIM_DELETE, &niDataFC);
+                Shell_NotifyIcon(NIM_ADD, &niDataFC);
                 needRemove = false;
             }
             else
@@ -450,92 +447,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_FAN_LIST:
-            if (fanUpdateBlock)
-                break;
-            switch (((NMHDR*)lParam)->code) {
-            case LVN_ITEMCHANGED:
-            {
-                NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-                if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
-                    // Select other fan....
-                    fan_conf->lastSelectedFan = lPoint->iItem;
-                    SendMessage(fanWindow, WM_PAINT, 0, 0);
-                    break;
-                }
-                if (lPoint->uNewState & 0x3000) {
-                    fan_block* fan = fan_conf->FindFanBlock(lPoint->iItem);
-                    switch (lPoint->uNewState & 0x3000) {
-                    case 0x1000:
-                        if (fan)
-                            // Remove sensor
-                            for (auto cSen = fan->sensors.begin(); cSen != fan->sensors.end(); cSen++)
-                                if (cSen->first == fan_conf->lastSelectedSensor) {
-                                    cSen->second.active = false;
-                                    break;
-                                }
-                        break;
-                    case 0x2000:
-                        // add fan
-                        if (!fan) { // add new fan block
-                            fan_conf->lastProf->fanControls.push_back({ (short)lPoint->iItem });
-                            fan = &fan_conf->lastProf->fanControls.back();
-                        }
-                        if (fan->sensors.find(fan_conf->lastSelectedSensor) == fan->sensors.end())
-                            fan->sensors[fan_conf->lastSelectedSensor] = { true, { {0,0},{100,100} } };
-                        else
-                            fan->sensors[fan_conf->lastSelectedSensor].active = true;
-                        break;
-                    }
-                    ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
-                }
-            } break;
-            }
+            if (!fanUpdateBlock)
+                FanUIEvent((NMLISTVIEW*)lParam, fanList);
             break;
-        case IDC_TEMP_LIST: {
-            switch (((NMHDR*)lParam)->code) {
-            case LVN_BEGINLABELEDIT: {
-                fanThread->Stop();
-                NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                auto pwr = fan_conf->sensors.find((WORD)sItem->item.lParam);
-                Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[sItem->item.iItem].name).c_str());
-            } break;
-            case LVN_ITEMACTIVATE: case NM_RETURN:
-            {
-                int pos = ListView_GetHotItem(tempList);
-                RECT rect;
-                ListView_GetSubItemRect(tempList, pos, 1, LVIR_BOUNDS, &rect);
-                SetWindowPos(ListView_EditLabel(tempList, pos), HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
-            } break;
-            case LVN_ENDLABELEDIT:
-            {
-                NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-                if (sItem->item.pszText) {
-                    if (strlen(sItem->item.pszText))
-                        fan_conf->sensors[(WORD)sItem->item.lParam] = sItem->item.pszText;
-                    else {
-                        auto pwr = fan_conf->sensors.find((WORD)sItem->item.lParam);
-                        if (pwr != fan_conf->sensors.end())
-                            fan_conf->sensors.erase(pwr);
-                    }
-                    ReloadTempView(tempList);
-                }
-                fanThread->Start();
-            } break;
-            case LVN_ITEMCHANGED:
-            {
-                NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-                if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
-                        // Select other sensor....
-                        fan_conf->lastSelectedSensor = (WORD)lPoint->lParam;
-                        // Redraw fans
-                        ReloadFanView(GetDlgItem(hDlg, IDC_FAN_LIST));
-                        SendMessage(fanWindow, WM_PAINT, 0, 0);
-                }
-            } break;
-            }
+        case IDC_TEMP_LIST:
+            TempUIEvent((NMLVDISPINFO*)lParam, fanThread, tempList, fanList);
+            break;
         } break;
-        }
-        break;
     case WM_CLOSE:
         DestroyWindow(hDlg);
         break;
@@ -558,7 +476,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             fanThread->Start();
             if (fan_conf->updateCheck) {
                 needUpdateFeedback = false;
-                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+                CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
             }
             break;
         case PBT_APMSUSPEND:
@@ -653,8 +571,8 @@ void UpdateFanUI(LPVOID lpParam) {
         for (int i = 0; i < acpi->fans.size(); i++) {
             name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
         }
-        strcpy_s(niData->szTip, 127, name.c_str());
-        Shell_NotifyIcon(NIM_MODIFY, niData);
+        strcpy_s(niDataFC.szTip, 127, name.c_str());
+        Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
     }
 }
 
