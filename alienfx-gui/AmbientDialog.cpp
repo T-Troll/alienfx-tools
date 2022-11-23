@@ -10,8 +10,6 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern EventHandler* eve;
 extern int eItem;
 
-ThreadHelper* ambUIupdate = NULL;
-
 void AmbUpdate(LPVOID);
 
 void InitButtonZone(HWND dlg) {
@@ -42,7 +40,7 @@ void RedrawButtonZone(HWND dlg) {
 }
 
 void SetGridSize(HWND dlg, int x, int y) {
-    ambUIupdate->Stop();
+    updateUI->Stop();
     if (eve->capt) {
         eve->capt->SetLightGridSize(x, y);
     }
@@ -50,7 +48,7 @@ void SetGridSize(HWND dlg, int x, int y) {
         conf->amb_grid = MAKELPARAM(x, y);
     }
     InitButtonZone(dlg);
-    ambUIupdate->Start();
+    updateUI->Start();
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -94,7 +92,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         InitButtonZone(hDlg);
 
         // Start UI update thread...
-        ambUIupdate = new ThreadHelper(AmbUpdate, hDlg, 200);
+        updateUI = new ThreadHelper(AmbUpdate, hDlg, 200);
 
     } break;
     case WM_COMMAND:
@@ -186,7 +184,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
     } break;
     case WM_DESTROY:
-        delete ambUIupdate;
+        delete updateUI;
     break;
     default: return false;
     }

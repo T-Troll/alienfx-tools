@@ -3,6 +3,7 @@
 extern int eItem;
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern bool IsGroupUnused(DWORD gid);
+extern FXHelper* fxhl;
 
 HWND zsDlg;
 

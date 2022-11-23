@@ -3,10 +3,9 @@
 class ThreadHelper
 {
 private:
-	HANDLE tHandle;
-
+	HANDLE tHandle = NULL;
 public:
-	void (*func)(LPVOID param) = NULL;
+	void (*func)(LPVOID param);
 	LPVOID param;
 	HANDLE tEvent;
 	int delay, priority;

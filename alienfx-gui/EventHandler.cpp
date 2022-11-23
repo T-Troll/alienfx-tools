@@ -5,6 +5,7 @@
 
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "MonHelper.h"
 
 // debug print
 #ifdef _DEBUG
@@ -15,6 +16,7 @@
 
 extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
+extern FXHelper* fxhl;
 extern MonHelper* mon;
 
 extern void SetTrayTip();
@@ -36,7 +38,6 @@ EventHandler::~EventHandler()
 {
 	StopProfiles();
 	StopEffects();
-	StopFanMon();
 	delete[] aProcesses;
 }
 
@@ -86,8 +87,8 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 		modifyProfile.unlock();
 
-		if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE && acpi->GetGMode() != conf->fan_conf->lastProf->gmode)
-				acpi->SetGMode(conf->fan_conf->lastProf->gmode);
+		if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
+			mon->SetCurrentGmode(conf->fan_conf->lastProf->gmode);
 
 		fxhl->SetState();
 		ChangeEffectMode();
@@ -177,21 +178,6 @@ void EventHandler::StartEffects() {
 			if (!grid) grid = new GridHelper();
 			break;
 		}
-	}
-}
-
-void EventHandler::StartFanMon() {
-	if (acpi && !mon) {
-		mon = new MonHelper(conf->fan_conf);
-	}
-}
-
-void EventHandler::StopFanMon() {
-	if (mon) {
-		monInUse.lock();
-		delete mon;
-		mon = NULL;
-		monInUse.unlock();
 	}
 }
 
@@ -418,7 +404,7 @@ void CEventProc(LPVOID param)
 	static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
 	static HKL curLocale;
 
-	EventData* cData = &src->cData;
+	LightEventData* cData = &src->cData;
 
 	if (conf->lightsNoDelay) {
 
@@ -450,14 +436,12 @@ void CEventProc(LPVOID param)
 			}
 
 			if (mon) {
-				src->monInUse.lock();
 				// Check fan RPMs
 				for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
 					cData->Fan = max(cData->Fan, acpi->GetFanPercent(i));
 				}
 				for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
 					cData->Temp = max(cData->Temp, i->second);
-				src->monInUse.unlock();
 			}
 
 			// ESIF powers and temps
@@ -492,6 +476,6 @@ void CEventProc(LPVOID param)
 			if (!src->grid)
 				fxhl->SetCounterColor(cData);
 			src->modifyProfile.unlock();
-			memcpy(&fxhl->eData, &cData, sizeof(EventData));
+			memcpy(&fxhl->eData, cData, sizeof(LightEventData));
 	}
 }

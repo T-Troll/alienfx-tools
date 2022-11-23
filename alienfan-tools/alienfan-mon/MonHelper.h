@@ -1,7 +1,7 @@
 #pragma once
 #include "alienfan-SDK.h"
 #include "ConfigFan.h"
-#include "..\..\AlienFx-Common\ThreadHelper.h"
+#include "ThreadHelper.h"
 
 class MonHelper {
 public:
@@ -11,7 +11,7 @@ public:
 	map<WORD, short> senValues, maxTemps;
 	vector<map<WORD, short>> senBoosts;
 
-	MonHelper(ConfigFan*);
+	MonHelper();
 	~MonHelper();
 	void Start();
 	void Stop();

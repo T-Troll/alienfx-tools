@@ -22,7 +22,8 @@ struct SENID {
 
 struct SENSOR {
 	string sname;
-	int min = NO_SEN_VALUE, max = 0, cur = 0, oldCur = NO_SEN_VALUE;
+	int min = NO_SEN_VALUE, max = 0, cur = 0;
+	bool changed = true;
 	union {
 		struct {
 			byte disabled;

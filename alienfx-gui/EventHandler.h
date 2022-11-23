@@ -1,10 +1,11 @@
 #pragma once
 #include <pdh.h>
+#include <mutex>
 #include "ConfigHandler.h"
 #include "CaptureHelper.h"
 #include "GridHelper.h"
 #include "WSAudioIn.h"
-#include "MonHelper.h"
+#include "FXHelper.h"
 
 class EventHandler
 {
@@ -34,14 +35,12 @@ public:
 
 	bool keyboardSwitchActive = false;
 
-	//HANDLE stopEvents = NULL;
-
-	mutex modifyProfile, monInUse;
+	mutex modifyProfile;
 
 	HQUERY hQuery = NULL;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 
-	EventData cData;
+	LightEventData cData;
 
 	void ChangePowerState();
 	void ChangeScreenState(DWORD state = 1);
@@ -56,9 +55,6 @@ public:
 
 	void StartEvents();
 	void StopEvents();
-
-	void StartFanMon();
-	void StopFanMon();
 
 	void ScanTaskList();
 

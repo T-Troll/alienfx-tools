@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
-#include "EventHandler.h"
+#include "MonHelper.h"
+#include "common.h"
 
 extern bool SetColor(HWND hDlg, groupset* mmap, AlienFX_SDK::afx_act* map);
 extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
@@ -7,8 +8,8 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
+extern FXHelper* fxhl;
 extern MonHelper* mon;
-
 extern int eItem;
 
 const static vector<string> eventTypeNames{ "Power", "Performance", "Indicator" },
@@ -18,7 +19,6 @@ const static vector<string> eventTypeNames{ "Power", "Performance", "Indicator" 
 
 int eventID = -1;
 void UpdateEventUI(LPVOID);
-ThreadHelper* hapUIupdate;
 
 event* GetEventData(groupset* mmap) {
 	if (mmap && eventID >= 0 && mmap->events.size() > eventID)
@@ -113,7 +113,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		RebuildEventList(hDlg, map);
 
 		// Start UI update thread...
-		hapUIupdate = new ThreadHelper(UpdateEventUI, hDlg, 300);
+		updateUI = new ThreadHelper(UpdateEventUI, hDlg, 300);
 
 	} break;
 	case WM_APP + 2: {
@@ -252,7 +252,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		}
 		break;
 	case WM_DESTROY:
-		delete hapUIupdate;
+		delete updateUI;
 		break;
 	default: return false;
 	}
@@ -266,16 +266,16 @@ void UpdateEventUI(LPVOID lpParam) {
 		SetDlgItemText((HWND)lpParam, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
 		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " (" + to_string(fxhl->maxData.PWR) + ")W").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET) + " %").c_str());
+		SetDlgItemText((HWND)lpParam, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
 		if (mon) {
 			int maxFans = 0;
 			for (auto i = mon->fanRpm.begin(); i < mon->fanRpm.end(); i++)
 				maxFans = max(maxFans, *i);
-				SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
+			SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
 		}
 		else
 			SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, "disabled");
-		SetDlgItemText((HWND)lpParam, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET) + " %").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
 	}
 }

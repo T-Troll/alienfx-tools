@@ -8,8 +8,7 @@ ThreadHelper::ThreadHelper(LPVOID function, LPVOID param, int delay, int prt) {
 	func = (void (*)(LPVOID))function;
 	this->param = param;
 	tEvent = CreateEvent(NULL, false, false, NULL);
-	func(param);
-	tHandle = CreateThread(NULL, 0, ThreadFunc, this, 0, NULL);
+	Start();
 }
 
 ThreadHelper::~ThreadHelper()
@@ -31,6 +30,7 @@ void ThreadHelper::Stop()
 void ThreadHelper::Start()
 {
 	if (!tHandle) {
+		func(param);
 		tHandle = CreateThread(NULL, 0, ThreadFunc, this, 0, NULL);
 	}
 }

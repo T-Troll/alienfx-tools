@@ -330,12 +330,12 @@ void ResetMinMax(DWORD id = 0xffffffff) {
 	if (id == 0xffffffff) {
 		for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
 			iter->second.max = iter->second.min = iter->second.cur;
-			iter->second.oldCur = NO_SEN_VALUE;
+			iter->second.cur = NO_SEN_VALUE;
 		}
 	}
 	else {
 		conf->active_sensors[id].max = conf->active_sensors[id].min = conf->active_sensors[id].cur;
-		conf->active_sensors[id].oldCur = NO_SEN_VALUE;
+		conf->active_sensors[id].cur = NO_SEN_VALUE;
 	}
 	//ReloadSensorView();
 }
@@ -343,7 +343,7 @@ void ResetMinMax(DWORD id = 0xffffffff) {
 void ResetTraySensors() {
 	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
 		if (i->second.intray)
-			i->second.oldCur = NO_SEN_VALUE;
+			i->second.cur = NO_SEN_VALUE;
 	}
 }
 
@@ -427,7 +427,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_BUTTON_COLOR:
 			if (sen) {
 				SetColor(IDC_BUTTON_COLOR, &sen->traycolor);
-				sen->oldCur = NO_SEN_VALUE;
+				sen->cur = NO_SEN_VALUE;
 			}
 			break;
 		case IDC_CHECK_INTRAY:
@@ -437,7 +437,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_CHECK_INVERTED:
 			if (sen) {
 				sen->inverse = state;
-				sen->oldCur = NO_SEN_VALUE;
+				sen->cur = NO_SEN_VALUE;
 			}
 			break;
 		case IDC_CHECK_ALARM:
@@ -692,9 +692,9 @@ void UpdateMonUI(LPVOID lpParam) {
 		int pos = 0;
 		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
 			// Update UI...
-			if (visible) {
-				if (IsSensorValid(i, conf->showHidden)) {
-					if (i->second.cur != i->second.oldCur && i->second.min != NO_SEN_VALUE) {
+			if (IsSensorValid(i, conf->showHidden)) {
+				if (visible) {
+					if (i->second.changed) {
 						string name = to_string(i->second.min);
 						ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
 						name = to_string(i->second.cur);
@@ -704,31 +704,30 @@ void UpdateMonUI(LPVOID lpParam) {
 					}
 					pos++;
 				}
-			}
-			// Update tray icons...
-			if (IsSensorValid(i, false) && i->second.intray) {
-				if (!i->second.niData) {
-					// add tray icon
-					i->second.niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (DWORD)(i->first),
-						NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
-					i->second.oldCur = NO_SEN_VALUE;
+				// Update tray icons...
+				if (i->second.intray) {
+					if (!i->second.niData) {
+						// add tray icon
+						i->second.niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (DWORD)(i->first),
+							NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
+						i->second.changed = true;
+					}
+					if (i->second.changed) {
+						UpdateTrayData(&i->second, 0);
+						if (!Shell_NotifyIcon(NIM_MODIFY, i->second.niData))
+							Shell_NotifyIcon(NIM_ADD, i->second.niData);
+					}
 				}
-				if (i->second.cur != i->second.oldCur && i->second.min != NO_SEN_VALUE) {
-					UpdateTrayData(&i->second, 0);
-					if (!Shell_NotifyIcon(NIM_MODIFY, i->second.niData))
-						Shell_NotifyIcon(NIM_ADD, i->second.niData);
-					i->second.oldCur = i->second.cur;
-				}
-			}
-			else {
-				// remove tray icon
-				if (i->second.niData) {
-					Shell_NotifyIcon(NIM_DELETE, i->second.niData);
-					DestroyIcon(i->second.niData->hIcon);
-					delete i->second.niData;
-					i->second.niData = NULL;
-					// Unresponsive icon workaround
-					Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+				else {
+					// remove tray icon
+					if (i->second.niData) {
+						Shell_NotifyIcon(NIM_DELETE, i->second.niData);
+						DestroyIcon(i->second.niData->hIcon);
+						delete i->second.niData;
+						i->second.niData = NULL;
+						// Unresponsive icon workaround
+						Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+					}
 				}
 			}
 		}

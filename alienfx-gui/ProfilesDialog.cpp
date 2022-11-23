@@ -14,6 +14,7 @@ extern bool IsGroupUnused(DWORD gid);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
 extern EventHandler* eve;
+extern FXHelper* fxhl;
 int pCid = -1;
 
 vector<deviceeffect>::iterator FindDevEffect(profile* prof, int devNum, int type) {

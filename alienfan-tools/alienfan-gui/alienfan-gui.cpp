@@ -21,7 +21,7 @@ using namespace std;
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 
-AlienFan_SDK::Control* acpi = NULL;             // ACPI control object
+extern AlienFan_SDK::Control* acpi;             // ACPI control object
 ConfigFan* fan_conf = NULL;                     // Config...
 MonHelper* mon = NULL;                          // Monitoring object
 
@@ -71,56 +71,6 @@ extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 extern DWORD WINAPI CheckFanRPM(LPVOID lpParam);
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
-{
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    //UNREFERENCED_PARAMETER(lpCmdLine);
-    //UNREFERENCED_PARAMETER(nCmdShow);
-
-    ResetDPIScale(lpCmdLine);
-
-    MSG msg{0};
-
-    fan_conf = new ConfigFan();
-    fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
-
-    if ((acpi = new AlienFan_SDK::Control())->Probe()) {
-        fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
-        Shell_NotifyIcon(NIM_DELETE, &niDataFC);
-        fan_conf->SetBoostsAndNames(acpi);
-        mon = new MonHelper(fan_conf);
-
-        if (!(InitInstance(hInstance, fan_conf->startMinimized ? SW_HIDE : SW_NORMAL))) {
-            return FALSE;
-        }
-
-        // Main message loop:
-        while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-        delete mon;
-    }
-    else {
-        ShowNotification(&niDataFC, "Error", "Compatible hardware not found!", false);
-        WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
-        Sleep(5000);
-    }
-
-    Shell_NotifyIcon(NIM_DELETE, &niDataFC);
-
-    DoStopService(fan_conf->wasAWCC, false);
-
-    delete acpi;
-    delete fan_conf;
-
-    return 0;
-}
-
 void SetHotkeys() {
     if (fan_conf->keyShortcuts) {
         //power mode hotkeys
@@ -136,22 +86,58 @@ void SetHotkeys() {
     }
 }
 
-HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+                     _In_opt_ HINSTANCE hPrevInstance,
+                     _In_ LPWSTR    lpCmdLine,
+                     _In_ int       nCmdShow)
 {
-    hInst = hInstance;
+    UNREFERENCED_PARAMETER(hPrevInstance);
+    //UNREFERENCED_PARAMETER(lpCmdLine);
+    //UNREFERENCED_PARAMETER(nCmdShow);
 
-    if (mDlg = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
+    ResetDPIScale(lpCmdLine);
 
-        SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
-        SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFANGUI), IMAGE_ICON, 16, 16, 0));
+    MSG msg{0};
 
-        SetHotkeys();
+    fan_conf = new ConfigFan();
+    fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
+    mon = new MonHelper();
 
-        ShowWindow(mDlg, nCmdShow);
+    if (mon->monThread) {
+        fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
+        Shell_NotifyIcon(NIM_DELETE, &niDataFC);
 
+        hInst = hInstance;
+
+        if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
+
+            SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
+            SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFANGUI), IMAGE_ICON, 16, 16, 0));
+
+            SetHotkeys();
+
+            ShowWindow(mDlg, fan_conf->startMinimized ? SW_HIDE : SW_SHOW);
+            ShowWindow(fanWindow, fan_conf->startMinimized ? SW_HIDE : SW_SHOWNA);
+
+            // Main message loop:
+            while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
     }
+    else {
+        ShowNotification(&niDataFC, "Error", "Compatible hardware not found!", false);
+        WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
+        Sleep(5000);
+    }
+    delete mon;
+    DoStopService(fan_conf->wasAWCC, false);
+    Shell_NotifyIcon(NIM_DELETE, &niDataFC);
 
-    return mDlg;
+    delete fan_conf;
+
+    return 0;
 }
 
 void StartOverboost(HWND hDlg, int fan, bool type) {
@@ -205,19 +191,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
         tipWindow = fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP | WS_SIZEBOX,//WS_OVERLAPPED,
                                  cDlg.right, cDlg.top, wh, wh,
-                                 hDlg, NULL, hInst, 0);
+                                 mDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
         toolTip = CreateToolTip(fanWindow, NULL);
-        ShowWindow(fanWindow, fan_conf->startMinimized ? SW_HIDE : SW_SHOWNA);
 
         ReloadPowerList(power_list);
         ReloadTempView(tempList);
-        //ReloadFanView(fanList);
 
         fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
-
-        //EnableWindow(gmode_chk, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
-        //Button_SetCheck(gmode_chk, fan_conf->lastProf->gmode);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -557,7 +538,14 @@ void UpdateFanUI(LPVOID lpParam) {
             ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
             ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
             for (int i = 0; i < acpi->fans.size(); i++) {
-                string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
+                string name;
+                switch (acpi->fans[i].type)
+                {
+                case 0: name = "CPU"; break;
+                case 1: name = "GPU"; break;
+                default: name = "Fan";
+                } 
+                name += " " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
                 ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
             }
             SendMessage(fanWindow, WM_PAINT, 0, 0);

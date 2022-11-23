@@ -39,9 +39,8 @@ typedef struct tag_dlghdr {
 #define ind(_x, _y) (_y*conf->mainGrid->x+_x)
 
 extern HINSTANCE hInst;
-
-extern FXHelper* fxhl;
 extern ConfigHandler* conf;
+extern ThreadHelper* updateUI;
 extern HWND sTip1, sTip2, sTip3;
 
 

@@ -1,6 +1,5 @@
 #include "alienfx-gui.h"
-#include "alienfx-controls.h"
-#include <common.h>
+#include "common.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
@@ -17,8 +16,7 @@ extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 extern AlienFX_SDK::mapping* FindCreateMapping();
 
-extern AlienFan_SDK::Control* acpi;
-
+extern FXHelper* fxhl;
 extern HWND mDlg;
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);

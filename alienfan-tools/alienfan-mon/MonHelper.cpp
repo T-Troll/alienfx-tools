@@ -9,26 +9,30 @@
 
 void CMonProc(LPVOID);
 
-extern AlienFan_SDK::Control* acpi;
+AlienFan_SDK::Control* acpi = NULL;
 extern ConfigFan* fan_conf;
 
-MonHelper::MonHelper(ConfigFan* config) {
+MonHelper::MonHelper() {
 	//for (auto i = acpi->sensors.begin(); i != acpi->sensors.end(); i++) {
 	//	senValues.emplace(i->sid, -1);
 	//	maxTemps.emplace(i->sid, -1);
 	//}
-	size_t fansize = acpi->fans.size();
-	senBoosts.resize(fansize);
-	fanRpm.resize(fansize);
-	boostRaw.resize(fansize);
-	boostSets.resize(fansize);
-	fanSleep.resize(fansize);
+	if ((acpi = new AlienFan_SDK::Control())->Probe()) {
+		fan_conf->SetBoostsAndNames(acpi);
+		size_t fansize = acpi->fans.size();
+		senBoosts.resize(fansize);
+		fanRpm.resize(fansize);
+		boostRaw.resize(fansize);
+		boostSets.resize(fansize);
+		fanSleep.resize(fansize);
 
-	Start();
+		Start();
+	}
 }
 
 MonHelper::~MonHelper() {
 	Stop();
+	delete acpi;
 }
 
 void MonHelper::Start() {
@@ -108,9 +112,10 @@ void CMonProc(LPVOID param) {
 		for (auto cIter = 0; cIter < fan_conf->lastProf->fanControls.size(); cIter++) {
 			src->boostSets[cIter] = 0;
 			for (auto fIter = fan_conf->lastProf->fanControls[cIter].begin(); fIter != fan_conf->lastProf->fanControls[cIter].end(); fIter++) {
-				if (fIter->second.active) {
-					int cBoost = fIter->second.points.back().boost;
-					for (auto k = fIter->second.points.begin() + 1; k != fIter->second.points.end(); k++)
+				sen_block* cur = &fIter->second;
+				if (cur->active) {
+					int cBoost = cur->points.back().boost;
+					for (auto k = cur->points.begin() + 1; k != cur->points.end(); k++)
 						if (src->senValues[fIter->first] <= k->temp) {
 							if (k->temp != (k - 1)->temp)
 								cBoost = ((k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[fIter->first] - (k - 1)->temp))

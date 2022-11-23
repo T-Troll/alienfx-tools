@@ -2,6 +2,7 @@
 #include <ColorDlg.h>
 #include <Dbt.h>
 #include "EventHandler.h"
+#include "MonHelper.h"
 #include "common.h"
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
@@ -30,9 +31,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
-AlienFan_SDK::Control* acpi = NULL;
+extern AlienFan_SDK::Control* acpi;
 ConfigFan* fan_conf = NULL;
 MonHelper* mon = NULL;
+ThreadHelper* updateUI;
 
 HWND mDlg = NULL, dDlg = NULL;
 
@@ -63,24 +65,55 @@ bool DetectFans() {
 		return EvaluteToAdmin();
 	}
 	else {
-		acpi = new AlienFan_SDK::Control();
-		if (acpi->Probe()) {
-			conf->fan_conf->SetBoostsAndNames(acpi);
+		mon = new MonHelper();
+		if (mon->monThread) {
 			// Obsolete format conversion
 			for (auto cp = conf->profiles.begin(); cp != conf->profiles.end(); cp++)
 				if ((*cp)->flags & PROF_FANS)
 					conf->fan_conf->ConvertSenMappings(&(*cp)->fansets, acpi);
-			eve->StartFanMon();
 			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		}
 		else {
-			ShowNotification(&conf->niData, "Error", "Alienware fan control not found and disabled!", false);
-			delete acpi;
-			acpi = NULL;
+			ShowNotification(&conf->niData, "Error", "Fan control not available and disabled!", false);
+			delete mon;
+			mon = NULL;
 			conf->fanControl = false;
 		}
 	}
 	return conf->fanControl;
+}
+
+void SetHotkeys() {
+	if (conf->keyShortcuts) {
+		//register global hotkeys...
+		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
+		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
+		RegisterHotKey(mDlg, 3, 0, VK_F18);
+		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
+		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9);
+		RegisterHotKey(mDlg, 6, 0, VK_F17);
+		//profile change hotkeys...
+		for (int i = 0; i < 10; i++)
+			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
+		//power mode hotkeys
+		if (acpi)
+			for (int i = 0; i < acpi->powers.size(); i++)
+				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+	}
+	else {
+		//unregister global hotkeys...
+		UnregisterHotKey(mDlg, 1);
+		UnregisterHotKey(mDlg, 2);
+		UnregisterHotKey(mDlg, 3);
+		UnregisterHotKey(mDlg, 4);
+		UnregisterHotKey(mDlg, 5);
+		UnregisterHotKey(mDlg, 6);
+		//profile/power change hotkeys...
+		for (int i = 0; i < 10; i++) {
+			UnregisterHotKey(mDlg, 10 + i);
+			UnregisterHotKey(mDlg, 30 + i);
+		}
+	}
 }
 
 void ReloadProfileList();
@@ -128,20 +161,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (conf->startMinimized)
 		eve->StartProfiles();
 
-	if (!(InitInstance(hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL)))
-		return FALSE;
+	hInst = hInstance;
 
-	ReloadProfileList();
+	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
 
-	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
+		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
+		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
 
-	MSG msg;
-	// Main message loop:
-	while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-		if (!TranslateAccelerator(mDlg, hAccelTable, &msg))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+		SetHotkeys();
+		// Power notifications...
+		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
+
+		ShowWindow(mDlg, conf->startMinimized ? SW_HIDE : SW_SHOW);
+
+		ReloadProfileList();
+
+		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
+
+		MSG msg;
+		// Main message loop:
+		while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+			if (!TranslateAccelerator(mDlg, hAccelTable, &msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
 	}
 
@@ -151,64 +195,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	DoStopService(conf->wasAWCC, false);
 
-	if (acpi) {
-		delete acpi;
+	if (mon) {
+		delete mon;
 	}
 
 	delete conf;
 
 	return 0;
-}
-
-void SetHotkeys() {
-	if (conf->keyShortcuts) {
-		//register global hotkeys...
-		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
-		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
-		RegisterHotKey(mDlg, 3, 0, VK_F18);
-		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
-		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9);
-		RegisterHotKey(mDlg, 6, 0, VK_F17);
-		//profile change hotkeys...
-		for (int i = 0; i < 10; i++)
-			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
-		//power mode hotkeys
-		if (acpi)
-			for (int i = 0; i < acpi->powers.size(); i++)
-				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
-	}
-	else {
-		//unregister global hotkeys...
-		UnregisterHotKey(mDlg, 1);
-		UnregisterHotKey(mDlg, 2);
-		UnregisterHotKey(mDlg, 3);
-		UnregisterHotKey(mDlg, 4);
-		UnregisterHotKey(mDlg, 5);
-		UnregisterHotKey(mDlg, 6);
-		//profile/power change hotkeys...
-		for (int i = 0; i < 10; i++) {
-			UnregisterHotKey(mDlg, 10 + i);
-			UnregisterHotKey(mDlg, 30 + i);
-		}
-	}
-}
-
-HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-	hInst = hInstance;
-
-	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
-
-		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
-		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
-
-		SetHotkeys();
-		// Power notifications...
-		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
-
-		ShowWindow(mDlg, nCmdShow);
-	}
-	return mDlg;
 }
 
 void RedrawButton(HWND ctrl, AlienFX_SDK::Colorcode* act) {
@@ -293,12 +286,10 @@ void OnSelChanged(HWND hwndDlg)
 		TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
 	}
 
-	if (tabSel == TAB_FANS && !acpi) {
-		if (DetectFans())
-			eve->StartFanMon();
-		if (!acpi) {
+	if (tabSel == TAB_FANS && !mon) {
+		conf->fanControl = true;
+		if (!DetectFans())
 			TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
-		}
 	}
 
 	// Destroy the current child dialog box, if any.
@@ -653,7 +644,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
 			fxhl->Start();
-			eve->StartFanMon();
+			DetectFans();
 			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -686,7 +677,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->StopProfiles();
 			eve->StopEffects();
 			fxhl->Stop();
-			eve->StopFanMon();
+			delete mon;
 			break;
 		}
 		break;

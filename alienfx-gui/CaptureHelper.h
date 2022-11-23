@@ -1,5 +1,4 @@
 #pragma once
-#include "FXHelper.h"
 #include "ThreadHelper.h"
 #include "DXGIManager.hpp"
 

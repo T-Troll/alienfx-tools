@@ -1,6 +1,6 @@
 #pragma once
-#include "alienfx-gui.h"
-#include "common.h"
+#include "ConfigHandler.h"
+#include "ThreadHelper.h"
 #include <random>
 
 class GridHelper {

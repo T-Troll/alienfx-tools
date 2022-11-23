@@ -491,15 +491,14 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <DisableSpecificWarnings>4312</DisableSpecificWarnings>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
       <Profile>false</Profile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
     <Manifest />
     <ResourceCompile />

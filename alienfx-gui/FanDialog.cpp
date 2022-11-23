@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
-#include "EventHandler.h"
+#include "MonHelper.h"
+#include "common.h"
 #include <powrprof.h>
 #include <commctrl.h>
 
@@ -7,7 +8,7 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
-extern EventHandler* eve;
+//extern EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
@@ -31,7 +32,6 @@ extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
 extern HANDLE ocStopEvent;
 
 void UpdateFanUI(LPVOID);
-ThreadHelper* fanUIUpdate = NULL;
 
 void StartOverboost(HWND hDlg, int fan, bool type) {
     EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
@@ -51,48 +51,46 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     switch (message) {
     case WM_INITDIALOG:
     {
-        if (mon) {
-            niData = &conf->niData;
+        niData = &conf->niData;
 
-            // set PerfBoost lists...
-            IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
-            PowerGetActiveScheme(NULL, &sch_guid);
-            DWORD acMode, dcMode;
-            PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
-            PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
+        // set PerfBoost lists...
+        IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
+        PowerGetActiveScheme(NULL, &sch_guid);
+        DWORD acMode, dcMode;
+        PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
+        PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
-            vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
-            UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, acMode);
-            UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
+        vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
+        UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, acMode);
+        UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
 
-            ReloadPowerList(power_list);
-            ReloadTempView(tempList);
-            //ReloadFanView(fanList);
+        ReloadPowerList(power_list);
+        ReloadTempView(tempList);
+        //ReloadFanView(fanList);
 
-            //EnableWindow(g_mode, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
-            //Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
+        //EnableWindow(g_mode, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
+        //Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
 
-            // So open fan control window...
-            fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
-            SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR)FanCurve);
-            toolTip = CreateToolTip(fanWindow, toolTip);
-            tipWindow = GetDlgItem(hDlg, IDC_FC_LABEL);
+        // So open fan control window...
+        fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
+        SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR)FanCurve);
+        toolTip = CreateToolTip(fanWindow, toolTip);
+        tipWindow = GetDlgItem(hDlg, IDC_FC_LABEL);
 
-            // Start UI update thread...
-            fanUIUpdate = new ThreadHelper(UpdateFanUI, hDlg, 500);
+        // Start UI update thread...
+        updateUI = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
-            //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
-            //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
-            //SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
+        //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
+        //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
+        //SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
 
-            if (!fan_conf->obCheck && MessageBox(NULL, "Do you want to set max. boost now (it will took some minutes)?", "Question",
-                    MB_YESNO | MB_ICONINFORMATION) == IDYES) {
-                    // ask for boost check
-                    EnableWindow(power_list, false);
-                    StartOverboost(hDlg, -1, true);
-                }
-            fan_conf->obCheck = 1;
-        }
+        if (!fan_conf->obCheck && MessageBox(NULL, "Do you want to set max. boost now (it will took some minutes)?", "Question",
+                MB_YESNO | MB_ICONINFORMATION) == IDYES) {
+                // ask for boost check
+                EnableWindow(power_list, false);
+                StartOverboost(hDlg, -1, true);
+            }
+        fan_conf->obCheck = 1;
     } break;
     case WM_COMMAND:
     {
@@ -170,14 +168,12 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             FanUIEvent((NMLISTVIEW*)lParam, fanList);
             break;
         case IDC_TEMP_LIST:
-            TempUIEvent((NMLVDISPINFO*)lParam, fanUIUpdate, tempList, fanList);
+            TempUIEvent((NMLVDISPINFO*)lParam, updateUI, tempList, fanList);
             break;
         } break;
     case WM_DESTROY:
-        if (fanUIUpdate) {
-            delete fanUIUpdate;
-            LocalFree(sch_guid);
-        }
+        delete updateUI;
+        LocalFree(sch_guid);
         break;
     }
     return 0;
@@ -194,8 +190,7 @@ void UpdateFanUI(LPVOID lpParam) {
         SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Check\n Max. boost");
         wasBoostMode = false;
     }
-    if (mon && IsWindowVisible((HWND)lpParam)) {
-        eve->monInUse.lock();
+    if (IsWindowVisible((HWND)lpParam)) {
         if (!mon->monThread) {
             for (int i = 0; i < acpi->sensors.size(); i++) {
                 mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
@@ -214,10 +209,16 @@ void UpdateFanUI(LPVOID lpParam) {
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
         ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         for (int i = 0; i < acpi->fans.size(); i++) {
-            string name = "Fan " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
+            string name;
+            switch (acpi->fans[i].type)
+            {
+            case 0: name = "CPU"; break;
+            case 1: name = "GPU"; break;
+            default: name = "Fan";
+            }
+            name += " " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);
-        eve->monInUse.unlock();
     }
 }

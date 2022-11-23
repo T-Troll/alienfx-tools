@@ -1,11 +1,9 @@
 #pragma once
 #ifndef WSAUDIO_H
 #define WSAUDIO_H
-//#include <windows.h>
 #include <Audioclient.h>
 #include <Mmdeviceapi.h>
-#include "alienfx-gui.h"
-#include "kiss_fftr.h"
+#include "ThreadHelper.h"
 
 #define NUMBARS 20
 #define NUMPTS 2048

@@ -7,6 +7,7 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND ctrl, AlienFX_SDK::Colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
+extern FXHelper* fxhl;
 
 extern int eItem;
 

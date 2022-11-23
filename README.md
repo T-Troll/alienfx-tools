@@ -96,10 +96,10 @@ Build process:
 ## ToDo list
 
 - [ ] KRDT temperature sensors (Intel)
-- [ ] Ryzen ACPI sensors/control (AMD)
+- [x] Ryzen ACPI sensors/control (AMD) - beta
 - [ ] Advanced grid effects
 - [ ] Power and battery charge control
-- [ ] Restore ACPI light API support (now disabled)
+- [x] Restore ACPI light API support - beta
 
 ## License
 

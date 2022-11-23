@@ -252,13 +252,9 @@ namespace AlienFX_SDK {
 	int Functions::AlienFXInitialize(AlienFan_SDK::Control* acc) {
 		if (acc) {
 			version = vid = pid = API_ACPI;
-			// ToDo: check acc for lights, if any - like in Probe
-			//device = new AlienFan_SDK::Lights(acc);
-			//if (Reset()) {
-			//	return pid;
-			//}
-			device = acc;
-			//delete device;
+			device = new AlienFan_SDK::Lights(acc);
+			if (((AlienFan_SDK::Lights*)device)->isActivated)
+				return pid;
 		}
 		return -1;
 	}
@@ -304,11 +300,6 @@ namespace AlienFX_SDK {
 			AlienfxWaitForReady();
 			chain = 1;
 		} break;
-#ifndef NOACPILIGHTS
-		case API_ACPI:
-			result = device->Reset();
-			break;
-#endif
 		}
 		inSet = true;
 		return result;
@@ -334,11 +325,6 @@ namespace AlienFX_SDK {
 				AlienfxWaitForBusy();
 				//chain = 1;
 			} break;
-#ifndef NOACPILIGHTS
-			case API_ACPI:
-				res = device->Update();
-				break;
-#endif
 			default: res = true;
 			}
 			inSet = false;
@@ -381,7 +367,7 @@ namespace AlienFX_SDK {
 		} break;
 #ifndef NOACPILIGHTS
 		case API_ACPI:
-			val = device->SetColor(1 << index, c.r, c.g, c.b);
+			val = ((AlienFan_SDK::Lights*)device)->SetColor(1 << index, c.r, c.g, c.b);
 			break;
 #endif
 		default: return false;
@@ -432,13 +418,6 @@ namespace AlienFX_SDK {
 				val = PrepareAndSend(COMMV8.colorSet, sizeof(COMMV8.colorSet), &mods);
 			}
 		} break;
-		//case API_V6:
-		//{
-		//	DWORD fmask = 0;
-		//	for (auto nc = lights->begin(); nc < lights->end(); nc++)
-		//		fmask |= 1 << (*nc);
-		//	val = PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), SetMaskAndColor(fmask, AlienFX_A_Color, c));
-		//} break;
 		case API_V5:
 		{
 			vector<icommand> mods;
@@ -483,23 +462,20 @@ namespace AlienFX_SDK {
 #ifndef NOACPILIGHTS
 		case API_ACPI:
 		{
-			DWORD fmask = 0;
+			byte fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
-			val = device->SetColor((byte)fmask, c.r, c.g, c.b);
+			val = ((AlienFan_SDK::Lights*)device)->SetColor(fmask, c.r, c.g, c.b);
 		} break;
 #endif
 		default:
-		{
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				val = SetColor(*nc, c);
-		}
 		}
 		return val;
 	}
 
 	bool Functions::SetMultiAction(vector<act_block> *act, bool save) {
-
 		if (!inSet) Reset();
 		if (save && version != API_V4)
 			return SetPowerAction(act);
@@ -657,30 +633,6 @@ namespace AlienFX_SDK {
 							Colorcode{ act->act.front().b, act->act.front().g, act->act.front().r };
 					res = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color),
 						SetMaskAndColor(1 << act->index, actmode, { act->act[ca].b, act->act[ca].g, act->act[ca].r }, c2));
-					//switch (act->act[ca].type) {
-					//case AlienFX_A_Pulse:
-					//{
-					//	if (act->act.size() == 1)
-					//		mods = SetMaskAndColor(1 << act->index, 2, {act->act[ca].b, act->act[ca].g, act->act[ca].r});
-					//	else
-					//		mods = ca < act->act.size() - 1 ? SetMaskAndColor(1 << act->index, 2, { act->act[ca].b, act->act[ca].g, act->act[ca].r },
-					//			{ act->act[ca + 1].b, act->act[ca + 1].g, act->act[ca + 1].r }) :
-					//			SetMaskAndColor(1 << act->index, 2, { act->act[ca].b, act->act[ca].g, act->act[ca].r },
-					//				{ act->act.front().b, act->act.front().g, act->act.front().r });
-					//} break;
-					//case AlienFX_A_Morph:
-					//{
-					//	mods = ca < act->act.size() - 1 ? SetMaskAndColor(1 << act->index, 1, { act->act[ca].b, act->act[ca].g, act->act[ca].r },
-					//		{ act->act[ca + 1].b, act->act[ca + 1].g, act->act[ca + 1].r }) :
-					//		SetMaskAndColor(1 << act->index, 1, { act->act[ca].b, act->act[ca].g, act->act[ca].r },
-					//			{ act->act.front().b, act->act.front().g, act->act.front().r });
-					//} break;
-					//default:
-					//{ //case AlienFX_A_Color:
-					//	mods = SetMaskAndColor(1 << act->index, 3, {act->act[ca].b, act->act[ca].g, act->act[ca].r});
-					//} //break;
-					//}
-					//res = PrepareAndSend(COMMV1.color, sizeof(COMMV1.color), mods);
 				}
 				Loop();
 			} break;
@@ -863,19 +815,6 @@ namespace AlienFX_SDK {
 			bright = brightness * 10 / 0xff;
 			return PrepareAndSend(COMMV8.setBrightness, sizeof(COMMV8.setBrightness), { {2, bright} });
 		} break;
-		// This is not used in GUI, and don't work correctly in CLI
-		/*case API_V7: case API_ACPI:
-			if (!brightness)
-				for (auto i = mappings->begin(); i < mappings->end(); i++) {
-					if (!i->flags || power)
-						SetColor(i->lightid, {0});
-				}
-			break;
-		case API_V6:
-		{
-			vector<icommand> mods{ {9,0xf}, {13,bright}, {14,7} };
-			PrepareAndSend(COMMV6.colorSet, sizeof(COMMV6.colorSet), &mods);
-		} break;*/
 		case API_V5:
 		{
 			Reset();
@@ -902,6 +841,11 @@ namespace AlienFX_SDK {
 			AlienfxWaitForReady();
 			return res;
 		} break;
+#ifndef NOACPILIGHTS
+		case API_ACPI:
+			bright = brightness * 0xf / 0xff;
+			return ((AlienFan_SDK::Lights*)device)->SetBrightness(bright);
+#endif // !NOACPILIGHTS
 		}
 		return false;
 	}
@@ -1052,7 +996,7 @@ namespace AlienFX_SDK {
 		}
 #ifndef NOACPILIGHTS
 		if (device) {
-			delete device;
+			delete (AlienFan_SDK::Lights*)device;
 		}
 #endif
 	}
@@ -1145,38 +1089,7 @@ namespace AlienFX_SDK {
 	}
 
 	void Mappings::AlienFXAssignDevices(void* acc, byte brightness, byte power) {
-
 		AlienFXApplyDevices(AlienFXEnumDevices(acc), brightness, power);
-
-		//vector<Functions*> devList = AlienFXEnumDevices(acc);
-
-		//activeLights = 0;
-		//activeDevices = (int)devList.size();
-		//for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
-		//	if (i->dev) {
-		//		// is device still present?
-		//		auto nDev = find_if(devList.begin(), devList.end(),
-		//			[i](auto dev) {
-		//				return dev->GetVID() == i->vid && dev->GetPID() == i->pid;
-		//			});
-		//		if (nDev == devList.end()) {
-		//			// device not present
-		//			delete i->dev;
-		//			i->dev = NULL;
-		//		}
-		//		else {
-		//			devList.erase(nDev);
-		//			activeLights += (int)i->lights.size();
-		//		}
-		//	}
-		//}
-		//// add new devices...
-		//for (auto i = devList.begin(); i != devList.end(); i++) {
-		//	afx_device* dev = AddDeviceById((*i)->GetPID(), (*i)->GetVID());
-		//	dev->dev = *i;
-		//	dev->dev->ToggleState(brightness, &dev->lights, power);
-		//	activeLights += (int)dev->lights.size();
-		//}
 	}
 
 	afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {

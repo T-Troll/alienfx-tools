@@ -11,6 +11,7 @@ extern void SetLightInfo();
 extern void RedrawDevList();
 
 extern AlienFX_SDK::afx_device* FindActiveDevice();
+extern FXHelper* fxhl;
 
 extern int eLid, dIndex;
 extern bool whiteTest;

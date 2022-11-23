@@ -1,8 +1,15 @@
 #include "WSAudioIn.h"
+#include "ConfigHandler.h"
+#include "FXHelper.h"
+#include <math.h>
 
 #ifndef PI
 #define PI 3.141592653589793238462643383279502884197169399375
 #endif
+#include <tools/kiss_fftr.h>
+
+extern ConfigHandler* conf;
+extern FXHelper* fxhl;
 
 DWORD WINAPI WSwaveInProc(LPVOID);
 DWORD WINAPI FFTProc(LPVOID);

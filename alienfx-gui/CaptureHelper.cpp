@@ -1,4 +1,5 @@
 #include "CaptureHelper.h"
+#include "FXHelper.h"
 
 DWORD WINAPI CInProc(LPVOID);
 void CFXProc(LPVOID);

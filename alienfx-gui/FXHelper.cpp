@@ -1,11 +1,9 @@
 #include "alienfx-gui.h"
-#include "FXHelper.h"
 #include "EventHandler.h"
 
 extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp);
 
-extern ConfigHandler* conf;
 extern EventHandler* eve;
 
 DWORD WINAPI CLightsProc(LPVOID param);
@@ -127,7 +125,7 @@ void FXHelper::ResetPower(AlienFX_SDK::afx_device* dev)
 	}
 }
 
-void FXHelper::SetCounterColor(EventData *data, bool force)
+void FXHelper::SetCounterColor(LightEventData *data, bool force)
 {
 
 	if (!force) blinkStage = !blinkStage;
@@ -349,7 +347,7 @@ void FXHelper::RefreshGrid(int tact) {
 
 			// Set lights
 			if (ce->gridop.oldphase != ce->gridop.phase) {
-				fxhl->SetGridEffect(&(*ce));
+				SetGridEffect(&(*ce));
 				wasChanged = true;
 			}
 			ce->gridop.oldphase = ce->gridop.phase;
@@ -407,7 +405,7 @@ void FXHelper::SetState(bool force) {
 					if (conf->stateOn)
 						Refresh();
 					break;
-				case API_ACPI: case API_V6: case API_V7:
+				case API_V6: case API_V7:
 					Refresh();
 				}
 			}

@@ -1,12 +1,16 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "MonHelper.h"
+#include "common.h"
 
 extern void ReloadProfileList();
 extern bool DetectFans();
 extern void SetHotkeys();
 
 extern EventHandler* eve;
-extern AlienFan_SDK::Control* acpi;
+extern FXHelper* fxhl;
+extern MonHelper* mon;
+//extern AlienFan_SDK::Control* acpi;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -138,15 +142,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (state) {
 				if (DetectFans()) {
 					SetHotkeys();
-					eve->StartFanMon();
 				} else
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 			} else {
 				// Stop all fan services
-				if (acpi) {
-					eve->StopFanMon();
-					delete acpi;
-					acpi = NULL;
+				if (mon) {
+					delete mon;
+					mon = NULL;
 				}
 			}
 			// check for ACPI lights

@@ -1,7 +1,10 @@
 #include "GridHelper.h"
 #include "EventHandler.h"
+#include "FXHelper.h"
 
 extern EventHandler* eve;
+extern ConfigHandler* conf;
+extern FXHelper* fxhl;
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);

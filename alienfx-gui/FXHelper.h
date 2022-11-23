@@ -3,15 +3,15 @@
 #include <mutex>
 #include "ConfigHandler.h"
 
-struct EventData {
+struct LightEventData {
 	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255;
 	short Fan = 0;
 };
 
 struct LightQueryElement {
-	AlienFX_SDK::afx_device* dev = NULL;
-	int lid = 0;
-	DWORD flags = 0;
+	AlienFX_SDK::afx_device* dev;
+	int lid;
+	DWORD flags;
 	bool update = false;
 	byte actsize;
 	AlienFX_SDK::afx_act actions[10];
@@ -42,7 +42,7 @@ public:
 	HANDLE haveNewElement = NULL;
 	queue<LightQueryElement> lightQuery;
 	mutex modifyQuery;
-	EventData eData, maxData;
+	LightEventData eData, maxData;
 	// Power button state...
 	AlienFX_SDK::afx_act pbstate[2]{ 0 };
 
@@ -57,7 +57,7 @@ public:
 	void RefreshOne(groupset* map, bool update = true, int force = 0);
 	void TestLight(AlienFX_SDK::afx_device* dev, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::afx_device* dev);
-	void SetCounterColor(EventData *data, bool force = false);
+	void SetCounterColor(LightEventData *data, bool force = false);
 	void SetGridEffect(groupset* grp);
 	void RefreshMon();
 	void RefreshAmbient(UCHAR *img);

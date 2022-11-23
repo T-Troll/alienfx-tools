@@ -16,7 +16,6 @@ freq_map* freqBlock = NULL;
 HWND hToolTip = NULL;
 
 void UpdateHapticsUI(LPVOID);
-ThreadHelper* hapUIThread;
 
 void DrawFreq(HWND hDlg) {
 
@@ -155,9 +154,9 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			if (idx != freqBlock->freqID.end())
 				switch (cutMove) {
 				case 0:
-					hapUIThread->Stop();
+					updateUI->Stop();
 					freqBlock->freqID.erase(idx);
-					hapUIThread->Start();
+					updateUI->Start();
 					break;
 				case 1: freqBlock->hicut = clickLevel; break;
 				case 2: freqBlock->lowcut = clickLevel; break;
@@ -207,7 +206,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		SetFreqGroups(hDlg);
 
 		// Start UI update thread...
-		hapUIThread = new ThreadHelper(UpdateHapticsUI, hDlg, 50);
+		updateUI = new ThreadHelper(UpdateHapticsUI, hDlg, 50);
 	}
 	break;
 	case WM_COMMAND:
@@ -298,7 +297,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		return false;
 	break;
 	case WM_DESTROY:
-		delete hapUIThread;
+		delete updateUI;
 	break;
 	default: return false;
 	}

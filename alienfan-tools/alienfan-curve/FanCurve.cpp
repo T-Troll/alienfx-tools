@@ -90,7 +90,8 @@ void DrawFan()
             if (fan) {
                 HPEN linePen;
                 for (auto senI = fan->begin(); senI != fan->end(); senI++) {
-                    if (senI->second.active) {
+                    sen_block* sen = &senI->second;
+                    if (sen->active) {
                         // draw fan curve
                         if (senI->first == fan_conf->lastSelectedSensor)
                             linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
@@ -99,7 +100,7 @@ void DrawFan()
                         SelectObject(hdc, linePen);
                         // First point
                         MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
-                        for (auto i = senI->second.points.begin(); i != senI->second.points.end(); i++) {
+                        for (auto i = sen->points.begin(); i != sen->points.end(); i++) {
                             mark = Fan2Screen(i->temp, i->boost);
                             LineTo(hdc, mark.x, mark.y);
                             Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
@@ -453,10 +454,10 @@ void ReloadTempView(HWND list) {
 }
 
 void TempUIEvent(NMLVDISPINFO* lParam, ThreadHelper* fanUIUpdate, HWND tempList, HWND fanList) {
+    auto pwr = fan_conf->sensors.find((WORD)lParam->item.lParam);
     switch (lParam->hdr.code) {
     case LVN_BEGINLABELEDIT: {
         fanUIUpdate->Stop();
-        auto pwr = fan_conf->sensors.find((WORD)lParam->item.lParam);
         Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[lParam->item.iItem].name).c_str());
     } break;
     case LVN_ITEMACTIVATE: case NM_RETURN:
@@ -472,7 +473,6 @@ void TempUIEvent(NMLVDISPINFO* lParam, ThreadHelper* fanUIUpdate, HWND tempList,
             if (strlen(lParam->item.pszText))
                 fan_conf->sensors[(WORD)lParam->item.lParam] = lParam->item.pszText;
             else {
-                auto pwr = fan_conf->sensors.find((WORD)lParam->item.lParam);
                 if (pwr != fan_conf->sensors.end())
                     fan_conf->sensors.erase(pwr);
             }
@@ -506,12 +506,8 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
             auto fan = &fan_conf->lastProf->fanControls[lParam->iItem];
             switch (lParam->uNewState & 0x3000) {
             case 0x1000:
-                // Remove sensor
-                for (auto cSen = fan->begin(); cSen != fan->end(); cSen++)
-                    if (cSen->first == fan_conf->lastSelectedSensor) {
-                        cSen->second.active = false;
-                        break;
-                    }
+                // Deactivate sensor
+                (*fan)[fan_conf->lastSelectedSensor].active = false;
                 break;
             case 0x2000:
                 (*fan)[fan_conf->lastSelectedSensor].active = true;

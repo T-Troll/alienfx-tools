@@ -21,30 +21,29 @@ namespace AlienFan_SDK {
 				byte index;
 				byte type;
 			};
-			WORD sid; // LOBYTE - index, HIBYTE - type: 0 = ESIF, 1 = AWCC, 2 - Disk, 3 - KRDT, 4 = OHM
+			WORD sid; // LOBYTE - index, HIBYTE - type: 0 = ESIF, 1 = AWCC, 2 - Disk, 3 - AMD, 4 = OHM
 		};
 		string name;
 		BSTR instance; // for ESIF/OHM/SSD sensors
+		BSTR valueName;
 	};
 
-	//struct ALIENFAN_COMMAND {
-	//	byte com;
-	//	byte sub;
-	//};
-
-	struct ALIENFAN_CONTROL {
-		byte getPowerID[2];
-		byte getFanRPM[2];
-		byte getFanPercent[2];
-		byte getFanBoost[2];
-		byte setFanBoost[2];
-		byte getTemp[2];
-		byte getPower[2];
-		byte setPower[2];
-		byte getGMode[2];
-		byte setGMode[2];
-		byte getSysID[2];
+	struct ALIENFAN_FAN_INFO {
+		byte id, type;
 	};
+
+#define getPowerID		0
+#define getFanRPM		1
+#define getFanPercent	2
+#define getFanBoost		3
+#define getTemp			4
+#define getPowerMode	5
+#define setFanBoost		6
+#define setPowerMode	7
+#define getGMode		8
+#define setGMode		9
+#define getSysID		10
+#define getFanSensor	11
 
 	union ALIENFAN_INTERFACE {
 		struct {
@@ -58,14 +57,13 @@ namespace AlienFan_SDK {
 
 	class Control {
 	private:
-		VARIANT m_instancePath;
 		byte devFlags = 0;
 		DWORD systemID = 0;
-		//byte sysType = 0;
+		byte sysType = -1;
 		int Percent(int, int);
-
+		void EnumSensors(IEnumWbemClassObject* enum_obj, byte type);
 	public:
-		//VARIANT m_instancePath;
+		VARIANT m_instancePath;
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
 		IWbemClassObject* m_InParamaters = NULL;
 		Control();
@@ -124,11 +122,11 @@ namespace AlienFan_SDK {
 		inline DWORD GetSystemID() { return systemID; };
 
 		// Call custom Alienware method trough WMI
-		int CallWMIMethod(const byte* com, byte arg1 = 0, byte arg2 = 0);
+		int CallWMIMethod(byte com, byte arg1 = 0, byte arg2 = 0);
 
 		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
-		vector<byte> fans;
+		vector<ALIENFAN_FAN_INFO> fans;
 		vector<byte> boosts;
 		vector<WORD> maxrpm;
 		vector<byte> powers;
@@ -136,28 +134,27 @@ namespace AlienFan_SDK {
 		IWbemClassObject* m_AWCCGetObj = NULL;
 	};
 
-	//class Lights {
-	//private:
-	//	bool activated = false;
-	//public:
-	//	Lights(Control *ac);
+	class Lights {
+	private:
+		const BSTR colorList[2]{
+			(BSTR)L"Set24BitsLEDColor",		// 0x12
+			(BSTR)L"LEDBrightness"			// 0x03
+		};
 
-	//	// Resets light subsystem
-	//	bool Reset();
+		IWbemClassObject* m_InParamaters = NULL;
+		IWbemServices* m_WbemServices = NULL;
+		VARIANT m_instancePath;
+		int CallWMIMethod(byte com, byte* arg1);
+	public:
+		bool isActivated = false;
 
-	//	// Prepare for operations
-	//	bool Prepare();
+		Lights(Control *ac);
 
-	//	// Update lights state (end operation)
-	//	bool Update();
+		// Set lights brightness, 0..F
+		int SetBrightness(byte brightness);
 
-	//	// Set color of lights mask defined by id to RGB
-	//	bool SetColor(byte id, byte r, byte g, byte b);
+		// Set color of lights mask defined by id to RGB
+		int SetColor(byte mask, byte r, byte g, byte b);
 
-	//	// Set light system mode (brightness, ???)
-	//	bool SetMode(byte mode, bool onoff);
-
-	//	// Return color subsystem availability
-	//	bool IsActivated();
-	//};
+	};
 }
