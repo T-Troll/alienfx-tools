@@ -136,7 +136,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     Shell_NotifyIcon(NIM_DELETE, &niDataFC);
 
     delete fan_conf;
-
     return 0;
 }
 
@@ -151,9 +150,9 @@ void StartOverboost(HWND hDlg, int fan, bool type) {
 }
 
 void RestoreApp() {
+    ShowWindow(mDlg, SW_RESTORE);
     ShowWindow(fanWindow, SW_RESTORE);
     SendMessage(fanWindow, WM_PAINT, 0, 0);
-    ShowWindow(mDlg, SW_RESTORE);
     SetForegroundWindow(mDlg);
 }
 
@@ -191,7 +190,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
         tipWindow = fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP | WS_SIZEBOX,//WS_OVERLAPPED,
                                  cDlg.right, cDlg.top, wh, wh,
-                                 mDlg, NULL, hInst, 0);
+                                 hDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
         toolTip = CreateToolTip(fanWindow, NULL);
 
@@ -261,8 +260,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case IDC_BUT_MINIMIZE:
-            ShowWindow(fanWindow, SW_HIDE);
-            ShowWindow(hDlg, SW_HIDE);
+            SendMessage(hDlg, SW_SHOW, SIZE_MINIMIZED, 0);
             break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
@@ -331,6 +329,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_SIZE:
         if (wParam == SIZE_MINIMIZED) {
             // go to tray...
+            ShowWindow(fanWindow, SW_HIDE);
             ShowWindow(hDlg, SW_HIDE);
         }
         break;
@@ -440,6 +439,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_DESTROY:
         delete fanThread;
+        fan_conf->Save();
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
@@ -507,6 +507,8 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+string GetFanName(int ind);
+
 void UpdateFanUI(LPVOID lpParam) {
     HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
         fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
@@ -538,14 +540,7 @@ void UpdateFanUI(LPVOID lpParam) {
             ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
             ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
             for (int i = 0; i < acpi->fans.size(); i++) {
-                string name;
-                switch (acpi->fans[i].type)
-                {
-                case 0: name = "CPU"; break;
-                case 1: name = "GPU"; break;
-                default: name = "Fan";
-                } 
-                name += " " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
+                string name = GetFanName(i);
                 ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
             }
             SendMessage(fanWindow, WM_PAINT, 0, 0);
@@ -557,7 +552,7 @@ void UpdateFanUI(LPVOID lpParam) {
             name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
 
         for (int i = 0; i < acpi->fans.size(); i++) {
-            name += "\nFan " + to_string(i + 1) + ": " + to_string(mon->fanRpm[i]) + " RPM";
+            name += "\n" + GetFanName(i);
         }
         strcpy_s(niDataFC.szTip, 127, name.c_str());
         Shell_NotifyIcon(NIM_MODIFY, &niDataFC);

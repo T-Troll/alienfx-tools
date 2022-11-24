@@ -644,7 +644,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
 			fxhl->Start();
-			DetectFans();
+			if (mon)
+				mon->Start();
 			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -676,8 +677,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->Save();
 			eve->StopProfiles();
 			eve->StopEffects();
+			if (mon)
+				mon->Stop();
 			fxhl->Stop();
-			delete mon;
 			break;
 		}
 		break;
@@ -708,6 +710,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		conf->Save();
 		delete eve;
 		fxhl->Refresh(2);
+		if (mon)
+			mon->Stop();
 		fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:

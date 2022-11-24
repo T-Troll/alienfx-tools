@@ -179,6 +179,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     return 0;
 }
 
+extern string GetFanName(int ind);
+
 void UpdateFanUI(LPVOID lpParam) {
     HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
         fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
@@ -209,14 +211,7 @@ void UpdateFanUI(LPVOID lpParam) {
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
         ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         for (int i = 0; i < acpi->fans.size(); i++) {
-            string name;
-            switch (acpi->fans[i].type)
-            {
-            case 0: name = "CPU"; break;
-            case 1: name = "GPU"; break;
-            default: name = "Fan";
-            }
-            name += " " + to_string(i + 1) + " (" + to_string(mon->fanRpm[i]) + ")";
+            string name = GetFanName(i);
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         SendMessage(fanWindow, WM_PAINT, 0, 0);

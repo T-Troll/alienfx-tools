@@ -301,8 +301,8 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (fanMode) {
             fan_point clk = Screen2Fan(lParam);
             if (cFan && wParam & MK_LBUTTON) {
-                lastFanPoint->boost = clk.boost;
-                lastFanPoint->temp = clk.temp;
+                *lastFanPoint = clk;
+                //lastFanPoint->temp = clk.temp;
                 DrawFan();
             }
             SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
@@ -377,6 +377,17 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hDlg, message, wParam, lParam);
 }
 
+string GetFanName(int ind) {
+    string name;
+    switch (acpi->fans[ind].type)
+    {
+    case 0: name = "CPU"; break;
+    case 1: name = "GPU"; break;
+    default: name = "Fan";
+    }
+    return name + " " + to_string(ind + 1) + " (" + to_string(mon->fanRpm[ind]) + ")";
+}
+
 void ReloadFanView(HWND list) {
     fanUpdateBlock = true;
     ListView_DeleteAllItems(list);
@@ -387,7 +398,7 @@ void ReloadFanView(HWND list) {
     }
     for (int i = 0; i < acpi->fans.size(); i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
-        string name = "Fan " + to_string(i + 1) + " (" + to_string(acpi->GetFanRPM(i)) + ")";
+        string name = GetFanName(i);
         lItem.pszText = (LPSTR)name.c_str();
         if (i == fan_conf->lastSelectedFan) {
             lItem.state = LVIS_SELECTED;
