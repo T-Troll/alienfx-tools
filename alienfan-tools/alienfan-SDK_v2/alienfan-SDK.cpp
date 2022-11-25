@@ -31,6 +31,9 @@ namespace AlienFan_SDK {
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
 		IEnumWbemClassObject* enum_obj = NULL;
 		if (m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDisk", 0, NULL, &enum_obj) == S_OK) {
+			//IWbemClassObject* spInstance;
+			//ULONG uNumOfInstances = 0;
+			//enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 			enum_obj->Release();
 		}
 		m_DiskService->Release();
@@ -91,7 +94,7 @@ namespace AlienFan_SDK {
 	//}
 
 	void Control::EnumSensors(IEnumWbemClassObject* enum_obj, byte type) {
-		IWbemClassObject* spInstance;
+		IWbemClassObject* spInstance[64];
 		ULONG uNumOfInstances = 0;
 		BSTR instansePath{ (BSTR)L"__Path" }, valuePath{ (BSTR)L"Temperature" };
 		VARIANT cTemp, instPath;
@@ -113,29 +116,29 @@ namespace AlienFan_SDK {
 			valuePath = (BSTR)L"Value";
 		}
 
-		enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-		byte ind;
-		for (ind = 1; uNumOfInstances; ind++) {
+		enum_obj->Next(3000, 64, spInstance, &uNumOfInstances);
+		for (byte ind = 0; ind < uNumOfInstances; ind++) {
 			if (type == 4) { // OHM sensors
 				VARIANT type;
-				spInstance->Get((BSTR)L"SensorType", 0, &type, 0, 0);
+				spInstance[ind]->Get((BSTR)L"SensorType", 0, &type, 0, 0);
 				if (type.bstrVal == wstring(L"Temperature")) {
 					VARIANT vname;
-					spInstance->Get((BSTR)L"Name", 0, &vname, 0, 0);
+					spInstance[ind]->Get((BSTR)L"Name", 0, &vname, 0, 0);
 					wstring sname{ vname.bstrVal };
 					name = string(sname.begin(), sname.end());
 				}
 				else {
-					goto next;
+					continue;
 				}
 			}
-			spInstance->Get(instansePath, 0, &instPath, 0, 0);
-			spInstance->Get(valuePath, 0, &cTemp, 0, 0);
-			spInstance->Release();
-			if (cTemp.uintVal > 0 || cTemp.fltVal > 0)
-				sensors.push_back({ { ind,type }, name + (type != 4 ? to_string(ind) : ""), instPath.bstrVal, valuePath });
-			next:
-			enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
+			spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
+			spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
+			spInstance[ind]->Release();
+			if (type == 2 || cTemp.uintVal > 0 || cTemp.fltVal > 0)
+				sensors.push_back({ { (BYTE)(ind+1),type }, name + (type != 4 ? to_string(ind+1) : ""), instPath.bstrVal, valuePath });
+
+		//next:
+		//	enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 		}
 		enum_obj->Release();
 #ifdef _TRACE_

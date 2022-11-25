@@ -218,20 +218,21 @@ void ReloadSensorView() {
 	SENID sid;
 	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
 		sid.sid = i->first;
+		SENSOR* sen = &i->second;
 		if (IsSensorValid(i, conf->showHidden)) {
-			string name = i->second.min > NO_SEN_VALUE ? to_string(i->second.min) : "--";
+			string name = sen->min > NO_SEN_VALUE ? to_string(sen->min) : "--";
 			LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM, pos };
-			lItem.lParam = i->first;
+			lItem.lParam = sid.sid;
 			lItem.pszText = (LPSTR)name.c_str();
 			ListView_InsertItem(list, &lItem);
-			if (i->first == selSensor) {
+			if (sid.sid == selSensor) {
 				ListView_SetItemState(list, pos, LVIS_SELECTED, LVIS_SELECTED);
 				rpos = pos;
 				UpdateItemInfo();
 			}
-			name = i->second.min > NO_SEN_VALUE ? to_string(i->second.cur) : "--";
+			name = sen->min > NO_SEN_VALUE ? to_string(sen->cur) : "--";
 			ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-			name = i->second.min > NO_SEN_VALUE ? to_string(i->second.max) : "--";
+			name = sen->min > NO_SEN_VALUE ? to_string(sen->max) : "--";
 			ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
 			switch (sid.source) {
 			case 0: name = "W";
@@ -253,15 +254,16 @@ void ReloadSensorView() {
 			case 2: name = "A";
 				switch (sid.type) {
 				case 0: name += "T"; break;
-				case 1: name += "R"; break;
-				case 2: name += "P"; break;
-				case 3: name += "B"; break;
+				default: name += "F"; break;
+				//case 1: name += "R"; break;
+				//case 2: name += "P"; break;
+				//case 3: name += "B"; break;
 				}
 				break;
 			}
 			//name += " " + to_string(sid.id);
 			ListView_SetItemText(list, pos, 3, (LPSTR)name.c_str());
-			ListView_SetItemText(list, pos, 4, GetSensorName(&i->second));
+			ListView_SetItemText(list, pos, 4, GetSensorName(sen));
 			pos++;
 		}
 	}
@@ -323,21 +325,16 @@ void RestoreWindow(DWORD id) {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
 	RedrawButton(IDC_BUTTON_COLOR, conf->active_sensors[selSensor].traycolor);
-	ReloadSensorView();
+	UpdateMonUI(0);
 }
 
 void ResetMinMax(DWORD id = 0xffffffff) {
-	if (id == 0xffffffff) {
-		for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++) {
+	for (auto iter = conf->active_sensors.begin(); iter != conf->active_sensors.end(); iter++)
+		if (id == 0xffffffff || id == iter->first) {
 			iter->second.max = iter->second.min = iter->second.cur;
 			iter->second.cur = NO_SEN_VALUE;
 		}
-	}
-	else {
-		conf->active_sensors[id].max = conf->active_sensors[id].min = conf->active_sensors[id].cur;
-		conf->active_sensors[id].cur = NO_SEN_VALUE;
-	}
-	//ReloadSensorView();
+	UpdateMonUI(0);
 }
 
 void ResetTraySensors() {
@@ -345,6 +342,7 @@ void ResetTraySensors() {
 		if (i->second.intray)
 			i->second.cur = NO_SEN_VALUE;
 	}
+	UpdateMonUI(0);
 }
 
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -518,13 +516,12 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 		} break;
 		case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
-			if (!isNewVersion && needRemove) {
+			if (needRemove) {
 				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 				Shell_NotifyIcon(NIM_ADD, &conf->niData);
 				needRemove = false;
 			}
-			else
-				isNewVersion = false;
+			isNewVersion = false;
 			break;
 		}
 		break;
@@ -552,11 +549,10 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_CLOSE:
-		EndDialog(hDlg, IDOK);
+		RemoveTrayIcons();
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:
-		RemoveTrayIcons();
 		PostQuitMessage(0);
 		break;
 	case WM_NOTIFY:
@@ -635,7 +631,7 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 
 	HDC hdc = GetDC(NULL), hdcMem = CreateCompatibleDC(hdc);
 	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, 32, 32),
-		hBitmapMask = sen->inverse ? CreateCompatibleBitmap(hdc, 32, 32) : hBitmap;
+		hBitmapMask = hBitmap;
 	HFONT hFont = CreateFont(32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Microsoft Sans Serif"));
 	HBRUSH brush = CreateSolidBrush(sen->inverse ? 0xffffff : sen->traycolor);
 
@@ -652,9 +648,10 @@ void UpdateTrayData(SENSOR* sen, byte index) {
 	DrawText(hdcMem, val, -1, &clip, DT_RIGHT | DT_SINGLELINE /*| DT_VCENTER*/ | DT_NOCLIP);
 
 	if (sen->inverse) {
+		hBitmapMask = CreateCompatibleBitmap(hdc, 32, 32);
 		SelectObject(hdcMem, hBitmapMask);
 		SetTextColor(hdcMem, sen->traycolor);
-		SetBkColor(hdcMem, 0x0);
+		//SetBkColor(hdcMem, 0x0);
 		SetBkMode(hdcMem, TRANSPARENT);
 		DrawText(hdcMem, val, -1, &clip, DT_RIGHT | DT_SINGLELINE /*| DT_VCENTER*/ | DT_NOCLIP);
 	}
@@ -693,38 +690,39 @@ void UpdateMonUI(LPVOID lpParam) {
 		for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
 			// Update UI...
 			if (IsSensorValid(i, conf->showHidden)) {
+				SENSOR* sen = &i->second;
 				if (visible) {
-					if (i->second.changed) {
-						string name = to_string(i->second.min);
+					if (sen->changed) {
+						string name = to_string(sen->min);
 						ListView_SetItemText(list, pos, 0, (LPSTR)name.c_str());
-						name = to_string(i->second.cur);
+						name = to_string(sen->cur);
 						ListView_SetItemText(list, pos, 1, (LPSTR)name.c_str());
-						name = to_string(i->second.max);
+						name = to_string(sen->max);
 						ListView_SetItemText(list, pos, 2, (LPSTR)name.c_str());
 					}
 					pos++;
 				}
 				// Update tray icons...
-				if (i->second.intray) {
-					if (!i->second.niData) {
+				if (sen->intray) {
+					if (!sen->niData) {
 						// add tray icon
-						i->second.niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (DWORD)(i->first),
+						sen->niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), mDlg, (DWORD)(i->first),
 							NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });
-						i->second.changed = true;
+						sen->changed = true;
 					}
-					if (i->second.changed) {
-						UpdateTrayData(&i->second, 0);
-						if (!Shell_NotifyIcon(NIM_MODIFY, i->second.niData))
-							Shell_NotifyIcon(NIM_ADD, i->second.niData);
+					if (sen->changed) {
+						UpdateTrayData(sen, 0);
+						if (!Shell_NotifyIcon(NIM_MODIFY, sen->niData))
+							Shell_NotifyIcon(NIM_ADD, sen->niData);
 					}
 				}
 				else {
 					// remove tray icon
-					if (i->second.niData) {
-						Shell_NotifyIcon(NIM_DELETE, i->second.niData);
-						DestroyIcon(i->second.niData->hIcon);
-						delete i->second.niData;
-						i->second.niData = NULL;
+					if (sen->niData) {
+						Shell_NotifyIcon(NIM_DELETE, sen->niData);
+						DestroyIcon(sen->niData->hIcon);
+						delete sen->niData;
+						sen->niData = NULL;
 						// Unresponsive icon workaround
 						Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 					}

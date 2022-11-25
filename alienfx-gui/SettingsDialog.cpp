@@ -6,11 +6,12 @@
 extern void ReloadProfileList();
 extern bool DetectFans();
 extern void SetHotkeys();
+extern void SetMainTabs();
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
-//extern AlienFan_SDK::Control* acpi;
+extern AlienFan_SDK::Control* acpi;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -124,7 +125,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->wasAWCC = DoStopService((bool)conf->awcc_disable != conf->wasAWCC, conf->wasAWCC);
 			break;
 		case IDC_ESIFTEMP:
-			//conf->esif_temp = state;
 			if (conf->esif_temp = state) {
 				conf->Save();
 				EvaluteToAdmin();
@@ -139,10 +139,11 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_FANCONTROL:
 			conf->fanControl = state;
+			eve->StopEffects();
 			if (state) {
-				if (DetectFans()) {
+				if (DetectFans())
 					SetHotkeys();
-				} else
+				else
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 			} else {
 				// Stop all fan services
@@ -152,7 +153,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			}
 			// check for ACPI lights
-			//fxhl->FillAllDevs(acpi);
+			fxhl->FillAllDevs(acpi);
+			eve->StartEffects();
+			SetMainTabs();
 			break;
 		case IDC_CHECK_LIGHTNAMES:
 			conf->showGridNames = !conf->showGridNames;

@@ -11,7 +11,6 @@
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-//#pragma comment(lib,"Version.lib")
 #pragma comment(lib,"PowrProf.lib")
 
 using namespace std;
@@ -375,13 +374,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             RestoreApp();
             break;
         case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
-            if (!isNewVersion && needRemove) {
-                Shell_NotifyIcon(NIM_DELETE, &niDataFC);
-                Shell_NotifyIcon(NIM_ADD, &niDataFC);
-                needRemove = false;
+            if (needRemove) {
+                Shell_NotifyIcon(NIM_DELETE, niData);
+                Shell_NotifyIcon(NIM_ADD, niData);
             }
-            else
-                isNewVersion = false;
+            isNewVersion = false;
             break;
         case NIN_BALLOONUSERCLICK:
         {
@@ -435,10 +432,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         } break;
     case WM_CLOSE:
+        delete fanThread;
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
-        delete fanThread;
         fan_conf->Save();
         LocalFree(sch_guid);
         PostQuitMessage(0);

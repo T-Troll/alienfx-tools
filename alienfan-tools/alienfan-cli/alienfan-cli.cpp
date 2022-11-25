@@ -133,13 +133,13 @@ setfans=<fan1>[,<fanN>][,mode]\tSet fans boost level (0..100 - in percent) with 
 setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or auto)\n\
 setgmode=<mode>\t\t\tSet G-mode on/off (1-on, 0-off)\n\
 gmode\t\t\t\tShow G-mode state\n\
-setcolor=<mask>,r,g,b\t\tSet light(s) defined by mask to color\n\
+setcolor=id,r,g,b\t\tSet light to color\n\
 setbrightness=<brightness>\tSet lights brightness\n\
 \tPower mode can be in 0..N - according to power states detected\n\
 \tPerformance boost can be in 0..4 - disabled, enabled, aggressive, efficient, efficient aggressive\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
 \tMode can absent for cooked value, and \"raw\" for raw value\n\
-\tBrightness for ACPI lights can be in 0..15\n");
+\tBrightness can be in 0..15\n");
 // \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
 // direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
 // directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
@@ -151,7 +151,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.7.0\n");
+    printf("AlienFan-CLI v7.7.1\n");
 
     AlienFan_SDK::Lights* lights = new AlienFan_SDK::Lights(&acpi);
 
@@ -372,44 +372,6 @@ int main(int argc, char* argv[])
         //        }
         //        else
         //            printf("Failed\n");
-        //    }
-        //    // SSD temperature sensors
-        //    IWbemClassObject* driveObject = NULL, * instObj = NULL;
-        //    IWbemLocator* m_WbemLocator;
-        //    IWbemServices* m_WbemServices = NULL;
-        //    CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
-        //    m_WbemLocator->ConnectServer((BSTR)L"root\\Microsoft\\Windows\\Storage\\Providers_v2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
-        //    m_WbemLocator->Release();
-        //    if (m_WbemServices->GetObject((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", NULL, nullptr, &driveObject, nullptr) == S_OK) {
-        //        //BSTR name;
-        //        VARIANT m_instancePath;
-        //        // Command dump
-        //        //m_ESIFObject->GetObjectText(0, &name);
-        //        //wprintf(L"Names: %s\n", name);
-        //        IEnumWbemClassObject* enum_obj;
-        //        m_WbemServices->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY/*WBEM_FLAG_RETURN_IMMEDIATELY*/, NULL, &enum_obj);
-        //        IWbemClassObject* spInstance;
-        //        ULONG uNumOfInstances = 0;
-        //        enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-        //        while (uNumOfInstances) {
-        //            spInstance->Get((BSTR)L"StorageReliabilityCounter", 0, &m_instancePath, 0, 0);
-        //            m_WbemServices->GetObject(m_instancePath.bstrVal, NULL, nullptr, &instObj, nullptr);
-        //            instObj->Get((BSTR)L"Temperature", 0, &m_instancePath, 0, 0);
-        //            wprintf(L"Temp: %d\n", m_instancePath.uintVal);
-        //            instObj->Release();
-        //            spInstance->Release();
-        //            enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-        //        }
-        //        enum_obj->Release();
-        //        //IWbemClassObject* m_outParameters = NULL;
-        //        //if (acpi->m_WbemServices->ExecMethod(acpi->m_instancePath.bstrVal,
-        //        //    (BSTR)L"MemoryOCControl", 0, NULL, NULL, &m_outParameters, NULL) == S_OK && m_outParameters) {
-        //        //    //m_InParamaters->Release();
-        //        //    VARIANT result;
-        //        //    m_outParameters->Get(L"Data", 0, &result, nullptr, nullptr);
-        //        //    m_outParameters->Release();
-        //        //    printf("Result - %d", result.uintVal);
-        //        //}
         //    }
         //    continue;
         //}

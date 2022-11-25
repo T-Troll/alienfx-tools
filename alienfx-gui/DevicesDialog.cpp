@@ -7,7 +7,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
 extern void RemoveLightAndClean(int dPid, int eLid);
-extern void OnSelChanged(HWND hwndDlg);
+extern void SetMainTabs();
 
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
@@ -18,6 +18,7 @@ extern AlienFX_SDK::mapping* FindCreateMapping();
 
 extern FXHelper* fxhl;
 extern HWND mDlg;
+extern int tabSel;
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -462,10 +463,13 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					dIndex = 0;
 					if (conf->afx_dev.fxdevs.empty()) {
 						// switch tab
-						dIndex = -1;
-						HWND mainTab = GetDlgItem(mDlg, IDC_TAB_MAIN);
-						TabCtrl_SetCurSel(mainTab, TAB_SETTINGS);
-						OnSelChanged(mainTab);
+						//dIndex = -1;
+						//HWND mainTab = GetDlgItem(mDlg, IDC_TAB_MAIN);
+						//TabCtrl_SetCurSel(mainTab, TAB_SETTINGS);
+						//OnSelChanged(mainTab);
+						tabSel = TAB_SETTINGS;
+						SetMainTabs();
+						break;
 					}
 					else
 						RedrawDevList();

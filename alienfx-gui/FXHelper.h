@@ -50,7 +50,7 @@ public:
 
 	~FXHelper();
 	AlienFX_SDK::afx_act BlendPower(double power, AlienFX_SDK::afx_act* from, AlienFX_SDK::afx_act* to);
-	int FillAllDevs(AlienFan_SDK::Control* acc);
+	void FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
 	void Refresh(int force = 0);

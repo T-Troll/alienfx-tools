@@ -18,6 +18,7 @@ extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 extern void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func);
+extern void ClearOldTabs(HWND);
 
 bool firstInit = false;
 extern int tabLightSel;
@@ -71,8 +72,8 @@ void OnLightSelChanged(HWND hwndDlg)
 	int oldTab = tabLightSel;
 	tabLightSel = TabCtrl_GetCurSel(hwndDlg);
 
-	if (conf->afx_dev.fxdevs.empty() || conf->afx_dev.GetGrids()->empty()) {
-		ShowNotification(&conf->niData, "Warning", "No devices or grids, please set it up!", true);
+	if (!conf->afx_dev.activeLights) {
+		ShowNotification(&conf->niData, "Warning", "Please set lights!", true);
 		tabLightSel = TAB_DEVICES;
 		TabCtrl_SetCurSel(hwndDlg, tabLightSel);
 	}
@@ -153,15 +154,14 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		else
 			return false;
 	} break;
-	case WM_NOTIFY: {
-		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_TAB_LIGHTS: {
-			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-					OnLightSelChanged(tab_list);
-			}
-		} break;
+	case WM_NOTIFY:
+		if (((NMHDR*)lParam)->idFrom == IDC_TAB_LIGHTS && ((NMHDR*)lParam)->code == TCN_SELCHANGE) {
+				OnLightSelChanged(tab_list);
 		}
-	} break;
+		break;
+	case WM_DESTROY:
+		ClearOldTabs(tab_list);
+		break;
 	default: return false;
 	}
 	return true;

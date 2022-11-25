@@ -75,7 +75,7 @@ void ShowNotification(NOTIFYICONDATA* niData, string title, string message, bool
 DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	NOTIFYICONDATA* niData = (NOTIFYICONDATA*)lparam;
 	HINTERNET session, req;
-	char buf[2048];
+	char* buf = new char[2048];
 	DWORD byteRead;
 	bool isConnectionFailed = true;
 	// Wait connection for a while
@@ -108,9 +108,9 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 		}
 		InternetCloseHandle(session);
 	}
-	if (needUpdateFeedback && isConnectionFailed) {
-		ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.", true);
-	}
+	if (needUpdateFeedback && isConnectionFailed)
+			ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.", true);
+	delete[] buf;
 	return 0;
 }
 

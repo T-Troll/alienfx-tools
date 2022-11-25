@@ -33,6 +33,7 @@ MonHelper::MonHelper() {
 MonHelper::~MonHelper() {
 	Stop();
 	delete acpi;
+	acpi = NULL;
 }
 
 void MonHelper::Start() {

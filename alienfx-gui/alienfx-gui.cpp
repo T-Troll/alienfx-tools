@@ -74,7 +74,7 @@ bool DetectFans() {
 			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		}
 		else {
-			ShowNotification(&conf->niData, "Error", "Fan control not available and disabled!", false);
+			//ShowNotification(&conf->niData, "Error", "Fan control not available and disabled!", false);
 			delete mon;
 			mon = NULL;
 			conf->fanControl = false;
@@ -280,17 +280,20 @@ void OnSelChanged(HWND hwndDlg)
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr( hwndDlg, GWLP_USERDATA);
 
 	// Get the index of the selected tab.
-	tabSel = TabCtrl_GetCurSel(hwndDlg);
-	if (tabSel == TAB_LIGHTS && conf->afx_dev.fxdevs.empty()) {
-		ShowNotification(&conf->niData, "Error", "Alienware light device not found!", true);
-		TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
-	}
+	TCITEM tie{ TCIF_PARAM };
+	TabCtrl_GetItem(hwndDlg, TabCtrl_GetCurSel(hwndDlg), &tie);
+	tabSel = (int)tie.lParam;
 
-	if (tabSel == TAB_FANS && !mon) {
-		conf->fanControl = true;
-		if (!DetectFans())
-			TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
-	}
+	//if (tabSel == TAB_LIGHTS && conf->afx_dev.fxdevs.empty()) {
+	//	ShowNotification(&conf->niData, "Error", "Alienware light device not found!", true);
+	//	TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
+	//}
+
+	//if (tabSel == TAB_FANS && !mon) {
+	//	conf->fanControl = true;
+	//	if (!DetectFans())
+	//		TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
+	//}
 
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay) {
@@ -331,7 +334,7 @@ void ReloadProfileList() {
 			if (conf->profiles[i]->id == conf->activeProfile->id) {
 				ComboBox_SetCurSel(profile_list, i);
 				ReloadModeList();
-				if (tabSel == TAB_FANS) {
+				if (tabSel == TAB_FANS && conf->activeProfile->flags & PROF_FANS) {
 					OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 				}
 			}
@@ -356,23 +359,43 @@ void RestoreApp() {
 	ReloadProfileList();
 }
 
+void ClearOldTabs(HWND tab) {
+	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(tab, GWLP_USERDATA);
+
+	if (pHdr) {
+		// close tab dialog and clean data
+		DestroyWindow(pHdr->hwndDisplay);
+		delete[] pHdr->apRes;
+		delete[] pHdr->apProc;
+		delete pHdr;
+		TabCtrl_DeleteAllItems(tab);
+	}
+}
+
 void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func) {
 
-	DLGHDR* pHdr = (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
+	ClearOldTabs(parent);
+
+	DLGHDR* pHdr = new DLGHDR{ 0 };// (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
 	SetWindowLongPtr(parent, GWLP_USERDATA, (LONG_PTR)pHdr);
 
 	int tabsize = (int)names.size();
 
-	pHdr->apRes = (DLGTEMPLATE**)LocalAlloc(LPTR, tabsize * sizeof(DLGTEMPLATE*));
-	pHdr->apProc = (DLGPROC*)LocalAlloc(LPTR, tabsize * sizeof(DLGPROC));
+	pHdr->apRes = new DLGTEMPLATE*[tabsize];// (DLGTEMPLATE**)LocalAlloc(LPTR, tabsize * sizeof(DLGTEMPLATE*));
+	pHdr->apProc = new DLGPROC[tabsize];// (DLGPROC*)LocalAlloc(LPTR, tabsize * sizeof(DLGPROC));
 
-	TCITEM tie{ TCIF_TEXT };
+	TCITEM tie{ TCIF_TEXT | TCIF_PARAM };
 
 	for (int i = 0; i < tabsize; i++) {
+		if (tabsize < 5 && ((i == 0 && conf->afx_dev.fxdevs.empty()) || (i == 1 && !mon)))
+			continue;
 		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
 		tie.pszText = (LPSTR)names[i].c_str();
-		SendMessage(parent, TCM_INSERTITEM, i, (LPARAM)&tie);
+		tie.lParam = i;
 		pHdr->apProc[i] = func[i];
+		int pos = TabCtrl_InsertItem(parent, i, (LPARAM)&tie);
+		if ((tabsize < 5 && i == tabSel) || (tabsize > 4 && i == tabLightSel))
+			TabCtrl_SetCurSel(parent, pos);
 	}
 }
 
@@ -380,6 +403,15 @@ void SetTrayTip() {
 	string name = "Profile: " + (conf->activeProfile ? conf->activeProfile->name : "Undefined") + "\nEffect: " + (conf->GetEffect() < effModes.size() ? effModes[conf->GetEffect()] : "Global");
 	strcpy_s(conf->niData.szTip, 128, name.c_str());
 	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+}
+
+void SetMainTabs() {
+	CreateTabControl(GetDlgItem(mDlg, IDC_TAB_MAIN),
+		{ "Lights", "Fans and Power", "Profiles", "Settings" },
+		{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS },
+		{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
+	);
+	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
 
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -399,11 +431,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		conf->niData.hWnd = mDlg = hDlg;
 
-		CreateTabControl(tab_list,
-			{"Lights", "Fans and Power", "Profiles", "Settings"},
-			{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS},
-			{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
-			);
+		SetMainTabs();
 
 		conf->SetStates();
 
@@ -471,15 +499,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		} break;
 	} break;
-	case WM_NOTIFY: {
-		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_TAB_MAIN: {
-			if (((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-				OnSelChanged(tab_list);
-			}
-		} break;
+	case WM_NOTIFY:
+		if (((NMHDR*)lParam)->idFrom == IDC_TAB_MAIN && ((NMHDR*)lParam)->code == TCN_SELCHANGE) {
+			OnSelChanged(tab_list);
 		}
-	} break;
+		break;
 	case WM_WINDOWPOSCHANGING: {
 		WINDOWPOS* pos = (WINDOWPOS*)lParam;
 		if (pos->flags & SWP_SHOWWINDOW && eve) {
@@ -578,12 +602,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
 		case NIN_BALLOONHIDE : case NIN_BALLOONTIMEOUT:
-			if (!isNewVersion && needRemove) {
+			if (needRemove) {
 				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 				Shell_NotifyIcon(NIM_ADD, &conf->niData);
-				needRemove = false;
-			} else
-				isNewVersion = false;
+			}
+			isNewVersion = false;
 			break;
 		case NIN_BALLOONUSERCLICK:
 		{
@@ -696,7 +719,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					fxhl->Start();
 					fxhl->Refresh();
 				}
-				OnSelChanged(tab_list);
+				SetMainTabs();
 			}
 		}
 		break;
@@ -719,14 +742,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (wParam == 10)
 				eve->SwitchActiveProfile(conf->FindDefaultProfile());
 			else
-				if (wParam - 11 < conf->profiles.size())
-					eve->SwitchActiveProfile(conf->profiles[wParam - 11]);
+				if (wParam - 10 < conf->profiles.size())
+					eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
 			ReloadProfileList();
 			break;
 		}
-		if (wParam > 29 && wParam < 36 && acpi /*&& wParam - 30 < acpi->powers.size()*/) { // PowerMode switch
+		if (mon && wParam > 29 && wParam - 30 < acpi->powers.size()) { // PowerMode switch
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
-			//acpi->SetPower(acpi->powers[conf->fan_conf->lastProf->powerStage]);
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
 			break;

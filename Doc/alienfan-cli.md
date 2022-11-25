@@ -21,7 +21,7 @@ Available commands:
 - `dump` - List all available Alienware methods (it's useful for new devices support)
 
 In case you system have ACPI light control, 2 more commands available:
-- `setcolor=<mask>,r,g,b` - Set light(s) to selected color. Mask is a bit combination, so use 1 for first light, 2 for next or 3 for both.
+- `setcolor=<id>,r,g,b` - Set light with this ID to selected color. Id's depends of the system, try from 0 to 4.
 - `setbrightness=<brightness>` - Set lights hardware brightness. Valid range is from, 0 (off) to 15 (full).
 
 FanID and SensorID is a digit from 0 to fan/sensor count found into the system.

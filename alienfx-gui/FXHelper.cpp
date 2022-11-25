@@ -432,13 +432,12 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 	}
 }
 
-int FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
+void FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
 	conf->SetStates();
 	Stop();
 	conf->afx_dev.AlienFXAssignDevices(acc, conf->finalBrightness, conf->finalPBState);
 	if (conf->afx_dev.activeDevices)
 		Start();
-	return conf->afx_dev.activeDevices;
 }
 
 void FXHelper::Start() {
