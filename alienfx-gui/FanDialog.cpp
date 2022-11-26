@@ -65,10 +65,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         ReloadPowerList(power_list);
         ReloadTempView(tempList);
-        //ReloadFanView(fanList);
-
-        //EnableWindow(g_mode, acpi->GetDeviceFlags() & DEV_FLAG_GMODE);
-        //Button_SetCheck(g_mode, fan_conf->lastProf->gmode);
 
         // So open fan control window...
         fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
@@ -79,7 +75,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         // Start UI update thread...
         SetTimer(hDlg, 0, 500, NULL);
         SetTimer(fanWindow, 1, 500, NULL);
-        //fanUpdateUI = new ThreadHelper(UpdateFanUI, hDlg, 500);
 
         //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
         //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);

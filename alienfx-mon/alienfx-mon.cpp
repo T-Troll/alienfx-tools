@@ -189,7 +189,7 @@ void ReloadSensorView() {
 	int pos = 0, rpos = 0;
 	HWND list = GetDlgItem(mDlg, IDC_SENSOR_LIST);
 	ListView_DeleteAllItems(list);
-	ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
+	ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
 	if (!ListView_GetColumnWidth(list, 0)) {
 		LVCOLUMNA lCol{ LVCF_TEXT | LVCF_SUBITEM };
 		lCol.pszText = (LPSTR)"Min";

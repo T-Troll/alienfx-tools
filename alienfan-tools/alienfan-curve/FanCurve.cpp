@@ -395,7 +395,7 @@ string GetFanName(int ind) {
 void ReloadFanView(HWND list) {
     fanUpdateBlock = true;
     ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES /*| LVS_EX_AUTOSIZECOLUMNS*/ | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     if (!ListView_GetColumnWidth(list, 0)) {
         LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
         ListView_InsertColumn(list, 0, &lCol);
@@ -437,7 +437,7 @@ void ReloadPowerList(HWND list) {
 void ReloadTempView(HWND list) {
     int rpos = 0;
     ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
     if (!ListView_GetColumnWidth(list, 1)) {
         LVCOLUMNA lCol{ LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM, LVCFMT_LEFT, 100, (LPSTR)"Temp" };
         ListView_InsertColumn(list, 0, &lCol);

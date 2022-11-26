@@ -50,7 +50,6 @@ bool needUpdateFeedback = false;
 bool needRemove = false;
 
 // Forward declarations of functions included in this code module:
-//ATOM                MyRegisterClass(HINSTANCE hInstance);
 HWND                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
