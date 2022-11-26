@@ -264,7 +264,7 @@ void LoadCSV(string name) {
 							int gid = atoi(fields[i].c_str());
 							for (auto pos = tGear.grids.begin(); pos != tGear.grids.end(); pos++)
 								if (pos->id == gid) {
-									pos->grid[atoi(fields[i + 1].c_str())] = gridval;
+									pos->grid[atoi(fields[i + 1].c_str())].lgh = gridval;
 									break;
 								}
 						}
@@ -272,7 +272,7 @@ void LoadCSV(string name) {
 					break;
 				case 2: // Grid info
 					tGear.grids.push_back({ (byte)atoi(fields[1].c_str()), (byte)atoi(fields[2].c_str()), (byte)atoi(fields[3].c_str()), fields[4] });
-					tGear.grids.back().grid = new DWORD[tGear.grids.back().x * tGear.grids.back().y]{ 0 };
+					tGear.grids.back().grid = new AlienFX_SDK::grpLight[tGear.grids.back().x * tGear.grids.back().y]{ 0 };
 					break;
 				case 3: // Device info
 					if (tGear.name != "" && !tGear.selected) {
@@ -570,10 +570,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 							for (auto j = i->lights.begin(); j < i->lights.end(); j++) {
 								line = "'1','" + to_string(j->lightid) + "','" + to_string(j->flags) + "','" + j->name;
-								DWORD gridid = MAKELPARAM(i->pid, j->lightid);
+								AlienFX_SDK::grpLight gridid = { i->pid, j->lightid };
 								for (auto i = conf->afx_dev.GetGrids()->begin(); i < conf->afx_dev.GetGrids()->end(); i++) {
 									for (int pos = 0; pos < i->x * i->y; pos++) {
-										if (gridid == i->grid[pos]) {
+										if (gridid.lgh == i->grid[pos].lgh) {
 											line += "','" + to_string(i->id) + "','" + to_string(pos);
 										}
 									}
@@ -628,7 +628,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							else
 								it++;
 						}
-						DWORD* newGrid = new DWORD[conf->mainGrid->x * conf->mainGrid->y]{ 0 };
+						AlienFX_SDK::grpLight* newGrid = new AlienFX_SDK::grpLight[conf->mainGrid->x * conf->mainGrid->y]{ 0 };
 						conf->afx_dev.GetGrids()->push_back({ newGridIndex, conf->mainGrid->x, conf->mainGrid->y, "Grid #" + to_string(newGridIndex), newGrid });
 						conf->mainGrid = &conf->afx_dev.GetGrids()->back();
 						TCITEM tie{ TCIF_TEXT };

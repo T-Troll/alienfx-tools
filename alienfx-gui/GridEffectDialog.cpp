@@ -5,8 +5,6 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
 
-extern int eItem;
-
 void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
 	if (mmap) {
 		CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->flags & GAUGE_GRADIENT);

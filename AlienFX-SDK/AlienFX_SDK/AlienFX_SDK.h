@@ -68,10 +68,17 @@ namespace AlienFX_SDK {
 		string name;
 	};
 
+	union grpLight {
+		struct {
+			WORD did, lid;
+		};
+		DWORD lgh;
+	};
+
 	struct group { // Light group information block
 		DWORD gid;
 		string name;
-		vector<DWORD> lights;
+		vector<grpLight> lights;
 		bool have_power = false;
 	};
 
@@ -79,7 +86,7 @@ namespace AlienFX_SDK {
 		byte id;
 		byte x, y;
 		string name;
-		DWORD *grid;
+		grpLight *grid;
 	};
 
 	struct afx_act { // atomic light action phase
@@ -311,12 +318,6 @@ namespace AlienFX_SDK {
 
 		// find light group by it's ID
 		group* GetGroupById(DWORD gid);
-
-		// add new light structure for device
-		void AddMappingByDev(afx_device* dev, WORD lightID, const char* name, WORD flags);
-
-		// add new light structure for device with this DevID (PID/VID)
-		void AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags);
 
 		// remove light mapping from device by id
 		void RemoveMapping(afx_device* dev, WORD lightID);

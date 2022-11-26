@@ -132,6 +132,18 @@ void ConfigHandler::SetReg(char *text, DWORD value) {
 	RegSetValueEx( hKeyMain, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
 }
 
+DWORD ConfigHandler::GetRegData(HKEY key, int vindex, char* name, byte** data) {
+	DWORD len, lend;
+	if (*data)
+		delete[] * data;
+	if (RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS) {
+		*data = new byte[lend];
+		RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, *data, &lend);
+		return lend;
+	}
+	return 0;
+}
+
 void ConfigHandler::Load() {
 	DWORD size_c = 16*sizeof(DWORD);// 4 * 16
 	DWORD activeProfileID = 0;
@@ -175,10 +187,7 @@ void ConfigHandler::Load() {
 	groupset* gset;
 
 	// Profiles...
-	for (int vindex = 0; RegEnumValue(hKeyProfiles, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		if (data) delete[] data;
-		data = new BYTE[lend];
-		RegEnumValue(hKeyProfiles, vindex, name, &(len = 255), NULL, NULL, data, &lend);
+	for (int vindex = 0; lend = GetRegData(hKeyProfiles, vindex, name, &data); vindex++) {
 		if (sscanf_s(name, "Profile-%d", &pid) == 1) {
 			FindCreateProfile(pid)->name = (char*)data;
 			continue;
@@ -206,6 +215,7 @@ void ConfigHandler::Load() {
 			fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid, data, lend);
 			continue;
 		}
+		// old format, obsolete
 		if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
 			fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid | 0xff00, data, lend);
 			continue;
@@ -221,12 +231,9 @@ void ConfigHandler::Load() {
 			prof->fansets.gmode = HIBYTE(((WORD*)data)[1]);
 		}
 	}
-
+	data = NULL;
 	// Loading zones...
-	for (int vindex = 0; RegEnumValue(hKeyZones, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		if (data) delete[] data;
-		data = new BYTE[lend];
-		RegEnumValue(hKeyZones, vindex, name, &(len = 255), NULL, NULL, (LPBYTE)data, &lend);
+	for (int vindex = 0; lend = GetRegData(hKeyZones, vindex, name, &data); vindex++) {
 		if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			gset->fromColor = data[0];
@@ -285,8 +292,6 @@ void ConfigHandler::Load() {
 		}
 	}
 
-	if (data) delete[] data;
-
 	if (!profiles.size()) {
 		// need new profile
 		profile* prof = new profile({0, 1, 0, {}, "Default"});
@@ -301,7 +306,6 @@ void ConfigHandler::Load() {
 	if (!activeProfile) activeProfile = FindDefaultProfile();
 	active_set = &activeProfile->lightsets;
 
-	//SortAllGauge();
 	SetStates();
 }
 
@@ -489,11 +493,11 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 	if (!grp || grp->lights.empty()) return zone;
 
 	// find operational grid...
-	DWORD lgt = grp->lights.front();
+	AlienFX_SDK::grpLight lgt = grp->lights.front();
 	AlienFX_SDK::lightgrid* opGrid = NULL;
 	for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
 		for (int ind = 0; ind < t->x * t->y; ind++)
-			if (t->grid[ind] == lgt) {
+			if (t->grid[ind].lgh == lgt.lgh) {
 				zone->gridID = t->id;
 				opGrid = &(*t);
 				break;
@@ -502,9 +506,9 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 
 	// scan light positions in grid...
 	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
-		zonelight cl{ *lgh, 255, 255 };
+		zonelight cl{ lgh->lgh, 255, 255 };
 		for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
-			if (opGrid->grid[ind] == *lgh) {
+			if (opGrid->grid[ind].lgh == lgh->lgh) {
 				cl.x = min(cl.x, ind % opGrid->x);
 				cl.y = min(cl.y, ind / opGrid->x);
 				zone->gMaxX = max(zone->gMaxX, ind % opGrid->x);

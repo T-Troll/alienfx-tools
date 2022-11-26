@@ -32,10 +32,9 @@ LFX_RESULT CheckState(int did = -1, int lid = -1) {
 	return state;
 }
 
-int LightInGroup(AlienFX_SDK::group* grp, int did, int lid) {
-	DWORD lgh = MAKELPARAM(did, lid);
+int LightInGroup(AlienFX_SDK::group* grp, AlienFX_SDK::grpLight lgh) {
 	for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-		if (*pos == lgh)
+		if (pos->lgh == lgh.lgh)
 			return (int)(pos - grp->lights.begin());
 	return -1;
 }
@@ -47,18 +46,18 @@ void FillGroupsFromGrid() {
 			dy = grid->y / 3;
 		for (int x = 0; x < grid->x; x++)
 			for (int y = 0; y < grid->y; y++) {
-				int did = LOWORD(grid->grid[y * grid->x + x]), lid = HIWORD(grid->grid[y * grid->x + x]);
-				if (x < dx && LightInGroup(&groups[1], did, lid) < 0) //left
-					groups[1].lights.push_back(MAKELPARAM(did, lid));
-				if (grid->x - x < dx && LightInGroup(&groups[0], did, lid) < 0) // right
-					groups[0].lights.push_back(MAKELPARAM(did, lid));
-				if (y < dy && LightInGroup(&groups[2], did, lid) < 0) { // upper and rear
-					groups[2].lights.push_back(MAKELPARAM(did, lid));
-					groups[5].lights.push_back(MAKELPARAM(did, lid));
+				AlienFX_SDK::grpLight cLight = grid->grid[y * grid->x + x];
+				if (x < dx && LightInGroup(&groups[1], cLight) < 0) //left
+					groups[1].lights.push_back(cLight);
+				if (grid->x - x < dx && LightInGroup(&groups[0], cLight) < 0) // right
+					groups[0].lights.push_back(cLight);
+				if (y < dy && LightInGroup(&groups[2], cLight) < 0) { // upper and rear
+					groups[2].lights.push_back(cLight);
+					groups[5].lights.push_back(cLight);
 				}
-				if (grid->y - y < dy && LightInGroup(&groups[3], did, lid) < 0) { // lower and front
-					groups[3].lights.push_back(MAKELPARAM(did, lid));
-					groups[4].lights.push_back(MAKELPARAM(did, lid));
+				if (grid->y - y < dy && LightInGroup(&groups[3], cLight) < 0) { // lower and front
+					groups[3].lights.push_back(cLight);
+					groups[4].lights.push_back(cLight);
 				}
 			}
 	}
@@ -211,14 +210,14 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightDescription(const unsigned int dev, c
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightLocation(const unsigned int dev, const unsigned int lid, PLFX_POSITION const pos) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
 		AlienFX_SDK::mapping *map = &afx_map->fxdevs[dev].lights[lid];
-		DWORD pid = afx_map->fxdevs[dev].pid;
 		if (map) {
-			pos->x = LightInGroup(&groups[1], pid, map->lightid) >= 0 ? 0 :
-				LightInGroup(&groups[0], pid, map->lightid) >= 0 ? 2 : 1;
-			pos->y = LightInGroup(&groups[3], pid, map->lightid) >= 0 ? 0 :
-				LightInGroup(&groups[2], pid, map->lightid) >= 0 ? 2 : 1;
-			pos->z = LightInGroup(&groups[5], pid, map->lightid) >= 0 ? 0 :
-				LightInGroup(&groups[4], pid, map->lightid) >= 0 ? 2 : 1;
+			AlienFX_SDK::grpLight cur{ afx_map->fxdevs[dev].pid , map->lightid };
+			pos->x = LightInGroup(&groups[1], cur) >= 0 ? 0 :
+				LightInGroup(&groups[0], cur) >= 0 ? 2 : 1;
+			pos->y = LightInGroup(&groups[3], cur) >= 0 ? 0 :
+				LightInGroup(&groups[2], cur) >= 0 ? 2 : 1;
+			pos->z = LightInGroup(&groups[5], cur) >= 0 ? 0 :
+				LightInGroup(&groups[4], cur) >= 0 ? 2 : 1;
 		}
 	}
 	return state;
@@ -251,8 +250,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 			vector<byte> lights;
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (LOWORD(grp->lights[i]) == j->pid)
-						lights.push_back((byte) HIWORD(grp->lights[i]));
+					if (grp->lights[i].did == j->pid)
+						lights.push_back((byte)grp->lights[i].lid);
 			} else {
 				for (auto i = j->lights.begin(); gid < 0 && i < j->lights.end(); i++) {
 					if (!(i->flags & ALIENFX_FLAG_POWER))
@@ -301,9 +300,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const u
 		for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
-					if (LOWORD(grp->lights[i]) == j->pid /*&&
-						!(grp->lights[i]->flags & ALIENFX_FLAG_POWER)*/) {
-						actions.index = (byte) HIWORD(grp->lights[i]);
+					if (grp->lights[i].did == j->pid) {
+						actions.index = (byte)grp->lights[i].lid;
 						j->dev->SetAction(&actions);
 					}
 			} else {

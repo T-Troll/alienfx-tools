@@ -1,6 +1,5 @@
 #include "alienfx-gui.h"
 
-extern int eItem;
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern bool IsGroupUnused(DWORD gid);
 extern FXHelper* fxhl;
@@ -98,7 +97,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	case WM_INITDIALOG:
 	{
 		zsDlg = hDlg;
-		if (eItem < 0 && conf->activeProfile->lightsets.size())
+		if (!eItem && conf->activeProfile->lightsets.size())
 			eItem = conf->activeProfile->lightsets.front().group;
 		UpdateZoneList();
 		//return false;
@@ -113,16 +112,12 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		} break;
 		case IDC_BUT_DEL_ZONE:
 			if (eItem > 0) {
-				int neItem;
+				int neItem = eItem;
 				for (auto iter = conf->activeProfile->lightsets.begin(); iter != conf->activeProfile->lightsets.end(); iter++) {
 					if (iter->group == eItem) {
-						if (iter != conf->activeProfile->lightsets.begin())
-							neItem = (iter - 1)->group;
-						else
-							if (conf->activeProfile->lightsets.size() > 1)
-								neItem = (iter + 1)->group;
-							else
-								neItem = -1;
+						neItem = iter == conf->activeProfile->lightsets.begin() ?
+							conf->activeProfile->lightsets.size() > 1 ?
+								(iter + 1)->group :	0 : (iter - 1)->group;
 						conf->activeProfile->lightsets.erase(iter);
 						break;
 					}
@@ -134,10 +129,9 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							break;
 						}
 				}
-				eItem = neItem;
-				UpdateZoneList();
-				if (eItem < 0)
+				if (!(eItem = neItem))
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+				UpdateZoneList();
 				fxhl->Refresh();
 			}
 			break;

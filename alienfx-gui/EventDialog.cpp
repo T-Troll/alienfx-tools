@@ -10,7 +10,6 @@ extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 extern FXHelper* fxhl;
 extern MonHelper* mon;
-extern int eItem;
 
 const static vector<string> eventTypeNames{ "Power", "Performance", "Indicator" },
 		perfTypeNames{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",

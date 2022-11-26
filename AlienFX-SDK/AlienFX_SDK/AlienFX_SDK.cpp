@@ -1131,29 +1131,6 @@ namespace AlienFX_SDK {
 		return &groups;
 	}
 
-	void Mappings::AddMappingByDev(afx_device* dev, WORD lightID, const char *name, WORD flags) {
-		if (dev) {
-			mapping* map;
-			if (!(map = GetMappingByDev(dev, lightID))) {
-				dev->lights.push_back({ lightID });
-				map = &dev->lights.back();
-			}
-			map->name = name;
-			map->flags = flags;
-		}
-	}
-
-	void Mappings::AddMapping(DWORD devID, WORD lightID, const char* name, WORD flags) {
-		afx_device* dev = AddDeviceById(LOWORD(devID), HIWORD(devID));
-		mapping* map;
-		if (!(map = GetMappingByDev(dev, lightID))) {
-			dev->lights.push_back({ lightID });
-			map = &dev->lights.back();
-		}
-		map->name = name;
-		map->flags = flags;
-	}
-
 	void Mappings::RemoveMapping(afx_device* dev, WORD lightID)
 	{
 		if (dev) {
@@ -1180,64 +1157,49 @@ namespace AlienFX_SDK {
 		grids.clear();
 
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
-		unsigned vindex; mapping map; afx_device* dev;
+		unsigned vindex; //mapping map; afx_device* dev;
 		char kName[255], name[255];
-		DWORD len = 255, lend = 255, dID;
-		WORD lID = 0, vid, pid;
-		for (vindex = 0; RegEnumValue(hKey1, vindex, kName, &len, NULL, NULL, (LPBYTE) name, &lend) == ERROR_SUCCESS; vindex++) {
+		DWORD len, lend, dID;
+		WORD lID, vid, pid;
+		for (vindex = 0; RegEnumValue(hKey1, vindex, kName, &(len = 255), NULL, NULL, (LPBYTE)name, &(lend = 255)) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Dev#%hd_%hd", &vid, &pid) == 2) {
-				dev = AddDeviceById(pid, vid);
-				dev->name = string(name);
+				AddDeviceById(pid, vid)->name = string(name);
+				continue;
 			}
 			if (sscanf_s(kName, "DevWhite#%hd_%hd", &vid, &pid) == 2) {
-				dev = AddDeviceById(pid, vid);
-				dev->white.ci = ((DWORD *) name)[0];
+				AddDeviceById(pid, vid)->white.ci = ((DWORD*)name)[0];
+				continue;
 			}
-			len = 255, lend = 255;
 		}
 		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
-			if (sscanf_s(kName, "Light%d-%hd", &dID, &lID) == 2) {
-				DWORD nameLen = 255, flags;
-				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
-				nameLen = sizeof(DWORD);
-				RegGetValue(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &flags, &nameLen);
-				// HIWORD(devID), LOWORD(devID)
-				AddMapping(dID, lID, name, LOWORD(flags));
+			if (sscanf_s(kName, "Light%u-%hd", &dID, &lID) == 2) {
+				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
+				RegGetValue(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
+				AddDeviceById(LOWORD(dID), HIWORD(dID))->lights.push_back({ lID, LOWORD(len), name });
+			}
+			if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
+				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
+				RegGetValue(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
+				byte x = HIBYTE(len), y = LOBYTE(len);
+				grpLight* grid = new grpLight[x * y];
+				RegGetValue(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &(lend = x * y * sizeof(DWORD)));
+				grids.push_back({ (byte)dID, x, y, name, grid });
 			}
 		}
 		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++)  {
 			if (sscanf_s((char *) kName, "Group%d", &dID) == 1) {
-				DWORD nameLen = 255, *maps;
-				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
-				nameLen = 0;
-				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &nameLen);
-				maps = new DWORD[nameLen / sizeof(DWORD)];
-				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &nameLen);
+				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
+				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend);
+				len = lend / sizeof(DWORD);
+				DWORD* maps = new DWORD[len];
+				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
 				groups.push_back({dID, name});
-				for (int i = 0; i < nameLen / sizeof(DWORD); i += 2) {
-					dev = GetDeviceById(LOWORD(maps[i]), HIWORD(maps[i]));
-					if (dev) {
-						//int flags = GetFlags(dev, (WORD)maps[i + 1]);
-						groups.back().lights.push_back(MAKELPARAM(LOWORD(maps[i]), maps[i + 1]));
-						if (GetFlags(dev, (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
-							groups.back().have_power = true;
-					}
+				for (unsigned i = 0; i < len; i += 2) {
+					groups.back().lights.push_back({ LOWORD(maps[i]), (WORD)maps[i + 1] });
+					if (GetFlags(LOWORD(maps[i]), (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
+						groups.back().have_power = true;
 				}
 				delete[] maps;
-			}
-		}
-		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
-			if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
-				DWORD nameLen = 255, *grid, sizes;
-				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &nameLen);
-				nameLen = sizeof(DWORD);
-				RegGetValue(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &sizes, &nameLen);
-				byte x = (byte)(sizes >> 8), y = (byte)(sizes & 0xff);
-				nameLen = x*y*sizeof(DWORD);
-				grid = new DWORD[x * y];
-				RegGetValue(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &nameLen);
-				grids.push_back({ (byte)dID, x, y, name, grid });
-				//memcpy(grids.back().grid, grid, MAXGRIDSIZE * sizeof(DWORD));
 			}
 		}
 		RegCloseKey(hKey1);
@@ -1280,8 +1242,8 @@ namespace AlienFX_SDK {
 			DWORD *grLights = new DWORD[groups[i].lights.size() * 2];
 
 			for (int j = 0; j < groups[i].lights.size(); j++) {
-				grLights[j * 2] = LOWORD(groups[i].lights[j]);
-				grLights[j * 2 + 1] = HIWORD(groups[i].lights[j]);
+				grLights[j * 2] = groups[i].lights[j].did;
+				grLights[j * 2 + 1] = groups[i].lights[j].lid;
 			}
 			RegSetValueEx( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD) groups[i].lights.size() * sizeof(DWORD) );
 
@@ -1318,7 +1280,7 @@ namespace AlienFX_SDK {
 
 	int Mappings::GetFlags(DWORD devID, WORD lightid)
 	{
-		afx_device* dev = GetDeviceById(HIWORD(devID), LOWORD(devID));
+		afx_device* dev = GetDeviceById(LOWORD(devID), HIWORD(devID));
 		if (dev)
 			return GetFlags(dev, lightid);
 		return 0;

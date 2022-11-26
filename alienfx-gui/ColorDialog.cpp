@@ -9,8 +9,6 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern FXHelper* fxhl;
 
-extern int eItem;
-
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 int effID = 0;

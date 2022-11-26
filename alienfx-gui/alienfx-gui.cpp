@@ -53,7 +53,7 @@ int tabLightSel = 0;
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // last light selected
-int eItem = -1;
+int eItem = 0;
 
 // Effect mode list
 const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
@@ -134,7 +134,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (!conf->afx_dev.GetGrids()->size()) {
 		conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main" });
-		conf->afx_dev.GetGrids()->back().grid = new DWORD[20 * 8]{ 0 };
+		conf->afx_dev.GetGrids()->back().grid = new AlienFX_SDK::grpLight[20 * 8]{ 0 };
 	}
 	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
 
@@ -883,7 +883,7 @@ groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set)
 bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp) {
 	if (grp)
 		for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-			if (*pos == lgh)
+			if (pos->lgh == lgh)
 				return true;
 	return false;
 }
@@ -911,12 +911,14 @@ void RemoveUnused(vector<groupset>* lightsets) {
 }
 
 void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
-	auto pos = find(grp->lights.begin(), grp->lights.end(), MAKELPARAM(devid, lightid));
-	if (pos != grp->lights.end()) {
-		if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
-			grp->have_power = false;
-		grp->lights.erase(pos);
-	}
+	AlienFX_SDK::grpLight cur{ devid, lightid };
+	for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
+		if (pos->lgh == cur.lgh) {
+			if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
+				grp->have_power = false;
+			grp->lights.erase(pos);
+			break;
+		}
 }
 
 void RemoveLightAndClean(int dPid, int eLid) {
@@ -928,8 +930,8 @@ void RemoveLightAndClean(int dPid, int eLid) {
 	DWORD lcode = MAKELPARAM(dPid, eLid);
 	for (auto g = conf->afx_dev.GetGrids()->begin(); g < conf->afx_dev.GetGrids()->end(); g++) {
 		for (int ind = 0; ind < g->x * g->y; ind++)
-			if (g->grid[ind] == lcode)
-				g->grid[ind] = 0;
+			if (g->grid[ind].lgh == lcode)
+				g->grid[ind].lgh = 0;
 	}
 }
 

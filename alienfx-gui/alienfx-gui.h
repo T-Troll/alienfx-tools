@@ -43,5 +43,7 @@ extern ConfigHandler* conf;
 //extern ThreadHelper* updateUI;
 extern HWND sTip1, sTip2, sTip3;
 
+extern int eItem;
+
 
 

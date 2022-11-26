@@ -15,7 +15,7 @@ extern FXHelper* fxhl;
 
 extern int eLid, dIndex;
 extern bool whiteTest;
-extern int tabLightSel, eItem;
+extern int tabLightSel;
 
 extern HWND zsDlg;
 
@@ -64,8 +64,8 @@ void InitGridButtonZone() {
     for (int y = 0; y < conf->mainGrid->y; y++)
         for (int x = 0; x < conf->mainGrid->x; x++) {
             int size = 1;
-            if (conf->mainGrid->grid[ind(x, y)]) {
-                while (conf->mainGrid->grid[ind(x, y)] == conf->mainGrid->grid[ind(x+size, y)]) size++;
+            if (conf->mainGrid->grid[ind(x, y)].lgh) {
+                while (conf->mainGrid->grid[ind(x, y)].lgh == conf->mainGrid->grid[ind(x+size, y)].lgh) size++;
                 // now ajust sizes
                 minGridX = min(minGridX, x);
                 minGridY = min(minGridY, y);
@@ -95,7 +95,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
                     for (int x = full.left; x < full.right; x++)
                         for (int y = full.top; y < full.bottom; y++) {
                             int ind = ind(x, y);
-                            if (IsLightInGroup(conf->mainGrid->grid[ind], grp)) {
+                            if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
                                 if (conf->enableMon)
                                     switch (conf->GetEffect()) {
                                     case 1: { // monitoring
@@ -152,7 +152,7 @@ void SetLightGridSize(int x, int y) {
         minY = min(minGridY, maxGridY - y + 1);
         y = max(y, maxGridY - minGridY + 1);
     }
-    DWORD* newgrid = new DWORD[x * y]{ 0 };
+    AlienFX_SDK::grpLight* newgrid = new AlienFX_SDK::grpLight[x * y]{ 0 };
     for (int row = 0; row < min(conf->mainGrid->y, y); row++)
         memcpy(newgrid + row * x, conf->mainGrid->grid + (row + minY) * conf->mainGrid->x + minX,
             min(conf->mainGrid->x, x) * sizeof(DWORD));
@@ -167,11 +167,11 @@ void ModifyDragZone(WORD did, WORD lid) {
     DWORD newVal = MAKELPARAM(did, lid);
     for (int x = dragZone.left; x < dragZone.right; x++)
         for (int y = dragZone.top; y < dragZone.bottom; y++) {
-            if (!newVal || conf->mainGrid->grid[ind(x, y)] == newVal)
-                conf->mainGrid->grid[ind(x, y)] = 0;
+            if (!newVal || conf->mainGrid->grid[ind(x, y)].lgh == newVal)
+                conf->mainGrid->grid[ind(x, y)].lgh = 0;
             else
-                if (!conf->mainGrid->grid[ind(x,y)])
-                    conf->mainGrid->grid[ind(x,y)] = newVal;
+                if (!conf->mainGrid->grid[ind(x,y)].lgh)
+                    conf->mainGrid->grid[ind(x,y)].lgh = newVal;
         }
     conf->zoneMaps.clear();
     InitGridButtonZone();
@@ -179,13 +179,13 @@ void ModifyDragZone(WORD did, WORD lid) {
 
 void ModifyColorDragZone(bool clear = false) {
     AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(eItem);
-    vector<DWORD> markRemove, markAdd;
+    vector<AlienFX_SDK::grpLight> markRemove, markAdd;
     if (grp && dragZone.top >= 0) {
         for (int x = dragZone.left; x < dragZone.right; x++)
             for (int y = dragZone.top; y < dragZone.bottom; y++) {
                 int ind = ind(x, y);
-                if (conf->mainGrid->grid[ind]) {
-                    if (IsLightInGroup(conf->mainGrid->grid[ind], grp))
+                if (conf->mainGrid->grid[ind].lgh) {
+                    if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp))
                         markRemove.push_back(conf->mainGrid->grid[ind]);
                     else
                         if (!clear)
@@ -195,24 +195,20 @@ void ModifyColorDragZone(bool clear = false) {
         // now clear by remove list and add new...
         for (auto tr = markRemove.begin(); tr < markRemove.end(); tr++) {
             for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-                if (*pos == *tr) {
+                if (pos->lgh == tr->lgh) {
                     grp->lights.erase(pos);
                     break;
                 }
         }
         for (auto tr = markAdd.begin(); tr < markAdd.end(); tr++) {
-            if (!IsLightInGroup(*tr, grp))
+            if (!IsLightInGroup(tr->lgh, grp))
                 grp->lights.push_back(*tr);
         }
         // now check for power...
         for (auto gpos = grp->lights.begin(); gpos != grp->lights.end(); gpos++) {
-            if (grp->have_power = conf->afx_dev.GetFlags(LOWORD(*gpos), HIWORD(*gpos)) & ALIENFX_FLAG_POWER)
+            if (grp->have_power = conf->afx_dev.GetFlags(gpos->did, gpos->lid) & ALIENFX_FLAG_POWER)
                 break;
         }
-        //grp->have_power = find_if(grp->lights.begin(), grp->lights.end(),
-        //    [](auto t) {
-        //        return conf->afx_dev.GetFlags(LOWORD(t), HIWORD(t)) & ALIENFX_FLAG_POWER;
-        //    }) != grp->lights.end();
 
         for (auto gpos = conf->zoneMaps.begin(); gpos != conf->zoneMaps.end(); gpos++)
             if (gpos->gID == grp->gid) {
@@ -283,9 +279,10 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         case IDC_BUT_CLEARGRID:
             if (tabLightSel == TAB_DEVICES) {
                 if (eLid >= 0) {
+                    AlienFX_SDK::grpLight cur = { FindActiveDevice()->pid, (WORD)eLid };
                     for (int ind = 0; ind < conf->mainGrid->x * conf->mainGrid->y; ind++)
-                        if (conf->mainGrid->grid[ind] == MAKELPARAM(FindActiveDevice()->pid, eLid))
-                            conf->mainGrid->grid[ind] = 0;
+                        if (conf->mainGrid->grid[ind].lgh == cur.lgh)
+                            conf->mainGrid->grid[ind].lgh = 0;
                 }
             }
             else
@@ -319,7 +316,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         // end selection
         if (dragZone.top >= 0) {
             if (tabLightSel == TAB_DEVICES) {
-                DWORD oldLightValue = conf->mainGrid->grid[ind(dragZone.left, dragZone.top)];
+                DWORD oldLightValue = conf->mainGrid->grid[ind(dragZone.left, dragZone.top)].lgh;
                 auto dev = FindActiveDevice();
                 WORD devID = dev->pid;
                 if (dragZone.bottom - dragZone.top == 1 && dragZone.right - dragZone.left == 1 &&
@@ -391,7 +388,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
             int ind = (int)GetWindowLongPtr(ditem->hwndItem, GWLP_USERDATA);
-            DWORD gridVal = conf->mainGrid->grid[ind];
+            DWORD gridVal = conf->mainGrid->grid[ind].lgh;
             if (tabLightSel == TAB_DEVICES) {
                 if (gridVal) {
                     HBRUSH Brush = CreateSolidBrush(gridVal == MAKELPARAM(FindActiveDevice()->pid, eLid) ?
@@ -439,10 +436,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_RAISED, BF_FLAT | BF_RECT);
         }
     } break;
-    //case WM_DESTROY:
-    //    for (DWORD bID = 2000; GetDlgItem(hDlg, bID); bID++)
-    //        DestroyWindow(GetDlgItem(hDlg, bID));
-    //    break;
 	default: return false;
 	}
 	return true;

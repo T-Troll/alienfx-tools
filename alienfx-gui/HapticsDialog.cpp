@@ -9,7 +9,6 @@ extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 extern EventHandler* eve;
-extern int eItem;
 
 int fGrpItem = -1;
 freq_map* freqBlock = NULL;

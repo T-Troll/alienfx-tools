@@ -225,8 +225,8 @@ int main(int argc, char* argv[])
 					for (auto j = afx_map->fxdevs.begin(); j != afx_map->fxdevs.end(); j++) {
 						vector<UCHAR> lights;
 						for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
-							if (LOWORD(*i) == j->pid)
-								lights.push_back((byte)HIWORD(*i));
+							if (i->did == j->pid)
+								lights.push_back((byte)i->lid);
 						}
 						j->dev->SetMultiColor(&lights, color);
 					}
@@ -291,8 +291,8 @@ int main(int argc, char* argv[])
 						act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
 					}
 					for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
-						if (dev = afx_map->GetDeviceById(LOWORD(*i), 0)) {
-							act.index = (byte)HIWORD(*i);
+						if (dev = afx_map->GetDeviceById(i->did, 0)) {
+							act.index = (byte)i->lid;
 							dev->dev->SetAction(&act);
 						}
 					}

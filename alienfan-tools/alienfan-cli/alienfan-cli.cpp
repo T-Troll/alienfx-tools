@@ -309,62 +309,41 @@ int main(int argc, char* argv[])
             wprintf(L"Names: %s\n", name);
             continue;
         }
-        //if (command == "thermal" && (acpi.GetDeviceFlags() & DEV_FLAG_AWCC)) { // test thermal command
-        //    acpi.m_AWCCGetObj->GetMethod((BSTR)L"GetThermalInfo", NULL, &acpi.m_InParamaters, nullptr);
-        //    VARIANT parameters = { VT_I4 };
-        //    if (acpi.m_InParamaters) {
-        //        for (byte i = 0; i < 10; i++) {
-        //            IWbemClassObject* m_outParameters = NULL;
-        //            parameters.uintVal = AlienFan_SDK::ALIENFAN_INTERFACE{ i, 0, 0 }.args;
-        //            if (acpi.m_InParamaters && acpi.m_WbemServices->ExecMethod(acpi.m_instancePath.bstrVal,
-        //                (BSTR)L"GetThermalInfo", 0, NULL, acpi.m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
-        //                VARIANT result{ VT_I4 };
-        //                m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
-        //                m_outParameters->Release();
-        //                printf("Thermal for %d is %d\n", i, result.intVal);
-        //            }
-        //            else
-        //                printf("Thermal for %d failed\n", i);
-        //        }
-        //    }
-        //    else
-        //        printf("Thermal InParam failed\n");
-        //    continue;
-        //}
         //if (command == "test") { // dump WMI functions
         //    IWbemClassObject* driveObject = NULL;
         //    IWbemLocator* m_WbemLocator;
         //    IWbemServices* m_WbemServices = NULL;
-        //    //IEnumWbemClassObject* enum_obj;
+        //    IEnumWbemClassObject* enum_obj;
         //    CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
         //    m_WbemLocator->ConnectServer((BSTR)L"root\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
         //    m_WbemLocator->Release();
         //    if (m_WbemServices->GetObject((BSTR)L"WMI_FanSpeedControl", NULL, nullptr, &driveObject, nullptr) == S_OK) {
         //        BSTR name;
-        //        VARIANT /*m_instancePath, */wSpeed{ VT_UI2 };
+        //        VARIANT wSpeed{ VT_UI2 };
         //        IWbemClassObject* m_InParamaters = NULL;
         //        IWbemClassObject* m_outParameters = NULL;
         //        IWbemClassObject* ECInst = NULL;
         //        // Command dump
+        //        m_WbemServices->GetObject((BSTR)L"WMI_Query", NULL, nullptr, &driveObject, nullptr);
         //        driveObject->GetObjectText(0, &name);
         //        wprintf(L"Names: %s\n", name);
-        //        //m_WbemServices->CreateInstanceEnum((BSTR)L"WMI_FanSpeedControl", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj);
-        //        //IWbemClassObject* spInstance;
-        //        //ULONG uNumOfInstances = 0;
-        //        //enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-        //        //driveObject->Get(L"InstanceName", 0, &m_instancePath, nullptr, nullptr);
-        //        //spInstance->Release();
-        //        //enum_obj->Release();
-        //        driveObject->GetMethod((BSTR)L"ECSetCPUFan", NULL, &m_InParamaters, nullptr);
-        //        //m_InParamaters->SpawnInstance(0, &ECInst);
-        //        wSpeed.iVal = 0;
-        //        m_InParamaters->Put(L"wSpeed", NULL, &wSpeed, NULL);
-        //        IErrorInfo* errinfo;
-        //        m_WbemServices->ExecMethod((BSTR)L"WMI_FanSpeedControl",
-        //            (BSTR)L"ECSetCPUFan", 0, NULL, m_InParamaters, NULL, NULL);
-        //        GetErrorInfo(0, &errinfo);
-        //        errinfo->GetDescription(&name);
-        //        m_InParamaters->Get(L"wSpeed", 0, &wSpeed, nullptr, nullptr);
+        //       // VARIANT path, active, instanceName, temp;
+        //        HRESULT res;
+        //        CIMTYPE pType;
+        //        //m_WbemServices->GetObject((BSTR)L"WMI_ThermalQuery", NULL, nullptr, &driveObject, nullptr);
+        //        //temp.vt = VT_ARRAY;
+        //        //res = driveObject->Get(L"FakeTemp", 0, &temp, &pType, 0);
+        //        driveObject->GetMethod((BSTR)L"ECSetCPUFan", NULL, &m_InParamaters, NULL);
+        //        m_InParamaters->SpawnInstance(0, &ECInst);
+        //        //VARIANT path{ VT_BSTR };
+        //        //driveObject->Get((BSTR)"__Path", 0, &path, 0, 0);
+        //        res = ECInst->Get(L"wSpeed", 0, &wSpeed, &pType, nullptr);
+        //        wSpeed.vt = pType;
+        //        wSpeed.iVal = (uint16_t)0;
+        //        res = ECInst->Put(L"wSpeed", NULL, &wSpeed, VT_UI2);
+        //        res = m_WbemServices->ExecMethod((BSTR)L"WMI_FanSpeedControl",
+        //            (BSTR)L"ECSetCPUFan", 0, NULL, ECInst, &m_outParameters, NULL);
+        //        ECInst->Get(L"wSpeed", 0, &wSpeed, nullptr, nullptr);
         //        if (m_outParameters) {
         //            m_outParameters->Get(L"wSpeed", 0, &wSpeed, nullptr, nullptr);
         //            m_outParameters->Release();

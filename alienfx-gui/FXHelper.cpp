@@ -60,7 +60,7 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::afx_act> actions, doub
 	if (cGrp && cGrp->lights.size()) {
 		if (!grp->gauge || actions.size() < 2 /*|| !zone*/) {
 			for (auto i = cGrp->lights.begin(); i < cGrp->lights.end(); i++)
-				SetLight(LOWORD(*i), HIWORD(*i), actions, force);
+				SetLight(i->did, i->lid, actions, force);
 		}
 		else {
 			zonemap* zone = conf->FindZoneMap(grp->group);

@@ -23,15 +23,11 @@ sen_block* ConfigFan::FindSensor() {
 	return NULL;
 }
 
-map<WORD, sen_block>*/*fan_block**/ ConfigFan::FindFanBlock(short id, fan_profile* prof) {
+map<WORD, sen_block>*ConfigFan::FindFanBlock(short id, fan_profile* prof) {
 	if (!prof) prof = lastProf;
 	if (id >= prof->fanControls.size())
 		prof->fanControls.resize(id + 1);
 	return &prof->fanControls[id];
-	//for (auto tb = prof->fanControls.begin(); tb != prof->fanControls.end(); tb++)
-	//	if (tb->fanIndex == id)
-	//		return &(*tb);
-	//return NULL;
 }
 
 void ConfigFan::GetReg(const char *name, DWORD *value, DWORD defValue) {
@@ -46,16 +42,24 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 
 void ConfigFan::AddSensorCurve(fan_profile *prof, WORD fid, WORD sid, byte* data, DWORD lend) {
 	auto fan = FindFanBlock(fid, prof);
-	//if (!fan) {
-	//	prof->fanControls.push_back({ (byte)fid });
-	//	fan = &prof->fanControls.back();
-	//}
 	// Now load and add sensor data..
 	sen_block curve = { true };
 	for (UINT i = 0; i < lend; i += 2) {
 		curve.points.push_back({ data[i], data[i + 1] });
 	}
 	(*fan)[sid] = curve;
+}
+
+DWORD ConfigFan::GetRegData(HKEY key, int vindex, char* name, byte** data) {
+	DWORD len, lend;
+	if (*data)
+		delete[] *data;
+	if (RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS) {
+		*data = new byte[lend];
+		RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, *data, &lend);
+		return lend;
+	}
+	return 0;
 }
 
 void ConfigFan::Load() {
@@ -66,8 +70,6 @@ void ConfigFan::Load() {
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LastPowerStage", &power);
-	//GetReg("LastSensor", &lastSelectedSensor);
-	//GetReg("LastFan", &lastSelectedFan);
 	GetReg("ObCheck", &obCheck);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
@@ -78,45 +80,34 @@ void ConfigFan::Load() {
 	// Now load sensor mappings...
 	char name[256];
 	byte* inarray = NULL;
-	DWORD len = 255, lend = 0; short fid, sid;
-	for (int vindex = 0; RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		if (inarray)
-			delete[] inarray;
-		inarray = new byte[lend];
-		RegEnumValue(keySensors, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
+	DWORD lend; short fid, sid;
+	for (int vindex = 0; lend = GetRegData(keySensors, vindex, name, &inarray); vindex++) {
 		if (sscanf_s(name, "Fan-%hd-%hd", &fid, &sid) == 2) {
 			AddSensorCurve(&prof, fid, sid, inarray, lend);
 			continue;
 		}
+		// Obsolete, remove soon
 		if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
 			AddSensorCurve(&prof, fid, sid | 0xff00, inarray, lend);
 			continue;
 		}
+		// 2nd part is obsolete too
 		sid = 0xff;
 		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2 || sscanf_s(name, "SensorName-%hd", &fid) == 1) {
 			sensors[MAKEWORD(fid, sid)] = (char*)inarray;
 			continue;
 		}
-		// old format, deprecated...
-		//if (sscanf_s(name, "SensorName-%hd", &sid) == 1) {
-		//	sensors.emplace(MAKEWORD(sid, 0xff), (char*)inarray);
-		//}
 	}
-	if (inarray) delete[] inarray;
-	for (int vindex = 0; RegEnumValue(keyMain, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+	inarray = NULL;
+	for (int vindex = 0; lend = GetRegData(keyMain, vindex, name, &inarray); vindex++) {
 		if (sscanf_s(name, "Boost-%hd", &fid) == 1) { // Boost block
-			inarray = new byte[lend];
-			RegEnumValue(keyMain, vindex, name, &(len = 255), NULL, NULL, inarray, &lend);
 			boosts[(byte)fid] = { inarray[0],*(WORD*)(inarray + 1) };
-			delete[] inarray;
 		}
 	}
-	for (int vindex = 0; RegEnumValue(keyPowers, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
+	inarray = NULL;
+	for (int vindex = 0; lend = GetRegData(keyPowers, vindex, name, &inarray); vindex++) {
 		if (sscanf_s(name, "Power-%hd", &fid) == 1) { // Power names
-			char* inarray = new char[lend + 1];
-			RegEnumValue(keyPowers, vindex, name, &(len = 255), NULL, NULL, (byte*)inarray, &lend);
-			powers.emplace((byte)fid, inarray);
-			delete[] inarray;
+			powers[(byte)fid] = (char*)inarray;
 		}
 	}
 }
@@ -128,8 +119,6 @@ void ConfigFan::Save() {
 	SetReg("StartMinimized", startMinimized);
 	SetReg("LastPowerStage", MAKELPARAM(prof.powerStage, prof.gmode));
 	SetReg("UpdateCheck", updateCheck);
-	//SetReg("LastSensor", lastSelectedSensor);
-	//SetReg("LastFan", lastSelectedFan);
 	SetReg("ObCheck", obCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);

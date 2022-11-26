@@ -7,7 +7,6 @@ extern void SetSlider(HWND tt, int value);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
 extern EventHandler* eve;
-extern int eItem;
 
 void InitButtonZone(HWND dlg) {
     // delete zone buttons...

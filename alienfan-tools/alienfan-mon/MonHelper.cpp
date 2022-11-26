@@ -114,7 +114,7 @@ void CMonProc(LPVOID param) {
 			src->boostSets[cIter] = 0;
 			for (auto fIter = fan_conf->lastProf->fanControls[cIter].begin(); fIter != fan_conf->lastProf->fanControls[cIter].end(); fIter++) {
 				sen_block* cur = &fIter->second;
-				if (cur->active) {
+				if (cur->active && cur->points.size()) {
 					int cBoost = cur->points.back().boost;
 					for (auto k = cur->points.begin() + 1; k != cur->points.end(); k++)
 						if (src->senValues[fIter->first] <= k->temp) {

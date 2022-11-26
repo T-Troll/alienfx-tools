@@ -125,6 +125,7 @@ private:
 	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
+	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id);
 public:
