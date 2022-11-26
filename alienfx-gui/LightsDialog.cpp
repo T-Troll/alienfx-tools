@@ -93,10 +93,10 @@ void OnLightSelChanged(HWND hwndDlg)
 			pHdr->hwndControl = NULL;
 		}
 		if (tabLightSel == TAB_DEVICES) {
-			if (pHdr->hwndControl) {
-				DestroyWindow(pHdr->hwndControl);
-				pHdr->hwndControl = NULL;
-			}
+			//if (pHdr->hwndControl) {
+			//	DestroyWindow(pHdr->hwndControl);
+			//	pHdr->hwndControl = NULL;
+			//}
 			if (oldTab != TAB_DEVICES) {
 				DestroyWindow(pHdr->hwndDisplay);
 				pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], hwndDlg, pHdr->apProc[tabLightSel]);

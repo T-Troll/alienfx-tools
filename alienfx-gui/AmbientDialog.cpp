@@ -5,12 +5,9 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-//extern void RemoveUnused(vector<groupset>*);
 
 extern EventHandler* eve;
 extern int eItem;
-
-void AmbUpdate(LPVOID);
 
 void InitButtonZone(HWND dlg) {
     // delete zone buttons...
@@ -40,7 +37,7 @@ void RedrawButtonZone(HWND dlg) {
 }
 
 void SetGridSize(HWND dlg, int x, int y) {
-    updateUI->Stop();
+    KillTimer(dlg, 0);
     if (eve->capt) {
         eve->capt->SetLightGridSize(x, y);
     }
@@ -48,11 +45,10 @@ void SetGridSize(HWND dlg, int x, int y) {
         conf->amb_grid = MAKELPARAM(x, y);
     }
     InitButtonZone(dlg);
-    updateUI->Start();
+    SetTimer(dlg, 0, 200, NULL);
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    //HWND light_list = GetDlgItem(hDlg, IDC_LIGHTS);
     HWND brSlider = GetDlgItem(hDlg, IDC_SLIDER_BR),
         gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID),
         gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
@@ -92,7 +88,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         InitButtonZone(hDlg);
 
         // Start UI update thread...
-        updateUI = new ThreadHelper(AmbUpdate, hDlg, 200);
+        SetTimer(hDlg, 0, 200, NULL);
 
     } break;
     case WM_COMMAND:
@@ -183,18 +179,14 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             DeleteObject(Brush);
         }
     } break;
-    case WM_DESTROY:
-        delete updateUI;
-    break;
+    case WM_TIMER:
+        if (eve->capt && eve->capt->needUIUpdate && IsWindowVisible(hDlg)) {
+            //DebugPrint("Ambient UI update...\n");
+            eve->capt->needUIUpdate = false;
+            RedrawButtonZone(hDlg);
+        }
+        break;
     default: return false;
     }
     return true;
-}
-
-void AmbUpdate(LPVOID param) {
-    if (eve->capt && eve->capt->needUIUpdate && IsWindowVisible((HWND)param)) {
-        //DebugPrint("Ambient UI update...\n");
-        eve->capt->needUIUpdate = false;
-        RedrawButtonZone((HWND)param);
-    }
 }

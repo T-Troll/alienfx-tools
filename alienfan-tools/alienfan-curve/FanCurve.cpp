@@ -67,7 +67,7 @@ void DrawFan()
         HDC hdc_r = GetDC(fanWindow);
         // Double buff...
         HDC hdc = CreateCompatibleDC(hdc_r);
-        HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, cArea.right - cArea.left + 1, cArea.bottom - cArea.top + 1);
+        HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, cArea.right /*- cArea.left*/ + 1, cArea.bottom /*- cArea.top*/ + 1);
         SetBkMode(hdc, TRANSPARENT);
         HGDIOBJ hOld = SelectObject(hdc, hbmMem);
 
@@ -160,7 +160,7 @@ void DrawFan()
             Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
         }
 
-        BitBlt(hdc_r, 0, 0, cArea.right - cArea.left + 1, cArea.bottom - cArea.top + 1, hdc, 0, 0, SRCCOPY);
+        BitBlt(hdc_r, 0, 0, cArea.right + 1, cArea.bottom + 1, hdc, 0, 0, SRCCOPY);
 
         SelectObject(hdc, hOld);
         DeleteObject(hbmMem);
@@ -176,11 +176,11 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
     int pRpm, bRpm = acpi->GetFanRPM(fanID), maxRPM;
     boostCheck.push_back({ boost, (USHORT)bRpm });
     lastBoostPoint = &boostCheck.back();
-    DrawFan();
+    //DrawFan();
     if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
         return -1;
     lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
-    DrawFan();
+    //DrawFan();
     do {
         pRpm = bRpm;
         bRpm = lastBoostPoint->maxRPM;
@@ -189,7 +189,7 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
         lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
         maxRPM = max(lastBoostPoint->maxRPM, bRpm);
         bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
-        DrawFan();
+        //DrawFan();
     } while ((lastBoostPoint->maxRPM > bRpm || bRpm < pRpm || lastBoostPoint->maxRPM != pRpm)
         && (!downtrend || !(lastBoostPoint->maxRPM < bRpm && bRpm < pRpm)));
     return lastBoostPoint->maxRPM = maxRPM;
@@ -244,7 +244,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                         rpm = lastBoostPoint->maxRPM;
                         cSteps = steps;
                         bestBoostPoint.maxBoost = boost;
-                        DrawFan();
+                        //DrawFan();
                     }
                     else {
                         if (crpm > 0)
@@ -261,7 +261,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                 boost -= steps;
                 while (boost > 100 && (crpm = SetFanSteady(i, boost)) >= bestBoostPoint.maxRPM - 55) {
                     bestBoostPoint.maxBoost = boost;
-                    DrawFan();
+                    //DrawFan();
                     boost -= steps;
                 }
                 if (crpm < 0)
@@ -271,7 +271,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
         finish:
             acpi->SetFanBoost(num, oldBoost, true);
             UpdateBoost(i);
-            DrawFan();
+            //DrawFan();
             ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
                 + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
         }
@@ -369,10 +369,14 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_SIZE:
         GetClientRect(fanWindow, &cArea);
         cArea.right--; cArea.bottom--;
-        DrawFan();
+        //DrawFan();
         break;
     case WM_ERASEBKGND:
         return true;
+    case WM_TIMER:
+        if (IsWindowVisible(hDlg))
+            DrawFan();
+        break;
     }
     return DefWindowProc(hDlg, message, wParam, lParam);
 }
@@ -464,11 +468,11 @@ void ReloadTempView(HWND list) {
     ListView_EnsureVisible(list, rpos, false);
 }
 
-void TempUIEvent(NMLVDISPINFO* lParam, ThreadHelper* fanUIUpdate, HWND tempList, HWND fanList) {
+void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
     auto pwr = fan_conf->sensors.find((WORD)lParam->item.lParam);
     switch (lParam->hdr.code) {
     case LVN_BEGINLABELEDIT: {
-        fanUIUpdate->Stop();
+        KillTimer(GetParent(tempList), 0);
         Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[lParam->item.iItem].name).c_str());
     } break;
     case LVN_ITEMACTIVATE: case NM_RETURN:
@@ -489,7 +493,7 @@ void TempUIEvent(NMLVDISPINFO* lParam, ThreadHelper* fanUIUpdate, HWND tempList,
             }
             ReloadTempView(tempList);
         }
-        fanUIUpdate->Start();
+        SetTimer(GetParent(tempList), 0, 500, NULL);
     } break;
     case LVN_ITEMCHANGED:
     {

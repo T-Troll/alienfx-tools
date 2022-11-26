@@ -34,7 +34,7 @@ EventHandler* eve;
 extern AlienFan_SDK::Control* acpi;
 ConfigFan* fan_conf = NULL;
 MonHelper* mon = NULL;
-ThreadHelper* updateUI;
+ThreadHelper* updateUI = NULL;
 
 HWND mDlg = NULL, dDlg = NULL;
 
@@ -284,30 +284,15 @@ void OnSelChanged(HWND hwndDlg)
 	TabCtrl_GetItem(hwndDlg, TabCtrl_GetCurSel(hwndDlg), &tie);
 	tabSel = (int)tie.lParam;
 
-	//if (tabSel == TAB_LIGHTS && conf->afx_dev.fxdevs.empty()) {
-	//	ShowNotification(&conf->niData, "Error", "Alienware light device not found!", true);
-	//	TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
-	//}
-
-	//if (tabSel == TAB_FANS && !mon) {
-	//	conf->fanControl = true;
-	//	if (!DetectFans())
-	//		TabCtrl_SetCurSel(hwndDlg, tabSel = TAB_SETTINGS);
-	//}
-
 	// Destroy the current child dialog box, if any.
 	if (pHdr->hwndDisplay) {
 		DestroyWindow(pHdr->hwndDisplay);
-		pHdr->hwndDisplay = NULL;
+		//pHdr->hwndDisplay = NULL;
+		//pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
 	}
 
-	HWND newDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
-	if (!pHdr->hwndDisplay)
-		pHdr->hwndDisplay = newDisplay;
-
-	if (pHdr->hwndDisplay) {
-		ResizeTab(pHdr->hwndDisplay);
-	}
+	pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
+	ResizeTab(pHdr->hwndDisplay);
 }
 
 void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
@@ -364,6 +349,7 @@ void ClearOldTabs(HWND tab) {
 
 	if (pHdr) {
 		// close tab dialog and clean data
+		DestroyWindow(pHdr->hwndControl);
 		DestroyWindow(pHdr->hwndDisplay);
 		delete[] pHdr->apRes;
 		delete[] pHdr->apProc;

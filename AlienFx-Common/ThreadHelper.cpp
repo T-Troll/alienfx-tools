@@ -7,28 +7,27 @@ ThreadHelper::ThreadHelper(LPVOID function, LPVOID param, int delay, int prt) {
 	priority = prt;
 	func = (void (*)(LPVOID))function;
 	this->param = param;
-	tEvent = CreateEvent(NULL, false, false, NULL);
 	Start();
 }
 
 ThreadHelper::~ThreadHelper()
 {
 	Stop();
-	CloseHandle(tEvent);
 }
 
 void ThreadHelper::Stop()
 {
 	if (tHandle) {
 		SetEvent(tEvent);
-		WaitForSingleObject(tHandle,
+		int code = WaitForSingleObject(tHandle,
 #ifdef _DEBUG
 			INFINITE
 #else
-			delay << 4
+			delay << 2
 #endif // _DEBUG
 		);
 		CloseHandle(tHandle);
+		CloseHandle(tEvent);
 		tHandle = NULL;
 	}
 }
@@ -36,16 +35,16 @@ void ThreadHelper::Stop()
 void ThreadHelper::Start()
 {
 	if (!tHandle) {
-		func(param);
+		tEvent = CreateEvent(NULL, true, false, NULL);
 		tHandle = CreateThread(NULL, 0, ThreadFunc, this, 0, NULL);
+		SetThreadPriority(tHandle, priority);
 	}
 }
 
 DWORD WINAPI ThreadFunc(LPVOID lpParam) {
 	ThreadHelper* src = (ThreadHelper*)lpParam;
-	SetThreadPriority(GetCurrentThread(), src->priority);
-	while (WaitForSingleObject(src->tEvent, src->delay) == WAIT_TIMEOUT) {
+	do {
 		src->func(src->param);
-	}
+	} while (WaitForSingleObject(src->tEvent, src->delay) == WAIT_TIMEOUT);
 	return 0;
 }

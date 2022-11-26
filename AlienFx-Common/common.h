@@ -1,5 +1,4 @@
 #pragma once
-//#include <libloaderapi.h>
 #include <ShlObj.h>
 #include <WinInet.h>
 #include <string>

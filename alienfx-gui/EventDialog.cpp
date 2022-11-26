@@ -13,12 +13,11 @@ extern MonHelper* mon;
 extern int eItem;
 
 const static vector<string> eventTypeNames{ "Power", "Performance", "Indicator" },
-						perfTypeNames{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
+		perfTypeNames{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
 			"Fan RPM", "Power usage" },
-						indTypeNames{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" };
+		indTypeNames{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" };
 
 int eventID = -1;
-void UpdateEventUI(LPVOID);
 
 event* GetEventData(groupset* mmap) {
 	if (mmap && eventID >= 0 && mmap->events.size() > eventID)
@@ -113,7 +112,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		RebuildEventList(hDlg, map);
 
 		// Start UI update thread...
-		updateUI = new ThreadHelper(UpdateEventUI, hDlg, 300);
+		SetTimer(hDlg, 0, 300, NULL);
 
 	} break;
 	case WM_APP + 2: {
@@ -251,31 +250,28 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		}
 		break;
-	case WM_DESTROY:
-		delete updateUI;
+	case WM_TIMER:
+		if (IsWindowVisible(hDlg)) {
+			//DebugPrint("Events UI update...\n");
+			SetDlgItemText(hDlg, IDC_VAL_CPU, (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
+			SetDlgItemText(hDlg, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
+			SetDlgItemText(hDlg, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
+			SetDlgItemText(hDlg, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " (" + to_string(fxhl->maxData.PWR) + ")W").c_str());
+			SetDlgItemText(hDlg, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
+			SetDlgItemText(hDlg, IDC_VAL_NET, (to_string(fxhl->eData.NET) + " %").c_str());
+			SetDlgItemText(hDlg, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
+			if (mon) {
+				int maxFans = 0;
+				for (auto i = mon->fanRpm.begin(); i < mon->fanRpm.end(); i++)
+					maxFans = max(maxFans, *i);
+				SetDlgItemText(hDlg, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
+			}
+			else
+				SetDlgItemText(hDlg, IDC_VAL_FAN, "disabled");
+		}
 		break;
 	default: return false;
 	}
 	return true;
 }
 
-void UpdateEventUI(LPVOID lpParam) {
-	if (IsWindowVisible((HWND)lpParam)) {
-		//DebugPrint("Events UI update...\n");
-		SetDlgItemText((HWND)lpParam, IDC_VAL_CPU, (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " (" + to_string(fxhl->maxData.PWR) + ")W").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_NET, (to_string(fxhl->eData.NET) + " %").c_str());
-		SetDlgItemText((HWND)lpParam, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
-		if (mon) {
-			int maxFans = 0;
-			for (auto i = mon->fanRpm.begin(); i < mon->fanRpm.end(); i++)
-				maxFans = max(maxFans, *i);
-			SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
-		}
-		else
-			SetDlgItemText((HWND)lpParam, IDC_VAL_FAN, "disabled");
-	}
-}

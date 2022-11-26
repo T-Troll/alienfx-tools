@@ -15,24 +15,20 @@ int fGrpItem = -1;
 freq_map* freqBlock = NULL;
 HWND hToolTip = NULL;
 
-void UpdateHapticsUI(LPVOID);
-
-void DrawFreq(HWND hDlg) {
-
-	HWND hysto = GetDlgItem(hDlg, IDC_LEVELS);
+void DrawFreq(HWND hysto) {
 
 	if (hysto) {
-		RECT levels_rect, graphZone;
+		RECT levels_rect;
 		GetClientRect(hysto, &levels_rect);
-		graphZone = levels_rect;
+		RECT graphZone = levels_rect;
 
 		HDC hdc_r = GetDC(hysto);
 
 		// Double buff...
 		HDC hdc = CreateCompatibleDC(hdc_r);
-		HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, graphZone.right - graphZone.left, graphZone.bottom - graphZone.top);
+		HBITMAP hbmMem = CreateCompatibleBitmap(hdc_r, graphZone.right /*- graphZone.left*/, graphZone.bottom /*- graphZone.top*/);
 
-		SetBkMode(hdc, TRANSPARENT);
+		//SetBkMode(hdc, TRANSPARENT);
 
 		HGDIOBJ hOld = SelectObject(hdc, hbmMem);
 
@@ -45,31 +41,29 @@ void DrawFreq(HWND hDlg) {
 		graphZone.bottom--;
 
 		groupset* map = FindMapping(eItem);
-		freqBlock = (fGrpItem < 0 ? NULL : &map->haptics[fGrpItem]);
-		if (map && freqBlock/*fGrpItem >= 0 && fGrpItem < map->haptics.size()*/) {
-			SelectObject(hdc, GetStockObject(GRAY_BRUSH));
-			SelectObject(hdc, GetStockObject(NULL_PEN));
-			for (auto t = freqBlock->freqID.begin(); t < freqBlock->freqID.end(); t++) {
-				int leftpos = (graphZone.right * (*t)) / NUMBARS + graphZone.left,
-					rightpos = (graphZone.right * (*t + 1)) / NUMBARS - 2 + graphZone.left;
-				Rectangle(hdc, leftpos, graphZone.top, rightpos + 2, graphZone.bottom);
-			}
-		}
-		if (eve->audio && eve->audio->freqs) {
+		freqBlock = (!map || fGrpItem < 0 ? NULL : &map->haptics[fGrpItem]);
+		if (eve->audio /*&& eve->audio->freqs*/) {
 			SelectObject(hdc, GetStockObject(WHITE_PEN));
 			SelectObject(hdc, GetStockObject(WHITE_BRUSH));
 			for (int i = 0; i < NUMBARS; i++) {
 				int leftpos = (graphZone.right * i) / NUMBARS + graphZone.left,
 					rightpos = (graphZone.right * (i + 1)) / NUMBARS - 2 + graphZone.left;
-				int rectop = (255 - eve->audio->freqs[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
 				Rectangle(hdc, leftpos, (255 - eve->audio->freqs[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top,
 					rightpos, graphZone.bottom);
 			}
 		}
-		if (map && freqBlock /*&& fGrpItem < map->haptics.size()*/) {
+		if (freqBlock) {
 			for (auto t = freqBlock->freqID.begin(); t < freqBlock->freqID.end(); t++) {
 				int leftpos = (graphZone.right * (*t)) / NUMBARS + graphZone.left,
 					rightpos = (graphZone.right * (*t + 1)) / NUMBARS - 2 + graphZone.left;
+				int rectop = graphZone.bottom;
+				// gray block
+				if (eve->audio)
+					rectop = (255 - eve->audio->freqs[*t]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
+				SelectObject(hdc, GetStockObject(GRAY_BRUSH));
+				SelectObject(hdc, GetStockObject(NULL_PEN));
+				Rectangle(hdc, leftpos, graphZone.top, rightpos + 2, rectop);
+
 				SetDCPenColor(hdc, RGB(255, 0, 0));
 				SelectObject(hdc, GetStockObject(DC_PEN));
 				int cutLevel = graphZone.bottom - ((graphZone.bottom - graphZone.top) * freqBlock->hicut / 255);
@@ -81,7 +75,7 @@ void DrawFreq(HWND hDlg) {
 			}
 		}
 
-		BitBlt(hdc_r, 0, 0, levels_rect.right - levels_rect.left, levels_rect.bottom - levels_rect.top, hdc, 0, 0, SRCCOPY);
+		BitBlt(hdc_r, 0, 0, levels_rect.right, levels_rect.bottom, hdc, 0, 0, SRCCOPY);
 
 		// Free-up the off-screen DC
 		SelectObject(hdc, hOld);
@@ -94,7 +88,7 @@ void DrawFreq(HWND hDlg) {
 }
 
 void SetMappingData(HWND hDlg, groupset* map) {
-	DrawFreq(hDlg);
+	DrawFreq(GetDlgItem(hDlg, IDC_LEVELS));
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_LPC), map && map->haptics.size() ? &freqBlock->colorfrom : NULL);
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_HPC), map && map->haptics.size() ? &freqBlock->colorto : NULL);
 }
@@ -133,7 +127,6 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	switch (message) {
 	case WM_LBUTTONDOWN: {
 		if (map && map->haptics.size() && fGrpItem >= 0) {
-			//auto freqBlock = &map->haptics[fGrpItem];
 			for (auto idx = freqBlock->freqID.begin(); idx != freqBlock->freqID.end(); idx++)
 				if (*idx == cIndex) {
 					if (abs(clickLevel - freqBlock->hicut) < 10)
@@ -146,7 +139,6 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	} break;
 	case WM_LBUTTONUP: {
 		if (map && map->haptics.size() && fGrpItem >= 0) {
-			//auto freqBlock = &map->haptics[fGrpItem];
 			auto idx = find_if(freqBlock->freqID.begin(), freqBlock->freqID.end(),
 				[cIndex](auto t) {
 					return cIndex == t;
@@ -154,9 +146,9 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			if (idx != freqBlock->freqID.end())
 				switch (cutMove) {
 				case 0:
-					updateUI->Stop();
+					//hapUpdateUI->Stop();
 					freqBlock->freqID.erase(idx);
-					updateUI->Start();
+					//hapUpdateUI->Start();
 					break;
 				case 1: freqBlock->hicut = clickLevel; break;
 				case 2: freqBlock->lowcut = clickLevel; break;
@@ -164,7 +156,7 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			else
 				freqBlock->freqID.push_back(cIndex);
 			cutMove = 0;
-			DrawFreq(GetParent(hDlg));
+			//DrawFreq(hDlg);
 		}
 		cutMove = 0;
 	} break;
@@ -175,15 +167,23 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			case 1: freqBlock->hicut = clickLevel; break;
 			case 2: freqBlock->lowcut = clickLevel; break;
 			}
-			DrawFreq(GetParent(hDlg));
+			//DrawFreq(hDlg);
 		}
 		SetToolTip(hToolTip, "Freq: " + to_string(cIndex ? 22050 - (int)round((log(21 - cIndex) * 22030 / log(21))) : 20) +
 			"-" + to_string(22050 - (int)round((log(20 - cIndex) * 22030 / log(21)))) + " Hz, Level: " +
 			to_string(clickLevel * 100 / 255));
 	} break;
 	case WM_PAINT:
-		DrawFreq(GetParent(hDlg));
+		DrawFreq(hDlg);
 		break;
+	case WM_TIMER:
+		if (eve->audio && IsWindowVisible(hDlg)) {
+			//DebugPrint("Haptics UI update...\n");
+			DrawFreq(hDlg);
+		}
+		break;
+	case WM_ERASEBKGND:
+		return true;
 	}
 	return DefWindowProc(hDlg, message, wParam, lParam);;
 }
@@ -206,7 +206,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		SetFreqGroups(hDlg);
 
 		// Start UI update thread...
-		updateUI = new ThreadHelper(UpdateHapticsUI, hDlg, 50);
+		SetTimer(GetDlgItem(hDlg, IDC_LEVELS), 0, 50, NULL);
 	}
 	break;
 	case WM_COMMAND:
@@ -224,7 +224,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case LBN_SELCHANGE:
 				if (map) {
 					fGrpItem = ListBox_GetCurSel(grp_list);
-					//DrawFreq(hDlg);
 					SetMappingData(hDlg, map);
 				}
 			break;
@@ -236,7 +235,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				map->haptics.push_back({});
 				fGrpItem = ListBox_AddString(grp_list, ("Group " + to_string(map->haptics.size())).c_str());
 				ListBox_SetCurSel(grp_list, fGrpItem);
-				//DrawFreq(hDlg);
 				SetMappingData(hDlg, map);
 				RedrawGridButtonZone(NULL, true);
 			}
@@ -248,7 +246,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if (fGrpItem == map->haptics.size())
 					fGrpItem--;
 				ListBox_SetCurSel(grp_list, fGrpItem);
-				//DrawFreq(hDlg);
 				SetMappingData(hDlg, map);
 				RedrawGridButtonZone(NULL, true);
 			}
@@ -268,7 +265,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_REMOVE:
 			if (map) {
 				freqBlock->freqID.clear();
-				//DrawFreq(hDlg);
 				SetMappingData(hDlg, map);
 				RedrawGridButtonZone(NULL, true);
 			}
@@ -276,8 +272,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	} break;
 	case WM_APP + 2: {
 		SetFreqGroups(hDlg);
-		//DrawFreq(hDlg);
-		//RedrawGridButtonZone(NULL, true);
 	} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
@@ -296,18 +290,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 		return false;
 	break;
-	case WM_DESTROY:
-		delete updateUI;
-	break;
 	default: return false;
 	}
 
 	return true;
-}
-
-void UpdateHapticsUI(LPVOID lpParam) {
-	if (eve->audio && IsWindowVisible((HWND)lpParam)) {
-		//DebugPrint("Haptics UI update...\n");
-		DrawFreq((HWND)lpParam);
-	}
 }

@@ -6,7 +6,7 @@
 #include "resource.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
-#include "ThreadHelper.h"
+//#include "ThreadHelper.h"
 
 // debug print
 #ifdef _DEBUG
@@ -40,7 +40,7 @@ typedef struct tag_dlghdr {
 
 extern HINSTANCE hInst;
 extern ConfigHandler* conf;
-extern ThreadHelper* updateUI;
+//extern ThreadHelper* updateUI;
 extern HWND sTip1, sTip2, sTip3;
 
 

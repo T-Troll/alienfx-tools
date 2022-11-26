@@ -30,8 +30,11 @@ HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
 const vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
 
 extern HWND toolTip;
+extern string GetFanName(int ind);
 
 GUID* sch_guid, perfset;
+
+bool wasBoostMode = false;
 
 NOTIFYICONDATA niDataFC{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
         (HICON)LoadImage(GetModuleHandle(NULL),
@@ -42,13 +45,9 @@ NOTIFYICONDATA niDataFC{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | 
             LR_DEFAULTCOLOR) };
 extern NOTIFYICONDATA* niData;
 
-
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
 bool needRemove = false;
-
-void UpdateFanUI(LPVOID);
-ThreadHelper* fanThread = NULL;
 
 // Forward declarations of functions included in this code module:
 //ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -60,12 +59,11 @@ INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
-extern void TempUIEvent(NMLVDISPINFO* lParam, ThreadHelper* fanUIUpdate, HWND tempList, HWND fanList);
+extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
 extern bool fanMode;
-extern bool fanUpdateBlock;
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 extern DWORD WINAPI CheckFanRPM(LPVOID lpParam);
@@ -146,6 +144,7 @@ void StartOverboost(HWND hDlg, int fan, bool type) {
     }
     else
         CreateThread(NULL, 0, CheckFanRPM, (LPVOID)(ULONG64)fan, 0, NULL);
+    wasBoostMode = true;
 }
 
 void RestoreApp() {
@@ -196,7 +195,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         ReloadPowerList(power_list);
         ReloadTempView(tempList);
 
-        fanThread = new ThreadHelper(UpdateFanUI, hDlg, 500);
+        SetTimer(hDlg, 0, 500, NULL);
+        SetTimer(fanWindow, 1, 500, NULL);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -424,15 +424,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_FAN_LIST:
-            if (!fanUpdateBlock)
-                FanUIEvent((NMLISTVIEW*)lParam, fanList);
+            FanUIEvent((NMLISTVIEW*)lParam, fanList);
             break;
         case IDC_TEMP_LIST:
-            TempUIEvent((NMLVDISPINFO*)lParam, fanThread, tempList, fanList);
+            TempUIEvent((NMLVDISPINFO*)lParam, tempList, fanList);
             break;
         } break;
     case WM_CLOSE:
-        delete fanThread;
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
@@ -443,7 +441,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_ENDSESSION:
         // Shutdown/restart scheduled....
         fan_conf->Save();
-        delete fanThread;
         delete mon;
         LocalFree(sch_guid);
         return 0;
@@ -451,7 +448,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
             mon->Start();
-            fanThread->Start();
             if (fan_conf->updateCheck) {
                 needUpdateFeedback = false;
                 CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
@@ -459,13 +455,58 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case PBT_APMSUSPEND:
             // Sleep initiated.
-            fanThread->Stop();
             mon->Stop();
             fan_conf->Save();
             break;
         }
+        break;
+    case WM_TIMER: {
+        if (fanMode && wasBoostMode) {
+            EnableWindow(power_list, true);
+            SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
+            wasBoostMode = false;
+        }
+        if (mon) {
+            if (!mon->monThread) {
+                for (int i = 0; i < acpi->sensors.size(); i++) {
+                    mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
+                    mon->maxTemps[acpi->sensors[i].sid] = max(mon->senValues[acpi->sensors[i].sid], mon->maxTemps[acpi->sensors[i].sid]);
+                }
+                for (int i = 0; i < acpi->fans.size(); i++)
+                    mon->fanRpm[i] = acpi->GetFanRPM(i);
+            }
+            if (IsWindowVisible(hDlg)) {
+                //DebugPrint("Fans UI update...\n");
+                for (int i = 0; i < acpi->sensors.size(); i++) {
+                    string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
+                    ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+                }
+                RECT cArea;
+                GetClientRect(tempList, &cArea);
+                ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+                ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+                for (int i = 0; i < acpi->fans.size(); i++) {
+                    string name = GetFanName(i);
+                    ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+                }
+                //SendMessage(fanWindow, WM_PAINT, 0, 0);
+            }
+            string name = "Power mode: ";
+            if (fan_conf->lastProf->gmode)
+                name += "G-mode";
+            else
+                name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
+
+            for (int i = 0; i < acpi->fans.size(); i++) {
+                name += "\n" + GetFanName(i);
+            }
+            strcpy_s(niDataFC.szTip, 127, name.c_str());
+            Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
+        }
+    } break;
+    default: return false;
     }
-    return 0;
+    return true;
 }
 
 // Message handler for about box.
@@ -503,56 +544,3 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-
-string GetFanName(int ind);
-
-void UpdateFanUI(LPVOID lpParam) {
-    HWND tempList = GetDlgItem((HWND)lpParam, IDC_TEMP_LIST),
-        fanList = GetDlgItem((HWND)lpParam, IDC_FAN_LIST),
-        power_list = GetDlgItem((HWND)lpParam, IDC_COMBO_POWER);
-    static bool wasBoostMode = false;
-    if (!fanMode) wasBoostMode = true;
-    if (fanMode && wasBoostMode) {
-        EnableWindow(power_list, true);
-        SetWindowText(GetDlgItem((HWND)lpParam, IDC_BUT_OVER), "Check\n Max. boost");
-        wasBoostMode = false;
-    }
-    if (mon) {
-        if (!mon->monThread) {
-            for (int i = 0; i < acpi->sensors.size(); i++) {
-                mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
-                mon->maxTemps[acpi->sensors[i].sid] = max(mon->senValues[acpi->sensors[i].sid], mon->maxTemps[acpi->sensors[i].sid]);
-            }
-            for (int i = 0; i < acpi->fans.size(); i++)
-                mon->fanRpm[i] = acpi->GetFanRPM(i);
-        }
-        if (IsWindowVisible((HWND)lpParam)) {
-            //DebugPrint("Fans UI update...\n");
-            for (int i = 0; i < acpi->sensors.size(); i++) {
-                string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
-                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
-            }
-            RECT cArea;
-            GetClientRect(tempList, &cArea);
-            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-            for (int i = 0; i < acpi->fans.size(); i++) {
-                string name = GetFanName(i);
-                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-            }
-            SendMessage(fanWindow, WM_PAINT, 0, 0);
-        }
-        string name = "Power mode: ";
-        if (fan_conf->lastProf->gmode)
-            name += "G-mode";
-        else
-            name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
-
-        for (int i = 0; i < acpi->fans.size(); i++) {
-            name += "\n" + GetFanName(i);
-        }
-        strcpy_s(niDataFC.szTip, 127, name.c_str());
-        Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
-    }
-}
-
