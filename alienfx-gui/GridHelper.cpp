@@ -6,6 +6,8 @@ extern EventHandler* eve;
 extern ConfigHandler* conf;
 extern FXHelper* fxhl;
 
+extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
+
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);
 	switch (grp->gauge) {
@@ -24,6 +26,7 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	}
 	grp->gridop.gridX = x;
 	grp->gridop.gridY = y;
+	fxhl->SetZone(grp, { *Code2Act(&grp->effect.from) });
 	grp->gridop.start_tact = tact;
 	grp->gridop.passive = false;
 }

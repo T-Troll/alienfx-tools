@@ -1,10 +1,10 @@
 #include "alienfx-gui.h"
 #include "common.h"
 
-extern bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::afx_act* map);
-extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
+extern bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::Afx_action* map);
+extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void RedrawButton(HWND ctrl, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern FXHelper* fxhl;
@@ -26,17 +26,10 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 			SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
 			SetSlider(sTip2, mmap->color[effID].time);
 		}
-		// gauge and spectrum.
-		CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->flags & GAUGE_GRADIENT);
-		CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->flags & GAUGE_REVERSE);
-		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !conf->afx_dev.GetGroupById(mmap->group)->have_power);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
-	EnableWindow(GetDlgItem(hDlg, IDC_COMBO_GAUGE), (bool)mmap);
-	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
-	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
 }
 
@@ -82,11 +75,48 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
+		fxhl->RefreshOne(mmap);
 	}
 	SetEffectData(hDlg, mmap);
 	//ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
 	RedrawGridButtonZone(NULL, true);
+}
+
+void ChangeAddColor(HWND hDlg, groupset* mmap, int newEffID) {
+	// change color.
+	if (mmap) {
+		if (newEffID < mmap->color.size())
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[newEffID]);
+		else {
+			AlienFX_SDK::Afx_action act{ 0 };
+			// add new effect
+			if (conf->afx_dev.GetGroupById(mmap->group)->have_power) {
+				if (mmap->color.empty()) {
+					act = { AlienFX_SDK::AlienFX_A_Power, 3, 0x64 };
+					mmap->color.push_back(act);
+					mmap->color.push_back(act);
+					newEffID = 0;
+				}
+			} else
+				if (mmap->color.size() < 9) {
+					if (effID < mmap->color.size())
+						act = mmap->color[effID];
+					mmap->color.push_back(act);
+					newEffID = (int)mmap->color.size() - 1;
+				}
+			if (newEffID < mmap->color.size())
+				if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[newEffID]))
+					effID = newEffID;
+				else {
+					if (conf->afx_dev.GetGroupById(mmap->group)->have_power)
+						mmap->color.clear();
+					else
+						mmap->color.erase(mmap->color.begin() + newEffID);
+				}
+		}
+		RebuildEffectList(hDlg, mmap);
+	}
 }
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -101,7 +131,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	{
 		// Set types and gauge list...
 		UpdateCombo(GetDlgItem(hDlg, IDC_TYPE1), lightEffectNames);
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)", "Radial" });
 		// now sliders...
 		SendMessage(s1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(l1_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
@@ -124,37 +153,16 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				mmap->color[effID].type = lType1;
 				RebuildEffectList(hDlg, mmap);
-				fxhl->RefreshOne(mmap);
 			}
 			break;
 		case IDC_BUTTON_C1:
-			if (HIWORD(wParam) == BN_CLICKED && mmap) {
-				if (mmap->color.empty())
-					mmap->color.push_back({ 0 });
-				SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[effID]);
-				RebuildEffectList(hDlg, mmap);
+			if (HIWORD(wParam) == BN_CLICKED) {
+				ChangeAddColor(hDlg, mmap, effID);
 			}
 			break;
 		case IDC_BUT_ADD_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap) {
-				AlienFX_SDK::afx_act act{ 0 };
-				if (conf->afx_dev.GetGroupById(mmap->group)->have_power) {
-					if (mmap->color.empty()) {
-						act = { AlienFX_SDK::AlienFX_A_Power, 3, 0x64 };
-						mmap->color.push_back(act);
-						mmap->color.push_back(act);
-					}
-				}
-				else
-					if (mmap->color.size() < 9) {
-						if (effID < mmap->color.size()) {
-							act = mmap->color[effID];
-						}
-						mmap->color.push_back(act);
-						effID = (int)mmap->color.size() - 1;
-					}
-				RebuildEffectList(hDlg, mmap);
-				fxhl->RefreshOne(mmap);
+				ChangeAddColor(hDlg, mmap, (int)mmap->color.size());
 			}
 			break;
 		case IDC_BUTT_REMOVE_EFFECT:
@@ -164,35 +172,14 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					effID = 0;
 				}
 				else {
-					mmap->color.pop_back();
-					effID--;
+					mmap->color.erase(mmap->color.begin() + effID);
+					if (effID > 0)
+						effID--;
 				}
-				fxhl->RefreshOne(mmap);
 				RebuildEffectList(hDlg, mmap);
 			}
 			break;
-		case IDC_CHECK_SPECTRUM:
-			if (mmap) {
-				SetBitMask(mmap->flags, GAUGE_GRADIENT, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				fxhl->Refresh();
-			}
-			break;
-		case IDC_CHECK_REVERSE:
-			if (mmap) {
-				SetBitMask(mmap->flags, GAUGE_REVERSE, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				//mmap->flags = (mmap->flags & ~GAUGE_REVERSE) | (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED ? GAUGE_REVERSE : 0);
-				fxhl->Refresh();
-			}
-			break;
-		case IDC_COMBO_GAUGE:
-			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
-				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap&& mmap->gauge);
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
-				fxhl->Refresh();
-			}
-			break;
-		default: return false;
+		//default: return false;
 		}
 	} break;
 	case WM_HSCROLL:
@@ -211,15 +198,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			}
 			break;
 		} break;
-	case WM_DRAWITEM:
-/*		switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-		case IDC_BUTTON_C1: */{
-			AlienFX_SDK::Colorcode* c = mmap && effID < mmap->color.size() ? c = Act2Code(&mmap->color[effID]) : NULL;
-			RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
-		//} break;
-		//default: return false;
-		}
-		break;
+	case WM_DRAWITEM: {
+		AlienFX_SDK::Afx_colorcode* c = mmap && effID < mmap->color.size() ? c = Act2Code(&mmap->color[effID]) : NULL;
+		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
+	} break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_LEFFECTS_LIST:
@@ -227,22 +209,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-				if (lPoint->uNewState & LVIS_FOCUSED) {
+				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
-					effID = lPoint->iItem != -1 ? effID = lPoint->iItem : 0;
+					effID = effID = lPoint->iItem;
 					SetEffectData(hDlg, mmap);
 				}
 			} break;
 			case NM_DBLCLK:
-			{
-				// change color.
-				if (mmap) {
-					if (mmap->color.empty())
-						mmap->color.push_back({ 0 });
-					SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[effID]);
-					RebuildEffectList(hDlg, mmap);
-				}
-			} break;
+				ChangeAddColor(hDlg, mmap, effID);
+				break;
 			}
 			break;
 		}

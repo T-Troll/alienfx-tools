@@ -39,7 +39,7 @@ ThreadHelper* updateUI = NULL;
 HWND mDlg = NULL, dDlg = NULL;
 
 // color selection:
-AlienFX_SDK::afx_act* mod;
+AlienFX_SDK::Afx_action* mod;
 HANDLE stopColorRefresh = 0;
 
 // tooltips
@@ -134,7 +134,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (!conf->afx_dev.GetGrids()->size()) {
 		conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main" });
-		conf->afx_dev.GetGrids()->back().grid = new AlienFX_SDK::grpLight[20 * 8]{ 0 };
+		conf->afx_dev.GetGrids()->back().grid = new AlienFX_SDK::Afx_groupLight[20 * 8]{ 0 };
 	}
 	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
 
@@ -204,7 +204,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
-void RedrawButton(HWND ctrl, AlienFX_SDK::Colorcode* act) {
+void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode* act) {
 	RECT rect;
 	HBRUSH Brush = act ? CreateSolidBrush(RGB(act->r, act->g, act->b)) : CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	GetClientRect(ctrl, &rect);
@@ -792,16 +792,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 }
 
 
-AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act *act) {
-	return new AlienFX_SDK::Colorcode({act->b,act->g,act->r});
+AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action *act) {
+	return new AlienFX_SDK::Afx_colorcode({act->b,act->g,act->r});
 }
 
-AlienFX_SDK::afx_act *Code2Act(AlienFX_SDK::Colorcode *c) {
-	return new AlienFX_SDK::afx_act({0,0,0,c->r,c->g,c->b});
+AlienFX_SDK::Afx_action *Code2Act(AlienFX_SDK::Afx_colorcode *c) {
+	return new AlienFX_SDK::Afx_action({0,0,0,c->r,c->g,c->b});
 }
 
 DWORD CColorRefreshProc(LPVOID param) {
-	AlienFX_SDK::afx_act last = *mod;
+	AlienFX_SDK::Afx_action last = *mod;
 	groupset* mmap = (groupset*)param;
 	int delay = conf->afx_dev.GetGroupById(mmap->group)->have_power ? 1000 : 200;
 	while (WaitForSingleObject(stopColorRefresh, delay)) {
@@ -819,7 +819,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message)
 	{
 	case WM_INITDIALOG:
-		mod = (AlienFX_SDK::afx_act*)((CHOOSECOLOR*)lParam)->lCustData;
+		mod = (AlienFX_SDK::Afx_action*)((CHOOSECOLOR*)lParam)->lCustData;
 		break;
 	case WM_CTLCOLOREDIT:
 		mod->r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
@@ -830,12 +830,12 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::afx_act* map) {
+bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::Afx_action* map) {
 	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
 	bool ret;
 
-	AlienFX_SDK::afx_act savedColor = *map;
+	AlienFX_SDK::Afx_action savedColor = *map;
 
 	mod = map;
 	stopColorRefresh = CreateEvent(NULL, false, false, NULL);
@@ -855,7 +855,7 @@ bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::afx_act* map) {
 	return ret;
 }
 
-bool SetColor(HWND ctrl, AlienFX_SDK::Colorcode *clr) {
+bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode *clr) {
 	CHOOSECOLOR cc{ sizeof(cc), ctrl };
 	bool ret;
 
@@ -880,7 +880,7 @@ groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set)
 	return nullptr;
 }
 
-bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp) {
+bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {
 	if (grp)
 		for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
 			if (pos->lgh == lgh)
@@ -910,8 +910,8 @@ void RemoveUnused(vector<groupset>* lightsets) {
 			it++;
 }
 
-void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid) {
-	AlienFX_SDK::grpLight cur{ devid, lightid };
+void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid) {
+	AlienFX_SDK::Afx_groupLight cur{ devid, lightid };
 	for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
 		if (pos->lgh == cur.lgh) {
 			if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)

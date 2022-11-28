@@ -2,10 +2,10 @@
 #include "MonHelper.h"
 #include "common.h"
 
-extern bool SetColor(HWND hDlg, groupset* mmap, AlienFX_SDK::afx_act* map);
-extern AlienFX_SDK::Colorcode *Act2Code(AlienFX_SDK::afx_act*);
+extern bool SetColor(HWND hDlg, groupset* mmap, AlienFX_SDK::Afx_action* map);
+extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 extern FXHelper* fxhl;
@@ -208,7 +208,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		}
 	} break;
 	case WM_DRAWITEM: {
-		AlienFX_SDK::Colorcode* c = NULL;
+		AlienFX_SDK::Afx_colorcode* c = NULL;
 		if (ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:

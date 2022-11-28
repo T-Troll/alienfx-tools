@@ -80,7 +80,7 @@ unsigned GetActionCode(ARG name, int mode) {
 	return mode ? AlienFX_SDK::Action::AlienFX_A_Color : LFX_ACTION_COLOR;
 }
 
-void SetBrighness(AlienFX_SDK::Colorcode *color) {
+void SetBrighness(AlienFX_SDK::Afx_colorcode *color) {
 	color->r = ((unsigned) color->r * color->br) / 255;// >> 8;
 	color->g = ((unsigned) color->g * color->br) / 255;// >> 8;
 	color->b = ((unsigned) color->b * color->br) / 255;// >> 8;
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 	int devType = -1;
 	UINT sleepy = 0;
 
-	printf("alienfx-cli v7.5.0\n");
+	printf("alienfx-cli v7.7.2\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
 		}
 		switch (CheckCommand(command, (int)args.size())) {
 		case 0: {
-			static AlienFX_SDK::Colorcode color{
+			static AlienFX_SDK::Afx_colorcode color{
 					(byte)args[2].num,
 					(byte)args[1].num,
 					(byte)args[0].num,
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 			Update();
 		} break;
 		case 1: {
-			AlienFX_SDK::Colorcode color{ (byte)args[4].num,
+			AlienFX_SDK::Afx_colorcode color{ (byte)args[4].num,
 				(byte)args[3].num,
 				(byte)args[2].num,
 				(byte)(args.size() > 5 ? args[5].num : globalBright) };
@@ -215,12 +215,12 @@ int main(int argc, char* argv[])
 			Update();
 		} break;
 		case 2: {
-			AlienFX_SDK::Colorcode color{ (byte)args[3].num, (byte)args[2].num, (byte)args[1].num,
+			AlienFX_SDK::Afx_colorcode color{ (byte)args[3].num, (byte)args[2].num, (byte)args[1].num,
 										(byte)(args.size() > 4 ? args[4].num : globalBright) };
 			unsigned zoneCode = GetZoneCode(args[0], devType);
 			if (devType) {
 				SetBrighness(&color);
-				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
+				AlienFX_SDK::Afx_group* grp = afx_map->GetGroupById(zoneCode);
 				if (grp) {
 					for (auto j = afx_map->fxdevs.begin(); j != afx_map->fxdevs.end(); j++) {
 						vector<UCHAR> lights;
@@ -239,15 +239,15 @@ int main(int argc, char* argv[])
 		} break;
 		case 3: {
 			unsigned actionCode = LFX_ACTION_COLOR;
-			vector<AlienFX_SDK::Colorcode> clrs;
-			AlienFX_SDK::act_block act{ (byte)args[1].num };
+			vector<AlienFX_SDK::Afx_colorcode> clrs;
+			AlienFX_SDK::Afx_lightblock act{ (byte)args[1].num };
 			for (int argPos = 2; argPos + 4 < args.size(); argPos += 5) {
 				actionCode = GetActionCode(args[argPos], devType);
-				AlienFX_SDK::Colorcode c{ (byte)args[argPos + 1].num, (byte)args[argPos + 2].num, (byte)args[argPos + 3].num,
+				AlienFX_SDK::Afx_colorcode c{ (byte)args[argPos + 1].num, (byte)args[argPos + 2].num, (byte)args[argPos + 3].num,
 										(byte)(argPos + 4 < args.size() ? args[argPos + 4].num : globalBright) };
 				if (devType) {
 					SetBrighness(&c);
-					act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)actionCode, (BYTE)sleepy, 7, (BYTE)c.b, (BYTE)c.g, (BYTE)c.r }));
+					act.act.push_back(AlienFX_SDK::Afx_action({ (BYTE)actionCode, (BYTE)sleepy, 7, (BYTE)c.b, (BYTE)c.g, (BYTE)c.r }));
 				}
 				else
 					clrs.push_back(c);
@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
 			}
 			if (devType) {
 				if (act.act.size() < 2) {
-					act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
+					act.act.push_back(AlienFX_SDK::Afx_action({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
 				}
 				if (args[0].num < afx_map->fxdevs.size())
 					afx_map->fxdevs[args[0].num].dev->SetAction(&act);
@@ -271,24 +271,24 @@ int main(int argc, char* argv[])
 		case 4: {
 			unsigned zoneCode = GetZoneCode(args[0], devType);
 			unsigned actionCode = GetActionCode(args[1], devType);
-			AlienFX_SDK::act_block act;
-			vector<AlienFX_SDK::Colorcode> clrs;
+			AlienFX_SDK::Afx_lightblock act;
+			vector<AlienFX_SDK::Afx_colorcode> clrs;
 			for (int argPos = 1; argPos + 4 < args.size(); argPos += 5) {
-				AlienFX_SDK::Colorcode c{ (byte)args[argPos + 3].num, (byte)args[argPos + 2].num, (byte)args[argPos + 1].num,
+				AlienFX_SDK::Afx_colorcode c{ (byte)args[argPos + 3].num, (byte)args[argPos + 2].num, (byte)args[argPos + 1].num,
 										(byte)(argPos + 4 < args.size() ? args[argPos + 4].num : globalBright) };
 				if (devType) {
 					SetBrighness(&c);
-					act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)GetActionCode(args[argPos], devType), (BYTE)sleepy, 7, (BYTE)c.r, (BYTE)c.g, (BYTE)c.b }));
+					act.act.push_back(AlienFX_SDK::Afx_action({ (BYTE)GetActionCode(args[argPos], devType), (BYTE)sleepy, 7, (BYTE)c.r, (BYTE)c.g, (BYTE)c.b }));
 				}
 				else
 					clrs.push_back(c);
 			}
 			if (devType) {
-				AlienFX_SDK::group* grp = afx_map->GetGroupById(zoneCode);
+				AlienFX_SDK::Afx_group* grp = afx_map->GetGroupById(zoneCode);
 				if (grp) {
-					AlienFX_SDK::afx_device* dev;
+					AlienFX_SDK::Afx_device* dev;
 					if (act.act.size() < 2) {
-						act.act.push_back(AlienFX_SDK::afx_act({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
+						act.act.push_back(AlienFX_SDK::Afx_action({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
 					}
 					for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
 						if (dev = afx_map->GetDeviceById(i->did, 0)) {
@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
 		} break;
 		case 5:
 			if (devType) {
-				vector<AlienFX_SDK::act_block> act{ {(byte)args[1].num,
+				vector<AlienFX_SDK::Afx_lightblock> act{ {(byte)args[1].num,
 								  {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64,
 								  (byte)args[2].num, (byte)args[3].num, (byte)args[4].num},
 								  {AlienFX_SDK::AlienFX_A_Power, 3, 0x64,
@@ -424,7 +424,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 						for (int i = 0; i < fnumlights; i++)
 							if (lightID == -1 || lightID == i) {
 								printf("Testing light #%d", i);
-								AlienFX_SDK::mapping* lmap = afx_map->GetMappingByDev(&(*cDev), i);
+								AlienFX_SDK::Afx_light* lmap = afx_map->GetMappingByDev(&(*cDev), i);
 								if (lmap) {
 									printf(", old name %s ", lmap->name.c_str());
 								}

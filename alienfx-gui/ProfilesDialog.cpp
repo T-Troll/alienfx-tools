@@ -5,8 +5,8 @@
 
 extern void ReloadProfileList();
 extern void ReloadModeList(HWND dlg=NULL, int mode = conf->GetEffect());
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveUnused(vector<groupset>* lightsets);

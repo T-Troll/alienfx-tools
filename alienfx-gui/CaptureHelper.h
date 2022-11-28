@@ -2,7 +2,14 @@
 #include "ThreadHelper.h"
 #include "DXGIManager.hpp"
 
-#define GRIDSIZE 36 // 4x3 x 3
+//#define GRIDSIZE 36 // 4x3 x 3
+
+struct procData {
+	int dx, dy;
+	UCHAR* dst;
+	HANDLE pEvent;
+	HANDLE pfEvent;
+};
 
 class CaptureHelper
 {

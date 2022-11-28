@@ -2,15 +2,15 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern AlienFX_SDK::afx_act* Code2Act(AlienFX_SDK::Colorcode* c);
+extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void UpdateZoneList();
-extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::group* grp);
+extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 extern void SetLightInfo();
 extern void RedrawDevList();
 
-extern AlienFX_SDK::afx_device* FindActiveDevice();
+extern AlienFX_SDK::Afx_device* FindActiveDevice();
 extern FXHelper* fxhl;
 
 extern int eLid, dIndex;
@@ -31,9 +31,9 @@ int minGridX, minGridY, maxGridX, maxGridY;
 
 extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-AlienFX_SDK::mapping* FindCreateMapping() {
-    AlienFX_SDK::afx_device* dev = FindActiveDevice();
-    AlienFX_SDK::mapping* lgh = NULL;
+AlienFX_SDK::Afx_light* FindCreateMapping() {
+    AlienFX_SDK::Afx_device* dev = FindActiveDevice();
+    AlienFX_SDK::Afx_light* lgh = NULL;
     if (dev && !(lgh = conf->afx_dev.GetMappingByDev(dev, eLid))) {
         // create new mapping
         dev->lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
@@ -89,7 +89,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
             delete[] conf->colorGrid;
         conf->colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y]{};
         for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
-            AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(cs->group);
+            AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(cs->group);
             if (grp)
                 //for (auto clgh = grp->lights.begin(); clgh < grp->lights.end(); clgh++) {
                     for (int x = full.left; x < full.right; x++)
@@ -152,7 +152,7 @@ void SetLightGridSize(int x, int y) {
         minY = min(minGridY, maxGridY - y + 1);
         y = max(y, maxGridY - minGridY + 1);
     }
-    AlienFX_SDK::grpLight* newgrid = new AlienFX_SDK::grpLight[x * y]{ 0 };
+    AlienFX_SDK::Afx_groupLight* newgrid = new AlienFX_SDK::Afx_groupLight[x * y]{ 0 };
     for (int row = 0; row < min(conf->mainGrid->y, y); row++)
         memcpy(newgrid + row * x, conf->mainGrid->grid + (row + minY) * conf->mainGrid->x + minX,
             min(conf->mainGrid->x, x) * sizeof(DWORD));
@@ -178,8 +178,8 @@ void ModifyDragZone(WORD did, WORD lid) {
 }
 
 void ModifyColorDragZone(bool clear = false) {
-    AlienFX_SDK::group* grp = conf->afx_dev.GetGroupById(eItem);
-    vector<AlienFX_SDK::grpLight> markRemove, markAdd;
+    AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(eItem);
+    vector<AlienFX_SDK::Afx_groupLight> markRemove, markAdd;
     if (grp && dragZone.top >= 0) {
         for (int x = dragZone.left; x < dragZone.right; x++)
             for (int y = dragZone.top; y < dragZone.bottom; y++) {
@@ -279,7 +279,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         case IDC_BUT_CLEARGRID:
             if (tabLightSel == TAB_DEVICES) {
                 if (eLid >= 0) {
-                    AlienFX_SDK::grpLight cur = { FindActiveDevice()->pid, (WORD)eLid };
+                    AlienFX_SDK::Afx_groupLight cur = { FindActiveDevice()->pid, (WORD)eLid };
                     for (int ind = 0; ind < conf->mainGrid->x * conf->mainGrid->y; ind++)
                         if (conf->mainGrid->grid[ind].lgh == cur.lgh)
                             conf->mainGrid->grid[ind].lgh = 0;
@@ -420,8 +420,8 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             }
             // print name
             if (conf->showGridNames && gridVal) {
-                AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(LOWORD(gridVal), 0);
-                AlienFX_SDK::mapping* lgh;
+                AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(LOWORD(gridVal), 0);
+                AlienFX_SDK::Afx_light* lgh;
                 if (dev && (lgh = conf->afx_dev.GetMappingByDev(dev, HIWORD(gridVal)))) {
                     SetBkMode(ditem->hDC, TRANSPARENT);
                     DrawText(ditem->hDC, lgh->name.c_str(), -1, &ditem->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);

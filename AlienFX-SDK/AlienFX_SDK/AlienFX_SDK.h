@@ -28,17 +28,6 @@ namespace AlienFX_SDK {
     #define ALIENFX_V5_WAITUPDATE 0x80
     #define ALIENFX_V5_INCOMMAND 0xcc
 
-	// API version:
-    #define API_ACPI 0 //128
-	#define API_V8 8 //65
-    #define API_V7 7 //65
-    #define API_V6 6 //65
-	#define API_V5 5 //64
-	#define API_V4 4 //34
-	#define API_V3 3 //12
-    #define API_V2 2 //9
-	#define API_V1 1 //8
-
 	// Mapping flags:
     #define ALIENFX_FLAG_POWER		1
     #define ALIENFX_FLAG_INDICATOR	2
@@ -47,72 +36,80 @@ namespace AlienFX_SDK {
 	// Maximal buffer size across all device types
     #define MAX_BUFFERSIZE 65
 
-	union Colorcode // Atomic color structure
+	union Afx_colorcode // Atomic color structure
 	{
 		struct {
-			byte b;
-			byte g;
-			byte r;
-			byte br;
+			byte b, g, r;
+			byte br; // Brightness
 		};
 		DWORD ci;
 	};
 
-	struct icommand {
+	struct Afx_icommand {
 		byte i, val;
 	};
 
-	struct mapping { // Light information block
+	struct Afx_light { // Light information block
 		WORD lightid;
 		WORD flags = 0;
 		string name;
 	};
 
-	union grpLight {
+	union Afx_groupLight {
 		struct {
 			WORD did, lid;
 		};
 		DWORD lgh;
 	};
 
-	struct group { // Light group information block
+	struct Afx_group { // Light group information block
 		DWORD gid;
 		string name;
-		vector<grpLight> lights;
+		vector<Afx_groupLight> lights;
 		bool have_power = false;
 	};
 
-	struct lightgrid {
+	struct Afx_grid {
 		byte id;
 		byte x, y;
 		string name;
-		grpLight *grid;
+		Afx_groupLight *grid;
 	};
 
-	struct afx_act { // atomic light action phase
+	struct Afx_action { // atomic light action phase
 		BYTE type; // one of Action values - action type
 		BYTE time; // How long this phase stay
 		BYTE tempo; // How fast it should transform
-		BYTE r; // phase color
-		BYTE g;
-		BYTE b;
+		BYTE r, g, b; // phase color
 	};
 
-	struct act_block { // light action block
+	struct Afx_lightblock { // light action block
 		byte index;
-		vector<afx_act> act;
+		vector<Afx_action> act;
 	};
 
-	enum Action
-	{
+	enum Afx_Version {
+		API_ACPI = 0, //128
+		API_V8 = 8, //65
+		API_V7 = 7, //65
+		API_V6 = 6, //65
+		API_V5 = 5, //64
+		API_V4 = 4, //34
+		API_V3 = 3, //12
+		API_V2 = 2, //9
+		API_V1 = 1, //8
+		API_UNKNOWN = -1
+	};
+
+	enum Action	{
 		AlienFX_A_Color = 0,
 		AlienFX_A_Pulse = 1,
 		AlienFX_A_Morph = 2,
 		AlienFX_A_Breathing= 3,
 		AlienFX_A_Spectrum = 4,
 		AlienFX_A_Rainbow = 5,
-		AlienFX_A_Power = 6,
-		AlienFX_A_NoAction = 7
+		AlienFX_A_Power = 6/*,
+		AlienFX_A_NoAction = 7*/
 	};
 
 	class Functions
@@ -125,36 +122,40 @@ namespace AlienFX_SDK {
 		void* device = NULL;
 
 		bool inSet = false;
+		//bool inSave = false;
 
 		int vid = -1; // Device VID
 		int pid = -1; // Device PID, -1 if not initialized
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
-		int version = -1; // interface version
+		int version = API_UNKNOWN; // interface version
 		byte reportID = 0; // HID ReportID (0 for auto)
 		byte bright = 64; // Brightness for APIv4 and v6
 
 		// support function for mask-based devices (v1-v3, v6)
-		vector<icommand>* SetMaskAndColor(DWORD index, byte type, Colorcode c1, Colorcode c2 = { 0 }, byte tempo = 0);
+		vector<Afx_icommand>* SetMaskAndColor(DWORD index, byte type, Afx_colorcode c1, Afx_colorcode c2 = { 0 }, byte tempo = 0);
 
 		// Support function to send data to USB device
-		bool PrepareAndSend(const byte *command, byte size, vector<icommand> *mods = NULL);
-		bool PrepareAndSend(const byte* command, byte size, vector<icommand> mods);
+		bool PrepareAndSend(const byte *command, byte size, vector<Afx_icommand> *mods = NULL);
+		bool PrepareAndSend(const byte* command, byte size, vector<Afx_icommand> mods);
 
 		// Add new light effect block for v8
-		void AddDataBlock(byte pos, vector<icommand>* mods, act_block* act);
+		void AddDataBlock(byte pos, vector<Afx_icommand>* mods, Afx_lightblock* act);
 
 		// Support function to send whole power block for v1-v3
-		bool SavePowerBlock(byte blID, act_block act, bool needSave, bool needInverse = false);
+		bool SavePowerBlock(byte blID, Afx_lightblock act, bool needSave, bool needInverse = false);
 
 		// return current device state
-		BYTE AlienfxGetDeviceStatus();
+		BYTE GetDeviceStatus();
 
 		// Next command delay for APIv1-v3
-		BYTE AlienfxWaitForReady();
+		BYTE WaitForReady();
 
 		// After-reset delay for APIv1-v3
-		BYTE AlienfxWaitForBusy();
+		BYTE WaitForBusy();
+
+		// Command separator for some APIs
+		void Loop();
 
 	public:
 
@@ -175,46 +176,43 @@ namespace AlienFX_SDK {
 		int AlienFXCheckDevice(string devPath, int vid = -1, int pid = -1);
 
 #ifndef NOACPILIGHTS
-		// Another init function, for Aurora ACPI init.
-		// acc is a handle to low-level ACPI driver (hwacc.sys) interface - see alienfan project.
+		// Initialize Aurora ACPI lights if present.
+		// acc is a pointer to active AlienFan control object (see AlienFan_SDK for reference)
 		int AlienFXInitialize(AlienFan_SDK::Control* acc);
 #endif
 
 		// Prepare to set lights
 		bool Reset();
 
-		// Command separator for some APIs
-		void Loop();
-
 		// false - not ready, true - ready, 0xff - stalled
 		BYTE IsDeviceReady();
 
 		// basic color set with ID index for current device. loop - does it need loop command after?
-		bool SetColor(unsigned index, Colorcode c, bool loop = true);
+		bool SetColor(unsigned index, Afx_colorcode c);
 
 		// Set multiply lights to the same color. This only works for some API devices, and emulated for other ones.
 		// lights - pointer to vector of light IDs need to be set.
 		// c - color to set (brightness ignored)
-		bool SetMultiColor(vector<byte> *lights, Colorcode c);
+		bool SetMultiColor(vector<byte> *lights, Afx_colorcode c);
 
 		// Set multiply lights to different color.
 		// act - pointer to vector of light control blocks
 		// store - need to save settings into device memory (v1-v4)
-		bool SetMultiAction(vector<act_block> *act, bool store = false);
+		bool SetMultiAction(vector<Afx_lightblock> *act, bool store = false);
 
 		// Set color to action
 		// act - pointer to light control block
-		bool SetAction(act_block *act);
+		bool SetAction(Afx_lightblock* act, bool ipe = true);
 
 		// Set action for Power button and store other light colors as default
 		// act - pointer to vector of light control blocks
-		bool SetPowerAction(vector<act_block> *act);
+		bool SetPowerAction(vector<Afx_lightblock> *act, bool save = false);
 
 		// Hardware enable/disable/dim lights
 		// brightness - desired brightness (0 - off, 255 - full)
 		// mappings - needed to enable some lights for v1-v4 and for software emulation
 		// power - if true, power and indicator lights will be set too
-		bool ToggleState(BYTE brightness, vector <mapping>* mappings, bool power);
+		bool ToggleState(BYTE brightness, vector <Afx_light>* mappings, bool power);
 
 		// Global (whole device) effect control for APIv5, v8
 		// effType - effect type
@@ -222,7 +220,7 @@ namespace AlienFX_SDK {
 		// tempo - effect tempo
 		// act1 - first effect color
 		// act2 - second effect color (not for all effects)
-		bool SetGlobalEffects(byte effType, byte mode, byte tempo, afx_act act1, afx_act act2);
+		bool SetGlobalEffects(byte effType, byte mode, byte tempo, Afx_action act1, Afx_action act2);
 
 		// Apply changes and update colors
 		bool UpdateColors();
@@ -243,28 +241,22 @@ namespace AlienFX_SDK {
 		bool IsHaveGlobal();
 	};
 
-	// Single device data - device pointer, description pointer, lights
-	struct afx_device {
+	struct Afx_device { // Single device data
 		WORD vid, pid;
-		Functions* dev = NULL;
+		Functions* dev = NULL; // device object pointer
 		string name;
-		Colorcode white = { 255,255,255 };
-		vector <mapping> lights;
-	};
-
-	struct enum_device {
-		WORD vid, pid;
-		string path;
+		Afx_colorcode white = { 255,255,255 }; // white point
+		vector <Afx_light> lights;
 	};
 
 	class Mappings {
 	private:
-		vector <group> groups; // Defined light groups
-		vector <lightgrid> grids; // Grid zones info
+		vector <Afx_group> groups; // Defined light groups
+		vector <Afx_grid> grids; // Grid zones info
 
 	public:
 
-		vector<afx_device> fxdevs; // main devices/mappings array
+		vector<Afx_device> fxdevs; // main devices/mappings array
 		int activeLights = 0,  // total number of active lights into the system
 			activeDevices = 0; // total number of active devices
 
@@ -294,36 +286,36 @@ namespace AlienFX_SDK {
 		void SaveMappings();
 
 		// get saved light structures from device
-		vector <mapping>* GetMappings(WORD pid, WORD vid);
+		vector <Afx_light>* GetMappings(WORD pid, WORD vid);
 
 		// get defined groups vector
-		vector <group>* GetGroups();
+		vector <Afx_group>* GetGroups();
 
 		// get defined grids vector
-		vector <lightgrid>* GetGrids() { return &grids; };
+		vector <Afx_grid>* GetGrids() { return &grids; };
 
 		// get grid object by it's ID
-		lightgrid* GetGridByID(byte id);
+		Afx_grid* GetGridByID(byte id);
 
 		// get device structure by PID/VID.
 		// VID can be zero for any VID
-		afx_device* GetDeviceById(WORD pid, WORD vid);
+		Afx_device* GetDeviceById(WORD pid, WORD vid);
 
 		// get or add device structure by PID/VID
 		// VID can be zero for any VID
-		afx_device* AddDeviceById(WORD pid, WORD vid);
+		Afx_device* AddDeviceById(WORD pid, WORD vid);
 
 		// find light mapping into device structure by light ID
-		mapping* GetMappingByDev(afx_device* dev, WORD LightID);
+		Afx_light* GetMappingByDev(Afx_device* dev, WORD LightID);
 
 		// find light group by it's ID
-		group* GetGroupById(DWORD gid);
+		Afx_group* GetGroupById(DWORD gid);
 
 		// remove light mapping from device by id
-		void RemoveMapping(afx_device* dev, WORD lightID);
+		void RemoveMapping(Afx_device* dev, WORD lightID);
 
 		// get light flags (Power, indicator, etc) from light structure
-		int GetFlags(afx_device* dev, WORD lightid);
+		int GetFlags(Afx_device* dev, WORD lightid);
 
 		// get light flags (Power, indicator) by DevID (PID/VID)
 		int GetFlags(DWORD devID, WORD lightid);

@@ -116,7 +116,7 @@ void EventHandler::StartEvents()
 
 		fxhl->RefreshMon();
 		// start thread...
-		eventProc = new ThreadHelper(CEventProc, this, 300);
+		eventProc = new ThreadHelper(CEventProc, this, 300/*, THREAD_PRIORITY_NORMAL*/);
 		DebugPrint("Event thread start.\n");
 	}
 }
@@ -474,7 +474,7 @@ void CEventProc(LPVOID param)
 
 			src->modifyProfile.lock();
 			if (!src->grid)
-				fxhl->SetCounterColor(cData);
+				fxhl->RefreshCounters(cData);
 			src->modifyProfile.unlock();
 			memcpy(&fxhl->eData, cData, sizeof(LightEventData));
 	}

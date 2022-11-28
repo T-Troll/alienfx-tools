@@ -1,11 +1,11 @@
 #include "alienfx-gui.h"
 #include "common.h"
 
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Colorcode*);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveLightFromGroup(AlienFX_SDK::group* grp, WORD devid, WORD lightid);
+extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid);
 extern void RemoveLightAndClean(int dPid, int eLid);
 extern void SetMainTabs();
 
@@ -14,7 +14,7 @@ extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
-extern AlienFX_SDK::mapping* FindCreateMapping();
+extern AlienFX_SDK::Afx_light* FindCreateMapping();
 
 extern FXHelper* fxhl;
 extern HWND mDlg;
@@ -24,8 +24,8 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 
 struct gearInfo {
 	string name;
-	vector <AlienFX_SDK::lightgrid> grids;
-	vector<AlienFX_SDK::afx_device> devs;
+	vector <AlienFX_SDK::Afx_grid> grids;
+	vector<AlienFX_SDK::Afx_device> devs;
 	bool selected = false;
 };
 
@@ -37,7 +37,7 @@ WNDPROC oldproc;
 HHOOK dEvent;
 HWND kDlg = NULL;
 
-AlienFX_SDK::afx_device* FindActiveDevice() {
+AlienFX_SDK::Afx_device* FindActiveDevice() {
 	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size())
 		//if (conf->afx_dev.fxdevs[dIndex].dev)
 			return &conf->afx_dev.fxdevs[dIndex];
@@ -46,7 +46,7 @@ AlienFX_SDK::afx_device* FindActiveDevice() {
 
 BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
-	AlienFX_SDK::afx_device* dev = FindActiveDevice();
+	AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 
 	switch (message)
 	{
@@ -109,10 +109,10 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 void SetLightInfo() {
-	AlienFX_SDK::afx_device* dev = FindActiveDevice();
+	AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 	if (dev) {
 		fxhl->TestLight(dev, eLid);
-		AlienFX_SDK::mapping* clight;
+		AlienFX_SDK::Afx_light* clight;
 		if (clight = conf->afx_dev.GetMappingByDev(dev, eLid)) {
 			SetDlgItemText(dDlg, IDC_EDIT_NAME, clight->name.c_str());
 		}
@@ -128,7 +128,7 @@ void SetLightInfo() {
 }
 
 void UpdateDeviceInfo() {
-	AlienFX_SDK::afx_device* dev = FindActiveDevice();
+	AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 	if (dev) {
 		char descript[128];
 		sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, %s",
@@ -224,7 +224,7 @@ void LoadCSV(string name) {
 		delete[] filebuf;
 		string line;
 		gearInfo tGear{ "" };
-		AlienFX_SDK::afx_device tDev;
+		AlienFX_SDK::Afx_device tDev;
 		while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 			vector<string> fields;
 			size_t pos = 0, posOld = 1;
@@ -241,7 +241,7 @@ void LoadCSV(string name) {
 					if (!tGear.selected) {
 						WORD vid = (WORD)atoi(fields[1].c_str()),
 							pid = (WORD)atoi(fields[2].c_str());
-						AlienFX_SDK::afx_device* dev = conf->afx_dev.GetDeviceById(pid, vid);
+						AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid, vid);
 						DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
 						if (dev && dev->dev) {
 							tGear.devs.push_back({vid, pid, NULL, fields[3] });
@@ -272,7 +272,7 @@ void LoadCSV(string name) {
 					break;
 				case 2: // Grid info
 					tGear.grids.push_back({ (byte)atoi(fields[1].c_str()), (byte)atoi(fields[2].c_str()), (byte)atoi(fields[3].c_str()), fields[4] });
-					tGear.grids.back().grid = new AlienFX_SDK::grpLight[tGear.grids.back().x * tGear.grids.back().y]{ 0 };
+					tGear.grids.back().grid = new AlienFX_SDK::Afx_groupLight[tGear.grids.back().x * tGear.grids.back().y]{ 0 };
 					break;
 				case 3: // Device info
 					if (tGear.name != "" && !tGear.selected) {
@@ -318,7 +318,7 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 	for (auto i = csv_devs.begin(); i < csv_devs.end(); i++) {
 		if (force || i->selected) {
 			for (auto td = i->devs.begin(); td < i->devs.end(); td++) {
-				AlienFX_SDK::afx_device* cDev = conf->afx_dev.AddDeviceById(td->pid, td->vid);
+				AlienFX_SDK::Afx_device* cDev = conf->afx_dev.AddDeviceById(td->pid, td->vid);
 				cDev->name = td->name;
 				if (cDev->dev)
 					conf->afx_dev.activeLights += (int)td->lights.size() - (int)cDev->lights.size();
@@ -382,8 +382,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
 	static bool clickOnTab = false;
 
-	AlienFX_SDK::afx_device* dev = FindActiveDevice();
-	AlienFX_SDK::mapping* lgh = conf->afx_dev.GetMappingByDev(dev, eLid);
+	AlienFX_SDK::Afx_device* dev = FindActiveDevice();
+	AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(dev, eLid);
 
 	switch (message)
 	{
@@ -570,7 +570,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 							for (auto j = i->lights.begin(); j < i->lights.end(); j++) {
 								line = "'1','" + to_string(j->lightid) + "','" + to_string(j->flags) + "','" + j->name;
-								AlienFX_SDK::grpLight gridid = { i->pid, j->lightid };
+								AlienFX_SDK::Afx_groupLight gridid = { i->pid, j->lightid };
 								for (auto i = conf->afx_dev.GetGrids()->begin(); i < conf->afx_dev.GetGrids()->end(); i++) {
 									for (int pos = 0; pos < i->x * i->y; pos++) {
 										if (gridid.lgh == i->grid[pos].lgh) {
@@ -628,7 +628,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 							else
 								it++;
 						}
-						AlienFX_SDK::grpLight* newGrid = new AlienFX_SDK::grpLight[conf->mainGrid->x * conf->mainGrid->y]{ 0 };
+						AlienFX_SDK::Afx_groupLight* newGrid = new AlienFX_SDK::Afx_groupLight[conf->mainGrid->x * conf->mainGrid->y]{ 0 };
 						conf->afx_dev.GetGrids()->push_back({ newGridIndex, conf->mainGrid->x, conf->mainGrid->y, "Grid #" + to_string(newGridIndex), newGrid });
 						conf->mainGrid = &conf->afx_dev.GetGrids()->back();
 						TCITEM tie{ TCIF_TEXT };

@@ -5,15 +5,21 @@
 namespace AlienFX_SDK {
 
 	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microship (monitors), Primax (mouses), Chicony (external keyboards)
-	//const static WORD vids[NUM_VIDS]{0x187c, 0x0d62, 0x0424, 0x0461, 0x04f2};
+	//enum Afx_VIDs {
+	//	Aleinware = 0x187c,
+	//	Darfon = 0x0d62,
+	//	Microchip = 0x0424,
+	//	Primax = 0x461,
+	//	Chicony = 0x4f2
+	//};
 
 	static struct COMMV1 { // old devices
+		const byte color[1]{ 0x03 };
+		const byte loop[1]{ 0x04 };
+		const byte update[1]{ 0x05 };
+		const byte status[1]{ 0x06 };
 		const byte reset[2]{0x07, 0x04};
 		// [2] - 0x1 - power & indi, 0x2 - sleep, 0x3 - off, 0x4 - on
-		const byte loop[1]{0x04};
-		const byte color[1]{0x03};
-		const byte update[1]{0x05};
-		const byte status[1]{0x06};
 		const byte saveGroup[1]{0x08};
 		// save group codes for saveGroup[2]:
 		// 0x1 - lights
@@ -25,16 +31,16 @@ namespace AlienFX_SDK {
 		// 0x9 - batt down (pulse batt-0)
 		// 0x2 0x0 - end storage block
 		const byte save[1]{0x09};
+		const byte setTempo[1]{ 0x0e };
 		const byte apply[2]{0x1d, 0x03};
-		const byte setTempo[1]{0x0e};
 	} COMMV1;
 
 	static struct COMMV4 { // common tron
 		const byte control[6]{ 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0xff };
-		// [4] - control type (1..6), 3 - update, 1 - reset
-		// [5] - unknown. ff for reset, 0 for others
-		// [6] - control ID (ff for reset/update, 61 for light store?)
+		// [4] - control type (1..7), 1 - start new, 2 - finish and save, 3 - finish and play, 4 - remove, 5 - play, 6 - set default, 7 - set startup
+		// [5-6] - control ID 0xffff - common, 8 - startup, 61 - light
 		const byte colorSel[5]{0x03 ,0x23 ,0x01 ,0x00 ,0x01};
+		// [3] - 1 - loop, 0 - once
 		// [5] - count of lights need to be set,
 		// [6-33] - LightID (index, not mask) - it can be COUNT of them.
 		const byte colorSet[7]{0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa};
@@ -45,12 +51,17 @@ namespace AlienFX_SDK {
 		// [8-10]    - rgb
 		// Then circle [11 - 17, 18 - 24, 25 - 31]
 		// It can be up to 3 colorSet for one colorSel.
-		const byte setPower[6]{0x03 ,0x22 ,0x00, 0x04, 0x00, 0x5b};
-		const byte prepareTurn[3]{0x03, 0x20, 0x2};
+		const byte setPower[2]{0x03 ,0x22};
+		// Bettr use control with [2] = 22
+		// [6] - type
 		const byte turnOn[2]{0x03, 0x26};
 		// [4] - brightness (0..100),
 		// [5] - lights count
 		// [6-33] - light IDs (like colorSel)
+		const byte setOneColor[2]{ 0x03, 0x27 };
+		// [3-5] - rgb
+		// [7] - count
+		// [8-33] - IDs
 	} COMMV4;
 
 	static struct COMMV5 { // notebook rgb keyboards

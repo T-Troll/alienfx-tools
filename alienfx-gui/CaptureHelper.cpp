@@ -44,7 +44,7 @@ void CaptureHelper::Start()
 {
 	if (!dwHandle) {
 		clrStopEvent = CreateEvent(NULL, true, false, NULL);
-		lThread = new ThreadHelper(CFXProc, this, 200);
+		lThread = new ThreadHelper(CFXProc, this, 200, THREAD_PRIORITY_ABOVE_NORMAL);
 		dwHandle = CreateThread( NULL, 0, CInProc, this, 0, NULL);
 	}
 }
@@ -74,13 +74,6 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 	imgz = new byte[x * y * 6];
 	Start();
 }
-
-struct procData {
-	int dx, dy;
-	UCHAR* dst;
-	HANDLE pEvent;
-	HANDLE pfEvent;
-};
 
 UINT w = 0, h = 0, ww = 0, hh = 0, stride = 0 , divider = 1;
 byte* scrImg = NULL;
@@ -137,7 +130,7 @@ DWORD WINAPI CInProc(LPVOID param)
 	byte* imgo = src->imgz + gridDataSize;
 	size_t buf_size;
 
-	HANDLE pThread[16], pfEvent[16];;
+	HANDLE pThread[16], pfEvent[16];
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 

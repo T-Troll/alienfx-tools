@@ -54,7 +54,7 @@ void WSAudioIn::startSampling()
 {
 	// creating listener thread...
 	if (pAudioClient && !dwHandle) {
-		lightUpdate = new ThreadHelper(resample, this, 100);
+		lightUpdate = new ThreadHelper(resample, this, 75, 0);
 		fftHandle = CreateThread(NULL, 0, FFTProc, this, 0, NULL);
 		dwHandle = CreateThread( NULL, 0, WSwaveInProc, this, 0, NULL);
 		pAudioClient->Start();
@@ -176,7 +176,7 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 							}
 							finVal += val;
 						}
-						waveT[arrayPos + i - shift] = (double) (finVal);
+						waveT[arrayPos + i - shift] = (double) (finVal) / src->pwfx->nChannels;
 						if (arrayPos + i - shift == NUMPTS - 1) {
 							//buffer full, send to process.
 							SetEvent(src->cEvent);
@@ -218,11 +218,13 @@ DWORD WINAPI FFTProc(LPVOID lpParam)
 	WSAudioIn* src = (WSAudioIn*)lpParam;
 	HANDLE hArray[2]{ src->stopEvent, src->cEvent };
 
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+
 	// Preparing FFT...
 	void* kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
-	kiss_fft_scalar* padded_in = (kiss_fft_scalar*)malloc(NUMPTS * sizeof(kiss_fft_scalar));
-	kiss_fft_cpx* padded_out = (kiss_fft_cpx*)malloc(NUMPTS * sizeof(kiss_fft_cpx));
-	double x2[NUMPTS];
+	kiss_fft_scalar* padded_in = new kiss_fft_scalar[NUMPTS];
+	kiss_fft_cpx* padded_out = new kiss_fft_cpx[NUMPTS];
+	double* x2 = new double[NUMPTS];
 	double peak = 0;
 
 	DWORD res;
@@ -274,8 +276,9 @@ DWORD WINAPI FFTProc(LPVOID lpParam)
 			src->needUpdate = true;
 		}
 	}
-	free(padded_in);
-	free(padded_out);
+	delete[] padded_in;
+	delete[] padded_out;
 	kiss_fft_free(kiss_cfg);
+	delete[] x2;
 	return 0;
 }

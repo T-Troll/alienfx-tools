@@ -43,7 +43,7 @@ profile* ConfigHandler::FindCreateProfile(unsigned id) {
 groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 {
 	profile* prof = FindProfile(profID);
-	AlienFX_SDK::group* grp = afx_dev.GetGroupById(groupID);
+	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(groupID);
 	if (prof && grp) {
 		groupset* gset = FindMapping(groupID, &prof->lightsets);
 		if (!gset) {
@@ -259,7 +259,7 @@ void ConfigHandler::Load() {
 		}
 		if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			AlienFX_SDK::afx_act* clr = (AlienFX_SDK::afx_act*)data;
+			AlienFX_SDK::Afx_action* clr = (AlienFX_SDK::Afx_action*)data;
 			for (int i = 0; i < recSize; i++)
 				gset->color.push_back(clr[i]);
 			continue;
@@ -393,10 +393,10 @@ void ConfigHandler::Save() {
 
 			if (iIter->color.size()) { // colors
 				fname = "Zone-colors-" + name + "-" + to_string(iIter->color.size());
-				AlienFX_SDK::afx_act* buffer = new AlienFX_SDK::afx_act[iIter->color.size()];
+				AlienFX_SDK::Afx_action* buffer = new AlienFX_SDK::Afx_action[iIter->color.size()];
 				for (int i = 0; i < iIter->color.size(); i++)
 					buffer[i] = iIter->color[i];
-				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::afx_act));
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::Afx_action));
 				delete[] buffer;
 			}
 			if (iIter->events.size()) { //events
@@ -480,7 +480,7 @@ zonemap* ConfigHandler::FindZoneMap(int gid) {
 }
 
 zonemap* ConfigHandler::SortGroupGauge(int gid) {
-	AlienFX_SDK::group* grp = afx_dev.GetGroupById(gid);
+	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
 
 	//remove_if(zoneMaps.begin(), zoneMaps.end(),
 	//	[gid](auto t) {
@@ -493,8 +493,8 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 	if (!grp || grp->lights.empty()) return zone;
 
 	// find operational grid...
-	AlienFX_SDK::grpLight lgt = grp->lights.front();
-	AlienFX_SDK::lightgrid* opGrid = NULL;
+	AlienFX_SDK::Afx_groupLight lgt = grp->lights.front();
+	AlienFX_SDK::Afx_grid* opGrid = NULL;
 	for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
 		for (int ind = 0; ind < t->x * t->y; ind++)
 			if (t->grid[ind].lgh == lgt.lgh) {

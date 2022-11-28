@@ -46,8 +46,19 @@ The rest of the window is control function tabs. There are 4 main control blocks
 All lights functions of you system controlled from here. It have 5 sub-tabs, but 2 blocks are common for most of it:
 - Lights grid (down-right block). It present how lights located at you gear surface, as well as show light color prediction according to current light settings and effect mode.
 - "Zones" block. It used for group lights to light zone for control it as one light. Press "+" button to add new zone (or select one from other profiles), "-" to remove selected zone, select (left-click or click-and-drag) cells into grid to add/remove assigned lights into zone. Pressing "X" button near grid remove all grid lights from current zone.
+- "Gauge" block. It defines how zone will act inside it:
+  - Off - All zone lights will have the same color.
+  - Horizontal - fill zone from left to right.
+  - Vertical - fill zone from top to bottom.
+  - Diagonal (left) - fill zone from top-left point to bottom-right.
+  - Diagonal (right) - fill zone from top-right point to bottom-left.
+  - Radial - fill zone by ellipse from center to borders.
 
-Rest of the screen is control block, it depends of function selected by tab: 
+  "Reverse" check box invert filling direction for the zone.  
+  "Gradient" check box alter zone filling style. In case zone have 2 colors, it will filled as gradient then enabled. For any effect, it will filled by gradient color instead of peak indicator.
+
+
+Rest of the screen is control block, it depends of function selected by tab:
 
 ### Colors
 
@@ -69,20 +80,6 @@ Available effect modes are:
 - Power - for hardware power button.
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do morph). But you can experiment.
-
-"Gauge" block controls how to zone lights color will be altered depends on it position on the grid.  
-For gauge type drop down, available modes are:
-- Off - All zone lights will have the same color.
-- Horizontal - fill zone from left to right.
-- Vertical - fill zone from top to bottom.
-- Diagonal (left) - fill zone from top-left point to bottom-right.
-- Diagonal (right) - fill zone from top-right point to bottom-left.
-- Radial - fill zone by ellipse from center to borders.
-
-"Reverse" check box invert filling direction to right-to-left and bottom-to-top.
-"Gradient" check box alter zone filling. In case zone have 2 colors, it will filled as gradient then enabled. For event/haptics gauge, it will filled by gradient color instead of peak indicator.
-
-Please keep in mind - defining zone as "Gradient" disables hardware color effects!
 
 ### Events Monitoring
 
@@ -131,7 +128,8 @@ Effect color switches between "From" and "To" values in case system event occurs
 
 !["Ambient" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-ambient-6.png?raw=true)
 
-`Ambient` tab setting up "Ambient" (Ambient lights) software effect mode - in this mode, zone colors will follow colors at you system screen.
+`Ambient` tab setting up "Ambient" (Ambient lights) software effect mode - in this mode, zone colors will follow colors at you system screen.  
+For gauge zones, zone will follow the difference between screen color and black.
 
 You can select which display (primary or all secondary) to follow, as well as define dimming to make light brightness be balanced with screen brightness.  
 "Reset" button restart color capturing from screen, it's useful in some situations like DirectX 12 game quit.
@@ -184,13 +182,9 @@ Effect types define how changing zone (defined by point and width) will be paint
 - Wave - lights into changing zone will have "wave" gradient between "From" color at the borders and "To" color in the middle.
 - Gradient - lights into changing zone will have gradient from "To" color to "From color".
 
-There are some check boxes for zone processing control:
-- Gradient - zone fill be filled by gradient color between "From" and "To" from the start point to current state point.
-- Reverse - reverses processing direction (f.e from left to right or from center to border).
-- Circle - after reaching processing limit, effect reverse direction until initial state reached.
+"Circle check box" make effect round - effect reverse direction until initial state after reaching zone size limit.
 
-"Direction" drop down define processing direction, the same as "Gauge" at "Color" tab.  
-If direction is set to "Off", all zone lights will morph between "From" and "To" colors as phase changed.
+If gauge is set to "Off", all zone lights will morph between "From" and "To" colors as phase changed, otherwise gauge settings used for direction and style.
 
 ### Devices and Grids
 

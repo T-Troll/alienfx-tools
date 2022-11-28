@@ -442,7 +442,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
+      <OptimizeReferences>false</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -462,8 +462,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
-      <OptimizeReferences>false</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>false</Profile>
     </Link>
     <Manifest />
     <ResourceCompile />

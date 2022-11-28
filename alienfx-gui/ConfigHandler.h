@@ -33,17 +33,15 @@
 #define GE_FLAG_ZONE	0x2
 
 struct freq_map {
-	AlienFX_SDK::Colorcode colorfrom{ 0 };
-	AlienFX_SDK::Colorcode colorto{ 0 };
-	byte hicut{ 255 };
-	byte lowcut{ 0 };
-	byte freqsize{ 0 };
+	AlienFX_SDK::Afx_colorcode colorfrom;
+	AlienFX_SDK::Afx_colorcode colorto;
+	byte hicut, lowcut, freqsize;
 	vector<byte> freqID;
 };
 
 struct event {
 	byte state, source, cut, mode;
-	AlienFX_SDK::afx_act from, to;
+	AlienFX_SDK::Afx_action from, to;
 	double coeff;
 };
 
@@ -60,8 +58,8 @@ struct zonemap {
 };
 
 struct gridClr {
-	AlienFX_SDK::afx_act* first;
-	AlienFX_SDK::afx_act* last;
+	AlienFX_SDK::Afx_action* first;
+	AlienFX_SDK::Afx_action* last;
 };
 
 struct grideffect {
@@ -72,8 +70,8 @@ struct grideffect {
 	byte size = 0;
 	byte width = 1;
 	WORD flags;
-	AlienFX_SDK::Colorcode from;
-	AlienFX_SDK::Colorcode to;
+	AlienFX_SDK::Afx_colorcode from;
+	AlienFX_SDK::Afx_colorcode to;
 };
 
 struct grideffop {
@@ -85,13 +83,14 @@ struct grideffop {
 
 struct groupset {
 	int group = 0;
-	vector<AlienFX_SDK::afx_act> color;
+	vector<AlienFX_SDK::Afx_action> color;
 	vector<event> events;
 	vector<byte> ambients;
 	vector<freq_map> haptics;
+	//vector<AlienFX_SDK::afx_act> lastHap;
+	//double lastHapPower;
 	grideffect effect;
 	grideffop  gridop;
-	//zonemap* zone;
 	bool fromColor = false;
 	WORD flags = 0;
 	byte gauge = 0;
@@ -99,7 +98,7 @@ struct groupset {
 
 struct deviceeffect {
 	WORD vid, pid;
-	AlienFX_SDK::Colorcode effColor1, effColor2;
+	AlienFX_SDK::Afx_colorcode effColor1, effColor2;
 	byte globalEffect = 0,
 		globalDelay = 5,
 		globalMode = 1;
@@ -156,7 +155,7 @@ public:
 	bool lightsNoDelay = true;
 	bool block_power = 0;
 	bool wasAWCC = false;
-	AlienFX_SDK::Colorcode testColor{0,255};
+	AlienFX_SDK::Afx_colorcode testColor{0,255};
 	//bool haveOldConfig = false;
 
 	// Ambient...
@@ -179,7 +178,7 @@ public:
 	profile* activeProfile = NULL;
 
 	// Grid-related
-	AlienFX_SDK::lightgrid* mainGrid = NULL;
+	AlienFX_SDK::Afx_grid* mainGrid = NULL;
 	gridClr* colorGrid = NULL;
 	int gridTabSel = 0;
 
