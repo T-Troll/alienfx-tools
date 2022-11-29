@@ -173,7 +173,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				else {
 					mmap->color.erase(mmap->color.begin() + effID);
-					if (effID > 0)
+					if (effID)
 						effID--;
 				}
 				RebuildEffectList(hDlg, mmap);

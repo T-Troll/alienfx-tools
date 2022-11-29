@@ -11,10 +11,11 @@ extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 extern FXHelper* fxhl;
 extern MonHelper* mon;
 
-const static vector<string> eventTypeNames{ "Power", "Performance", "Indicator" },
-		perfTypeNames{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
-			"Fan RPM", "Power usage" },
-		indTypeNames{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" };
+const static vector<string> eventTypeNames{ "Power", "Performance", "Indicator" };
+const static vector<vector<string>> eventNames{ { "Power status" },
+		{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
+			"Fans RPM", "Power usage" },
+		{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" } };
 
 int eventID = -1;
 
@@ -25,23 +26,13 @@ event* GetEventData(groupset* mmap) {
 }
 
 void SetEventData(HWND hDlg, event* ev) {
-	CheckDlgButton(hDlg, IDC_STATUS_BLINK, ev && ev->mode ? BST_CHECKED : BST_UNCHECKED);
-	ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE), ev ? ev->state : -1);
-	vector<string> sources;
-	switch (ev ? ev->state : -1) {
-	case MON_TYPE_POWER:
-		sources = { "Power" };
-		break;
-	case MON_TYPE_PERF:
-		sources = perfTypeNames;
-		break;
-	case MON_TYPE_IND:
-		sources = indTypeNames;
-		break;
+	if (ev) {
+		CheckDlgButton(hDlg, IDC_STATUS_BLINK, ev->mode ? BST_CHECKED : BST_UNCHECKED);
+		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE), ev->state);
+		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ev->state], ev->source);
+		SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_SETPOS, true, ev->cut);
+		SetSlider(sTip2, ev->cut);
 	}
-	UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), sources, ev ? ev->source : -1);
-	SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_SETPOS, true, ev ? ev->cut : 0);
-	SetSlider(sTip2, ev ? ev->cut : 0);
 	RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), NULL, NULL, RDW_INVALIDATE);
 	RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), NULL, NULL, RDW_INVALIDATE);
 }
@@ -62,15 +53,8 @@ void RebuildEventList(HWND hDlg, groupset* mmap) {
 	if (mmap) {
 		LVITEMA lItem{ LVIF_TEXT | LVIF_STATE };
 		for (int i = 0; i < mmap->events.size(); i++) {
-			string itemName = eventTypeNames[mmap->events[i].state];
-			switch (mmap->events[i].state) {
-			case MON_TYPE_PERF:
-				itemName += ", " + perfTypeNames[mmap->events[i].source];
-				break;
-			case MON_TYPE_IND:
-				itemName += ", " + indTypeNames[mmap->events[i].source];
-				break;
-			}
+			string itemName = eventTypeNames[mmap->events[i].state] + ", " +
+				eventNames[mmap->events[i].state][mmap->events[i].source];
 			lItem.iItem = i;
 			lItem.pszText = (LPSTR) itemName.c_str();
 			// check selection...
@@ -128,7 +112,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_CHECK_NOEVENT:
 			if (map) {
 				map->fromColor = state;
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			else
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
@@ -143,37 +127,42 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (ev && (!map->fromColor || map->color.size())) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), map, &ev->from);
 				RedrawGridButtonZone(NULL, true);
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTTON_COLORTO:
 			if (ev) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), map, &ev->to);
 				RedrawGridButtonZone(NULL, true);
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_EVENT_SOURCE:
 			if (ev && HIWORD(wParam) == CBN_SELCHANGE) {
 				ev->source = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE));
 				RebuildEventList(hDlg, map);
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_EVENT_TYPE:
 			if (ev && HIWORD(wParam) == CBN_SELCHANGE) {
-				ev->state = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE));
-				ev->source = 0;
+				int ctype = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE));
+				UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype], 0);
+				if (ev) {
+					ev->state = ctype;
+					ev->source = 0;
+				}
 				RebuildEventList(hDlg, map);
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUT_ADD_EVENT:
 			if (map) {
-				map->events.push_back({ 0 });
+				map->events.push_back({ (byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE)),
+					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
 				eventID = (int)map->events.size() - 1;
 				RebuildEventList(hDlg, map);
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
@@ -182,7 +171,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				if (eventID)
 					eventID--;
 				RebuildEventList(hDlg, map);
-				fxhl->Refresh();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTT_EVENT_UP:
@@ -192,7 +181,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				*ev = map->events[eventID];
 				map->events[eventID] = t;
 				RebuildEventList(hDlg, map);
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUT_EVENT_DOWN:
@@ -202,7 +191,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				*ev = map->events[eventID];
 				map->events[eventID] = t;
 				RebuildEventList(hDlg, map);
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		}
@@ -226,7 +215,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			if (ev && (HWND)lParam == s2_slider) {
 				SetSlider(sTip2, ev->cut = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
-				fxhl->RefreshMon();
+				fxhl->RefreshCounters();
 			}
 			break;
 		} break;

@@ -12,16 +12,16 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);
 	switch (grp->gauge) {
 	case 1:
-		grp->effect.size = cx;
+		grp->gridop.size = cx;
 		break;
 	case 2:
-		grp->effect.size = cy;
+		grp->gridop.size = cy;
 		break;
 	case 0: case 3: case 4:
-		grp->effect.size = cx + cy;
+		grp->gridop.size = cx + cy;
 		break;
 	case 5:
-		grp->effect.size = max(cx, cy);
+		grp->gridop.size = max(cx, cy);
 		break;
 	}
 	grp->gridop.gridX = x;

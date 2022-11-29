@@ -14,7 +14,7 @@ extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
-extern AlienFX_SDK::Afx_light* FindCreateMapping();
+extern AlienFX_SDK::Afx_light* FindCreateMapping(bool);
 
 extern FXHelper* fxhl;
 extern HWND mDlg;
@@ -119,6 +119,7 @@ void SetLightInfo() {
 		else {
 			SetDlgItemText(dDlg, IDC_EDIT_NAME, "<not used>");
 		}
+		EnableWindow(GetDlgItem(dDlg, IDC_BUT_CLEAR), clight != NULL);
 		SetDlgItemInt(dDlg, IDC_LIGHTID, eLid, false);
 
 		CheckDlgButton(dDlg, IDC_ISPOWERBUTTON, clight && clight->flags & ALIENFX_FLAG_POWER);
@@ -423,7 +424,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					eLid = max(eLid, it->lightid);
 				SetLightInfo();
 			}
-		break;
+			break;
 		case IDC_BUT_FIRST:
 			if (dev) {
 				eLid = 999;
@@ -433,7 +434,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_KEY:
-			FindCreateMapping();
+			if (!lgh)
+				FindCreateMapping(false);
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), hDlg, (DLGPROC)KeyPressDialog);
 			UpdateDeviceInfo();
 			break;
@@ -441,13 +443,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			switch (HIWORD(wParam)) {
 			case EN_CHANGE:
 				if (Edit_GetModify(GetDlgItem(hDlg, IDC_EDIT_NAME))) {
-					lgh = FindCreateMapping();
+					if (!lgh)
+						lgh = FindCreateMapping(false);
 					lgh->name.resize(128);
 					GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)lgh->name.data(), 127);
 					lgh->name.shrink_to_fit();
-					UpdateDeviceInfo();
+					EnableWindow(GetDlgItem(dDlg, IDC_BUT_CLEAR), true);
 				}
 				break;
+			case EN_KILLFOCUS:
+				UpdateDeviceInfo();
 			}
 			break;
 		case IDC_BUT_DEVCLEAR:

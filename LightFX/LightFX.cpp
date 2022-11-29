@@ -14,9 +14,9 @@ LFX_RESULT state;
 
 void TranslateColor(LFX_COLOR src) {
 	// gamma-correction and brightness...
-	final.red = ((unsigned) src.red * src.red * src.brightness) / (255 * 255);
-	final.green = ((unsigned) src.green * src.green * src.brightness) / (255 * 255);
-	final.blue = ((unsigned) src.blue * src.blue * src.brightness) / (255 * 255);
+	final.red = ((unsigned)src.red * src.red * src.brightness) / 65025;// (255 * 255);
+	final.green = ((unsigned)src.green * src.green * src.brightness) / 65025;// (255 * 255);
+	final.blue = ((unsigned)src.blue * src.blue * src.brightness) / 65025;// (255 * 255);
 }
 
 LFX_RESULT CheckState(int did = -1, int lid = -1) {

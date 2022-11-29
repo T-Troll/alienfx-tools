@@ -27,21 +27,23 @@ HWND tipH = NULL, tipV = NULL;
 
 HWND cgDlg;
 
-int minGridX, minGridY, maxGridX, maxGridY;
+int minGridX, minGridY, maxGridX, maxGridY, bSize;
 
 extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-AlienFX_SDK::Afx_light* FindCreateMapping() {
+AlienFX_SDK::Afx_light* FindCreateMapping(bool allowKey) {
     AlienFX_SDK::Afx_device* dev = FindActiveDevice();
-    AlienFX_SDK::Afx_light* lgh = NULL;
-    if (dev && !(lgh = conf->afx_dev.GetMappingByDev(dev, eLid))) {
+    AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(dev, eLid);
+    if (dev && !lgh) {
         // create new mapping
         dev->lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
-        if (dev->dev) conf->afx_dev.activeLights++;
+        if (dev->dev) {
+            conf->afx_dev.activeLights++;
+            // for rgb keyboards, check key...
+            if (allowKey && dev->dev->IsHaveGlobal())
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
+        }
         lgh = &dev->lights.back();
-        // for rgb keyboards, check key...
-        //if (dev->dev && dev->dev->IsHaveGlobal())
-        //    DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
     }
     return lgh;
 }
@@ -56,16 +58,16 @@ void InitGridButtonZone() {
     // Create zone buttons...
     HWND bblock = GetDlgItem(cgDlg, IDC_BUTTON_ZONE);
     GetClientRect(bblock, &buttonZone);
-    RECT bzone = buttonZone;
-    MapWindowPoints(bblock, cgDlg, (LPPOINT)&bzone, 1);
-    bzone.right /= conf->mainGrid->x;
-    bzone.bottom /= conf->mainGrid->y;
+    MapWindowPoints(bblock, cgDlg, (LPPOINT)&buttonZone, 1);
+    buttonZone.right /= conf->mainGrid->x;
+    buttonZone.bottom /= conf->mainGrid->y;
     LONGLONG bId = 2000;
     for (int y = 0; y < conf->mainGrid->y; y++)
         for (int x = 0; x < conf->mainGrid->x; x++) {
             int size = 1;
+            while (x + size < conf->mainGrid->x &&
+                conf->mainGrid->grid[ind(x, y)].lgh == conf->mainGrid->grid[ind(x + size, y)].lgh) size++;
             if (conf->mainGrid->grid[ind(x, y)].lgh) {
-                while (conf->mainGrid->grid[ind(x, y)].lgh == conf->mainGrid->grid[ind(x+size, y)].lgh) size++;
                 // now ajust sizes
                 minGridX = min(minGridX, x);
                 minGridY = min(minGridY, y);
@@ -73,7 +75,7 @@ void InitGridButtonZone() {
                 maxGridY = max(maxGridY, y);
             }
             HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW | WS_DISABLED,
-                bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, size * bzone.right, bzone.bottom, cgDlg, (HMENU)bId++,
+                buttonZone.left + x * buttonZone.right, buttonZone.top + y * buttonZone.bottom, size * buttonZone.right, buttonZone.bottom, cgDlg, (HMENU)bId++,
                 GetModuleHandle(NULL), NULL);
             SetWindowLongPtr(btn, GWLP_USERDATA, (LONG_PTR)(ind(x,y)));
             x+=size-1;
@@ -137,7 +139,7 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
     pRect.bottom = pRect.top + full.bottom * sizeY;
     pRect.left += sizeX * full.left;
     pRect.top += sizeY * full.top;
-    RedrawWindow(cgDlg, &pRect, 0, RDW_INVALIDATE | /*RDW_UPDATENOW |*/ RDW_ALLCHILDREN);
+    RedrawWindow(cgDlg, &pRect, 0, RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 
 void SetLightGridSize(int x, int y) {
@@ -318,26 +320,21 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             if (tabLightSel == TAB_DEVICES) {
                 DWORD oldLightValue = conf->mainGrid->grid[ind(dragZone.left, dragZone.top)].lgh;
                 auto dev = FindActiveDevice();
-                WORD devID = dev->pid;
                 if (dragZone.bottom - dragZone.top == 1 && dragZone.right - dragZone.left == 1 &&
-                   oldLightValue && oldLightValue != MAKELPARAM(devID, eLid)) {
+                   oldLightValue && oldLightValue != MAKELPARAM(dev->pid, eLid)) {
                     // switch light
-                    if (LOWORD(oldLightValue) != devID) {
+                    if (LOWORD(oldLightValue) != dev->pid) {
                         // Switch device, if possible
                         for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++)
-                            if (conf->afx_dev.fxdevs[i].dev && conf->afx_dev.fxdevs[i].pid == LOWORD(oldLightValue)) {
+                            if (conf->afx_dev.fxdevs[i].pid == LOWORD(oldLightValue)) {
                                 dIndex = i;
                                 RedrawDevList();
                             }
                     }
                     eLid = HIWORD(oldLightValue);
                 } else {
-                    ModifyDragZone(devID, eLid);
-                    //InitGridButtonZone();
-                    FindCreateMapping();
-                    // for rgb keyboards, check key...
-                    if (dev->dev && dev->dev->IsHaveGlobal())
-                        DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
+                    ModifyDragZone(dev->pid, eLid);
+                    FindCreateMapping(true);
                 }
                 SetLightInfo();
             }
@@ -389,34 +386,47 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         if (ditem->CtlID >= 2000) {
             int ind = (int)GetWindowLongPtr(ditem->hwndItem, GWLP_USERDATA);
             DWORD gridVal = conf->mainGrid->grid[ind].lgh;
+            int x = ind % conf->mainGrid->x, y = ind / conf->mainGrid->x,
+                size = ditem->rcItem.right / buttonZone.right;
+            HDC wDC = ditem->hDC;
             if (tabLightSel == TAB_DEVICES) {
                 if (gridVal) {
                     HBRUSH Brush = CreateSolidBrush(gridVal == MAKELPARAM(FindActiveDevice()->pid, eLid) ?
                         RGB(conf->testColor.r, conf->testColor.g, conf->testColor.b) :
                         RGB(0xff - (HIWORD(gridVal) << 5), LOWORD(gridVal), HIWORD(gridVal) << 1));
-                    FillRect(ditem->hDC, &ditem->rcItem, Brush);
+                    FillRect(wDC, &ditem->rcItem, Brush);
                     DeleteObject(Brush);
                 }
             }
             else {
                 if (gridVal) {
-                    GRADIENT_RECT gRect{ 0,1 };
-                    TRIVERTEX vertex[2]{ {ditem->rcItem.left, ditem->rcItem.top},
-                        {ditem->rcItem.right, ditem->rcItem.bottom} };
+                    RECT rectClip = ditem->rcItem;
+                    //GRADIENT_RECT gRect{ 0,1 };
+                    //TRIVERTEX vertex[2];
                     gridClr lightcolors = conf->colorGrid[ind];
                     if (lightcolors.first) {
                         // active
-                        vertex[0].Red = lightcolors.first->r << 8;
-                        vertex[0].Green = lightcolors.first->g << 8;
-                        vertex[0].Blue = lightcolors.first->b << 8;
-                        vertex[1].Red = lightcolors.last->r << 8;
-                        vertex[1].Green = lightcolors.last->g << 8;
-                        vertex[1].Blue = lightcolors.last->b << 8;
+                        GRADIENT_RECT gRect{ 0,1 };
+                        TRIVERTEX vertex[2]{{ rectClip.left, rectClip.top, (COLOR16)(lightcolors.first->r << 8),
+                            (COLOR16)(lightcolors.first->g << 8),
+                            (COLOR16)(lightcolors.first->b << 8) },
+                        { rectClip.right, rectClip.bottom, (COLOR16)(lightcolors.last->r << 8),
+                            (COLOR16)(lightcolors.last->g << 8),
+                            (COLOR16)(lightcolors.last->b << 8) } };
+                        GradientFill(wDC, vertex, 2, &gRect, 1, GRADIENT_FILL_RECT_H);
                     }
-                    GradientFill(ditem->hDC, vertex, 2, &gRect, 1, GRADIENT_FILL_RECT_H);
+                    if (IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem))) {
+                        for (int cx = 0; cx < size; cx++) {
+                            rectClip.right = rectClip.left + buttonZone.right;
+                            int border = (cx == 0 * BF_LEFT) |
+                                (cx == size - 1) * BF_RIGHT |
+                                (!y || gridVal != conf->mainGrid->grid[ind + cx - conf->mainGrid->x].lgh) * BF_TOP |
+                                (y == conf->mainGrid->y - 1 || gridVal != conf->mainGrid->grid[ind + cx + conf->mainGrid->x].lgh) * BF_BOTTOM;
+                            DrawEdge(wDC, &rectClip, EDGE_SUNKEN, BF_MONO | border);
+                            rectClip.left += buttonZone.right;
+                        }
+                    }
                 }
-                if (gridVal && IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem)))
-                    DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_MONO | BF_RECT);
             }
             // print name
             if (conf->showGridNames && gridVal) {
@@ -428,12 +438,16 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 }
             }
             // Highlight if in selection zone
-            if (PtInRect(&dragZone, { (long)(ind % conf->mainGrid->x), (long)(ind / conf->mainGrid->x) })) {
-                DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
+            RECT rectClip = ditem->rcItem;
+            for (int cx = 0; cx < size; cx++) {
+                rectClip.right = rectClip.left + buttonZone.right;
+                if (PtInRect(&dragZone, { x + cx, y }))
+                    DrawEdge(wDC, &rectClip, EDGE_SUNKEN, BF_RECT);
+                else
+                    if (!gridVal)
+                        DrawEdge(wDC, &rectClip, EDGE_RAISED, BF_FLAT | BF_RECT);
+                rectClip.left += buttonZone.right;
             }
-            else
-                if (!gridVal)
-                    DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_RAISED, BF_FLAT | BF_RECT);
         }
     } break;
 	default: return false;

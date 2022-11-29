@@ -127,115 +127,121 @@ void FXHelper::ResetPower(AlienFX_SDK::Afx_device* dev)
 
 void FXHelper::RefreshCounters(LightEventData *data, bool force)
 {
-
-	if (!force) blinkStage = !blinkStage;
-	bool wasChanged = false;
-
 #ifdef _DEBUG
 	if (force) {
 		DebugPrint("Forced Counter update initiated...\n");
 	}
 #endif
 
-	vector<groupset> active = conf->activeProfile->lightsets;
-	AlienFX_SDK::Afx_group* grp;
-	for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
-		vector<AlienFX_SDK::Afx_action> actions;
-		bool noDiff = true;
-		int lVal = 0, cVal = 0;
-		double fCoeff = 0.0;
-		if (grp = conf->afx_dev.GetGroupById(Iter->group)) {
-			if (Iter->fromColor && Iter->color.size()) {
-				actions.push_back(grp->have_power && conf->statePower ? Iter->color.back() : Iter->color.front());
-				actions.back().type = 0;
-			}
-			for (auto e = Iter->events.begin(); e != Iter->events.end(); e++) {
-				if (actions.empty())
-					actions.push_back(e->from);
-				switch (e->state) {
-				case MON_TYPE_POWER: // power
-					if (force || eData.ACP != data->ACP || eData.BST != data->BST || data->BST & 14) {
-						if (data->ACP) {
-							if ((data->BST & 8) && blinkStage)
-								actions[0] = e->to;
-						}
-						else
-							actions[0] = (data->BST & 6) && blinkStage ? AlienFX_SDK::Afx_action{ 0 } : e->to;
-						noDiff = false;
-					}
-					break;
-				case MON_TYPE_PERF: // counter
-					switch (e->source) {
-					case 0: lVal = eData.CPU; cVal = data->CPU; break;
-					case 1: lVal = eData.RAM; cVal = data->RAM; break;
-					case 2: lVal = eData.HDD; cVal = data->HDD; break;
-					case 3: lVal = eData.GPU; cVal = data->GPU; break;
-					case 4: lVal = eData.NET; cVal = data->NET; break;
-					case 5: lVal = eData.Temp; cVal = data->Temp; break;
-					case 6: lVal = eData.Batt; cVal = data->Batt; break;
-					case 7: lVal = eData.Fan; cVal = data->Fan; break;
-					case 8: lVal = eData.PWR; cVal = data->PWR; break;
-					}
+	if (conf->enableMon && conf->GetEffect() == 1) {
+		if (!data) {
+			data = &eData;
+			force = true;
+		}
+		if (!force) blinkStage = !blinkStage;
+		bool wasChanged = false;
 
-					if (force || (lVal != cVal && (lVal > e->cut || cVal > e->cut))) {
-						noDiff = false;
-						fCoeff = e->coeff = cVal > e->cut ? (cVal - e->cut) / (100.0 - e->cut) : 0.0;
-					}
-					if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
-						actions.push_back(e->to);
-					else {
-						actions.push_back(BlendPower(e->coeff, &actions.front(), &e->to));
-						if (!Iter->gauge)
-							actions.erase(actions.begin());
-					}
-					break;
-				case MON_TYPE_IND: { // indicator
-					int ccut = e->cut;
-					switch (e->source) {
-					case 0: lVal = eData.HDD; cVal = data->HDD; break;
-					case 1: lVal = eData.NET; cVal = data->NET; break;
-					case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
-					case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
-					case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
-					case 5: lVal = eData.KBD; cVal = data->KBD; break;
-					}
+		vector<groupset> active = conf->activeProfile->lightsets;
+		AlienFX_SDK::Afx_group* grp;
 
-					if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
-						noDiff = false;
-						if (cVal > 0) {
-							actions.erase(actions.begin());
-							actions.push_back(e->to);
-						}
-					}
-					else
-						if (e->mode && cVal > 0) {
+		for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
+			vector<AlienFX_SDK::Afx_action> actions;
+			bool noDiff = true;
+			int lVal = 0, cVal = 0;
+			double fCoeff = 0.0;
+			if (grp = conf->afx_dev.GetGroupById(Iter->group)) {
+				if (Iter->fromColor && Iter->color.size()) {
+					actions.push_back(grp->have_power && conf->statePower ? Iter->color.back() : Iter->color.front());
+					actions.back().type = 0;
+				}
+				for (auto e = Iter->events.begin(); e != Iter->events.end(); e++) {
+					if (actions.empty())
+						actions.push_back(e->from);
+					switch (e->state) {
+					case MON_TYPE_POWER: // power
+						if (force || eData.ACP != data->ACP || eData.BST != data->BST || data->BST & 14) {
+							if (data->ACP) {
+								if ((data->BST & 8) && blinkStage)
+									actions[0] = e->to;
+							}
+							else
+								actions[0] = (data->BST & 6) && blinkStage ? AlienFX_SDK::Afx_action{ 0 } : e->to;
 							noDiff = false;
-							if (blinkStage) {
+						}
+						break;
+					case MON_TYPE_PERF: // counter
+						switch (e->source) {
+						case 0: lVal = eData.CPU; cVal = data->CPU; break;
+						case 1: lVal = eData.RAM; cVal = data->RAM; break;
+						case 2: lVal = eData.HDD; cVal = data->HDD; break;
+						case 3: lVal = eData.GPU; cVal = data->GPU; break;
+						case 4: lVal = eData.NET; cVal = data->NET; break;
+						case 5: lVal = eData.Temp; cVal = data->Temp; break;
+						case 6: lVal = eData.Batt; cVal = data->Batt; break;
+						case 7: lVal = eData.Fan; cVal = data->Fan; break;
+						case 8: lVal = eData.PWR; cVal = data->PWR; break;
+						}
+
+						if (force || (lVal != cVal && (lVal > e->cut || cVal > e->cut))) {
+							noDiff = false;
+							fCoeff = e->coeff = cVal > e->cut ? (cVal - e->cut) / (100.0 - e->cut) : 0.0;
+						}
+						if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
+							actions.push_back(e->to);
+						else {
+							actions.push_back(BlendPower(e->coeff, &actions.front(), &e->to));
+							if (!Iter->gauge)
+								actions.erase(actions.begin());
+						}
+						break;
+					case MON_TYPE_IND: { // indicator
+						int ccut = e->cut;
+						switch (e->source) {
+						case 0: lVal = eData.HDD; cVal = data->HDD; break;
+						case 1: lVal = eData.NET; cVal = data->NET; break;
+						case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
+						case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
+						case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
+						case 5: lVal = eData.KBD; cVal = data->KBD; break;
+						}
+
+						if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
+							noDiff = false;
+							if (cVal > 0) {
 								actions.erase(actions.begin());
 								actions.push_back(e->to);
 							}
 						}
-				} break;
+						else
+							if (e->mode && cVal > 0) {
+								noDiff = false;
+								if (blinkStage) {
+									actions.erase(actions.begin());
+									actions.push_back(e->to);
+								}
+							}
+					} break;
+					}
 				}
+
+				// check for change.
+				if (noDiff)	continue;
+				wasChanged = true;
+
+				if (grp->have_power)
+					if (conf->statePower) {
+						actions.push_back(Iter->color.back());
+					}
+					else {
+						actions.insert(actions.begin(), Iter->color.front());
+					}
+
+				SetZone(&(*Iter), actions, fCoeff);
 			}
-
-			// check for change.
-			if (noDiff)	continue;
-			wasChanged = true;
-
-			if (grp->have_power)
-				if (conf->statePower) {
-					actions.push_back(Iter->color.back());
-				}
-				else {
-					actions.insert(actions.begin(), Iter->color.front());
-				}
-
-			SetZone(&(*Iter), actions, fCoeff);
 		}
-	}
-	if (wasChanged) {
-		QueryUpdate();
+		if (wasChanged) {
+			QueryUpdate();
+		}
 	}
 }
 
@@ -311,7 +317,7 @@ void FXHelper::SetGridEffect(groupset* grp)
 		if (grp->gridop.phase < 0)
 			SetZone(grp, { from });
 		else {
-			power = (double)grp->gridop.phase / grp->effect.size;
+			power = (double)grp->gridop.phase / grp->gridop.size;
 			SetZone(grp, { BlendPower(power, &from, &to) });
 		}
 	}
@@ -328,7 +334,7 @@ void FXHelper::RefreshGrid(int tact) {
 			// calculate phase
 			int cTact = abs((long)tact - (long)ce->gridop.start_tact);
 			ce->gridop.phase = ce->effect.speed < 80 ? cTact / (80 - ce->effect.speed) : cTact * (ce->effect.speed - 79);
-			int effsize = (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->effect.size : ce->effect.size);
+			int effsize = (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->gridop.size : ce->gridop.size);
 			if (ce->gridop.phase > effsize) {
 				if (ce->effect.trigger == 1)
 					ce->gridop.phase %= effsize;
@@ -340,10 +346,10 @@ void FXHelper::RefreshGrid(int tact) {
 					//continue;
 				}
 			}
-			if (ce->gridop.phase > ce->effect.size) // circle
+			if (ce->gridop.phase > ce->gridop.size) // circle
 				ce->gridop.phase = effsize - ce->gridop.phase;
 			if (ce->flags & GAUGE_REVERSE)
-				ce->gridop.phase = ce->effect.size - ce->gridop.phase;
+				ce->gridop.phase = ce->gridop.size - ce->gridop.phase;
 
 			// Set lights
 			if (ce->gridop.oldphase != ce->gridop.phase) {
@@ -360,7 +366,7 @@ void FXHelper::RefreshGrid(int tact) {
 void FXHelper::QueryUpdate(bool force)
 {
 	if (conf->stateOn) {
-		LightQueryElement newBlock{/*did > 0 ? conf->afx_dev.GetDeviceById(LOWORD(did), HIWORD(did)) :*/ NULL, 0, force, true};
+		LightQueryElement newBlock{NULL, 0, force, true};
 		modifyQuery.lock();
 		lightQuery.push(newBlock);
 		modifyQuery.unlock();
@@ -376,21 +382,19 @@ void FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::Afx_action> actions
 			LightQueryElement newBlock{ dev, id, force, false, (byte)actions.size() };
 			for (int i = 0; i < newBlock.actsize; i++)
 				newBlock.actions[i] = actions[i];
-			if (did && newBlock.actsize) {
-				modifyQuery.lock();
-				lightQuery.push(newBlock);
-				modifyQuery.unlock();
-				SetEvent(haveNewElement);
-			}
+			modifyQuery.lock();
+			lightQuery.push(newBlock);
+			modifyQuery.unlock();
+			SetEvent(haveNewElement);
 		}
 	}
 }
 
-inline void FXHelper::RefreshMon()
-{
-	if (updateThread && conf->enableMon && conf->GetEffect() == 1)
-		RefreshCounters(&eData, true);
-}
+//inline void FXHelper::RefreshMon()
+//{
+//	if (updateThread && conf->enableMon && conf->GetEffect() == 1)
+//		RefreshCounters(&eData, true);
+//}
 
 void FXHelper::SetState(bool force) {
 	if (conf->SetStates() || force) {
@@ -402,16 +406,14 @@ void FXHelper::SetState(bool force) {
 				i->dev->ToggleState(conf->finalBrightness, &i->lights, conf->finalPBState);
 				switch (i->dev->GetVersion()) {
 				case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3:
-					if (conf->stateOn)
-						Refresh();
+					Refresh();
 					break;
 				case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
-					Refresh();
+					Refresh(true);
 				}
 			}
 		}
-		if (updates)
-			Start();
+		if (updates) Start();
 	}
 }
 
@@ -472,12 +474,12 @@ void FXHelper::Refresh(int forced)
 #endif
 
 	for (auto it = (*conf->active_set).begin(); it < (*conf->active_set).end(); it++) {
-		RefreshOne(&(*it), false);
+		RefreshOne(&(*it), false, forced);
 	}
 
 	if (!forced && eve)
 		switch (eve->effMode) {
-		case 1: RefreshMon(); break;
+		case 1: RefreshCounters(); break;
 		case 2: if (eve->capt) RefreshAmbient(eve->capt->imgz); break;
 		case 3: if (eve->audio) RefreshHaptics(eve->audio->freqs); break;
 		case 4: if (eve->grid) RefreshGrid(eve->grid->tact); break;
@@ -489,7 +491,7 @@ void FXHelper::Refresh(int forced)
 
 void FXHelper::RefreshOne(groupset* map, bool update, int force) {
 
-	if (conf->stateOn && map && map->color.size()) {
+	if ((conf->stateOn || force) && map && map->color.size()) {
 		SetZone(map, map->color, 0, force == 2);
 		if (update)
 			QueryUpdate(force == 2);

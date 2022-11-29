@@ -114,7 +114,7 @@ void EventHandler::StartEvents()
 		PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
 		PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 
-		fxhl->RefreshMon();
+		fxhl->RefreshCounters();
 		// start thread...
 		eventProc = new ThreadHelper(CEventProc, this, 300/*, THREAD_PRIORITY_NORMAL*/);
 		DebugPrint("Event thread start.\n");

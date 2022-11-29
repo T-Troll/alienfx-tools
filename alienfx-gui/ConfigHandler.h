@@ -30,7 +30,7 @@
 #define GAUGE_REVERSE	0x2
 
 #define GE_FLAG_CIRCLE	0x1
-#define GE_FLAG_ZONE	0x2
+#define GE_FLAG_RANDOM	0x2
 
 struct freq_map {
 	AlienFX_SDK::Afx_colorcode colorfrom;
@@ -67,7 +67,7 @@ struct grideffect {
 	byte trigger = 0;
 	byte type = 0;
 	byte speed = 80;
-	byte size = 0;
+	byte padding = 0;
 	byte width = 1;
 	WORD flags;
 	AlienFX_SDK::Afx_colorcode from;
@@ -77,7 +77,7 @@ struct grideffect {
 struct grideffop {
 	// operational info
 	bool passive = true;
-	int gridX, gridY, phase = -1, oldphase=-1;
+	int gridX, gridY, phase = -1, oldphase=-1, size;
 	UINT start_tact;
 };
 

@@ -393,11 +393,11 @@ void ConfigHandler::Save() {
 
 			if (iIter->color.size()) { // colors
 				fname = "Zone-colors-" + name + "-" + to_string(iIter->color.size());
-				AlienFX_SDK::Afx_action* buffer = new AlienFX_SDK::Afx_action[iIter->color.size()];
-				for (int i = 0; i < iIter->color.size(); i++)
-					buffer[i] = iIter->color[i];
-				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::Afx_action));
-				delete[] buffer;
+				//AlienFX_SDK::Afx_action* buffer = new AlienFX_SDK::Afx_action[iIter->color.size()];
+				//for (int i = 0; i < iIter->color.size(); i++)
+				//	buffer[i] = iIter->color[i];
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->color.data(), (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::Afx_action));
+				//delete[] buffer;
 			}
 			if (iIter->events.size()) { //events
 				fname = "Zone-eventlist-" + name;
