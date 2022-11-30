@@ -114,8 +114,8 @@ void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false) {
                                         }
                                         break;
                                     case 4: // grid effects
-                                        if (cs->effect.trigger) {
-                                            conf->colorGrid[ind] = { Code2Act(&cs->effect.from), Code2Act(&cs->effect.to) };
+                                        if (cs->effect.trigger && cs->effect.effectColors.size()) {
+                                            conf->colorGrid[ind] = { Code2Act(&cs->effect.effectColors.front()), Code2Act(&cs->effect.effectColors.back()) };
                                         }
                                         break;
                                     }
@@ -401,8 +401,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             else {
                 if (gridVal) {
                     RECT rectClip = ditem->rcItem;
-                    //GRADIENT_RECT gRect{ 0,1 };
-                    //TRIVERTEX vertex[2];
                     gridClr lightcolors = conf->colorGrid[ind];
                     if (lightcolors.first) {
                         // active

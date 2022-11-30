@@ -70,8 +70,9 @@ struct grideffect {
 	byte padding = 0;
 	byte width = 1;
 	WORD flags;
-	AlienFX_SDK::Afx_colorcode from;
-	AlienFX_SDK::Afx_colorcode to;
+	vector<AlienFX_SDK::Afx_colorcode> effectColors;
+	//AlienFX_SDK::Afx_colorcode from;
+	//AlienFX_SDK::Afx_colorcode to;
 };
 
 struct grideffop {
@@ -87,8 +88,6 @@ struct groupset {
 	vector<event> events;
 	vector<byte> ambients;
 	vector<freq_map> haptics;
-	//vector<AlienFX_SDK::afx_act> lastHap;
-	//double lastHapPower;
 	grideffect effect;
 	grideffop  gridop;
 	bool fromColor = false;

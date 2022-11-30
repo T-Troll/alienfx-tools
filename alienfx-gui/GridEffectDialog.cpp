@@ -6,18 +6,21 @@ extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 
 void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
-	if (mmap) {
+	if (mmap && mmap->effect.effectColors.size()) {
 		CheckDlgButton(hDlg, IDC_CHECK_CIRCLE, mmap->effect.flags & GE_FLAG_CIRCLE);
+		CheckDlgButton(hDlg, IDC_CHECK_RANDOM, mmap->effect.flags & GE_FLAG_RANDOM);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), mmap->effect.trigger);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), mmap->effect.type);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SPEED), TBM_SETPOS, true, mmap->effect.speed - 80);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), TBM_SETPOS, true, mmap->effect.width);
 		SetSlider(sTip2, mmap->effect.speed - 80);
 		SetSlider(sTip3, mmap->effect.width);
+		RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GEFROM), mmap ? &mmap->effect.effectColors.front() : NULL);
+		RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GETO), mmap ? &mmap->effect.effectColors.back() : NULL);
 	}
-	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_CIRCLE), mmap != NULL);
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GEFROM), mmap ? &mmap->effect.from : NULL);
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GETO), mmap ? &mmap->effect.to : NULL);
+	//EnableWindow(GetDlgItem(hDlg, IDC_CHECK_CIRCLE), mmap != NULL);
+	//RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GEFROM), mmap ? &mmap->effect.effectColors.front() : NULL);
+	//RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_GETO), mmap ? &mmap->effect.effectColors.back() : NULL);
 }
 
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -62,11 +65,14 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_CHECK_CIRCLE:
 			SetBitMask(mmap->effect.flags, GE_FLAG_CIRCLE, state);
 			break;
+		case IDC_CHECK_RANDOM:
+			SetBitMask(mmap->effect.flags, GE_FLAG_RANDOM, state);
+			break;
 		case IDC_BUTTON_GEFROM:
-			SetColor(GetDlgItem(hDlg, IDC_BUTTON_GEFROM), &mmap->effect.from);
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_GEFROM), &mmap->effect.effectColors.front());
 			break;
 		case IDC_BUTTON_GETO:
-			SetColor(GetDlgItem(hDlg, IDC_BUTTON_GETO), &mmap->effect.to);
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_GETO), &mmap->effect.effectColors.back());
 			break;
 		}
 	} break;
@@ -85,9 +91,9 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			}
 		} break;
 	case WM_DRAWITEM:
-		if (mmap) {
+		if (mmap && mmap->effect.effectColors.size()) {
 			case IDC_BUTTON_GEFROM:
-			AlienFX_SDK::Afx_colorcode* c = ((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_BUTTON_GEFROM ? &mmap->effect.from : &mmap->effect.to;
+			AlienFX_SDK::Afx_colorcode* c = ((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_BUTTON_GEFROM ? &mmap->effect.effectColors.front() : &mmap->effect.effectColors.back();
 			RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
 		}
 	    break;

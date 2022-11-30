@@ -24,9 +24,14 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 		grp->gridop.size = max(cx, cy);
 		break;
 	}
+	if (grp->effect.flags & GE_FLAG_RANDOM) {
+		// set color to random
+		uniform_int_distribution<DWORD> ccomp(0x00404040, 0x00ffffff);
+		grp->effect.effectColors.back().ci = ccomp(rnd);
+	}
 	grp->gridop.gridX = x;
 	grp->gridop.gridY = y;
-	fxhl->SetZone(grp, { *Code2Act(&grp->effect.from) });
+	fxhl->SetZone(grp, { *Code2Act(&grp->effect.effectColors.front()) });
 	grp->gridop.start_tact = tact;
 	grp->gridop.passive = false;
 }
@@ -78,7 +83,7 @@ void GridHelper::StartCommonRun(groupset* ce, zonemap* cz) {
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
 	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
-		if (/*ce->gauge && */ce->effect.trigger && ce->gridop.passive) {
+		if (ce->effect.trigger && ce->gridop.passive) {
 			zonemap* cz = conf->FindZoneMap(ce->group);
 			switch (ce->effect.trigger) {
 			case 1: // Continues

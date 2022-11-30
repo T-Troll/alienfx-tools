@@ -72,14 +72,18 @@ void MonHelper::Stop() {
 }
 
 void MonHelper::SetCurrentGmode(WORD newMode) {
-	if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && acpi->GetGMode() != newMode) {
-		fan_conf->lastProf->gmode = newMode;
-		if (newMode && acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
-			acpi->SetPower(acpi->powers[1]);
-		acpi->SetGMode(newMode);
-		if (!newMode)
-			acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+	if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+		if (acpi->GetGMode() != newMode) {
+			fan_conf->lastProf->gmode = newMode;
+			if (newMode && acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
+				acpi->SetPower(acpi->powers[1]);
+			acpi->SetGMode(newMode);
+			if (!newMode)
+				acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+		}
 	}
+	else
+		fan_conf->lastProf->gmode = 0;
 }
 
 void CMonProc(LPVOID param) {

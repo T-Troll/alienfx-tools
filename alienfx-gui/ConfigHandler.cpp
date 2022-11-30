@@ -288,7 +288,12 @@ void ConfigHandler::Load() {
 		}
 		if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			memcpy(&gset->effect, data, sizeof(grideffect));
+			memcpy(&gset->effect, data, 7);
+			AlienFX_SDK::Afx_colorcode cc;
+			for (unsigned pos = 7; pos < lend; pos += 4) {
+				cc.ci = *(DWORD*)(data + pos);
+				gset->effect.effectColors.push_back(cc);
+			}
 		}
 	}
 
@@ -393,11 +398,7 @@ void ConfigHandler::Save() {
 
 			if (iIter->color.size()) { // colors
 				fname = "Zone-colors-" + name + "-" + to_string(iIter->color.size());
-				//AlienFX_SDK::Afx_action* buffer = new AlienFX_SDK::Afx_action[iIter->color.size()];
-				//for (int i = 0; i < iIter->color.size(); i++)
-				//	buffer[i] = iIter->color[i];
 				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->color.data(), (DWORD)iIter->color.size() * sizeof(AlienFX_SDK::Afx_action));
-				//delete[] buffer;
 			}
 			if (iIter->events.size()) { //events
 				fname = "Zone-eventlist-" + name;
@@ -430,7 +431,13 @@ void ConfigHandler::Save() {
 			}
 			if (iIter->effect.trigger) { // Grid effects
 				fname = "Zone-effect-" + name;
-				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)&iIter->effect, sizeof(grideffect));
+				DWORD size = (DWORD)(7 + iIter->effect.effectColors.size() * sizeof(DWORD));
+				byte* buffer = new byte[size];
+				memcpy(buffer, &iIter->effect, 7);
+				for (int cc = 0; cc < iIter->effect.effectColors.size(); cc++)
+					*(DWORD*)(buffer + 7 + cc * sizeof(DWORD)) = iIter->effect.effectColors[cc].ci;
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, buffer, size);
+				delete[] buffer;
 			}
 		}
 

@@ -276,7 +276,7 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 void FXHelper::SetGridEffect(groupset* grp)
 {
 	double power;
-	AlienFX_SDK::Afx_action from = *Code2Act(&grp->effect.from), to = *Code2Act(&grp->effect.to);
+	AlienFX_SDK::Afx_action from = *Code2Act(&grp->effect.effectColors.front()), to = *Code2Act(&grp->effect.effectColors.back());
 
 	if (grp->gauge) {
 		auto zone = conf->FindZoneMap(grp->group);
@@ -335,16 +335,16 @@ void FXHelper::RefreshGrid(int tact) {
 			int cTact = abs((long)tact - (long)ce->gridop.start_tact);
 			ce->gridop.phase = ce->effect.speed < 80 ? cTact / (80 - ce->effect.speed) : cTact * (ce->effect.speed - 79);
 			int effsize = (ce->effect.flags & GE_FLAG_CIRCLE ? 2 * ce->gridop.size : ce->gridop.size);
-			if (ce->gridop.phase > effsize) {
-				if (ce->effect.trigger == 1)
-					ce->gridop.phase %= effsize;
-				else {
+			if (ce->gridop.phase == effsize) {
+				//if (ce->effect.trigger == 1)
+				//	ce->gridop.phase %= effsize;
+				//else {
 					ce->gridop.passive = true;
 					ce->gridop.phase = -1;
 					//SetZone(&(*ce), { *Code2Act(&ce->effect.from) });
-					wasChanged = true;
-					//continue;
-				}
+					//wasChanged = true;
+					continue;
+				//}
 			}
 			if (ce->gridop.phase > ce->gridop.size) // circle
 				ce->gridop.phase = effsize - ce->gridop.phase;

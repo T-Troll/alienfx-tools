@@ -176,6 +176,8 @@
 #define IDC_TRIGGER_POWER_BATTERY       1164
 #define IDC_SLIDER_SPEED                1168
 #define IDC_CHECK_CIRCLE                1169
+#define IDC_CHECK_CIRCLE2               1170
+#define IDC_CHECK_RANDOM                1170
 #define IDC_SLIDER_WIDTH                1171
 #define IDC_COMBO_TRIGGER               1172
 #define IDC_COMBO_GEFFTYPE              1173
