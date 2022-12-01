@@ -95,6 +95,7 @@
 #define IDC_LEFFECTS_LIST               1066
 #define IDC_BUT_ADD_EFFECT              1068
 #define IDC_BUTT_REMOVE_EFFECT          1069
+#define IDC_BUT_REMOVE_EFFECT           1069
 #define IDC_CHECK_PROFDIM               1071
 #define IDC_CHECK_FOREGROUND            1073
 #define IDC_BUT_PROFRESET               1076
@@ -176,12 +177,12 @@
 #define IDC_TRIGGER_POWER_BATTERY       1164
 #define IDC_SLIDER_SPEED                1168
 #define IDC_CHECK_CIRCLE                1169
-#define IDC_CHECK_CIRCLE2               1170
 #define IDC_CHECK_RANDOM                1170
 #define IDC_SLIDER_WIDTH                1171
 #define IDC_COMBO_TRIGGER               1172
 #define IDC_COMBO_GEFFTYPE              1173
 #define IDC_BUTTON_GEFROM               1175
+#define IDC_BUT_GECOLOR                 1175
 #define IDC_BUTTON_GETO                 1176
 #define IDC_BUT_KEY                     1176
 #define IDC_DE_LIST                     1178
@@ -192,7 +193,12 @@
 #define IDC_BUTT_REMOVE_EVENT           1182
 #define IDC_EVENTS_LIST                 1183
 #define IDC_BUT_ADD_EVENT               1184
+#define IDC_CHECK_PHASE                 1184
 #define IDC_BUTT_EVENT_UP               1185
+#define IDC_CHECK_BACKGROUND            1185
+#define IDC_COLORS_LIST                 1186
+#define IDC_BUT_ADD_COLOR               1187
+#define IDC_BUT_REMOVE_COLOR            1188
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -215,7 +221,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        166
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1184
+#define _APS_NEXT_CONTROL_VALUE         1189
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

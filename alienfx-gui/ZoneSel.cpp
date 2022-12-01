@@ -4,6 +4,7 @@
 extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern bool IsGroupUnused(DWORD gid);
 extern FXHelper* fxhl;
+extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 
 HWND zsDlg;
 
@@ -136,6 +137,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 				UpdateZoneList();
 				fxhl->Refresh();
+				RedrawGridButtonZone(NULL, true);
 			}
 			break;
 		case IDC_CHECK_SPECTRUM:

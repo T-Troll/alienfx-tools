@@ -78,7 +78,6 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 		fxhl->RefreshOne(mmap);
 	}
 	SetEffectData(hDlg, mmap);
-	//ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);// width);
 	ListView_EnsureVisible(eff_list, effID, false);
 	RedrawGridButtonZone(NULL, true);
 }
@@ -165,8 +164,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				ChangeAddColor(hDlg, mmap, (int)mmap->color.size());
 			}
 			break;
-		case IDC_BUTT_REMOVE_EFFECT:
-			if (HIWORD(wParam) == BN_CLICKED && mmap) {
+		case IDC_BUT_REMOVE_EFFECT:
+			if (HIWORD(wParam) == BN_CLICKED && mmap && effID < mmap->color.size()) {
 				if (conf->afx_dev.GetGroupById(mmap->group)->have_power) {
 					mmap->color.clear();
 					effID = 0;
@@ -179,7 +178,6 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				RebuildEffectList(hDlg, mmap);
 			}
 			break;
-		//default: return false;
 		}
 	} break;
 	case WM_HSCROLL:
@@ -203,15 +201,14 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
 	} break;
 	case WM_NOTIFY:
-		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_LEFFECTS_LIST:
+		if (((NMHDR*)lParam)->idFrom == IDC_LEFFECTS_LIST) {
 			switch (((NMHDR*) lParam)->code) {
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
 				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
-					effID = effID = lPoint->iItem;
+					effID = lPoint->iItem;
 					SetEffectData(hDlg, mmap);
 				}
 			} break;

@@ -1,7 +1,6 @@
 #pragma once
 #include "ConfigHandler.h"
 #include "ThreadHelper.h"
-#include <random>
 
 class GridHelper {
 private:
@@ -13,5 +12,4 @@ public:
 	void StartCommonRun(groupset* ce, zonemap* cz);
 	void StartGridRun(groupset* grp, zonemap* cz, int x, int y);
 	UINT tact = 0;
-	mt19937 rnd;
 };

@@ -9,31 +9,34 @@ extern FXHelper* fxhl;
 extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
-	int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);
-	switch (grp->gauge) {
-	case 1:
-		grp->gridop.size = cx;
-		break;
-	case 2:
-		grp->gridop.size = cy;
-		break;
-	case 0: case 3: case 4:
-		grp->gridop.size = cx + cy;
-		break;
-	case 5:
-		grp->gridop.size = max(cx, cy);
-		break;
+	if (grp->effect.effectColors.size() > 1) {
+		int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);
+		switch (grp->gauge) {
+		case 1:
+			grp->gridop.size = cx;
+			break;
+		case 2:
+			grp->gridop.size = cy;
+			break;
+		case 0: case 3: case 4:
+			grp->gridop.size = cx + cy;
+			break;
+		case 5:
+			grp->gridop.size = max(cx, cy);
+			break;
+		}
+		if (grp->effect.flags & GE_FLAG_RANDOM) {
+			// set color to random
+			uniform_int_distribution<DWORD> ccomp(0x00404040, 0x00ffffff);
+			for (auto cl = grp->effect.effectColors.begin() + 1; cl != grp->effect.effectColors.end(); cl++)
+				cl->ci = ccomp(conf->rnd);
+		}
+		grp->gridop.gridX = x;
+		grp->gridop.gridY = y;
+		grp->gridop.start_tact = tact;
+		grp->gridop.oldphase = -1;
+		grp->gridop.passive = false;
 	}
-	if (grp->effect.flags & GE_FLAG_RANDOM) {
-		// set color to random
-		uniform_int_distribution<DWORD> ccomp(0x00404040, 0x00ffffff);
-		grp->effect.effectColors.back().ci = ccomp(rnd);
-	}
-	grp->gridop.gridX = x;
-	grp->gridop.gridY = y;
-	fxhl->SetZone(grp, { *Code2Act(&grp->effect.effectColors.front()) });
-	grp->gridop.start_tact = tact;
-	grp->gridop.passive = false;
 }
 
 LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -92,7 +95,7 @@ void GridTriggerWatch(LPVOID param) {
 			case 2: { // Random
 				uniform_int_distribution<int> pntX(0, cz->xMax-1);
 				uniform_int_distribution<int> pntY(0, cz->yMax-1);
-				src->StartGridRun(&(*ce), cz, pntX(src->rnd), pntY(src->rnd));
+				src->StartGridRun(&(*ce), cz, pntX(conf->rnd), pntY(conf->rnd));
 			} break;
 			case 4: { // Indicator
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)

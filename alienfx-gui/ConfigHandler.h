@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <random>
 #include "AlienFX_SDK.h"
 #include "ConfigFan.h"
 
@@ -16,6 +17,7 @@
 #define PROF_TRIGGER_AC		 0x1
 #define PROF_TRIGGER_BATTERY 0x2
 
+// event types
 #define LEVENT_COLOR	0x1
 #define LEVENT_POWER	0x2
 #define LEVENT_PERF		0x4
@@ -26,11 +28,15 @@
 #define MON_TYPE_PERF	1
 #define MON_TYPE_IND	2
 
+// Gauge flags
 #define GAUGE_GRADIENT	0x1
 #define GAUGE_REVERSE	0x2
 
+// Grid effect flags
 #define GE_FLAG_CIRCLE	0x1
 #define GE_FLAG_RANDOM	0x2
+#define GE_FLAG_PHASE	0x4
+#define GE_FLAG_BACK	0x8
 
 struct freq_map {
 	AlienFX_SDK::Afx_colorcode colorfrom;
@@ -78,7 +84,10 @@ struct grideffect {
 struct grideffop {
 	// operational info
 	bool passive = true;
-	int gridX, gridY, phase = -1, oldphase=-1, size;
+	int gridX, gridY, 
+		//phase = -1, 
+		oldphase=-1, 
+		size;
 	UINT start_tact;
 };
 
@@ -171,10 +180,14 @@ public:
 
 	ConfigFan *fan_conf = NULL;
 
+	// Profiles and zones
 	vector<groupset>* active_set;
 	vector<profile*> profiles;
 	vector<zonemap> zoneMaps;
 	profile* activeProfile = NULL;
+
+	// Random
+	mt19937 rnd;
 
 	// Grid-related
 	AlienFX_SDK::Afx_grid* mainGrid = NULL;
