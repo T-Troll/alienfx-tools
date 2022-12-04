@@ -63,24 +63,24 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 				SetLight(i->did, i->lid, actions, force);
 		}
 		else {
-			zonemap* zone = conf->FindZoneMap(grp->group);
-			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
+			zonemap zone = *conf->FindZoneMap(grp->group);
+			for (auto t = zone.lightMap.begin(); t < zone.lightMap.end(); t++)
 				switch (grp->gauge) {
 				case 1: // horizontal
-					SetZoneLight(t->light, t->x, zone->xMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, t->x, zone.xMax, grp->flags, actions, power, force);
 					break;
 				case 2: // vertical
-					SetZoneLight(t->light, t->y, zone->yMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, t->y, zone.yMax, grp->flags, actions, power, force);
 					break;
 				case 3: // diagonal
-					SetZoneLight(t->light, t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, t->x + t->y, zone.xMax + zone.yMax, grp->flags, actions, power, force);
 					break;
 				case 4: // back diagonal
-					SetZoneLight(t->light, zone->xMax - t->x + t->y, zone->xMax + zone->yMax, grp->flags, actions, power, force);
+					SetZoneLight(t->light, zone.xMax - t->x + t->y, zone.xMax + zone.yMax, grp->flags, actions, power, force);
 					break;
 				case 5: // radial
-					float px = abs(((float)zone->xMax)/2 - t->x), py = abs(((float)zone->yMax)/2 - t->y);
-					int radius = (int)(sqrt(zone->xMax * zone->xMax + zone->yMax * zone->yMax) / 2),
+					float px = abs(((float)zone.xMax)/2 - t->x), py = abs(((float)zone.yMax)/2 - t->y);
+					int radius = (int)(sqrt(zone.xMax * zone.xMax + zone.yMax * zone.yMax) / 2),
 						weight = (int)sqrt(px * px + py * py);
 					SetZoneLight(t->light, weight, radius, grp->flags, actions, power, force);
 					break;
@@ -274,39 +274,39 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 	}
 }
 
-void FXHelper::RefreshGrid(int tact) {
+void FXHelper::RefreshGrid(long tact) {
 	bool wasChanged = false;
 	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
 		if (!ce->gridop.passive && ce->effect.effectColors.size()) {
 			// prepare vars..
-			static grideffop* effop = &ce->gridop;
-			static grideffect* eff = &ce->effect;
+			grideffop* effop = &ce->gridop;
+			grideffect* eff = &ce->effect;
 			// calculate phase
-			int cTact = abs((long)tact - (long)effop->start_tact);
+			int cTact = abs(tact - effop->start_tact);
 			int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
-			int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() - 1;
-			int realsize = effop->size + eff->width - 1;
-			int effsize = eff->flags & GE_FLAG_CIRCLE ? realsize << 1 : realsize;
+			int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() /*- 1*/;
+			int realsize = effop->size + eff->width;
+			int effsize = eff->flags & GE_FLAG_CIRCLE ? (realsize << 1): realsize;
 
-			if (phase == effsize * lmp) {
+			int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase :
+				phase / effsize) % (eff->effectColors.size());
+
+			AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
+				&eff->effectColors[colorIndex]),
+				to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
+
+			if (phase == effsize * lmp || !memcmp(&from, &to, sizeof(AlienFX_SDK::Afx_action))) {
 				effop->passive = true;
 				continue;
 			}
 
-			int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase :
-				phase / effsize) % (eff->effectColors.size() - 1);
-
-			AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
-				&eff->effectColors[colorIndex]),
-				to = *Code2Act(&eff->effectColors[colorIndex + 1]);
-
 			phase %= effsize;
 
-			if (phase > realsize) // circle by color and direction
+			if (phase >= realsize) // circle by color and direction
 				phase = effsize - phase;
 
 			if (ce->flags & GAUGE_REVERSE)
-				phase = realsize - phase;
+				phase = realsize - phase - 1;
 
 			// Set lights
 			if (effop->oldphase != phase) {
@@ -314,39 +314,46 @@ void FXHelper::RefreshGrid(int tact) {
 				double power = 0;
 
 				if (ce->gauge) {
-					auto zone = conf->FindZoneMap(ce->group);
+					auto zone = *conf->FindZoneMap(ce->group);
 					// Old phase cleanup
-					if (effop->oldphase >= 0)
-						for (int dist = 0; dist < eff->width; dist++)
-							SetGaugeGrid(&(*ce), zone, effop->oldphase - dist, &from);
-					else {
+					if (effop->oldphase < 0) {
 						vector<AlienFX_SDK::Afx_action> fin{ from };
 						SetZone(&(*ce), &fin);
-					}
+					} else
+						for (int dist = 0; dist < eff->width; dist++)
+							SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
 
+					// Check for gradient zones - in this case all phases updated!
 					if (ce->flags & GAUGE_GRADIENT) {
-						// Check for gradient zones - in this case all phases updated!
 						for (int nf = 0; nf < effop->size - phase; nf++) {
 							power = (double)nf / (effop->size - phase);
-							SetGaugeGrid(&(*ce), zone, effop->size - nf, &BlendPower(power, &from, &to));
+							SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
 						}
 					}
 
 					// Fill new phase colors
-					int halfW = eff->width / 2;
-					for (int dist = 0; dist < eff->width; dist++) {
-						if (phase - dist >= 0) {
-							// make final color for this distance
-							power = 1.0;
-							if (halfW) // do not need if size < 2
-								switch (eff->type) {
-								case 1: // wave
-									power -= (double)abs(halfW - dist) / halfW;
-									break;
-								case 2: // gradient
-									power -= (double)(dist) / eff->width; // just for fun for now
-								}
-							SetGaugeGrid(&(*ce), zone, phase - dist, &BlendPower(power, &from, &to));
+					if (eff->type == 3) { // Filled
+						for (int nf = 0; nf < phase; nf++) {
+							power = ce->flags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
+							SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
+						}
+					}
+					else {
+						int halfW = eff->width / 2;
+						for (int dist = 0; dist < eff->width; dist++) {
+							if (phase - dist >= 0) {
+								// make final color for this distance
+								power = 1.0;
+								if (halfW) // do not need if size < 2
+									switch (eff->type) {
+									case 1: // wave
+										power -= (double)abs(halfW - dist) / halfW;
+										break;
+									case 2: // gradient
+										power -= (double)(dist) / eff->width;
+									}
+								SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &from, &to));
+							}
 						}
 					}
 				}

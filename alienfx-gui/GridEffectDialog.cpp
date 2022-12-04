@@ -82,7 +82,7 @@ void ChangeAddGEColor(HWND hDlg, groupset* mmap, int newColorID) {
 }
 
 void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
-	if (mmap && mmap->effect.effectColors.size()) {
+	if (mmap) {
 		CheckDlgButton(hDlg, IDC_CHECK_CIRCLE, mmap->effect.flags & GE_FLAG_CIRCLE);
 		CheckDlgButton(hDlg, IDC_CHECK_RANDOM, mmap->effect.flags & GE_FLAG_RANDOM);
 		CheckDlgButton(hDlg, IDC_CHECK_PHASE, mmap->effect.flags & GE_FLAG_PHASE);
@@ -108,7 +108,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_INITDIALOG:
 	{
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Random", "Keyboard", "Event"});
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient" });
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient", "Fill" });
 		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(-80, 80));
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
 		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_SPEED), sTip2);
@@ -117,6 +117,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 	} break;
 	case WM_APP + 2: {
+		mmap = FindMapping(eItem);
 		UpdateEffectInfo(hDlg, mmap);
 	} break;
 	case WM_COMMAND: {
@@ -128,6 +129,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				RedrawGridButtonZone(NULL, true);
 			}
 			break;
 		case IDC_COMBO_GEFFTYPE:

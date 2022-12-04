@@ -186,12 +186,13 @@ Use "+" and "-" buttons to add/remove colors there.
 Check boxes defines how colors will be used in phase sequence:
 - "Per phase" - each new phase will use next color. If it off, effect will run full cycle with one color, then full cycle next one.
 - "Keep background" - first color ("background") will be always used. Otherwise, previous color in sequence will be used as a background.
-- "Random" - all colors, except first one will be randomized every new cycle.
+- "Random" - all colors will be randomized every new cycle.
 
 Effect types define how the zone should be changed (defined by point and width):
 - Running light - simple color change.
 - Wave - colors will fade to background at the borders of the changed area.
 - Gradient - colors will fade to background inside the changed area.
+- Fill - space between start point and current active point will be filled by color or gradient.
 
 If the zone Gauge settings have "Gradient" enabled, zone outside changed area will be filled with gradient color between background at borders and active color at changed area border.  
 If the zone Gauge type set to "Off", all zone lights will morph between background and active colors as phase changed, otherwise gauge settings used for direction and style.

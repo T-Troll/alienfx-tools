@@ -62,7 +62,7 @@ public:
 	void RefreshCounters(LightEventData *data = NULL, bool force = false);
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
-	void RefreshGrid(int tact);
+	void RefreshGrid(long tact);
 	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0, bool force = false);
 	void SetState(bool force = false);
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);

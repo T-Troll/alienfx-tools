@@ -28,7 +28,7 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 		if (grp->effect.flags & GE_FLAG_RANDOM) {
 			// set color to random
 			uniform_int_distribution<DWORD> ccomp(0x00404040, 0x00ffffff);
-			for (auto cl = grp->effect.effectColors.begin() + 1; cl != grp->effect.effectColors.end(); cl++)
+			for (auto cl = grp->effect.effectColors.begin(); cl != grp->effect.effectColors.end(); cl++)
 				cl->ci = ccomp(conf->rnd);
 		}
 		grp->gridop.gridX = x;
@@ -66,38 +66,25 @@ void GridUpdate(LPVOID param) {
 		fxhl->RefreshGrid(((GridHelper*)param)->tact++);
 }
 
-void GridHelper::StartCommonRun(groupset* ce, zonemap* cz) {
-	switch (ce->gauge) {
-	case 0: case 1:
-		StartGridRun(&(*ce), cz, 0, 0);
-		break;
-	case 2:
-		StartGridRun(&(*ce), cz, 0, 0);
-		break;
-	case 3: case 4:
-		StartGridRun(&(*ce), cz, 0, 0);
-		break;
-	case 5:
-		StartGridRun(&(*ce), cz, cz->xMax / 2, cz->yMax / 2);
-		break;
-	}
+void GridHelper::StartCommonRun(groupset* ce) {
+	zonemap* cz = conf->FindZoneMap(ce->group);
+	if (ce->effect.trigger == 2) {
+		uniform_int_distribution<int> pntX(0, cz->xMax - 1);
+		uniform_int_distribution<int> pntY(0, cz->yMax - 1);
+		StartGridRun(&(*ce), cz, pntX(conf->rnd), pntY(conf->rnd));
+	} else
+		if (ce->gauge == 5)
+			StartGridRun(&(*ce), cz, cz->xMax / 2, cz->yMax / 2);
+		else
+			StartGridRun(&(*ce), cz, 0, 0);
 }
 
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
 	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
 		if (ce->effect.trigger && ce->gridop.passive) {
-			zonemap* cz = conf->FindZoneMap(ce->group);
-			switch (ce->effect.trigger) {
-			case 1: // Continues
-				src->StartCommonRun(&(*ce), cz);
-				break;
-			case 2: { // Random
-				uniform_int_distribution<int> pntX(0, cz->xMax-1);
-				uniform_int_distribution<int> pntY(0, cz->yMax-1);
-				src->StartGridRun(&(*ce), cz, pntX(conf->rnd), pntY(conf->rnd));
-			} break;
-			case 4: { // Indicator
+			//zonemap* cz = conf->FindZoneMap(ce->group);
+			if (ce->effect.trigger == 4) { // indicator
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)
 					if (ev->state == MON_TYPE_IND) {
 						int ccut = ev->cut, cVal = 0;
@@ -112,11 +99,11 @@ void GridTriggerWatch(LPVOID param) {
 
 						if (cVal > 0) {
 							// Triggering effect...
-							src->StartCommonRun(&(*ce), cz);
+							src->StartCommonRun(&(*ce));
 						}
 					}
-			} break;
-			}
+			} else
+				src->StartCommonRun(&(*ce));
 		}
 	}
 }

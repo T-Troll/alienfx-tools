@@ -88,7 +88,7 @@ struct grideffop {
 		//phase = -1, 
 		oldphase=-1, 
 		size;
-	UINT start_tact;
+	long start_tact;
 };
 
 struct groupset {
