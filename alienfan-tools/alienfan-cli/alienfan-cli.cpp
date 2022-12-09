@@ -9,6 +9,11 @@
 
 #pragma comment(lib, "PowrProf.lib")
 
+//extern "C" {
+//    __declspec(dllexport) DWORD NvOptimusEnablement;
+//    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance;
+//}
+
 using namespace std;
 
 struct ARG {
@@ -151,7 +156,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.7.1\n");
+    printf("AlienFan-CLI v7.9.0\n");
 
     AlienFan_SDK::Lights* lights = new AlienFan_SDK::Lights(&acpi);
 
@@ -221,6 +226,10 @@ int main(int argc, char* argv[])
             printf("Power set to %d (result %d)\n", args[0].num, acpi.SetPower(acpi.powers[args[0].num]));
             continue;
         }
+        //if (command == "forcegpu" && CheckArgs(1, 2)) {
+        //    NvOptimusEnablement = args[0].num;
+        //    continue;
+        //}
         //if (command == "setgpu" && CheckArgs(command, 1, args.size())) {
 
         //    printf("GPU limit set to %d (result %d)\n", args[0].num, acpi->SetGPU(args[0].num));

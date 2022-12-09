@@ -181,7 +181,7 @@ public:
 	ConfigFan *fan_conf = NULL;
 
 	// Profiles and zones
-	vector<groupset>* active_set;
+	//vector<groupset>* active_set;
 	vector<profile*> profiles;
 	vector<zonemap> zoneMaps;
 	profile* activeProfile = NULL;
@@ -204,16 +204,14 @@ public:
 	void Load();
 	bool SamePower(WORD flags, bool anyFit = false);
 	void Save();
-	//void SortAllGauge();
+	groupset* FindMapping(int mid, vector<groupset>* set = NULL);
 	zonemap* FindZoneMap(int gid);
 	zonemap* SortGroupGauge(int gid);
-	//vector<deviceeffect>::iterator FindDevEffect(profile* prof, AlienFX_SDK::afx_device* dev, int type);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);
 	bool SetStates();
-	//void SetToolTip();
 	void SetIconState();
 	bool IsDimmed();
 	void SetDimmed();

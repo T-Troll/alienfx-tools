@@ -59,7 +59,7 @@ public:
 	map<WORD, sen_block>* FindFanBlock(short, fan_profile* prof = NULL);
 	void AddSensorCurve(fan_profile* prof, WORD fid, WORD sid, byte* data, DWORD lend);
 	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
-	void ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi);
+	//void ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi);
 	void SetBoostsAndNames(AlienFan_SDK::Control*);
 
 	void Load();

@@ -12,10 +12,11 @@ extern void ResizeTab(HWND);
 
 extern BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+extern void UpdateZoneList();
 
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
-extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+extern void RedrawGridButtonZone(RECT* what = NULL);
 
 extern void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func);
 extern void ClearOldTabs(HWND);
@@ -23,6 +24,8 @@ extern void ClearOldTabs(HWND);
 bool firstInit = false;
 extern int tabLightSel;
 extern HWND zsDlg;
+
+void OnLightSelChanged(HWND hwndDlg);
 
 BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID);
@@ -39,10 +42,23 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid);
 	} break;
-	case WM_APP + 2:
-		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 1);
-		RedrawGridButtonZone();
-	break;
+	case WM_APP + 2: {
+		groupset* mmap = conf->FindMapping(eItem);
+		if (mmap) {
+			zonemap* zone = conf->FindZoneMap(mmap->group);
+			if (zone->gridID != conf->mainGrid->id) {
+				// Switch grid tab
+				vector<AlienFX_SDK::Afx_grid>* grids = conf->afx_dev.GetGrids();
+				for (int i = 0; i < grids->size(); i++)
+					if (zone->gridID == (*grids)[i].id) {
+						TabCtrl_SetCurSel(gridTab, i);
+						OnGridSelChanged(gridTab);
+					}
+			}
+			RedrawGridButtonZone();
+			SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 1);
+		}
+	} break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_TAB_COLOR_GRID: {
@@ -93,10 +109,6 @@ void OnLightSelChanged(HWND hwndDlg)
 			pHdr->hwndControl = NULL;
 		}
 		if (tabLightSel == TAB_DEVICES) {
-			//if (pHdr->hwndControl) {
-			//	DestroyWindow(pHdr->hwndControl);
-			//	pHdr->hwndControl = NULL;
-			//}
 			if (oldTab != TAB_DEVICES) {
 				DestroyWindow(pHdr->hwndDisplay);
 				pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabLightSel], hwndDlg, pHdr->apProc[tabLightSel]);
@@ -114,6 +126,7 @@ void OnLightSelChanged(HWND hwndDlg)
 			GetWindowRect(GetDlgItem(pHdr->hwndDisplay, IDC_STATIC_CONTROLS), &mRect);
 			ScreenToClient(pHdr->hwndDisplay, (LPPOINT)&mRect);
 			SetWindowPos(pHdr->hwndControl, NULL, mRect.left, mRect.top, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
+			UpdateZoneList();
 		}
 		ResizeTab(pHdr->hwndDisplay);
 	}

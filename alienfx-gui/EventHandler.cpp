@@ -83,7 +83,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		fxhl->UpdateGlobalEffect(NULL, true);
 		modifyProfile.lock();
 		conf->activeProfile = newID;
-		conf->active_set = &newID->lightsets;
+		//conf->active_set = &newID->lightsets;
 		conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 		modifyProfile.unlock();
 

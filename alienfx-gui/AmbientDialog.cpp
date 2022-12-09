@@ -4,7 +4,7 @@
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 
-extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
 extern EventHandler* eve;
 
@@ -53,7 +53,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
         gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
 
-    groupset* map = FindMapping(eItem);
+    groupset* map = conf->FindMapping(eItem);
 
     switch (message) {
     case WM_INITDIALOG:

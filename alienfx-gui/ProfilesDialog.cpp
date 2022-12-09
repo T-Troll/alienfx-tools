@@ -11,7 +11,7 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveUnused(vector<groupset>* lightsets);
 extern bool IsGroupUnused(DWORD gid);
-extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
@@ -349,7 +349,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_BUT_COPYACTIVE:
 			if (conf->activeProfile->id != prof->id) {
 				for (auto t = conf->activeProfile->lightsets.begin(); t < conf->activeProfile->lightsets.end(); t++) {
-					groupset* lset = FindMapping(t->group, &prof->lightsets);
+					groupset* lset = conf->FindMapping(t->group, &prof->lightsets);
 					if (!lset) {
 						prof->lightsets.push_back({ t->group });
 						lset = &prof->lightsets.back();

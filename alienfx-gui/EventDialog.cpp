@@ -4,9 +4,10 @@
 
 extern bool SetColor(HWND hDlg, groupset* mmap, AlienFX_SDK::Afx_action* map);
 extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
-extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+//extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+extern void RedrawZoneGrid(DWORD grpid);
 
 extern FXHelper* fxhl;
 extern MonHelper* mon;
@@ -65,26 +66,26 @@ void RebuildEventList(HWND hDlg, groupset* mmap) {
 				lItem.state = 0;
 			ListView_InsertItem(eff_list, &lItem);
 		}
+		RedrawZoneGrid(mmap->group);
 	}
 	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, mmap && mmap->fromColor ? BST_CHECKED : BST_UNCHECKED);
 	SetEventData(hDlg, GetEventData(mmap));
 	ListView_EnsureVisible(eff_list, eventID, false);
-	RedrawGridButtonZone(NULL, true);
 }
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
-	groupset* map = FindMapping(eItem);
+	groupset* map = conf->FindMapping(eItem);
 	event* ev = GetEventData(map);
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_TYPE), eventTypeNames);
-
+		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_TYPE), eventTypeNames, 0);
+		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[0], 0);
 		// Set slider
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
 		SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
@@ -92,13 +93,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 
 		if (map && map->events.size())
 			eventID = 0;
-		RebuildEventList(hDlg, map);
+		//RebuildEventList(hDlg, map);
 
 		// Start UI update thread...
 		SetTimer(hDlg, 0, 300, NULL);
 
 	} break;
 	case WM_APP + 2: {
+		map = conf->FindMapping(eItem);
 		if (map && map->events.size())
 			eventID = 0;
 		else
@@ -126,14 +128,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_BUTTON_COLORFROM:
 			if (ev && (!map->fromColor || map->color.size())) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), map, &ev->from);
-				RedrawGridButtonZone(NULL, true);
+				RedrawZoneGrid(map->group);
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTTON_COLORTO:
 			if (ev) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), map, &ev->to);
-				RedrawGridButtonZone(NULL, true);
+				RedrawZoneGrid(map->group);
 				fxhl->RefreshCounters();
 			}
 			break;

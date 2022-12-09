@@ -12,7 +12,7 @@ extern void SetMainTabs();
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
-extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+extern void RedrawGridButtonZone(RECT* what = NULL);
 
 extern AlienFX_SDK::Afx_light* FindCreateMapping(bool);
 
@@ -112,20 +112,31 @@ void SetLightInfo() {
 	AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 	if (dev) {
 		fxhl->TestLight(dev, eLid);
-		AlienFX_SDK::Afx_light* clight;
-		if (clight = conf->afx_dev.GetMappingByDev(dev, eLid)) {
-			SetDlgItemText(dDlg, IDC_EDIT_NAME, clight->name.c_str());
-		}
-		else {
-			SetDlgItemText(dDlg, IDC_EDIT_NAME, "<not used>");
-		}
+		AlienFX_SDK::Afx_light* clight = conf->afx_dev.GetMappingByDev(dev, eLid);
+		SetDlgItemText(dDlg, IDC_EDIT_NAME, clight ? clight->name.c_str() : "<unused>");
 		EnableWindow(GetDlgItem(dDlg, IDC_BUT_CLEAR), clight != NULL);
 		SetDlgItemInt(dDlg, IDC_LIGHTID, eLid, false);
-
 		CheckDlgButton(dDlg, IDC_ISPOWERBUTTON, clight && clight->flags & ALIENFX_FLAG_POWER);
 		CheckDlgButton(dDlg, IDC_CHECK_INDICATOR, clight && clight->flags & ALIENFX_FLAG_INDICATOR);
 		RedrawGridButtonZone();
 	}
+}
+
+void UpdateLightsList() {
+	AlienFX_SDK::Afx_device* dev = FindActiveDevice();
+	HWND llist = GetDlgItem(dDlg, IDC_LIGHTS_LIST);
+	ListBox_ResetContent(llist);
+	int spos = -1;
+	if (dev) {
+		for (auto i = dev->lights.begin(); i != dev->lights.end(); i++) {
+			int pos = ListBox_AddString(llist, i->name.c_str());
+			ListBox_SetItemData(llist, pos, (LPARAM)i->lightid);
+			if (i->lightid == eLid)
+				spos = pos;
+		}
+	}
+	ListBox_SetCurSel(llist, spos);
+	SetLightInfo();
 }
 
 void UpdateDeviceInfo() {
@@ -136,7 +147,8 @@ void UpdateDeviceInfo() {
 			dev->vid, dev->pid, (int)dev->lights.size(), (dev->dev ? "APIv" + to_string(dev->dev->GetVersion()) : "Inactive").c_str());
 		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev && dev->dev->GetVersion() && dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
-		SetLightInfo();
+		//SetLightInfo();
+		UpdateLightsList();
 	}
 }
 
@@ -207,6 +219,7 @@ void RedrawDevList() {
 	}
 	ListView_SetColumnWidth(dev_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	ListView_EnsureVisible(dev_list, rpos, false);
+	//UpdateLightsList();
 }
 
 void LoadCSV(string name) {
@@ -339,7 +352,7 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 	CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 	OnGridSelChanged(gridTab);
 	RedrawDevList();
-	SetLightInfo();
+	//SetLightInfo();
 	csv_devs.clear();
 }
 
@@ -379,7 +392,8 @@ LRESULT GridNameEdit(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND gridTab = GetDlgItem(hDlg, IDC_TAB_DEV_GRID);
+	HWND gridTab = GetDlgItem(hDlg, IDC_TAB_DEV_GRID),
+		 llist = GetDlgItem(hDlg, IDC_LIGHTS_LIST);
 
 	static bool clickOnTab = false;
 
@@ -409,12 +423,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 		case IDC_BUT_NEXT:
 			eLid++;
-			SetLightInfo();
+			UpdateLightsList();
 			break;
 		case IDC_BUT_PREV:
 			if (eLid) {
 				eLid--;
-				SetLightInfo();
+				UpdateLightsList();
 			}
 			break;
 		case IDC_BUT_LAST:
@@ -422,7 +436,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				eLid = 0;
 				for (auto it = dev->lights.begin(); it < dev->lights.end(); it++)
 					eLid = max(eLid, it->lightid);
-				SetLightInfo();
+				UpdateLightsList();
 			}
 			break;
 		case IDC_BUT_FIRST:
@@ -430,7 +444,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				eLid = 999;
 				for (auto it = dev->lights.begin(); it < dev->lights.end(); it++)
 					eLid = min(eLid, it->lightid);
-				SetLightInfo();
+				UpdateLightsList();
 			}
 			break;
 		case IDC_BUT_KEY:
@@ -438,6 +452,14 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				FindCreateMapping(false);
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), hDlg, (DLGPROC)KeyPressDialog);
 			UpdateDeviceInfo();
+			break;
+		case IDC_LIGHTS_LIST:
+			switch (HIWORD(wParam)) {
+			case LBN_SELCHANGE:
+				eLid = (int)ListBox_GetItemData(llist, ListBox_GetCurSel(llist));
+				SetLightInfo();
+				break;
+			}
 			break;
 		case IDC_EDIT_NAME:
 			switch (HIWORD(wParam)) {
@@ -453,6 +475,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				break;
 			case EN_KILLFOCUS:
 				UpdateDeviceInfo();
+				//UpdateLightsList();
 			}
 			break;
 		case IDC_BUT_DEVCLEAR:
@@ -707,16 +730,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 	} break;
 	case WM_DRAWITEM:
-		//switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
-		//case IDC_BUTTON_TESTCOLOR:
-		//{
-			RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, &conf->testColor);
-		//} break;
-		//}
+		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, &conf->testColor);
 		break;
 	case WM_DESTROY:
 	{
-		//conf->SortAllGauge();
 		fxhl->Start();
 		fxhl->Refresh();
 		dDlg = NULL;

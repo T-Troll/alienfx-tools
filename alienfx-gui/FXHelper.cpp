@@ -276,7 +276,7 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 
 void FXHelper::RefreshGrid(long tact) {
 	bool wasChanged = false;
-	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
+	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 		if (!ce->gridop.passive && ce->effect.effectColors.size()) {
 			// prepare vars..
 			grideffop* effop = &ce->gridop;
@@ -482,7 +482,7 @@ void FXHelper::Refresh(int forced)
 		DebugPrint("Refresh initiated.\n");
 #endif
 
-	for (auto it = (*conf->active_set).begin(); it < (*conf->active_set).end(); it++) {
+	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 		RefreshOne(&(*it), false, forced);
 	}
 
@@ -513,7 +513,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 	vector<AlienFX_SDK::Afx_action> actions{ {0} };
 	bool wasChanged = false;
 
-	for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
+	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 		if (it->ambients.size()) {
 			ULONG r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size();
 			for (auto cAmb = it->ambients.begin(); dsize && cAmb != it->ambients.end(); cAmb++) {
@@ -547,7 +547,7 @@ void FXHelper::RefreshHaptics(int *freq) {
 	vector<AlienFX_SDK::Afx_action> actions;
 	bool wasChanged = false;
 
-	for (auto mIter = conf->active_set->begin(); mIter < conf->active_set->end(); mIter++) {
+	for (auto mIter = conf->activeProfile->lightsets.begin(); mIter != conf->activeProfile->lightsets.end(); mIter++) {
 		if (mIter->haptics.size()) {
 			// Now for each freq block...
 			long from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0, groupsize = 0;

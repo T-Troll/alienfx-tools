@@ -1,10 +1,11 @@
 #include "alienfx-gui.h"
 #include "common.h"
 
-extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+//extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
+extern void RedrawZoneGrid(DWORD id);
 
 int clrListID = 0;
 
@@ -77,11 +78,12 @@ void ChangeAddGEColor(HWND hDlg, groupset* mmap, int newColorID) {
 				clr->erase(clr->begin() + newColorID);
 		}
 		RebuildGEColorsList(hDlg, mmap);
-		RedrawGridButtonZone(NULL, true);
+		RedrawZoneGrid(mmap->group);
 	}
 }
 
-void UpdateEffectInfo(HWND hDlg, groupset* mmap) {
+void UpdateEffectInfo(HWND hDlg) {
+	groupset* mmap = conf->FindMapping(eItem);
 	if (mmap) {
 		CheckDlgButton(hDlg, IDC_CHECK_CIRCLE, mmap->effect.flags & GE_FLAG_CIRCLE);
 		CheckDlgButton(hDlg, IDC_CHECK_RANDOM, mmap->effect.flags & GE_FLAG_RANDOM);
@@ -101,7 +103,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
 		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH);
 
-	groupset* mmap = FindMapping(eItem);
+	groupset* mmap = conf->FindMapping(eItem);
 
 	switch (message)
 	{
@@ -113,12 +115,11 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
 		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_SPEED), sTip2);
 		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), sTip3);
-		UpdateEffectInfo(hDlg, mmap);
+		UpdateEffectInfo(hDlg);
 
 	} break;
 	case WM_APP + 2: {
-		mmap = FindMapping(eItem);
-		UpdateEffectInfo(hDlg, mmap);
+		UpdateEffectInfo(hDlg);
 	} break;
 	case WM_COMMAND: {
 		if (!mmap)
@@ -129,7 +130,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				RedrawGridButtonZone(NULL, true);
+				RedrawZoneGrid(mmap->group);
 			}
 			break;
 		case IDC_COMBO_GEFFTYPE:
@@ -169,7 +170,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 						clrListID--;
 				}
 				RebuildGEColorsList(hDlg, mmap);
-				RedrawGridButtonZone(NULL, true);
+				RedrawZoneGrid(mmap->group);
 			}
 			break;
 		}

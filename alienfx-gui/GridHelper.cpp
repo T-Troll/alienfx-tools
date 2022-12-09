@@ -46,7 +46,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
 		char keyname [32];
 		GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
- 		for (auto it = conf->active_set->begin(); it < conf->active_set->end(); it++)
+ 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->effect.trigger == 3 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
 				zonemap* zone = conf->FindZoneMap(it->group);
@@ -81,7 +81,7 @@ void GridHelper::StartCommonRun(groupset* ce) {
 
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
-	for (auto ce = conf->active_set->begin(); ce < conf->active_set->end(); ce++) {
+	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		if (ce->effect.trigger && ce->gridop.passive) {
 			//zonemap* cz = conf->FindZoneMap(ce->group);
 			if (ce->effect.trigger == 4) { // indicator

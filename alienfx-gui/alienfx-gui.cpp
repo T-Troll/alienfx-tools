@@ -68,9 +68,9 @@ bool DetectFans() {
 		mon = new MonHelper();
 		if (mon->monThread) {
 			// Obsolete format conversion
-			for (auto cp = conf->profiles.begin(); cp != conf->profiles.end(); cp++)
-				if ((*cp)->flags & PROF_FANS)
-					conf->fan_conf->ConvertSenMappings(&(*cp)->fansets, acpi);
+			//for (auto cp = conf->profiles.begin(); cp != conf->profiles.end(); cp++)
+			//	if ((*cp)->flags & PROF_FANS)
+			//		conf->fan_conf->ConvertSenMappings(&(*cp)->fansets, acpi);
 			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		}
 		else {
@@ -870,14 +870,6 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode *clr) {
 	}
 	RedrawButton(ctrl, clr);
 	return ret;
-}
-
-groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set)
-{
-	for (auto res = set->begin(); res < set->end(); res++)
-		if (res->group == mid)
-			return &(*res);
-	return nullptr;
 }
 
 bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {

@@ -87,13 +87,13 @@ void ConfigFan::Load() {
 			continue;
 		}
 		// Obsolete, remove soon
-		if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
-			AddSensorCurve(&prof, fid, sid | 0xff00, inarray, lend);
-			continue;
-		}
+		//if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
+		//	AddSensorCurve(&prof, fid, sid | 0xff00, inarray, lend);
+		//	continue;
+		//}
 		// 2nd part is obsolete too
-		sid = 0xff;
-		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2 || sscanf_s(name, "SensorName-%hd", &fid) == 1) {
+		//sid = 0xff;
+		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2 /*|| sscanf_s(name, "SensorName-%hd", &fid) == 1*/) {
 			sensors[MAKEWORD(fid, sid)] = (char*)inarray;
 			continue;
 		}
@@ -164,19 +164,19 @@ void ConfigFan::Save() {
 	}
 }
 
-void ConfigFan::ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi) {
-	prof->fanControls.resize(acpi->fans.size());
-	for (auto fn = prof->fanControls.begin(); fn != prof->fanControls.end(); fn++) {
-		map<WORD, sen_block> newSenData;
-		for (auto sen = fn->begin(); sen != fn->end(); sen++)
-			if (HIBYTE(sen->first) == 0xff) {
-				newSenData[acpi->sensors[LOBYTE(sen->first)].sid] = sen->second;
-			}
-			else
-				newSenData[sen->first] = sen->second;
-		(*fn) = newSenData;
-	}
-}
+//void ConfigFan::ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi) {
+//	prof->fanControls.resize(acpi->fans.size());
+//	for (auto fn = prof->fanControls.begin(); fn != prof->fanControls.end(); fn++) {
+//		map<WORD, sen_block> newSenData;
+//		for (auto sen = fn->begin(); sen != fn->end(); sen++)
+//			if (HIBYTE(sen->first) == 0xff) {
+//				newSenData[acpi->sensors[LOBYTE(sen->first)].sid] = sen->second;
+//			}
+//			else
+//				newSenData[sen->first] = sen->second;
+//		(*fn) = newSenData;
+//	}
+//}
 
 void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
 	// Resize fan blocks...
@@ -193,16 +193,16 @@ void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
 
 	// old formats convert
 	// sensor names...
-	map<WORD, string> newSenNames;
-	for (auto i = sensors.begin(); i != sensors.end(); i++)
-		if (HIBYTE(i->first) == 0xff) {
-			newSenNames[acpi->sensors[LOBYTE(i->first)].sid] = i->second;
-		}
-		else
-			newSenNames[i->first] = i->second;
-	sensors = newSenNames;
-	// fan mappings
-	ConvertSenMappings(lastProf, acpi);
+	//map<WORD, string> newSenNames;
+	//for (auto i = sensors.begin(); i != sensors.end(); i++)
+	//	if (HIBYTE(i->first) == 0xff) {
+	//		newSenNames[acpi->sensors[LOBYTE(i->first)].sid] = i->second;
+	//	}
+	//	else
+	//		newSenNames[i->first] = i->second;
+	//sensors = newSenNames;
+	//// fan mappings
+	//ConvertSenMappings(lastProf, acpi);
 }
 
 

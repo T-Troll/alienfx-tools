@@ -45,7 +45,7 @@ The rest of the window is control function tabs. There are 4 main control blocks
 
 All lights functions of you system controlled from here. It have 5 sub-tabs, but 2 blocks are common for most of it:
 - Lights grid (down-right block). It present how lights located at you gear surface, as well as show light color prediction according to current light settings and effect mode.
-- "Zones" block. It used for group lights to light zone for control it as one light. Press "+" button to add new zone (or select one from other profiles), "-" to remove selected zone, select (left-click or click-and-drag) cells into grid to add/remove assigned lights into zone. Pressing "X" button near grid remove all grid lights from current zone.
+- "Zones" block. It used for group lights to light zone for control it as one light. Press "+" button to add new zone (or select one from other profiles), "-" to remove selected zone, select (left-click or click-and-drag) cells into grid to add/remove assigned lights into zone. Pressing "X" button near grid remove all grid lights from current zone. Press "Select from list" button to add lights to zone not from grid, but from global lights list.
 - "Gauge" block. It defines how zone will act inside it:
   - Off - All zone lights will have the same color.
   - Horizontal - fill zone from left to right.
@@ -201,7 +201,7 @@ If the zone Gauge type set to "Off", all zone lights will morph between backgrou
 
 !["Devices and Grids" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-devices-6.png?raw=true)
 
-This tab dedicated to assign device lights into grids, so it doesn't have Zones block.
+This tab dedicated to assign device lights and set it into grids, so it doesn't have Zones block.
 
 Grids block is different, then other light tabs, it have some additional features:
 - You can use sliders near grid to change it size.
@@ -216,21 +216,23 @@ Press "Set white balance" button to change white color correction for selected d
 
 Button block into the center is about settings management - press "Detect devices" to look for your devices into application database, use "Save Grids and Lights" and "Load Grids and Lights" to save/load current settings into .csv file (for backup or sharing).
 
-Top-right zone controls currently selected light for selected device.  
-Physical light ID provided after "Light:" mark, next 4 buttons used for navigation between lights:
+Right zone controls assigned lights and currently selected light for selected device.  
+Rightmost is the list of all lights, defined for current device.  
+"Key" button provide dialog window to select current light name by pressing any keyboard key. It's also will be done automatically in case per-key RGB device active. You can also set current light name typing it at name field.  
+4 buttons on top used for navigation between lights:
 - "|<" (or press Shift+Home) - navigate to first assigned light of the current device.
 - "<" (or Shift+Left) - select previous light (by ID).
 - ">" (Shift+Right) - select next light (by ID).
 - ">|" (and also Shift+End) - navigate to last assigned light of the current device.
+
+Left from the lights list is selected light info and control:
+- Physical light ID provided after "Selected Light:" mark
 - "Reset" - Unassigns current light, delete it from all zones, clear it's name and parameters (forget light).
-
-Check boxes define light type - "Power button" marks light as a hardware power button (be careful, but app will provide you some hints about it), "Indicator" light set it as a status indicator (like Caps Lock, Wifi, HDD) - some systems use controlled lights for it.  
+- Check boxes define light type - "Power button" marks light as a hardware power button (be careful, but app will provide you some hints about it), "Indicator" light set it as a status indicator (like Caps Lock, Wifi, HDD) - some systems use controlled lights for it.  
 Both Power button and indicators can be configured in settings to stay on then the rest of lights are off/dimmed.
+- "Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.  
 
-"Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.  
 Other assigned lights will have random colors at grid and black color for physical lights.
-
-"Key" button provide dialog window to select current light name by pressing any keyboard key. It's also will be done automatically in case per-key RGB device active. You can also set current light name typing it at name field into "Light" block.
 
 Then you find light position at you physical device (it's highlighted), assign it to the grid - click or click-and drag at grid zone to do it.  
 Click again to remove grid sell from current light, right-click (or click-and-drag) to clear grid cell(s).  

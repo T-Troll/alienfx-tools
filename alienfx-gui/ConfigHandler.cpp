@@ -203,7 +203,7 @@ void ConfigHandler::Load() {
 			prof->flags = ((WORD*)data)[0];;
 			prof->effmode = ((WORD*)data)[1];
 			// old format, obsolete
-			if (prof->effmode == 99) prof->effmode = 0;
+			//if (prof->effmode == 99) prof->effmode = 0;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
@@ -216,10 +216,10 @@ void ConfigHandler::Load() {
 			continue;
 		}
 		// old format, obsolete
-		if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
-			fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid | 0xff00, data, lend);
-			continue;
-		}
+		//if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
+		//	fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid | 0xff00, data, lend);
+		//	continue;
+		//}
 		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
 			FindCreateProfile(pid)->effects.push_back(*(deviceeffect*)data);
 			continue;
@@ -309,7 +309,7 @@ void ConfigHandler::Load() {
 
 	activeProfile = FindProfile(activeProfileID);
 	if (!activeProfile) activeProfile = FindDefaultProfile();
-	active_set = &activeProfile->lightsets;
+	//active_set = &activeProfile->lightsets;
 
 	SetStates();
 }
@@ -474,11 +474,6 @@ void ConfigHandler::Save() {
 	}
 }
 
-//void ConfigHandler::SortAllGauge() {
-//	for (auto t = afx_dev.GetGroups()->begin(); t < afx_dev.GetGroups()->end(); t++)
-//		SortGroupGauge(t->gid);
-//}
-
 zonemap* ConfigHandler::FindZoneMap(int gid) {
 	for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
 		if (gpos->gID == gid)
@@ -488,11 +483,6 @@ zonemap* ConfigHandler::FindZoneMap(int gid) {
 
 zonemap* ConfigHandler::SortGroupGauge(int gid) {
 	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
-
-	//remove_if(zoneMaps.begin(), zoneMaps.end(),
-	//	[gid](auto t) {
-	//		return t.gID == gid;
-	//	});
 
 	zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
 	auto zone = &zoneMaps.back();
@@ -569,4 +559,14 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 		}
 	}
 	return zone;
+}
+
+groupset* ConfigHandler::FindMapping(int mid, vector<groupset>* set)
+{
+	if (!set)
+		set = &activeProfile->lightsets;
+	for (auto res = set->begin(); res < set->end(); res++)
+		if (res->group == mid)
+			return &(*res);
+	return nullptr;
 }
