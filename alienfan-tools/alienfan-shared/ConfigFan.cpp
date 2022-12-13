@@ -86,14 +86,7 @@ void ConfigFan::Load() {
 			AddSensorCurve(&prof, fid, sid, inarray, lend);
 			continue;
 		}
-		// Obsolete, remove soon
-		//if (sscanf_s(name, "Sensor-%hd-%hd", &sid, &fid) == 2) {
-		//	AddSensorCurve(&prof, fid, sid | 0xff00, inarray, lend);
-		//	continue;
-		//}
-		// 2nd part is obsolete too
-		//sid = 0xff;
-		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2 /*|| sscanf_s(name, "SensorName-%hd", &fid) == 1*/) {
+		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2) {
 			sensors[MAKEWORD(fid, sid)] = (char*)inarray;
 			continue;
 		}
@@ -155,54 +148,24 @@ void ConfigFan::Save() {
 	// save powers...
 	for (auto i = powers.begin(); i != powers.end(); i++) {
 		name = "Power-" + to_string(i->first);
-		RegSetValueEx(keyPowers, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD) i->second.length());
+		RegSetValueEx(keyPowers, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD) i->second.size());
 	}
 	// save sensors...
 	for (auto i = sensors.begin(); i != sensors.end(); i++) {
 		name = "SensorName-" + to_string(HIBYTE(i->first)) + "-" + to_string(LOBYTE(i->first));
-		RegSetValueEx(keySensors, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD)i->second.length());
+		RegSetValueEx(keySensors, name.c_str(), 0, REG_SZ, (BYTE*)i->second.c_str(), (DWORD)i->second.size());
 	}
 }
 
-//void ConfigFan::ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi) {
-//	prof->fanControls.resize(acpi->fans.size());
-//	for (auto fn = prof->fanControls.begin(); fn != prof->fanControls.end(); fn++) {
-//		map<WORD, sen_block> newSenData;
-//		for (auto sen = fn->begin(); sen != fn->end(); sen++)
-//			if (HIBYTE(sen->first) == 0xff) {
-//				newSenData[acpi->sensors[LOBYTE(sen->first)].sid] = sen->second;
-//			}
-//			else
-//				newSenData[sen->first] = sen->second;
-//		(*fn) = newSenData;
-//	}
-//}
-
-void ConfigFan::SetBoostsAndNames(AlienFan_SDK::Control* acpi) {
-	// Resize fan blocks...
-	for (byte fID = 0; fID < acpi->boosts.size(); fID++)
-		for (auto maxB = boosts.begin(); maxB != boosts.end(); maxB++)
-			if (maxB->first == fID) {
-				acpi->boosts[fID] = maxB->second.maxBoost;
-				acpi->maxrpm[fID] = maxB->second.maxRPM;
-				break;
-			}
+void ConfigFan::SetSensorNames(AlienFan_SDK::Control* acpi) {
 	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
 		if (powers.find(*i) == powers.end())
 			powers.emplace(*i, *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual");
+}
 
-	// old formats convert
-	// sensor names...
-	//map<WORD, string> newSenNames;
-	//for (auto i = sensors.begin(); i != sensors.end(); i++)
-	//	if (HIBYTE(i->first) == 0xff) {
-	//		newSenNames[acpi->sensors[LOBYTE(i->first)].sid] = i->second;
-	//	}
-	//	else
-	//		newSenNames[i->first] = i->second;
-	//sensors = newSenNames;
-	//// fan mappings
-	//ConvertSenMappings(lastProf, acpi);
+int ConfigFan::GetFanScale(byte fanID) {
+	auto maxboost = boosts.find(fanID);
+	return maxboost == boosts.end() ? 100 : maxboost->second.maxBoost;
 }
 
 

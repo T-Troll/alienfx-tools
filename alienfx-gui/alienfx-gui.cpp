@@ -67,14 +67,9 @@ bool DetectFans() {
 	else {
 		mon = new MonHelper();
 		if (mon->monThread) {
-			// Obsolete format conversion
-			//for (auto cp = conf->profiles.begin(); cp != conf->profiles.end(); cp++)
-			//	if ((*cp)->flags & PROF_FANS)
-			//		conf->fan_conf->ConvertSenMappings(&(*cp)->fansets, acpi);
 			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		}
 		else {
-			//ShowNotification(&conf->niData, "Error", "Fan control not available and disabled!", false);
 			delete mon;
 			mon = NULL;
 			conf->fanControl = false;
@@ -653,8 +648,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
 			fxhl->Start();
-			if (mon)
-				mon->Start();
+			if (conf->fanControl)
+				DetectFans();
 			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -686,8 +681,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->Save();
 			eve->StopProfiles();
 			eve->StopEffects();
-			if (mon)
-				mon->Stop();
+			if (mon) {
+				delete mon;
+				mon = NULL;
+			}
 			fxhl->Stop();
 			break;
 		}

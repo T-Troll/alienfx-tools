@@ -81,9 +81,11 @@ void GridHelper::StartCommonRun(groupset* ce) {
 
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
-	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
+	eve->modifyProfile.lock();
+	vector<groupset> active = conf->activeProfile->lightsets;
+	eve->modifyProfile.unlock();
+	for (auto ce = active.begin(); ce < active.end(); ce++) {
 		if (ce->effect.trigger && ce->gridop.passive) {
-			//zonemap* cz = conf->FindZoneMap(ce->group);
 			if (ce->effect.trigger == 4) { // indicator
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)
 					if (ev->state == MON_TYPE_IND) {
@@ -106,6 +108,7 @@ void GridTriggerWatch(LPVOID param) {
 				src->StartCommonRun(&(*ce));
 		}
 	}
+
 }
 
 GridHelper::GridHelper() {

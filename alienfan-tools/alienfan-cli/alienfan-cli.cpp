@@ -9,11 +9,6 @@
 
 #pragma comment(lib, "PowrProf.lib")
 
-//extern "C" {
-//    __declspec(dllexport) DWORD NvOptimusEnablement;
-//    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance;
-//}
-
 using namespace std;
 
 struct ARG {
@@ -42,7 +37,7 @@ bool CheckArgs(size_t minArgs, size_t maxZeroArg, bool print = true) {
 
 int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
     printf("Probing Fan#%d at boost %d: ", fanID, boost);
-    acpi.SetFanBoost(fanID, boost, true);
+    acpi.SetFanBoost(fanID, boost);
     // Check the trend...
     int pRpm, maxRPM, bRpm = acpi.GetFanRPM(fanID), fRpm;
     Sleep(3000);
@@ -64,15 +59,10 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 void UpdateBoost(byte fanID) {
     fan_conf.boosts[fanID].maxBoost = max(bestBoostPoint.maxBoost, 100);
     fan_conf.boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, fan_conf.boosts[fanID].maxRPM);
-
-    acpi.boosts[fanID] = max(bestBoostPoint.maxBoost, 100);
-    acpi.maxrpm[fanID] = max(fan_conf.boosts[fanID].maxRPM, acpi.maxrpm[fanID]);
-
-    fan_conf.Save();
 }
 
 void CheckFanOverboost(byte num) {
-    int cSteps = 8, boost = 100, cBoost = 100, rpm, oldBoost = acpi.GetFanBoost(num, true);
+    int cSteps = 8, boost = 100, cBoost = 100, rpm, oldBoost = acpi.GetFanBoost(num);
     printf("Checking Fan#%d:\n", num);
     bestBoostPoint = { 100, 0 };
     rpm = SetFanSteady(num, boost);
@@ -109,16 +99,16 @@ void CheckFanOverboost(byte num) {
         boost = bestBoostPoint.maxBoost;
     }
     printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-    acpi.SetFanBoost(num, oldBoost, true);
+    acpi.SetFanBoost(num, oldBoost);
     UpdateBoost(num);
 }
 
 const char* GetFanType(int index) {
     const char* res;
     switch (acpi.fans[index].type) {
-    case 0: res = "CPU"; break;
-    case 1: res = "GPU"; break;
-    default: res = "Fan";
+    case 0: res = " CPU"; break;
+    case 1: res = " GPU"; break;
+    default: res = "";
     }
     return res;
 }
@@ -145,27 +135,21 @@ setbrightness=<brightness>\tSet lights brightness\n\
 \tNumber of fan boost values should be the same as a number of fans detected\n\
 \tMode can absent for cooked value, and \"raw\" for raw value\n\
 \tBrightness can be in 0..15\n");
-// \tGPU power limit can be in 0..4 - 0 - no limit, 4 - max. limit\n\
-// direct=<id>,<subid>[,val,val]\tIssue direct interface command (for testing)\n\
-// directgpu=<id>,<value>\t\tIssue direct GPU interface command (for testing)\n\
-// setgpu=<value>\t\t\tSet GPU power limit\n\
-//\n\
-//\tAll values in \"direct\" commands should be hex, not decimal!
-
 }
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.9.0\n");
+    printf("AlienFan-CLI v7.9.0.1\n");
 
-    AlienFan_SDK::Lights* lights = new AlienFan_SDK::Lights(&acpi);
+    AlienFan_SDK::Lights* lights = NULL;
 
     if (acpi.Probe()) {
+        lights = new AlienFan_SDK::Lights(&acpi);
         printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s.\n",
             acpi.GetSystemID(), (int)acpi.fans.size(), (int)acpi.sensors.size(), (int)acpi.powers.size(),
             (acpi.GetDeviceFlags() & DEV_FLAG_GMODE ? ", G-Mode" : ""),
             (lights->isActivated ? ", Lights" : ""));
-        fan_conf.SetBoostsAndNames(&acpi);
+        fan_conf.SetSensorNames(&acpi);
     }
     else {
         if (acpi.GetDeviceFlags() & DEV_FLAG_AWCC)
@@ -187,26 +171,23 @@ int main(int argc, char* argv[])
             }
 
         if (command == "rpm") {
-            if (CheckArgs(1, acpi.fans.size(), false))
-                printf("%s %d: %d\n", GetFanType(args[0].num), args[0].num, acpi.GetFanRPM(args[0].num));
-            else
-                for (int i = 0; i < acpi.fans.size(); i++)
-                    printf("%s %d: %d\n", GetFanType(i), i, acpi.GetFanRPM(i));
+            for (int i = 0; i < acpi.fans.size(); i++)
+                if (args.empty() || args[0].num == i)
+                    printf("Fan%s %d: %d\n", GetFanType(i), i, acpi.GetFanRPM(i));
             continue;
         }
         if (command == "percent") {
-            if (CheckArgs(0, acpi.fans.size()))
-                printf("%s %d: %d%%\n", GetFanType(args[0].num), args[0].num, acpi.GetFanPercent(args[0].num));
-            else
-                for (int i = 0; i < acpi.fans.size(); i++)
-                    printf("%s %d: %d%%\n", GetFanType(i), i, acpi.GetFanPercent(i));
+            for (int i = 0; i < acpi.fans.size(); i++)
+                if (args.empty() || args[0].num == i) {
+                    auto maxboost = fan_conf.boosts.find(i);
+                    printf("%s %d: %d%%\n", GetFanType(i), i, maxboost == fan_conf.boosts.end() ?
+                        acpi.GetFanPercent(i) : (acpi.GetFanRPM(i) * 100) / maxboost->second.maxRPM);
+                }
             continue;
         }
         if (command == "temp") {
-            if (CheckArgs(0, acpi.sensors.size()))
-                printf("%d\n", acpi.GetTempValue(args[0].num));
-            else
-                for (int i = 0; i < acpi.sensors.size(); i++) {
+            for (int i = 0; i < acpi.sensors.size(); i++)
+                if (args.empty() || i == args[0].num) {
                     auto sname = fan_conf.sensors.find(acpi.sensors[i].sid);
                     printf("%s: %d\n", (sname == fan_conf.sensors.end() ? acpi.sensors[i].name.c_str() :
                         sname->second.c_str()), acpi.GetTempValue(i));
@@ -214,7 +195,7 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "unlock") {
-            printf("%s", acpi.Unlock() < 0 ? "Unlock failed!\n" : "Unlock successful.\n");
+            printf("%s", acpi.Unlock() < 0 ? "Unlock failed!\n" : "Unlocked.\n");
             continue;
         }
         if (command == "gmode") {
@@ -223,18 +204,10 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "setpower" && CheckArgs(1, acpi.powers.size())) {
-            printf("Power set to %d (result %d)\n", args[0].num, acpi.SetPower(acpi.powers[args[0].num]));
+            acpi.SetPower(acpi.powers[args[0].num]);
+            printf("Power mode set to %s(%d)\n", fan_conf.powers[acpi.powers[args[0].num]].c_str(), acpi.powers[args[0].num]);
             continue;
         }
-        //if (command == "forcegpu" && CheckArgs(1, 2)) {
-        //    NvOptimusEnablement = args[0].num;
-        //    continue;
-        //}
-        //if (command == "setgpu" && CheckArgs(command, 1, args.size())) {
-
-        //    printf("GPU limit set to %d (result %d)\n", args[0].num, acpi->SetGPU(args[0].num));
-        //    continue;
-        //}
         if (command == "setperf" && CheckArgs(2, 5)) {
             GUID* sch_guid, perfset;
             IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
@@ -247,45 +220,46 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "getpower") {
-            printf("Current power mode: %d\n", acpi.GetPower());
+            int res = acpi.GetPower();
+            if (res >= 0)
+                printf("Power mode: %s(%d)\n", fan_conf.powers[acpi.powers[res]].c_str(), acpi.powers[res]);
             continue;
         }
         if (command == "getfans") {
-            if (CheckArgs(1, acpi.fans.size(), false) && args[0].str != "raw")
-                printf("%s %d boost - %d\n", GetFanType(args[0].num), args[0].num, acpi.GetFanBoost(args[0].num, args.back().str == "raw"));
-            else
-                for (int i = 0; i < acpi.fans.size(); i++)
-                    printf("%s %d boost %d\n", GetFanType(i), i, acpi.GetFanBoost(i, args.size() && args.back().str == "raw"));
+            int rawboost;
+            bool single = CheckArgs(1, acpi.fans.size(), false) && args[0].str != "raw";
+            for (int i = 0; i < acpi.fans.size(); i++)
+                if (!single || i == args[0].num) {
+                    rawboost = acpi.GetFanBoost(i);
+                    printf("Fan%s %d boost %d (%d)\n", GetFanType(i), i,
+                        args.size() && args.back().str == "raw" ? rawboost : (rawboost * 100) / fan_conf.GetFanScale(i), rawboost);
+                }
             continue;
         }
         if (command == "setfans") {
             if (CheckArgs(acpi.fans.size(), 256))
                 for (int i = 0; i < acpi.fans.size(); i++)
-                    printf("%s %d boost set to %d (result %d)\n", GetFanType(i), i, args[i].num,
-                        acpi.SetFanBoost(i, args[i].num, args.back().str == "raw"));
+                    printf("Fan%s %d boost set to %d (%d)\n", GetFanType(i), i, args[i].num,
+                        acpi.SetFanBoost(i, args.back().str == "raw" ? args[i].num : (args[i].num * fan_conf.GetFanScale(i)) / 100));
             continue;
         }
         if (command == "setover") {
             int oldMode = acpi.GetPower();
             acpi.Unlock();
-            if (CheckArgs(1, acpi.fans.size(), false)) {
+            if (CheckArgs(2, acpi.fans.size(), false)) {
                 byte fanID = args[0].num;
-                if (args.size() > 1) {
-                    // manual fan set
-                    bestBoostPoint = { (byte)args[1].num, 0 };
-                    SetFanSteady(fanID, bestBoostPoint.maxBoost);
-                    UpdateBoost(fanID);
-                    printf("\nBoost for %s %d set to %d @ %d RPM.\n", GetFanType(fanID),
-                        fanID, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-                }
-                else
-                    // auto fan set
-                    CheckFanOverboost(fanID);
+                // manual fan set
+                bestBoostPoint = { (byte)args[1].num, 0 };
+                SetFanSteady(fanID, bestBoostPoint.maxBoost);
+                UpdateBoost(fanID);
+                printf("\nBoost for Fan%s %d set to %d @ %d RPM.\n", GetFanType(fanID),
+                    fanID, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
             }
             else {
                 // all fans
                 for (int i = 0; i < acpi.fans.size(); i++)
-                    CheckFanOverboost(i);
+                    if (args.empty() || i == args[0].num)
+                        CheckFanOverboost(i);
             }
             if (oldMode >= 0)
                 acpi.SetPower(acpi.powers[oldMode]);
@@ -315,7 +289,7 @@ int main(int argc, char* argv[])
             BSTR name;
             // Command dump
             acpi.m_AWCCGetObj->GetObjectText(0, &name);
-            wprintf(L"Names: %s\n", name);
+            wprintf(L"Names:\n%s\n", name);
             continue;
         }
         //if (command == "test") { // dump WMI functions
@@ -371,5 +345,6 @@ int main(int argc, char* argv[])
         Usage();
     }
 
-    delete lights;
+    if (lights)
+        delete lights;
 }

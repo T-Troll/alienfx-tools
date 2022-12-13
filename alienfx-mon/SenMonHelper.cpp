@@ -190,7 +190,7 @@ void SenMonHelper::UpdateSensors()
 		for (WORD i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3
 			AddUpdateSensor({ i, 1, 2 }, acpi->GetFanRPM(i), "Fan " + to_string(i + 1) + " RPM");
 			AddUpdateSensor({ i, 2, 2 }, acpi->GetFanPercent(i), "Fan " + to_string(i + 1) + " percent");
-			AddUpdateSensor({ i, 3, 2 }, acpi->GetFanBoost(i, true), "Fan " + to_string(i + 1) + " boost");
+			AddUpdateSensor({ i, 3, 2 }, acpi->GetFanBoost(i), "Fan " + to_string(i + 1) + " boost");
 		}
 	} else
 		if (conf->eSensors) {

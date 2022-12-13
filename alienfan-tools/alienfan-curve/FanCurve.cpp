@@ -127,11 +127,12 @@ void DrawFan()
             SetDCBrushColor(hdc, RGB(255, 0, 0));
             SelectObject(hdc, GetStockObject(DC_PEN));
             SelectObject(hdc, GetStockObject(DC_BRUSH));
-            int fanBoost = (int)round(mon->boostRaw[fan_conf->lastSelectedFan] * 100.0 / acpi->boosts[fan_conf->lastSelectedFan]);
+            int scale = fan_conf->GetFanScale(fan_conf->lastSelectedFan);
+            byte fanBoost = (byte)round((100.0 * mon->boostRaw[fan_conf->lastSelectedFan]) / scale);
             mark = Fan2Screen(mon->senValues[fan_conf->lastSelectedSensor], fanBoost);
             Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
-            string rpmText = "Fan curve (scale: " + to_string(acpi->boosts[fan_conf->lastSelectedFan])
-                + ", boost: " + to_string(fanBoost) + ", " + to_string(acpi->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
+            string rpmText = "Fan curve (scale " + to_string(scale) + ", boost " + to_string(fanBoost) + ", " +
+                to_string(mon->GetFanPercent(fan_conf->lastSelectedFan)) + "%)";
             SetWindowText(tipWindow, rpmText.c_str());
         }
         else {
@@ -171,7 +172,7 @@ void DrawFan()
 }
 
 int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
-    acpi->SetFanBoost(fanID, boost, true);
+    acpi->SetFanBoost(fanID, boost/*, true*/);
     // Check the trend...
     int pRpm, bRpm = acpi->GetFanRPM(fanID), maxRPM;
     boostCheck.push_back({ boost, (USHORT)bRpm });
@@ -199,9 +200,6 @@ void UpdateBoost(byte fanID) {
     fan_overboost* fo = &fan_conf->boosts[fanID];
     fo->maxBoost = max(bestBoostPoint.maxBoost, 100);
     fo->maxRPM = max(bestBoostPoint.maxRPM, fo->maxRPM);
-
-    acpi->boosts[fanID] = max(bestBoostPoint.maxBoost, 100);
-    acpi->maxrpm[fanID] = max(fo->maxRPM, acpi->maxrpm[fanID]);
 }
 
 DWORD WINAPI CheckFanRPM(LPVOID lpParam) {
@@ -212,8 +210,8 @@ DWORD WINAPI CheckFanRPM(LPVOID lpParam) {
     boostCheck.clear();
     bestBoostPoint = { 100, 3000 };
     SetFanSteady(fanID, 100);
-    fan_conf->boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, acpi->maxrpm[fanID]);
-    acpi->maxrpm[fanID] = fan_conf->boosts[fanID].maxRPM;
+    fan_conf->boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, fan_conf->boosts[fanID].maxRPM/*acpi->maxrpm[fanID]*/);
+    //acpi->maxrpm[fanID] = fan_conf->boosts[fanID].maxRPM;
     ShowNotification(niData, "Max. RPM calculation done", "Fan #" + to_string(fanID + 1) + ": " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
     acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
     fanMode = true;
@@ -228,7 +226,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     acpi->Unlock();
     for (byte i = 0; i < acpi->fans.size(); i++)
         if (num < 0 || num == i) {
-            int cSteps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num, true);
+            int cSteps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num/*, true*/);
             fan_conf->lastSelectedFan = i;
             boostCheck.clear();
             bestBoostPoint = { 100, 3000 };
@@ -269,7 +267,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
                 boost = bestBoostPoint.maxBoost;
             }
         finish:
-            acpi->SetFanBoost(num, oldBoost, true);
+            acpi->SetFanBoost(num, oldBoost/*, true*/);
             UpdateBoost(i);
             //DrawFan();
             ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)

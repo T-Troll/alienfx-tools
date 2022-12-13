@@ -446,7 +446,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
-            mon->Start();
+            //mon->Start();
+            mon = new MonHelper();
             if (fan_conf->updateCheck) {
                 needUpdateFeedback = false;
                 CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
@@ -454,7 +455,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case PBT_APMSUSPEND:
             // Sleep initiated.
-            mon->Stop();
+            //mon->Stop();
+            delete mon;
+            mon = NULL;
             fan_conf->Save();
             break;
         }
@@ -488,7 +491,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     string name = GetFanName(i);
                     ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
                 }
-                //SendMessage(fanWindow, WM_PAINT, 0, 0);
             }
             string name = "Power mode: ";
             if (fan_conf->lastProf->gmode)

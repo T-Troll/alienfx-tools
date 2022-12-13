@@ -8,13 +8,8 @@ ConfigHandler::ConfigHandler() {
 
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
+	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
-	// do we have old configuration?
-	//if (RegOpenKeyEx(hKeyMain, "Zones", 0, KEY_ALL_ACCESS, &hKeyZones) != ERROR_SUCCESS) {
-	//	if (haveOldConfig = RegOpenKeyEx(hKeyMain, "Events", 0, KEY_ALL_ACCESS, &hKeyZones) == ERROR_SUCCESS)
-	//		RegCloseKey(hKeyZones);
-		RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
-	//}
 	afx_dev.LoadMappings();
 
 	fan_conf = new ConfigFan();
@@ -202,8 +197,6 @@ void ConfigHandler::Load() {
 			prof = FindCreateProfile(pid);
 			prof->flags = ((WORD*)data)[0];;
 			prof->effmode = ((WORD*)data)[1];
-			// old format, obsolete
-			//if (prof->effmode == 99) prof->effmode = 0;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
@@ -215,11 +208,6 @@ void ConfigHandler::Load() {
 			fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid, data, lend);
 			continue;
 		}
-		// old format, obsolete
-		//if (sscanf_s(name, "Profile-fans-%d-%d-%d", &pid, &senid, &fanid) == 3) {
-		//	fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid | 0xff00, data, lend);
-		//	continue;
-		//}
 		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
 			FindCreateProfile(pid)->effects.push_back(*(deviceeffect*)data);
 			continue;
@@ -227,7 +215,6 @@ void ConfigHandler::Load() {
 		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
 			prof->fansets.powerStage = ((WORD*)data)[0];
-			//prof->fansets.GPUPower = LOBYTE(HIWORD(*(DWORD*)data));
 			prof->fansets.gmode = HIBYTE(((WORD*)data)[1]);
 		}
 	}
@@ -309,7 +296,6 @@ void ConfigHandler::Load() {
 
 	activeProfile = FindProfile(activeProfileID);
 	if (!activeProfile) activeProfile = FindDefaultProfile();
-	//active_set = &activeProfile->lightsets;
 
 	SetStates();
 }
@@ -373,7 +359,7 @@ void ConfigHandler::Save() {
 	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
 		DWORD flagset;
 		string name = "Profile-" + to_string((*jIter)->id);
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.length());
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.size());
 		name = "Profile-gflags-" + to_string((*jIter)->id);
 		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
@@ -450,14 +436,13 @@ void ConfigHandler::Save() {
 		if ((*jIter)->flags & PROF_FANS) {
 			// save powers..
 			name = "Profile-power-" + to_string((*jIter)->id);
-			WORD ps = MAKEWORD(0/*(*jIter)->fansets.GPUPower*/, (*jIter)->fansets.gmode);
+			WORD ps = MAKEWORD(0, (*jIter)->fansets.gmode);
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
 			for (auto i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
 				for (auto j = (*jIter)->fansets.fanControls[i].begin(); j != (*jIter)->fansets.fanControls[i].end(); j++) {
 					if (j->second.active) {
-						//name = "Fan-" + to_string(i) + "-" + to_string(j->first);
 						byte* outdata = new byte[j->second.points.size() * 2];
 						for (int k = 0; k < j->second.points.size(); k++) {
 							outdata[2 * k] = (byte)j->second.points[k].temp;

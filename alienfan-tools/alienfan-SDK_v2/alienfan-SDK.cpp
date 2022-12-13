@@ -9,9 +9,9 @@
 
 namespace AlienFan_SDK {
 
-	int Control::Percent(int val, int from) {
-		return val * 100 / from;
-	}
+	//int Control::Percent(int val, int from) {
+	//	return val * 100 / from;
+	//}
 
 	Control::Control() {
 
@@ -142,7 +142,7 @@ namespace AlienFan_SDK {
 		}
 		enum_obj->Release();
 #ifdef _TRACE_
-		printf("%d sensors of #%d added, %d total\n", ind-1, type, (int)sensors.size());
+		printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
 #endif
 	}
 
@@ -190,8 +190,11 @@ namespace AlienFan_SDK {
 					// Scan for available fans...
 					while ((funcID = CallWMIMethod(getPowerID, fIndex)) < 0x100 && (funcID > 0 || funcID > 0x12f)) { // bugfix for 0x132 fan for R7
 						fans.push_back({ (byte)(funcID & 0xff), 0xff });
-						boosts.push_back(100);
-						maxrpm.push_back(0);
+#ifdef _TRACE_
+						printf("Fan ID=%x found\n", funcID);
+#endif
+						//boosts.push_back(100);
+						//maxrpm.push_back(0);
 						fIndex++;
 					}
 #ifdef _TRACE_
@@ -210,6 +213,9 @@ namespace AlienFan_SDK {
 					if (funcID > 0) {
 						do {
 							powers.push_back(funcID & 0xff);
+#ifdef _TRACE_
+							printf("Power ID=%x found\n", funcID);
+#endif
 							fIndex++;
 						} while ((funcID = CallWMIMethod(getPowerID, fIndex)) && funcID > 0);
 #ifdef _TRACE_
@@ -257,23 +263,25 @@ namespace AlienFan_SDK {
 	}
 	int Control::GetFanPercent(int fanID) {
 		if (fanID < fans.size())
-			if (fanID < maxrpm.size() && maxrpm[fanID])
-				return Percent(GetFanRPM(fanID),maxrpm[fanID]);
-			else
+			//if (fanID < maxrpm.size() && maxrpm[fanID])
+			//	return Percent(GetFanRPM(fanID),maxrpm[fanID]);
+			//else
 				return CallWMIMethod(getFanPercent, (byte) fans[fanID].id);
 		return -1;
 	}
-	int Control::GetFanBoost(int fanID, bool force) {
+	int Control::GetFanBoost(int fanID/*, bool force*/) {
 		if (fanID < fans.size()) {
-			int value = CallWMIMethod(getFanBoost, (byte) fans[fanID].id);
-			return force ? value : Percent(value, boosts[fanID]);
+			//int value = CallWMIMethod(getFanBoost, (byte) fans[fanID].id);
+			//return force ? value : Percent(value, boosts[fanID]);
+			return CallWMIMethod(getFanBoost, (byte)fans[fanID].id);
 		}
 		return -1;
 	}
-	int Control::SetFanBoost(int fanID, byte value, bool force) {
+	int Control::SetFanBoost(int fanID, byte value/*, bool force*/) {
 		if (fanID < fans.size()) {
-			int finalValue = force ? value : (int) value * boosts[fanID] / 100;
-			return CallWMIMethod(setFanBoost, (byte) fans[fanID].id, finalValue);
+			//int finalValue = force ? value : (int) value * boosts[fanID] / 100;
+			//return CallWMIMethod(setFanBoost, (byte) fans[fanID].id, finalValue);
+			return CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value);
 		}
 		return -1;
 	}

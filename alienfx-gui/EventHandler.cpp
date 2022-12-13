@@ -438,7 +438,7 @@ void CEventProc(LPVOID param)
 			if (mon) {
 				// Check fan RPMs
 				for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
-					cData->Fan = max(cData->Fan, acpi->GetFanPercent(i));
+					cData->Fan = max(cData->Fan, mon->GetFanPercent(i));
 				}
 				for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
 					cData->Temp = max(cData->Temp, i->second);
@@ -472,10 +472,10 @@ void CEventProc(LPVOID param)
 			fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData->RAM);
 			fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData->CPU);
 
-			src->modifyProfile.lock();
-			if (!src->grid)
-				fxhl->RefreshCounters(cData);
-			src->modifyProfile.unlock();
-			memcpy(&fxhl->eData, cData, sizeof(LightEventData));
+			if (conf->lightsNoDelay) { // update lights
+				if (!src->grid)
+					fxhl->RefreshCounters(cData);
+				memcpy(&fxhl->eData, cData, sizeof(LightEventData));
+			}
 	}
 }

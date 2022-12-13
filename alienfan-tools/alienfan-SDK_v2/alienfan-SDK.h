@@ -60,7 +60,7 @@ namespace AlienFan_SDK {
 		byte devFlags = 0;
 		DWORD systemID = 0;
 		byte sysType = -1;
-		int Percent(int, int);
+		//int Percent(int, int);
 		void EnumSensors(IEnumWbemClassObject* enum_obj, byte type);
 	public:
 		VARIANT m_instancePath;
@@ -83,11 +83,11 @@ namespace AlienFan_SDK {
 
 		// Get boost value for the fan index fanID at fans[]. If force, raw value returned, otherwise cooked by boost
 		// Result: Error or raw value if forced, otherwise cooked by boost.
-		int GetFanBoost(int fanID, bool force = false);
+		int GetFanBoost(int fanID/*, bool force = false*/);
 
 		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise cooked by boost.
 		// Result: value or error
-		int SetFanBoost(int fanID, byte value, bool force = false);
+		int SetFanBoost(int fanID, byte value/*, bool force = false*/);
 
 		// Get temperature value for the sensor index TanID at sensors[]
 		// Result: temperature value or error
@@ -127,8 +127,8 @@ namespace AlienFan_SDK {
 		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<ALIENFAN_FAN_INFO> fans;
-		vector<byte> boosts;
-		vector<WORD> maxrpm;
+		//vector<byte> boosts;
+		//vector<WORD> maxrpm;
 		vector<byte> powers;
 
 		IWbemClassObject* m_AWCCGetObj = NULL;

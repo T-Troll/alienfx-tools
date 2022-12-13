@@ -13,12 +13,8 @@ AlienFan_SDK::Control* acpi = NULL;
 extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper() {
-	//for (auto i = acpi->sensors.begin(); i != acpi->sensors.end(); i++) {
-	//	senValues.emplace(i->sid, -1);
-	//	maxTemps.emplace(i->sid, -1);
-	//}
 	if ((acpi = new AlienFan_SDK::Control())->Probe()) {
-		fan_conf->SetBoostsAndNames(acpi);
+		fan_conf->SetSensorNames(acpi);
 		size_t fansize = acpi->fans.size();
 		senBoosts.resize(fansize);
 		fanRpm.resize(fansize);
@@ -40,11 +36,16 @@ void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
 		oldGmode = acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? acpi->GetGMode() : 0;
-		if (!oldGmode && oldPower < 0)
-			oldPower = acpi->GetPower();
+		//if (!oldGmode && oldPower < 0)
+		//	oldPower = acpi->GetPower();
 		if (oldGmode != fan_conf->lastProf->gmode) {
 			SetCurrentGmode(fan_conf->lastProf->gmode);
 		}
+		if (!fan_conf->lastProf->gmode && oldPower < 0)
+			oldPower = acpi->GetPower();
+		// Patch for R4
+		//if (acpi->powers.size() > 1)
+		//	acpi->SetPower(acpi->powers[1]);
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -56,7 +57,7 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
-		if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE && oldGmode != fan_conf->lastProf->gmode)
+		if ((acpi->GetDeviceFlags() & DEV_FLAG_GMODE) && oldGmode != fan_conf->lastProf->gmode)
 			SetCurrentGmode(oldGmode);
 		if (!oldGmode && oldPower >= 0) {
 			acpi->SetPower(acpi->powers[oldPower]);
@@ -75,7 +76,7 @@ void MonHelper::SetCurrentGmode(WORD newMode) {
 	if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
 		if (acpi->GetGMode() != newMode) {
 			fan_conf->lastProf->gmode = newMode;
-			if (newMode && acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
+			if (newMode && (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200)) // m15R5 && G5 5510 fix
 				acpi->SetPower(acpi->powers[1]);
 			acpi->SetGMode(newMode);
 			if (!newMode)
@@ -84,6 +85,12 @@ void MonHelper::SetCurrentGmode(WORD newMode) {
 	}
 	else
 		fan_conf->lastProf->gmode = 0;
+}
+
+byte MonHelper::GetFanPercent(byte fanID)
+{
+	auto maxboost = fan_conf->boosts.find(fanID);
+	return maxboost == fan_conf->boosts.end() ? acpi->GetFanPercent(fanID) : (fanRpm[fanID] * 100) / maxboost->second.maxRPM;
 }
 
 void CMonProc(LPVOID param) {
@@ -107,7 +114,7 @@ void CMonProc(LPVOID param) {
 	// fans...
 	for (int i = 0; i < acpi->fans.size(); i++) {
 		//src->boostSets[i] = 0;
-		src->boostRaw[i] = acpi->GetFanBoost(i, true);
+		src->boostRaw[i] = acpi->GetFanBoost(i/*, true*/);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
@@ -135,10 +142,10 @@ void CMonProc(LPVOID param) {
 				}
 			}
 			if (!src->fanSleep[cIter]) {
-				int rawBoost = src->boostSets[cIter] * acpi->boosts[cIter] / 100;
+				int rawBoost = (int)round((fan_conf->GetFanScale(cIter) * src->boostSets[cIter]) / 100.0);
 				// Check overboost tricks...
 				if (src->boostRaw[cIter] < 90 && rawBoost > 100) {
-					acpi->SetFanBoost(cIter, 100, true);
+					acpi->SetFanBoost(cIter, 100/*, true*/);
 					src->fanSleep[cIter] = ((100 - src->boostRaw[cIter]) >> 3) + 2;
 					DebugPrint("Overboost started, fan " + to_string(cIter) + " locked for " + to_string(src->fanSleep[cIter]) + " tacts(old "
 						+ to_string(src->boostRaw[cIter]) + ", new " + to_string(rawBoost) + ")!\n");
@@ -159,7 +166,7 @@ void CMonProc(LPVOID param) {
 						//	}
 						//}
 
-						acpi->SetFanBoost(cIter, rawBoost, true);
+						acpi->SetFanBoost(cIter, rawBoost/*, true*/);
 
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());

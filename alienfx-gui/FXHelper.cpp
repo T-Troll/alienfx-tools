@@ -141,7 +141,9 @@ void FXHelper::RefreshCounters(LightEventData *data, bool force)
 		if (!force) blinkStage = !blinkStage;
 		bool wasChanged = false;
 
+		eve->modifyProfile.lock();
 		vector<groupset> active = conf->activeProfile->lightsets;
+		eve->modifyProfile.unlock();
 		AlienFX_SDK::Afx_group* grp;
 
 		for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
@@ -398,12 +400,6 @@ void FXHelper::SetLight(int did, int id, vector<AlienFX_SDK::Afx_action>* action
 		}
 	}
 }
-
-//inline void FXHelper::RefreshMon()
-//{
-//	if (updateThread && conf->enableMon && conf->GetEffect() == 1)
-//		RefreshCounters(&eData, true);
-//}
 
 void FXHelper::SetState(bool force) {
 	if (conf->SetStates() || force) {
