@@ -352,7 +352,6 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 	CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 	OnGridSelChanged(gridTab);
 	RedrawDevList();
-	//SetLightInfo();
 	csv_devs.clear();
 }
 
@@ -468,7 +467,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					if (!lgh)
 						lgh = FindCreateMapping(false);
 					lgh->name.resize(128);
-					GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)lgh->name.data(), 127);
+					lgh->name.resize(GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)lgh->name.data(), 127));
 					lgh->name.shrink_to_fit();
 					EnableWindow(GetDlgItem(dDlg, IDC_BUT_CLEAR), true);
 				}

@@ -1135,17 +1135,17 @@ namespace AlienFX_SDK {
 
 
 	void Mappings::LoadMappings() {
-		HKEY   hKey1;
+		HKEY   mainKey;
 
 		groups.clear();
 		grids.clear();
 
-		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
-		unsigned vindex; //mapping map; afx_device* dev;
+		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &mainKey, NULL);
+		unsigned vindex;
 		char kName[255], name[255];
 		DWORD len, lend, dID;
 		WORD lID, vid, pid;
-		for (vindex = 0; RegEnumValue(hKey1, vindex, kName, &(len = 255), NULL, NULL, (LPBYTE)name, &(lend = 255)) == ERROR_SUCCESS; vindex++) {
+		for (vindex = 0; RegEnumValue(mainKey, vindex, kName, &(len = 255), NULL, NULL, (LPBYTE)name, &(lend = 255)) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Dev#%hd_%hd", &vid, &pid) == 2) {
 				AddDeviceById(pid, vid)->name = string(name);
 				continue;
@@ -1155,28 +1155,28 @@ namespace AlienFX_SDK {
 				continue;
 			}
 		}
-		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
+		for (vindex = 0; RegEnumKey(mainKey, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Light%u-%hd", &dID, &lID) == 2) {
-				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
-				RegGetValue(hKey1, kName, "Flags", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
+				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
+				RegGetValue(mainKey, kName, "Flags", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
 				AddDeviceById(LOWORD(dID), HIWORD(dID))->lights.push_back({ lID, LOWORD(len), name });
 			}
-			if (sscanf_s((char*)kName, "Grid%d", &dID) == 1) {
-				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
-				RegGetValue(hKey1, kName, "Size", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
+			if (sscanf_s(kName, "Grid%d", &dID) == 1) {
+				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
+				RegGetValue(mainKey, kName, "Size", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
 				byte x = HIBYTE(len), y = LOBYTE(len);
 				Afx_groupLight* grid = new Afx_groupLight[x * y];
-				RegGetValue(hKey1, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &(lend = x * y * sizeof(DWORD)));
+				RegGetValue(mainKey, kName, "Grid", RRF_RT_REG_BINARY, 0, grid, &(lend = x * y * sizeof(DWORD)));
 				grids.push_back({ (byte)dID, x, y, name, grid });
 			}
 		}
-		for (vindex = 0; RegEnumKey(hKey1, vindex, kName, 255) == ERROR_SUCCESS; vindex++)  {
-			if (sscanf_s((char *) kName, "Group%d", &dID) == 1) {
-				RegGetValue(hKey1, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
-				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend);
+		for (vindex = 0; RegEnumKey(mainKey, vindex, kName, 255) == ERROR_SUCCESS; vindex++)  {
+			if (sscanf_s(kName, "Group%d", &dID) == 1) {
+				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
+				RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend);
 				len = lend / sizeof(DWORD);
 				DWORD* maps = new DWORD[len];
-				RegGetValue(hKey1, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
+				RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
 				groups.push_back({dID, name});
 				for (unsigned i = 0; i < len; i += 2) {
 					groups.back().lights.push_back({ LOWORD(maps[i]), (WORD)maps[i + 1] });
@@ -1186,7 +1186,7 @@ namespace AlienFX_SDK {
 				delete[] maps;
 			}
 		}
-		RegCloseKey(hKey1);
+		RegCloseKey(mainKey);
 	}
 
 	void Mappings::SaveMappings() {
