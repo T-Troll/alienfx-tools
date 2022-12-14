@@ -139,22 +139,19 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_FANCONTROL:
 			conf->fanControl = state;
-			eve->StopEffects();
 			if (state) {
 				if (DetectFans())
 					SetHotkeys();
 				else
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 			} else {
-				// Stop all fan services
-				if (mon) {
+				eve->StopEffects();
+				if (acpi) {
 					delete mon;
-					mon = NULL;
 				}
+				eve->StartEffects();
 			}
-			// check for ACPI lights
 			fxhl->FillAllDevs(acpi);
-			eve->StartEffects();
 			SetMainTabs();
 			break;
 		case IDC_CHECK_LIGHTNAMES:

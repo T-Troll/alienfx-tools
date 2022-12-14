@@ -44,8 +44,10 @@ void MonHelper::Start() {
 		if (!fan_conf->lastProf->gmode && oldPower < 0)
 			oldPower = acpi->GetPower();
 		// Patch for R4
-		//if (acpi->powers.size() > 1)
-		//	acpi->SetPower(acpi->powers[1]);
+		if (!acpi->GetSystemID() && acpi->powers.size() > 2) {
+			acpi->SetPower(0);
+			acpi->SetPower(acpi->powers[2]);
+		}
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");

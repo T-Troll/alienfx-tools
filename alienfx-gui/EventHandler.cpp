@@ -87,7 +87,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 		modifyProfile.unlock();
 
-		if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
+		if (acpi && acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
 			mon->SetCurrentGmode(conf->fan_conf->lastProf->gmode);
 
 		fxhl->SetState();
@@ -435,7 +435,7 @@ void CEventProc(LPVOID param)
 				}
 			}
 
-			if (mon) {
+			if (acpi) {
 				// Check fan RPMs
 				for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
 					cData->Fan = max(cData->Fan, mon->GetFanPercent(i));
@@ -447,7 +447,7 @@ void CEventProc(LPVOID param)
 			// ESIF powers and temps
 			short totalPwr = 0;
 			if (conf->esif_temp) {
-				if (!mon) {
+				if (!acpi) {
 					// ESIF temps (already in fans)
 					cData->Temp = max(cData->Temp, GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
 				}

@@ -62,7 +62,7 @@ POINT Boost2Screen(fan_overboost* boost) {
 
 void DrawFan()
 {
-    if (fanWindow && mon && cArea.right) {
+    if (fanWindow && acpi && cArea.right) {
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
         // Double buff...

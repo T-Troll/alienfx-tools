@@ -173,7 +173,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
             wasBoostMode = false;
         }
-        if (IsWindowVisible(hDlg)) {
+        if (IsWindowVisible(hDlg) && acpi) {
             if (!mon->monThread) {
                 for (int i = 0; i < acpi->sensors.size(); i++) {
                     mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);

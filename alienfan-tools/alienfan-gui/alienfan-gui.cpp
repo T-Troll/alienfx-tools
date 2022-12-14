@@ -446,7 +446,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
-            //mon->Start();
             mon = new MonHelper();
             if (fan_conf->updateCheck) {
                 needUpdateFeedback = false;
@@ -455,9 +454,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case PBT_APMSUSPEND:
             // Sleep initiated.
-            //mon->Stop();
             delete mon;
-            mon = NULL;
             fan_conf->Save();
             break;
         }
@@ -468,7 +465,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
             wasBoostMode = false;
         }
-        if (mon) {
+        if (acpi) {
             if (!mon->monThread) {
                 for (int i = 0; i < acpi->sensors.size(); i++) {
                     mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);

@@ -71,7 +71,6 @@ bool DetectFans() {
 		}
 		else {
 			delete mon;
-			mon = NULL;
 			conf->fanControl = false;
 		}
 	}
@@ -190,7 +189,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	DoStopService(conf->wasAWCC, false);
 
-	if (mon) {
+	if (acpi) {
 		delete mon;
 	}
 
@@ -368,8 +367,11 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 	TCITEM tie{ TCIF_TEXT | TCIF_PARAM };
 
 	for (int i = 0; i < tabsize; i++) {
-		if (tabsize < 5 && ((i == 0 && conf->afx_dev.fxdevs.empty()) || (i == 1 && !mon)))
-			continue;
+		if (tabsize < 5)
+			switch (i) { // check disable tabs
+			case 0: if (conf->afx_dev.fxdevs.empty()) continue; break;
+			case 1: if (!acpi) continue; break;
+			}
 		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
 		tie.pszText = (LPSTR)names[i].c_str();
 		tie.lParam = i;
@@ -681,10 +683,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->Save();
 			eve->StopProfiles();
 			eve->StopEffects();
-			if (mon) {
+			if (acpi)
 				delete mon;
-				mon = NULL;
-			}
 			fxhl->Stop();
 			break;
 		}
@@ -716,7 +716,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		conf->Save();
 		delete eve;
 		fxhl->Refresh(2);
-		if (mon)
+		if (acpi)
 			mon->Stop();
 		fxhl->Stop();
 		return 0;
@@ -730,7 +730,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		}
-		if (mon && wParam > 29 && wParam - 30 < acpi->powers.size()) { // PowerMode switch
+		if (acpi && wParam > 29 && wParam - 30 < acpi->powers.size()) { // PowerMode switch
 			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
@@ -766,7 +766,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		case 6: // G-key for Dell G-series power switch
-			if (mon && acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+			if (acpi && acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
 				mon->SetCurrentGmode(!conf->fan_conf->lastProf->gmode);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);
