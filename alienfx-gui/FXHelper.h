@@ -9,16 +9,14 @@ struct LightEventData {
 };
 
 struct LightQueryElement {
-	AlienFX_SDK::Afx_device* dev;
-	int lid;
-	DWORD flags;
-	bool update = false;
+	DWORD light;
+	bool flags, update = false;
 	byte actsize;
 	AlienFX_SDK::Afx_action actions[10];
 };
 
 struct deviceQuery {
-	AlienFX_SDK::Afx_device* dev;
+	WORD pid;
 	vector<AlienFX_SDK::Afx_lightblock> dev_query;
 };
 
@@ -31,7 +29,7 @@ private:
 
 	void SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0, bool force = false);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
-	void SetLight(int did, int id, vector<AlienFX_SDK::Afx_action>* actions, bool force = false);
+	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions, bool force = false);
 	void QueryUpdate(bool force = false);
 
 public:
@@ -59,7 +57,7 @@ public:
 	void RefreshOne(groupset* map, bool update = true, int force = 0);
 	void TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::Afx_device* dev);
-	void RefreshCounters(LightEventData *data = NULL, bool force = false);
+	void RefreshCounters(LightEventData *data = NULL);
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);
 	void RefreshGrid(long tact);

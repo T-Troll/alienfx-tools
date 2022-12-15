@@ -261,6 +261,12 @@ namespace AlienFan_SDK {
 			return CallWMIMethod(getFanRPM, (byte) fans[fanID].id);
 		return -1;
 	}
+	int Control::GetMaxRPM(int fanID)
+	{
+		if (fanID < fans.size())
+			return CallWMIMethod(getMaxRPM, (byte)fans[fanID].id);
+		return -1;
+	}
 	int Control::GetFanPercent(int fanID) {
 		if (fanID < fans.size())
 			//if (fanID < maxrpm.size() && maxrpm[fanID])

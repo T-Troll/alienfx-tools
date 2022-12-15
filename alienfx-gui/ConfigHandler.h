@@ -59,7 +59,7 @@ struct zonelight {
 struct zonemap {
 	DWORD gID;
 	DWORD gridID;
-	byte xMax=0, yMax=0, gMinX=255, gMaxX=0, gMinY=255, gMaxY=0;
+	byte xMax = 0, yMax = 0, gMinX = 255, gMaxX = 0, gMinY = 255, gMaxY = 0;
 	vector<zonelight> lightMap;
 };
 

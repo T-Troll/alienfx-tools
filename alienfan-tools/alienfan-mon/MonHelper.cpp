@@ -35,19 +35,15 @@ MonHelper::~MonHelper() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		oldGmode = acpi->GetDeviceFlags() & DEV_FLAG_GMODE ? acpi->GetGMode() : 0;
-		//if (!oldGmode && oldPower < 0)
-		//	oldPower = acpi->GetPower();
+		oldGmode = acpi->GetGMode() > 0;
+		if (!oldGmode && oldPower < 0)
+			oldPower = acpi->GetPower();
 		if (oldGmode != fan_conf->lastProf->gmode) {
 			SetCurrentGmode(fan_conf->lastProf->gmode);
 		}
-		if (!fan_conf->lastProf->gmode && oldPower < 0)
-			oldPower = acpi->GetPower();
 		// Patch for R4
-		if (!acpi->GetSystemID() && acpi->powers.size() > 2) {
-			acpi->SetPower(0);
-			acpi->SetPower(acpi->powers[2]);
-		}
+		if (!acpi->GetSystemID())
+			acpi->SetPower(0xa0);
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -79,7 +75,7 @@ void MonHelper::SetCurrentGmode(WORD newMode) {
 		if (acpi->GetGMode() != newMode) {
 			fan_conf->lastProf->gmode = newMode;
 			if (newMode && (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200)) // m15R5 && G5 5510 fix
-				acpi->SetPower(acpi->powers[1]);
+				acpi->SetPower(0xa0);
 			acpi->SetGMode(newMode);
 			if (!newMode)
 				acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);

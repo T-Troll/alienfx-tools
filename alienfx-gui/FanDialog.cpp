@@ -31,16 +31,6 @@ extern HANDLE ocStopEvent;
 
 static bool wasBoostMode = false;
 
-void StartOverboost(HWND hDlg, int fan, bool type) {
-    EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
-    if (type) {
-        CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)(ULONG64)fan, 0, NULL);
-        SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
-    } else
-        CreateThread(NULL, 0, CheckFanRPM, (LPVOID)(ULONG64)fan, 0, NULL);
-    wasBoostMode = true;
-}
-
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -80,13 +70,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
         //SendMessage(power_gpu, TBM_SETPOS, true, fan_conf->lastProf->GPUPower);
 
-        if (!fan_conf->obCheck && MessageBox(NULL, "Do you want to set max. boost now (it will took some minutes)?", "Question",
-                MB_YESNO | MB_ICONINFORMATION) == IDYES) {
-                // ask for boost check
-                EnableWindow(power_list, false);
-                StartOverboost(hDlg, -1, true);
-            }
-        fan_conf->obCheck = 1;
     } break;
     case WM_COMMAND:
     {
@@ -146,15 +129,19 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_OVER:
             if (fanMode) {
-                StartOverboost(hDlg, fan_conf->lastSelectedFan, true);
+                EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
+                CreateThread(NULL, 0, CheckFanOverboost, 0, 0, NULL);
+                fanMode = false;
+                wasBoostMode = true;
+                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
             }
             else {
                 SetEvent(ocStopEvent);
             }
             break;
-        case IDC_BUT_MAXRPM:
+        case IDC_BUT_RESETBOOST:
             if (fanMode)
-                StartOverboost(hDlg, fan_conf->lastSelectedFan, false);
+                fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
             break;
         }
     } break;

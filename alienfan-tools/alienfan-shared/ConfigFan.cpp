@@ -70,7 +70,7 @@ void ConfigFan::Load() {
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LastPowerStage", &power);
-	GetReg("ObCheck", &obCheck);
+	//GetReg("ObCheck", &obCheck);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	// set power values
@@ -112,7 +112,7 @@ void ConfigFan::Save() {
 	SetReg("StartMinimized", startMinimized);
 	SetReg("LastPowerStage", MAKELPARAM(prof.powerStage, prof.gmode));
 	SetReg("UpdateCheck", updateCheck);
-	SetReg("ObCheck", obCheck);
+	//SetReg("ObCheck", obCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);
 	// clean old data
@@ -161,11 +161,15 @@ void ConfigFan::SetSensorNames(AlienFan_SDK::Control* acpi) {
 	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
 		if (powers.find(*i) == powers.end())
 			powers.emplace(*i, *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual");
+	for (int i = 0; i < acpi->fans.size(); i++)
+		if (boosts.find(i) == boosts.end())
+			boosts[i] = { 100, (unsigned short)acpi->GetMaxRPM(i) };
 }
 
 int ConfigFan::GetFanScale(byte fanID) {
-	auto maxboost = boosts.find(fanID);
-	return maxboost == boosts.end() ? 100 : maxboost->second.maxBoost;
+	return boosts[fanID].maxBoost;
+	//auto maxboost = boosts.find(fanID);
+	//return maxboost == boosts.end() ? 100 : maxboost->second.maxBoost;
 }
 
 

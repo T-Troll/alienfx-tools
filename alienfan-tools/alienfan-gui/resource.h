@@ -19,10 +19,11 @@
 #define IDC_STATIC_VERSION              1009
 #define IDC_SYSLINK_HOMEPAGE            1010
 #define IDC_MAX_RESET                   1016
+#define IDC_BUTTON1                     1017
+#define IDC_BUT_RESETBOOST              1017
 #define IDC_AC_BOOST                    1124
 #define IDC_DC_BOOST                    1125
 #define IDC_BUT_OVER                    1130
-#define IDC_BUT_MAXRPM                  1131
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDM_SETTINGS_UPDATE             32782
@@ -45,7 +46,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         32799
-#define _APS_NEXT_CONTROL_VALUE         1017
+#define _APS_NEXT_CONTROL_VALUE         1018
 #define _APS_NEXT_SYMED_VALUE           111
 #endif
 #endif

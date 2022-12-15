@@ -57,39 +57,41 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 }
 
 void UpdateBoost(byte fanID) {
-    fan_conf.boosts[fanID].maxBoost = max(bestBoostPoint.maxBoost, 100);
-    fan_conf.boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, fan_conf.boosts[fanID].maxRPM);
+    fan_overboost* fo = &fan_conf.boosts[fanID];
+    fo->maxBoost = max(bestBoostPoint.maxBoost, 100);
+    fo->maxRPM = max(bestBoostPoint.maxRPM, fo->maxRPM);
 }
 
 void CheckFanOverboost(byte num) {
-    int cSteps = 8, boost = 100, cBoost = 100, rpm, oldBoost = acpi.GetFanBoost(num);
+    int rpm, crpm, cSteps = 8, boost, oldBoost = acpi.GetFanBoost(num), downScale;
+    fan_overboost* fo = &fan_conf.boosts[num];
     printf("Checking Fan#%d:\n", num);
-    bestBoostPoint = { 100, 0 };
-    rpm = SetFanSteady(num, boost);
+    bestBoostPoint = *fo;
+    SetFanSteady(num, 100);
+    boost = fo->maxBoost;
+    rpm = fo->maxRPM;
     printf("    \n");
     for (int steps = cSteps; steps; steps = steps >> 1) {
         // Check for uptrend
-        while ((boost+=steps) != cBoost)
+        boost += steps;
+        while ((crpm = SetFanSteady(num, boost, true)) > rpm)
         {
-            if (SetFanSteady(num, boost, true) > rpm) {
                 rpm = bestBoostPoint.maxRPM;
                 cSteps = steps;
                 bestBoostPoint.maxBoost = boost;
-                printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-            }
-            else {
-                printf("(Skipped)\n");
-                break;
-            }
+                printf("(New best: %d @ %d RPM)\n", boost, bestBoostPoint.maxRPM);
+                boost += steps;
         }
+        printf("(Skipped)\n");
         boost = bestBoostPoint.maxBoost;
-        cBoost = boost + steps;
     }
     printf("High check done, best %d @ %d RPM, starting low check:\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+    // 100 rpm step patch
+    downScale = (rpm / 100) * 100 == rpm ? 101 : 56;
     for (int steps = cSteps; steps; steps = steps >> 1) {
         // Check for downtrend
         boost -= steps;
-        while (boost > 100 && SetFanSteady(num, boost) >= bestBoostPoint.maxRPM - 55) {
+        while (boost > 100 && SetFanSteady(num, boost) > bestBoostPoint.maxRPM - downScale) {
             bestBoostPoint.maxBoost = boost;
             boost -= steps;
             printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
@@ -114,16 +116,17 @@ const char* GetFanType(int index) {
 }
 
 void Usage() {
-    printf("Usage: alienfan-cli [command[=value{,value}] [command...]]\n\
+    printf("Usage: alienfan-cli command[=value{,value}] {command...}\n\
 Available commands: \n\
 rpm[=id]\t\t\tShow fan(s) RPM\n\
+maxrpm[=id]\t\t\tBIOS fan max. RPM\n\
 percent[=id]\t\t\tShow fan(s) RPM in percent of maximum\n\
 temp[=id]\t\t\tShow known temperature sensors values\n\
 unlock\t\t\t\tUnlock fan controls\n\
 getpower\t\t\tDisplay current power state\n\
 setpower=<power mode>\t\tSet CPU power to this mode\n\
 setperf=<ac>,<dc>\t\tSet CPU performance boost\n\
-getfans[=[fanID,]<mode>]\t\tShow fan boost level (0..100 - in percent) with selected mode\n\
+getfans[=[fanID,]<mode>]\tShow fan boost level (0..100 - in percent) with selected mode\n\
 setfans=<fan1>[,<fanN>][,mode]\tSet fans boost level (0..100 - in percent) with selected mode\n\
 setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or auto)\n\
 setgmode=<mode>\t\t\tSet G-mode on/off (1-on, 0-off)\n\
@@ -139,7 +142,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.9.1\n");
+    printf("AlienFan-CLI v7.9.2\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -174,6 +177,12 @@ int main(int argc, char* argv[])
             for (int i = 0; i < acpi.fans.size(); i++)
                 if (args.empty() || args[0].num == i)
                     printf("Fan%s %d: %d\n", GetFanType(i), i, acpi.GetFanRPM(i));
+            continue;
+        }
+        if (command == "maxrpm") {
+            for (int i = 0; i < acpi.fans.size(); i++)
+                if (args.empty() || args[0].num == i)
+                    printf("Fan%s %d: %d\n", GetFanType(i), i, acpi.GetMaxRPM(i));
             continue;
         }
         if (command == "percent") {
@@ -268,7 +277,7 @@ int main(int argc, char* argv[])
         if (command == "setgmode" && CheckArgs(1, 2)) {
             if ((acpi.GetDeviceFlags() & DEV_FLAG_GMODE) && acpi.GetGMode() != args[0].num) {
                 if (acpi.GetSystemID() == 2933 && args[0].num) // G5 5510 fix
-                    acpi.SetPower(acpi.powers[1]);
+                    acpi.SetPower(0xa0);
                 acpi.SetGMode(args[0].num);
                 if (!args[0].num)
                     acpi.SetPower(acpi.powers[fan_conf.prof.powerStage]);

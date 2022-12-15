@@ -18,9 +18,8 @@ First power mode always named "Manual", and the last power mode is a special one
 "Check Max. boost" button will check possibility of currently selected fan to increase RPM even more, then 100% boost.  
 It will switch curve window to other mode - showing currently tested boost level and resulting RPM.  
 This process can take some minutes, window with final results will be shown after the process ends, and they be used lately for this fan.  
-You can press "Stop check" button at any time to stop max. boost check.
-
-"Check Max. RPM" button is highly recommended to use if you don't want or can't check for Max. boost. It check top RPMs for 100% boost, then record result. This fix the situation fan percent is not correct (some BIOSes report it incorrectly).
+You can press "Stop check" button any time to stop max. boost check.  
+Press "X" button at right to reset fan boost to BIOS default values.
 
 ```
 How to use it

@@ -36,14 +36,14 @@ private:
 public:
 	byte lastSelectedFan = 0;
 	WORD lastSelectedSensor = 0;
-	DWORD startWithWindows = 0;
-	DWORD startMinimized = 0;
-	DWORD updateCheck = 1;
-	DWORD obCheck = 0;
-	DWORD awcc_disable = 0;
-	DWORD keyShortcuts = 1;
+	DWORD startWithWindows;
+	DWORD startMinimized;
+	DWORD updateCheck;
+	//DWORD obCheck = 0;
+	DWORD awcc_disable;
+	DWORD keyShortcuts;
 
-	bool wasAWCC = false;
+	bool wasAWCC;
 
 	fan_profile prof;
 	fan_profile* lastProf = &prof;

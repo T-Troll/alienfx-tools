@@ -18,12 +18,12 @@ namespace AlienFan_SDK {
 	//	(BSTR)L"LEDBrightness"			// 0x03
 	//};
 
-	static const byte functionID[2][12]{
-		{ 0,0,0,0,0,0,1,1,2,2,3,4 },
-		{ 5,5,5,5,5,5,6,6,2,2,3,4 }
+	static const byte functionID[2][13]{
+		{ 0,0,0,0,0,0,1,1,2,2,3,4,0 },
+		{ 5,5,5,5,5,5,6,6,2,2,3,4,5 }
 	};
 
-	static const byte dev_controls[12]{
+	static const byte dev_controls[13]{
 		3, // PowerID
 		5, // RPM
 		6, // Percent
@@ -35,7 +35,8 @@ namespace AlienFan_SDK {
 		2, // Get G-Mode
 		1, // Toggle G-Mode
 		2, // Get system ID
-		2  // Get fan sensor ID
+		2, // Get fan sensor ID
+		9  // Get Max. RPM
 	};
 
 	static const char* temp_names[2]{

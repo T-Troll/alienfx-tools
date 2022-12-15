@@ -5,7 +5,8 @@ ACPI calls can't control fans directly for modern gear (but can set direct fan p
 Run `alienfan-cli [command[=value{,value}] [command...]]`. After start, it detect you gear and show number of fans, temperature sensors and power modes available.
 
 Available commands:
-- `rpm[=fanID]` - Show fan RPM(s) for all fans or for this ID only.
+- `rpm[=fanID]` - Show fan RPM(s) for all fans or for this ID.
+- `maxrpm[=fanID]` - Show BIOS-defined maximal RPM(s) for all fans or for this ID.
 - `percent[=fanID]` - Show current fan RPM(s) in percent of maximum for all fans or for this ID only.
 - `temp=[sensorID]` - Show known temperature sensor name and value for all sensors or for this ID only.
 - `unlock` - Enable manual fan control

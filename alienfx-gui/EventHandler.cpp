@@ -427,12 +427,14 @@ void CEventProc(LPVOID param)
 			GetSystemPowerStatus(&state);
 			// Locale
 			if (curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL))) {
-				for (int i = GetKeyboardLayoutList(10, locIDs); i >= 0; i--) {
-					if (curLocale == locIDs[i]) {
-						cData->KBD = i > 0 ? 100 : 0;
-						break;
-					}
-				}
+				GetKeyboardLayoutList(10, locIDs);
+				cData->KBD = curLocale == locIDs[0] ? 0 : 100;
+				//for (int i = GetKeyboardLayoutList(10, locIDs); i >= 0; i--) {
+				//	if (curLocale == locIDs[i]) {
+				//		cData->KBD = i > 0 ? 100 : 0;
+				//		break;
+				//	}
+				//}
 			}
 
 			if (acpi) {
@@ -464,11 +466,7 @@ void CEventProc(LPVOID param)
 			cData->Fan = min(100, cData->Fan);
 			cData->CPU = (byte)cCPUVal.longValue;
 			cData->RAM = (byte)memStat.dwMemoryLoad;
-			//cData.NET = (byte) totalNet ? max(totalNet * 100 / fxhl->maxData.NET, 1) : 0;
 			cData->PWR = (byte)cData->PWR * 100 / fxhl->maxData.PWR;
-			//fxhl->maxData.NET = max(fxhl->maxData.NET, cData.NET);
-			//fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData.GPU);
-			//fxhl->maxData.Temp = max(fxhl->maxData.Temp, cData.Temp);
 			fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData->RAM);
 			fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData->CPU);
 

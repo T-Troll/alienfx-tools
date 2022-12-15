@@ -46,6 +46,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
 		char keyname [32];
 		GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
+		eve->modifyProfile.lock();
  		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->effect.trigger == 3 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
@@ -56,6 +57,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 						break;
 					}
 			}
+		eve->modifyProfile.unlock();
 	}
 
 	return res;
@@ -82,9 +84,8 @@ void GridHelper::StartCommonRun(groupset* ce) {
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
 	eve->modifyProfile.lock();
-	vector<groupset> active = conf->activeProfile->lightsets;
-	eve->modifyProfile.unlock();
-	for (auto ce = active.begin(); ce < active.end(); ce++) {
+	//vector<groupset> active = conf->activeProfile->lightsets;
+	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		if (ce->effect.trigger && ce->gridop.passive) {
 			if (ce->effect.trigger == 4) { // indicator
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)
@@ -108,7 +109,7 @@ void GridTriggerWatch(LPVOID param) {
 				src->StartCommonRun(&(*ce));
 		}
 	}
-
+	eve->modifyProfile.unlock();
 }
 
 GridHelper::GridHelper() {

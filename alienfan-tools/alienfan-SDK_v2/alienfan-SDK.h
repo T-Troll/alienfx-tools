@@ -44,6 +44,7 @@ namespace AlienFan_SDK {
 #define setGMode		9
 #define getSysID		10
 #define getFanSensor	11
+#define getMaxRPM		12
 
 	union ALIENFAN_INTERFACE {
 		struct {
@@ -76,6 +77,9 @@ namespace AlienFan_SDK {
 		// Get RPM for the fan index fanID at fans[]
 		// Result: fan RPM
 		int GetFanRPM(int fanID);
+
+		// Get Max. RPM for fan index fanID
+		int GetMaxRPM(int fanID);
 
 		// Get fan RPMs as a percent of RPM
 		// Result: percent of the fan speed

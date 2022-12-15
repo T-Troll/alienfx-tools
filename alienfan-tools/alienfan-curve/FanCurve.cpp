@@ -22,7 +22,7 @@ bool fanUpdateBlock = false;
 RECT cArea{ 0 };
 
 vector<fan_point>::iterator lastFanPoint;
-fan_overboost* lastBoostPoint = NULL, bestBoostPoint{ 0 };
+fan_overboost* lastBoostPoint = NULL, bestBoostPoint;
 vector<fan_overboost> boostCheck;
 
 int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
@@ -172,16 +172,14 @@ void DrawFan()
 }
 
 int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
-    acpi->SetFanBoost(fanID, boost/*, true*/);
+    acpi->SetFanBoost(fanID, boost);
     // Check the trend...
     int pRpm, bRpm = acpi->GetFanRPM(fanID), maxRPM;
     boostCheck.push_back({ boost, (USHORT)bRpm });
     lastBoostPoint = &boostCheck.back();
-    //DrawFan();
     if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
         return -1;
     lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
-    //DrawFan();
     do {
         pRpm = bRpm;
         bRpm = lastBoostPoint->maxRPM;
@@ -190,92 +188,60 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
         lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
         maxRPM = max(lastBoostPoint->maxRPM, bRpm);
         bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
-        //DrawFan();
     } while ((lastBoostPoint->maxRPM > bRpm || bRpm < pRpm || lastBoostPoint->maxRPM != pRpm)
         && (!downtrend || !(lastBoostPoint->maxRPM < bRpm && bRpm < pRpm)));
     return lastBoostPoint->maxRPM = maxRPM;
 }
 
-void UpdateBoost(byte fanID) {
-    fan_overboost* fo = &fan_conf->boosts[fanID];
-    fo->maxBoost = max(bestBoostPoint.maxBoost, 100);
-    fo->maxRPM = max(bestBoostPoint.maxRPM, fo->maxRPM);
-}
-
-DWORD WINAPI CheckFanRPM(LPVOID lpParam) {
-    byte fanID = (byte)(ULONG64)lpParam;
-    mon->Stop();
-    fanMode = false;
-    acpi->Unlock();
-    boostCheck.clear();
-    bestBoostPoint = { 100, 3000 };
-    SetFanSteady(fanID, 100);
-    fan_conf->boosts[fanID].maxRPM = max(bestBoostPoint.maxRPM, fan_conf->boosts[fanID].maxRPM/*acpi->maxrpm[fanID]*/);
-    //acpi->maxrpm[fanID] = fan_conf->boosts[fanID].maxRPM;
-    ShowNotification(niData, "Max. RPM calculation done", "Fan #" + to_string(fanID + 1) + ": " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
-    acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-    fanMode = true;
-    mon->Start();
-    return 0;
-}
-
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    int num = (int)(ULONG64)lpParam, rpm, crpm;
     mon->Stop();
-    fanMode = false;
     acpi->Unlock();
-    for (byte i = 0; i < acpi->fans.size(); i++)
-        if (num < 0 || num == i) {
-            int cSteps = 8, boost = 100, cBoost = 100, oldBoost = acpi->GetFanBoost(num/*, true*/);
-            fan_conf->lastSelectedFan = i;
-            boostCheck.clear();
-            bestBoostPoint = { 100, 3000 };
-            boostScale = 10; fanMinScale = 3000; fanMaxScale = 500;
-            if ((rpm = SetFanSteady(i, boost)) < 0)
-                break;
-            fanMinScale = (rpm / 100) * 100;
-            for (int steps = cSteps; steps; steps = steps >> 1) {
-                // Check for uptrend
-                while ((boost += steps) != cBoost)
-                {
-                    if ((crpm = SetFanSteady(i, boost, true)) > rpm) {
-                        rpm = lastBoostPoint->maxRPM;
-                        cSteps = steps;
-                        bestBoostPoint.maxBoost = boost;
-                        //DrawFan();
-                    }
-                    else {
-                        if (crpm > 0)
-                            break;
-                        else
-                            goto finish;
-                    }
-                }
-                boost = bestBoostPoint.maxBoost;
-                cBoost = boost + steps;
-            }
-            for (int steps = cSteps; steps; steps = steps >> 1) {
-                // Check for uptrend
-                boost -= steps;
-                while (boost > 100 && (crpm = SetFanSteady(i, boost)) >= bestBoostPoint.maxRPM - 55) {
-                    bestBoostPoint.maxBoost = boost;
-                    //DrawFan();
-                    boost -= steps;
-                }
-                if (crpm < 0)
-                    goto finish;
-                boost = bestBoostPoint.maxBoost;
-            }
-        finish:
-            acpi->SetFanBoost(num, oldBoost/*, true*/);
-            UpdateBoost(i);
-            //DrawFan();
-            ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(i+1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
-                + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
+
+    int rpm, crpm, cSteps = 8, boost, oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
+    fan_overboost* fo = &fan_conf->boosts[fan_conf->lastSelectedFan];
+    boostCheck.clear();
+    bestBoostPoint = *fo;
+    // warm-up...
+    crpm = SetFanSteady(fan_conf->lastSelectedFan, 100);
+    boost = fo->maxBoost;
+    rpm = fo->maxRPM;
+    boostScale = 10;
+    fanMaxScale = 500;
+    fanMinScale = (rpm / 100) * 100;
+    // 100 rpm step patch
+    downScale = fanMinScale == rpm ? 101 : 56;
+    for (int steps = cSteps; crpm >= 0 && steps; steps = steps >> 1) {
+        // Check for uptrend
+        boost += steps;
+        while ((crpm = SetFanSteady(fan_conf->lastSelectedFan, boost, true)) > rpm)
+        {
+            rpm = lastBoostPoint->maxRPM;
+            cSteps = steps;
+            bestBoostPoint.maxBoost = boost;
+            boost += steps;
         }
+        boost = bestBoostPoint.maxBoost;
+    }
+    for (int steps = cSteps; crpm >= 0 && steps; steps = steps >> 1) {
+        // Check for uptrend
+        boost -= steps;
+        while (boost > 100 && (crpm = SetFanSteady(fan_conf->lastSelectedFan, boost)) > bestBoostPoint.maxRPM - downScale) {
+            bestBoostPoint.maxBoost = boost;
+            boost -= steps;
+        }
+        boost = bestBoostPoint.maxBoost;
+    }
+    if (crpm >= 0) {
+        acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
+        fo->maxBoost = max(bestBoostPoint.maxBoost, 100);
+        fo->maxRPM = max(bestBoostPoint.maxRPM, fo->maxRPM);
+        ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
+            + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
+    }
+
     acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-    fanMode = true;
     mon->Start();
+    fanMode = true;
     return 0;
 }
 

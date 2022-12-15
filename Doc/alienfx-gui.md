@@ -60,7 +60,7 @@ All lights functions of you system controlled from here. It have 5 sub-tabs, but
 
 Rest of the screen is control block, it depends of function selected by tab:
 
-### Colors
+### Colors tab
 
 !["Colors" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-colors-6.png?raw=true)
 
@@ -81,7 +81,7 @@ Available effect modes are:
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do morph). But you can experiment.
 
-### Events Monitoring
+### Events Monitoring tab
 
 !["Events Monitoring" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-monitoring-6.png?raw=true)
 
@@ -197,7 +197,7 @@ Effect types define how the zone should be changed (defined by point and width):
 If the zone Gauge settings have "Gradient" enabled, zone outside changed area will be filled with gradient color between background at borders and active color at changed area border.  
 If the zone Gauge type set to "Off", all zone lights will morph between background and active colors as phase changed, otherwise gauge settings used for direction and style.
 
-### Devices and Grids
+### Devices and Grids tab
 
 !["Devices and Grids" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-devices-6.png?raw=true)
 
@@ -238,7 +238,7 @@ Then you find light position at you physical device (it's highlighted), assign i
 Click again to remove grid sell from current light, right-click (or click-and-drag) to clear grid cell(s).  
 Left-click at already assigned cell to select corresponding light (and it's device).
 
-## Fans and Power
+## Fans and Power tab
 
 !["Fans and Power" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-fans-6.png?raw=true)
 
@@ -262,9 +262,8 @@ You can change sensor name by double-click on it. In case you remove sensor name
 "Check Max. boost" button will check possibility of currently selected fan to increase RPM even more, then 100% boost.  
 It will switch curve window to other mode - showing currently tested boost level and resulting RPM.  
 This process can take some minutes, window with final results will be shown after the process ends, and they be used lately for this fan.  
-You can press "Stop check" button at any time to stop max. boost check.
-
-"Check Max. RPM" button is highly recommended to use if you don't want or can't check for Max. boost. It check top RPMs for 100% boost, then record result. This fix the situation fan percent is not correct (some BIOSes report it incorrectly).
+You can press "Stop check" button at any time to stop max. boost check.  
+Press "X" button at right to reset fan boost to BIOS default values.
 
 There are "Fan curve" graph at the right. It shows currently selected fan temperature/boost curve, as well as current boost.  
 You will see current fan boost at the top if it, and the active fan control curve (green line). The rest of the sensors controlling the same fan marked as yellow dotted lines.  
@@ -289,7 +288,7 @@ Please keep in mind:
 - If you move first or last point, it will keep its temperature after button release - but you can set other boost level for it.
 - Then fan controlled by more, then one sensor, boost will be set to the maximal value across them.  
 
-## Profiles
+## Profiles tab
 
 !["Profiles" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-profiles-6.png?raw=true)
 
@@ -326,7 +325,7 @@ In case "Profile auto switch" turned on at "Settings", active profile will be se
 - If foreground application is one of the "Trigger application" of the profile with "Only when active" flag, and no other application belongs to profile with "Priority" flag running, this profile will be selected.
 - Pressing a key or changing power source will always select first profile with this triggers active. It will stay active until other profile switch happened.
 
-## Settings
+## Settings tab
 
 !["Settings" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-settings-6.png?raw=true)
 

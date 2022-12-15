@@ -491,17 +491,19 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 		zonelight cl{ lgh->lgh, 255, 255 };
 		for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
 			if (opGrid->grid[ind].lgh == lgh->lgh) {
-				cl.x = ind % opGrid->x;//cl.x = min(cl.x, ind % opGrid->x);
-				cl.y = ind / opGrid->x;//cl.y = min(cl.y, ind / opGrid->x);
+				//cl.x = ind % opGrid->x;
+				cl.x = min(cl.x, ind % opGrid->x);
+				//cl.y = ind / opGrid->x;
+				cl.y = min(cl.y, ind / opGrid->x);
 				zone->gMaxX = max(zone->gMaxX, ind % opGrid->x);
 				zone->gMaxY = max(zone->gMaxY, ind / opGrid->x);
 				zone->gMinX = min(zone->gMinX, cl.x);
 				zone->gMinY = min(zone->gMinY, cl.y);
-				zone->lightMap.push_back(cl);
+				//zone->lightMap.push_back(cl);
 			}
-		//zone->gMinX = min(zone->gMinX, cl.x);
-		//zone->gMinY = min(zone->gMinY, cl.y);
-		//zone->lightMap.push_back(cl);
+		zone->gMinX = min(zone->gMinX, cl.x);
+		zone->gMinY = min(zone->gMinY, cl.y);
+		zone->lightMap.push_back(cl);
 	}
 
 	// now shrink axis...

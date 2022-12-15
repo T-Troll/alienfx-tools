@@ -50,6 +50,7 @@
 #define IDC_MAX_RESET                   1016
 #define IDC_STARTM                      1017
 #define IDC_BUTTON_REMOVE               1017
+#define IDC_BUT_RESETBOOST              1017
 #define IDC_LIST_DEV                    1018
 #define IDC_HOTKEYS                     1018
 #define IDC_BUT_LAST                    1019
@@ -95,7 +96,6 @@
 #define IDC_APP_BROWSE                  1060
 #define IDC_LEFFECTS_LIST               1066
 #define IDC_BUT_ADD_EFFECT              1068
-#define IDC_BUTT_REMOVE_EFFECT          1069
 #define IDC_BUT_REMOVE_EFFECT           1069
 #define IDC_CHECK_PROFDIM               1071
 #define IDC_CHECK_FOREGROUND            1073
@@ -142,7 +142,6 @@
 #define IDC_BUT_OVER                    1130
 #define IDC_VAL_NET                     1131
 #define IDC_OFFONBATTERY                1131
-#define IDC_BUT_MAXRPM                  1131
 #define IDC_VAL_BAT                     1132
 #define IDC_FAN_RESET                   1132
 #define IDC_VAL_TEMP                    1133
@@ -182,9 +181,7 @@
 #define IDC_SLIDER_WIDTH                1171
 #define IDC_COMBO_TRIGGER               1172
 #define IDC_COMBO_GEFFTYPE              1173
-#define IDC_BUTTON_GEFROM               1175
 #define IDC_BUT_GECOLOR                 1175
-#define IDC_BUTTON_GETO                 1176
 #define IDC_BUT_KEY                     1176
 #define IDC_DE_LIST                     1178
 #define IDC_DEV_EFFECT                  1179
@@ -203,7 +200,6 @@
 #define IDC_LIGHTS_LIST                 1191
 #define IDC_BUT_FROMLIST                1192
 #define IDC_BUT_LIGHTSAPPLY             1194
-#define IDC_BUTTON2                     1195
 #define IDC_BUT_LIGHTSRESET             1195
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
