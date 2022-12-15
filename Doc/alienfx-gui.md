@@ -3,7 +3,7 @@
 `AlienFX-GUI` is AWCC in 500kb. Not 500Mb!  
 
 What it **cannot** do in compare to AWCC?
-- No over clocking and down volt. Anyway, ThrottleStop or XTU do the job better.
+- No overclock (but can come soon...) and downvolt. Anyway, ThrottleStop or XTU do the job better.
 - No audio control. Being honest, never use it into AWCC.
 - No huge picture or animations, interface is as minimalistic as possible.
 - No services and drivers which send you usage data in Dell, consume RAM and slow down system.
@@ -15,11 +15,13 @@ But what it can do, instead?
   - Group the lights any way you wish and control group not as one light only, but as a gauge of LEDs.
   - Make lights react on screen colors (Ambient lights).
   - Make lights react on sound around (Haptics).
+  - Grid light effects - make group of lights react for keyboard, event or just random using light position.
 - Control system fans. Instead of AWCC, fan control is dynamic, so you can boost them any way you want. Or reset boost.
+- Control system settings like boost, power mode (thermal profile).
 - Can have a profile for any application you run, switching not only light sets, but, for example, dim lights or only switch if application in foreground.
 - Fast, less buggy and robust LightFX emulation for 3rd-party applications.
 
-Read wiki page [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide)-for-release-v6.x.x.x) for more details about initial setup.
+Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide)) for more details about initial setup.
 
 ## Main screen
 
