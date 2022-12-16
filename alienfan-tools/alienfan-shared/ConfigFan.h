@@ -20,7 +20,7 @@ struct fan_profile {
 	WORD powerStage = 0;
 	WORD gmode = 0;
 	//DWORD GPUPower = 0;
-	vector<map<WORD, sen_block>> fanControls;
+	map<short,map<WORD, sen_block>> fanControls;
 };
 
 struct fan_overboost {
@@ -56,8 +56,8 @@ public:
 	~ConfigFan();
 
 	sen_block* FindSensor();
-	map<WORD, sen_block>* FindFanBlock(short, fan_profile* prof = NULL);
 	void AddSensorCurve(fan_profile* prof, WORD fid, WORD sid, byte* data, DWORD lend);
+	void SaveSensorBlocks(HKEY key, string pname, fan_profile* data);
 	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
 	//void ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi);
 	void SetSensorNames(AlienFan_SDK::Control*);

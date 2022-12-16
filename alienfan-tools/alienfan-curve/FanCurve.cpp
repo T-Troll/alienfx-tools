@@ -86,10 +86,10 @@ void DrawFan()
 
         if (fanMode) {
             // curve...
-            auto fan = fan_conf->FindFanBlock(fan_conf->lastSelectedFan);
-            if (fan) {
+            auto fan = fan_conf->lastProf->fanControls.find(fan_conf->lastSelectedFan);
+            if (fan != fan_conf->lastProf->fanControls.end()) {
                 HPEN linePen;
-                for (auto senI = fan->begin(); senI != fan->end(); senI++) {
+                for (auto senI = fan->second.begin(); senI != fan->second.end(); senI++) {
                     sen_block* sen = &senI->second;
                     if (sen->active) {
                         // draw fan curve

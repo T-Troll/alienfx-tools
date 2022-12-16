@@ -440,21 +440,7 @@ void ConfigHandler::Save() {
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
-			for (auto i = 0; i < (*jIter)->fansets.fanControls.size(); i++) {
-				for (auto j = (*jIter)->fansets.fanControls[i].begin(); j != (*jIter)->fansets.fanControls[i].end(); j++) {
-					if (j->second.active) {
-						byte* outdata = new byte[j->second.points.size() * 2];
-						for (int k = 0; k < j->second.points.size(); k++) {
-							outdata[2 * k] = (byte)j->second.points[k].temp;
-							outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
-						}
-						name = "Profile-fan-" + to_string((*jIter)->id) + "-" + to_string(i) + "-" + to_string(j->first);
-
-						RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)j->second.points.size() * 2);
-						delete[] outdata;
-					}
-				}
-			}
+			fan_conf->SaveSensorBlocks(hKeyProfiles, "Profile-fan-" + to_string((*jIter)->id), &(*jIter)->fansets);
 		}
 	}
 }

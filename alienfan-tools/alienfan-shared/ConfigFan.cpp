@@ -23,13 +23,6 @@ sen_block* ConfigFan::FindSensor() {
 	return NULL;
 }
 
-map<WORD, sen_block>*ConfigFan::FindFanBlock(short id, fan_profile* prof) {
-	if (!prof) prof = lastProf;
-	if (id >= prof->fanControls.size())
-		prof->fanControls.resize(id + 1);
-	return &prof->fanControls[id];
-}
-
 void ConfigFan::GetReg(const char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
 	if (RegGetValue(keyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
@@ -41,13 +34,13 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 }
 
 void ConfigFan::AddSensorCurve(fan_profile *prof, WORD fid, WORD sid, byte* data, DWORD lend) {
-	auto fan = FindFanBlock(fid, prof);
+	if (!prof) prof = lastProf;
 	// Now load and add sensor data..
 	sen_block curve = { true };
 	for (UINT i = 0; i < lend; i += 2) {
 		curve.points.push_back({ data[i], data[i + 1] });
 	}
-	(*fan)[sid] = curve;
+	prof->fanControls[fid][sid] = curve;
 }
 
 DWORD ConfigFan::GetRegData(HKEY key, int vindex, char* name, byte** data) {
@@ -105,6 +98,24 @@ void ConfigFan::Load() {
 	}
 }
 
+void ConfigFan::SaveSensorBlocks(HKEY key, string pname, fan_profile* data) {
+	for (auto i = data->fanControls.begin(); i != data->fanControls.end(); i++) {
+		for (auto j = i->second.begin(); j != i->second.end(); j++) {
+			if (j->second.active) {
+				string name = pname + "-" + to_string(i->first) + "-" + to_string(j->first);
+				byte* outdata = new byte[j->second.points.size() * 2];
+				for (int k = 0; k < j->second.points.size(); k++) {
+					outdata[2 * k] = (byte)j->second.points[k].temp;
+					outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
+				}
+
+				RegSetValueEx(key, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)j->second.points.size() * 2);
+				delete[] outdata;
+			}
+		}
+	}
+}
+
 void ConfigFan::Save() {
 	string name;
 
@@ -122,21 +133,7 @@ void ConfigFan::Save() {
 	RegCreateKeyEx(keyMain, "Powers", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 
 	// save profile..
-	for (auto i = 0; i < prof.fanControls.size(); i++) {
-		for (auto j = prof.fanControls[i].begin(); j != prof.fanControls[i].end(); j++) {
-			if (j->second.active) {
-				name = "Fan-" + to_string(i) + "-" + to_string(j->first);
-				byte* outdata = new byte[j->second.points.size() * 2];
-				for (int k = 0; k < j->second.points.size(); k++) {
-					outdata[2 * k] = (byte)j->second.points[k].temp;
-					outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
-				}
-
-				RegSetValueEx(keySensors, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)j->second.points.size() * 2);
-				delete[] outdata;
-			}
-		}
-	}
+	SaveSensorBlocks(keySensors, "Fan", &prof);
 	// save boosts...
 	for (auto i = boosts.begin(); i != boosts.end(); i++) {
 		byte outarray[sizeof(byte) + sizeof(USHORT)] = {0};
@@ -158,6 +155,7 @@ void ConfigFan::Save() {
 }
 
 void ConfigFan::SetSensorNames(AlienFan_SDK::Control* acpi) {
+	// patch for incorrect fan block size
 	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
 		if (powers.find(*i) == powers.end())
 			powers.emplace(*i, *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual");
