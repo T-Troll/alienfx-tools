@@ -182,31 +182,35 @@ void EventHandler::StartEffects() {
 }
 
 void EventHandler::ScanTaskList() {
-	DWORD cbNeeded, cProcesses;
-	static char szProcessName[32768];
+	DWORD cbNeeded;
+	char* szProcessName = new char[32768];
 
 	profile* newp = NULL, *finalP = NULL;
 
 	if (EnumProcesses(aProcesses, maxProcess * sizeof(DWORD), &cbNeeded)) {
-		while ((cProcesses = cbNeeded / sizeof(DWORD)) == maxProcess) {
+		while (cbNeeded / sizeof(DWORD) == maxProcess) {
 			maxProcess = maxProcess << 1;
 			delete[] aProcesses;
 			aProcesses = new DWORD[maxProcess];
 			EnumProcesses(aProcesses, maxProcess * sizeof(DWORD), &cbNeeded);
 		}
 
-		for (UINT i = 0; i < cProcesses; i++) {
+		for (UINT i = 0; i < cbNeeded / sizeof(DWORD); i++) {
 			if (aProcesses[i]) {
-				HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION |
-					PROCESS_VM_READ,
-					FALSE, aProcesses[i]);
+				HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, aProcesses[i]);
 				if (hProcess && GetProcessImageFileName(hProcess, szProcessName, 32767)) {
 					PathStripPath(szProcessName);
-					// is it related to profile?
-					if ((newp = conf->FindProfileByApp(string(szProcessName))) && (!finalP || !(finalP->flags & PROF_PRIORITY)))
-						finalP = newp;
 					CloseHandle(hProcess);
+					// is it related to profile?
+					if (newp = conf->FindProfileByApp(string(szProcessName))) {
+						finalP = newp;
+						if (conf->IsPriorityProfile(newp))
+							break;
+					}
 				}
+			}
+			else {
+				DebugPrint("Zero process " + to_string(i) + "\n");
 			}
 		}
 	}
@@ -217,19 +221,21 @@ void EventHandler::ScanTaskList() {
 	else
 		DebugPrint("TaskScan: no profile\n");
 #endif // _DEBUG
-
+	delete[] szProcessName;
 	SwitchActiveProfile(finalP);
 }
 
 void EventHandler::CheckProfileWindow() {
 
-	static char szProcessName[32768];
+	char* szProcessName;
 	DWORD prcId;
 
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
 
-	if (hProcess && GetProcessImageFileName(hProcess, szProcessName, 32767)) {
+	if (hProcess) {
+		szProcessName = new char[32768];
+		GetProcessImageFileName(hProcess, szProcessName, 32767);
 		CloseHandle(hProcess);
 		PathStripPath(szProcessName);
 
@@ -257,6 +263,7 @@ void EventHandler::CheckProfileWindow() {
 			DebugPrint("Forbidden app, switch blocked!\n");
 		}
 #endif // _DEBUG
+		delete[] szProcessName;
 	}
 }
 
@@ -338,7 +345,7 @@ int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, int divider = 
 
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 
-	static char szProcessName[32768];
+	char* szProcessName;
 	DWORD prcId;
 
 	GetWindowThreadProcessId(hwnd, &prcId);
@@ -346,20 +353,22 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 	HANDLE hProcess;
 
 	if (idObject == OBJID_WINDOW && !GetParent(hwnd) &&
-		(hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, prcId)) &&
-		GetProcessImageFileName(hProcess, szProcessName, 32767)) {
+		(hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, prcId))) {
+		szProcessName = new char[32768];
+		GetProcessImageFileName(hProcess, szProcessName, 32767);
 		PathStripPath(szProcessName);
 		//DebugPrint(("C/D: " + to_string(dwEvent) + " - " + szProcessName + "\n").c_str());
-		if (conf->FindProfileByApp(string(szProcessName))) {
+		if (conf->FindProfileByApp(szProcessName)) {
 			if (dwEvent == EVENT_OBJECT_DESTROY) {
 				DebugPrint("C/D: Delay activated.\n");
 				// Wait for termination
 				WaitForSingleObject(hProcess, 1000);
 				DebugPrint("C/D: Delay done.\n");
 			}
-			eve->ScanTaskList();
+			//eve->ScanTaskList();
 			eve->CheckProfileWindow();
 		}
+		delete[] szProcessName;
 		CloseHandle(hProcess);
 	}
 }
@@ -429,12 +438,6 @@ void CEventProc(LPVOID param)
 			if (curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL))) {
 				GetKeyboardLayoutList(10, locIDs);
 				cData->KBD = curLocale == locIDs[0] ? 0 : 100;
-				//for (int i = GetKeyboardLayoutList(10, locIDs); i >= 0; i--) {
-				//	if (curLocale == locIDs[i]) {
-				//		cData->KBD = i > 0 ? 100 : 0;
-				//		break;
-				//	}
-				//}
 			}
 
 			if (acpi) {

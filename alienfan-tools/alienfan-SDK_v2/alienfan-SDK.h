@@ -61,12 +61,14 @@ namespace AlienFan_SDK {
 		byte devFlags = 0;
 		DWORD systemID = 0;
 		byte sysType = -1;
-		//int Percent(int, int);
 		void EnumSensors(IEnumWbemClassObject* enum_obj, byte type);
 	public:
 		VARIANT m_instancePath;
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
 		IWbemClassObject* m_InParamaters = NULL;
+		void* dptf = NULL;
+		bool DPTFdone = false;
+
 		Control();
 		~Control();
 
@@ -131,8 +133,6 @@ namespace AlienFan_SDK {
 		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<ALIENFAN_FAN_INFO> fans;
-		//vector<byte> boosts;
-		//vector<WORD> maxrpm;
 		vector<byte> powers;
 
 		IWbemClassObject* m_AWCCGetObj = NULL;
@@ -160,5 +160,21 @@ namespace AlienFan_SDK {
 		// Set color of lights mask defined by id to RGB
 		int SetColor(byte mask, byte r, byte g, byte b);
 
+	};
+
+	class DPTFHelper {
+	private:
+		SECURITY_ATTRIBUTES attr{ sizeof(SECURITY_ATTRIBUTES), NULL, true };
+		STARTUPINFO sinfo{ sizeof(STARTUPINFO), 0 };
+		HANDLE g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, initHandle = NULL;
+		PROCESS_INFORMATION proc;
+		bool haveDPTF = false;
+	public:
+		Control* acpi;
+		DPTFHelper(Control* ac);
+		~DPTFHelper();
+		string ReadFromESIF(string command, bool wait);
+		string GetTag(string xml, string tag, size_t& pos);
+		int GetTemp(int id);
 	};
 }

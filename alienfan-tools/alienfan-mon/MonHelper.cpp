@@ -41,7 +41,7 @@ void MonHelper::Start() {
 			SetCurrentGmode(fan_conf->lastProf->gmode);
 		}
 		// Patch for R4
-		if (!acpi->GetSystemID())
+		if (!fan_conf->lastProf->gmode && !acpi->GetSystemID())
 			acpi->SetPower(0xa0);
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
@@ -94,7 +94,7 @@ void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
 	bool modified = false;
 	// let's check power...
-	if (!fan_conf->lastProf->gmode && acpi->GetPower() != fan_conf->lastProf->powerStage)
+	if (src->inControl && !fan_conf->lastProf->gmode && acpi->GetPower() != fan_conf->lastProf->powerStage)
 		acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
 	// update values:
 	// temps..
@@ -113,7 +113,7 @@ void CMonProc(LPVOID param) {
 		src->boostSets[i] = 0;
 		src->boostRaw[i] = acpi->GetFanBoost(i);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
-		if (modified && !fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
+		if (src->inControl && modified && !fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
 			auto cIter = fan_conf->lastProf->fanControls.find(i);
 			if (cIter != fan_conf->lastProf->fanControls.end()) {
 				// Set boost

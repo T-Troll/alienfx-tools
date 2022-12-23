@@ -54,6 +54,8 @@ namespace AlienFan_SDK {
 			m_AWCCGetObj->Release();
 		if (m_WbemServices)
 			m_WbemServices->Release();
+		if (dptf)
+			delete (AlienFan_SDK::DPTFHelper*)dptf;
 		CoUninitialize();
 	}
 
@@ -134,7 +136,7 @@ namespace AlienFan_SDK {
 			spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
 			spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
 			spInstance[ind]->Release();
-			if (type == 2 || cTemp.uintVal > 0 || cTemp.fltVal > 0)
+			if (cTemp.uintVal > 0 || cTemp.fltVal > 0)
 				sensors.push_back({ { (BYTE)(ind+1),type }, name + (type != 4 ? to_string(ind+1) : ""), instPath.bstrVal, valuePath });
 
 		//next:
@@ -237,9 +239,9 @@ namespace AlienFan_SDK {
 					return false;
 			}
 			// ESIF sensors
-			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
-				EnumSensors(enum_obj, 0);
-			}
+			//if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+			//	EnumSensors(enum_obj, 0);
+			//}
 			// SSD sensors
 			if (/*m_DiskService && */m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 2);
@@ -252,6 +254,7 @@ namespace AlienFan_SDK {
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 4);
 			}
+			dptf = new DPTFHelper(this);
 		}
 		return devFlags;
 	}
@@ -305,6 +308,10 @@ namespace AlienFan_SDK {
 			case 2: // SSD
 				serviceObject = m_DiskService;
 				break;
+			case 3: // DPTF
+				if (DPTFdone)
+					return ((DPTFHelper*)dptf)->GetTemp(sensors[TempID].index);
+				return -1;
 			case 4: // OHM
 				serviceObject = m_OHMService;
 				break;
@@ -386,4 +393,143 @@ namespace AlienFan_SDK {
 		byte param[8]{ id, r, g, b };
 		return CallWMIMethod(1, param);
 	}
+
+	DWORD WINAPI DPTFInitFunc(LPVOID lpParam);
+
+	DPTFHelper::DPTFHelper(Control* ac) {
+		string wdName;
+		acpi = ac;
+		wdName.resize(2048);
+		wdName.resize(GetWindowsDirectory((LPSTR)wdName.data(), 2047));
+		wdName += "\\system32\\DriverStore\\FileRepository\\";
+		WIN32_FIND_DATA file;
+		HANDLE search_handle = FindFirstFile((wdName + "dptf_cpu*").c_str(), &file);
+		if (search_handle != INVALID_HANDLE_VALUE)
+		{
+			wdName += string(file.cFileName) + "\\esif_uf.exe";
+			FindClose(search_handle);
+			haveDPTF = true;
+			CreatePipe(&g_hChildStd_OUT_Rd, &sinfo.hStdOutput, &attr, 0);
+			CreatePipe(&sinfo.hStdInput, &g_hChildStd_IN_Wr, &attr, 0);
+			DWORD flags = PIPE_NOWAIT;
+			SetNamedPipeHandleState(g_hChildStd_IN_Wr, &flags, NULL, NULL);
+			sinfo.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+			sinfo.wShowWindow = SW_HIDE;
+			sinfo.hStdError = sinfo.hStdOutput;
+			DWORD procID;
+			HWND cur = GetForegroundWindow();
+			if (CreateProcess(NULL/*(LPSTR)wdName.c_str()*/, (LPSTR)(wdName + " client").c_str(),
+				NULL, NULL, true,
+				CREATE_NEW_CONSOLE, NULL, NULL, &sinfo, &proc)) {
+				SetForegroundWindow(cur);
+				// Start init thread...
+				initHandle = CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
+			}
+			else
+				acpi->DPTFdone = true;
+		}
+		else
+			acpi->DPTFdone = true;
+	}
+
+	DPTFHelper::~DPTFHelper() {
+
+		if (haveDPTF) {
+			ReadFromESIF("exit\n", false);
+
+			WaitForSingleObject(proc.hProcess, INFINITY);
+
+			CloseHandle(sinfo.hStdInput);
+			CloseHandle(g_hChildStd_IN_Wr);
+			CloseHandle(g_hChildStd_OUT_Rd);
+			CloseHandle(sinfo.hStdOutput);
+
+			CloseHandle(proc.hProcess);
+			CloseHandle(proc.hThread);
+		}
+	}
+
+	string DPTFHelper::ReadFromESIF(string command, bool wait) {
+		DWORD written;
+		string outpart;
+		byte e_command[] = "echo noop\n";
+		if (WaitForSingleObject(proc.hProcess, 0) != WAIT_TIMEOUT)
+			return "";
+		WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
+		//FlushProcessWriteBuffers();
+		while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
+			char* buffer = new char[written + 1]{ 0 };
+			ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
+			outpart += buffer;
+			delete[] buffer;
+		}
+		while (wait && outpart.find("</result>") == string::npos && outpart.find("ESIF_E") == string::npos
+			&& outpart.find("Error") == string::npos) {
+			while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) {
+				for (int i = 0; (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) && i < 40; i++) {
+					if (WaitForSingleObject(proc.hProcess, 0) != WAIT_TIMEOUT)
+						return "";
+					WriteFile(g_hChildStd_IN_Wr, e_command, sizeof(e_command) - 1, &written, NULL);
+					//FlushProcessWriteBuffers();
+				}
+				Sleep(5);
+			}
+			while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
+				char* buffer = new char[written + 1]{ 0 };
+				ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
+				outpart += buffer;
+				delete[] buffer;
+			}
+		}
+		if (!wait || outpart.find("ESIF_E") != string::npos || outpart.find("Error") != string::npos)
+			return "";
+		else {
+			size_t pos = 0;
+			return GetTag(outpart, "result", pos);
+		}
+	}
+
+	string DPTFHelper::GetTag(string xml, string tag, size_t& pos) {
+		size_t firstpos = xml.find("<" + tag + ">", pos);
+		if (firstpos != string::npos) {
+			firstpos += tag.length() + 2;
+			pos = xml.find("</" + tag + ">", firstpos);
+			return xml.substr(firstpos, pos - firstpos);
+		}
+		else {
+			pos = string::npos;
+			return "";
+		}
+	}
+
+	int DPTFHelper::GetTemp(int id) {
+		size_t pos = 0;
+		string val = ReadFromESIF("getp_part " + to_string(id) + " 14\n", true);
+		if (val.empty())
+			return -1;
+		else
+			return atoi(GetTag(val, "value", pos).c_str());
+	}
+
+	DWORD WINAPI DPTFInitFunc(LPVOID lpParam) {
+		DPTFHelper* src = (DPTFHelper*)lpParam;
+		size_t pos = 0;
+		string parts = src->ReadFromESIF("format xml\nparticipants\n", true);
+		string part;
+		if (parts.size()) {
+			while (pos != string::npos) {
+				part = src->GetTag(parts, "participant", pos);
+				size_t descpos = 0;
+				byte sID = atoi(src->GetTag(part, "UpId", descpos).c_str());
+				string name = src->GetTag(part, "desc", descpos);
+				int temp = src->GetTemp(sID);
+				if (temp > 0)
+					src->acpi->sensors.push_back({ {sID, 3}, name });
+			}
+		}
+		src->acpi->DPTFdone = true;
+		return 0;
+	}
+
+
 }

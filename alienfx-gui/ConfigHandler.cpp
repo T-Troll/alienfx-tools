@@ -51,22 +51,27 @@ groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 }
 
 profile* ConfigHandler::FindProfile(int id) {
-	for (int i = 0; i < profiles.size(); i++)
-		if (profiles[i]->id == id) {
-			return profiles[i];
+	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
+		if ((*prof)->id == id) {
+			return *prof;
 		}
 	return NULL;
 }
 
 profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
+	profile* fprof = NULL;
 	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
-		if ((*prof)->triggerapp.size() && (active || !((*prof)->flags & PROF_ACTIVE)) && SamePower((*prof)->triggerFlags, true)) {
+		if (SamePower((*prof)->triggerFlags, true) && (active || !((*prof)->flags & PROF_ACTIVE))) {
 			for (auto name = (*prof)->triggerapp.begin(); name < (*prof)->triggerapp.end(); name++)
-				if (*name == appName)
-					return *prof;
+				if (*name == appName) {
+					if (IsPriorityProfile(*prof))
+						return *prof;
+					else
+						fprof = *prof;
+				}
 		}
-	return NULL;
+	return fprof;
 }
 
 bool ConfigHandler::IsPriorityProfile(profile* prof) {

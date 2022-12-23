@@ -17,7 +17,7 @@ NOTIFYICONDATA* niData;
 
 HWND toolTip = NULL;
 extern HINSTANCE hInst;
-bool fanMode = true;
+//bool fanMode = true;
 bool fanUpdateBlock = false;
 RECT cArea{ 0 };
 
@@ -84,7 +84,7 @@ void DrawFan()
                 LineTo(hdc, cArea.right, cy);
             }
 
-        if (fanMode) {
+        if (mon->inControl) {
             // curve...
             auto fan = fan_conf->lastProf->fanControls.find(fan_conf->lastSelectedFan);
             if (fan != fan_conf->lastProf->fanControls.end()) {
@@ -194,9 +194,9 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    mon->Stop();
+    //mon->Stop();
+    mon->inControl = false;
     acpi->Unlock();
-
     int rpm, crpm, cSteps = 8, boost, oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
     fan_overboost* fo = &fan_conf->boosts[fan_conf->lastSelectedFan];
     boostCheck.clear();
@@ -240,8 +240,8 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     }
 
     acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-    mon->Start();
-    fanMode = true;
+    //mon->Start();
+    mon->inControl = true;
     return 0;
 }
 
@@ -262,7 +262,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return true;
     } break;
     case WM_MOUSEMOVE: {
-        if (fanMode) {
+        if (mon->inControl) {
             fan_point clk = Screen2Fan(lParam);
             if (cFan && wParam & MK_LBUTTON) {
                 *lastFanPoint = clk;
@@ -279,7 +279,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_LBUTTONDOWN:
     {
         SetCapture(hDlg);
-        if (fanMode && cFan) {
+        if (mon->inControl && cFan) {
             // check and add point
             fan_point clk = Screen2Fan(lParam);
             lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
@@ -293,13 +293,13 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         return t.temp > clk.temp;
                     }), clk);
             }
-            DrawFan();
+            //DrawFan();
         }
     } break;
     case WM_LBUTTONUP: {
         ReleaseCapture();
         // re-sort and de-duplicate array.
-        if (fanMode && cFan) {
+        if (mon->inControl && cFan) {
             for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++) {
                 if (fPi->temp > (fPi + 1)->temp) {
                     fan_point t = *fPi;
@@ -311,13 +311,13 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
             cFan->points.front().temp = 0;
             cFan->points.back().temp = 100;
-            DrawFan();
+            //DrawFan();
         }
         SetFocus(GetParent(hDlg));
     } break;
     case WM_RBUTTONUP: {
         // remove point from curve...
-        if (fanMode && cFan && cFan->points.size() > 2) {
+        if (mon->inControl && cFan && cFan->points.size() > 2) {
             // check and remove point
             fan_point clk = Screen2Fan(lParam);
             for (auto fPi = cFan->points.begin() + 1; fPi < cFan->points.end() - 1; fPi++)
@@ -326,7 +326,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     cFan->points.erase(fPi);
                     break;
                 }
-            DrawFan();
+            //DrawFan();
         }
         SetFocus(GetParent(hDlg));
     } break;
@@ -411,7 +411,7 @@ void ReloadTempView(HWND list) {
     }
     for (int i = 0; i < acpi->sensors.size(); i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
-        string name = to_string(acpi->GetTempValue(i)) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
+        string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
         lItem.lParam = acpi->sensors[i].sid;
         lItem.pszText = (LPSTR)name.c_str();
         if (acpi->sensors[i].sid == fan_conf->lastSelectedSensor) {

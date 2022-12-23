@@ -27,14 +27,14 @@ MonHelper* mon = NULL;                          // Monitoring object
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
 
-const vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
+static const vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
 
 extern HWND toolTip;
 extern string GetFanName(int ind);
 
 GUID* sch_guid, perfset;
 
-bool wasBoostMode = false;
+//bool wasBoostMode = false;
 
 NOTIFYICONDATA niDataFC{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
         (HICON)LoadImage(GetModuleHandle(NULL),
@@ -62,10 +62,11 @@ extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
-extern bool fanMode;
+//extern bool fanMode;
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
-extern DWORD WINAPI CheckFanRPM(LPVOID lpParam);
+
+bool wasDPTF = true;
 
 void SetHotkeys() {
     if (fan_conf->keyShortcuts) {
@@ -135,17 +136,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return 0;
 }
 
-//void StartOverboost(HWND hDlg, int fan, bool type) {
-//    EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
-//    if (type) {
-//        CreateThread(NULL, 0, CheckFanOverboost, (LPVOID)(ULONG64)fan, 0, NULL);
-//        SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
-//    }
-//    else
-//        CreateThread(NULL, 0, CheckFanRPM, (LPVOID)(ULONG64)fan, 0, NULL);
-//    wasBoostMode = true;
-//}
-
 void RestoreApp() {
     ShowWindow(mDlg, SW_RESTORE);
     ShowWindow(fanWindow, SW_RESTORE);
@@ -202,13 +192,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
-
-        //if (!fan_conf->obCheck && MessageBox(NULL, "Do you want to set max. boost now (it will took some minutes)?", "Fan settings",
-        //    MB_YESNO | MB_ICONQUESTION) == IDYES) {
-        //    // ask for boost check
-        //    StartOverboost(hDlg, -1, true);
-        //}
-        //fan_conf->obCheck = 1;
 
         return true;
     } break;
@@ -310,19 +293,20 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ReloadTempView(tempList);
             break;
         case IDC_BUT_OVER:
-            if (fanMode) {
-                EnableWindow(GetDlgItem(hDlg, IDC_COMBO_POWER), false);
-                CreateThread(NULL, 0, CheckFanOverboost, 0, 0, NULL);
-                fanMode = false;
-                wasBoostMode = true;
+            if (mon->inControl) {
+                EnableWindow(power_list, false);
                 SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
+                CreateThread(NULL, 0, CheckFanOverboost, 0, 0, NULL);
+                //wasBoostMode = true;
             }
             else {
                 SetEvent(ocStopEvent);
+                EnableWindow(power_list, true);
+                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
             }
             break;
         case IDC_BUT_RESETBOOST:
-            if (fanMode)
+            if (mon->inControl)
                 fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
             break;
         }
@@ -464,22 +448,27 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         break;
     case WM_TIMER: {
-        if (fanMode && wasBoostMode) {
-            EnableWindow(power_list, true);
-            SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
-            wasBoostMode = false;
-        }
+        //if (mon->inControl && wasBoostMode) {
+        //    EnableWindow(power_list, true);
+        //    SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
+        //    wasBoostMode = false;
+        //}
         if (acpi) {
-            if (!mon->monThread) {
-                for (int i = 0; i < acpi->sensors.size(); i++) {
-                    mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
-                    mon->maxTemps[acpi->sensors[i].sid] = max(mon->senValues[acpi->sensors[i].sid], mon->maxTemps[acpi->sensors[i].sid]);
-                }
-                for (int i = 0; i < acpi->fans.size(); i++)
-                    mon->fanRpm[i] = acpi->GetFanRPM(i);
-            }
+            //if (!mon->monThread) {
+            //    for (int i = 0; i < acpi->sensors.size(); i++) {
+            //        mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
+            //        mon->maxTemps[acpi->sensors[i].sid] = max(mon->senValues[acpi->sensors[i].sid], mon->maxTemps[acpi->sensors[i].sid]);
+            //    }
+            //    for (int i = 0; i < acpi->fans.size(); i++)
+            //        mon->fanRpm[i] = acpi->GetFanRPM(i);
+            //}
             if (IsWindowVisible(hDlg)) {
                 //DebugPrint("Fans UI update...\n");
+                if (wasDPTF && acpi->DPTFdone) {
+                    ReloadTempView(tempList);
+                    wasDPTF = false;
+                    return false;
+                }
                 for (int i = 0; i < acpi->sensors.size(); i++) {
                     string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
                     ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());

@@ -7,6 +7,7 @@ class MonHelper {
 public:
 	ThreadHelper* monThread = NULL;
 	short oldPower = -1, oldGmode = 0;
+	bool inControl = true;
 	vector<WORD> fanRpm;
 	vector<byte> boostRaw, boostSets, fanSleep;
 	map<WORD, short> senValues, maxTemps;
