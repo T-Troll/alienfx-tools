@@ -34,8 +34,6 @@ extern string GetFanName(int ind);
 
 GUID* sch_guid, perfset;
 
-//bool wasBoostMode = false;
-
 NOTIFYICONDATA niDataFC{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
         (HICON)LoadImage(GetModuleHandle(NULL),
             MAKEINTRESOURCE(IDI_ALIENFANGUI),
@@ -65,8 +63,6 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 //extern bool fanMode;
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
-
-bool wasDPTF = true;
 
 void SetHotkeys() {
     if (fan_conf->keyShortcuts) {
@@ -448,25 +444,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         break;
     case WM_TIMER: {
-        //if (mon->inControl && wasBoostMode) {
-        //    EnableWindow(power_list, true);
-        //    SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
-        //    wasBoostMode = false;
-        //}
         if (acpi) {
-            //if (!mon->monThread) {
-            //    for (int i = 0; i < acpi->sensors.size(); i++) {
-            //        mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
-            //        mon->maxTemps[acpi->sensors[i].sid] = max(mon->senValues[acpi->sensors[i].sid], mon->maxTemps[acpi->sensors[i].sid]);
-            //    }
-            //    for (int i = 0; i < acpi->fans.size(); i++)
-            //        mon->fanRpm[i] = acpi->GetFanRPM(i);
-            //}
             if (IsWindowVisible(hDlg)) {
                 //DebugPrint("Fans UI update...\n");
-                if (wasDPTF && acpi->DPTFdone) {
+                if (acpi->DPTFdone) {
                     ReloadTempView(tempList);
-                    wasDPTF = false;
+                    acpi->DPTFdone = false;
                     return false;
                 }
                 for (int i = 0; i < acpi->sensors.size(); i++) {

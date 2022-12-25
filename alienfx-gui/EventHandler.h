@@ -15,7 +15,7 @@ private:
 	DWORD maxProcess = 256;
 	DWORD* aProcesses;
 
-	LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
+	const LPCTSTR COUNTER_PATH_CPU = "\\Processor Information(_Total)\\% Processor Time",
 		COUNTER_PATH_NET = "\\Network Interface(*)\\Bytes Total/sec",
 		COUNTER_PATH_NETMAX = "\\Network Interface(*)\\Current BandWidth",
 		COUNTER_PATH_GPU = "\\GPU Engine(*)\\Utilization Percentage",

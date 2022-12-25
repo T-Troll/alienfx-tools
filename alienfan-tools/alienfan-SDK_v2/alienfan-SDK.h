@@ -66,7 +66,6 @@ namespace AlienFan_SDK {
 		VARIANT m_instancePath;
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
 		IWbemClassObject* m_InParamaters = NULL;
-		void* dptf = NULL;
 		bool DPTFdone = false;
 
 		Control();
@@ -162,19 +161,4 @@ namespace AlienFan_SDK {
 
 	};
 
-	class DPTFHelper {
-	private:
-		SECURITY_ATTRIBUTES attr{ sizeof(SECURITY_ATTRIBUTES), NULL, true };
-		STARTUPINFO sinfo{ sizeof(STARTUPINFO), 0 };
-		HANDLE g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, initHandle = NULL;
-		PROCESS_INFORMATION proc;
-		bool haveDPTF = false;
-	public:
-		Control* acpi;
-		DPTFHelper(Control* ac);
-		~DPTFHelper();
-		string ReadFromESIF(string command, bool wait);
-		string GetTag(string xml, string tag, size_t& pos);
-		int GetTemp(int id);
-	};
 }

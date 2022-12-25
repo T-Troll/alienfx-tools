@@ -192,6 +192,11 @@ void SenMonHelper::UpdateSensors()
 			AddUpdateSensor({ i, 2, 2 }, acpi->GetFanPercent(i), "Fan " + to_string(i + 1) + " percent");
 			AddUpdateSensor({ i, 3, 2 }, acpi->GetFanBoost(i), "Fan " + to_string(i + 1) + " boost");
 		}
+		// check DPTF
+		if (acpi->DPTFdone) {
+			conf->needFullUpdate = true;
+			acpi->DPTFdone = false;
+		}
 	} else
 		if (conf->eSensors) {
 			// Added other tempset ...

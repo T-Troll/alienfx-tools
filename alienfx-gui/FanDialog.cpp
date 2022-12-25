@@ -29,8 +29,6 @@ extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
 extern string GetFanName(int ind);
 extern HANDLE ocStopEvent;
 
-//static bool wasBoostMode = false;
-
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -156,21 +154,12 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         } break;
     case WM_TIMER: {
-        //if (mon->inControl && wasBoostMode) {
-        //    EnableWindow(power_list, true);
-        //    SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
-        //    wasBoostMode = false;
-        //}
         if (IsWindowVisible(hDlg) && acpi) {
-            //if (!mon->monThread) {
-            //    for (int i = 0; i < acpi->sensors.size(); i++) {
-            //        mon->senValues[acpi->sensors[i].sid] = acpi->GetTempValue(i);
-            //        mon->maxTemps[acpi->sensors[i].sid] = max(mon->senValues[acpi->sensors[i].sid], mon->maxTemps[acpi->sensors[i].sid]);
-            //    }
-            //    for (int i = 0; i < acpi->fans.size(); i++)
-            //        mon->fanRpm[i] = acpi->GetFanRPM(i);
-            //}
-            //DebugPrint("Fans UI update...\n");
+            if (acpi->DPTFdone) {
+                ReloadTempView(tempList);
+                acpi->DPTFdone = false;
+                return false;
+            }
             for (int i = 0; i < acpi->sensors.size(); i++) {
                 string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
