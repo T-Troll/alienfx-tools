@@ -144,7 +144,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.9.2.1\n");
+    printf("AlienFan-CLI v7.10.0\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -304,47 +304,47 @@ int main(int argc, char* argv[])
             continue;
         }
 
-        if (command == "test") { // Test
-            //HANDLE hDriver;
-            //if ((hDriver = OpenESIFDriver()) != INVALID_HANDLE_VALUE) {
-            //    // Prepare ioctrl
-            //    struct esif_command_get_participants* data_ptr = NULL;
-            //    const unsigned data_len = sizeof(struct esif_command_get_participants);
-            //    struct esif_ipc_command* command_ptr = NULL;
-            //    unsigned i = 0;
-            //    unsigned count = 0;
-            //    struct esif_ipc* ipc_ptr = esif_ipc_alloc_command(&command_ptr, data_len);
-            //    // Data prepare...
-            //    command_ptr->type = ESIF_COMMAND_TYPE_GET_PARTICIPANTS;
-            //    command_ptr->req_data_type = ESIF_DATA_VOID;
-            //    command_ptr->req_data_offset = 0;
-            //    command_ptr->req_data_len = 0;
-            //    command_ptr->rsp_data_type = ESIF_DATA_STRUCTURE;
-            //    command_ptr->rsp_data_offset = 0;
-            //    command_ptr->rsp_data_len = data_len;
-            //    // Run ioctrl
-            //    bool IoctlResult = DeviceIoControl(
-            //        hDriver,           // Handle to device
-            //        ESIF_IOCTL_IPC,    // IO Control code for Read
-            //        ipc_ptr,        // Buffer to driver.
-            //        data_len, // Length of buffer in bytes.
-            //        outbuf,     // Buffer from driver.
-            //        sizeof(ACPI_EVAL_OUTPUT_BUFFER),
-            //        &ReturnedLength,    // Bytes placed in DataBuffer.
-            //        NULL                // NULL means wait till op. completes.
-            //    );
-            //    CloseHandle(hDriver);
-            //}
-            while (!acpi.DPTFdone)
-                Sleep(200);
-            for (int i = 0; i < acpi.sensors.size(); i++)
-                if (!acpi.sensors[i].type) {
-                    auto sname = fan_conf.sensors.find(acpi.sensors[i].sid);
-                    printf("%s: %d\n", (sname == fan_conf.sensors.end() ? acpi.sensors[i].name.c_str() :
-                        sname->second.c_str()), acpi.GetTempValue(i));
-                }
-            continue;
-        }
+        //if (command == "test") { // Test
+        //    //HANDLE hDriver;
+        //    //if ((hDriver = OpenESIFDriver()) != INVALID_HANDLE_VALUE) {
+        //    //    // Prepare ioctrl
+        //    //    struct esif_command_get_participants* data_ptr = NULL;
+        //    //    const unsigned data_len = sizeof(struct esif_command_get_participants);
+        //    //    struct esif_ipc_command* command_ptr = NULL;
+        //    //    unsigned i = 0;
+        //    //    unsigned count = 0;
+        //    //    struct esif_ipc* ipc_ptr = esif_ipc_alloc_command(&command_ptr, data_len);
+        //    //    // Data prepare...
+        //    //    command_ptr->type = ESIF_COMMAND_TYPE_GET_PARTICIPANTS;
+        //    //    command_ptr->req_data_type = ESIF_DATA_VOID;
+        //    //    command_ptr->req_data_offset = 0;
+        //    //    command_ptr->req_data_len = 0;
+        //    //    command_ptr->rsp_data_type = ESIF_DATA_STRUCTURE;
+        //    //    command_ptr->rsp_data_offset = 0;
+        //    //    command_ptr->rsp_data_len = data_len;
+        //    //    // Run ioctrl
+        //    //    bool IoctlResult = DeviceIoControl(
+        //    //        hDriver,           // Handle to device
+        //    //        ESIF_IOCTL_IPC,    // IO Control code for Read
+        //    //        ipc_ptr,        // Buffer to driver.
+        //    //        data_len, // Length of buffer in bytes.
+        //    //        outbuf,     // Buffer from driver.
+        //    //        sizeof(ACPI_EVAL_OUTPUT_BUFFER),
+        //    //        &ReturnedLength,    // Bytes placed in DataBuffer.
+        //    //        NULL                // NULL means wait till op. completes.
+        //    //    );
+        //    //    CloseHandle(hDriver);
+        //    //}
+        //    while (!acpi.DPTFdone)
+        //        Sleep(200);
+        //    for (int i = 0; i < acpi.sensors.size(); i++)
+        //        if (!acpi.sensors[i].type) {
+        //            auto sname = fan_conf.sensors.find(acpi.sensors[i].sid);
+        //            printf("%s: %d\n", (sname == fan_conf.sensors.end() ? acpi.sensors[i].name.c_str() :
+        //                sname->second.c_str()), acpi.GetTempValue(i));
+        //        }
+        //    continue;
+        //}
         printf("Unknown command - %s, run without parameters for help.\n", command.c_str());
     }
 

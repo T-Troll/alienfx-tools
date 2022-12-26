@@ -85,7 +85,7 @@ void SenMonHelper::ModifyMon()
 	conf->needFullUpdate = true;
 }
 
-void SenMonHelper::AddUpdateSensor(SENID sid, long val, string name) {
+void SenMonHelper::AddUpdateSensor(SENID sid, long val, string name, bool updateName) {
 	if (val > 10000 || val <= NO_SEN_VALUE) return;
 
 	SENSOR* sen = conf->FindSensor(sid.sid);
@@ -95,29 +95,25 @@ void SenMonHelper::AddUpdateSensor(SENID sid, long val, string name) {
 		conf->needFullUpdate = true;
 	}
 	else {
-		if (sen->sname.empty()) {
-			// add sensor name
+		if (sen->sname.empty() || updateName) {
 			sen->sname = name;
 			conf->needFullUpdate = true;
 		}
 
 		sen->min = sen->min <= NO_SEN_VALUE ? val : min(sen->min, val);
-		sen->changed = sen->min > NO_SEN_VALUE && sen->cur != val;
-		if (sen->changed) {
-			//sen->min = min(sen->min, val);
+		//sen->changed = sen->min > NO_SEN_VALUE && sen->cur != val;
+		if (sen->changed = (sen->min > NO_SEN_VALUE && sen->cur != val)) {
 			sen->max = max(sen->max, val);
-			sen->cur = val;
 			if (sen->alarm) {
 				// Check alarm
 				int upTrend = val - sen->ap, downtrend = sen->cur - sen->ap;
 				if (sen->direction ? upTrend < 0 && downtrend >= 0 : upTrend > 0 && downtrend <= 0) {
-					//if ((sen->direction ? (sen->cur < (int)sen->ap) + (sen->oldCur >= (int)sen->ap) == 2 :
-					//	(sen->cur > (int)sen->ap) + (sen->oldCur <= (int)sen->ap) == 2)) {
-						// Set alarm
+					// Set alarm
 					ShowNotification(&conf->niData, "Alarm triggered!", "Sensor \"" + sen->name +
-						"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->ap) + " (Current: " + to_string(sen->cur) + ")!", true);
+						"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->ap) + " (Current: " + to_string(val) + ")!", true);
 				}
 			}
+			sen->cur = val;
 		}
 	}
 }
@@ -172,38 +168,36 @@ void SenMonHelper::UpdateSensors()
 		}
 	}
 
-	if (conf->eSensors) { // group 1
-		// ESIF temperatures and power
-		valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
-		for (WORD i = 0; i < valCount; i++) {
-			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
-				AddUpdateSensor({ i, 1, 1 }, counterValues[i].FmtValue.longValue / 10, "Power " + to_string(i));
-		}
-	}
-
 	if (acpi) { // group 2
-		// Fan data and BIOS temperatures
+		// check DPTF
+		bool needUpdateName = acpi->DPTFdone;
+		acpi->DPTFdone = false;
+		// BIOS/WMI temperatures
 		for (WORD i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
-			AddUpdateSensor({ acpi->sensors[i].sid, 0, 2 }, acpi->GetTempValue(i), acpi->sensors[i].name);
+			AddUpdateSensor({ acpi->sensors[i].sid, 0, 2 }, acpi->GetTempValue(i), acpi->sensors[i].name, needUpdateName);
 		}
-
+		// Fan data
 		for (WORD i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3
 			AddUpdateSensor({ i, 1, 2 }, acpi->GetFanRPM(i), "Fan " + to_string(i + 1) + " RPM");
 			AddUpdateSensor({ i, 2, 2 }, acpi->GetFanPercent(i), "Fan " + to_string(i + 1) + " percent");
 			AddUpdateSensor({ i, 3, 2 }, acpi->GetFanBoost(i), "Fan " + to_string(i + 1) + " boost");
 		}
-		// check DPTF
-		if (acpi->DPTFdone) {
-			conf->needFullUpdate = true;
-			acpi->DPTFdone = false;
-		}
 	} else
 		if (conf->eSensors) {
-			// Added other tempset ...
+			// ESIF temperatures...
 			valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
 			for (WORD i = 0; i < valCount; i++) {
 				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue)
 					AddUpdateSensor({ i, 0, 1 }, counterValues[i].FmtValue.longValue, "Temp " + to_string(i+1));
 			}
 		}
+
+	if (conf->eSensors) { // group 1
+		// ESIF temperatures and power
+		valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
+		for (WORD i = 0; i < valCount; i++) {
+			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA)
+				AddUpdateSensor({ i, 1, 1 }, counterValues[i].FmtValue.longValue / 10, "Power " + to_string(i+1));
+		}
+	}
 }
