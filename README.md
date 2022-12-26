@@ -95,7 +95,7 @@ Build process:
 
 ## ToDo list
 
-- [x] KRDT temperature sensors (Intel)
+- [x] DPTF temperature sensors (Intel)
 - [ ] Ryzen ACPI sensors/control (AMD)
 - [x] Advanced grid effects
 - [ ] Grid effect shapes (like text, image, etc)
