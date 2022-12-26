@@ -97,9 +97,11 @@ Build process:
 
 - [x] KRDT temperature sensors (Intel)
 - [ ] Ryzen ACPI sensors/control (AMD)
-- [ ] Advanced grid effects
+- [x] Advanced grid effects
+- [ ] Grid effect shapes (like text, image, etc)
 - [ ] Power and battery charge control
 - [x] Restore ACPI light API support - beta
+- [ ] Automatic overclocking/underclock based on desired system temperature and load
 
 ## License
 
