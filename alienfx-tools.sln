@@ -58,12 +58,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-SDK_V2", "alienfan
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "AlienFX tools", "Install\Install.vdproj", "{4E8D4808-C6DD-4DA3-A1D4-2EA628C8E587}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DPTFHelper", "DPTFHelper\DPTFHelper.vcxitems", "{1A8FA21D-80C2-45F4-BD4C-1132BB8D1ED6}"
-EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{05a1d711-23f5-4b90-9f62-ec3de2419b4d}*SharedItemsImports = 9
-		DPTFHelper\DPTFHelper.vcxitems*{1a8fa21d-80c2-45f4-bd4c-1132bb8d1ed6}*SharedItemsImports = 9
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
