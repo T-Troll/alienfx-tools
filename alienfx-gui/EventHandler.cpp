@@ -445,8 +445,13 @@ void CEventProc(LPVOID param)
 				for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
 					cData->Fan = max(cData->Fan, mon->GetFanPercent(i));
 				}
+				// Sensors
 				for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
 					cData->Temp = max(cData->Temp, i->second);
+				// Power mode
+				cData->PWM = conf->fan_conf->lastProf->gmode ? 100 :
+					conf->fan_conf->lastProf->powerStage * 100 /
+					((int)acpi->powers.size() + ((acpi->GetDeviceFlags() & DEV_FLAG_GMODE) != 0) - 1);
 			}
 
 			// ESIF powers and temps

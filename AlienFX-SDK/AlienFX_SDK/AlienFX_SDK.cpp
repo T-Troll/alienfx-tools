@@ -1248,10 +1248,10 @@ namespace AlienFX_SDK {
 		RegCloseKey(hKey1);
 	}
 
-	vector<Afx_light> *Mappings::GetMappings(WORD pid, WORD vid) {
-		Afx_device* dev = GetDeviceById(pid, vid);
+	Afx_light *Mappings::GetMappingByID(WORD pid, WORD lid) {
+		Afx_device* dev = GetDeviceById(pid);
 		if (dev)
-			return &dev->lights;
+			return GetMappingByDev(dev, lid);
 		return nullptr;
 	}
 

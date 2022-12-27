@@ -285,8 +285,8 @@ namespace AlienFX_SDK {
 		// save light names into registry
 		void SaveMappings();
 
-		// get saved light structures from device
-		vector <Afx_light>* GetMappings(WORD pid, WORD vid);
+		// get saved light structure by device ID and light ID
+		Afx_light* GetMappingByID(WORD pid, WORD vid);
 
 		// get defined groups vector
 		vector <Afx_group>* GetGroups();
@@ -299,7 +299,7 @@ namespace AlienFX_SDK {
 
 		// get device structure by PID/VID.
 		// VID can be zero for any VID
-		Afx_device* GetDeviceById(WORD pid, WORD vid);
+		Afx_device* GetDeviceById(WORD pid, WORD vid = 0);
 
 		// get or add device structure by PID/VID
 		// VID can be zero for any VID

@@ -1,15 +1,13 @@
 #include "alienfx-gui.h"
 #include "common.h"
 
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-//extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 extern void RedrawZoneGrid(DWORD id);
 
 int clrListID = 0;
 
-void RebuildGEColorsList(HWND hDlg, groupset* mmap) {
+void RebuildGEColorsList(HWND hDlg) {
 	HWND eff_list = GetDlgItem(hDlg, IDC_COLORS_LIST);
 
 	ListView_DeleteAllItems(eff_list);
@@ -23,7 +21,7 @@ void RebuildGEColorsList(HWND hDlg, groupset* mmap) {
 	if (!ListView_GetColumnWidth(eff_list, 0)) {
 		LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
 		ListView_InsertColumn(eff_list, 0, &lCol);
-		ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);// width);
+		ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	}
 	if (mmap) {
 		COLORREF* picData = NULL;
@@ -57,7 +55,7 @@ void RebuildGEColorsList(HWND hDlg, groupset* mmap) {
 	ListView_EnsureVisible(eff_list, clrListID, false);
 }
 
-void ChangeAddGEColor(HWND hDlg, groupset* mmap, int newColorID) {
+void ChangeAddGEColor(HWND hDlg, int newColorID) {
 	// change color.
 	if (mmap) {
 		vector<AlienFX_SDK::Afx_colorcode>* clr = &mmap->effect.effectColors;
@@ -77,13 +75,12 @@ void ChangeAddGEColor(HWND hDlg, groupset* mmap, int newColorID) {
 			else
 				clr->erase(clr->begin() + newColorID);
 		}
-		RebuildGEColorsList(hDlg, mmap);
+		RebuildGEColorsList(hDlg);
 		RedrawZoneGrid(mmap->group);
 	}
 }
 
 void UpdateEffectInfo(HWND hDlg) {
-	groupset* mmap = conf->FindMapping(eItem);
 	if (mmap) {
 		CheckDlgButton(hDlg, IDC_CHECK_CIRCLE, mmap->effect.flags & GE_FLAG_CIRCLE);
 		CheckDlgButton(hDlg, IDC_CHECK_RANDOM, mmap->effect.flags & GE_FLAG_RANDOM);
@@ -96,14 +93,12 @@ void UpdateEffectInfo(HWND hDlg) {
 		SetSlider(sTip2, mmap->effect.speed - 80);
 		SetSlider(sTip3, mmap->effect.width);
 	}
-	RebuildGEColorsList(hDlg, mmap);
+	RebuildGEColorsList(hDlg);
 }
 
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
 		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH);
-
-	groupset* mmap = conf->FindMapping(eItem);
 
 	switch (message)
 	{
@@ -151,11 +146,11 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			SetBitMask(mmap->effect.flags, GE_FLAG_BACK, state);
 			break;
 		case IDC_BUT_GECOLOR:
-				ChangeAddGEColor(hDlg, mmap, clrListID);
+				ChangeAddGEColor(hDlg, clrListID);
 			break;
 		case IDC_BUT_ADD_COLOR:
 			if (HIWORD(wParam) == BN_CLICKED) {
-				ChangeAddGEColor(hDlg, mmap, (int)mmap->effect.effectColors.size());
+				ChangeAddGEColor(hDlg, (int)mmap->effect.effectColors.size());
 			}
 			break;
 		case IDC_BUT_REMOVE_COLOR:
@@ -169,7 +164,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					if (clrListID)
 						clrListID--;
 				}
-				RebuildGEColorsList(hDlg, mmap);
+				RebuildGEColorsList(hDlg);
 				RedrawZoneGrid(mmap->group);
 			}
 			break;
@@ -209,7 +204,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				}
 			} break;
 			case NM_DBLCLK:
-				ChangeAddGEColor(hDlg, mmap, clrListID);
+				ChangeAddGEColor(hDlg, clrListID);
 				break;
 			}
 			break;

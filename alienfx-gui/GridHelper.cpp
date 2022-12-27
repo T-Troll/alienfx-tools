@@ -52,7 +52,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 				// Is it have a key pressed?
 				zonemap* zone = conf->FindZoneMap(it->group);
 				for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
-					if (conf->afx_dev.GetMappingByDev(conf->afx_dev.GetDeviceById(LOWORD(pos->light), 0), HIWORD(pos->light))->name == (string)keyname) {
+					if (conf->afx_dev.GetMappingByID(LOWORD(pos->light), HIWORD(pos->light))->name == (string)keyname) {
 						eve->grid->StartGridRun(&(*it), zone, pos->x, pos->y);
 						break;
 					}
@@ -90,17 +90,18 @@ void GridTriggerWatch(LPVOID param) {
 			if (ce->effect.trigger == 4) { // indicator
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)
 					if (ev->state == MON_TYPE_IND) {
-						int ccut = ev->cut, cVal = 0;
-						switch (ev->source) {
-						case 0: cVal = fxhl->eData.HDD; break;
-						case 1: cVal = fxhl->eData.NET; break;
-						case 2: cVal = fxhl->eData.Temp - ccut; break;
-						case 3: cVal = fxhl->eData.RAM - ccut; break;
-						case 4: cVal = fxhl->eData.Batt - ccut; break;
-						case 5: cVal = fxhl->eData.KBD; break;
-						}
+						//int ccut = ev->cut, cVal = 0;
+						//switch (ev->source) {
+						//case 0: cVal = fxhl->eData.HDD; break;
+						//case 1: cVal = fxhl->eData.NET; break;
+						//case 2: cVal = fxhl->eData.Temp - ccut; break;
+						//case 3: cVal = fxhl->eData.RAM - ccut; break;
+						//case 4: cVal = ccut - fxhl->eData.Batt; break;
+						//case 5: cVal = fxhl->eData.KBD; break;
+						//case 6: cVal = fxhl->eData.PWM - ccut; break;
+						//}
 
-						if (cVal > 0) {
+						if (fxhl->CheckEvent(&fxhl->eData, &(*ev)) > 0) {
 							// Triggering effect...
 							src->StartCommonRun(&(*ce));
 						}

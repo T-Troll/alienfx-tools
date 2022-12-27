@@ -186,7 +186,6 @@
 #define IDC_DE_LIST                     1178
 #define IDC_DEV_EFFECT                  1179
 #define IDC_BUT_DEVCLEAR                1179
-#define IDC_EVENT_TYPE                  1180
 #define IDC_BUT_EVENT_DOWN              1181
 #define IDC_BUTT_REMOVE_EVENT           1182
 #define IDC_EVENTS_LIST                 1183
@@ -201,6 +200,9 @@
 #define IDC_BUT_FROMLIST                1192
 #define IDC_BUT_LIGHTSAPPLY             1194
 #define IDC_BUT_LIGHTSRESET             1195
+#define IDC_RADIO_PERF                  1196
+#define IDC_RADIO2                      1197
+#define IDC_RADIO_IND                   1197
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -223,7 +225,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1196
+#define _APS_NEXT_CONTROL_VALUE         1198
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

@@ -53,7 +53,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
         gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
 
-    groupset* map = conf->FindMapping(eItem);
+    //groupset* map = conf->FindMapping(eItem);
 
     switch (message) {
     case WM_INITDIALOG:
@@ -95,17 +95,17 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         if (LOWORD(wParam) >= 2000) { // grid button
             switch (HIWORD(wParam)) {
             case BN_CLICKED:
-                if (map) {
+                if (mmap) {
                     UINT id = LOWORD(wParam) - 2000;
                     // add/remove mapping
-                    auto pos = find_if(map->ambients.begin(), map->ambients.end(),
+                    auto pos = find_if(mmap->ambients.begin(), mmap->ambients.end(),
                         [id](auto t) {
                             return t == id;
                         });
-                    if (pos == map->ambients.end())
-                        map->ambients.push_back(id);
+                    if (pos == mmap->ambients.end())
+                        mmap->ambients.push_back(id);
                     else
-                        map->ambients.erase(pos);
+                        mmap->ambients.erase(pos);
                     RedrawButtonZone(hDlg);
                 }
                 break;
@@ -171,7 +171,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 RGB(eve->capt->imgz[idx * 3 + 2], eve->capt->imgz[idx * 3 + 1], eve->capt->imgz[idx * 3]) :
                 GetSysColor(COLOR_BTNFACE));
             FillRect(ditem->hDC, &ditem->rcItem, Brush);
-            if (map && map->ambients.size() && find(map->ambients.begin(), map->ambients.end(), idx) != map->ambients.end())
+            if (mmap && mmap->ambients.size() && find(mmap->ambients.begin(), mmap->ambients.end(), idx) != mmap->ambients.end())
                 DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
             else
                 FrameRect(ditem->hDC, &ditem->rcItem, GetSysColorBrush(COLOR_GRAYTEXT));

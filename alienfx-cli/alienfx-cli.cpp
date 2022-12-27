@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
 						act.act.push_back(AlienFX_SDK::Afx_action({ (BYTE)actionCode, (BYTE)sleepy, 7, 0, 0, 0 }));
 					}
 					for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
-						if (dev = afx_map->GetDeviceById(i->did, 0)) {
+						if (dev = afx_map->GetDeviceById(i->did)) {
 							act.index = (byte)i->lid;
 							dev->dev->SetAction(&act);
 						}

@@ -2,7 +2,7 @@
 #include "MonHelper.h"
 #include "common.h"
 
-extern bool SetColor(HWND hDlg, groupset* mmap, AlienFX_SDK::Afx_action* map);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_action* map);
 extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
 //extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
@@ -13,16 +13,17 @@ extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern AlienFan_SDK::Control* acpi;
 
-const static vector<string> eventTypeNames{ "Power", "Performance", "Indicator" };
-const static vector<vector<string>> eventNames{ { "Power status" },
+const static vector<string> eventTypeNames{ "Performance", "Indicator" };
+const static vector<vector<string>> eventNames{/* { "Power status" },*/
 		{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
-			"Fans RPM", "Power usage" },
-		{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language" } };
+			"Fans RPM", "Power usage", "Power mode"},
+		{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
+			"Power mode", "Power status" }};
 
-int eventID = -1;
+int eventID = 0;
 
-event* GetEventData(groupset* mmap) {
-	if (mmap && eventID >= 0 && mmap->events.size() > eventID)
+event* GetEventData() {
+	if (mmap && /*eventID >= 0 && */mmap->events.size() > eventID)
 		return &mmap->events[eventID];
 	return NULL;
 }
@@ -30,8 +31,10 @@ event* GetEventData(groupset* mmap) {
 void SetEventData(HWND hDlg, event* ev) {
 	if (ev) {
 		CheckDlgButton(hDlg, IDC_STATUS_BLINK, ev->mode ? BST_CHECKED : BST_UNCHECKED);
-		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE), ev->state);
-		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ev->state], ev->source);
+		//ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE), ev->state);
+		CheckDlgButton(hDlg, IDC_RADIO_PERF, ev->state == MON_TYPE_PERF ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_RADIO_IND, ev->state == MON_TYPE_IND ? BST_CHECKED : BST_UNCHECKED);
+		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ev->state-1], ev->source);
 		SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_SETPOS, true, ev->cut);
 		SetSlider(sTip2, ev->cut);
 	}
@@ -39,7 +42,7 @@ void SetEventData(HWND hDlg, event* ev) {
 	RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), NULL, NULL, RDW_INVALIDATE);
 }
 
-void RebuildEventList(HWND hDlg, groupset* mmap) {
+void RebuildEventList(HWND hDlg/*, groupset* mmap*/) {
 	HWND eff_list = GetDlgItem(hDlg, IDC_EVENTS_LIST);
 
 	ListView_DeleteAllItems(eff_list);
@@ -55,8 +58,9 @@ void RebuildEventList(HWND hDlg, groupset* mmap) {
 	if (mmap) {
 		LVITEMA lItem{ LVIF_TEXT | LVIF_STATE };
 		for (int i = 0; i < mmap->events.size(); i++) {
-			string itemName = eventTypeNames[mmap->events[i].state] + ", " +
-				eventNames[mmap->events[i].state][mmap->events[i].source];
+			int type = mmap->events[i].state - 1;
+			string itemName = eventTypeNames[type] + ", " +
+				eventNames[type][mmap->events[i].source];
 			lItem.iItem = i;
 			lItem.pszText = (LPSTR) itemName.c_str();
 			// check selection...
@@ -70,7 +74,7 @@ void RebuildEventList(HWND hDlg, groupset* mmap) {
 		RedrawZoneGrid(mmap->group);
 	}
 	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, mmap && mmap->fromColor ? BST_CHECKED : BST_UNCHECKED);
-	SetEventData(hDlg, GetEventData(mmap));
+	SetEventData(hDlg, GetEventData());
 	ListView_EnsureVisible(eff_list, eventID, false);
 }
 
@@ -78,22 +82,23 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 {
 	HWND s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
 
-	groupset* map = conf->FindMapping(eItem);
-	event* ev = GetEventData(map);
+	//groupset* map = conf->FindMapping(eItem);
+	event* ev = GetEventData();
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_TYPE), eventTypeNames, 0);
-		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[0], 0);
+		//UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_TYPE), eventTypeNames, 0);
+		//CheckDlgButton(hDlg, IDC_RADIO_PERF, BST_CHECKED);
+		//UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[0], 0);
 		// Set slider
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
 		SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
 		sTip2 = CreateToolTip(s2_slider, sTip2);
 
-		if (map && map->events.size())
-			eventID = 0;
+		//if (map && eventID >= map->events.size())
+		//	eventID = 0;
 		//RebuildEventList(hDlg, map);
 
 		// Start UI update thread...
@@ -101,20 +106,18 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 
 	} break;
 	case WM_APP + 2: {
-		map = conf->FindMapping(eItem);
-		if (map && map->events.size())
+		//map = conf->FindMapping(eItem);
+		if (mmap && !(eventID < mmap->events.size()))
 			eventID = 0;
-		else
-			eventID = -1;
-		RebuildEventList(hDlg, map);
+		RebuildEventList(hDlg);
 	} break;
 	case WM_COMMAND: {
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
 		{
 		case IDC_CHECK_NOEVENT:
-			if (map) {
-				map->fromColor = state;
+			if (mmap) {
+				mmap->fromColor = state;
 				fxhl->RefreshCounters();
 			}
 			else
@@ -127,53 +130,64 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 			break;
 		case IDC_BUTTON_COLORFROM:
-			if (ev && (!map->fromColor || map->color.size())) {
-				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), map, &ev->from);
-				RedrawZoneGrid(map->group);
+			if (ev && (!mmap->fromColor || mmap->color.size())) {
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), &ev->from);
+				RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTTON_COLORTO:
 			if (ev) {
-				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), map, &ev->to);
-				RedrawZoneGrid(map->group);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), &ev->to);
+				RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_EVENT_SOURCE:
 			if (ev && HIWORD(wParam) == CBN_SELCHANGE) {
 				ev->source = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE));
-				RebuildEventList(hDlg, map);
+				RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 			break;
-		case IDC_EVENT_TYPE:
-			if (ev && HIWORD(wParam) == CBN_SELCHANGE) {
-				int ctype = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE));
-				UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype], 0);
-				if (ev) {
-					ev->state = ctype;
-					ev->source = 0;
-				}
-				RebuildEventList(hDlg, map);
+		case IDC_RADIO_PERF: case IDC_RADIO_IND: {
+			int ctype = LOWORD(wParam) == IDC_RADIO_PERF ? 1 : 2;
+			UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype - 1], 0);
+			if (ev) {
+				ev->state = ctype;
+				ev->source = 0;
+				RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
-			break;
+		} break;
+		//case IDC_EVENT_TYPE:
+		//	if (map && HIWORD(wParam) == CBN_SELCHANGE) {
+		//		int ctype = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE));
+		//		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype], 0);
+		//		if (ev) {
+		//			ev->state = ctype;
+		//			ev->source = 0;
+		//		}
+		//		RebuildEventList(hDlg, map);
+		//		fxhl->RefreshCounters();
+		//	}
+		//	break;
 		case IDC_BUT_ADD_EVENT:
-			if (map) {
-				map->events.push_back({ (byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE)),
+			if (mmap) {
+				mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
+					/*(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE)),*/
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
-				eventID = (int)map->events.size() - 1;
-				RebuildEventList(hDlg, map);
+				eventID = (int)mmap->events.size() - 1;
+				RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
 			if (ev) {
-				map->events.erase(map->events.begin() + eventID);
+				mmap->events.erase(mmap->events.begin() + eventID);
 				if (eventID)
 					eventID--;
-				RebuildEventList(hDlg, map);
+				RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -181,19 +195,19 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (ev && eventID) {
 				event t = *ev;
 				eventID--;
-				*ev = map->events[eventID];
-				map->events[eventID] = t;
-				RebuildEventList(hDlg, map);
+				*ev = mmap->events[eventID];
+				mmap->events[eventID] = t;
+				RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUT_EVENT_DOWN:
-			if (ev && eventID < map->events.size() - 1) {
+			if (ev && eventID < mmap->events.size() - 1) {
 				event t = *ev;
 				eventID++;
-				*ev = map->events[eventID];
-				map->events[eventID] = t;
-				RebuildEventList(hDlg, map);
+				*ev = mmap->events[eventID];
+				mmap->events[eventID] = t;
+				RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -204,7 +218,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		if (ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:
-				c = Act2Code(map->fromColor && map->color.size() ? &map->color[0] : &ev->from);
+				c = Act2Code(mmap->fromColor && mmap->color.size() ? &mmap->color[0] : &ev->from);
 				break;
 			case IDC_BUTTON_COLORTO:
 				c = Act2Code(&ev->to);
@@ -235,7 +249,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				}
 				else
 					eventID = -1;
-				SetEventData(hDlg, GetEventData(map));
+				SetEventData(hDlg, GetEventData());
 			} break;
 			}
 			break;

@@ -1,22 +1,20 @@
 #include "alienfx-gui.h"
 #include "common.h"
 
-extern bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::Afx_action* map);
+extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map);
 extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern FXHelper* fxhl;
 
-//extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 extern void RedrawZoneGrid(DWORD grpid);
 
 int effID = 0;
 
 const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
 
-void SetEffectData(HWND hDlg, groupset* mmap) {
+void SetEffectData(HWND hDlg) {
 	bool hasEffects = false;
 	if (mmap) {
 		if (mmap->color.size()) {
@@ -34,7 +32,7 @@ void SetEffectData(HWND hDlg, groupset* mmap) {
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
 }
 
-void RebuildEffectList(HWND hDlg, groupset* mmap) {
+void RebuildEffectList(HWND hDlg) {
 	HWND eff_list = GetDlgItem(hDlg, IDC_LEFFECTS_LIST);
 
 	ListView_DeleteAllItems(eff_list);
@@ -78,16 +76,16 @@ void RebuildEffectList(HWND hDlg, groupset* mmap) {
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
 		fxhl->RefreshOne(mmap);
 	}
-	SetEffectData(hDlg, mmap);
+	SetEffectData(hDlg);
 	ListView_EnsureVisible(eff_list, effID, false);
 	//RedrawGridButtonZone(NULL, true);
 }
 
-void ChangeAddColor(HWND hDlg, groupset* mmap, int newEffID) {
+void ChangeAddColor(HWND hDlg, int newEffID) {
 	// change color.
 	if (mmap) {
 		if (newEffID < mmap->color.size())
-			SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[newEffID]);
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]);
 		else {
 			AlienFX_SDK::Afx_action act{ 0 };
 			// add new effect
@@ -106,7 +104,7 @@ void ChangeAddColor(HWND hDlg, groupset* mmap, int newEffID) {
 					newEffID = (int)mmap->color.size() - 1;
 				}
 			if (newEffID < mmap->color.size())
-				if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap, &mmap->color[newEffID]))
+				if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]))
 					effID = newEffID;
 				else {
 					if (conf->afx_dev.GetGroupById(mmap->group)->have_power)
@@ -115,7 +113,7 @@ void ChangeAddColor(HWND hDlg, groupset* mmap, int newEffID) {
 						mmap->color.erase(mmap->color.begin() + newEffID);
 				}
 		}
-		RebuildEffectList(hDlg, mmap);
+		RebuildEffectList(hDlg);
 		RedrawZoneGrid(mmap->group);
 	}
 }
@@ -124,7 +122,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	HWND s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1);
 
-	groupset* mmap = conf->FindMapping(eItem);
+	//groupset* mmap = conf->FindMapping(eItem);
 
 	switch (message)
 	{
@@ -140,11 +138,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
 		sTip1 = CreateToolTip(s1_slider, sTip1);
 		sTip2 = CreateToolTip(l1_slider, sTip2);
-		RebuildEffectList(hDlg, mmap);
+		RebuildEffectList(hDlg);
 	} break;
 	case WM_APP + 2: {
 		effID = 0;
-		RebuildEffectList(hDlg, mmap);
+		RebuildEffectList(hDlg);
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -153,17 +151,17 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			if (HIWORD(wParam) == CBN_SELCHANGE && mmap) {
 				int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				mmap->color[effID].type = lType1;
-				RebuildEffectList(hDlg, mmap);
+				RebuildEffectList(hDlg);
 			}
 			break;
 		case IDC_BUTTON_C1:
 			if (HIWORD(wParam) == BN_CLICKED) {
-				ChangeAddColor(hDlg, mmap, effID);
+				ChangeAddColor(hDlg, effID);
 			}
 			break;
 		case IDC_BUT_ADD_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap) {
-				ChangeAddColor(hDlg, mmap, (int)mmap->color.size());
+				ChangeAddColor(hDlg, (int)mmap->color.size());
 			}
 			break;
 		case IDC_BUT_REMOVE_EFFECT:
@@ -177,7 +175,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					if (effID)
 						effID--;
 				}
-				RebuildEffectList(hDlg, mmap);
+				RebuildEffectList(hDlg);
 				RedrawZoneGrid(mmap->group);
 			}
 			break;
@@ -212,11 +210,11 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem != -1) {
 					// Select other item...
 					effID = lPoint->iItem;
-					SetEffectData(hDlg, mmap);
+					SetEffectData(hDlg);
 				}
 			} break;
 			case NM_DBLCLK:
-				ChangeAddColor(hDlg, mmap, effID);
+				ChangeAddColor(hDlg, effID);
 				break;
 			}
 			break;

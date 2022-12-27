@@ -4,9 +4,6 @@
 
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
-
-//extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 extern void RedrawZoneGrid(DWORD id);
 
 extern EventHandler* eve;
@@ -96,16 +93,16 @@ void SetMappingData(HWND hDlg) {
 
 void SetFreqGroups(HWND hDlg) {
 	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
-	groupset* map = conf->FindMapping(eItem);
+	//groupset* map = conf->FindMapping(eItem);
 	ListBox_ResetContent(grp_list);
 	freqItem = 0;
-	if (map && map->haptics.size()) {
+	if (mmap && mmap->haptics.size()) {
 		// Set groups
-		for (int j = 0; j < map->haptics.size(); j++) {
+		for (int j = 0; j < mmap->haptics.size(); j++) {
 			ListBox_AddString(grp_list, ("Group " + to_string(j + 1)).c_str());
 		}
 		ListBox_SetCurSel(grp_list, 0);
-		freqBlock = &map->haptics.front();
+		freqBlock = &mmap->haptics.front();
 	}
 	else
 		freqBlock = NULL;
@@ -115,7 +112,7 @@ void SetFreqGroups(HWND hDlg) {
 INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	RECT pos;
-	groupset* map = conf->FindMapping(eItem);
+	//groupset* map = conf->FindMapping(eItem);
 	GetClientRect(hDlg, &pos);
 	pos.right--;
 	pos.bottom;

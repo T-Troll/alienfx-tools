@@ -4,7 +4,8 @@
 #include "ConfigHandler.h"
 
 struct LightEventData {
-	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255;
+	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255,
+		PWM = 0;
 	short Fan = 0;
 };
 
@@ -40,7 +41,7 @@ public:
 	mutex modifyQuery;
 	LightEventData eData, maxData;
 	// Power button state...
-	AlienFX_SDK::Afx_action pbstate[2]{ 0 };
+	map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;
 
 	FXHelper();
 
@@ -57,6 +58,7 @@ public:
 	void RefreshOne(groupset* map, bool update = true, int force = 0);
 	void TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::Afx_device* dev);
+	int CheckEvent(LightEventData* eData, event* e);
 	void RefreshCounters(LightEventData *data = NULL);
 	void RefreshAmbient(UCHAR *img);
 	void RefreshHaptics(int *freq);

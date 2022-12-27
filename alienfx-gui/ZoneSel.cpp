@@ -157,7 +157,7 @@ BOOL CALLBACK SelectLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 
 BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
-	groupset* mmap = conf->FindMapping(eItem);
+	//mmap = conf->FindMapping(eItem);
 
 	switch (message)
 	{
@@ -167,6 +167,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)", "Radial" });
 		if (conf->activeProfile->lightsets.size() && !mmap)
 			eItem = conf->activeProfile->lightsets.front().group;
+		mmap = conf->FindMapping(eItem);
 		//UpdateZoneList();
 	} break;
 	case WM_COMMAND: {
@@ -177,7 +178,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			UpdateZoneList();
 		} break;
 		case IDC_BUT_DEL_ZONE:
-			if (eItem > 0) {
+			if (mmap) {
 				int neItem = eItem;
 				for (auto iter = conf->activeProfile->lightsets.begin(); iter != conf->activeProfile->lightsets.end(); iter++) {
 					if (iter->group == eItem) {
@@ -246,7 +247,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					// Select other item...
 					eItem = (int)lPoint->lParam;
 					// gauge and spectrum.
-					groupset* mmap = conf->FindMapping(eItem);
+					mmap = conf->FindMapping(eItem);
 					if (mmap) {
 						CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->flags & GAUGE_GRADIENT);
 						CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->flags & GAUGE_REVERSE);

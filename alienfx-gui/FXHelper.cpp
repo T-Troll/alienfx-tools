@@ -121,6 +121,20 @@ void FXHelper::ResetPower(AlienFX_SDK::Afx_device* dev)
 	}
 }
 
+int FXHelper::CheckEvent(LightEventData* eData, event* e) {
+	byte ccut = e->cut;
+	switch (e->source) {
+	case 0: return eData->HDD; break;
+	case 1: return eData->NET; break;
+	case 2: return eData->Temp - ccut; break;
+	case 3: return eData->RAM - ccut; break;
+	case 4: return ccut - eData->Batt; break;
+	case 5: return eData->KBD; break;
+	case 6: return eData->PWM - ccut; break;
+	}
+	return 0;
+}
+
 void FXHelper::RefreshCounters(LightEventData *data)
 {
 	if (conf->enableMon && conf->GetEffect() == 1) {
@@ -150,17 +164,17 @@ void FXHelper::RefreshCounters(LightEventData *data)
 					if (actions.empty())
 						actions.push_back(e->from);
 					switch (e->state) {
-					case MON_TYPE_POWER: // power
-						if (force || eData.ACP != data->ACP || eData.BST != data->BST || data->BST & 14) {
-							if (data->ACP) {
-								if ((data->BST & 8) && blinkStage)
-									actions[0] = e->to;
-							}
-							else
-								actions[0] = (data->BST & 6) && blinkStage ? AlienFX_SDK::Afx_action{ 0 } : e->to;
-							hasDiff = true;
-						}
-						break;
+					//case MON_TYPE_POWER: // power
+					//	if (force || eData.ACP != data->ACP || eData.BST != data->BST || data->BST & 14) {
+					//		if (data->ACP) {
+					//			if ((data->BST & 8) && blinkStage)
+					//				actions[0] = e->to;
+					//		}
+					//		else
+					//			actions[0] = (data->BST & 6) && blinkStage ? AlienFX_SDK::Afx_action{ 0 } : e->to;
+					//		hasDiff = true;
+					//	}
+					//	break;
 					case MON_TYPE_PERF: // counter
 						switch (e->source) {
 						case 0: lVal = eData.CPU; cVal = data->CPU; break;
@@ -172,6 +186,7 @@ void FXHelper::RefreshCounters(LightEventData *data)
 						case 6: lVal = eData.Batt; cVal = data->Batt; break;
 						case 7: lVal = eData.Fan; cVal = data->Fan; break;
 						case 8: lVal = eData.PWR; cVal = data->PWR; break;
+						case 9: lVal = eData.PWM; cVal = data->PWM; break;
 						}
 
 						if (force || (lVal != cVal && (lVal > e->cut || cVal > e->cut))) {
@@ -187,31 +202,47 @@ void FXHelper::RefreshCounters(LightEventData *data)
 						}
 						break;
 					case MON_TYPE_IND: { // indicator
-						int ccut = e->cut;
-						switch (e->source) {
-						case 0: lVal = eData.HDD; cVal = data->HDD; break;
-						case 1: lVal = eData.NET; cVal = data->NET; break;
-						case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
-						case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
-						case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
-						case 5: lVal = eData.KBD; cVal = data->KBD; break;
-						}
-
-						if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
-							hasDiff = true;
-							if (cVal > 0) {
-								actions.erase(actions.begin());
-								actions.push_back(e->to);
+						if (e->source == 7) {
+							if (force || eData.ACP != data->ACP || eData.BST != data->BST || data->BST & 14) {
+								if (data->ACP) {
+									if ((data->BST & 8) && blinkStage)
+										actions[0] = e->to;
+								}
+								else
+									actions[0] = (data->BST & 6) && blinkStage ? AlienFX_SDK::Afx_action{ 0 } : e->to;
+								hasDiff = true;
 							}
 						}
-						else
-							if (e->mode && cVal > 0) {
+						else {
+							lVal = CheckEvent(&eData, &(*e));
+							cVal = CheckEvent(data, &(*e));
+							//int ccut = e->cut;
+							//switch (e->source) {
+							//case 0: lVal = eData.HDD; cVal = data->HDD; break;
+							//case 1: lVal = eData.NET; cVal = data->NET; break;
+							//case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
+							//case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
+							//case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
+							//case 5: lVal = eData.KBD; cVal = data->KBD; break;
+							//case 6: lVal = eData.PWM - ccut; cVal = data->PWM - ccut; break;
+							//}
+
+							if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
 								hasDiff = true;
-								if (blinkStage) {
+								if (cVal > 0) {
 									actions.erase(actions.begin());
 									actions.push_back(e->to);
 								}
 							}
+							else
+								if (e->mode && cVal > 0) {
+									hasDiff = true;
+									if (blinkStage) {
+										actions.erase(actions.begin());
+										actions.push_back(e->to);
+									}
+								}
+						}
 					} break;
 					}
 				}
@@ -585,7 +616,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	LightQueryElement current;
 
 	HANDLE waitArray[2]{ src->haveNewElement, src->stopQuery };
-	vector<deviceQuery> devs_query;
+	map<WORD, vector<AlienFX_SDK::Afx_lightblock>> devs_query;
 
 	AlienFX_SDK::Afx_device* dev;
 
@@ -607,19 +638,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			if (current.update) {
 				// update command
 				for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
-					if (devQ->dev_query.size()) {
+					if (devQ->second.size()) {
 //#ifdef _DEBUG
 //							char buff[2048];
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
-						if ((dev = conf->afx_dev.GetDeviceById(devQ->pid, 0)) && dev->dev) {
-							dev->dev->SetMultiAction(&devQ->dev_query, current.flags);
+						if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
+							dev->dev->SetMultiAction(&devQ->second, current.flags);
 							dev->dev->UpdateColors();
 							if (dev->dev->IsHaveGlobal())
 								src->UpdateGlobalEffect(dev->dev);
 						}
-						devQ->dev_query.clear();
+						devQ->second.clear();
 					}
 				}
 
@@ -638,7 +669,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				// set light
 				WORD pid = LOWORD(current.light);
 				WORD lid = HIWORD(current.light);
-				if ((dev = conf->afx_dev.GetDeviceById(pid, 0)) && dev->dev) {
+				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
 					WORD flags = conf->afx_dev.GetFlags(dev, lid);
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
@@ -669,7 +700,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// Should we update it?
 						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						current.actsize = 2;
-						if (!conf->block_power && (current.flags || memcmp(src->pbstate, current.actions, 2 * sizeof(AlienFX_SDK::Afx_action)))) {
+						if (!conf->block_power && (current.flags || memcmp(src->pbstate[pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action)))) {
 
 							DebugPrint("Power button set to " +
 										to_string(current.actions[0].r) + "-" +
@@ -680,7 +711,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 										to_string(current.actions[1].b) +
 										"\n");
 
-							memcpy(src->pbstate, current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
+							memcpy(src->pbstate[pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
 						} else {
 							DebugPrint("Power button update skipped (blocked or same colors)\n");
 							continue;
@@ -691,26 +722,17 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					AlienFX_SDK::Afx_lightblock ablock{ (byte)lid };
 					ablock.act.resize(current.actsize);
 					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
-					// find query....
-					auto qn = find_if(devs_query.begin(), devs_query.end(),
-						[pid](auto t) {
-							return t.pid == pid;
+					// do we have another set for same light?
+					vector<AlienFX_SDK::Afx_lightblock>* dv = &devs_query[pid];
+					auto lp = find_if(dv->begin(), dv->end(),
+						[lid](auto acb) {
+							return acb.index == lid;
 						});
-					if (qn == devs_query.end())
-						devs_query.push_back({ dev->pid, { ablock } });
-					else
-					{
-						// do we have another set for same light?
-						auto lp = find_if(qn->dev_query.begin(), qn->dev_query.end(),
-							[lid](auto acb) {
-								return acb.index == lid;
-							});
-						if (lp == qn->dev_query.end())
-							qn->dev_query.push_back(ablock);
-						else {
-							//DebugPrint("Light already in query, updating data.\n");
-							lp->act = ablock.act;
-						}
+					if (lp == dv->end())
+						dv->push_back(ablock);
+					else {
+						//DebugPrint("Light already in query, updating data.\n");
+						lp->act = ablock.act;
 					}
 				}
 			}

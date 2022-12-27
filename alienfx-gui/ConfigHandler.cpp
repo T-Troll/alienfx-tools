@@ -233,20 +233,18 @@ void ConfigHandler::Load() {
 			gset->flags = ((WORD*)data)[1];
 			continue;
 		}
-		// Obsolete, remove soon
-		if (sscanf_s((char*)name, "Zone-events-%d-%d", &profID, &groupID) == 2 &&
-			(gset = FindCreateGroupSet(profID, groupID))) {
-			for (int i = 0; i < 4; i++)
-				if (((event*)data)[i].state) {
-					((event*)data)[i].state = i;
-					gset->events.push_back(((event*)data)[i]);
-				}
-			continue;
-		}
 		if (sscanf_s((char*)name, "Zone-eventlist-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			for (int i = 0; i * sizeof(event) < lend; i++)
-				gset->events.push_back(((event*)data)[i]);
+			event* ev = (event*)data;
+			for (int i = 0; i * sizeof(event) < lend; i++) {
+				// Obsolete conversion, remove after some time
+				if (ev[i].state == MON_TYPE_POWER) {
+					// convert power to indicator
+					ev[i].state = MON_TYPE_IND;
+					ev[i].source = 7;
+				}
+				gset->events.push_back(ev[i]);
+			}
 			continue;
 		}
 		if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&

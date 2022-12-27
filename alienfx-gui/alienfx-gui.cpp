@@ -55,6 +55,9 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 // last light selected
 int eItem = 0;
 
+// last zone selected
+groupset* mmap = NULL;
+
 // Effect mode list
 const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
@@ -827,7 +830,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-bool SetColor(HWND ctrl, groupset* mmap, AlienFX_SDK::Afx_action* map) {
+bool SetColor(HWND ctrl, /*groupset* mmap, */AlienFX_SDK::Afx_action* map) {
 	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
 	bool ret;
