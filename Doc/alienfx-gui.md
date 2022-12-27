@@ -95,10 +95,7 @@ In case "Use default color" check box enabled, first color for chain will be tak
 
 You can use "+" and "-" buttons to add/remove effect into the chain, and arrow buttons to move currently selected effect earlier or later.
 
-For each effect, 3 different monitoring types available:
-
-"Power"  
-Effect will act as software power button, and reflect current power state - AC or battery. It will blink between colors then charging and blink between battery color and black then charge is low.
+For each effect, 2 different monitoring types available:
 
 "Performance"  
 Effect will reflect selected performance indicator, available indicator sources are:
@@ -111,6 +108,7 @@ Effect will reflect selected performance indicator, available indicator sources 
 - Battery level - Battery charge level in percent - "From" color for full battery, "To" color for completely drained.
 - Max. Fan RPM - Highest fan RPM (in percent of maximum) across all system fans. This indicator will only works if "Fan control" is enabled in "Settings".
 - Power consumption - Current system power drain level. This indicator will only works if "BIOS sensors" enabled at "Settings".
+- Power Mode - if fan control enabled, it will reflect current active Power Mode (thermal profile). First color is always manual mode, second is G-mode if present, or higher mode in list if not present.
 
 You can use "Trigger level" slider to define value of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.  
 For gauge-enabled zones, performance effect acts as a peak indicator - lights below current value marked as "To" color, lights above as "From", active lights (fits value) use mixed color in between.
@@ -123,6 +121,8 @@ Effect color switches between "From" and "To" values in case system event occurs
 - Out of memory - Switch zone color if memory usage above "Trigger level" value.
 - Low battery - Switch light if battery charged below "Trigger level" value.
 - Language indicator - Light will have "From" color if first input language selected, and "To" color if any other selected.
+- Power Mode - if fan control enabled, it will reflect current active Power Mode (thermal profile). Switch level defined by "Trigger level" slider.
+- Power status - Software power button. First color for AC, second for DC, it can blink then charging or if battery level low.
 
 "Blink" check box switch triggered value to blink between from-to colors about 2 times per second.
 
