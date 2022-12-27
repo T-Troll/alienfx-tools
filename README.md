@@ -15,13 +15,13 @@ Light control tools work with USB/ACPI hardware devices directly, not requiring 
 
 - It's way faster. For older systems, the change rate can be up to 20cps. For modern, up to 120cps.
 - It's flexible. I can use uncommon calls to set a broader range of effects and modes.
-- Group lights, create light/fan Profiles for different situations, switch them by running games/applications.
+- Group lights, create light/fan Profiles for different situations, switch them by running games/applications/power source/keyboard shortcut.
 
 For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tool does not use direct EC (Embed controller) access and data modification.  
-It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used by AWCC) trough the hole into Windows WMI.
+It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used by AWCC).
 - It's safer - BIOS still monitors fans and has no risk fans will stop under full load.
-- It's universal - Most Alienware systems have the same interface.
-- In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control at all.
+- It's universal - Most Alienware/Dell G-series systems have the same interface.
+- In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control.
 
 ## Disclaimer
 
@@ -95,11 +95,13 @@ Build process:
 
 ## ToDo list
 
-- [ ] KRDT temperature sensors (Intel)
-- [x] Ryzen ACPI sensors/control (AMD) - beta
-- [ ] Advanced grid effects
+- [x] DPTF temperature sensors (Intel)
+- [ ] Ryzen ACPI sensors/control (AMD)
+- [x] Advanced grid effects
+- [ ] Grid effect shapes (like text, image, etc)
 - [ ] Power and battery charge control
 - [x] Restore ACPI light API support - beta
+- [ ] Automatic overclocking/underclock based on desired system temperature and load
 
 ## License
 
