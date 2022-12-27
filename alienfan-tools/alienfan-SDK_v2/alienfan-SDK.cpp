@@ -145,13 +145,13 @@ namespace AlienFan_SDK {
 				spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
 				spInstance->Release();
 				enum_obj->Release();
-				devFlags |= DEV_FLAG_AWCC;
+				isAleinware = true;
 
 				if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK) {
 #ifdef _TRACE_
 					printf("G-Mode available\n");
 #endif
-					devFlags |= DEV_FLAG_GMODE;
+					isGmode = true;
 				}
 
 				// check system is compatible and fill inParams
@@ -165,7 +165,7 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 					printf("Fan Control available, system type %d\n", sysType);
 #endif
-					devFlags |= DEV_FLAG_CONTROL;
+					isSupported = true;
 					systemID = CallWMIMethod(getSysID, 2);
 #ifdef _TRACE_
 					printf("System ID = %d\n", systemID);
@@ -177,8 +177,6 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 						printf("Fan ID=%x found\n", funcID);
 #endif
-						//boosts.push_back(100);
-						//maxrpm.push_back(0);
 						fIndex++;
 					}
 #ifdef _TRACE_
@@ -238,7 +236,7 @@ namespace AlienFan_SDK {
 			}
 			CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
 		}
-		return devFlags;
+		return isSupported;
 	}
 
 	int Control::GetFanRPM(int fanID) {
@@ -322,7 +320,7 @@ namespace AlienFan_SDK {
 
 	int Control::SetGMode(bool state)
 	{
-		if (devFlags & DEV_FLAG_GMODE) {
+		if (isGmode) {
 			if (state)
 				SetPower(0xAB);
 			return CallWMIMethod(setGMode, state);
@@ -331,7 +329,7 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		if (devFlags & DEV_FLAG_GMODE) {
+		if (isGmode) {
 			if (GetPower() < 0)
 				return 1;
 			else
@@ -341,7 +339,7 @@ namespace AlienFan_SDK {
 	}
 
 	Lights::Lights(Control *ac) {
-		if (ac && ac->GetDeviceFlags() & DEV_FLAG_AWCC &&
+		if (ac && ac->isAleinware &&
 			ac->m_AWCCGetObj->GetMethod(colorList[0], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
 			m_WbemServices = ac->m_WbemServices;
 			m_instancePath = ac->m_instancePath;

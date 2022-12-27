@@ -87,7 +87,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
 		modifyProfile.unlock();
 
-		if (acpi && acpi->GetDeviceFlags() & DEV_FLAG_GMODE)
+		if (acpi)
 			mon->SetCurrentGmode(conf->fan_conf->lastProf->gmode);
 
 		fxhl->SetState();
@@ -451,7 +451,7 @@ void CEventProc(LPVOID param)
 				// Power mode
 				cData->PWM = conf->fan_conf->lastProf->gmode ? 100 :
 					conf->fan_conf->lastProf->powerStage * 100 /
-					((int)acpi->powers.size() + ((acpi->GetDeviceFlags() & DEV_FLAG_GMODE) != 0) - 1);
+					((int)acpi->powers.size() + acpi->isGmode - 1);
 			}
 
 			// ESIF powers and temps

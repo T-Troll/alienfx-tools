@@ -54,7 +54,7 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
-		if ((acpi->GetDeviceFlags() & DEV_FLAG_GMODE) && oldGmode != fan_conf->lastProf->gmode)
+		if ((acpi->isGmode) && oldGmode != fan_conf->lastProf->gmode)
 			SetCurrentGmode(oldGmode);
 		if (!oldGmode && oldPower >= 0) {
 			acpi->SetPower(acpi->powers[oldPower]);
@@ -70,7 +70,7 @@ void MonHelper::Stop() {
 }
 
 void MonHelper::SetCurrentGmode(WORD newMode) {
-	if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+	if (acpi->isGmode) {
 		if (acpi->GetGMode() != newMode) {
 			fan_conf->lastProf->gmode = newMode;
 			if (newMode && (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200)) // m15R5 && G5 5510 fix

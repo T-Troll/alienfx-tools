@@ -9,9 +9,9 @@ using namespace std;
 
 #define byte BYTE
 
-#define DEV_FLAG_AWCC		1
-#define DEV_FLAG_CONTROL	4
-#define DEV_FLAG_GMODE		8
+//#define DEV_FLAG_AWCC		1
+//#define DEV_FLAG_CONTROL	4
+//#define DEV_FLAG_GMODE		8
 
 namespace AlienFan_SDK {
 
@@ -58,7 +58,7 @@ namespace AlienFan_SDK {
 
 	class Control {
 	private:
-		byte devFlags = 0;
+		//byte devFlags = 0;
 		DWORD systemID = 0;
 		byte sysType = -1;
 		void EnumSensors(IEnumWbemClassObject* enum_obj, byte type);
@@ -66,7 +66,10 @@ namespace AlienFan_SDK {
 		VARIANT m_instancePath;
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
 		IWbemClassObject* m_InParamaters = NULL;
-		bool DPTFdone = false;
+		bool DPTFdone = false,
+			isAleinware = false,
+			isSupported = false,
+			isGmode = false;
 
 		Control();
 		~Control();
@@ -121,7 +124,7 @@ namespace AlienFan_SDK {
 		int GetGMode();
 
 		// Return current device capability
-		inline byte GetDeviceFlags() { return devFlags; };
+		//inline byte GetDeviceFlags() { return devFlags; };
 
 		// Return current device ID
 		inline DWORD GetSystemID() { return systemID; };

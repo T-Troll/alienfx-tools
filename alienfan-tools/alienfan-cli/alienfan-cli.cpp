@@ -152,12 +152,12 @@ int main(int argc, char* argv[])
         lights = new AlienFan_SDK::Lights(&acpi);
         printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s.\n",
             acpi.GetSystemID(), (int)acpi.fans.size(), (int)acpi.sensors.size(), (int)acpi.powers.size(),
-            (acpi.GetDeviceFlags() & DEV_FLAG_GMODE ? ", G-Mode" : ""),
+            (acpi.isGmode ? ", G-Mode" : ""),
             (lights->isActivated ? ", Lights" : ""));
         fan_conf.SetSensorNames(&acpi);
     }
     else {
-        if (acpi.GetDeviceFlags() & DEV_FLAG_AWCC)
+        if (acpi.isAleinware)
             printf("Alienware system, ");
         printf("Hardware not compatible.\n");
     }
@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "setgmode" && CheckArgs(1, 2)) {
-            if ((acpi.GetDeviceFlags() & DEV_FLAG_GMODE) && acpi.GetGMode() != args[0].num) {
+            if (acpi.isGmode && acpi.GetGMode() != args[0].num) {
                 if (acpi.GetSystemID() == 2933 && args[0].num) // G5 5510 fix
                     acpi.SetPower(0xa0);
                 acpi.SetGMode(args[0].num);
@@ -296,7 +296,7 @@ int main(int argc, char* argv[])
             continue;
         }
 
-        if (command == "dump" && (acpi.GetDeviceFlags() & DEV_FLAG_AWCC)) { // dump WMI functions
+        if (command == "dump" && acpi.isAleinware) { // dump WMI functions
             BSTR name;
             // Command dump
             acpi.m_AWCCGetObj->GetObjectText(0, &name);

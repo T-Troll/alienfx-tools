@@ -769,7 +769,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		case 6: // G-key for Dell G-series power switch
-			if (acpi && acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+			if (acpi) {
 				mon->SetCurrentGmode(!conf->fan_conf->lastProf->gmode);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);

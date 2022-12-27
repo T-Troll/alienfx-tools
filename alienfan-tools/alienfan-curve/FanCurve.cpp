@@ -391,7 +391,7 @@ void ReloadPowerList(HWND list) {
         if (pos == fan_conf->lastProf->powerStage)
             ComboBox_SetCurSel(list, pos);
     }
-    if (acpi->GetDeviceFlags() & DEV_FLAG_GMODE) {
+    if (acpi->isGmode) {
         int pos = ComboBox_AddString(list, (LPARAM)("G-Mode"));
         if (fan_conf->lastProf->gmode)
             ComboBox_SetCurSel(list, pos);
