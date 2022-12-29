@@ -145,7 +145,7 @@ namespace AlienFan_SDK {
 				spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
 				spInstance->Release();
 				enum_obj->Release();
-				isAleinware = true;
+				isAlienware = true;
 
 				if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK) {
 #ifdef _TRACE_
@@ -207,9 +207,9 @@ namespace AlienFan_SDK {
 
 					// fan mappings...
 					for (auto fan = fans.begin(); fan != fans.end(); fan++) {
-						int senID = CallWMIMethod(getFanSensor, fan->id);
+						ALIENFAN_SEN_INFO sen = { (byte)CallWMIMethod(getFanSensor, fan->id), 1 };
 						for (byte i = 0; i < sensors.size(); i++)
-							if (sensors[i].index == senID) {
+							if (sensors[i].sid == sen.sid) {
 								fan->type = i;
 								break;
 							}
@@ -339,7 +339,7 @@ namespace AlienFan_SDK {
 	}
 
 	Lights::Lights(Control *ac) {
-		if (ac && ac->isAleinware &&
+		if (ac && ac->isAlienware &&
 			ac->m_AWCCGetObj->GetMethod(colorList[0], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
 			m_WbemServices = ac->m_WbemServices;
 			m_instancePath = ac->m_instancePath;
@@ -402,7 +402,7 @@ namespace AlienFan_SDK {
 			delete[] buffer;
 		}
 		while (outpart.find("</result>") == string::npos && outpart.find("ESIF_E") == string::npos
-			/*&& outpart.find("Error") == string::npos*/) {
+			&& outpart.find("Error:") == string::npos) {
 			while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) {
 				for (int i = 0; (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) && i < 40; i++) {
 					if (WaitForSingleObject(proc->hProcess, 0) != WAIT_TIMEOUT)
@@ -419,7 +419,7 @@ namespace AlienFan_SDK {
 				delete[] buffer;
 			}
 		}
-		if (outpart.find("ESIF_E") != string::npos /*|| outpart.find("Error") != string::npos*/)
+		if (outpart.find("ESIF_E") != string::npos || outpart.find("Error:") != string::npos)
 			return "";
 		else {
 			size_t pos = 0;

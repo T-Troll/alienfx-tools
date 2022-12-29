@@ -67,7 +67,7 @@ namespace AlienFan_SDK {
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
 		IWbemClassObject* m_InParamaters = NULL;
 		bool DPTFdone = false,
-			isAleinware = false,
+			isAlienware = false,
 			isSupported = false,
 			isGmode = false;
 

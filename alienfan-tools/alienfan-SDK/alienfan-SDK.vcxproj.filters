@@ -27,4 +27,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="aliefan_v1.md" />
+  </ItemGroup>
 </Project>

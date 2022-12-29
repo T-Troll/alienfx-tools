@@ -74,8 +74,8 @@ namespace AlienFan_SDK {
 #ifdef _SERVICE_WAY_
 		SC_HANDLE scManager = NULL;
 #endif
-		int ReadRamDirect(DWORD);
-		int WriteRamDirect(DWORD, byte);
+		//int ReadRamDirect(DWORD);
+		//int WriteRamDirect(DWORD, byte);
 
 	public:
 		Control();
@@ -182,7 +182,6 @@ namespace AlienFan_SDK {
 	private:
 		Control *acpi = NULL;
 		bool inCommand = false;
-		bool activated = false;
 	public:
 		Lights(Control *ac);
 
@@ -199,9 +198,10 @@ namespace AlienFan_SDK {
 		bool SetColor(byte id, byte r, byte g, byte b);
 
 		// Set light system mode (brightness, ???)
-		bool SetMode(byte mode, bool onoff);
+		bool SetBrightness(byte mode);
 
-		// Return color subsystem availability
-		bool IsActivated();
+		//// Return color subsystem availability
+		//bool IsActivated();
+		bool isActivated = false;
 	};
 }

@@ -182,6 +182,9 @@
       <Project>{cc889c0d-369a-46f0-87b2-956da96ddefd}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="aliefan_v1.md" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

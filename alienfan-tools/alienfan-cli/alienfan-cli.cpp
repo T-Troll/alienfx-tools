@@ -144,7 +144,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.10.0\n");
+    printf("AlienFan-CLI v7.10.1.1\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -157,23 +157,22 @@ int main(int argc, char* argv[])
         fan_conf.SetSensorNames(&acpi);
     }
     else {
-        if (acpi.isAleinware)
+        if (acpi.isAlienware)
             printf("Alienware system, ");
         printf("Hardware not compatible.\n");
     }
 
     for (int cc = 1; cc < argc; cc++) {
-        string arg = string(argv[cc]);
+        string arg = argv[cc];
         size_t vid = arg.find_first_of('=');
         command = arg.substr(0, vid);
         args.clear();
-        if (vid != arg.length() - 1)
-            while (vid != string::npos) {
-                size_t argPos = arg.find(',', vid + 1);
-                args.push_back({ arg.substr(vid + 1, (argPos == string::npos ? arg.length() : argPos) - vid - 1) });
-                args.back().num = atoi(args.back().str.c_str());
-                vid = argPos;
-            }
+        while (vid != string::npos) {
+            size_t argPos = arg.find(',', vid + 1);
+            args.push_back({ arg.substr(vid + 1, (argPos == string::npos ? arg.length() : argPos) - vid - 1),
+                atoi(args.back().str.c_str()) });
+            vid = argPos;
+        }
 
         if (command == "rpm") {
             for (int i = 0; i < acpi.fans.size(); i++)
@@ -191,7 +190,7 @@ int main(int argc, char* argv[])
             for (int i = 0; i < acpi.fans.size(); i++)
                 if (args.empty() || args[0].num == i) {
                     auto maxboost = fan_conf.boosts.find(i);
-                    printf("%s %d: %d%%\n", GetFanType(i), i, maxboost == fan_conf.boosts.end() ?
+                    printf("Fan%s %d: %d%%\n", GetFanType(i), i, maxboost == fan_conf.boosts.end() ?
                         acpi.GetFanPercent(i) : (acpi.GetFanRPM(i) * 100) / maxboost->second.maxRPM);
                 }
             continue;
@@ -296,13 +295,13 @@ int main(int argc, char* argv[])
             continue;
         }
 
-        if (command == "dump" && acpi.isAleinware) { // dump WMI functions
-            BSTR name;
-            // Command dump
-            acpi.m_AWCCGetObj->GetObjectText(0, &name);
-            wprintf(L"Names:\n%s\n", name);
-            continue;
-        }
+        //if (command == "dump" && acpi.isAlienware) { // dump WMI functions
+        //    BSTR name;
+        //    // Command dump
+        //    acpi.m_AWCCGetObj->GetObjectText(0, &name);
+        //    wprintf(L"Names:\n%s\n", name);
+        //    continue;
+        //}
 
         //if (command == "test") { // Test
         //    //HANDLE hDriver;
