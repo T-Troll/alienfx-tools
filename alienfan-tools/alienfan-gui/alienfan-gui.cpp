@@ -155,6 +155,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         niDataFC.hWnd = hDlg;
         niData = &niDataFC;
+
         AddTrayIcon(&niDataFC, fan_conf->updateCheck);
 
         // set PerfBoost lists...
@@ -290,15 +291,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_OVER:
             if (mon->inControl) {
-                EnableWindow(power_list, false);
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
-                CreateThread(NULL, 0, CheckFanOverboost, 0, 0, NULL);
-                //wasBoostMode = true;
+                CreateThread(NULL, 0, CheckFanOverboost, hDlg, 0, NULL);
             }
             else {
                 SetEvent(ocStopEvent);
-                EnableWindow(power_list, true);
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
             }
             break;
         case IDC_BUT_RESETBOOST:
@@ -322,6 +318,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         GetWindowRect(hDlg, &cDlg);
         SetWindowPos(fanWindow, hDlg, cDlg.right, cDlg.top, 0, 0, SWP_NOSIZE | SWP_NOREDRAW | SWP_NOACTIVATE);
     } break;
+    case WM_APP + 2:
+        EnableWindow(power_list, (bool)lParam);
+        SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), (bool)lParam ? "Check\n Max. boost" : "Stop check");
+        break;
     case WM_APP + 1:
     {
         switch (lParam) {

@@ -194,8 +194,10 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 }
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
-    //mon->Stop();
     mon->inControl = false;
+    WORD oldGmode = fan_conf->lastProf->gmode;
+    SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
+    mon->SetCurrentGmode(0);
     acpi->Unlock();
     int rpm, crpm, cSteps = 8, boost, oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
     fan_overboost* fo = &fan_conf->boosts[fan_conf->lastSelectedFan];
@@ -232,16 +234,17 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
         boost = bestBoostPoint.maxBoost;
     }
     if (crpm >= 0) {
-        acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
         fo->maxBoost = max(bestBoostPoint.maxBoost, 100);
         fo->maxRPM = max(bestBoostPoint.maxRPM, fo->maxRPM);
         ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
     }
-
+    // Restore mode
+    acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
     acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-    //mon->Start();
+    mon->SetCurrentGmode(oldGmode);
     mon->inControl = true;
+    SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
     return 0;
 }
 

@@ -166,8 +166,6 @@ void ConfigFan::SetSensorNames(AlienFan_SDK::Control* acpi) {
 
 int ConfigFan::GetFanScale(byte fanID) {
 	return boosts[fanID].maxBoost;
-	//auto maxboost = boosts.find(fanID);
-	//return maxboost == boosts.end() ? 100 : maxboost->second.maxBoost;
 }
 
 

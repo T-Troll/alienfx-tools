@@ -127,15 +127,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_OVER:
             if (mon->inControl) {
-                EnableWindow(power_list, false);
-                CreateThread(NULL, 0, CheckFanOverboost, 0, 0, NULL);
-                //wasBoostMode = true;
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Stop check");
+                CreateThread(NULL, 0, CheckFanOverboost, hDlg, 0, NULL);
             }
             else {
                 SetEvent(ocStopEvent);
-                EnableWindow(power_list, true);
-                SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), "Check\n Max. boost");
             }
             break;
         case IDC_BUT_RESETBOOST:
@@ -144,6 +139,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         }
     } break;
+    case WM_APP + 2:
+        EnableWindow(power_list, (bool)lParam);
+        SetWindowText(GetDlgItem(hDlg, IDC_BUT_OVER), (bool)lParam ? "Check\n Max. boost" : "Stop check");
+        break;
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_FAN_LIST:

@@ -6,7 +6,6 @@
 #include "resource.h"
 #include "ConfigHandler.h"
 #include "FXHelper.h"
-//#include "ThreadHelper.h"
 
 // debug print
 #ifdef _DEBUG

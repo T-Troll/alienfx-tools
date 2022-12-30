@@ -39,7 +39,6 @@ public:
 	DWORD startWithWindows;
 	DWORD startMinimized;
 	DWORD updateCheck;
-	//DWORD obCheck = 0;
 	DWORD awcc_disable;
 	DWORD keyShortcuts;
 
@@ -59,7 +58,6 @@ public:
 	void AddSensorCurve(fan_profile* prof, WORD fid, WORD sid, byte* data, DWORD lend);
 	void SaveSensorBlocks(HKEY key, string pname, fan_profile* data);
 	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
-	//void ConvertSenMappings(fan_profile* prof, AlienFan_SDK::Control* acpi);
 	void SetSensorNames(AlienFan_SDK::Control*);
 	int GetFanScale(byte fanID);
 
