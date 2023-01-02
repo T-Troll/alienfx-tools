@@ -133,20 +133,20 @@ namespace LFXUtil
 		return 1;
 	}
 
-	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned *color)
+	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned color)
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
 
-		if (_LFX_SetLightColor(dev, light, (PLFX_COLOR)color) != LFX_SUCCESS)
+		if (_LFX_SetLightColor(dev, light, (PLFX_COLOR)&color) != LFX_SUCCESS)
 			return 0;
 
 		return 1;
 	}
 
-	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned *color, unsigned *color2) {
+	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned color, unsigned color2) {
 
-		if (_LFX_SetLightActionColorEx(dev, light, action, (PLFX_COLOR)color, (PLFX_COLOR)color2) != LFX_SUCCESS)
+		if (_LFX_SetLightActionColorEx(dev, light, action, (PLFX_COLOR)&color, (PLFX_COLOR)&color2) != LFX_SUCCESS)
 			return 0;
 
 		return 0;

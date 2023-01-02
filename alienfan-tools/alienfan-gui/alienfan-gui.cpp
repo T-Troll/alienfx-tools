@@ -221,10 +221,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 int newMode = ComboBox_GetCurSel(power_list);
-                // G-Mode check
-                mon->SetCurrentGmode(!(newMode < acpi->powers.size()));
+                fan_conf->lastProf->gmode = (newMode == acpi->powers.size());
                 if (newMode < acpi->powers.size())
                     fan_conf->lastProf->powerStage = newMode;
+                mon->SetCurrentMode(newMode);
             } break;
             case CBN_EDITCHANGE:
                 if (!fan_conf->lastProf->gmode && fan_conf->lastProf->powerStage > 0) {

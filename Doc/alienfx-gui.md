@@ -113,7 +113,7 @@ Effect will reflect selected performance indicator, available indicator sources 
 You can use "Trigger level" slider to define value of no reaction - for example, for temperature it's nice to set it to the room temperature - only heat above it will change color.  
 For gauge-enabled zones, performance effect acts as a peak indicator - lights below current value marked as "To" color, lights above as "From", active lights (fits value) use mixed color in between.
 
-"Event"  
+"Indicator"  
 Effect color switches between "From" and "To" values in case system event occurs:
 - Storage activity - Switch zone color every disk activity event (Storage IDLE above zero).
 - Network activity - Switch zone color if any network traffic detected (across all adapters).
@@ -151,6 +151,7 @@ Use "Audio source" block to select between audio inputs ("Output" is for all sou
 In case "Haptics" effect active, "Frequency/level" window reflect current sound spectrum divided by 20 frequency groups.  
 
 One or more Reactions Groups can be assigned to zone - each group define reaction for frequencies. It have two levels - high and low (red and green lines), final color for zone defined as "low-level" one if sound level below low, mix of the "low-level" and "high-level" if sound level between them and "high-level" if it's above high. Final zone color will be set as a mix of all group colors.  
+"Random" check box will randomly select new "High level" color value each time sound level reach it's peak.  
 Press "+" button to add Reaction group, "-" button to remove it, "X" button to reset it levels, colors and frequencies.
 
 Click at desired frequency at "Frequency/level" window to add/remove it into group, click-and-drag the level mark to set it other value.  
@@ -168,7 +169,6 @@ Then effect triggered, it's starting to change light colors from the trigger poi
 First, you should define trigger - the event which launch effect for selected zone. Currently, available triggers are:
 - Off - grid effect disabled (default)
 - Continues - grid effect always start at the beginning point of the zone (depend on its direction type), and continue to run until this setting or effect mode changed.
-- Random - grid effect start at random point inside zone, processing all zone and start again into new point, until this mode or effect mode changed.
 - Keyboard - grid effect start from the position of the light with the name same as pressed key, run one time then stop until key is pressed again.
 - Event - grid effect start if one of monitoring event happened (see Event Monitoring tab) and continues until event off.
 
@@ -179,6 +179,7 @@ Effect processing driven by phases (100 ms each), so it has 10 phases per second
 "Speed" slider is about how fast an effect runs (change it state). Possible value is from -80 (condition changed every 80 phases) to +80 (condition changed to 80 each phase).  
 "Width" slider defines how many lights will be involved into color change.
 
+"Random position" check box select new random start point inside zone each time effect start/re-start.  
 "Circle" check box make effect round - effect reverse direction until initial state after reaching zone size limit.
 
 "Colors" block into the middle define the color sequence used for zone grid effect.  

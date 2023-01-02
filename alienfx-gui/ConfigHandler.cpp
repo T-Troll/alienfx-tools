@@ -546,3 +546,9 @@ groupset* ConfigHandler::FindMapping(int mid, vector<groupset>* set)
 			return &(*res);
 	return nullptr;
 }
+
+void ConfigHandler::SetRandomColor(AlienFX_SDK::Afx_colorcode* clr) {
+	clr->r = (byte)rclr(rnd);
+	clr->g = (byte)rclr(rnd);
+	clr->b = (byte)rclr(rnd);
+}

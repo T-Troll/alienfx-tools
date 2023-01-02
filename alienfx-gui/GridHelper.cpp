@@ -6,7 +6,7 @@ extern EventHandler* eve;
 extern ConfigHandler* conf;
 extern FXHelper* fxhl;
 
-extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
+//extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (grp->effect.effectColors.size() > 1) {
@@ -27,9 +27,8 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 		}
 		if (grp->effect.flags & GE_FLAG_RANDOM) {
 			// set color to random
-			uniform_int_distribution<DWORD> ccomp(0x00404040, 0x00ffffff);
 			for (auto cl = grp->effect.effectColors.begin(); cl != grp->effect.effectColors.end(); cl++)
-				cl->ci = ccomp(conf->rnd);
+				conf->SetRandomColor(&(*cl));
 		}
 		grp->gridop.gridX = x;
 		grp->gridop.gridY = y;
@@ -44,11 +43,11 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
 
 	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
-		char keyname [32];
+		char keyname[32];
 		GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
 		eve->modifyProfile.lock();
  		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
-			if (it->effect.trigger == 3 && it->gridop.passive) { // keyboard effect
+			if (it->effect.trigger == 2 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
 				zonemap* zone = conf->FindZoneMap(it->group);
 				for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
@@ -64,13 +63,16 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
+	GridHelper* gh = (GridHelper*)param;
+	if (gh->tact < 0)
+		gh->tact = 0;
 	if (conf->lightsNoDelay)
-		fxhl->RefreshGrid(((GridHelper*)param)->tact++);
+		fxhl->RefreshGrid(gh->tact++);
 }
 
 void GridHelper::StartCommonRun(groupset* ce) {
 	zonemap* cz = conf->FindZoneMap(ce->group);
-	if (ce->effect.trigger == 2) {
+	if (ce->flags & GE_FLAG_RPOS) {
 		uniform_int_distribution<int> pntX(0, cz->xMax - 1);
 		uniform_int_distribution<int> pntY(0, cz->yMax - 1);
 		StartGridRun(&(*ce), cz, pntX(conf->rnd), pntY(conf->rnd));
@@ -84,30 +86,20 @@ void GridHelper::StartCommonRun(groupset* ce) {
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
 	eve->modifyProfile.lock();
-	//vector<groupset> active = conf->activeProfile->lightsets;
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
-		if (ce->effect.trigger && ce->gridop.passive) {
-			if (ce->effect.trigger == 4) { // indicator
+		if (/*ce->effect.trigger && */ce->gridop.passive) {
+			switch (ce->effect.trigger) {
+			case 1: src->StartCommonRun(&(*ce));
+				break;
+			case 3:
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)
-					if (ev->state == MON_TYPE_IND) {
-						//int ccut = ev->cut, cVal = 0;
-						//switch (ev->source) {
-						//case 0: cVal = fxhl->eData.HDD; break;
-						//case 1: cVal = fxhl->eData.NET; break;
-						//case 2: cVal = fxhl->eData.Temp - ccut; break;
-						//case 3: cVal = fxhl->eData.RAM - ccut; break;
-						//case 4: cVal = ccut - fxhl->eData.Batt; break;
-						//case 5: cVal = fxhl->eData.KBD; break;
-						//case 6: cVal = fxhl->eData.PWM - ccut; break;
-						//}
-
-						if (fxhl->CheckEvent(&fxhl->eData, &(*ev)) > 0) {
-							// Triggering effect...
-							src->StartCommonRun(&(*ce));
-						}
+					if (ev->state == MON_TYPE_IND && fxhl->CheckEvent(&fxhl->eData, &(*ev)) > 0) {
+						// Triggering effect...
+						src->StartCommonRun(&(*ce));
+						break;
 					}
-			} else
-				src->StartCommonRun(&(*ce));
+				break;
+			}
 		}
 	}
 	eve->modifyProfile.unlock();
@@ -115,20 +107,36 @@ void GridTriggerWatch(LPVOID param) {
 
 GridHelper::GridHelper() {
 	tact = 0;
-	eve->StartEvents();
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, 100);
 	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, 100);
-#ifndef _DEBUG
-	kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
-#endif // !_DEBUG
+	RestartWatch();
 }
 
 GridHelper::~GridHelper()
 {
-#ifndef _DEBUG
-	UnhookWindowsHookEx(kEvent);
-#endif
-	eve->StopEvents();
 	delete gridTrigger;
 	delete gridThread;
+	if (kEvent)
+		UnhookWindowsHookEx(kEvent);
+	eve->StopEvents();
+}
+
+void GridHelper::RestartWatch() {
+	bool haveEvents = false, haveKeys = false;
+	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
+		switch (ce->effect.trigger) {
+		case 2: haveKeys = true; break;
+		case 3: haveEvents = true; break;
+		}
+	}
+	if (haveKeys && !kEvent)
+		kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
+	else {
+		UnhookWindowsHookEx(kEvent);
+		kEvent = NULL;
+	}
+	if (haveEvents)
+		eve->StartEvents();
+	else
+		eve->StopEvents();
 }

@@ -298,6 +298,7 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 
 void FXHelper::RefreshGrid(long tact) {
 	bool wasChanged = false;
+	eve->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 		if (!ce->gridop.passive && ce->effect.effectColors.size()) {
 			// prepare vars..
@@ -308,7 +309,7 @@ void FXHelper::RefreshGrid(long tact) {
 			int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
 			int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() /*- 1*/;
 			int realsize = effop->size + eff->width;
-			int effsize = eff->flags & GE_FLAG_CIRCLE ? (realsize << 1): realsize;
+			int effsize = eff->flags & GE_FLAG_CIRCLE ? (realsize << 1) : realsize;
 
 			int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase :
 				phase / effsize) % (eff->effectColors.size());
@@ -341,7 +342,8 @@ void FXHelper::RefreshGrid(long tact) {
 					if (effop->oldphase < 0) {
 						vector<AlienFX_SDK::Afx_action> fin{ from };
 						SetZone(&(*ce), &fin);
-					} else
+					}
+					else
 						for (int dist = 0; dist < eff->width; dist++)
 							SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
 
@@ -390,6 +392,7 @@ void FXHelper::RefreshGrid(long tact) {
 			}
 		}
 	}
+	eve->modifyProfile.unlock();
 	if (wasChanged)
 		QueryUpdate();
 }
@@ -494,11 +497,9 @@ void FXHelper::Refresh(int forced)
 	} else
 		DebugPrint("Refresh initiated.\n");
 #endif
-
 	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 		RefreshOne(&(*it), false, forced);
 	}
-
 	if (!forced && eve)
 		switch (eve->effMode) {
 		case 1: RefreshCounters(); break;
@@ -525,7 +526,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 	UINT shift = 255 - conf->amb_shift, gridsize = LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid);
 	vector<AlienFX_SDK::Afx_action> actions{ {0} };
 	bool wasChanged = false;
-
+	eve->modifyProfile.lock();
 	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 		if (it->ambients.size()) {
 			ULONG r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size();
@@ -551,6 +552,7 @@ void FXHelper::RefreshAmbient(UCHAR *img) {
 				SetZone(&(*it), &actions);
 			}
 		}
+	eve->modifyProfile.unlock();
 	if (wasChanged)
 		QueryUpdate();
 }
@@ -559,7 +561,7 @@ void FXHelper::RefreshHaptics(int *freq) {
 
 	vector<AlienFX_SDK::Afx_action> actions;
 	bool wasChanged = false;
-
+	eve->modifyProfile.lock();
 	for (auto mIter = conf->activeProfile->lightsets.begin(); mIter != conf->activeProfile->lightsets.end(); mIter++) {
 		if (mIter->haptics.size()) {
 			// Now for each freq block...
@@ -590,6 +592,11 @@ void FXHelper::RefreshHaptics(int *freq) {
 						cur_g += (byte)sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
 						cur_b += (byte)sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
 					}
+
+					// change color if peak
+					if (fIter->colorto.br && power == 1.0) {
+						conf->SetRandomColor(&fIter->colorto);
+					}
 				}
 			}
 
@@ -607,6 +614,7 @@ void FXHelper::RefreshHaptics(int *freq) {
 			}
 		}
 	}
+	eve->modifyProfile.unlock();
 	if (wasChanged)
 		QueryUpdate();
 }

@@ -39,9 +39,9 @@ namespace LFXUtil
 
 			// returns true on success, false on failure
 			int SetLFXColor(unsigned zone, unsigned color);
-			int SetOneLFXColor(unsigned dev, unsigned light, unsigned *color);
-			int SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned *color,
-				unsigned *color2);
+			int SetOneLFXColor(unsigned dev, unsigned light, unsigned color);
+			int SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned color,
+				unsigned color2);
 			int SetLFXZoneAction(unsigned action, unsigned zone, unsigned color,
 				unsigned color2);
 			int SetTempo(unsigned tempo);

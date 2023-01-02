@@ -108,8 +108,7 @@ namespace AlienFX_SDK {
 		AlienFX_A_Breathing= 3,
 		AlienFX_A_Spectrum = 4,
 		AlienFX_A_Rainbow = 5,
-		AlienFX_A_Power = 6/*,
-		AlienFX_A_NoAction = 7*/
+		AlienFX_A_Power = 6
 	};
 
 	class Functions
@@ -122,7 +121,6 @@ namespace AlienFX_SDK {
 		void* device = NULL;
 
 		bool inSet = false;
-		//bool inSave = false;
 
 		int vid = -1; // Device VID
 		int pid = -1; // Device PID, -1 if not initialized

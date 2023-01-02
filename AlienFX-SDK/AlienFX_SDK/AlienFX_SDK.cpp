@@ -448,8 +448,8 @@ namespace AlienFX_SDK {
 		} break;
 		case API_V4:
 		{
-			vector<Afx_icommand> mods;
-			mods.push_back({7,(byte)lights->size()});
+			vector<Afx_icommand> mods{ { 3, c.r }, { 4, c.g }, { 5, c.b }, {7, (byte)lights->size()} };
+			//mods.insert(mods.end(), { 3, c.r }, { 4, c.g }, { 5, c.b }, {7, (byte)lights->size()});
 			for (int nc = 0; nc < lights->size(); nc++)
 				mods.push_back({ (byte)(8 + nc), lights->at(nc)});
 			//PrepareAndSend(COMMV4_colorSel, sizeof(COMMV4_colorSel), &mods);

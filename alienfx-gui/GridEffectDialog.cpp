@@ -1,9 +1,14 @@
 #include "alienfx-gui.h"
 #include "common.h"
+#include "EventHandler.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawZoneGrid(DWORD id);
+extern void UpdateZoneList();
+
+extern EventHandler* eve;
+extern FXHelper* fxhl;
 
 int clrListID = 0;
 
@@ -76,7 +81,8 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 				clr->erase(clr->begin() + newColorID);
 		}
 		RebuildGEColorsList(hDlg);
-		RedrawZoneGrid(mmap->group);
+		UpdateZoneList();
+		//RedrawZoneGrid(mmap->group);
 	}
 }
 
@@ -86,6 +92,7 @@ void UpdateEffectInfo(HWND hDlg) {
 		CheckDlgButton(hDlg, IDC_CHECK_RANDOM, mmap->effect.flags & GE_FLAG_RANDOM);
 		CheckDlgButton(hDlg, IDC_CHECK_PHASE, mmap->effect.flags & GE_FLAG_PHASE);
 		CheckDlgButton(hDlg, IDC_CHECK_BACKGROUND, mmap->effect.flags & GE_FLAG_BACK);
+		CheckDlgButton(hDlg, IDC_CHECK_RPOS, mmap->effect.flags & GE_FLAG_RPOS);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), mmap->effect.trigger);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), mmap->effect.type);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SPEED), TBM_SETPOS, true, mmap->effect.speed - 80);
@@ -104,7 +111,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	{
 	case WM_INITDIALOG:
 	{
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Random", "Keyboard", "Event"});
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Keyboard", "Event"});
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient", "Fill" });
 		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(-80, 80));
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
@@ -125,7 +132,11 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				RedrawZoneGrid(mmap->group);
+				mmap->gridop.passive = true;
+				fxhl->Refresh();
+				if (eve->grid)
+					eve->grid->RestartWatch();
+				UpdateZoneList();
 			}
 			break;
 		case IDC_COMBO_GEFFTYPE:
@@ -135,6 +146,9 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			break;
 		case IDC_CHECK_CIRCLE:
 			SetBitMask(mmap->effect.flags, GE_FLAG_CIRCLE, state);
+			break;
+		case IDC_CHECK_RPOS:
+			SetBitMask(mmap->effect.flags, GE_FLAG_RPOS, state);
 			break;
 		case IDC_CHECK_RANDOM:
 			SetBitMask(mmap->effect.flags, GE_FLAG_RANDOM, state);

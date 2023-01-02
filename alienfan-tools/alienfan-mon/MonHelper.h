@@ -6,7 +6,7 @@
 class MonHelper {
 public:
 	ThreadHelper* monThread = NULL;
-	short oldPower = -1, oldGmode = 0;
+	short oldPower = -1;// , oldGmode = 0;
 	bool inControl = true;
 	vector<WORD> fanRpm;
 	vector<byte> boostRaw, boostSets, fanSleep;
@@ -17,7 +17,8 @@ public:
 	~MonHelper();
 	void Start();
 	void Stop();
-	void SetCurrentGmode(WORD newMode);
+	void SetCurrentMode(size_t newMode);
+	void SetCurrentGmode(bool newMode);
 	byte GetFanPercent(byte fanID);
 };
 

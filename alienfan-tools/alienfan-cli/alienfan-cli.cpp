@@ -144,7 +144,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.10.1.1\n");
+    printf("AlienFan-CLI v7.10.2\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -169,8 +169,8 @@ int main(int argc, char* argv[])
         args.clear();
         while (vid != string::npos) {
             size_t argPos = arg.find(',', vid + 1);
-            args.push_back({ arg.substr(vid + 1, (argPos == string::npos ? arg.length() : argPos) - vid - 1),
-                atoi(args.back().str.c_str()) });
+            args.push_back({ arg.substr(vid + 1, (argPos == string::npos ? arg.length() : argPos) - vid - 1) });
+            args.back().num = atoi(args.back().str.c_str());
             vid = argPos;
         }
 

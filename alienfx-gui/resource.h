@@ -201,8 +201,9 @@
 #define IDC_BUT_LIGHTSAPPLY             1194
 #define IDC_BUT_LIGHTSRESET             1195
 #define IDC_RADIO_PERF                  1196
-#define IDC_RADIO2                      1197
 #define IDC_RADIO_IND                   1197
+#define IDC_CHECK1                      1199
+#define IDC_CHECK_RPOS                  1199
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -225,7 +226,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1198
+#define _APS_NEXT_CONTROL_VALUE         1200
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

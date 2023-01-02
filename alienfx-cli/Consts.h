@@ -1,14 +1,13 @@
 #pragma once
 
 struct ARG {
-	int num;
 	string str;
+	int num;
 };
 
 struct COMMAND {
 	const int id;
-	const char* name,
-		* desc;
+	const char* name, *desc;
 	const byte minArgs;
 };
 
@@ -40,24 +39,43 @@ const ACTIONCODE actioncodes[]{
 	{"rainbow", AlienFX_SDK::Action::AlienFX_A_Rainbow, LFX_ACTION_MORPH }
 };
 
+enum COMMANDS {
+	setall = 0,
+	setone = 1,
+	setzone = 2,
+	setaction = 3,
+	setzoneact = 4,
+	setpower = 5,
+	settempo = 6,
+	setdim = 8,
+	setglobal = 9,
+	lowlevel = 10,
+	highlevel = 11,
+	probe = 12,
+	status = 13,
+	//lightson = 14,
+	//lightsoff = 15,
+	loop = 17
+};
+
 const COMMAND commands[]{
-	{0,"set-all","\tr,g,b[,br] - set all lights",3},
-	{1,"set-one","\tdev,light,r,g,b[,br] - set one light",5},
-	{2,"set-zone","zone,r,g,b[,br] - set zone lights",4},
-	{3,"set-action","dev,light,action,r,g,b[,br,[action,r,g,b,br]] - set light and enable it's action",6},
-	{4,"set-zone-action","zone,action,r,g,b[,br,[action,r,g,b,br]] - set all zone lights and enable it's action",5},
-	{5,"set-power","dev,light,r,g,b,r2,g2,b2 - set power button colors (low-level only)",8},
-	{6,"set-tempo","tempo - set tempo for actions and pause",1},
+	{COMMANDS::setall,"setall","\tr,g,b - set all lights",3},
+	{COMMANDS::setone,"setone","\tdev,light,r,g,b - set one light",5},
+	{COMMANDS::setzone,"setzone","\tzone,r,g,b - set zone lights",4},
+	{COMMANDS::setaction,"setaction","dev,light,action,r,g,b[,action,r,g,b] - set light and enable it's action",6},
+	{COMMANDS::setzoneact,"setzoneaction","zone,action,r,g,b[,action,r,g,b] - set all zone lights and enable it's action",5},
+	{COMMANDS::setpower,"setpower","dev,light,r,g,b,r2,g2,b2 - set power button colors (low-level only)",8},
+	{COMMANDS::settempo,"settempo","tempo[,length] - set tempo and effect length for actions",1},
 	//{7,"set-dev","\tpid - set active device for low-level",1},
-	{8,"set-dim","\t[dev,]br - set dimming (brightness) level",1},
-	{9,"set-global","dev,type,mode,r,g,b,r,g,b - set global effect (v5, v8, v9 devices)",9},
-	{10,"low-level","switch to low-level SDK (USB)"},
-	{11,"high-level","switch to high-level SDK (LightFX)"},
-	{12,"probe","\t[l][d][,lights][,devID[,lightID]] - probe lights and set names"},
-	{13,"status","\tshows devices, lights and zones id's and names"},
-	//{14,"lightson","turn all lights on"},
-	//{15,"lightsoff","turn all lights off"},
+	{COMMANDS::setdim,"setdim","\t[dev,]br - set dimming (brightness) level",1},
+	{COMMANDS::setglobal,"setglobal","dev,type,mode,r,g,b,r,g,b - set global effect (v5, v8, v9 devices)",9},
+	{COMMANDS::lowlevel,"lowlevel","switch to low-level SDK (USB)"},
+	{COMMANDS::highlevel,"highlevel","switch to high-level SDK (LightFX)"},
+	{COMMANDS::probe,"probe","\t[l][d][,lights][,devID[,lightID]] - probe lights and set names"},
+	{COMMANDS::status,"status","\tshows devices, lights and zones id's and names"},
+	//{COMMANDS::lightson,"lightson","turn all lights on"},
+	//{COMMANDS::lightsoff,"lightsoff","turn all lights off"},
 	//{16,"reset","\treset current device state"},
 	//{17,"update","\tUpdate lights"},
-	{17,"loop","\trepeat commands from start, until user press CTRL+c"}
+	{COMMANDS::loop,"loop","\trepeat commands from start, until user press CTRL+c"}
 };

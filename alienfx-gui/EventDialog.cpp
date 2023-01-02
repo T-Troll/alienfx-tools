@@ -4,10 +4,9 @@
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_action* map);
 extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-//extern void RedrawGridButtonZone(RECT* what = NULL, bool recalc = false);
 extern void RedrawZoneGrid(DWORD grpid);
+extern void UpdateZoneList();
 
 extern FXHelper* fxhl;
 extern MonHelper* mon;
@@ -38,6 +37,12 @@ void SetEventData(HWND hDlg, event* ev) {
 		SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_SETPOS, true, ev->cut);
 		SetSlider(sTip2, ev->cut);
 	}
+	else {
+		CheckDlgButton(hDlg, IDC_RADIO_PERF, BST_CHECKED);
+		CheckDlgButton(hDlg, IDC_RADIO_IND, BST_UNCHECKED);
+		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[0], 0);
+	}
+
 	RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), NULL, NULL, RDW_INVALIDATE);
 	RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), NULL, NULL, RDW_INVALIDATE);
 }
@@ -71,7 +76,7 @@ void RebuildEventList(HWND hDlg/*, groupset* mmap*/) {
 				lItem.state = 0;
 			ListView_InsertItem(eff_list, &lItem);
 		}
-		RedrawZoneGrid(mmap->group);
+		//RedrawZoneGrid(mmap->group);
 	}
 	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, mmap && mmap->fromColor ? BST_CHECKED : BST_UNCHECKED);
 	SetEventData(hDlg, GetEventData());
@@ -81,32 +86,22 @@ void RebuildEventList(HWND hDlg/*, groupset* mmap*/) {
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
-
-	//groupset* map = conf->FindMapping(eItem);
 	event* ev = GetEventData();
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-		//UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_TYPE), eventTypeNames, 0);
-		//CheckDlgButton(hDlg, IDC_RADIO_PERF, BST_CHECKED);
-		//UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[0], 0);
 		// Set slider
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
 		SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
 		sTip2 = CreateToolTip(s2_slider, sTip2);
-
-		//if (map && eventID >= map->events.size())
-		//	eventID = 0;
-		//RebuildEventList(hDlg, map);
 
 		// Start UI update thread...
 		SetTimer(hDlg, 0, 300, NULL);
 
 	} break;
 	case WM_APP + 2: {
-		//map = conf->FindMapping(eItem);
 		if (mmap && !(eventID < mmap->events.size()))
 			eventID = 0;
 		RebuildEventList(hDlg);
@@ -179,6 +174,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
 				eventID = (int)mmap->events.size() - 1;
 				RebuildEventList(hDlg);
+				UpdateZoneList();
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -188,6 +184,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				if (eventID)
 					eventID--;
 				RebuildEventList(hDlg);
+				UpdateZoneList();
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -198,6 +195,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				*ev = mmap->events[eventID];
 				mmap->events[eventID] = t;
 				RebuildEventList(hDlg);
+				RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -208,6 +206,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				*ev = mmap->events[eventID];
 				mmap->events[eventID] = t;
 				RebuildEventList(hDlg);
+				RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;

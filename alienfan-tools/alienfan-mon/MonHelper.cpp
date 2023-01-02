@@ -34,15 +34,12 @@ MonHelper::~MonHelper() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		oldGmode = acpi->GetGMode() > 0;
-		if (!oldGmode && oldPower < 0)
-			oldPower = acpi->GetPower();
-		if (oldGmode != fan_conf->lastProf->gmode) {
-			SetCurrentGmode(fan_conf->lastProf->gmode);
-		}
-		// Patch for R4
-		if (!fan_conf->lastProf->gmode && !acpi->GetSystemID())
-			acpi->SetPower(0xa0);
+		if (/*!(oldGmode = acpi->GetGMode() > 0) && */oldPower < 0)
+			oldPower = acpi->GetGMode() ? (short)acpi->powers.size() : acpi->GetPower();
+		SetCurrentMode(fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
+		//if (oldGmode != fan_conf->lastProf->gmode) {
+		//	SetCurrentGmode(fan_conf->lastProf->gmode);
+		//}
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -54,34 +51,49 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
-		if ((acpi->isGmode) && oldGmode != fan_conf->lastProf->gmode)
-			SetCurrentGmode(oldGmode);
-		if (!oldGmode && oldPower >= 0) {
-			acpi->SetPower(acpi->powers[oldPower]);
-			if (!oldPower)
-				// reset boost
-				for (int i = 0; i < acpi->fans.size(); i++)
-					acpi->SetFanBoost(i, 0);
-		}
+		SetCurrentMode(oldPower);
+		//if ((acpi->isGmode) && oldGmode != fan_conf->lastProf->gmode)
+		//	SetCurrentGmode(oldGmode);
+		//if (!oldGmode && oldPower >= 0) {
+		//	acpi->SetPower(acpi->powers[oldPower]);
+		//	if (!oldPower)
+		//		// reset boost
+		//		for (int i = 0; i < acpi->fans.size(); i++)
+		//			acpi->SetFanBoost(i, 0);
+		//}
 #ifdef _DEBUG
 		OutputDebugString("Mon thread stop.\n");
 #endif
 	}
 }
 
-void MonHelper::SetCurrentGmode(WORD newMode) {
-	if (acpi->isGmode) {
-		if (acpi->GetGMode() != newMode) {
-			fan_conf->lastProf->gmode = newMode;
-			if (newMode && (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200)) // m15R5 && G5 5510 fix
+void MonHelper::SetCurrentMode(size_t newMode) {
+	if (newMode < acpi->powers.size()) {
+		if (acpi->GetGMode()) {
+			acpi->SetGMode(0);
+		}
+		acpi->SetPower(acpi->powers[newMode]);
+	}
+	else {
+		if (!acpi->GetGMode()) {
+			if (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
 				acpi->SetPower(0xa0);
-			acpi->SetGMode(newMode);
-			if (!newMode)
-				acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+			acpi->SetGMode(1);
 		}
 	}
-	else
-		fan_conf->lastProf->gmode = 0;
+}
+
+void MonHelper::SetCurrentGmode(bool newMode) {
+	fan_conf->lastProf->gmode = acpi->isGmode ? newMode : 0;
+	SetCurrentMode(newMode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
+		//if (acpi->GetGMode() != newMode) {
+		//	fan_conf->lastProf->gmode = newMode;
+		//	if (newMode && (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200)) // m15R5 && G5 5510 fix
+		//		acpi->SetPower(0xa0);
+		//	acpi->SetGMode(newMode);
+		//	if (!newMode)
+		//		acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+		//}
 }
 
 byte MonHelper::GetFanPercent(byte fanID)

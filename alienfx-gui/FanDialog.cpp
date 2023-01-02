@@ -97,18 +97,19 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 int newMode = ComboBox_GetCurSel(power_list);
-                // G-Mode check
-                mon->SetCurrentGmode(!(newMode < acpi->powers.size()));
+                fan_conf->lastProf->gmode = (newMode == acpi->powers.size());
                 if (newMode < acpi->powers.size())
                     fan_conf->lastProf->powerStage = newMode;
+                mon->SetCurrentMode(newMode);
             } break;
             case CBN_EDITCHANGE:
-                if (!fan_conf->lastProf->gmode && fan_conf->lastProf->powerStage > 0) {
-                    char buffer[MAX_PATH];
+                if (!fan_conf->lastProf->gmode && !fan_conf->lastProf->powerStage) {
+                    char* buffer = new char[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
                     fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
                     ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
                     ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
+                    delete buffer;
                 }
                 break;
             }

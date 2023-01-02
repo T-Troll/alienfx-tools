@@ -329,13 +329,7 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		if (isGmode) {
-			if (GetPower() < 0)
-				return 1;
-			else
-				return CallWMIMethod(getGMode);
-		}
-		return -1;
+		return isGmode ? GetPower() < 0 ? 1 : CallWMIMethod(getGMode) : 0;
 	}
 
 	Lights::Lights(Control *ac) {
@@ -390,28 +384,26 @@ namespace AlienFan_SDK {
 	string ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
 		DWORD written;
 		string outpart;
-		byte e_command[] = "echo noop\n";
-		if (WaitForSingleObject(proc->hProcess, 0) != WAIT_TIMEOUT)
-			return "";
+		//byte e_command[] = "echo noop\n";
+		//if (WaitForSingleObject(proc->hProcess, 0) != WAIT_TIMEOUT)
+		//	return "";
 		WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
-		//FlushProcessWriteBuffers();
-		while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
-			char* buffer = new char[written + 1]{ 0 };
-			ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
-			outpart += buffer;
-			delete[] buffer;
-		}
-		while (outpart.find("</result>") == string::npos && outpart.find("ESIF_E") == string::npos
-			&& outpart.find("Error:") == string::npos) {
-			while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) {
-				for (int i = 0; (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) && i < 40; i++) {
-					if (WaitForSingleObject(proc->hProcess, 0) != WAIT_TIMEOUT)
-						return "";
-					WriteFile(g_hChildStd_IN_Wr, e_command, sizeof(e_command) - 1, &written, NULL);
-					//FlushProcessWriteBuffers();
-				}
-				Sleep(5);
-			}
+		//while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
+		//	char* buffer = new char[written + 1]{ 0 };
+		//	ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
+		//	outpart += buffer;
+		//	delete[] buffer;
+		//}
+		while (outpart.find("Returned:") == string::npos /*&& outpart.find("ESIF_E") == string::npos
+			&& outpart.find("Error:") == string::npos*/) {
+			//while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) {
+			//	for (int i = 0; (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) && i < 40; i++) {
+			//		if (WaitForSingleObject(proc->hProcess, 0) != WAIT_TIMEOUT)
+			//			return "";
+			//		WriteFile(g_hChildStd_IN_Wr, e_command, sizeof(e_command) - 1, &written, NULL);
+			//	}
+			//	Sleep(5);
+			//}
 			while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
 				char* buffer = new char[written + 1]{ 0 };
 				ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
@@ -419,12 +411,19 @@ namespace AlienFan_SDK {
 				delete[] buffer;
 			}
 		}
-		if (outpart.find("ESIF_E") != string::npos || outpart.find("Error:") != string::npos)
-			return "";
-		else {
+		if (outpart.find("</result>") != string::npos) {
 			size_t pos = 0;
 			return GetTag(outpart, "result", pos);
 		}
+		else
+			return "";
+
+		//if (outpart.find("ESIF_E") != string::npos || outpart.find("Error:") != string::npos)
+		//	return "";
+		//else {
+		//	size_t pos = 0;
+		//	return GetTag(outpart, "result", pos);
+		//}
 	}
 
 	//int DPTFHelper::GetTemp(int id) {

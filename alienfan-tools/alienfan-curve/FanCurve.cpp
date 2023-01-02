@@ -195,10 +195,8 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->inControl = false;
-    WORD oldGmode = fan_conf->lastProf->gmode;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
-    mon->SetCurrentGmode(0);
-    acpi->Unlock();
+    mon->SetCurrentMode(0);
     int rpm, crpm, cSteps = 8, boost, oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
     fan_overboost* fo = &fan_conf->boosts[fan_conf->lastSelectedFan];
     boostCheck.clear();
@@ -241,8 +239,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     }
     // Restore mode
     acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
-    acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-    mon->SetCurrentGmode(oldGmode);
+    mon->SetCurrentMode(fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
     mon->inControl = true;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
     return 0;

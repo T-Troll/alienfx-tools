@@ -5,6 +5,7 @@
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawZoneGrid(DWORD id);
+extern void UpdateZoneList();
 
 extern EventHandler* eve;
 
@@ -89,6 +90,7 @@ void SetMappingData(HWND hDlg) {
 	DrawFreq(GetDlgItem(hDlg, IDC_LEVELS));
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_LPC), freqBlock ? &freqBlock->colorfrom : NULL);
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_HPC), freqBlock ? &freqBlock->colorto : NULL);
+	CheckDlgButton(hDlg, IDC_CHECK_RANDOM, freqBlock ? freqBlock->colorto.br : 0);
 }
 
 void SetFreqGroups(HWND hDlg) {
@@ -173,8 +175,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP),
 	     gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID);
 
-	//groupset *map = conf->FindMapping(eItem);
-
 	switch (message) {
 	case WM_INITDIALOG:
 	{
@@ -192,7 +192,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	break;
 	case WM_COMMAND:
 	{
-		groupset* map = conf->FindMapping(eItem);
 		switch (LOWORD(wParam)) {
 		case IDC_RADIO_OUTPUT: case IDC_RADIO_INPUT:
 			conf->hap_inpType = LOWORD(wParam) == IDC_RADIO_INPUT;
@@ -204,9 +203,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_FREQ_GROUP:
 			switch (HIWORD(wParam)) {
 			case LBN_SELCHANGE:
-				if (map) {
+				if (mmap) {
 					freqItem = ListBox_GetCurSel(grp_list);
-					freqBlock = &map->haptics[freqItem];
+					freqBlock = &mmap->haptics[freqItem];
 					SetMappingData(hDlg);
 				}
 			break;
@@ -214,51 +213,55 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUT_ADD_GROUP:
 		{
-			if (map) {
-				map->haptics.push_back({0,0,255});
-				int pos = ListBox_AddString(grp_list, ("Group " + to_string(map->haptics.size())).c_str());
+			if (mmap) {
+				mmap->haptics.push_back({0,0,255});
+				int pos = ListBox_AddString(grp_list, ("Group " + to_string(mmap->haptics.size())).c_str());
 				ListBox_SetCurSel(grp_list, pos);
-				freqBlock = &map->haptics.back();
+				freqBlock = &mmap->haptics.back();
 				SetMappingData(hDlg);
-				RedrawZoneGrid(map->group);
+				UpdateZoneList();
 			}
 		} break;
 		case IDC_BUT_REM_GROUP:
 			if (freqBlock) {
-				map->haptics.erase(map->haptics.begin() + freqItem);
+				mmap->haptics.erase(mmap->haptics.begin() + freqItem);
 				ListBox_DeleteString(grp_list, freqItem);
-				if (map->haptics.size()) {
+				if (mmap->haptics.size()) {
 					if (freqItem) {
 						freqItem--;
-						freqBlock = &(*(map->haptics.begin() + freqItem));
+						freqBlock = &(*(mmap->haptics.begin() + freqItem));
 					}
 					else
-						freqBlock = &map->haptics.front();
+						freqBlock = &mmap->haptics.front();
 					ListBox_SetCurSel(grp_list, freqItem);
 				}
 				else
 					freqBlock = NULL;
 				SetMappingData(hDlg);
-				RedrawZoneGrid(map->group);
+				UpdateZoneList();
 			}
 			break;
 		case IDC_BUTTON_LPC:
 			if (freqBlock) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_LPC), &freqBlock->colorfrom);
-				RedrawZoneGrid(map->group);
+				RedrawZoneGrid(mmap->group);
 			}
 			break;
 		case IDC_BUTTON_HPC:
 			if (freqBlock) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_HPC), &freqBlock->colorto);
-				RedrawZoneGrid(map->group);
+				RedrawZoneGrid(mmap->group);
 			}
 			break;
 		case IDC_BUTTON_REMOVE:
 			if (freqBlock) {
 				freqBlock->freqID.clear();
 				SetMappingData(hDlg);
-				RedrawZoneGrid(map->group);
+				RedrawZoneGrid(mmap->group);
+			}
+		case IDC_CHECK_RANDOM:
+			if (freqBlock) {
+				freqBlock->colorto.br = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 			}
 		}
 	} break;

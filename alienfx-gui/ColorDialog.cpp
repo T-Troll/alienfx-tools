@@ -6,6 +6,7 @@ extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
+extern void UpdateZoneList();
 extern FXHelper* fxhl;
 
 extern void RedrawZoneGrid(DWORD grpid);
@@ -78,7 +79,6 @@ void RebuildEffectList(HWND hDlg) {
 	}
 	SetEffectData(hDlg);
 	ListView_EnsureVisible(eff_list, effID, false);
-	//RedrawGridButtonZone(NULL, true);
 }
 
 void ChangeAddColor(HWND hDlg, int newEffID) {
@@ -114,15 +114,13 @@ void ChangeAddColor(HWND hDlg, int newEffID) {
 				}
 		}
 		RebuildEffectList(hDlg);
-		RedrawZoneGrid(mmap->group);
+		UpdateZoneList();
 	}
 }
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND s1_slider = GetDlgItem(hDlg, IDC_SPEED1),
 		l1_slider = GetDlgItem(hDlg, IDC_LENGTH1);
-
-	//groupset* mmap = conf->FindMapping(eItem);
 
 	switch (message)
 	{
@@ -176,7 +174,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						effID--;
 				}
 				RebuildEffectList(hDlg);
-				RedrawZoneGrid(mmap->group);
+				UpdateZoneList();
 			}
 			break;
 		}

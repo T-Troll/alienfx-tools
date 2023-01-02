@@ -4,11 +4,12 @@
 
 class GridHelper {
 private:
-	HHOOK kEvent;
+	HHOOK kEvent = NULL;
 	ThreadHelper* gridTrigger, * gridThread;
 public:
 	GridHelper();
 	~GridHelper();
+	void RestartWatch();
 	void StartCommonRun(groupset* ce);
 	void StartGridRun(groupset* grp, zonemap* cz, int x, int y);
 	long tact = 0;

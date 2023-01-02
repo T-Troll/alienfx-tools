@@ -37,6 +37,7 @@
 #define GE_FLAG_RANDOM	0x2
 #define GE_FLAG_PHASE	0x4
 #define GE_FLAG_BACK	0x8
+#define GE_FLAG_RPOS	0x10
 
 struct freq_map {
 	AlienFX_SDK::Afx_colorcode colorfrom;
@@ -134,7 +135,8 @@ private:
 	void SetReg(char *text, DWORD value);
 	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
 	groupset* FindCreateGroupSet(int profID, int groupID);
-	profile* FindCreateProfile(unsigned id);
+	profile* FindCreateProfile(unsigned id); 
+	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
 public:
 	DWORD startWindows = 0;
 	DWORD startMinimized = 0;
@@ -205,6 +207,7 @@ public:
 	bool SamePower(WORD flags, bool anyFit = false);
 	void Save();
 	groupset* FindMapping(int mid, vector<groupset>* set = NULL);
+	void SetRandomColor(AlienFX_SDK::Afx_colorcode* clr);
 	zonemap* FindZoneMap(int gid);
 	zonemap* SortGroupGauge(int gid);
 	profile* FindProfile(int id);

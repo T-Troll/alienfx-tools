@@ -89,22 +89,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	senmon = new SenMonHelper();
 
     // Perform application initialization:
-    if (!InitInstance (hInstance, conf->startMinimized ? SW_HIDE : SW_NORMAL))
-    {
-        return FALSE;
-    }
+	hInst = hInstance;
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXMON));
+	if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_WINDOW), NULL, (DLGPROC)DialogMain)) {
+		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXMON)));
+		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXMON), IMAGE_ICON, 16, 16, 0));
+
+		ShowWindow(mDlg, conf->startMinimized ? SW_HIDE : SW_SHOW);
+	}
 
     MSG msg;
     // Main message loop:
-    while ((GetMessage(&msg, 0, 0, 0)) != 0) {
-        if (!TranslateAccelerator(mDlg, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+	while ((GetMessage(&msg, 0, 0, 0)) != 0) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 
 	delete senmon;
 	delete conf;
@@ -112,20 +111,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int) msg.wParam;
 }
 
-HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-	hInst = hInstance;
-	CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAIN_WINDOW), NULL, (DLGPROC)DialogMain);
-
-	if (mDlg) {
-
-		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXMON)));
-		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXMON), IMAGE_ICON, 16, 16, 0));
-
-		ShowWindow(mDlg, nCmdShow);
-	}
-	return mDlg;
-}
+//HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
+//{
+//	hInst = hInstance;
+//	CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAIN_WINDOW), NULL, (DLGPROC)DialogMain);
+//
+//	if (mDlg) {
+//
+//		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXMON)));
+//		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXMON), IMAGE_ICON, 16, 16, 0));
+//
+//		ShowWindow(mDlg, nCmdShow);
+//	}
+//	return mDlg;
+//}
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -413,7 +412,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	{
 	case WM_INITDIALOG:
 	{
-		conf->niData.hWnd = mDlg = hDlg;
+		conf->niData.hWnd = hDlg;
 		CheckDlgButton(hDlg, IDC_STARTW, conf->startWindows);
 		CheckDlgButton(hDlg, IDC_STARTM, conf->startMinimized);
 		CheckDlgButton(hDlg, IDC_CHECK_UPDATE, conf->updateCheck);

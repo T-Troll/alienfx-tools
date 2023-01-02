@@ -3,8 +3,7 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+extern void UpdateZoneList();
 
 extern EventHandler* eve;
 
@@ -52,8 +51,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         gridTab = GetDlgItem(hDlg, IDC_TAB_COLOR_GRID),
         gridX = GetDlgItem(hDlg, IDC_SLIDER_HSCALE),
         gridY = GetDlgItem(hDlg, IDC_SLIDER_VSCALE);
-
-    //groupset* map = conf->FindMapping(eItem);
 
     switch (message) {
     case WM_INITDIALOG:
@@ -106,7 +103,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                         mmap->ambients.push_back(id);
                     else
                         mmap->ambients.erase(pos);
-                    RedrawButtonZone(hDlg);
+                    UpdateZoneList();
                 }
                 break;
             }
