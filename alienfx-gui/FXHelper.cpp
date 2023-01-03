@@ -423,7 +423,7 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions, boo
 
 void FXHelper::SetState(bool force) {
 	if (conf->SetStates() || force) {
-		HANDLE updates = updateThread;
+		bool updates = updateThread;
 		Stop();
 		for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++) {
 			if (i->dev) {

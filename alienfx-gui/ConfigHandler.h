@@ -161,7 +161,7 @@ public:
 	COLORREF customColors[16]{ 0 };
 
 	// States
-	bool stateDimmed = false, stateOn = true, statePower = true, dimmedScreen = false, stateScreen = true;
+	bool stateDimmed = false, stateOn = true, statePower = true, /*dimmedScreen = false, */stateScreen = true;
 	bool lightsNoDelay = true;
 	bool block_power = 0;
 	bool wasAWCC = false;

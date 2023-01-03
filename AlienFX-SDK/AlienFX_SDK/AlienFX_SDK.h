@@ -143,6 +143,9 @@ namespace AlienFX_SDK {
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, Afx_lightblock act, bool needSave, bool needInverse = false);
 
+		// Support function for APIv4 action set
+		bool SetV4Action(Afx_lightblock* act);
+
 		// return current device state
 		BYTE GetDeviceStatus();
 
@@ -200,7 +203,7 @@ namespace AlienFX_SDK {
 
 		// Set color to action
 		// act - pointer to light control block
-		bool SetAction(Afx_lightblock* act, bool ipe = true);
+		bool SetAction(Afx_lightblock* act);
 
 		// Set action for Power button and store other light colors as default
 		// act - pointer to vector of light control blocks

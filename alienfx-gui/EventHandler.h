@@ -27,7 +27,7 @@ private:
 	ThreadHelper* eventProc = NULL;
 
 public:
-	int effMode = 0;
+	int effMode = -1;
 
 	CaptureHelper* capt = NULL;
 	GridHelper* grid = NULL;
@@ -43,7 +43,7 @@ public:
 	LightEventData cData;
 
 	void ChangePowerState();
-	void ChangeScreenState(DWORD state = 1);
+	//void ChangeScreenState(DWORD state = 1);
 	void SwitchActiveProfile(profile* newID);
 
 	void StartProfiles();

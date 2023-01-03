@@ -83,7 +83,7 @@ bool ConfigHandler::SetStates() {
 	// Lights on state...
 	stateOn = lightsOn && stateScreen && (!offOnBattery || statePower);
 	// Dim state...
-	stateDimmed = IsDimmed() || dimmedScreen || (dimmedBatt && !statePower);
+	stateDimmed = IsDimmed() /*|| dimmedScreen*/ || (dimmedBatt && !statePower);
 	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
 	finalPBState = finalBrightness ? stateDimmed ? (byte)dimPowerButton : 1 : (byte)offPowerButton;
 

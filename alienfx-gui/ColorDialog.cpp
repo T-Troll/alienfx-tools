@@ -75,7 +75,7 @@ void RebuildEffectList(HWND hDlg) {
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
-		fxhl->RefreshOne(mmap);
+		//fxhl->RefreshOne(mmap);
 	}
 	SetEffectData(hDlg);
 	ListView_EnsureVisible(eff_list, effID, false);
@@ -113,6 +113,7 @@ void ChangeAddColor(HWND hDlg, int newEffID) {
 						mmap->color.erase(mmap->color.begin() + newEffID);
 				}
 		}
+		fxhl->RefreshOne(mmap);
 		RebuildEffectList(hDlg);
 		UpdateZoneList();
 	}
@@ -150,6 +151,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				mmap->color[effID].type = lType1;
 				RebuildEffectList(hDlg);
+				fxhl->RefreshOne(mmap);
 			}
 			break;
 		case IDC_BUTTON_C1:
@@ -173,6 +175,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					if (effID)
 						effID--;
 				}
+				fxhl->RefreshOne(mmap);
 				RebuildEffectList(hDlg);
 				UpdateZoneList();
 			}

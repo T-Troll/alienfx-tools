@@ -52,7 +52,7 @@ namespace AlienFX_SDK {
 		// Then circle [11 - 17, 18 - 24, 25 - 31]
 		// It can be up to 3 colorSet for one colorSel.
 		const byte COMMV4_setPower[2]{0x03 ,0x22};
-		// Bettr use control with [2] = 22
+		// Better use control with [2] = 22
 		// [6] - type
 		const byte COMMV4_turnOn[2]{0x03, 0x26};
 		// [4] - brightness (0..100),
@@ -63,6 +63,7 @@ namespace AlienFX_SDK {
 		// [7] - count
 		// [8-33] - IDs
 	//} COMMV4;
+		static byte v4OpCodes[]{ 0xd0, 0xdc, 0xcf, 0xdc, 0x82, 0xac, 0xe8 };
 
 	//static struct COMMV5 { // notebook rgb keyboards
 		// Start command block
@@ -128,6 +129,7 @@ namespace AlienFX_SDK {
 		const byte COMMV7_control[5]{0x40,0x10,0x0c,0x00,0x01};// , 0x64, 0x00, 0x2a, 0xaa, 0xff};
 		//[5] - effect mode, [6] - brightness, [7] - lightID, [8..10] - rgb1, [11..13] - rgb2...
 	//} COMMV7;
+		static byte v7OpCodes[]{ 1,5,3,2,4,6,1 };
 
 	//static struct COMMV8 { // external keyboards
 		const byte COMMV8_effectReady[4]{0x5,0x1,0x51,0x00};

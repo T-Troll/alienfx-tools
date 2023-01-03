@@ -54,25 +54,13 @@ void EventHandler::ChangePowerState()
 	}
 }
 
-void EventHandler::ChangeScreenState(DWORD state)
-{
-	if (conf->lightsOn && (conf->offWithScreen || capt)) {
-		if (state == 2) {
-			// Dim display
-			conf->dimmedScreen = true;
-			conf->stateScreen = true;
-		}
-		else {
-			conf->stateScreen = state;
-			conf->dimmedScreen = false;
-		}
-		DebugPrint("Display state changed\n");
-	} else {
-		conf->dimmedScreen = false;
-		conf->stateScreen = true;
-	}
-	fxhl->SetState();
-}
+//void EventHandler::ChangeScreenState(DWORD state)
+//{
+//	//conf->dimmedScreen = state == 2;
+//	conf->stateScreen = conf->lightsOn && conf->offWithScreen && state;
+//	fxhl->SetState();
+//	DebugPrint("Screen state changed to " + to_string(state) + "\n");
+//}
 
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
@@ -133,10 +121,10 @@ void EventHandler::StopEvents()
 
 void EventHandler::ChangeEffectMode() {
 	if (conf->enableMon && conf->stateOn) {
-		if (conf->GetEffect() != effMode)
-			StopEffects();
-		else
-			fxhl->Refresh();
+		//if (conf->GetEffect() != effMode)
+		//	StopEffects();
+		//else
+		//	fxhl->Refresh();
 		StartEffects();
 	}
 	else
@@ -146,14 +134,14 @@ void EventHandler::ChangeEffectMode() {
 
 void EventHandler::StopEffects() {
 	switch (effMode) {
-	case 1:	StopEvents(); break; // Events
-	case 2: if (capt) { // Ambient
+	case 1:	StopEvents(); break;	// Events
+	case 2: if (capt) {				// Ambient
 		delete capt; capt = NULL;
 	} break;
-	case 3: if (audio) { // Haptics
+	case 3: if (audio) {			// Haptics
 		delete audio; audio = NULL;
 	} break;
-	case 4: if (grid) {
+	case 4: if (grid) {				// Grid
 		delete grid; grid = NULL;
 	} break;
 	}
@@ -162,22 +150,29 @@ void EventHandler::StopEffects() {
 }
 
 void EventHandler::StartEffects() {
-	if (conf->enableMon) {
-		// start new mode...
-		switch (effMode = conf->GetEffect()) {
-		case 1:
-			StartEvents();
-			break;
-		case 2:
-			if (!capt) capt = new CaptureHelper();
-			break;
-		case 3:
-			if (!audio) audio = new WSAudioIn();
-			break;
-		case 4:
-			if (!grid) grid = new GridHelper();
-			break;
-		}
+	if (conf->enableMon && conf->stateOn) {
+		if (conf->GetEffect() != effMode) {
+			StopEffects();
+			// start new mode...
+			switch (effMode = conf->GetEffect()) {
+			//case 0:
+			//	fxhl->Refresh();
+			//	break;
+			case 1:
+				StartEvents();
+				break;
+			case 2:
+				if (!capt) capt = new CaptureHelper();
+				break;
+			case 3:
+				if (!audio) audio = new WSAudioIn();
+				break;
+			case 4:
+				if (!grid) grid = new GridHelper();
+				break;
+			}
+		} else
+			fxhl->Refresh();
 	}
 }
 
@@ -270,13 +265,12 @@ void EventHandler::CheckProfileWindow() {
 void EventHandler::StartProfiles()
 {
 	if (conf->enableProf && !cEvent) {
-
 		DebugPrint("Profile hooks starting.\n");
 
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
-								 EVENT_SYSTEM_FOREGROUND, NULL,
-								 CForegroundProc, 0, 0,
-								 WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+			EVENT_SYSTEM_FOREGROUND, NULL,
+			CForegroundProc, 0, 0,
+			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
 		cEvent = SetWinEventHook(EVENT_OBJECT_CREATE,
 			EVENT_OBJECT_DESTROY, NULL,
@@ -299,7 +293,7 @@ void EventHandler::StopProfiles()
 		UnhookWinEvent(hEvent);
 		UnhookWinEvent(cEvent);
 		UnhookWindowsHookEx(kEvent);
-		cEvent = 0;
+		cEvent = NULL;
 		keyboardSwitchActive = false;
 	}
 }

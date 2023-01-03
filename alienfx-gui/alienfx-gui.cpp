@@ -168,6 +168,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		SetHotkeys();
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
+		RegisterPowerSettingNotification(mDlg, &GUID_LIDSWITCH_STATE_CHANGE, 0);
+		//sParams->PowerSetting == GUID_MONITOR_POWER_ON ||
+		//	sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE ||
+		//	sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS ||
+		//	sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE
 
 		ShowWindow(mDlg, conf->startMinimized ? SW_HIDE : SW_SHOW);
 
@@ -652,9 +657,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
-			fxhl->Start();
 			if (conf->fanControl)
 				DetectFans();
+			fxhl->Start();
 			eve->StartEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
@@ -668,27 +673,38 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
-			DebugPrint("Display state change initiated\n");
 			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*) lParam;
-			if (sParams->PowerSetting == GUID_MONITOR_POWER_ON || sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE
-				|| sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS) {
-				eve->ChangeScreenState(sParams->Data[0]);
-			}
+			//if (sParams->PowerSetting == GUID_MONITOR_POWER_ON)
+			conf->stateScreen = !conf->offWithScreen || sParams->Data[0];
+			//else
+			if (sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE)
+				conf->stateScreen = conf->stateScreen || GetSystemMetrics(SM_CMONITORS) > 1;
+			DebugPrint("Screen state changed to " + to_string(conf->stateScreen) + "\n");
+			fxhl->SetState();
+			//if (sParams->PowerSetting == GUID_MONITOR_POWER_ON/* ||
+			//	sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE ||
+			//	sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS */||
+			//	sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE) {
+			//	//eve->ChangeScreenState(sParams->Data[0]);
+			//	conf->stateScreen = conf->offWithScreen && sParams->Data[0];
+			//	fxhl->SetState();
+			//}
 		} break;
 		case PBT_APMSUSPEND:
 			// Sleep initiated.
 			DebugPrint("Sleep/hibernate initiated\n");
+			conf->Save();
+			eve->StopProfiles();
 			// need to restore lights if followed screen
-			if (conf->lightsOn && conf->offWithScreen) {
+			if (conf->offWithScreen) {
 				conf->stateScreen = true;
 				fxhl->SetState();
 			}
-			conf->Save();
-			eve->StopProfiles();
 			eve->StopEffects();
+			fxhl->Refresh(2);
+			fxhl->Stop();
 			if (acpi)
 				delete mon;
-			fxhl->Stop();
 			break;
 		}
 		break;
@@ -698,7 +714,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(acpi);
 			if (devList.size() != conf->afx_dev.activeDevices) {
 				DebugPrint("Active list changed!\n");
-				HANDLE updated = fxhl->updateThread;
+				bool updated = fxhl->updateThread;
 				fxhl->Stop();
 				conf->afx_dev.AlienFXApplyDevices(devList, conf->finalBrightness, conf->finalPBState);
 				if (conf->afx_dev.activeDevices && updated) {
@@ -712,7 +728,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DISPLAYCHANGE:
 		// Monitor configuration changed
 	    if (eve->capt) eve->capt->Restart();
-	break;
+		break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
