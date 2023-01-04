@@ -430,7 +430,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
-            mon = new MonHelper();
+            mon->Start();
             if (fan_conf->updateCheck) {
                 needUpdateFeedback = false;
                 CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
@@ -438,7 +438,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case PBT_APMSUSPEND:
             // Sleep initiated.
-            delete mon;
+            mon->Stop();
             fan_conf->Save();
             break;
         }

@@ -657,8 +657,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
-			if (conf->fanControl)
-				DetectFans();
+			if (acpi)
+				mon->Start();
 			fxhl->Start();
 			eve->StartEffects();
 			eve->StartProfiles();
@@ -704,7 +704,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			fxhl->Refresh(2);
 			fxhl->Stop();
 			if (acpi)
-				delete mon;
+				mon->Stop();
 			break;
 		}
 		break;

@@ -492,6 +492,14 @@ namespace AlienFan_SDK {
 						}
 					}
 				}
+				while (WaitForSingleObject(proc.hProcess, 300) == WAIT_TIMEOUT) {
+					DWORD written;
+					while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
+						char* buffer = new char[written + 1]{ 0 };
+						ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
+						delete[] buffer;
+					}
+				}
 				CloseHandle(proc.hProcess);
 				CloseHandle(proc.hThread);
 			}
