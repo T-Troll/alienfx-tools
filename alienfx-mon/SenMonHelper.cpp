@@ -35,6 +35,9 @@ SenMonHelper::~SenMonHelper()
 
 void SenMonHelper::ModifyMon()
 {
+	if ((conf->bSensors || conf->eSensors) && !EvaluteToAdmin()) {
+		conf->bSensors = conf->eSensors = false;
+	}
 	if ((conf->wSensors || conf->eSensors) && (hQuery || PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS)) {
 		if (conf->wSensors) {
 			PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);

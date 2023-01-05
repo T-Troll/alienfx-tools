@@ -83,8 +83,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	conf = new ConfigMon();
 
-	if (conf->eSensors || conf->bSensors)
-		EvaluteToAdmin();
+	//if (conf->eSensors || conf->bSensors)
+	//	EvaluteToAdmin();
 
 	senmon = new SenMonHelper();
 
@@ -110,21 +110,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     return (int) msg.wParam;
 }
-
-//HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
-//{
-//	hInst = hInstance;
-//	CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAIN_WINDOW), NULL, (DLGPROC)DialogMain);
-//
-//	if (mDlg) {
-//
-//		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXMON)));
-//		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXMON), IMAGE_ICON, 16, 16, 0));
-//
-//		ShowWindow(mDlg, nCmdShow);
-//	}
-//	return mDlg;
-//}
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -272,7 +257,6 @@ void ReloadSensorView() {
 }
 
 void RemoveTrayIcons() {
-	KillTimer(mDlg, 0);
 	// Remove icons from tray...
 	Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
@@ -281,19 +265,35 @@ void RemoveTrayIcons() {
 			if (i->second.niData->hIcon)
 				DestroyIcon(i->second.niData->hIcon);
 			delete i->second.niData;
+			i->second.niData = NULL;
 		}
 }
 
-void ModifySensors() {
-	if (!IsUserAnAdmin() && (conf->bSensors || conf->eSensors)) {
-		RemoveTrayIcons();
-		conf->Save();
-		EvaluteToAdmin();
+void ResetTraySensors() {
+	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
+		if (i->second.intray)
+			i->second.cur = NO_SEN_VALUE;
 	}
-	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
+	SendMessage(mDlg, WM_TIMER, 0, 0);
+}
+
+void ModifySensors() {
+	//if (!IsUserAnAdmin() && (conf->bSensors || conf->eSensors)) {
+	//	RemoveTrayIcons();
+	//	conf->Save();
+	//	if (!EvaluteToAdmin()) {
+	//		AddTrayIcon(&conf->niData, conf->updateCheck);
+	//		ResetTraySensors();
+	//	}
+	//}
 	conf->paused = true;
+	RemoveTrayIcons();
+	conf->Save();
 	senmon->ModifyMon();
-	senmon->UpdateSensors();
+	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
+	AddTrayIcon(&conf->niData, conf->updateCheck);
+	ResetTraySensors();
+	//senmon->UpdateSensors();
 	conf->paused = false;
 }
 
@@ -326,14 +326,6 @@ void ResetMinMax(DWORD id = 0xffffffff) {
 			iter->second.max = iter->second.min = iter->second.cur;
 			iter->second.cur = NO_SEN_VALUE;
 		}
-	SendMessage(mDlg, WM_TIMER, 0, 0);
-}
-
-void ResetTraySensors() {
-	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++) {
-		if (i->second.intray)
-			i->second.cur = NO_SEN_VALUE;
-	}
 	SendMessage(mDlg, WM_TIMER, 0, 0);
 }
 
@@ -601,6 +593,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_CLOSE:
+		KillTimer(mDlg, 0);
 		RemoveTrayIcons();
 		DestroyWindow(hDlg);
 		break;

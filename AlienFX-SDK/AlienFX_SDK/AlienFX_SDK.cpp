@@ -1196,7 +1196,7 @@ namespace AlienFX_SDK {
 		RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"));
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
 
-		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
+		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
 			// Saving device data..
 			string name = "Dev#" + to_string(i->vid) + "_" + to_string(i->pid);
 			RegSetValueEx( hKey1, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
@@ -1214,31 +1214,31 @@ namespace AlienFX_SDK {
 			}
 		}
 
-		for (int i = 0; i < numGroups; i++) {
-			string name = "Group" + to_string(groups[i].gid);
+		for (auto i = groups.begin(); i != groups.end(); i++) {
+			string name = "Group" + to_string(i->gid);
 
 			RegCreateKey(hKey1, name.c_str(), &hKeyS);
-			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE *) groups[i].name.c_str(), (DWORD) groups[i].name.size());
+			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.size());
 
-			DWORD *grLights = new DWORD[groups[i].lights.size() * 2];
+			DWORD *grLights = new DWORD[i->lights.size() * 2];
 
-			for (int j = 0; j < groups[i].lights.size(); j++) {
-				grLights[j * 2] = groups[i].lights[j].did;
-				grLights[j * 2 + 1] = groups[i].lights[j].lid;
+			for (int j = 0; j < i->lights.size(); j++) {
+				grLights[j * 2] = i->lights[j].did;
+				grLights[j * 2 + 1] = i->lights[j].lid;
 			}
-			RegSetValueEx( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD) groups[i].lights.size() * sizeof(DWORD) );
+			RegSetValueEx( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD)i->lights.size() * sizeof(DWORD) );
 
 			delete[] grLights;
 			RegCloseKey(hKeyS);
 		}
 
-		for (int i = 0; i < numGrids; i++) {
-			string name = "Grid" + to_string(grids[i].id);
+		for (auto i = grids.begin(); i != grids.end(); i++) {
+			string name = "Grid" + to_string(i->id);
 			RegCreateKey(hKey1, name.c_str(), &hKeyS);
-			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE*)grids[i].name.c_str(), (DWORD)grids[i].name.length());
-			DWORD sizes = ((DWORD)grids[i].x << 8) | grids[i].y;
+			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE*)i->name.c_str(), (DWORD)i->name.length());
+			DWORD sizes = ((DWORD)i->x << 8) | i->y;
 			RegSetValueEx(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
-			RegSetValueEx(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)grids[i].grid, grids[i].x * grids[i].y * sizeof(DWORD));
+			RegSetValueEx(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)i->grid, i->x * i->y * sizeof(DWORD));
 			RegCloseKey(hKeyS);
 		}
 

@@ -26,7 +26,7 @@ struct gearInfo {
 	string name;
 	vector <AlienFX_SDK::Afx_grid> grids;
 	vector<AlienFX_SDK::Afx_device> devs;
-	bool selected = false;
+	bool selected = false, found = true;
 };
 
 extern HWND dDlg;
@@ -38,10 +38,10 @@ HHOOK dEvent;
 HWND kDlg = NULL;
 
 AlienFX_SDK::Afx_device* FindActiveDevice() {
-	if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size())
-		//if (conf->afx_dev.fxdevs[dIndex].dev)
-			return &conf->afx_dev.fxdevs[dIndex];
-	return nullptr;
+	return dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size() ? &conf->afx_dev.fxdevs[dIndex] : nullptr;
+	//if (dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size())
+	//	return &conf->afx_dev.fxdevs[dIndex];
+	//return nullptr;
 }
 
 BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -69,10 +69,12 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SetSlider(sTip2, dev->white.r);
 			SetSlider(sTip3, dev->white.r);
 			fxhl->TestLight(dev, eLid, true, true);
+			RECT pRect;
+			GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);
+			SetWindowPos(hDlg, NULL, pRect.right, pRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 		}
-		RECT pRect;
-		GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);
-		SetWindowPos(hDlg, NULL, pRect.right, pRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		else
+			EndDialog(hDlg, IDCLOSE);
 	}
 	break;
 	case WM_HSCROLL:
@@ -82,16 +84,16 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case TB_THUMBTRACK: case TB_ENDTRACK:
 			{
 				if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_RED)) {
-					conf->afx_dev.fxdevs[dIndex].white.r = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, conf->afx_dev.fxdevs[dIndex].white.r);
+					dev->white.r = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip1, dev->white.r);
 				} else
 					if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_GREEN)) {
-						conf->afx_dev.fxdevs[dIndex].white.g = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-						SetSlider(sTip2, conf->afx_dev.fxdevs[dIndex].white.g);
+						dev->white.g = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+						SetSlider(sTip2, dev->white.g);
 					} else
 						if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_BLUE)) {
-							conf->afx_dev.fxdevs[dIndex].white.b = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-							SetSlider(sTip3, conf->afx_dev.fxdevs[dIndex].white.b);
+							dev->white.b = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+							SetSlider(sTip3, dev->white.b);
 						}
 				fxhl->TestLight(dev, eLid, true, true);
 			} break;
@@ -147,7 +149,6 @@ void UpdateDeviceInfo() {
 			dev->vid, dev->pid, (int)dev->lights.size(), (dev->dev ? "APIv" + to_string(dev->dev->GetVersion()) : "Inactive").c_str());
 		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), dev->dev && dev->dev->GetVersion() && dev->dev->GetVersion() < 5); // v5 and higher doesn't support power button
-		//SetLightInfo();
 		UpdateLightsList();
 	}
 }
@@ -176,7 +177,7 @@ BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_CLOSE:
 		UnhookWindowsHookEx(dEvent);
 		EndDialog(hDlg, IDCLOSE);
-		kDlg = NULL;
+		//kDlg = NULL;
 		break;
 	default: return false;
 	}
@@ -195,26 +196,24 @@ void RedrawDevList() {
 	for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++) {
 		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
 		if (!conf->afx_dev.fxdevs[i].name.length() && conf->afx_dev.fxdevs[i].dev) {
-			// no name
-			string typeName = "Unknown";
+			string typeName = "";
 			switch (conf->afx_dev.fxdevs[i].dev->GetVersion()) {
 			case 0: typeName = "Desktop"; break;
 			case 1: case 2: case 3: typeName = "Notebook"; break;
-			case 4: typeName = "Notebook/Tron"; break;
+			case 4: typeName = "Notebook/Chassis"; break;
 			case 5: case 8: typeName = "Keyboard"; break;
 			case 6: typeName = "Display"; break;
 			case 7: typeName = "Mouse"; break;
 			}
 			conf->afx_dev.fxdevs[i].name = typeName + ", #" + to_string(conf->afx_dev.fxdevs[i].pid);
 		}
-		//lItem.lParam = i;
 		lItem.pszText = (char*)conf->afx_dev.fxdevs[i].name.c_str();
 		if (i == dIndex) {
 			lItem.state = LVIS_SELECTED;
 			rpos = i;
 		}
-		else
-			lItem.state = 0;
+		/*else
+			lItem.state = 0;*/
 		ListView_InsertItem(dev_list, &lItem);
 	}
 	ListView_SetColumnWidth(dev_list, 0, LVSCW_AUTOSIZE_USEHEADER);
@@ -237,8 +236,8 @@ void LoadCSV(string name) {
 		string content = (char *) filebuf;
 		delete[] filebuf;
 		string line;
-		gearInfo tGear{ "" };
-		AlienFX_SDK::Afx_device tDev;
+		gearInfo tGear;// { "" };
+		//AlienFX_SDK::Afx_device tDev;
 		while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 			vector<string> fields;
 			size_t pos = 0, posOld = 1;
@@ -249,62 +248,64 @@ void LoadCSV(string name) {
 					fields.push_back(line.substr(posOld, pos - posOld));
 					posOld = pos + 3;
 				}
-				fields.push_back(line.substr(posOld, line.size() - posOld - 1));
-				switch (atoi(fields[0].c_str())) {
-				case 0: { // device line
-					if (!tGear.selected) {
-						WORD vid = (WORD)atoi(fields[1].c_str()),
-							pid = (WORD)atoi(fields[2].c_str());
-						AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid, vid);
-						DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
-						if (dev && dev->dev) {
-							tGear.devs.push_back({vid, pid, NULL, fields[3] });
-							DebugPrint("Matched.\n")
+				fields.push_back(line.substr(posOld, line.length() - posOld - 1));
+				if (tGear.found || fields.front()[0] == '3') {
+					switch (fields.front()[0]) {
+					case '0': { // device line
+						//if (tGear.found) {
+							WORD vid = (WORD)atoi(fields[1].c_str()),
+								pid = (WORD)atoi(fields[2].c_str());
+							//tGear.found = conf->afx_dev.GetDeviceById(pid, vid);
+							DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
+							if (tGear.found = conf->afx_dev.GetDeviceById(pid, vid)) {
+								tGear.devs.push_back({ vid, pid, NULL, fields[3] });
+								DebugPrint("Matched.\n")
+							}
+#ifdef _DEBUG
+							else {
+								DebugPrint("Skipped.\n");
+							}
+#endif // _DEBUG
+						//}
+					} break;
+					case '1': { // lights line
+						//if (tGear.found) {
+							WORD ltId = (WORD)atoi(fields[1].c_str());
+							DWORD gridval = MAKELPARAM(tGear.devs.back().pid, ltId);
+							tGear.devs.back().lights.push_back({ ltId, (WORD)atoi(fields[2].c_str()), fields[3] });
+							// grid maps
+							for (int i = 4; i < fields.size(); i += 2) {
+								int gid = atoi(fields[i].c_str());
+								for (auto pos = tGear.grids.begin(); pos != tGear.grids.end(); pos++)
+									if (pos->id == gid) {
+										pos->grid[atoi(fields[i + 1].c_str())].lgh = gridval;
+										break;
+									}
+							}
+						//}
+					} break;
+					case '2': // Grid info
+						tGear.grids.push_back({ (byte)atoi(fields[1].c_str()), (byte)atoi(fields[2].c_str()), (byte)atoi(fields[3].c_str()), fields[4] });
+						tGear.grids.back().grid = new AlienFX_SDK::Afx_groupLight[tGear.grids.back().x * tGear.grids.back().y]{ 0 };
+						break;
+					case '3': // Device info
+						if (tGear.name.length() && tGear.found) {
+							//tGear.name = tGear.devs.front().name;
+							csv_devs.push_back(tGear);
 						}
-						else {
-							// Skip to next "3" block!
-							tGear.selected = true;
-							DebugPrint("Skipped.\n");
-						}
+						tGear = { fields[1] };
+						//tGear.name = fields[1];
+						DebugPrint("Gear " + tGear.name + ":\n");
+						break;
+						//default: // wrong line, skip
+						//	DebugPrint("Line skipped\n");
 					}
-				} break;
-				case 1: // lights line
-					if (!tGear.selected) {
-						WORD ltId = (WORD)atoi(fields[1].c_str());
-						DWORD gridval = MAKELPARAM(tGear.devs.back().pid, ltId);
-						tGear.devs.back().lights.push_back({ ltId, (WORD)atoi(fields[2].c_str()), fields[3] });
-						// grid maps
-						for (int i = 4; i < fields.size(); i += 2) {
-							int gid = atoi(fields[i].c_str());
-							for (auto pos = tGear.grids.begin(); pos != tGear.grids.end(); pos++)
-								if (pos->id == gid) {
-									pos->grid[atoi(fields[i + 1].c_str())].lgh = gridval;
-									break;
-								}
-						}
-					}
-					break;
-				case 2: // Grid info
-					tGear.grids.push_back({ (byte)atoi(fields[1].c_str()), (byte)atoi(fields[2].c_str()), (byte)atoi(fields[3].c_str()), fields[4] });
-					tGear.grids.back().grid = new AlienFX_SDK::Afx_groupLight[tGear.grids.back().x * tGear.grids.back().y]{ 0 };
-					break;
-				case 3: // Device info
-					if (tGear.name != "" && !tGear.selected) {
-						tGear.name = tGear.devs.front().name;
-						csv_devs.push_back(tGear);
-					}
-					tGear = { "" };
-					tGear.name = fields[1];
-					DebugPrint("Device " + tGear.name + ":\n");
-					break;
-				//default: // wrong line, skip
-				//	DebugPrint("Line skipped\n");
 				}
 			}
 		}
-		if (!tGear.selected) {
-			if (tGear.name == "")
-				tGear.name = tGear.devs.front().name;
+		if (tGear.found) {
+			/*if (tGear.name == "")
+				tGear.name = tGear.devs.front().name;*/
 			csv_devs.push_back(tGear);
 		}
 		CloseHandle(file);
@@ -320,10 +321,11 @@ string OpenSaveFile(bool isOpen) {
 	fstruct.lpstrInitialDir = ".\\Mappings";
 	fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT |
 		(isOpen ? OFN_FILEMUSTEXIST : OFN_PATHMUSTEXIST);
-	if (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) {
-		return appName;
-	} else
-		return "";
+	return (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) ? appName : "";
+	//if (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) {
+	//	return appName;
+	//} else
+	//	return "";
 }
 
 void ApplyDeviceMaps(HWND gridTab, bool force = false) {

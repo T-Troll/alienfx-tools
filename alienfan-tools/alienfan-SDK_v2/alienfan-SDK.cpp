@@ -46,6 +46,8 @@ namespace AlienFan_SDK {
 	}
 
 	Control::~Control() {
+		if (dptfCheck)
+			WaitForSingleObject(dptfCheck, 5000);
 		if (m_DiskService)
 			m_DiskService->Release();
 		if (m_OHMService)
@@ -131,6 +133,7 @@ namespace AlienFan_SDK {
 	}
 
 	bool Control::Probe() {
+		//IEnumWbemClassObject* enum_obj;
 		if (m_WbemServices && m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK) {
 #ifdef _TRACE_
 			printf("AWCC section detected!\n");
@@ -234,7 +237,7 @@ namespace AlienFan_SDK {
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 4);
 			}
-			CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
+			dptfCheck = CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
 		}
 		return isSupported;
 	}

@@ -62,12 +62,7 @@ groupset* mmap = NULL;
 const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
 bool DetectFans() {
-	if (!IsUserAnAdmin()) {
-		conf->fanControl = true;
-		conf->Save();
-		return EvaluteToAdmin();
-	}
-	else {
+	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin())) {
 		mon = new MonHelper();
 		if (mon->monThread) {
 			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
@@ -137,21 +132,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	fan_conf = conf->fan_conf;
 
-	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
-		EvaluteToAdmin();
-
-	conf->wasAWCC = DoStopService(conf->awcc_disable, true);
-
-	fxhl = new FXHelper();
-
 	if (conf->activeProfile->flags & PROF_FANS)
 		fan_conf->lastProf = &conf->activeProfile->fansets;
 
-	if (conf->fanControl) {
-		DetectFans();
-	}
+	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
+		if (EvaluteToAdmin()) {
+			conf->wasAWCC = DoStopService(conf->awcc_disable, true);
+			DetectFans();
+		}
+		else
+			conf->fanControl = false;
 
-	fxhl->FillAllDevs(acpi);
+	fxhl = new FXHelper();
+	//fxhl->FillAllDevs(acpi);
 
 	eve = new EventHandler();
 

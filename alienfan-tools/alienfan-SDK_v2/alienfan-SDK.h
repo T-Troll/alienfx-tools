@@ -32,19 +32,21 @@ namespace AlienFan_SDK {
 		byte id, type;
 	};
 
-#define getPowerID		0
-#define getFanRPM		1
-#define getFanPercent	2
-#define getFanBoost		3
-#define getTemp			4
-#define getPowerMode	5
-#define setFanBoost		6
-#define setPowerMode	7
-#define getGMode		8
-#define setGMode		9
-#define getSysID		10
-#define getFanSensor	11
-#define getMaxRPM		12
+	enum {
+		getPowerID	 =	0,
+		getFanRPM	 =	1,
+		getFanPercent=	2,
+		getFanBoost	 =	3,
+		getTemp		 =	4,
+		getPowerMode =	5,
+		setFanBoost	 =	6,
+		setPowerMode =	7,
+		getGMode	 =	8,
+		setGMode	 =	9,
+		getSysID	 =	10,
+		getFanSensor =	11,
+		getMaxRPM	 =	12
+	};
 
 	union ALIENFAN_INTERFACE {
 		struct {
@@ -61,6 +63,7 @@ namespace AlienFan_SDK {
 		//byte devFlags = 0;
 		DWORD systemID = 0;
 		byte sysType = -1;
+		HANDLE dptfCheck = NULL;
 		void EnumSensors(IEnumWbemClassObject* enum_obj, byte type);
 	public:
 		VARIANT m_instancePath;

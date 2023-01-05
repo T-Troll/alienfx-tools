@@ -13,10 +13,10 @@ bool UACPassed = true;
 
 bool EvaluteToAdmin() {
 	// Evaluation attempt...
-	if (UACPassed && !IsUserAnAdmin()) {
+	if (!(UACPassed = IsUserAnAdmin())) {
 		char szPath[MAX_PATH];
 		GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath));
-			// Launch itself as admin
+		// Launch itself as admin
 		SHELLEXECUTEINFO sei{ sizeof(sei), 0, NULL, "runas", szPath, NULL, NULL, SW_NORMAL };
 		if (UACPassed = ShellExecuteEx(&sei)) {
 			_exit(1);  // Quit itself
@@ -26,25 +26,18 @@ bool EvaluteToAdmin() {
 }
 
 bool DoStopService(bool flag, bool kind) {
+	bool rCode = false;
 	if (flag && EvaluteToAdmin()) {
 		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 		SC_HANDLE schService = schSCManager ? OpenService(schSCManager, "AWCCService", SERVICE_ALL_ACCESS) : NULL;
 		SERVICE_STATUS  serviceStatus;
-		bool rCode = false;
 		if (schSCManager && schService) {
-			if (kind) {
-				// stop service
-				rCode = (BOOLEAN)ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus);
-			}
-			else {
-				// start service
+			rCode = kind ? ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus) :
 				StartService(schService, 0, NULL);
-			}
 			CloseServiceHandle(schService);
 		}
-		return rCode;
 	}
-	return false;
+	return rCode;
 }
 
 void ResetDPIScale(LPWSTR cmdLine) {

@@ -4,6 +4,7 @@
 extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
+extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
 
 DWORD WINAPI CLightsProc(LPVOID param);
@@ -11,6 +12,7 @@ DWORD WINAPI CLightsProc(LPVOID param);
 FXHelper::FXHelper() {
 	stopQuery = CreateEvent(NULL, false, false, NULL);
 	haveNewElement = CreateEvent(NULL, false, false, NULL);
+	FillAllDevs(acpi);
 }
 
 FXHelper::~FXHelper() {
@@ -216,16 +218,6 @@ void FXHelper::RefreshCounters(LightEventData *data)
 						else {
 							lVal = CheckEvent(&eData, &(*e));
 							cVal = CheckEvent(data, &(*e));
-							//int ccut = e->cut;
-							//switch (e->source) {
-							//case 0: lVal = eData.HDD; cVal = data->HDD; break;
-							//case 1: lVal = eData.NET; cVal = data->NET; break;
-							//case 2: lVal = eData.Temp - ccut; cVal = data->Temp - ccut; break;
-							//case 3: lVal = eData.RAM - ccut; cVal = data->RAM - ccut; break;
-							//case 4: lVal = ccut - eData.Batt; cVal = ccut - data->Batt; break;
-							//case 5: lVal = eData.KBD; cVal = data->KBD; break;
-							//case 6: lVal = eData.PWM - ccut; cVal = data->PWM - ccut; break;
-							//}
 
 							if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
 								hasDiff = true;
