@@ -15,11 +15,17 @@ namespace AlienFan_SDK {
 
 	DWORD WINAPI DPTFInitFunc(LPVOID lpParam);
 
+	HANDLE updateAllowed = NULL;
+
 	Control::Control() {
 
 #ifdef _TRACE_
 		printf("WMI activation started.\n");
 #endif
+		if (!updateAllowed)
+			updateAllowed = CreateEvent(NULL, true, true, NULL);
+		else
+			SetEvent(updateAllowed);
 		IWbemLocator* m_WbemLocator;
 		CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 		CoInitializeSecurity(nullptr, -1, nullptr, nullptr,
@@ -46,8 +52,9 @@ namespace AlienFan_SDK {
 	}
 
 	Control::~Control() {
-		if (dptfCheck)
-			WaitForSingleObject(dptfCheck, 5000);
+		//if (dptfCheck)
+		//	WaitForSingleObject(dptfCheck, 5000);
+		ResetEvent(updateAllowed);
 		if (m_DiskService)
 			m_DiskService->Release();
 		if (m_OHMService)
@@ -237,7 +244,7 @@ namespace AlienFan_SDK {
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 4);
 			}
-			dptfCheck = CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
+			CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
 		}
 		return isSupported;
 	}
@@ -471,7 +478,7 @@ namespace AlienFan_SDK {
 				string parts = ReadFromESIF("format xml\nparticipants\nexit\n", g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, &proc);
 				string part;
 				int idc = 0;
-				if (parts.size()) {
+				if (parts.size() && WaitForSingleObject(updateAllowed, 0) != WAIT_TIMEOUT) {
 					while (pos != string::npos) {
 						part = GetTag(parts, "participant", pos);
 						size_t descpos = 0;
@@ -495,14 +502,15 @@ namespace AlienFan_SDK {
 						}
 					}
 				}
-				while (WaitForSingleObject(proc.hProcess, 300) == WAIT_TIMEOUT) {
-					DWORD written;
-					while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
-						char* buffer = new char[written + 1]{ 0 };
-						ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
-						delete[] buffer;
-					}
-				}
+				TerminateProcess(proc.hProcess, 1);
+				//while (WaitForSingleObject(proc.hProcess, 300) == WAIT_TIMEOUT) {
+				//	DWORD written;
+				//	while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
+				//		char* buffer = new char[written + 1]{ 0 };
+				//		ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
+				//		delete[] buffer;
+				//	}
+				//}
 				CloseHandle(proc.hProcess);
 				CloseHandle(proc.hThread);
 			}

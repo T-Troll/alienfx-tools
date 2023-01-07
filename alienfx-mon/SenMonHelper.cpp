@@ -78,13 +78,13 @@ void SenMonHelper::ModifyMon()
 			DebugPrint("ACPI on.\n");
 		}
 	}
-	else {
-		if (acpi) {
-			delete acpi;
-			acpi = NULL;
-			DebugPrint("ACPI off.\n");
-		}
-	}
+	//else {
+	//	if (acpi) {
+	//		delete acpi;
+	//		acpi = NULL;
+	//		DebugPrint("ACPI off.\n");
+	//	}
+	//}
 	conf->needFullUpdate = true;
 }
 
@@ -171,7 +171,7 @@ void SenMonHelper::UpdateSensors()
 		}
 	}
 
-	if (acpi) { // group 2
+	if (conf->bSensors) { // group 2
 		// check DPTF
 		bool needUpdateName = acpi->DPTFdone;
 		acpi->DPTFdone = false;

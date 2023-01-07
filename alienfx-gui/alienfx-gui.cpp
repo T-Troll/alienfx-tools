@@ -672,7 +672,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			//else
 			if (sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE)
 				conf->stateScreen = conf->stateScreen || GetSystemMetrics(SM_CMONITORS) > 1;
-			DebugPrint("Screen state changed to " + to_string(conf->stateScreen) + "\n");
+			DebugPrint("Screen state changed to " + to_string(conf->stateScreen) + " (source: " +
+				(sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
+				+ ")\n");
 			fxhl->SetState();
 			//if (sParams->PowerSetting == GUID_MONITOR_POWER_ON/* ||
 			//	sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE ||

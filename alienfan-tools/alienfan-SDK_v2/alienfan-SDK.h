@@ -63,7 +63,7 @@ namespace AlienFan_SDK {
 		//byte devFlags = 0;
 		DWORD systemID = 0;
 		byte sysType = -1;
-		HANDLE dptfCheck = NULL;
+		//HANDLE dptfCheck = NULL;
 		void EnumSensors(IEnumWbemClassObject* enum_obj, byte type);
 	public:
 		VARIANT m_instancePath;
