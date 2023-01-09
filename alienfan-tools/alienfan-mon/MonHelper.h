@@ -8,7 +8,7 @@ public:
 	ThreadHelper* monThread = NULL;
 	short oldPower = -1;// , oldGmode = 0;
 	bool inControl = true;
-	vector<WORD> fanRpm;
+	vector<WORD> fanRpm, lastBoost;
 	vector<byte> boostRaw, boostSets, fanSleep;
 	map<WORD, short> senValues, maxTemps;
 	vector<map<WORD, byte>> senBoosts;

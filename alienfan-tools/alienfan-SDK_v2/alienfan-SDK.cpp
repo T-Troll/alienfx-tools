@@ -9,10 +9,6 @@
 
 namespace AlienFan_SDK {
 
-	//int Control::Percent(int val, int from) {
-	//	return val * 100 / from;
-	//}
-
 	DWORD WINAPI DPTFInitFunc(LPVOID lpParam);
 
 	HANDLE updateAllowed = NULL;
@@ -52,8 +48,6 @@ namespace AlienFan_SDK {
 	}
 
 	Control::~Control() {
-		//if (dptfCheck)
-		//	WaitForSingleObject(dptfCheck, 5000);
 		ResetEvent(updateAllowed);
 		if (m_DiskService)
 			m_DiskService->Release();
@@ -74,7 +68,7 @@ namespace AlienFan_SDK {
 		if (sysType >= 0) {
 			IWbemClassObject* m_outParameters = NULL;
 			VARIANT parameters = { VT_I4 };
-			parameters.uintVal = ALIENFAN_INTERFACE{ dev_controls[com], arg1, arg2 }.args;
+			parameters.uintVal = ALIENFAN_INTERFACE{ dev_controls[com], arg1, arg2, 0 }.args;
 			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
 			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
 				commandList[functionID[sysType][com]], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
@@ -100,10 +94,6 @@ namespace AlienFan_SDK {
 			name = "SSD sensor ";
 			instansePath = (BSTR)L"StorageReliabilityCounter";
 			break;
-		//case 3:
-		//	name = "AMD Sensor ";
-		//	valuePath = (BSTR)L"Temp";
-		//	break;
 		case 4:
 			valuePath = (BSTR)L"Value";
 		}
@@ -129,9 +119,6 @@ namespace AlienFan_SDK {
 			spInstance[ind]->Release();
 			if (cTemp.uintVal > 0 || cTemp.fltVal > 0)
 				sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, valuePath });
-
-		//next:
-		//	enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 		}
 		enum_obj->Release();
 #ifdef _TRACE_
@@ -140,7 +127,6 @@ namespace AlienFan_SDK {
 	}
 
 	bool Control::Probe() {
-		//IEnumWbemClassObject* enum_obj;
 		if (m_WbemServices && m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK) {
 #ifdef _TRACE_
 			printf("AWCC section detected!\n");
@@ -164,18 +150,17 @@ namespace AlienFan_SDK {
 					isGmode = true;
 				}
 
-				// check system is compatible and fill inParams
-				if (m_AWCCGetObj->GetMethod(commandList[functionID[0][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)
-					sysType = 0;
-				else
-					if (m_AWCCGetObj->GetMethod(commandList[functionID[1][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)
-						sysType = 1;
+				// check system type and fill inParams
+				for (int type = 0; type < 2; type++)
+					if (m_AWCCGetObj->GetMethod(commandList[functionID[type][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
+						sysType = type;
+						break;
+					}
 
-				if (sysType >= 0) {
+				if (isSupported = (sysType >= 0)) {
 #ifdef _TRACE_
 					printf("Fan Control available, system type %d\n", sysType);
 #endif
-					isSupported = true;
 					systemID = CallWMIMethod(getSysID, 2);
 #ifdef _TRACE_
 					printf("System ID = %d\n", systemID);
@@ -225,8 +210,6 @@ namespace AlienFan_SDK {
 							}
 					}
 				}
-				else
-					return false;
 			}
 			// ESIF sensors
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
@@ -250,39 +233,37 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetFanRPM(int fanID) {
-		if (fanID < fans.size())
-			return CallWMIMethod(getFanRPM, (byte) fans[fanID].id);
-		return -1;
+		return fanID < fans.size() ? CallWMIMethod(getFanRPM, (byte)fans[fanID].id) : -1;
+		//if (fanID < fans.size())
+		//	return CallWMIMethod(getFanRPM, (byte) fans[fanID].id);
+		//return -1;
 	}
 	int Control::GetMaxRPM(int fanID)
 	{
-		if (fanID < fans.size())
-			return CallWMIMethod(getMaxRPM, (byte)fans[fanID].id);
-		return -1;
+		return fanID < fans.size() ? CallWMIMethod(getMaxRPM, (byte)fans[fanID].id) : -1;
+		//if (fanID < fans.size())
+		//	return CallWMIMethod(getMaxRPM, (byte)fans[fanID].id);
+		//return -1;
 	}
 	int Control::GetFanPercent(int fanID) {
-		if (fanID < fans.size())
-			//if (fanID < maxrpm.size() && maxrpm[fanID])
-			//	return Percent(GetFanRPM(fanID),maxrpm[fanID]);
-			//else
-				return CallWMIMethod(getFanPercent, (byte) fans[fanID].id);
-		return -1;
+		return fanID < fans.size() ? CallWMIMethod(getFanPercent, (byte)fans[fanID].id) : -1;
+		//if (fanID < fans.size())
+		//	return CallWMIMethod(getFanPercent, (byte) fans[fanID].id);
+		//return -1;
 	}
-	int Control::GetFanBoost(int fanID/*, bool force*/) {
-		if (fanID < fans.size()) {
-			//int value = CallWMIMethod(getFanBoost, (byte) fans[fanID].id);
-			//return force ? value : Percent(value, boosts[fanID]);
-			return CallWMIMethod(getFanBoost, (byte)fans[fanID].id);
-		}
-		return -1;
+	int Control::GetFanBoost(int fanID) {
+		return fanID < fans.size() ? CallWMIMethod(getFanBoost, (byte)fans[fanID].id) : -1;
+		//if (fanID < fans.size()) {
+		//	return CallWMIMethod(getFanBoost, (byte)fans[fanID].id);
+		//}
+		//return -1;
 	}
-	int Control::SetFanBoost(int fanID, byte value/*, bool force*/) {
-		if (fanID < fans.size()) {
-			//int finalValue = force ? value : (int) value * boosts[fanID] / 100;
-			//return CallWMIMethod(setFanBoost, (byte) fans[fanID].id, finalValue);
-			return CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value);
-		}
-		return -1;
+	int Control::SetFanBoost(int fanID, byte value) {
+		return fanID < fans.size() ? CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value) : -1;
+		//if (fanID < fans.size()) {
+		//	return CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value);
+		//}
+		//return -1;
 	}
 	int Control::GetTempValue(int TempID) {
 		IWbemClassObject* sensorObject = NULL;
@@ -394,16 +375,7 @@ namespace AlienFan_SDK {
 	string ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
 		DWORD written;
 		string outpart;
-		//byte e_command[] = "echo noop\n";
-		//if (WaitForSingleObject(proc->hProcess, 0) != WAIT_TIMEOUT)
-		//	return "";
 		WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
-		//while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
-		//	char* buffer = new char[written + 1]{ 0 };
-		//	ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
-		//	outpart += buffer;
-		//	delete[] buffer;
-		//}
 		while (outpart.find("Returned:") == string::npos /*&& outpart.find("ESIF_E") == string::npos
 			&& outpart.find("Error:") == string::npos*/) {
 			//while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) {
@@ -427,13 +399,6 @@ namespace AlienFan_SDK {
 		}
 		else
 			return "";
-
-		//if (outpart.find("ESIF_E") != string::npos || outpart.find("Error:") != string::npos)
-		//	return "";
-		//else {
-		//	size_t pos = 0;
-		//	return GetTag(outpart, "result", pos);
-		//}
 	}
 
 	//int DPTFHelper::GetTemp(int id) {
@@ -469,7 +434,7 @@ namespace AlienFan_SDK {
 			sinfo.wShowWindow = SW_HIDE;
 			sinfo.hStdError = sinfo.hStdOutput;
 			HWND cur = GetForegroundWindow();
-			if (CreateProcess(NULL/*(LPSTR)wdName.c_str()*/, (LPSTR)(wdName + " client").c_str(),
+			if (CreateProcess(NULL, (LPSTR)(wdName + " client").c_str(),
 				NULL, NULL, true,
 				CREATE_NEW_CONSOLE, NULL, NULL, &sinfo, &proc)) {
 				SetForegroundWindow(cur);

@@ -7,7 +7,8 @@
 
 using namespace std;
 
-#define byte BYTE
+//#define byte BYTE
+#define ALIENFAN_SDK_V1
 
 namespace AlienFan_SDK {
 
@@ -137,6 +138,10 @@ namespace AlienFan_SDK {
 		// Return current device ID
 		inline DWORD GetSystemID() { return systemID; };
 
+		int GetCharge();
+
+		int SetCharge(byte val);
+
 		// Get low-level driver handle for direct operations
 		// Result: handle to driver or NULL
 		//HANDLE GetHandle();
@@ -170,7 +175,7 @@ namespace AlienFan_SDK {
 		vector<byte> powers;
 		HANDLE acc = NULL;
 
-		bool isAlienware = false, isSupported = false, isGmode = false, DPTFdone = false;
+		bool isAlienware = false, isSupported = false, isGmode = false, DPTFdone = false, isCharge = false;
 
 #ifdef _SERVICE_WAY_
 		// true if driver connection fails, as well as start driver attempt fails. Indicates you have not enough rights or system not configured correctly.

@@ -20,6 +20,7 @@ MonHelper::MonHelper() {
 		fanRpm.resize(fansize);
 		boostRaw.resize(fansize);
 		boostSets.resize(fansize);
+		lastBoost.resize(fansize);
 		fanSleep.resize(fansize);
 		Start();
 	}
@@ -143,8 +144,10 @@ void CMonProc(LPVOID param) {
 									cBoost = k->boost;
 								break;
 							}
-						if (cBoost > src->boostSets[fnum])
+						if (cBoost > src->boostSets[fnum]) {
 							src->boostSets[fnum] = cBoost;
+							src->lastBoost[fnum] = fIter->first;
+						}
 						src->senBoosts[fnum][fIter->first] = cBoost;
 					}
 				}
