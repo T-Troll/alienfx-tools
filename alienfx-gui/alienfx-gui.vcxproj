@@ -605,6 +605,7 @@
     <ClCompile Include="FXHelper.cpp" />
     <ClCompile Include="GridHelper.cpp" />
     <ClCompile Include="HapticsDialog.cpp" />
+    <ClCompile Include="KeyPressDialog.cpp" />
     <ClCompile Include="LightsDialog.cpp" />
     <ClCompile Include="ProfilesDialog.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />

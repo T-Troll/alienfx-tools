@@ -379,7 +379,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	case WM_KEYDOWN: case WM_SYSKEYDOWN:
 		if (!eve->keyboardSwitchActive) {
 			for (auto pos = conf->profiles.begin(); pos != conf->profiles.end(); pos++)
-				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == (*pos)->triggerkey && conf->SamePower((*pos)->triggerFlags, true)) {
+				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == ((*pos)->triggerkey & 0xff) && conf->SamePower((*pos)->triggerFlags, true)) {
 					eve->SwitchActiveProfile(*pos);
 					eve->keyboardSwitchActive = true;
 					break;
@@ -387,7 +387,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 		}
 		break;
 	case WM_KEYUP: case WM_SYSKEYUP:
-		if (eve->keyboardSwitchActive && ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == conf->activeProfile->triggerkey) {
+		if (eve->keyboardSwitchActive && ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == (conf->activeProfile->triggerkey & 0xff)) {
 			eve->keyboardSwitchActive = false;
 			eve->CheckProfileWindow();
 		}

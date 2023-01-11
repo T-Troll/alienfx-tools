@@ -11,7 +11,10 @@ extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveUnused(vector<groupset>* lightsets);
 extern bool IsGroupUnused(DWORD gid);
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
+
+extern AlienFX_SDK::Afx_light* keySetLight;
+extern string GetKeyName(WORD vkcode);
+extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
@@ -147,15 +150,6 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					fxhl->Refresh();// UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 			}
 		} break;
-		/*case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR4:
-		{
-			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR2 ? b1 : b2;
-			if (b != prof->effects.end()) {
-				SetColor(GetDlgItem(hDlg, LOWORD(wParam)), &b->effColor2);
-				if (pCid == conf->activeProfile->id)
-					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
-			}
-		} break;*/
 		} break;
 	case WM_DRAWITEM:
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
@@ -167,12 +161,6 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 						&b->effColor1 : &b->effColor2);
 			}
 			break;
-		//case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR4:
-		//	if (b2 != prof->effects.end()) {
-		//		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem,
-		//			((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_BUTTON_EFFCLR3 ? &b2->effColor1 : &b2->effColor2);
-		//	}
-		//	break;
 		}
 		break;
 	case WM_HSCROLL:
@@ -196,13 +184,6 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	return true;
 }
 
-void ReloadKeyList(HWND hDlg, WORD key) {
-	HWND key_list = GetDlgItem(hDlg, IDC_COMBO_TRIGGERKEY);
-	UpdateCombo(key_list,
-		{ "Off", "Left Shift", "Left Control", "Left Alt", "Windows key", "Right Shift", "Right Control", "Right Alt" }, key,
-		{ 0, VK_LSHIFT, VK_LCONTROL, VK_LMENU, VK_LWIN, VK_RSHIFT, VK_RCONTROL, VK_RMENU });
-}
-
 void ReloadProfSettings(HWND hDlg, profile *prof) {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
 		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
@@ -214,9 +195,10 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 
 	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_AC, prof->triggerFlags & PROF_TRIGGER_AC);
 	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_BATTERY, prof->triggerFlags & PROF_TRIGGER_BATTERY);
+	CheckDlgButton(hDlg, IDC_TRIGGER_KEYS, prof->triggerkey);
 
 	ReloadModeList(mode_list, prof->effmode);
-	ReloadKeyList(hDlg, prof->triggerkey);
+	SetDlgItemText(hDlg, IDC_TRIGGER_KEYS, ("Keyboard (" + (prof->triggerkey ? GetKeyName(prof->triggerkey) : "Off") + ")").c_str());
 	ListBox_ResetContent(app_list);
 	for (int j = 0; j < prof->triggerapp.size(); j++)
 		ListBox_AddString(app_list, prof->triggerapp[j].c_str());
@@ -249,9 +231,8 @@ void ReloadProfileView(HWND hDlg) {
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
-		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE),
-		key_list = GetDlgItem(hDlg, IDC_COMBO_TRIGGERKEY),
-		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO);
+		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE)/*,
+		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO)*/;
 
 	profile *prof = conf->FindProfile(pCid);
 
@@ -274,14 +255,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_DEV_EFFECT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_DEVICEEFFECTS), hDlg, (DLGPROC)DeviceEffectDialog);
 			break;
-		case IDC_COMBO_TRIGGERKEY: {
-			switch (HIWORD(wParam)) {
-			case CBN_SELCHANGE:
-			{
-				prof->triggerkey = (WORD)ComboBox_GetItemData(key_list, ComboBox_GetCurSel(key_list));
-			} break;
-			}
-		} break;
+		//case IDC_COMBO_TRIGGERKEY: {
+		//	switch (HIWORD(wParam)) {
+		//	case CBN_SELCHANGE:
+		//	{
+		//		prof->triggerkey = (WORD)ComboBox_GetItemData(key_list, ComboBox_GetCurSel(key_list));
+		//	} break;
+		//	}
+		//} break;
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
 			for (int i = 0; i < conf->profiles.size(); i++)
@@ -453,6 +434,17 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_TRIGGER_POWER_BATTERY:
 			SetBitMask(prof->triggerFlags, PROF_TRIGGER_BATTERY, state);
+			break;
+		case IDC_TRIGGER_KEYS:
+			if (state) {
+				AlienFX_SDK::Afx_light lgh;
+				keySetLight = &lgh;
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), hDlg, (DLGPROC)KeyPressDialog);
+				prof->triggerkey = (WORD)lgh.scancode;
+			}
+			else
+				prof->triggerkey = 0;
+			ReloadProfSettings(hDlg, prof);
 			break;
 		}
 	} break;

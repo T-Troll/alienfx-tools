@@ -10,7 +10,7 @@ extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 extern void SetLightInfo();
 extern void RedrawDevList();
 
-extern AlienFX_SDK::Afx_device* FindActiveDevice();
+//extern AlienFX_SDK::Afx_device* FindActiveDevice();
 extern FXHelper* fxhl;
 
 extern int eLid, dIndex;
@@ -30,20 +30,26 @@ HWND cgDlg;
 int minGridX, minGridY, maxGridX, maxGridY, bSize;
 
 extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+extern AlienFX_SDK::Afx_light* keySetLight;
+extern AlienFX_SDK::Afx_device* activeDevice;
 
-AlienFX_SDK::Afx_light* FindCreateMapping(bool allowKey) {
-    AlienFX_SDK::Afx_device* dev = FindActiveDevice();
-    AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(dev, eLid);
-    if (dev && !lgh) {
+AlienFX_SDK::Afx_light* FindCreateMapping() {
+    //AlienFX_SDK::Afx_device* dev = FindActiveDevice();
+    AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
+    if (activeDevice && !lgh) {
         // create new mapping
-        dev->lights.push_back({ (WORD)eLid, 0, "Light " + to_string(eLid + 1) });
-        if (dev->dev) {
+        activeDevice->lights.push_back({ (WORD)eLid/*, 0, "Light " + to_string(eLid + 1)*/ });
+        lgh = &activeDevice->lights.back();
+        if (activeDevice->dev) {
             conf->afx_dev.activeLights++;
-            // for rgb keyboards, check key...
-            if (allowKey && dev->dev->IsHaveGlobal())
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
         }
-        lgh = &dev->lights.back();
+        // for rgb keyboards, check key...
+        if (activeDevice->dev && activeDevice->dev->IsHaveGlobal()) {
+            keySetLight = lgh;
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
+        }
+        else
+            lgh->name = "Light " + to_string(eLid + 1);
     }
     return lgh;
 }
@@ -303,7 +309,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         case IDC_BUT_CLEARGRID:
             if (tabLightSel == TAB_DEVICES) {
                 if (eLid >= 0) {
-                    AlienFX_SDK::Afx_groupLight cur = { FindActiveDevice()->pid, (WORD)eLid };
+                    AlienFX_SDK::Afx_groupLight cur = { activeDevice->pid, (WORD)eLid };
                     for (int ind = 0; ind < conf->mainGrid->x * conf->mainGrid->y; ind++)
                         if (conf->mainGrid->grid[ind].lgh == cur.lgh)
                             conf->mainGrid->grid[ind].lgh = 0;
@@ -340,12 +346,12 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         if (dragZone.top >= 0) {
             if (tabLightSel == TAB_DEVICES) {
                 DWORD oldLightValue = conf->mainGrid->grid[ind(dragZone.left, dragZone.top)].lgh;
-                auto dev = FindActiveDevice();
+                //auto dev = FindActiveDevice();
                 if (dragZone.bottom - dragZone.top == 1 && dragZone.right - dragZone.left == 1 &&
-                   oldLightValue && oldLightValue != MAKELPARAM(dev->pid, eLid)) {
+                   oldLightValue && oldLightValue != MAKELPARAM(activeDevice->pid, eLid)) {
                     // switch light
                     eLid = HIWORD(oldLightValue);
-                    if (LOWORD(oldLightValue) != dev->pid) {
+                    if (LOWORD(oldLightValue) != activeDevice->pid) {
                         // Switch device, if possible
                         for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++)
                             if (conf->afx_dev.fxdevs[i].pid == LOWORD(oldLightValue)) {
@@ -355,8 +361,8 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     }
                     RedrawDevList();
                 } else {
-                    ModifyDragZone(dev->pid, eLid);
-                    FindCreateMapping(true);
+                    ModifyDragZone(activeDevice->pid, eLid);
+                    FindCreateMapping();
                     SetLightInfo();
                 }
             }
@@ -413,7 +419,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             HDC wDC = ditem->hDC;
             if (gridVal) {
                 if (tabLightSel == TAB_DEVICES) {
-                    HBRUSH Brush = CreateSolidBrush(gridVal == MAKELPARAM(FindActiveDevice()->pid, eLid) ?
+                    HBRUSH Brush = CreateSolidBrush(gridVal == MAKELPARAM(activeDevice->pid, eLid) ?
                         RGB(conf->testColor.r, conf->testColor.g, conf->testColor.b) :
                         RGB(0xff - (HIWORD(gridVal) << 5), LOWORD(gridVal), HIWORD(gridVal) << 1));
                     FillRect(wDC, &ditem->rcItem, Brush);

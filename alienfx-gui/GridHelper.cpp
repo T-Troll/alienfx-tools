@@ -43,18 +43,28 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
 
 	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
-		char keyname[32];
-		GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
+		//char keyname[32];
+		//GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
 		eve->modifyProfile.lock();
  		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->effect.trigger == 2 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
-				zonemap* zone = conf->FindZoneMap(it->group);
-				for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
-					if (conf->afx_dev.GetMappingByID(LOWORD(pos->light), HIWORD(pos->light))->name == (string)keyname) {
-						eve->grid->StartGridRun(&(*it), zone, pos->x, pos->y);
-						break;
+				AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(it->group);
+				for (auto lgh = grp->lights.begin(); lgh != grp->lights.end(); lgh++)
+					if ((conf->afx_dev.GetMappingByID(lgh->did, lgh->lid)->scancode & 0xff) == ((LPKBDLLHOOKSTRUCT)lParam)->vkCode) {
+						zonemap* zone = conf->FindZoneMap(it->group);
+						for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
+							if (pos->light == lgh->lgh) {
+								eve->grid->StartGridRun(&(*it), zone, pos->x, pos->y);
+								break;
+							}
 					}
+				//zonemap* zone = conf->FindZoneMap(it->group);
+				//for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
+				//	if (conf->afx_dev.GetMappingByID(LOWORD(pos->light), HIWORD(pos->light))->name == (string)keyname) {
+				//		eve->grid->StartGridRun(&(*it), zone, pos->x, pos->y);
+				//		break;
+				//	}
 			}
 		eve->modifyProfile.unlock();
 	}
@@ -130,7 +140,7 @@ void GridHelper::RestartWatch() {
 		}
 	}
 	if (haveKeys && !kEvent)
-		kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
+		kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
 	else {
 		UnhookWindowsHookEx(kEvent);
 		kEvent = NULL;

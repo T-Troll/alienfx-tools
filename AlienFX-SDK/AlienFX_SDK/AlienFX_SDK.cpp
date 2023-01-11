@@ -1154,9 +1154,11 @@ namespace AlienFX_SDK {
 		}
 		for (vindex = 0; RegEnumKey(mainKey, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Light%u-%hd", &dID, &lID) == 2) {
+				DWORD scan = 0;
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
 				RegGetValue(mainKey, kName, "Flags", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
-				AddDeviceById(LOWORD(dID), HIWORD(dID))->lights.push_back({ lID, LOWORD(len), name });
+				RegGetValue(mainKey, kName, "Scan", RRF_RT_REG_DWORD, 0, &scan, &(lend = sizeof(DWORD)));
+				AddDeviceById(LOWORD(dID), HIWORD(dID))->lights.push_back({ lID, LOWORD(len), name, scan });
 			}
 			if (sscanf_s(kName, "Grid%d", &dID) == 1) {
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
@@ -1188,37 +1190,38 @@ namespace AlienFX_SDK {
 
 	void Mappings::SaveMappings() {
 
-		HKEY   hKey1, hKeyS;
+		HKEY   hKeybase, hKeyStore;
 		size_t numGroups = groups.size();
 		size_t numGrids = grids.size();
 
 		// Remove all maps!
 		RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"));
-		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey1, NULL);
+		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeybase, NULL);
 
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
 			// Saving device data..
 			string name = "Dev#" + to_string(i->vid) + "_" + to_string(i->pid);
-			RegSetValueEx( hKey1, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
+			RegSetValueEx(hKeybase, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
 			name = "DevWhite#" + to_string(i->vid) + "_" + to_string(i->pid);
-			RegSetValueEx( hKey1, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
+			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
 			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {
 				// Saving all lights from current device
 				string name = "Light" + to_string(MAKELONG(i->pid, i->vid)) + "-" + to_string(cl->lightid);
-				RegCreateKey(hKey1, name.c_str(), &hKeyS);
-				RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
-
+				RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
+				RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
 				DWORD flags = cl->flags;
-				RegSetValueEx(hKeyS, "Flags", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
-				RegCloseKey(hKeyS);
+				RegSetValueEx(hKeyStore, "Flags", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
+				flags = cl->scancode;
+				RegSetValueEx(hKeyStore, "Scan", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
+				RegCloseKey(hKeyStore);
 			}
 		}
 
 		for (auto i = groups.begin(); i != groups.end(); i++) {
 			string name = "Group" + to_string(i->gid);
 
-			RegCreateKey(hKey1, name.c_str(), &hKeyS);
-			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.size());
+			RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
+			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.size());
 
 			DWORD *grLights = new DWORD[i->lights.size() * 2];
 
@@ -1226,23 +1229,23 @@ namespace AlienFX_SDK {
 				grLights[j * 2] = i->lights[j].did;
 				grLights[j * 2 + 1] = i->lights[j].lid;
 			}
-			RegSetValueEx( hKeyS, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD)i->lights.size() * sizeof(DWORD) );
+			RegSetValueEx(hKeyStore, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD)i->lights.size() * sizeof(DWORD) );
 
 			delete[] grLights;
-			RegCloseKey(hKeyS);
+			RegCloseKey(hKeyStore);
 		}
 
 		for (auto i = grids.begin(); i != grids.end(); i++) {
 			string name = "Grid" + to_string(i->id);
-			RegCreateKey(hKey1, name.c_str(), &hKeyS);
-			RegSetValueEx(hKeyS, "Name", 0, REG_SZ, (BYTE*)i->name.c_str(), (DWORD)i->name.length());
+			RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
+			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)i->name.c_str(), (DWORD)i->name.length());
 			DWORD sizes = ((DWORD)i->x << 8) | i->y;
-			RegSetValueEx(hKeyS, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
-			RegSetValueEx(hKeyS, "Grid", 0, REG_BINARY, (BYTE*)i->grid, i->x * i->y * sizeof(DWORD));
-			RegCloseKey(hKeyS);
+			RegSetValueEx(hKeyStore, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
+			RegSetValueEx(hKeyStore, "Grid", 0, REG_BINARY, (BYTE*)i->grid, i->x * i->y * sizeof(DWORD));
+			RegCloseKey(hKeyStore);
 		}
 
-		RegCloseKey(hKey1);
+		RegCloseKey(hKeybase);
 	}
 
 	Afx_light *Mappings::GetMappingByID(WORD pid, WORD lid) {

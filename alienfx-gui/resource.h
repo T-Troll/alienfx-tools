@@ -172,7 +172,6 @@
 #define IDC_BUT_WHITE                   1158
 #define IDC_CHECK_REVERSE               1159
 #define IDC_CHECK_LIGHTNAMES            1161
-#define IDC_COMBO_TRIGGERKEY            1162
 #define IDC_TRIGGER_POWER_AC            1163
 #define IDC_TRIGGER_POWER_BATTERY       1164
 #define IDC_SLIDER_SPEED                1168
@@ -202,8 +201,9 @@
 #define IDC_BUT_LIGHTSRESET             1195
 #define IDC_RADIO_PERF                  1196
 #define IDC_RADIO_IND                   1197
-#define IDC_CHECK1                      1199
 #define IDC_CHECK_RPOS                  1199
+#define IDC_TRIGGER_KEYS                1199
+#define IDC_STATIC_SCANCODE             1200
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -226,7 +226,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1200
+#define _APS_NEXT_CONTROL_VALUE         1201
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif
