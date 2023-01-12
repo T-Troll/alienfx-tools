@@ -169,6 +169,7 @@ void ConfigHandler::Load() {
 	GetReg("FanControl", &fanControl, 1);
 	GetReg("ShowGridNames", &showGridNames);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
+	GetReg("GESpeed", &geTact, 100);
 	RegGetValue(hKeyMain, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
 	// Ambient....
@@ -343,6 +344,7 @@ void ConfigHandler::Save() {
 	SetReg("FanControl", fanControl);
 	SetReg("ShowGridNames", showGridNames);
 	SetReg("KeyboardShortcut", keyShortcuts);
+	SetReg("GESpeed", geTact);
 	RegSetValueEx( hKeyMain, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16 );
 
 	// Ambient

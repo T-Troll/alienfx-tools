@@ -105,7 +105,8 @@ void UpdateEffectInfo(HWND hDlg) {
 
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
-		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH);
+		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH),
+		gs_slider = GetDlgItem(hDlg, IDC_SLIDER_TACT);
 
 	switch (message)
 	{
@@ -115,8 +116,13 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient", "Fill" });
 		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(-80, 80));
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
-		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_SPEED), sTip2);
-		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), sTip3);
+		SendMessage(gs_slider, TBM_SETRANGE, true, MAKELPARAM(5, 1000));
+		SendMessage(gs_slider, TBM_SETTICFREQ, 50, 0);
+		SendMessage(gs_slider, TBM_SETPOS, true, conf->geTact);
+		sTip1 = CreateToolTip(gs_slider, sTip1);
+		SetSlider(sTip1, conf->geTact);
+		sTip2 = CreateToolTip(speed_slider, sTip2);
+		sTip3 = CreateToolTip(width_slider, sTip3);
 		UpdateEffectInfo(hDlg);
 
 	} break;
@@ -199,6 +205,16 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				}
 			}
 		} break;
+	case WM_VSCROLL:
+		switch (LOWORD(wParam)) {
+		case TB_THUMBTRACK: case TB_ENDTRACK:
+			conf->geTact = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+			SetSlider(sTip1, conf->geTact);
+			if (eve->grid)
+				eve->grid->RestartWatch();
+			break;
+		}
+		break;
 	case WM_DRAWITEM:
 		if (mmap && clrListID < mmap->effect.effectColors.size()) {
 			RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), &mmap->effect.effectColors[clrListID]);

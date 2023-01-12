@@ -225,37 +225,34 @@ void LoadCSV(string name) {
 				if (tGear.found || fields.front()[0] == '3') {
 					switch (fields.front()[0]) {
 					case '0': { // device line
-						//if (tGear.found) {
-							WORD vid = (WORD)atoi(fields[1].c_str()),
-								pid = (WORD)atoi(fields[2].c_str());
-							//tGear.found = conf->afx_dev.GetDeviceById(pid, vid);
-							DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
-							if (tGear.found = conf->afx_dev.GetDeviceById(pid, vid)) {
-								tGear.devs.push_back({ vid, pid, NULL, fields[3] });
-								DebugPrint("Matched.\n")
-							}
+						WORD vid = (WORD)atoi(fields[1].c_str()),
+							pid = (WORD)atoi(fields[2].c_str());
+						//tGear.found = conf->afx_dev.GetDeviceById(pid, vid);
+						DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
+						if (tGear.found = conf->afx_dev.GetDeviceById(pid, vid)) {
+							tGear.devs.push_back({ vid, pid, NULL, fields[3] });
+							DebugPrint("Matched.\n")
+						}
 #ifdef _DEBUG
-							else {
-								DebugPrint("Skipped.\n");
-							}
+						else {
+							DebugPrint("Skipped.\n");
+						}
 #endif // _DEBUG
-						//}
 					} break;
 					case '1': { // lights line
-						//if (tGear.found) {
-							WORD ltId = (WORD)atoi(fields[1].c_str());
-							DWORD gridval = MAKELPARAM(tGear.devs.back().pid, ltId);
-							tGear.devs.back().lights.push_back({ ltId, (WORD)atoi(fields[2].c_str()), fields[3] });
-							// grid maps
-							for (int i = 4; i < fields.size(); i += 2) {
-								int gid = atoi(fields[i].c_str());
-								for (auto pos = tGear.grids.begin(); pos != tGear.grids.end(); pos++)
-									if (pos->id == gid) {
-										pos->grid[atoi(fields[i + 1].c_str())].lgh = gridval;
-										break;
-									}
-							}
-						//}
+						WORD ltId = (WORD)atoi(fields[1].c_str());
+						DWORD gridval = MAKELPARAM(tGear.devs.back().pid, ltId);
+						DWORD data = atoi(fields[2].c_str());
+						tGear.devs.back().lights.push_back({ ltId, { LOWORD(data), HIWORD(data) }, fields[3]});
+						// grid maps
+						for (int i = 4; i < fields.size(); i += 2) {
+							int gid = atoi(fields[i].c_str());
+							for (auto pos = tGear.grids.begin(); pos != tGear.grids.end(); pos++)
+								if (pos->id == gid) {
+									pos->grid[atoi(fields[i + 1].c_str())].lgh = gridval;
+									break;
+								}
+						}
 					} break;
 					case '2': // Grid info
 						tGear.grids.push_back({ (byte)atoi(fields[1].c_str()), (byte)atoi(fields[2].c_str()), (byte)atoi(fields[3].c_str()), fields[4] });
@@ -263,15 +260,13 @@ void LoadCSV(string name) {
 						break;
 					case '3': // Device info
 						if (tGear.name.length() && tGear.found) {
-							//tGear.name = tGear.devs.front().name;
 							csv_devs.push_back(tGear);
 						}
 						tGear = { fields[1] };
-						//tGear.name = fields[1];
 						DebugPrint("Gear " + tGear.name + ":\n");
 						break;
-						//default: // wrong line, skip
-						//	DebugPrint("Line skipped\n");
+					//default: // wrong line, skip
+					//	DebugPrint("Line skipped\n");
 					}
 				}
 			}
@@ -545,41 +540,36 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUT_SAVEMAP:
 		{
 			// Save device and light mappings
-			string appName;
-			if ((appName = OpenSaveFile(false)).length()) {
-				// Now save mappings...
-				HANDLE file = CreateFile(appName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
-				if (file != INVALID_HANDLE_VALUE) {
-					//conf->afx_dev.AlienFXAssignDevices();
-					if (conf->afx_dev.fxdevs.size()) {
+			if (conf->afx_dev.fxdevs.size()) {
+				string appName;
+				if ((appName = OpenSaveFile(false)).length()) {
+					// Now save mappings...
+					HANDLE file = CreateFile(appName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+					if (file != INVALID_HANDLE_VALUE) {
 						DWORD writeBytes;
-						string line = "'3','" + conf->afx_dev.fxdevs.front().name + "'\r\n";
-						WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-						for (auto i = conf->afx_dev.GetGrids()->begin(); i < conf->afx_dev.GetGrids()->end(); i++) {
-							line = "'2','" + to_string(i->id) + "','" + to_string(i->x) + "','" + to_string(i->y)
+						char name[] = "'3','Current gear'\r\n";
+						WriteFile(file, name, (DWORD)strlen(name), &writeBytes, NULL);
+						for (auto i = conf->afx_dev.GetGrids()->begin(); i != conf->afx_dev.GetGrids()->end(); i++) {
+							string line = "'2','" + to_string(i->id) + "','" + to_string(i->x) + "','" + to_string(i->y)
 								+ "','" + i->name + "'\r\n";
 							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 						}
-						for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++) {
-							/// Only connected devices stored!
-							line = "'0','" + to_string(i->vid) + "','" + to_string(i->pid) + "','" + i->name + "'\r\n";
+						for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) {
+							string line = "'0','" + to_string(i->vid) + "','" + to_string(i->pid) + "','" + i->name + "'\r\n";
 							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-							for (auto j = i->lights.begin(); j < i->lights.end(); j++) {
-								line = "'1','" + to_string(j->lightid) + "','" + to_string(j->flags) + "','" + j->name;
+							for (auto j = i->lights.begin(); j != i->lights.end(); j++) {
+								line = "'1','" + to_string(j->lightid) + "','" + to_string(j->data) + "','" + j->name;
 								AlienFX_SDK::Afx_groupLight gridid = { i->pid, j->lightid };
-								for (auto i = conf->afx_dev.GetGrids()->begin(); i < conf->afx_dev.GetGrids()->end(); i++) {
-									for (int pos = 0; pos < i->x * i->y; pos++) {
-										if (gridid.lgh == i->grid[pos].lgh) {
-											line += "','" + to_string(i->id) + "','" + to_string(pos);
-										}
-									}
-								}
+								for (auto k = conf->afx_dev.GetGrids()->begin(); k != conf->afx_dev.GetGrids()->end(); k++)
+									for (int pos = 0; pos < k->x * k->y; pos++)
+										if (gridid.lgh == k->grid[pos].lgh)
+											line += "','" + to_string(k->id) + "','" + to_string(pos);
 								line += "'\r\n";
 								WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 							}
 						}
+						CloseHandle(file);
 					}
-					CloseHandle(file);
 				}
 			}
 		} break;

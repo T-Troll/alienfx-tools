@@ -1154,11 +1154,9 @@ namespace AlienFX_SDK {
 		}
 		for (vindex = 0; RegEnumKey(mainKey, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Light%u-%hd", &dID, &lID) == 2) {
-				DWORD scan = 0;
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
 				RegGetValue(mainKey, kName, "Flags", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
-				RegGetValue(mainKey, kName, "Scan", RRF_RT_REG_DWORD, 0, &scan, &(lend = sizeof(DWORD)));
-				AddDeviceById(LOWORD(dID), HIWORD(dID))->lights.push_back({ lID, LOWORD(len), name, scan });
+				AddDeviceById(LOWORD(dID), HIWORD(dID))->lights.push_back({ lID, { LOWORD(len), HIWORD(len) }, name });
 			}
 			if (sscanf_s(kName, "Grid%d", &dID) == 1) {
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
@@ -1209,10 +1207,7 @@ namespace AlienFX_SDK {
 				string name = "Light" + to_string(MAKELONG(i->pid, i->vid)) + "-" + to_string(cl->lightid);
 				RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
 				RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
-				DWORD flags = cl->flags;
-				RegSetValueEx(hKeyStore, "Flags", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
-				flags = cl->scancode;
-				RegSetValueEx(hKeyStore, "Scan", 0, REG_DWORD, (BYTE*)&flags, sizeof(DWORD));
+				RegSetValueEx(hKeyStore, "Flags", 0, REG_DWORD, (BYTE*)&cl->data, sizeof(DWORD));
 				RegCloseKey(hKeyStore);
 			}
 		}

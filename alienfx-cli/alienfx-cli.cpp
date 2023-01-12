@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
 {
 	int devType = -1;
 
-	printf("alienfx-cli v7.10.2.1\n");
+	printf("alienfx-cli v7.10.4\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -418,7 +418,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 											lmap->name = name;
 										}
 										else {
-											cDev->lights.push_back({ (WORD)i, 0, name });
+											cDev->lights.push_back({ (WORD)i, {0,0}, name });
 										}
 										afx_map->SaveMappings();
 										printf("Final name is %s, ", name);

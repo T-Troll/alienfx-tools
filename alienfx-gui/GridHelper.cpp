@@ -117,8 +117,6 @@ void GridTriggerWatch(LPVOID param) {
 
 GridHelper::GridHelper() {
 	tact = 0;
-	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, 100);
-	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, 100);
 	RestartWatch();
 }
 
@@ -133,6 +131,10 @@ GridHelper::~GridHelper()
 
 void GridHelper::RestartWatch() {
 	bool haveEvents = false, haveKeys = false;
+	if (gridTrigger) delete gridTrigger;
+	if (gridThread) delete gridThread;
+	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, conf->geTact);
+	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, conf->geTact);
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		switch (ce->effect.trigger) {
 		case 2: haveKeys = true; break;

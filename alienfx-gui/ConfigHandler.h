@@ -138,26 +138,27 @@ private:
 	profile* FindCreateProfile(unsigned id); 
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
 public:
-	DWORD startWindows = 0;
-	DWORD startMinimized = 0;
-	DWORD updateCheck = 1;
-	DWORD lightsOn = 1;
-	DWORD dimmed = 0;
-	DWORD offWithScreen = 0;
-	DWORD dimmedBatt = 1;
-	DWORD dimPowerButton = 0;
-	DWORD dimmingPower = 92;
-	DWORD enableProf = 0;
-	DWORD offPowerButton = 0;
-	DWORD offOnBattery = 0;
-	DWORD awcc_disable = 0;
-	DWORD esif_temp = 0;
-	DWORD gammaCorrection = 1;
-	DWORD fanControl = 0;
-	DWORD enableMon = 1;
-	DWORD noDesktop = 0;
-	DWORD showGridNames = 0;
-	DWORD keyShortcuts = 1;
+	DWORD startWindows;
+	DWORD startMinimized;
+	DWORD updateCheck;
+	DWORD lightsOn;
+	DWORD dimmed;
+	DWORD offWithScreen;
+	DWORD dimmedBatt;
+	DWORD dimPowerButton;
+	DWORD dimmingPower;
+	DWORD enableProf;
+	DWORD offPowerButton;
+	DWORD offOnBattery;
+	DWORD awcc_disable;
+	DWORD esif_temp;
+	DWORD gammaCorrection;
+	DWORD fanControl;
+	DWORD enableMon;
+	DWORD noDesktop;
+	DWORD showGridNames;
+	DWORD keyShortcuts;
+	DWORD geTact;
 	COLORREF customColors[16]{ 0 };
 
 	// States

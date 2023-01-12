@@ -174,7 +174,8 @@ First, you should define trigger - the event which launch effect for selected zo
 
 For Keyboard trigger, light names should be the same as key name (please use capital letters, "A" right, "a" wrong), and common English key names from the capital letter (f.e. "Space", "Esc").
 
-Effect processing driven by phases (100 ms each), so it has 10 phases per second.
+Effect processing driven by phases, you can use "Global effect" slider to change phase length (default is 100ms, 10 changes per second).  
+Please keep in mind - the shorted length you set, the higher CPU load it will provide!
 
 "Speed" slider is about how fast an effect runs (change it state). Possible value is from -80 (condition changed every 80 phases) to +80 (condition changed to 80 each phase).  
 "Width" slider defines how many lights will be involved into color change.
@@ -221,7 +222,7 @@ Button block into the center is about settings management - press "Detect device
 
 Right zone controls assigned lights and currently selected light for selected device.  
 Rightmost is the list of all lights, defined for current device.  
-"Key" button provide dialog window to select current light name by pressing any keyboard key. It's also will be done automatically in case per-key RGB device active. You can also set current light name typing it at name field.  
+"Key" button provide dialog window to select current light name and key code by pressing any keyboard key. It's also will be done automatically in case per-key RGB device active. You can also set current light name typing it at name field.  
 4 buttons on top used for navigation between lights:
 - "|<" (or press Shift+Home) - navigate to first assigned light of the current device.
 - "<" (or Shift+Left) - select previous light (by ID).
@@ -233,7 +234,8 @@ Left from the lights list is selected light info and control:
 - "Reset" - Unassigns current light, delete it from all zones, clear it's name and parameters (forget light).
 - Check boxes define light type - "Power button" marks light as a hardware power button (be careful, but app will provide you some hints about it), "Indicator" light set it as a status indicator (like Caps Lock, Wifi, HDD) - some systems use controlled lights for it.  
 Both Power button and indicators can be configured in settings to stay on then the rest of lights are off/dimmed.
-- "Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.  
+- "Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.
+- "Key code" informs about keyboard button assigned to light - it will present button name or "Off" if not assigned. This key code used for grid effects trigger.
 
 Other assigned lights will have random colors at grid and black color for physical lights.
 
@@ -301,7 +303,7 @@ Press "+" or "-" buttons to add or remove profile. New profile settings will be 
 You can double-click or press Enter on selected profile into the list to edit its name.  
 
 Each profile can have settings and application for trigger it. The settings are:
-- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Off.
+- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Gird effects, Off.
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
 - "Priority profile" - If this flag enabled, this profile will be chosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
 - "Dim lights" - Then profile activated, all lights will be dimmed.
@@ -313,10 +315,10 @@ At this dialog, you can select device supporting per-device effects and set it p
 APIv5 (per-key RGB notebook keyboards) support hardware effect, and APIv8 (external keyboards) support both hardware and key press effects.
 
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
-- "Keyboard" drop down will activate this profile in case corresponding key is pressed. Release the key to switch back to other profile.  
-- "Power" block - if checked, profile will be activated if power source changed to checked state.  
-- "Trigger applications" list define applications executable, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it.  
-- "Only then active" - profile will be activated only in case of any application running and foreground (active) and have focus.
+- "Keyboard" check box define this profile can be switched by pressing keyboard key. Upon selected, it will provide key selection dialog to choose the key.
+- "Power" block - if checked, profile will be activated if power source changed to checked state.
+- "Trigger applications" list define applications executable, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it.
+- "Only then active" - profile will be activated in case of any application running and foreground (active) and have focus only.
 
 "Zones setting" block used operate with different setting blocks of the selected profile.
 Check all types of zones you need to operate (colors, effect or fan settings), then press "Reset" button to remove it from selected profile, or "Copy active" button to copy it from active (selected in top drop down box) profile.
@@ -326,7 +328,7 @@ In case "Profile auto switch" turned on at "Settings", active profile will be se
 - If any "Trigger application" from profile with "Priority" setting running - this profile will be selected.
 - If any "Trigger application" from profile running, and it doesn't have "Only when active" trigger, this profile selected (random one of them if more, then one application found in many).
 - If foreground application is one of the "Trigger application" of the profile with "Only when active" flag, and no other application belongs to profile with "Priority" flag running, this profile will be selected.
-- Pressing a key or changing power source will always select first profile with this triggers active. It will stay active until other profile switch happened.
+- Pressing a key or changing power source will always select first profile with this triggers active. It will stay active until other profile switch happened (or the key released).
 
 ## Settings tab
 

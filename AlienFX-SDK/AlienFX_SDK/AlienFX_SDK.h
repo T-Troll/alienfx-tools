@@ -51,9 +51,14 @@ namespace AlienFX_SDK {
 
 	struct Afx_light { // Light information block
 		WORD  lightid;
-		WORD  flags = 0;
+		union {
+			struct {
+				WORD flags;
+				WORD scancode;
+			};
+			DWORD data;
+		};
 		string name;
-		DWORD scancode = 0;
 	};
 
 	union Afx_groupLight {
