@@ -58,7 +58,9 @@ public:
 	void AddSensorCurve(fan_profile* prof, WORD fid, WORD sid, byte* data, DWORD lend);
 	void SaveSensorBlocks(HKEY key, string pname, fan_profile* data);
 	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
-	void SetSensorNames(AlienFan_SDK::Control*);
+	string GetPowerName(int index);
+	//void SetSensorNames(AlienFan_SDK::Control*);
+	void UpdateBoost(byte fanID, byte boost, WORD rpm);
 	int GetFanScale(byte fanID);
 
 	void Load();

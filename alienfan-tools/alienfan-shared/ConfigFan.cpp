@@ -154,17 +154,37 @@ void ConfigFan::Save() {
 	}
 }
 
-void ConfigFan::SetSensorNames(AlienFan_SDK::Control* acpi) {
-	// patch for incorrect fan block size
-	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
-		if (powers.find(*i) == powers.end())
-			powers.emplace(*i, *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual");
-	for (int i = 0; i < acpi->fans.size(); i++)
-		if (boosts.find(i) == boosts.end())
-			boosts[i] = { 100, (unsigned short)acpi->GetMaxRPM(i) };
+string ConfigFan::GetPowerName(int index) {
+	if (powers[index].empty())
+		powers[index] = index ? "Level " + to_string(index) : "Manual";
+	return powers[index];
 }
 
+void ConfigFan::UpdateBoost(byte fanID, byte boost, WORD rpm) {
+	fan_overboost* fo = &boosts[fanID];
+	fo->maxBoost = max(boost, 100);
+	fo->maxRPM = max(rpm, fo->maxRPM);
+}
+
+//void ConfigFan::SetSensorNames(AlienFan_SDK::Control* acpi) {
+//	// patch for incorrect fan block size
+//	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
+//		if (powers[*i].empty())
+//			powers[*i] = *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual";
+//	for (int i = 0; i < acpi->fans.size(); i++) {
+//		fan_overboost* fo = &boosts[i];
+//		fo->maxBoost = max(100, fo->maxBoost);
+//		fo->maxRPM = max(acpi->GetMaxRPM(i), fo->maxRPM);
+//	}
+//		//if (boosts.find(i) == boosts.end())
+//		//	boosts[i] = { 100, (unsigned short)acpi->GetMaxRPM(i) };
+//		//else
+//		//	boosts[i].maxBoost = max(boosts[i].maxBoost, 100);
+//}
+
 int ConfigFan::GetFanScale(byte fanID) {
+	if (!boosts[fanID].maxBoost)
+		boosts[fanID].maxBoost = 100;
 	return boosts[fanID].maxBoost;
 }
 

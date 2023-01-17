@@ -195,19 +195,21 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->inControl = false;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
     mon->SetCurrentMode(0);
-    int rpm, crpm, cSteps = 8, boost, oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
-    fan_overboost* fo = &fan_conf->boosts[fan_conf->lastSelectedFan];
+    int rpm = acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100,
+        oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
+    //fan_overboost* fo = &fan_conf->boosts[fan_conf->lastSelectedFan];
     boostCheck.clear();
-    bestBoostPoint = *fo;
+    bestBoostPoint = { (byte)boost, (unsigned short)rpm };//*fo;
     // warm-up...
-    crpm = SetFanSteady(fan_conf->lastSelectedFan, 100);
-    boost = fo->maxBoost;
-    rpm = fo->maxRPM;
+    //crpm = SetFanSteady(fan_conf->lastSelectedFan, 100);
+    //boost = fo->maxBoost;
+    //rpm = fo->maxRPM;
     boostScale = 10;
     fanMaxScale = 500;
     fanMinScale = (rpm / 100) * 100;
     // 100 rpm step patch
     downScale = fanMinScale == rpm ? 101 : 56;
+    int crpm = SetFanSteady(fan_conf->lastSelectedFan, 100);
     for (int steps = cSteps; crpm >= 0 && steps; steps = steps >> 1) {
         // Check for uptrend
         boost += steps;
@@ -230,14 +232,14 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
         boost = bestBoostPoint.maxBoost;
     }
     if (crpm >= 0) {
-        fo->maxBoost = max(bestBoostPoint.maxBoost, 100);
-        fo->maxRPM = max(bestBoostPoint.maxRPM, fo->maxRPM);
-        ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1) + ": Final boost " + to_string(bestBoostPoint.maxBoost)
+        fan_conf->UpdateBoost(fan_conf->lastSelectedFan, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+        ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1)
+            + ": Final boost " + to_string(bestBoostPoint.maxBoost)
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
     }
     // Restore mode
     acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
-    mon->SetCurrentMode(fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
+    mon->SetCurrentGmode(fan_conf->lastProf->gmode);
     mon->inControl = true;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
     return 0;
@@ -384,8 +386,8 @@ void ReloadFanView(HWND list) {
 
 void ReloadPowerList(HWND list) {
     ComboBox_ResetContent(list);
-    for (auto i = fan_conf->powers.begin(); i != fan_conf->powers.end(); i++) {
-        int pos = ComboBox_AddString(list, (LPARAM)(i->second.c_str()));
+    for (auto i = acpi->powers.begin(); i != acpi->powers.end(); i++) {
+        int pos = ComboBox_AddString(list, (LPARAM)(fan_conf->GetPowerName(*i).c_str()));
         if (pos == fan_conf->lastProf->powerStage)
             ComboBox_SetCurSel(list, pos);
     }

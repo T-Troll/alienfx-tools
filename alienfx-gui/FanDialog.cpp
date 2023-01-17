@@ -109,7 +109,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
                     ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
                     ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
-                    delete buffer;
+                    delete[] buffer;
                 }
                 break;
             }

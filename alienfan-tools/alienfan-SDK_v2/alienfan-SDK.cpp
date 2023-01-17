@@ -214,7 +214,10 @@ namespace AlienFan_SDK {
 			// ESIF sensors
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 0);
+				CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
 			}
+			else
+				DPTFdone = true;
 			// SSD sensors
 			if (/*m_DiskService && */m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 2);
@@ -227,7 +230,6 @@ namespace AlienFan_SDK {
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 4);
 			}
-			CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
 		}
 		return isSupported;
 	}
@@ -376,16 +378,7 @@ namespace AlienFan_SDK {
 		DWORD written;
 		string outpart;
 		WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
-		while (outpart.find("Returned:") == string::npos /*&& outpart.find("ESIF_E") == string::npos
-			&& outpart.find("Error:") == string::npos*/) {
-			//while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) {
-			//	for (int i = 0; (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && !written) && i < 40; i++) {
-			//		if (WaitForSingleObject(proc->hProcess, 0) != WAIT_TIMEOUT)
-			//			return "";
-			//		WriteFile(g_hChildStd_IN_Wr, e_command, sizeof(e_command) - 1, &written, NULL);
-			//	}
-			//	Sleep(5);
-			//}
+		while (outpart.find("Returned:") == string::npos) {
 			while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
 				char* buffer = new char[written + 1]{ 0 };
 				ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
@@ -400,15 +393,6 @@ namespace AlienFan_SDK {
 		else
 			return "";
 	}
-
-	//int DPTFHelper::GetTemp(int id) {
-	//	size_t pos = 0;
-	//	string val = ReadFromESIF("getp_part " + to_string(id & 0xf) + " 14 D" + to_string(id >> 4) + "\n", true);
-	//	if (val.empty())
-	//		return -1;
-	//	else
-	//		return atoi(GetTag(val, "value", pos).c_str());
-	//}
 
 	DWORD WINAPI DPTFInitFunc(LPVOID lpParam) {
 		Control* src = (Control*)lpParam;
@@ -467,15 +451,6 @@ namespace AlienFan_SDK {
 						}
 					}
 				}
-				TerminateProcess(proc.hProcess, 1);
-				//while (WaitForSingleObject(proc.hProcess, 300) == WAIT_TIMEOUT) {
-				//	DWORD written;
-				//	while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
-				//		char* buffer = new char[written + 1]{ 0 };
-				//		ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
-				//		delete[] buffer;
-				//	}
-				//}
 				CloseHandle(proc.hProcess);
 				CloseHandle(proc.hThread);
 			}

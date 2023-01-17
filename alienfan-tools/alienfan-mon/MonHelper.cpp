@@ -14,7 +14,7 @@ extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper() {
 	if ((acpi = new AlienFan_SDK::Control())->Probe()) {
-		fan_conf->SetSensorNames(acpi);
+		//fan_conf->SetSensorNames(acpi);
 		size_t fansize = acpi->fans.size();
 		senBoosts.resize(fansize);
 		fanRpm.resize(fansize);
@@ -35,12 +35,9 @@ MonHelper::~MonHelper() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		if (/*!(oldGmode = acpi->GetGMode() > 0) && */oldPower < 0)
+		if (oldPower < 0)
 			oldPower = acpi->GetGMode() ? (short)acpi->powers.size() : acpi->GetPower();
 		SetCurrentMode(fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
-		//if (oldGmode != fan_conf->lastProf->gmode) {
-		//	SetCurrentGmode(fan_conf->lastProf->gmode);
-		//}
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -53,15 +50,6 @@ void MonHelper::Stop() {
 		delete monThread;
 		monThread = NULL;
 		SetCurrentMode(oldPower);
-		//if ((acpi->isGmode) && oldGmode != fan_conf->lastProf->gmode)
-		//	SetCurrentGmode(oldGmode);
-		//if (!oldGmode && oldPower >= 0) {
-		//	acpi->SetPower(acpi->powers[oldPower]);
-		//	if (!oldPower)
-		//		// reset boost
-		//		for (int i = 0; i < acpi->fans.size(); i++)
-		//			acpi->SetFanBoost(i, 0);
-		//}
 #ifdef _DEBUG
 		OutputDebugString("Mon thread stop.\n");
 #endif
@@ -87,20 +75,13 @@ void MonHelper::SetCurrentMode(size_t newMode) {
 void MonHelper::SetCurrentGmode(bool newMode) {
 	fan_conf->lastProf->gmode = acpi->isGmode ? newMode : 0;
 	SetCurrentMode(newMode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
-		//if (acpi->GetGMode() != newMode) {
-		//	fan_conf->lastProf->gmode = newMode;
-		//	if (newMode && (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200)) // m15R5 && G5 5510 fix
-		//		acpi->SetPower(0xa0);
-		//	acpi->SetGMode(newMode);
-		//	if (!newMode)
-		//		acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
-		//}
 }
 
 byte MonHelper::GetFanPercent(byte fanID)
 {
-	auto maxboost = fan_conf->boosts.find(fanID);
-	return maxboost == fan_conf->boosts.end() ? acpi->GetFanPercent(fanID) : (fanRpm[fanID] * 100) / maxboost->second.maxRPM;
+	if (!fan_conf->boosts[fanID].maxRPM)
+		fan_conf->boosts[fanID].maxRPM = acpi->GetMaxRPM(fanID);
+	return (fanRpm[fanID] * 100) / fan_conf->boosts[fanID].maxRPM;
 }
 
 void CMonProc(LPVOID param) {
