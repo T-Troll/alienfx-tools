@@ -91,9 +91,6 @@ namespace AlienFan_SDK {
 		}
 	}
 	Control::~Control() {
-		//sensors.clear();
-		//fans.clear();
-		//powers.clear();
 		CloseAcpiDevice(acc);
 #ifdef _SERVICE_WAY_
 		UnloadService();

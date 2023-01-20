@@ -660,7 +660,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		if (!conf->paused) {
 			senmon->UpdateSensors();
 			if (visible) {
-				if (conf->needFullUpdate || (acpi && acpi->DPTFdone))
+				if (conf->needFullUpdate /*|| (acpi && acpi->DPTFdone)*/)
 					ReloadSensorView();
 			}
 			else

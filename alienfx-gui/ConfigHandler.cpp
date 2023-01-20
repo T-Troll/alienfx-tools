@@ -1,7 +1,6 @@
 #include "ConfigHandler.h"
 #include "resource.h"
 
-extern groupset* FindMapping(int, vector<groupset>*);
 extern void SetTrayTip();
 
 ConfigHandler::ConfigHandler() {
@@ -134,8 +133,10 @@ void ConfigHandler::SetReg(char *text, DWORD value) {
 
 DWORD ConfigHandler::GetRegData(HKEY key, int vindex, char* name, byte** data) {
 	DWORD len, lend;
-	if (*data)
+	if (*data) {
 		delete[] * data;
+		*data = NULL;
+	}
 	if (RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS) {
 		*data = new byte[lend];
 		RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, *data, &lend);
@@ -224,7 +225,6 @@ void ConfigHandler::Load() {
 			prof->fansets.gmode = HIBYTE(((WORD*)data)[1]);
 		}
 	}
-	data = NULL;
 	// Loading zones...
 	for (int vindex = 0; lend = GetRegData(hKeyZones, vindex, name, &data); vindex++) {
 		if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&

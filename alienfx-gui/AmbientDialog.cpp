@@ -176,7 +176,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
     } break;
     case WM_TIMER:
-        if (eve->capt && eve->capt->needUIUpdate && IsWindowVisible(hDlg)) {
+        if (eve->effMode == 2 && eve->capt->needUIUpdate && IsWindowVisible(hDlg)) {
             //DebugPrint("Ambient UI update...\n");
             eve->capt->needUIUpdate = false;
             RedrawButtonZone(hDlg);

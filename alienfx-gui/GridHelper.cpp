@@ -6,8 +6,6 @@ extern EventHandler* eve;
 extern ConfigHandler* conf;
 extern FXHelper* fxhl;
 
-//extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
-
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (grp->effect.effectColors.size() > 1) {
 		int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);
@@ -96,8 +94,8 @@ void GridHelper::StartCommonRun(groupset* ce) {
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
 	eve->modifyProfile.lock();
-	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
-		if (/*ce->effect.trigger && */ce->gridop.passive) {
+	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
+		if (ce->gridop.passive) {
 			switch (ce->effect.trigger) {
 			case 1: src->StartCommonRun(&(*ce));
 				break;
@@ -108,6 +106,9 @@ void GridTriggerWatch(LPVOID param) {
 						src->StartCommonRun(&(*ce));
 						break;
 					}
+				break;
+			case 4:
+				ce->gridop.passive = false;
 				break;
 			}
 		}
@@ -122,33 +123,36 @@ GridHelper::GridHelper() {
 
 GridHelper::~GridHelper()
 {
+	Stop();
+}
+
+void GridHelper::Stop() {
 	delete gridTrigger;
 	delete gridThread;
 	if (kEvent)
 		UnhookWindowsHookEx(kEvent);
+	if (eve->capt) {
+		delete eve->capt; eve->capt = NULL;
+	}
 	eve->StopEvents();
 }
 
 void GridHelper::RestartWatch() {
-	bool haveEvents = false, haveKeys = false;
-	if (gridTrigger) delete gridTrigger;
-	if (gridThread) delete gridThread;
-	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, conf->geTact);
-	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, conf->geTact);
+	Stop();
+
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		switch (ce->effect.trigger) {
-		case 2: haveKeys = true; break;
-		case 3: haveEvents = true; break;
+		case 2: if (!kEvent)
+			kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
+			break;
+		case 3: eve->StartEvents(); break;
+		case 4: if (!eve->capt) {
+			auto zone = *conf->FindZoneMap(ce->group);
+			eve->capt = new CaptureHelper(zone.xMax, zone.yMax);
+		} break;
 		}
 	}
-	if (haveKeys && !kEvent)
-		kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
-	else {
-		UnhookWindowsHookEx(kEvent);
-		kEvent = NULL;
-	}
-	if (haveEvents)
-		eve->StartEvents();
-	else
-		eve->StopEvents();
+
+	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, conf->geTact);
+	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, conf->geTact);
 }

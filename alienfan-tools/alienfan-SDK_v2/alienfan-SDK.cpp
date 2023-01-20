@@ -9,19 +9,19 @@
 
 namespace AlienFan_SDK {
 
-	DWORD WINAPI DPTFInitFunc(LPVOID lpParam);
+	//DWORD WINAPI DPTFInitFunc(LPVOID lpParam);
 
-	HANDLE updateAllowed = NULL;
+	//HANDLE updateAllowed = NULL;
 
 	Control::Control() {
 
 #ifdef _TRACE_
 		printf("WMI activation started.\n");
 #endif
-		if (!updateAllowed)
-			updateAllowed = CreateEvent(NULL, true, true, NULL);
-		else
-			SetEvent(updateAllowed);
+		//if (!updateAllowed)
+		//	updateAllowed = CreateEvent(NULL, true, true, NULL);
+		//else
+		//	SetEvent(updateAllowed);
 		IWbemLocator* m_WbemLocator;
 		CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 		CoInitializeSecurity(nullptr, -1, nullptr, nullptr,
@@ -48,7 +48,7 @@ namespace AlienFan_SDK {
 	}
 
 	Control::~Control() {
-		ResetEvent(updateAllowed);
+		//ResetEvent(updateAllowed);
 		if (m_DiskService)
 			m_DiskService->Release();
 		if (m_OHMService)
@@ -214,10 +214,10 @@ namespace AlienFan_SDK {
 			// ESIF sensors
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 0);
-				CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
+				//CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
 			}
-			else
-				DPTFdone = true;
+			//else
+			//	DPTFdone = true;
 			// SSD sensors
 			if (/*m_DiskService && */m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 2);
@@ -361,107 +361,105 @@ namespace AlienFan_SDK {
 		return CallWMIMethod(1, param);
 	}
 
-	string GetTag(string xml, string tag, size_t& pos) {
-		size_t firstpos = xml.find("<" + tag + ">", pos);
-		if (firstpos != string::npos) {
-			firstpos += tag.length() + 2;
-			pos = xml.find("</" + tag + ">", firstpos);
-			return xml.substr(firstpos, pos - firstpos);
-		}
-		else {
-			pos = string::npos;
-			return "";
-		}
-	}
+	//string GetTag(string xml, string tag, size_t& pos) {
+	//	size_t firstpos = xml.find("<" + tag + ">", pos);
+	//	if (firstpos != string::npos) {
+	//		firstpos += tag.length() + 2;
+	//		pos = xml.find("</" + tag + ">", firstpos);
+	//		return xml.substr(firstpos, pos - firstpos);
+	//	}
+	//	else {
+	//		pos = string::npos;
+	//		return "";
+	//	}
+	//}
 
-	string ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
-		DWORD written;
-		string outpart;
-		WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
-		while (outpart.find("Returned:") == string::npos) {
-			while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
-				char* buffer = new char[written + 1]{ 0 };
-				ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
-				outpart += buffer;
-				delete[] buffer;
-			}
-		}
-		if (outpart.find("</result>") != string::npos) {
-			size_t pos = 0;
-			return GetTag(outpart, "result", pos);
-		}
-		else
-			return "";
-	}
+	//string ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
+	//	DWORD written;
+	//	string outpart;
+	//	WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
+	//	while (outpart.find("Returned:") == string::npos) {
+	//		while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
+	//			char* buffer = new char[written + 1]{ 0 };
+	//			ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
+	//			outpart += buffer;
+	//			delete[] buffer;
+	//		}
+	//	}
+	//	if (outpart.find("</result>") != string::npos) {
+	//		size_t pos = 0;
+	//		return GetTag(outpart, "result", pos);
+	//	}
+	//	else
+	//		return "";
+	//}
 
-	DWORD WINAPI DPTFInitFunc(LPVOID lpParam) {
-		Control* src = (Control*)lpParam;
-		string wdName;
-		SECURITY_ATTRIBUTES attr{ sizeof(SECURITY_ATTRIBUTES), NULL, true };
-		STARTUPINFO sinfo{ sizeof(STARTUPINFO), 0 };
-		HANDLE g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, initHandle = NULL;
-		PROCESS_INFORMATION proc;
-		wdName.resize(2048);
-		wdName.resize(GetWindowsDirectory((LPSTR)wdName.data(), 2047));
-		wdName += "\\system32\\DriverStore\\FileRepository\\";
-		WIN32_FIND_DATA file;
-		HANDLE search_handle = FindFirstFile((wdName + "dptf_cpu*").c_str(), &file);
-		if (search_handle != INVALID_HANDLE_VALUE)
-		{
-			wdName += string(file.cFileName) + "\\esif_uf.exe";
-			FindClose(search_handle);
-			CreatePipe(&g_hChildStd_OUT_Rd, &sinfo.hStdOutput, &attr, 0);
-			CreatePipe(&sinfo.hStdInput, &g_hChildStd_IN_Wr, &attr, 0);
-			DWORD flags = PIPE_NOWAIT;
-			SetNamedPipeHandleState(g_hChildStd_IN_Wr, &flags, NULL, NULL);
-			sinfo.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-			sinfo.wShowWindow = SW_HIDE;
-			sinfo.hStdError = sinfo.hStdOutput;
-			HWND cur = GetForegroundWindow();
-			if (CreateProcess(NULL, (LPSTR)(wdName + " client").c_str(),
-				NULL, NULL, true,
-				CREATE_NEW_CONSOLE, NULL, NULL, &sinfo, &proc)) {
-				SetForegroundWindow(cur);
-				// Start init...
-				size_t pos = 0;
-				string parts = ReadFromESIF("format xml\nparticipants\nexit\n", g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, &proc);
-				string part;
-				int idc = 0;
-				if (parts.size() && WaitForSingleObject(updateAllowed, 0) != WAIT_TIMEOUT) {
-					while (pos != string::npos) {
-						part = GetTag(parts, "participant", pos);
-						size_t descpos = 0;
-						byte sID = atoi(GetTag(part, "UpId", descpos).c_str());
-						string name = GetTag(part, "desc", descpos);
-						int dcount = atoi(GetTag(part, "domainCount", descpos).c_str());
-						// check domains...
-						for (int i = 0; i < dcount; i++) {
-							size_t dPos = 0;
-							string domain = GetTag(part, "domain", descpos);
-							string dName = GetTag(domain, "name", dPos);
-							char* p;
-							if (strtol(GetTag(domain, "capability", dPos).c_str(), &p, 16) & 0x80) {
-								for (auto sen = src->sensors.begin(); sen != src->sensors.end(); sen++)
-									if (!sen->type && sen->index == idc) {
-										sen->name = name + (dcount > 1 ? " (" + dName + ")" : "");
-										break;
-									}
-								idc++;
-							}
-						}
-					}
-				}
-				CloseHandle(proc.hProcess);
-				CloseHandle(proc.hThread);
-			}
-			CloseHandle(sinfo.hStdInput);
-			CloseHandle(g_hChildStd_IN_Wr);
-			CloseHandle(g_hChildStd_OUT_Rd);
-			CloseHandle(sinfo.hStdOutput);
-		}
-		src->DPTFdone = true;
-		return 0;
-	}
-
-
+	//DWORD WINAPI DPTFInitFunc(LPVOID lpParam) {
+	//	Control* src = (Control*)lpParam;
+	//	string wdName;
+	//	SECURITY_ATTRIBUTES attr{ sizeof(SECURITY_ATTRIBUTES), NULL, true };
+	//	STARTUPINFO sinfo{ sizeof(STARTUPINFO), 0 };
+	//	HANDLE g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, initHandle = NULL;
+	//	PROCESS_INFORMATION proc;
+	//	wdName.resize(2048);
+	//	wdName.resize(GetWindowsDirectory((LPSTR)wdName.data(), 2047));
+	//	wdName += "\\system32\\DriverStore\\FileRepository\\";
+	//	WIN32_FIND_DATA file;
+	//	HANDLE search_handle = FindFirstFile((wdName + "dptf_cpu*").c_str(), &file);
+	//	if (search_handle != INVALID_HANDLE_VALUE)
+	//	{
+	//		wdName += string(file.cFileName) + "\\esif_uf.exe";
+	//		FindClose(search_handle);
+	//		CreatePipe(&g_hChildStd_OUT_Rd, &sinfo.hStdOutput, &attr, 0);
+	//		CreatePipe(&sinfo.hStdInput, &g_hChildStd_IN_Wr, &attr, 0);
+	//		DWORD flags = PIPE_NOWAIT;
+	//		SetNamedPipeHandleState(g_hChildStd_IN_Wr, &flags, NULL, NULL);
+	//		sinfo.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+	//		sinfo.wShowWindow = SW_HIDE;
+	//		sinfo.hStdError = sinfo.hStdOutput;
+	//		HWND cur = GetForegroundWindow();
+	//		if (CreateProcess(NULL, (LPSTR)(wdName + " client").c_str(),
+	//			NULL, NULL, true,
+	//			CREATE_NEW_CONSOLE, NULL, NULL, &sinfo, &proc)) {
+	//			SetForegroundWindow(cur);
+	//			// Start init...
+	//			size_t pos = 0;
+	//			string parts = ReadFromESIF("format xml\nparticipants\nexit\n", g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, &proc);
+	//			string part;
+	//			int idc = 0;
+	//			if (parts.size() && WaitForSingleObject(updateAllowed, 0) != WAIT_TIMEOUT) {
+	//				while (pos != string::npos) {
+	//					part = GetTag(parts, "participant", pos);
+	//					size_t descpos = 0;
+	//					byte sID = atoi(GetTag(part, "UpId", descpos).c_str());
+	//					string name = GetTag(part, "desc", descpos);
+	//					int dcount = atoi(GetTag(part, "domainCount", descpos).c_str());
+	//					// check domains...
+	//					for (int i = 0; i < dcount; i++) {
+	//						size_t dPos = 0;
+	//						string domain = GetTag(part, "domain", descpos);
+	//						string dName = GetTag(domain, "name", dPos);
+	//						char* p;
+	//						if (strtol(GetTag(domain, "capability", dPos).c_str(), &p, 16) & 0x80) {
+	//							for (auto sen = src->sensors.begin(); sen != src->sensors.end(); sen++)
+	//								if (!sen->type && sen->index == idc) {
+	//									sen->name = name + (dcount > 1 ? " (" + dName + ")" : "");
+	//									break;
+	//								}
+	//							idc++;
+	//						}
+	//					}
+	//				}
+	//			}
+	//			CloseHandle(proc.hProcess);
+	//			CloseHandle(proc.hThread);
+	//		}
+	//		CloseHandle(sinfo.hStdInput);
+	//		CloseHandle(g_hChildStd_IN_Wr);
+	//		CloseHandle(g_hChildStd_OUT_Rd);
+	//		CloseHandle(sinfo.hStdOutput);
+	//	}
+	//	src->DPTFdone = true;
+	//	return 0;
+	//}
 }

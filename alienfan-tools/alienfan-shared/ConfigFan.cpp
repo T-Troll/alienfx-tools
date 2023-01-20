@@ -1,5 +1,4 @@
 #include "ConfigFan.h"
-#include <string>
 
 ConfigFan::ConfigFan() {
 
@@ -7,6 +6,8 @@ ConfigFan::ConfigFan() {
 	RegCreateKeyEx(keyMain, TEXT("Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
 	RegCreateKeyEx(keyMain, TEXT("Powers"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 	Load();
+	if (needDPTF)
+		DPTFInit();
 }
 
 ConfigFan::~ConfigFan() {
@@ -35,7 +36,6 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 
 void ConfigFan::AddSensorCurve(fan_profile *prof, WORD fid, WORD sid, byte* data, DWORD lend) {
 	if (!prof) prof = lastProf;
-	// Now load and add sensor data..
 	sen_block curve = { true };
 	for (UINT i = 0; i < lend; i += 2) {
 		curve.points.push_back({ data[i], data[i + 1] });
@@ -45,8 +45,10 @@ void ConfigFan::AddSensorCurve(fan_profile *prof, WORD fid, WORD sid, byte* data
 
 DWORD ConfigFan::GetRegData(HKEY key, int vindex, char* name, byte** data) {
 	DWORD len, lend;
-	if (*data)
-		delete[] *data;
+	if (*data) {
+		delete[] * data;
+		*data = NULL;
+	}
 	if (RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS) {
 		*data = new byte[lend];
 		RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, *data, &lend);
@@ -63,9 +65,9 @@ void ConfigFan::Load() {
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LastPowerStage", &power);
-	//GetReg("ObCheck", &obCheck);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
+	GetReg("DPTF", &needDPTF, 1);
 	// set power values
 	prof.powerStage = LOWORD(power);
 	prof.gmode = HIWORD(power);
@@ -84,13 +86,13 @@ void ConfigFan::Load() {
 			continue;
 		}
 	}
-	inarray = NULL;
 	for (int vindex = 0; lend = GetRegData(keyMain, vindex, name, &inarray); vindex++) {
 		if (sscanf_s(name, "Boost-%hd", &fid) == 1) { // Boost block
 			boosts[(byte)fid] = { inarray[0],*(WORD*)(inarray + 1) };
 		}
 	}
-	inarray = NULL;
+	// manual mode always available
+	powers[0] = "Manual";
 	for (int vindex = 0; lend = GetRegData(keyPowers, vindex, name, &inarray); vindex++) {
 		if (sscanf_s(name, "Power-%hd", &fid) == 1) { // Power names
 			powers[(byte)fid] = (char*)inarray;
@@ -123,14 +125,14 @@ void ConfigFan::Save() {
 	SetReg("StartMinimized", startMinimized);
 	SetReg("LastPowerStage", MAKELPARAM(prof.powerStage, prof.gmode));
 	SetReg("UpdateCheck", updateCheck);
-	//SetReg("ObCheck", obCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);
+	SetReg("DPTF", needDPTF);
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");
 	RegCreateKeyEx(keyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
-	RegDeleteTree(keyMain, "Powers");
-	RegCreateKeyEx(keyMain, "Powers", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
+	//RegDeleteTree(keyMain, "Powers");
+	//RegCreateKeyEx(keyMain, "Powers", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 
 	// save profile..
 	SaveSensorBlocks(keySensors, "Fan", &prof);
@@ -155,32 +157,15 @@ void ConfigFan::Save() {
 }
 
 string ConfigFan::GetPowerName(int index) {
-	if (powers[index].empty())
-		powers[index] = index ? "Level " + to_string(index) : "Manual";
-	return powers[index];
+	auto pwr = &powers[index];
+	if (pwr->empty())
+		*pwr = "Level " + to_string(index);
+	return *pwr;
 }
 
 void ConfigFan::UpdateBoost(byte fanID, byte boost, WORD rpm) {
-	fan_overboost* fo = &boosts[fanID];
-	fo->maxBoost = max(boost, 100);
-	fo->maxRPM = max(rpm, fo->maxRPM);
+	boosts[fanID] = { (byte)max(boost, 100), max(rpm, boosts[fanID].maxRPM) };
 }
-
-//void ConfigFan::SetSensorNames(AlienFan_SDK::Control* acpi) {
-//	// patch for incorrect fan block size
-//	for (auto i = acpi->powers.begin(); i < acpi->powers.end(); i++)
-//		if (powers[*i].empty())
-//			powers[*i] = *i ? "Level " + to_string(i - acpi->powers.begin()) : "Manual";
-//	for (int i = 0; i < acpi->fans.size(); i++) {
-//		fan_overboost* fo = &boosts[i];
-//		fo->maxBoost = max(100, fo->maxBoost);
-//		fo->maxRPM = max(acpi->GetMaxRPM(i), fo->maxRPM);
-//	}
-//		//if (boosts.find(i) == boosts.end())
-//		//	boosts[i] = { 100, (unsigned short)acpi->GetMaxRPM(i) };
-//		//else
-//		//	boosts[i].maxBoost = max(boosts[i].maxBoost, 100);
-//}
 
 int ConfigFan::GetFanScale(byte fanID) {
 	if (!boosts[fanID].maxBoost)
@@ -188,4 +173,101 @@ int ConfigFan::GetFanScale(byte fanID) {
 	return boosts[fanID].maxBoost;
 }
 
+string ConfigFan::GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi) {
+	auto sen = &sensors[acpi->sid];
+	if (sen->empty())
+		*sen = acpi->name;
+	return *sen;
+}
 
+string ConfigFan::GetTag(string xml, string tag, size_t& pos) {
+	size_t firstpos = xml.find("<" + tag + ">", pos);
+	if (firstpos != string::npos) {
+		firstpos += tag.length() + 2;
+		pos = xml.find("</" + tag + ">", firstpos);
+		return xml.substr(firstpos, pos - firstpos);
+	}
+	else {
+		pos = string::npos;
+		return "";
+	}
+}
+
+string ConfigFan::ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
+	DWORD written;
+	string outpart;
+	WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
+	while (outpart.find("Returned:") == string::npos) {
+		while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
+			char* buffer = new char[written + 1]{ 0 };
+			ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
+			outpart += buffer;
+			delete[] buffer;
+		}
+	}
+	if (outpart.find("</result>") != string::npos) {
+		size_t pos = 0;
+		return GetTag(outpart, "result", pos);
+	}
+	else
+		return "";
+}
+
+void ConfigFan::DPTFInit() {
+	string wdName;
+	SECURITY_ATTRIBUTES attr{ sizeof(SECURITY_ATTRIBUTES), NULL, true };
+	STARTUPINFO sinfo{ sizeof(STARTUPINFO), 0 };
+	HANDLE g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, initHandle = NULL;
+	PROCESS_INFORMATION proc;
+	wdName.resize(2048);
+	wdName.resize(GetWindowsDirectory((LPSTR)wdName.data(), 2047));
+	wdName += "\\system32\\DriverStore\\FileRepository\\";
+	WIN32_FIND_DATA file;
+	HANDLE search_handle = FindFirstFile((wdName + "dptf_cpu*").c_str(), &file);
+	if (needDPTF = (search_handle != INVALID_HANDLE_VALUE))
+	{
+		wdName += string(file.cFileName) + "\\esif_uf.exe";
+		FindClose(search_handle);
+		CreatePipe(&g_hChildStd_OUT_Rd, &sinfo.hStdOutput, &attr, 0);
+		CreatePipe(&sinfo.hStdInput, &g_hChildStd_IN_Wr, &attr, 0);
+		DWORD flags = PIPE_NOWAIT;
+		SetNamedPipeHandleState(g_hChildStd_IN_Wr, &flags, NULL, NULL);
+		sinfo.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+		sinfo.wShowWindow = SW_HIDE;
+		sinfo.hStdError = sinfo.hStdOutput;
+		HWND cur = GetForegroundWindow();
+		if (needDPTF = CreateProcess(NULL, (LPSTR)(wdName + " client").c_str(), NULL, NULL, true,
+			CREATE_NEW_CONSOLE, NULL, NULL, &sinfo, &proc)) {
+			SetForegroundWindow(cur);
+			// Start init...
+			string parts = ReadFromESIF("format xml\nparticipants\nexit\n", g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, &proc);
+			if (parts.size()) {
+				needDPTF = 0;
+				size_t pos = 0;
+				WORD sid = 0;
+				while (pos != string::npos) {
+					string part = GetTag(parts, "participant", pos);
+					size_t descpos = 0;
+					byte sID = atoi(GetTag(part, "UpId", descpos).c_str());
+					string name = GetTag(part, "desc", descpos);
+					int dcount = atoi(GetTag(part, "domainCount", descpos).c_str());
+					// check domains...
+					for (int i = 0; i < dcount; i++) {
+						size_t dPos = 0;
+						string domain = GetTag(part, "domain", descpos);
+						string dName = GetTag(domain, "name", dPos);
+						if (strtol(GetTag(domain, "capability", dPos).c_str(), NULL, 16) & 0x80) {
+							sensors[sid++] = name + (dcount > 1 ? " (" + dName + ")" : "");
+						}
+					}
+				}
+			}
+			CloseHandle(proc.hProcess);
+			CloseHandle(proc.hThread);
+		}
+		CloseHandle(sinfo.hStdInput);
+		CloseHandle(g_hChildStd_IN_Wr);
+		CloseHandle(g_hChildStd_OUT_Rd);
+		CloseHandle(sinfo.hStdOutput);
+	}
+}

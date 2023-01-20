@@ -121,10 +121,6 @@ void EventHandler::StopEvents()
 
 void EventHandler::ChangeEffectMode() {
 	if (conf->enableMon && conf->stateOn) {
-		//if (conf->GetEffect() != effMode)
-		//	StopEffects();
-		//else
-		//	fxhl->Refresh();
 		StartEffects();
 	}
 	else
@@ -133,17 +129,15 @@ void EventHandler::ChangeEffectMode() {
 }
 
 void EventHandler::StopEffects() {
-	switch (effMode) {
-	case 1:	StopEvents(); break;	// Events
-	case 2: if (capt) {				// Ambient
+	StopEvents();	// Events
+	if (capt) {		// Ambient
 		delete capt; capt = NULL;
-	} break;
-	case 3: if (audio) {			// Haptics
+	}
+	if (audio) {	// Haptics
 		delete audio; audio = NULL;
-	} break;
-	case 4: if (grid) {				// Grid
+	}
+	if (grid) {		// Grid
 		delete grid; grid = NULL;
-	} break;
 	}
 	effMode = 0;
 	fxhl->Refresh();
@@ -162,7 +156,7 @@ void EventHandler::StartEffects() {
 				StartEvents();
 				break;
 			case 2:
-				if (!capt) capt = new CaptureHelper();
+				if (!capt) capt = new CaptureHelper(LOWORD(conf->amb_grid), HIWORD(conf->amb_grid));
 				break;
 			case 3:
 				if (!audio) audio = new WSAudioIn();

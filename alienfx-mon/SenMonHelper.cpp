@@ -88,7 +88,7 @@ void SenMonHelper::ModifyMon()
 	conf->needFullUpdate = true;
 }
 
-void SenMonHelper::AddUpdateSensor(SENID sid, long val, string name, bool updateName) {
+void SenMonHelper::AddUpdateSensor(SENID sid, long val, string name) {
 	if (val > 10000 || val <= NO_SEN_VALUE) return;
 
 	SENSOR* sen = conf->FindSensor(sid.sid);
@@ -98,7 +98,7 @@ void SenMonHelper::AddUpdateSensor(SENID sid, long val, string name, bool update
 		conf->needFullUpdate = true;
 	}
 	else {
-		if (sen->sname.empty() || updateName) {
+		if (sen->sname.empty()) {
 			sen->sname = name;
 			conf->needFullUpdate = true;
 		}
@@ -172,12 +172,9 @@ void SenMonHelper::UpdateSensors()
 	}
 
 	if (conf->bSensors) { // group 2
-		// check DPTF
-		bool needUpdateName = acpi->DPTFdone;
-		acpi->DPTFdone = false;
 		// BIOS/WMI temperatures
 		for (WORD i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
-			AddUpdateSensor({ acpi->sensors[i].sid, 0, 2 }, acpi->GetTempValue(i), acpi->sensors[i].name, needUpdateName);
+			AddUpdateSensor({ acpi->sensors[i].sid, 0, 2 }, acpi->GetTempValue(i), acpi->sensors[i].name);
 		}
 		// Fan data
 		for (WORD i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3

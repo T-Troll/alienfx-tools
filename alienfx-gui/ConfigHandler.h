@@ -184,7 +184,6 @@ public:
 	ConfigFan *fan_conf = NULL;
 
 	// Profiles and zones
-	//vector<groupset>* active_set;
 	vector<profile*> profiles;
 	vector<zonemap> zoneMaps;
 	profile* activeProfile = NULL;

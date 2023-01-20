@@ -171,6 +171,7 @@ First, you should define trigger - the event which launch effect for selected zo
 - Continues - grid effect always start at the beginning point of the zone (depend on its direction type), and continue to run until this setting or effect mode changed.
 - Keyboard - grid effect start from the position of the light with the name same as pressed key, run one time then stop until key is pressed again.
 - Event - grid effect start if one of monitoring event happened (see Event Monitoring tab) and continues until event off.
+- Ambient - zone lights color follow screen color, like "Ambient" effect mode. Other settings are ignored. It does not recommended to set it for more, then one zone.
 
 For Keyboard trigger, light names should be the same as key name (please use capital letters, "A" right, "a" wrong), and common English key names from the capital letter (f.e. "Space", "Esc").
 

@@ -197,13 +197,8 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->SetCurrentMode(0);
     int rpm = acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100,
         oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
-    //fan_overboost* fo = &fan_conf->boosts[fan_conf->lastSelectedFan];
     boostCheck.clear();
-    bestBoostPoint = { (byte)boost, (unsigned short)rpm };//*fo;
-    // warm-up...
-    //crpm = SetFanSteady(fan_conf->lastSelectedFan, 100);
-    //boost = fo->maxBoost;
-    //rpm = fo->maxRPM;
+    bestBoostPoint = { (byte)boost, (unsigned short)rpm };
     boostScale = 10;
     fanMaxScale = 500;
     fanMinScale = (rpm / 100) * 100;
@@ -421,8 +416,9 @@ void ReloadTempView(HWND list) {
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        auto pwr = fan_conf->sensors.find(acpi->sensors[i].sid);
-        name = pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[i].name;
+        //auto pwr = fan_conf->sensors.find(acpi->sensors[i].sid);
+        //name = pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[i].name;
+        name = fan_conf->GetSensorName(&acpi->sensors[i]);
         ListView_SetItemText(list, i, 1, (LPSTR)name.c_str());
     }
     RECT cArea;
@@ -433,11 +429,10 @@ void ReloadTempView(HWND list) {
 }
 
 void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
-    auto pwr = fan_conf->sensors.find((WORD)lParam->item.lParam);
     switch (lParam->hdr.code) {
     case LVN_BEGINLABELEDIT: {
         KillTimer(GetParent(tempList), 0);
-        Edit_SetText(ListView_GetEditControl(tempList), (pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[lParam->item.iItem].name).c_str());
+        Edit_SetText(ListView_GetEditControl(tempList), fan_conf->GetSensorName(&acpi->sensors[lParam->item.iItem]).c_str());
     } break;
     case LVN_ITEMACTIVATE: case NM_RETURN:
     {
@@ -449,12 +444,7 @@ void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
     case LVN_ENDLABELEDIT:
     {
         if (lParam->item.pszText) {
-            if (strlen(lParam->item.pszText))
-                fan_conf->sensors[(WORD)lParam->item.lParam] = lParam->item.pszText;
-            else {
-                if (pwr != fan_conf->sensors.end())
-                    fan_conf->sensors.erase(pwr);
-            }
+            fan_conf->sensors[(WORD)lParam->item.lParam] = lParam->item.pszText;
             ReloadTempView(tempList);
         }
         SetTimer(GetParent(tempList), 0, 500, NULL);
@@ -466,7 +456,7 @@ void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
             fan_conf->lastSelectedSensor = (WORD)((LPNMLISTVIEW)lParam)->lParam;
             // Redraw fans
             ReloadFanView(fanList);
-            DrawFan();
+            // DrawFan();
         }
     } break;
     }
@@ -478,7 +468,7 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
         if (lParam->uNewState & LVIS_SELECTED && lParam->iItem != -1) {
             // Select other fan....
             fan_conf->lastSelectedFan = lParam->iItem;
-            DrawFan();
+            //DrawFan();
             return;
         }
         if (lParam->uNewState & 0x3000) {
@@ -493,7 +483,7 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
                 if ((*fan)[fan_conf->lastSelectedSensor].points.empty())
                     (*fan)[fan_conf->lastSelectedSensor].points = { {0,0},{100,100} };
             }
-            DrawFan();
+            //DrawFan();
             ListView_SetItemState(fanList, lParam->iItem, LVIS_SELECTED, LVIS_SELECTED);
         }
     }

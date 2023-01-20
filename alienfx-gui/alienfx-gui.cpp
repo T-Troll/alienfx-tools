@@ -59,7 +59,7 @@ int eItem = 0;
 groupset* mmap = NULL;
 
 // Effect mode list
-const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
+static const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin())) {
@@ -197,6 +197,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	delete conf;
 
 	return 0;
+}
+
+void SetTrayTip() {
+	//string name = "Profile: " + (conf->activeProfile ? conf->activeProfile->name : "Undefined") + "\nEffect: " + (conf->GetEffect() < effModes.size() ? effModes[conf->GetEffect()] : "Global");
+	string name = "Profile: " + conf->activeProfile->name + "\nEffect: " + effModes[conf->GetEffect()];
+	strcpy_s(conf->niData.szTip, 128, name.c_str());
+	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 }
 
 void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode* act) {
@@ -381,12 +388,6 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 		if ((tabsize < 5 && i == tabSel) || (tabsize > 4 && i == tabLightSel))
 			TabCtrl_SetCurSel(parent, pos);
 	}
-}
-
-void SetTrayTip() {
-	string name = "Profile: " + (conf->activeProfile ? conf->activeProfile->name : "Undefined") + "\nEffect: " + (conf->GetEffect() < effModes.size() ? effModes[conf->GetEffect()] : "Global");
-	strcpy_s(conf->niData.szTip, 128, name.c_str());
-	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 }
 
 void SetMainTabs() {
@@ -624,7 +625,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(true);
 			break;
 		case ID_TRAYMENU_MONITORING_SELECTED:
-			conf->activeProfile->effmode = idx < effModes.size() ? idx : 99;
+			conf->activeProfile->effmode = idx;
 			UpdateState(true);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:

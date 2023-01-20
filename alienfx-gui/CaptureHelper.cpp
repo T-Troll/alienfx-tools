@@ -16,9 +16,10 @@ extern FXHelper *fxhl;
 
 HANDLE clrStopEvent;
 
-CaptureHelper::CaptureHelper()
+CaptureHelper::CaptureHelper(int x, int y)
 {
-	imgz = new byte[LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid) * 6];
+	gridX = x; gridY = y;
+	imgz = new byte[x * y * 6];
 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	dxgi_manager = new DXGIManager();
 	dxgi_manager->set_timeout(100);
@@ -44,7 +45,8 @@ void CaptureHelper::Start()
 {
 	if (!dwHandle) {
 		clrStopEvent = CreateEvent(NULL, true, false, NULL);
-		lThread = new ThreadHelper(CFXProc, this, 200, THREAD_PRIORITY_ABOVE_NORMAL);
+		if (conf->GetEffect() == 2)
+			lThread = new ThreadHelper(CFXProc, this, 200, THREAD_PRIORITY_ABOVE_NORMAL);
 		dwHandle = CreateThread( NULL, 0, CInProc, this, 0, NULL);
 	}
 }
@@ -53,7 +55,8 @@ void CaptureHelper::Stop()
 {
 	if (dwHandle) {
 		SetEvent(clrStopEvent);
-		delete lThread;
+		if (lThread)
+			delete lThread;
 		WaitForSingleObject(dwHandle, 5000);
 		CloseHandle(dwHandle);
 		CloseHandle(clrStopEvent);
@@ -69,7 +72,9 @@ void CaptureHelper::Restart() {
 void CaptureHelper::SetLightGridSize(int x, int y)
 {
 	Stop();
-	conf->amb_grid = MAKELPARAM(x, y);
+	gridX = x; gridY = y;
+	if (conf->GetEffect() == 2)
+		conf->amb_grid = MAKELPARAM(x, y);
 	delete[] imgz;
 	imgz = new byte[x * y * 6];
 	Start();
@@ -81,7 +86,7 @@ byte* scrImg = NULL;
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*) inp;
 	HANDLE waitArray[2]{src->pEvent, clrStopEvent};
-	DWORD res = 0;
+	DWORD res;
 
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 200)) != WAIT_OBJECT_0 + 1) {
 		if (res == WAIT_OBJECT_0) {
@@ -97,12 +102,9 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 					pos += 4;
 				}
 			}
-			r /= div;
-			g /= div;
-			b /= div;
-			src->dst[0] = (UCHAR) r;
-			src->dst[1] = (UCHAR) g;
-			src->dst[2] = (UCHAR) b;
+			src->dst[0] = (UCHAR) (r / div);
+			src->dst[1] = (UCHAR) (g / div);
+			src->dst[2] = (UCHAR) (b / div);
 			SetEvent(src->pfEvent);
 		}
 	}
@@ -116,7 +118,7 @@ void CaptureHelper::SetDimensions() {
 	RECT dimensions = dxgi_manager->get_output_rect();
 	w = dimensions.right - dimensions.left;
 	h = dimensions.bottom - dimensions.top;
-	ww = w / LOWORD(conf->amb_grid); hh = h / HIWORD(conf->amb_grid);
+	ww = w / gridX; hh = h / gridY;
 	stride = w * 4;
 	divider = w > 1920 ? 2 : 1;
 	DebugPrint("Screen resolution set to " + to_string(w) + "x" + to_string(h) + ", div " + to_string(divider) + ".\n");
@@ -126,7 +128,7 @@ DWORD WINAPI CInProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
 
-	DWORD gridSize = LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid), gridDataSize = gridSize * 3, ret = 0;
+	DWORD /*gridSize = src->gridX * src->gridY,*/ gridDataSize = src->gridX * src->gridY * 3, ret = 0;
 	byte* imgo = src->imgz + gridDataSize;
 	size_t buf_size;
 
@@ -149,9 +151,9 @@ DWORD WINAPI CInProc(LPVOID param)
 		// Resize & calc
 		UINT tInd = 0;
 		if (w && h && (ret = src->dxgi_manager->get_output_data(&scrImg, &buf_size)) == CR_OK && scrImg) {
-			for (int dy = 0; dy < HIWORD(conf->amb_grid); dy++)
-				for (int dx = 0; dx < LOWORD(conf->amb_grid); dx++) {
-					UINT ptr = (dy * LOWORD(conf->amb_grid) + dx);
+			for (int dy = 0; dy < src->gridY; dy++)
+				for (int dx = 0; dx < src->gridX; dx++) {
+					UINT ptr = (dy * src->gridX + dx);
 					tInd = ptr % 16;
 					if (ptr > 0 && !tInd) {
 #ifndef _DEBUG

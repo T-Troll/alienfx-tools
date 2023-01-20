@@ -447,11 +447,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (acpi) {
             if (IsWindowVisible(hDlg)) {
                 //DebugPrint("Fans UI update...\n");
-                if (acpi->DPTFdone) {
-                    ReloadTempView(tempList);
-                    acpi->DPTFdone = false;
-                    return false;
-                }
+                //if (acpi->DPTFdone) {
+                //    ReloadTempView(tempList);
+                //    acpi->DPTFdone = false;
+                //    return false;
+                //}
                 for (int i = 0; i < acpi->sensors.size(); i++) {
                     string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
                     ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
