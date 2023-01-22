@@ -127,7 +127,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     delete mon;
     DoStopService(fan_conf->wasAWCC, false);
     Shell_NotifyIcon(NIM_DELETE, &niDataFC);
-
+    fan_conf->Save();
     delete fan_conf;
     return 0;
 }
@@ -417,16 +417,16 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
-        fan_conf->Save();
+        //fan_conf->Save();
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
     case WM_ENDSESSION:
         // Shutdown/restart scheduled....
+        mon->Stop();
         fan_conf->Save();
-        delete mon;
         LocalFree(sch_guid);
-        return 0;
+        exit(0);
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
@@ -447,11 +447,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (acpi) {
             if (IsWindowVisible(hDlg)) {
                 //DebugPrint("Fans UI update...\n");
-                //if (acpi->DPTFdone) {
-                //    ReloadTempView(tempList);
-                //    acpi->DPTFdone = false;
-                //    return false;
-                //}
                 for (int i = 0; i < acpi->sensors.size(); i++) {
                     string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
                     ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());

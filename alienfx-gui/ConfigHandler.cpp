@@ -10,13 +10,10 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
 	afx_dev.LoadMappings();
-
-	fan_conf = new ConfigFan();
 }
 
 ConfigHandler::~ConfigHandler() {
 	Save();
-	if (fan_conf) delete fan_conf;
 
 	afx_dev.SaveMappings();
 
@@ -212,7 +209,7 @@ void ConfigHandler::Load() {
 		}
 		int senid, fanid;
 		if (sscanf_s(name, "Profile-fan-%d-%d-%d", &pid, &fanid, &senid) == 3) {
-			fan_conf->AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid, data, lend);
+			fan_conf.AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid, data, lend);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
@@ -321,7 +318,7 @@ profile* ConfigHandler::FindDefaultProfile() {
 
 void ConfigHandler::Save() {
 
-	if (fan_conf) fan_conf->Save();
+	fan_conf.Save();
 
 	SetReg("AutoStart", startWindows);
 	SetReg("Minimized", startMinimized);
@@ -445,7 +442,7 @@ void ConfigHandler::Save() {
 			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
-			fan_conf->SaveSensorBlocks(hKeyProfiles, "Profile-fan-" + to_string((*jIter)->id), &(*jIter)->fansets);
+			fan_conf.SaveSensorBlocks(hKeyProfiles, "Profile-fan-" + to_string((*jIter)->id), &(*jIter)->fansets);
 		}
 	}
 }

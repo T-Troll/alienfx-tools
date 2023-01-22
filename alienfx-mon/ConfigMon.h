@@ -1,9 +1,9 @@
 #pragma once
 #include <map>
-//#include <vector>
 #include <string>
 #include <wtypes.h>
 #include "resource.h"
+#include "ConfigFan.h"
 
 using namespace std;
 
@@ -22,7 +22,7 @@ struct SENID {
 
 struct SENSOR {
 	string sname;
-	int min = NO_SEN_VALUE, max = 0, cur = 0;
+	int min = NO_SEN_VALUE, max = NO_SEN_VALUE, cur = NO_SEN_VALUE;
 	bool changed = true;
 	union {
 		struct {
@@ -36,11 +36,13 @@ struct SENSOR {
 	union {
 		struct {
 			WORD ap;
-			WORD direction;
+			byte direction;
+			byte highlight;
 		};
 		DWORD alarmPoint = 0;
 	};
 	string name;
+	bool alarming = false;
 	DWORD traycolor = 0xffffff;
 	NOTIFYICONDATA* niData = NULL;
 };
@@ -65,6 +67,10 @@ public:
 	bool paused = false;
 	bool showHidden = false;
 
+	DWORD selection[2]{ 0xffffffff, 0xffffffff };
+
+	ConfigFan fan_conf;
+
 	map<DWORD,SENSOR> active_sensors;
 
 	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0xffffffff, NIF_ICON | NIF_MESSAGE, WM_APP + 1, (HICON)LoadImage(GetModuleHandle(NULL),
@@ -79,6 +85,5 @@ public:
 	void Load();
 	void Save();
 
-	//SENSOR* FindSensor(byte, byte, WORD);
-	SENSOR* FindSensor(DWORD sid);
+	//SENSOR* FindSensor(DWORD sid);
 };

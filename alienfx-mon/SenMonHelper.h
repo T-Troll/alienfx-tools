@@ -29,7 +29,7 @@ private:
 	DWORD cType = 0, valCount = 0;
 
 	int GetValuesArray(HCOUNTER counter);
-	void AddUpdateSensor(SENID sid, long val, string name);
+	SENSOR* UpdateSensor(SENID sid, long val);
 public:
 	HANDLE stopEvents = NULL;
 	SenMonHelper();

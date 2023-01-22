@@ -23,14 +23,6 @@ ConfigMon::~ConfigMon() {
 	RegCloseKey(hKeyMain);
 }
 
-SENSOR* ConfigMon::FindSensor(DWORD sid)
-{
-	for (auto i = active_sensors.begin(); i != active_sensors.end(); i++)
-		if (i->first == sid)
-			return &(i->second);
-	return NULL;
-}
-
 void ConfigMon::GetReg(const char* name, DWORD* value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
 	if (RegGetValue(hKeyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
@@ -101,7 +93,7 @@ void ConfigMon::Save() {
 			tName = "2-" + to_string(j->first);
 			RegSetValueEx(hKeySensors, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->second.traycolor, sizeof(DWORD));
 		}
-		if (j->second.alarm) {
+		if (j->second.alarmPoint) {
 			tName = "3-" + to_string(j->first);
 			RegSetValueEx(hKeySensors, tName.c_str(), 0, REG_DWORD, (BYTE*)&j->second.alarmPoint, sizeof(DWORD));
 		}

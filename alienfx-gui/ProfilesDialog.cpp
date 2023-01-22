@@ -18,6 +18,7 @@ extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPAR
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
+extern ConfigFan* fan_conf;
 int pCid = -1;
 
 vector<deviceeffect>::iterator FindDevEffect(profile* prof, int devNum, int type) {
@@ -350,10 +351,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						lset->effect = t->effect;
 				}
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED)
-					if (conf->activeProfile->flags & PROF_FANS)
-						prof->fansets = conf->activeProfile->fansets;
-					else
-						prof->fansets = conf->fan_conf->prof;
+					prof->fansets = conf->activeProfile->flags & PROF_FANS ? conf->activeProfile->fansets : fan_conf->prof;
 			}
 			break;
 		case IDC_APP_RESET:
@@ -419,15 +417,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_FANPROFILE:
 			SetBitMask(prof->flags, PROF_FANS, state);
-			if (prof->flags & PROF_FANS) {
+			if (state) {
 				// add current fan profile...
 				if (prof->fansets.fanControls.empty())
-					prof->fansets = conf->fan_conf->prof;
-			} else {
-				// Switch fan control if needed
-				if (prof->id == conf->activeProfile->id)
-					conf->fan_conf->lastProf = &conf->fan_conf->prof;
+					prof->fansets = fan_conf->prof;
 			}
+			// Switch fan control if needed
+			if (prof->id == conf->activeProfile->id)
+				fan_conf->lastProf = state ? &fan_conf->prof : &fan_conf->prof;
 			break;
 		case IDC_TRIGGER_POWER_AC:
 			SetBitMask(prof->triggerFlags, PROF_TRIGGER_AC, state);

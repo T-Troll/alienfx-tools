@@ -78,16 +78,13 @@ struct grideffect {
 	byte width = 1;
 	WORD flags;
 	vector<AlienFX_SDK::Afx_colorcode> effectColors;
-	//AlienFX_SDK::Afx_colorcode from;
-	//AlienFX_SDK::Afx_colorcode to;
 };
 
 struct grideffop {
 	// operational info
 	bool passive = true;
-	int gridX, gridY, 
-		//phase = -1, 
-		oldphase=-1, 
+	int gridX, gridY,
+		oldphase=-1,
 		size;
 	long start_tact;
 };
@@ -162,12 +159,11 @@ public:
 	COLORREF customColors[16]{ 0 };
 
 	// States
-	bool stateDimmed = false, stateOn = true, statePower = true, /*dimmedScreen = false, */stateScreen = true;
+	bool stateDimmed = false, stateOn = true, statePower = true, stateScreen = true;
 	bool lightsNoDelay = true;
 	bool block_power = 0;
 	bool wasAWCC = false;
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
-	//bool haveOldConfig = false;
 
 	// Ambient...
 	DWORD amb_mode = 0;
@@ -181,7 +177,7 @@ public:
 	byte finalBrightness = 255;
 	byte finalPBState = false;
 
-	ConfigFan *fan_conf = NULL;
+	ConfigFan fan_conf;
 
 	// Profiles and zones
 	vector<profile*> profiles;

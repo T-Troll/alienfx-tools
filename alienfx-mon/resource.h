@@ -28,6 +28,8 @@
 #define IDC_CHECK_DIRECTION             1015
 #define IDC_STARTW                      1016
 #define IDC_STARTM                      1017
+#define IDC_CHECK1                      1018
+#define IDC_CHECK_HIGHLIGHT             1018
 #define IDC_ESENSORS                    1039
 #define IDC_BSENSORS                    1042
 #define IDC_SYSLINK_HOMEPAGE            1043
@@ -46,7 +48,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1016
+#define _APS_NEXT_CONTROL_VALUE         1019
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

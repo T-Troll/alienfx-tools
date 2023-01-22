@@ -130,7 +130,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
 
-	fan_conf = conf->fan_conf;
+	fan_conf = &conf->fan_conf;
 
 	if (conf->activeProfile->flags & PROF_FANS)
 		fan_conf->lastProf = &conf->activeProfile->fansets;
@@ -746,7 +746,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		if (acpi && wParam > 29 && wParam - 30 < acpi->powers.size()) { // PowerMode switch
-			conf->fan_conf->lastProf->powerStage = (WORD)wParam - 30;
+			fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
 			break;
@@ -782,7 +782,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case 6: // G-key for Dell G-series power switch
 			if (acpi) {
-				mon->SetCurrentGmode(!conf->fan_conf->lastProf->gmode);
+				mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);
 			}

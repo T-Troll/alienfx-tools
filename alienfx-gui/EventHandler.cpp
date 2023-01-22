@@ -18,6 +18,7 @@ extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
+extern ConfigFan* fan_conf;
 
 extern void SetTrayTip();
 
@@ -54,14 +55,6 @@ void EventHandler::ChangePowerState()
 	}
 }
 
-//void EventHandler::ChangeScreenState(DWORD state)
-//{
-//	//conf->dimmedScreen = state == 2;
-//	conf->stateScreen = conf->lightsOn && conf->offWithScreen && state;
-//	fxhl->SetState();
-//	DebugPrint("Screen state changed to " + to_string(state) + "\n");
-//}
-
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
 	if (keyboardSwitchActive) return;
@@ -71,12 +64,11 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		fxhl->UpdateGlobalEffect(NULL, true);
 		modifyProfile.lock();
 		conf->activeProfile = newID;
-		//conf->active_set = &newID->lightsets;
-		conf->fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &conf->fan_conf->prof;
+		fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &fan_conf->prof;
 		modifyProfile.unlock();
 
 		if (acpi)
-			mon->SetCurrentGmode(conf->fan_conf->lastProf->gmode);
+			mon->SetCurrentGmode(fan_conf->lastProf->gmode);
 
 		fxhl->SetState();
 		ChangeEffectMode();
@@ -437,8 +429,8 @@ void CEventProc(LPVOID param)
 				for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
 					cData->Temp = max(cData->Temp, i->second);
 				// Power mode
-				cData->PWM = conf->fan_conf->lastProf->gmode ? 100 :
-					conf->fan_conf->lastProf->powerStage * 100 /
+				cData->PWM = fan_conf->lastProf->gmode ? 100 :
+					fan_conf->lastProf->powerStage * 100 /
 					((int)acpi->powers.size() + acpi->isGmode - 1);
 			}
 

@@ -70,6 +70,7 @@ Global
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		AlienFx-Common\AlienFx-Common.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3e950e09-5324-4c38-929a-93215f83efaa}*SharedItemsImports = 9
+		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
 		AlienFx-Common\AlienFx-Common.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{79be1884-5fdb-4851-bc17-39fb58101cba}*SharedItemsImports = 9
 		alienfx-LFX\alienfx-LFX.vcxitems*{cc4108ae-d644-45f9-95aa-67940d0fbeda}*SharedItemsImports = 9
