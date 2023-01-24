@@ -49,7 +49,7 @@ struct freq_map {
 struct event {
 	byte state, source, cut, mode;
 	AlienFX_SDK::Afx_action from, to;
-	double coeff;
+	//double coeff;
 };
 
 struct zonelight {
@@ -86,7 +86,7 @@ struct grideffop {
 	int gridX, gridY,
 		oldphase=-1,
 		size;
-	long start_tact;
+	int current_tact;
 };
 
 struct groupset {
@@ -200,14 +200,14 @@ public:
 	ConfigHandler();
 	~ConfigHandler();
 	void Load();
-	bool SamePower(WORD flags, bool anyFit = false);
+	bool SamePower(WORD flags, profile* prof = NULL);
 	void Save();
 	groupset* FindMapping(int mid, vector<groupset>* set = NULL);
 	void SetRandomColor(AlienFX_SDK::Afx_colorcode* clr);
 	zonemap* FindZoneMap(int gid);
 	zonemap* SortGroupGauge(int gid);
 	profile* FindProfile(int id);
-	profile* FindDefaultProfile();
+	profile* FindDefaultProfile(profile* newp = NULL);
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);
 	bool SetStates();

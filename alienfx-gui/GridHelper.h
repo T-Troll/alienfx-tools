@@ -13,5 +13,5 @@ public:
 	void RestartWatch();
 	void StartCommonRun(groupset* ce);
 	void StartGridRun(groupset* grp, zonemap* cz, int x, int y);
-	long tact = 0;
+	//unsigned long tact = 0;
 };

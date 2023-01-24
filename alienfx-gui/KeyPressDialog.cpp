@@ -17,7 +17,7 @@ string GetKeyName(WORD vkcode) {
 
 LRESULT CALLBACK DetectKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
-	if (wParam == WM_KEYUP) {
+	if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
 		LPKBDLLHOOKSTRUCT keyblock = (LPKBDLLHOOKSTRUCT)lParam;
 		//keySetLight->name = GetKeyName(keyblock->vkCode | ((keyblock->flags & 1) << 8));
 		keySetLight->name.resize(128);

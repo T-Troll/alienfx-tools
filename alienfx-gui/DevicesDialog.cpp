@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 #include "common.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
@@ -21,6 +22,7 @@ extern AlienFX_SDK::Afx_light* keySetLight;
 extern string GetKeyName(WORD vkcode);
 
 extern FXHelper* fxhl;
+extern EventHandler* eve;
 extern HWND mDlg;
 extern int tabSel;
 
@@ -372,6 +374,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
+		eve->StopEffects();
 		fxhl->Stop();
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
@@ -693,7 +696,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_DESTROY:
 	{
 		fxhl->Start();
-		fxhl->Refresh();
+		eve->StartEffects();
 		dDlg = NULL;
 	} break;
 	default: return false;

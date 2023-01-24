@@ -232,8 +232,7 @@ void ReloadProfileView(HWND hDlg) {
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
-		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE)/*,
-		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO)*/;
+		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
 
 	profile *prof = conf->FindProfile(pCid);
 
@@ -256,14 +255,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_DEV_EFFECT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_DEVICEEFFECTS), hDlg, (DLGPROC)DeviceEffectDialog);
 			break;
-		//case IDC_COMBO_TRIGGERKEY: {
-		//	switch (HIWORD(wParam)) {
-		//	case CBN_SELCHANGE:
-		//	{
-		//		prof->triggerkey = (WORD)ComboBox_GetItemData(key_list, ComboBox_GetCurSel(key_list));
-		//	} break;
-		//	}
-		//} break;
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
 			for (int i = 0; i < conf->profiles.size(); i++)
@@ -390,20 +381,15 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_DEFPROFILE:
 		{
 			if (state) {
-				auto old_def = find_if(conf->profiles.begin(), conf->profiles.end(),
-					[](profile* prof) {
-						return (prof->flags & PROF_DEFAULT);
-					});
-				(*old_def)->flags = (*old_def)->flags & ~PROF_DEFAULT;
+				for (auto op = conf->profiles.begin(); op != conf->profiles.end(); op++)
+					if ((*op)->flags & PROF_DEFAULT && conf->SamePower((*op)->flags, prof))
+						(*op)->flags &= ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
 			} else
 				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 		} break;
 		case IDC_CHECK_PRIORITY:
 			SetBitMask(prof->flags, PROF_PRIORITY, state);
-			// Update active profile, if needed
-			//if (conf->enableProf)
-			//	eve->ScanTaskList();
 			break;
 		case IDC_CHECK_PROFDIM:
 			SetBitMask(prof->flags, PROF_DIMMED, state);
@@ -420,11 +406,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (state) {
 				// add current fan profile...
 				if (prof->fansets.fanControls.empty())
-					prof->fansets = fan_conf->prof;
+					prof->fansets = *fan_conf->lastProf;
 			}
 			// Switch fan control if needed
 			if (prof->id == conf->activeProfile->id)
-				fan_conf->lastProf = state ? &fan_conf->prof : &fan_conf->prof;
+				fan_conf->lastProf = state ? &prof->fansets : &fan_conf->prof;
 			break;
 		case IDC_TRIGGER_POWER_AC:
 			SetBitMask(prof->triggerFlags, PROF_TRIGGER_AC, state);
@@ -474,11 +460,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case LVN_ENDLABELEDIT:
 			{
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*) lParam;
-				profile* prof = conf->FindProfile((int)sItem->item.lParam);
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
 					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
 					ReloadProfileList();
+					ReloadProfSettings(hDlg, prof);
 				}
 			} break;
 			}

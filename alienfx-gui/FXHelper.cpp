@@ -33,11 +33,11 @@ void FXHelper::SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX
 {
 	vector<AlienFX_SDK::Afx_action> fAct;
 	if (flags & GAUGE_REVERSE)
-		x = max - x;
+		x = max - x - 1;
 	if (flags & GAUGE_GRADIENT)
 		fAct.push_back(BlendPower((double)x / max, &actions->front(), &actions->back()));
 	else {
-		max++;
+		//max++;
 		double pos = (double)x / max;
 		if (pos > power) {
 			fAct.push_back(actions->front());
@@ -123,18 +123,18 @@ void FXHelper::ResetPower(AlienFX_SDK::Afx_device* dev)
 	}
 }
 
-int FXHelper::CheckEvent(LightEventData* eData, event* e) {
+bool FXHelper::CheckEvent(LightEventData* eData, event* e) {
 	byte ccut = e->cut;
 	switch (e->source) {
 	case 0: return eData->HDD; break;
 	case 1: return eData->NET; break;
-	case 2: return eData->Temp - ccut; break;
-	case 3: return eData->RAM - ccut; break;
-	case 4: return ccut - eData->Batt; break;
+	case 2: return eData->Temp - ccut > 0; break;
+	case 3: return eData->RAM - ccut > 0; break;
+	case 4: return ccut - eData->Batt > 0; break;
 	case 5: return eData->KBD; break;
-	case 6: return eData->PWM - ccut; break;
+	case 6: return eData->PWM - ccut > 0; break;
 	}
-	return 0;
+	return false;
 }
 
 void FXHelper::RefreshCounters(LightEventData *data)
@@ -166,17 +166,6 @@ void FXHelper::RefreshCounters(LightEventData *data)
 					if (actions.empty())
 						actions.push_back(e->from);
 					switch (e->state) {
-					//case MON_TYPE_POWER: // power
-					//	if (force || eData.ACP != data->ACP || eData.BST != data->BST || data->BST & 14) {
-					//		if (data->ACP) {
-					//			if ((data->BST & 8) && blinkStage)
-					//				actions[0] = e->to;
-					//		}
-					//		else
-					//			actions[0] = (data->BST & 6) && blinkStage ? AlienFX_SDK::Afx_action{ 0 } : e->to;
-					//		hasDiff = true;
-					//	}
-					//	break;
 					case MON_TYPE_PERF: // counter
 						switch (e->source) {
 						case 0: lVal = eData.CPU; cVal = data->CPU; break;
@@ -193,11 +182,11 @@ void FXHelper::RefreshCounters(LightEventData *data)
 
 						if (force || (lVal != cVal && (lVal > e->cut || cVal > e->cut))) {
 							hasDiff = true;
-							fCoeff = e->coeff = cVal > e->cut ? (cVal - e->cut) / (100.0 - e->cut) : 0.0;
+							fCoeff = /*e->coeff =*/ cVal > e->cut ? (cVal - e->cut) / (100.0 - e->cut) : 0.0;
 							if (Iter->gauge && !(Iter->flags & GAUGE_GRADIENT))
 								actions.push_back(e->to);
 							else {
-								actions.push_back(BlendPower(e->coeff, &actions.front(), &e->to));
+								actions.push_back(BlendPower(fCoeff/*e->coeff*/, &actions.back(), &e->to));
 								if (!Iter->gauge)
 									actions.erase(actions.begin());
 							}
@@ -216,18 +205,18 @@ void FXHelper::RefreshCounters(LightEventData *data)
 							}
 						}
 						else {
-							lVal = CheckEvent(&eData, &(*e));
+							//lVal = CheckEvent(&eData, &(*e));
 							cVal = CheckEvent(data, &(*e));
 
-							if (force || ((byte)(cVal > 0) + (byte)(lVal > 0)) == 1) {
+							if (force || (cVal + CheckEvent(&eData, &(*e))) == 1) {
 								hasDiff = true;
-								if (cVal > 0) {
+								if (cVal) {
 									actions.erase(actions.begin());
 									actions.push_back(e->to);
 								}
 							}
 							else
-								if (e->mode && cVal > 0) {
+								if (e->mode && cVal) {
 									hasDiff = true;
 									if (blinkStage) {
 										actions.erase(actions.begin());
@@ -288,15 +277,15 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 	}
 }
 
-void FXHelper::RefreshGrid(long tact) {
+void FXHelper::RefreshGrid() {
 	bool wasChanged = false;
+	vector<AlienFX_SDK::Afx_action> cur{ {0} };
 	eve->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 		if (!ce->gridop.passive) {
 			if (ce->effect.trigger == 4 && eve->capt->needUpdate) { // ambient
 				UINT shift = 255 - conf->amb_shift;
 				auto zone = *conf->FindZoneMap(ce->group);
-				vector<AlienFX_SDK::Afx_action> cur; cur.push_back({ 0 });
 				// resize grid if zone changed
 				if (eve->capt->gridX != zone.xMax || eve->capt->gridY != zone.yMax)
 					eve->capt->SetLightGridSize(zone.xMax, zone.yMax);
@@ -315,31 +304,29 @@ void FXHelper::RefreshGrid(long tact) {
 				grideffop* effop = &ce->gridop;
 				grideffect* eff = &ce->effect;
 				// calculate phase
-				int cTact = abs(tact - effop->start_tact);
+				int cTact = effop->current_tact++;
 				int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
-				int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() /*- 1*/;
-				int realsize = effop->size + eff->width;
-				int effsize = eff->flags & GE_FLAG_CIRCLE ? (realsize << 1) : realsize;
+				int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() - 1;
+				int effsize = eff->flags & GE_FLAG_CIRCLE ? (effop->size << 1) : effop->size;
 
-				int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase :
-					phase / effsize) % (eff->effectColors.size());
+				if (phase > effsize * lmp) {
+					effop->passive = true;
+					continue;
+				}
+
+				int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : phase / effsize) % (eff->effectColors.size());
 
 				AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
 					&eff->effectColors[colorIndex]),
 					to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
 
-				if (phase == effsize * lmp || !memcmp(&from, &to, sizeof(AlienFX_SDK::Afx_action))) {
-					effop->passive = true;
-					continue;
-				}
-
 				phase %= effsize;
 
-				if (phase >= realsize) // circle by color and direction
-					phase = effsize - phase;
+				if (phase >= effop->size) // circle by color and direction
+					phase = effsize - phase - 1;
 
 				if (ce->flags & GAUGE_REVERSE)
-					phase = realsize - phase - 1;
+					phase = effop->size - phase - 1;
 
 				// Set lights
 				if (effop->oldphase != phase) {
@@ -349,9 +336,9 @@ void FXHelper::RefreshGrid(long tact) {
 					if (ce->gauge) {
 						auto zone = *conf->FindZoneMap(ce->group);
 						// Old phase cleanup
-						if (effop->oldphase < 0) {
-							vector<AlienFX_SDK::Afx_action> fin{ from };
-							SetZone(&(*ce), &fin);
+						if (!cTact/*effop->oldphase < 0*/) {
+							cur.front() = from;
+							SetZone(&(*ce), &cur);
 						}
 						else
 							for (int dist = 0; dist < eff->width; dist++)
@@ -367,7 +354,7 @@ void FXHelper::RefreshGrid(long tact) {
 
 						// Fill new phase colors
 						if (eff->type == 3) { // Filled
-							for (int nf = 0; nf < phase; nf++) {
+							for (int nf = 0; nf <= phase; nf++) {
 								power = ce->flags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
 								SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
 							}
@@ -394,8 +381,8 @@ void FXHelper::RefreshGrid(long tact) {
 					else {
 						// flat morph emulation
 						power = (double)phase / effsize;
-						vector<AlienFX_SDK::Afx_action> fin = { BlendPower(power, &from, &to) };
-						SetZone(&(*ce), &fin);
+						cur.front() = { BlendPower(power, &from, &to) };
+						SetZone(&(*ce), &cur);
 					}
 					wasChanged = true;
 					effop->oldphase = phase;
@@ -491,7 +478,7 @@ void FXHelper::Stop() {
 		if (lightQuery.size())
 			QueryUpdate();
 		SetEvent(stopQuery);
-		conf->lightsNoDelay = false;
+		//conf->lightsNoDelay = false;
 		WaitForSingleObject(updateThread, 60000);
 		CloseHandle(updateThread);
 		updateThread = NULL;
@@ -516,7 +503,7 @@ void FXHelper::Refresh(int forced)
 		case 1: RefreshCounters(); break;
 		case 2: if (eve->capt) RefreshAmbient(eve->capt->imgz); break;
 		case 3: if (eve->audio) RefreshHaptics(eve->audio->freqs); break;
-		case 4: if (eve->grid) RefreshGrid(eve->grid->tact); break;
+		case 4: if (eve->grid) RefreshGrid(/*eve->grid->tact*/); break;
 		default: QueryUpdate();
 		}
 	else

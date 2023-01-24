@@ -112,11 +112,10 @@ void EventHandler::StopEvents()
 }
 
 void EventHandler::ChangeEffectMode() {
-	if (conf->enableMon && conf->stateOn) {
+//	if (conf->enableMon && conf->stateOn)
 		StartEffects();
-	}
-	else
-		StopEffects();
+//	else
+//		StopEffects();
 	SetTrayTip();
 }
 
@@ -157,9 +156,15 @@ void EventHandler::StartEffects() {
 				if (!grid) grid = new GridHelper();
 				break;
 			}
-		} else
+		}
+		else {
+			if (effMode == 4) // need to refresh grid support
+				grid->RestartWatch();
 			fxhl->Refresh();
+		}
 	}
+	else
+		StopEffects();
 }
 
 void EventHandler::ScanTaskList() {
@@ -190,9 +195,9 @@ void EventHandler::ScanTaskList() {
 					}
 				}
 			}
-			else {
-				DebugPrint("Zero process " + to_string(i) + "\n");
-			}
+			//else {
+			//	DebugPrint("Zero process " + to_string(i) + "\n");
+			//}
 		}
 	}
 #ifdef _DEBUG
@@ -365,7 +370,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	case WM_KEYDOWN: case WM_SYSKEYDOWN:
 		if (!eve->keyboardSwitchActive) {
 			for (auto pos = conf->profiles.begin(); pos != conf->profiles.end(); pos++)
-				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == ((*pos)->triggerkey & 0xff) && conf->SamePower((*pos)->triggerFlags, true)) {
+				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == ((*pos)->triggerkey & 0xff) && conf->SamePower((*pos)->triggerFlags)) {
 					eve->SwitchActiveProfile(*pos);
 					eve->keyboardSwitchActive = true;
 					break;

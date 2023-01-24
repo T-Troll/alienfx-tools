@@ -58,7 +58,7 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
 	profile* fprof = NULL;
 	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
-		if (SamePower((*prof)->triggerFlags, true) && (active || !((*prof)->flags & PROF_ACTIVE))) {
+		if (SamePower((*prof)->triggerFlags) && (active || !((*prof)->flags & PROF_ACTIVE))) {
 			for (auto name = (*prof)->triggerapp.begin(); name < (*prof)->triggerapp.end(); name++)
 				if (*name == appName) {
 					if (IsPriorityProfile(*prof))
@@ -285,34 +285,31 @@ void ConfigHandler::Load() {
 		}
 	}
 
-	if (!profiles.size()) {
+	if (profiles.empty()) {
 		// need new profile
-		profile* prof = new profile({0, 1, 0, {}, "Default"});
+		profile* prof = new profile({0, PROF_DEFAULT, 0, {}, "Default"});
 		profiles.push_back(prof);
 	}
 
-	if (profiles.size() == 1) {
-		profiles.front()->flags |= PROF_DEFAULT;
-	}
-
-	activeProfile = FindProfile(activeProfileID);
-	if (!activeProfile) activeProfile = FindDefaultProfile();
+	if (!(activeProfile = FindProfile(activeProfileID))) activeProfile = FindDefaultProfile();
 
 	SetStates();
 }
 
-bool ConfigHandler::SamePower(WORD flags, bool anyFit) {
-	return (flags & (statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY)) ||
-		(anyFit && !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)));
+bool ConfigHandler::SamePower(WORD flags, profile* prof) {
+	WORD cflags = prof ? prof->triggerFlags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY) : statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY;
+	return !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)) || !cflags || flags & cflags;
+	//return (flags & (statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY)) ||
+	//	(anyFit && !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)));
 }
 
-profile* ConfigHandler::FindDefaultProfile() {
+profile* ConfigHandler::FindDefaultProfile(profile* newp) {
 	for (auto res = profiles.begin(); res != profiles.end(); res++)
-		if (!(*res)->triggerapp.size() && SamePower((*res)->triggerFlags))
+		if ((*res)->flags & PROF_DEFAULT/*!(*res)->triggerapp.size()*/ && SamePower((*res)->triggerFlags, newp))
 			return *res;
-	for (auto res = profiles.begin(); res != profiles.end(); res++)
-		if ((*res)->flags & PROF_DEFAULT)
-			return *res;
+	//for (auto res = profiles.begin(); res != profiles.end(); res++)
+	//	if ((*res)->flags & PROF_DEFAULT)
+	//		return *res;
 	return profiles.front();
 }
 
@@ -488,17 +485,21 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 				zone->gMinX = min(zone->gMinX, cl.x);
 				zone->gMinY = min(zone->gMinY, cl.y);
 				//zone->lightMap.push_back(cl);
+				break;
 			}
-		zone->gMinX = min(zone->gMinX, cl.x);
-		zone->gMinY = min(zone->gMinY, cl.y);
-		zone->lightMap.push_back(cl);
+		// Ignore light if not in grid
+		if (cl.x < 255) {
+			zone->gMinX = min(zone->gMinX, cl.x);
+			zone->gMinY = min(zone->gMinY, cl.y);
+			zone->lightMap.push_back(cl);
+		}
 	}
 
 	// now shrink axis...
 	for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++) {
 		t->x -= zone->gMinX; t->y -= zone->gMinY;
 	}
-	zone->xMax = zone->gMaxX - zone->gMinX; zone->yMax = zone->gMaxY - zone->gMinY;
+	zone->xMax = zone->gMaxX - zone->gMinX + 1; zone->yMax = zone->gMaxY - zone->gMinY + 1;
 	for (int x = 1; x < zone->xMax; x++) {
 		if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
 			[x](auto t) {
@@ -513,7 +514,7 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 				zone->xMax -= minDelta;
 			}
 			else
-				zone->xMax = x - 1;
+				zone->xMax = x;
 		}
 	}
 	for (int y = 1; y < zone->yMax; y++) {
@@ -530,7 +531,7 @@ zonemap* ConfigHandler::SortGroupGauge(int gid) {
 				zone->yMax -= minDelta;
 			}
 			else
-				zone->yMax = y - 1;
+				zone->yMax = y;
 		}
 	}
 	return zone;

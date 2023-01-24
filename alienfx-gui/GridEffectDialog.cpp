@@ -138,8 +138,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				mmap->gridop.passive = true;
-				fxhl->Refresh();
+				//fxhl->Refresh();
 				if (eve->grid)
 					eve->grid->RestartWatch();
 				UpdateZoneList();
@@ -203,6 +202,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					mmap->effect.width = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip3, mmap->effect.width);
 				}
+				mmap->gridop.passive = true;
 			}
 		} break;
 	case WM_VSCROLL:

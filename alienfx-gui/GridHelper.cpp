@@ -8,7 +8,7 @@ extern FXHelper* fxhl;
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (grp->effect.effectColors.size() > 1) {
-		int cx = max(x, cz->xMax - x), cy = max(y, cz->yMax - y);
+		int cx = max(x + 1, cz->xMax - x), cy = max(y + 1, cz->yMax - y);
 		switch (grp->gauge) {
 		case 1:
 			grp->gridop.size = cx;
@@ -17,7 +17,7 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 			grp->gridop.size = cy;
 			break;
 		case 0: case 3: case 4:
-			grp->gridop.size = cx + cy;
+			grp->gridop.size = cx + cy - 2;
 			break;
 		case 5:
 			grp->gridop.size = max(cx, cy);
@@ -28,9 +28,11 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 			for (auto cl = grp->effect.effectColors.begin(); cl != grp->effect.effectColors.end(); cl++)
 				conf->SetRandomColor(&(*cl));
 		}
+		// prepare data
+		grp->gridop.size += grp->effect.width - 1;
 		grp->gridop.gridX = x;
 		grp->gridop.gridY = y;
-		grp->gridop.start_tact = tact;
+		grp->gridop.current_tact = 0;
 		grp->gridop.oldphase = -1;
 		grp->gridop.passive = false;
 	}
@@ -57,12 +59,6 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 								break;
 							}
 					}
-				//zonemap* zone = conf->FindZoneMap(it->group);
-				//for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
-				//	if (conf->afx_dev.GetMappingByID(LOWORD(pos->light), HIWORD(pos->light))->name == (string)keyname) {
-				//		eve->grid->StartGridRun(&(*it), zone, pos->x, pos->y);
-				//		break;
-				//	}
 			}
 		eve->modifyProfile.unlock();
 	}
@@ -71,24 +67,29 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
-	GridHelper* gh = (GridHelper*)param;
-	if (gh->tact < 0)
-		gh->tact = 0;
-	if (conf->lightsNoDelay)
-		fxhl->RefreshGrid(gh->tact++);
+	fxhl->RefreshGrid();
+	//GridHelper* gh = (GridHelper*)param;
+	////if (gh->tact < 0)
+	////	gh->tact = 0;
+	//if (conf->lightsNoDelay) {
+	//	fxhl->RefreshGrid(gh->tact);
+	//	gh->tact++;
+	//}
 }
 
 void GridHelper::StartCommonRun(groupset* ce) {
 	zonemap* cz = conf->FindZoneMap(ce->group);
-	if (ce->flags & GE_FLAG_RPOS) {
+	int srX = 0, srY = 0;
+	if (ce->effect.flags & GE_FLAG_RPOS) {
 		uniform_int_distribution<int> pntX(0, cz->xMax - 1);
 		uniform_int_distribution<int> pntY(0, cz->yMax - 1);
-		StartGridRun(&(*ce), cz, pntX(conf->rnd), pntY(conf->rnd));
-	} else
-		if (ce->gauge == 5)
-			StartGridRun(&(*ce), cz, cz->xMax / 2, cz->yMax / 2);
-		else
-			StartGridRun(&(*ce), cz, 0, 0);
+		srX = pntX(conf->rnd); srY = pntY(conf->rnd);
+	}
+	else
+		if (ce->gauge == 5) {
+			srX = cz->xMax / 2; srY = cz->yMax / 2;
+		}
+	StartGridRun(&(*ce), cz, srX, srY);
 }
 
 void GridTriggerWatch(LPVOID param) {
@@ -101,7 +102,7 @@ void GridTriggerWatch(LPVOID param) {
 				break;
 			case 3:
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)
-					if (ev->state == MON_TYPE_IND && fxhl->CheckEvent(&fxhl->eData, &(*ev)) > 0) {
+					if (ev->state == MON_TYPE_IND && fxhl->CheckEvent(&fxhl->eData, &(*ev))) {
 						// Triggering effect...
 						src->StartCommonRun(&(*ce));
 						break;
@@ -117,7 +118,7 @@ void GridTriggerWatch(LPVOID param) {
 }
 
 GridHelper::GridHelper() {
-	tact = 0;
+	//tact = 0;
 	RestartWatch();
 }
 
@@ -141,18 +142,19 @@ void GridHelper::RestartWatch() {
 	Stop();
 
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
+		ce->gridop.passive = true;
 		switch (ce->effect.trigger) {
 		case 2: if (!kEvent)
 			kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
 			break;
 		case 3: eve->StartEvents(); break;
 		case 4: if (!eve->capt) {
-			auto zone = *conf->FindZoneMap(ce->group);
-			eve->capt = new CaptureHelper(zone.xMax, zone.yMax);
+			//auto zone = *conf->FindZoneMap(ce->group);
+			eve->capt = new CaptureHelper(4, 3);
 		} break;
 		}
 	}
 
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, conf->geTact);
-	gridThread = new ThreadHelper(GridUpdate, (LPVOID)this, conf->geTact);
+	gridThread = new ThreadHelper(GridUpdate, NULL/*(LPVOID)this*/, conf->geTact);
 }
