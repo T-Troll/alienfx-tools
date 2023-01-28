@@ -380,7 +380,7 @@ void FXHelper::RefreshGrid() {
 					}
 					else {
 						// flat morph emulation
-						power = (double)phase / effsize;
+						power = (double)phase / eff->width;// effsize;
 						cur.front() = { BlendPower(power, &from, &to) };
 						SetZone(&(*ce), &cur);
 					}

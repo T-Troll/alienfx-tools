@@ -29,7 +29,7 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 				conf->SetRandomColor(&(*cl));
 		}
 		// prepare data
-		grp->gridop.size += grp->effect.width - 1;
+		grp->gridop.size = max(grp->gridop.size + grp->effect.width - 1, 1);
 		grp->gridop.gridX = x;
 		grp->gridop.gridY = y;
 		grp->gridop.current_tact = 0;

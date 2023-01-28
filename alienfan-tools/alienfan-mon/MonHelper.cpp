@@ -14,6 +14,7 @@ extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper() {
 	if ((acpi = new AlienFan_SDK::Control())->Probe()) {
+		fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		size_t fansize = acpi->fans.size();
 		senBoosts.resize(fansize);
 		fanRpm.resize(fansize);

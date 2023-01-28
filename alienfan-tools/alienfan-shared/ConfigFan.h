@@ -56,7 +56,7 @@ public:
 	ConfigFan();
 	~ConfigFan();
 
-	sen_block* FindSensor();
+	//sen_block* FindSensor();
 	void AddSensorCurve(fan_profile* prof, WORD fid, WORD sid, byte* data, DWORD lend);
 	void SaveSensorBlocks(HKEY key, string pname, fan_profile* data);
 	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);

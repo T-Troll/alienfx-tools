@@ -64,10 +64,7 @@ static const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics",
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin())) {
 		mon = new MonHelper();
-		if (mon->monThread) {
-			fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
-		}
-		else {
+		if (!acpi->isSupported) {
 			delete mon;
 			conf->fanControl = false;
 		}
@@ -88,7 +85,7 @@ void SetHotkeys() {
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		//power mode hotkeys
-		if (acpi)
+		if (conf->fanControl)
 			for (int i = 0; i < acpi->powers.size(); i++)
 				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
 	}

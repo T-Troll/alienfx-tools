@@ -141,20 +141,17 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->fanControl = state;
 			if (state) {
 				conf->Save();
-				if (DetectFans())
-					SetHotkeys();
-				else {
+				if (!DetectFans()) {
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 					ShowNotification(&conf->niData, "Error", "Fan control not available.", true);
 				}
 			} else {
 				eve->StopEffects();
-				//if (acpi) {
-					delete mon;
-				//}
+				delete mon;
 				eve->StartEffects();
 			}
 			fxhl->FillAllDevs(acpi);
+			SetHotkeys();
 			SetMainTabs();
 			break;
 		case IDC_CHECK_LIGHTNAMES:

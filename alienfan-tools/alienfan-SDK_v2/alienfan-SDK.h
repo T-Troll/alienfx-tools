@@ -150,10 +150,10 @@ namespace AlienFan_SDK {
 		Lights(Control *ac);
 
 		// Set lights brightness, 0..F
-		int SetBrightness(byte brightness);
+		bool SetBrightness(byte brightness);
 
 		// Set color of lights mask defined by id to RGB
-		int SetColor(byte mask, byte r, byte g, byte b);
+		bool SetColor(byte mask, byte r, byte g, byte b, bool save = false);
 
 	};
 

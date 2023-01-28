@@ -9,19 +9,11 @@
 
 namespace AlienFan_SDK {
 
-	//DWORD WINAPI DPTFInitFunc(LPVOID lpParam);
-
-	//HANDLE updateAllowed = NULL;
-
 	Control::Control() {
 
 #ifdef _TRACE_
 		printf("WMI activation started.\n");
 #endif
-		//if (!updateAllowed)
-		//	updateAllowed = CreateEvent(NULL, true, true, NULL);
-		//else
-		//	SetEvent(updateAllowed);
 		IWbemLocator* m_WbemLocator;
 		CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 		CoInitializeSecurity(nullptr, -1, nullptr, nullptr,
@@ -48,7 +40,6 @@ namespace AlienFan_SDK {
 	}
 
 	Control::~Control() {
-		//ResetEvent(updateAllowed);
 		if (m_DiskService)
 			m_DiskService->Release();
 		if (m_OHMService)
@@ -143,89 +134,84 @@ namespace AlienFan_SDK {
 				enum_obj->Release();
 				isAlienware = true;
 
-				if (m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK) {
+				isGmode = m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK;
 #ifdef _TRACE_
+				if (isGmode)
 					printf("G-Mode available\n");
 #endif
-					isGmode = true;
-				}
-
 				// check system type and fill inParams
 				for (int type = 0; type < 2; type++)
-					if (m_AWCCGetObj->GetMethod(commandList[functionID[type][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
+					if ((isSupported = m_AWCCGetObj->GetMethod(commandList[functionID[type][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK) && m_InParamaters) {
 						sysType = type;
-						break;
-					}
-
-				if (isSupported = (sysType >= 0)) {
 #ifdef _TRACE_
-					printf("Fan Control available, system type %d\n", sysType);
+						printf("Fan Control available, system type %d\n", sysType);
 #endif
-					systemID = CallWMIMethod(getSysID, 2);
+						systemID = CallWMIMethod(getSysID, 2);
 #ifdef _TRACE_
-					printf("System ID = %d\n", systemID);
+						printf("System ID = %d\n", systemID);
 #endif
-					int fIndex = 0, funcID;
-					// Scan for available fans...
-					while ((funcID = CallWMIMethod(getPowerID, fIndex)) < 0x100 && (funcID > 0 || funcID > 0x12f)) { // bugfix for 0x132 fan for R7
-						fans.push_back({ (byte)(funcID & 0xff), 0xff });
+						int fIndex = 0; byte funcID;
+						// Scan for available fans...
+						while ((funcID = CallWMIMethod(getPowerID, fIndex) & 0xff) > 0x2f) {
+							fans.push_back({ funcID, 0xff });
 #ifdef _TRACE_
-						printf("Fan ID=%x found\n", funcID);
+							printf("Fan ID=%x found\n", funcID);
 #endif
-						fIndex++;
-					}
+							fIndex++;
+						}
 #ifdef _TRACE_
-					printf("%d Fans found\n", fIndex);
+						printf("%d Fans found\n", fIndex);
 #endif
-					// AWCC temperature sensors.
-					do {
-						sensors.push_back({ {(byte)funcID, 1}, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
-						fIndex++;
-					} while ((funcID = CallWMIMethod(getPowerID, fIndex)) > 0x100 && funcID < 0x1A0);
+						// AWCC temperature sensors.
+						while (funcID && funcID < 0xa0) {
 #ifdef _TRACE_
-					printf("%d AWCC Temperature sensors found\n", (int)sensors.size());
+							printf("Sensor ID=%x found\n", funcID);
 #endif
-					// Power modes.
-					powers.push_back(0); // Manual mode
-					if (funcID > 0) {
-						do {
-							powers.push_back(funcID & 0xff);
+							string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
+							// fan mappings...
+							for (auto fan = fans.begin(); fan != fans.end(); fan++)
+								if (funcID == CallWMIMethod(getFanSensor, fan->id)) {
+									fan->type = (byte)sensors.size();
+									break;
+								}
+							sensors.push_back({ { funcID, 1 }, sName });
+							fIndex++;
+							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
+						}
+#ifdef _TRACE_
+						printf("%d AWCC Temperature sensors found\n", (int)sensors.size());
+#endif
+						// Power modes.
+						powers.push_back(0); // Manual mode
+						while (funcID && funcID != 0xff) {
+							powers.push_back(funcID);
 #ifdef _TRACE_
 							printf("Power ID=%x found\n", funcID);
 #endif
 							fIndex++;
-						} while ((funcID = CallWMIMethod(getPowerID, fIndex)) && funcID > 0);
+							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
+						}
 #ifdef _TRACE_
 						printf("%d Power modes found\n", (int)powers.size());
 #endif
-					}
 
-					// fan mappings...
-					for (auto fan = fans.begin(); fan != fans.end(); fan++) {
-						ALIENFAN_SEN_INFO sen = { (byte)CallWMIMethod(getFanSensor, fan->id), 1 };
-						for (byte i = 0; i < sensors.size(); i++)
-							if (sensors[i].sid == sen.sid) {
-								fan->type = i;
-								break;
-							}
+						if (sysType) {
+							// Modes 1 and 2 for R7 desktop
+							powers.push_back(1);
+							powers.push_back(2);
+						}
+
+						break;
 					}
-				}
 			}
 			// ESIF sensors
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 0);
-				//CreateThread(NULL, 0, DPTFInitFunc, this, 0, NULL);
 			}
-			//else
-			//	DPTFdone = true;
 			// SSD sensors
 			if (/*m_DiskService && */m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 2);
 			}
-			// AMD sensors
-			//if (m_WbemServices->CreateInstanceEnum((BSTR)L"WMI_ThermalQuery", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
-			//	EnumSensors(enum_obj, 3);
-			//}
 			// OHM sensors
 			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 				EnumSensors(enum_obj, 4);
@@ -236,36 +222,19 @@ namespace AlienFan_SDK {
 
 	int Control::GetFanRPM(int fanID) {
 		return fanID < fans.size() ? CallWMIMethod(getFanRPM, (byte)fans[fanID].id) : -1;
-		//if (fanID < fans.size())
-		//	return CallWMIMethod(getFanRPM, (byte) fans[fanID].id);
-		//return -1;
 	}
 	int Control::GetMaxRPM(int fanID)
 	{
 		return fanID < fans.size() ? CallWMIMethod(getMaxRPM, (byte)fans[fanID].id) : -1;
-		//if (fanID < fans.size())
-		//	return CallWMIMethod(getMaxRPM, (byte)fans[fanID].id);
-		//return -1;
 	}
 	int Control::GetFanPercent(int fanID) {
 		return fanID < fans.size() ? CallWMIMethod(getFanPercent, (byte)fans[fanID].id) : -1;
-		//if (fanID < fans.size())
-		//	return CallWMIMethod(getFanPercent, (byte) fans[fanID].id);
-		//return -1;
 	}
 	int Control::GetFanBoost(int fanID) {
 		return fanID < fans.size() ? CallWMIMethod(getFanBoost, (byte)fans[fanID].id) : -1;
-		//if (fanID < fans.size()) {
-		//	return CallWMIMethod(getFanBoost, (byte)fans[fanID].id);
-		//}
-		//return -1;
 	}
 	int Control::SetFanBoost(int fanID, byte value) {
 		return fanID < fans.size() ? CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value) : -1;
-		//if (fanID < fans.size()) {
-		//	return CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value);
-		//}
-		//return -1;
 	}
 	int Control::GetTempValue(int TempID) {
 		IWbemClassObject* sensorObject = NULL;
@@ -281,10 +250,6 @@ namespace AlienFan_SDK {
 			case 2: // SSD
 				serviceObject = m_DiskService;
 				break;
-			//case 3: // DPTF
-			//	if (DPTFdone)
-			//		return ((DPTFHelper*)dptf)->GetTemp(sensors[TempID].index);
-			//	return -1;
 			case 4: // OHM
 				serviceObject = m_OHMService;
 				break;
@@ -330,6 +295,11 @@ namespace AlienFan_SDK {
 			ac->m_AWCCGetObj->GetMethod(colorList[0], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
 			m_WbemServices = ac->m_WbemServices;
 			m_instancePath = ac->m_instancePath;
+#ifdef _TRACE_
+			VARIANT res{ VT_UNKNOWN };
+			m_InParamaters->Get((BSTR)L"arg2", 0, &res, nullptr, nullptr);
+			printf("Parameter type %x\n", res.vt);
+#endif
 			isActivated = true;
 		}
 	}
@@ -339,127 +309,37 @@ namespace AlienFan_SDK {
 		result.intVal = -1;
 		if (m_InParamaters) {
 			IWbemClassObject* m_outParameters = NULL;
-			VARIANT parameters = { VT_ARRAY };
-			parameters.pbVal = arg1;
+			VARIANT parameters = { VT_ARRAY | VT_UI4 };
+			SAFEARRAY* args = SafeArrayCreateVector(VT_UI4, 0, 8);
+			byte HUGEP* pdFreq;
+			SafeArrayAccessData(args, (void HUGEP * FAR*) &pdFreq);
+			for (int i = 0; i < 8; i++)
+				pdFreq[i] = arg1[i];
+			SafeArrayUnaccessData(args);
+			parameters.pparray = &args;
 			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
 			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
 				colorList[com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
 				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
 				m_outParameters->Release();
 			}
+			SafeArrayDestroy(args);
 		}
 		return result.intVal;
 	}
 
-	int Lights::SetBrightness(byte brightness) {
-		byte param[8]{ brightness };
-		return CallWMIMethod(1, param);
+	bool Lights::SetBrightness(byte brightness) {
+		byte param[8]{ 0 };
+		param[4] = brightness;
+		return CallWMIMethod(1, param) >= 0;
 	}
 
-	int Lights::SetColor(byte id, byte r, byte g, byte b) {
-		byte param[8]{ id, r, g, b };
-		return CallWMIMethod(1, param);
+	bool Lights::SetColor(byte id, byte r, byte g, byte b, bool save) {
+		byte param[8]{ id };
+		param[4] = b;
+		param[5] = g;
+		param[6] = r;
+		param[7] = save ? 0 : 0xff;
+		return CallWMIMethod(1, param) >= 0;
 	}
-
-	//string GetTag(string xml, string tag, size_t& pos) {
-	//	size_t firstpos = xml.find("<" + tag + ">", pos);
-	//	if (firstpos != string::npos) {
-	//		firstpos += tag.length() + 2;
-	//		pos = xml.find("</" + tag + ">", firstpos);
-	//		return xml.substr(firstpos, pos - firstpos);
-	//	}
-	//	else {
-	//		pos = string::npos;
-	//		return "";
-	//	}
-	//}
-
-	//string ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
-	//	DWORD written;
-	//	string outpart;
-	//	WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
-	//	while (outpart.find("Returned:") == string::npos) {
-	//		while (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &written, NULL) && written) {
-	//			char* buffer = new char[written + 1]{ 0 };
-	//			ReadFile(g_hChildStd_OUT_Rd, buffer, written, &written, NULL);
-	//			outpart += buffer;
-	//			delete[] buffer;
-	//		}
-	//	}
-	//	if (outpart.find("</result>") != string::npos) {
-	//		size_t pos = 0;
-	//		return GetTag(outpart, "result", pos);
-	//	}
-	//	else
-	//		return "";
-	//}
-
-	//DWORD WINAPI DPTFInitFunc(LPVOID lpParam) {
-	//	Control* src = (Control*)lpParam;
-	//	string wdName;
-	//	SECURITY_ATTRIBUTES attr{ sizeof(SECURITY_ATTRIBUTES), NULL, true };
-	//	STARTUPINFO sinfo{ sizeof(STARTUPINFO), 0 };
-	//	HANDLE g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, initHandle = NULL;
-	//	PROCESS_INFORMATION proc;
-	//	wdName.resize(2048);
-	//	wdName.resize(GetWindowsDirectory((LPSTR)wdName.data(), 2047));
-	//	wdName += "\\system32\\DriverStore\\FileRepository\\";
-	//	WIN32_FIND_DATA file;
-	//	HANDLE search_handle = FindFirstFile((wdName + "dptf_cpu*").c_str(), &file);
-	//	if (search_handle != INVALID_HANDLE_VALUE)
-	//	{
-	//		wdName += string(file.cFileName) + "\\esif_uf.exe";
-	//		FindClose(search_handle);
-	//		CreatePipe(&g_hChildStd_OUT_Rd, &sinfo.hStdOutput, &attr, 0);
-	//		CreatePipe(&sinfo.hStdInput, &g_hChildStd_IN_Wr, &attr, 0);
-	//		DWORD flags = PIPE_NOWAIT;
-	//		SetNamedPipeHandleState(g_hChildStd_IN_Wr, &flags, NULL, NULL);
-	//		sinfo.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-	//		sinfo.wShowWindow = SW_HIDE;
-	//		sinfo.hStdError = sinfo.hStdOutput;
-	//		HWND cur = GetForegroundWindow();
-	//		if (CreateProcess(NULL, (LPSTR)(wdName + " client").c_str(),
-	//			NULL, NULL, true,
-	//			CREATE_NEW_CONSOLE, NULL, NULL, &sinfo, &proc)) {
-	//			SetForegroundWindow(cur);
-	//			// Start init...
-	//			size_t pos = 0;
-	//			string parts = ReadFromESIF("format xml\nparticipants\nexit\n", g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, &proc);
-	//			string part;
-	//			int idc = 0;
-	//			if (parts.size() && WaitForSingleObject(updateAllowed, 0) != WAIT_TIMEOUT) {
-	//				while (pos != string::npos) {
-	//					part = GetTag(parts, "participant", pos);
-	//					size_t descpos = 0;
-	//					byte sID = atoi(GetTag(part, "UpId", descpos).c_str());
-	//					string name = GetTag(part, "desc", descpos);
-	//					int dcount = atoi(GetTag(part, "domainCount", descpos).c_str());
-	//					// check domains...
-	//					for (int i = 0; i < dcount; i++) {
-	//						size_t dPos = 0;
-	//						string domain = GetTag(part, "domain", descpos);
-	//						string dName = GetTag(domain, "name", dPos);
-	//						char* p;
-	//						if (strtol(GetTag(domain, "capability", dPos).c_str(), &p, 16) & 0x80) {
-	//							for (auto sen = src->sensors.begin(); sen != src->sensors.end(); sen++)
-	//								if (!sen->type && sen->index == idc) {
-	//									sen->name = name + (dcount > 1 ? " (" + dName + ")" : "");
-	//									break;
-	//								}
-	//							idc++;
-	//						}
-	//					}
-	//				}
-	//			}
-	//			CloseHandle(proc.hProcess);
-	//			CloseHandle(proc.hThread);
-	//		}
-	//		CloseHandle(sinfo.hStdInput);
-	//		CloseHandle(g_hChildStd_IN_Wr);
-	//		CloseHandle(g_hChildStd_OUT_Rd);
-	//		CloseHandle(sinfo.hStdOutput);
-	//	}
-	//	src->DPTFdone = true;
-	//	return 0;
-	//}
 }

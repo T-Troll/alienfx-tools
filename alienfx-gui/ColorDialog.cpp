@@ -16,16 +16,13 @@ int effID = 0;
 const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
 
 void SetEffectData(HWND hDlg) {
-	bool hasEffects = false;
-	if (mmap) {
-		if (mmap->color.size()) {
-			hasEffects = true;
+	bool hasEffects = mmap && mmap->color.size();
+	if (hasEffects) {
 			ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->color[effID].type);
 			SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->color[effID].tempo);
 			SetSlider(sTip1, mmap->color[effID].tempo);
 			SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
 			SetSlider(sTip2, mmap->color[effID].time);
-		}
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !conf->afx_dev.GetGroupById(mmap->group)->have_power);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);

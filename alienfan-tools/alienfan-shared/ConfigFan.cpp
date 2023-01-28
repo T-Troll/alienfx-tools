@@ -11,18 +11,17 @@ ConfigFan::ConfigFan() {
 }
 
 ConfigFan::~ConfigFan() {
-	//Save();
 	RegCloseKey(keyPowers);
 	RegCloseKey(keySensors);
 	RegCloseKey(keyMain);
 }
 
-sen_block* ConfigFan::FindSensor() {
-	auto sen = lastProf->fanControls[lastSelectedFan].find(lastSelectedSensor);
-	if (sen != lastProf->fanControls[lastSelectedFan].end())
-		return &sen->second;
-	return NULL;
-}
+//sen_block* ConfigFan::FindSensor() {
+//	auto sen = lastProf->fanControls[lastSelectedFan].find(lastSelectedSensor);
+//	if (sen != lastProf->fanControls[lastSelectedFan].end())
+//		return &sen->second;
+//	return NULL;
+//}
 
 void ConfigFan::GetReg(const char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);

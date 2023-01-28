@@ -534,7 +534,7 @@ namespace AlienFan_SDK {
 		}
 		return false;
 	}
-	bool Lights::SetColor(byte id, byte r, byte g, byte b) {
+	bool Lights::SetColor(byte mask, byte r, byte g, byte b, bool save) {
 		PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 		PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs = NULL;
 		if (!inCommand) {
@@ -543,7 +543,7 @@ namespace AlienFan_SDK {
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(NULL, r);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, g);
 		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, b);
-		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, id);
+		acpiargs = (PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX) PutIntArg(acpiargs, mask);
 		if (EvalAcpiMethod(acpi->acc, "\\_SB.AMW1.SETC", (PVOID *) &resName, acpiargs)) {
 			free(resName);
 			return true;
@@ -565,7 +565,4 @@ namespace AlienFan_SDK {
 		}
 		return false;
 	}
-	//bool Lights::IsActivated() {
-	//	return activated;
-	//}
 }

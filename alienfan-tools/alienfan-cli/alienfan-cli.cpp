@@ -140,7 +140,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.10.5\n");
+    printf("AlienFan-CLI v7.10.6\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -150,7 +150,6 @@ int main(int argc, char* argv[])
             acpi.GetSystemID(), (int)acpi.fans.size(), (int)acpi.sensors.size(), (int)acpi.powers.size(),
             (acpi.isGmode ? ", G-Mode" : ""),
             (lights->isActivated ? ", Lights" : ""));
-        //fan_conf.SetSensorNames(&acpi);
     }
     else {
         if (acpi.isAlienware)

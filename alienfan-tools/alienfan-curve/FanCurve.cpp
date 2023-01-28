@@ -242,7 +242,6 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
 
 INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    sen_block* cFan = fan_conf->FindSensor();
     if (!cArea.right) {
         GetClientRect(fanWindow, &cArea);
         cArea.right--; cArea.bottom--;
@@ -256,86 +255,86 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         EndPaint(hDlg, &ps);
         return true;
     } break;
-    case WM_MOUSEMOVE: {
-        if (mon->inControl) {
-            fan_point clk = Screen2Fan(lParam);
-            if (cFan && wParam & MK_LBUTTON) {
-                *lastFanPoint = clk;
-                //lastFanPoint->temp = clk.temp;
-                DrawFan();
-            }
-            SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
-        }
-        else {
-            SetToolTip(toolTip, "Boost " + to_string((cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100) + " @ " +
-                to_string(GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale) + " RPM");
-        }
-    } break;
-    case WM_LBUTTONDOWN:
-    {
-        SetCapture(hDlg);
-        if (mon->inControl && cFan) {
-            // check and add point
-            fan_point clk = Screen2Fan(lParam);
-            lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
-                [clk](auto t) {
-                    return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
-                });
-            if (lastFanPoint == cFan->points.end()) {
-                // insert element
-                lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
-                    [clk](auto t) {
-                        return t.temp > clk.temp;
-                    }), clk);
-            }
-            //DrawFan();
-        }
-    } break;
-    case WM_LBUTTONUP: {
-        ReleaseCapture();
-        // re-sort and de-duplicate array.
-        if (mon->inControl && cFan) {
-            for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++) {
-                if (fPi->temp > (fPi + 1)->temp) {
-                    fan_point t = *fPi;
-                    *fPi = *(fPi + 1);
-                    *(fPi + 1) = t;
-                }
-                if (fPi->temp == (fPi + 1)->temp && fPi->boost == (fPi + 1)->boost)
-                    cFan->points.erase(fPi + 1);
-            }
-            cFan->points.front().temp = 0;
-            cFan->points.back().temp = 100;
-            //DrawFan();
-        }
-        SetFocus(GetParent(hDlg));
-    } break;
-    case WM_RBUTTONUP: {
-        // remove point from curve...
-        if (mon->inControl && cFan && cFan->points.size() > 2) {
-            // check and remove point
-            fan_point clk = Screen2Fan(lParam);
-            for (auto fPi = cFan->points.begin() + 1; fPi < cFan->points.end() - 1; fPi++)
-                if (abs(fPi->temp - clk.temp) <= DRAG_ZONE && abs(fPi->boost - clk.boost) <= DRAG_ZONE) {
-                    // Remove this element...
-                    cFan->points.erase(fPi);
-                    break;
-                }
-            //DrawFan();
-        }
-        SetFocus(GetParent(hDlg));
-    } break;
     case WM_SIZE:
         GetClientRect(fanWindow, &cArea);
         cArea.right--; cArea.bottom--;
-        //DrawFan();
         break;
     case WM_ERASEBKGND:
         return true;
     case WM_TIMER:
         if (IsWindowVisible(hDlg))
             DrawFan();
-        break;
+        return true;
+        //break;
+    default:
+        if (mon->inControl) {
+            sen_block* cFan;
+            fan_point clk = Screen2Fan(lParam);
+            for (auto sen = fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].begin();
+                sen != fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].end(); sen++)
+                if (sen->first == fan_conf->lastSelectedSensor) {
+                    cFan = &sen->second;
+                    switch (message) {
+                    case WM_MOUSEMOVE: {
+                        if (wParam & MK_LBUTTON) {
+                            *lastFanPoint = clk;
+                            DrawFan();
+                        }
+                        SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
+                    } break;
+                    case WM_LBUTTONDOWN:
+                        SetCapture(hDlg);
+                        // check and add point
+                        lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
+                            [clk](auto t) {
+                                return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
+                            });
+                        if (lastFanPoint == cFan->points.end()) {
+                            // insert element
+                            lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
+                                [clk](auto t) {
+                                    return t.temp > clk.temp;
+                                }), clk);
+                        }
+                        break;
+                    case WM_LBUTTONUP:
+                        ReleaseCapture();
+                        // re-sort and de-duplicate array.
+                        for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++) {
+                            if (fPi->temp > (fPi + 1)->temp) {
+                                fan_point t = *fPi;
+                                *fPi = *(fPi + 1);
+                                *(fPi + 1) = t;
+                            }
+                            if (fPi->temp == (fPi + 1)->temp && fPi->boost == (fPi + 1)->boost)
+                                cFan->points.erase(fPi + 1);
+                        }
+                        cFan->points.front().temp = 0;
+                        cFan->points.back().temp = 100;
+                        SetFocus(GetParent(hDlg));
+                        break;
+                    case WM_RBUTTONUP:
+                        // remove point from curve...
+                        if (cFan->points.size() > 2) {
+                            // check and remove point
+                            for (auto fPi = cFan->points.begin() + 1; fPi < cFan->points.end() - 1; fPi++)
+                                if (abs(fPi->temp - clk.temp) <= DRAG_ZONE && abs(fPi->boost - clk.boost) <= DRAG_ZONE) {
+                                    // Remove this element...
+                                    cFan->points.erase(fPi);
+                                    DrawFan();
+                                    break;
+                                }
+                        }
+                        SetFocus(GetParent(hDlg));
+                        break;
+                    }
+                    break;
+                }
+        }
+        else
+            if (message == WM_MOUSEMOVE)
+                SetToolTip(toolTip, "Boost " + to_string((cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100) + " @ " +
+                    to_string(GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale) + " RPM");
     }
     return DefWindowProc(hDlg, message, wParam, lParam);
 }

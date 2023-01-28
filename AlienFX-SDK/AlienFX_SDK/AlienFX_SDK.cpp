@@ -456,26 +456,38 @@ namespace AlienFX_SDK {
 			//val = PrepareAndSend(COMMV4_colorSet, sizeof(COMMV4_colorSet), {{8,c.r}, {9,c.g}, {10,c.b}});
 			val = PrepareAndSend(COMMV4_setOneColor, sizeof(COMMV4_setOneColor), &mods);
 		} break;
-		case API_V3: case API_V2: case API_V1: case API_V6:
+		case API_V3: case API_V2: case API_V1: case API_V6: case API_ACPI:
 		{
 			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
-			if (version == API_V6)
+			switch (version) {
+			case API_V6:
 				val = PrepareAndSend(COMMV6_colorSet, sizeof(COMMV6_colorSet), SetMaskAndColor(fmask, AlienFX_A_Color, c));
-			else
+				break;
+#ifndef NOACPILIGHTS
+			case API_ACPI:
+				val = ((AlienFan_SDK::Lights*)device)->SetColor((byte)fmask, c.r, c.g, c.b);
+				break;
+#endif
+			default:
 				val = PrepareAndSend(COMMV1_color, sizeof(COMMV1_color), SetMaskAndColor(fmask, 3, c));
+			}
+			//if (version == API_V6)
+			//	val = PrepareAndSend(COMMV6_colorSet, sizeof(COMMV6_colorSet), SetMaskAndColor(fmask, AlienFX_A_Color, c));
+			//else
+			//	val = PrepareAndSend(COMMV1_color, sizeof(COMMV1_color), SetMaskAndColor(fmask, 3, c));
 			Loop();
 		} break;
-#ifndef NOACPILIGHTS
-		case API_ACPI:
-		{
-			byte fmask = 0;
-			for (auto nc = lights->begin(); nc < lights->end(); nc++)
-				fmask |= 1 << (*nc);
-			val = ((AlienFan_SDK::Lights*)device)->SetColor(fmask, c.r, c.g, c.b);
-		} break;
-#endif
+//#ifndef NOACPILIGHTS
+//		case API_ACPI:
+//		{
+//			byte fmask = 0;
+//			for (auto nc = lights->begin(); nc < lights->end(); nc++)
+//				fmask |= 1 << (*nc);
+//			val = ((AlienFan_SDK::Lights*)device)->SetColor(fmask, c.r, c.g, c.b);
+//		} break;
+//#endif
 		default:
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				val = SetColor(*nc, c);
@@ -773,6 +785,12 @@ namespace AlienFX_SDK {
 			if (pwr)
 				SetColor(pwr->index, { pwr->act[!powerMode].b, pwr->act[!powerMode].g, pwr->act[!powerMode].r });
 		} break;
+#ifndef NOACPILIGHTS
+		case API_ACPI:
+			for (auto ca = act->begin(); ca != act->end(); ca++)
+				((AlienFan_SDK::Lights*)device)->SetColor(ca->index, ca->act.front().r, ca->act.front().g, ca->act.front().b, true);
+			break;
+#endif
 		//default:
 		//	// can't set action for other, just use color
 		//	SetAction(&act->front());

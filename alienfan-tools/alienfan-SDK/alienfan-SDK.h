@@ -200,7 +200,7 @@ namespace AlienFan_SDK {
 		bool Update();
 
 		// Set color of lights mask defined by id to RGB
-		bool SetColor(byte id, byte r, byte g, byte b);
+		bool SetColor(byte mask, byte r, byte g, byte b, bool save = false);
 
 		// Set light system mode (brightness, ???)
 		bool SetBrightness(byte mode);

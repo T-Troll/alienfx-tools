@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <windowsx.h>
 #include <powrprof.h>
 #include <string>
 #include "Resource.h"
@@ -6,7 +7,6 @@
 #include "ConfigFan.h"
 #include "MonHelper.h"
 #include "common.h"
-#include <windowsx.h>
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -60,7 +60,6 @@ extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
 HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 
-//extern bool fanMode;
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 
@@ -96,8 +95,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
     mon = new MonHelper();
 
-    if (mon->monThread) {
-        fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
+    if (acpi->isSupported) {
         Shell_NotifyIcon(NIM_DELETE, &niDataFC);
 
         hInst = hInstance;
