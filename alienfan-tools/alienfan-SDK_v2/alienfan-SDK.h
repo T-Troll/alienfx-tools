@@ -136,6 +136,7 @@ namespace AlienFan_SDK {
 	class Lights {
 	private:
 		const BSTR colorList[2]{
+			//(BSTR)L"SetLEDColor",			// 0x04
 			(BSTR)L"Set24BitsLEDColor",		// 0x12
 			(BSTR)L"LEDBrightness"			// 0x03
 		};

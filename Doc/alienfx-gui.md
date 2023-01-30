@@ -200,7 +200,7 @@ Effect types define how the zone should be changed (defined by point and width):
 - Fill - space between start point and current active point will be filled by color or gradient.
 
 If the zone Gauge settings have "Gradient" enabled, zone outside changed area will be filled with gradient color between background at borders and active color at changed area border.  
-If the zone Gauge type set to "Off", all zone lights will morph between background and active colors as phase changed, otherwise gauge settings used for direction and style.
+If the zone Gauge type set to "Off", all zone lights will morph between background and active colors as phase changed ("width" slider defines how many grades it will have), otherwise gauge settings used for direction and style.
 
 ### Devices and Grids tab
 

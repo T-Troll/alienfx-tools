@@ -22,7 +22,7 @@
         "Entry"
         {
         "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
+        "OwnerKey" = "8:_B829425435A04EFB81D071102204D8B4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -35,12 +35,6 @@
         {
         "MsmKey" = "8:_0A00A47835A1465B951DE62EC59665E5"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1375B50A6DC9C5B6B588529FB724B677"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -69,38 +63,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4F8B5EE2B052FEA2FFA646E5A39AF737"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_557F8C025C2F12A22DEB61B7BD602D9A"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_62778E3B93EA66E8423CFE35D880654B"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_6351900FB5424C86AB017CEAB765135D"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_82E4C2532EEB39831247EDB4B6D917DC"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -147,26 +111,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E62E3EC8F5681811CD45B0147079B24F"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_FE510A127E1B3283F303BA235B3D1001"
-        "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -331,26 +277,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1375B50A6DC9C5B6B588529FB724B677"
-            {
-            "SourcePath" = "8:d3d11.dll"
-            "TargetName" = "8:d3d11.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3AE7CAAC94814B3090DEAE0C5F50265B"
             {
             "SourcePath" = "8:..\\Doc\\alienfan-cli.md"
@@ -391,66 +317,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4F8B5EE2B052FEA2FFA646E5A39AF737"
-            {
-            "SourcePath" = "8:pdh.dll"
-            "TargetName" = "8:pdh.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_557F8C025C2F12A22DEB61B7BD602D9A"
-            {
-            "SourcePath" = "8:MSIMG32.dll"
-            "TargetName" = "8:MSIMG32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_62778E3B93EA66E8423CFE35D880654B"
-            {
-            "SourcePath" = "8:SETUPAPI.dll"
-            "TargetName" = "8:SETUPAPI.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_39E2774D52CE4B619039352379796769"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6351900FB5424C86AB017CEAB765135D"
             {
             "SourcePath" = "8:..\\Doc\\LightFX.md"
@@ -469,46 +335,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_82E4C2532EEB39831247EDB4B6D917DC"
-            {
-            "SourcePath" = "8:HID.DLL"
-            "TargetName" = "8:HID.DLL"
-            "Tag" = "8:"
-            "Folder" = "8:_39E2774D52CE4B619039352379796769"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_83763AF12CFE41FE16B491DE99592F8F"
-            {
-            "SourcePath" = "8:VERSION.dll"
-            "TargetName" = "8:VERSION.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9503587A884F4044BECE7881E4187E1C"
@@ -589,66 +415,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E57C9B0CB5862DCB6BAC31D289B34509"
-            {
-            "SourcePath" = "8:WININET.dll"
-            "TargetName" = "8:WININET.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E62E3EC8F5681811CD45B0147079B24F"
-            {
-            "SourcePath" = "8:COMDLG32.dll"
-            "TargetName" = "8:COMDLG32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FE510A127E1B3283F303BA235B3D1001"
-            {
-            "SourcePath" = "8:dxgi.dll"
-            "TargetName" = "8:dxgi.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
         }
@@ -817,15 +583,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{60AB1026-D424-41F7-9B15-8B50E7C08EE3}"
-        "PackageCode" = "8:{89B75359-1FE6-4BA5-AED9-F530240696F9}"
+        "ProductCode" = "8:{19E891B7-A02A-4113-97B4-A902064CD720}"
+        "PackageCode" = "8:{76166C5C-BFD6-4851-B513-D5751DE9CE0F}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:7.10.601"
+        "ProductVersion" = "8:7.10.602"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -1185,7 +951,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1924518F6EA84AD696BCCE8E589E25C7"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-gui.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1213,7 +979,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4B7975803E6C492C8F7D8B599766674C"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfan-gui.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfan-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1241,7 +1007,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\LightFX.dll"
+            "SourcePath" = "8:..\\x64\\Release\\LightFX\\LightFX.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_39E2774D52CE4B619039352379796769"
@@ -1269,7 +1035,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B829425435A04EFB81D071102204D8B4"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfan-cli.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfan-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1325,7 +1091,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E287D1712A1A426DA4A815104949F017"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1353,7 +1119,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FA7989C51ECD437AB3316446FB849F60"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\alienfx-mon.exe"
+            "SourcePath" = "8:..\\x64\\Release\\alienfx-mon.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"

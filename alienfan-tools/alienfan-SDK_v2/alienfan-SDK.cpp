@@ -60,7 +60,7 @@ namespace AlienFan_SDK {
 			IWbemClassObject* m_outParameters = NULL;
 			VARIANT parameters = { VT_I4 };
 			parameters.uintVal = ALIENFAN_INTERFACE{ dev_controls[com], arg1, arg2, 0 }.args;
-			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
+			m_InParamaters->Put(L"arg2", NULL, &parameters, 0);
 			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
 				commandList[functionID[sysType][com]], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
 				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
@@ -73,7 +73,8 @@ namespace AlienFan_SDK {
 	void Control::EnumSensors(IEnumWbemClassObject* enum_obj, byte type) {
 		IWbemClassObject* spInstance[64];
 		ULONG uNumOfInstances = 0;
-		BSTR instansePath{ (BSTR)L"__Path" }, valuePath{ (BSTR)L"Temperature" };
+		//BSTR instansePath{ (BSTR)L"__Path" }, valuePath{ (BSTR)L"Temperature" };
+		LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
 		VARIANT cTemp, instPath;
 		string name;
 
@@ -83,10 +84,10 @@ namespace AlienFan_SDK {
 			break;
 		case 2:
 			name = "SSD sensor ";
-			instansePath = (BSTR)L"StorageReliabilityCounter";
+			instansePath = L"StorageReliabilityCounter";
 			break;
 		case 4:
-			valuePath = (BSTR)L"Value";
+			valuePath = L"Value";
 		}
 
 		enum_obj->Next(3000, 64, spInstance, &uNumOfInstances);
@@ -94,10 +95,10 @@ namespace AlienFan_SDK {
 		for (byte ind = 0; ind < uNumOfInstances; ind++) {
 			if (type == 4) { // OHM sensors
 				VARIANT type;
-				spInstance[ind]->Get((BSTR)L"SensorType", 0, &type, 0, 0);
+				spInstance[ind]->Get(L"SensorType", 0, &type, 0, 0);
 				if (type.bstrVal == wstring(L"Temperature")) {
 					VARIANT vname;
-					spInstance[ind]->Get((BSTR)L"Name", 0, &vname, 0, 0);
+					spInstance[ind]->Get(L"Name", 0, &vname, 0, 0);
 					wstring sname{ vname.bstrVal };
 					name = string(sname.begin(), sname.end());
 				}
@@ -109,7 +110,7 @@ namespace AlienFan_SDK {
 			spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
 			spInstance[ind]->Release();
 			if (cTemp.uintVal > 0 || cTemp.fltVal > 0)
-				sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, valuePath });
+				sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
 		}
 		enum_obj->Release();
 #ifdef _TRACE_
@@ -297,8 +298,9 @@ namespace AlienFan_SDK {
 			m_instancePath = ac->m_instancePath;
 #ifdef _TRACE_
 			VARIANT res{ VT_UNKNOWN };
-			m_InParamaters->Get((BSTR)L"arg2", 0, &res, nullptr, nullptr);
-			printf("Parameter type %x\n", res.vt);
+			CIMTYPE restype;
+			m_InParamaters->Get(L"arg2", 0, &res, &restype, nullptr);
+			printf("Light parameter type %x(%x)\n", restype, res.vt);
 #endif
 			isActivated = true;
 		}
@@ -309,15 +311,25 @@ namespace AlienFan_SDK {
 		result.intVal = -1;
 		if (m_InParamaters) {
 			IWbemClassObject* m_outParameters = NULL;
-			VARIANT parameters = { VT_ARRAY | VT_UI4 };
-			SAFEARRAY* args = SafeArrayCreateVector(VT_UI4, 0, 8);
-			byte HUGEP* pdFreq;
-			SafeArrayAccessData(args, (void HUGEP * FAR*) &pdFreq);
-			for (int i = 0; i < 8; i++)
-				pdFreq[i] = arg1[i];
-			SafeArrayUnaccessData(args);
+			VARIANT parameters{ VT_ARRAY | VT_UI1 };
+			SAFEARRAY* args = SafeArrayCreateVector(VT_UI1, 0, 8);
+#ifdef _TRACE_
+			if (!args)
+				printf("Light array creation failed!\n");
+#endif
+			//byte HUGEP* pdFreq;
+			//SafeArrayAccessData(args, (void HUGEP * FAR*) &pdFreq);
+			for (long i = 0; i < 8; i++) {
+				HRESULT res = SafeArrayPutElement(args, &i, &arg1[i]);
+#ifdef _TRACE_
+				if (res != S_OK)
+					printf("Light array element error %x\n", res);
+#endif
+				//pdFreq[i] = arg1[i];
+			}
+			//SafeArrayUnaccessData(args);
 			parameters.pparray = &args;
-			m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
+			m_InParamaters->Put(L"arg2", NULL, &parameters, 0);
 			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
 				colorList[com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
 				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
@@ -335,11 +347,12 @@ namespace AlienFan_SDK {
 	}
 
 	bool Lights::SetColor(byte id, byte r, byte g, byte b, bool save) {
+		//byte param[8]{ r, g, b, id };
 		byte param[8]{ id };
 		param[4] = b;
 		param[5] = g;
 		param[6] = r;
 		param[7] = save ? 0 : 0xff;
-		return CallWMIMethod(1, param) >= 0;
+		return CallWMIMethod(0, param) >= 0;
 	}
 }
