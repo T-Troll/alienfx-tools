@@ -80,20 +80,6 @@ void SenMonHelper::ModifyMon()
 	conf->needFullUpdate = true;
 }
 
-//void SenMonHelper::AddSensor(SENID sid, long val, string name) {
-//	SENSOR* sen = conf->FindSensor(sid.sid);
-//	if (!sen) {
-//		// add sensor
-//		conf->active_sensors[sid.sid] = { name, val, val, val, true };
-//	}
-//	else
-//		if (sen->sname.empty()) {
-//			// Update name
-//			sen->sname = name;
-//		}
-//	conf->needFullUpdate = true;
-//}
-
 SENSOR* SenMonHelper::UpdateSensor(SENID sid, long val) {
 	if (val > 10000 || val <= NO_SEN_VALUE) return NULL;
 
@@ -154,13 +140,27 @@ void SenMonHelper::UpdateSensors()
 			sen->sname = "Battery";
 
 		valCount = GetValuesArray(hGPUCounter); // GPU, code 4
-		long valLast = 0;
-		for (unsigned i = 0; i < valCount && counterValues[i].szName != NULL; i++) {
-			if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA))
-				valLast = max(valLast, counterValues[i].FmtValue.longValue);
+		for (DWORD i = 0; i < valCount; i++) {
+			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
+				string path = counterValues[i].szName;
+				string phys = path.substr(path.find("luid_") + 18, 8);
+				int physID = strtol(path.substr(path.find("luid_") + 18, 8).c_str(), NULL, 16);
+				string type = path.substr(path.find("type_") + 5);
+				gpusubs[type][physID] += counterValues[i].FmtValue.longValue;
+			}
 		}
-		if (sen = UpdateSensor({ 0, 4, 0 }, valLast))
-			sen->sname = "GPU load";
+		WORD sstype = 0;
+		for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
+			// per-value
+			WORD adnum = 0;
+			for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
+				if (sen = UpdateSensor({ (WORD)((adnum << 4) + sstype), 4, 0 }, sub->second))
+					sen->sname = "GPU " + to_string(adnum) + " " + it->first;
+				sub->second = 0;
+				adnum++;
+			}
+			sstype++;
+		}
 
 		valCount = GetValuesArray(hTempCounter); // Temps, code 5
 		for (WORD i = 0; i < valCount; i++) {

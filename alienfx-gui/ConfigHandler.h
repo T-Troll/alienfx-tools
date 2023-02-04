@@ -124,6 +124,13 @@ struct profile {
 	bool ignoreDimming;
 };
 
+union ambgrid {
+	struct {
+		WORD x, y;
+	};
+	DWORD ag;
+};
+
 class ConfigHandler
 {
 private:
@@ -166,12 +173,12 @@ public:
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 
 	// Ambient...
-	DWORD amb_mode = 0;
-	DWORD amb_shift = 40;
-	DWORD amb_grid = MAKELPARAM(4,3);
+	DWORD amb_mode;
+	DWORD amb_shift;
+	ambgrid amb_grid;
 
 	// Haptics...
-	DWORD hap_inpType = 0;
+	DWORD hap_inpType;
 
 	// final states
 	byte finalBrightness = 255;
@@ -192,7 +199,7 @@ public:
 	gridClr* colorGrid = NULL;
 	int gridTabSel = 0;
 
-	// mapping block from SDK
+	// mapping block from FX SDK
 	AlienFX_SDK::Mappings afx_dev;
 
 	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1};

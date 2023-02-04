@@ -16,15 +16,13 @@ extern FXHelper *fxhl;
 
 HANDLE clrStopEvent;
 
-CaptureHelper::CaptureHelper(int x, int y)
+CaptureHelper::CaptureHelper()
 {
-	gridX = x; gridY = y;
-	imgz = new byte[x * y * 6];
 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	dxgi_manager = new DXGIManager();
 	dxgi_manager->set_timeout(100);
-
-	SetCaptureScreen(conf->amb_mode);
+	dxgi_manager->set_capture_source((WORD)conf->amb_mode);
+	SetLightGridSize(conf->amb_grid.x, conf->amb_grid.y);
 }
 
 CaptureHelper::~CaptureHelper()
@@ -44,6 +42,7 @@ void CaptureHelper::SetCaptureScreen(int mode) {
 void CaptureHelper::Start()
 {
 	if (!dwHandle) {
+		imgz = new byte[gridX * gridY * 6];
 		clrStopEvent = CreateEvent(NULL, true, false, NULL);
 		if (conf->GetEffect() == 2)
 			lThread = new ThreadHelper(CFXProc, this, 200, THREAD_PRIORITY_ABOVE_NORMAL);
@@ -61,7 +60,8 @@ void CaptureHelper::Stop()
 		CloseHandle(dwHandle);
 		CloseHandle(clrStopEvent);
 		dwHandle = NULL;
-		memset(imgz, 0xff, sizeof(imgz));
+		delete[] imgz;
+		imgz = NULL;
 	}
 }
 
@@ -73,10 +73,6 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 {
 	Stop();
 	gridX = x; gridY = y;
-	if (conf->GetEffect() == 2)
-		conf->amb_grid = MAKELPARAM(x, y);
-	delete[] imgz;
-	imgz = new byte[x * y * 6];
 	Start();
 }
 
@@ -128,7 +124,7 @@ DWORD WINAPI CInProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
 
-	DWORD /*gridSize = src->gridX * src->gridY,*/ gridDataSize = src->gridX * src->gridY * 3, ret = 0;
+	DWORD gridDataSize = src->gridX * src->gridY * 3, ret = 0;
 	byte* imgo = src->imgz + gridDataSize;
 	size_t buf_size;
 

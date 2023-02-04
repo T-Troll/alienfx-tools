@@ -28,6 +28,8 @@ private:
 
 	DWORD cType = 0, valCount = 0;
 
+	map<string, map<byte, DWORD>> gpusubs;
+
 	int GetValuesArray(HCOUNTER counter);
 	SENSOR* UpdateSensor(SENID sid, long val);
 public:

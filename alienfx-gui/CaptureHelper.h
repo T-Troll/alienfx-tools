@@ -14,7 +14,7 @@ struct procData {
 class CaptureHelper
 {
 public:
-	CaptureHelper(int x, int y);
+	CaptureHelper();
 	~CaptureHelper();
 	void SetCaptureScreen(int mode);
 	void Start();
@@ -24,7 +24,7 @@ public:
 	void SetDimensions();
 	bool needUpdate = false;
 	bool needUIUpdate = false;
-	byte *imgz;
+	byte *imgz = NULL;
 	byte gridX, gridY;
 	DXGIManager* dxgi_manager = NULL;
 private:

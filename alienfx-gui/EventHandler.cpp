@@ -1,11 +1,7 @@
-#include <Pdh.h>
-#include <pdhmsg.h>
-#include <Psapi.h>
-#pragma comment(lib, "pdh.lib")
-
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "MonHelper.h"
+#include <Psapi.h>
 
 // debug print
 #ifdef _DEBUG
@@ -81,46 +77,15 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 #endif
 }
 
-void EventHandler::StartEvents()
-{
-	if (!eventProc && PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
-		// Set data source...
-		PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_NETMAX, 0, &hNETMAXCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
-		PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
-		PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
-
-		fxhl->RefreshCounters();
-		// start thread...
-		eventProc = new ThreadHelper(CEventProc, this, 300/*, THREAD_PRIORITY_NORMAL*/);
-		DebugPrint("Event thread start.\n");
-	}
-}
-
-void EventHandler::StopEvents()
-{
-	if (eventProc) {
-		delete eventProc;
-		eventProc = NULL;
-		PdhCloseQuery(hQuery);
-		DebugPrint("Event thread stop.\n");
-	}
-}
-
 void EventHandler::ChangeEffectMode() {
-//	if (conf->enableMon && conf->stateOn)
-		StartEffects();
-//	else
-//		StopEffects();
+	StartEffects();
 	SetTrayTip();
 }
 
 void EventHandler::StopEffects() {
-	StopEvents();	// Events
+	if (sysmon) {	// Events
+		delete sysmon; sysmon = NULL;
+	}
 	if (capt) {		// Ambient
 		delete capt; capt = NULL;
 	}
@@ -144,10 +109,10 @@ void EventHandler::StartEffects() {
 			//	fxhl->Refresh();
 			//	break;
 			case 1:
-				StartEvents();
+				if (!sysmon) sysmon = new SysMonHelper();
 				break;
 			case 2:
-				if (!capt) capt = new CaptureHelper(LOWORD(conf->amb_grid), HIWORD(conf->amb_grid));
+				if (!capt) capt = new CaptureHelper();
 				break;
 			case 3:
 				if (!audio) audio = new WSAudioIn();
@@ -289,40 +254,6 @@ void EventHandler::StopProfiles()
 	}
 }
 
-DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
-PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1], * counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[1];
-
-int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, int divider = 1, HCOUNTER c2 = NULL) {
-	PDH_STATUS pdhStatus;
-	DWORD count;
-	int retVal = 0;
-
-	if (c2) {
-		counterSize = sizeof(counterValuesMax);
-		while ((pdhStatus = PdhGetFormattedCounterArray(c2, PDH_FMT_LONG, &counterSize, &count, counterValuesMax)) == PDH_MORE_DATA) {
-			delete[] counterValuesMax;
-			counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
-		}
-	}
-
-	counterSize = sizeof(counterValues);
-	while ((pdhStatus = PdhGetFormattedCounterArray( counter, PDH_FMT_LONG, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {
-		delete[] counterValues;
-		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[counterSize/sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
-	}
-
-	for (DWORD i = 0; i < count; i++) {
-		int cval = c2 && counterValuesMax[i].FmtValue.longValue ?
-			counterValues[i].FmtValue.longValue * 800 / counterValuesMax[i].FmtValue.longValue :
-			counterValues[i].FmtValue.longValue / divider - delta;
-		retVal = max(retVal, cval);
-	}
-
-	maxVal = max(maxVal, retVal);
-
-	return retVal;
-}
-
 // Callback and event processing hooks
 // Create - Check process ID, switch if found and no foreground active.
 // Foreground - Check process ID, switch if found, clear foreground if not.
@@ -386,87 +317,4 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	}
 
 	return res;
-}
-
-void CEventProc(LPVOID param)
-{
-	EventHandler* src = (EventHandler*)param;
-
-	static HKL locIDs[10];
-	static MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
-	static SYSTEM_POWER_STATUS state;
-	static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
-	static HKL curLocale;
-
-	LightEventData* cData = &src->cData;
-
-	if (conf->lightsNoDelay) {
-
-			PdhCollectQueryData(src->hQuery);
-			src->cData = { 0 };
-
-			// CPU load
-			PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);
-			// HDD load
-			PdhGetFormattedCounterValue(src->hHDDCounter, PDH_FMT_LONG, NULL, &cHDDVal);
-			// Network load
-			cData->NET = GetValuesArray(src->hNETCounter, fxhl->maxData.NET, 0, 1, src->hNETMAXCounter);
-			// GPU load
-			cData->GPU = GetValuesArray(src->hGPUCounter, fxhl->maxData.GPU);
-			// Temperatures
-			cData->Temp = GetValuesArray(src->hTempCounter, fxhl->maxData.Temp, 273);
-			// RAM load
-			GlobalMemoryStatusEx(&memStat);
-			// Power state
-			GetSystemPowerStatus(&state);
-			// Locale
-			if (curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL))) {
-				GetKeyboardLayoutList(10, locIDs);
-				cData->KBD = curLocale == locIDs[0] ? 0 : 100;
-			}
-
-			if (acpi) {
-				// Check fan RPMs
-				for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
-					cData->Fan = max(cData->Fan, mon->GetFanPercent(i));
-				}
-				// Sensors
-				for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
-					cData->Temp = max(cData->Temp, i->second);
-				// Power mode
-				cData->PWM = fan_conf->lastProf->gmode ? 100 :
-					fan_conf->lastProf->powerStage * 100 /
-					((int)acpi->powers.size() + acpi->isGmode - 1);
-			}
-
-			// ESIF powers and temps
-			short totalPwr = 0;
-			if (conf->esif_temp) {
-				if (!acpi) {
-					// ESIF temps (already in fans)
-					cData->Temp = max(cData->Temp, GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
-				}
-				// Powers
-				cData->PWR = GetValuesArray(src->hPwrCounter, fxhl->maxData.PWR, 0, 10);
-			}
-
-			// Leveling...
-			cData->Temp = min(100, max(0, cData->Temp));
-			cData->Batt = state.BatteryLifePercent;
-			cData->ACP = state.ACLineStatus;
-			cData->BST = state.BatteryFlag;
-			cData->HDD = (byte)max(0, 99 - cHDDVal.longValue);
-			cData->Fan = min(100, cData->Fan);
-			cData->CPU = (byte)cCPUVal.longValue;
-			cData->RAM = (byte)memStat.dwMemoryLoad;
-			cData->PWR = (byte)cData->PWR * 100 / fxhl->maxData.PWR;
-			fxhl->maxData.RAM = max(fxhl->maxData.RAM, cData->RAM);
-			fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData->CPU);
-
-			if (conf->lightsNoDelay) { // update lights
-				if (!src->grid)
-					fxhl->RefreshCounters(cData);
-				memcpy(&fxhl->eData, cData, sizeof(LightEventData));
-			}
-	}
 }

@@ -171,9 +171,9 @@ void ConfigHandler::Load() {
 	RegGetValue(hKeyMain, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
 	// Ambient....
-	GetReg("Ambient-Shift", &amb_shift);
+	GetReg("Ambient-Shift", &amb_shift, 40);
 	GetReg("Ambient-Mode", &amb_mode);
-	GetReg("Ambient-Grid", &amb_grid, 0x30004);
+	GetReg("Ambient-Grid", &amb_grid.ag, 0x30004);
 
 	// Haptics....
 	GetReg("Haptics-Input", &hap_inpType);
@@ -235,13 +235,16 @@ void ConfigHandler::Load() {
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			event* ev = (event*)data;
 			for (int i = 0; i * sizeof(event) < lend; i++) {
-				// Obsolete conversion, remove after some time
-				if (ev[i].state == MON_TYPE_POWER) {
-					// convert power to indicator
-					ev[i].state = MON_TYPE_IND;
-					ev[i].source = 7;
+				// Bugfix for broken events
+				if (ev[i].state <= MON_TYPE_IND && ev[i].source <= 10) {
+					// Obsolete conversion, remove after some time
+					if (ev[i].state == MON_TYPE_POWER) {
+						// convert power to indicator
+						ev[i].state = MON_TYPE_IND;
+						ev[i].source = 7;
+					}
+					gset->events.push_back(ev[i]);
 				}
-				gset->events.push_back(ev[i]);
 			}
 			continue;
 		}
@@ -344,7 +347,7 @@ void ConfigHandler::Save() {
 	// Ambient
 	SetReg("Ambient-Shift", amb_shift);
 	SetReg("Ambient-Mode", amb_mode);
-	SetReg("Ambient-Grid", amb_grid);
+	SetReg("Ambient-Grid", amb_grid.ag);
 
 	// Haptics
 	SetReg("Haptics-Input", hap_inpType);

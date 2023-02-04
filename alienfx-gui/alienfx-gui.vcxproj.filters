@@ -48,6 +48,9 @@
     <ClInclude Include="GridHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SysMonHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alienfx-gui.cpp">
@@ -111,6 +114,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="KeyPressDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SysMonHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -521,7 +521,7 @@ void FXHelper::RefreshOne(groupset* map, bool update, int force) {
 
 void FXHelper::RefreshAmbient(UCHAR *img) {
 
-	UINT shift = 255 - conf->amb_shift, gridsize = LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid);
+	UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 	vector<AlienFX_SDK::Afx_action> actions{ {0} };
 	bool wasChanged = false;
 	eve->modifyProfile.lock();

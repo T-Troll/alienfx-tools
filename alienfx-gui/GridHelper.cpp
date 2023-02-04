@@ -43,8 +43,6 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
 
 	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
-		//char keyname[32];
-		//GetKeyNameText(MAKELPARAM(0,((LPKBDLLHOOKSTRUCT)lParam)->scanCode), keyname, 31);
 		eve->modifyProfile.lock();
  		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->effect.trigger == 2 && it->gridop.passive) { // keyboard effect
@@ -68,13 +66,6 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 void GridUpdate(LPVOID param) {
 	fxhl->RefreshGrid();
-	//GridHelper* gh = (GridHelper*)param;
-	////if (gh->tact < 0)
-	////	gh->tact = 0;
-	//if (conf->lightsNoDelay) {
-	//	fxhl->RefreshGrid(gh->tact);
-	//	gh->tact++;
-	//}
 }
 
 void GridHelper::StartCommonRun(groupset* ce) {
@@ -135,7 +126,9 @@ void GridHelper::Stop() {
 	if (eve->capt) {
 		delete eve->capt; eve->capt = NULL;
 	}
-	eve->StopEvents();
+	if (eve->sysmon) {
+		delete eve->sysmon; eve->sysmon = NULL;
+	}
 }
 
 void GridHelper::RestartWatch() {
@@ -147,10 +140,11 @@ void GridHelper::RestartWatch() {
 		case 2: if (!kEvent)
 			kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
 			break;
-		case 3: eve->StartEvents(); break;
+		case 3: if (!eve->sysmon) {
+			eve->sysmon = new SysMonHelper();
+		} break;
 		case 4: if (!eve->capt) {
-			//auto zone = *conf->FindZoneMap(ce->group);
-			eve->capt = new CaptureHelper(4, 3);
+			eve->capt = new CaptureHelper();
 		} break;
 		}
 	}

@@ -22,7 +22,7 @@ const static vector<vector<string>> eventNames{/* { "Power status" },*/
 int eventID = 0;
 
 event* GetEventData() {
-	if (mmap && /*eventID >= 0 && */mmap->events.size() > eventID)
+	if (mmap && mmap->events.size() > eventID)
 		return &mmap->events[eventID];
 	return NULL;
 }
@@ -155,22 +155,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				fxhl->RefreshCounters();
 			}
 		} break;
-		//case IDC_EVENT_TYPE:
-		//	if (map && HIWORD(wParam) == CBN_SELCHANGE) {
-		//		int ctype = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE));
-		//		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype], 0);
-		//		if (ev) {
-		//			ev->state = ctype;
-		//			ev->source = 0;
-		//		}
-		//		RebuildEventList(hDlg, map);
-		//		fxhl->RefreshCounters();
-		//	}
-		//	break;
 		case IDC_BUT_ADD_EVENT:
 			if (mmap) {
 				mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
-					/*(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE)),*/
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
 				eventID = (int)mmap->events.size() - 1;
 				RebuildEventList(hDlg);
@@ -242,12 +229,12 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-				if (lPoint->uNewState & LVIS_FOCUSED) {
+				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem >= 0) {
 					// Select other item...
 					eventID = lPoint->iItem;
 				}
-				else
-					eventID = -1;
+				//else
+				//	eventID = -1;
 				SetEventData(hDlg, GetEventData());
 			} break;
 			}

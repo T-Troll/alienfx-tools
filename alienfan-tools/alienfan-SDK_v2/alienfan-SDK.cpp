@@ -161,7 +161,7 @@ namespace AlienFan_SDK {
 							fIndex++;
 						}
 #ifdef _TRACE_
-						printf("%d Fans found\n", fIndex);
+						printf("%d Fans found, last reply %d\n", fIndex, funcID);
 #endif
 						// AWCC temperature sensors.
 						while (funcID && funcID < 0xa0) {
@@ -180,7 +180,7 @@ namespace AlienFan_SDK {
 							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
 						}
 #ifdef _TRACE_
-						printf("%d AWCC Temperature sensors found\n", (int)sensors.size());
+						printf("%d AWCC Temperature sensors found, last reply %d\n", (int)sensors.size(), funcID);
 #endif
 						// Power modes.
 						powers.push_back(0); // Manual mode
@@ -193,7 +193,7 @@ namespace AlienFan_SDK {
 							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
 						}
 #ifdef _TRACE_
-						printf("%d Power modes found\n", (int)powers.size());
+						printf("%d Power modes found, last reply %d\n", (int)powers.size(), funcID);
 #endif
 
 						if (sysType) {

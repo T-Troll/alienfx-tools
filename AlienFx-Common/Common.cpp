@@ -11,6 +11,13 @@ extern bool needUpdateFeedback, isNewVersion, needRemove;
 
 bool UACPassed = true;
 
+//void CleanDelete(void** obj) {
+//	if (obj) {
+//		delete *obj;
+//		*obj = NULL;
+//	}
+//}
+
 bool EvaluteToAdmin() {
 	// Evaluation attempt...
 	if (!(UACPassed = IsUserAnAdmin())) {
