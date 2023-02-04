@@ -60,8 +60,8 @@ public:
 	void ResetPower(AlienFX_SDK::Afx_device* dev);
 	bool CheckEvent(LightEventData* eData, event* e);
 	void RefreshCounters(LightEventData *data = NULL);
-	void RefreshAmbient(UCHAR *img);
-	void RefreshHaptics(int *freq);
+	void RefreshAmbient();
+	void RefreshHaptics();
 	void RefreshGrid();
 	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0, bool force = false);
 	void SetState(bool force = false);

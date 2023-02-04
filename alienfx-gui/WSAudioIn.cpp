@@ -209,7 +209,7 @@ void resample(LPVOID lpParam)
 
 	if (conf->lightsNoDelay && src->needUpdate) {
 		src->needUpdate = false;
-		fxhl->RefreshHaptics(src->freqs);
+		fxhl->RefreshHaptics();
 	}
 }
 

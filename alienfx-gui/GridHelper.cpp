@@ -65,7 +65,8 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
-	fxhl->RefreshGrid();
+	if (conf->lightsNoDelay)
+		fxhl->RefreshGrid();
 }
 
 void GridHelper::StartCommonRun(groupset* ce) {
@@ -109,7 +110,6 @@ void GridTriggerWatch(LPVOID param) {
 }
 
 GridHelper::GridHelper() {
-	//tact = 0;
 	RestartWatch();
 }
 
@@ -123,11 +123,11 @@ void GridHelper::Stop() {
 	delete gridThread;
 	if (kEvent)
 		UnhookWindowsHookEx(kEvent);
-	if (eve->capt) {
-		delete eve->capt; eve->capt = NULL;
+	if (capt) {
+		delete capt; capt = NULL;
 	}
-	if (eve->sysmon) {
-		delete eve->sysmon; eve->sysmon = NULL;
+	if (sysmon) {
+		delete sysmon; sysmon = NULL;
 	}
 }
 
@@ -140,11 +140,11 @@ void GridHelper::RestartWatch() {
 		case 2: if (!kEvent)
 			kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
 			break;
-		case 3: if (!eve->sysmon) {
-			eve->sysmon = new SysMonHelper();
+		case 3: if (!sysmon) {
+			sysmon = new SysMonHelper();
 		} break;
-		case 4: if (!eve->capt) {
-			eve->capt = new CaptureHelper();
+		case 4: if (!capt) {
+			capt = new CaptureHelper();
 		} break;
 		}
 	}

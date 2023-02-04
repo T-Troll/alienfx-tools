@@ -20,15 +20,7 @@ extern ConfigFan* fan_conf;
 void CEventProc(LPVOID);
 
 SysMonHelper::SysMonHelper() {
-	Start();
-}
-
-SysMonHelper::~SysMonHelper() {
-	Stop();
-}
-
-void SysMonHelper::Start() {
-	if (!eventProc && PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
+	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
 		// Set data source...
 		PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
 		PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
@@ -36,12 +28,21 @@ void SysMonHelper::Start() {
 		PdhAddCounter(hQuery, COUNTER_PATH_NETMAX, 0, &hNETMAXCounter);
 		PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
 		PdhAddCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
+		// ToDo: start only if esif enabled
 		PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
 		PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
+		Start();
+	}
+}
 
-		if (conf->GetEffect() == 1)
-			fxhl->RefreshCounters();
+SysMonHelper::~SysMonHelper() {
+	PdhCloseQuery(hQuery);
+	Stop();
+}
 
+void SysMonHelper::Start() {
+	if (!eventProc) {
+		fxhl->RefreshCounters();
 		// start thread...
 		eventProc = new ThreadHelper(CEventProc, this, 300);
 		DebugPrint("Event thread start.\n");
@@ -53,14 +54,11 @@ void SysMonHelper::Stop()
 	if (eventProc) {
 		delete eventProc;
 		eventProc = NULL;
-		PdhCloseQuery(hQuery);
 		DebugPrint("Event thread stop.\n");
 	}
 }
 
-PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1], * counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[1];
-
-int GetCounterValues(HCOUNTER counter, PDH_FMT_COUNTERVALUE_ITEM** values) {
+int SysMonHelper::GetCounterValues(HCOUNTER counter, PDH_FMT_COUNTERVALUE_ITEM** values) {
 	DWORD counterSize = sizeof(values);
 	DWORD count;
 	while (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &counterSize, &count, *values) == PDH_MORE_DATA) {
@@ -70,7 +68,7 @@ int GetCounterValues(HCOUNTER counter, PDH_FMT_COUNTERVALUE_ITEM** values) {
 	return count;
 }
 
-int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, int divider = 1, HCOUNTER c2 = NULL) {
+int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, int divider = 1, HCOUNTER c2 = NULL) {
 	int retVal = 0;
 
 	if (c2) {
@@ -114,18 +112,17 @@ void CEventProc(LPVOID param)
 		// HDD load
 		PdhGetFormattedCounterValue(src->hHDDCounter, PDH_FMT_LONG, NULL, &cHDDVal);
 		// Network load
-		cData->NET = GetValuesArray(src->hNETCounter, fxhl->maxData.NET, 0, 1, src->hNETMAXCounter);
+		cData->NET = src->GetValuesArray(src->hNETCounter, fxhl->maxData.NET, 0, 1, src->hNETMAXCounter);
 		// GPU load
-		//cData->GPU = GetValuesArray(src->hGPUCounter, fxhl->maxData.GPU);
-		DWORD count = GetCounterValues(src->hGPUCounter, &counterValues);
+		DWORD count = src->GetCounterValues(src->hGPUCounter, &src->counterValues);
 		// now sort...
 		for (DWORD i = 0; i < count; i++) {
-			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
-				string path = counterValues[i].szName;
+			if (src->counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
+				string path = src->counterValues[i].szName;
 				//string phys = path.substr(path.find("phys_") + 5, 1);
 				int physID = atoi(path.substr(path.find("phys_") + 5, 1).c_str());
 				string type = path.substr(path.find("type_") + 5);
-				gpusubs[type][physID] += counterValues[i].FmtValue.longValue;
+				gpusubs[type][physID] += src->counterValues[i].FmtValue.longValue;
 			}
 		}
 		for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
@@ -137,7 +134,7 @@ void CEventProc(LPVOID param)
 			}
 		}
 		// Temperatures
-		cData->Temp = GetValuesArray(src->hTempCounter, fxhl->maxData.Temp, 273);
+		cData->Temp = src->GetValuesArray(src->hTempCounter, fxhl->maxData.Temp, 273);
 		// RAM load
 		GlobalMemoryStatusEx(&memStat);
 		// Power state
@@ -167,10 +164,10 @@ void CEventProc(LPVOID param)
 		if (conf->esif_temp) {
 			if (!acpi) {
 				// ESIF temps (already in fans)
-				cData->Temp = max(cData->Temp, GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
+				cData->Temp = max(cData->Temp, src->GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
 			}
 			// Powers
-			cData->PWR = GetValuesArray(src->hPwrCounter, fxhl->maxData.PWR, 0, 10) * 100 / fxhl->maxData.PWR;
+			cData->PWR = src->GetValuesArray(src->hPwrCounter, fxhl->maxData.PWR, 0, 10) * 100 / fxhl->maxData.PWR;
 		}
 
 		// Leveling...

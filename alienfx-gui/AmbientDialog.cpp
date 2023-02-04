@@ -136,8 +136,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             if ((HWND)lParam == brSlider) {
                 conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 if (eve->capt)
-                    eve->capt->needUpdate = eve->capt->needUIUpdate = true;
-                    //ZeroMemory(eve->capt->imgz, LOWORD(conf->amb_grid) * HIWORD(conf->amb_grid) * 3);
+                    eve->capt->needUpdate = true;
                 break;
             }
             if ((HWND)lParam == gridX) {
@@ -177,9 +176,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
     } break;
     case WM_TIMER:
-        if (eve->effMode == 2 && eve->capt->needUIUpdate && IsWindowVisible(hDlg)) {
+        if (eve->effMode == 2 && IsWindowVisible(hDlg)) {
             //DebugPrint("Ambient UI update...\n");
-            eve->capt->needUIUpdate = false;
             RedrawButtonZone(hDlg);
         }
         break;

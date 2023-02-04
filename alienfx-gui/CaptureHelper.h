@@ -2,13 +2,12 @@
 #include "ThreadHelper.h"
 #include "DXGIManager.hpp"
 
-//#define GRIDSIZE 36 // 4x3 x 3
-
 struct procData {
 	int dx, dy;
 	UCHAR* dst;
 	HANDLE pEvent;
 	HANDLE pfEvent;
+	void* cap;
 };
 
 class CaptureHelper
@@ -16,19 +15,20 @@ class CaptureHelper
 public:
 	CaptureHelper();
 	~CaptureHelper();
-	void SetCaptureScreen(int mode);
 	void Start();
 	void Stop();
 	void Restart();
 	void SetLightGridSize(int, int);
 	void SetDimensions();
 	bool needUpdate = false;
-	bool needUIUpdate = false;
-	byte *imgz = NULL;
+	byte *imgz = NULL, *imgo, *scrImg = NULL;
 	byte gridX, gridY;
+	DWORD gridDataSize;
 	DXGIManager* dxgi_manager = NULL;
+	HANDLE pfEvent[16];
+	procData callData[16];
+	UINT w, h, ww, hh, stride, divider, div;
 private:
-	HANDLE dwHandle = NULL;
-	ThreadHelper* lThread = NULL;
+	ThreadHelper* dwHandle = NULL, *lThread = NULL, *pThread[16];
 };
 

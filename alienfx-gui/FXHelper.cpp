@@ -139,8 +139,9 @@ bool FXHelper::CheckEvent(LightEventData* eData, event* e) {
 
 void FXHelper::RefreshCounters(LightEventData *data)
 {
-	if (conf->enableMon && conf->GetEffect() == 1) {
+	if (eve->sysmon) {
 		bool force = false, wasChanged = false;
+		AlienFX_SDK::Afx_group* grp;
 		if (!data) {
 			data = &eData;
 			force = true;
@@ -148,11 +149,7 @@ void FXHelper::RefreshCounters(LightEventData *data)
 			blinkStage = !blinkStage;
 
 		eve->modifyProfile.lock();
-		vector<groupset> active = conf->activeProfile->lightsets;
-		eve->modifyProfile.unlock();
-		AlienFX_SDK::Afx_group* grp;
-
-		for (auto Iter = active.begin(); Iter != active.end(); Iter++) {
+		for (auto Iter = conf->activeProfile->lightsets.begin(); Iter != conf->activeProfile->lightsets.end(); Iter++) {
 			vector<AlienFX_SDK::Afx_action> actions;
 			bool hasDiff = false;
 			int lVal = 0, cVal = 0;
@@ -244,6 +241,7 @@ void FXHelper::RefreshCounters(LightEventData *data)
 				}
 			}
 		}
+		eve->modifyProfile.unlock();
 		if (wasChanged) {
 			QueryUpdate();
 		}
@@ -278,121 +276,126 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 }
 
 void FXHelper::RefreshGrid() {
-	bool wasChanged = false;
-	vector<AlienFX_SDK::Afx_action> cur{ {0} };
-	eve->modifyProfile.lock();
-	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
-		if (!ce->gridop.passive) {
-			if (ce->effect.trigger == 4 && eve->capt->needUpdate) { // ambient
-				UINT shift = 255 - conf->amb_shift;
-				auto zone = *conf->FindZoneMap(ce->group);
-				// resize grid if zone changed
-				if (eve->capt->gridX != zone.xMax || eve->capt->gridY != zone.yMax)
-					eve->capt->SetLightGridSize(zone.xMax, zone.yMax);
-				for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
-					int ind = (lgh->x + (lgh->y * zone.xMax)) * 3;
-					cur.front().r = (eve->capt->imgz[ind+2] * shift) / 255;
-					cur.front().g = (eve->capt->imgz[ind+1] * shift) / 255;
-					cur.front().b = (eve->capt->imgz[ind] * shift) / 255;
-					SetLight(lgh->light, &cur);
-				}
-				wasChanged = true;
-				continue;
-			}
-			if (ce->effect.effectColors.size()) {
-				// prepare vars..
-				grideffop* effop = &ce->gridop;
-				grideffect* eff = &ce->effect;
-				// calculate phase
-				int cTact = effop->current_tact++;
-				int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
-				int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() - 1;
-				int effsize = eff->flags & GE_FLAG_CIRCLE ? (effop->size << 1) : effop->size;
-
-				if (phase > effsize * lmp) {
-					effop->passive = true;
+	if (eve->grid) {
+		bool wasChanged = false;
+		vector<AlienFX_SDK::Afx_action> cur{ {0} };
+		eve->modifyProfile.lock();
+		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
+			if (!ce->gridop.passive) {
+				if (ce->effect.trigger == 4) { // ambient
+					auto capt = eve->grid->capt;
+					if (capt->needUpdate) {
+						UINT shift = 255 - conf->amb_shift;
+						auto zone = *conf->FindZoneMap(ce->group);
+						// resize grid if zone changed
+						if (capt->gridX != zone.xMax || capt->gridY != zone.yMax)
+							capt->SetLightGridSize(zone.xMax, zone.yMax);
+						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
+							int ind = (lgh->x + (lgh->y * zone.xMax)) * 3;
+							cur.front().r = (capt->imgz[ind + 2] * shift) / 255;
+							cur.front().g = (capt->imgz[ind + 1] * shift) / 255;
+							cur.front().b = (capt->imgz[ind] * shift) / 255;
+							SetLight(lgh->light, &cur);
+						}
+						wasChanged = true;
+					}
 					continue;
 				}
+				if (ce->effect.effectColors.size()) {
+					// prepare vars..
+					grideffop* effop = &ce->gridop;
+					grideffect* eff = &ce->effect;
+					// calculate phase
+					int cTact = effop->current_tact++;
+					int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
+					int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() - 1;
+					int effsize = eff->flags & GE_FLAG_CIRCLE ? (effop->size << 1) : effop->size;
 
-				int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : phase / effsize) % (eff->effectColors.size());
+					if (phase > effsize * lmp) {
+						effop->passive = true;
+						continue;
+					}
 
-				AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
-					&eff->effectColors[colorIndex]),
-					to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
+					int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : phase / effsize) % (eff->effectColors.size());
 
-				phase %= effsize;
+					AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
+						&eff->effectColors[colorIndex]),
+						to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
 
-				if (phase >= effop->size) // circle by color and direction
-					phase = effsize - phase - 1;
+					phase %= effsize;
 
-				if (ce->flags & GAUGE_REVERSE)
-					phase = effop->size - phase - 1;
+					if (phase >= effop->size) // circle by color and direction
+						phase = effsize - phase - 1;
 
-				// Set lights
-				if (effop->oldphase != phase) {
-					// Set grid effect
-					double power = 0;
+					if (ce->flags & GAUGE_REVERSE)
+						phase = effop->size - phase - 1;
 
-					if (ce->gauge) {
-						auto zone = *conf->FindZoneMap(ce->group);
-						// Old phase cleanup
-						if (!cTact/*effop->oldphase < 0*/) {
-							cur.front() = from;
-							SetZone(&(*ce), &cur);
-						}
-						else
-							for (int dist = 0; dist < eff->width; dist++)
-								SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
+					// Set lights
+					if (effop->oldphase != phase) {
+						// Set grid effect
+						double power = 0;
 
-						// Check for gradient zones - in this case all phases updated!
-						if (ce->flags & GAUGE_GRADIENT) {
-							for (int nf = 0; nf < effop->size - phase; nf++) {
-								power = (double)nf / (effop->size - phase);
-								SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
+						if (ce->gauge) {
+							auto zone = *conf->FindZoneMap(ce->group);
+							// Old phase cleanup
+							if (!cTact/*effop->oldphase < 0*/) {
+								cur.front() = from;
+								SetZone(&(*ce), &cur);
 							}
-						}
+							else
+								for (int dist = 0; dist < eff->width; dist++)
+									SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
 
-						// Fill new phase colors
-						if (eff->type == 3) { // Filled
-							for (int nf = 0; nf <= phase; nf++) {
-								power = ce->flags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
-								SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
+							// Check for gradient zones - in this case all phases updated!
+							if (ce->flags & GAUGE_GRADIENT) {
+								for (int nf = 0; nf < effop->size - phase; nf++) {
+									power = (double)nf / (effop->size - phase);
+									SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
+								}
 							}
-						}
-						else {
-							int halfW = eff->width / 2;
-							for (int dist = 0; dist < eff->width; dist++) {
-								if (phase - dist >= 0) {
-									// make final color for this distance
-									power = 1.0;
-									if (halfW) // do not need if size < 2
-										switch (eff->type) {
-										case 1: // wave
-											power -= (double)abs(halfW - dist) / halfW;
-											break;
-										case 2: // gradient
-											power -= (double)(dist) / eff->width;
-										}
-									SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &from, &to));
+
+							// Fill new phase colors
+							if (eff->type == 3) { // Filled
+								for (int nf = 0; nf <= phase; nf++) {
+									power = ce->flags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
+									SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
+								}
+							}
+							else {
+								int halfW = eff->width / 2;
+								for (int dist = 0; dist < eff->width; dist++) {
+									if (phase - dist >= 0) {
+										// make final color for this distance
+										power = 1.0;
+										if (halfW) // do not need if size < 2
+											switch (eff->type) {
+											case 1: // wave
+												power -= (double)abs(halfW - dist) / halfW;
+												break;
+											case 2: // gradient
+												power -= (double)(dist) / eff->width;
+											}
+										SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &from, &to));
+									}
 								}
 							}
 						}
+						else {
+							// flat morph emulation
+							power = (double)phase / eff->width;// effsize;
+							cur.front() = { BlendPower(power, &from, &to) };
+							SetZone(&(*ce), &cur);
+						}
+						wasChanged = true;
+						effop->oldphase = phase;
 					}
-					else {
-						// flat morph emulation
-						power = (double)phase / eff->width;// effsize;
-						cur.front() = { BlendPower(power, &from, &to) };
-						SetZone(&(*ce), &cur);
-					}
-					wasChanged = true;
-					effop->oldphase = phase;
 				}
 			}
 		}
+		eve->modifyProfile.unlock();
+		if (wasChanged)
+			QueryUpdate();
 	}
-	eve->modifyProfile.unlock();
-	if (wasChanged)
-		QueryUpdate();
 }
 
 void FXHelper::QueryUpdate(bool force)
@@ -498,124 +501,127 @@ void FXHelper::Refresh(int forced)
 	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 		RefreshOne(&(*it), false, forced);
 	}
-	if (!forced && eve)
-		switch (eve->effMode) {
-		case 1: RefreshCounters(); break;
-		case 2: if (eve->capt) RefreshAmbient(eve->capt->imgz); break;
-		case 3: if (eve->audio) RefreshHaptics(eve->audio->freqs); break;
-		case 4: if (eve->grid) RefreshGrid(/*eve->grid->tact*/); break;
-		default: QueryUpdate();
-		}
+	if (!forced) {
+		RefreshCounters();
+		RefreshAmbient();
+		RefreshHaptics();
+		RefreshGrid();
+		QueryUpdate();
+	}
 	else
 		QueryUpdate(forced == 2);
 }
 
 void FXHelper::RefreshOne(groupset* map, bool update, int force) {
 
-	if ((conf->stateOn || force) && map && map->color.size()) {
+	if (map && map->color.size()) {
 		SetZone(map, &map->color, 0, force == 2);
 		if (update)
 			QueryUpdate(force == 2);
 	}
 }
 
-void FXHelper::RefreshAmbient(UCHAR *img) {
-
-	UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
-	vector<AlienFX_SDK::Afx_action> actions{ {0} };
-	bool wasChanged = false;
-	eve->modifyProfile.lock();
-	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
-		if (it->ambients.size()) {
-			ULONG r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size();
-			for (auto cAmb = it->ambients.begin(); dsize && cAmb != it->ambients.end(); cAmb++) {
-				if (*cAmb < gridsize) {
-					int ind = *cAmb * 3;
-					r += img[ind + 2];
-					g += img[ind + 1];
-					b += img[ind];
-				}
-				else {
-					dsize--;
-				}
-			}
-			// Multi-lights and brightness correction...
-			if (dsize) {
-				wasChanged = true;
-				dsize *= 255;
-				actions.front().r = (BYTE)((r * shift) / dsize);
-				actions.front().g = (BYTE)((g * shift) / dsize);
-				actions.front().b = (BYTE)((b * shift) / dsize);
-				if (it->gauge)
-					actions.push_back({ 0 });
-				SetZone(&(*it), &actions);
-			}
-		}
-	eve->modifyProfile.unlock();
-	if (wasChanged)
-		QueryUpdate();
-}
-
-void FXHelper::RefreshHaptics(int *freq) {
-
-	vector<AlienFX_SDK::Afx_action> actions;
-	bool wasChanged = false;
-	eve->modifyProfile.lock();
-	for (auto mIter = conf->activeProfile->lightsets.begin(); mIter != conf->activeProfile->lightsets.end(); mIter++) {
-		if (mIter->haptics.size()) {
-			// Now for each freq block...
-			long from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0, groupsize = 0;
-			double f_power = 0.0;
-			for (auto fIter = mIter->haptics.begin(); fIter < mIter->haptics.end(); fIter++) {
-				if (!fIter->freqID.empty() && fIter->hicut > fIter->lowcut) {
-					double power = 0.0;
-					groupsize++;
-					// here need to check less bars...
-					for (auto iIter = fIter->freqID.begin(); iIter < fIter->freqID.end(); iIter++)
-						power += (freq[*iIter] > fIter->lowcut ? freq[*iIter] < fIter->hicut ?
-							freq[*iIter] - fIter->lowcut : fIter->hicut - fIter->lowcut : 0);
-					power = power / (fIter->freqID.size() * (fIter->hicut - fIter->lowcut));
-					f_power += power;
-
-					if (mIter->gauge) {
-						from_r += fIter->colorfrom.r;
-						from_g += fIter->colorfrom.g;
-						from_b += fIter->colorfrom.b;
-
-						to_r += fIter->colorto.r;
-						to_g += fIter->colorto.g;
-						to_b += fIter->colorto.b;
+void FXHelper::RefreshAmbient() {
+	if (eve->capt) {
+		UCHAR* img = eve->capt->imgz;
+		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
+		vector<AlienFX_SDK::Afx_action> actions{ {0} };
+		bool wasChanged = false;
+		eve->modifyProfile.lock();
+		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
+			if (it->ambients.size()) {
+				ULONG r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size();
+				for (auto cAmb = it->ambients.begin(); dsize && cAmb != it->ambients.end(); cAmb++) {
+					if (*cAmb < gridsize) {
+						int ind = *cAmb * 3;
+						r += img[ind + 2];
+						g += img[ind + 1];
+						b += img[ind];
 					}
 					else {
-						cur_r += (byte)sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
-						cur_g += (byte)sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
-						cur_b += (byte)sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
+						dsize--;
 					}
-
-					// change color if peak
-					if (fIter->colorto.br && power == 1.0) {
-						conf->SetRandomColor(&fIter->colorto);
-					}
+				}
+				// Multi-lights and brightness correction...
+				if (dsize) {
+					wasChanged = true;
+					dsize *= 255;
+					actions.front().r = (BYTE)((r * shift) / dsize);
+					actions.front().g = (BYTE)((g * shift) / dsize);
+					actions.front().b = (BYTE)((b * shift) / dsize);
+					if (it->gauge)
+						actions.push_back({ 0 });
+					SetZone(&(*it), &actions);
 				}
 			}
+		eve->modifyProfile.unlock();
+		if (wasChanged)
+			QueryUpdate();
+	}
+}
 
-			if (groupsize) {
+void FXHelper::RefreshHaptics() {
+	if (eve->audio) {
+		int* freq = eve->audio->freqs;
+		vector<AlienFX_SDK::Afx_action> actions;
+		bool wasChanged = false;
+		eve->modifyProfile.lock();
+		for (auto mIter = conf->activeProfile->lightsets.begin(); mIter != conf->activeProfile->lightsets.end(); mIter++) {
+			if (mIter->haptics.size()) {
+				// Now for each freq block...
+				long from_r = 0, from_g = 0, from_b = 0, to_r = 0, to_g = 0, to_b = 0, cur_r = 0, cur_g = 0, cur_b = 0, groupsize = 0;
+				double f_power = 0.0;
+				for (auto fIter = mIter->haptics.begin(); fIter < mIter->haptics.end(); fIter++) {
+					if (!fIter->freqID.empty() && fIter->hicut > fIter->lowcut) {
+						double power = 0.0;
+						groupsize++;
+						// here need to check less bars...
+						for (auto iIter = fIter->freqID.begin(); iIter < fIter->freqID.end(); iIter++)
+							power += (freq[*iIter] > fIter->lowcut ? freq[*iIter] < fIter->hicut ?
+								freq[*iIter] - fIter->lowcut : fIter->hicut - fIter->lowcut : 0);
+						power = power / (fIter->freqID.size() * (fIter->hicut - fIter->lowcut));
+						f_power += power;
 
-				if (mIter->gauge) {
-					actions = { { 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize)},
-						{0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize)} };
+						if (mIter->gauge) {
+							from_r += fIter->colorfrom.r;
+							from_g += fIter->colorfrom.g;
+							from_b += fIter->colorfrom.b;
+
+							to_r += fIter->colorto.r;
+							to_g += fIter->colorto.g;
+							to_b += fIter->colorto.b;
+						}
+						else {
+							cur_r += (byte)sqrt((1.0 - power) * fIter->colorfrom.r * fIter->colorfrom.r + power * fIter->colorto.r * fIter->colorto.r);
+							cur_g += (byte)sqrt((1.0 - power) * fIter->colorfrom.g * fIter->colorfrom.g + power * fIter->colorto.g * fIter->colorto.g);
+							cur_b += (byte)sqrt((1.0 - power) * fIter->colorfrom.b * fIter->colorfrom.b + power * fIter->colorto.b * fIter->colorto.b);
+						}
+
+						// change color if peak
+						if (fIter->colorto.br && power == 1.0) {
+							conf->SetRandomColor(&fIter->colorto);
+						}
+					}
 				}
-				else
-					actions = { { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) } };
 
-				SetZone(&(*mIter), &actions, f_power / groupsize);
-				wasChanged = true;
+				if (groupsize) {
+
+					if (mIter->gauge) {
+						actions = { { 0,0,0,(byte)(from_r / groupsize),(byte)(from_g / groupsize),(byte)(from_b / groupsize)},
+							{0,0,0,(byte)(to_r / groupsize),(byte)(to_g / groupsize),(byte)(to_b / groupsize)} };
+					}
+					else
+						actions = { { 0,0,0,(byte)(cur_r / groupsize),(byte)(cur_g / groupsize),(byte)(cur_b / groupsize) } };
+
+					SetZone(&(*mIter), &actions, f_power / groupsize);
+					wasChanged = true;
+				}
 			}
 		}
+		eve->modifyProfile.unlock();
+		if (wasChanged)
+			QueryUpdate();
 	}
-	eve->modifyProfile.unlock();
-	if (wasChanged)
-		QueryUpdate();
 }
 
 DWORD WINAPI CLightsProc(LPVOID param) {
@@ -630,7 +636,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
 	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) == WAIT_OBJECT_0) {
-		while (src->lightQuery.size() && conf->stateOn) {
+		while (src->lightQuery.size() /*&& conf->stateOn*/) {
 
 			src->modifyQuery.lock();
 			current = src->lightQuery.front();
