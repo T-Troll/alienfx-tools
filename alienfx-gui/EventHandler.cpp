@@ -95,38 +95,43 @@ void EventHandler::StopEffects() {
 	if (grid) {		// Grid
 		delete grid; grid = NULL;
 	}
-	effMode = 0;
 	fxhl->Refresh();
 }
 
 void EventHandler::StartEffects() {
-	if (conf->enableMon && conf->stateOn) {
-		if (conf->GetEffect() != effMode) {
-			StopEffects();
-			// start new mode...
-			switch (effMode = conf->GetEffect()) {
-			//case 0:
-			//	fxhl->Refresh();
-			//	break;
-			case 1:
-				if (!sysmon) sysmon = new SysMonHelper();
-				break;
-			case 2:
-				if (!capt) capt = new CaptureHelper();
-				break;
-			case 3:
-				if (!audio) audio = new WSAudioIn();
-				break;
-			case 4:
-				if (!grid) grid = new GridHelper();
-				break;
+	if (conf->stateEffects && conf->stateOn) {
+		bool haveMon = false, haveAmb = false, haveHap = false, haveGrid = false;
+		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
+			if (it->events.size()) haveMon = true;
+			if (it->ambients.size()) haveAmb = true;
+			if (it->haptics.size()) haveHap = true;
+			if (it->effect.trigger) haveGrid = true;
+		}
+		if (haveMon && !sysmon)
+			sysmon = new SysMonHelper(true);
+		if (!haveMon && sysmon) {	// System monitoring
+			delete sysmon; sysmon = NULL;
+		}
+		if (haveAmb && !capt)
+			capt = new CaptureHelper(true);
+		if (!haveAmb && capt) {		// Ambient
+				delete capt; capt = NULL;
 			}
-		}
-		else {
-			if (effMode == 4) // need to refresh grid support
+		if (haveHap && !audio)
+			audio = new WSAudioIn();
+		if (!haveHap && audio) {	// Haptics
+				delete audio; audio = NULL;
+			}
+		if (haveGrid)
+			if (!grid)
+				grid = new GridHelper();
+			else
 				grid->RestartWatch();
-			fxhl->Refresh();
-		}
+		else
+			if (grid) {		// Grid
+				delete grid; grid = NULL;
+			}
+		fxhl->Refresh();
 	}
 	else
 		StopEffects();
@@ -220,7 +225,7 @@ void EventHandler::CheckProfileWindow() {
 
 void EventHandler::StartProfiles()
 {
-	if (conf->enableProf && !cEvent) {
+	if (conf->enableProfSwitch && !cEvent) {
 		DebugPrint("Profile hooks starting.\n");
 
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,

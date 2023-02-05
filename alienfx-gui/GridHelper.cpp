@@ -90,7 +90,8 @@ void GridTriggerWatch(LPVOID param) {
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 		if (ce->gridop.passive) {
 			switch (ce->effect.trigger) {
-			case 1: src->StartCommonRun(&(*ce));
+			case 4: case 1:
+				src->StartCommonRun(&(*ce));
 				break;
 			case 3:
 				for (auto ev = ce->events.begin(); ev != ce->events.end(); ev++)
@@ -100,9 +101,6 @@ void GridTriggerWatch(LPVOID param) {
 						break;
 					}
 				break;
-			case 4:
-				ce->gridop.passive = false;
-				break;
 			}
 		}
 	}
@@ -110,6 +108,8 @@ void GridTriggerWatch(LPVOID param) {
 }
 
 GridHelper::GridHelper() {
+	if (eve->capt)
+		Sleep(150);
 	RestartWatch();
 }
 
@@ -121,8 +121,10 @@ GridHelper::~GridHelper()
 void GridHelper::Stop() {
 	delete gridTrigger;
 	delete gridThread;
-	if (kEvent)
+	if (kEvent) {
 		UnhookWindowsHookEx(kEvent);
+		kEvent = NULL;
+	}
 	if (capt) {
 		delete capt; capt = NULL;
 	}
@@ -140,12 +142,12 @@ void GridHelper::RestartWatch() {
 		case 2: if (!kEvent)
 			kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
 			break;
-		case 3: if (!sysmon) {
-			sysmon = new SysMonHelper();
-		} break;
-		case 4: if (!capt) {
-			capt = new CaptureHelper();
-		} break;
+		case 3: if (!sysmon)
+			sysmon = new SysMonHelper(false);
+			break;
+		case 4: if (!capt)
+			capt = new CaptureHelper(false);
+			break;
 		}
 	}
 

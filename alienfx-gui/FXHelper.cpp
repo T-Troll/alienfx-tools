@@ -284,7 +284,12 @@ void FXHelper::RefreshGrid() {
 			if (!ce->gridop.passive) {
 				if (ce->effect.trigger == 4) { // ambient
 					auto capt = eve->grid->capt;
+					// check availability
+					if (!capt)
+						capt = new CaptureHelper(false);
+					// update lights
 					if (capt->needUpdate) {
+						capt->needUpdate = false;
 						UINT shift = 255 - conf->amb_shift;
 						auto zone = *conf->FindZoneMap(ce->group);
 						// resize grid if zone changed
@@ -713,7 +718,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// Should we update it?
 						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						current.actsize = 2;
-						if (!conf->block_power && (current.flags || memcmp(src->pbstate[pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action)))) {
+						if (current.flags || memcmp(src->pbstate[pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action))) {
 
 							DebugPrint("Power button set to " +
 										to_string(current.actions[0].r) + "-" +

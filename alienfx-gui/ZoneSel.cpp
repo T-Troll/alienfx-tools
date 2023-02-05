@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "FXHelper.h"
 #include "common.h"
 
 //extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);

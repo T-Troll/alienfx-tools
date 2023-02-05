@@ -25,12 +25,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_STARTM, conf->startMinimized);
 		CheckDlgButton(hDlg, IDC_BATTDIM, conf->dimmedBatt);
 		CheckDlgButton(hDlg, IDC_SCREENOFF, conf->offWithScreen);
-		CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, conf->enableMon);
+		CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, conf->enableEffects);
+		CheckDlgButton(hDlg, IDC_CHECK_EFFBAT, conf->effectsOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_LON, conf->lightsOn);
 		CheckDlgButton(hDlg, IDC_POWER_DIM, conf->dimPowerButton);
 		CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection);
 		CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, !conf->offPowerButton);
-		CheckDlgButton(hDlg, IDC_BUT_PROFILESWITCH, conf->enableProf);
+		CheckDlgButton(hDlg, IDC_BUT_PROFILESWITCH, conf->enableProfSwitch);
 		CheckDlgButton(hDlg, IDC_AWCC, conf->awcc_disable);
 		CheckDlgButton(hDlg, IDC_ESIFTEMP, conf->esif_temp);
 		CheckDlgButton(hDlg, IDC_FANCONTROL, conf->fanControl);
@@ -63,6 +64,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_BATTDIM:
 			conf->dimmedBatt = state;
+			conf->SetStates();
 			fxhl->Refresh();
 			break;
 		case IDC_SCREENOFF:
@@ -70,7 +72,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_BUT_PROFILESWITCH:
 			eve->StopProfiles();
-			conf->enableProf = state;
+			conf->enableProfSwitch = state;
 			eve->StartProfiles();
 			ReloadProfileList();
 			break;
@@ -84,7 +86,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			fxhl->Refresh();
 			break;
 		case IDC_CHECK_EFFECTS:
-			conf->enableMon = state;
+			conf->enableEffects = state;
+			conf->SetStates();
+			eve->ChangeEffectMode();
+			break;
+		case IDC_CHECK_EFFBAT:
+			conf->effectsOnBattery = state;
+			conf->SetStates();
 			eve->ChangeEffectMode();
 			break;
 		case IDC_OFFPOWERBUTTON:
@@ -112,6 +120,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_OFFONBATTERY:
 			conf->offOnBattery = state;
+			conf->SetStates();
 			fxhl->SetState();
 			break;
 		case IDC_AWCC:

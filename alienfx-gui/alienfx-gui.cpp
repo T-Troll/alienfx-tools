@@ -18,6 +18,7 @@ bool needUpdateFeedback = false;
 bool needRemove = false;
 
 void ResetDPIScale();
+extern void dxgi_Restart();
 
 HWND InitInstance(HINSTANCE, int);
 
@@ -59,7 +60,7 @@ int eItem = 0;
 groupset* mmap = NULL;
 
 // Effect mode list
-static const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
+// static const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
 
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin())) {
@@ -141,7 +142,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			conf->fanControl = false;
 
 	fxhl = new FXHelper();
-	//fxhl->FillAllDevs(acpi);
 
 	eve = new EventHandler();
 
@@ -154,15 +154,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
 		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
-
+		conf->SetStates();
 		SetHotkeys();
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
 		RegisterPowerSettingNotification(mDlg, &GUID_LIDSWITCH_STATE_CHANGE, 0);
-		//sParams->PowerSetting == GUID_MONITOR_POWER_ON ||
-		//	sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE ||
-		//	sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS ||
-		//	sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE
 
 		ShowWindow(mDlg, conf->startMinimized ? SW_HIDE : SW_SHOW);
 
@@ -197,8 +193,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 }
 
 void SetTrayTip() {
-	//string name = "Profile: " + (conf->activeProfile ? conf->activeProfile->name : "Undefined") + "\nEffect: " + (conf->GetEffect() < effModes.size() ? effModes[conf->GetEffect()] : "Global");
-	string name = "Profile: " + conf->activeProfile->name + "\nEffect: " + effModes[conf->GetEffect()];
+	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
+	if (eve) {
+		string effName;
+		if (conf->stateEffects) {
+			effName += eve->sysmon ? "Monitoring " : "";
+			effName += eve->capt ? "Ambient " : "";
+			effName += eve->audio ? "Haptics " : "";
+			effName += eve->grid ? "Grid" : "";
+		}
+		name += "\nEffects: " + (effName.empty() ? "Off" : effName);
+	}
 	strcpy_s(conf->niData.szTip, 128, name.c_str());
 	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 }
@@ -294,19 +299,21 @@ void OnSelChanged(HWND hwndDlg)
 	ResizeTab(pHdr->hwndDisplay);
 }
 
-void ReloadModeList(HWND mode_list = NULL, int mode = conf->GetEffect()) {
-	if (IsWindowVisible(mDlg)) {
-		if (!mode_list) {
-			mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
-		}
+void ReloadModeList() {
+	CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
+	EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
+	//if (IsWindowVisible(mDlg)) {
+	//	if (!mode_list) {
+	//		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
+	//	}
 
-		EnableWindow(mode_list, conf->enableMon);
-		UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
+	//	EnableWindow(mode_list, conf->enableMon);
+	//	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
 
 		if (tabSel == TAB_LIGHTS) {
 			OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 		}
-	}
+	//}
 }
 
 void ReloadProfileList() {
@@ -398,28 +405,26 @@ void SetMainTabs() {
 
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
-		profile_list = GetDlgItem(hDlg, IDC_PROFILES),
-		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE);
+		profile_list = GetDlgItem(hDlg, IDC_PROFILES)/*,
+		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE)*/;
 
+	// Started/restarted explorer...
 	if (message == newTaskBar && AddTrayIcon(&conf->niData, conf->updateCheck)) {
-		// Started/restarted explorer...
-		SetTrayTip();
+		conf->SetIconState();
+		return true;
 	}
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-
 		conf->niData.hWnd = mDlg = hDlg;
 
 		SetMainTabs();
 
-		conf->SetStates();
-
-		if (AddTrayIcon(&conf->niData, conf->updateCheck))
-			SetTrayTip();
-
+		if (AddTrayIcon(&conf->niData, conf->updateCheck)) {
+			conf->SetIconState();
+		}
 	} break;
 	case WM_COMMAND:
 	{
@@ -456,24 +461,29 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			fxhl->Refresh(2); // set def. colors
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", true);
 			break;
-		case IDC_EFFECT_MODE:
-		{
-			switch (HIWORD(wParam)) {
-			case CBN_SELCHANGE:
-			{
-				conf->activeProfile->effmode = (WORD) ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
-				eve->ChangeEffectMode();
-				if (tabSel == TAB_LIGHTS)
-					OnSelChanged(tab_list);
-			} break;
-			}
-		} break;
+		//case IDC_EFFECT_MODE:
+		//{
+		//	switch (HIWORD(wParam)) {
+		//	case CBN_SELCHANGE:
+		//	{
+		//		conf->activeProfile->effmode = (WORD) ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
+		//		eve->ChangeEffectMode();
+		//		if (tabSel == TAB_LIGHTS)
+		//			OnSelChanged(tab_list);
+		//	} break;
+		//	}
+		//} break;
+		case IDC_PROFILE_EFFECTS:
+			conf->activeProfile->effmode = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			eve->ChangeEffectMode();
+			ReloadModeList();
+			break;
 		case IDC_PROFILES: {
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
-				int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
-				eve->SwitchActiveProfile(conf->FindProfile(prid));
+				//int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
+				eve->SwitchActiveProfile(conf->FindProfile((int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list))));
 				ReloadModeList();
 				OnSelChanged(tab_list);
 			} break;
@@ -505,9 +515,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
 					GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
 					SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
-					GetWindowRect(GetDlgItem(mDlg, IDC_EFFECT_MODE), &oldRect);
+					GetWindowRect(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), &oldRect);
 					ScreenToClient(mDlg, (LPPOINT)&oldRect);
-					SetWindowPos(GetDlgItem(mDlg, IDC_EFFECT_MODE), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+					SetWindowPos(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
 					GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
 					ScreenToClient(mDlg, (LPPOINT)&oldRect);
 					SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
@@ -550,7 +560,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
 			// add profiles...
-			if (!conf->enableProf) {
+			if (!conf->enableProfSwitch) {
 				pMenu = CreatePopupMenu();
 				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
 				for (int i = 0; i < conf->profiles.size(); i++) {
@@ -561,22 +571,22 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
 			}
 			// add effects menu...
-			if (conf->enableMon) {
-				pMenu = CreatePopupMenu();
-				mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
-				int i = 0;
-				for (i=0; i < effModes.size(); i++) {
-					mInfo.dwTypeData = (LPSTR)effModes[i].c_str();
-					mInfo.fState = i == conf->GetEffect() ? MF_CHECKED : MF_UNCHECKED;
-					InsertMenuItem(pMenu, i, false, &mInfo);
-				}
-				ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_ENABLED | MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
-			}
+			//if (conf->enableMon) {
+			//	pMenu = CreatePopupMenu();
+			//	mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
+			//	int i = 0;
+			//	for (i=0; i < effModes.size(); i++) {
+			//		mInfo.dwTypeData = (LPSTR)effModes[i].c_str();
+			//		mInfo.fState = i == conf->GetEffect() ? MF_CHECKED : MF_UNCHECKED;
+			//		InsertMenuItem(pMenu, i, false, &mInfo);
+			//	}
+			//	ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_ENABLED | MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
+			//}
 
-			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableMon ? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableEffects ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, conf->lightsOn ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, conf->IsDimmed() ? MF_CHECKED : MF_UNCHECKED);
-			CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, conf->enableProf? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, conf->enableProfSwitch? MF_CHECKED : MF_UNCHECKED);
 
 			GetCursorPos(&lpClickPoint);
 			SetForegroundWindow(hDlg);
@@ -618,16 +628,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(false);
 			break;
 		case ID_TRAYMENU_ENABLEEFFECTS:
-			conf->enableMon = !conf->enableMon;
+			conf->enableEffects = !conf->enableEffects;
 			UpdateState(true);
 			break;
-		case ID_TRAYMENU_MONITORING_SELECTED:
-			conf->activeProfile->effmode = idx;
-			UpdateState(true);
-			break;
+		//case ID_TRAYMENU_MONITORING_SELECTED:
+		//	conf->activeProfile->effmode = idx;
+		//	UpdateState(true);
+		//	break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
-			conf->enableProf = !conf->enableProf;
+			conf->enableProfSwitch = !conf->enableProfSwitch;
 			eve->StartProfiles();
 			ReloadProfileList();
 			break;
@@ -635,10 +645,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			RestoreApp();
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
-			if (conf->profiles[idx]->id != conf->activeProfile->id) {
-				eve->SwitchActiveProfile(conf->profiles[idx]);
-				ReloadProfileList();
-			}
+			eve->SwitchActiveProfile(conf->profiles[idx]);
+			ReloadProfileList();
 		} break;
 		}
 	} break;
@@ -720,7 +728,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_DISPLAYCHANGE:
 		// Monitor configuration changed
-	    if (eve->capt) eve->capt->Restart();
+	    dxgi_Restart();
 		break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
@@ -768,12 +776,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(false);
 			break;
 		case 4: // effects
-			conf->enableMon = !conf->enableMon;
+			conf->enableEffects = !conf->enableEffects;
 			UpdateState(true);
 			break;
 		case 5: // profile autoswitch
 			eve->StopProfiles();
-			conf->enableProf = !conf->enableProf;
+			conf->enableProfSwitch = !conf->enableProfSwitch;
 			eve->StartProfiles();
 			ReloadProfileList();
 			break;

@@ -4,7 +4,7 @@
 #include <Shlwapi.h>
 
 extern void ReloadProfileList();
-extern void ReloadModeList(HWND dlg=NULL, int mode = conf->GetEffect());
+//extern void ReloadModeList(HWND dlg, int mode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
@@ -186,19 +186,20 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 void ReloadProfSettings(HWND hDlg, profile *prof) {
-	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
-		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
+	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS)/*,
+		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE)*/;
 	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT);
 	CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof->flags & PROF_PRIORITY);
 	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED);
 	CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof->flags & PROF_ACTIVE);
 	CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, prof->flags & PROF_FANS);
+	CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, prof->effmode);
 
 	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_AC, prof->triggerFlags & PROF_TRIGGER_AC);
 	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_BATTERY, prof->triggerFlags & PROF_TRIGGER_BATTERY);
 	CheckDlgButton(hDlg, IDC_TRIGGER_KEYS, prof->triggerkey);
 
-	ReloadModeList(mode_list, prof->effmode);
+	//ReloadModeList(mode_list, prof->effmode);
 	SetDlgItemText(hDlg, IDC_TRIGGER_KEYS, ("Keyboard (" + (prof->triggerkey ? GetKeyName(prof->triggerkey) : "Off") + ")").c_str());
 	ListBox_ResetContent(app_list);
 	for (int j = 0; j < prof->triggerapp.size(); j++)
@@ -231,8 +232,8 @@ void ReloadProfileView(HWND hDlg) {
 
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS),
-		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE);
+	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS)/*,
+		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE)*/;
 
 	profile *prof = conf->FindProfile(pCid);
 
@@ -365,19 +366,24 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				ListBox_AddString(app_list, prof->triggerapp.back().c_str());
 			}
 		} break;
-		case IDC_COMBO_EFFMODE:
-		{
-			switch (HIWORD(wParam)) {
-			case CBN_SELCHANGE:
-			{
-				prof->effmode = (WORD)ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
-				if (prof->id == conf->activeProfile->id) {
-					eve->ChangeEffectMode();
-					ReloadModeList();
-				}
-			} break;
-			}
-		} break;
+		case IDC_CHECK_EFFECTS:
+			prof->effmode = state;
+			if (prof->id == conf->activeProfile->id)
+				eve->ChangeEffectMode();
+			break;
+		//case IDC_COMBO_EFFMODE:
+		//{
+		//	switch (HIWORD(wParam)) {
+		//	case CBN_SELCHANGE:
+		//	{
+		//		prof->effmode = (WORD)ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
+		//		if (prof->id == conf->activeProfile->id) {
+		//			eve->ChangeEffectMode();
+		//			//ReloadModeList();
+		//		}
+		//	} break;
+		//	}
+		//} break;
 		case IDC_CHECK_DEFPROFILE:
 		{
 			if (state) {
@@ -453,8 +459,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
 					CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
 					CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, BST_UNCHECKED);
+					CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, BST_UNCHECKED);
 					ListBox_ResetContent(app_list);
-					ComboBox_SetCurSel(mode_list, 0);
+					//ComboBox_SetCurSel(mode_list, 0);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:

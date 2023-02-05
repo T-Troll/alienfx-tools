@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "EventHandler.h"
 #include "MonHelper.h"
 #include "common.h"
 
@@ -11,6 +12,7 @@ extern void UpdateZoneList();
 extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern AlienFan_SDK::Control* acpi;
+extern EventHandler* eve;
 
 const static vector<string> eventTypeNames{ "Performance", "Indicator" };
 const static vector<vector<string>> eventNames{/* { "Power status" },*/
@@ -160,6 +162,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
 				eventID = (int)mmap->events.size() - 1;
+				eve->ChangeEffectMode();
 				RebuildEventList(hDlg);
 				UpdateZoneList();
 				fxhl->RefreshCounters();
@@ -170,6 +173,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				mmap->events.erase(mmap->events.begin() + eventID);
 				if (eventID)
 					eventID--;
+				eve->ChangeEffectMode();
 				RebuildEventList(hDlg);
 				UpdateZoneList();
 				fxhl->RefreshCounters();

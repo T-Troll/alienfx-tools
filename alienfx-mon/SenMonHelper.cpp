@@ -154,7 +154,7 @@ void SenMonHelper::UpdateSensors()
 			// per-value
 			WORD adnum = 0;
 			for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
-				if (sen = UpdateSensor({ (WORD)((adnum << 4) + sstype), 4, 0 }, sub->second))
+				if (sen = UpdateSensor({ (WORD)((adnum << 4) + sstype), 4, 0 }, min(sub->second, 100)))
 					sen->sname = "GPU " + to_string(adnum) + " " + it->first;
 				sub->second = 0;
 				adnum++;

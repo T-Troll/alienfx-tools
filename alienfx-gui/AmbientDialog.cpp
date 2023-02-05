@@ -4,6 +4,7 @@
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
+extern void dxgi_Restart();
 
 extern EventHandler* eve;
 
@@ -89,40 +90,32 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     } break;
     case WM_COMMAND:
     {
-        if (LOWORD(wParam) >= 2000) { // grid button
-            switch (HIWORD(wParam)) {
-            case BN_CLICKED:
-                if (mmap) {
-                    UINT id = LOWORD(wParam) - 2000;
-                    // add/remove mapping
-                    auto pos = find_if(mmap->ambients.begin(), mmap->ambients.end(),
-                        [id](auto t) {
-                            return t == id;
-                        });
-                    if (pos == mmap->ambients.end())
-                        mmap->ambients.push_back(id);
-                    else
-                        mmap->ambients.erase(pos);
-                    UpdateZoneList();
+        if (LOWORD(wParam) >= 2000 && mmap && HIWORD(wParam) == BN_CLICKED) { // grid button
+            UINT id = LOWORD(wParam) - 2000;
+            // add/remove mapping
+            bool nf = false;
+            for (auto pos = mmap->ambients.begin(); pos != mmap->ambients.end(); pos++)
+                if (nf = (*pos == id)) {
+                    mmap->ambients.erase(pos);
+                    break;
                 }
-                break;
-            }
+            if (!nf)
+                mmap->ambients.push_back(id);
+            eve->ChangeEffectMode();
+            UpdateZoneList();
+            break;
         }
         switch (LOWORD(wParam)) {
         case IDC_RADIO_PRIMARY: case IDC_RADIO_SECONDARY:
-            switch (HIWORD(wParam)) {
-            case BN_CLICKED:
+            if (HIWORD(wParam) == BN_CLICKED) {
                 conf->amb_mode = LOWORD(wParam) == IDC_RADIO_PRIMARY ? 0 : 1;
                 CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_mode ? BST_UNCHECKED : BST_CHECKED);
                 CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, conf->amb_mode ? BST_CHECKED : BST_UNCHECKED);
-                if (eve->capt)
-                    eve->capt->Restart();
-                break;
-            } break;
-        case IDC_BUTTON_RESET:
-            if (eve->capt) {
-                eve->capt->Restart();
+                dxgi_Restart();
             }
+            break;
+        case IDC_BUTTON_RESET:
+            dxgi_Restart();
             break;
         default: return false;
         }
@@ -176,7 +169,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
     } break;
     case WM_TIMER:
-        if (eve->effMode == 2 && IsWindowVisible(hDlg)) {
+        if (eve->capt && IsWindowVisible(hDlg)) {
             //DebugPrint("Ambient UI update...\n");
             RedrawButtonZone(hDlg);
         }

@@ -151,14 +151,15 @@ public:
 	DWORD dimmedBatt;
 	DWORD dimPowerButton;
 	DWORD dimmingPower;
-	DWORD enableProf;
+	DWORD enableProfSwitch;
 	DWORD offPowerButton;
 	DWORD offOnBattery;
 	DWORD awcc_disable;
 	DWORD esif_temp;
 	DWORD gammaCorrection;
 	DWORD fanControl;
-	DWORD enableMon;
+	DWORD enableEffects;
+	DWORD effectsOnBattery;
 	DWORD noDesktop;
 	DWORD showGridNames;
 	DWORD keyShortcuts;
@@ -166,9 +167,13 @@ public:
 	COLORREF customColors[16]{ 0 };
 
 	// States
-	bool stateDimmed = false, stateOn = true, statePower = true, stateScreen = true;
+	bool stateDimmed = false,
+		stateOn = true,
+		statePower = true,
+		stateScreen = true,
+		stateEffects = true;
+	bool lightFXBlock = false;
 	bool lightsNoDelay = true;
-	bool block_power = 0;
 	bool wasAWCC = false;
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 
@@ -221,5 +226,5 @@ public:
 	void SetIconState();
 	bool IsDimmed();
 	void SetDimmed();
-	int GetEffect();
+	//int GetEffect();
 };

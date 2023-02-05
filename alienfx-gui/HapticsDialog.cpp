@@ -218,6 +218,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				int pos = ListBox_AddString(grp_list, ("Group " + to_string(mmap->haptics.size())).c_str());
 				ListBox_SetCurSel(grp_list, pos);
 				freqBlock = &mmap->haptics.back();
+				eve->ChangeEffectMode();
 				SetMappingData(hDlg);
 				UpdateZoneList();
 			}
@@ -235,8 +236,10 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						freqBlock = &mmap->haptics.front();
 					ListBox_SetCurSel(grp_list, freqItem);
 				}
-				else
+				else {
 					freqBlock = NULL;
+					eve->ChangeEffectMode();
+				}
 				SetMappingData(hDlg);
 				UpdateZoneList();
 			}

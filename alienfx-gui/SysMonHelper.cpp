@@ -19,7 +19,8 @@ extern ConfigFan* fan_conf;
 
 void CEventProc(LPVOID);
 
-SysMonHelper::SysMonHelper() {
+SysMonHelper::SysMonHelper(bool needUpdate) {
+	needLightsUpdate = needUpdate;
 	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
 		// Set data source...
 		PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
@@ -42,7 +43,7 @@ SysMonHelper::~SysMonHelper() {
 
 void SysMonHelper::Start() {
 	if (!eventProc) {
-		fxhl->RefreshCounters();
+		//fxhl->RefreshCounters();
 		// start thread...
 		eventProc = new ThreadHelper(CEventProc, this, 300);
 		DebugPrint("Event thread start.\n");
@@ -128,7 +129,7 @@ void CEventProc(LPVOID param)
 		for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
 			// per-adapter
 			for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
-				cData->GPU = max(cData->GPU, sub->second);
+				cData->GPU = min(max(cData->GPU, sub->second), 100);
 				//DebugPrint("Adapter " + to_string(sub->first) + ", system " + it->first + ": " + to_string(sub->second) + "\n");
 				sub->second = 0;
 			}
@@ -181,7 +182,7 @@ void CEventProc(LPVOID param)
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData->GPU);
 
 		if (conf->lightsNoDelay) { // update lights
-			if (conf->GetEffect() == 1)
+			if (src->needLightsUpdate)
 				fxhl->RefreshCounters(cData);
 			memcpy(&fxhl->eData, cData, sizeof(LightEventData));
 		}

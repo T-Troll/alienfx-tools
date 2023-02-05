@@ -75,17 +75,20 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 }
 
 bool ConfigHandler::SetStates() {
-	bool oldStateOn = stateOn, oldStateDim = stateDimmed, oldPBState = finalPBState;
+	bool oldStateOn = stateOn, oldStateDim = stateDimmed, oldStateEffect = stateEffects;
 	// Lights on state...
 	stateOn = lightsOn && stateScreen && (!offOnBattery || statePower);
 	// Dim state...
-	stateDimmed = IsDimmed() /*|| dimmedScreen*/ || (dimmedBatt && !statePower);
+	stateDimmed = IsDimmed() || (dimmedBatt && !statePower);
+	// Effects state...
+	stateEffects = enableEffects && (effectsOnBattery || statePower) && !lightFXBlock; // ToDo: check from profile here
+	// Brightness
 	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
+	// Power button state
 	finalPBState = finalBrightness ? stateDimmed ? (byte)dimPowerButton : 1 : (byte)offPowerButton;
 
-	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldPBState != (bool)finalPBState) {
+	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldStateEffect != stateEffects) {
 		SetIconState();
-		SetTrayTip();
 		return true;
 	}
 	return false;
@@ -96,6 +99,7 @@ void ConfigHandler::SetIconState() {
 	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
 						stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
 						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+	SetTrayTip();
 }
 
 bool ConfigHandler::IsDimmed() {
@@ -114,9 +118,10 @@ void ConfigHandler::SetDimmed() {
 
 	dimmed = !dimmed;
 }
-int ConfigHandler::GetEffect() {
-	return enableMon ? activeProfile->effmode : 0;
-}
+
+//int ConfigHandler::GetEffect() {
+//	return enableMon ? activeProfile->effmode : 0;
+//}
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
@@ -151,10 +156,11 @@ void ConfigHandler::Load() {
 	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LightsOn", &lightsOn, 1);
 	GetReg("Dimmed", &dimmed);
-	GetReg("Monitoring", &enableMon, 1);
+	GetReg("Monitoring", &enableEffects, 1);
+	GetReg("EffectsOnBattery", &effectsOnBattery, 1);
 	GetReg("GammaCorrection", &gammaCorrection, 1);
 	GetReg("DisableAWCC", &awcc_disable);
-	GetReg("ProfileAutoSwitch", &enableProf);
+	GetReg("ProfileAutoSwitch", &enableProfSwitch);
 	GetReg("OffWithScreen", &offWithScreen);
 	GetReg("NoDesktopSwitch", &noDesktop);
 	GetReg("DimPower", &dimPowerButton);
@@ -325,7 +331,8 @@ void ConfigHandler::Save() {
 	SetReg("UpdateCheck", updateCheck);
 	SetReg("LightsOn", lightsOn);
 	SetReg("Dimmed", dimmed);
-	SetReg("Monitoring", enableMon);
+	SetReg("Monitoring", enableEffects);
+	SetReg("EffectsOnBattery", effectsOnBattery);
 	SetReg("OffWithScreen", offWithScreen);
 	SetReg("NoDesktopSwitch", noDesktop);
 	SetReg("DimPower", dimPowerButton);
@@ -335,7 +342,7 @@ void ConfigHandler::Save() {
 	SetReg("DimmingPower", dimmingPower);
 	SetReg("ActiveProfile", activeProfile->id);
 	SetReg("GammaCorrection", gammaCorrection);
-	SetReg("ProfileAutoSwitch", enableProf);
+	SetReg("ProfileAutoSwitch", enableProfSwitch);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("EsifTemp", esif_temp);
 	SetReg("FanControl", fanControl);

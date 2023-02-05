@@ -14,8 +14,6 @@ private:
 	DWORD* aProcesses;
 
 public:
-	int effMode = -1;
-
 	CaptureHelper* capt = NULL;
 	GridHelper* grid = NULL;
 	WSAudioIn* audio = NULL;

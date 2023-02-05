@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "FXHelper.h"
 #include "common.h"
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map);

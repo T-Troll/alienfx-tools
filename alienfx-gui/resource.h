@@ -109,11 +109,9 @@
 #define IDC_BUT_SAVEMAP                 1091
 #define IDC_SLIDER_KEYTEMPO             1091
 #define IDC_CHECK_FANPROFILE            1092
-#define IDC_EFFECT_MODE                 1093
 #define IDC_RADIO_OUTPUT                1094
 #define IDC_RADIO_INPUT                 1095
 #define IDC_FAN_CURVE                   1096
-#define IDC_COMBO_EFFMODE               1098
 #define IDC_CHECK_EFFECTS               1099
 #define IDC_CHECK_PRIORITY              1100
 #define IDC_CHECK_EXCEPTION             1101
@@ -204,8 +202,10 @@
 #define IDC_CHECK_RPOS                  1199
 #define IDC_TRIGGER_KEYS                1199
 #define IDC_STATIC_SCANCODE             1200
-#define IDC_SLIDER1                     1201
 #define IDC_SLIDER_TACT                 1201
+#define IDC_PROFILE_EFFECTS             1202
+#define IDC_CHECK                       1204
+#define IDC_CHECK_EFFBAT                1204
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -215,7 +215,6 @@
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
 #define ID_TRAYMENU_PROFILE_SELECTED    32791
-#define ID_TRAYMENU_MONITORING_SELECTED 32792
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
 #define IDM_CHECKUPDATE                 32804
 #define IDM_HELP                        32807
@@ -228,7 +227,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1202
+#define _APS_NEXT_CONTROL_VALUE         1205
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

@@ -20,10 +20,10 @@ public:
 	HQUERY hQuery = NULL;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 	PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1], * counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[1];
-
+	bool needLightsUpdate = false;
 	LightEventData cData;
 
-	SysMonHelper();
+	SysMonHelper(bool needUpdate);
 	~SysMonHelper();
 	void Start();
 	void Stop();

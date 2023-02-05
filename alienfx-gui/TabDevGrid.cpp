@@ -1,4 +1,5 @@
 #include "alienfx-gui.h"
+#include "FXHelper.h"
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
@@ -105,6 +106,8 @@ void RedrawGridButtonZone(RECT* what = NULL) {
     RedrawWindow(cgDlg, &pRect, 0, RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 
+static AlienFX_SDK::Afx_action ambient_grid{ 0,0,0,0xff,0xff,0xff };
+
 void RecalcGridZone(RECT* what = NULL) {
     RECT full = what ? *what : RECT({ 0, 0, conf->mainGrid->x, conf->mainGrid->y });
 
@@ -124,32 +127,22 @@ void RecalcGridZone(RECT* what = NULL) {
                 for (int y = full.top; y < full.bottom; y++) {
                     int ind = ind(x, y);
                     if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
-                        if (conf->enableMon)
-                            switch (conf->GetEffect()) {
-                            case 1: { // monitoring
-                                if (cs->events.size()) {
-                                    if (!conf->colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
-                                        conf->colorGrid[ind].first = &cs->events.front().from;
-                                    conf->colorGrid[ind].last = &cs->events.back().to;
-                                }
-                            } break;
-                            case 2: // ambient
-                                if (cs->ambients.size()) {
-                                    AlienFX_SDK::Afx_colorcode c; c.ci = 0xffffff;
-                                    conf->colorGrid[ind].first = conf->colorGrid[ind].last = Code2Act(&c);
-                                }
-                                break;
-                            case 3: // haptics
-                                if (cs->haptics.size()) {
-                                    conf->colorGrid[ind] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
-                                }
-                                break;
-                            case 4: // grid effects
-                                if (cs->effect.trigger && cs->effect.effectColors.size()) {
-                                    conf->colorGrid[ind] = { Code2Act(&cs->effect.effectColors.front()), Code2Act(&cs->effect.effectColors.back()) };
-                                }
-                                break;
+                        if (conf->stateEffects && conf->activeProfile->effmode) {
+                            if (cs->events.size()) {
+                                if (!conf->colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
+                                    conf->colorGrid[ind].first = &cs->events.front().from;
+                                conf->colorGrid[ind].last = &cs->events.back().to;
                             }
+                            if (cs->ambients.size()) {
+                                conf->colorGrid[ind].first = conf->colorGrid[ind].last = &ambient_grid;
+                            }
+                            if (cs->haptics.size()) {
+                                conf->colorGrid[ind] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
+                            }
+                            if (cs->effect.trigger && cs->effect.effectColors.size()) {
+                                conf->colorGrid[ind] = { Code2Act(&cs->effect.effectColors.front()), Code2Act(&cs->effect.effectColors.back()) };
+                            }
+                        }
                         if (cs->color.size()) {
                             if (!conf->colorGrid[ind].first)
                                 conf->colorGrid[ind].first = &cs->color.front();

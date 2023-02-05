@@ -217,8 +217,7 @@ void SetBitMask(WORD& val, WORD mask, bool state) {
 bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck) {
 	bool haveIcon = Shell_NotifyIcon(NIM_MODIFY, iconData);
 	if (!haveIcon) {
-		while (!Shell_NotifyIcon(NIM_ADD, iconData))
-			Sleep(100);
+		haveIcon = Shell_NotifyIcon(NIM_ADD, iconData);
 		if (needCheck)
 			CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
 	}
