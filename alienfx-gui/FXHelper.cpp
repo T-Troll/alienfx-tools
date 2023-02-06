@@ -12,6 +12,7 @@ DWORD WINAPI CLightsProc(LPVOID param);
 FXHelper::FXHelper() {
 	stopQuery = CreateEvent(NULL, false, false, NULL);
 	haveNewElement = CreateEvent(NULL, false, false, NULL);
+	lightFX = CreateEvent(NULL, true, false, "LightFXActive");
 	FillAllDevs(acpi);
 }
 
@@ -19,6 +20,7 @@ FXHelper::~FXHelper() {
 	Stop();
 	CloseHandle(stopQuery);
 	CloseHandle(haveNewElement);
+	CloseHandle(lightFX);
 };
 
 AlienFX_SDK::Afx_action FXHelper::BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to) {
@@ -403,27 +405,32 @@ void FXHelper::RefreshGrid() {
 	}
 }
 
-void FXHelper::QueryUpdate(bool force)
-{
-	if (conf->stateOn) {
-		//LightQueryElement newBlock{0, 0, force, true};
+void FXHelper::QueryCommand(LightQueryElement* lqe) {
+	if (conf->stateOn && WaitForSingleObject(lightFX, 0) == WAIT_TIMEOUT) {
 		modifyQuery.lock();
-		lightQuery.push({ 0, force, true });
+		lightQuery.push(*lqe);
 		modifyQuery.unlock();
 		SetEvent(haveNewElement);
 	}
+//#ifdef _DEBUG
+//	else
+//		DebugPrint("Lights blocked\n");
+//#endif // _DEBUG
+}
+
+void FXHelper::QueryUpdate(bool force)
+{
+	LightQueryElement update{ 0, force, true };
+	QueryCommand(&update);
 }
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions, bool force)
 {
-	if (conf->stateOn && !actions->empty()) {
+	if (!actions->empty()) {
 		LightQueryElement newBlock{ lgh, force, false, (byte)actions->size() };
 		for (int i = 0; i < newBlock.actsize; i++)
 			newBlock.actions[i] = actions->at(i);
-		modifyQuery.lock();
-		lightQuery.push(newBlock);
-		modifyQuery.unlock();
-		SetEvent(haveNewElement);
+		QueryCommand(&newBlock);
 	}
 }
 

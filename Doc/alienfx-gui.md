@@ -18,23 +18,17 @@ But what it can do, instead?
   - Grid light effects - make group of lights react for keyboard, event or just random using light position.
 - Control system fans. Instead of AWCC, fan control is dynamic, so you can boost them any way you want. Or reset boost.
 - Control system settings like boost, power mode (thermal profile).
-- Can have a profile for any application you run, switching not only light sets, but, for example, dim lights or only switch if application in foreground.
-- Fast, less buggy and robust LightFX emulation for 3rd-party applications.
+- Can have a profile for any application you run, power source and even key pressed.
 
 Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide)) for more details about initial setup.
 
 ## Main screen
 
-Top-left is profile selection drop down. It present currently active profile and you can change it to other any time. All changes made will be applied to it.  
-Top-right is software effect drop down, it defines currently active effect mode.  
-There are 4 Software effect modes available:
- - Monitoring - Lights will react to current system state (f.e. RAM/CPU load, temperatures, network activity).
- - Ambient - Lights follow screen colors from you game or video player (well... any application or desktop).
- - Haptics - Lights will react on any sound played (captured by any game, audio/video player, messenger or even microphone).
- - Grid - Enables grid effect mode - spatial-based effects.
- - Off - Disable software effects.
+Top-left is profile selection drop down. It present currently active profile and you can change it to other any time. All changes made will be applied to it.
 
-Enabling any effect will stop hardware per-light effects - it's a hardware limitation.
+Top-right check box enables or disables software effects for active profile.  
+Effects in action will be defined by zones setting.  
+Enabling effects can stop hardware per-light effects - it's a hardware limitation.
 
 "Refresh" button update all lights colors according to current profile settings (color sets, effects, etc).  
 "Save" button saves configuration, "Minimize" button hides application into tray.
@@ -87,7 +81,7 @@ Please keep in mind, mixing different event modes for one light can provide unex
 
 !["Events Monitoring" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-monitoring-6.png?raw=true)
 
-This tab designed to control "Monitoring" software effect - it change zone colors based on system states and events - like power source changes, system load, temperatures.  
+This tab designed to control "System Monitoring" software effect - it change zone colors based on system states and events - like power source changes, system load, temperatures.  
 
 For each zone, you can assign the chain of effects applied to it.  
 For each effect in chain, color from previous effect used as a source value, then re-calculated using effect settings. Resulted color after all chain calculated applied to the zone lights.  
@@ -130,21 +124,21 @@ Effect color switches between "From" and "To" values in case system event occurs
 
 !["Ambient" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-ambient-6.png?raw=true)
 
-`Ambient` tab setting up "Ambient" (Ambient lights) software effect mode - in this mode, zone colors will follow colors at you system screen.  
+`Ambient` tab setting up "Ambient" (Ambient lights) software effect - zone colors will follow colors at you screen.  
 For gauge zones, zone will follow the difference between screen color and black.
 
 You can select which display (primary or all secondary) to follow, as well as define dimming to make light brightness be balanced with screen brightness.  
 "Reset" button restart color capturing from screen, it's useful in some situations like DirectX 12 game quit.
 
 "Screen zones" grid define which screen area current zone will follow. Click on corresponding are to add/remove it to zone reactions.
-In case of "Ambient" effect mode active, button colors will filled from the screen one.
+In case of "Ambient" effect active, button colors will filled from the screen one.
 Sliders below and right to screen area grid used to change grid density, providing more or less areas screen will be divided. Default is 4x3.  
 
 ### Haptics tab
 
 !["Haptics" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-haptics-6.png?raw=true)
 
-It's about sound and audio haptics control.
+This effect control zone lights color depends of the sound played (haptic effect).
 
 Use "Audio source" block to select between audio inputs ("Output" is for all sound from the system, "Input" is for incoming sounds - Line In or Microphone).
 
@@ -161,7 +155,7 @@ Click color buttons for change group hi/low level colors.
 
 !["Grid effect" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-grideffect.png?raw=true)
 
-Grid effects is a group of software light effects, operating not with lights only, but also using it position on grid. It's like "Global effect" on some RGB keyboards, but have flexible controls and can reflect some system events.
+Grid effects is a group of software light effects, operating not with lights only, but also using it position on grid. It's like "Global effect" on some RGB keyboards, but have flexible controls and can have multiply trigger sources.
 
 Each effect have trigger to initiate, position to start, type, and phase.  
 Then effect triggered, it's starting to change light colors from the trigger point according to direction, until it meet it's stop condition.
@@ -169,11 +163,9 @@ Then effect triggered, it's starting to change light colors from the trigger poi
 First, you should define trigger - the event which launch effect for selected zone. Currently, available triggers are:
 - Off - grid effect disabled (default)
 - Continues - grid effect always start at the beginning point of the zone (depend on its direction type), and continue to run until this setting or effect mode changed.
-- Keyboard - grid effect start from the position of the light with the name same as pressed key, run one time then stop until key is pressed again.
-- Event - grid effect start if one of monitoring event happened (see Event Monitoring tab) and continues until event off.
-- Ambient - zone lights color follow screen color, like "Ambient" effect mode. Other settings are ignored. It does not recommended to set it for more, then one zone.
-
-For Keyboard trigger, light names should be the same as key name (please use capital letters, "A" right, "a" wrong), and common English key names from the capital letter (f.e. "Space", "Esc").
+- Keyboard - grid effect start from the position of the light with the name same as pressed key, run one time then stop until key is pressed again. 
+- Event - grid effect start if one of monitoring event happened (see Event Monitoring tab) and continues until event off. Key codes for lights should be defined at "Devices" tab (pressing "Key" button for each light).
+- Ambient - zone lights color follow screen color, like "Ambient" effect mode, other settings are ignored. It does not recommended to set it for more, then one zone.
 
 Effect processing driven by phases, you can use "Global effect" slider to change phase length (default is 100ms, 10 changes per second).  
 Please keep in mind - the shorted length you set, the higher CPU load it will provide!
@@ -303,12 +295,14 @@ Please keep in mind:
 Press "+" or "-" buttons to add or remove profile. New profile settings will be copied from currently selected profile.  
 You can double-click or press Enter on selected profile into the list to edit its name.  
 
-Each profile can have settings and application for trigger it. The settings are:
-- "Effect mode" - Software effect mode for this profile: Monitoring, Ambient, Haptics, Gird effects, Off.
+Each profile can have settings and triggers switching to it.
+
+The settings are:
 - "Default profile" - Default profile is the one used if "Profile auto switch" enabled, but running applications doesn't fit any other profile. There is can be only one Default profile, and it can't be deleted.
 - "Priority profile" - If this flag enabled, this profile will be chosen upon others. Priority profile overrides "Only then active" setting of the other profiles. 
 - "Dim lights" - Then profile activated, all lights will be dimmed.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
+- "Software effects" - Enables or disables software effects for selected profile.
 
 "Device effects" button open profile settings for device effect (supported for some devices like RGB keyboards):  
 ![Device Effects](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui_deviceeffect.png?raw=true)  
@@ -321,8 +315,8 @@ The next block is "Triggers" - it define cases app should switch to this profile
 - "Trigger applications" list define applications executable, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it.
 - "Only then active" - profile will be activated in case of any application running and foreground (active) and have focus only.
 
-"Zones setting" block used operate with different setting blocks of the selected profile.
-Check all types of zones you need to operate (colors, effect or fan settings), then press "Reset" button to remove it from selected profile, or "Copy active" button to copy it from active (selected in top drop down box) profile.
+The block operated by "Reset" and "Copy active" buttons used to clear or copy selected profile settings.  
+Check all types of information you need to operate (colors, effects or fan settings), then press "Reset" button to remove it from selected profile, or "Copy active" button to copy it from active (selected in top drop down box) profile.
 
 In case "Profile auto switch" turned on at "Settings", active profile will be selected automatically according to this rules:
 - If any "Trigger application" from any profile running - "Default" profile selected.
@@ -353,6 +347,7 @@ Light system control options at the left:
 - "Lights follow screen state" - Dim/Fade to black lights then system screen dimmed/off (default - off).
 - "Colour Gamma correction" - Enables colour correction to make them looks close to screen one. It keeps original LED colours if disabled (default - on).
 - "Enable software effects" - Global software effect switch. If it's off, effects always disabled, otherwise effect mode defined by current profile (default - on).
+  - "Effects on battery" - If disabled, switching to battery power will stop all software effects (for lower CPU usage and longer battery life).
 - "Profile auto switch" - Switch between profiles according of their trigger applications start and finish (default - off).
   - "Do not switch for desktop" - Profile will not be changed in case start menu/tray/desktop activated by user (default - off).
 
@@ -362,7 +357,7 @@ Light dimming control at bottom:
   - "Dim lights on battery" - Dim lights if system running at battery power, decreasing energy usage. Returns to full brightness if AC connected (default - on).
 
 Interface settings:
-- "Light names on grid" - Shows/hide light name printing at grid buttons.
+- "Light names on grid" - Shows/hide light names at grid buttons.
 
 
 ## Keyboard shortcuts 
@@ -373,11 +368,11 @@ Global shortcuts (can be operated if application running):
 - CTRL+SHIFT+F10 - enable/disable software effects.
 - CTRL+SHIFT+F9 - enable/disable profile auto switch.
 - CTRL+SHIFT+0..9 - switch active profile to profile #N (profile order is the same as at "Profiles" tab). "0" is switch to default profile.
-- CTRL+ALT+0..5 - switch active power mode (in case fan control enabled). 0 is for Manual, 1..5 for system-defined.
+- CTRL+ALT+0..9 - switch active power mode (in case fan control enabled). 0 is for Manual, 1..9 for system-defined modes.
 - F18 (Fn+AlienFX) - cycle light mode (on-dim-off).
 - F17 (Fn+G-key) - toggle G-Mode on and off ("Fan control" should be enabled).
 
-Other shortcuts (operating then application active only):
+Other shortcuts (operating then application active):
 - ALT+r - refresh all light colors
 - ALT+m - minimize app window
 - ALT+s - save configuration

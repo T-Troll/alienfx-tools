@@ -81,7 +81,7 @@ bool ConfigHandler::SetStates() {
 	// Dim state...
 	stateDimmed = IsDimmed() || (dimmedBatt && !statePower);
 	// Effects state...
-	stateEffects = enableEffects && (effectsOnBattery || statePower) && !lightFXBlock; // ToDo: check from profile here
+	stateEffects = enableEffects && (effectsOnBattery || statePower);
 	// Brightness
 	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
 	// Power button state
@@ -243,12 +243,6 @@ void ConfigHandler::Load() {
 			for (int i = 0; i * sizeof(event) < lend; i++) {
 				// Bugfix for broken events
 				if (ev[i].state <= MON_TYPE_IND && ev[i].source <= 10) {
-					// Obsolete conversion, remove after some time
-					if (ev[i].state == MON_TYPE_POWER) {
-						// convert power to indicator
-						ev[i].state = MON_TYPE_IND;
-						ev[i].source = 7;
-					}
 					gset->events.push_back(ev[i]);
 				}
 			}
@@ -308,17 +302,12 @@ void ConfigHandler::Load() {
 bool ConfigHandler::SamePower(WORD flags, profile* prof) {
 	WORD cflags = prof ? prof->triggerFlags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY) : statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY;
 	return !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)) || !cflags || flags & cflags;
-	//return (flags & (statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY)) ||
-	//	(anyFit && !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)));
 }
 
 profile* ConfigHandler::FindDefaultProfile(profile* newp) {
 	for (auto res = profiles.begin(); res != profiles.end(); res++)
-		if ((*res)->flags & PROF_DEFAULT/*!(*res)->triggerapp.size()*/ && SamePower((*res)->triggerFlags, newp))
+		if ((*res)->flags & PROF_DEFAULT && SamePower((*res)->triggerFlags, newp))
 			return *res;
-	//for (auto res = profiles.begin(); res != profiles.end(); res++)
-	//	if ((*res)->flags & PROF_DEFAULT)
-	//		return *res;
 	return profiles.front();
 }
 

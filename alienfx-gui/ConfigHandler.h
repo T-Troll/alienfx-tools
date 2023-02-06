@@ -172,7 +172,6 @@ public:
 		statePower = true,
 		stateScreen = true,
 		stateEffects = true;
-	bool lightFXBlock = false;
 	bool lightsNoDelay = true;
 	bool wasAWCC = false;
 	AlienFX_SDK::Afx_colorcode testColor{0,255};

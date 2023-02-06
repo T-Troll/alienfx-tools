@@ -1,6 +1,5 @@
 #include "ConfigMon.h"
 #include "resource.h"
-#include <Shlwapi.h>
 
 // debug print
 #ifdef _DEBUG

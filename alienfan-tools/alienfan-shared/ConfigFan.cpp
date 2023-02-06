@@ -16,13 +16,6 @@ ConfigFan::~ConfigFan() {
 	RegCloseKey(keyMain);
 }
 
-//sen_block* ConfigFan::FindSensor() {
-//	auto sen = lastProf->fanControls[lastSelectedFan].find(lastSelectedSensor);
-//	if (sen != lastProf->fanControls[lastSelectedFan].end())
-//		return &sen->second;
-//	return NULL;
-//}
-
 void ConfigFan::GetReg(const char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
 	if (RegGetValue(keyMain, NULL, name, RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, value, &size) != ERROR_SUCCESS)
@@ -130,8 +123,6 @@ void ConfigFan::Save() {
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");
 	RegCreateKeyEx(keyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
-	//RegDeleteTree(keyMain, "Powers");
-	//RegCreateKeyEx(keyMain, "Powers", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 
 	// save profile..
 	SaveSensorBlocks(keySensors, "Fan", &prof);

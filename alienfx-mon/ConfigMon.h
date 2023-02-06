@@ -84,6 +84,4 @@ public:
 	~ConfigMon();
 	void Load();
 	void Save();
-
-	//SENSOR* FindSensor(DWORD sid);
 };

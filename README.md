@@ -34,7 +34,7 @@ From release 7.0.0 anti-virus do not complain anymore (ACPI access method was ch
 ## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
 - Windows 10 v1903 or later (64-bit only).
-- `alienfan-gui` and `-cli` always require Administrator rights to work (for communication with hardware).
+- `alienfan-gui` and `alienfan-cli` always require Administrator rights to work (for communication with hardware).
 - `alienfx-gui` require Administrator rights in some cases:
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privileges)
   - "Use BIOS sensors" selected (access to ESIF values blocked from user account)
@@ -42,7 +42,7 @@ From release 7.0.0 anti-virus do not complain anymore (ACPI access method was ch
 - `alienfx-mon` require Administrator rights in case BIOS or Alienware monitoring enabled (the same reason as for `alienfx-gui`)
 - `alienfx-cli` does not require Administrator privilege and can be run at any level.
 - All the tools don't require an Internet connection, but `alienfan-gui`, `alienfx-mon` and `alienfx-gui` will connect to GitHub to check for updates if a connection is available.
-- All the tools does not collect and share any personal data. Some hardware data collected (but not shared) during hardware detection process.
+- All the tools does not collect or share any personal data. Some hardware data collected (but not shared) during hardware detection process.
 
 ## Installation
 - Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).
@@ -51,7 +51,7 @@ From release 7.0.0 anti-virus do not complain anymore (ACPI access method was ch
 - (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes don't require it, so you need it if you plan to use `Ambient` effects only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
 - (Optional) For `alienfx-cli` high-level support, both of my emulated (see above) or Alienware LightFX DLLs should be installed on your computer. These are installed automatically with Alienware Command Center, and the program should pick them up. You also should enable Alienfx API into AWCC to utilize high-level access: Settings-Misc at Metro version (new), right button context menu, then "Allow 3rd-party applications" in older Desktop version. 
-- (Optional) For the fan control, it's highly recommended to set correct overboost values and maximal fans RPM. You can do it at GUI apps first start or by running `alienfx-cli setover` command.
+- (Optional) For the fan control, it's highly recommended to set correct max. boost values. You can do it at GUI apps or by running `alienfx-cli setover` command.
 - (Optional) You can install and run `Libre Hardware Monitor` before running fan control apps - this provide more sensors to control.
 
 Please read [How to start](https://github.com/T-Troll/alienfx-tools/wiki/How-to-start-(Beginner's-guide)-for-release-v6.x.x.x) guide first!
@@ -69,8 +69,8 @@ For fan control - Open issue here or contact me via Discord support server.
 - Hardware light effects like breathing, spectrum, rainbow only supported at APIv4 (Tron) lights.
 - Hardware light effects and global effect didn't work with software effects at the same time for APIv4-v5 (hardware bug, "Update" command stop all effects). Disable monitoring in `alienfx-gui` to use it.
 - DirectX12 games didn't allow access to GPU or frame, so `Ambient` effect will not work, and `alienfx-gui` can't handle GPU load for it correctly.
-- Setting a hardware power button light, especially for events, can provide hardware light system acting slow right after color update! `alienfx-gui` will switch to the "Devices" tab or quit with visible delay.
-- Fans still controlled by BIOS, so you can't stop it at high system load/temperatures.
+- Setting a hardware power button light, especially for events, can provide hardware light system acting slow right after color update - next updates will be delayed.
+- Fans can only be controlled in "Manual" mode (BIOS limitation), all other modes utilize BIOS-defined control values.
 - Some BIOSes limit fan RPMs to lower values under heavy system load (Power subsystem have not enough reserves for fans).
 - In case BIOS drives mode set to "Raid", SSD temperatures into fan control will be fake (always 60C) at some systems.
 - **WARNING!** I strongly recommend stopping AWCCService if you plan to use `alienfx-gui` application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze (for APIv4).
@@ -95,13 +95,11 @@ Build process:
 
 ## ToDo list
 
-- [x] DPTF temperature sensors (Intel)
 - [ ] Ryzen ACPI sensors/control (AMD)
-- [x] Advanced grid effects
 - [ ] Grid effect shapes (like text, image, etc)
 - [ ] Power and battery charge control
 - [x] Restore ACPI light API support - beta
-- [ ] Automatic overclocking/underclock based on desired system temperature and load
+- [ ] Automatic overclock/underclock based on desired system temperature and load
 
 ## License
 

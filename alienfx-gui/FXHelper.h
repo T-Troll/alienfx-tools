@@ -27,9 +27,11 @@ private:
 
 	bool blinkStage = false;
 	int oldtest = -1;
+	HANDLE lightFX;
 
 	void SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0, bool force = false);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
+	void QueryCommand(LightQueryElement* lqe);
 	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions, bool force = false);
 	void QueryUpdate(bool force = false);
 

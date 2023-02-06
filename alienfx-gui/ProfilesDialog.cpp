@@ -4,7 +4,6 @@
 #include <Shlwapi.h>
 
 extern void ReloadProfileList();
-//extern void ReloadModeList(HWND dlg, int mode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
@@ -130,13 +129,10 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 						newEffect, 5, (byte)(LOWORD(wParam) == IDC_GLOBAL_EFFECT ? 1 : 2) });
 					b = prof->effects.end() - 1;
 				}
-				if (pCid == conf->activeProfile->id) {
-					//fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
-					fxhl->Refresh();
-				}
-				if (!newEffect) {
+				if (!newEffect)
 					prof->effects.erase(b);
-				}
+				if (pCid == conf->activeProfile->id)
+					fxhl->Refresh();
 				RefreshDeviceList(hDlg, devNum, prof);
 			} break;
 			}
@@ -148,7 +144,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				SetColor(GetDlgItem(hDlg, LOWORD(wParam)), LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR3 ?
 					&b->effColor1 : &b->effColor2);
 				if (pCid == conf->activeProfile->id)
-					fxhl->Refresh();// UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+					fxhl->Refresh();
 			}
 		} break;
 		} break;
@@ -175,7 +171,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					b->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
 					SetSlider((HWND)lParam == eff_tempo ? sTip1 : sTip2, b->globalDelay);
 					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+						fxhl->Refresh();
 				}
 			} break;
 			}
@@ -186,8 +182,8 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 void ReloadProfSettings(HWND hDlg, profile *prof) {
-	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS)/*,
-		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE)*/;
+	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS);
+
 	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof->flags & PROF_DEFAULT);
 	CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof->flags & PROF_PRIORITY);
 	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof->flags & PROF_DIMMED);
@@ -199,7 +195,6 @@ void ReloadProfSettings(HWND hDlg, profile *prof) {
 	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_BATTERY, prof->triggerFlags & PROF_TRIGGER_BATTERY);
 	CheckDlgButton(hDlg, IDC_TRIGGER_KEYS, prof->triggerkey);
 
-	//ReloadModeList(mode_list, prof->effmode);
 	SetDlgItemText(hDlg, IDC_TRIGGER_KEYS, ("Keyboard (" + (prof->triggerkey ? GetKeyName(prof->triggerkey) : "Off") + ")").c_str());
 	ListBox_ResetContent(app_list);
 	for (int j = 0; j < prof->triggerapp.size(); j++)
@@ -232,8 +227,7 @@ void ReloadProfileView(HWND hDlg) {
 
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS)/*,
-		mode_list = GetDlgItem(hDlg, IDC_COMBO_EFFMODE)*/;
+	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS);
 
 	profile *prof = conf->FindProfile(pCid);
 
@@ -371,19 +365,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (prof->id == conf->activeProfile->id)
 				eve->ChangeEffectMode();
 			break;
-		//case IDC_COMBO_EFFMODE:
-		//{
-		//	switch (HIWORD(wParam)) {
-		//	case CBN_SELCHANGE:
-		//	{
-		//		prof->effmode = (WORD)ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
-		//		if (prof->id == conf->activeProfile->id) {
-		//			eve->ChangeEffectMode();
-		//			//ReloadModeList();
-		//		}
-		//	} break;
-		//	}
-		//} break;
 		case IDC_CHECK_DEFPROFILE:
 		{
 			if (state) {

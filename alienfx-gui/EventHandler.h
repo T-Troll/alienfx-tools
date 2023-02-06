@@ -8,7 +8,7 @@
 class EventHandler
 {
 private:
-	HWINEVENTHOOK hEvent, cEvent = 0;
+	HWINEVENTHOOK hEvent = NULL, cEvent;
 	HHOOK kEvent;
 	DWORD maxProcess = 256;
 	DWORD* aProcesses;

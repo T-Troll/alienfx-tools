@@ -59,9 +59,6 @@ int eItem = 0;
 // last zone selected
 groupset* mmap = NULL;
 
-// Effect mode list
-// static const vector<string> effModes{ "Off", "Monitoring", "Ambient", "Haptics", "Grid"};
-
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin())) {
 		mon = new MonHelper();
@@ -289,11 +286,8 @@ void OnSelChanged(HWND hwndDlg)
 	tabSel = (int)tie.lParam;
 
 	// Destroy the current child dialog box, if any.
-	if (pHdr->hwndDisplay) {
+	if (pHdr->hwndDisplay)
 		DestroyWindow(pHdr->hwndDisplay);
-		//pHdr->hwndDisplay = NULL;
-		//pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
-	}
 
 	pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
 	ResizeTab(pHdr->hwndDisplay);
@@ -302,18 +296,9 @@ void OnSelChanged(HWND hwndDlg)
 void ReloadModeList() {
 	CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
 	EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
-	//if (IsWindowVisible(mDlg)) {
-	//	if (!mode_list) {
-	//		mode_list = GetDlgItem(mDlg, IDC_EFFECT_MODE);
-	//	}
-
-	//	EnableWindow(mode_list, conf->enableMon);
-	//	UpdateCombo(mode_list, effModes, mode, { 0,1,2,3,4 });
-
-		if (tabSel == TAB_LIGHTS) {
-			OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
-		}
-	//}
+	if (tabSel == TAB_LIGHTS) {
+		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+	}
 }
 
 void ReloadProfileList() {
@@ -405,8 +390,7 @@ void SetMainTabs() {
 
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
-		profile_list = GetDlgItem(hDlg, IDC_PROFILES)/*,
-		mode_list = GetDlgItem(hDlg, IDC_EFFECT_MODE)*/;
+		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
 
 	// Started/restarted explorer...
 	if (message == newTaskBar && AddTrayIcon(&conf->niData, conf->updateCheck)) {
@@ -461,18 +445,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			fxhl->Refresh(2); // set def. colors
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", true);
 			break;
-		//case IDC_EFFECT_MODE:
-		//{
-		//	switch (HIWORD(wParam)) {
-		//	case CBN_SELCHANGE:
-		//	{
-		//		conf->activeProfile->effmode = (WORD) ComboBox_GetItemData(mode_list, ComboBox_GetCurSel(mode_list));
-		//		eve->ChangeEffectMode();
-		//		if (tabSel == TAB_LIGHTS)
-		//			OnSelChanged(tab_list);
-		//	} break;
-		//	}
-		//} break;
 		case IDC_PROFILE_EFFECTS:
 			conf->activeProfile->effmode = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 			eve->ChangeEffectMode();
@@ -482,7 +454,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE: {
-				//int prid = (int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list));
 				eve->SwitchActiveProfile(conf->FindProfile((int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list))));
 				ReloadModeList();
 				OnSelChanged(tab_list);
@@ -570,18 +541,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				}
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
 			}
-			// add effects menu...
-			//if (conf->enableMon) {
-			//	pMenu = CreatePopupMenu();
-			//	mInfo.wID = ID_TRAYMENU_MONITORING_SELECTED;
-			//	int i = 0;
-			//	for (i=0; i < effModes.size(); i++) {
-			//		mInfo.dwTypeData = (LPSTR)effModes[i].c_str();
-			//		mInfo.fState = i == conf->GetEffect() ? MF_CHECKED : MF_UNCHECKED;
-			//		InsertMenuItem(pMenu, i, false, &mInfo);
-			//	}
-			//	ModifyMenu(tMenu, ID_TRAYMENU_MONITORING, MF_ENABLED | MF_BYCOMMAND | MF_POPUP | MF_STRING, (UINT_PTR) pMenu, "Effects...");
-			//}
 
 			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableEffects ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, conf->lightsOn ? MF_CHECKED : MF_UNCHECKED);
@@ -631,10 +590,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->enableEffects = !conf->enableEffects;
 			UpdateState(true);
 			break;
-		//case ID_TRAYMENU_MONITORING_SELECTED:
-		//	conf->activeProfile->effmode = idx;
-		//	UpdateState(true);
-		//	break;
 		case ID_TRAYMENU_PROFILESWITCH:
 			eve->StopProfiles();
 			conf->enableProfSwitch = !conf->enableProfSwitch;
@@ -673,23 +628,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case PBT_POWERSETTINGCHANGE: {
 			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*) lParam;
-			//if (sParams->PowerSetting == GUID_MONITOR_POWER_ON)
 			conf->stateScreen = !conf->offWithScreen || sParams->Data[0];
-			//else
 			if (sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE)
 				conf->stateScreen = conf->stateScreen || GetSystemMetrics(SM_CMONITORS) > 1;
 			DebugPrint("Screen state changed to " + to_string(conf->stateScreen) + " (source: " +
 				(sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
 				+ ")\n");
 			fxhl->SetState();
-			//if (sParams->PowerSetting == GUID_MONITOR_POWER_ON/* ||
-			//	sParams->PowerSetting == GUID_CONSOLE_DISPLAY_STATE ||
-			//	sParams->PowerSetting == GUID_SESSION_DISPLAY_STATUS */||
-			//	sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE) {
-			//	//eve->ChangeScreenState(sParams->Data[0]);
-			//	conf->stateScreen = conf->offWithScreen && sParams->Data[0];
-			//	fxhl->SetState();
-			//}
 		} break;
 		case PBT_APMSUSPEND:
 			// Sleep initiated.

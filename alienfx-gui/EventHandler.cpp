@@ -225,7 +225,7 @@ void EventHandler::CheckProfileWindow() {
 
 void EventHandler::StartProfiles()
 {
-	if (conf->enableProfSwitch && !cEvent) {
+	if (conf->enableProfSwitch && !hEvent) {
 		DebugPrint("Profile hooks starting.\n");
 
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
@@ -249,12 +249,12 @@ void EventHandler::StartProfiles()
 
 void EventHandler::StopProfiles()
 {
-	if (cEvent) {
+	if (hEvent) {
 		DebugPrint("Profile hooks stop.\n");
 		UnhookWinEvent(hEvent);
 		UnhookWinEvent(cEvent);
 		UnhookWindowsHookEx(kEvent);
-		cEvent = NULL;
+		hEvent = NULL;
 		keyboardSwitchActive = false;
 	}
 }
@@ -279,7 +279,7 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 		GetProcessImageFileName(hProcess, szProcessName, 32767);
 		PathStripPath(szProcessName);
 		//DebugPrint(("C/D: " + to_string(dwEvent) + " - " + szProcessName + "\n").c_str());
-		if (conf->FindProfileByApp(szProcessName)) {
+		if (conf->enableProfSwitch && conf->FindProfileByApp(szProcessName)) {
 			if (dwEvent == EVENT_OBJECT_DESTROY) {
 				DebugPrint("C/D: Delay activated.\n");
 				// Wait for termination
