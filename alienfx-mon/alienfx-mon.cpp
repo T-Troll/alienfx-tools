@@ -315,10 +315,10 @@ void ResetMinMax(DWORD id = 0xffffffff) {
 void UpdateTrayData(SENSOR* sen) {
 
 	NOTIFYICONDATA* niData = sen->niData;
-	char val[3];
+	char val[5];
 
 	if (sen->cur != 100)
-		sprintf_s(val, "%2d", sen->cur > 100 ? sen->cur / 100 : sen->cur);
+		sprintf_s(val, "  %2d", sen->cur > 100 ? sen->cur / 100 : sen->cur);
 	else
 		sprintf_s(val, "00");
 

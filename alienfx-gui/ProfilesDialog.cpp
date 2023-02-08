@@ -380,7 +380,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_PROFDIM:
 			SetBitMask(prof->flags, PROF_DIMMED, state);
-			prof->ignoreDimming = false;
 			if (prof->id == conf->activeProfile->id) {
 				fxhl->SetState();
 			}

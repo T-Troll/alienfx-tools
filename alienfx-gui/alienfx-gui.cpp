@@ -15,7 +15,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
-bool needRemove = false;
 
 void ResetDPIScale();
 extern void dxgi_Restart();
@@ -189,6 +188,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
+extern string GetFanName(int ind);
+
 void SetTrayTip() {
 	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
 	if (eve) {
@@ -201,7 +202,18 @@ void SetTrayTip() {
 		}
 		name += "\nEffects: " + (effName.empty() ? "Off" : effName);
 	}
-	strcpy_s(conf->niData.szTip, 128, name.c_str());
+	if (acpi) {
+		name += "\nPower mode: ";
+		if (fan_conf->lastProf->gmode)
+			name += "G-mode";
+		else
+			name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
+
+		for (int i = 0; i < acpi->fans.size(); i++) {
+			name += "\n" + GetFanName(i);
+		}
+	}
+	strcpy_s(conf->niData.szTip, 127, name.c_str());
 	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 }
 
@@ -409,6 +421,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		if (AddTrayIcon(&conf->niData, conf->updateCheck)) {
 			conf->SetIconState();
 		}
+
+		SetTimer(hDlg, 0, 500, NULL);
+
 	} break;
 	case WM_COMMAND:
 	{
@@ -514,13 +529,39 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		}
 		break;
+	case WM_TIMER: {
+		if (acpi) {
+			SetTrayTip();
+			//DebugPrint("Timer on\n");
+		}
+	//	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
+	//	if (eve) {
+	//		string effName;
+	//		if (conf->stateEffects) {
+	//			effName += eve->sysmon ? "Monitoring " : "";
+	//			effName += eve->capt ? "Ambient " : "";
+	//			effName += eve->audio ? "Haptics " : "";
+	//			effName += eve->grid ? "Grid" : "";
+	//		}
+	//		name += "\nEffects: " + (effName.empty() ? "Off" : effName);
+	//	}
+	//	strcpy_s(conf->niData.szTip, 128, name.c_str());
+	//	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+	} break;
 	case WM_APP + 1: {
-		switch (lParam)
-		{
+		switch (LOWORD(lParam))	{
 		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONUP:
 			RestoreApp();
 			break;
+		//case NIN_POPUPOPEN:
+		//	//SetTimer(hDlg, 0, 500, NULL);
+		//	DebugPrint("Tray mouse enter\n");
+		//	break;
+		//case NIN_POPUPCLOSE:
+		//	//KillTimer(hDlg, 0);
+		//	DebugPrint("Tray mouse leave\n");
+		//	break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
 			POINT lpClickPoint;
@@ -544,7 +585,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableEffects ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, conf->lightsOn ? MF_CHECKED : MF_UNCHECKED);
-			CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, conf->IsDimmed() ? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, conf->dimmed ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, conf->enableProfSwitch? MF_CHECKED : MF_UNCHECKED);
 
 			GetCursorPos(&lpClickPoint);
@@ -552,8 +593,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
-		case NIN_BALLOONHIDE : case NIN_BALLOONTIMEOUT:
-			if (needRemove) {
+		case NIN_BALLOONTIMEOUT:
+			if (!(conf->niData.uFlags & NIF_INFO)) {
 				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 				Shell_NotifyIcon(NIM_ADD, &conf->niData);
 			}
@@ -583,7 +624,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(false);
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
-		    conf->SetDimmed();
+			conf->dimmed = !conf->dimmed;
 			UpdateState(false);
 			break;
 		case ID_TRAYMENU_ENABLEEFFECTS:
@@ -707,14 +748,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(false);
 			break;
 		case 2: // dim
-			conf->SetDimmed();
+			conf->dimmed = !conf->dimmed;
 			UpdateState(false);
 			break;
 		case 3: // off-dim-full circle
 			if (conf->lightsOn) {
-				if (conf->IsDimmed())
+				if (conf->stateDimmed)
 					conf->lightsOn = false;
-				conf->SetDimmed();
+				else
+					conf->dimmed = true;
 			}
 			else
 				conf->lightsOn = true;

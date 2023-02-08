@@ -7,16 +7,9 @@ using namespace std;
 #pragma comment(lib,"Version.lib")
 
 extern HWND mDlg;
-extern bool needUpdateFeedback, isNewVersion, needRemove;
+extern bool needUpdateFeedback, isNewVersion;
 
 bool UACPassed = true;
-
-//void CleanDelete(void** obj) {
-//	if (obj) {
-//		delete *obj;
-//		*obj = NULL;
-//	}
-//}
 
 bool EvaluteToAdmin() {
 	// Evaluation attempt...
@@ -63,19 +56,20 @@ void ResetDPIScale(LPWSTR cmdLine) {
 }
 
 void ShowNotification(NOTIFYICONDATA* niData, string title, string message, bool type) {
-	needRemove = type;
 	strcpy_s(niData->szInfoTitle, title.c_str());
 	strcpy_s(niData->szInfo, message.c_str());
 	niData->uFlags |= NIF_INFO;
+	//niData->dwInfoFlags = NIIF_ERROR;
 	if (!Shell_NotifyIcon(NIM_MODIFY, niData))
 		Shell_NotifyIcon(NIM_ADD, niData);
-	niData->uFlags &= ~NIF_INFO;
+	if (type)
+		niData->uFlags &= ~NIF_INFO;
 }
 
 DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	NOTIFYICONDATA* niData = (NOTIFYICONDATA*)lparam;
 	HINTERNET session, req;
-	char* buf = new char[2048];
+	char* buf = new char[255];
 	DWORD byteRead;
 	bool isConnectionFailed = true;
 	// Wait connection for a while
@@ -84,16 +78,19 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
 		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
 			NULL, 0, 0, NULL)) {
-			if (InternetReadFile(req, buf, 2047, &byteRead)) {
+			if (InternetReadFile(req, buf, 254, &byteRead)) {
 				buf[byteRead] = 0;
 				string res = buf;
-				size_t pos = res.find("\"name\":"),
-					posf = res.find("\"", pos + 8);
+				size_t pos = res.find("\"name\":");
 				if (pos != string::npos) {
 					isConnectionFailed = false;
-					res = res.substr(pos + 8, posf - pos - 8);
-					size_t dotpos = res.find(".", 1 + res.find(".", 1 + res.find(".")));
-					if (res.find(".", 1 + res.find(".", 1 + res.find("."))) == string::npos)
+					res = res.substr(pos + 8);
+					res = res.substr(0, res.find("\""));
+					int ndots = 0;
+					for (auto i = res.begin(); i != res.end(); i++)
+						if (*i == '.')
+							ndots++;
+					while (ndots++ < 3)
 						res += ".0";
 					if (res.compare(GetAppVersion()) > 0) {
 						// new version detected!
@@ -218,6 +215,8 @@ bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck) {
 	bool haveIcon = Shell_NotifyIcon(NIM_MODIFY, iconData);
 	if (!haveIcon) {
 		haveIcon = Shell_NotifyIcon(NIM_ADD, iconData);
+		//iconData->uVersion = NOTIFYICON_VERSION_4;
+		//Shell_NotifyIcon(NIM_SETVERSION, iconData);
 		if (needCheck)
 			CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
 	}

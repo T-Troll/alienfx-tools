@@ -1055,25 +1055,25 @@ namespace AlienFX_SDK {
 		return devs;
 	}
 
-	void Mappings::AlienFXApplyDevices(vector<Functions*> devList, byte brightness, byte power) {
+	void Mappings::AlienFXApplyDevices(vector<Functions*> devList, byte brightness, bool power) {
 		activeLights = 0;
 		activeDevices = (int)devList.size();
 		// check old devices...
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
 			if (i->dev) {
 				// is device still present?
-				auto nDev = find_if(devList.begin(), devList.end(),
-					[i](auto dev) {
-						return dev->GetVID() == i->vid && dev->GetPID() == i->pid;
-					});
-				if (nDev == devList.end()) {
-					// device not present
+				bool found = false;
+				for (auto nDev = devList.begin(); nDev != devList.end(); nDev++)
+					if (found = (i->vid == (*nDev)->GetVID() && i->pid == (*nDev)->GetPID())) {
+						// Still present
+						devList.erase(nDev);
+						activeLights += (int)i->lights.size();
+						break;
+					}
+				if (!found) {
+					// Not present
 					delete i->dev;
 					i->dev = NULL;
-				}
-				else {
-					devList.erase(nDev);
-					activeLights += (int)i->lights.size();
 				}
 			}
 		}
@@ -1087,7 +1087,7 @@ namespace AlienFX_SDK {
 		devList.clear();
 	}
 
-	void Mappings::AlienFXAssignDevices(void* acc, byte brightness, byte power) {
+	void Mappings::AlienFXAssignDevices(void* acc, byte brightness, bool power) {
 		AlienFXApplyDevices(AlienFXEnumDevices(acc), brightness, power);
 	}
 

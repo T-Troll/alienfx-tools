@@ -97,25 +97,22 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = !state;
-			if (!conf->lightsOn) {
+			if (!conf->stateOn) {
+				conf->stateOn = true;
 				if (state) {
-					conf->lightsOn = true;
 					fxhl->SetState(true);
-					conf->lightsOn = false;
 				}
-				fxhl->SetState(true);
+				fxhl->SetState();
 			}
 			break;
 		case IDC_POWER_DIM:
 			conf->dimPowerButton = state;
-			if (conf->IsDimmed()) {
+			if (conf->stateDimmed) {
+				conf->stateDimmed = false;
 				if (!state) {
-					DWORD oldDimmed = conf->dimmed;
-					conf->dimmed = false;
 					fxhl->SetState(true);
-					conf->dimmed = oldDimmed;
 				}
-				fxhl->SetState(true);
+				fxhl->SetState();
 			}
 			break;
 		case IDC_OFFONBATTERY:
@@ -179,8 +176,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if ((HWND)lParam == dim_slider) {
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip1, conf->dimmingPower);
-				if (conf->IsDimmed())
-					fxhl->SetState(true);
+				if (conf->stateDimmed) {
+					conf->stateDimmed = false;
+					fxhl->SetState();
+				}
 			}
 		} break;
 		} break;

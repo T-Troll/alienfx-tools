@@ -45,7 +45,6 @@ extern NOTIFYICONDATA* niData;
 
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
-bool needRemove = false;
 
 // Forward declarations of functions included in this code module:
 HWND                InitInstance(HINSTANCE, int);
@@ -354,8 +353,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case WM_LBUTTONUP:
             RestoreApp();
             break;
-        case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
-            if (needRemove) {
+        case NIN_BALLOONTIMEOUT:
+            if (!(niData->uFlags & NIF_INFO)) {
                 Shell_NotifyIcon(NIM_DELETE, niData);
                 Shell_NotifyIcon(NIM_ADD, niData);
             }

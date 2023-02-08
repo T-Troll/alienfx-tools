@@ -121,7 +121,6 @@ struct profile {
 	vector<groupset> lightsets;
 	fan_profile fansets;
 	vector<deviceeffect> effects;
-	bool ignoreDimming;
 };
 
 union ambgrid {
@@ -186,7 +185,7 @@ public:
 
 	// final states
 	byte finalBrightness = 255;
-	byte finalPBState = false;
+	bool finalPBState = false;
 
 	ConfigFan fan_conf;
 
@@ -223,7 +222,4 @@ public:
 	bool IsPriorityProfile(profile* prof);
 	bool SetStates();
 	void SetIconState();
-	bool IsDimmed();
-	void SetDimmed();
-	//int GetEffect();
 };

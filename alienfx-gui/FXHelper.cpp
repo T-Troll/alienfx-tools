@@ -435,13 +435,14 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions, boo
 }
 
 void FXHelper::SetState(bool force) {
-	if (conf->SetStates() || force) {
+	if (force || conf->SetStates()) {
 		bool updates = updateThread;
 		Stop();
+		bool pbstate = force || conf->finalPBState;
 		for (auto i = conf->afx_dev.fxdevs.begin(); i < conf->afx_dev.fxdevs.end(); i++) {
 			if (i->dev) {
 				i->dev->powerMode = conf->statePower;
-				i->dev->ToggleState(conf->finalBrightness, &i->lights, conf->finalPBState);
+				i->dev->ToggleState(force ? 255 : conf->finalBrightness, &i->lights, pbstate);
 				switch (i->dev->GetVersion()) {
 				case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3:
 					Refresh();
@@ -706,7 +707,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						}
 						// Dimming...
 						// For v1-v3 and v7 devices only, other have hardware dimming
-						if (conf->IsDimmed() && (!flags || conf->dimPowerButton))
+						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
 							switch (dev->dev->GetVersion()) {
 							case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V7: {
 								unsigned delta = 255 - conf->dimmingPower;

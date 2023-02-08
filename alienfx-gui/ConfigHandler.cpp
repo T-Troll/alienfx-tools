@@ -79,13 +79,13 @@ bool ConfigHandler::SetStates() {
 	// Lights on state...
 	stateOn = lightsOn && stateScreen && (!offOnBattery || statePower);
 	// Dim state...
-	stateDimmed = IsDimmed() || (dimmedBatt && !statePower);
+	stateDimmed = dimmed || activeProfile->flags & PROF_DIMMED || (dimmedBatt && !statePower);
 	// Effects state...
 	stateEffects = enableEffects && (effectsOnBattery || statePower);
 	// Brightness
 	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
 	// Power button state
-	finalPBState = finalBrightness ? stateDimmed ? (byte)dimPowerButton : 1 : (byte)offPowerButton;
+	finalPBState = stateOn ? !stateDimmed || dimPowerButton : offPowerButton;
 
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldStateEffect != stateEffects) {
 		SetIconState();
@@ -101,27 +101,6 @@ void ConfigHandler::SetIconState() {
 						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	SetTrayTip();
 }
-
-bool ConfigHandler::IsDimmed() {
-	return dimmed || (!activeProfile->ignoreDimming && activeProfile->flags & PROF_DIMMED);
-}
-
-void ConfigHandler::SetDimmed() {
-	if (activeProfile->flags & PROF_DIMMED) {
-		if (!dimmed && !activeProfile->ignoreDimming) {
-			activeProfile->ignoreDimming = true;
-			return;
-		}
-		if (!dimmed || !activeProfile->ignoreDimming)
-			activeProfile->ignoreDimming = !activeProfile->ignoreDimming;
-	}
-
-	dimmed = !dimmed;
-}
-
-//int ConfigHandler::GetEffect() {
-//	return enableMon ? activeProfile->effmode : 0;
-//}
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
 	DWORD size = sizeof(DWORD);
