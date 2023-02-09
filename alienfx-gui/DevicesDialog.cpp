@@ -26,6 +26,8 @@ extern EventHandler* eve;
 extern HWND mDlg;
 extern int tabSel;
 
+extern bool noLightFX;
+
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 struct gearInfo {
@@ -43,13 +45,7 @@ WNDPROC oldproc;
 
 AlienFX_SDK::Afx_device* activeDevice = NULL;
 
-//AlienFX_SDK::Afx_device* FindActiveDevice() {
-//	return dIndex >= 0 && dIndex < conf->afx_dev.fxdevs.size() ? &conf->afx_dev.fxdevs[dIndex] : nullptr;
-//}
-
 BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-
-	//AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 
 	switch (message)
 	{
@@ -114,7 +110,6 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 void SetLightInfo() {
-	//AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 	if (activeDevice) {
 		fxhl->TestLight(activeDevice, eLid);
 		AlienFX_SDK::Afx_light* clight = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
@@ -128,7 +123,6 @@ void SetLightInfo() {
 }
 
 void UpdateLightsList() {
-	//AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 	HWND llist = GetDlgItem(dDlg, IDC_LIGHTS_LIST);
 	ListBox_ResetContent(llist);
 	int spos = -1;
@@ -145,7 +139,6 @@ void UpdateLightsList() {
 }
 
 void UpdateDeviceInfo() {
-	//AlienFX_SDK::Afx_device* dev = FindActiveDevice();
 	if (activeDevice) {
 		char descript[128];
 		int devVersion = activeDevice->dev->GetVersion();
@@ -154,7 +147,7 @@ void UpdateDeviceInfo() {
 			(activeDevice->dev ? "APIv" + to_string(devVersion) : "Inactive").c_str());
 		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->dev && 
-			devVersion < 5); // v5 and higher doesn't support power button
+			devVersion && devVersion < 5); // v5 and higher doesn't support power button
 		UpdateLightsList();
 	}
 }
@@ -187,13 +180,10 @@ void RedrawDevList() {
 			lItem.state = LVIS_SELECTED;
 			rpos = i;
 		}
-		/*else
-			lItem.state = 0;*/
 		ListView_InsertItem(dev_list, &lItem);
 	}
 	ListView_SetColumnWidth(dev_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	ListView_EnsureVisible(dev_list, rpos, false);
-	//UpdateLightsList();
 }
 
 void LoadCSV(string name) {
@@ -211,8 +201,7 @@ void LoadCSV(string name) {
 		string content = (char *) filebuf;
 		delete[] filebuf;
 		string line;
-		gearInfo tGear;// { "" };
-		//AlienFX_SDK::Afx_device tDev;
+		gearInfo tGear;
 		while ((linePos = content.find("\r\n", oldLinePos)) != string::npos) {
 			vector<string> fields;
 			size_t pos = 0, posOld = 1;
@@ -229,7 +218,6 @@ void LoadCSV(string name) {
 					case '0': { // device line
 						WORD vid = (WORD)atoi(fields[1].c_str()),
 							pid = (WORD)atoi(fields[2].c_str());
-						//tGear.found = conf->afx_dev.GetDeviceById(pid, vid);
 						DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
 						if (tGear.found = conf->afx_dev.GetDeviceById(pid, vid)) {
 							tGear.devs.push_back({ vid, pid, NULL, fields[3] });
@@ -274,8 +262,6 @@ void LoadCSV(string name) {
 			}
 		}
 		if (tGear.found) {
-			/*if (tGear.name == "")
-				tGear.name = tGear.devs.front().name;*/
 			csv_devs.push_back(tGear);
 		}
 		CloseHandle(file);
@@ -374,6 +360,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
+
 		eve->StopEffects();
 		fxhl->Stop();
 
@@ -695,8 +682,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 	{
-		fxhl->Start();
-		eve->StartEffects();
+		if (noLightFX) {
+			fxhl->Start();
+			eve->StartEffects();
+		}
 		dDlg = NULL;
 	} break;
 	default: return false;

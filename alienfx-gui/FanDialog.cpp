@@ -5,28 +5,22 @@
 
 #pragma comment(lib, "PowrProf.lib")
 
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-
 extern AlienFan_SDK::Control* acpi;
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
 HWND fanWindow = NULL, tipWindow = NULL;
-extern HWND toolTip;
-
-//extern bool fanMode;
 
 GUID* sch_guid, perfset;
 extern NOTIFYICONDATA* niData;
 
 extern INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
-extern DWORD WINAPI CheckFanRPM(LPVOID lpParam);
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
 extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
-extern string GetFanName(int ind);
+extern string GetFanName(int ind, bool forTray = false);
 extern HANDLE ocStopEvent;
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -57,7 +51,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         // So open fan control window...
         fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR)FanCurve);
-        toolTip = CreateToolTip(fanWindow, toolTip);
         tipWindow = GetDlgItem(hDlg, IDC_FC_LABEL);
 
         // Start UI update thread...
@@ -155,11 +148,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
     case WM_TIMER: {
         if (IsWindowVisible(hDlg) && acpi) {
-            //if (acpi->DPTFdone) {
-            //    ReloadTempView(tempList);
-            //    acpi->DPTFdone = false;
-            //    return false;
-            //}
             for (int i = 0; i < acpi->sensors.size(); i++) {
                 string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());

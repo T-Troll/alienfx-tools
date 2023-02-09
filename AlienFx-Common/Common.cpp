@@ -184,13 +184,14 @@ void SetToolTip(HWND tt, string value) {
 }
 
 void SetSlider(HWND tt, int value) {
-	TOOLINFO ti{ sizeof(TOOLINFO) };
-	if (tt) {
-		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-		string toolTip = to_string(value);
-		ti.lpszText = (LPTSTR)toolTip.c_str();
-		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-	}
+	SetToolTip(tt, to_string(value));
+	//TOOLINFO ti{ sizeof(TOOLINFO) };
+	//if (tt) {
+	//	SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
+	//	string toolTip = to_string(value);
+	//	ti.lpszText = (LPTSTR)toolTip.c_str();
+	//	SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+	//}
 }
 
 void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
@@ -213,8 +214,7 @@ void SetBitMask(WORD& val, WORD mask, bool state) {
 
 bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck) {
 	bool haveIcon = Shell_NotifyIcon(NIM_MODIFY, iconData);
-	if (!haveIcon) {
-		haveIcon = Shell_NotifyIcon(NIM_ADD, iconData);
+	if (haveIcon || (haveIcon = Shell_NotifyIcon(NIM_ADD, iconData))) {
 		//iconData->uVersion = NOTIFYICON_VERSION_4;
 		//Shell_NotifyIcon(NIM_SETVERSION, iconData);
 		if (needCheck)

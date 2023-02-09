@@ -49,7 +49,6 @@ struct freq_map {
 struct event {
 	byte state, source, cut, mode;
 	AlienFX_SDK::Afx_action from, to;
-	//double coeff;
 };
 
 struct zonelight {

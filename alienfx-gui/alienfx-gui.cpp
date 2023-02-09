@@ -16,10 +16,7 @@ HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
 
-void ResetDPIScale();
 extern void dxgi_Restart();
-
-HWND InitInstance(HINSTANCE, int);
 
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -40,7 +37,10 @@ HWND mDlg = NULL, dDlg = NULL;
 
 // color selection:
 AlienFX_SDK::Afx_action* mod;
-HANDLE stopColorRefresh = 0;
+//HANDLE stopColorRefresh = 0;
+
+HANDLE haveLightFX;
+bool noLightFX = true;
 
 // tooltips
 HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
@@ -137,6 +137,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		else
 			conf->fanControl = false;
 
+	haveLightFX = CreateEvent(NULL, true, false, "LightFXActive");
+
 	fxhl = new FXHelper();
 
 	eve = new EventHandler();
@@ -174,7 +176,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	delete eve;
-	fxhl->Refresh(2);
+	fxhl->Refresh(true);
+	CloseHandle(haveLightFX);
 	delete fxhl;
 
 	DoStopService(conf->wasAWCC, false);
@@ -188,7 +191,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
-extern string GetFanName(int ind);
+extern string GetFanName(int ind, bool forTray = false);
 
 void SetTrayTip() {
 	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
@@ -210,7 +213,7 @@ void SetTrayTip() {
 			name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
 
 		for (int i = 0; i < acpi->fans.size(); i++) {
-			name += "\n" + GetFanName(i);
+			name += "\n" + GetFanName(i, true);
 		}
 	}
 	strcpy_s(conf->niData.szTip, 127, name.c_str());
@@ -274,7 +277,6 @@ void ResizeTab(HWND tab) {
 	int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
 		deltay = dRect.bottom - (rcDisplay.bottom - rcDisplay.top);
 	if (deltax || deltay) {
-		//DebugPrint("Resize needed!\n");
 		GetWindowRect(GetParent(GetParent(tab)), &dRect);
 		SetWindowPos(GetParent(GetParent(tab)), NULL, 0, 0, dRect.right - dRect.left + deltax, dRect.bottom - dRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
 		rcDisplay.right += deltax;
@@ -284,7 +286,7 @@ void ResizeTab(HWND tab) {
 		rcDisplay.left, rcDisplay.top,
 		rcDisplay.right - rcDisplay.left,
 		rcDisplay.bottom - rcDisplay.top,
-		SWP_SHOWWINDOW /*| SWP_NOSIZE*/);
+		SWP_SHOWWINDOW);
 }
 
 void OnSelChanged(HWND hwndDlg)
@@ -332,7 +334,7 @@ void ReloadProfileList() {
 }
 
 void UpdateState(bool checkMode) {
-	fxhl->SetState();
+	//fxhl->SetState();
 	eve->ChangeEffectMode();
 	if (checkMode) {
 		ReloadModeList();
@@ -422,7 +424,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->SetIconState();
 		}
 
-		SetTimer(hDlg, 0, 500, NULL);
+		SetTimer(hDlg, 0, 750, NULL);
 
 	} break;
 	case WM_COMMAND:
@@ -457,7 +459,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();
 			conf->Save();
-			fxhl->Refresh(2); // set def. colors
+			fxhl->Refresh(true);
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", true);
 			break;
 		case IDC_PROFILE_EFFECTS:
@@ -530,6 +532,20 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_TIMER: {
+		if (noLightFX != (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT)) {
+			// have block!
+			if (noLightFX) {
+				// Stop all!
+				eve->StopEffects();
+				fxhl->Stop();
+			}
+			else {
+				// start back
+				fxhl->Start();
+				eve->StartEffects();
+			}
+			noLightFX = !noLightFX;
+		}
 		if (acpi) {
 			SetTrayTip();
 			//DebugPrint("Timer on\n");
@@ -688,7 +704,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				fxhl->SetState();
 			}
 			eve->StopEffects();
-			fxhl->Refresh(2);
+			fxhl->Refresh(true);
 			fxhl->Stop();
 			if (acpi)
 				mon->Stop();
@@ -721,7 +737,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
 		delete eve;
-		fxhl->Refresh(2);
+		fxhl->Refresh(true);
 		if (acpi)
 			mon->Stop();
 		fxhl->Stop();
@@ -804,21 +820,16 @@ AlienFX_SDK::Afx_action *Code2Act(AlienFX_SDK::Afx_colorcode *c) {
 	return new AlienFX_SDK::Afx_action({0,0,0,c->r,c->g,c->b});
 }
 
-DWORD CColorRefreshProc(LPVOID param) {
-	AlienFX_SDK::Afx_action last = *mod;
-	groupset* mmap = (groupset*)param;
-	int delay = conf->afx_dev.GetGroupById(mmap->group)->have_power ? 1000 : 200;
-	while (WaitForSingleObject(stopColorRefresh, delay)) {
-		if (last.r != mod->r || last.g != mod->g || last.b != mod->b) {
-			last = *mod;
-			if (mmap) fxhl->RefreshOne(mmap);
-		}
+void CColorRefreshProc(LPVOID param) {
+	AlienFX_SDK::Afx_action* lastcolor = (AlienFX_SDK::Afx_action*)param;
+	if (memcmp(lastcolor, mod, sizeof(AlienFX_SDK::Afx_action))) {
+		*lastcolor = *mod;
+		if (mmap) fxhl->RefreshOne(mmap);
 	}
-	return 0;
 }
 
 UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	DRAWITEMSTRUCT* item = 0;
+	//DRAWITEMSTRUCT* item = 0;
 
 	switch (message)
 	{
@@ -834,46 +845,48 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-bool SetColor(HWND ctrl, /*groupset* mmap, */AlienFX_SDK::Afx_action* map) {
+bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
+
 	bool ret;
-
-	AlienFX_SDK::Afx_action savedColor = *map;
-
+	AlienFX_SDK::Afx_action savedColor = *map, lastcolor = *map;
 	mod = map;
-	stopColorRefresh = CreateEvent(NULL, false, false, NULL);
-	HANDLE crRefresh = CreateThread(NULL, 0, CColorRefreshProc, mmap, 0, NULL);
+	ThreadHelper* colorUpdate = NULL;
+	
+	if (needUpdate)
+		colorUpdate = new ThreadHelper(CColorRefreshProc, &lastcolor, conf->afx_dev.GetGroupById(mmap->group)->have_power ? 1000 : 200);
 
-	if (!(ret=ChooseColor(&cc)))
+	if (!(ret = ChooseColor(&cc)))
 		(*map) = savedColor;
 
-	SetEvent(stopColorRefresh);
-	WaitForSingleObject(crRefresh, 500);
-	CloseHandle(crRefresh);
-	CloseHandle(stopColorRefresh);
+	if (needUpdate) {
+		delete colorUpdate;
+		fxhl->Refresh();
+	}
 
-	fxhl->RefreshOne(mmap);
 	RedrawButton(ctrl, Act2Code(map));
-
 	return ret;
 }
 
 bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode *clr) {
-	CHOOSECOLOR cc{ sizeof(cc), ctrl };
 	bool ret;
-
-	cc.lpCustColors = (LPDWORD) conf->customColors;
-	cc.rgbResult = RGB(clr->r, clr->g, clr->b);
-	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
-
-	if (ret = ChooseColor(&cc)) {
-		clr->r = cc.rgbResult & 0xff;
-		clr->g = cc.rgbResult >> 8 & 0xff;
-		clr->b = cc.rgbResult >> 16 & 0xff;
-	}
-	RedrawButton(ctrl, clr);
+	AlienFX_SDK::Afx_action* savedColor = Code2Act(clr);
+	if (ret = SetColor(ctrl, savedColor, false))
+		*clr = *Act2Code(savedColor);
 	return ret;
+	//CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(clr->r, clr->g, clr->b), (LPDWORD)conf->customColors, CC_FULLOPEN | CC_RGBINIT };
+
+	//cc.lpCustColors = (LPDWORD) conf->customColors;
+	//cc.rgbResult = RGB(clr->r, clr->g, clr->b);
+	//cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+	//if (ChooseColor(&cc)) {
+	//	clr->r = cc.rgbResult & 0xff;
+	//	clr->g = cc.rgbResult >> 8 & 0xff;
+	//	clr->b = cc.rgbResult >> 16 & 0xff;
+	//}
+	//RedrawButton(ctrl, clr);
 }
 
 bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {

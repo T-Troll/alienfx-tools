@@ -19,8 +19,7 @@ extern ConfigFan* fan_conf;
 
 void CEventProc(LPVOID);
 
-SysMonHelper::SysMonHelper(bool needUpdate) {
-	needLightsUpdate = needUpdate;
+SysMonHelper::SysMonHelper() {
 	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
 		// Set data source...
 		PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
@@ -32,39 +31,25 @@ SysMonHelper::SysMonHelper(bool needUpdate) {
 		// ToDo: start only if esif enabled
 		PdhAddCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
 		PdhAddCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
-		Start();
-	}
-}
-
-SysMonHelper::~SysMonHelper() {
-	PdhCloseQuery(hQuery);
-	Stop();
-}
-
-void SysMonHelper::Start() {
-	if (!eventProc) {
-		//fxhl->RefreshCounters();
 		// start thread...
 		eventProc = new ThreadHelper(CEventProc, this, 300);
 		DebugPrint("Event thread start.\n");
 	}
 }
 
-void SysMonHelper::Stop()
-{
-	if (eventProc) {
-		delete eventProc;
-		eventProc = NULL;
-		DebugPrint("Event thread stop.\n");
-	}
+SysMonHelper::~SysMonHelper() {
+	delete eventProc;
+	DebugPrint("Event thread stop.\n");
+	PdhCloseQuery(hQuery);
 }
 
-int SysMonHelper::GetCounterValues(HCOUNTER counter, PDH_FMT_COUNTERVALUE_ITEM** values) {
-	DWORD counterSize = sizeof(values);
+int SysMonHelper::GetCounterValues(HCOUNTER counter, int index) {
+	DWORD cs = counterSizes[index] * sizeof(PDH_FMT_COUNTERVALUE_ITEM);
 	DWORD count;
-	while (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &counterSize, &count, *values) == PDH_MORE_DATA) {
-		delete[] * values;
-		*values = new PDH_FMT_COUNTERVALUE_ITEM[counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1];
+	while (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, counterValues[index]) == PDH_MORE_DATA) {
+		delete[] counterValues[index];
+		counterSizes[index] = cs / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
+		counterValues[index] = new PDH_FMT_COUNTERVALUE_ITEM[counterSizes[index]];
 	}
 	return count;
 }
@@ -73,15 +58,15 @@ int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, 
 	int retVal = 0;
 
 	if (c2) {
-		GetCounterValues(c2, &counterValuesMax);
+		GetCounterValues(c2, 1);
 	}
 
-	DWORD count = GetCounterValues(counter, &counterValues);
+	DWORD count = GetCounterValues(counter);
 
 	for (DWORD i = 0; i < count; i++) {
-		int cval = c2 && counterValuesMax[i].FmtValue.longValue ?
-			counterValues[i].FmtValue.longValue * 800 / counterValuesMax[i].FmtValue.longValue :
-			counterValues[i].FmtValue.longValue / divider - delta;
+		int cval = c2 && counterValues[1][i].FmtValue.longValue ?
+			counterValues[0][i].FmtValue.longValue * 800 / counterValues[1][i].FmtValue.longValue :
+			counterValues[0][i].FmtValue.longValue / divider - delta;
 		retVal = max(retVal, cval);
 	}
 
@@ -115,15 +100,15 @@ void CEventProc(LPVOID param)
 		// Network load
 		cData->NET = src->GetValuesArray(src->hNETCounter, fxhl->maxData.NET, 0, 1, src->hNETMAXCounter);
 		// GPU load
-		DWORD count = src->GetCounterValues(src->hGPUCounter, &src->counterValues);
+		DWORD count = src->GetCounterValues(src->hGPUCounter);
 		// now sort...
 		for (DWORD i = 0; i < count; i++) {
-			if (src->counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
-				string path = src->counterValues[i].szName;
+			if (src->counterValues[0][i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
+				string path = src->counterValues[0][i].szName;
 				//string phys = path.substr(path.find("phys_") + 5, 1);
 				int physID = atoi(path.substr(path.find("phys_") + 5, 1).c_str());
 				string type = path.substr(path.find("type_") + 5);
-				gpusubs[type][physID] += src->counterValues[i].FmtValue.longValue;
+				gpusubs[type][physID] += src->counterValues[0][i].FmtValue.longValue;
 			}
 		}
 		for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
@@ -182,8 +167,7 @@ void CEventProc(LPVOID param)
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData->GPU);
 
 		if (conf->lightsNoDelay) { // update lights
-			if (src->needLightsUpdate)
-				fxhl->RefreshCounters(cData);
+			fxhl->RefreshCounters(cData);
 			memcpy(&fxhl->eData, cData, sizeof(LightEventData));
 		}
 	}

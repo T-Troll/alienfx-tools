@@ -29,9 +29,6 @@ HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
 
 static const vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
 
-extern HWND toolTip;
-extern string GetFanName(int ind);
-
 GUID* sch_guid, perfset;
 
 NOTIFYICONDATA niDataFC{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1,
@@ -47,7 +44,6 @@ bool isNewVersion = false;
 bool needUpdateFeedback = false;
 
 // Forward declarations of functions included in this code module:
-HWND                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
@@ -57,7 +53,7 @@ extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
 extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
-HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+extern string GetFanName(int ind, bool forTray = false);
 
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
@@ -173,7 +169,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                                  cDlg.right, cDlg.top, wh, wh,
                                  hDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
-        toolTip = CreateToolTip(fanWindow, NULL);
 
         ReloadPowerList(power_list);
         ReloadTempView(tempList);
@@ -414,7 +409,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
-        //fan_conf->Save();
         LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
@@ -464,7 +458,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
 
             for (int i = 0; i < acpi->fans.size(); i++) {
-                name += "\n" + GetFanName(i);
+                name += "\n" + GetFanName(i, true);
             }
             strcpy_s(niDataFC.szTip, 127, name.c_str());
             Shell_NotifyIcon(NIM_MODIFY, &niDataFC);

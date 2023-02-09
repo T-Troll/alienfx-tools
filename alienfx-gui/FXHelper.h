@@ -11,7 +11,7 @@ struct LightEventData {
 
 struct LightQueryElement {
 	DWORD light;
-	bool flags, update = false;
+	byte update;
 	byte actsize;
 	AlienFX_SDK::Afx_action actions[10];
 };
@@ -27,12 +27,11 @@ private:
 
 	bool blinkStage = false;
 	int oldtest = -1;
-	HANDLE lightFX;
 
-	void SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0, bool force = false);
+	void SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
 	void QueryCommand(LightQueryElement* lqe);
-	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions, bool force = false);
+	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions);
 	void QueryUpdate(bool force = false);
 
 public:
@@ -52,12 +51,8 @@ public:
 	void FillAllDevs(AlienFan_SDK::Control* acc);
 	void Start();
 	void Stop();
-	// Force:
-	// 0: update lights not involved to effect, then effect
-	// 1: update all lights, ignoring on status
-	// 2: save lights into device
-	void Refresh(int force = 0);
-	void RefreshOne(groupset* map, bool update = true, int force = 0);
+	void Refresh(bool force = false);
+	void RefreshOne(groupset* map, bool update = true);
 	void TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force = false, bool wp=false);
 	void ResetPower(AlienFX_SDK::Afx_device* dev);
 	bool CheckEvent(LightEventData* eData, event* e);
@@ -65,7 +60,7 @@ public:
 	void RefreshAmbient();
 	void RefreshHaptics();
 	void RefreshGrid();
-	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0, bool force = false);
+	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0);
 	void SetState(bool force = false);
 	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);
 };

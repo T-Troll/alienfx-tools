@@ -1,7 +1,5 @@
 #pragma once
 
-#define NUM_VIDS 5
-
 namespace AlienFX_SDK {
 
 	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microship (monitors), Primax (mouses), Chicony (external keyboards)
@@ -13,7 +11,7 @@ namespace AlienFX_SDK {
 	//	Chicony = 0x4f2
 	//};
 
-	//static struct COMMV1 { // old devices
+	// V1-V3, old devices
 		const byte COMMV1_color[1]{ 0x03 };
 		const byte COMMV1_loop[1]{ 0x04 };
 		const byte COMMV1_update[1]{ 0x05 };
@@ -33,9 +31,8 @@ namespace AlienFX_SDK {
 		const byte COMMV1_save[1]{0x09};
 		const byte COMMV1_setTempo[1]{ 0x0e };
 		const byte COMMV1_apply[2]{0x1d, 0x03};
-	//} COMMV1;
 
-	//static struct COMMV4 { // common tron
+	// V4, common tron/desktop
 		const byte COMMV4_control[6]{ 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0xff };
 		// [4] - control type (1..7), 1 - start new, 2 - finish and save, 3 - finish and play, 4 - remove, 5 - play, 6 - set default, 7 - set startup
 		// [5-6] - control ID 0xffff - common, 8 - startup, 61 - light
@@ -62,11 +59,10 @@ namespace AlienFX_SDK {
 		// [3-5] - rgb
 		// [7] - count
 		// [8-33] - IDs
-	//} COMMV4;
 		static byte v4OpCodes[]{ 0xd0, 0xdc, 0xcf, 0xdc, 0x82, 0xac, 0xe8 };
+		// Operation codes for light mode
 
-	//static struct COMMV5 { // notebook rgb keyboards
-		// Start command block
+	// V5, notebook rgb keyboards
 		const byte COMMV5_reset[1]{0x94};
 		const byte COMMV5_status[1]{0x93};
 		const byte COMMV5_colorSet[2]{0x8c, 0x02};
@@ -104,9 +100,8 @@ namespace AlienFX_SDK {
 		//					// 0xf0, 0xf0, 0x01};
 		//					{0xcc, 0x8c, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0xff, 0x00, 0x00,
 		//					 0xff, 0x00, 0x01};
-	//} COMMV5;
 
-	//static struct COMMV6 { // monitors
+	// V6, monitors
 		//const byte systemReset[3]{0x93,0x37,0x0e};
 		//[3] - some command, can be 06 and 0e
 		const byte COMMV6_systemReset[4]{ 0x95,0,0,0 };
@@ -120,18 +115,17 @@ namespace AlienFX_SDK {
 		// 4,87 - [10,11,12] - RGB, [13] - Brightness (0..64), [14] - checksum
 		// 2,88 - [10,11,12] - RGB, [13] - Brightness (0..64), [14] - Tempo?, [15] - checksum
 		// 1,8c - [10,11,12] - RGB, [13,14,15] - RGB2, [16] - brightness, [17,18] - tempo, [19] - checksum
-	//} COMMV6;
 
-	//static struct COMMV7 { // mouses
+	// V7, mouses
 		const byte COMMV7_update[8]{0x40,0x60,0x07,0x00,0xc0,0x4e,0x00,0x01};
 		//[8] = 1 - update finish, [9] = 1 - update color (after set)
 		const byte COMMV7_status[5]{0x40,0x03,0x01,0x00,0x01};
 		const byte COMMV7_control[5]{0x40,0x10,0x0c,0x00,0x01};// , 0x64, 0x00, 0x2a, 0xaa, 0xff};
 		//[5] - effect mode, [6] - brightness, [7] - lightID, [8..10] - rgb1, [11..13] - rgb2...
-	//} COMMV7;
 		static byte v7OpCodes[]{ 1,5,3,2,4,6,1 };
+		// light modes operation codes
 
-	//static struct COMMV8 { // external keyboards
+	// V8, external keyboards
 		const byte COMMV8_effectReady[4]{0x5,0x1,0x51,0x00};
 		// [2] - profile number
 		const byte COMMV8_effectSet[14]{0x5,0x1,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 };
@@ -162,5 +156,4 @@ namespace AlienFX_SDK {
 		// [20-33],[35-48],[50-63] - same block [5..18] (so total 4 blocks per command)
 		const byte COMMV8_setBrightness[4]{ 0x17,0x00,0x00,0x00 };
 		// [1] - brightness (0..a)
-	//} COMMV8;
 }

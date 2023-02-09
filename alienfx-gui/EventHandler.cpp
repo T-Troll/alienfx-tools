@@ -16,7 +16,7 @@ extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigFan* fan_conf;
 
-extern void SetTrayTip();
+//extern void SetTrayTip();
 
 void CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -66,7 +66,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		if (acpi)
 			mon->SetCurrentGmode(fan_conf->lastProf->gmode);
 
-		fxhl->SetState();
 		ChangeEffectMode();
 
 		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");
@@ -78,8 +77,9 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 }
 
 void EventHandler::ChangeEffectMode() {
+	fxhl->SetState();
 	StartEffects();
-	SetTrayTip();
+	//SetTrayTip();
 }
 
 void EventHandler::StopEffects() {
@@ -108,7 +108,7 @@ void EventHandler::StartEffects() {
 			if (it->effect.trigger) haveGrid = true;
 		}
 		if (haveMon && !sysmon)
-			sysmon = new SysMonHelper(true);
+			sysmon = new SysMonHelper();
 		if (!haveMon && sysmon) {	// System monitoring
 			delete sysmon; sysmon = NULL;
 		}

@@ -3,7 +3,7 @@
 #include "MonHelper.h"
 #include "common.h"
 
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_action* map);
+extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawZoneGrid(DWORD grpid);

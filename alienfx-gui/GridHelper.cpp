@@ -143,7 +143,7 @@ void GridHelper::RestartWatch() {
 			kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
 			break;
 		case 3: if (!sysmon)
-			sysmon = new SysMonHelper(false);
+			sysmon = new SysMonHelper();
 			break;
 		case 4: if (!capt)
 			capt = new CaptureHelper(false);

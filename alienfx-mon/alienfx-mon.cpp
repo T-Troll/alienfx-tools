@@ -275,7 +275,7 @@ void ModifySensors() {
 	conf->Save();
 	senmon->ModifyMon();
 	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
-	AddTrayIcon(&conf->niData, conf->updateCheck);
+	AddTrayIcon(&conf->niData, false/*conf->updateCheck*/);
 	ResetTraySensors();
 	conf->paused = false;
 }

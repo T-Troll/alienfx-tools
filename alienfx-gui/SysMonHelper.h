@@ -19,14 +19,12 @@ public:
 
 	HQUERY hQuery = NULL;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
-	PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1], * counterValuesMax = new PDH_FMT_COUNTERVALUE_ITEM[1];
-	bool needLightsUpdate = false;
+	PDH_FMT_COUNTERVALUE_ITEM* counterValues[2]{ new PDH_FMT_COUNTERVALUE_ITEM[1], new PDH_FMT_COUNTERVALUE_ITEM[1] };
+	DWORD counterSizes[2]{ 1,1 };
 	LightEventData cData;
 
-	SysMonHelper(bool needUpdate);
+	SysMonHelper();
 	~SysMonHelper();
-	void Start();
-	void Stop();
-	int GetCounterValues(HCOUNTER counter, PDH_FMT_COUNTERVALUE_ITEM** values);
+	int GetCounterValues(HCOUNTER counter, int index = 0);
 	int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta, int divider, HCOUNTER c2);
 };

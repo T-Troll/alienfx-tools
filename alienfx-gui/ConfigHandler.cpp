@@ -1,7 +1,6 @@
 #include "ConfigHandler.h"
+#include "common.h"
 #include "resource.h"
-
-extern void SetTrayTip();
 
 ConfigHandler::ConfigHandler() {
 
@@ -9,7 +8,6 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
-	afx_dev.LoadMappings();
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -99,7 +97,8 @@ void ConfigHandler::SetIconState() {
 	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
 						stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
 						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
-	SetTrayTip();
+	AddTrayIcon(&niData, false);
+	//SetTrayTip();
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
@@ -127,6 +126,9 @@ DWORD ConfigHandler::GetRegData(HKEY key, int vindex, char* name, byte** data) {
 }
 
 void ConfigHandler::Load() {
+
+	afx_dev.LoadMappings();
+
 	DWORD size_c = 16*sizeof(DWORD);// 4 * 16
 	DWORD activeProfileID = 0;
 

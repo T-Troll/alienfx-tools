@@ -11,13 +11,11 @@ extern MonHelper* mon;
 extern HWND fanWindow, tipWindow;
 extern AlienFan_SDK::Control* acpi;
 
-extern void SetToolTip(HWND, string);
+HWND toolTip = NULL;
 
 NOTIFYICONDATA* niData;
 
-HWND toolTip = NULL;
 extern HINSTANCE hInst;
-//bool fanMode = true;
 bool fanUpdateBlock = false;
 RECT cArea{ 0 };
 
@@ -242,13 +240,14 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
 
 INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if (!cArea.right) {
-        GetClientRect(fanWindow, &cArea);
-        cArea.right--; cArea.bottom--;
-    }
-
     switch (message) {
     case WM_PAINT: {
+        if (!toolTip)
+            toolTip = CreateToolTip(hDlg, NULL);
+        if (!cArea.right) {
+            GetClientRect(fanWindow, &cArea);
+            cArea.right--; cArea.bottom--;
+        }
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hDlg, &ps);
         DrawFan();
@@ -339,15 +338,18 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hDlg, message, wParam, lParam);
 }
 
-string GetFanName(int ind) {
-    string name;
+string GetFanName(int ind, bool forTray = false) {
+    char ftype[4];
     switch (acpi->fans[ind].type)
     {
-    case 0: name = "CPU"; break;
-    case 1: name = "GPU"; break;
-    default: name = "Fan";
+    case 0: strcpy_s(ftype, "CPU"); break;
+    case 1: strcpy_s(ftype, "GPU"); break;
+    default: strcpy_s(ftype, "Fan");
     }
-    return name + " " + to_string(ind + 1) + " (" + to_string(mon->fanRpm[ind]) + ")";
+    string fname = (string)ftype + " " + to_string(ind + 1) + " - " + to_string(mon->fanRpm[ind]);
+    if (forTray)
+        fname += " (" + to_string(mon->boostRaw[ind]) + ")";
+    return fname;
 }
 
 void ReloadFanView(HWND list) {

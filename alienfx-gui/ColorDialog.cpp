@@ -2,7 +2,7 @@
 #include "FXHelper.h"
 #include "common.h"
 
-extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map);
+extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
@@ -111,7 +111,7 @@ void ChangeAddColor(HWND hDlg, int newEffID) {
 						mmap->color.erase(mmap->color.begin() + newEffID);
 				}
 		}
-		fxhl->RefreshOne(mmap);
+		//fxhl->RefreshOne(mmap);
 		RebuildEffectList(hDlg);
 		UpdateZoneList();
 	}
@@ -173,9 +173,9 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					if (effID)
 						effID--;
 				}
-				fxhl->RefreshOne(mmap);
 				RebuildEffectList(hDlg);
 				UpdateZoneList();
+				fxhl->Refresh();
 			}
 			break;
 		}
@@ -192,7 +192,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					mmap->color[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip2, mmap->color[effID].time);
 				}
-				fxhl->RefreshOne(mmap);
+				fxhl->Refresh();
 			}
 			break;
 		} break;

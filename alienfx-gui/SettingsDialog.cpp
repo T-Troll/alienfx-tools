@@ -78,7 +78,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_LON:
 			conf->lightsOn = state;
-			fxhl->SetState();
 			eve->ChangeEffectMode();
 			break;
 		case IDC_CHECK_GAMMA:
@@ -87,12 +86,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_EFFECTS:
 			conf->enableEffects = state;
-			conf->SetStates();
 			eve->ChangeEffectMode();
 			break;
 		case IDC_CHECK_EFFBAT:
 			conf->effectsOnBattery = state;
-			conf->SetStates();
 			eve->ChangeEffectMode();
 			break;
 		case IDC_OFFPOWERBUTTON:
@@ -117,7 +114,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_OFFONBATTERY:
 			conf->offOnBattery = state;
-			conf->SetStates();
 			fxhl->SetState();
 			break;
 		case IDC_AWCC:
