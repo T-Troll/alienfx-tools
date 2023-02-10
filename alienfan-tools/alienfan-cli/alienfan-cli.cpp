@@ -140,7 +140,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v7.10.6.2\n");
+    printf("AlienFan-CLI v8.0.2\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
             printf("G-mode is %s\n", acpi.GetGMode() > 0 ? "On" : "Off");
             continue;
         }
-        if (command == "setpower" && CheckArgs(1, acpi.powers.size()) && acpi.SetPower(acpi.powers[args[0].num]) > 0) {
+        if (command == "setpower" && CheckArgs(1, acpi.powers.size()) && acpi.SetPower(acpi.powers[args[0].num]) >= 0) {
             printf("Power mode set to %s (%d)\n", fan_conf.GetPowerName(args[0].num).c_str(), acpi.powers[args[0].num]);
             continue;
         }

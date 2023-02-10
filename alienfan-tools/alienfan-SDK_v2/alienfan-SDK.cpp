@@ -173,7 +173,9 @@ namespace AlienFan_SDK {
 							for (auto fan = fans.begin(); fan != fans.end(); fan++)
 								if (funcID == CallWMIMethod(getFanSensor, fan->id)) {
 									fan->type = (byte)sensors.size();
-									break;
+#ifdef _TRACE_
+									printf("Fan %d belong to it!\n", fan->id);
+#endif
 								}
 							sensors.push_back({ { funcID, 1 }, sName });
 							fIndex++;
