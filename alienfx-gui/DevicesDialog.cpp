@@ -469,7 +469,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					MB_YESNO | MB_ICONWARNING) == IDYES) {
 					if (lgh->flags & ALIENFX_FLAG_POWER) {
 						fxhl->ResetPower(activeDevice);
-						ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!", true);
+						ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!");
 					}
 					// delete from all groups and grids...
 					RemoveLightAndClean(activeDevice->pid, eLid);
@@ -490,12 +490,12 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_ISPOWERBUTTON: {
 			if (lgh) {
 				if (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED) {
-					ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all light settings!", true);
+					ShowNotification(&conf->niData, "Warning", "Setting light to Hardware Power will reset all light settings!");
 					lgh->flags |= ALIENFX_FLAG_POWER;
 				}
 				else {
 					// remove power button config from chip config if unchecked and confirmed
-					ShowNotification(&conf->niData, "Warning", "You may need to reset light system!", true);
+					ShowNotification(&conf->niData, "Warning", "You may need to reset light system hardware!");
 					fxhl->ResetPower(activeDevice);
 					lgh->flags &= ~ALIENFX_FLAG_POWER;
 				}

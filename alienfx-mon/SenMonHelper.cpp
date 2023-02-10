@@ -91,7 +91,7 @@ SENSOR* SenMonHelper::UpdateSensor(SENID sid, long val) {
 			bool alarming = sen->direction ? val < sen->ap : val >= sen->ap;
 			if (sen->alarm && !sen->alarming && alarming && sen->sname.size())
 				ShowNotification(&conf->niData, "Alarm triggered!", "Sensor \"" + sen->sname +
-					"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->ap) + " (Current: " + to_string(val) + ")!", true);
+					"\" " + (sen->direction ? "lower " : "higher ") + to_string(sen->ap) + " (Current: " + to_string(val) + ")!");
 			sen->alarming = alarming;
 		}
 		sen->cur = val;

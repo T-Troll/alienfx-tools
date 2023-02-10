@@ -16,6 +16,6 @@ HWND CreateToolTip(HWND, HWND);
 void SetToolTip(HWND, string);
 void SetSlider(HWND, int);
 void UpdateCombo(HWND ctrl, vector<string> items, int sel = 0, vector<int> val = {});
-void ShowNotification(NOTIFYICONDATA* niData, string title, string message, bool type);
+void ShowNotification(NOTIFYICONDATA* niData, string title, string message);
 void SetBitMask(WORD& val, WORD mask, bool state);
 bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck);

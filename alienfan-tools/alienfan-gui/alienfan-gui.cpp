@@ -113,7 +113,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
     else {
-        ShowNotification(&niDataFC, "Error", "Compatible hardware not found!", false);
+        ShowNotification(&niDataFC, "Error", "Compatible hardware not found!");
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
         Sleep(5000);
     }
@@ -240,7 +240,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SAVE:
             fan_conf->Save();
-            ShowNotification(&niDataFC, "Configuration saved!", "Configuration saved successfully.", true);
+            ShowNotification(&niDataFC, "Configuration saved!", "Configuration saved successfully.");
             break;
         case IDM_SETTINGS_STARTWITHWINDOWS:
         {
@@ -349,11 +349,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             RestoreApp();
             break;
         case NIN_BALLOONTIMEOUT:
-            if (!(niData->uFlags & NIF_INFO)) {
+            if (!isNewVersion) {
                 Shell_NotifyIcon(NIM_DELETE, niData);
                 Shell_NotifyIcon(NIM_ADD, niData);
             }
-            isNewVersion = false;
+            else
+                isNewVersion = false;
             break;
         case NIN_BALLOONUSERCLICK:
         {

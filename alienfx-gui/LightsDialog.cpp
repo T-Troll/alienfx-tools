@@ -89,7 +89,7 @@ void OnLightSelChanged(HWND hwndDlg)
 	tabLightSel = TabCtrl_GetCurSel(hwndDlg);
 
 	if (!conf->afx_dev.activeLights) {
-		ShowNotification(&conf->niData, "Warning", "Please set lights!", true);
+		ShowNotification(&conf->niData, "Warning", "Please set lights first!");
 		tabLightSel = TAB_DEVICES;
 		TabCtrl_SetCurSel(hwndDlg, tabLightSel);
 	}

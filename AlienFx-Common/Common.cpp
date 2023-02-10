@@ -55,15 +55,14 @@ void ResetDPIScale(LPWSTR cmdLine) {
 	}
 }
 
-void ShowNotification(NOTIFYICONDATA* niData, string title, string message, bool type) {
+void ShowNotification(NOTIFYICONDATA* niData, string title, string message) {
 	strcpy_s(niData->szInfoTitle, title.c_str());
 	strcpy_s(niData->szInfo, message.c_str());
 	niData->uFlags |= NIF_INFO;
 	//niData->dwInfoFlags = NIIF_ERROR;
 	if (!Shell_NotifyIcon(NIM_MODIFY, niData))
 		Shell_NotifyIcon(NIM_ADD, niData);
-	if (type)
-		niData->uFlags &= ~NIF_INFO;
+	niData->uFlags &= ~NIF_INFO;
 }
 
 DWORD WINAPI CUpdateCheck(LPVOID lparam) {
@@ -94,11 +93,11 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 						res += ".0";
 					if (res.compare(GetAppVersion()) > 0) {
 						// new version detected!
-						ShowNotification(niData, "Update available!", "Latest version is " + res, false);
+						ShowNotification(niData, "Update available!", "Latest version is " + res);
 						isNewVersion = true;
 					} else
 						if (needUpdateFeedback)
-							ShowNotification(niData, "You are up to date!", "You are using latest version.", true);
+							ShowNotification(niData, "You are up to date!", "You are using latest version.");
 				}
 			}
 			InternetCloseHandle(req);
@@ -106,7 +105,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 		InternetCloseHandle(session);
 	}
 	if (needUpdateFeedback && isConnectionFailed)
-			ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.", true);
+			ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.");
 	delete[] buf;
 	return 0;
 }

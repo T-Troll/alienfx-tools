@@ -17,7 +17,6 @@ HINSTANCE hInst;                                // current instance
 HWND mDlg = 0;
 bool needUpdateFeedback = false;
 bool isNewVersion = false;
-bool needRemove = false;
 bool runUIUpdate = true;
 DWORD selSensor = 0xffffffff;
 
@@ -544,20 +543,19 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
+		case NIN_BALLOONTIMEOUT:
+			if (!isNewVersion) {
+				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+				Shell_NotifyIcon(NIM_ADD, &conf->niData);
+			}
+			else
+				isNewVersion = false;
+			break;
 		case NIN_BALLOONUSERCLICK:
-		{
 			if (isNewVersion) {
 				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
 				isNewVersion = false;
 			}
-		} break;
-		case NIN_BALLOONHIDE: case NIN_BALLOONTIMEOUT:
-			if (needRemove) {
-				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-				Shell_NotifyIcon(NIM_ADD, &conf->niData);
-				needRemove = false;
-			}
-			isNewVersion = false;
 			break;
 		}
 		break;

@@ -460,7 +460,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->afx_dev.SaveMappings();
 			conf->Save();
 			fxhl->Refresh(true);
-			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.", true);
+			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.");
 			break;
 		case IDC_PROFILE_EFFECTS:
 			conf->activeProfile->effmode = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
@@ -610,11 +610,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
 		case NIN_BALLOONTIMEOUT:
-			if (!(conf->niData.uFlags & NIF_INFO)) {
+			if (!isNewVersion) {
 				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 				Shell_NotifyIcon(NIM_ADD, &conf->niData);
-			}
-			isNewVersion = false;
+			} else
+				isNewVersion = false;
 			break;
 		case NIN_BALLOONUSERCLICK:
 		{
@@ -853,7 +853,7 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	AlienFX_SDK::Afx_action savedColor = *map, lastcolor = *map;
 	mod = map;
 	ThreadHelper* colorUpdate = NULL;
-	
+
 	if (needUpdate)
 		colorUpdate = new ThreadHelper(CColorRefreshProc, &lastcolor, conf->afx_dev.GetGroupById(mmap->group)->have_power ? 1000 : 200);
 
@@ -875,18 +875,6 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode *clr) {
 	if (ret = SetColor(ctrl, savedColor, false))
 		*clr = *Act2Code(savedColor);
 	return ret;
-	//CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(clr->r, clr->g, clr->b), (LPDWORD)conf->customColors, CC_FULLOPEN | CC_RGBINIT };
-
-	//cc.lpCustColors = (LPDWORD) conf->customColors;
-	//cc.rgbResult = RGB(clr->r, clr->g, clr->b);
-	//cc.Flags = CC_FULLOPEN | CC_RGBINIT;
-
-	//if (ChooseColor(&cc)) {
-	//	clr->r = cc.rgbResult & 0xff;
-	//	clr->g = cc.rgbResult >> 8 & 0xff;
-	//	clr->b = cc.rgbResult >> 16 & 0xff;
-	//}
-	//RedrawButton(ctrl, clr);
 }
 
 bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {

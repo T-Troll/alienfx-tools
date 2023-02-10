@@ -228,7 +228,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
         fan_conf->UpdateBoost(fan_conf->lastSelectedFan, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
         ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1)
             + ": Final boost " + to_string(bestBoostPoint.maxBoost)
-            + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.", false);
+            + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
     }
     // Restore mode
     acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);

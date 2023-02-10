@@ -145,7 +145,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				conf->Save();
 				if (!DetectFans()) {
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
-					ShowNotification(&conf->niData, "Error", "Fan control not available.", true);
+					ShowNotification(&conf->niData, "Error", "Fan control not available.");
 				}
 			} else {
 				eve->StopEffects();

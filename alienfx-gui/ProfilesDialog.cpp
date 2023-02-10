@@ -288,7 +288,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 			}
 			else
-				ShowNotification(&conf->niData, "Error", "Can't delete last or default profile!", true);
+				ShowNotification(&conf->niData, "Error", "Can't delete last or default profile!");
 		} break;
 		case IDC_BUT_PROFRESET:
 			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove selected light settings from this profile?", "Warning",
