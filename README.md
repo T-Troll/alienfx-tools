@@ -47,6 +47,7 @@ From release 7.0.0 anti-virus do not complain anymore (ACPI access method was ch
 ## Installation
 - Download the latest release archive or installer package from [here](https://github.com/T-Troll/alienfx-tools/releases).
 - Unpack the archive to any directory of your choice or just run the installer.
+- In case you are using .zip archive and have Intel system, copy files from `DPTF` folder to `<Windows folder>\System32\drivers\DriverData\Intel\DPTF\dv\`
 - Run `alienfx-gui` or `alienfx-cli probe` to check and set light names (light control tools will have limited functionality without this step).
 - (Optional) `Ambient` effect mode uses DirectX for screen capturing, so you need to download and install it from [here](https://www.microsoft.com/en-us/download/details.aspx?id=35). Other modes don't require it, so you need it if you plan to use `Ambient` effects only.
 - (Optional) For LightFX-enabled games/applications, copy `LightFx.dll` into game/application folder.
