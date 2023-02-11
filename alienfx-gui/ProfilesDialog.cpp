@@ -120,6 +120,8 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case CBN_SELCHANGE:
 			{
 				vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_GLOBAL_EFFECT ? b1 : b2;
+				if (pCid == conf->activeProfile->id)
+					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev, true);
 				byte newEffect = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
 				if (b != prof->effects.end())
 					b->globalEffect = newEffect;

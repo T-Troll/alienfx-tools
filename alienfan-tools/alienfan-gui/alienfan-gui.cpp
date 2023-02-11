@@ -89,12 +89,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     fan_conf = new ConfigFan();
     fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
     mon = new MonHelper();
+    hInst = hInstance;
+    niData = &niDataFC;
 
     if (acpi->isSupported) {
-        Shell_NotifyIcon(NIM_DELETE, &niDataFC);
-
-        hInst = hInstance;
-
         if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
 
             SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
@@ -113,9 +111,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
     else {
-        ShowNotification(&niDataFC, "Error", "Compatible hardware not found!");
+        if (AddTrayIcon(&niDataFC, false)) {
+            ShowNotification(&niDataFC, "Error", "Compatible hardware not found!");
+            Sleep(5000);
+        }
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
-        Sleep(5000);
     }
     delete mon;
     DoStopService(fan_conf->wasAWCC, false);
@@ -141,13 +141,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     if (message == newTaskBar) {
         // Started/restarted explorer...
         AddTrayIcon(&niDataFC, fan_conf->updateCheck);
+        return true;
     }
 
     switch (message) {
     case WM_INITDIALOG:
     {
         niDataFC.hWnd = hDlg;
-        niData = &niDataFC;
 
         AddTrayIcon(&niDataFC, fan_conf->updateCheck);
 

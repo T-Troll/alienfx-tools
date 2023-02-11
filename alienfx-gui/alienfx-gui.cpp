@@ -112,15 +112,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	//UNREFERENCED_PARAMETER(lpCmdLine);
 	//UNREFERENCED_PARAMETER(nCmdShow);
+	hInst = hInstance;
 
 	ResetDPIScale(lpCmdLine);
 
 	conf = new ConfigHandler();
 	conf->Load();
 
-	if (!conf->afx_dev.GetGrids()->size()) {
-		conf->afx_dev.GetGrids()->push_back({ 0, 20, 8, "Main" });
-		conf->afx_dev.GetGrids()->back().grid = new AlienFX_SDK::Afx_groupLight[20 * 8]{ 0 };
+	auto grids = conf->afx_dev.GetGrids();
+	if (grids->empty()) {
+		grids->push_back({ 0, 20, 8, "Main" });
+		grids->back().grid = new AlienFX_SDK::Afx_groupLight[20 * 8]{ 0 };
 	}
 	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
 
@@ -140,19 +142,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	haveLightFX = CreateEvent(NULL, true, false, "LightFXActive");
 
 	fxhl = new FXHelper();
-
 	eve = new EventHandler();
-
 	if (conf->startMinimized)
 		eve->StartProfiles();
-
-	hInst = hInstance;
 
 	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
 
 		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
 		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
-		conf->SetStates();
+		fxhl = new FXHelper();
+
+		eve = new EventHandler();
+
+		if (conf->startMinimized)
+			eve->StartProfiles();
 		SetHotkeys();
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);

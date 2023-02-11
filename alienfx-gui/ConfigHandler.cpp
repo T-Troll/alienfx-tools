@@ -2,6 +2,8 @@
 #include "common.h"
 #include "resource.h"
 
+extern HWND mDlg;
+
 ConfigHandler::ConfigHandler() {
 
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
@@ -86,7 +88,8 @@ bool ConfigHandler::SetStates() {
 	finalPBState = stateOn ? !stateDimmed || dimPowerButton : offPowerButton;
 
 	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldStateEffect != stateEffects) {
-		SetIconState();
+		if (mDlg)
+			SetIconState();
 		return true;
 	}
 	return false;
@@ -277,7 +280,6 @@ void ConfigHandler::Load() {
 
 	if (!(activeProfile = FindProfile(activeProfileID))) activeProfile = FindDefaultProfile();
 
-	SetStates();
 }
 
 bool ConfigHandler::SamePower(WORD flags, profile* prof) {

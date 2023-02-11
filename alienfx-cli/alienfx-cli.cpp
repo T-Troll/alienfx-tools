@@ -85,6 +85,7 @@ void SetBrighness(AlienFX_SDK::Afx_colorcode *color) {
 	color->r = ((unsigned) color->r * globalBright) / 255;// >> 8;
 	color->g = ((unsigned) color->g * globalBright) / 255;// >> 8;
 	color->b = ((unsigned) color->b * globalBright) / 255;// >> 8;
+	color->br = 255;
 }
 
 void printUsage()
@@ -124,7 +125,7 @@ void Update() {
 }
 
 AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action* act) {
-	return new AlienFX_SDK::Afx_colorcode({ act->b,act->g,act->r });
+	return new AlienFX_SDK::Afx_colorcode({ act->b,act->g,act->r, 255 });
 }
 
 AlienFX_SDK::Afx_colorcode ParseRGB(vector<ARG>* args, int from) {
@@ -153,7 +154,7 @@ int main(int argc, char* argv[])
 	if (argc < 2)
 	{
 		printUsage();
-		return 1;
+		return 0;
 	}
 
 	afx_map->LoadMappings();

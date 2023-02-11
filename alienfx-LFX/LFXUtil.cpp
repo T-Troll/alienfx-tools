@@ -111,46 +111,30 @@ namespace LFXUtil
 	}
 
 	int LFXUtilC::SetTempo(unsigned tempo) {
-		if (_LFX_SetTiming(tempo) != LFX_SUCCESS)
-			return 0;
-		return 1;
+		return _LFX_SetTiming(tempo) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::SetLFXColor(unsigned zone, unsigned color)
 	{
-		if (_LFX_Light(zone, color) != LFX_SUCCESS)
-			return 0;
-		return 1;
+		return _LFX_Light(zone, color) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::SetLFXZoneAction(unsigned action, unsigned zone, unsigned color, unsigned color2)
 	{
 		// Set all lights to color
-
-		if (_LFX_ActionColorEx(zone, action, color, color2) != LFX_SUCCESS)
-			return 0;
-
-		return 1;
+		return _LFX_ActionColorEx(zone, action, color, color2) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned color)
 	{
 		// perform lazy initialization
 		// this should support a device being plugged in after the program has already started running
-
-		if (_LFX_SetLightColor(dev, light, (PLFX_COLOR)&color) != LFX_SUCCESS)
-			return 0;
-
-		return 1;
+		//LFX_COLOR fin{ ((PLFX_COLOR)&color)->red, ((PLFX_COLOR)&color)->green, ((PLFX_COLOR)&color)->blue, ((PLFX_COLOR)&color)->brightness };
+		return _LFX_SetLightColor(dev, light, (PLFX_COLOR)&color) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned color, unsigned color2) {
-
-		if (_LFX_SetLightActionColorEx(dev, light, action, (PLFX_COLOR)&color, (PLFX_COLOR)&color2) != LFX_SUCCESS)
-			return 0;
-
-		return 0;
-
+		return _LFX_SetLightActionColorEx(dev, light, action, (PLFX_COLOR)&color, (PLFX_COLOR)&color2) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::GetStatus()

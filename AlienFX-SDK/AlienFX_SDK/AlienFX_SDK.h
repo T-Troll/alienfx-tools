@@ -140,8 +140,8 @@ namespace AlienFX_SDK {
 		vector<Afx_icommand>* SetMaskAndColor(DWORD index, byte type, Afx_colorcode c1, Afx_colorcode c2 = { 0 }, byte tempo = 0);
 
 		// Support function to send data to USB device
-		bool PrepareAndSend(const byte *command, byte size, vector<Afx_icommand> *mods = NULL);
-		bool PrepareAndSend(const byte* command, byte size, vector<Afx_icommand> mods);
+		bool PrepareAndSend(const byte *command, vector<Afx_icommand> *mods = NULL);
+		bool PrepareAndSend(const byte* command, vector<Afx_icommand> mods);
 
 		// Add new light effect block for v8
 		void AddDataBlock(byte pos, vector<Afx_icommand>* mods, Afx_lightblock* act);

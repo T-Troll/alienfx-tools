@@ -650,24 +650,23 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			//#endif
 			if (current.update) {
 				// update command
-				for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++) {
-					if (devQ->second.size()) {
+				for (auto devQ=devs_query.begin(); devQ != devs_query.end(); devQ++)
 //#ifdef _DEBUG
 //							char buff[2048];
 //							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
 //							OutputDebugString(buff);
 //#endif
-						if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
+					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
+						if (devQ->second.size()) {
 							dev->dev->SetMultiAction(&devQ->second, current.update == 2);
 							dev->dev->UpdateColors();
-							if (dev->dev->IsHaveGlobal())
-								src->UpdateGlobalEffect(dev->dev);
+							devQ->second.clear();
 						}
-						devQ->second.clear();
+						if (dev->dev->IsHaveGlobal())
+							src->UpdateGlobalEffect(dev->dev);
 					}
-				}
 
-				conf->lightsNoDelay = src->lightQuery.size() < (conf->afx_dev.activeLights << 2);
+				conf->lightsNoDelay = src->lightQuery.size() < (conf->afx_dev.activeLights << 3);
 #ifdef _DEBUG
 				if (!conf->lightsNoDelay)
 					DebugPrint("Query so big, delayed!\n");
