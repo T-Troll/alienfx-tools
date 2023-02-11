@@ -121,11 +121,11 @@ namespace AlienFX_SDK {
 		// [2] - how much lights into next color block(s)
 		// [3] - profile number
 		// [4] - ???
-		const byte COMMV8_colorSet[]{10, 0xe, 0x01,0x00,0x01,0x0,0x81,0x00,0xa5,0x00,0x0a };
+		const byte COMMV8_colorSet[]{10, 0xe,0x01,0x00,0x01,0x0,0x81,0x00,0xa5,0x00,0x0a };
 		// [4] - packet number in group
 		// [5] - light id
 		// [6] - Effect type (80 - off, 81 - color, 82 - Pulse, 83 - morph, 87 - breath, 88 - spectrum (undocumented))
-		// 84 - default blue?
+		// 84 - default blue
 		// [7] - Effect speed (tempo)
 		// [9] - Effect length (time)
 		// [10] - brightness?

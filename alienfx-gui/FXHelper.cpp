@@ -463,9 +463,9 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 }
 
 void FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
-	conf->SetStates();
 	Stop();
-	conf->afx_dev.AlienFXAssignDevices(acc, conf->finalBrightness, conf->finalPBState);
+	conf->SetStates();
+	conf->afx_dev.AlienFXAssignDevices(false, acc, conf->finalBrightness, conf->finalPBState);
 	if (conf->afx_dev.activeDevices)
 		Start();
 }

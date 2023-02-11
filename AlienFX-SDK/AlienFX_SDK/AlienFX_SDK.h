@@ -264,8 +264,8 @@ namespace AlienFX_SDK {
 	public:
 
 		vector<Afx_device> fxdevs; // main devices/mappings array
-		int activeLights = 0,  // total number of active lights into the system
-			activeDevices = 0; // total number of active devices
+		unsigned activeLights = 0,  // total number of active lights into the system
+				 activeDevices = 0; // total number of active devices
 
 		~Mappings();
 
@@ -275,16 +275,18 @@ namespace AlienFX_SDK {
 		vector<Functions*> AlienFXEnumDevices(void* acc);
 
 		// Apply device vector to fxdevs structure
+		// activeOnly - clear inactive devices from list
 		// devList - list of active devices
 		// brightness - default device brightness
 		// power - set brightness to power/indicator lights as well
-		void AlienFXApplyDevices(vector<Functions*> devList, byte brightness, bool power);
+		void AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList, byte brightness, bool power);
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
+		// activeOnly - clear inactive devices from list
 		// acc - link to AlienFan_SDK::Control object
 		// brightness - default device brightness
 		// power - set brightness to power/indicator lights as well
-		void AlienFXAssignDevices(void* acc = NULL, byte brightness=255, bool power=false);
+		void AlienFXAssignDevices(bool activeOnly = true, void* acc = NULL, byte brightness=255, bool power=false);
 
 		// load light names from registry
 		void LoadMappings();

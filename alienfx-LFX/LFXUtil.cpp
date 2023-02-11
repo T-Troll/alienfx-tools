@@ -127,14 +127,16 @@ namespace LFXUtil
 
 	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned color)
 	{
-		// perform lazy initialization
-		// this should support a device being plugged in after the program has already started running
-		//LFX_COLOR fin{ ((PLFX_COLOR)&color)->red, ((PLFX_COLOR)&color)->green, ((PLFX_COLOR)&color)->blue, ((PLFX_COLOR)&color)->brightness };
-		return _LFX_SetLightColor(dev, light, (PLFX_COLOR)&color) == LFX_SUCCESS;
+		PLFX_COLOR c = (PLFX_COLOR)&color;
+		std::swap(c->blue, c->red);
+		return _LFX_SetLightColor(dev, light, c) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned color, unsigned color2) {
-		return _LFX_SetLightActionColorEx(dev, light, action, (PLFX_COLOR)&color, (PLFX_COLOR)&color2) == LFX_SUCCESS;
+		PLFX_COLOR c1 = (PLFX_COLOR)&color, c2 = (PLFX_COLOR)&color2;
+		std::swap(c1->blue, c1->red);
+		std::swap(c2->blue, c2->red);
+		return _LFX_SetLightActionColorEx(dev, light, action, c1, c2) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::GetStatus()

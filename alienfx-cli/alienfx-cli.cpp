@@ -64,13 +64,12 @@ void CheckDevices() {
 }
 
 unsigned GetZoneCode(ARG name, int mode) {
-	switch (mode) {
-	case 1: return name.num | 0x10000;
-	case 0:
+	if (mode)
+		return name.num | 0x10000;
+	else
 		for (int i = 0; i < ARRAYSIZE(zonecodes); i++)
 			if (name.str == zonecodes[i].name)
 				return zonecodes[i].code;
-	}
 	return LFX_ALL;
 }
 
@@ -96,7 +95,7 @@ void printUsage()
 	printf("\nProbe argument (can be combined):\n\
 \tl - Define number of lights\n\
 \td - DeviceID and optionally LightID.\n\
-Zones:\tleft, right, top, bottom, front, rear (high-level) or ID of the Group (low-level).\n\
+Zones:\tleft, right, top, bottom, front, rear, all (high-level) or ID of the Group (low-level).\n\
 Actions:color (disable action), pulse, morph,\n\
 \tbreath, spectrum, rainbow (low-level only).\n\
 \tUp to 9 colors can be entered.");
@@ -166,17 +165,11 @@ int main(int argc, char* argv[])
 	} else
 		printf("Dell API not found");
 
-	for (int i = 0; i < afx_map->fxdevs.size(); i++) {
-		if (!afx_map->fxdevs[i].dev) {
-			afx_map->fxdevs.erase(i + afx_map->fxdevs.begin());
-			i--;
-		}
-	}
-	if (afx_map->fxdevs.size()) {
-		printf(", %d low-level devices found.\n", (int)afx_map->fxdevs.size());
+	if (afx_map->activeDevices) {
+		printf(", %d devices found.\n", afx_map->activeDevices);
 		devType = 1;
 	} else
-		printf(", Low-level devices not found.\n");
+		printf(", devices not found.\n");
 
 	if (devType >= 0) {
 
@@ -243,7 +236,7 @@ int main(int argc, char* argv[])
 				Update();
 			} break;
 			case COMMANDS::setaction: {
-				unsigned actionCode = GetActionCode(args[1], devType);
+				unsigned actionCode = GetActionCode(args[2], devType);
 				AlienFX_SDK::Afx_lightblock act{ (byte)args[1].num };
 				act.act = *ParseActions(&args, 2);
 				if (act.act.size() < 2) {
@@ -307,9 +300,6 @@ int main(int argc, char* argv[])
 				// set-dim
 				if (devType && args.size() > 1 && args[0].num < afx_map->fxdevs.size())
 					afx_map->fxdevs[args[0].num].dev->ToggleState(args[1].num, &afx_map->fxdevs[args[0].num].lights, false);
-					//else
-					//	for (int i = 0; i < afx_map->fxdevs.size(); i++)
-					//		afx_map->fxdevs[i].dev->ToggleState(args.back().num, &afx_map->fxdevs[i].lights, false);
 				else
 					globalBright = args.back().num;
 				break;
@@ -324,14 +314,14 @@ int main(int argc, char* argv[])
 				// low-level
 				if (afx_map->fxdevs.size()) {
 					devType = 1;
-					printf("Low-level device selected\n");
+					printf("Device access selected\n");
 				}
 				break;
 			case COMMANDS::highlevel:
 				// high-level
 				if (have_high) {
 					devType = 0;
-					printf("High-level device selected\n");
+					printf("Dell API selected\n");
 				}
 				break;
 			case COMMANDS::status:

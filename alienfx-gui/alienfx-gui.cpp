@@ -722,7 +722,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				DebugPrint("Active list changed!\n");
 				bool updated = fxhl->updateThread;
 				fxhl->Stop();
-				conf->afx_dev.AlienFXApplyDevices(devList, conf->finalBrightness, conf->finalPBState);
+				conf->afx_dev.AlienFXApplyDevices(false, devList, conf->finalBrightness, conf->finalPBState);
 				if (conf->afx_dev.activeDevices && updated) {
 					fxhl->Start();
 					fxhl->Refresh();

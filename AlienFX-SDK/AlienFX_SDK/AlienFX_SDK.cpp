@@ -104,7 +104,7 @@ namespace AlienFX_SDK {
 			if (size == 4) {
 				//res = HidD_SetFeature(devHandle, buffer, length);
 				res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(6); // Need wait for ACK
+				Sleep(7); // Need wait for ACK
 			}
 			else {
 				res = WriteFile(devHandle, buffer, length, &written, NULL);
@@ -1019,40 +1019,45 @@ namespace AlienFX_SDK {
 		return devs;
 	}
 
-	void Mappings::AlienFXApplyDevices(vector<Functions*> devList, byte brightness, bool power) {
+	void Mappings::AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList, byte brightness, bool power) {
 		activeLights = 0;
 		activeDevices = (int)devList.size();
+
 		// check old devices...
-		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
-			if (i->dev) {
-				// is device still present?
-				bool found = false;
-				for (auto nDev = devList.begin(); nDev != devList.end(); nDev++)
-					if (found = (i->vid == (*nDev)->GetVID() && i->pid == (*nDev)->GetPID())) {
-						// Still present
-						devList.erase(nDev);
-						activeLights += (int)i->lights.size();
-						break;
-					}
-				if (!found) {
-					// Not present
+		for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
+			auto nDev = devList.begin();
+			for (; nDev != devList.end(); nDev++)
+				if (i->vid == (*nDev)->GetVID() && i->pid == (*nDev)->GetPID()) {
+					// Still present
+					i++;
+					break;
+				}
+			if (nDev == devList.end()) {
+				// not found
+				if (activeOnly)
+					fxdevs.erase(i);
+				else {
 					delete i->dev;
 					i->dev = NULL;
+					i++;
 				}
 			}
 		}
+
 		// add new devices...
 		for (auto i = devList.begin(); i != devList.end(); i++) {
 			Afx_device* dev = AddDeviceById((*i)->GetPID(), (*i)->GetVID());
-			dev->dev = *i;
-			dev->dev->ToggleState(brightness, &dev->lights, power);
+			if (!dev->dev) {
+				dev->dev = *i;
+				dev->dev->ToggleState(brightness, &dev->lights, power);
+			}
 			activeLights += (int)dev->lights.size();
 		}
 		devList.clear();
 	}
 
-	void Mappings::AlienFXAssignDevices(void* acc, byte brightness, bool power) {
-		AlienFXApplyDevices(AlienFXEnumDevices(acc), brightness, power);
+	void Mappings::AlienFXAssignDevices(bool activeOnly, void* acc, byte brightness, bool power) {
+		AlienFXApplyDevices(activeOnly, AlienFXEnumDevices(acc), brightness, power);
 	}
 
 	Afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {

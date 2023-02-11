@@ -101,7 +101,6 @@ void ConfigHandler::SetIconState() {
 						stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
 						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	AddTrayIcon(&niData, false);
-	//SetTrayTip();
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
