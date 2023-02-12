@@ -230,7 +230,7 @@ void LoadCSV(string name) {
 #endif // _DEBUG
 					} break;
 					case '1': { // lights line
-						WORD ltId = (WORD)atoi(fields[1].c_str());
+						byte ltId = (byte)atoi(fields[1].c_str());
 						DWORD gridval = MAKELPARAM(tGear.devs.back().pid, ltId);
 						DWORD data = atoi(fields[2].c_str());
 						tGear.devs.back().lights.push_back({ ltId, { LOWORD(data), HIWORD(data) }, fields[3]});
@@ -422,7 +422,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			case EN_CHANGE:
 				if (Edit_GetModify(GetDlgItem(hDlg, IDC_EDIT_NAME))) {
 					if (!lgh) {
-						activeDevice->lights.push_back({ (WORD)eLid/*, 0, "Light " + to_string(eLid + 1)*/ });
+						activeDevice->lights.push_back({ (byte)eLid });
 						lgh = &activeDevice->lights.back();
 					}
 					lgh->name.resize(128);

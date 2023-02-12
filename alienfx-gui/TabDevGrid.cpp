@@ -35,19 +35,18 @@ extern AlienFX_SDK::Afx_light* keySetLight;
 extern AlienFX_SDK::Afx_device* activeDevice;
 
 AlienFX_SDK::Afx_light* FindCreateMapping() {
-    //AlienFX_SDK::Afx_device* dev = FindActiveDevice();
     AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
     if (activeDevice && !lgh) {
         // create new mapping
-        activeDevice->lights.push_back({ (WORD)eLid/*, 0, "Light " + to_string(eLid + 1)*/ });
+        activeDevice->lights.push_back({ (byte)eLid, {0,0}, "Light " + to_string(eLid + 1) });
         lgh = &activeDevice->lights.back();
         if (activeDevice->dev) {
             conf->afx_dev.activeLights++;
-        }
-        // for rgb keyboards, check key...
-        if (activeDevice->dev && activeDevice->dev->IsHaveGlobal()) {
-            keySetLight = lgh;
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
+            // for rgb keyboards, check key...
+            if (activeDevice->dev->IsHaveGlobal()) {
+                keySetLight = lgh;
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
+            }
         }
         else
             lgh->name = "Light " + to_string(eLid + 1);

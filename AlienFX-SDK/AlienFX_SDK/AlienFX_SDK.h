@@ -50,7 +50,7 @@ namespace AlienFX_SDK {
 	};
 
 	struct Afx_light { // Light information block
-		WORD  lightid;
+		byte lightid;
 		union {
 			struct {
 				WORD flags;
@@ -137,20 +137,20 @@ namespace AlienFX_SDK {
 		byte bright = 64; // Brightness for APIv4 and v6
 
 		// support function for mask-based devices (v1-v3, v6)
-		vector<Afx_icommand>* SetMaskAndColor(DWORD index, byte type, Afx_colorcode c1, Afx_colorcode c2 = { 0 }, byte tempo = 0);
+		vector<Afx_icommand>* SetMaskAndColor(DWORD index, byte type, Afx_action c1, Afx_action c2 = { 0 }, byte tempo = 0);
 
 		// Support function to send data to USB device
 		bool PrepareAndSend(const byte *command, vector<Afx_icommand> *mods = NULL);
 		bool PrepareAndSend(const byte* command, vector<Afx_icommand> mods);
 
 		// Add new light effect block for v8
-		void AddDataBlock(byte pos, vector<Afx_icommand>* mods, Afx_lightblock* act);
+		byte AddDataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act);
 
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, Afx_lightblock act, bool needSave, bool needInverse = false);
 
 		// Support function for APIv4 action set
-		bool SetV4Action(Afx_lightblock* act);
+		bool SetV4Action(byte index, vector<Afx_action>* act);
 
 		// return current device state
 		BYTE GetDeviceStatus();
@@ -160,9 +160,6 @@ namespace AlienFX_SDK {
 
 		// After-reset delay for APIv1-v3
 		BYTE WaitForBusy();
-
-		// Command separator for some APIs
-		void Loop();
 
 	public:
 
@@ -195,12 +192,12 @@ namespace AlienFX_SDK {
 		BYTE IsDeviceReady();
 
 		// basic color set with ID index for current device. loop - does it need loop command after?
-		bool SetColor(unsigned index, Afx_colorcode c);
+		bool SetColor(byte index, Afx_action c);
 
 		// Set multiply lights to the same color. This only works for some API devices, and emulated for other ones.
 		// lights - pointer to vector of light IDs need to be set.
 		// c - color to set (brightness ignored)
-		bool SetMultiColor(vector<byte> *lights, Afx_colorcode c);
+		bool SetMultiColor(vector<byte> *lights, Afx_action c);
 
 		// Set multiply lights to different color.
 		// act - pointer to vector of light control blocks
@@ -209,7 +206,7 @@ namespace AlienFX_SDK {
 
 		// Set color to action
 		// act - pointer to light control block
-		bool SetAction(Afx_lightblock* act);
+		bool SetAction(byte index, vector<Afx_action>* act);
 
 		// Set action for Power button and store other light colors as default
 		// act - pointer to vector of light control blocks

@@ -832,13 +832,11 @@ void CColorRefreshProc(LPVOID param) {
 }
 
 UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	//DRAWITEMSTRUCT* item = 0;
-
 	switch (message)
 	{
-	case WM_INITDIALOG:
-		mod = (AlienFX_SDK::Afx_action*)((CHOOSECOLOR*)lParam)->lCustData;
-		break;
+	//case WM_INITDIALOG:
+	//	mod = (AlienFX_SDK::Afx_action*)((CHOOSECOLOR*)lParam)->lCustData;
+	//	break;
 	case WM_CTLCOLOREDIT:
 		mod->r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
 		mod->g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
@@ -850,7 +848,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
 bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
-		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, (LPARAM)map, Lpcchookproc };
+		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, NULL/*(LPARAM)map*/, Lpcchookproc };
 
 	bool ret;
 	AlienFX_SDK::Afx_action savedColor = *map, lastcolor = *map;

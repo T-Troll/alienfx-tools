@@ -31,7 +31,7 @@ LFX_RESULT CheckState(int did = -1, int lid = -1) {
 		return LFX_ERROR_NOINIT;
 	if (!(did < (int)afx_map->activeDevices))
 		return LFX_ERROR_NODEVS;
-	if (did < 0 || lid < afx_map->fxdevs[did].lights.size())
+	if (did < 0 || lid < (int)afx_map->fxdevs[did].lights.size())
 		return LFX_SUCCESS;
 	return LFX_ERROR_NOLIGHTS;
 }
@@ -168,7 +168,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, 
 		}
 
 		if (namelen > devName.length()) {
-			strcpy_s(name, namelen+1, devName.c_str());
+			strcpy_s(name, namelen, devName.data());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}
@@ -185,7 +185,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumLights(const unsigned int dev, unsigned
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightDescription(const unsigned int dev, const unsigned int lid, char *const name, const unsigned int namelen) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
 		if (namelen > afx_map->fxdevs[dev].lights[lid].name.length()) {
-			strcpy_s(name, namelen+1, afx_map->fxdevs[dev].lights[lid].name.c_str());
+			strcpy_s(name, namelen, afx_map->fxdevs[dev].lights[lid].name.data());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}
@@ -215,8 +215,9 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const u
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightColor(const unsigned int dev, const unsigned int lid, const PLFX_COLOR clr) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
-		auto action = TranslateColor(*clr, 0);
-		afx_map->fxdevs[dev].dev->SetColor(afx_map->fxdevs[dev].lights[lid].lightid, { action.b, action.g, action.r });
+		//AlienFX_SDK::Afx_lightblock action = { (byte)afx_map->fxdevs[dev].lights[lid].lightid, { TranslateColor(*clr, 0)} };
+		vector<AlienFX_SDK::Afx_action> act{ TranslateColor(*clr, 0) };
+		afx_map->fxdevs[dev].dev->SetAction(afx_map->fxdevs[dev].lights[lid].lightid, &act);
 	}
 	return state;
 }
@@ -250,9 +251,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColor(const unsigned int dev, c
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColorEx(const unsigned int dev, const unsigned int lid, const unsigned int act, const PLFX_COLOR clr1, const PLFX_COLOR clr2) {
 	if (CheckState(dev,lid) == LFX_SUCCESS) {
-		AlienFX_SDK::Afx_lightblock actions{ (byte)afx_map->fxdevs[dev].lights[lid].lightid,
-			{TranslateColor(*clr1, act), TranslateColor(*clr2, act)} };
-		afx_map->fxdevs[dev].dev->SetAction(&actions);
+		vector<AlienFX_SDK::Afx_action> actions{ {TranslateColor(*clr1, act), TranslateColor(*clr2, act)} };
+		afx_map->fxdevs[dev].dev->SetAction((byte)afx_map->fxdevs[dev].lights[lid].lightid, &actions);
 	}
 	return state;
 }
@@ -263,21 +263,18 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColor(const unsigned int pos, const uns
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const unsigned int act, const unsigned int clr1, const unsigned int clr2) {
 	if (CheckState() == LFX_SUCCESS) {
-		AlienFX_SDK::Afx_lightblock actions{ 0,
-			{TranslateColor(clr1, act), TranslateColor(clr2, act)} };
+		vector<AlienFX_SDK::Afx_action> actions{ {TranslateColor(clr1, act), TranslateColor(clr2, act)} };
 		AlienFX_SDK::Afx_group *grp = GetGroupID(pos);
 		for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
 			if (grp) {
 				for (int i = 0; i < grp->lights.size(); i++)
 					if (grp->lights[i].did == j->pid) {
-						actions.index = (byte)grp->lights[i].lid;
-						j->dev->SetAction(&actions);
+						j->dev->SetAction((byte)grp->lights[i].lid, &actions);
 					}
 			} else {
 				for (auto i = j->lights.begin(); i < j->lights.end(); i++) {
 					if (!i->flags) {
-						actions.index = (byte)i->lightid;
-						j->dev->SetAction(&actions);
+						j->dev->SetAction((byte)i->lightid, &actions);
 					}
 				}
 			}

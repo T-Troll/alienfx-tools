@@ -92,7 +92,9 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 {
 	if (dev && dev->dev) {
 
-		AlienFX_SDK::Afx_colorcode c = wp ? dev->white : AlienFX_SDK::Afx_colorcode({ 0 });
+		AlienFX_SDK::Afx_action c{ 0 };
+		if (wp)
+			c = { 0, 0, 0, dev->white.r, dev->white.g, dev->white.b };
 
 		if (force) {
 			vector<byte> opLights;
@@ -109,7 +111,7 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 			oldtest = id;
 
 			if (id != -1)
-				dev->dev->SetColor(id, conf->testColor);
+				dev->dev->SetColor(id, { 0,0,0,conf->testColor.r,conf->testColor.g,conf->testColor.b });
 			dev->dev->UpdateColors();
 		}
 	}
