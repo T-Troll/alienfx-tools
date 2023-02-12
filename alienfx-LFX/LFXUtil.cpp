@@ -125,18 +125,13 @@ namespace LFXUtil
 		return _LFX_ActionColorEx(zone, action, color, color2) == LFX_SUCCESS;
 	}
 
-	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, unsigned color)
+	int LFXUtilC::SetOneLFXColor(unsigned dev, unsigned light, PLFX_COLOR color)
 	{
-		PLFX_COLOR c = (PLFX_COLOR)&color;
-		std::swap(c->blue, c->red);
-		return _LFX_SetLightColor(dev, light, c) == LFX_SUCCESS;
+		return _LFX_SetLightColor(dev, light, color) == LFX_SUCCESS;
 	}
 
-	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, unsigned color, unsigned color2) {
-		PLFX_COLOR c1 = (PLFX_COLOR)&color, c2 = (PLFX_COLOR)&color2;
-		std::swap(c1->blue, c1->red);
-		std::swap(c2->blue, c2->red);
-		return _LFX_SetLightActionColorEx(dev, light, action, c1, c2) == LFX_SUCCESS;
+	int LFXUtilC::SetLFXAction(unsigned action, unsigned dev, unsigned light, PLFX_COLOR color, PLFX_COLOR color2) {
+		return _LFX_SetLightActionColorEx(dev, light, action, color, color2) == LFX_SUCCESS;
 	}
 
 	int LFXUtilC::GetStatus()

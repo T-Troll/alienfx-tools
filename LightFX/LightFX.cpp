@@ -215,9 +215,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const u
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightColor(const unsigned int dev, const unsigned int lid, const PLFX_COLOR clr) {
 	if (CheckState(dev, lid) == LFX_SUCCESS) {
-		//AlienFX_SDK::Afx_lightblock action = { (byte)afx_map->fxdevs[dev].lights[lid].lightid, { TranslateColor(*clr, 0)} };
-		vector<AlienFX_SDK::Afx_action> act{ TranslateColor(*clr, 0) };
-		afx_map->fxdevs[dev].dev->SetAction(afx_map->fxdevs[dev].lights[lid].lightid, &act);
+		vector<byte> ids = { afx_map->fxdevs[dev].lights[lid].lightid };
+		afx_map->fxdevs[dev].dev->SetMultiColor(&ids, TranslateColor(*clr, 0));
 	}
 	return state;
 }
@@ -239,7 +238,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned 
 						lights.push_back((byte) i->lightid);
 				}
 			}
-			j->dev->SetMultiColor(&lights, {action.b, action.g, action.r});
+			j->dev->SetMultiColor(&lights, action);
 		}
 	}
 	return state;
