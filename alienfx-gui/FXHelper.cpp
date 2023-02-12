@@ -92,26 +92,28 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 {
 	if (dev && dev->dev) {
 
-		AlienFX_SDK::Afx_action c{ 0 };
+		vector<AlienFX_SDK::Afx_action> c{ {0} };
 		if (wp)
-			c = { 0, 0, 0, dev->white.r, dev->white.g, dev->white.b };
+			c.front() = { 0, 0, 0, dev->white.r, dev->white.g, dev->white.b };
 
 		if (force) {
 			vector<byte> opLights;
 			for (auto lIter = dev->lights.begin(); lIter != dev->lights.end(); lIter++)
 				if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
 					opLights.push_back((byte)lIter->lightid);
-			dev->dev->SetMultiColor(&opLights, c);
+			dev->dev->SetMultiColor(&opLights, c.front());
 			dev->dev->UpdateColors();
 		}
 
 		if (id != oldtest) {
 			if (oldtest != -1)
-				dev->dev->SetColor(oldtest, c);
+				dev->dev->SetAction(oldtest, &c);
 			oldtest = id;
 
-			if (id != -1)
-				dev->dev->SetColor(id, { 0,0,0,conf->testColor.r,conf->testColor.g,conf->testColor.b });
+			if (id != -1) {
+				c.front() = { 0,0,0,conf->testColor.r,conf->testColor.g,conf->testColor.b };
+				dev->dev->SetAction(id, &c);
+			}
 			dev->dev->UpdateColors();
 		}
 	}

@@ -144,10 +144,13 @@ namespace AlienFX_SDK {
 		bool PrepareAndSend(const byte* command, vector<Afx_icommand> mods);
 
 		// Add new light effect block for v8
-		byte AddDataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act);
+		byte AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act);
+
+		// Add new color block for v5
+		byte AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* act);
 
 		// Support function to send whole power block for v1-v3
-		bool SavePowerBlock(byte blID, Afx_lightblock act, bool needSave, bool needInverse = false);
+		bool SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse = false);
 
 		// Support function for APIv4 action set
 		bool SetV4Action(byte index, vector<Afx_action>* act);
@@ -191,12 +194,13 @@ namespace AlienFX_SDK {
 		// false - not ready, true - ready, 0xff - stalled
 		BYTE IsDeviceReady();
 
-		// basic color set with ID index for current device. loop - does it need loop command after?
+		// basic color set with ID index for current device.
+		// Now it's a synonym of SetAction, but with one color
 		bool SetColor(byte index, Afx_action c);
 
 		// Set multiply lights to the same color. This only works for some API devices, and emulated for other ones.
 		// lights - pointer to vector of light IDs need to be set.
-		// c - color to set (brightness ignored)
+		// c - color to set
 		bool SetMultiColor(vector<byte> *lights, Afx_action c);
 
 		// Set multiply lights to different color.

@@ -135,5 +135,5 @@ namespace AlienFX_SDK {
 		// [20-33],[35-48],[50-63] - same block [5..18] (so total 4 blocks per command)
 		const byte COMMV8_setBrightness[]{4, 0x17,0x00,0x00,0x00 };
 		// [1] - brightness (0..a)
-		const byte v8opCodes[]{ 0x81, 0x82, 0x83, 0x87, 0x88, 0x84, 0x81 };
+		const byte v8OpCodes[]{ 0x81, 0x82, 0x83, 0x87, 0x88, 0x84, 0x81 };
 }

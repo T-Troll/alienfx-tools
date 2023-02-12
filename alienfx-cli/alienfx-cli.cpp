@@ -80,11 +80,10 @@ unsigned GetActionCode(ARG name, int mode) {
 	return mode ? AlienFX_SDK::Action::AlienFX_A_Color : LFX_ACTION_COLOR;
 }
 
-void SetBrighness(AlienFX_SDK::Afx_colorcode *color) {
+void SetBrighness(AlienFX_SDK::Afx_action *color) {
 	color->r = ((unsigned) color->r * globalBright) / 255;// >> 8;
 	color->g = ((unsigned) color->g * globalBright) / 255;// >> 8;
 	color->b = ((unsigned) color->b * globalBright) / 255;// >> 8;
-	color->br = 255;
 }
 
 void printUsage()
@@ -127,10 +126,10 @@ AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action* act) {
 	return new AlienFX_SDK::Afx_colorcode({ act->b,act->g,act->r, 255 });
 }
 
-AlienFX_SDK::Afx_colorcode ParseRGB(vector<ARG>* args, int from) {
-	AlienFX_SDK::Afx_colorcode cur{ 0 };
+AlienFX_SDK::Afx_action ParseRGB(vector<ARG>* args, int from) {
+	AlienFX_SDK::Afx_action cur{ 0 };
 	if (args->size() > from + 2) {
-		cur = { (byte)args->at(from+2).num, (byte)args->at(from + 1).num, (byte)args->at(from).num };
+		cur = { 0, sleepy, longer, (byte)args->at(from+2).num, (byte)args->at(from + 1).num, (byte)args->at(from).num };
 		SetBrighness(&cur);
 	}
 	return cur;
@@ -139,8 +138,10 @@ AlienFX_SDK::Afx_colorcode ParseRGB(vector<ARG>* args, int from) {
 vector<AlienFX_SDK::Afx_action>* ParseActions(vector<ARG>* args, int startPos) {
 	vector<AlienFX_SDK::Afx_action>* actions = new vector<AlienFX_SDK::Afx_action>;
 	for (int argPos = startPos; argPos < args->size(); argPos += 4) {
-		AlienFX_SDK::Afx_colorcode cur = ParseRGB(args, argPos + 1);
-		actions->push_back({ (byte)GetActionCode(args->at(argPos), 1), sleepy, longer, cur.r, cur.g, cur.b });
+		//AlienFX_SDK::Afx_colorcode cur = ParseRGB(args, argPos + 1);
+		//actions->push_back({ (byte)GetActionCode(args->at(argPos), 1), sleepy, longer, cur.r, cur.g, cur.b });
+		actions->push_back(ParseRGB(args, argPos + 1));
+		actions->back().type = GetActionCode(args->at(argPos), 1);
 	}
 	return actions;
 }
@@ -187,7 +188,7 @@ int main(int argc, char* argv[])
 			}
 			switch (CheckCommand(command, (int)args.size())) {
 			case COMMANDS::setall: {
-				AlienFX_SDK::Afx_colorcode color = ParseRGB(&args, 0);
+				//AlienFX_SDK::Afx_colorcode color = ParseRGB(&args, 0);
 				if (devType) {
 					for (auto cd = afx_map->fxdevs.begin(); cd != afx_map->fxdevs.end(); cd++) {
 						vector<byte> lights;
@@ -195,27 +196,25 @@ int main(int argc, char* argv[])
 							if (!(i->flags & ALIENFX_FLAG_POWER))
 								lights.push_back((byte)i->lightid);
 						}
-						cd->dev->SetMultiColor(&lights, { 0,0,0,color.r, color.g, color.b });
+						cd->dev->SetMultiColor(&lights, ParseRGB(&args, 0));
 					}
 				}
 				else {
-					lfxUtil.SetLFXColor(LFX_ALL, color.ci);
+					lfxUtil.SetLFXColor(LFX_ALL, Act2Code(&ParseRGB(&args, 0))->ci);
 				}
 				Update();
 			} break;
 			case COMMANDS::setone: {
-				AlienFX_SDK::Afx_colorcode color = ParseRGB(&args, 2);
 				if (devType) {
 					if (args[0].num < afx_map->fxdevs.size())
-						afx_map->fxdevs[args[0].num].dev->SetColor(args[1].num, { 0,0,0,color.r, color.g, color.b });
+						afx_map->fxdevs[args[0].num].dev->SetAction(args[1].num, &vector<AlienFX_SDK::Afx_action>{ ParseRGB(&args, 2) });
 				}
 				else {
-					lfxUtil.SetOneLFXColor(args[0].num, args[1].num, color.ci);
+					lfxUtil.SetOneLFXColor(args[0].num, args[1].num, Act2Code(&ParseRGB(&args, 2))->ci);
 				}
 				Update();
 			} break;
 			case COMMANDS::setzone: {
-				AlienFX_SDK::Afx_colorcode color = ParseRGB(&args, 1);
 				unsigned zoneCode = GetZoneCode(args[0], devType);
 				if (devType) {
 					AlienFX_SDK::Afx_group* grp = afx_map->GetGroupById(zoneCode);
@@ -226,12 +225,12 @@ int main(int argc, char* argv[])
 								if (i->did == j->pid)
 									lights.push_back((byte)i->lid);
 							}
-							j->dev->SetMultiColor(&lights, { 0,0,0,color.r, color.g, color.b });
+							j->dev->SetMultiColor(&lights, ParseRGB(&args, 1));
 						}
 					}
 				}
 				else {
-					lfxUtil.SetLFXColor(zoneCode, color.ci);
+					lfxUtil.SetLFXColor(zoneCode, Act2Code(&ParseRGB(&args, 1))->ci);
 				}
 				Update();
 			} break;
@@ -291,9 +290,10 @@ int main(int argc, char* argv[])
 				if (args.size() > 1)
 					longer = args[1].num;
 				if (!devType) {
-					lfxUtil.SetTempo(args[0].num);
+					lfxUtil.SetTempo(sleepy);
 					lfxUtil.Update();;
 				}
+				sleepy /= 50;
 				break;
 			case COMMANDS::setdim:
 				// set-dim
@@ -398,7 +398,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 										printf(", old name %s ", lmap->name.c_str());
 									}
 									printf("(ENTER for skip): ");
-									cDev->dev->SetColor(i, { 0, 255, 0 });
+									cDev->dev->SetAction(i, &vector<AlienFX_SDK::Afx_action>{ { 0, 0, 0, 0, 255, 0 }});
 									cDev->dev->UpdateColors();
 									Sleep(100);
 									gets_s(name, 255);
@@ -416,7 +416,7 @@ Just press Enter if no visible light at this ID to skip it.\n");
 									else {
 										printf("Skipped, ");
 									}
-									cDev->dev->SetColor(i, { 0, 0, 255 });
+									cDev->dev->SetAction(i, &vector<AlienFX_SDK::Afx_action>{ { 0, 0, 0, 255, 0, 0 }});
 									cDev->dev->UpdateColors();
 									Sleep(100);
 									afx_map->SaveMappings();
@@ -425,30 +425,8 @@ Just press Enter if no visible light at this ID to skip it.\n");
 					}
 				}
 			} break;
-				//case 14:
-				//	// lights on
-				//	if (devType)
-				//		for (int i = 0; i < afx_map->fxdevs.size(); i++)
-				//			afx_map->fxdevs[i].dev->ToggleState(255, &afx_map->fxdevs[i].lights, false);
-				//	break;
-				//case 15:
-				//	// lights off
-				//	if (devType)
-				//		for (int i = 0; i < afx_map->fxdevs.size(); i++)
-				//			afx_map->fxdevs[i].dev->ToggleState(0, &afx_map->fxdevs[i].lights, false);
-				//	break;
-				//case 16:
-				//	// reset
-				//	if (devType)
-				//		for (int i = 0; i < afx_map->fxdevs.size(); i++)
-				//			afx_map->fxdevs[i].dev->Reset();
-				//	else
-				//		lfxUtil.Reset();
-				//	break;
 			case COMMANDS::loop:
-				// loop
 				cc = 1;
-				//Update();
 				break;
 			case -2:
 				printf("Unknown command %s\n", command.c_str());

@@ -12,7 +12,7 @@ AlienFX_SDK::Afx_group groups[4];
 LFX_RESULT state;
 //map<WORD,vector<LFX_COLOR> > lastState;
 
-AlienFX_SDK::Afx_action TranslateColor(LFX_COLOR src, int type) {
+AlienFX_SDK::Afx_action TranslateColor(LFX_COLOR src, byte type) {
 	// gamma-correction and brightness...
 	AlienFX_SDK::Afx_action final = { actionCodes[type], gtempo, 7,
 		 (byte)(((unsigned)src.red * src.red * src.brightness) / 65025),
@@ -101,11 +101,11 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Release() {
-	if (afx_map) {
+	if (CheckState() == LFX_SUCCESS) {
 		delete afx_map;
 		afx_map = NULL;
 	}
-	return LFX_SUCCESS;
+	return state;
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetTiming(const int time) {
@@ -114,17 +114,17 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetTiming(const int time) {
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetVersion(char *const name, const unsigned int namelen) {
-	if (CheckState() == LFX_SUCCESS) {
-		string vName = "V5.2";
-		for (auto i = afx_map->fxdevs.begin(); i < afx_map->fxdevs.end(); i++) {
-			vName += ",API v" + to_string(i->dev->GetVersion());
-		}
-		if (namelen > vName.length()) {
-			strcpy_s(name, namelen, vName.c_str());
+	//if (CheckState() == LFX_SUCCESS) {
+		char vName[] = "V5.2 emulated";
+		//for (auto i = afx_map->fxdevs.begin(); i < afx_map->fxdevs.end(); i++) {
+		//	vName += ",API v" + to_string(i->dev->GetVersion());
+		//}
+		if (namelen > strlen(vName)) {
+			strcpy_s(name, namelen, vName);
 		} else
 			return LFX_ERROR_BUFFSIZE;
-	}
-	return state;
+	//}
+		return LFX_SUCCESS;/// state;
 }
 
 
@@ -266,18 +266,19 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const u
 		vector<AlienFX_SDK::Afx_action> actions{ {TranslateColor(clr1, act), TranslateColor(clr2, act)} };
 		AlienFX_SDK::Afx_group *grp = GetGroupID(pos);
 		for (auto j = afx_map->fxdevs.begin(); j < afx_map->fxdevs.end(); j++) {
+			vector<AlienFX_SDK::Afx_lightblock> act;
 			if (grp) {
-				for (int i = 0; i < grp->lights.size(); i++)
-					if (grp->lights[i].did == j->pid) {
-						j->dev->SetAction((byte)grp->lights[i].lid, &actions);
-					}
+				for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
+					if (i->did == j->pid)
+						act.push_back({ (byte)i->lid, actions });
+				}
 			} else {
 				for (auto i = j->lights.begin(); i < j->lights.end(); i++) {
-					if (!i->flags) {
-						j->dev->SetAction((byte)i->lightid, &actions);
-					}
+					if (!i->flags)
+						act.push_back({ (byte)i->lightid, actions });
 				}
 			}
+			j->dev->SetMultiAction(&act);
 		}
 	}
 	return state;

@@ -53,9 +53,7 @@ enum COMMANDS {
 	highlevel = 11,
 	probe = 12,
 	status = 13,
-	//lightson = 14,
-	//lightsoff = 15,
-	loop = 17
+	loop = 14
 };
 
 const COMMAND commands[]{
@@ -66,16 +64,11 @@ const COMMAND commands[]{
 	{COMMANDS::setzoneact,"setzoneaction","zone,action,r,g,b[,action,r,g,b] - set all zone lights and enable it's action",5},
 	{COMMANDS::setpower,"setpower","dev,light,r,g,b,r2,g2,b2 - set power button colors (low-level only)",8},
 	{COMMANDS::settempo,"settempo","tempo[,length] - set tempo and effect length for actions",1},
-	//{7,"set-dev","\tpid - set active device for low-level",1},
-	{COMMANDS::setdim,"setdim","\t[dev,]br - set dimming (brightness) level",1},
+	{COMMANDS::setdim,"setdim","\t[dev,]br - set brightness level",1},
 	{COMMANDS::setglobal,"setglobal","dev,type,mode,r,g,b,r,g,b - set global effect (v5, v8, v9 devices)",9},
 	{COMMANDS::lowlevel,"lowlevel","switch to low-level SDK (USB)"},
 	{COMMANDS::highlevel,"highlevel","switch to high-level SDK (LightFX)"},
 	{COMMANDS::probe,"probe","\t[l][d][,lights][,devID[,lightID]] - probe lights and set names"},
 	{COMMANDS::status,"status","\tshows devices, lights and zones id's and names"},
-	//{COMMANDS::lightson,"lightson","turn all lights on"},
-	//{COMMANDS::lightsoff,"lightsoff","turn all lights off"},
-	//{16,"reset","\treset current device state"},
-	//{17,"update","\tUpdate lights"},
 	{COMMANDS::loop,"loop","\trepeat commands from start, until user press CTRL+c"}
 };
