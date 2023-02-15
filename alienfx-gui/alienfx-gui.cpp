@@ -150,12 +150,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALIENFXGUI)));
 		SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFXGUI), IMAGE_ICON, 16, 16, 0));
-		fxhl = new FXHelper();
 
-		eve = new EventHandler();
-
-		if (conf->startMinimized)
-			eve->StartProfiles();
 		SetHotkeys();
 		// Power notifications...
 		RegisterPowerSettingNotification(mDlg, &GUID_MONITOR_POWER_ON, 0);
@@ -178,10 +173,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
-	delete eve;
 	fxhl->Refresh(true);
-	CloseHandle(haveLightFX);
+	delete eve;
 	delete fxhl;
+	CloseHandle(haveLightFX);
 
 	DoStopService(conf->wasAWCC, false);
 
@@ -549,10 +544,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			noLightFX = !noLightFX;
 		}
-		if (acpi) {
-			SetTrayTip();
-			//DebugPrint("Timer on\n");
-		}
+		SetTrayTip();
 	//	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
 	//	if (eve) {
 	//		string effName;

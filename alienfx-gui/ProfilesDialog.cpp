@@ -37,49 +37,48 @@ void RemoveUnusedGroups() {
 		}
 }
 
+const static vector<string> ge_names[2]{ // 0 - v8, 1 - v5
+	{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+	{ "Off", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" } };
+const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,15,16,17,19 }, { 0,2,3,4,8,9,10,11 } };
+
 void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DE_LIST);
 	ListBox_ResetContent(dev_list);
-	for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++)
-		if (conf->afx_dev.fxdevs[i].dev && conf->afx_dev.fxdevs[i].dev->IsHaveGlobal()) {
-			int ind = ListBox_AddString(dev_list, conf->afx_dev.fxdevs[i].name.c_str());
-			ListBox_SetItemData(dev_list, ind, i);
-			if (i == devNum) {
+	for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) 
+		if (i->dev && i->dev->IsHaveGlobal()) {
+			int pos = (int)(i - conf->afx_dev.fxdevs.begin());
+			int ind = ListBox_AddString(dev_list, i->name.c_str());
+			ListBox_SetItemData(dev_list, ind, pos);
+			if (pos == devNum) {
 				ListBox_SetCurSel(dev_list, ind);
 				vector<deviceeffect>::iterator b1 = FindDevEffect(prof, devNum, 1),
 					b2 = FindDevEffect(prof, devNum, 2);
-				switch (conf->afx_dev.fxdevs[devNum].dev->GetVersion()) {
-				case 5:
-					// for v5
-					UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
-						{ "Off", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" },
-						b1 == prof->effects.end() ? 0 : b1->globalEffect, { 0,2,3,4,8,9,10,11 });
-					EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), false);
-					break;
-				case 8:
-					// for v8
-					UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT),
-						{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
-						b1 == prof->effects.end() ? 0 : b1->globalEffect, { 0,1,2,3,7,8,15,16,17,19 });
-					EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), true);
-					UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT),
-						{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
-						b2 == prof->effects.end() ? 0 : b2->globalEffect, { 0,1,2,3,7,8,15,16,17,19 });
-					break;
-				}
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), ge_names[i->version == 5],	b1 == prof->effects.end() ? 0 : b1->globalEffect, ge_types[i->version == 5]);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), ge_names[i->version == 5], b2 == prof->effects.end() ? 0 : b2->globalEffect, ge_types[i->version == 5]);
+				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8);
+
 				if (b1 != prof->effects.end()) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b1->globalDelay);
 					SetSlider(sTip1, b1->globalDelay);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), &b1->effColor1);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), &b1->effColor2);
 				}
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), b1 != prof->effects.end() ? &b1->effColor1 : NULL);
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), b1 != prof->effects.end() ? &b1->effColor2 : NULL);
+				else {
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), NULL);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), NULL);
+				}
 
 				if (b2 != prof->effects.end()) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b2->globalDelay);
 					SetSlider(sTip2, b2->globalDelay);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), &b2->effColor1);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), &b2->effColor2);
 				}
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), b2 != prof->effects.end() ? &b2->effColor1 : NULL);
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), b2 != prof->effects.end() ? &b2->effColor2 : NULL);
+				else {
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), NULL);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), NULL);
+				}
 			}
 		}
 }

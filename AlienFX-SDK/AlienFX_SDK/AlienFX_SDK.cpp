@@ -265,7 +265,8 @@ namespace AlienFX_SDK {
 #ifndef NOACPILIGHTS
 	int Functions::AlienFXInitialize(AlienFan_SDK::Control* acc) {
 		if (acc) {
-			vid = pid = 0xffff;
+			vid = 0x187c;
+			pid = 0xffff;
 			version = API_ACPI;
 			device = new AlienFan_SDK::Lights(acc);
 			if (((AlienFan_SDK::Lights*)device)->isActivated)
@@ -991,6 +992,7 @@ namespace AlienFX_SDK {
 			Afx_device* dev = AddDeviceById((*i)->GetPID(), (*i)->GetVID());
 			if (!dev->dev) {
 				dev->dev = *i;
+				dev->version = (*i)->GetVersion();
 				dev->dev->ToggleState(brightness, &dev->lights, power);
 			}
 			activeLights += (int)dev->lights.size();
@@ -1128,9 +1130,10 @@ namespace AlienFX_SDK {
 
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
 			// Saving device data..
-			string name = "Dev#" + to_string(i->vid) + "_" + to_string(i->pid);
+			string devID = to_string(i->vid) + "_" + to_string(i->pid);
+			string name = "Dev#" + devID;
 			RegSetValueEx(hKeybase, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
-			name = "DevWhite#" + to_string(i->vid) + "_" + to_string(i->pid);
+			name = "DevWhite#" + devID;
 			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
 			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {
 				// Saving all lights from current device

@@ -438,7 +438,7 @@ void FXHelper::SetState(bool force) {
 			if (i->dev) {
 				i->dev->powerMode = conf->statePower;
 				i->dev->ToggleState(force ? 255 : conf->finalBrightness, &i->lights, pbstate);
-				switch (i->dev->GetVersion()) {
+				switch (i->version) {
 				case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
 					// They don't have hardware brightness, so need to set each light again.
 					Refresh();
@@ -487,8 +487,7 @@ void FXHelper::Stop() {
 		if (lightQuery.size())
 			QueryUpdate();
 		SetEvent(stopQuery);
-		//conf->lightsNoDelay = false;
-		WaitForSingleObject(updateThread, 60000);
+		WaitForSingleObject(updateThread, 20000);
 		CloseHandle(updateThread);
 		updateThread = NULL;
 		DebugPrint("Light updates stopped.\n");
@@ -682,7 +681,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				WORD lid = HIWORD(current.light);
 				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
 					WORD flags = conf->afx_dev.GetFlags(dev, lid);
-					int version = dev->dev->GetVersion();
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
 						// gamma-correction...
@@ -694,8 +692,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// Dimming...
 						// For v1-v3 and v7 devices only, other have hardware dimming
 						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
-							switch (version) {
-							case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: {
+							switch (dev->version) {
+							case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: 
+							case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V7: {
 								unsigned delta = 255 - conf->dimmingPower;
 								action->r = ((UINT)action->r * delta) / 255;// >> 8;
 								action->g = ((UINT)action->g * delta) / 255;// >> 8;
@@ -708,7 +707,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 
 					// Is it power button?
-					if ((flags & ALIENFX_FLAG_POWER) && version && version < AlienFX_SDK::API_V5) {
+					if ((flags & ALIENFX_FLAG_POWER) && dev->version && dev->version < AlienFX_SDK::API_V5) {
 						// Should we update it?
 						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						current.actsize = 2;

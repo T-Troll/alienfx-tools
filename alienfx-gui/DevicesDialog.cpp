@@ -141,13 +141,10 @@ void UpdateLightsList() {
 void UpdateDeviceInfo() {
 	if (activeDevice) {
 		char descript[128];
-		int devVersion = activeDevice->dev->GetVersion();
-		sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, %s",
-			activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), 
-			(activeDevice->dev ? "APIv" + to_string(devVersion) : "Inactive").c_str());
+		sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, APIv%d",
+			activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), activeDevice->version);
 		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
-		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->dev && 
-			devVersion && devVersion < 5); // v5 and higher doesn't support power button
+		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->version && activeDevice->version < 5); // v5 and higher doesn't support power button
 		UpdateLightsList();
 	}
 }
@@ -161,11 +158,12 @@ void RedrawDevList() {
 		LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
 		ListView_InsertColumn(dev_list, 0, &lCol);
 	}
-	for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++) {
-		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
-		if (!conf->afx_dev.fxdevs[i].name.length() && conf->afx_dev.fxdevs[i].dev) {
+	for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) {
+		int pos = (int)(i - conf->afx_dev.fxdevs.begin());
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, pos};
+		if (!i->name.length()) {
 			string typeName = "";
-			switch (conf->afx_dev.fxdevs[i].dev->GetVersion()) {
+			switch (i->version) {
 			case 0: typeName = "Desktop"; break;
 			case 1: case 2: case 3: typeName = "Notebook"; break;
 			case 4: typeName = "Notebook/Chassis"; break;
@@ -173,12 +171,12 @@ void RedrawDevList() {
 			case 6: typeName = "Display"; break;
 			case 7: typeName = "Mouse"; break;
 			}
-			conf->afx_dev.fxdevs[i].name = typeName + ", #" + to_string(conf->afx_dev.fxdevs[i].pid);
+			i->name = typeName + ", #" + to_string(i->pid);
 		}
-		lItem.pszText = (char*)conf->afx_dev.fxdevs[i].name.c_str();
-		if (i == dIndex) {
+		lItem.pszText = (char*)i->name.c_str();
+		if (pos == dIndex) {
 			lItem.state = LVIS_SELECTED;
-			rpos = i;
+			rpos = pos;
 		}
 		ListView_InsertItem(dev_list, &lItem);
 	}
@@ -647,8 +645,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
-					dIndex = (int)lPoint->iItem;
-					fxhl->TestLight(&conf->afx_dev.fxdevs[dIndex], eLid, true);
+					//dIndex = (int)lPoint->iItem; 
+					fxhl->TestLight(activeDevice = &conf->afx_dev.fxdevs[dIndex = (int)lPoint->iItem], eLid, true);
 					UpdateDeviceInfo();
 				}
 				else {

@@ -157,12 +157,12 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, 
 	if (!state) {
 		string devName = afx_map->fxdevs[dev].name.length() ? afx_map->fxdevs[dev].name : "Device #" + to_string(dev);
 		*devtype = LFX_DEVTYPE_UNKNOWN;
-		switch (afx_map->fxdevs[dev].dev->GetVersion()) {
-		case 0: *devtype = LFX_DEVTYPE_DESKTOP; break;
-		case 1: case 2: case 3: case 4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
-		case 5: case 8: *devtype = LFX_DEVTYPE_KEYBOARD; break;
-		case 6: *devtype = LFX_DEVTYPE_DISPLAY; break;
-		case 7: *devtype = LFX_DEVTYPE_MOUSE; break;
+		switch (afx_map->fxdevs[dev].version) {
+		case AlienFX_SDK::API_ACPI: *devtype = LFX_DEVTYPE_DESKTOP; break;
+		case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
+		case AlienFX_SDK::API_V5: case AlienFX_SDK::API_V8: *devtype = LFX_DEVTYPE_KEYBOARD; break;
+		case AlienFX_SDK::API_V6: *devtype = LFX_DEVTYPE_DISPLAY; break;
+		case AlienFX_SDK::API_V7: *devtype = LFX_DEVTYPE_MOUSE; break;
 		}
 
 		if (namelen > devName.length()) {

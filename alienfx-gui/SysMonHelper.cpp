@@ -80,15 +80,16 @@ void CEventProc(LPVOID param)
 	SysMonHelper* src = (SysMonHelper*)param;
 
 	static HKL locIDs[10];
-	static MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
-	static SYSTEM_POWER_STATUS state;
-	static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
-	static HKL curLocale;
 	static map<string, map<byte, int>> gpusubs;
 
 	LightEventData* cData = &src->cData;
 
 	if (conf->lightsNoDelay) {
+
+		SYSTEM_POWER_STATUS state;
+		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
+		MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
+		HKL curLocale;
 
 		PdhCollectQueryData(src->hQuery);
 		src->cData = { 0 };

@@ -31,7 +31,6 @@ namespace AlienFX_SDK {
 	// Mapping flags:
     #define ALIENFX_FLAG_POWER		1
     #define ALIENFX_FLAG_INDICATOR	2
-	#define ALIENFX_FLAG_LOCK		4
 
 	// Maximal buffer size across all device types
     #define MAX_BUFFERSIZE 65
@@ -121,10 +120,8 @@ namespace AlienFX_SDK {
 	{
 	private:
 
-		HANDLE devHandle = NULL;
-		OVERLAPPED callBack;
-
-		void* device = NULL;
+		HANDLE devHandle = NULL; // USB device handle
+		void* device = NULL;	 // ACPI device object pointer
 
 		bool inSet = false;
 
@@ -255,6 +252,7 @@ namespace AlienFX_SDK {
 		string name;
 		Afx_colorcode white = { 255,255,255 }; // white point
 		vector <Afx_light> lights;
+		int version = API_UNKNOWN;
 	};
 
 	class Mappings {
