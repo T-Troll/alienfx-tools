@@ -2,7 +2,7 @@
 #include <wtypes.h>
 #include <vector>
 #include <string>
-//#include "alienfx-controls.h"
+#include <SetupAPI.h>
 
 #ifndef NOACPILIGHTS
 #include "alienfan-SDK.h"
@@ -130,8 +130,8 @@ namespace AlienFX_SDK {
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
 		int version = API_UNKNOWN; // interface version
-		byte reportID = 0; // HID ReportID (0 for auto)
-		byte bright = 64; // Brightness for APIv4 and v6
+		//byte reportID = 0; // HID ReportID (0 for auto)
+		byte bright = 64; // Brightness for some APIs (APIv4 and v6)
 
 		// support function for mask-based devices (v1-v3, v6)
 		vector<Afx_icommand>* SetMaskAndColor(DWORD index, byte type, Afx_action c1, Afx_action c2 = { 0 }, byte tempo = 0);
@@ -169,15 +169,15 @@ namespace AlienFX_SDK {
 		~Functions();
 
 		// Initialize device
-		// If vid is 0, first device found into the system will be used, otherwise device with this VID.
-		// If pid is not zero, device with vid/pid will be used.
-		// Returns PID of device used.
+		// If vid is -1 or absent, first device found into the system will be used, otherwise device with this VID only.
+		// If pid is -1 or absent, first device with any pid and given vid will be used, otherwise vid/pid pair.
+		// Returns PID of device found, -1 if fail.
 		int AlienFXInitialize(int vidd = -1, int pidd = -1);
 
-		// Check device and initialize path and vid/pid
-		// in case vid/pid -1 or absent, any vid/pid acceptable
-		// Returns PID of device if ok, -1 otherwise
-		int AlienFXCheckDevice(string devPath, int vid = -1, int pid = -1);
+		// Check device and initialize data
+		// vid/pid the same as above
+		// Returns true if device found and initialize
+		bool ProbeDevice(HDEVINFO hDevInfo, SP_DEVICE_INTERFACE_DATA* devData, int vid = -1, int pid = -1);
 
 #ifndef NOACPILIGHTS
 		// Initialize Aurora ACPI lights if present.
@@ -191,8 +191,10 @@ namespace AlienFX_SDK {
 		// false - not ready, true - ready, 0xff - stalled
 		BYTE IsDeviceReady();
 
-		// basic color set with ID index for current device.
-		// Now it's a synonym of SetAction, but with one color
+		// Basic color set for current device.
+		// index - light ID
+		// c - color action structure
+		// It's a synonym of SetAction, but with one color action
 		bool SetColor(byte index, Afx_action c);
 
 		// Set multiply lights to the same color. This only works for some API devices, and emulated for other ones.
@@ -201,12 +203,13 @@ namespace AlienFX_SDK {
 		bool SetMultiColor(vector<byte> *lights, Afx_action c);
 
 		// Set multiply lights to different color.
-		// act - pointer to vector of light control blocks
+		// act - pointer to vector of light control blocks (each define one light)
 		// store - need to save settings into device memory (v1-v4)
 		bool SetMultiAction(vector<Afx_lightblock> *act, bool store = false);
 
 		// Set color to action
-		// act - pointer to light control block
+		// index - light ID
+		// act - pointer to light actions vector
 		bool SetAction(byte index, vector<Afx_action>* act);
 
 		// Set action for Power button and store other light colors as default
@@ -247,12 +250,12 @@ namespace AlienFX_SDK {
 	};
 
 	struct Afx_device { // Single device data
-		WORD vid, pid;
-		Functions* dev = NULL; // device object pointer
-		string name;
+		WORD vid, pid;			// IDs
+		Functions* dev = NULL;  // device control object pointer
+		string name;			// device name
 		Afx_colorcode white = { 255,255,255 }; // white point
-		vector <Afx_light> lights;
-		int version = API_UNKNOWN;
+		vector <Afx_light> lights; // vector of lights defined
+		int version = API_UNKNOWN; // API version used for this device
 	};
 
 	class Mappings {
