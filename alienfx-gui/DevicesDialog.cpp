@@ -25,7 +25,6 @@ extern FXHelper* fxhl;
 extern EventHandler* eve;
 extern HWND mDlg;
 extern int tabSel;
-
 extern bool noLightFX;
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -141,8 +140,8 @@ void UpdateLightsList() {
 void UpdateDeviceInfo() {
 	if (activeDevice) {
 		char descript[128];
-		sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, APIv%d",
-			activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), activeDevice->version);
+		sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, APIv%d %s",
+			activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), activeDevice->version, activeDevice->dev ? "" : "(inactive)");
 		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->version && activeDevice->version < 5); // v5 and higher doesn't support power button
 		UpdateLightsList();
@@ -358,7 +357,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
-
+		eve->StopProfiles();
 		eve->StopEffects();
 		fxhl->Stop();
 
@@ -683,6 +682,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		if (noLightFX) {
 			fxhl->Start();
 			eve->StartEffects();
+			eve->StartProfiles();
 		}
 		dDlg = NULL;
 	} break;

@@ -531,33 +531,21 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_TIMER: {
 		if (noLightFX != (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT)) {
-			// have block!
+			// lightfx block state changed
+			noLightFX = !noLightFX;
 			if (noLightFX) {
-				// Stop all!
-				eve->StopEffects();
-				fxhl->Stop();
-			}
-			else {
 				// start back
 				fxhl->Start();
 				eve->StartEffects();
 			}
-			noLightFX = !noLightFX;
+			else {
+				// Stop all!
+				eve->StopEffects();
+				fxhl->Stop();
+			}
+			DebugPrint((string)"LightFX " + (noLightFX ? "Off" : "On") + "\n");
 		}
 		SetTrayTip();
-	//	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
-	//	if (eve) {
-	//		string effName;
-	//		if (conf->stateEffects) {
-	//			effName += eve->sysmon ? "Monitoring " : "";
-	//			effName += eve->capt ? "Ambient " : "";
-	//			effName += eve->audio ? "Haptics " : "";
-	//			effName += eve->grid ? "Grid" : "";
-	//		}
-	//		name += "\nEffects: " + (effName.empty() ? "Off" : effName);
-	//	}
-	//	strcpy_s(conf->niData.szTip, 128, name.c_str());
-	//	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 	} break;
 	case WM_APP + 1: {
 		switch (LOWORD(lParam))	{
@@ -693,12 +681,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Sleep/hibernate initiated\n");
 			conf->Save();
 			eve->StopProfiles();
+			eve->StopEffects();
 			// need to restore lights if followed screen
 			if (conf->offWithScreen) {
 				conf->stateScreen = true;
 				fxhl->SetState();
 			}
-			eve->StopEffects();
 			fxhl->Refresh(true);
 			fxhl->Stop();
 			if (acpi)
@@ -733,9 +721,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		conf->Save();
 		delete eve;
 		fxhl->Refresh(true);
+		fxhl->Stop();
 		if (acpi)
 			mon->Stop();
-		fxhl->Stop();
 		return 0;
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 21) { // Profile switch

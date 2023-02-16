@@ -213,11 +213,11 @@ namespace AlienFX_SDK {
 		// act - pointer to vector of light control blocks
 		bool SetPowerAction(vector<Afx_lightblock> *act, bool save = false);
 
-		// Hardware enable/disable/dim lights
+		// Hardware brightness for device, if supported
 		// brightness - desired brightness (0 - off, 255 - full)
-		// mappings - needed to enable some lights for v1-v4 and for software emulation
+		// mappings - mappings list for v4 brightness set (it require light IDs list)
 		// power - if true, power and indicator lights will be set too
-		bool ToggleState(BYTE brightness, vector <Afx_light>* mappings, bool power);
+		bool SetBrightness(BYTE brightness, vector <Afx_light>* mappings, bool power);
 
 		// Global (whole device) effect control for APIv5, v8
 		// effType - effect type

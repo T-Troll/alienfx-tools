@@ -15,11 +15,11 @@ extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
 
 const static vector<string> eventTypeNames{ "Performance", "Indicator" };
-const static vector<vector<string>> eventNames{/* { "Power status" },*/
+const static vector<vector<string>> eventNames{
 		{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
 			"Fans RPM", "Power usage", "Power mode"},
 		{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
-			"Power mode", "Power status" }};
+			"BIOS Power mode", "Power source" }};
 
 int eventID = 0;
 

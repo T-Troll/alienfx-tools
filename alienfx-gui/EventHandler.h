@@ -12,6 +12,7 @@ private:
 	HHOOK kEvent;
 	DWORD maxProcess = 256;
 	DWORD* aProcesses;
+	string GetProcessName(DWORD proc);
 
 public:
 	CaptureHelper* capt = NULL;

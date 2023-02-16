@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
 			case COMMANDS::setdim:
 				// set-dim
 				if (devType && args.size() > 1 && args[0].num < afx_map->fxdevs.size())
-					afx_map->fxdevs[args.front().num].dev->ToggleState(args.back().num, &afx_map->fxdevs[args.front().num].lights, false);
+					afx_map->fxdevs[args.front().num].dev->SetBrightness(args.back().num, &afx_map->fxdevs[args.front().num].lights, false);
 				else
 					globalBright = args.front().num;
 				break;

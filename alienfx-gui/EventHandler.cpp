@@ -15,6 +15,7 @@ extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigFan* fan_conf;
+extern bool noLightFX;
 
 //extern void SetTrayTip();
 
@@ -42,7 +43,7 @@ void EventHandler::ChangePowerState()
 {
 	SYSTEM_POWER_STATUS state;
 	GetSystemPowerStatus(&state);
-	if ((byte)conf->statePower != state.ACLineStatus) {
+	if (conf->statePower != (bool)state.ACLineStatus) {
 		conf->statePower = state.ACLineStatus;
 		DebugPrint("Power state changed!\n");
 		fxhl->SetState();
@@ -79,7 +80,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 void EventHandler::ChangeEffectMode() {
 	fxhl->SetState();
 	StartEffects();
-	//SetTrayTip();
 }
 
 void EventHandler::StopEffects() {
@@ -99,7 +99,7 @@ void EventHandler::StopEffects() {
 }
 
 void EventHandler::StartEffects() {
-	if (conf->stateEffects && conf->stateOn) {
+	if (conf->stateEffects && noLightFX) {
 		bool haveMon = false, haveAmb = false, haveHap = false, haveGrid = false;
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			if (it->events.size()) haveMon = true;
@@ -137,10 +137,19 @@ void EventHandler::StartEffects() {
 		StopEffects();
 }
 
+string EventHandler::GetProcessName(DWORD proc) {
+	char szProcessName[MAX_PATH];
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc);
+	if (hProcess && GetProcessImageFileName(hProcess, szProcessName, MAX_PATH)) {
+		PathStripPath(szProcessName);
+		CloseHandle(hProcess);
+		return szProcessName;
+	}
+	return "";
+}
+
 void EventHandler::ScanTaskList() {
 	DWORD cbNeeded;
-	char* szProcessName = new char[32768];
-
 	profile* newp = NULL, *finalP = NULL;
 
 	if (EnumProcesses(aProcesses, maxProcess * sizeof(DWORD), &cbNeeded)) {
@@ -153,16 +162,11 @@ void EventHandler::ScanTaskList() {
 
 		for (UINT i = 0; i < cbNeeded / sizeof(DWORD); i++) {
 			if (aProcesses[i]) {
-				HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, aProcesses[i]);
-				if (hProcess && GetProcessImageFileName(hProcess, szProcessName, 32767)) {
-					PathStripPath(szProcessName);
-					CloseHandle(hProcess);
-					// is it related to profile?
-					if (newp = conf->FindProfileByApp(string(szProcessName))) {
-						finalP = newp;
-						if (conf->IsPriorityProfile(newp))
-							break;
-					}
+				// is it related to profile?
+				if (newp = conf->FindProfileByApp(GetProcessName(aProcesses[i]))) {
+					finalP = newp;
+					if (conf->IsPriorityProfile(newp))
+						break;
 				}
 			}
 			//else {
@@ -177,37 +181,30 @@ void EventHandler::ScanTaskList() {
 	else
 		DebugPrint("TaskScan: no profile\n");
 #endif // _DEBUG
-	delete[] szProcessName;
 	SwitchActiveProfile(finalP);
 }
 
 void EventHandler::CheckProfileWindow() {
 
-	char* szProcessName;
 	DWORD prcId;
 
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
-	HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
+	string procName = GetProcessName(prcId);
 
-	if (hProcess) {
-		szProcessName = new char[32768];
-		GetProcessImageFileName(hProcess, szProcessName, 32767);
-		CloseHandle(hProcess);
-		PathStripPath(szProcessName);
+	if (procName.size()) {
+		DebugPrint("Foreground switched to " + procName + "\n");
 
-		DebugPrint(string("Foreground switched to ") + szProcessName + "\n");
-
-		if (!conf->noDesktop || (szProcessName != string("ShellExperienceHost.exe")
-			&& szProcessName != string("explorer.exe")
-			&& szProcessName != string("SearchApp.exe")
+		if (!conf->noDesktop || (procName != "ShellExperienceHost.exe"
+			&& procName != "explorer.exe"
+			&& procName != "SearchApp.exe"
 #ifdef _DEBUG
-			&& szProcessName != string("devenv.exe")
+			&& procName != "devenv.exe"
 #endif
 			)) {
 
 			profile* newProf;
 
-			if (newProf = conf->FindProfileByApp(szProcessName, true)) {
+			if (newProf = conf->FindProfileByApp(procName, true)) {
 				if (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))
 					SwitchActiveProfile(newProf);
 			}
@@ -219,8 +216,12 @@ void EventHandler::CheckProfileWindow() {
 			DebugPrint("Forbidden app, switch blocked!\n");
 		}
 #endif // _DEBUG
-		delete[] szProcessName;
 	}
+#ifdef _DEBUG
+	else {
+		DebugPrint("Incorrect active app name\n");
+	}
+#endif
 }
 
 void EventHandler::StartProfiles()
@@ -241,7 +242,6 @@ void EventHandler::StartProfiles()
 #ifndef _DEBUG
 		kEvent = SetWindowsHookExW(WH_KEYBOARD_LL, KeyProc, NULL, 0);
 #endif
-
 		// Need to switch if already running....
 		CheckProfileWindow();
 	}

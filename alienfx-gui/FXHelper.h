@@ -11,7 +11,7 @@ struct LightEventData {
 
 struct LightQueryElement {
 	DWORD light;
-	byte update;
+	byte command; // 0 - color, 1 - update, 2 - set brightness
 	byte actsize;
 	AlienFX_SDK::Afx_action actions[10];
 };

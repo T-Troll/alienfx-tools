@@ -126,7 +126,7 @@ void RecalcGridZone(RECT* what = NULL) {
                 for (int y = full.top; y < full.bottom; y++) {
                     int ind = ind(x, y);
                     if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
-                        if (conf->stateEffects && conf->activeProfile->effmode) {
+                        if (conf->stateEffects) {
                             if (cs->events.size()) {
                                 if (!conf->colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
                                     conf->colorGrid[ind].first = &cs->events.front().from;

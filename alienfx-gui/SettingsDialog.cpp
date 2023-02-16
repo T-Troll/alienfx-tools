@@ -172,10 +172,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if ((HWND)lParam == dim_slider) {
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip1, conf->dimmingPower);
-				if (conf->stateDimmed) {
+				//if (conf->stateDimmed) {
 					conf->stateDimmed = false;
 					fxhl->SetState();
-				}
+				//}
 			}
 		} break;
 		} break;
