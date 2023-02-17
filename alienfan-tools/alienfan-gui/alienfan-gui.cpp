@@ -1,7 +1,6 @@
-#include <windows.h>
 #include <windowsx.h>
+#include <wtypes.h>
 #include <powrprof.h>
-#include <string>
 #include "Resource.h"
 #include "ConfigFan.h"
 #include "MonHelper.h"

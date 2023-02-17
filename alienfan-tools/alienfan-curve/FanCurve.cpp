@@ -1,6 +1,6 @@
 #include "ConfigFan.h"
 #include "MonHelper.h"
-#include "alienfan-SDK.h"
+//#include "alienfan-SDK.h"
 #include <windowsx.h>
 #include "common.h"
 

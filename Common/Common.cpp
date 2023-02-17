@@ -12,6 +12,46 @@ extern bool needUpdateFeedback, isNewVersion;
 
 bool UACPassed = true;
 
+//int versionTag, linkControl;
+//
+//INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//	UNREFERENCED_PARAMETER(lParam);
+//	switch (message)
+//	{
+//	case WM_INITDIALOG: {
+//		SetDlgItemText(hDlg, versionTag, ("Version: " + GetAppVersion()).c_str());
+//	} break;
+//	case WM_COMMAND:
+//		switch (LOWORD(wParam)) {
+//		case IDOK: case IDCANCEL:
+//		{
+//			EndDialog(hDlg, LOWORD(wParam));
+//		} break;
+//		}
+//		break;
+//	case WM_NOTIFY:
+//		if (LOWORD(wParam) == linkControl) {
+//			switch (((LPNMHDR)lParam)->code)
+//			{
+//			case NM_CLICK:
+//			case NM_RETURN:
+//			{
+//				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
+//			} break;
+//			} break;
+//		}
+//		break;
+//	default: return (INT_PTR)FALSE;
+//	}
+//	return (INT_PTR)TRUE;
+//}
+//
+//void OpenAbout(int res, int vt, int link) {
+//	versionTag = vt; linkControl = link;
+//	DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(res), mDlg, About);
+//}
+
 bool EvaluteToAdmin() {
 	// Evaluation attempt...
 	if (!(UACPassed = IsUserAnAdmin())) {

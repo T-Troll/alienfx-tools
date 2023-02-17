@@ -19,7 +19,6 @@
 #define IDC_STATIC_VERSION              1009
 #define IDC_SYSLINK_HOMEPAGE            1010
 #define IDC_MAX_RESET                   1016
-#define IDC_BUTTON1                     1017
 #define IDC_BUT_RESETBOOST              1017
 #define IDC_AC_BOOST                    1124
 #define IDC_DC_BOOST                    1125
@@ -32,7 +31,6 @@
 #define ID_MENU_POWER                   32791
 #define ID_MENU_GMODE                   32792
 #define ID_MENU_EXIT                    32793
-#define ID_SAVE                         32794
 #define IDM_SAVE                        32795
 #define IDM_SETTINGS_DISABLEAWCC        32796
 #define ID_SETTINGS_KEYBOARDSHORTCUTS   32797

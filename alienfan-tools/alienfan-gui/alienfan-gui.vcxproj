@@ -58,7 +58,6 @@
   <ImportGroup Label="Shared">
     <Import Project="..\alienfan-shared\alienfan-shared.vcxitems" Label="Shared" />
     <Import Project="..\alienfan-curve\alienfan-curve.vcxitems" Label="Shared" />
-    <Import Project="..\..\AlienFx-Common\AlienFx-Common.vcxitems" Label="Shared" />
     <Import Project="..\alienfan-mon\alienfan-mon.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -177,6 +176,9 @@
     <Image Include="alienfan-gui.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Common\Common.vcxproj">
+      <Project>{3d4ef0c4-282c-4318-8fbb-133514a8f0dc}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\alienfan-SDK_v2\alienfan-SDK_v2.vcxproj">
       <Project>{9321a480-9118-4173-b79d-45d8253c2c47}</Project>
     </ProjectReference>
