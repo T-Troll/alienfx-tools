@@ -10,8 +10,6 @@ using namespace std;
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-#define MAX_LOADSTRING 100
-
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 HWND mDlg = 0;
@@ -31,8 +29,6 @@ SenMonHelper* senmon;
 HWND                InitInstance(HINSTANCE, int);
 BOOL CALLBACK       DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-void ResetDPIScale();
 
 bool IsSensorValid(map<DWORD, SENSOR>::iterator sen) {
 	if (sen != conf->active_sensors.end()) {
@@ -75,9 +71,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	ResetDPIScale(lpCmdLine);
 
 	conf = new ConfigMon();
-
-	//if (conf->eSensors || conf->bSensors)
-	//	EvaluteToAdmin();
 
 	senmon = new SenMonHelper();
 
@@ -273,8 +266,9 @@ void ModifySensors() {
 	RemoveTrayIcons();
 	conf->Save();
 	senmon->ModifyMon();
+	CheckDlgButton(mDlg, IDC_ESENSORS, conf->eSensors);
 	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
-	AddTrayIcon(&conf->niData, false/*conf->updateCheck*/);
+	AddTrayIcon(&conf->niData, false);
 	ResetTraySensors();
 	conf->paused = false;
 }
@@ -382,6 +376,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Started/restarted explorer...
 		AddTrayIcon(&conf->niData, conf->updateCheck);
 		ResetTraySensors();
+		SendMessage(hDlg, WM_TIMER, 0, 0);
 	}
 
 	switch (message)
@@ -402,8 +397,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		senmon->UpdateSensors();
 		ReloadSensorView();
 		SendMessage(hDlg, WM_TIMER, 0, 0);
-		// Start UI update thread...
-		//SetTimer(mDlg, 0, conf->refreshDelay, NULL);
 	} break;
 	case WM_COMMAND:
 	{
@@ -638,8 +631,6 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (conf->updateCheck)
 				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 		} break;
-		//case PBT_APMSUSPEND:
-		//	break;
 		}
 		break;
 	case WM_ENDSESSION:

@@ -10,7 +10,7 @@
 #define DebugPrint(_x_)
 #endif
 
-extern AlienFan_SDK::Control* acpi;
+//extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
@@ -64,7 +64,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		fan_conf->lastProf = newID->flags & PROF_FANS ? &newID->fansets : &fan_conf->prof;
 		modifyProfile.unlock();
 
-		if (acpi)
+		if (mon)
 			mon->SetCurrentGmode(fan_conf->lastProf->gmode);
 
 		ChangeEffectMode();

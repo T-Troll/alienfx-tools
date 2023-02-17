@@ -1,6 +1,5 @@
 #pragma once
 #include <ShlObj.h>
-#include <WinInet.h>
 #include <string>
 #include <vector>
 

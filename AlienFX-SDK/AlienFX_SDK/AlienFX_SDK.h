@@ -2,7 +2,6 @@
 #include <wtypes.h>
 #include <vector>
 #include <string>
-#include <SetupAPI.h>
 
 #ifndef NOACPILIGHTS
 #include "alienfan-SDK.h"
@@ -177,7 +176,7 @@ namespace AlienFX_SDK {
 		// Check device and initialize data
 		// vid/pid the same as above
 		// Returns true if device found and initialize
-		bool ProbeDevice(HDEVINFO hDevInfo, SP_DEVICE_INTERFACE_DATA* devData, int vid = -1, int pid = -1);
+		bool ProbeDevice(void* hDevInfo, void* devData, int vid = -1, int pid = -1);
 
 #ifndef NOACPILIGHTS
 		// Initialize Aurora ACPI lights if present.

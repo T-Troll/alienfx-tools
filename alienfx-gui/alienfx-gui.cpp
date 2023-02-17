@@ -28,7 +28,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
-extern AlienFan_SDK::Control* acpi;
+//extern AlienFan_SDK::Control* acpi;
 ConfigFan* fan_conf = NULL;
 MonHelper* mon = NULL;
 ThreadHelper* updateUI = NULL;
@@ -61,9 +61,9 @@ groupset* mmap = NULL;
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin())) {
 		mon = new MonHelper();
-		if (!acpi->isSupported) {
+		if (!(conf->fanControl = mon->acpi->isSupported)) {
 			delete mon;
-			conf->fanControl = false;
+			mon = NULL;
 		}
 	}
 	return conf->fanControl;
@@ -82,8 +82,8 @@ void SetHotkeys() {
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		//power mode hotkeys
-		if (conf->fanControl)
-			for (int i = 0; i < acpi->powers.size(); i++)
+		if (mon)
+			for (int i = 0; i < mon->acpi->powers.size(); i++)
 				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
 	}
 	else {
@@ -180,7 +180,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	DoStopService(conf->wasAWCC, false);
 
-	if (acpi) {
+	if (mon) {
 		delete mon;
 	}
 
@@ -203,14 +203,14 @@ void SetTrayTip() {
 		}
 		name += "\nEffects: " + (effName.empty() ? "Off" : effName);
 	}
-	if (acpi) {
+	if (mon) {
 		name += "\nPower mode: ";
 		if (fan_conf->lastProf->gmode)
 			name += "G-mode";
 		else
-			name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
+			name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
 
-		for (int i = 0; i < acpi->fans.size(); i++) {
+		for (int i = 0; i < mon->acpi->fans.size(); i++) {
 			name += "\n" + GetFanName(i, true);
 		}
 	}
@@ -377,9 +377,10 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 
 	for (int i = 0; i < tabsize; i++) {
 		if (tabsize < 5)
-			switch (i) { // check disable tabs
-			case 0: if (conf->afx_dev.fxdevs.empty()) continue; break;
-			case 1: if (!acpi) continue; break;
+			switch (i) { // check disabled tabs
+			case 0: if (!conf->afx_dev.activeDevices) continue;
+				break;
+			case 1: if (!mon) continue;
 			}
 		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
 		tie.pszText = (LPSTR)names[i].c_str();
@@ -651,7 +652,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
 			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
-			if (acpi)
+			if (mon)
 				mon->Start();
 			fxhl->Start();
 			eve->StartEffects();
@@ -689,7 +690,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			fxhl->Refresh(true);
 			fxhl->Stop();
-			if (acpi)
+			if (mon)
 				mon->Stop();
 			break;
 		}
@@ -697,7 +698,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
-			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(acpi);
+			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon->acpi);
 			if (devList.size() != conf->afx_dev.activeDevices) {
 				DebugPrint("Active list changed!\n");
 				bool updated = fxhl->updateThread;
@@ -722,7 +723,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		delete eve;
 		fxhl->Refresh(true);
 		fxhl->Stop();
-		if (acpi)
+		if (mon)
 			mon->Stop();
 		return 0;
 	case WM_HOTKEY:
@@ -735,7 +736,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		}
-		if (acpi && wParam > 29 && wParam - 30 < acpi->powers.size()) { // PowerMode switch
+		if (mon && wParam > 29 && wParam - 30 < mon->acpi->powers.size()) { // PowerMode switch
 			fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
@@ -772,7 +773,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ReloadProfileList();
 			break;
 		case 6: // G-key for Dell G-series power switch
-			if (acpi) {
+			if (mon) {
 				mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);

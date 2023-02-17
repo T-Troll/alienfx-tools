@@ -3,7 +3,6 @@
 #include <powrprof.h>
 #include <string>
 #include "Resource.h"
-#include "alienfan-SDK.h"
 #include "ConfigFan.h"
 #include "MonHelper.h"
 #include "common.h"
@@ -15,12 +14,9 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 using namespace std;
 
-#define MAX_LOADSTRING 100
-
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 
-extern AlienFan_SDK::Control* acpi;             // ACPI control object
 ConfigFan* fan_conf = NULL;                     // Config...
 MonHelper* mon = NULL;                          // Monitoring object
 
@@ -61,14 +57,14 @@ extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 void SetHotkeys() {
     if (fan_conf->keyShortcuts) {
         //power mode hotkeys
-        for (int i = 0; i < acpi->powers.size(); i++)
+        for (int i = 0; i < mon->acpi->powers.size(); i++)
             RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
         RegisterHotKey(mDlg, 6, 0, VK_F17);
     }
     else
     {
         UnregisterHotKey(mDlg, 6);
-        for (int i = 0; i < acpi->powers.size(); i++)
+        for (int i = 0; i < mon->acpi->powers.size(); i++)
             UnregisterHotKey(mDlg, 20 + i);
     }
 }
@@ -92,7 +88,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     hInst = hInstance;
     niData = &niDataFC;
 
-    if (acpi->isSupported) {
+    if (mon->acpi->isSupported) {
         if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
 
             SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
@@ -213,8 +209,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 int newMode = ComboBox_GetCurSel(power_list);
-                fan_conf->lastProf->gmode = (newMode == acpi->powers.size());
-                if (newMode < acpi->powers.size())
+                fan_conf->lastProf->gmode = (newMode == mon->acpi->powers.size());
+                if (newMode < mon->acpi->powers.size())
                     fan_conf->lastProf->powerStage = newMode;
                 mon->SetCurrentMode(newMode);
             } break;
@@ -222,7 +218,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 if (!fan_conf->lastProf->gmode && fan_conf->lastProf->powerStage > 0) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
-                    fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
+                    fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
                     ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
                     ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
                 }
@@ -291,7 +287,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_RESETBOOST:
             if (mon->inControl)
-                fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
+                fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
             break;
         }
     }
@@ -328,14 +324,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             HMENU pMenu;
             pMenu = CreatePopupMenu();
             mInfo.wID = ID_TRAYMENU_POWER_SELECTED;
-            for (int i = 0; i < acpi->powers.size(); i++) {
-                mInfo.dwTypeData = (LPSTR)fan_conf->powers.find(acpi->powers[i])->second.c_str();
+            for (int i = 0; i < mon->acpi->powers.size(); i++) {
+                mInfo.dwTypeData = (LPSTR)fan_conf->powers.find(mon->acpi->powers[i])->second.c_str();
                 mInfo.fState = i == fan_conf->lastProf->powerStage ? MF_CHECKED : MF_UNCHECKED;
                 InsertMenuItem(pMenu, i, false, &mInfo);
             }
             ModifyMenu(tMenu, ID_MENU_POWER, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Power mode - " +
-                fan_conf->powers.find(acpi->powers[fan_conf->lastProf->powerStage])->second).c_str());
-            EnableMenuItem(tMenu, ID_MENU_GMODE, acpi->isGmode ? MF_ENABLED : MF_DISABLED);
+                fan_conf->powers.find(mon->acpi->powers[fan_conf->lastProf->powerStage])->second).c_str());
+            EnableMenuItem(tMenu, ID_MENU_GMODE, mon->acpi->isGmode ? MF_ENABLED : MF_DISABLED);
             CheckMenuItem(tMenu, ID_MENU_GMODE, fan_conf->lastProf->gmode ? MF_CHECKED : MF_UNCHECKED);
 
             GetCursorPos(&lpClickPoint);
@@ -367,14 +363,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     } break;
     case WM_HOTKEY: {
-        if (wParam > 19 && wParam - 20 < acpi->powers.size()) {
+        if (wParam > 19 && wParam - 20 < mon->acpi->powers.size()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
             mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
-            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
+            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? mon->acpi->powers.size() : fan_conf->lastProf->powerStage);
             break;
         }
     } break;
@@ -389,7 +385,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case ID_MENU_GMODE:
             mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
-            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
+            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? mon->acpi->powers.size() : fan_conf->lastProf->powerStage);
             break;
         case ID_TRAYMENU_POWER_SELECTED:
             fan_conf->lastProf->powerStage = idx;
@@ -436,18 +432,18 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         break;
     case WM_TIMER: {
-        if (acpi) {
+        if (mon) {
             if (IsWindowVisible(hDlg)) {
                 //DebugPrint("Fans UI update...\n");
-                for (int i = 0; i < acpi->sensors.size(); i++) {
-                    string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
+                for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+                    string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
                     ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
                 }
                 RECT cArea;
                 GetClientRect(tempList, &cArea);
                 ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
                 ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-                for (int i = 0; i < acpi->fans.size(); i++) {
+                for (int i = 0; i < mon->acpi->fans.size(); i++) {
                     string name = GetFanName(i);
                     ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
                 }
@@ -456,9 +452,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (fan_conf->lastProf->gmode)
                 name += "G-mode";
             else
-                name += fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]];
+                name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
 
-            for (int i = 0; i < acpi->fans.size(); i++) {
+            for (int i = 0; i < mon->acpi->fans.size(); i++) {
                 name += "\n" + GetFanName(i, true);
             }
             strcpy_s(niDataFC.szTip, 127, name.c_str());

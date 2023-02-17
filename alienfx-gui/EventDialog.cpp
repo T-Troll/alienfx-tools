@@ -11,7 +11,7 @@ extern void UpdateZoneList();
 
 extern FXHelper* fxhl;
 extern MonHelper* mon;
-extern AlienFan_SDK::Control* acpi;
+//extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
 
 const static vector<string> eventTypeNames{ "Performance", "Indicator" };
@@ -255,7 +255,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			SetDlgItemText(hDlg, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
 			SetDlgItemText(hDlg, IDC_VAL_NET, (to_string(fxhl->eData.NET) + " %").c_str());
 			SetDlgItemText(hDlg, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
-			if (acpi) {
+			if (mon) {
 				int maxFans = 0;
 				for (auto i = mon->fanRpm.begin(); i < mon->fanRpm.end(); i++)
 					maxFans = max(maxFans, *i);

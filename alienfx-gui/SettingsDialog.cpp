@@ -11,7 +11,6 @@ extern void SetMainTabs();
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
-extern AlienFan_SDK::Control* acpi;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -143,16 +142,17 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->fanControl = state;
 			if (state) {
 				conf->Save();
-				if (!DetectFans()) {
+				if (!(conf->fanControl = DetectFans())) {
 					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
 					ShowNotification(&conf->niData, "Error", "Fan control not available.");
 				}
 			} else {
 				eve->StopEffects();
 				delete mon;
+				mon = NULL;
 				eve->StartEffects();
 			}
-			fxhl->FillAllDevs(acpi);
+			fxhl->FillAllDevs();
 			SetHotkeys();
 			SetMainTabs();
 			break;

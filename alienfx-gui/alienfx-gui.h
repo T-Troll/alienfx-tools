@@ -5,7 +5,6 @@
 #include <windowsx.h>
 #include "resource.h"
 #include "ConfigHandler.h"
-//#include "FXHelper.h"
 
 // debug print
 #ifdef _DEBUG

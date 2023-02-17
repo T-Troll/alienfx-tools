@@ -5,6 +5,7 @@ extern "C" {
 #include <hidclass.h>
 #include <hidsdi.h>
 }
+#include <SetupAPI.h>
 
 #pragma comment(lib,"setupapi.lib")
 #pragma comment(lib, "hid.lib")
@@ -156,13 +157,13 @@ namespace AlienFX_SDK {
 		return true;
 	}
 
-	bool Functions::ProbeDevice(HDEVINFO hDevInfo, SP_DEVICE_INTERFACE_DATA* devData, int vidd, int pidd) {
+	bool Functions::ProbeDevice(void* hDevInfo, void* devData, int vidd, int pidd) {
 		DWORD dwRequiredSize = 0;
 		bool flag = false;
-		SetupDiGetDeviceInterfaceDetail(hDevInfo, devData, NULL, 0, &dwRequiredSize, NULL);
+		SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, NULL, 0, &dwRequiredSize, NULL);
 		SP_DEVICE_INTERFACE_DETAIL_DATA* deviceInterfaceDetailData = (SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize];
 		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL) &&
+		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL) &&
 			(devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
 				OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN | SECURITY_ANONYMOUS/*FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH*/, NULL)) != INVALID_HANDLE_VALUE) {
 			PHIDP_PREPARSED_DATA prep_caps;

@@ -1,5 +1,4 @@
 #include "SysMonHelper.h"
-#include "alienfx-gui.h"
 #include "MonHelper.h"
 #include <PdhMsg.h>
 
@@ -13,9 +12,9 @@
 #endif
 
 extern FXHelper* fxhl;
-extern AlienFan_SDK::Control* acpi;
 extern MonHelper* mon;
 extern ConfigFan* fan_conf;
+extern ConfigHandler* conf;
 
 void CEventProc(LPVOID);
 
@@ -132,7 +131,7 @@ void CEventProc(LPVOID param)
 			cData->KBD = curLocale == locIDs[0] ? 0 : 100;
 		}
 
-		if (acpi) {
+		if (mon) {
 			// Check fan RPMs
 			for (unsigned i = 0; i < mon->fanRpm.size(); i++) {
 				cData->Fan = max(cData->Fan, mon->GetFanPercent(i));
@@ -144,12 +143,12 @@ void CEventProc(LPVOID param)
 			// Power mode
 			cData->PWM = fan_conf->lastProf->gmode ? 100 :
 				fan_conf->lastProf->powerStage * 100 /
-				((int)acpi->powers.size() + acpi->isGmode - 1);
+				((int)mon->acpi->powers.size() + mon->acpi->isGmode - 1);
 		}
 
 		// ESIF powers and temps
 		if (conf->esif_temp) {
-			if (!acpi) {
+			if (!mon) {
 				// ESIF temps (already in fans)
 				cData->Temp = max(cData->Temp, src->GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
 			}

@@ -5,7 +5,7 @@
 
 #pragma comment(lib, "PowrProf.lib")
 
-extern AlienFan_SDK::Control* acpi;
+//extern AlienFan_SDK::Control* acpi;
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
 HWND fanWindow = NULL, tipWindow = NULL;
@@ -90,8 +90,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 int newMode = ComboBox_GetCurSel(power_list);
-                fan_conf->lastProf->gmode = (newMode == acpi->powers.size());
-                if (newMode < acpi->powers.size())
+                fan_conf->lastProf->gmode = (newMode == mon->acpi->powers.size());
+                if (newMode < mon->acpi->powers.size())
                     fan_conf->lastProf->powerStage = newMode;
                 mon->SetCurrentMode(newMode);
             } break;
@@ -99,7 +99,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 if (!fan_conf->lastProf->gmode && !fan_conf->lastProf->powerStage) {
                     char* buffer = new char[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
-                    fan_conf->powers[acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
+                    fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
                     ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
                     ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
                     delete[] buffer;
@@ -129,7 +129,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_RESETBOOST:
             if (mon->inControl)
-                fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
+                fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
             break;
         }
     } break;
@@ -147,16 +147,16 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         } break;
     case WM_TIMER: {
-        if (IsWindowVisible(hDlg) && acpi) {
-            for (int i = 0; i < acpi->sensors.size(); i++) {
-                string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
+        if (IsWindowVisible(hDlg) && mon) {
+            for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+                string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
             }
             RECT cArea;
             GetClientRect(tempList, &cArea);
             ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
             ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-            for (int i = 0; i < acpi->fans.size(); i++) {
+            for (int i = 0; i < mon->acpi->fans.size(); i++) {
                 string name = GetFanName(i);
                 ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
             }

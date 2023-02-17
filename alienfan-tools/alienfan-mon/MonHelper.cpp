@@ -9,7 +9,6 @@
 
 void CMonProc(LPVOID);
 
-AlienFan_SDK::Control* acpi = NULL;
 extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper() {
@@ -29,7 +28,7 @@ MonHelper::MonHelper() {
 MonHelper::~MonHelper() {
 	Stop();
 	delete acpi;
-	acpi = NULL;
+	//acpi = NULL;
 }
 
 void MonHelper::Start() {
@@ -86,6 +85,7 @@ byte MonHelper::GetFanPercent(byte fanID)
 
 void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
+	AlienFan_SDK::Control* acpi = src->acpi;
 	bool modified = false;
 	// let's check power...
 	if (src->inControl && !fan_conf->lastProf->gmode && acpi->GetPower() != fan_conf->lastProf->powerStage)

@@ -1,5 +1,6 @@
 #include "Common.h"
 #include <windowsx.h>
+#include <WinInet.h>
 
 using namespace std;
 

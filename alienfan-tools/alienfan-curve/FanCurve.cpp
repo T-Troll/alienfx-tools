@@ -9,7 +9,7 @@
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
 extern HWND fanWindow, tipWindow;
-extern AlienFan_SDK::Control* acpi;
+//extern AlienFan_SDK::Control* acpi;
 
 HWND toolTip = NULL;
 
@@ -60,7 +60,7 @@ POINT Boost2Screen(fan_overboost* boost) {
 
 void DrawFan()
 {
-    if (fanWindow && acpi && cArea.right) {
+    if (fanWindow && mon && cArea.right) {
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
         // Double buff...
@@ -168,20 +168,20 @@ void DrawFan()
 }
 
 int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
-    acpi->SetFanBoost(fanID, boost);
+    mon->acpi->SetFanBoost(fanID, boost);
     // Check the trend...
-    int pRpm, bRpm = acpi->GetFanRPM(fanID), maxRPM;
+    int pRpm, bRpm = mon->acpi->GetFanRPM(fanID), maxRPM;
     boostCheck.push_back({ boost, (USHORT)bRpm });
     lastBoostPoint = &boostCheck.back();
     if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
         return -1;
-    lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
+    lastBoostPoint->maxRPM = mon->acpi->GetFanRPM(fanID);
     do {
         pRpm = bRpm;
         bRpm = lastBoostPoint->maxRPM;
         if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
             return -1;
-        lastBoostPoint->maxRPM = acpi->GetFanRPM(fanID);
+        lastBoostPoint->maxRPM = mon->acpi->GetFanRPM(fanID);
         maxRPM = max(lastBoostPoint->maxRPM, bRpm);
         bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
     } while ((lastBoostPoint->maxRPM > bRpm || bRpm < pRpm || lastBoostPoint->maxRPM != pRpm)
@@ -193,8 +193,8 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->inControl = false;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
     mon->SetCurrentMode(0);
-    int rpm = acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100,
-        oldBoost = acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
+    int rpm = mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100,
+        oldBoost = mon->acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
     boostCheck.clear();
     bestBoostPoint = { (byte)boost, (unsigned short)rpm };
     boostScale = 10;
@@ -231,7 +231,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
     }
     // Restore mode
-    acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
+    mon->acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
     mon->SetCurrentGmode(fan_conf->lastProf->gmode);
     mon->inControl = true;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
@@ -340,7 +340,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 string GetFanName(int ind, bool forTray = false) {
     char ftype[4];
-    switch (acpi->fans[ind].type)
+    switch (mon->acpi->fans[ind].type)
     {
     case 0: strcpy_s(ftype, "CPU"); break;
     case 1: strcpy_s(ftype, "GPU"); break;
@@ -360,7 +360,7 @@ void ReloadFanView(HWND list) {
         LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
         ListView_InsertColumn(list, 0, &lCol);
     }
-    for (int i = 0; i < acpi->fans.size(); i++) {
+    for (int i = 0; i < mon->acpi->fans.size(); i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
         string name = GetFanName(i);
         lItem.pszText = (LPSTR)name.c_str();
@@ -382,12 +382,12 @@ void ReloadFanView(HWND list) {
 
 void ReloadPowerList(HWND list) {
     ComboBox_ResetContent(list);
-    for (auto i = acpi->powers.begin(); i != acpi->powers.end(); i++) {
+    for (auto i = mon->acpi->powers.begin(); i != mon->acpi->powers.end(); i++) {
         int pos = ComboBox_AddString(list, (LPARAM)(fan_conf->GetPowerName(*i).c_str()));
         if (pos == fan_conf->lastProf->powerStage)
             ComboBox_SetCurSel(list, pos);
     }
-    if (acpi->isGmode) {
+    if (mon->acpi->isGmode) {
         int pos = ComboBox_AddString(list, (LPARAM)("G-Mode"));
         if (fan_conf->lastProf->gmode)
             ComboBox_SetCurSel(list, pos);
@@ -405,12 +405,12 @@ void ReloadTempView(HWND list) {
         lCol.iSubItem = 1;
         ListView_InsertColumn(list, 1, &lCol);
     }
-    for (int i = 0; i < acpi->sensors.size(); i++) {
+    for (int i = 0; i < mon->acpi->sensors.size(); i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
-        string name = to_string(mon->senValues[acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[acpi->sensors[i].sid]) + ")";
-        lItem.lParam = acpi->sensors[i].sid;
+        string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
+        lItem.lParam = mon->acpi->sensors[i].sid;
         lItem.pszText = (LPSTR)name.c_str();
-        if (acpi->sensors[i].sid == fan_conf->lastSelectedSensor) {
+        if (mon->acpi->sensors[i].sid == fan_conf->lastSelectedSensor) {
             lItem.state = LVIS_SELECTED;
             rpos = i;
         }
@@ -419,7 +419,7 @@ void ReloadTempView(HWND list) {
         ListView_InsertItem(list, &lItem);
         //auto pwr = fan_conf->sensors.find(acpi->sensors[i].sid);
         //name = pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[i].name;
-        name = fan_conf->GetSensorName(&acpi->sensors[i]);
+        name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
         ListView_SetItemText(list, i, 1, (LPSTR)name.c_str());
     }
     RECT cArea;
@@ -433,7 +433,7 @@ void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
     switch (lParam->hdr.code) {
     case LVN_BEGINLABELEDIT: {
         KillTimer(GetParent(tempList), 0);
-        Edit_SetText(ListView_GetEditControl(tempList), fan_conf->GetSensorName(&acpi->sensors[lParam->item.iItem]).c_str());
+        Edit_SetText(ListView_GetEditControl(tempList), fan_conf->GetSensorName(&mon->acpi->sensors[lParam->item.iItem]).c_str());
     } break;
     case LVN_ITEMACTIVATE: case NM_RETURN:
     {

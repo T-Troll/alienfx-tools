@@ -1,18 +1,20 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "MonHelper.h"
 
 extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
-extern AlienFan_SDK::Control* acpi;
+//extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
+extern MonHelper* mon;
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
 FXHelper::FXHelper() {
 	stopQuery = CreateEvent(NULL, false, false, NULL);
 	haveNewElement = CreateEvent(NULL, false, false, NULL);
-	FillAllDevs(acpi);
+	FillAllDevs();
 }
 
 FXHelper::~FXHelper() {
@@ -442,10 +444,10 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 	}
 }
 
-void FXHelper::FillAllDevs(AlienFan_SDK::Control* acc) {
+void FXHelper::FillAllDevs() {
 	Stop();
 	conf->SetStates();
-	conf->afx_dev.AlienFXAssignDevices(false, acc, conf->finalBrightness, conf->finalPBState);
+	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL, conf->finalBrightness, conf->finalPBState);
 	if (conf->afx_dev.activeDevices)
 		Start();
 }
