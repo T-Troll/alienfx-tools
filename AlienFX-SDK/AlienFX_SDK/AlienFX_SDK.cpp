@@ -10,6 +10,15 @@ extern "C" {
 #pragma comment(lib,"setupapi.lib")
 #pragma comment(lib, "hid.lib")
 
+// debug print
+#ifdef _DEBUG
+//#define DebugPrint(_x_) printf("%s",string(_x_).c_str());
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
+//#endif
+#else
+#define DebugPrint(_x_)
+#endif
+
 namespace AlienFX_SDK {
 
 	vector<Afx_icommand> *Functions::SetMaskAndColor(DWORD index, byte type, Afx_action c1, Afx_action c2, byte tempo) {
@@ -20,9 +29,9 @@ namespace AlienFX_SDK {
 			mods = new vector<Afx_icommand>({ {1, type}, { 2,(byte)chain },
 			{ 3,(byte)((index & 0xFF0000) >> 16) }, { 4,(byte)((index & 0x00FF00) >> 8) }, { 5,(byte)(index & 0x0000FF) }});
 		switch (version) {
-		case API_V1:
-			mods->insert(mods->end(),{{6,c1.r},{7,c1.g},{8,c1.b}});
-			break;
+		//case API_V1:
+		//	mods->insert(mods->end(),{{6,c1.r},{7,c1.g},{8,c1.b}});
+		//	break;
 		case API_V3:
 			mods->insert(mods->end(),{{6,c1.r},{7,c1.g},{8,c1.b},{9,c2.r},{10,c2.g},{11,c2.b}});
 			break;
@@ -77,7 +86,7 @@ namespace AlienFX_SDK {
 		}
 
 		switch (version) {
-		case API_V1: case API_V2: case API_V3:
+		/*case API_V1:*/ case API_V2: case API_V3:
 			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
 			//return HidD_SetOutputReport(devHandle, buffer, length);
 			break;
@@ -112,7 +121,7 @@ namespace AlienFX_SDK {
 		}
 #ifdef _DEBUG
 		if (!res)
-			OutputDebugString("Device IO fail!\n");
+			DebugPrint("Device IO fail!\n");
 #endif
 		return res;
 	}
@@ -185,9 +194,9 @@ namespace AlienFX_SDK {
 					break;
 				case 0x187c: // Alienware
 					switch (length) {
-					case 8:
-						version = API_V1;
-						break;
+					//case 8:
+					//	version = API_V1;
+					//	break;
 					case 9:
 						version = API_V2;
 						break;
@@ -276,11 +285,11 @@ namespace AlienFX_SDK {
 			PrepareAndSend(COMMV4_control, { {4, 4}/*, { 5, 0xff }*/ });
 			result = PrepareAndSend(COMMV4_control, { {4, 1}/*, { 5, 0xff }*/ });
 		} break;
-		case API_V3: case API_V2: case API_V1:
+		case API_V3: case API_V2: /*case API_V1:*/
 		{
+			chain = 1;
 			result = PrepareAndSend(COMMV1_reset);
 			WaitForReady();
-			chain = 1;
 		} break;
 		}
 		return inSet = result;
@@ -300,10 +309,10 @@ namespace AlienFX_SDK {
 				res = PrepareAndSend(COMMV4_control);
 				WaitForReady();
 			} break;
-			case API_V3: case API_V2: case API_V1:
+			case API_V3: case API_V2: /*case API_V1:*/
 			{
 				res = PrepareAndSend(COMMV1_update);
-				WaitForBusy();
+				DebugPrint("Post-update status: " + to_string(GetDeviceStatus()) + "\n");
 			} break;
 			default: res = true;
 			}
@@ -378,7 +387,7 @@ namespace AlienFX_SDK {
 				mods.push_back({ (byte)(8 + nc), lights->at(nc)});
 			val = PrepareAndSend(COMMV4_setOneColor, &mods);
 		} break;
-		case API_V3: case API_V2: case API_V1: case API_V6: case API_ACPI:
+		case API_V3: case API_V2: /*case API_V1: */case API_V6: case API_ACPI:
 		{
 			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
@@ -524,7 +533,7 @@ namespace AlienFX_SDK {
 			default: // Set action
 				return SetV4Action(index, act);
 			}
-		case API_V3: case API_V2: case API_V1:
+		case API_V3: case API_V2: /*case API_V1:*/
 		{
 			bool res = false;
 			// check types and call
@@ -625,15 +634,15 @@ namespace AlienFX_SDK {
 
 				PrepareAndSend(COMMV4_control, { { 4, 5 }/*, { 6, 0x61 }*/ });
 #ifdef _DEBUG
-				if (WaitForBusy())
-					OutputDebugString("Power device ready timeout!\n");
+				if (WaitForBusy() != ALIENFX_V4_BUSY)
+					DebugPrint("Power device ready timeout!\n");
 #else
 				WaitForBusy();
 #endif
 				WaitForReady();
 			}
 		} break;
-		case API_V3: case API_V2: case API_V1:
+		case API_V3: case API_V2: /*case API_V1:*/
 		{
 			if (!inSet) Reset();
 			for (auto ca = act->begin(); ca != act->end(); ca++)
@@ -690,12 +699,7 @@ namespace AlienFX_SDK {
 
 	bool Functions::SetBrightness(BYTE brightness, vector<Afx_light> *mappings, bool power) {
 
-#ifdef _DEBUG
-		char buff[2048];
-		sprintf_s(buff, 2047, "State update: PID: %#x, brightness: %d, Power: %d\n",
-			pid, brightness, power);
-		OutputDebugString(buff);
-#endif
+		DebugPrint("State update: PID: " + to_string(pid) + ", brightness: " + to_string(brightness) + ", power: " + to_string(power) + "\n");
 
 		bright = ((UINT)brightness * 0x64) / 0xff;
 		if (inSet) UpdateColors();
@@ -707,8 +711,8 @@ namespace AlienFX_SDK {
 		case API_V5:
 		{
 			Reset();
-			PrepareAndSend(COMMV5_turnOnInit);
-			PrepareAndSend(COMMV5_turnOnInit2);
+			//PrepareAndSend(COMMV5_turnOnInit);
+			//PrepareAndSend(COMMV5_turnOnInit2);
 			return PrepareAndSend(COMMV5_turnOnSet, {{4,brightness}});
 		}
 		case API_V4:
@@ -723,10 +727,11 @@ namespace AlienFX_SDK {
 			mods.push_back({5,pindex});
 			return PrepareAndSend(COMMV4_turnOn,  &mods);
 		}
-		case API_V3: case API_V1: case API_V2:
+		case API_V3: /*case API_V1:*/ case API_V2:
 		{
-			int res = PrepareAndSend(COMMV1_reset, {{2,(byte)(brightness ? 4 : power ? 3 : 1)}});
+			bool res = PrepareAndSend(COMMV1_reset, {{2,(byte)(brightness ? 4 : power ? 3 : 1)}});
 			WaitForReady();
+			PrepareAndSend(COMMV1_dim, { { 2,bright } });
 			return res;
 		}
 #ifndef NOACPILIGHTS
@@ -746,8 +751,7 @@ namespace AlienFX_SDK {
 			return PrepareAndSend(COMMV8_effectSet, {{3, effType},
 				{4, act1.r}, {5, act1.g}, {6, act1.b},
 				{7, act2.r}, {8, act2.g}, {9, act2.b},
-				{10, tempo}, {13, mode}, {14, 2}
-				});
+				{10, tempo}, {13, mode}, {14, 2}});
 		} break;
 		case API_V5:
 		{
@@ -762,10 +766,9 @@ namespace AlienFX_SDK {
 						   {13,act2.r}, {14,act2.g}, {15,act2.b},
 						   {16,5}});
 			if (effType < 2)
-				PrepareAndSend(COMMV5_update, { {3,0xfe}, {6,0xff}, {7,0xff} });
+				return PrepareAndSend(COMMV5_update, { {3,0xfe}, {6,0xff}, {7,0xff} });
 			else
-				UpdateColors();
-			return true;
+				return UpdateColors();
 		} break;
 		}
 		return false;
@@ -773,74 +776,86 @@ namespace AlienFX_SDK {
 
 	BYTE Functions::GetDeviceStatus() {
 
-		byte buffer[MAX_BUFFERSIZE]{reportIDList[version]};
-		DWORD written;
+		byte buffer[MAX_BUFFERSIZE];// {reportIDList[version]};
+		DWORD written = 0;
+		byte res = 0;
 		switch (version) {
 		case API_V5:
 		{
 			PrepareAndSend(COMMV5_status);
-			buffer[1] = 0x93;
+			//Debug: seems like it's useless.
+			//buffer[1] = 0x93;
 			//if (HidD_GetFeature(devHandle, buffer, length))
 			if (DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, &written, NULL))
-				return buffer[2];
+				res = buffer[2];
 		} break;
 		case API_V4:
 		{
 			//if (HidD_GetInputReport(devHandle, buffer, length))
 			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				return buffer[2];
-#ifdef _DEBUG
-			else {
-				OutputDebugString(TEXT("System hangs!\n"));
-			}
-#endif
+				res = buffer[2];
 		} break;
-		case API_V3: case API_V2: case API_V1:
+		case API_V3: case API_V2: /*case API_V1:*/
 		{
 			PrepareAndSend(COMMV1_status);
-			buffer[0] = 0x01;
+			//buffer[0] = 0x01;
 			//HidD_GetInputReport(devHandle, buffer, length);
 			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				return buffer[0] == 0x01 ? 0x06 : buffer[0];
+				res = buffer[0] == 0x01 ? ALIENFX_V2_RESET : buffer[0];
+			else
+				res = ALIENFX_V2_RESET;
 		} break;
 		}
 
-		return 0;
+		//DebugPrint("Status: " + to_string(written) + " bytes, " + to_string(res) + "\n");
+		return res;
 	}
 
 	BYTE Functions::WaitForReady() {
 		byte status;// = GetDeviceStatus();
+		int i = 0;
 		switch (version) {
-		case API_V3: case API_V2: case API_V1:
-			for (int i = 0; i < 100 && ((status = GetDeviceStatus()) != ALIENFX_V2_READY || status != ALIENFX_V2_RESET); i++) {
+		case API_V3: case API_V2: /*case API_V1:*/
+			for (i = 0; i < 100 && ((status = GetDeviceStatus()) != ALIENFX_V2_READY || status != ALIENFX_V2_RESET); i++) {
 				Sleep(5);
 			}
 			break;
 		case API_V4:
-			while (!(status = IsDeviceReady()))
+			while (!(status = IsDeviceReady())) {
 				Sleep(20);
+				i++;
+			}
 			break;
 		default:
 			status = GetDeviceStatus();
 		}
+#ifdef _DEBUG
+		if (i > 0)
+			DebugPrint("Ready for " + to_string(i) + ", result " + to_string(status) + "\n");
+#endif // DEBUG
 		return status;
 	}
 
 	BYTE Functions::WaitForBusy() {
 		byte status;// = GetDeviceStatus();
+		int i = 0;
 		switch (version) {
-		case API_V3: case API_V2: case API_V1:
-			for (int i = 0; i < 500 && ((status = GetDeviceStatus()) != ALIENFX_V2_BUSY || status != ALIENFX_V2_RESET); i++) {
-				Sleep(10);
+		case API_V3: case API_V2: /*case API_V1:*/
+			for (i = 0; i < 200 && !((status = GetDeviceStatus()) == ALIENFX_V2_BUSY || status == ALIENFX_V2_RESET); i++) {
+				Sleep(5);
 			}
 			break;
-		case API_V4:
-			for (int i = 0; i < 500 && (status = IsDeviceReady()); i++)
+		case API_V4: {
+			for (i = 0; i < 500 && (status = GetDeviceStatus()) != ALIENFX_V4_BUSY; i++)
 				Sleep(20);
-			break;
+		} break;
 		default:
 			status = GetDeviceStatus();
 		}
+#ifdef _DEBUG
+		if (i > 0)
+			DebugPrint("Busy for " + to_string(i) + ", result " + to_string(status) + "\n");
+#endif // DEBUG
 		return status;
 	}
 
@@ -851,22 +866,19 @@ namespace AlienFX_SDK {
 			return status != ALIENFX_V5_WAITUPDATE;
 		case API_V4:
 #ifdef _DEBUG
-			status = status ? status == ALIENFX_V4_READY || status == ALIENFX_V4_WAITUPDATE || status == ALIENFX_V4_WASON : 0xff;
-			if (!status)
-				OutputDebugString("Device not ready!\n");
+			status = status ? status != ALIENFX_V4_BUSY : 0xff;
+			if (status == 0xff)
+				DebugPrint("Device hang!\n");
 			return status;
 #else
-			return status ? status == ALIENFX_V4_READY || status == ALIENFX_V4_WAITUPDATE || status == ALIENFX_V4_WASON : 0xff;
+			return status ? status != ALIENFX_V4_BUSY : 0xff;
 #endif
-		case API_V3: case API_V2: case API_V1:
+		case API_V3: case API_V2: /*case API_V1:*/
 			switch (status) {
 			case ALIENFX_V2_READY:
 				return 1;
-			case ALIENFX_V2_BUSY:
-				Reset();
-				return WaitForReady() == ALIENFX_V2_READY;
-			case ALIENFX_V2_RESET:
-				return WaitForReady() == ALIENFX_V2_READY;
+			case ALIENFX_V2_BUSY: case ALIENFX_V2_RESET:
+				return Reset();
 			}
 			return 0;
 		default:
@@ -906,13 +918,8 @@ namespace AlienFX_SDK {
 				if (dev->ProbeDevice(hDevInfo, &deviceInterfaceData))
 				{
 					devs.push_back(dev);
-#ifdef _DEBUG
-					char buff[2048];
-					sprintf_s(buff, 2047, "Scan: VID: %#x, PID: %#x, Version: %d\n",
-						dev->GetVID(), dev->GetPID(), dev->GetVersion());
-					OutputDebugString(buff);
-					printf("%s", buff);
-#endif
+					DebugPrint("Scan: VID: " + to_string(dev->GetVID()) + ", PID: " + to_string(dev->GetPID()) + ", Version: "
+						+ to_string(dev->GetVersion()) + "\n");
 				}
 				else
 					delete dev;
@@ -1035,6 +1042,7 @@ namespace AlienFX_SDK {
 	void Mappings::LoadMappings() {
 		HKEY   mainKey;
 
+		fxdevs.clear();
 		groups.clear();
 		grids.clear();
 

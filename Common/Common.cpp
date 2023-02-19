@@ -52,6 +52,20 @@ bool UACPassed = true;
 //	DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(res), mDlg, About);
 //}
 
+DWORD WINAPI Blinker(LPVOID lparam) {
+	int howmany = (int)(ULONGLONG)lparam << 1;
+	for (int i = 0; i < howmany; i++) {
+		keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0);
+		keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+		Sleep(300);
+	}
+	return 0;
+}
+
+void BlinkNumLock(int howmany) {
+	CreateThread(NULL, 0, Blinker, (LPVOID)(ULONGLONG)howmany, 0, NULL);
+}
+
 bool EvaluteToAdmin() {
 	// Evaluation attempt...
 	if (!(UACPassed = IsUserAnAdmin())) {
@@ -225,13 +239,6 @@ void SetToolTip(HWND tt, string value) {
 
 void SetSlider(HWND tt, int value) {
 	SetToolTip(tt, to_string(value));
-	//TOOLINFO ti{ sizeof(TOOLINFO) };
-	//if (tt) {
-	//	SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
-	//	string toolTip = to_string(value);
-	//	ti.lpszText = (LPTSTR)toolTip.c_str();
-	//	SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
-	//}
 }
 
 void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {

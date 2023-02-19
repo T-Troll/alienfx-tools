@@ -698,7 +698,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
-			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon->acpi);
+			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
 			if (devList.size() != conf->afx_dev.activeDevices) {
 				DebugPrint("Active list changed!\n");
 				bool updated = fxhl->updateThread;
@@ -740,6 +740,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			fan_conf->lastProf->powerStage = (WORD)wParam - 30;
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
+			BlinkNumLock((int)wParam - 29);
 			break;
 		}
 		switch (wParam) {
@@ -777,6 +778,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);
+				BlinkNumLock(3);
 			}
 			break;
 		default: return false;

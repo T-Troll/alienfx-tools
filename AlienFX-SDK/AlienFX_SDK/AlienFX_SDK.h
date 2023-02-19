@@ -101,7 +101,7 @@ namespace AlienFX_SDK {
 		API_V4 = 4, //34
 		API_V3 = 3, //12
 		API_V2 = 2, //9
-		API_V1 = 1, //8
+		//API_V1 = 1, //8
 		API_UNKNOWN = -1
 	};
 

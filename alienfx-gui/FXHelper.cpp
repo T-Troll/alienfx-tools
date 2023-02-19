@@ -413,7 +413,7 @@ void FXHelper::QueryUpdate(bool force) {
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
-	if (!actions->empty()) {
+	if (actions->size()) {
 		LightQueryElement newBlock{ lgh, 0, (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		QueryCommand(&newBlock);
@@ -638,7 +638,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						dev->dev->powerMode = conf->statePower;
 						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
 						switch (dev->version) {
-						case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
+						/*case AlienFX_SDK::API_V1:*/ case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
 							// They don't have hardware brightness, so need to set each light again.
 							needRefresh = needRefresh || fbright || dev->version > AlienFX_SDK::API_V3;
 						}
@@ -676,6 +676,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
 					WORD flags = conf->afx_dev.GetFlags(dev, lid);
 					for (int i = 0; i < current.actsize; i++) {
+					//for (auto i = current.actions.begin(); i < current.actions.end(); i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
 						// gamma-correction...
 						if (conf->gammaCorrection) {
@@ -687,8 +688,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// For v1-v3 and v7 devices only, other have hardware dimming
 						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
 							switch (dev->version) {
-							case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2:
-							case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V7: {
+							/*case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2:
+							case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
 								unsigned delta = 255 - conf->dimmingPower;
 								action->r = ((UINT)action->r * delta) / 255;// >> 8;
 								action->g = ((UINT)action->g * delta) / 255;// >> 8;

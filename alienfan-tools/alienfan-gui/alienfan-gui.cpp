@@ -365,11 +365,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (wParam > 19 && wParam - 20 < mon->acpi->powers.size()) {
             fan_conf->lastProf->powerStage = (WORD)wParam - 20;
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
+            BlinkNumLock((int)wParam - 19);
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
             mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? mon->acpi->powers.size() : fan_conf->lastProf->powerStage);
+            BlinkNumLock(3);
             break;
         }
     } break;

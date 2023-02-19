@@ -61,19 +61,6 @@ unsigned GetZoneCode(ARG name) {
 	}
 }
 
-//unsigned GetActionCode(ARG name) {
-//	for (int i = 0; i < ARRAYSIZE(actioncodes); i++)
-//		if (name.str == actioncodes[i].name)
-//			return devType ? actioncodes[i].afx_code : actioncodes[i].dell_code;
-//	return devType ? AlienFX_SDK::Action::AlienFX_A_Color : LFX_ACTION_COLOR;
-//}
-
-//void SetBrighness(AlienFX_SDK::Afx_action *color) {
-//	color->r = ((unsigned) color->r * globalBright) / 255;// >> 8;
-//	color->g = ((unsigned) color->g * globalBright) / 255;// >> 8;
-//	color->b = ((unsigned) color->b * globalBright) / 255;// >> 8;
-//}
-
 void printUsage()
 {
 	printf("Usage: alienfx-cli [command=option,option,option] ... [loop]\nCommands:\tOptions:\n");
