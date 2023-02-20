@@ -12,8 +12,8 @@ extern "C" {
 
 // debug print
 #ifdef _DEBUG
-//#define DebugPrint(_x_) printf("%s",string(_x_).c_str());
-#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
+#define DebugPrint(_x_) printf("%s",string(_x_).c_str());
+//#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 //#endif
 #else
 #define DebugPrint(_x_)
@@ -701,6 +701,7 @@ namespace AlienFX_SDK {
 
 		DebugPrint("State update: PID: " + to_string(pid) + ", brightness: " + to_string(brightness) + ", power: " + to_string(power) + "\n");
 
+		byte oldBright = bright;
 		bright = ((UINT)brightness * 0x64) / 0xff;
 		if (inSet) UpdateColors();
 		switch (version) {
@@ -718,21 +719,22 @@ namespace AlienFX_SDK {
 		case API_V4:
 		{
 			vector<Afx_icommand> mods{{3,(byte)(0x64 - bright)}};
-			byte pos = 6, pindex = 0;
+			byte pos = 6;
 			for (auto i = mappings->begin(); i < mappings->end(); i++)
 				if (pos < length && (!i->flags || power)) {
 					mods.push_back({pos,(byte)i->lightid});
-					pos++; pindex++;
+					pos++;
 				}
-			mods.push_back({5,pindex});
+			mods.push_back({5,(byte)mappings->size()});
 			return PrepareAndSend(COMMV4_turnOn,  &mods);
 		}
 		case API_V3: /*case API_V1:*/ case API_V2:
 		{
-			bool res = PrepareAndSend(COMMV1_reset, {{2,(byte)(brightness ? 4 : power ? 3 : 1)}});
-			WaitForReady();
-			PrepareAndSend(COMMV1_dim, { { 2,bright } });
-			return res;
+			if (!oldBright || !bright) {
+				PrepareAndSend(COMMV1_reset, { {2,(byte)(bright ? 4 : power ? 3 : 1)} });
+				WaitForReady();
+			}
+			return PrepareAndSend(COMMV1_dim, { { 2,bright } });
 		}
 #ifndef NOACPILIGHTS
 		case API_ACPI:
@@ -816,7 +818,7 @@ namespace AlienFX_SDK {
 		int i = 0;
 		switch (version) {
 		case API_V3: case API_V2: /*case API_V1:*/
-			for (i = 0; i < 100 && ((status = GetDeviceStatus()) != ALIENFX_V2_READY || status != ALIENFX_V2_RESET); i++) {
+			for (i = 0; i < 200 && ((status = GetDeviceStatus()) != ALIENFX_V2_READY && status != ALIENFX_V2_RESET); i++) {
 				Sleep(5);
 			}
 			break;

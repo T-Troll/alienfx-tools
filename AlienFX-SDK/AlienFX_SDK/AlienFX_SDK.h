@@ -28,8 +28,8 @@ namespace AlienFX_SDK {
     #define ALIENFX_V5_INCOMMAND 0xcc
 
 	// Mapping flags:
-    #define ALIENFX_FLAG_POWER		1
-    #define ALIENFX_FLAG_INDICATOR	2
+    #define ALIENFX_FLAG_POWER		1 // This is power button
+    #define ALIENFX_FLAG_INDICATOR	2 // This is indicator light (keep at lights off)
 
 	// Maximal buffer size across all device types
     #define MAX_BUFFERSIZE 65

@@ -3,11 +3,11 @@
 #include "DXGIManager.hpp"
 
 struct procData {
-	int dx, dy;
-	UCHAR* dst;
 	HANDLE pEvent;
 	HANDLE pfEvent;
 	void* cap;
+	int idx;
+	UCHAR* dst;
 };
 
 class CaptureHelper
@@ -21,14 +21,15 @@ public:
 	void SetLightGridSize(int, int);
 	//void SetDimensions();
 	bool needUpdate = false, needLightsUpdate = false;
-	byte *imgz = NULL, *imgo/*, *scrImg = NULL*/;
+	byte *imgz = NULL, *imgo;
 	byte gridX, gridY;
 	DWORD gridDataSize;
 	//DXGIManager* dxgi_manager = NULL;
-	HANDLE pfEvent[16];
+	HANDLE pfEvent[16], sEvent;
 	procData callData[16];
-	UINT /*w, h,*/ ww, hh, stride, divider, div;
+	UINT ww, hh, div;
 private:
-	ThreadHelper* dwHandle = NULL, *pThread[16];
+	HANDLE pThread[16];
+	ThreadHelper* dwHandle = NULL;
 };
 

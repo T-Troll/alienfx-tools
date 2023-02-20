@@ -3,7 +3,7 @@
 #include "FXHelper.h"
 
 void CInProc(LPVOID);
-void ColorCalc(LPVOID inp);
+DWORD WINAPI ColorCalc(LPVOID inp);
 
 // debug print
 #ifdef _DEBUG
@@ -17,25 +17,39 @@ extern FXHelper *fxhl;
 extern EventHandler* eve;
 
 DXGIManager* dxgi_manager = NULL;
-bool dxgi_inuse = false;
+int dxgi_counter = 0;
 ThreadHelper* dxgi_thread;
 
 byte* scrImg = NULL;
-UINT w = 0, h;
+UINT w, h, stride, divider;
+int capRes = CR_TIMEOUT;
+
+void dxgi_loop(LPVOID param);
 
 void dxgi_SetDimensions() {
 	RECT dimensions = dxgi_manager->get_output_rect();
 	w = dimensions.right - dimensions.left;
 	h = dimensions.bottom - dimensions.top;
+	stride = w * 4;
+	divider = w > 1920 ? 2 : 1;
+}
+
+void dxgi_Restart() {
+	if (dxgi_manager) {
+		delete dxgi_thread;
+		capRes = CR_TIMEOUT;
+		dxgi_manager->set_capture_source((WORD)conf->amb_mode);
+		Sleep(150);
+		dxgi_SetDimensions();
+		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_LOWEST);
+	}
 }
 
 void dxgi_loop(LPVOID param) {
-	int res;
 	size_t buf_size;
-	if ((res = dxgi_manager->get_output_data(&scrImg, &buf_size)) != CR_OK && res != CR_TIMEOUT) {
+	if ((capRes = dxgi_manager->get_output_data(&scrImg, &buf_size)) != CR_OK && capRes != CR_TIMEOUT) {
 		// restart capture
 		DebugPrint("Ambient feed restart!\n");
-		w = 0;
 		dxgi_manager->refresh_output();
 		Sleep(150);
 		dxgi_SetDimensions();
@@ -52,12 +66,12 @@ CaptureHelper::CaptureHelper(bool needLights)
 		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_LOWEST);
 		dxgi_SetDimensions();
 	}
-	else
-		dxgi_inuse = true;
+	dxgi_counter++;
 	// prepare threads and data...
+	sEvent = CreateEvent(NULL, true, false, NULL);
 	for (UINT i = 0; i < 16; i++) {
-		callData[i] = { 0, 0, NULL, CreateEvent(NULL, false, false, NULL), CreateEvent(NULL, false, false, NULL), this };
-		pThread[i] = new ThreadHelper(ColorCalc, &callData[i], 0, THREAD_PRIORITY_ABOVE_NORMAL);
+		callData[i] = { CreateEvent(NULL, false, false, NULL), CreateEvent(NULL, false, false, NULL), this };
+		pThread[i] = CreateThread(NULL, 0, ColorCalc, &callData[i], 0, NULL);
 		pfEvent[i] = callData[i].pfEvent;
 	}
 	needLightsUpdate = needLights;
@@ -68,23 +82,21 @@ CaptureHelper::~CaptureHelper()
 {
 	Stop();
 	// Stop and remove processing threads
+	SetEvent(sEvent);
+	WaitForMultipleObjects(16, pThread, true, 1000);
+	CloseHandle(sEvent);
 	for (DWORD i = 0; i < 16; i++) {
-		if (callData[i].dst)
-			SetEvent(callData[i].pEvent);
-		delete pThread[i];
 		CloseHandle(callData[i].pEvent);
 		CloseHandle(pfEvent[i]);
 	}
-	if (dxgi_inuse)
-		dxgi_inuse = false;
-	else {
+	delete[] imgz;
+	if (!(--dxgi_counter)) {
 		delete dxgi_thread;
 		delete dxgi_manager;
 		dxgi_manager = NULL;
 		scrImg = NULL;
 		CoUninitialize();
 	}
-	delete[] imgz;
 }
 
 void CaptureHelper::Start()
@@ -102,17 +114,6 @@ void CaptureHelper::Stop()
 	}
 }
 
-void dxgi_Restart() {
-	if (dxgi_manager) {
-		w = 0;
-		delete dxgi_thread;
-		dxgi_manager->set_capture_source((WORD)conf->amb_mode);
-		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_LOWEST);
-		Sleep(150);
-		dxgi_SetDimensions();
-	}
-}
-
 void CaptureHelper::SetLightGridSize(int x, int y)
 {
 	Stop();
@@ -126,71 +127,60 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 	Start();
 }
 
-void ColorCalc(LPVOID inp) {
-	procData* src = (procData*) inp;
-
-	if (WaitForSingleObject(src->pEvent, 150) == WAIT_OBJECT_0) {
-		CaptureHelper* cap = (CaptureHelper*)src->cap;
-		UINT idx = src->dy * cap->hh * cap->stride + src->dx * cap->ww * 4;
-		ULONG64 r = 0, g = 0, b = 0;
-		for (UINT y = 0; y < cap->hh; y += cap->divider) {
-			UINT pos = idx + y * cap->stride;
-			for (UINT x = 0; x < cap->ww; x += cap->divider) {
-				r += scrImg[pos];
-				g += scrImg[pos + 1];
-				b += scrImg[pos + 2];
-				pos += 4;
+DWORD WINAPI ColorCalc(LPVOID inp) {
+	procData* src = (procData*)inp;
+	CaptureHelper* cap = (CaptureHelper*)src->cap;
+	HANDLE waitArray[2]{ cap->sEvent, src->pEvent };
+	DWORD res;
+	while ((res = WaitForMultipleObjects(2, waitArray, false, 150)) != WAIT_OBJECT_0)
+		if (res != WAIT_TIMEOUT) {
+			UINT idx = src->idx;
+			ULONG64 r = 0, g = 0, b = 0;
+			for (UINT y = 0; y < cap->hh; y += divider) {
+				UINT pos = idx;
+				for (UINT x = 0; x < cap->ww; x += divider) {
+					r += scrImg[pos++];
+					g += scrImg[pos++];
+					b += scrImg[pos++];
+					pos++;
+				}
+				idx += stride;
 			}
+			src->dst[0] = (UCHAR) (r / cap->div);
+			src->dst[1] = (UCHAR) (g / cap->div);
+			src->dst[2] = (UCHAR) (b / cap->div);
+			SetEvent(src->pfEvent);
 		}
-		src->dst[0] = (UCHAR) (r / cap->div);
-		src->dst[1] = (UCHAR) (g / cap->div);
-		src->dst[2] = (UCHAR) (b / cap->div);
-		SetEvent(src->pfEvent);
-	}
+	return 0;
 }
-
-//void CaptureHelper::SetDimensions() {
-//	RECT dimensions = dxgi_manager->get_output_rect();
-//	w = dimensions.right - dimensions.left;
-//	h = dimensions.bottom - dimensions.top;
-//	ww = w / gridX; hh = h / gridY;
-//	stride = w * 4;
-//	divider = w > 1920 ? 2 : 1;
-//	div = hh * ww / (divider * divider);
-//	DebugPrint("Screen resolution set to " + to_string(w) + "x" + to_string(h) + ", div " + to_string(divider) + ".\n");
-//}
 
 void CInProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
 
-	//size_t buf_size;
-	//int res;
-
 	// Resize & calc
-	UINT tInd = 0;
-	if (w && /*h &&*/ /*(res = dxgi_manager->get_output_data(&src->scrImg, &buf_size)) == CR_OK*/ /*&&*/ scrImg) {
+	if (!capRes && scrImg) {
 		src->ww = w / src->gridX; src->hh = h / src->gridY;
-		src->stride = w * 4;
-		src->divider = w > 1920 ? 2 : 1;
-		src->div = src->hh * src->ww / (src->divider * src->divider);
-		for (int dy = 0; dy < src->gridY; dy++)
-			for (int dx = 0; dx < src->gridX; dx++) {
-				UINT ptr = (dy * src->gridX + dx);
-				tInd = ptr % 16;
-				if (ptr > 0 && !tInd) {
+		src->div = src->hh * src->ww / (divider * divider);
+		UINT ptr = 0;
+		UINT tInd = 0;
+		for (int ind = 0; ind < src->gridY * src->gridX; ind++) {
+			tInd = ptr % 16;
+			if (ptr > 0 && !tInd) {
 #ifndef _DEBUG
-					WaitForMultipleObjects(16, src->pfEvent, true, 1000);
+				WaitForMultipleObjects(16, src->pfEvent, true, 1000);
 #else
-					if (WaitForMultipleObjects(16, src->pfEvent, true, 1000) != WAIT_OBJECT_0)
-						DebugPrint("Ambient thread execution fails at " + to_string(ptr) + "\n");
+				if (WaitForMultipleObjects(16, src->pfEvent, true, 1000) != WAIT_OBJECT_0)
+					DebugPrint("Ambient thread execution fails at " + to_string(ptr) + "\n");
 #endif
-				}
-				src->callData[tInd].dx = dx;
-				src->callData[tInd].dy = dy;
-				src->callData[tInd].dst = src->imgo + ptr * 3;
-				SetEvent(src->callData[tInd].pEvent);
 			}
+			src->callData[tInd].idx = (ptr / src->gridX) * src->hh * stride + (ptr % src->gridX) * src->ww * 4;
+			//src->callData[tInd].dx = dx;
+			//src->callData[tInd].dy = dy;
+			src->callData[tInd].dst = src->imgo + ptr * 3;
+			SetEvent(src->callData[tInd].pEvent);
+			ptr++;
+		}
 #ifndef _DEBUG
 		WaitForMultipleObjects(tInd + 1, src->pfEvent, true, 1000);
 #else
@@ -198,18 +188,11 @@ void CInProc(LPVOID param)
 			DebugPrint("Ambient thread execution fails at last set\n");
 #endif
 
-		if (src->needUpdate = memcmp(src->imgz, src->imgo, src->gridDataSize)) {
+		if (memcmp(src->imgz, src->imgo, src->gridDataSize)) {
 			memcpy(src->imgz, src->imgo, src->gridDataSize);
+			src->needUpdate = true;
 			if (src->needLightsUpdate && conf->lightsNoDelay)
 				fxhl->RefreshAmbient();
 		}
 	}
-	//else {
-	//	if (res != CR_TIMEOUT) {
-	//		DebugPrint("Ambient feed restart!\n");
-	//		dxgi_manager->refresh_output();
-	//		Sleep(150);
-	//		src->SetDimensions();
-	//	}
-	//}
 }

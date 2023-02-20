@@ -624,11 +624,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			src->lightQuery.pop();
 			src->modifyQuery.unlock();
 
-			//#ifdef _DEBUG
-			//				char buff[2048];
-			//				sprintf_s(buff, 2047, "New light update: (%d,%d),u=%d (%ld remains)...\n", current.did, current.lid, current.update, src->lightQuery.size());
-			//				OutputDebugString(buff);
-			//#endif
 			switch (current.command) {
 			case 2: { // set brightness
 				bool pbstate = current.light || conf->finalPBState, needRefresh = false;
@@ -672,8 +667,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				break;
 			case 0: { // set light
 				WORD pid = LOWORD(current.light);
-				WORD lid = HIWORD(current.light);
 				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
+					WORD lid = HIWORD(current.light);
 					WORD flags = conf->afx_dev.GetFlags(dev, lid);
 					for (int i = 0; i < current.actsize; i++) {
 					//for (auto i = current.actions.begin(); i < current.actions.end(); i++) {
