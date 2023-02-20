@@ -778,7 +778,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);
-				BlinkNumLock(3);
+				BlinkNumLock(2 + fan_conf->lastProf->gmode);
 			}
 			break;
 		default: return false;

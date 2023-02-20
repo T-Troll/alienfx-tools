@@ -371,7 +371,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case 6: // G-key for Dell G-series power switch
             mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? mon->acpi->powers.size() : fan_conf->lastProf->powerStage);
-            BlinkNumLock(3);
+            BlinkNumLock(2 + fan_conf->lastProf->gmode);
             break;
         }
     } break;
