@@ -159,7 +159,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, 
 		*devtype = LFX_DEVTYPE_UNKNOWN;
 		switch (afx_map->fxdevs[dev].version) {
 		case AlienFX_SDK::API_ACPI: *devtype = LFX_DEVTYPE_DESKTOP; break;
-		/*case AlienFX_SDK::API_V1: */case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
+		case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
 		case AlienFX_SDK::API_V5: case AlienFX_SDK::API_V8: *devtype = LFX_DEVTYPE_KEYBOARD; break;
 		case AlienFX_SDK::API_V6: *devtype = LFX_DEVTYPE_DISPLAY; break;
 		case AlienFX_SDK::API_V7: *devtype = LFX_DEVTYPE_MOUSE; break;

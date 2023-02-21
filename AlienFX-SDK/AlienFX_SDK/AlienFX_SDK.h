@@ -12,7 +12,6 @@ using namespace std;
 namespace AlienFX_SDK {
 
 	// Statuses for v1-v3
-	#define ALIENFX_V2_RESET 0x06
 	#define ALIENFX_V2_READY 0x10
 	#define ALIENFX_V2_BUSY 0x11
 	#define ALIENFX_V2_UNKNOWN 0x12
@@ -101,7 +100,6 @@ namespace AlienFX_SDK {
 		API_V4 = 4, //34
 		API_V3 = 3, //12
 		API_V2 = 2, //9
-		//API_V1 = 1, //8
 		API_UNKNOWN = -1
 	};
 

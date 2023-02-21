@@ -633,7 +633,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						dev->dev->powerMode = conf->statePower;
 						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
 						switch (dev->version) {
-						/*case AlienFX_SDK::API_V1:*/ case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
+						case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
 							// They don't have hardware brightness, so need to set each light again.
 							needRefresh = needRefresh || fbright || dev->version > AlienFX_SDK::API_V3;
 						}
@@ -683,7 +683,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// For v1-v3 and v7 devices only, other have hardware dimming
 						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
 							switch (dev->version) {
-							/*case AlienFX_SDK::API_V1: case AlienFX_SDK::API_V2:
+							/*case AlienFX_SDK::API_V2:
 							case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
 								unsigned delta = 255 - conf->dimmingPower;
 								action->r = ((UINT)action->r * delta) / 255;// >> 8;
