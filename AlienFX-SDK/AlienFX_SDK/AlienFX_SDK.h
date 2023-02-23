@@ -159,10 +159,6 @@ namespace AlienFX_SDK {
 		BYTE WaitForBusy();
 
 	public:
-
-		// current power mode (AC/Battery) for APIv1-v3
-		bool powerMode = true;
-
 		~Functions();
 
 		// Initialize device

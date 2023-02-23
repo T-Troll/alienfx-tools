@@ -179,9 +179,9 @@ void FXHelper::RefreshCounters(LightEventData *data)
 						case 8: lVal = eData.PWR; cVal = data->PWR; break;
 						case 9: lVal = eData.PWM; cVal = data->PWM; break;
 						}
-						cVal -= e->cut;
-						if (force || (lVal != cVal && (lVal >= 0 || cVal > e->cut))) {
+						if (force || (lVal != cVal && (cVal > e->cut || lVal >= e->cut))) {
 							hasDiff = true;
+							cVal -= e->cut;
 							fCoeff = cVal > 0 ? cVal / (100.0 - e->cut) : 0.0;
 							if (actions.empty())
 								actions.push_back(e->from);
@@ -381,7 +381,7 @@ void FXHelper::RefreshGrid() {
 						}
 						else {
 							// flat morph emulation
-							power = (double)phase / eff->width;
+							power = (double)phase / (eff->width + 1);
 							cur.front() = { BlendPower(power, &from, &to) };
 							SetZone(&(*ce), &cur);
 						}
@@ -630,7 +630,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				byte fbright = current.light ? 255 : conf->finalBrightness;
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++)
 					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
-						dev->dev->powerMode = conf->statePower;
 						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
 						switch (dev->version) {
 						case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
@@ -643,11 +642,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			} break;
 			case 1: // update command
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++)
-					//#ifdef _DEBUG
-					//							char buff[2048];
-					//							sprintf_s(buff, 2047, "Starting update for %d, (%d lights, %d in query)...\n", devQ->devID, devQ->dev_query.size(), src->lightQuery.size());
-					//							OutputDebugString(buff);
-					//#endif
 					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
 						if (devQ->second.size()) {
 							dev->dev->SetMultiAction(&devQ->second, current.light);
@@ -671,7 +665,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					WORD lid = HIWORD(current.light);
 					WORD flags = conf->afx_dev.GetFlags(dev, lid);
 					for (int i = 0; i < current.actsize; i++) {
-					//for (auto i = current.actions.begin(); i < current.actions.end(); i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
 						// gamma-correction...
 						if (conf->gammaCorrection) {
@@ -680,7 +673,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
 						}
 						// Dimming...
-						// For v1-v3 and v7 devices only, other have hardware dimming
+						// For v7 devices only, other have hardware dimming
 						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
 							switch (dev->version) {
 							/*case AlienFX_SDK::API_V2:
@@ -691,9 +684,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 								action->b = ((UINT)action->b * delta) / 255;// >> 8;
 							}
 							}
-						//DebugPrint(("Light for #" + to_string(current.did) + ", ID " + to_string(current.lid) +
-						//" to (" + to_string(action.r) + "," + to_string(action.g) + "," + to_string(action.b) + ")\n").c_str());
-						//actions.push_back(action);
 					}
 
 					// Is it power button?

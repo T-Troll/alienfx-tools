@@ -463,8 +463,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_PROFILE_EFFECTS:
 			conf->activeProfile->effmode = (IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-			eve->ChangeEffectMode();
-			ReloadModeList();
+			UpdateState(true);
 			break;
 		case IDC_PROFILES: {
 			switch (HIWORD(wParam))

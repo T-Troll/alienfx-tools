@@ -81,7 +81,7 @@ bool ConfigHandler::SetStates() {
 	// Dim state...
 	stateDimmed = dimmed || activeProfile->flags & PROF_DIMMED || (dimmedBatt && !statePower);
 	// Effects state...
-	stateEffects = stateOn && enableEffects && (effectsOnBattery || statePower);
+	stateEffects = stateOn && enableEffects && (effectsOnBattery || statePower) && activeProfile->effmode;
 	// Brightness
 	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
 	// Power button state

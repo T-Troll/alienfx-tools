@@ -59,6 +59,7 @@ void dxgi_loop(LPVOID param) {
 CaptureHelper::CaptureHelper(bool needLights)
 {
 	if (!dxgi_manager) {
+		DebugPrint("Startinging screen capture\n");
 		CoInitializeEx(NULL, COINIT_MULTITHREADED);
 		dxgi_manager = new DXGIManager();
 		dxgi_manager->set_timeout(100);
@@ -91,6 +92,7 @@ CaptureHelper::~CaptureHelper()
 	}
 	delete[] imgz;
 	if (!(--dxgi_counter)) {
+		DebugPrint("Deleting screen capture\n");
 		delete dxgi_thread;
 		delete dxgi_manager;
 		dxgi_manager = NULL;

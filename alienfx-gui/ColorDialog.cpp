@@ -14,7 +14,7 @@ extern void RedrawZoneGrid(DWORD grpid);
 
 int effID = 0;
 
-const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
+const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow", "Power" };
 
 void SetEffectData(HWND hDlg) {
 	bool hasEffects = mmap && mmap->color.size();
@@ -25,7 +25,7 @@ void SetEffectData(HWND hDlg) {
 			SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
 			SetSlider(sTip2, mmap->color[effID].time);
 	}
-	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects && !conf->afx_dev.GetGroupById(mmap->group)->have_power);
+	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
@@ -63,7 +63,7 @@ void RebuildEffectList(HWND hDlg) {
 			ImageList_Add(hSmall, colorBox, NULL);
 			DeleteObject(colorBox);
 			lItem.iImage = i;
-			lItem.pszText = mmap->color[i].type != 6 ? (LPSTR)lightEffectNames[mmap->color[i].type].c_str() : "Power";
+			lItem.pszText = (LPSTR)lightEffectNames[mmap->color[i].type].c_str();
 			// check selection...
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
@@ -73,45 +73,35 @@ void RebuildEffectList(HWND hDlg) {
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
-		//fxhl->RefreshOne(mmap);
 	}
 	SetEffectData(hDlg);
 	ListView_EnsureVisible(eff_list, effID, false);
 }
 
 void ChangeAddColor(HWND hDlg, int newEffID) {
-	// change color.
 	if (mmap) {
 		if (newEffID < mmap->color.size())
 			SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]);
 		else {
 			AlienFX_SDK::Afx_action act{ 0 };
+			bool isPower = conf->afx_dev.GetGroupById(mmap->group)->have_power;
 			// add new effect
-			if (conf->afx_dev.GetGroupById(mmap->group)->have_power) {
-				if (mmap->color.empty()) {
-					act = { AlienFX_SDK::AlienFX_A_Power, 3, 0x64 };
-					mmap->color.push_back(act);
-					mmap->color.push_back(act);
-					newEffID = 0;
-				}
-			} else
-				if (mmap->color.size() < 9) {
-					if (effID < mmap->color.size())
-						act = mmap->color[effID];
-					mmap->color.push_back(act);
-					newEffID = (int)mmap->color.size() - 1;
-				}
-			if (newEffID < mmap->color.size())
+			if (isPower && mmap->color.empty())
+				mmap->color.push_back({ AlienFX_SDK::AlienFX_A_Power, 3, 0x64 });
+			if (mmap->color.size() < 9) {
+				if (effID < mmap->color.size())
+					act = mmap->color[effID];
+				mmap->color.push_back(act);
 				if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]))
 					effID = newEffID;
 				else {
-					if (conf->afx_dev.GetGroupById(mmap->group)->have_power)
+					if (isPower && mmap->color.size() == 2)
 						mmap->color.clear();
 					else
-						mmap->color.erase(mmap->color.begin() + newEffID);
+						mmap->color.pop_back();
 				}
+			}		
 		}
-		//fxhl->RefreshOne(mmap);
 		RebuildEffectList(hDlg);
 		UpdateZoneList();
 	}
@@ -164,7 +154,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_BUT_REMOVE_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap && effID < mmap->color.size()) {
-				if (conf->afx_dev.GetGroupById(mmap->group)->have_power) {
+				if (conf->afx_dev.GetGroupById(mmap->group)->have_power && mmap->color.size() == 2) {
 					mmap->color.clear();
 					effID = 0;
 				}

@@ -74,11 +74,10 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 			if (clr->empty())
 				clr->push_back(act);
 			clr->push_back(act);
-			newColorID = (int)clr->size() - 1;
 			if (SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), &clr->at(newColorID)))
 				clrListID = newColorID;
 			else
-				clr->erase(clr->begin() + newColorID);
+				clr->pop_back();
 		}
 		RebuildGEColorsList(hDlg);
 		UpdateZoneList();
