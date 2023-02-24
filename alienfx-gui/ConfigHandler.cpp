@@ -173,6 +173,7 @@ void ConfigHandler::Load() {
 	DWORD len = 255, lend = 0;
 	profile* prof;
 	groupset* gset;
+	byte cbsize = 2 * sizeof(DWORD) + 3;
 
 	// Profiles...
 	for (int vindex = 0; lend = GetRegData(hKeyProfiles, vindex, name, &data); vindex++) {
@@ -181,15 +182,11 @@ void ConfigHandler::Load() {
 			continue;
 		}
 		if (sscanf_s(name, "Profile-triggers-%d", &pid) == 1) {
-			prof = FindCreateProfile(pid);
-			prof->triggerFlags = ((WORD*)data)[0];
-			prof->triggerkey = ((WORD*)data)[1];
+			FindCreateProfile(pid)->triggers = *(DWORD*)data;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-gflags-%d", &pid) == 1) {
-			prof = FindCreateProfile(pid);
-			prof->flags = ((WORD*)data)[0];;
-			prof->effmode = ((WORD*)data)[1];
+			FindCreateProfile(pid)->gflags = *(DWORD*)data;
 			continue;
 		}
 		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
@@ -217,7 +214,7 @@ void ConfigHandler::Load() {
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			gset->fromColor = data[0];
 			gset->gauge = data[1];
-			gset->flags = ((WORD*)data)[1];
+			gset->gaugeflags = ((WORD*)data)[1];
 			continue;
 		}
 		if (sscanf_s((char*)name, "Zone-eventlist-%d-%d", &profID, &groupID) == 2 &&
@@ -234,46 +231,49 @@ void ConfigHandler::Load() {
 		if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			AlienFX_SDK::Afx_action* clr = (AlienFX_SDK::Afx_action*)data;
-			for (int i = 0; i < recSize; i++)
+			for (int i = 0; i < recSize; i++) {
+				// Power mode patch (not used in UI anymore
+				if (clr[i].type == AlienFX_SDK::AlienFX_A_Power)
+					clr[i].type = AlienFX_SDK::AlienFX_A_Color;
 				gset->color.push_back(clr[i]);
+			}
 			continue;
 		}
 		if (sscanf_s((char*)name, "Zone-ambient-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			for (int i = 0; i < recSize; i++)
-				gset->ambients.push_back(data[i]);
+			gset->ambients.resize(recSize);
+			memcpy(gset->ambients.data(), data, recSize);
 			continue;
 		}
 		if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			byte* out = data, cbsize = 2 * sizeof(DWORD) + 3;
+			byte* out = data;
 			freq_map newFreq;
 			for (int i = 0; i < recSize; i++) {
-				newFreq.freqID.clear();
 				memcpy(&newFreq, out, cbsize);
 				out += cbsize;
-				for (int j = 0; j < newFreq.freqsize; j++) {
-					if (find(newFreq.freqID.begin(), newFreq.freqID.end(), *out) == newFreq.freqID.end())
-						newFreq.freqID.push_back(*out); out++;
-				}
+				newFreq.freqID.resize(newFreq.freqsize);
+				memcpy(newFreq.freqID.data(), out, newFreq.freqsize);
+				out += newFreq.freqsize;
 				gset->haptics.push_back(newFreq);
 			}
 			continue;
 		}
 		if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2 &&
 			(gset = FindCreateGroupSet(profID, groupID))) {
-			memcpy(&gset->effect, data, 7);
-			AlienFX_SDK::Afx_colorcode cc;
-			for (unsigned pos = 7; pos < lend; pos += 4) {
-				cc.ci = *(DWORD*)(data + pos);
-				gset->effect.effectColors.push_back(cc);
+			auto ce = &gset->effect;
+			memcpy(ce, data, 7);
+			//ce->effectColors.resize(gset->effect.numclr);
+			//memcpy(ce->effectColors.data(), data + 7, gset->effect.numclr);
+			for (unsigned pos = 7; pos < lend; pos += sizeof(DWORD)) {
+				ce->effectColors.push_back(*(AlienFX_SDK::Afx_colorcode*)(data+pos));
 			}
 		}
 	}
 
 	if (profiles.empty()) {
 		// need new profile
-		profile* prof = new profile({0, PROF_DEFAULT, 0, {}, "Default"});
+		profile* prof = new profile({ 0, "Default", {PROF_DEFAULT, 1} });
 		profiles.push_back(prof);
 	}
 
@@ -286,10 +286,10 @@ bool ConfigHandler::SamePower(WORD flags, profile* prof) {
 	return !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)) || !cflags || flags & cflags;
 }
 
-profile* ConfigHandler::FindDefaultProfile(profile* newp) {
-	for (auto res = profiles.begin(); res != profiles.end(); res++)
-		if ((*res)->flags & PROF_DEFAULT && SamePower((*res)->triggerFlags, newp))
-			return *res;
+profile* ConfigHandler::FindDefaultProfile() {
+	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
+		if ((*prof)->flags & PROF_DEFAULT && SamePower((*prof)->triggerFlags, NULL))
+			return (*prof);
 	return profiles.front();
 }
 
@@ -337,29 +337,26 @@ void ConfigHandler::Save() {
 	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
 	for (auto jIter = profiles.begin(); jIter < profiles.end(); jIter++) {
-		DWORD flagset;
-		string name = "Profile-" + to_string((*jIter)->id);
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->name.c_str(), (DWORD)(*jIter)->name.size());
-		name = "Profile-gflags-" + to_string((*jIter)->id);
-		flagset = MAKELONG((*jIter)->flags, (*jIter)->effmode);
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
-		flagset = MAKELONG((*jIter)->triggerFlags, (*jIter)->triggerkey);
-		if (flagset) {
-			name = "Profile-triggers-" + to_string((*jIter)->id);
-			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&flagset, sizeof(DWORD));
+		auto prof = *jIter;
+		string profID = to_string(prof->id);
+		string name = "Profile-" + profID;
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)prof->name.c_str(), (DWORD)prof->name.size());
+		name = "Profile-gflags-" + profID;
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->gflags, sizeof(DWORD));
+		name = "Profile-triggers-" + profID;
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->triggers, sizeof(DWORD));
+		// Trigger applications
+		for (int i = 0; i < prof->triggerapp.size(); i++) {
+			name = "Profile-app-" +profID + "-" + to_string(i);
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)prof->triggerapp[i].c_str(), (DWORD)prof->triggerapp[i].size());
 		}
-
-		for (int i = 0; i < (*jIter)->triggerapp.size(); i++) {
-			name = "Profile-app-" + to_string((*jIter)->id) + "-" + to_string(i);
-			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)(*jIter)->triggerapp[i].c_str(), (DWORD)(*jIter)->triggerapp[i].length());
-		}
-
-		for (auto iIter = (*jIter)->lightsets.begin(); iIter < (*jIter)->lightsets.end(); iIter++) {
+		// Zone sets
+		for (auto iIter = prof->lightsets.begin(); iIter < prof->lightsets.end(); iIter++) {
 			string fname;
-			name = to_string((*jIter)->id) + "-" + to_string(iIter->group);
+			name =profID + "-" + to_string(iIter->group);
 			// flags...
 			fname = "Zone-flags-" + name;
-			DWORD value = MAKELPARAM(MAKEWORD(iIter->fromColor, iIter->gauge), iIter->flags);
+			DWORD value = MAKELPARAM(MAKEWORD(iIter->fromColor, iIter->gauge), iIter->gaugeflags);
 			RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
 
 			if (iIter->color.size()) { // colors
@@ -372,55 +369,51 @@ void ConfigHandler::Save() {
 			}
 			if (iIter->ambients.size()) { // ambient
 				fname = "Zone-ambient-" + name + "-" + to_string(iIter->ambients.size());
-				byte* buffer = new byte[iIter->ambients.size()];
-				for (int i = 0; i < iIter->ambients.size(); i++)
-					buffer[i] = iIter->ambients[i];
-				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, (DWORD)iIter->ambients.size());
-				delete[] buffer;
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)iIter->ambients.data(), (DWORD)iIter->ambients.size());
 			}
 			if (iIter->haptics.size()) { // haptics
+				// ToDo: rebuild to per-group save
 				fname = "Zone-haptics-" + name + "-" + to_string(iIter->haptics.size());
 				DWORD size = 0, recSize = 2 * sizeof(DWORD) + 3;
-				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++)
-					size += recSize + (DWORD)it->freqID.size();
+				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++) {
+					it->freqsize = (byte)it->freqID.size();
+					size += recSize + it->freqsize;
+				}
 				byte* buffer = new byte[size], * out = buffer;
 				for (auto it = iIter->haptics.begin(); it < iIter->haptics.end(); it++) {
-					it->freqsize = (byte) it->freqID.size();
 					memcpy(out, &(*it), recSize);
 					out += recSize;
-					for (auto itf = it->freqID.begin(); itf < it->freqID.end(); itf++) {
-						*out = *itf; out++;
-					}
+					memcpy(out, it->freqID.data(), it->freqsize);
+					out += it->freqsize;
 				}
 				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, (BYTE*)buffer, size);
 				delete[] buffer;
 			}
 			if (iIter->effect.trigger) { // Grid effects
 				fname = "Zone-effect-" + name;
-				DWORD size = (DWORD)(7 + iIter->effect.effectColors.size() * sizeof(DWORD));
-				byte* buffer = new byte[size];
+				DWORD size = (DWORD)(iIter->effect.effectColors.size() * sizeof(DWORD));
+				byte* buffer = new byte[size + 7];
 				memcpy(buffer, &iIter->effect, 7);
-				for (int cc = 0; cc < iIter->effect.effectColors.size(); cc++)
-					*(DWORD*)(buffer + 7 + cc * sizeof(DWORD)) = iIter->effect.effectColors[cc].ci;
-				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, buffer, size);
+				memcpy(buffer + 7, iIter->effect.effectColors.data(), size);
+				RegSetValueEx(hKeyZones, fname.c_str(), 0, REG_BINARY, buffer, size + 7);
 				delete[] buffer;
 			}
 		}
 
 		// Global effects
-		for (auto it = (*jIter)->effects.begin(); it != (*jIter)->effects.end(); it++) {
-			name = "Profile-device-" + to_string((*jIter)->id) + "-" + to_string(it - (*jIter)->effects.begin());
+		for (auto it = prof->effects.begin(); it != prof->effects.end(); it++) {
+			name = "Profile-device-" +profID + "-" + to_string(it - prof->effects.begin());
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*it), sizeof(deviceeffect));
 		}
 		// Fans....
-		if ((*jIter)->flags & PROF_FANS) {
+		if (prof->flags & PROF_FANS) {
 			// save powers..
-			name = "Profile-power-" + to_string((*jIter)->id);
-			WORD ps = MAKEWORD(0, (*jIter)->fansets.gmode);
-			DWORD pvalue = MAKELONG((*jIter)->fansets.powerStage, ps);
+			name = "Profile-power-" +profID;
+			WORD ps = MAKEWORD(0, prof->fansets.gmode);
+			DWORD pvalue = MAKELONG(prof->fansets.powerStage, ps);
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
 			// save fans...
-			fan_conf.SaveSensorBlocks(hKeyProfiles, "Profile-fan-" + to_string((*jIter)->id), &(*jIter)->fansets);
+			fan_conf.SaveSensorBlocks(hKeyProfiles, "Profile-fan-" +profID, &prof->fansets);
 		}
 	}
 }

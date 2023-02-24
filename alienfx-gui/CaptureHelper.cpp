@@ -64,7 +64,7 @@ CaptureHelper::CaptureHelper(bool needLights)
 		dxgi_manager = new DXGIManager();
 		dxgi_manager->set_timeout(100);
 		dxgi_manager->set_capture_source((WORD)conf->amb_mode);
-		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_LOWEST);
+		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_NORMAL);
 		dxgi_SetDimensions();
 	}
 	dxgi_counter++;
@@ -73,6 +73,7 @@ CaptureHelper::CaptureHelper(bool needLights)
 	for (UINT i = 0; i < 16; i++) {
 		callData[i] = { CreateEvent(NULL, false, false, NULL), CreateEvent(NULL, false, false, NULL), this };
 		pThread[i] = CreateThread(NULL, 0, ColorCalc, &callData[i], 0, NULL);
+		SetThreadPriority(pThread[i], THREAD_PRIORITY_ABOVE_NORMAL);
 		pfEvent[i] = callData[i].pfEvent;
 	}
 	needLightsUpdate = needLights;
@@ -104,7 +105,7 @@ CaptureHelper::~CaptureHelper()
 void CaptureHelper::Start()
 {
 	if (!dwHandle) {
-		dwHandle = new ThreadHelper(CInProc, this, 100, THREAD_PRIORITY_LOWEST);
+		dwHandle = new ThreadHelper(CInProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
 	}
 }
 

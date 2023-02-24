@@ -204,13 +204,13 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			break;
 		case IDC_CHECK_SPECTRUM:
 			if (mmap) {
-				SetBitMask(mmap->flags, GAUGE_GRADIENT, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				SetBitMask(mmap->gaugeflags, GAUGE_GRADIENT, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				fxhl->Refresh();
 			}
 			break;
 		case IDC_CHECK_REVERSE:
 			if (mmap) {
-				SetBitMask(mmap->flags, GAUGE_REVERSE, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+				SetBitMask(mmap->gaugeflags, GAUGE_REVERSE, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				fxhl->Refresh();
 			}
 			break;
@@ -248,8 +248,8 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					// gauge and spectrum.
 					mmap = conf->FindMapping(eItem);
 					if (mmap) {
-						CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->flags & GAUGE_GRADIENT);
-						CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->flags & GAUGE_REVERSE);
+						CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
+						CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
 						RedrawZoneGrid(mmap->group);
 						ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 						SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);

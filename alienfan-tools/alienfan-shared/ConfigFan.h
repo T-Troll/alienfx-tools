@@ -7,8 +7,7 @@
 using namespace std;
 
 struct fan_point {
-	short temp;
-	short boost;
+	byte temp, boost;
 };
 
 struct sen_block {

@@ -929,7 +929,7 @@ namespace AlienFX_SDK {
 			if (nDev == devList.end()) {
 				// not found
 				if (activeOnly)
-					fxdevs.erase(i);
+					i = fxdevs.erase(i);
 				else {
 					delete i->dev;
 					i->dev = NULL;

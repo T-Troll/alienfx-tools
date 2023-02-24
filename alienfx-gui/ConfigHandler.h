@@ -3,7 +3,7 @@
 #include <string>
 #include <random>
 #include "AlienFX_SDK.h"
-#include "ConfigFan.h"
+//#include "ConfigFan.h"
 
 // Profile flags
 #define PROF_DEFAULT		0x1
@@ -73,7 +73,7 @@ struct grideffect {
 	byte trigger = 0;
 	byte type = 0;
 	byte speed = 80;
-	byte padding = 0;
+	byte numclr = 0;
 	byte width = 1;
 	WORD flags;
 	vector<AlienFX_SDK::Afx_colorcode> effectColors;
@@ -97,28 +97,36 @@ struct groupset {
 	grideffect effect;
 	grideffop  gridop;
 	bool fromColor = false;
-	WORD flags = 0;
+	WORD gaugeflags = 0;
 	byte gauge = 0;
 };
 
 struct deviceeffect {
 	WORD vid, pid;
 	AlienFX_SDK::Afx_colorcode effColor1, effColor2;
-	byte globalEffect = 0,
-		globalDelay = 5,
-		globalMode = 1;
+	byte globalEffect, globalDelay,	globalMode;
 };
 
 struct profile {
 	unsigned id = 0;
-	WORD flags = 0;
-	WORD effmode = 0;
-	vector<string> triggerapp;
 	string name;
-	WORD triggerkey = 0;
-	WORD triggerFlags;
+	union {
+		struct {
+			WORD flags;
+			WORD effmode;
+		};
+		DWORD gflags;
+	};
+	union {
+		struct {
+			WORD triggerFlags;
+			WORD triggerkey;
+		};
+		DWORD triggers = 0;
+	};
+	vector<string> triggerapp;
 	vector<groupset> lightsets;
-	fan_profile fansets;
+	/*fan_profile*/void *fansets;
 	vector<deviceeffect> effects;
 };
 
@@ -186,7 +194,7 @@ public:
 	byte finalBrightness = 255;
 	bool finalPBState = false;
 
-	ConfigFan fan_conf;
+	/*ConfigFan*/void *fan_conf;
 
 	// Profiles and zones
 	vector<profile*> profiles;
@@ -216,7 +224,7 @@ public:
 	zonemap* FindZoneMap(int gid);
 	zonemap* SortGroupGauge(int gid);
 	profile* FindProfile(int id);
-	profile* FindDefaultProfile(profile* newp = NULL);
+	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof);
 	bool SetStates();

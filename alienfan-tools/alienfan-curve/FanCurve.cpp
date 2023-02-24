@@ -27,14 +27,18 @@ int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
 
 HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
 
-fan_point Screen2Fan(LPARAM lParam) {
+void SetFanWindow() {
     if (!cArea.right) {
         GetClientRect(fanWindow, &cArea);
         cArea.right--; cArea.bottom--;
     }
+}
+
+fan_point Screen2Fan(LPARAM lParam) {
+    SetFanWindow();
     return {
-        (short)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
-        (short)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
+        (byte)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
+        (byte)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
     };
 }
 
@@ -60,7 +64,8 @@ POINT Boost2Screen(fan_overboost* boost) {
 
 void DrawFan()
 {
-    if (fanWindow && mon && cArea.right) {
+    if (fanWindow && mon) {
+        SetFanWindow();
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
         // Double buff...
@@ -244,10 +249,6 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT: {
         if (!toolTip)
             toolTip = CreateToolTip(hDlg, NULL);
-        if (!cArea.right) {
-            GetClientRect(fanWindow, &cArea);
-            cArea.right--; cArea.bottom--;
-        }
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hDlg, &ps);
         DrawFan();
@@ -255,8 +256,8 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         return true;
     } break;
     case WM_SIZE:
-        GetClientRect(fanWindow, &cArea);
-        cArea.right--; cArea.bottom--;
+        cArea.right = 0;
+        //SetFanWindow();
         break;
     case WM_ERASEBKGND:
         return true;
@@ -264,15 +265,13 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if (IsWindowVisible(hDlg))
             DrawFan();
         return true;
-        //break;
     default:
         if (mon->inControl) {
-            sen_block* cFan;
-            fan_point clk = Screen2Fan(lParam);
+            auto clk = Screen2Fan(lParam);
             for (auto sen = fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].begin();
                 sen != fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].end(); sen++)
                 if (sen->first == fan_conf->lastSelectedSensor) {
-                    cFan = &sen->second;
+                    auto cFan = &sen->second;
                     switch (message) {
                     case WM_MOUSEMOVE: {
                         if (wParam & MK_LBUTTON) {
@@ -284,29 +283,37 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     case WM_LBUTTONDOWN:
                         SetCapture(hDlg);
                         // check and add point
-                        lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
-                            [clk](auto t) {
-                                return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
-                            });
-                        if (lastFanPoint == cFan->points.end()) {
-                            // insert element
-                            lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
-                                [clk](auto t) {
-                                    return t.temp > clk.temp;
-                                }), clk);
+                        for (auto fp = cFan->points.begin(); fp != cFan->points.end(); fp++) {
+                            if (abs(fp->temp - clk.temp) <= DRAG_ZONE && abs(fp->boost - clk.boost) <= DRAG_ZONE) {
+                                lastFanPoint = fp;
+                                break;
+                            }
+                            if (fp->temp > clk.temp) {
+                                lastFanPoint = cFan->points.insert(fp, clk);
+                                break;
+                            }
                         }
+                        //lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
+                        //    [clk](auto t) {
+                        //        return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
+                        //    });
+                        //if (lastFanPoint == cFan->points.end()) {
+                        //    // insert element
+                        //    lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
+                        //        [clk](auto t) {
+                        //            return t.temp > clk.temp;
+                        //        }), clk);
+                        //}
                         break;
                     case WM_LBUTTONUP:
                         ReleaseCapture();
                         // re-sort and de-duplicate array.
                         for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++) {
-                            if (fPi->temp > (fPi + 1)->temp) {
-                                fan_point t = *fPi;
-                                *fPi = *(fPi + 1);
-                                *(fPi + 1) = t;
-                            }
-                            if (fPi->temp == (fPi + 1)->temp && fPi->boost == (fPi + 1)->boost)
-                                cFan->points.erase(fPi + 1);
+                            auto nfPi = fPi + 1;
+                            if (fPi->temp > nfPi->temp)
+                                swap(*fPi, *nfPi);
+                            if (fPi->temp == nfPi->temp && fPi->boost == nfPi->boost && cFan->points.size() > 2)
+                                cFan->points.erase(nfPi);
                         }
                         cFan->points.front().temp = 0;
                         cFan->points.back().temp = 100;
@@ -417,8 +424,6 @@ void ReloadTempView(HWND list) {
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        //auto pwr = fan_conf->sensors.find(acpi->sensors[i].sid);
-        //name = pwr != fan_conf->sensors.end() ? pwr->second : acpi->sensors[i].name;
         name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
         ListView_SetItemText(list, i, 1, (LPSTR)name.c_str());
     }
@@ -457,7 +462,6 @@ void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
             fan_conf->lastSelectedSensor = (WORD)((LPNMLISTVIEW)lParam)->lParam;
             // Redraw fans
             ReloadFanView(fanList);
-            // DrawFan();
         }
     } break;
     }
@@ -469,7 +473,6 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
         if (lParam->uNewState & LVIS_SELECTED && lParam->iItem != -1) {
             // Select other fan....
             fan_conf->lastSelectedFan = lParam->iItem;
-            //DrawFan();
             return;
         }
         if (lParam->uNewState & 0x3000) {
@@ -484,7 +487,6 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
                 if ((*fan)[fan_conf->lastSelectedSensor].points.empty())
                     (*fan)[fan_conf->lastSelectedSensor].points = { {0,0},{100,100} };
             }
-            //DrawFan();
             ListView_SetItemState(fanList, lParam->iItem, LVIS_SELECTED, LVIS_SELECTED);
         }
     }

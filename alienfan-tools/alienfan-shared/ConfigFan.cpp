@@ -29,9 +29,11 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 void ConfigFan::AddSensorCurve(fan_profile *prof, WORD fid, WORD sid, byte* data, DWORD lend) {
 	if (!prof) prof = lastProf;
 	sen_block curve = { true };
-	for (UINT i = 0; i < lend; i += 2) {
-		curve.points.push_back({ data[i], data[i + 1] });
-	}
+	curve.points.resize(lend / 2);
+	memcpy(curve.points.data(), data, lend);
+	//for (UINT i = 0; i < lend; i += 2) {
+	//	curve.points.push_back({ data[i], data[i + 1] });
+	//}
 	prof->fanControls[fid][sid] = curve;
 }
 
@@ -97,14 +99,14 @@ void ConfigFan::SaveSensorBlocks(HKEY key, string pname, fan_profile* data) {
 		for (auto j = i->second.begin(); j != i->second.end(); j++) {
 			if (j->second.active) {
 				string name = pname + "-" + to_string(i->first) + "-" + to_string(j->first);
-				byte* outdata = new byte[j->second.points.size() * 2];
-				for (int k = 0; k < j->second.points.size(); k++) {
-					outdata[2 * k] = (byte)j->second.points[k].temp;
-					outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
-				}
+				//byte* outdata = new byte[j->second.points.size() * 2];
+				//for (int k = 0; k < j->second.points.size(); k++) {
+				//	outdata[2 * k] = (byte)j->second.points[k].temp;
+				//	outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
+				//}
 
-				RegSetValueEx(key, name.c_str(), 0, REG_BINARY, (BYTE*)outdata, (DWORD)j->second.points.size() * 2);
-				delete[] outdata;
+				RegSetValueEx(key, name.c_str(), 0, REG_BINARY, (BYTE*)j->second.points.data(), (DWORD)j->second.points.size() * 2);
+				//delete[] outdata;
 			}
 		}
 	}

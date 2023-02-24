@@ -317,10 +317,11 @@ void ReloadProfileList() {
 	if (IsWindowVisible(mDlg)) {
 		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
 		ComboBox_ResetContent(profile_list);
-		for (int i = 0; i < conf->profiles.size(); i++) {
-			ComboBox_SetItemData(profile_list, ComboBox_AddString(profile_list, conf->profiles[i]->name.c_str()), conf->profiles[i]->id);
-			if (conf->profiles[i]->id == conf->activeProfile->id) {
-				ComboBox_SetCurSel(profile_list, i);
+		for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
+			int id;
+			ComboBox_SetItemData(profile_list, id = ComboBox_AddString(profile_list, (*i)->name.c_str()), (*i)->id);
+			if ((*i)->id == conf->activeProfile->id) {
+				ComboBox_SetCurSel(profile_list, id);
 				ReloadModeList();
 				if (tabSel == TAB_FANS && conf->activeProfile->flags & PROF_FANS) {
 					OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
@@ -574,10 +575,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (!conf->enableProfSwitch) {
 				pMenu = CreatePopupMenu();
 				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
-				for (int i = 0; i < conf->profiles.size(); i++) {
-					mInfo.dwTypeData = (LPSTR) conf->profiles[i]->name.c_str();
-					mInfo.fState = conf->profiles[i]->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
-					InsertMenuItem(pMenu, i, false, &mInfo);
+				for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
+					mInfo.dwTypeData = (LPSTR) (*i)->name.c_str();
+					mInfo.fState = (*i)->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
+					InsertMenuItem(pMenu, (UINT)(i - conf->profiles.begin()), false, &mInfo);
 				}
 				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
 			}
@@ -869,26 +870,24 @@ bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {
 }
 
 bool IsGroupUnused(DWORD gid) {
-	bool inSet = true;
-	for (auto prof = conf->profiles.begin(); inSet && prof != conf->profiles.end(); prof++) {
+	for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++) {
 		for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
 			if (ls->group == gid) {
-				inSet = false;
-				break;
+				return false;
 			}
 	}
-	return inSet;
+	return true;
 }
 
-void RemoveUnused(vector<groupset>* lightsets) {
-	for (auto it = lightsets->begin(); it != lightsets->end();)
-		if (!(it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)) {
-			lightsets->erase(it);
-			it = lightsets->begin();
-		}
-		else
-			it++;
-}
+//void RemoveUnused(vector<groupset>* lightsets) {
+//	for (auto it = lightsets->begin(); it != lightsets->end();)
+//		if (!(it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)) {
+//			lightsets->erase(it);
+//			it = lightsets->begin();
+//		}
+//		else
+//			it++;
+//}
 
 void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid) {
 	AlienFX_SDK::Afx_groupLight cur{ devid, lightid };

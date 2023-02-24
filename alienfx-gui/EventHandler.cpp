@@ -305,9 +305,9 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	switch (wParam) {
 	case WM_KEYDOWN: case WM_SYSKEYDOWN:
 		if (!eve->keyboardSwitchActive) {
-			for (auto pos = conf->profiles.begin(); pos != conf->profiles.end(); pos++)
-				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == ((*pos)->triggerkey & 0xff) && conf->SamePower((*pos)->triggerFlags)) {
-					eve->SwitchActiveProfile(*pos);
+			for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++)
+				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == ((*prof)->triggerkey & 0xff) && conf->SamePower((*prof)->triggerFlags)) {
+					eve->SwitchActiveProfile(*prof);
 					eve->keyboardSwitchActive = true;
 					break;
 				}

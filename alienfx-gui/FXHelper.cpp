@@ -67,22 +67,22 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 			for (auto t = zone.lightMap.begin(); t < zone.lightMap.end(); t++)
 				switch (grp->gauge) {
 				case 1: // horizontal
-					SetZoneLight(t->light, t->x, zone.xMax, grp->flags, actions, power);
+					SetZoneLight(t->light, t->x, zone.xMax, grp->gaugeflags, actions, power);
 					break;
 				case 2: // vertical
-					SetZoneLight(t->light, t->y, zone.yMax, grp->flags, actions, power);
+					SetZoneLight(t->light, t->y, zone.yMax, grp->gaugeflags, actions, power);
 					break;
 				case 3: // diagonal
-					SetZoneLight(t->light, t->x + t->y, zone.xMax + zone.yMax, grp->flags, actions, power);
+					SetZoneLight(t->light, t->x + t->y, zone.xMax + zone.yMax, grp->gaugeflags, actions, power);
 					break;
 				case 4: // back diagonal
-					SetZoneLight(t->light, zone.xMax - t->x + t->y, zone.xMax + zone.yMax, grp->flags, actions, power);
+					SetZoneLight(t->light, zone.xMax - t->x + t->y, zone.xMax + zone.yMax, grp->gaugeflags, actions, power);
 					break;
 				case 5: // radial
 					float px = abs(((float)zone.xMax)/2 - t->x), py = abs(((float)zone.yMax)/2 - t->y);
 					int radius = (int)(sqrt(zone.xMax * zone.xMax + zone.yMax * zone.yMax) / 2),
 						weight = (int)sqrt(px * px + py * py);
-					SetZoneLight(t->light, weight, radius, grp->flags, actions, power);
+					SetZoneLight(t->light, weight, radius, grp->gaugeflags, actions, power);
 					break;
 				}
 		}
@@ -185,7 +185,7 @@ void FXHelper::RefreshCounters(LightEventData *data)
 							fCoeff = cVal > 0 ? cVal / (100.0 - e->cut) : 0.0;
 							if (actions.empty())
 								actions.push_back(e->from);
-							actions.push_back(!Iter->gauge || (Iter->flags & GAUGE_GRADIENT) ? BlendPower(fCoeff, &actions.back(), &e->to) : e->to);
+							actions.push_back(!Iter->gauge || (Iter->gaugeflags & GAUGE_GRADIENT) ? BlendPower(fCoeff, &actions.back(), &e->to) : e->to);
 							if (!Iter->gauge)
 								actions.erase(actions.begin());
 						}
@@ -326,7 +326,7 @@ void FXHelper::RefreshGrid() {
 					if (phase >= effop->size) // circle by color and direction
 						phase = effsize - phase - 1;
 
-					if (ce->flags & GAUGE_REVERSE)
+					if (ce->gaugeflags & GAUGE_REVERSE)
 						phase = effop->size - phase - 1;
 
 					// Set lights
@@ -346,7 +346,7 @@ void FXHelper::RefreshGrid() {
 									SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
 
 							// Check for gradient zones - in this case all phases updated!
-							if (ce->flags & GAUGE_GRADIENT) {
+							if (ce->gaugeflags & GAUGE_GRADIENT) {
 								for (int nf = 0; nf < effop->size - phase; nf++) {
 									power = (double)nf / (effop->size - phase);
 									SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
@@ -356,7 +356,7 @@ void FXHelper::RefreshGrid() {
 							// Fill new phase colors
 							if (eff->type == 3) { // Filled
 								for (int nf = 0; nf <= phase; nf++) {
-									power = ce->flags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
+									power = ce->gaugeflags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
 									SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
 								}
 							}
