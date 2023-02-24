@@ -28,7 +28,6 @@ MonHelper::MonHelper() {
 MonHelper::~MonHelper() {
 	Stop();
 	delete acpi;
-	//acpi = NULL;
 }
 
 void MonHelper::Start() {
@@ -86,10 +85,14 @@ byte MonHelper::GetFanPercent(byte fanID)
 void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
 	AlienFan_SDK::Control* acpi = src->acpi;
+	auto prof = fan_conf->lastProf;
+	// Stop if no active profile - just for sure
+	if (!prof)
+		return;
 	bool modified = false;
 	// let's check power...
-	if (src->inControl && !fan_conf->lastProf->gmode && acpi->GetPower() != fan_conf->lastProf->powerStage)
-		acpi->SetPower(acpi->powers[fan_conf->lastProf->powerStage]);
+	if (src->inControl && !prof->gmode && acpi->GetPower() != prof->powerStage)
+		acpi->SetPower(acpi->powers[prof->powerStage]);
 	// update values:
 	// temps..
 	for (int i = 0; i < acpi->sensors.size(); i++) {
@@ -107,9 +110,9 @@ void CMonProc(LPVOID param) {
 		src->boostSets[i] = 0;
 		src->boostRaw[i] = acpi->GetFanBoost(i);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
-		if (src->inControl && modified && !fan_conf->lastProf->powerStage && !fan_conf->lastProf->gmode) {
-			auto cIter = fan_conf->lastProf->fanControls.find(i);
-			if (cIter != fan_conf->lastProf->fanControls.end()) {
+		if (src->inControl && modified && !prof->powerStage && !prof->gmode) {
+			auto cIter = prof->fanControls.find(i);
+			if (cIter != prof->fanControls.end()) {
 				// Set boost
 				short fnum = cIter->first;
 				for (auto fIter = cIter->second.begin(); fIter != cIter->second.end(); fIter++) {
@@ -142,7 +145,7 @@ void CMonProc(LPVOID param) {
 							+ to_string(src->boostRaw[fnum]) + ", new " + to_string(rawBoost) + ")!\n");
 					}
 					else
-						if (rawBoost != src->boostRaw[fnum] /*|| src->boostSets[i] > 100*/) {
+						if (rawBoost != src->boostRaw[fnum]) {
 							if (src->boostRaw[fnum] > rawBoost)
 								rawBoost += 15 * ((src->boostRaw[fnum] - rawBoost) >> 4);
 							// fan RPM stuck patch v2
@@ -157,7 +160,7 @@ void CMonProc(LPVOID param) {
 							//	}
 							//}
 
-							acpi->SetFanBoost(fnum, rawBoost/*, true*/);
+							acpi->SetFanBoost(fnum, rawBoost);
 
 							//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 							//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());

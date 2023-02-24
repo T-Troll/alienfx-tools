@@ -16,8 +16,13 @@ struct sen_block {
 };
 
 struct fan_profile {
-	WORD powerStage = 0;
-	WORD gmode = 0;
+	union {
+		struct {
+			WORD powerStage;
+			WORD gmode;
+		};
+		DWORD powerSet = 0;
+	};
 	map<short,map<WORD, sen_block>> fanControls;
 };
 

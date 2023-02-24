@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "ConfigFan.h"
 #include "common.h"
 #include <Shlwapi.h>
 
@@ -320,7 +321,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 				RemoveUnusedGroups();
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
-					prof->fansets = { };
+					delete prof->fansets;// = { };
+					prof->fansets = NULL;
+					prof->flags &= ~PROF_FANS;
+					ReloadProfileView(hDlg);
 				}
 				if (conf->activeProfile->id == prof->id)
 					UpdateState(true);
@@ -350,8 +354,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						lset->effect = t->effect;
 				}
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
-					prof->fansets = conf->activeProfile->flags & PROF_FANS ? conf->activeProfile->fansets : fan_profile({});
-					SetBitMask(prof->flags, PROF_FANS, conf->activeProfile->flags & PROF_FANS);
+					if (prof->fansets) 
+						delete prof->fansets;
+					prof->fansets = conf->activeProfile->fansets ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
+					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) > 0);
 					ReloadProfileView(hDlg);
 				}
 			}
@@ -407,12 +413,12 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SetBitMask(prof->flags, PROF_FANS, state);
 			if (state) {
 				// add current fan profile...
-				if (prof->fansets.fanControls.empty())
-					prof->fansets = *fan_conf->lastProf;
+				if (!prof->fansets)
+					prof->fansets = new fan_profile(*fan_conf->lastProf);
 			}
 			// Switch fan control if needed
 			if (prof->id == conf->activeProfile->id)
-				fan_conf->lastProf = state ? &prof->fansets : &fan_conf->prof;
+				fan_conf->lastProf = state ? (fan_profile*)prof->fansets : &fan_conf->prof;
 			break;
 		case IDC_TRIGGER_POWER_AC:
 			SetBitMask(prof->triggerFlags, PROF_TRIGGER_AC, state);

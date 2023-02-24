@@ -53,18 +53,19 @@ DWORD ConfigFan::GetRegData(HKEY key, int vindex, char* name, byte** data) {
 
 void ConfigFan::Load() {
 
-	DWORD power;
+	//DWORD power;
 
 	GetReg("StartAtBoot", &startWithWindows);
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
-	GetReg("LastPowerStage", &power);
+	GetReg("LastPowerStage", &prof.powerSet/*power*/);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("DPTF", &needDPTF, 1);
 	// set power values
-	prof.powerStage = LOWORD(power);
-	prof.gmode = HIWORD(power);
+	//prof.powerSet = power;
+	//prof.powerStage = LOWORD(power);
+	//prof.gmode = HIWORD(power);
 
 	// Now load sensor mappings...
 	char name[256];
@@ -117,7 +118,7 @@ void ConfigFan::Save() {
 
 	SetReg("StartAtBoot", startWithWindows);
 	SetReg("StartMinimized", startMinimized);
-	SetReg("LastPowerStage", MAKELPARAM(prof.powerStage, prof.gmode));
+	SetReg("LastPowerStage", prof.powerSet/*MAKELPARAM(prof.powerStage, prof.gmode)*/);
 	SetReg("UpdateCheck", updateCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);

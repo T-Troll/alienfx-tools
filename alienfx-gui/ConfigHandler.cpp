@@ -1,8 +1,10 @@
 #include "ConfigHandler.h"
+#include "ConfigFan.h"
 #include "common.h"
 #include "resource.h"
 
 extern HWND mDlg;
+extern ConfigFan* fan_conf;
 
 ConfigHandler::ConfigHandler() {
 
@@ -10,11 +12,12 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
+	fan_conf = new ConfigFan();
 }
 
 ConfigHandler::~ConfigHandler() {
 	Save();
-
+	delete fan_conf;
 	afx_dev.SaveMappings();
 
 	RegCloseKey(hKeyMain);
@@ -195,7 +198,7 @@ void ConfigHandler::Load() {
 		}
 		int senid, fanid;
 		if (sscanf_s(name, "Profile-fan-%d-%d-%d", &pid, &fanid, &senid) == 3) {
-			fan_conf.AddSensorCurve(&FindCreateProfile(pid)->fansets, fanid, senid, data, lend);
+			((ConfigFan*)fan_conf)->AddSensorCurve(((fan_profile*)FindCreateProfile(pid)->fansets), fanid, senid, data, lend);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
@@ -204,8 +207,11 @@ void ConfigHandler::Load() {
 		}
 		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
-			prof->fansets.powerStage = ((WORD*)data)[0];
-			prof->fansets.gmode = HIBYTE(((WORD*)data)[1]);
+			if (!prof->fansets)
+				prof->fansets = new fan_profile();
+			((fan_profile*)prof->fansets)->powerSet = *(DWORD*)data;
+			//((fan_profile*)prof->fansets)->powerStage = ((WORD*)data)[0];
+			//((fan_profile*)prof->fansets)->gmode = HIBYTE(((WORD*)data)[1]);
 		}
 	}
 	// Loading zones...
@@ -295,7 +301,7 @@ profile* ConfigHandler::FindDefaultProfile() {
 
 void ConfigHandler::Save() {
 
-	fan_conf.Save();
+	((ConfigFan*)fan_conf)->Save();
 
 	SetReg("AutoStart", startWindows);
 	SetReg("Minimized", startMinimized);
@@ -409,11 +415,11 @@ void ConfigHandler::Save() {
 		if (prof->flags & PROF_FANS) {
 			// save powers..
 			name = "Profile-power-" +profID;
-			WORD ps = MAKEWORD(0, prof->fansets.gmode);
-			DWORD pvalue = MAKELONG(prof->fansets.powerStage, ps);
-			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&pvalue, sizeof(DWORD));
+			//WORD ps = MAKEWORD(0, prof->fansets.gmode);
+			//DWORD pvalue = MAKELONG(prof->fansets.powerStage, ps);
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&((fan_profile*)prof->fansets)->powerSet, sizeof(DWORD));
 			// save fans...
-			fan_conf.SaveSensorBlocks(hKeyProfiles, "Profile-fan-" +profID, &prof->fansets);
+			fan_conf->SaveSensorBlocks(hKeyProfiles, "Profile-fan-" +profID, ((fan_profile*)prof->fansets));
 		}
 	}
 }

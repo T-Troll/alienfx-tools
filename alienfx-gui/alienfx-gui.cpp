@@ -126,10 +126,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
 
-	fan_conf = &conf->fan_conf;
+	//fan_conf = &conf->fan_conf;
 
 	if (conf->activeProfile->flags & PROF_FANS)
-		fan_conf->lastProf = &conf->activeProfile->fansets;
+		fan_conf->lastProf = (fan_profile*)conf->activeProfile->fansets;
 
 	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
 		if (EvaluteToAdmin()) {

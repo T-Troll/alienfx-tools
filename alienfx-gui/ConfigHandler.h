@@ -126,7 +126,7 @@ struct profile {
 	};
 	vector<string> triggerapp;
 	vector<groupset> lightsets;
-	/*fan_profile*/void *fansets;
+	/*fan_profile*/void *fansets = NULL;
 	vector<deviceeffect> effects;
 };
 
@@ -194,7 +194,7 @@ public:
 	byte finalBrightness = 255;
 	bool finalPBState = false;
 
-	/*ConfigFan*/void *fan_conf;
+	///*ConfigFan*/void *fan_conf;
 
 	// Profiles and zones
 	vector<profile*> profiles;
