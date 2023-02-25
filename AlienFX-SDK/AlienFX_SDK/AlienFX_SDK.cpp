@@ -165,75 +165,80 @@ namespace AlienFX_SDK {
 
 	bool Functions::ProbeDevice(void* hDevInfo, void* devData, int vidd, int pidd) {
 		DWORD dwRequiredSize = 0;
-		bool flag = false;
+		version = API_UNKNOWN;
+		DebugPrint("Probing ID#" + to_string(((PSP_DEVICE_INTERFACE_DATA)devData)->Reserved) + "\n");
 		SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, NULL, 0, &dwRequiredSize, NULL);
+		if (!dwRequiredSize)
+			return false;
+		DebugPrint("Detail data probe OK\n");
 		SP_DEVICE_INTERFACE_DETAIL_DATA* deviceInterfaceDetailData = (SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize];
 		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL) &&
-			(devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL)) {
+			DebugPrint("Detail data OK\n");
+			if ((devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
 				OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN | SECURITY_ANONYMOUS/*FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH*/, NULL)) != INVALID_HANDLE_VALUE) {
-			PHIDP_PREPARSED_DATA prep_caps;
-			HIDP_CAPS caps;
-			HIDD_ATTRIBUTES attributes{ sizeof(HIDD_ATTRIBUTES) };
-			if (HidD_GetAttributes(devHandle, &attributes) &&
-				(vidd == -1 || attributes.VendorID == vidd) && (pidd == -1 || attributes.ProductID == pidd)) {
-				HidD_GetPreparsedData(devHandle, &prep_caps);
-				HidP_GetCaps(prep_caps, &caps);
-				HidD_FreePreparsedData(prep_caps);
-				length = caps.OutputReportByteLength;
-				vid = attributes.VendorID;
-				switch (vid) {
-				case 0x0d62: // Darfon
-					if (caps.Usage == 0xcc && !length) {
-						length = caps.FeatureReportByteLength;
-						version = API_V5;
-					}
-					break;
-				case 0x187c: // Alienware
-					switch (length) {
-					case 9:
-						version = API_V2;
+				HIDD_ATTRIBUTES attributes{ sizeof(HIDD_ATTRIBUTES) };
+				DebugPrint("Handle OK\n");
+				if (HidD_GetAttributes(devHandle, &attributes) &&
+					(vidd == -1 || attributes.VendorID == vidd) && (pidd == -1 || attributes.ProductID == pidd)) {
+					DebugPrint("Attributes OK\n");
+					PHIDP_PREPARSED_DATA prep_caps;
+					HIDP_CAPS caps;
+					HidD_GetPreparsedData(devHandle, &prep_caps);
+					HidP_GetCaps(prep_caps, &caps);
+					HidD_FreePreparsedData(prep_caps);
+					length = caps.OutputReportByteLength;
+					switch (vid = attributes.VendorID) {
+					case 0x0d62: // Darfon
+						if (caps.Usage == 0xcc && !length) {
+							length = caps.FeatureReportByteLength;
+							version = API_V5;
+						}
 						break;
-					case 12:
-						version = API_V3;
+					case 0x187c: // Alienware
+						switch (length) {
+						case 9:
+							version = API_V2;
+							break;
+						case 12:
+							version = API_V3;
+							break;
+						case 34:
+							version = API_V4;
+							break;
+						case 65:
+							version = API_V6;
+							PrepareAndSend(COMMV6_systemReset);
+							break;
+						}
 						break;
-					case 34:
-						version = API_V4;
-						break;
-					case 65:
-						version = API_V6;
-						// device init
-						PrepareAndSend(COMMV6_systemReset);
-						break;
+					default:
+						if (length == 65)
+							switch (vid) {
+							case 0x0424: // Microchip
+								version = API_V6;
+								PrepareAndSend(COMMV6_systemReset);
+								break;
+							case 0x0461: // Primax
+								version = API_V7;
+								break;
+							case 0x04f2:  // Chicony
+								version = API_V8;
+								break;
+							}
 					}
-					break;
-				case 0x0424: // Microchip
-					if (length == 65) {
-						version = API_V6;
-						// device init
-						PrepareAndSend(COMMV6_systemReset);
+					if (version == API_UNKNOWN) {
+						CloseHandle(devHandle); devHandle = NULL;
+						pid = -1;
 					}
-					break;
-				case 0x0461: // Primax
-					if (length == 65) {
-						version = API_V7;
-					}
-					break;
-				case 0x04f2:  // Chicony
-					if (length == 65) {
-						version = API_V8;
-					}
-					break;
+					else
+						pid = attributes.ProductID;
+					DebugPrint("Probe done, type " + to_string(version) + "\n");
 				}
-				if (flag = (version != API_UNKNOWN))
-					pid = attributes.ProductID;
-				else {
-					CloseHandle(devHandle); devHandle = NULL;
-				}
-			}
+		}
 		}
 		delete[] deviceInterfaceDetailData;
-		return flag;
+		return pid >= 0;
 	}
 
 	//Use this method for general devices, vid = -1 for any vid, pid = -1 for any pid.
@@ -246,6 +251,7 @@ namespace AlienFX_SDK {
 		HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 		if (hDevInfo != INVALID_HANDLE_VALUE) {
 			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData) &&
+				(deviceInterfaceData.Flags & SPINT_ACTIVE) &&
 				!ProbeDevice(hDevInfo, &deviceInterfaceData, vidd, pidd); dw++) ;
 			SetupDiDestroyDeviceInfoList(hDevInfo);
 		}
@@ -889,10 +895,11 @@ namespace AlienFX_SDK {
 			SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
 			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData); dw++) {
 				Functions* dev = new Functions();
-				if (dev->ProbeDevice(hDevInfo, &deviceInterfaceData))
+				//DebugPrint("Testing device #" + to_string(dw) + ", ID=" + to_string(deviceInterfaceData.Reserved) + "\n");
+				if ((deviceInterfaceData.Flags & SPINT_ACTIVE) && dev->ProbeDevice(hDevInfo, &deviceInterfaceData))
 				{
 					devs.push_back(dev);
-					DebugPrint("Scan: VID: " + to_string(dev->GetVID()) + ", PID: " + to_string(dev->GetPID()) + ", Version: "
+					DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->GetVID()) + ", PID: " + to_string(dev->GetPID()) + ", Version: "
 						+ to_string(dev->GetVersion()) + "\n");
 				}
 				else
@@ -921,7 +928,7 @@ namespace AlienFX_SDK {
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
 			auto nDev = devList.begin();
 			for (; nDev != devList.end(); nDev++)
-				if (i->vid == (*nDev)->GetVID() && i->pid == (*nDev)->GetPID()) {
+				if (i->vid == (*nDev)->vid && i->pid == (*nDev)->pid) {
 					// Still present
 					i++;
 					break;
@@ -940,10 +947,10 @@ namespace AlienFX_SDK {
 
 		// add new devices...
 		for (auto i = devList.begin(); i != devList.end(); i++) {
-			Afx_device* dev = AddDeviceById((*i)->GetPID(), (*i)->GetVID());
+			Afx_device* dev = AddDeviceById((*i)->pid, (*i)->vid);
 			if (!dev->dev) {
 				dev->dev = *i;
-				dev->version = (*i)->GetVersion();
+				dev->version = (*i)->version;
 				dev->dev->SetBrightness(brightness, &dev->lights, power);
 			}
 			activeLights += (int)dev->lights.size();
@@ -1150,17 +1157,14 @@ namespace AlienFX_SDK {
 		return 0;
 	}
 
-	// get PID for current device
-	int Functions::GetPID() { return pid; };
+	//// get PID for current device
+	//int Functions::GetPID() { return pid; };
 
-	// get VID for current device
-	int Functions::GetVID() { return vid; };
+	//// get VID for current device
+	//int Functions::GetVID() { return vid; };
 
-	// get API version for current device
-	int Functions::GetVersion() { return version; };
-
-	// get data length for current device
-	int Functions::GetLength() { return length; };
+	//// get API version for current device
+	//int Functions::GetVersion() { return version; };
 
 	bool Functions::IsHaveGlobal()
 	{

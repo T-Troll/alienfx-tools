@@ -19,7 +19,6 @@ LRESULT CALLBACK DetectKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 	if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
 		LPKBDLLHOOKSTRUCT keyblock = (LPKBDLLHOOKSTRUCT)lParam;
-		//keySetLight->name = GetKeyName(keyblock->vkCode | ((keyblock->flags & 1) << 8));
 		keySetLight->name.resize(128);
 		keySetLight->name.resize(GetKeyNameText(
 			(keyblock->scanCode | ((keyblock->flags & 1) << 8)) << 16,

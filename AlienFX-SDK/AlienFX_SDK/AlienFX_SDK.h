@@ -122,11 +122,8 @@ namespace AlienFX_SDK {
 
 		bool inSet = false;
 
-		int vid = -1; // Device VID
-		int pid = -1; // Device PID, -1 if not initialized
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
-		int version = API_UNKNOWN; // interface version
 		//byte reportID = 0; // HID ReportID (0 for auto)
 		byte bright = 64; // Brightness for some APIs (APIv4 and v6)
 
@@ -159,6 +156,10 @@ namespace AlienFX_SDK {
 		BYTE WaitForBusy();
 
 	public:
+		int vid = -1; // Device VID
+		int pid = -1; // Device PID, -1 if not initialized
+		int version = API_UNKNOWN; // interface version
+
 		~Functions();
 
 		// Initialize device
@@ -226,17 +227,14 @@ namespace AlienFX_SDK {
 		// Apply changes and update colors
 		bool UpdateColors();
 
-		// get PID for current device
-		int GetPID();
+		//// get PID for current device
+		//int GetPID();
 
-		// get VID for current device
-		int GetVID();
+		//// get VID for current device
+		//int GetVID();
 
-		// get API version for current device
-		int GetVersion();
-
-		// get data length for current device
-		int GetLength();
+		//// get API version for current device
+		//int GetVersion();
 
 		// check global effects availability
 		bool IsHaveGlobal();

@@ -4,18 +4,15 @@
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 extern void SetLightInfo();
 extern void RedrawDevList();
 
-//extern AlienFX_SDK::Afx_device* FindActiveDevice();
 extern FXHelper* fxhl;
 
-extern int eLid, dIndex;
-extern bool whiteTest;
+extern int eLid;
 extern int tabLightSel;
 
 extern HWND zsDlg;
@@ -34,24 +31,24 @@ extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPAR
 extern AlienFX_SDK::Afx_light* keySetLight;
 extern AlienFX_SDK::Afx_device* activeDevice;
 
-AlienFX_SDK::Afx_light* FindCreateMapping() {
-    AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
-    if (activeDevice && !lgh) {
+void FindCreateMapping() {
+    //AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
+    if (activeDevice && !(keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid))) {
         // create new mapping
         activeDevice->lights.push_back({ (byte)eLid, {0,0}, "Light " + to_string(eLid + 1) });
-        lgh = &activeDevice->lights.back();
+        keySetLight = &activeDevice->lights.back();
         if (activeDevice->dev) {
             conf->afx_dev.activeLights++;
             // for rgb keyboards, check key...
             if (activeDevice->dev->IsHaveGlobal()) {
-                keySetLight = lgh;
+                //keySetLight = lgh;
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
             }
         }
         else
-            lgh->name = "Light " + to_string(eLid + 1);
+            keySetLight->name = "Light " + to_string(eLid + 1);
     }
-    return lgh;
+    //return keySetLight;
 }
 
 void InitGridButtonZone() {
@@ -345,11 +342,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     eLid = HIWORD(oldLightValue);
                     if (LOWORD(oldLightValue) != activeDevice->pid) {
                         // Switch device, if possible
-                        for (int i = 0; i < conf->afx_dev.fxdevs.size(); i++)
-                            if (conf->afx_dev.fxdevs[i].pid == LOWORD(oldLightValue)) {
-                                dIndex = i;
-                                break;
-                            }
+                        activeDevice = conf->afx_dev.GetDeviceById(LOWORD(oldLightValue));
                     }
                     RedrawDevList();
                 } else {

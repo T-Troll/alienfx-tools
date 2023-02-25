@@ -128,7 +128,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_ESIFTEMP:
 			if (conf->esif_temp = state) {
 				conf->Save();
-				EvaluteToAdmin();
+				EvaluteToAdmin(mDlg);
 			}
 			break;
 		case IDC_CHECK_EXCEPTION:
@@ -143,8 +143,11 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (state) {
 				conf->Save();
 				if (!(conf->fanControl = DetectFans())) {
-					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
-					ShowNotification(&conf->niData, "Error", "Fan control not available.");
+					if (mDlg) {
+						CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
+						ShowNotification(&conf->niData, "Error", "Fan control not available.");
+					}
+					break;
 				}
 			} else {
 				eve->StopEffects();

@@ -10,8 +10,6 @@ using namespace std;
 extern HWND mDlg;
 extern bool needUpdateFeedback, isNewVersion;
 
-bool UACPassed = true;
-
 //int versionTag, linkControl;
 //
 //INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -66,18 +64,23 @@ void BlinkNumLock(int howmany) {
 	CreateThread(NULL, 0, Blinker, (LPVOID)(ULONGLONG)howmany, 0, NULL);
 }
 
-bool EvaluteToAdmin() {
+bool EvaluteToAdmin(HWND dlg) {
 	// Evaluation attempt...
-	if (!(UACPassed = IsUserAnAdmin())) {
+	if (!IsUserAnAdmin()) {
 		char szPath[MAX_PATH];
 		GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath));
 		// Launch itself as admin
 		SHELLEXECUTEINFO sei{ sizeof(sei), 0, NULL, "runas", szPath, NULL, NULL, SW_NORMAL };
-		if (UACPassed = ShellExecuteEx(&sei)) {
-			_exit(1);  // Quit itself
+		if (ShellExecuteEx(&sei)) {
+			// Quit this instance
+			if (dlg)
+				SendMessage(dlg, WM_CLOSE, 0, 0);
+			else
+				_exit(1);
 		}
+		return false;
 	}
-	return UACPassed;
+	return true;
 }
 
 bool DoStopService(bool flag, bool kind) {
@@ -260,12 +263,18 @@ void SetBitMask(WORD& val, WORD mask, bool state) {
 }
 
 bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck) {
-	bool haveIcon = Shell_NotifyIcon(NIM_MODIFY, iconData);
-	if (haveIcon || (haveIcon = Shell_NotifyIcon(NIM_ADD, iconData))) {
-		//iconData->uVersion = NOTIFYICON_VERSION_4;
-		//Shell_NotifyIcon(NIM_SETVERSION, iconData);
+	if (Shell_NotifyIcon(NIM_MODIFY, iconData) || Shell_NotifyIcon(NIM_ADD, iconData)) {
 		if (needCheck)
 			CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
+		return true;
 	}
-	return haveIcon;
+	return false;
+	//bool haveIcon = Shell_NotifyIcon(NIM_MODIFY, iconData);
+	//if (haveIcon || (haveIcon = Shell_NotifyIcon(NIM_ADD, iconData))) {
+	//	//iconData->uVersion = NOTIFYICON_VERSION_4;
+	//	//Shell_NotifyIcon(NIM_SETVERSION, iconData);
+	//	if (needCheck)
+	//		CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
+	//}
+	//return haveIcon;
 }

@@ -432,7 +432,7 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 	{
 		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;
 
-		if (cdev && (cdev->GetPID() == it->pid && cdev->GetVID() == it->vid)) {
+		if (cdev && (cdev->pid == it->pid && cdev->vid == it->vid)) {
 			// set this effect for device
 			if (reset)
 				cdev->SetGlobalEffects(0, it->globalMode, it->globalDelay, { 0 }, { 0 });

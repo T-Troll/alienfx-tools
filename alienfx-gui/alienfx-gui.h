@@ -39,6 +39,7 @@ typedef struct tag_dlghdr {
 extern HINSTANCE hInst;
 extern ConfigHandler* conf;
 extern HWND sTip1, sTip2, sTip3;
+extern HWND mDlg;
 
 extern int eItem;
 extern groupset* mmap;

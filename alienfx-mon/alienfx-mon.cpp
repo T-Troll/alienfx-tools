@@ -242,7 +242,7 @@ void ReloadSensorView() {
 
 void RemoveTrayIcons() {
 	// Remove icons from tray...
-	Shell_NotifyIcon(NIM_DELETE, &conf->niData);
+	//Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
 		if (i->second.niData) {
 			Shell_NotifyIcon(NIM_DELETE, i->second.niData);
@@ -268,7 +268,7 @@ void ModifySensors() {
 	senmon->ModifyMon();
 	CheckDlgButton(mDlg, IDC_ESENSORS, conf->eSensors);
 	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
-	AddTrayIcon(&conf->niData, false);
+	//AddTrayIcon(&conf->niData, false);
 	ResetTraySensors();
 	conf->paused = false;
 }
@@ -578,6 +578,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_CLOSE:
 		KillTimer(hDlg, 0);
 		RemoveTrayIcons();
+		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:

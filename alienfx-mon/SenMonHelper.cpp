@@ -15,6 +15,7 @@ DWORD WINAPI CBiosProc(LPVOID);
 
 extern ConfigMon* conf;
 extern AlienFan_SDK::Control* acpi;
+extern HWND mDlg;
 
 SenMonHelper::SenMonHelper()
 {
@@ -35,7 +36,7 @@ SenMonHelper::~SenMonHelper()
 
 void SenMonHelper::ModifyMon()
 {
-	if ((conf->bSensors || conf->eSensors) && !EvaluteToAdmin()) {
+	if ((conf->bSensors || conf->eSensors) && !EvaluteToAdmin(mDlg)) {
 		conf->bSensors = conf->eSensors = false;
 	}
 	if ((conf->wSensors || conf->eSensors) && (hQuery || PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS)) {

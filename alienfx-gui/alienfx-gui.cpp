@@ -28,16 +28,15 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 FXHelper* fxhl;
 ConfigHandler* conf;
 EventHandler* eve;
-//extern AlienFan_SDK::Control* acpi;
 ConfigFan* fan_conf = NULL;
 MonHelper* mon = NULL;
 ThreadHelper* updateUI = NULL;
 
+// Main and device dialog, then active
 HWND mDlg = NULL, dDlg = NULL;
 
 // color selection:
 AlienFX_SDK::Afx_action* mod;
-//HANDLE stopColorRefresh = 0;
 
 HANDLE haveLightFX;
 bool noLightFX = true;
@@ -54,12 +53,13 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // last light selected
 int eItem = 0;
-
 // last zone selected
 groupset* mmap = NULL;
+// last device selected
+AlienFX_SDK::Afx_device* activeDevice = NULL;
 
 bool DetectFans() {
-	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin())) {
+	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin(mDlg))) {
 		mon = new MonHelper();
 		if (!(conf->fanControl = mon->acpi->isSupported)) {
 			delete mon;
@@ -136,10 +136,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			conf->wasAWCC = DoStopService(conf->awcc_disable, true);
 			DetectFans();
 		}
-		else
-			conf->fanControl = false;
-
-	haveLightFX = CreateEvent(NULL, true, false, "LightFXActive");
+		else {
+			conf->fanControl = conf->esif_temp = false;
+		}
 
 	fxhl = new FXHelper();
 	eve = new EventHandler();
@@ -176,7 +175,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	fxhl->Refresh(true);
 	delete eve;
 	delete fxhl;
-	CloseHandle(haveLightFX);
 
 	DoStopService(conf->wasAWCC, false);
 
@@ -424,6 +422,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->SetIconState();
 		}
 
+		haveLightFX = CreateEvent(NULL, true, false, "LightFXActive");
 		SetTimer(hDlg, 0, 750, NULL);
 
 	} break;
@@ -700,10 +699,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Device list changed \n");
 			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
 			if (devList.size() != conf->afx_dev.activeDevices) {
-				DebugPrint("Active list changed!\n");
+				DebugPrint("Active device list changed!\n");
 				bool updated = fxhl->updateThread;
 				fxhl->Stop();
 				conf->afx_dev.AlienFXApplyDevices(false, devList, conf->finalBrightness, conf->finalPBState);
+				activeDevice = NULL;
 				if (conf->afx_dev.activeDevices && updated) {
 					fxhl->Start();
 					fxhl->Refresh();
@@ -720,12 +720,14 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
-		delete eve;
-		fxhl->Refresh(true);
-		fxhl->Stop();
-		if (mon)
-			mon->Stop();
-		return 0;
+		SendMessage(hDlg, WM_CLOSE, 0, 0);
+		return false;
+		//delete eve;
+		//fxhl->Refresh(true);
+		//fxhl->Stop();
+		//if (mon)
+		//	mon->Stop();
+		//return 0;
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 21) { // Profile switch
 			if (wParam == 10)
@@ -791,6 +793,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		conf->Save();
 		PostQuitMessage(0);
+		mDlg = NULL;
+		CloseHandle(haveLightFX);
 		break;
 	default: return false;
 	}
@@ -878,16 +882,6 @@ bool IsGroupUnused(DWORD gid) {
 	}
 	return true;
 }
-
-//void RemoveUnused(vector<groupset>* lightsets) {
-//	for (auto it = lightsets->begin(); it != lightsets->end();)
-//		if (!(it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)) {
-//			lightsets->erase(it);
-//			it = lightsets->begin();
-//		}
-//		else
-//			it++;
-//}
 
 void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid) {
 	AlienFX_SDK::Afx_groupLight cur{ devid, lightid };
