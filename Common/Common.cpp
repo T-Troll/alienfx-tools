@@ -172,7 +172,7 @@ bool WindowsStartSet(bool kind, string name) {
 	if (kind) {
 		char* pathBuffer = new char[2048];
 		GetModuleFileName(NULL, pathBuffer, 2047);
-		int res = ShellExecute(NULL, "runas", "powershell.exe", ("Register-ScheduledTask -TaskName \"" + name + "\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
+		bool res = ShellExecute(NULL, "runas", "powershell.exe", ("Register-ScheduledTask -TaskName \"" + name + "\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
 			+ string(pathBuffer) + /*"' -Argument '-d'*/"') -force -RunLevel Highest").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;
 		delete[] pathBuffer;
 		return res;
@@ -269,12 +269,4 @@ bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck) {
 		return true;
 	}
 	return false;
-	//bool haveIcon = Shell_NotifyIcon(NIM_MODIFY, iconData);
-	//if (haveIcon || (haveIcon = Shell_NotifyIcon(NIM_ADD, iconData))) {
-	//	//iconData->uVersion = NOTIFYICON_VERSION_4;
-	//	//Shell_NotifyIcon(NIM_SETVERSION, iconData);
-	//	if (needCheck)
-	//		CreateThread(NULL, 0, CUpdateCheck, iconData, 0, NULL);
-	//}
-	//return haveIcon;
 }

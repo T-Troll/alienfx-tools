@@ -720,14 +720,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
-		SendMessage(hDlg, WM_CLOSE, 0, 0);
-		return false;
-		//delete eve;
-		//fxhl->Refresh(true);
-		//fxhl->Stop();
-		//if (mon)
-		//	mon->Stop();
-		//return 0;
+		delete eve;
+		fxhl->Refresh(true);
+		fxhl->Stop();
+		if (mon)
+			mon->Stop();
+		exit(0);
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 21) { // Profile switch
 			if (wParam == 10)

@@ -68,7 +68,7 @@ namespace AlienFX_SDK {
 
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
 		byte buffer[MAX_BUFFERSIZE]{ reportIDList[version] };
-		DWORD written, size = command[0];
+		DWORD written , size = command[0];
 		BOOL res = false;
 
 		if (version == API_V6 /*&& size != 3*/)
@@ -166,76 +166,67 @@ namespace AlienFX_SDK {
 	bool Functions::ProbeDevice(void* hDevInfo, void* devData, int vidd, int pidd) {
 		DWORD dwRequiredSize = 0;
 		version = API_UNKNOWN;
-		DebugPrint("Probing ID#" + to_string(((PSP_DEVICE_INTERFACE_DATA)devData)->Reserved) + "\n");
 		SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, NULL, 0, &dwRequiredSize, NULL);
-		if (!dwRequiredSize)
-			return false;
-		DebugPrint("Detail data probe OK\n");
 		SP_DEVICE_INTERFACE_DETAIL_DATA* deviceInterfaceDetailData = (SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize];
 		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL)) {
-			DebugPrint("Detail data OK\n");
-			if ((devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL) &&
+			(devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
 				OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN | SECURITY_ANONYMOUS/*FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH*/, NULL)) != INVALID_HANDLE_VALUE) {
-				HIDD_ATTRIBUTES attributes{ sizeof(HIDD_ATTRIBUTES) };
-				DebugPrint("Handle OK\n");
-				if (HidD_GetAttributes(devHandle, &attributes) &&
-					(vidd == -1 || attributes.VendorID == vidd) && (pidd == -1 || attributes.ProductID == pidd)) {
-					DebugPrint("Attributes OK\n");
-					PHIDP_PREPARSED_DATA prep_caps;
-					HIDP_CAPS caps;
-					HidD_GetPreparsedData(devHandle, &prep_caps);
-					HidP_GetCaps(prep_caps, &caps);
-					HidD_FreePreparsedData(prep_caps);
-					length = caps.OutputReportByteLength;
-					switch (vid = attributes.VendorID) {
-					case 0x0d62: // Darfon
-						if (caps.Usage == 0xcc && !length) {
-							length = caps.FeatureReportByteLength;
-							version = API_V5;
-						}
+			HIDD_ATTRIBUTES attributes{ sizeof(HIDD_ATTRIBUTES) };
+			PHIDP_PREPARSED_DATA prep_caps;
+			HIDP_CAPS caps;
+			if (HidD_GetAttributes(devHandle, &attributes) &&
+				(vidd == -1 || attributes.VendorID == vidd) && (pidd == -1 || attributes.ProductID == pidd) &&
+				HidD_GetPreparsedData(devHandle, &prep_caps) && HidP_GetCaps(prep_caps, &caps) == HIDP_STATUS_SUCCESS) {
+				HidD_FreePreparsedData(prep_caps);
+				length = caps.OutputReportByteLength;
+				switch (vid = attributes.VendorID) {
+				case 0x0d62: // Darfon
+					if (caps.Usage == 0xcc && !length) {
+						length = caps.FeatureReportByteLength;
+						version = API_V5;
+					}
+					break;
+				case 0x187c: // Alienware
+					switch (length) {
+					case 9:
+						version = API_V2;
 						break;
-					case 0x187c: // Alienware
-						switch (length) {
-						case 9:
-							version = API_V2;
-							break;
-						case 12:
-							version = API_V3;
-							break;
-						case 34:
-							version = API_V4;
-							break;
-						case 65:
+					case 12:
+						version = API_V3;
+						break;
+					case 34:
+						version = API_V4;
+						break;
+					case 65:
+						version = API_V6;
+						//PrepareAndSend(COMMV6_systemReset);
+						break;
+					}
+					break;
+				default:
+					if (length == 65)
+						switch (vid) {
+						case 0x0424: // Microchip
 							version = API_V6;
-							PrepareAndSend(COMMV6_systemReset);
+							//PrepareAndSend(COMMV6_systemReset);
+							break;
+						case 0x0461: // Primax
+							version = API_V7;
+							break;
+						case 0x04f2:  // Chicony
+							version = API_V8;
 							break;
 						}
-						break;
-					default:
-						if (length == 65)
-							switch (vid) {
-							case 0x0424: // Microchip
-								version = API_V6;
-								PrepareAndSend(COMMV6_systemReset);
-								break;
-							case 0x0461: // Primax
-								version = API_V7;
-								break;
-							case 0x04f2:  // Chicony
-								version = API_V8;
-								break;
-							}
-					}
-					if (version == API_UNKNOWN) {
-						CloseHandle(devHandle); devHandle = NULL;
-						pid = -1;
-					}
-					else
-						pid = attributes.ProductID;
-					DebugPrint("Probe done, type " + to_string(version) + "\n");
 				}
-		}
+			}
+			if (version == API_UNKNOWN) {
+				CloseHandle(devHandle); devHandle = NULL;
+				pid = -1;
+			}
+			else
+				pid = attributes.ProductID;
+			DebugPrint("Probe done, type " + to_string(version) + "\n");
 		}
 		delete[] deviceInterfaceDetailData;
 		return pid >= 0;
@@ -273,54 +264,59 @@ namespace AlienFX_SDK {
 #endif
 
 	bool Functions::Reset() {
-		BOOL result = false;
 		switch (version) {
+		case API_V6:
+			// need initial reset if not done
+			if (chain) {
+				PrepareAndSend(COMMV6_systemReset);
+				chain = 0;
+			}
+			inSet = true;
+			break;
 		case API_V5:
 		{
-			result = PrepareAndSend(COMMV5_reset);
+			inSet = PrepareAndSend(COMMV5_reset);
 			GetDeviceStatus();
 		} break;
 		case API_V4:
 		{
 			PrepareAndSend(COMMV4_control, { {4, 4}/*, { 5, 0xff }*/ });
-			result = PrepareAndSend(COMMV4_control, { {4, 1}/*, { 5, 0xff }*/ });
+			inSet = PrepareAndSend(COMMV4_control, { {4, 1}/*, { 5, 0xff }*/ });
 		} break;
 		case API_V3: case API_V2:
 		{
 			chain = 1;
-			result = PrepareAndSend(COMMV1_reset);
+			inSet = PrepareAndSend(COMMV1_reset);
 			WaitForReady();
 			DebugPrint("Post-Reset status: " + to_string(GetDeviceStatus()) + "\n");
 		} break;
+		default: inSet = true;
 		}
-		return inSet = result;
+		return inSet;
 	}
 
 	bool Functions::UpdateColors() {
-		bool res = false;
-
 		if (inSet) {
 			switch (version) {
 			case API_V5:
 			{
-				res = PrepareAndSend(COMMV5_update);
+				inSet = !PrepareAndSend(COMMV5_update);
 			} break;
 			case API_V4:
 			{
-				res = PrepareAndSend(COMMV4_control);
+				inSet = !PrepareAndSend(COMMV4_control);
 				WaitForReady();
 			} break;
 			case API_V3: case API_V2: 
 			{
-				res = PrepareAndSend(COMMV1_update);
+				inSet = !PrepareAndSend(COMMV1_update);
 				DebugPrint("Post-update status: " + to_string(GetDeviceStatus()) + "\n");
 			} break;
-			default: res = true;
+			default: inSet = false;
 			}
-			inSet = false;
 			Sleep(5); // Fix for ultra-fast updates, or next command will fail sometimes.
 		}
-		return res;
+		return !inSet;
 
 	}
 
@@ -899,8 +895,8 @@ namespace AlienFX_SDK {
 				if ((deviceInterfaceData.Flags & SPINT_ACTIVE) && dev->ProbeDevice(hDevInfo, &deviceInterfaceData))
 				{
 					devs.push_back(dev);
-					DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->GetVID()) + ", PID: " + to_string(dev->GetPID()) + ", Version: "
-						+ to_string(dev->GetVersion()) + "\n");
+					DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
+						+ to_string(dev->version) + "\n");
 				}
 				else
 					delete dev;
