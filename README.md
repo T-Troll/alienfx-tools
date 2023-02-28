@@ -17,8 +17,9 @@ Light control tools work with USB/ACPI hardware devices directly, not requiring 
 - It's flexible. I can use uncommon calls to set a broader range of effects and modes.
 - Group lights, create light/fan Profiles for different situations, switch them by running games/applications/power source/keyboard shortcut.
 
-For fan/power controls, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tool does not use direct EC (Embed controller) access and data modification.  
+For fan/power control, instead of many other fan control tools, like `SpeedFan`, `HWINFO` or `Dell Fan Control`, this tool does not use direct EC (Embed controller) access and data modification.  
 It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used by AWCC).
+
 - It's safer - BIOS still monitors fans and has no risk fans will stop under full load.
 - It's universal - Most Alienware/Dell G-series systems have the same interface.
 - In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control.
@@ -63,12 +64,12 @@ Light control: Virtually any Alienware/Dell G-series (with Alienware keyboard) n
 Fan control: Modern Alienware/Dell G-Series notebooks (any m-series, x-series, Area51m), Aurora R7 (and later model) desktops.
 
 Project Wiki has [more details and the list of tested devices](https://github.com/T-Troll/alienfx-tools/wiki/Supported-and-tested-devices-list).  
-If your device is not supported, you can [help me support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).  
-For fan control - Open issue here or contact me via Discord support server.
+If your light device is not supported, you can [help me support it](https://github.com/T-Troll/alienfx-tools/wiki/How-to-collect-data-for-the-new-light-device).  
+In case of issues with fan control, please open issue here or contact me via Discord support server.
 
 ## Light system reset
 
-- In rare case light system freeze, shutdown or hibernate your notebook (some lights can stay on after shutdown), disconnect all cables, including power adapter, and wait about 15 seconds (or until all lights turn off), then start it back.
+- In rare case light system freeze, shutdown or hibernate your system (some lights can stay on after shutdown), disconnect all cables, including power adapter, and wait about 15 seconds (or until all lights turn off), then start it back.
 - In rare case you have Alienware monitor, and `AlienFX-GUI` or `AlienFX-CLI` freeze at start for more, then 6 seconds, disconnect you monitor USB cable or reset monitor settings to default (hardware bug).
 
 ## Project Support and support for the project
