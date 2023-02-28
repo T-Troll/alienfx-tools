@@ -152,7 +152,7 @@ namespace AlienFX_SDK {
 				{act->act.back().b, act->act.back().g, act->act.back().r}));
 			PrepareAndSend(COMMV1_saveGroup, &separator);
 			PrepareAndSend(COMMV1_loop);
-			chain++;
+chain++;
 		}
 
 		if (needSave) {
@@ -163,23 +163,23 @@ namespace AlienFX_SDK {
 		return true;
 	}
 
-	bool Functions::ProbeDevice(void* hDevInfo, void* devData, int vidd, int pidd) {
+	bool Functions::ProbeDevice(void* hDevInfo, void* devData, WORD vidd, WORD pidd) {
 		DWORD dwRequiredSize = 0;
 		version = API_UNKNOWN;
 		SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, NULL, 0, &dwRequiredSize, NULL);
 		SP_DEVICE_INTERFACE_DETAIL_DATA* deviceInterfaceDetailData = (SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize];
 		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
-		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL) &&
-			(devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-				OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN | SECURITY_ANONYMOUS/*FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH*/, NULL)) != INVALID_HANDLE_VALUE) {
+		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL)
+			&& (devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+				NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL)) != INVALID_HANDLE_VALUE) {
 			HIDD_ATTRIBUTES attributes{ sizeof(HIDD_ATTRIBUTES) };
 			PHIDP_PREPARSED_DATA prep_caps;
 			HIDP_CAPS caps;
-			if (HidD_GetAttributes(devHandle, &attributes) &&
-				(vidd == -1 || attributes.VendorID == vidd) && (pidd == -1 || attributes.ProductID == pidd) &&
-				HidD_GetPreparsedData(devHandle, &prep_caps) && HidP_GetCaps(prep_caps, &caps) == HIDP_STATUS_SUCCESS) {
+			if (HidD_GetAttributes(devHandle, &attributes) && (!vidd || attributes.VendorID == vidd) && (!pidd || attributes.ProductID == pidd)
+				&& HidD_GetPreparsedData(devHandle, &prep_caps) && HidP_GetCaps(prep_caps, &caps) == HIDP_STATUS_SUCCESS) {
 				HidD_FreePreparsedData(prep_caps);
 				length = caps.OutputReportByteLength;
+				pid = attributes.ProductID;
 				switch (vid = attributes.VendorID) {
 				case 0x0d62: // Darfon
 					if (caps.Usage == 0xcc && !length) {
@@ -220,46 +220,45 @@ namespace AlienFX_SDK {
 						}
 				}
 			}
-			if (version == API_UNKNOWN) {
-				CloseHandle(devHandle); devHandle = NULL;
-				pid = -1;
-			}
-			else
-				pid = attributes.ProductID;
+			if (version == API_UNKNOWN)
+				CloseHandle(devHandle);
 			DebugPrint("Probe done, type " + to_string(version) + "\n");
 		}
 		delete[] deviceInterfaceDetailData;
-		return pid >= 0;
+		return version != API_UNKNOWN;
 	}
 
-	//Use this method for general devices, vid = -1 for any vid, pid = -1 for any pid.
-	int Functions::AlienFXInitialize(int vidd, int pidd) {
+	//Use this method for general devices, vid = 0 for any vid, pid = 0 for any pid.
+	bool Functions::AlienFXInitialize(WORD vidd, WORD pidd) {
 		GUID guid;
 		DWORD dwRequiredSize = 0;
 		SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
+		devHandle = NULL;
 
 		HidD_GetHidGuid(&guid);
 		HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 		if (hDevInfo != INVALID_HANDLE_VALUE) {
 			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData) &&
 				(deviceInterfaceData.Flags & SPINT_ACTIVE) &&
-				!ProbeDevice(hDevInfo, &deviceInterfaceData, vidd, pidd); dw++) ;
+				!ProbeDevice(hDevInfo, &deviceInterfaceData, vidd, pidd); dw++);
 			SetupDiDestroyDeviceInfoList(hDevInfo);
 		}
-		return pid;
+		return version != API_UNKNOWN;
 	}
 
 #ifndef NOACPILIGHTS
-	int Functions::AlienFXInitialize(AlienFan_SDK::Control* acc) {
+	bool Functions::AlienFXInitialize(AlienFan_SDK::Control* acc) {
+		version = API_UNKNOWN;
 		if (acc) {
 			vid = 0x187c;
 			pid = 0xffff;
-			version = API_ACPI;
-			device = new AlienFan_SDK::Lights(acc);
-			if (((AlienFan_SDK::Lights*)device)->isActivated)
-				return pid;
+			ACPIdevice = new AlienFan_SDK::Lights(acc);
+			if ((AlienFan_SDK::Lights*)ACPIdevice)->isActivated) {
+				version = API_ACPI;
+				return true;
+			}
 		}
-		return -1;
+		return false;
 	}
 #endif
 
@@ -395,7 +394,7 @@ namespace AlienFX_SDK {
 				break;
 #ifndef NOACPILIGHTS
 			case API_ACPI:
-				val = ((AlienFan_SDK::Lights*)device)->SetColor((byte)fmask, c.r, c.g, c.b);
+				val = ((AlienFan_SDK::Lights*)ACPIdevice)->SetColor((byte)fmask, c.r, c.g, c.b);
 				break;
 #endif
 			default: {
@@ -566,7 +565,7 @@ namespace AlienFX_SDK {
 		}
 #ifndef NOACPILIGHTS
 		case API_ACPI:
-			return ((AlienFan_SDK::Lights*)device)->SetColor(1 << index, act->front().r, act->front().g, act->front().b);
+			return ((AlienFan_SDK::Lights*)ACPIdevice)->SetColor(1 << index, act->front().r, act->front().g, act->front().b);
 			break;
 #endif
 		}
@@ -727,7 +726,7 @@ namespace AlienFX_SDK {
 #ifndef NOACPILIGHTS
 		case API_ACPI:
 			bright = brightness * 0xf / 0xff;
-			return ((AlienFan_SDK::Lights*)device)->SetBrightness(bright);
+			return ((AlienFan_SDK::Lights*)ACPIdevice)->SetBrightness(bright);
 #endif // !NOACPILIGHTS
 		}
 		return false;
@@ -863,12 +862,12 @@ namespace AlienFX_SDK {
 	}
 
 	Functions::~Functions() {
-		if (devHandle) {
+		if (version != API_UNKNOWN) {
 			CloseHandle(devHandle);
 		}
 #ifndef NOACPILIGHTS
-		if (device) {
-			delete (AlienFan_SDK::Lights*)device;
+		if (ACPIdevice) {
+			delete (AlienFan_SDK::Lights*)ACPIdevice;
 		}
 #endif
 	}
@@ -884,13 +883,14 @@ namespace AlienFX_SDK {
 	vector<Functions*> Mappings::AlienFXEnumDevices(void* acc) {
 		vector<Functions*> devs;
 		GUID guid;
+		Functions* dev;
 
 		HidD_GetHidGuid(&guid);
 		HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 		if (hDevInfo != INVALID_HANDLE_VALUE) {
 			SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
 			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData); dw++) {
-				Functions* dev = new Functions();
+				dev = new Functions();
 				//DebugPrint("Testing device #" + to_string(dw) + ", ID=" + to_string(deviceInterfaceData.Reserved) + "\n");
 				if ((deviceInterfaceData.Flags & SPINT_ACTIVE) && dev->ProbeDevice(hDevInfo, &deviceInterfaceData))
 				{
@@ -906,11 +906,11 @@ namespace AlienFX_SDK {
 #ifndef NOACPILIGHTS
 		// add ACPI, if any
 		if (acc) {
-			Functions* devc = new AlienFX_SDK::Functions();
-			if (devc->AlienFXInitialize((AlienFan_SDK::Control*)acc) < 0)
-				delete devc;
+			dev = new AlienFX_SDK::Functions();
+			if (dev->AlienFXInitialize((AlienFan_SDK::Control*)acc))
+				devs.push_back(dev);
 			else
-				devs.push_back(devc);
+				delete dev;
 		}
 #endif
 		return devs;

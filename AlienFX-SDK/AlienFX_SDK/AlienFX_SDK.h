@@ -117,14 +117,13 @@ namespace AlienFX_SDK {
 	{
 	private:
 
-		HANDLE devHandle = NULL; // USB device handle
-		void* device = NULL;	 // ACPI device object pointer
+		HANDLE devHandle = NULL; // USB device handle, NULL if not initialized
+		void* ACPIdevice = NULL; // ACPI device object pointer
 
 		bool inSet = false;
 
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
-		//byte reportID = 0; // HID ReportID (0 for auto)
 		byte bright = 64; // Brightness for some APIs (APIv4 and v6)
 
 		// support function for mask-based devices (v1-v3, v6)
@@ -156,27 +155,27 @@ namespace AlienFX_SDK {
 		BYTE WaitForBusy();
 
 	public:
-		int vid = -1; // Device VID
-		int pid = -1; // Device PID, -1 if not initialized
-		int version = API_UNKNOWN; // interface version
+		WORD vid = 0; // Device VID
+		WORD pid = 0; // Device PID
+		int version = API_UNKNOWN; // interface version, will stay at API_UNKNOWN if not initialized
 
 		~Functions();
 
 		// Initialize device
-		// If vid is -1 or absent, first device found into the system will be used, otherwise device with this VID only.
-		// If pid is -1 or absent, first device with any pid and given vid will be used, otherwise vid/pid pair.
-		// Returns PID of device found, -1 if fail.
-		int AlienFXInitialize(int vidd = -1, int pidd = -1);
+		// If vid is 0 or absent, first device found into the system will be used, otherwise device with this VID only.
+		// If pid is 0 or absent, first device with any pid and given vid will be used, otherwise vid/pid pair.
+		// Returns true if device found and initialized.
+		bool AlienFXInitialize(WORD vidd = 0, WORD pidd = 0);
 
 		// Check device and initialize data
 		// vid/pid the same as above
-		// Returns true if device found and initialize
-		bool ProbeDevice(void* hDevInfo, void* devData, int vid = -1, int pid = -1);
+		// Returns true if device found and initialized.
+		bool ProbeDevice(void* hDevInfo, void* devData, WORD vid = 0, WORD pid = 0);
 
 #ifndef NOACPILIGHTS
 		// Initialize Aurora ACPI lights if present.
 		// acc is a pointer to active AlienFan control object (see AlienFan_SDK for reference)
-		int AlienFXInitialize(AlienFan_SDK::Control* acc);
+		bool AlienFXInitialize(AlienFan_SDK::Control* acc);
 #endif
 
 		// Prepare to set lights
