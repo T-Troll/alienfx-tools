@@ -23,24 +23,24 @@ It utilizes proprietary Alienware function calls inside ACPI BIOS (the same used
 - It's universal - Most Alienware/Dell G-series systems have the same interface.
 - In some cases, this is the only way - for example, Alienware m15/m17R1 does not have EC control.
 
-## Disclaimer
-
-Starting from the release 4.2.1, **Anti-viruses can detect virus into project package**.  
-Please add application folder into anti-virus exception list.  
-You can read why it happened [here](https://github.com/T-Troll/alienfx-tools/wiki/Why-antivirus-complain-about-some-alienfx-tools-components%3F).
-
-From release 7.0.0 anti-virus do not complain anymore (ACPI access method was changed).
-
-## Requirements and privacy
+## Requirements
 - Alienware light device/Alienware ACPI BIOS (for fan control) present into the system and have USB HID driver active (`alienfx-cli` can work even with missing devices, Dell LightFX needs to be present in the system).
-- Windows 10 v1903 or later (64-bit only).
-- `alienfan-gui` and `alienfan-cli` always require Administrator rights to work (for communication with hardware).
-- `alienfx-gui` require Administrator rights in some cases:
+- Windows 10 v1903 or later (64-bit only). Windows 11 supported.
+
+## Security and privacy
+
+In case you install tools version between `4.2.1` and `6.4.3.2`, **Anti-viruses can detect virus into project package**.  
+It's not a virus, you can read why it happened [here](https://github.com/T-Troll/alienfx-tools/wiki/Why-antivirus-complain-about-some-alienfx-tools-components%3F).  
+Please add application folder into anti-virus exception list.
+
+- `alienfan-gui` and `alienfan-cli` always require Administrator rights (for communication with hardware).
+- `alienfx-gui` require Administrator rights in some cases (this functions will be disabled in case you chancel UAC request):
   - "Disable AWCC" selected in Settings (stopping AWCC service require Administrator privileges)
   - "Use BIOS sensors" selected (access to ESIF values blocked from user account)
   - "Enable Fan control" selected (the same reason as for `alienfan-gui`)
 - `alienfx-mon` require Administrator rights in case BIOS or Alienware monitoring enabled (the same reason as for `alienfx-gui`)
-- `alienfx-cli` does not require Administrator privilege and can be run at any level.
+- `alienfx-cli` don't require Administrator privilege and can be run at any level.
+
 - All the tools don't require an Internet connection, but `alienfan-gui`, `alienfx-mon` and `alienfx-gui` will connect to GitHub to check for updates if a connection is available.
 - All the tools don't collect or share any personal data. Some hardware data collected (but not shared) during hardware detection process.
 
