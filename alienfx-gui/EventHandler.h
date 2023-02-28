@@ -12,7 +12,6 @@ private:
 	HHOOK kEvent;
 	DWORD maxProcess = 256;
 	DWORD* aProcesses;
-	string GetProcessName(DWORD proc);
 
 public:
 	CaptureHelper* capt = NULL;
@@ -30,8 +29,8 @@ public:
 	void SwitchActiveProfile(profile* newID);
 	void StartProfiles();
 	void StopProfiles();
-	void ScanTaskList();
-	void CheckProfileWindow();
+	string GetProcessName(DWORD proc);
+	void CheckProfileChange();
 
 	// Effects
 	void ChangeEffectMode();

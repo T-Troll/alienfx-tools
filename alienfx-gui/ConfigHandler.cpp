@@ -61,7 +61,7 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
 	profile* fprof = NULL;
 	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
-		if (SamePower((*prof)->triggerFlags) && (active || !((*prof)->flags & PROF_ACTIVE))) {
+		if (SamePower(*prof) && (active || !IsActiveOnly(*prof))) {
 			for (auto name = (*prof)->triggerapp.begin(); name < (*prof)->triggerapp.end(); name++)
 				if (*name == appName) {
 					if (IsPriorityProfile(*prof))
@@ -74,7 +74,11 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 }
 
 bool ConfigHandler::IsPriorityProfile(profile* prof) {
-	return prof && (prof->flags & PROF_PRIORITY);
+	return (prof ? prof->flags : activeProfile->flags) & PROF_PRIORITY;
+}
+
+bool ConfigHandler::IsActiveOnly(profile* prof) {
+	return (prof ? prof->flags : activeProfile->flags) & PROF_ACTIVE;
 }
 
 bool ConfigHandler::SetStates() {
@@ -287,14 +291,14 @@ void ConfigHandler::Load() {
 
 }
 
-bool ConfigHandler::SamePower(WORD flags, profile* prof) {
+bool ConfigHandler::SamePower(profile* cur, profile* prof) {
 	WORD cflags = prof ? prof->triggerFlags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY) : statePower ? PROF_TRIGGER_AC : PROF_TRIGGER_BATTERY;
-	return !(flags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)) || !cflags || flags & cflags;
+	return !(cur->triggerFlags & (PROF_TRIGGER_AC | PROF_TRIGGER_BATTERY)) || !cflags || cur->triggerFlags & cflags;
 }
 
 profile* ConfigHandler::FindDefaultProfile() {
 	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
-		if ((*prof)->flags & PROF_DEFAULT && SamePower((*prof)->triggerFlags, NULL))
+		if ((*prof)->flags & PROF_DEFAULT && SamePower(*prof, NULL))
 			return (*prof);
 	return profiles.front();
 }

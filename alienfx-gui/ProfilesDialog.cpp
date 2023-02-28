@@ -391,7 +391,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		{
 			if (state) {
 				for (auto op = conf->profiles.begin(); op != conf->profiles.end(); op++)
-					if ((*op)->flags & PROF_DEFAULT && conf->SamePower((*op)->flags, prof))
+					if ((*op)->flags & PROF_DEFAULT && conf->SamePower(*op, prof))
 						(*op)->flags &= ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
 			} else

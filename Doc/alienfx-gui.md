@@ -380,3 +380,15 @@ Other shortcuts (operating then application active):
 - ALT+/ - about application
 - ALT+x - quit
 
+## Known issues
+- Application can freeze at first start for some seconds in case you have Intel CPU. It's normal situation, application trying to obtain Intel sensor names. 
+- Hardware light effects like breathing, spectrum, rainbow only supported for APIv4 (Tron) lights.
+- Hardware light effects and global effect didn't work with software effects at the same time for APIv4-v5 (hardware design limitation). Disable software effects to use it.
+- DirectX12 games didn't allow access to GPU or frame, so `Ambient` effect will not work, and GPU load will not be correct.
+- Setting a hardware power button light, especially for events, can provide hardware light system acting slow right after color update - next updates will be delayed.
+- Fans can only be controlled in "Manual" mode (BIOS limitation), all other modes utilize BIOS-defined control values.
+- Some BIOSes limit fan RPMs to lower values under heavy system load (Power subsystem have not enough reserves for fans).
+- In case BIOS drives mode set to "Raid", SSD temperatures into fan control will be fake (always 60C) at some systems.
+- It's strongly recommend stopping AWCCService if you plan to use application with "Power Button" related features. Keeping it working can provide unexpected results up to light system freeze.
+- There is a well-known bug in DirectX at the Hybrid graphics (Intel+Nvidia) notebooks, preventing the `Ambient` effect from capturing the screen. If you have only one screen (notebook panel) connected but set Nvidia as a "Preferred GPU" in the Nvidia panel, please add `alienfx-gui` with "integrated GPU" setting at "Program settings" for the same monitor. It will not work at the default setting in this case.
+

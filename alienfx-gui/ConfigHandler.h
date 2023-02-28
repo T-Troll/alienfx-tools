@@ -217,7 +217,7 @@ public:
 	ConfigHandler();
 	~ConfigHandler();
 	void Load();
-	bool SamePower(WORD flags, profile* prof = NULL);
+	bool SamePower(profile* cur, profile* prof = NULL);
 	void Save();
 	groupset* FindMapping(int mid, vector<groupset>* set = NULL);
 	void SetRandomColor(AlienFX_SDK::Afx_colorcode* clr);
@@ -226,7 +226,8 @@ public:
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
-	bool IsPriorityProfile(profile* prof);
+	bool IsPriorityProfile(profile* prof = NULL);
+	bool IsActiveOnly(profile* prof = NULL);
 	bool SetStates();
 	void SetIconState();
 };

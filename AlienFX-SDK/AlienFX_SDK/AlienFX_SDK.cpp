@@ -268,10 +268,10 @@ namespace AlienFX_SDK {
 		case API_V6:
 			// need initial reset if not done
 			if (chain) {
-				PrepareAndSend(COMMV6_systemReset);
+				inSet = PrepareAndSend(COMMV6_systemReset);
 				chain = 0;
-			}
-			inSet = true;
+			} else
+				inSet = true;
 			break;
 		case API_V5:
 		{

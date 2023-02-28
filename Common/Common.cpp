@@ -114,13 +114,17 @@ void ResetDPIScale(LPWSTR cmdLine) {
 }
 
 void ShowNotification(NOTIFYICONDATA* niData, string title, string message) {
-	strcpy_s(niData->szInfoTitle, title.c_str());
-	strcpy_s(niData->szInfo, message.c_str());
-	niData->uFlags |= NIF_INFO;
-	//niData->dwInfoFlags = NIIF_ERROR;
-	if (!Shell_NotifyIcon(NIM_MODIFY, niData))
-		Shell_NotifyIcon(NIM_ADD, niData);
-	niData->uFlags &= ~NIF_INFO;
+	//QUERY_USER_NOTIFICATION_STATE cns;
+	//SHQueryUserNotificationState(&cns);
+	//if (cns == QUNS_ACCEPTS_NOTIFICATIONS) {
+		strcpy_s(niData->szInfoTitle, title.c_str());
+		strcpy_s(niData->szInfo, message.c_str());
+		niData->uFlags |= NIF_INFO;
+		//niData->dwInfoFlags = NIIF_ERROR;
+		if (!Shell_NotifyIcon(NIM_MODIFY, niData))
+			Shell_NotifyIcon(NIM_ADD, niData);
+		niData->uFlags &= ~NIF_INFO;
+	//}
 }
 
 DWORD WINAPI CUpdateCheck(LPVOID lparam) {

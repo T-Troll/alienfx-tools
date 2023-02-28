@@ -57,3 +57,10 @@ Global shortcuts (works all time application running):
 - CTRL+ALT+0..N - switch active power mode. 0 is for Manual, 1..N for system-defined
 - F17 (G-key for Dell G-series laptops) - Enable/disable G-Mode (performance mode)
 
+## Known issues
+- Application can freeze at first start for some seconds in case you have Intel CPU. It's normal situation, application trying to obtain Intel sensor names. 
+- Fans can only be controlled in "Manual" mode (BIOS limitation), all other modes utilize BIOS-defined control values.
+- Some BIOSes limit fan RPMs to lower values under heavy system load (Power subsystem have not enough reserves for fans).
+- In case BIOS drives mode set to "Raid", SSD temperatures into fan control will be fake (always 60C) at some systems.
+
+
