@@ -428,96 +428,105 @@ void ConfigHandler::Save() {
 	}
 }
 
-zonemap* ConfigHandler::FindZoneMap(int gid) {
+zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
+	zonemap* zone = NULL;
+	zoneUpdate.lock();
 	for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
-		if (gpos->gID == gid)
-			return &(*gpos);
-	return SortGroupGauge(gid);
-}
-
-zonemap* ConfigHandler::SortGroupGauge(int gid) {
-	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
-
-	zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
-	auto zone = &zoneMaps.back();
-
-	if (!grp || grp->lights.empty()) return zone;
-
-	// find operational grid...
-	AlienFX_SDK::Afx_groupLight lgt = grp->lights.front();
-	AlienFX_SDK::Afx_grid* opGrid = NULL;
-	for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
-		for (int ind = 0; ind < t->x * t->y; ind++)
-			if (t->grid[ind].lgh == lgt.lgh) {
-				zone->gridID = t->id;
-				opGrid = &(*t);
-				break;
-			}
-	if (!opGrid) return zone;
-
-	// scan light positions in grid...
-	for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
-		zonelight cl{ lgh->lgh, 255, 255 };
-		for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
-			if (opGrid->grid[ind].lgh == lgh->lgh) {
-				//cl.x = ind % opGrid->x;
-				cl.x = min(cl.x, ind % opGrid->x);
-				//cl.y = ind / opGrid->x;
-				cl.y = min(cl.y, ind / opGrid->x);
-				zone->gMaxX = max(zone->gMaxX, ind % opGrid->x);
-				zone->gMaxY = max(zone->gMaxY, ind / opGrid->x);
-				zone->gMinX = min(zone->gMinX, cl.x);
-				zone->gMinY = min(zone->gMinY, cl.y);
-				//zone->lightMap.push_back(cl);
-				break;
-			}
-		// Ignore light if not in grid
-		if (cl.x < 255) {
-			zone->gMinX = min(zone->gMinX, cl.x);
-			zone->gMinY = min(zone->gMinY, cl.y);
-			zone->lightMap.push_back(cl);
-		}
-	}
-
-	// now shrink axis...
-	for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++) {
-		t->x -= zone->gMinX; t->y -= zone->gMinY;
-	}
-	zone->xMax = zone->gMaxX - zone->gMinX + 1; zone->yMax = zone->gMaxY - zone->gMinY + 1;
-	for (int x = 1; x < zone->xMax; x++) {
-		if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
-			[x](auto t) {
-				return t.x == x;
-			}) == zone->lightMap.end()) {
-			byte minDelta = 255;
-			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
-				if (t->x > x) minDelta = min(minDelta, t->x-x);
-			if (minDelta < 255) {
-				for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
-					if (t->x > x) t->x -= minDelta;
-				zone->xMax -= minDelta;
-			}
+		if (gpos->gID == gid) {
+			if (reset)
+				zoneMaps.erase(gpos);
 			else
-				zone->xMax = x;
+				zone = &(*gpos);
+			break;
 		}
-	}
-	for (int y = 1; y < zone->yMax; y++) {
-		if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
-			[y](auto t) {
-				return t.y == y;
-			}) == zone->lightMap.end()) {
-			byte minDelta = 255;
-			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
-				if (t->y > y) minDelta = min(minDelta, t->y - y);
-			if (minDelta < 255) {
-				for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
-					if (t->y > y) t->y -= minDelta;
-				zone->yMax -= minDelta;
+	if (!zone) {
+		// create new zoneMap
+		AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
+
+		zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
+		zone = &zoneMaps.back();
+
+		if (grp && grp->lights.size()) {
+			// find operational grid...
+			AlienFX_SDK::Afx_groupLight lgt = grp->lights.front();
+			AlienFX_SDK::Afx_grid* opGrid = NULL;
+			for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
+				for (int ind = 0; ind < t->x * t->y; ind++)
+					if (t->grid[ind].lgh == lgt.lgh) {
+						zone->gridID = t->id;
+						opGrid = &(*t);
+						break;
+					}
+
+			if (opGrid) {
+
+				// scan light positions in grid...
+				for (auto lgh = grp->lights.begin(); lgh < grp->lights.end(); lgh++) {
+					zonelight cl{ lgh->lgh, 255, 255 };
+					for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
+						if (opGrid->grid[ind].lgh == lgh->lgh) {
+							//cl.x = ind % opGrid->x;
+							cl.x = min(cl.x, ind % opGrid->x);
+							//cl.y = ind / opGrid->x;
+							cl.y = min(cl.y, ind / opGrid->x);
+							zone->gMaxX = max(zone->gMaxX, ind % opGrid->x);
+							zone->gMaxY = max(zone->gMaxY, ind / opGrid->x);
+							zone->gMinX = min(zone->gMinX, cl.x);
+							zone->gMinY = min(zone->gMinY, cl.y);
+							//zone->lightMap.push_back(cl);
+							break;
+						}
+					// Ignore light if not in grid
+					if (cl.x < 255) {
+						zone->gMinX = min(zone->gMinX, cl.x);
+						zone->gMinY = min(zone->gMinY, cl.y);
+						zone->lightMap.push_back(cl);
+					}
+				}
+
+				// now shrink axis...
+				for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++) {
+					t->x -= zone->gMinX; t->y -= zone->gMinY;
+				}
+				zone->xMax = zone->gMaxX - zone->gMinX + 1; zone->yMax = zone->gMaxY - zone->gMinY + 1;
+				for (int x = 1; x < zone->xMax; x++) {
+					if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
+						[x](auto t) {
+							return t.x == x;
+						}) == zone->lightMap.end()) {
+						byte minDelta = 255;
+						for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
+							if (t->x > x) minDelta = min(minDelta, t->x - x);
+						if (minDelta < 255) {
+							for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
+								if (t->x > x) t->x -= minDelta;
+							zone->xMax -= minDelta;
+						}
+						else
+							zone->xMax = x;
+					}
+				}
+				for (int y = 1; y < zone->yMax; y++) {
+					if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
+						[y](auto t) {
+							return t.y == y;
+						}) == zone->lightMap.end()) {
+						byte minDelta = 255;
+						for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
+							if (t->y > y) minDelta = min(minDelta, t->y - y);
+						if (minDelta < 255) {
+							for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
+								if (t->y > y) t->y -= minDelta;
+							zone->yMax -= minDelta;
+						}
+						else
+							zone->yMax = y;
+					}
+				}
 			}
-			else
-				zone->yMax = y;
 		}
 	}
+	zoneUpdate.unlock();
 	return zone;
 }
 

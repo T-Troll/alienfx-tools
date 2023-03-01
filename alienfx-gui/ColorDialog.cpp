@@ -3,7 +3,7 @@
 #include "common.h"
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
-extern AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action*);
+extern AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);

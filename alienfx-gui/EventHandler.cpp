@@ -257,7 +257,7 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 
 	GetWindowThreadProcessId(hwnd, &prcId);
 
-	if (/*idObject == OBJID_WINDOW &&*/ !GetParent(hwnd) && (szProcessName = eve->GetProcessName(prcId)).size() &&
+	if (!GetParent(hwnd) && (szProcessName = eve->GetProcessName(prcId)).size() &&
 		(prof = conf->FindProfileByApp(szProcessName))) {
 		//DebugPrint(("C/D: " + to_string(dwEvent) + " - " + szProcessName + "\n").c_str());
 		if (dwEvent == EVENT_OBJECT_DESTROY) {

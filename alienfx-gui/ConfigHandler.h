@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <mutex>
 #include <random>
 #include "AlienFX_SDK.h"
 //#include "ConfigFan.h"
@@ -64,8 +65,8 @@ struct zonemap {
 };
 
 struct gridClr {
-	AlienFX_SDK::Afx_action* first;
-	AlienFX_SDK::Afx_action* last;
+	AlienFX_SDK::Afx_colorcode* first;
+	AlienFX_SDK::Afx_colorcode* last;
 };
 
 struct grideffect {
@@ -84,8 +85,10 @@ struct grideffop {
 	bool passive = true;
 	int gridX, gridY,
 		oldphase=-1,
-		size;
-	int current_tact;
+		size,
+		effsize,
+		lmp,
+		current_tact;
 };
 
 struct groupset {
@@ -147,6 +150,7 @@ private:
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id); 
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
+	mutex zoneUpdate;
 public:
 	DWORD startWindows;
 	DWORD startMinimized;
@@ -221,8 +225,7 @@ public:
 	void Save();
 	groupset* FindMapping(int mid, vector<groupset>* set = NULL);
 	void SetRandomColor(AlienFX_SDK::Afx_colorcode* clr);
-	zonemap* FindZoneMap(int gid);
-	zonemap* SortGroupGauge(int gid);
+	zonemap* FindZoneMap(int gid, bool reset=false);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);

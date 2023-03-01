@@ -3,7 +3,7 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
+extern AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action* act);
 extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
@@ -32,7 +32,6 @@ extern AlienFX_SDK::Afx_light* keySetLight;
 extern AlienFX_SDK::Afx_device* activeDevice;
 
 void FindCreateMapping() {
-    //AlienFX_SDK::Afx_light* lgh = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
     if (activeDevice && !(keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid))) {
         // create new mapping
         activeDevice->lights.push_back({ (byte)eLid, {0,0}, "Light " + to_string(eLid + 1) });
@@ -41,14 +40,12 @@ void FindCreateMapping() {
             conf->afx_dev.activeLights++;
             // for rgb keyboards, check key...
             if (activeDevice->dev->IsHaveGlobal()) {
-                //keySetLight = lgh;
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
             }
         }
         else
             keySetLight->name = "Light " + to_string(eLid + 1);
     }
-    //return keySetLight;
 }
 
 void InitGridButtonZone() {
@@ -126,24 +123,24 @@ void RecalcGridZone(RECT* what = NULL) {
                         if (conf->stateEffects) {
                             if (cs->events.size()) {
                                 if (!conf->colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
-                                    conf->colorGrid[ind].first = &cs->events.front().from;
-                                conf->colorGrid[ind].last = &cs->events.back().to;
+                                    conf->colorGrid[ind].first = Act2Code(&cs->events.front().from);
+                                conf->colorGrid[ind].last = Act2Code(&cs->events.back().to);
                             }
                             if (cs->ambients.size()) {
-                                conf->colorGrid[ind].first = conf->colorGrid[ind].last = &ambient_grid;
+                                conf->colorGrid[ind].first = conf->colorGrid[ind].last = Act2Code(&ambient_grid);
                             }
                             if (cs->haptics.size()) {
-                                conf->colorGrid[ind] = { Code2Act(&cs->haptics.front().colorfrom), Code2Act(&cs->haptics.back().colorto) };
+                                conf->colorGrid[ind] = { &cs->haptics.front().colorfrom, &cs->haptics.back().colorto };
                             }
                             if (cs->effect.trigger && cs->effect.effectColors.size()) {
-                                conf->colorGrid[ind] = { Code2Act(&cs->effect.effectColors.front()), Code2Act(&cs->effect.effectColors.back()) };
+                                conf->colorGrid[ind] = { &cs->effect.effectColors.front(), &cs->effect.effectColors.back() };
                             }
                         }
                         if (cs->color.size()) {
                             if (!conf->colorGrid[ind].first)
-                                conf->colorGrid[ind].first = &cs->color.front();
+                                conf->colorGrid[ind].first = Act2Code(&cs->color.front());
                             if (!conf->colorGrid[ind].last)
-                                conf->colorGrid[ind].last = &cs->color.back();
+                                conf->colorGrid[ind].last = Act2Code(&cs->color.back());
                         }
                     }
                 }
@@ -233,13 +230,7 @@ void ModifyColorDragZone(bool clear = false) {
                 break;
         }
 
-        for (auto gpos = conf->zoneMaps.begin(); gpos != conf->zoneMaps.end(); gpos++)
-            if (gpos->gID == grp->gid) {
-                conf->zoneMaps.erase(gpos);
-                break;
-            }
-
-        conf->SortGroupGauge(grp->gid);
+        conf->FindZoneMap(grp->gid, true);
         RecalcGridZone();
         UpdateZoneList();
     }

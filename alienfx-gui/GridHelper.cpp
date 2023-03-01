@@ -8,32 +8,39 @@ extern FXHelper* fxhl;
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (grp->effect.effectColors.size() > 1) {
-		int cx = max(x + 1, cz->xMax - x), cy = max(y + 1, cz->yMax - y);
-		switch (grp->gauge) {
-		case 1:
-			grp->gridop.size = cx;
-			break;
-		case 2:
-			grp->gridop.size = cy;
-			break;
-		case 0: case 3: case 4:
-			grp->gridop.size = cx + cy - 2;
-			break;
-		case 5:
-			grp->gridop.size = max(cx, cy);
-			break;
+		grideffop* gridop = &grp->gridop;
+		int cx = max(x + 1, cz->xMax - x), cy = max(y + 1, cz->yMax - y), esize;
+		if (grp->gauge) {
+			switch (grp->gauge) {
+			case 1:
+				esize = cx;
+				break;
+			case 2:
+				esize = cy;
+				break;
+			case 0: case 3: case 4:
+				esize = cx + cy - 2;
+				break;
+			case 5:
+				esize = max(cx, cy);
+				break;
+			}
+			gridop->size = max(esize + grp->effect.width - 1, 1);
 		}
+		else
+			gridop->size = grp->effect.width;
 		if (grp->effect.flags & GE_FLAG_RANDOM) {
 			// set color to random
 			for (auto cl = grp->effect.effectColors.begin(); cl != grp->effect.effectColors.end(); cl++)
 				conf->SetRandomColor(&(*cl));
 		}
 		// prepare data
-		grp->gridop.size = max(grp->gridop.size + grp->effect.width - 1, 1);
-		grp->gridop.gridX = x;
-		grp->gridop.gridY = y;
-		grp->gridop.current_tact = 0;
-		grp->gridop.oldphase = -1;
+		gridop->gridX = x;
+		gridop->gridY = y;
+		gridop->current_tact = 0;
+		gridop->oldphase = -1;
+		gridop->lmp = grp->effect.flags & GE_FLAG_PHASE ? 1 : ((int)grp->effect.effectColors.size() - 1);
+		gridop->effsize = grp->effect.flags & GE_FLAG_CIRCLE ? gridop->size << 1 : gridop->size;
 		grp->gridop.passive = false;
 	}
 }

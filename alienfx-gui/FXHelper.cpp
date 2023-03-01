@@ -5,7 +5,6 @@
 extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
-//extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
 extern MonHelper* mon;
 
@@ -307,24 +306,22 @@ void FXHelper::RefreshGrid() {
 					// calculate phase
 					int cTact = effop->current_tact++;
 					int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
-					int lmp = eff->flags & GE_FLAG_PHASE ? 1 : (int)eff->effectColors.size() - 1;
-					int effsize = eff->flags & GE_FLAG_CIRCLE ? (effop->size << 1) : effop->size;
 
-					if (phase > effsize * lmp) {
+					if (phase > effop->effsize * effop->lmp) {
 						effop->passive = true;
 						continue;
 					}
 
-					int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : phase / effsize) % (eff->effectColors.size());
+					int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
 
 					AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
 						&eff->effectColors[colorIndex]),
 						to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
 
-					phase %= effsize;
+					phase %= effop->effsize;
 
 					if (phase >= effop->size) // circle by color and direction
-						phase = effsize - phase - 1;
+						phase = effop->effsize - phase - 1;
 
 					if (ce->gaugeflags & GAUGE_REVERSE)
 						phase = effop->size - phase - 1;
@@ -381,7 +378,7 @@ void FXHelper::RefreshGrid() {
 						}
 						else {
 							// flat morph emulation
-							power = (double)phase / (eff->width + 1);
+							power = (double)phase / eff->width;
 							cur.front() = { BlendPower(power, &from, &to) };
 							SetZone(&(*ce), &cur);
 						}
@@ -722,16 +719,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
 							lp->act = ablock.act;
 						}
-					//auto lp = find_if(dv->begin(), dv->end(),
-					//	[lid](auto acb) {
-					//		return acb.index == lid;
-					//	});
 					if (lp == dv->end())
 						dv->push_back(ablock);
-					//else {
-					//	DebugPrint("Light already in query, updating data.\n");
-					//	lp->act = ablock.act;
-					//}
 				}
 			}
 			}

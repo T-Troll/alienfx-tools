@@ -1,7 +1,8 @@
-//#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #include "AlienFX_SDK.h"
 #include "alienfx-controls.h"
 extern "C" {
+#include <initguid.h>
 #include <hidclass.h>
 #include <hidsdi.h>
 }
@@ -68,8 +69,8 @@ namespace AlienFX_SDK {
 
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
 		byte buffer[MAX_BUFFERSIZE]{ reportIDList[version] };
-		DWORD written , size = command[0];
-		BOOL res = false;
+		DWORD written, size = command[0];
+		//BOOL res = false;
 
 		if (version == API_V6 /*&& size != 3*/)
 			FillMemory(buffer+1, MAX_BUFFERSIZE-1, 0xff);
@@ -84,43 +85,40 @@ namespace AlienFX_SDK {
 
 		switch (version) {
 		case API_V2: case API_V3:
-			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
-			//return HidD_SetOutputReport(devHandle, buffer, length);
-			break;
+			//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
+			return HidD_SetOutputReport(devHandle, buffer, length);
+			//break;
 		case API_V4:
-			res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
-			res &= DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL);
-			break;
+			//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
+			return HidD_SetOutputReport(devHandle, buffer, length);
+			//res &= DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL);
+			//break;
 		case API_V5:
-			res =  DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-			//return HidD_SetFeature(devHandle, buffer, length);
-			break;
-		case API_V6: {
-			res = WriteFile(devHandle, buffer, length, &written, NULL);
+			//res =  DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
+			return HidD_SetFeature(devHandle, buffer, length);
+			//break;
+		case API_V6:
+			/*res =*/return WriteFile(devHandle, buffer, length, &written, NULL);
 			//if (size == 3)
 			//	res &= ReadFile(devHandle, buffer, length, &written, NULL);
-			break;
-		}
+			//break;
 		case API_V7:
 			WriteFile(devHandle, buffer, length, &written, NULL);
-			res =  ReadFile(devHandle, buffer, length, &written, NULL);
-			break;
+			return ReadFile(devHandle, buffer, length, &written, NULL);
+			//break;
 		case API_V8: {
 			if (size == 4) {
-				//res = HidD_SetFeature(devHandle, buffer, length);
-				res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
+				bool res = HidD_SetFeature(devHandle, buffer, length);
+				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
 				Sleep(7); // Need wait for ACK
+				return res;
 			}
 			else {
-				res = WriteFile(devHandle, buffer, length, &written, NULL);
+				return WriteFile(devHandle, buffer, length, &written, NULL);
 			}
 		}
 		}
-#ifdef _DEBUG
-		if (!res)
-			DebugPrint("Device IO fail!\n");
-#endif
-		return res;
+		return false;
 	}
 
 	bool Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse) {
@@ -163,7 +161,7 @@ chain++;
 		return true;
 	}
 
-	bool Functions::ProbeDevice(void* hDevInfo, void* devData, WORD vidd, WORD pidd) {
+	bool Functions::AlienFXProbeDevice(void* hDevInfo, void* devData, WORD vidd, WORD pidd) {
 		DWORD dwRequiredSize = 0;
 		version = API_UNKNOWN;
 		SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, NULL, 0, &dwRequiredSize, NULL);
@@ -200,7 +198,6 @@ chain++;
 						break;
 					case 65:
 						version = API_V6;
-						//PrepareAndSend(COMMV6_systemReset);
 						break;
 					}
 					break;
@@ -209,7 +206,6 @@ chain++;
 						switch (vid) {
 						case 0x0424: // Microchip
 							version = API_V6;
-							//PrepareAndSend(COMMV6_systemReset);
 							break;
 						case 0x0461: // Primax
 							version = API_V7;
@@ -230,17 +226,15 @@ chain++;
 
 	//Use this method for general devices, vid = 0 for any vid, pid = 0 for any pid.
 	bool Functions::AlienFXInitialize(WORD vidd, WORD pidd) {
-		GUID guid;
 		DWORD dwRequiredSize = 0;
 		SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
 		devHandle = NULL;
 
-		HidD_GetHidGuid(&guid);
-		HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+		HDEVINFO hDevInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_HID, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 		if (hDevInfo != INVALID_HANDLE_VALUE) {
-			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData) &&
+			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &GUID_DEVINTERFACE_HID, dw, &deviceInterfaceData) &&
 				(deviceInterfaceData.Flags & SPINT_ACTIVE) &&
-				!ProbeDevice(hDevInfo, &deviceInterfaceData, vidd, pidd); dw++);
+				!AlienFXProbeDevice(hDevInfo, &deviceInterfaceData, vidd, pidd); dw++);
 			SetupDiDestroyDeviceInfoList(hDevInfo);
 		}
 		return version != API_UNKNOWN;
@@ -253,7 +247,7 @@ chain++;
 			vid = 0x187c;
 			pid = 0xffff;
 			ACPIdevice = new AlienFan_SDK::Lights(acc);
-			if ((AlienFan_SDK::Lights*)ACPIdevice)->isActivated) {
+			if (((AlienFan_SDK::Lights*)ACPIdevice)->isActivated) {
 				version = API_ACPI;
 				return true;
 			}
@@ -587,7 +581,6 @@ chain++;
 						SetV4Action(ca->index, &ca->act);
 				PrepareAndSend(COMMV4_control, { { 4, 2 }, { 6, 0x61 } });
 				PrepareAndSend(COMMV4_control, { { 4, 6 }, { 6, 0x61 }});
-				//PrepareAndSend(COMMV4_control, sizeof(COMMV4_control), { { 4, 7 }, { 6, 0x61 } });
 			}
 			else {
 				pwr = &act->front();
@@ -763,33 +756,31 @@ chain++;
 	BYTE Functions::GetDeviceStatus() {
 
 		byte buffer[MAX_BUFFERSIZE];
-		DWORD written;
-		byte res = 0;
+		//DWORD written;
 		switch (version) {
 		case API_V5:
 		{
 			PrepareAndSend(COMMV5_status);
-			//if (HidD_GetFeature(devHandle, buffer, length))
-			if (DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, &written, NULL))
-				res = buffer[2];
+			if (HidD_GetFeature(devHandle, buffer, length))
+			//if (DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, &written, NULL))
+				return buffer[2];
 		} break;
 		case API_V4:
 		{
-			//if (HidD_GetInputReport(devHandle, buffer, length))
-			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				res = buffer[2];
+			if (HidD_GetInputReport(devHandle, buffer, length))
+			//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
+				return buffer[2];
 		} break;
 		case API_V3: case API_V2:
 		{
 			PrepareAndSend(COMMV1_status);
-			//HidD_GetInputReport(devHandle, buffer, length);
-			if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				res = /*buffer[0] == 0x01 ? ALIENFX_V2_RESET : */buffer[0];
+			if (HidD_GetInputReport(devHandle, buffer, length))
+			//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
+				return buffer[0];
 		} break;
 		}
 
-		//DebugPrint("Status: " + to_string(written) + " bytes, " + to_string(res) + "\n");
-		return res;
+		return 0;
 	}
 
 	BYTE Functions::WaitForReady() {
@@ -798,7 +789,7 @@ chain++;
 		case API_V3: case API_V2:
 			if (!GetDeviceStatus())
 				Reset();
-			for (; i < 200 && GetDeviceStatus() != ALIENFX_V2_READY/* && status != ALIENFX_V2_RESET*/; i++) {
+			for (; i < 200 && GetDeviceStatus() != ALIENFX_V2_READY; i++) {
 				Sleep(10);
 			}
 			return i != 200;
@@ -849,13 +840,6 @@ chain++;
 #endif
 		case API_V3: case API_V2:
 			return status == ALIENFX_V2_READY ? 1 : Reset();
-			//switch (status) {
-			//case ALIENFX_V2_READY:
-			//	return 1;
-			//case ALIENFX_V2_BUSY: case 0:
-			//	return Reset();
-			//}
-			//return 0;
 		default:
 			return !inSet;
 		}
@@ -882,17 +866,15 @@ chain++;
 
 	vector<Functions*> Mappings::AlienFXEnumDevices(void* acc) {
 		vector<Functions*> devs;
-		GUID guid;
 		Functions* dev;
 
-		HidD_GetHidGuid(&guid);
-		HDEVINFO hDevInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+		HDEVINFO hDevInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_HID, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 		if (hDevInfo != INVALID_HANDLE_VALUE) {
 			SP_DEVICE_INTERFACE_DATA deviceInterfaceData{ sizeof(SP_DEVICE_INTERFACE_DATA) };
-			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &guid, dw, &deviceInterfaceData); dw++) {
+			for (DWORD dw = 0; SetupDiEnumDeviceInterfaces(hDevInfo, NULL, &GUID_DEVINTERFACE_HID, dw, &deviceInterfaceData); dw++) {
 				dev = new Functions();
 				//DebugPrint("Testing device #" + to_string(dw) + ", ID=" + to_string(deviceInterfaceData.Reserved) + "\n");
-				if ((deviceInterfaceData.Flags & SPINT_ACTIVE) && dev->ProbeDevice(hDevInfo, &deviceInterfaceData))
+				if ((deviceInterfaceData.Flags & SPINT_ACTIVE) && dev->AlienFXProbeDevice(hDevInfo, &deviceInterfaceData))
 				{
 					devs.push_back(dev);
 					DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
@@ -1152,15 +1134,6 @@ chain++;
 			return GetFlags(dev, lightid);
 		return 0;
 	}
-
-	//// get PID for current device
-	//int Functions::GetPID() { return pid; };
-
-	//// get VID for current device
-	//int Functions::GetVID() { return vid; };
-
-	//// get API version for current device
-	//int Functions::GetVersion() { return version; };
 
 	bool Functions::IsHaveGlobal()
 	{

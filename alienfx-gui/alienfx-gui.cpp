@@ -110,8 +110,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ int       nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
-	//UNREFERENCED_PARAMETER(lpCmdLine);
-	//UNREFERENCED_PARAMETER(nCmdShow);
+
 	hInst = hInstance;
 
 	ResetDPIScale(lpCmdLine);
@@ -125,8 +124,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		grids->back().grid = new AlienFX_SDK::Afx_groupLight[20 * 8]{ 0 };
 	}
 	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
-
-	//fan_conf = &conf->fan_conf;
 
 	if (conf->activeProfile->flags & PROF_FANS)
 		fan_conf->lastProf = (fan_profile*)conf->activeProfile->fansets;
@@ -413,7 +410,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_INITDIALOG:
 	{
 		conf->niData.hWnd = mDlg = hDlg;
-
 		SetMainTabs();
 
 		if (AddTrayIcon(&conf->niData, conf->updateCheck)) {
@@ -482,10 +478,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_WINDOWPOSCHANGING: {
 		WINDOWPOS* pos = (WINDOWPOS*)lParam;
-		if (pos->flags & SWP_SHOWWINDOW /*&& eve*/) {
+		if (pos->flags & SWP_SHOWWINDOW) {
 			eve->StopProfiles();
 		} else
-			if (pos->flags & SWP_HIDEWINDOW /*&& eve*/) {
+			if (pos->flags & SWP_HIDEWINDOW) {
 				eve->StartProfiles();
 			}
 			else
@@ -551,14 +547,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case WM_LBUTTONUP:
 			RestoreApp();
 			break;
-		//case NIN_POPUPOPEN:
-		//	//SetTimer(hDlg, 0, 500, NULL);
-		//	DebugPrint("Tray mouse enter\n");
-		//	break;
-		//case NIN_POPUPCLOSE:
-		//	//KillTimer(hDlg, 0);
-		//	DebugPrint("Tray mouse leave\n");
-		//	break;
 		case WM_RBUTTONUP: case WM_CONTEXTMENU:
 		{
 			POINT lpClickPoint;
@@ -586,7 +574,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, conf->enableProfSwitch? MF_CHECKED : MF_UNCHECKED);
 
 			GetCursorPos(&lpClickPoint);
-			SetForegroundWindow(hDlg);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
 		} break;
@@ -693,6 +680,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_DEVICECHANGE:
+		//if (lParam) {
+		//	DEV_BROADCAST_DEVICEINTERFACE* dev = (DEV_BROADCAST_DEVICEINTERFACE*)lParam;
+		//}
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
 			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
@@ -788,9 +778,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DESTROY:
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		conf->Save();
-		PostQuitMessage(0);
 		mDlg = NULL;
 		CloseHandle(haveLightFX);
+		//UnregisterDeviceNotification(hDlg);
+		PostQuitMessage(0);
 		break;
 	default: return false;
 	}
@@ -798,7 +789,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 }
 
 
-AlienFX_SDK::Afx_colorcode *Act2Code(AlienFX_SDK::Afx_action *act) {
+AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action *act) {
 	return new AlienFX_SDK::Afx_colorcode({act->b,act->g,act->r});
 }
 

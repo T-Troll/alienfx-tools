@@ -170,7 +170,7 @@ namespace AlienFX_SDK {
 		// Check device and initialize data
 		// vid/pid the same as above
 		// Returns true if device found and initialized.
-		bool ProbeDevice(void* hDevInfo, void* devData, WORD vid = 0, WORD pid = 0);
+		bool AlienFXProbeDevice(void* hDevInfo, void* devData, WORD vid = 0, WORD pid = 0);
 
 #ifndef NOACPILIGHTS
 		// Initialize Aurora ACPI lights if present.
