@@ -337,7 +337,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SetForegroundWindow(hDlg);
             int res = TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
                 lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
-            int i = 0;
+            PostMessage(hDlg, WM_NULL, 0, 0);
         } break;
         case WM_LBUTTONDBLCLK:
         case WM_LBUTTONUP:
