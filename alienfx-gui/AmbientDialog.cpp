@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "CaptureHelper.h"
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
@@ -37,8 +38,9 @@ void RedrawButtonZone(HWND dlg) {
 
 void SetGridSize(HWND dlg, WORD x, WORD y) {
     KillTimer(dlg, 0);
-    if (eve->capt) {
-        eve->capt->SetLightGridSize(x, y);
+    CaptureHelper* capt = (CaptureHelper*)eve->capt;
+    if (capt) {
+        capt->SetLightGridSize(x, y);
     }
     else {
         conf->amb_grid = { x, y };
@@ -57,8 +59,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     case WM_INITDIALOG:
     {
         // Mode...
-        CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_mode ? BST_UNCHECKED : BST_CHECKED);
-        CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, conf->amb_mode ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hDlg, conf->amb_mode ? IDC_RADIO_SECONDARY : IDC_RADIO_PRIMARY, BST_CHECKED);
+        CheckDlgButton(hDlg, conf->amb_calc ? IDC_RADIO_PREVEALING : IDC_RADIO_MEDIUM, BST_CHECKED);
 
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(brSlider, TBM_SETPOS, true, conf->amb_shift);
@@ -89,37 +91,34 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
     } break;
     case WM_COMMAND:
-    {
         if (LOWORD(wParam) >= 2000 && mmap && HIWORD(wParam) == BN_CLICKED) { // grid button
             UINT id = LOWORD(wParam) - 2000;
             // add/remove mapping
-            bool nf = false;
-            for (auto pos = mmap->ambients.begin(); pos != mmap->ambients.end(); pos++)
-                if (nf = (*pos == id)) {
-                    mmap->ambients.erase(pos);
+            auto pos = mmap->ambients.begin();
+            for (; pos != mmap->ambients.end(); pos++)
+                if (*pos == id)
                     break;
-                }
-            if (!nf)
+            if (pos == mmap->ambients.end())
                 mmap->ambients.push_back(id);
+            else
+                mmap->ambients.erase(pos);
             eve->ChangeEffectMode();
             UpdateZoneList();
             break;
         }
         switch (LOWORD(wParam)) {
-        case IDC_RADIO_PRIMARY: case IDC_RADIO_SECONDARY:
-            if (HIWORD(wParam) == BN_CLICKED) {
-                conf->amb_mode = LOWORD(wParam) == IDC_RADIO_PRIMARY ? 0 : 1;
-                CheckDlgButton(hDlg, IDC_RADIO_PRIMARY, conf->amb_mode ? BST_UNCHECKED : BST_CHECKED);
-                CheckDlgButton(hDlg, IDC_RADIO_SECONDARY, conf->amb_mode ? BST_CHECKED : BST_UNCHECKED);
-                dxgi_Restart();
-            }
+        case IDC_RADIO_MEDIUM: case IDC_RADIO_PREVEALING:
+            conf->amb_calc = LOWORD(wParam) == IDC_RADIO_PREVEALING;
             break;
+        case IDC_RADIO_PRIMARY: case IDC_RADIO_SECONDARY:
+            conf->amb_mode = LOWORD(wParam) == IDC_RADIO_SECONDARY;
+            //dxgi_Restart();
+            //break;
         case IDC_BUTTON_RESET:
             dxgi_Restart();
             break;
-        default: return false;
         }
-    } break;
+        break;
     case WM_APP + 2: {
         RedrawButtonZone(hDlg);
     } break;
@@ -128,8 +127,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == brSlider) {
                 conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                if (eve->capt)
-                    eve->capt->needUpdate = true;
+                CaptureHelper* capt = (CaptureHelper*)eve->capt;
+                if (capt)
+                    capt->needUpdate = true;
                 break;
             }
             if ((HWND)lParam == gridX) {
@@ -157,8 +157,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         DRAWITEMSTRUCT* ditem = (DRAWITEMSTRUCT*)lParam;
         if (ditem->CtlID >= 2000) {
             int idx = ditem->CtlID - 2000;
+            CaptureHelper* capt = (CaptureHelper*)eve->capt;
             HBRUSH Brush = CreateSolidBrush(eve->capt ?
-                RGB(eve->capt->imgz[idx * 3 + 2], eve->capt->imgz[idx * 3 + 1], eve->capt->imgz[idx * 3]) :
+                RGB(capt->imgz[idx * 3 + 2], capt->imgz[idx * 3 + 1], capt->imgz[idx * 3]) :
                 GetSysColor(COLOR_BTNFACE));
             FillRect(ditem->hDC, &ditem->rcItem, Brush);
             if (mmap && mmap->ambients.size() && find(mmap->ambients.begin(), mmap->ambients.end(), idx) != mmap->ambients.end())

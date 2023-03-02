@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "WSAudioIn.h"
 #include "Common.h"
 
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
@@ -40,14 +41,14 @@ void DrawFreq(HWND hysto) {
 		graphZone.top = 2;
 		graphZone.left = 1;
 		graphZone.bottom--;
-
-		if (eve->audio) {
+		WSAudioIn* audio = (WSAudioIn*)eve->audio;
+		if (audio) {
 			SelectObject(hdc, GetStockObject(WHITE_PEN));
 			SelectObject(hdc, GetStockObject(WHITE_BRUSH));
 			for (int i = 0; i < NUMBARS; i++) {
 				int leftpos = (graphZone.right * i) / NUMBARS + graphZone.left,
 					rightpos = (graphZone.right * (i + 1)) / NUMBARS - 2 + graphZone.left;
-				Rectangle(hdc, leftpos, (255 - eve->audio->freqs[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top,
+				Rectangle(hdc, leftpos, (255 - audio->freqs[i]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top,
 					rightpos, graphZone.bottom);
 			}
 		}
@@ -57,8 +58,8 @@ void DrawFreq(HWND hysto) {
 					rightpos = (graphZone.right * (*t + 1)) / NUMBARS - 2 + graphZone.left;
 				int rectop = graphZone.bottom;
 				// gray block
-				if (eve->audio)
-					rectop = (255 - eve->audio->freqs[*t]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
+				if (audio)
+					rectop = (255 - audio->freqs[*t]) * (graphZone.bottom - graphZone.top) / 255 + graphZone.top;
 				SelectObject(hdc, GetStockObject(GRAY_BRUSH));
 				SelectObject(hdc, GetStockObject(NULL_PEN));
 				Rectangle(hdc, leftpos, graphZone.top, rightpos + 2, rectop);
@@ -151,7 +152,8 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			case 2: freqBlock->lowcut = clickLevel; break;
 			}
 		}
-		int freq = eve->audio ? eve->audio->pwfx->nSamplesPerSec >> 1 : 22050;
+		WSAudioIn* audio = (WSAudioIn*)eve->audio;
+		int freq = audio ? audio->pwfx->nSamplesPerSec >> 1 : 22050;
 		SetToolTip(hToolTip, "Freq: " + to_string(cIndex ? freq - (int)round((log(21 - cIndex) * freq / log_divider)) : 20) +
 			"-" + to_string(freq - (int)round((log(20 - cIndex) * freq / log_divider))) + " Hz, Level: " +
 			to_string(clickLevel * 100 / 255));
@@ -178,8 +180,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_inpType ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_inpType ? BST_UNCHECKED : BST_CHECKED);
+		CheckDlgButton(hDlg, conf->hap_inpType ? IDC_RADIO_INPUT : IDC_RADIO_OUTPUT, BST_CHECKED);
 
 		SetWindowLongPtr(GetDlgItem(hDlg, IDC_LEVELS), GWLP_WNDPROC, (LONG_PTR)FreqLevels);
 		hToolTip = CreateToolTip(GetDlgItem(hDlg, IDC_LEVELS), hToolTip);
@@ -193,13 +194,12 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam)) {
-		case IDC_RADIO_OUTPUT: case IDC_RADIO_INPUT:
+		case IDC_RADIO_OUTPUT: case IDC_RADIO_INPUT: {
 			conf->hap_inpType = LOWORD(wParam) == IDC_RADIO_INPUT;
-			CheckDlgButton(hDlg, IDC_RADIO_INPUT, conf->hap_inpType ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_RADIO_OUTPUT, conf->hap_inpType ? BST_UNCHECKED : BST_CHECKED);
-			if (eve->audio)
-				eve->audio->RestartDevice(conf->hap_inpType);
-		break;
+			WSAudioIn* audio = (WSAudioIn*)eve->audio;
+			if (audio)
+				audio->RestartDevice();
+		} break;
 		case IDC_FREQ_GROUP:
 			switch (HIWORD(wParam)) {
 			case LBN_SELCHANGE:

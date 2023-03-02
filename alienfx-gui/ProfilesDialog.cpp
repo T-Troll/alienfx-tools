@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "FXHelper.h"
 #include "ConfigFan.h"
 #include "common.h"
 #include <Shlwapi.h>

@@ -1,6 +1,8 @@
 #include "alienfx-gui.h"
 #include "common.h"
 #include "EventHandler.h"
+#include "FXHelper.h"
+#include "GridHelper.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
@@ -106,7 +108,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
 		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH),
 		gs_slider = GetDlgItem(hDlg, IDC_SLIDER_TACT);
-
+	auto grid = (GridHelper*)eve->grid;
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -138,8 +140,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				eve->ChangeEffectMode();
-				if (eve->grid)
-					eve->grid->RestartWatch();
+				if (grid)
+					grid->RestartWatch();
 				UpdateZoneList();
 			}
 			break;
@@ -209,8 +211,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			conf->geTact = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 			SetSlider(sTip1, conf->geTact);
-			if (eve->grid)
-				eve->grid->RestartWatch();
+			if (grid)
+				grid->RestartWatch();
 			break;
 		}
 		break;

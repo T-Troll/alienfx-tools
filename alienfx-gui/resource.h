@@ -206,6 +206,9 @@
 #define IDC_PROFILE_EFFECTS             1202
 #define IDC_CHECK                       1204
 #define IDC_CHECK_EFFBAT                1204
+#define IDC_RADIO_MEDIUM                1205
+#define IDC_RADIO2                      1206
+#define IDC_RADIO_PREVEALING            1206
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -227,7 +230,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1205
+#define _APS_NEXT_CONTROL_VALUE         1207
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

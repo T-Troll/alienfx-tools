@@ -1,10 +1,9 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <mutex>
 #include <random>
 #include "AlienFX_SDK.h"
-//#include "ConfigFan.h"
+#include "CustomMutex.h"
 
 // Profile flags
 #define PROF_DEFAULT		0x1
@@ -150,7 +149,7 @@ private:
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id); 
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
-	mutex zoneUpdate;
+	CustomMutex zoneUpdate;
 public:
 	DWORD startWindows;
 	DWORD startMinimized;
@@ -179,26 +178,18 @@ public:
 	// States
 	bool stateDimmed = false,
 		stateOn = true,
-		statePower = true,
-		stateScreen = true,
-		stateEffects = true;
-	bool lightsNoDelay = true;
+		statePower = true;
 	bool wasAWCC = false;
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 
 	// Ambient...
 	DWORD amb_mode;
+	DWORD amb_calc;
 	DWORD amb_shift;
 	ambgrid amb_grid;
 
 	// Haptics...
 	DWORD hap_inpType;
-
-	// final states
-	byte finalBrightness = 255;
-	bool finalPBState = false;
-
-	///*ConfigFan*/void *fan_conf;
 
 	// Profiles and zones
 	vector<profile*> profiles;
@@ -231,6 +222,5 @@ public:
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof = NULL);
 	bool IsActiveOnly(profile* prof = NULL);
-	bool SetStates();
 	void SetIconState();
 };

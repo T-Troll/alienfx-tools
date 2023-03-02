@@ -1,9 +1,6 @@
 #pragma once
-#include <mutex>
-#include "SysMonHelper.h"
-#include "CaptureHelper.h"
-#include "GridHelper.h"
-#include "WSAudioIn.h"
+//#include "CustomMutex.h"
+#include "ConfigHandler.h"
 
 class EventHandler
 {
@@ -14,14 +11,14 @@ private:
 	DWORD* aProcesses;
 
 public:
-	CaptureHelper* capt = NULL;
-	GridHelper* grid = NULL;
-	WSAudioIn* audio = NULL;
-	SysMonHelper* sysmon = NULL;
+	void* capt = NULL;
+	void* grid = NULL;
+	void* audio = NULL;
+	void* sysmon = NULL;
 
 	bool keyboardSwitchActive = false;
 
-	mutex modifyProfile;
+	CustomMutex modifyProfile;
 
 	void ChangePowerState();
 
@@ -34,8 +31,7 @@ public:
 
 	// Effects
 	void ChangeEffectMode();
-	void StopEffects();
-	void StartEffects();
+	void ChangeEffects(bool stop=false);
 
 	EventHandler();
 	~EventHandler();

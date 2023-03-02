@@ -99,7 +99,7 @@ void RedrawGridButtonZone(RECT* what = NULL) {
     RedrawWindow(cgDlg, &pRect, 0, RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 
-static AlienFX_SDK::Afx_action ambient_grid{ 0,0,0,0xff,0xff,0xff };
+static AlienFX_SDK::Afx_colorcode ambient_grid{ 0xff,0xff,0xff };
 
 void RecalcGridZone(RECT* what = NULL) {
     RECT full = what ? *what : RECT({ 0, 0, conf->mainGrid->x, conf->mainGrid->y });
@@ -120,20 +120,24 @@ void RecalcGridZone(RECT* what = NULL) {
                 for (int y = full.top; y < full.bottom; y++) {
                     int ind = ind(x, y);
                     if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
-                        if (conf->stateEffects) {
+                        if (fxhl->stateEffects) {
                             if (cs->events.size()) {
                                 if (!conf->colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
                                     conf->colorGrid[ind].first = Act2Code(&cs->events.front().from);
                                 conf->colorGrid[ind].last = Act2Code(&cs->events.back().to);
                             }
-                            if (cs->ambients.size()) {
-                                conf->colorGrid[ind].first = conf->colorGrid[ind].last = Act2Code(&ambient_grid);
-                            }
                             if (cs->haptics.size()) {
                                 conf->colorGrid[ind] = { &cs->haptics.front().colorfrom, &cs->haptics.back().colorto };
                             }
-                            if (cs->effect.trigger && cs->effect.effectColors.size()) {
-                                conf->colorGrid[ind] = { &cs->effect.effectColors.front(), &cs->effect.effectColors.back() };
+                            if (cs->ambients.size()) {
+                                conf->colorGrid[ind].first = conf->colorGrid[ind].last = &ambient_grid;
+                            }
+                            if (cs->effect.trigger) {
+                                if (cs->effect.trigger == 4)
+                                    conf->colorGrid[ind].first = conf->colorGrid[ind].last = &ambient_grid;
+                                else
+                                    if (cs->effect.effectColors.size())
+                                        conf->colorGrid[ind] = { &cs->effect.effectColors.front(), &cs->effect.effectColors.back() };
                             }
                         }
                         if (cs->color.size()) {

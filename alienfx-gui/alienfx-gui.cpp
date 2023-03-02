@@ -2,6 +2,7 @@
 #include <ColorDlg.h>
 #include <Dbt.h>
 #include "EventHandler.h"
+#include "FXHelper.h"
 #include "MonHelper.h"
 #include "common.h"
 
@@ -188,7 +189,7 @@ void SetTrayTip() {
 	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
 	if (eve) {
 		string effName;
-		if (conf->stateEffects) {
+		if (fxhl->stateEffects) {
 			effName += eve->sysmon ? "Monitoring " : "";
 			effName += eve->capt ? "Ambient " : "";
 			effName += eve->audio ? "Haptics " : "";
@@ -530,11 +531,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (noLightFX) {
 				// start back
 				fxhl->Start();
-				eve->StartEffects();
+				eve->ChangeEffects();
 			}
 			else {
 				// Stop all!
-				eve->StopEffects();
+				eve->ChangeEffects(true);
 				fxhl->Stop();
 			}
 			DebugPrint((string)"LightFX " + (noLightFX ? "Off" : "On") + "\n");
@@ -637,11 +638,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
-			conf->stateOn = conf->lightsOn; // patch for later StateScreen update
+			fxhl->stateScreen = true; // patch for later StateScreen update
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			eve->StartEffects();
+			eve->ChangeEffects();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
 				needUpdateFeedback = false;
@@ -655,10 +656,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case PBT_POWERSETTINGCHANGE: {
 			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*) lParam;
-			conf->stateScreen = !conf->offWithScreen || sParams->Data[0];
+			fxhl->stateScreen = !conf->offWithScreen || sParams->Data[0];
 			if (sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE)
-				conf->stateScreen = conf->stateScreen || GetSystemMetrics(SM_CMONITORS) > 1;
-			DebugPrint("Screen state changed to " + to_string(conf->stateScreen) + " (source: " +
+				fxhl->stateScreen = fxhl->stateScreen || GetSystemMetrics(SM_CMONITORS) > 1;
+			DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
 				(sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
 				+ ")\n");
 			fxhl->SetState();
@@ -668,12 +669,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Sleep/hibernate initiated\n");
 			conf->Save();
 			eve->StopProfiles();
-			eve->StopEffects();
+			eve->ChangeEffects(true);
 			// need to restore lights if followed screen
-			if (conf->offWithScreen) {
-				conf->stateScreen = true;
-				fxhl->SetState();
-			}
+			fxhl->stateScreen = true;
+			fxhl->SetState();
 			fxhl->Refresh(true);
 			fxhl->Stop();
 			if (mon)
@@ -682,9 +681,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_DEVICECHANGE:
-		//if (lParam) {
-		//	DEV_BROADCAST_DEVICEINTERFACE* dev = (DEV_BROADCAST_DEVICEINTERFACE*)lParam;
-		//}
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
 			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
@@ -692,7 +688,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				DebugPrint("Active device list changed!\n");
 				bool updated = fxhl->updateThread;
 				fxhl->Stop();
-				conf->afx_dev.AlienFXApplyDevices(false, devList, conf->finalBrightness, conf->finalPBState);
+				conf->afx_dev.AlienFXApplyDevices(false, devList, fxhl->finalBrightness, fxhl->finalPBState);
 				activeDevice = NULL;
 				if (conf->afx_dev.activeDevices && updated) {
 					fxhl->Start();

@@ -17,8 +17,8 @@ public:
 	~WSAudioIn();
 	void startSampling();
 	void stopSampling();
-	void RestartDevice(int type);
-	void init(int type);
+	void RestartDevice();
+	void init();
 	void release();
 
 	double waveD[NUMPTS];

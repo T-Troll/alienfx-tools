@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "FXHelper.h"
 #include "common.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
@@ -357,7 +358,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		dDlg = hDlg;
 		eve->StopProfiles();
-		eve->StopEffects();
+		eve->ChangeEffects(true);
 		fxhl->Stop();
 
 		if (!activeDevice)
@@ -681,7 +682,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	{
 		if (noLightFX) {
 			fxhl->Start();
-			eve->StartEffects();
+			eve->ChangeEffectMode();
 			eve->StartProfiles();
 		}
 		dDlg = NULL;

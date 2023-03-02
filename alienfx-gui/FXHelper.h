@@ -1,6 +1,5 @@
 #pragma once
 #include <queue>
-#include <mutex>
 #include <map>
 #include "ConfigHandler.h"
 
@@ -37,13 +36,20 @@ private:
 
 public:
 	HANDLE updateThread = NULL;
-	HANDLE stopQuery = NULL;
-	HANDLE haveNewElement = NULL;
+	HANDLE stopQuery;
+	HANDLE haveNewElement;
+	CustomMutex modifyQuery;
 	queue<LightQueryElement> lightQuery;
-	mutex modifyQuery;
 	LightEventData eData, maxData;
 	// Power button state...
 	map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;
+
+	// light states
+	bool stateScreen = true,
+		stateEffects = true,
+		finalPBState = false;
+	bool lightsNoDelay = true;
+	byte finalBrightness = 255;
 
 	FXHelper();
 

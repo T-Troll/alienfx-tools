@@ -38,7 +38,7 @@ WSAudioIn::WSAudioIn()
 	hEvent = CreateEvent(NULL, false, false, NULL);
 	cEvent = CreateEvent(NULL, false, false, NULL);
 
-	init(conf->hap_inpType);
+	init();
 }
 
 WSAudioIn::~WSAudioIn()
@@ -76,24 +76,24 @@ void WSAudioIn::stopSampling()
 	}
 }
 
-void WSAudioIn::RestartDevice(int type)
+void WSAudioIn::RestartDevice()
 {
 	release();
-	init(type);
+	init();
 }
 
-void WSAudioIn::init(int type)
+void WSAudioIn::init()
 {
 	static const REFERENCE_TIME hnsRequestedDuration = 500000; // 50 ms buffer
 	DWORD ret = 0;
 	// get device
-	if ((inpDev = GetDefaultMultimediaDevice(type ? eCapture : eRender)) &&
+	if ((inpDev = GetDefaultMultimediaDevice(conf->hap_inpType ? eCapture : eRender)) &&
 		inpDev->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient) == S_OK) {
 
 		pAudioClient->GetMixFormat(&pwfx);
 
 		if (pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-			type ? AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM :
+			conf->hap_inpType ? AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM :
 			AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,
 			hnsRequestedDuration, 0, pwfx, NULL) == S_OK) {
 
@@ -207,7 +207,7 @@ void resample(LPVOID lpParam)
 {
 	WSAudioIn *src = (WSAudioIn *) lpParam;
 
-	if (conf->lightsNoDelay && src->needUpdate) {
+	if (fxhl->lightsNoDelay && src->needUpdate) {
 		src->needUpdate = false;
 		fxhl->RefreshHaptics();
 	}

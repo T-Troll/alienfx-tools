@@ -1,5 +1,6 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
+#include "FXHelper.h"
 #include "MonHelper.h"
 #include "common.h"
 
@@ -63,8 +64,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_BATTDIM:
 			conf->dimmedBatt = state;
-			conf->SetStates();
-			fxhl->Refresh();
+			//conf->SetStates();
+			fxhl->SetState();
 			break;
 		case IDC_SCREENOFF:
 			conf->offWithScreen = state;
@@ -150,10 +151,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					break;
 				}
 			} else {
-				eve->StopEffects();
+				eve->ChangeEffects(true);
 				delete mon;
 				mon = NULL;
-				eve->StartEffects();
+				eve->ChangeEffects();
 			}
 			fxhl->FillAllDevs();
 			SetHotkeys();

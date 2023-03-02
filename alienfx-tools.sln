@@ -65,6 +65,9 @@ EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{05a1d711-23f5-4b90-9f62-ec3de2419b4d}*SharedItemsImports = 9
+		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
+		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
+		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3e950e09-5324-4c38-929a-93215f83efaa}*SharedItemsImports = 9
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{79be1884-5fdb-4851-bc17-39fb58101cba}*SharedItemsImports = 9

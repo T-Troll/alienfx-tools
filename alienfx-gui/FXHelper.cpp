@@ -1,6 +1,10 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "MonHelper.h"
+#include "FXHelper.h"
+#include "common.h"
+#include "GridHelper.h"
+#include "WSAudioIn.h"
 
 extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
@@ -269,14 +273,15 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 }
 
 void FXHelper::RefreshGrid() {
-	if (eve->grid) {
+	GridHelper* grid = (GridHelper*)eve->grid;
+	if (grid) {
 		bool wasChanged = false;
 		vector<AlienFX_SDK::Afx_action> cur{ {0} };
 		eve->modifyProfile.lock();
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 			if (!ce->gridop.passive) {
 				if (ce->effect.trigger == 4) { // ambient
-					auto capt = eve->grid->capt;
+					auto capt = grid->capt;
 					// check availability
 					if (!capt)
 						capt = new CaptureHelper(false);
@@ -418,7 +423,21 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 }
 
 void FXHelper::SetState(bool force) {
-	if (force || conf->SetStates()) {
+	bool oldStateOn = conf->stateOn, oldStateDim = conf->stateDimmed, oldStateEffect = stateEffects;
+	// Lights on state...
+	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
+	// Dim state...
+	conf->stateDimmed = conf->dimmed || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
+	// Effects state...
+	stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
+	// Brightness
+	finalBrightness = (byte)(conf->stateOn ? conf->stateDimmed ? 255 - conf->dimmingPower : 255 : 0);
+	// Power button state
+	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
+
+	if (force || oldStateOn != conf->stateOn || oldStateDim != conf->stateDimmed || oldStateEffect != stateEffects) {
+		if (mDlg)
+			conf-> SetIconState();
 		LightQueryElement brt{ force, 2 };
 		QueryCommand(&brt);
 	}
@@ -443,15 +462,15 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 
 void FXHelper::FillAllDevs() {
 	Stop();
-	conf->SetStates();
-	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL, conf->finalBrightness, conf->finalPBState);
+	//conf->SetStates();
+	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL, finalBrightness, finalPBState);
 	if (conf->afx_dev.activeDevices)
 		Start();
 }
 
 void FXHelper::Start() {
 	if (!updateThread) {
-		conf->lightsNoDelay = true;
+		lightsNoDelay = true;
 		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
 		DebugPrint("Light updates started.\n");
 	}
@@ -500,8 +519,9 @@ void FXHelper::RefreshOne(groupset* map, bool update) {
 }
 
 void FXHelper::RefreshAmbient() {
-	if (eve->capt) {
-		UCHAR* img = eve->capt->imgz;
+	auto capt = (CaptureHelper*)eve->capt;
+	if (capt) {
+		UCHAR* img = capt->imgz;
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 		vector<AlienFX_SDK::Afx_action> actions{ {0} };
 		bool wasChanged = false;
@@ -540,7 +560,7 @@ void FXHelper::RefreshAmbient() {
 
 void FXHelper::RefreshHaptics() {
 	if (eve->audio) {
-		int* freq = eve->audio->freqs;
+		int* freq = ((WSAudioIn*)eve->audio)->freqs;
 		vector<AlienFX_SDK::Afx_action> actions;
 		bool wasChanged = false;
 		eve->modifyProfile.lock();
@@ -623,8 +643,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 			switch (current.command) {
 			case 2: { // set brightness
-				bool pbstate = current.light || conf->finalPBState, needRefresh = false;
-				byte fbright = current.light ? 255 : conf->finalBrightness;
+				bool pbstate = current.light || src->finalPBState, needRefresh = false;
+				byte fbright = current.light ? 255 : src->finalBrightness;
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++)
 					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
 						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
@@ -649,9 +669,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							src->UpdateGlobalEffect(dev->dev);
 					}
 
-				conf->lightsNoDelay = src->lightQuery.size() < (conf->afx_dev.activeLights << 3);
+				src->lightsNoDelay = src->lightQuery.size() < (conf->afx_dev.activeLights << 3);
 #ifdef _DEBUG
-				if (!conf->lightsNoDelay)
+				if (!src->lightsNoDelay)
 					DebugPrint("Query so big, delayed!\n");
 #endif // _DEBUG
 
@@ -716,7 +736,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					auto lp = dv->begin();
 					for (; lp != dv->end(); lp++)
 						if (lp->index == lid) {
-							DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
+							//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
 							lp->act = ablock.act;
 						}
 					if (lp == dv->end())

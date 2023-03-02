@@ -7,9 +7,9 @@ extern ConfigHandler* conf;
 extern FXHelper* fxhl;
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
-	if (grp->effect.effectColors.size() > 1) {
+	if (grp->effect.trigger == 4 || grp->effect.effectColors.size()) {
 		grideffop* gridop = &grp->gridop;
-		int cx = max(x + 1, cz->xMax - x), cy = max(y + 1, cz->yMax - y), esize;
+		int cx = max(x + 1, cz->xMax - x), cy = max(y + 1, cz->yMax - y), esize = 0;
 		if (grp->gauge) {
 			switch (grp->gauge) {
 			case 1:
@@ -60,7 +60,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 						zonemap* zone = conf->FindZoneMap(it->group);
 						for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
 							if (pos->light == lgh->lgh) {
-								eve->grid->StartGridRun(&(*it), zone, pos->x, pos->y);
+								((GridHelper*)eve->grid)->StartGridRun(&(*it), zone, pos->x, pos->y);
 								break;
 							}
 					}
@@ -72,7 +72,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
-	if (conf->lightsNoDelay)
+	if (fxhl->lightsNoDelay)
 		fxhl->RefreshGrid();
 }
 

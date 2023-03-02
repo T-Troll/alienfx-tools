@@ -1,6 +1,10 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "MonHelper.h"
+#include "SysMonHelper.h"
+#include "CaptureHelper.h"
+#include "GridHelper.h"
+#include "WSAudioIn.h"
 #include <Psapi.h>
 
 // debug print
@@ -28,15 +32,15 @@ EventHandler::EventHandler()
 	eve = this;
 	aProcesses = new DWORD[maxProcess];
 	ChangePowerState();
+	ChangeEffectMode();
 	if (conf->startMinimized)
 		StartProfiles();
-	ChangeEffectMode();
 }
 
 EventHandler::~EventHandler()
 {
 	StopProfiles();
-	StopEffects();
+	ChangeEffects(true);
 	delete[] aProcesses;
 }
 
@@ -80,62 +84,47 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 
 void EventHandler::ChangeEffectMode() {
 	fxhl->SetState();
-	StartEffects();
+	ChangeEffects();
 }
 
-void EventHandler::StopEffects() {
-	if (sysmon) {	// Events
-		delete sysmon; sysmon = NULL;
+void EventHandler::ChangeEffects(bool stop) {
+	bool haveMon = false, haveAmb = false, haveHap = false, haveGrid = false;
+	if (!stop && fxhl->stateEffects && noLightFX) {
+		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
+			if (it->events.size() && !sysmon) {
+				haveMon = true;
+				sysmon = new SysMonHelper();
+			}
+			if (it->ambients.size() && !capt) {
+				haveAmb = true;
+				capt = new CaptureHelper(true);
+			}
+			if (it->haptics.size() && !audio) {
+				haveHap = true;
+				audio = new WSAudioIn();
+			}
+			if (it->effect.trigger) {
+				haveGrid = true;
+				if (!grid)
+					grid = new GridHelper();
+				else
+					((GridHelper*)grid)->RestartWatch();
+			}
+		}
 	}
-	if (capt) {		// Ambient
-		delete capt; capt = NULL;
+	if (!haveMon && sysmon) {	// System monitoring
+		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
-	if (audio) {	// Haptics
-		delete audio; audio = NULL;
-	}
-	if (grid) {		// Grid
-		delete grid; grid = NULL;
+	if (!haveAmb && capt) {		// Ambient
+			delete (CaptureHelper*)capt; capt = NULL;
+		}
+	if (!haveHap && audio) {	// Haptics
+			delete (WSAudioIn*)audio; audio = NULL;
+		}
+	if (!haveGrid && grid) {
+		delete (GridHelper*)grid; grid = NULL;
 	}
 	fxhl->Refresh();
-}
-
-void EventHandler::StartEffects() {
-	if (conf->stateEffects && noLightFX) {
-		bool haveMon = false, haveAmb = false, haveHap = false, haveGrid = false;
-		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
-			if (it->events.size()) haveMon = true;
-			if (it->ambients.size()) haveAmb = true;
-			if (it->haptics.size()) haveHap = true;
-			if (it->effect.trigger) haveGrid = true;
-		}
-		if (haveMon && !sysmon)
-			sysmon = new SysMonHelper();
-		if (!haveMon && sysmon) {	// System monitoring
-			delete sysmon; sysmon = NULL;
-		}
-		if (haveAmb && !capt)
-			capt = new CaptureHelper(true);
-		if (!haveAmb && capt) {		// Ambient
-				delete capt; capt = NULL;
-			}
-		if (haveHap && !audio)
-			audio = new WSAudioIn();
-		if (!haveHap && audio) {	// Haptics
-				delete audio; audio = NULL;
-			}
-		if (haveGrid)
-			if (!grid)
-				grid = new GridHelper();
-			else
-				grid->RestartWatch();
-		else
-			if (grid) {		// Grid
-				delete grid; grid = NULL;
-			}
-		fxhl->Refresh();
-	}
-	else
-		StopEffects();
 }
 
 string EventHandler::GetProcessName(DWORD proc) {

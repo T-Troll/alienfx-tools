@@ -135,19 +135,21 @@ void CMonProc(LPVOID param) {
 						src->senBoosts[fnum][fIter->first] = cBoost;
 					}
 				}
-				if (!src->fanSleep[fnum]) {
-					int rawBoost = (int)round((fan_conf->GetFanScale((byte)fnum) * src->boostSets[fnum]) / 100.0);
+				int rawBoost = (int)round((fan_conf->GetFanScale((byte)fnum) * src->boostSets[fnum]) / 100.0);
+				if (!src->fanSleep[fnum] || rawBoost <= 100) {
+					byte boostOld = src->boostRaw[fnum];
+					src->fanSleep[fnum] = 0;
 					// Check overboost tricks...
-					if (src->boostRaw[fnum] < 90 && rawBoost > 100) {
-						acpi->SetFanBoost(fnum, 100/*, true*/);
-						src->fanSleep[fnum] = ((100 - src->boostRaw[fnum]) >> 3) + 2;
+					if (boostOld < 90 && rawBoost > 100) {
+						acpi->SetFanBoost(fnum, 100);
+						src->fanSleep[fnum] = ((100 - boostOld) >> 3) + 2;
 						DebugPrint("Overboost started, fan " + to_string(fnum) + " locked for " + to_string(src->fanSleep[fnum]) + " tacts(old "
-							+ to_string(src->boostRaw[fnum]) + ", new " + to_string(rawBoost) + ")!\n");
+							+ to_string(boostOld) + ", new " + to_string(rawBoost) + ")!\n");
 					}
 					else
-						if (rawBoost != src->boostRaw[fnum]) {
-							if (src->boostRaw[fnum] > rawBoost)
-								rawBoost += 15 * ((src->boostRaw[fnum] - rawBoost) >> 4);
+						if (rawBoost != boostOld) {
+							if (boostOld > rawBoost)
+								rawBoost += 15 * ((boostOld - rawBoost) >> 4);
 							// fan RPM stuck patch v2
 							//if (acpi->GetSystemID() == 3200 && src->boostRaw[i] > 50) {
 							//	int pct = acpi->GetFanPercent(i) << 3;

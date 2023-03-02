@@ -11,7 +11,6 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
-
 	fan_conf = new ConfigFan();
 }
 
@@ -19,7 +18,6 @@ ConfigHandler::~ConfigHandler() {
 	Save();
 	delete fan_conf;
 	afx_dev.SaveMappings();
-
 	RegCloseKey(hKeyMain);
 	RegCloseKey(hKeyZones);
 	RegCloseKey(hKeyProfiles);
@@ -79,27 +77,6 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 
 bool ConfigHandler::IsActiveOnly(profile* prof) {
 	return (prof ? prof->flags : activeProfile->flags) & PROF_ACTIVE;
-}
-
-bool ConfigHandler::SetStates() {
-	bool oldStateOn = stateOn, oldStateDim = stateDimmed, oldStateEffect = stateEffects;
-	// Lights on state...
-	stateOn = lightsOn && stateScreen && (!offOnBattery || statePower);
-	// Dim state...
-	stateDimmed = dimmed || activeProfile->flags & PROF_DIMMED || (dimmedBatt && !statePower);
-	// Effects state...
-	stateEffects = stateOn && enableEffects && (effectsOnBattery || statePower) && activeProfile->effmode;
-	// Brightness
-	finalBrightness = (byte)(stateOn ? stateDimmed ? 255 - dimmingPower : 255 : 0);
-	// Power button state
-	finalPBState = stateOn ? !stateDimmed || dimPowerButton : offPowerButton;
-
-	if (oldStateOn != stateOn || oldStateDim != stateDimmed || oldStateEffect != stateEffects) {
-		if (mDlg)
-			SetIconState();
-		return true;
-	}
-	return false;
 }
 
 void ConfigHandler::SetIconState() {
@@ -168,6 +145,7 @@ void ConfigHandler::Load() {
 
 	// Ambient....
 	GetReg("Ambient-Shift", &amb_shift, 40);
+	GetReg("Ambient-Calc", &amb_calc);
 	GetReg("Ambient-Mode", &amb_mode);
 	GetReg("Ambient-Grid", &amb_grid.ag, 0x30004);
 
@@ -334,6 +312,7 @@ void ConfigHandler::Save() {
 
 	// Ambient
 	SetReg("Ambient-Shift", amb_shift);
+	SetReg("Ambient-Calc", amb_calc);
 	SetReg("Ambient-Mode", amb_mode);
 	SetReg("Ambient-Grid", amb_grid.ag);
 

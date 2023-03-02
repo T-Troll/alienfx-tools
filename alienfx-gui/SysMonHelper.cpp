@@ -83,7 +83,7 @@ void CEventProc(LPVOID param)
 
 	LightEventData* cData = &src->cData;
 
-	if (conf->lightsNoDelay) {
+	if (fxhl->lightsNoDelay) {
 
 		SYSTEM_POWER_STATUS state;
 		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
@@ -166,7 +166,7 @@ void CEventProc(LPVOID param)
 		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData->CPU = (byte)cCPUVal.longValue);
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData->GPU);
 
-		if (conf->lightsNoDelay) { // update lights
+		if (fxhl->lightsNoDelay) { // update lights
 			fxhl->RefreshCounters(cData);
 			memcpy(&fxhl->eData, cData, sizeof(LightEventData));
 		}

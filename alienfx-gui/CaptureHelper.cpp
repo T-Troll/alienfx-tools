@@ -139,19 +139,49 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 		if (res != WAIT_TIMEOUT) {
 			UINT idx = src->idx;
 			ULONG64 r = 0, g = 0, b = 0;
+			byte* freqval = NULL; 
+			int freqcount = 0;
+			//map<DWORD, int> counters;
 			for (UINT y = 0; y < cap->hh; y += divider) {
 				UINT pos = idx;
 				for (UINT x = 0; x < cap->ww; x += divider) {
-					r += scrImg[pos++];
-					g += scrImg[pos++];
-					b += scrImg[pos++];
-					pos++;
+					//counters[*(DWORD*)(scrImg + pos)]++;
+					switch (conf->amb_calc) {
+					case 0: // medium
+						r += scrImg[pos++];
+						g += scrImg[pos++];
+						b += scrImg[pos++];
+						pos++;
+						break;
+					case 1: // prevealing
+						if (!freqcount) {
+							freqval = scrImg + pos;
+							freqcount++;
+						}
+						else
+							if (!memcmp(scrImg + pos, freqval, 3))
+								freqcount++;
+							else
+								freqcount--;
+						pos += 4;
+					}
 				}
 				idx += stride;
 			}
-			src->dst[0] = (UCHAR) (r / cap->div);
-			src->dst[1] = (UCHAR) (g / cap->div);
-			src->dst[2] = (UCHAR) (b / cap->div);
+			//for (auto cc = counters.begin(); cc != counters.end(); cc++)
+			//	if (cc->second > freqcount) {
+			//		freqcount = cc->second;
+			//		memcpy(src->dst, &cc->first, 3);
+			//	}
+			switch (conf->amb_calc) {
+			case 0: // medium
+				src->dst[0] = (byte)(r / cap->div);
+				src->dst[1] = (byte)(g / cap->div);
+				src->dst[2] = (byte)(b / cap->div);
+				break;
+			case 1: // prev
+				memcpy(src->dst, freqval, 3);
+			}
 			SetEvent(src->pfEvent);
 		}
 	return 0;
@@ -194,7 +224,7 @@ void CInProc(LPVOID param)
 		if (memcmp(src->imgz, src->imgo, src->gridDataSize)) {
 			memcpy(src->imgz, src->imgo, src->gridDataSize);
 			src->needUpdate = true;
-			if (src->needLightsUpdate && conf->lightsNoDelay)
+			if (src->needLightsUpdate && fxhl->lightsNoDelay)
 				fxhl->RefreshAmbient();
 		}
 	}

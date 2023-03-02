@@ -610,7 +610,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
         "ProductCode" = "8:{FC735424-A266-42CC-BF83-EBA20177AA9E}"
-        "PackageCode" = "8:{598C3D92-DF8C-409B-9ADF-01485608F5E9}"
+        "PackageCode" = "8:{3EC603B1-16E9-4A40-A197-7E90F6A91F72}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
