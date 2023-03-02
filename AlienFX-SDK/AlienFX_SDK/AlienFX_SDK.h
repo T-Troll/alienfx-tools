@@ -269,16 +269,12 @@ namespace AlienFX_SDK {
 		// Apply device vector to fxdevs structure
 		// activeOnly - clear inactive devices from list
 		// devList - list of active devices
-		// brightness - default device brightness
-		// power - set brightness to power/indicator lights as well
-		void AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList, byte brightness, bool power);
+		void AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList);
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
 		// activeOnly - clear inactive devices from list
-		// acc - link to AlienFan_SDK::Control object
-		// brightness - default device brightness
-		// power - set brightness to power/indicator lights as well
-		void AlienFXAssignDevices(bool activeOnly = true, void* acc = NULL, byte brightness=255, bool power=false);
+		// acc - pointer to AlienFan_SDK::Control object for ACPI lights
+		void AlienFXAssignDevices(bool activeOnly = true, void* acc = NULL);
 
 		// load light names from registry
 		void LoadMappings();

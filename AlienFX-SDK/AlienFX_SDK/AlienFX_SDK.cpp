@@ -898,7 +898,7 @@ chain++;
 		return devs;
 	}
 
-	void Mappings::AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList, byte brightness, bool power) {
+	void Mappings::AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList) {
 		activeLights = 0;
 		activeDevices = (int)devList.size();
 
@@ -929,15 +929,14 @@ chain++;
 			if (!dev->dev) {
 				dev->dev = *i;
 				dev->version = (*i)->version;
-				dev->dev->SetBrightness(brightness, &dev->lights, power);
 			}
 			activeLights += (int)dev->lights.size();
 		}
 		devList.clear();
 	}
 
-	void Mappings::AlienFXAssignDevices(bool activeOnly, void* acc, byte brightness, bool power) {
-		AlienFXApplyDevices(activeOnly, AlienFXEnumDevices(acc), brightness, power);
+	void Mappings::AlienFXAssignDevices(bool activeOnly, void* acc) {
+		AlienFXApplyDevices(activeOnly, AlienFXEnumDevices(acc));
 	}
 
 	Afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {

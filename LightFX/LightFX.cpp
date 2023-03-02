@@ -58,6 +58,8 @@ AlienFX_SDK::Afx_group* GetGroupID(unsigned int mask) {
 LFX_RESULT FillDevs() {
 	if (afx_map) {
 		afx_map->AlienFXAssignDevices();
+		for (auto dev = afx_map->fxdevs.begin(); dev != afx_map->fxdevs.end(); dev++)
+			dev->dev->SetBrightness(255, &dev->lights, false);
 		if (afx_map->activeDevices) {
 			// now map lights to zones
 			for (int g = 0; g < 4; g++)

@@ -150,6 +150,9 @@ int main(int argc, char* argv[])
 	if (afx_map.activeDevices) {
 		printf(", %d devices found.\n", afx_map.activeDevices);
 		devType = 1;
+		// set brightness
+		for (auto dev = afx_map.fxdevs.begin(); dev != afx_map.fxdevs.end(); dev++)
+			dev->dev->SetBrightness(255, &dev->lights, true);
 	} else
 		printf(", devices not found.\n");
 

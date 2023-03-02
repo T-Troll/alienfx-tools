@@ -13,7 +13,7 @@ struct LightQueryElement {
 	DWORD light;
 	byte command; // 0 - color, 1 - update, 2 - set brightness
 	byte actsize;
-	AlienFX_SDK::Afx_action actions[10];
+	AlienFX_SDK::Afx_action actions[9];
 };
 
 struct deviceQuery {
@@ -55,7 +55,6 @@ public:
 
 	~FXHelper();
 	AlienFX_SDK::Afx_action BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to);
-	void FillAllDevs();
 	void Start();
 	void Stop();
 	void Refresh(bool force = false);

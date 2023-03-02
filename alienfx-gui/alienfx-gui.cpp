@@ -105,6 +105,14 @@ void SetHotkeys() {
 
 void ReloadProfileList();
 
+void FillAllDevs() {
+	fxhl->Stop();
+	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
+	if (conf->afx_dev.activeDevices)
+		fxhl->Start();
+	fxhl->SetState();
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -139,6 +147,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 	fxhl = new FXHelper();
+	FillAllDevs();
 	eve = new EventHandler();
 
 	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
@@ -688,10 +697,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				DebugPrint("Active device list changed!\n");
 				bool updated = fxhl->updateThread;
 				fxhl->Stop();
-				conf->afx_dev.AlienFXApplyDevices(false, devList, fxhl->finalBrightness, fxhl->finalPBState);
+				conf->afx_dev.AlienFXApplyDevices(false, devList);
 				activeDevice = NULL;
 				if (conf->afx_dev.activeDevices && updated) {
 					fxhl->Start();
+					fxhl->SetState();
 					fxhl->Refresh();
 				}
 				SetMainTabs();

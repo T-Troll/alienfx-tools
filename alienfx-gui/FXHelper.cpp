@@ -1,6 +1,5 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
-#include "MonHelper.h"
 #include "FXHelper.h"
 #include "common.h"
 #include "GridHelper.h"
@@ -10,14 +9,12 @@ extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 extern EventHandler* eve;
-extern MonHelper* mon;
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
 FXHelper::FXHelper() {
 	stopQuery = CreateEvent(NULL, false, false, NULL);
 	haveNewElement = CreateEvent(NULL, false, false, NULL);
-	FillAllDevs();
 }
 
 FXHelper::~FXHelper() {
@@ -458,14 +455,6 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 					{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
 		}
 	}
-}
-
-void FXHelper::FillAllDevs() {
-	Stop();
-	//conf->SetStates();
-	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL, finalBrightness, finalPBState);
-	if (conf->afx_dev.activeDevices)
-		Start();
 }
 
 void FXHelper::Start() {
