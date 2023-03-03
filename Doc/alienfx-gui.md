@@ -130,6 +130,10 @@ For gauge zones, zone will follow the difference between screen color and black.
 You can select which display (primary or all secondary) to follow, as well as define dimming to make light brightness be balanced with screen brightness.  
 "Reset" button restart color capturing from screen, it's useful in some situations like DirectX 12 game quit.
 
+"Calculation" block defines ambient color calculation algorithm:
+- Medium - color will be calculated as an average value between all block colors. Can be not so precise if many different colors into block.
+- Prevailing - detection of the color most present into the block. Precise and fast, but can provide incorrect result if no prevailing color.
+
 "Screen zones" grid define which screen area current zone will follow. Click on corresponding are to add/remove it to zone reactions.
 In case of "Ambient" effect active, button colors will filled from the screen one.
 Sliders below and right to screen area grid used to change grid density, providing more or less areas screen will be divided. Default is 4x3.  
