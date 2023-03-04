@@ -40,7 +40,7 @@ HWND mDlg = NULL, dDlg = NULL;
 AlienFX_SDK::Afx_action* mod;
 
 HANDLE haveLightFX;
-bool noLightFX = true;
+//bool noLightFX = true;
 
 // tooltips
 HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
@@ -427,7 +427,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 
 		haveLightFX = CreateEvent(NULL, true, false, "LightFXActive");
-		SetTimer(hDlg, 0, 750, NULL);
+		//SetTimer(hDlg, 0, 750, NULL);
 
 	} break;
 	case WM_COMMAND:
@@ -533,24 +533,24 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		}
 		break;
-	case WM_TIMER: {
-		if (noLightFX != (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT)) {
-			// lightfx block state changed
-			noLightFX = !noLightFX;
-			if (noLightFX) {
-				// start back
-				fxhl->Start();
-				eve->ChangeEffects();
-			}
-			else {
-				// Stop all!
-				eve->ChangeEffects(true);
-				fxhl->Stop();
-			}
-			DebugPrint((string)"LightFX " + (noLightFX ? "Off" : "On") + "\n");
-		}
-		SetTrayTip();
-	} break;
+	//case WM_TIMER: {
+	//	if (noLightFX != (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT)) {
+	//		// lightfx block state changed
+	//		noLightFX = !noLightFX;
+	//		if (noLightFX) {
+	//			// start back
+	//			fxhl->Start();
+	//			eve->ChangeEffects();
+	//		}
+	//		else {
+	//			// Stop all!
+	//			eve->ChangeEffects(true);
+	//			fxhl->Stop();
+	//		}
+	//		DebugPrint((string)"LightFX " + (noLightFX ? "Off" : "On") + "\n");
+	//	}
+	//	SetTrayTip();
+	//} break;
 	case WM_APP + 1: {
 		switch (LOWORD(lParam))	{
 		case WM_LBUTTONDBLCLK:

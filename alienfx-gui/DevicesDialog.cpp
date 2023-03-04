@@ -26,7 +26,7 @@ extern FXHelper* fxhl;
 extern EventHandler* eve;
 extern HWND mDlg;
 extern int tabSel;
-extern bool noLightFX;
+//extern bool noLightFX;
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -680,11 +680,11 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 	{
-		if (noLightFX) {
+		//if (noLightFX) {
 			fxhl->Start();
 			eve->ChangeEffectMode();
 			eve->StartProfiles();
-		}
+		//}
 		dDlg = NULL;
 	} break;
 	default: return false;

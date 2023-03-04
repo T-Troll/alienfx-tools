@@ -25,7 +25,7 @@ class FXHelper
 {
 private:
 
-	bool blinkStage = false;
+	bool blinkStage = false, wasLFX = false;
 	int oldtest = -1;
 
 	void SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0);

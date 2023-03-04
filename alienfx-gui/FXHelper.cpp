@@ -9,6 +9,7 @@ extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 extern EventHandler* eve;
+extern HANDLE haveLightFX;
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
@@ -397,12 +398,19 @@ void FXHelper::RefreshGrid() {
 }
 
 void FXHelper::QueryCommand(LightQueryElement* lqe) {
-	if (updateThread) {
-		modifyQuery.lock();
-		lightQuery.push(*lqe);
-		modifyQuery.unlock();
-		SetEvent(haveNewElement);
-	}
+	if (updateThread)
+		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
+			if (wasLFX) {
+				wasLFX = false;
+				SetState();
+			}
+			modifyQuery.lock();
+			lightQuery.push(*lqe);
+			modifyQuery.unlock();
+			SetEvent(haveNewElement);
+		}
+		else
+			wasLFX = true;
 }
 
 void FXHelper::QueryUpdate(bool force) {

@@ -110,7 +110,7 @@ namespace AlienFX_SDK {
 			if (size == 4) {
 				bool res = HidD_SetFeature(devHandle, buffer, length);
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(7); // Need wait for ACK
+				Sleep(8); // Need wait for ACK
 				return res;
 			}
 			else {

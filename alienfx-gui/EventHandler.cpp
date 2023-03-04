@@ -18,7 +18,8 @@ extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigFan* fan_conf;
-extern bool noLightFX;
+//extern bool noLightFX;
+extern void SetTrayTip();
 
 //extern void SetTrayTip();
 
@@ -85,11 +86,12 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 void EventHandler::ChangeEffectMode() {
 	fxhl->SetState();
 	ChangeEffects();
+	SetTrayTip();
 }
 
 void EventHandler::ChangeEffects(bool stop) {
 	bool haveMon = false, haveAmb = false, haveHap = false, haveGrid = false;
-	if (!stop && fxhl->stateEffects && noLightFX) {
+	if (!stop && fxhl->stateEffects /*&& noLightFX*/) {
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			if (it->events.size() && !sysmon) {
 				haveMon = true;

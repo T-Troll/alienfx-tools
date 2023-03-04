@@ -4,7 +4,7 @@ Better AlienFX/LightFX SDK than Dell official's one without any limitations:
 - Better performance. Update rate can be very high for modern devices.
 - Tiny footprint both in code and RAM.
 - Full hardware features support - per-key and per-device effect set, hardware brightness, hardware power buttons.
-- Using direct hardware access, so no additional software requred.
+- Using direct hardware access, so no additional software required.
 
 ### Supported devices:
 
@@ -14,8 +14,8 @@ Read more details about supported devices and models [here](https://github.com/T
 ### Supported device API versions:
 
 - ACPI-controlled lights - 3 lights, 8 bit/color (v0) - Aurora R6/R7 (using this API require AlienFan-SDK library from [AlienFX-Tools](https://github.com/T-Troll/alienfx-tools) project).
-- 9 bytes 8 bit/color, reportID 2 control (v1) - Ancient notebooks (like m14x)
-- 9 bytes 4 bit/color, reportID 2 control (v2) - Older notebooks (like 13R1/R2)
+- 9 bytes 8 bit/color, reportID 2 control (v1) - Ancient notebooks - deprecated and removed.
+- 9 bytes 4 bit/color, reportID 2 control (v2) - Older notebooks (like m14/17x, 13R1/R2)
 - 12 bytes 8 bit/color, reportID 2 control (v3) - Old notebooks (like 15R5)
 - 34 bytes 8 bit/color, reportID 0 control (v4) - Modern notebooks/desktop (all m-series, x-series, Dell g-series, Aurora R8+)
 - 64 bytes 8 bit/color, featureID 0xcc control (v5) - Modern notebooks internal per-key RGB keyboard (all m- and x-series)
@@ -34,8 +34,9 @@ Some notebooks can have 2 devices - APIv4 (for logo, power button, etc) and APIv
 - Change multiply lights color
 - Change light hardware effect (except APIv0 and v5)
 - Change multiply lights hardware effects (except APIv0 and APIv5)
-- Hardware-backed global light off/on/dim (dim is software for APIv0-v3 and v6 and should be done by application)
-- Global hardware light effects (APIv5, v8)
+- Hardware-backed global light off/on/dim (dim is software for v6 and should be done by application)
+- Global (all lights) hardware light effects (APIv5, v8)
+- Power/indicator button light control (AC/battery hardware switch and effects)
 
 ### Initialization
 ```C++
@@ -89,9 +90,9 @@ size_t how_many_devices = info_object.fxdevs.size();
 // define color/effect structure...
 AlienFX_SDK::Afx_action c = {0,0,0,225,134,245};
 
-// Set color for LightID 2 at single device
+// Set color for LightID 3 at single device
 device.SetColor(3, c);
-// But SetColor is a wrapper for SetAction, so next line is equvivalent (also it use info_object devices list object)
+// But SetColor is a wrapper for SetAction, so next line is equivalent (also it use info_object devices list object)
 info_object.fxdevs[0].dev->SetAction(3, &c);
 
 // Or set multiply lights at the same color
@@ -109,3 +110,4 @@ device.UpdateColors();
 
 ##### Special Thanks
 Thanks go to Ingrater (http://3d.benjamin-thaut.de/) for his work on AlienFX and providing the protocol for me to work on.
+Welcome joined investigation with [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB/) team, providing clarification with APIv4 (tron) interface!

@@ -367,6 +367,7 @@ void ReloadFanView(HWND list) {
         ListView_InsertColumn(list, 0, &lCol);
     }
     for (int i = 0; i < mon->acpi->fans.size(); i++) {
+        auto fanControls = &fan_conf->lastProf->fanControls[i];
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
         string name = GetFanName(i);
         lItem.pszText = (LPSTR)name.c_str();
@@ -376,8 +377,8 @@ void ReloadFanView(HWND list) {
         else
             lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        if (fan_conf->lastProf->fanControls[i].find(fan_conf->lastSelectedSensor) != fan_conf->lastProf->fanControls[i].end() 
-            && fan_conf->lastProf->fanControls[i][fan_conf->lastSelectedSensor].active) {
+        if (fanControls->find(fan_conf->lastSelectedSensor) != fanControls->end()
+            && (*fanControls)[fan_conf->lastSelectedSensor].active) {
             ListView_SetCheckState(list, i, true);
         }
     }

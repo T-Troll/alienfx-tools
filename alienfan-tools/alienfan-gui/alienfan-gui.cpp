@@ -106,15 +106,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
     else {
-        if (AddTrayIcon(&niDataFC, false)) {
-            ShowNotification(&niDataFC, "Error", "Compatible hardware not found!");
+        if (AddTrayIcon(niData, false)) {
+            ShowNotification(niData, "Error", "Compatible hardware not found!");
             Sleep(5000);
         }
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
     }
     delete mon;
     DoStopService(fan_conf->wasAWCC, false);
-    Shell_NotifyIcon(NIM_DELETE, &niDataFC);
+    Shell_NotifyIcon(NIM_DELETE, niData);
     fan_conf->Save();
     delete fan_conf;
     return 0;
@@ -127,6 +127,20 @@ void RestoreApp() {
     SetForegroundWindow(mDlg);
 }
 
+void SetTrayTip() {
+    string name = "Power mode: ";
+    if (fan_conf->lastProf->gmode)
+        name += "G-mode";
+    else
+        name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
+
+    for (int i = 0; i < mon->acpi->fans.size(); i++) {
+        name += "\n" + GetFanName(i, true);
+    }
+    strcpy_s(niData->szTip, 127, name.c_str());
+    Shell_NotifyIcon(NIM_MODIFY, niData);
+}
+
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -135,16 +149,16 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
-        AddTrayIcon(&niDataFC, fan_conf->updateCheck);
+        AddTrayIcon(niData, fan_conf->updateCheck);
         return true;
     }
 
     switch (message) {
     case WM_INITDIALOG:
     {
-        niDataFC.hWnd = hDlg;
+        niData->hWnd = hDlg;
 
-        AddTrayIcon(&niDataFC, fan_conf->updateCheck);
+        AddTrayIcon(niData, fan_conf->updateCheck);
 
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
@@ -235,7 +249,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SAVE:
             fan_conf->Save();
-            ShowNotification(&niDataFC, "Configuration saved!", "Configuration saved successfully.");
+            ShowNotification(niData, "Configuration saved!", "Configuration saved successfully.");
             break;
         case IDM_SETTINGS_STARTWITHWINDOWS:
         {
@@ -252,7 +266,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             fan_conf->updateCheck = !fan_conf->updateCheck;
             CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
             if (fan_conf->updateCheck)
-                CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
+                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
         } break;
         case IDM_SETTINGS_KEYBOARDSHORTCUTS:
             fan_conf->keyShortcuts = !fan_conf->keyShortcuts;
@@ -422,7 +436,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             mon->Start();
             if (fan_conf->updateCheck) {
                 needUpdateFeedback = false;
-                CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
+                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
             }
             break;
         case PBT_APMSUSPEND:
@@ -449,17 +463,17 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                     ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
                 }
             }
-            string name = "Power mode: ";
-            if (fan_conf->lastProf->gmode)
-                name += "G-mode";
-            else
-                name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
+            //string name = "Power mode: ";
+            //if (fan_conf->lastProf->gmode)
+            //    name += "G-mode";
+            //else
+            //    name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
 
-            for (int i = 0; i < mon->acpi->fans.size(); i++) {
-                name += "\n" + GetFanName(i, true);
-            }
-            strcpy_s(niDataFC.szTip, 127, name.c_str());
-            Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
+            //for (int i = 0; i < mon->acpi->fans.size(); i++) {
+            //    name += "\n" + GetFanName(i, true);
+            //}
+            //strcpy_s(niDataFC.szTip, 127, name.c_str());
+            //Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
         }
     } break;
     default: return false;

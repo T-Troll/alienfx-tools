@@ -184,7 +184,6 @@ int main(int argc, char* argv[])
         if (command == "percent") {
             for (int i = 0; i < acpi.fans.size(); i++)
                 if (args.empty() || args[0].num == i) {
-                    //auto maxboost = fan_conf.boosts.find(i);
                     PrintFanType(i, (acpi.GetFanRPM(i) * 100) / (fan_conf.boosts[i].maxRPM ?
                         fan_conf.boosts[i].maxRPM : acpi.GetMaxRPM(i)), "Percent");
                 }
