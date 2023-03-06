@@ -398,6 +398,10 @@ void FXHelper::RefreshGrid() {
 }
 
 void FXHelper::QueryCommand(LightQueryElement* lqe) {
+	if (!lqe) {
+		DebugPrint("Zero element added to LQ!\n");
+		return;
+	}
 	if (updateThread)
 		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
 			if (wasLFX) {

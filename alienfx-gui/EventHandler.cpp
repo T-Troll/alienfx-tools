@@ -70,8 +70,11 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
 		modifyProfile.unlock();
 
-		if (mon)
-			mon->SetCurrentGmode(fan_conf->lastProf->gmode);
+		// deprecated, remove soon
+		if (mon && fan_conf->lastProf->gmode_stage) {
+			fan_conf->lastProf->gmode_stage = 0;
+			fan_conf->lastProf->powerSet = (WORD)mon->acpi->powers.size();
+		}
 
 		ChangeEffectMode();
 

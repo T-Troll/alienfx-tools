@@ -361,8 +361,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		eve->ChangeEffects(true);
 		fxhl->Stop();
 
-		if (!activeDevice)
-			activeDevice = &conf->afx_dev.fxdevs.front();
+		activeDevice = &conf->afx_dev.fxdevs.front();
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		fxhl->TestLight(activeDevice, -1);
@@ -680,11 +679,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 	{
-		//if (noLightFX) {
-			fxhl->Start();
-			eve->ChangeEffectMode();
-			eve->StartProfiles();
-		//}
+		fxhl->Start();
+		eve->ChangeEffectMode();
+		eve->StartProfiles();
+		activeDevice = NULL;
 		dDlg = NULL;
 	} break;
 	default: return false;

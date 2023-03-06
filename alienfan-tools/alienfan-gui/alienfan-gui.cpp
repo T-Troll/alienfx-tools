@@ -49,23 +49,22 @@ extern void ReloadTempView(HWND list);
 extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
 extern string GetFanName(int ind, bool forTray = false);
+extern void AlterGMode(HWND);
 
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 
 void SetHotkeys() {
-    if (fan_conf->keyShortcuts) {
-        //power mode hotkeys
-        for (int i = 0; i < mon->acpi->powers.size(); i++)
+    //power mode hotkeys
+    for (int i = 0; i < mon->acpi->powers.size(); i++)
+        if (fan_conf->keyShortcuts)
             RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
-        RegisterHotKey(mDlg, 6, 0, VK_F17);
-    }
-    else
-    {
-        UnregisterHotKey(mDlg, 6);
-        for (int i = 0; i < mon->acpi->powers.size(); i++)
+        else
             UnregisterHotKey(mDlg, 20 + i);
-    }
+    if (fan_conf->keyShortcuts)
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
+    else
+        UnregisterHotKey(mDlg, 6);
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -129,7 +128,7 @@ void RestoreApp() {
 
 void SetTrayTip() {
     string name = "Power mode: ";
-    if (fan_conf->lastProf->gmode)
+    if (mon->IsGMode())
         name += "G-mode";
     else
         name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
@@ -221,14 +220,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                int newMode = ComboBox_GetCurSel(power_list);
-                fan_conf->lastProf->gmode = (newMode == mon->acpi->powers.size());
-                if (newMode < mon->acpi->powers.size())
-                    fan_conf->lastProf->powerStage = newMode;
-                mon->SetCurrentMode(newMode);
+                fan_conf->lastProf->powerStage = ComboBox_GetCurSel(power_list);
+                //fan_conf->lastProf->gmode = (newMode == mon->acpi->powers.size());
+                //if (newMode < mon->acpi->powers.size())
+                //    fan_conf->lastProf->powerStage = newMode;
+                //mon->SetCurrentMode(newMode);
             } break;
             case CBN_EDITCHANGE:
-                if (!fan_conf->lastProf->gmode && fan_conf->lastProf->powerStage > 0) {
+                if (fan_conf->lastProf->powerStage < mon->acpi->powers.size() && !fan_conf->lastProf->powerStage) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
                     fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
@@ -345,7 +344,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ModifyMenu(tMenu, ID_MENU_POWER, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Power mode - " +
                 fan_conf->powers.find(mon->acpi->powers[fan_conf->lastProf->powerStage])->second).c_str());
             EnableMenuItem(tMenu, ID_MENU_GMODE, mon->acpi->isGmode ? MF_ENABLED : MF_DISABLED);
-            CheckMenuItem(tMenu, ID_MENU_GMODE, fan_conf->lastProf->gmode ? MF_CHECKED : MF_UNCHECKED);
+            CheckMenuItem(tMenu, ID_MENU_GMODE, mon->IsGMode() ? MF_CHECKED : MF_UNCHECKED);
 
             GetCursorPos(&lpClickPoint);
             SetForegroundWindow(hDlg);
@@ -383,9 +382,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         switch (wParam) {
         case 6: // G-key for Dell G-series power switch
-            mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
-            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? mon->acpi->powers.size() : fan_conf->lastProf->powerStage);
-            BlinkNumLock(2 + fan_conf->lastProf->gmode);
+            AlterGMode(power_list);
             break;
         }
     } break;
@@ -399,8 +396,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             RestoreApp();
             break;
         case ID_MENU_GMODE:
-            mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
-            ComboBox_SetCurSel(power_list, fan_conf->lastProf->gmode ? mon->acpi->powers.size() : fan_conf->lastProf->powerStage);
+            AlterGMode(power_list);
             break;
         case ID_TRAYMENU_POWER_SELECTED:
             fan_conf->lastProf->powerStage = idx;

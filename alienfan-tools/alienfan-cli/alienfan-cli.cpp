@@ -61,13 +61,9 @@ void CheckFanOverboost(byte num) {
     int rpm = acpi.GetFanRPM(num), cSteps = 8, boost = 100,
         oldBoost = acpi.GetFanBoost(num),
         downScale, crpm;
-    //fan_overboost* fo = &fan_conf.boosts[num];
     printf("Checking Fan#%d:\n", num);
-    bestBoostPoint = { 100, (unsigned short)rpm };// *fo;
-    //SetFanSteady(num, 100);
-    //boost = fo->maxBoost;
-    //rpm = fo->maxRPM;
-    SetFanSteady(num, 100);
+    bestBoostPoint = { (byte)boost, (WORD)rpm };
+    SetFanSteady(num, boost);
     printf("    \n");
     for (int steps = cSteps; steps; steps = steps >> 1) {
         // Check for uptrend
@@ -251,8 +247,6 @@ int main(int argc, char* argv[])
                 byte fanID = args[0].num;
                 // manual fan set
                 bestBoostPoint = { (byte)args[1].num, 0 };
-                //SetFanSteady(fanID, 100);
-                //printf("\n");
                 SetFanSteady(fanID, bestBoostPoint.maxBoost);
                 fan_conf.UpdateBoost(fanID, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
                 printf("\n");
@@ -323,44 +317,6 @@ int main(int argc, char* argv[])
 #endif // !ALIENFAN_SDK_V1
 
         //if (command == "test") { // Test
-        //    //HANDLE hDriver;
-        //    //if ((hDriver = OpenESIFDriver()) != INVALID_HANDLE_VALUE) {
-        //    //    // Prepare ioctrl
-        //    //    struct esif_command_get_participants* data_ptr = NULL;
-        //    //    const unsigned data_len = sizeof(struct esif_command_get_participants);
-        //    //    struct esif_ipc_command* command_ptr = NULL;
-        //    //    unsigned i = 0;
-        //    //    unsigned count = 0;
-        //    //    struct esif_ipc* ipc_ptr = esif_ipc_alloc_command(&command_ptr, data_len);
-        //    //    // Data prepare...
-        //    //    command_ptr->type = ESIF_COMMAND_TYPE_GET_PARTICIPANTS;
-        //    //    command_ptr->req_data_type = ESIF_DATA_VOID;
-        //    //    command_ptr->req_data_offset = 0;
-        //    //    command_ptr->req_data_len = 0;
-        //    //    command_ptr->rsp_data_type = ESIF_DATA_STRUCTURE;
-        //    //    command_ptr->rsp_data_offset = 0;
-        //    //    command_ptr->rsp_data_len = data_len;
-        //    //    // Run ioctrl
-        //    //    bool IoctlResult = DeviceIoControl(
-        //    //        hDriver,           // Handle to device
-        //    //        ESIF_IOCTL_IPC,    // IO Control code for Read
-        //    //        ipc_ptr,        // Buffer to driver.
-        //    //        data_len, // Length of buffer in bytes.
-        //    //        outbuf,     // Buffer from driver.
-        //    //        sizeof(ACPI_EVAL_OUTPUT_BUFFER),
-        //    //        &ReturnedLength,    // Bytes placed in DataBuffer.
-        //    //        NULL                // NULL means wait till op. completes.
-        //    //    );
-        //    //    CloseHandle(hDriver);
-        //    //}
-        //    while (!acpi.DPTFdone)
-        //        Sleep(200);
-        //    for (int i = 0; i < acpi.sensors.size(); i++)
-        //        if (!acpi.sensors[i].type) {
-        //            auto sname = fan_conf.sensors.find(acpi.sensors[i].sid);
-        //            printf("%s: %d\n", (sname == fan_conf.sensors.end() ? acpi.sensors[i].name.c_str() :
-        //                sname->second.c_str()), acpi.GetTempValue(i));
-        //        }
         //    continue;
         //}
         printf("Unknown command - %s, run without parameters for help.\n", command.c_str());

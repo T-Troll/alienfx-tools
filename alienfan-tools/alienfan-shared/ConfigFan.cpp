@@ -26,14 +26,11 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 	RegSetValueEx( keyMain, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
 }
 
-void ConfigFan::AddSensorCurve(fan_profile *prof, WORD fid, WORD sid, byte* data, DWORD lend) {
+void ConfigFan::AddSensorCurve(fan_profile *prof, byte fid, WORD sid, byte* data, DWORD lend) {
 	if (!prof) prof = lastProf;
 	sen_block curve = { true };
 	curve.points.resize(lend / 2);
 	memcpy(curve.points.data(), data, lend);
-	//for (UINT i = 0; i < lend; i += 2) {
-	//	curve.points.push_back({ data[i], data[i + 1] });
-	//}
 	prof->fanControls[fid][sid] = curve;
 }
 
@@ -53,8 +50,6 @@ DWORD ConfigFan::GetRegData(HKEY key, int vindex, char* name, byte** data) {
 
 void ConfigFan::Load() {
 
-	//DWORD power;
-
 	GetReg("StartAtBoot", &startWithWindows);
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
@@ -62,10 +57,6 @@ void ConfigFan::Load() {
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("DPTF", &needDPTF, 1);
-	// set power values
-	//prof.powerSet = power;
-	//prof.powerStage = LOWORD(power);
-	//prof.gmode = HIWORD(power);
 
 	// Now load sensor mappings...
 	char name[256];
@@ -73,7 +64,7 @@ void ConfigFan::Load() {
 	DWORD lend; short fid, sid;
 	for (int vindex = 0; lend = GetRegData(keySensors, vindex, name, &inarray); vindex++) {
 		if (sscanf_s(name, "Fan-%hd-%hd", &fid, &sid) == 2) {
-			AddSensorCurve(&prof, fid, sid, inarray, lend);
+			AddSensorCurve(&prof, (byte)fid, sid, inarray, lend);
 			continue;
 		}
 		if (sscanf_s(name, "SensorName-%hd-%hd", &sid, &fid) == 2) {
@@ -100,14 +91,7 @@ void ConfigFan::SaveSensorBlocks(HKEY key, string pname, fan_profile* data) {
 		for (auto j = i->second.begin(); j != i->second.end(); j++) {
 			if (j->second.active) {
 				string name = pname + "-" + to_string(i->first) + "-" + to_string(j->first);
-				//byte* outdata = new byte[j->second.points.size() * 2];
-				//for (int k = 0; k < j->second.points.size(); k++) {
-				//	outdata[2 * k] = (byte)j->second.points[k].temp;
-				//	outdata[(2 * k) + 1] = (byte)j->second.points[k].boost;
-				//}
-
 				RegSetValueEx(key, name.c_str(), 0, REG_BINARY, (BYTE*)j->second.points.data(), (DWORD)j->second.points.size() * 2);
-				//delete[] outdata;
 			}
 		}
 	}
@@ -118,7 +102,7 @@ void ConfigFan::Save() {
 
 	SetReg("StartAtBoot", startWithWindows);
 	SetReg("StartMinimized", startMinimized);
-	SetReg("LastPowerStage", prof.powerSet/*MAKELPARAM(prof.powerStage, prof.gmode)*/);
+	SetReg("LastPowerStage", prof.powerSet);
 	SetReg("UpdateCheck", updateCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);

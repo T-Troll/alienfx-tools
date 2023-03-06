@@ -13,11 +13,6 @@ namespace AlienFan_SDK {
 		(BSTR)L"SetThermalControl2"		// 0x11
 	};
 
-	//static const BSTR colorList[2]{
-	//	(BSTR)L"Set24BitsLEDColor",		// 0x12
-	//	(BSTR)L"LEDBrightness"			// 0x03
-	//};
-
 	static const byte functionID[2][13]{
 		{ 0,0,0,0,0,0,1,1,2,2,3,4,0 },
 		{ 5,5,5,5,5,5,6,6,2,2,3,4,5 }

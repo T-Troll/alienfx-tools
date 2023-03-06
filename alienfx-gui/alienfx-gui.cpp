@@ -59,6 +59,9 @@ groupset* mmap = NULL;
 // last device selected
 AlienFX_SDK::Afx_device* activeDevice = NULL;
 
+extern string GetFanName(int ind, bool forTray = false);
+extern void AlterGMode(HWND);
+
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin(mDlg))) {
 		mon = new MonHelper();
@@ -78,24 +81,18 @@ void SetHotkeys() {
 		RegisterHotKey(mDlg, 3, 0, VK_F18);
 		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9);
-		RegisterHotKey(mDlg, 6, 0, VK_F17);
-		//profile change hotkeys...
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
-		//power mode hotkeys
-		if (mon)
+		if (mon) {
 			for (int i = 0; i < mon->acpi->powers.size(); i++)
 				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+			RegisterHotKey(mDlg, 6, 0, VK_F17);
+		}
 	}
 	else {
 		//unregister global hotkeys...
-		UnregisterHotKey(mDlg, 1);
-		UnregisterHotKey(mDlg, 2);
-		UnregisterHotKey(mDlg, 3);
-		UnregisterHotKey(mDlg, 4);
-		UnregisterHotKey(mDlg, 5);
-		UnregisterHotKey(mDlg, 6);
-		//profile/power change hotkeys...
+		for (int i = 1; i < 7; i++)
+			UnregisterHotKey(mDlg, i);
 		for (int i = 0; i < 10; i++) {
 			UnregisterHotKey(mDlg, 10 + i);
 			UnregisterHotKey(mDlg, 30 + i);
@@ -192,8 +189,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
-extern string GetFanName(int ind, bool forTray = false);
-
 void SetTrayTip() {
 	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
 	if (eve) {
@@ -208,7 +203,7 @@ void SetTrayTip() {
 	}
 	if (mon) {
 		name += "\nPower mode: ";
-		if (fan_conf->lastProf->gmode)
+		if (fan_conf->lastProf->powerStage == mon->acpi->powers.size())
 			name += "G-mode";
 		else
 			name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
@@ -771,10 +766,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case 6: // G-key for Dell G-series power switch
 			if (mon) {
-				mon->SetCurrentGmode(!fan_conf->lastProf->gmode);
+				AlterGMode(NULL);
 				if (tabSel == TAB_FANS)
 					OnSelChanged(tab_list);
-				BlinkNumLock(2 + fan_conf->lastProf->gmode);
 			}
 			break;
 		default: return false;

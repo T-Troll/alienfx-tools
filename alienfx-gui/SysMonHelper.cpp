@@ -38,6 +38,7 @@ SysMonHelper::SysMonHelper() {
 
 SysMonHelper::~SysMonHelper() {
 	delete eventProc;
+	ZeroMemory(&fxhl->eData, sizeof(LightEventData));
 	DebugPrint("Event thread stop.\n");
 	PdhCloseQuery(hQuery);
 }
@@ -76,14 +77,12 @@ int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, 
 
 void CEventProc(LPVOID param)
 {
-	SysMonHelper* src = (SysMonHelper*)param;
-
 	static HKL locIDs[10];
 	static map<string, map<byte, int>> gpusubs;
 
-	LightEventData* cData = &src->cData;
-
 	if (fxhl->lightsNoDelay) {
+		SysMonHelper* src = (SysMonHelper*)param;
+		LightEventData* cData = &src->cData;
 
 		SYSTEM_POWER_STATUS state;
 		PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
@@ -91,7 +90,7 @@ void CEventProc(LPVOID param)
 		HKL curLocale;
 
 		PdhCollectQueryData(src->hQuery);
-		src->cData = { 0 };
+		ZeroMemory(cData,sizeof(LightEventData));
 
 		// CPU load
 		PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);
@@ -141,9 +140,7 @@ void CEventProc(LPVOID param)
 			for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
 				cData->Temp = max(cData->Temp, i->second);
 			// Power mode
-			cData->PWM = fan_conf->lastProf->gmode ? 100 :
-				fan_conf->lastProf->powerStage * 100 /
-				((int)mon->acpi->powers.size() + mon->acpi->isGmode - 1);
+			cData->PWM = fan_conf->lastProf->powerStage * 100 /	((byte)mon->acpi->powers.size() + mon->acpi->isGmode - 1);
 		}
 
 		// ESIF powers and temps

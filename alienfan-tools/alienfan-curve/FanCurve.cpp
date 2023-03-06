@@ -196,9 +196,10 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->inControl = false;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
+    mon->ResetBoost();
     mon->SetCurrentMode(0);
-    int rpm = mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100,
-        oldBoost = mon->acpi->GetFanBoost(fan_conf->lastSelectedFan), downScale;
+    int rpm = mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100/*,
+        oldBoost = mon->boostRaw[fan_conf->lastSelectedFan]*//*mon->acpi->GetFanBoost(fan_conf->lastSelectedFan)*/, downScale;
     boostCheck.clear();
     bestBoostPoint = { (byte)boost, (unsigned short)rpm };
     boostScale = 10;
@@ -235,8 +236,8 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
     }
     // Restore mode
-    mon->acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
-    mon->SetCurrentGmode(fan_conf->lastProf->gmode);
+    //mon->acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
+    //mon->SetCurrentGmode(fan_conf->lastProf->gmode);
     mon->inControl = true;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
     return 0;
@@ -353,7 +354,7 @@ string GetFanName(int ind, bool forTray = false) {
     default: strcpy_s(ftype, "Fan");
     }
     string fname = (string)ftype + " " + to_string(ind + 1) + " - " + to_string(mon->fanRpm[ind]);
-    if (forTray)
+    if (forTray && !fan_conf->lastProf->powerStage)
         fname += " (" + to_string(mon->boostRaw[ind]) + ")";
     return fname;
 }
@@ -396,7 +397,7 @@ void ReloadPowerList(HWND list) {
     }
     if (mon->acpi->isGmode) {
         int pos = ComboBox_AddString(list, (LPARAM)("G-Mode"));
-        if (fan_conf->lastProf->gmode)
+        if (mon->IsGMode())
             ComboBox_SetCurSel(list, pos);
     }
 }
@@ -489,5 +490,14 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
             }
             ListView_SetItemState(fanList, lParam->iItem, LVIS_SELECTED, LVIS_SELECTED);
         }
+    }
+}
+
+void AlterGMode(HWND power_list) {
+    if (mon->acpi->isGmode) {
+        fan_conf->lastProf->powerStage = mon->IsGMode() ? 0 : (WORD)mon->acpi->powers.size();
+        mon->SetCurrentMode(fan_conf->lastProf->powerStage);
+        ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
+        BlinkNumLock(2 + mon->IsGMode());
     }
 }
