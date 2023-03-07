@@ -244,7 +244,7 @@ Left-click at already assigned cell to select corresponding light (and it's devi
 
 !["Fans and Power" tab](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui-fans-6.png?raw=true)
 
-Fan and BIOS power profile settings can be defined at this tab.
+Fan settings and BIOS power modes can be defined at this tab.
 
 First, take a look at "Power mode" drop-down - it can control system predefined power modes. For manual fan control switch it to "Manual". You can edit mode name by selecting it and type new name.  
 First power mode always named "Manual", and the last power mode is a special one, named "G-mode" (if supported at you system). It's accelerate performance of the system, but set fans to maximal RPMs available.
@@ -258,14 +258,14 @@ You can change sensor name by double-click on it. In case you remove sensor name
 
 "Fans" list presents all fans found into the system and their current RPMs.
 
-"X" button above sensors list reset maximal temperature sensors value to current one.  
-"X" button above fans list REMOVE ALL CURVES for currently selected fan.
+"Reset max." button above sensors list reset maximal temperature sensors value to current one.  
+"X" button above fans list REMOVE ALL CURVES (for all sensors) for currently selected fan.
 
 "Check Max. boost" button will check possibility of currently selected fan to increase RPM even more, then 100% boost.  
 It will switch curve window to other mode - showing currently tested boost level and resulting RPM.  
 This process can take some minutes, window with final results will be shown after the process ends, and they be used lately for this fan.  
 You can press "Stop check" button at any time to stop max. boost check.  
-Press "X" button at right to reset fan boost to BIOS default values.
+Press "Default boost" button at right to reset fan boost to BIOS default values.
 
 There are "Fan curve" graph at the right. It shows currently selected fan temperature/boost curve, as well as current boost.  
 You will see current fan boost at the top if it, and the active fan control curve (green line). The rest of the sensors controlling the same fan marked as yellow dotted lines.  
@@ -275,20 +275,22 @@ Big green and yellow dots present temperature and proposed boost set for every s
 How to use it
 ```
 
-Fan control is temperature sensor-driven, so first select one of the temperature sensors. You can also change sensor name by double-click on it. In case you remove sensor name (leaving it empty), it will be restored back to default BIOS one.  
-Then, select which fan(s) should react on its readings - you can select from none to all in any combination.  
-So, select check box for fan(s) you need.
+First, select the Fan you want to control from left list.  
+Fan control is temperature sensor-driven, so select and check the sensors you want to use for fan control from sensors list.  
 
-After you doing so, currently selected fan settings will be shown at "Fan Curve" window (and the active sensor curve will be green).  
+After you doing this, currently selected fan settings will be shown at "Fan Curve" window - you will see current fan boost at the top, and the fan control curve for selected sensor (green line).
+The rest of the sensors controlling the same fan marked as yellow dotted lines.  
+Big green and yellow dots present temperature and proposed boost set for every sensor controlling this fan, red one show current hardware boost settings an selected sensor temperature.
+
 Now play with fan control curve - it defines fan boost by temperature level. X axle is temperature, Y axle is boost level.  
-You can left click (and drag until release mouse button) into the curve window to add point or select close point (if any) to move it.  
+You can left click (and drag until mouse button release) into the curve window to add point or select close point (if any) to move it.  
 You can click right mouse button at the graph point to remove it.  
 
 Please keep in mind:
 - Fan control is indirect at modern systems. You **can not** set exact fan RPMs, but can modify it using "boost" curves.
 - You can't remove first or last point of the curve.
 - If you move first or last point, it will keep its temperature after button release - but you can set other boost level for it.
-- Then fan controlled by more, then one sensor, boost will be set to the maximal value across them.  
+- Then fan controlled by multiply sensors, boost will be set to the maximal value across them.
 
 ## Profiles tab
 

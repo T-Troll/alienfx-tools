@@ -110,7 +110,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all fan curves?", "Warning",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
                 fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].clear();
-                ReloadFanView(fanList);
+                ReloadTempView(tempList);
             }
         } break;
         case IDC_MAX_RESET:
