@@ -73,7 +73,7 @@ namespace AlienFX_SDK {
 		//BOOL res = false;
 
 		if (version == API_V6 /*&& size != 3*/)
-			FillMemory(buffer+1, MAX_BUFFERSIZE-1, 0xff);
+			memset(buffer + 1, 0xff, MAX_BUFFERSIZE - 1);
 
 		memcpy(buffer+1, command+1, size);
 
@@ -110,7 +110,7 @@ namespace AlienFX_SDK {
 			if (size == 4) {
 				bool res = HidD_SetFeature(devHandle, buffer, length);
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(8); // Need wait for ACK
+				Sleep(6); // Need wait for ACK
 				return res;
 			}
 			else {

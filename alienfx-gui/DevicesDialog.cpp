@@ -51,57 +51,49 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	{
 	case WM_INITDIALOG:
 	{
-		if (activeDevice) {
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETTICFREQ, 16, 0);
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETTICFREQ, 16, 0);
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETTICFREQ, 16, 0);
-			sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1);
-			sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2);
-			sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, activeDevice->white.r);
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, activeDevice->white.g);
-			SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, activeDevice->white.b);
-			SetSlider(sTip1, activeDevice->white.r);
-			SetSlider(sTip2, activeDevice->white.r);
-			SetSlider(sTip3, activeDevice->white.r);
-			fxhl->TestLight(activeDevice, eLid, true, true);
-			RECT pRect;
-			GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);
-			SetWindowPos(hDlg, NULL, pRect.right, pRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-		}
-		else
-			EndDialog(hDlg, IDCLOSE);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETTICFREQ, 16, 0);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETTICFREQ, 16, 0);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETTICFREQ, 16, 0);
+		sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1);
+		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2);
+		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, activeDevice->white.r);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, activeDevice->white.g);
+		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, activeDevice->white.b);
+		SetSlider(sTip1, activeDevice->white.r);
+		SetSlider(sTip2, activeDevice->white.r);
+		SetSlider(sTip3, activeDevice->white.r);
+		fxhl->TestLight(activeDevice, eLid, true, true);
+		RECT pRect;
+		GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);
+		SetWindowPos(hDlg, NULL, pRect.right, pRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 	break;
 	case WM_HSCROLL:
-	{
-		if (activeDevice) {
-			switch (LOWORD(wParam)) {
-			case TB_THUMBTRACK: case TB_ENDTRACK:
-			{
-				if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_RED)) {
-					activeDevice->white.r = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, activeDevice->white.r);
+		switch (LOWORD(wParam)) {
+		case TB_THUMBTRACK: case TB_ENDTRACK:
+		{
+			if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_RED)) {
+				activeDevice->white.r = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+				SetSlider(sTip1, activeDevice->white.r);
+			} else
+				if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_GREEN)) {
+					activeDevice->white.g = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip2, activeDevice->white.g);
 				} else
-					if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_GREEN)) {
-						activeDevice->white.g = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-						SetSlider(sTip2, activeDevice->white.g);
-					} else
-						if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_BLUE)) {
-							activeDevice->white.b = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-							SetSlider(sTip3, activeDevice->white.b);
-						}
-				fxhl->TestLight(activeDevice, eLid, true, true);
-			} break;
-			}
+					if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_BLUE)) {
+						activeDevice->white.b = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+						SetSlider(sTip3, activeDevice->white.b);
+					}
+			fxhl->TestLight(activeDevice, eLid, true, true);
+		} break;
 		}
-	} break;
+		break;
 	case WM_CLOSE:
-		if (activeDevice)
-			fxhl->TestLight(activeDevice, eLid, true);
+		fxhl->TestLight(activeDevice, eLid, true);
 		EndDialog(hDlg, IDCLOSE);
 		break;
 	default: return false;
@@ -110,31 +102,27 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 void SetLightInfo() {
-	if (activeDevice) {
-		fxhl->TestLight(activeDevice, eLid);
-		keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
-		SetDlgItemText(dDlg, IDC_EDIT_NAME, keySetLight ? keySetLight->name.c_str() : "<unused>");
-		SetDlgItemText(dDlg, IDC_STATIC_SCANCODE, keySetLight && keySetLight->scancode ? GetKeyName((WORD)keySetLight->scancode).c_str() : "Off");
-		SetDlgItemInt(dDlg, IDC_LIGHTID, eLid, false);
-		CheckDlgButton(dDlg, IDC_ISPOWERBUTTON, keySetLight && keySetLight->flags & ALIENFX_FLAG_POWER);
-		CheckDlgButton(dDlg, IDC_CHECK_INDICATOR, keySetLight && keySetLight->flags & ALIENFX_FLAG_INDICATOR);
-		EnableWindow(GetDlgItem(dDlg, IDC_BUT_CLEAR), (bool)keySetLight);
-		RedrawGridButtonZone();
-	}
+	fxhl->TestLight(activeDevice, eLid);
+	keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid);
+	SetDlgItemText(dDlg, IDC_EDIT_NAME, keySetLight ? keySetLight->name.c_str() : "<unused>");
+	SetDlgItemText(dDlg, IDC_STATIC_SCANCODE, keySetLight && keySetLight->scancode ? GetKeyName((WORD)keySetLight->scancode).c_str() : "Off");
+	SetDlgItemInt(dDlg, IDC_LIGHTID, eLid, false);
+	CheckDlgButton(dDlg, IDC_ISPOWERBUTTON, keySetLight && keySetLight->flags & ALIENFX_FLAG_POWER);
+	CheckDlgButton(dDlg, IDC_CHECK_INDICATOR, keySetLight && keySetLight->flags & ALIENFX_FLAG_INDICATOR);
+	EnableWindow(GetDlgItem(dDlg, IDC_BUT_CLEAR), (bool)keySetLight);
+	RedrawGridButtonZone();
 }
 
 void UpdateLightsList() {
 	HWND llist = GetDlgItem(dDlg, IDC_LIGHTS_LIST);
 	ListBox_ResetContent(llist);
 	int spos = -1;
-	if (activeDevice) {
-		for (auto i = activeDevice->lights.begin(); i != activeDevice->lights.end(); i++) {
-			int pos = ListBox_AddString(llist, i->name.c_str());
-			ListBox_SetItemData(llist, pos, (LPARAM)i->lightid);
-			if (i->lightid == eLid) {
-				spos = pos;
-				keySetLight = &(*i);
-			}
+	for (auto i = activeDevice->lights.begin(); i != activeDevice->lights.end(); i++) {
+		int pos = ListBox_AddString(llist, i->name.c_str());
+		ListBox_SetItemData(llist, pos, (LPARAM)i->lightid);
+		if (i->lightid == eLid) {
+			spos = pos;
+			keySetLight = &(*i);
 		}
 	}
 	ListBox_SetCurSel(llist, spos);
@@ -142,14 +130,12 @@ void UpdateLightsList() {
 }
 
 void UpdateDeviceInfo() {
-	if (activeDevice) {
-		char descript[128];
-		sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, APIv%d %s",
-			activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), activeDevice->version, activeDevice->dev ? "" : "(inactive)");
-		SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
-		EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->version && activeDevice->version < 5); // v5 and higher doesn't support power button
-		UpdateLightsList();
-	}
+	char descript[128];
+	sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, APIv%d %s",
+		activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), activeDevice->version, activeDevice->dev ? "" : "(inactive)");
+	SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
+	EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->version && activeDevice->version < 5); // v5 and higher doesn't support power button
+	UpdateLightsList();
 }
 
 void RedrawDevList() {
@@ -163,23 +149,23 @@ void RedrawDevList() {
 	}
 	for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) {
 		int pos = (int)(i - conf->afx_dev.fxdevs.begin());
-		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, 64};
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, pos};
 		if (!i->name.length()) {
-			string typeName;
+			//string typeName;
 			switch (i->version) {
-			case 0: typeName = "Desktop"; break;
-			case 1: case 2: case 3: typeName = "Notebook"; break;
-			case 4: typeName = "Notebook/Chassis"; break;
-			case 5: case 8: typeName = "Keyboard"; break;
-			case 6: typeName = "Display"; break;
-			case 7: typeName = "Mouse"; break;
-			default: typeName = "Unknown";
+			case 0: i->name = "Desktop"; break;
+			case 1: case 2: case 3: i->name = "Notebook"; break;
+			case 4: i->name = "Notebook/Chassis"; break;
+			case 5: case 8: i->name = "Keyboard"; break;
+			case 6: i->name = "Display"; break;
+			case 7: i->name = "Mouse"; break;
+			default: i->name = "Unknown";
 			}
-			i->name = typeName + ", #" + to_string(i->pid);
+			i->name += ", #" + to_string(i->pid);
 		}
-		lItem.pszText = (char*)i->name.c_str();
+		lItem.pszText = (LPSTR)i->name.c_str();
 		if (activeDevice->pid == i->pid) {
-			lItem.state = LVIS_SELECTED;
+			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			rpos = pos;
 		}
 		ListView_InsertItem(dev_list, &lItem);
@@ -361,7 +347,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		eve->ChangeEffects(true);
 		fxhl->Stop();
 
-		activeDevice = &conf->afx_dev.fxdevs.front();
+		if (!activeDevice)
+			activeDevice = &conf->afx_dev.fxdevs.front();
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
 		fxhl->TestLight(activeDevice, -1);
@@ -384,20 +371,16 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_LAST:
-			if (activeDevice) {
-				eLid = 0;
-				for (auto it = activeDevice->lights.begin(); it < activeDevice->lights.end(); it++)
-					eLid = max(eLid, it->lightid);
-				UpdateLightsList();
-			}
+			eLid = 0;
+			for (auto it = activeDevice->lights.begin(); it < activeDevice->lights.end(); it++)
+				eLid = max(eLid, it->lightid);
+			UpdateLightsList();
 			break;
 		case IDC_BUT_FIRST:
-			if (activeDevice) {
-				eLid = 999;
-				for (auto it = activeDevice->lights.begin(); it < activeDevice->lights.end(); it++)
-					eLid = min(eLid, it->lightid);
-				UpdateLightsList();
-			}
+			eLid = 999;
+			for (auto it = activeDevice->lights.begin(); it < activeDevice->lights.end(); it++)
+				eLid = min(eLid, it->lightid);
+			UpdateLightsList();
 			break;
 		case IDC_BUT_KEY:
 			if (keySetLight)
@@ -649,7 +632,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					UpdateDeviceInfo();
 				}
 				else {
-					if (!lPoint->uNewState && ListView_GetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_FOCUSED)) {
+					if (ListView_GetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_FOCUSED)) {
 						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
 					}
 					else {
@@ -682,7 +665,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		fxhl->Start();
 		eve->ChangeEffectMode();
 		eve->StartProfiles();
-		activeDevice = NULL;
 		dDlg = NULL;
 	} break;
 	default: return false;

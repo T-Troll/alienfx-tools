@@ -144,7 +144,6 @@
 #define IDC_FAN_RESET                   1132
 #define IDC_VAL_TEMP                    1133
 #define IDC_TAB_LIGHTS                  1133
-#define IDC_STATIC_EFFECTS              1134
 #define IDC_TAB_DEV_GRID                1135
 #define IDC_BUT_FIRST                   1137
 #define IDC_EDIT_GRID                   1138
@@ -204,17 +203,14 @@
 #define IDC_STATIC_SCANCODE             1200
 #define IDC_SLIDER_TACT                 1201
 #define IDC_PROFILE_EFFECTS             1202
-#define IDC_CHECK                       1204
 #define IDC_CHECK_EFFBAT                1204
 #define IDC_RADIO_MEDIUM                1205
-#define IDC_RADIO2                      1206
 #define IDC_RADIO_PREVEALING            1206
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
 #define ID_TRAYMENU_EXIT                32775
 #define ID_TRAYMENU_REFRESH             32776
-#define ID_TRAYMENU_MONITORING          32786
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
 #define ID_TRAYMENU_PROFILE_SELECTED    32791

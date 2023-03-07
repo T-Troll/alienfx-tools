@@ -360,31 +360,22 @@ string GetFanName(int ind, bool forTray = false) {
 }
 
 void ReloadFanView(HWND list) {
-    fanUpdateBlock = true;
     ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     if (!ListView_GetColumnWidth(list, 0)) {
         LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
         ListView_InsertColumn(list, 0, &lCol);
     }
     for (int i = 0; i < mon->acpi->fans.size(); i++) {
-        auto fanControls = &fan_conf->lastProf->fanControls[i];
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
         string name = GetFanName(i);
         lItem.pszText = (LPSTR)name.c_str();
         if (i == fan_conf->lastSelectedFan) {
-            lItem.state = LVIS_SELECTED;
+            lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
         }
-        else
-            lItem.state = 0;
         ListView_InsertItem(list, &lItem);
-        if (fanControls->find(fan_conf->lastSelectedSensor) != fanControls->end()
-            && (*fanControls)[fan_conf->lastSelectedSensor].active) {
-            ListView_SetCheckState(list, i, true);
-        }
     }
     ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE_USEHEADER);
-    fanUpdateBlock = false;
 }
 
 
@@ -404,8 +395,9 @@ void ReloadPowerList(HWND list) {
 
 void ReloadTempView(HWND list) {
     int rpos = 0;
+    fanUpdateBlock = true;
     ListView_DeleteAllItems(list);
-    ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
+    ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
     if (!ListView_GetColumnWidth(list, 1)) {
         LVCOLUMNA lCol{ LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM, LVCFMT_LEFT, 100, (LPSTR)"Temp" };
         ListView_InsertColumn(list, 0, &lCol);
@@ -413,29 +405,35 @@ void ReloadTempView(HWND list) {
         lCol.iSubItem = 1;
         ListView_InsertColumn(list, 1, &lCol);
     }
+    auto fanControls = &fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan];
     for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+        WORD sid = mon->acpi->sensors[i].sid;
         LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
-        string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
-        lItem.lParam = mon->acpi->sensors[i].sid;
+        string name = to_string(mon->senValues[sid]) + " (" + to_string(mon->maxTemps[sid]) + ")";
+        lItem.lParam = sid;
         lItem.pszText = (LPSTR)name.c_str();
-        if (mon->acpi->sensors[i].sid == fan_conf->lastSelectedSensor) {
+        if (sid == fan_conf->lastSelectedSensor) {
             lItem.state = LVIS_SELECTED;
             rpos = i;
         }
-        else
-            lItem.state = 0;
         ListView_InsertItem(list, &lItem);
         name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
         ListView_SetItemText(list, i, 1, (LPSTR)name.c_str());
+        for (auto sc = fanControls->begin(); sc != fanControls->end(); sc++)
+            if (sc->first == sid) {
+                ListView_SetCheckState(list, i, true);
+                break;
+            }
     }
     RECT cArea;
     GetClientRect(list, &cArea);
     ListView_SetColumnWidth(list, 0, LVSCW_AUTOSIZE);
     ListView_SetColumnWidth(list, 1, cArea.right - ListView_GetColumnWidth(list, 0));
     ListView_EnsureVisible(list, rpos, false);
+    fanUpdateBlock = false;
 }
 
-void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
+void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList) {
     switch (lParam->hdr.code) {
     case LVN_BEGINLABELEDIT: {
         KillTimer(GetParent(tempList), 0);
@@ -458,45 +456,53 @@ void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList) {
     } break;
     case LVN_ITEMCHANGED:
     {
-        if (((LPNMLISTVIEW)lParam)->uNewState & LVIS_SELECTED && ((LPNMLISTVIEW)lParam)->iItem != -1) {
-            // Select other sensor....
-            fan_conf->lastSelectedSensor = (WORD)((LPNMLISTVIEW)lParam)->lParam;
-            // Redraw fans
-            ReloadFanView(fanList);
+        LPNMLISTVIEW item = (LPNMLISTVIEW)lParam;
+        if (item->uChanged & LVIF_STATE) {
+            if (item->uNewState & LVIS_SELECTED) {
+                // Select other sensor....
+                fan_conf->lastSelectedSensor = (WORD)item->lParam;
+                DrawFan();
+            }
+            if (!fanUpdateBlock && item->uNewState & 0x3000) {
+                auto fan = &fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan];
+                switch (item->uNewState & 0x3000) {
+                case 0x1000:
+                    // Deactivate sensor
+                    (*fan)[(WORD)item->lParam].active = false;
+                    break;
+                case 0x2000:
+                    // Activate sensor
+                    (*fan)[(WORD)item->lParam].active = true;
+                    if ((*fan)[(WORD)item->lParam].points.empty())
+                        (*fan)[(WORD)item->lParam].points = { {0,0},{100,100} };
+                }
+                ListView_SetItemState(tempList, item->iItem, LVIS_SELECTED, LVIS_SELECTED);
+            }
         }
     } break;
     }
 }
 
-void FanUIEvent(NMLISTVIEW* lParam, HWND fanList) {
-    if (!fanUpdateBlock && lParam->hdr.code == LVN_ITEMCHANGED)
+void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList) {
+    if (lParam->hdr.code == LVN_ITEMCHANGED && lParam->uChanged & LVIF_STATE)
     {
-        if (lParam->uNewState & LVIS_SELECTED && lParam->iItem != -1) {
+        if (lParam->uNewState & LVIS_SELECTED) {
             // Select other fan....
+            if (fan_conf->lastSelectedFan != lParam->iItem)
+                ListView_SetItemState(fanList, fan_conf->lastSelectedFan, 0, LVIS_SELECTED);
             fan_conf->lastSelectedFan = lParam->iItem;
-            return;
-        }
-        if (lParam->uNewState & 0x3000) {
-            auto fan = &fan_conf->lastProf->fanControls[lParam->iItem];
-            switch (lParam->uNewState & 0x3000) {
-            case 0x1000:
-                // Deactivate sensor
-                (*fan)[fan_conf->lastSelectedSensor].active = false;
-                break;
-            case 0x2000:
-                (*fan)[fan_conf->lastSelectedSensor].active = true;
-                if ((*fan)[fan_conf->lastSelectedSensor].points.empty())
-                    (*fan)[fan_conf->lastSelectedSensor].points = { {0,0},{100,100} };
+            ReloadTempView(tempList);
+        } else
+            if (ListView_GetItemState(fanList, lParam->iItem, LVIS_FOCUSED)) {
+                ListView_SetItemState(fanList, lParam->iItem, LVIS_SELECTED, LVIS_SELECTED);
             }
-            ListView_SetItemState(fanList, lParam->iItem, LVIS_SELECTED, LVIS_SELECTED);
-        }
     }
 }
 
 void AlterGMode(HWND power_list) {
     if (mon->acpi->isGmode) {
         fan_conf->lastProf->powerStage = mon->IsGMode() ? 0 : (WORD)mon->acpi->powers.size();
-        mon->SetCurrentMode(fan_conf->lastProf->powerStage);
+        //mon->SetCurrentMode(fan_conf->lastProf->powerStage);
         ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
         BlinkNumLock(2 + mon->IsGMode());
     }

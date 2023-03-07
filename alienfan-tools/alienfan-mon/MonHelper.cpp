@@ -10,7 +10,6 @@
 void CMonProc(LPVOID);
 
 extern ConfigFan* fan_conf;
-extern void SetTrayTip();
 
 MonHelper::MonHelper() {
 	if ((acpi = new AlienFan_SDK::Control())->Probe()) {
@@ -182,5 +181,4 @@ void CMonProc(LPVOID param) {
 			}
 		}
 	}
-	SetTrayTip();
 }

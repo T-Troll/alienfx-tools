@@ -5,7 +5,6 @@
 
 #pragma comment(lib, "PowrProf.lib")
 
-//extern AlienFan_SDK::Control* acpi;
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
 HWND fanWindow = NULL, tipWindow = NULL;
@@ -18,8 +17,8 @@ extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
-extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
-extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
+extern void TempUIEvent(NMLVDISPINFO* lParam, HWND fanList);
+extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList);
 extern string GetFanName(int ind, bool forTray = false);
 extern HANDLE ocStopEvent;
 
@@ -46,7 +45,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
 
         ReloadPowerList(power_list);
-        ReloadTempView(tempList);
+        ReloadFanView(fanList);
 
         // So open fan control window...
         fanWindow = GetDlgItem(hDlg, IDC_FAN_CURVE);
@@ -139,10 +138,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_FAN_LIST:
-            FanUIEvent((NMLISTVIEW*)lParam, fanList);
+            FanUIEvent((NMLISTVIEW*)lParam, fanList, tempList);
             break;
         case IDC_TEMP_LIST:
-            TempUIEvent((NMLVDISPINFO*)lParam, tempList, fanList);
+            TempUIEvent((NMLVDISPINFO*)lParam, tempList);
             break;
         } break;
     case WM_TIMER: {

@@ -15,7 +15,6 @@
 #define IDC_FAN_LIST                    1003
 #define IDC_BUT_MINIMIZE                1005
 #define IDC_BUT_CLOSE                   1006
-#define IDC_BUT_RESET                   1007
 #define IDC_STATIC_VERSION              1009
 #define IDC_SYSLINK_HOMEPAGE            1010
 #define IDC_MAX_RESET                   1016
@@ -23,17 +22,16 @@
 #define IDC_AC_BOOST                    1124
 #define IDC_DC_BOOST                    1125
 #define IDC_BUT_OVER                    1130
+#define IDC_FAN_RESET                   1132
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDM_SETTINGS_UPDATE             32782
-#define IDM_DISABLEAWCC                 32784
 #define ID_MENU_RESTORE                 32790
 #define ID_MENU_POWER                   32791
 #define ID_MENU_GMODE                   32792
 #define ID_MENU_EXIT                    32793
 #define IDM_SAVE                        32795
 #define IDM_SETTINGS_DISABLEAWCC        32796
-#define ID_SETTINGS_KEYBOARDSHORTCUTS   32797
 #define IDM_SETTINGS_KEYBOARDSHORTCUTS  32798
 #define IDC_STATIC                      -1
 

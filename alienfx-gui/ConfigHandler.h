@@ -207,7 +207,7 @@ public:
 	// mapping block from FX SDK
 	AlienFX_SDK::Mappings afx_dev;
 
-	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_APP + 1};
+	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP, WM_APP + 1};
 
 	ConfigHandler();
 	~ConfigHandler();

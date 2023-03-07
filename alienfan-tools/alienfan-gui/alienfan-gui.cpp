@@ -46,8 +46,8 @@ INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 extern void ReloadFanView(HWND list);
 extern void ReloadPowerList(HWND list);
 extern void ReloadTempView(HWND list);
-extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList, HWND fanList);
-extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList);
+extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList);
+extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList);
 extern string GetFanName(int ind, bool forTray = false);
 extern void AlterGMode(HWND);
 
@@ -126,20 +126,6 @@ void RestoreApp() {
     SetForegroundWindow(mDlg);
 }
 
-void SetTrayTip() {
-    string name = "Power mode: ";
-    if (mon->IsGMode())
-        name += "G-mode";
-    else
-        name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
-
-    for (int i = 0; i < mon->acpi->fans.size(); i++) {
-        name += "\n" + GetFanName(i, true);
-    }
-    strcpy_s(niData->szTip, 127, name.c_str());
-    Shell_NotifyIcon(NIM_MODIFY, niData);
-}
-
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -179,7 +165,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
 
         ReloadPowerList(power_list);
-        ReloadTempView(tempList);
+        ReloadFanView(fanList);
 
         SetTimer(hDlg, 0, 500, NULL);
         SetTimer(fanWindow, 1, 500, NULL);
@@ -187,7 +173,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
-        CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
 
         return true;
@@ -221,10 +207,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 fan_conf->lastProf->powerStage = ComboBox_GetCurSel(power_list);
-                //fan_conf->lastProf->gmode = (newMode == mon->acpi->powers.size());
-                //if (newMode < mon->acpi->powers.size())
-                //    fan_conf->lastProf->powerStage = newMode;
-                //mon->SetCurrentMode(newMode);
+                mon->SetCurrentMode(fan_conf->lastProf->powerStage);
             } break;
             case CBN_EDITCHANGE:
                 if (fan_conf->lastProf->powerStage < mon->acpi->powers.size() && !fan_conf->lastProf->powerStage) {
@@ -274,10 +257,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SETTINGS_DISABLEAWCC: {
             fan_conf->awcc_disable = !fan_conf->awcc_disable;
-            CheckMenuItem(GetMenu(hDlg), IDM_DISABLEAWCC, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
+            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
             fan_conf->wasAWCC = DoStopService((bool)fan_conf->awcc_disable != fan_conf->wasAWCC, fan_conf->wasAWCC);
         } break;
-        case IDC_BUT_RESET:
+        case IDC_FAN_RESET:
         {
             if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all fan curves?", "Warning",
                 MB_YESNO | MB_ICONWARNING) == IDYES) {
@@ -371,6 +354,19 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 isNewVersion = false;
             }
         } break;
+        case WM_MOVE: {
+            string name = "Power mode: ";
+            if (mon->IsGMode())
+                name += "G-mode";
+            else
+                name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
+
+            for (int i = 0; i < mon->acpi->fans.size(); i++) {
+                name += "\n" + GetFanName(i, true);
+            }
+            strcpy_s(niData->szTip, 127, name.c_str());
+            Shell_NotifyIcon(NIM_MODIFY, niData);
+        } break;
         }
         break;
     } break;
@@ -407,10 +403,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_NOTIFY:
         switch (((NMHDR*)lParam)->idFrom) {
         case IDC_FAN_LIST:
-            FanUIEvent((NMLISTVIEW*)lParam, fanList);
+            FanUIEvent((NMLISTVIEW*)lParam, fanList, tempList);
             break;
         case IDC_TEMP_LIST:
-            TempUIEvent((NMLVDISPINFO*)lParam, tempList, fanList);
+            TempUIEvent((NMLVDISPINFO*)lParam, tempList);
             break;
         } break;
     case WM_CLOSE:
@@ -442,36 +438,23 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         }
         break;
-    case WM_TIMER: {
-        if (mon) {
-            if (IsWindowVisible(hDlg)) {
-                //DebugPrint("Fans UI update...\n");
-                for (int i = 0; i < mon->acpi->sensors.size(); i++) {
-                    string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
-                    ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
-                }
-                RECT cArea;
-                GetClientRect(tempList, &cArea);
-                ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-                ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-                for (int i = 0; i < mon->acpi->fans.size(); i++) {
-                    string name = GetFanName(i);
-                    ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-                }
+    case WM_TIMER:
+        if (IsWindowVisible(hDlg)) {
+            //DebugPrint("Fans UI update...\n");
+            for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+                string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
+                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
             }
-            //string name = "Power mode: ";
-            //if (fan_conf->lastProf->gmode)
-            //    name += "G-mode";
-            //else
-            //    name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
-
-            //for (int i = 0; i < mon->acpi->fans.size(); i++) {
-            //    name += "\n" + GetFanName(i, true);
-            //}
-            //strcpy_s(niDataFC.szTip, 127, name.c_str());
-            //Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
+            RECT cArea;
+            GetClientRect(tempList, &cArea);
+            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+            for (int i = 0; i < mon->acpi->fans.size(); i++) {
+                string name = GetFanName(i);
+                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+            }
         }
-    } break;
+        break;
     default: return false;
     }
     return true;

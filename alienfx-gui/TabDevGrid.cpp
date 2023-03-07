@@ -32,7 +32,7 @@ extern AlienFX_SDK::Afx_light* keySetLight;
 extern AlienFX_SDK::Afx_device* activeDevice;
 
 void FindCreateMapping() {
-    if (activeDevice && !(keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid))) {
+    if (!(keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid))) {
         // create new mapping
         activeDevice->lights.push_back({ (byte)eLid, {0,0}, "Light " + to_string(eLid + 1) });
         keySetLight = &activeDevice->lights.back();
@@ -330,7 +330,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         if (dragZone.top >= 0) {
             if (tabLightSel == TAB_DEVICES) {
                 DWORD oldLightValue = conf->mainGrid->grid[ind(dragZone.left, dragZone.top)].lgh;
-                //auto dev = FindActiveDevice();
                 if (dragZone.bottom - dragZone.top == 1 && dragZone.right - dragZone.left == 1 &&
                    oldLightValue && oldLightValue != MAKELPARAM(activeDevice->pid, eLid)) {
                     // switch light

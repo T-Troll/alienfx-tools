@@ -18,10 +18,6 @@ extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigFan* fan_conf;
-//extern bool noLightFX;
-extern void SetTrayTip();
-
-//extern void SetTrayTip();
 
 void CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -89,7 +85,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 void EventHandler::ChangeEffectMode() {
 	fxhl->SetState();
 	ChangeEffects();
-	SetTrayTip();
 }
 
 void EventHandler::ChangeEffects(bool stop) {

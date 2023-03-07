@@ -16,12 +16,14 @@ DWORD WINAPI CLightsProc(LPVOID param);
 FXHelper::FXHelper() {
 	stopQuery = CreateEvent(NULL, false, false, NULL);
 	haveNewElement = CreateEvent(NULL, false, false, NULL);
+	haveLightFX = CreateEvent(NULL, true, false, "LightFXActive");
 }
 
 FXHelper::~FXHelper() {
 	Stop();
 	CloseHandle(stopQuery);
 	CloseHandle(haveNewElement);
+	CloseHandle(haveLightFX);
 };
 
 AlienFX_SDK::Afx_action FXHelper::BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to) {
@@ -397,11 +399,7 @@ void FXHelper::RefreshGrid() {
 	}
 }
 
-void FXHelper::QueryCommand(LightQueryElement* lqe) {
-	if (!lqe) {
-		DebugPrint("Zero element added to LQ!\n");
-		return;
-	}
+void FXHelper::QueryCommand(LightQueryElement lqe) {
 	if (updateThread)
 		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
 			if (wasLFX) {
@@ -409,7 +407,7 @@ void FXHelper::QueryCommand(LightQueryElement* lqe) {
 				SetState();
 			}
 			modifyQuery.lock();
-			lightQuery.push(*lqe);
+			lightQuery.push(lqe);
 			modifyQuery.unlock();
 			SetEvent(haveNewElement);
 		}
@@ -418,8 +416,7 @@ void FXHelper::QueryCommand(LightQueryElement* lqe) {
 }
 
 void FXHelper::QueryUpdate(bool force) {
-	LightQueryElement update{ force, 1 };
-	QueryCommand(&update);
+	QueryCommand({ force, 1 });
 }
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
@@ -427,7 +424,7 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 	if (actions->size()) {
 		LightQueryElement newBlock{ lgh, 0, (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
-		QueryCommand(&newBlock);
+		QueryCommand(newBlock);
 	}
 }
 
@@ -447,8 +444,7 @@ void FXHelper::SetState(bool force) {
 	if (force || oldStateOn != conf->stateOn || oldStateDim != conf->stateDimmed || oldStateEffect != stateEffects) {
 		if (mDlg)
 			conf-> SetIconState();
-		LightQueryElement brt{ force, 2 };
-		QueryCommand(&brt);
+		QueryCommand({ force, 2 });
 	}
 }
 
@@ -646,8 +642,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			case 2: { // set brightness
 				bool pbstate = current.light || src->finalPBState, needRefresh = false;
 				byte fbright = current.light ? 255 : src->finalBrightness;
-				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++)
-					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
+				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++)
+					if (dev->dev) {
 						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
 						switch (dev->version) {
 						case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
@@ -694,13 +690,13 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						// For v7 devices only, other have hardware dimming
 						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
 							switch (dev->version) {
-							/*case AlienFX_SDK::API_V2:
-							case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
-								unsigned delta = 255 - conf->dimmingPower;
-								action->r = ((UINT)action->r * delta) / 255;// >> 8;
-								action->g = ((UINT)action->g * delta) / 255;// >> 8;
-								action->b = ((UINT)action->b * delta) / 255;// >> 8;
-							}
+								/*case AlienFX_SDK::API_V2:
+								case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
+									unsigned delta = 255 - conf->dimmingPower;
+									action->r = ((UINT)action->r * delta) / 255;// >> 8;
+									action->g = ((UINT)action->g * delta) / 255;// >> 8;
+									action->b = ((UINT)action->b * delta) / 255;// >> 8;
+								}
 							}
 					}
 
@@ -733,12 +729,13 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					ablock.act.resize(current.actsize);
 					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
 					// do we have another set for same light?
-					vector<AlienFX_SDK::Afx_lightblock>* dv = &devs_query[pid];
+					auto dv = &devs_query[pid];
 					auto lp = dv->begin();
 					for (; lp != dv->end(); lp++)
 						if (lp->index == lid) {
 							//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
 							lp->act = ablock.act;
+							break;
 						}
 					if (lp == dv->end())
 						dv->push_back(ablock);

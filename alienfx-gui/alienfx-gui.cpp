@@ -189,33 +189,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
-void SetTrayTip() {
-	string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
-	if (eve) {
-		string effName;
-		if (fxhl->stateEffects) {
-			effName += eve->sysmon ? "Monitoring " : "";
-			effName += eve->capt ? "Ambient " : "";
-			effName += eve->audio ? "Haptics " : "";
-			effName += eve->grid ? "Grid" : "";
-		}
-		name += "\nEffects: " + (effName.empty() ? "Off" : effName);
-	}
-	if (mon) {
-		name += "\nPower mode: ";
-		if (fan_conf->lastProf->powerStage == mon->acpi->powers.size())
-			name += "G-mode";
-		else
-			name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
-
-		for (int i = 0; i < mon->acpi->fans.size(); i++) {
-			name += "\n" + GetFanName(i, true);
-		}
-	}
-	strcpy_s(conf->niData.szTip, 127, name.c_str());
-	Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
-}
-
 void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode* act) {
 	RECT rect;
 	HBRUSH Brush = act ? CreateSolidBrush(RGB(act->r, act->g, act->b)) : CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
@@ -331,7 +304,6 @@ void ReloadProfileList() {
 }
 
 void UpdateState(bool checkMode) {
-	//fxhl->SetState();
 	eve->ChangeEffectMode();
 	if (checkMode) {
 		ReloadModeList();
@@ -400,6 +372,8 @@ void SetMainTabs() {
 	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
 
+HWND tip;
+
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
@@ -420,9 +394,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		if (AddTrayIcon(&conf->niData, conf->updateCheck)) {
 			conf->SetIconState();
 		}
-
-		haveLightFX = CreateEvent(NULL, true, false, "LightFXActive");
-		//SetTimer(hDlg, 0, 750, NULL);
 
 	} break;
 	case WM_COMMAND:
@@ -503,9 +474,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 						GetWindowRect(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), &oldRect);
 						ScreenToClient(mDlg, (LPPOINT)&oldRect);
 						SetWindowPos(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-						GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
-						ScreenToClient(mDlg, (LPPOINT)&oldRect);
-						SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+						//GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
+						//ScreenToClient(mDlg, (LPPOINT)&oldRect);
+						//SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
 						GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
 						ScreenToClient(mDlg, (LPPOINT)&oldRect);
 						SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, oldRect.left, oldRect.top + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
@@ -528,36 +499,17 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} break;
 		}
 		break;
-	//case WM_TIMER: {
-	//	if (noLightFX != (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT)) {
-	//		// lightfx block state changed
-	//		noLightFX = !noLightFX;
-	//		if (noLightFX) {
-	//			// start back
-	//			fxhl->Start();
-	//			eve->ChangeEffects();
-	//		}
-	//		else {
-	//			// Stop all!
-	//			eve->ChangeEffects(true);
-	//			fxhl->Stop();
-	//		}
-	//		DebugPrint((string)"LightFX " + (noLightFX ? "Off" : "On") + "\n");
-	//	}
-	//	SetTrayTip();
-	//} break;
 	case WM_APP + 1: {
-		switch (LOWORD(lParam))	{
-		case WM_LBUTTONDBLCLK:
-		case WM_LBUTTONUP:
+		switch (LOWORD(lParam)) {
+		case WM_LBUTTONDBLCLK: case WM_LBUTTONUP:
 			RestoreApp();
 			break;
-		case WM_RBUTTONUP: case WM_CONTEXTMENU:
+		case WM_RBUTTONUP: case NIN_KEYSELECT: case WM_CONTEXTMENU:
 		{
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS };
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_AUTODISMISS };
 			SetMenuInfo(tMenu, &mi);
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
@@ -566,17 +518,17 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				pMenu = CreatePopupMenu();
 				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
 				for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
-					mInfo.dwTypeData = (LPSTR) (*i)->name.c_str();
+					mInfo.dwTypeData = (LPSTR)(*i)->name.c_str();
 					mInfo.fState = (*i)->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
 					InsertMenuItem(pMenu, (UINT)(i - conf->profiles.begin()), false, &mInfo);
 				}
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR) pMenu, "Profiles...");
+				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, "Profiles...");
 			}
 
 			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableEffects ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, conf->lightsOn ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_DIMLIGHTS, conf->dimmed ? MF_CHECKED : MF_UNCHECKED);
-			CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, conf->enableProfSwitch? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(tMenu, ID_TRAYMENU_PROFILESWITCH, conf->enableProfSwitch ? MF_CHECKED : MF_UNCHECKED);
 
 			GetCursorPos(&lpClickPoint);
 			SetForegroundWindow(hDlg);
@@ -588,18 +540,41 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (!isNewVersion) {
 				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 				Shell_NotifyIcon(NIM_ADD, &conf->niData);
-			} else
+			}
+			else
 				isNewVersion = false;
 			break;
 		case NIN_BALLOONUSERCLICK:
-		{
 			if (isNewVersion) {
 				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools/releases", NULL, NULL, SW_SHOWNORMAL);
 				isNewVersion = false;
 			}
+			break;
+		case WM_MOUSEMOVE: {
+			string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
+			string effName;
+			if (fxhl->stateEffects) {
+				effName += eve->sysmon ? "Monitoring " : "";
+				effName += eve->capt ? "Ambient " : "";
+				effName += eve->audio ? "Haptics " : "";
+				effName += eve->grid ? "Grid" : "";
+			}
+			name += "\nEffects: " + (effName.empty() ? "Off" : effName);
+			if (mon) {
+				name += "\nPower mode: ";
+				if (fan_conf->lastProf->powerStage == mon->acpi->powers.size())
+					name += "G-mode";
+				else
+					name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
+
+				for (int i = 0; i < mon->acpi->fans.size(); i++) {
+					name += "\n" + GetFanName(i, true);
+				}
+			}
+			strcpy_s(conf->niData.szTip, 127, name.c_str());
+			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 		} break;
 		}
-		break;
 	} break;
 	case WM_MENUCOMMAND: {
 		int idx = LOWORD(wParam);
@@ -690,13 +665,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
 			if (devList.size() != conf->afx_dev.activeDevices) {
 				DebugPrint("Active device list changed!\n");
-				bool updated = fxhl->updateThread;
 				fxhl->Stop();
 				conf->afx_dev.AlienFXApplyDevices(false, devList);
 				activeDevice = NULL;
-				if (conf->afx_dev.activeDevices && updated) {
+				if (conf->afx_dev.activeDevices && !dDlg) {
 					fxhl->Start();
-					fxhl->SetState();
+					//fxhl->SetState();
 					fxhl->Refresh();
 				}
 				SetMainTabs();
@@ -781,8 +755,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		conf->Save();
 		mDlg = NULL;
-		CloseHandle(haveLightFX);
-		//UnregisterDeviceNotification(hDlg);
 		PostQuitMessage(0);
 		break;
 	default: return false;

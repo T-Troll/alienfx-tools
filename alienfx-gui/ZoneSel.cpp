@@ -2,7 +2,6 @@
 #include "FXHelper.h"
 #include "common.h"
 
-//extern groupset* FindMapping(int mid, vector<groupset>* set = conf->active_set);
 extern bool IsGroupUnused(DWORD gid);
 extern FXHelper* fxhl;
 extern int tabLightSel;
@@ -39,7 +38,7 @@ void UpdateZoneList() {
 		lItem.lParam = i->group;
 		lItem.pszText = (LPSTR)grp->name.c_str();
 		if (grp->gid == eItem) {
-			lItem.state = LVIS_SELECTED;
+			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			rpos = pos;
 		}
 		else
@@ -53,8 +52,6 @@ void UpdateZoneList() {
 	ListView_SetColumnWidth(zone_list, 1, LVSCW_AUTOSIZE);
 	ListView_SetColumnWidth(zone_list, 0, cArea.right - ListView_GetColumnWidth(zone_list, 1));
 	ListView_EnsureVisible(zone_list, rpos, false);
-	if (rpos < 0)
-		eItem = 0;
 }
 
 BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -231,8 +228,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		}
 	} break;
 	case WM_NOTIFY:
-		switch (((NMHDR*)lParam)->idFrom) {
-		case IDC_LIST_ZONES:
+		if (((NMHDR*)lParam)->idFrom == IDC_LIST_ZONES) {
 			switch (((NMHDR*)lParam)->code) {
 			case LVN_ITEMACTIVATE: {
 				NMITEMACTIVATE* item = (NMITEMACTIVATE*)lParam;
@@ -242,25 +238,23 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-				if (lPoint->uNewState & LVIS_SELECTED) {
-					// Select other item...
-					eItem = (int)lPoint->lParam;
-					// gauge and spectrum.
-					mmap = conf->FindMapping(eItem);
-					if (mmap) {
-						CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
-						CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
-						RedrawZoneGrid(mmap->group);
-						ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
-						SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
-					}
-				}
-				else {
-					if (!lPoint->uNewState && ListView_GetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_FOCUSED)) {
-						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
+				if (lPoint->uChanged & LVIF_STATE) {
+					if (lPoint->uNewState & LVIS_SELECTED) {
+						// Select other item...
+						eItem = (int)lPoint->lParam;
+						// gauge and spectrum.
+						if (mmap = conf->FindMapping(eItem)) {
+							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
+							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
+							RedrawZoneGrid(mmap->group);
+							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
+							SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+						}
 					}
 					else
-						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, 0, LVIS_SELECTED);
+						if (ListView_GetItemState(lPoint->hdr.hwndFrom, lPoint->iItem, LVIS_FOCUSED)) {
+							ListView_SetItemState(lPoint->hdr.hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
+						}
 				}
 			} break;
 			case LVN_ENDLABELEDIT:
@@ -280,7 +274,6 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					return false;
 			} break;
 			}
-			break;
 		}
 		break;
 	default: return false;

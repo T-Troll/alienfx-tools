@@ -30,7 +30,7 @@ private:
 
 	void SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
-	void QueryCommand(LightQueryElement* lqe);
+	void QueryCommand(LightQueryElement lqe);
 	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions);
 	void QueryUpdate(bool force = false);
 

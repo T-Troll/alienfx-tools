@@ -134,6 +134,14 @@ IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
 	return pDevice;
 }
 
+void WSAudioIn::SetSilence() {
+	if (!clearBuffer) {
+		memset(freqs, 0, NUMBARS * sizeof(int));
+		clearBuffer = true;
+		needUpdate = true;
+	}
+}
+
 DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 {
 	WSAudioIn *src = (WSAudioIn *) lpParam;
@@ -154,16 +162,12 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 		switch (res) {
 		case WAIT_OBJECT_0+1:
 			// got new buffer....
-			src->pCaptureClient->GetNextPacketSize(&packetLength);
-			while (packetLength != 0) {
+			//src->pCaptureClient->GetNextPacketSize(&packetLength);
+			while (src->pCaptureClient->GetNextPacketSize(&packetLength) == S_OK && packetLength) {
 				src->pCaptureClient->GetBuffer((BYTE**) &pData, &numFramesAvailable, &flags, NULL, NULL);
 				shift = 0;
 				if (flags == AUDCLNT_BUFFERFLAGS_SILENT) {
-					if (!src->clearBuffer) {
-						ZeroMemory(src->freqs, NUMBARS * sizeof(int));
-						src->clearBuffer = true;
-						src->needUpdate = true;
-					}
+					src->SetSilence();
 					arrayPos = 0;
 				} else {
 					src->clearBuffer = false;
@@ -187,15 +191,11 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 					arrayPos += numFramesAvailable - shift;
 				}
 				src->pCaptureClient->ReleaseBuffer(numFramesAvailable);
-				src->pCaptureClient->GetNextPacketSize(&packetLength);
+				//src->pCaptureClient->GetNextPacketSize(&packetLength);
 			}
 			break;
 		case WAIT_TIMEOUT: // no buffer data for 200 ms...
-			if (!src->clearBuffer) {
-				ZeroMemory(src->freqs, NUMBARS * sizeof(int));
-				src->clearBuffer = true;
-				src->needUpdate = true;
-			}
+			src->SetSilence();
 			arrayPos = 0;
 			break;
 		}

@@ -20,6 +20,7 @@ public:
 	void RestartDevice();
 	void init();
 	void release();
+	void SetSilence();
 
 	double waveD[NUMPTS];
 	int freqs[NUMBARS];

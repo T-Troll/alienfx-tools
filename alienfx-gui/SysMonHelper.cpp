@@ -38,7 +38,7 @@ SysMonHelper::SysMonHelper() {
 
 SysMonHelper::~SysMonHelper() {
 	delete eventProc;
-	ZeroMemory(&fxhl->eData, sizeof(LightEventData));
+	memset(&fxhl->eData, 0, sizeof(LightEventData));
 	DebugPrint("Event thread stop.\n");
 	PdhCloseQuery(hQuery);
 }
@@ -90,7 +90,7 @@ void CEventProc(LPVOID param)
 		HKL curLocale;
 
 		PdhCollectQueryData(src->hQuery);
-		ZeroMemory(cData,sizeof(LightEventData));
+		memset(cData,0,sizeof(LightEventData));
 
 		// CPU load
 		PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);

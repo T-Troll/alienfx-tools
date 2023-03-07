@@ -57,42 +57,43 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
     return maxRPM;
 }
 
-void CheckFanOverboost(byte num) {
-    int rpm = acpi.GetFanRPM(num), cSteps = 8, boost = 100,
-        oldBoost = acpi.GetFanBoost(num),
-        downScale, crpm;
+void CheckFanOverboost(byte num, byte boost) {
+    int rpm = acpi.GetFanRPM(num), cSteps = 8/*, boost = boostval : 100*/,
+        oldBoost = acpi.GetFanBoost(num), downScale, crpm;
     printf("Checking Fan#%d:\n", num);
     bestBoostPoint = { (byte)boost, (WORD)rpm };
     SetFanSteady(num, boost);
-    printf("    \n");
-    for (int steps = cSteps; steps; steps = steps >> 1) {
-        // Check for uptrend
-        boost += steps;
-        while ((crpm = SetFanSteady(num, boost, true)) > rpm)
-        {
+    if (boost == 100) {
+        printf("    \n");
+        for (int steps = cSteps; steps; steps = steps >> 1) {
+            // Check for uptrend
+            boost += steps;
+            while ((crpm = SetFanSteady(num, boost, true)) > rpm)
+            {
                 rpm = bestBoostPoint.maxRPM;
                 cSteps = steps;
                 bestBoostPoint.maxBoost = boost;
                 printf("(New best: %d @ %d RPM)\n", boost, bestBoostPoint.maxRPM);
                 boost += steps;
+            }
+            printf("(Skipped)\n");
+            boost = bestBoostPoint.maxBoost;
         }
-        printf("(Skipped)\n");
-        boost = bestBoostPoint.maxBoost;
-    }
-    printf("High check done, best %d @ %d RPM, starting low check:\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-    // 100 rpm step patch
-    downScale = (rpm / 100) * 100 == rpm ? 101 : 56;
-    for (int steps = cSteps; steps; steps = steps >> 1) {
-        // Check for downtrend
-        boost -= steps;
-        while (boost > 100 && SetFanSteady(num, boost) > bestBoostPoint.maxRPM - downScale) {
-            bestBoostPoint.maxBoost = boost;
+        printf("High check done, best %d @ %d RPM, starting low check:\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+        // 100 rpm step patch
+        downScale = (rpm / 100) * 100 == rpm ? 101 : 56;
+        for (int steps = cSteps; steps; steps = steps >> 1) {
+            // Check for downtrend
             boost -= steps;
-            printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+            while (boost > 100 && SetFanSteady(num, boost) > bestBoostPoint.maxRPM - downScale) {
+                bestBoostPoint.maxBoost = boost;
+                boost -= steps;
+                printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+            }
+            if (boost > 100)
+                printf("(Step back)\n");
+            boost = bestBoostPoint.maxBoost;
         }
-        if (boost > 100)
-            printf("(Step back)\n");
-        boost = bestBoostPoint.maxBoost;
     }
     printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
     acpi.SetFanBoost(num, oldBoost);
@@ -241,23 +242,11 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "setover") {
-            int oldMode = acpi.GetPower();
+            int oldMode = acpi.GetPower(), boost = CheckArgs(2, acpi.fans.size(), false) ? args[1].num : 100;
             acpi.Unlock();
-            if (CheckArgs(2, acpi.fans.size(), false)) {
-                byte fanID = args[0].num;
-                // manual fan set
-                bestBoostPoint = { (byte)args[1].num, 0 };
-                SetFanSteady(fanID, bestBoostPoint.maxBoost);
-                fan_conf.UpdateBoost(fanID, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-                printf("\n");
-                PrintFanType(fanID, bestBoostPoint.maxRPM, ("boost " + to_string(bestBoostPoint.maxBoost) + ", RPM").c_str());
-                acpi.SetFanBoost(fanID, 0);
-            }
-            else
-                // all fans
-                for (int i = 0; i < acpi.fans.size(); i++)
-                    if (args.empty() || i == args[0].num)
-                        CheckFanOverboost(i);
+            for (int i = 0; i < acpi.fans.size(); i++)
+                if (args.empty() || i == args[0].num)
+                    CheckFanOverboost(i, boost);
             if (oldMode >= 0)
                 acpi.SetPower(acpi.powers[oldMode]);
             continue;

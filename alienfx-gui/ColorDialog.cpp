@@ -68,8 +68,8 @@ void RebuildEffectList(HWND hDlg) {
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
 			}
-			else
-				lItem.state = 0;
+			//else
+			//	lItem.state = 0;
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
