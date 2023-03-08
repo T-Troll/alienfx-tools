@@ -46,7 +46,6 @@ public:
 
 	// light states
 	bool stateScreen = true,
-		stateEffects = true,
 		finalPBState = false;
 	bool lightsNoDelay = true;
 	byte finalBrightness = 255;

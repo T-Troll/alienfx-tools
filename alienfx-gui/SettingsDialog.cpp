@@ -27,7 +27,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_BATTDIM, conf->dimmedBatt);
 		CheckDlgButton(hDlg, IDC_SCREENOFF, conf->offWithScreen);
 		CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, conf->enableEffects);
-		CheckDlgButton(hDlg, IDC_CHECK_EFFBAT, conf->effectsOnBattery);
+		CheckDlgButton(hDlg, IDC_CHECK_EFFBAT, !conf->effectsOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_LON, conf->lightsOn);
 		CheckDlgButton(hDlg, IDC_POWER_DIM, conf->dimPowerButton);
 		CheckDlgButton(hDlg, IDC_CHECK_GAMMA, conf->gammaCorrection);
@@ -36,6 +36,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_AWCC, conf->awcc_disable);
 		CheckDlgButton(hDlg, IDC_ESIFTEMP, conf->esif_temp);
 		CheckDlgButton(hDlg, IDC_FANCONTROL, conf->fanControl);
+		CheckDlgButton(hDlg, IDC_BAT_FAN, !conf->fansOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_EXCEPTION, conf->noDesktop);
 		CheckDlgButton(hDlg, IDC_CHECK_DIM, conf->dimmed);
 		CheckDlgButton(hDlg, IDC_CHECK_UPDATE, conf->updateCheck);
@@ -65,7 +66,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_BATTDIM:
 			conf->dimmedBatt = state;
-			//conf->SetStates();
 			fxhl->SetState();
 			break;
 		case IDC_SCREENOFF:
@@ -90,8 +90,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			eve->ChangeEffectMode();
 			break;
 		case IDC_CHECK_EFFBAT:
-			conf->effectsOnBattery = state;
+			conf->effectsOnBattery = !state;
 			eve->ChangeEffectMode();
+			break;
+		case IDC_BAT_FAN:
+			conf->fansOnBattery = !state;
+			eve->ToggleFans();
 			break;
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = !state;
@@ -177,10 +181,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if ((HWND)lParam == dim_slider) {
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip1, conf->dimmingPower);
-				//if (conf->stateDimmed) {
-					conf->stateDimmed = false;
-					fxhl->SetState();
-				//}
+				conf->stateDimmed = false;
+				fxhl->SetState();
 			}
 		} break;
 		} break;

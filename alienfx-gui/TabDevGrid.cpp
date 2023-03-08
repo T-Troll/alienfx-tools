@@ -27,6 +27,8 @@ HWND cgDlg;
 
 int minGridX, minGridY, maxGridX, maxGridY, bSize;
 
+gridClr* colorGrid = NULL;
+
 extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern AlienFX_SDK::Afx_light* keySetLight;
 extern AlienFX_SDK::Afx_device* activeDevice;
@@ -104,14 +106,14 @@ static AlienFX_SDK::Afx_colorcode ambient_grid{ 0xff,0xff,0xff };
 void RecalcGridZone(RECT* what = NULL) {
     RECT full = what ? *what : RECT({ 0, 0, conf->mainGrid->x, conf->mainGrid->y });
 
-    if (!conf->colorGrid)
-        conf->colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y]{};
+    if (!colorGrid)
+        colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y]{};
     else
         // clear grid
         for (int x = full.left; x < full.right; x++)
             for (int y = full.top; y < full.bottom; y++) {
                 int ind = ind(x, y);
-                conf->colorGrid[ind].first = conf->colorGrid[ind].last = NULL;
+                colorGrid[ind].first = colorGrid[ind].last = NULL;
             }
     AlienFX_SDK::Afx_group* grp;
     for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
@@ -120,31 +122,31 @@ void RecalcGridZone(RECT* what = NULL) {
                 for (int y = full.top; y < full.bottom; y++) {
                     int ind = ind(x, y);
                     if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
-                        if (fxhl->stateEffects) {
+                        if (conf->stateEffects) {
                             if (cs->events.size()) {
-                                if (!conf->colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
-                                    conf->colorGrid[ind].first = Act2Code(&cs->events.front().from);
-                                conf->colorGrid[ind].last = Act2Code(&cs->events.back().to);
+                                if (!colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
+                                    colorGrid[ind].first = Act2Code(&cs->events.front().from);
+                                colorGrid[ind].last = Act2Code(&cs->events.back().to);
                             }
                             if (cs->haptics.size()) {
-                                conf->colorGrid[ind] = { &cs->haptics.front().colorfrom, &cs->haptics.back().colorto };
+                                colorGrid[ind] = { &cs->haptics.front().colorfrom, &cs->haptics.back().colorto };
                             }
                             if (cs->ambients.size()) {
-                                conf->colorGrid[ind].first = conf->colorGrid[ind].last = &ambient_grid;
+                                colorGrid[ind].first = colorGrid[ind].last = &ambient_grid;
                             }
                             if (cs->effect.trigger) {
                                 if (cs->effect.trigger == 4)
-                                    conf->colorGrid[ind].first = conf->colorGrid[ind].last = &ambient_grid;
+                                    colorGrid[ind].first = colorGrid[ind].last = &ambient_grid;
                                 else
                                     if (cs->effect.effectColors.size())
-                                        conf->colorGrid[ind] = { &cs->effect.effectColors.front(), &cs->effect.effectColors.back() };
+                                        colorGrid[ind] = { &cs->effect.effectColors.front(), &cs->effect.effectColors.back() };
                             }
                         }
                         if (cs->color.size()) {
-                            if (!conf->colorGrid[ind].first)
-                                conf->colorGrid[ind].first = Act2Code(&cs->color.front());
-                            if (!conf->colorGrid[ind].last)
-                                conf->colorGrid[ind].last = Act2Code(&cs->color.back());
+                            if (!colorGrid[ind].first)
+                                colorGrid[ind].first = Act2Code(&cs->color.front());
+                            if (!colorGrid[ind].last)
+                                colorGrid[ind].last = Act2Code(&cs->color.back());
                         }
                     }
                 }
@@ -180,9 +182,9 @@ void SetLightGridSize(int x, int y) {
     conf->mainGrid->grid = newgrid;
     conf->mainGrid->x = x;
     conf->mainGrid->y = y;
-    if (conf->colorGrid) {
-        delete[] conf->colorGrid;
-        conf->colorGrid = NULL;
+    if (colorGrid) {
+        delete[] colorGrid;
+        colorGrid = NULL;
     }
     InitGridButtonZone();
 }
@@ -406,7 +408,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 }
                 else {
                     RECT rectClip = ditem->rcItem;
-                    gridClr lightcolors = conf->colorGrid[ind];
+                    gridClr lightcolors = colorGrid[ind];
                     if (lightcolors.first) {
                         // active
                         GRADIENT_RECT gRect{ 0,1 };
@@ -518,9 +520,9 @@ void OnGridSelChanged(HWND hwndDlg)
     conf->gridTabSel = TabCtrl_GetCurSel(hwndDlg);
     if (conf->gridTabSel < 0) conf->gridTabSel = 0;
     conf->mainGrid = &conf->afx_dev.GetGrids()->at(conf->gridTabSel);
-    if (conf->colorGrid) {
-        delete[] conf->colorGrid;
-        conf->colorGrid = NULL;
+    if (colorGrid) {
+        delete[] colorGrid;
+        colorGrid = NULL;
     }
 
     RepaintGrid();

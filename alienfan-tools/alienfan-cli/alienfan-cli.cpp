@@ -199,8 +199,8 @@ int main(int argc, char* argv[])
             printf("%s", acpi.Unlock() < 0 ? "Unlock failed!\n" : "Unlocked.\n");
             continue;
         }
-        if (command == "gmode" && acpi.isGmode) {
-            printf("G-mode is %s\n", acpi.GetGMode() > 0 ? "On" : "Off");
+        if (command == "gmode" /*&& acpi.isGmode*/) {
+            printf("G-mode is %s\n", acpi.GetGMode() ? "On" : "Off");
             continue;
         }
         if (command == "setpower" && CheckArgs(1, acpi.powers.size()) && acpi.SetPower(acpi.powers[args[0].num]) >= 0) {

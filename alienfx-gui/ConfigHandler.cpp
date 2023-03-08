@@ -138,6 +138,7 @@ void ConfigHandler::Load() {
 	GetReg("DimmingPower", &dimmingPower, 92);
 	GetReg("OffOnBattery", &offOnBattery);
 	GetReg("FanControl", &fanControl, 1);
+	GetReg("FansOnBattery", &fansOnBattery, 1);
 	GetReg("ShowGridNames", &showGridNames);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("GESpeed", &geTact, 100);
@@ -305,6 +306,7 @@ void ConfigHandler::Save() {
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("EsifTemp", esif_temp);
 	SetReg("FanControl", fanControl);
+	SetReg("FansOnBattery", fansOnBattery);
 	SetReg("ShowGridNames", showGridNames);
 	SetReg("KeyboardShortcut", keyShortcuts);
 	SetReg("GESpeed", geTact);

@@ -48,29 +48,23 @@ void EventHandler::ChangePowerState()
 	if (conf->statePower != (bool)state.ACLineStatus) {
 		conf->statePower = state.ACLineStatus;
 		DebugPrint("Power state changed!\n");
-		fxhl->SetState();
-		if (cEvent)
+		ToggleFans();
+		ChangeEffectMode();
+		if (conf->enableProfSwitch)
 			CheckProfileChange();
 	}
 }
 
 void EventHandler::SwitchActiveProfile(profile* newID)
 {
-	if (keyboardSwitchActive) return;
 	if (!newID) newID = conf->FindDefaultProfile();
-	if (newID != conf->activeProfile) {
+	if (!(keyboardSwitchActive || newID == conf->activeProfile)) {
 		// reset effects
 		fxhl->UpdateGlobalEffect(NULL, true);
 		modifyProfile.lock();
 		conf->activeProfile = newID;
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
 		modifyProfile.unlock();
-
-		// deprecated, remove soon
-		if (mon && fan_conf->lastProf->gmode_stage) {
-			fan_conf->lastProf->gmode_stage = 0;
-			fan_conf->lastProf->powerSet = (WORD)mon->acpi->powers.size();
-		}
 
 		ChangeEffectMode();
 
@@ -82,6 +76,14 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 #endif
 }
 
+void EventHandler::ToggleFans() {
+	if (mon)
+		if (conf->fansOnBattery || conf->statePower)
+			mon->Start();
+		else
+			mon->Stop();
+}
+
 void EventHandler::ChangeEffectMode() {
 	fxhl->SetState();
 	ChangeEffects();
@@ -89,7 +91,9 @@ void EventHandler::ChangeEffectMode() {
 
 void EventHandler::ChangeEffects(bool stop) {
 	bool haveMon = false, haveAmb = false, haveHap = false, haveGrid = false;
-	if (!stop && fxhl->stateEffects /*&& noLightFX*/) {
+	// Effects state...
+	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
+	if (!stop && conf->stateEffects) {
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			if (it->events.size() && !sysmon) {
 				haveMon = true;

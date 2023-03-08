@@ -82,6 +82,7 @@ struct grideffect {
 struct grideffop {
 	// operational info
 	bool passive = true;
+	//void* capt = NULL; // capture object if present in operation
 	int gridX, gridY,
 		oldphase=-1,
 		size,
@@ -157,29 +158,33 @@ public:
 	DWORD lightsOn;
 	DWORD dimmed;
 	DWORD offWithScreen;
-	DWORD dimmedBatt;
 	DWORD dimPowerButton;
 	DWORD dimmingPower;
 	DWORD enableProfSwitch;
 	DWORD offPowerButton;
-	DWORD offOnBattery;
 	DWORD awcc_disable;
 	DWORD esif_temp;
 	DWORD gammaCorrection;
 	DWORD fanControl;
 	DWORD enableEffects;
-	DWORD effectsOnBattery;
 	DWORD noDesktop;
 	DWORD showGridNames;
 	DWORD keyShortcuts;
 	DWORD geTact;
+	// Battery related
+	DWORD offOnBattery;
+	DWORD dimmedBatt;
+	DWORD effectsOnBattery;
+	DWORD fansOnBattery;
+
 	COLORREF customColors[16]{ 0 };
 
 	// States
 	bool stateDimmed = false,
-		stateOn = true,
-		statePower = true;
-	bool wasAWCC = false;
+		 stateOn = true,
+		 stateEffects = true,
+		 statePower = true,
+		 wasAWCC = false;
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 
 	// Ambient...
@@ -201,7 +206,7 @@ public:
 
 	// Grid-related
 	AlienFX_SDK::Afx_grid* mainGrid = NULL;
-	gridClr* colorGrid = NULL;
+	//gridClr* colorGrid = NULL;
 	int gridTabSel = 0;
 
 	// mapping block from FX SDK

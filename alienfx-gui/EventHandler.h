@@ -1,5 +1,4 @@
 #pragma once
-//#include "CustomMutex.h"
 #include "ConfigHandler.h"
 
 class EventHandler
@@ -24,6 +23,7 @@ public:
 
 	// Profiles
 	void SwitchActiveProfile(profile* newID);
+	void ToggleFans();
 	void StartProfiles();
 	void StopProfiles();
 	string GetProcessName(DWORD proc);

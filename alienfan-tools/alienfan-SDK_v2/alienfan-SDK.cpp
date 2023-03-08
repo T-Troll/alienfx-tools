@@ -290,7 +290,7 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		return isGmode ? GetPower() < 0 ? 1 : CallWMIMethod(getGMode) : 0;
+		return isGmode ? GetPower() < 0 || CallWMIMethod(getGMode) : 0;
 	}
 
 	Lights::Lights(Control *ac) {

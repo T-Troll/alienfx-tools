@@ -146,9 +146,151 @@ bool FXHelper::CheckEvent(LightEventData* eData, event* e) {
 	return false;
 }
 
-void FXHelper::RefreshCounters(LightEventData *data)
+void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin) {
+	vector<AlienFX_SDK::Afx_action> cur{ *fin };
+	for (auto lgh = zone->lightMap.begin(); lgh != zone->lightMap.end(); lgh++) {
+		bool needSet = false;
+		switch (grp->gauge) {
+		case 1: // horizontal
+			needSet = lgh->x == phase;
+			break;
+		case 2: // vertical
+			needSet = lgh->y == phase;
+			break;
+		case 3: // diagonal
+			needSet = lgh->x + lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
+			break;
+		case 4: // back diagonal
+			needSet = lgh->x + zone->yMax - lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
+			break;
+		case 5: // radial
+			needSet = (abs(lgh->x - grp->gridop.gridX) == phase && abs(lgh->y - grp->gridop.gridY) <= phase)
+				|| (abs(lgh->y - grp->gridop.gridY) == phase && abs(lgh->x - grp->gridop.gridX) <= phase);
+			break;
+		}
+		if (needSet)
+			SetLight(lgh->light, &cur);
+	}
+}
+
+void FXHelper::QueryCommand(LightQueryElement lqe) {
+	if (updateThread)
+		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
+			modifyQuery.lock();
+			if (wasLFX) {
+				wasLFX = false;
+				lightQuery.push({ 0, 2 });
+			}
+			lightQuery.push(lqe);
+			modifyQuery.unlock();
+			SetEvent(haveNewElement);
+		}
+		else
+			wasLFX = true;
+}
+
+void FXHelper::QueryUpdate(bool force) {
+	QueryCommand({ force, 1 });
+}
+
+void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
-	if (eve->sysmon) {
+	if (actions->size()) {
+		LightQueryElement newBlock{ lgh, 0, (byte)actions->size() };
+		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
+		QueryCommand(newBlock);
+	}
+}
+
+void FXHelper::SetState(bool force) {
+	bool oldStateOn = conf->stateOn, oldStateDim = conf->stateDimmed;
+	// Lights on state...
+	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
+	// Dim state...
+	conf->stateDimmed = conf->dimmed || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
+	// Brightness
+	finalBrightness = (byte)(conf->stateOn ? 255 - conf->stateDimmed ? conf->dimmingPower : 0 : 0);
+	// Power button state
+	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
+
+	if (force || oldStateOn != conf->stateOn || oldStateDim != conf->stateDimmed) {
+		if (mDlg)
+			conf->SetIconState();
+		QueryCommand({ force, 2 });
+	}
+}
+
+void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
+	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++)
+	{
+		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;
+
+		if (cdev && (cdev->pid == it->pid && cdev->vid == it->vid)) {
+			// set this effect for device
+			if (reset)
+				cdev->SetGlobalEffects(0, it->globalMode, it->globalDelay, { 0 }, { 0 });
+			else
+				cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->globalDelay,
+					{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
+					{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
+		}
+	}
+}
+
+void FXHelper::Start() {
+	if (!updateThread) {
+		lightsNoDelay = true;
+		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
+		DebugPrint("Light updates started.\n");
+	}
+}
+
+void FXHelper::Stop() {
+	if (updateThread) {
+		HANDLE oldUpate = updateThread;
+		updateThread = NULL;
+		//if (lightQuery.size())
+		//	QueryUpdate();
+		SetEvent(stopQuery);
+		WaitForSingleObject(oldUpate, 20000);
+		CloseHandle(oldUpate);
+		DebugPrint("Light updates stopped.\n");
+	}
+}
+
+void FXHelper::Refresh(bool forced)
+{
+
+#ifdef _DEBUG
+	if (forced)
+		DebugPrint("Forced ");
+	DebugPrint("Refresh initiated.\n");
+#endif
+
+	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
+		RefreshOne(&(*it), false);
+	}
+	if (!forced) {
+		RefreshCounters();
+		RefreshAmbient();
+		RefreshHaptics();
+		RefreshGrid();
+	}
+	QueryUpdate(forced);
+}
+
+void FXHelper::RefreshOne(groupset* map, bool update) {
+
+	if (map && map->color.size()) {
+		SetZone(map, &map->color, 0);
+		if (update)
+			QueryUpdate();
+	}
+}
+
+void FXHelper::RefreshCounters(LightEventData* data)
+{
+	if (conf->stateEffects) {
 		bool force = !data, wasChanged = false;
 		AlienFX_SDK::Afx_group* grp;
 		if (!data)
@@ -245,280 +387,9 @@ void FXHelper::RefreshCounters(LightEventData *data)
 	}
 }
 
-void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin) {
-	vector<AlienFX_SDK::Afx_action> cur{ *fin };
-	for (auto lgh = zone->lightMap.begin(); lgh != zone->lightMap.end(); lgh++) {
-		bool needSet = false;
-		switch (grp->gauge) {
-		case 1: // horizontal
-			needSet = lgh->x == phase;
-			break;
-		case 2: // vertical
-			needSet = lgh->y == phase;
-			break;
-		case 3: // diagonal
-			needSet = lgh->x + lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
-			break;
-		case 4: // back diagonal
-			needSet = lgh->x + zone->yMax - lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
-			break;
-		case 5: // radial
-			needSet = (abs(lgh->x - grp->gridop.gridX) == phase && abs(lgh->y - grp->gridop.gridY) <= phase)
-				|| (abs(lgh->y - grp->gridop.gridY) == phase && abs(lgh->x - grp->gridop.gridX) <= phase);
-			break;
-		}
-		if (needSet)
-			SetLight(lgh->light, &cur);
-	}
-}
-
-void FXHelper::RefreshGrid() {
-	GridHelper* grid = (GridHelper*)eve->grid;
-	if (grid) {
-		bool wasChanged = false;
-		vector<AlienFX_SDK::Afx_action> cur{ {0} };
-		eve->modifyProfile.lock();
-		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
-			if (!ce->gridop.passive) {
-				if (ce->effect.trigger == 4) { // ambient
-					auto capt = grid->capt;
-					// check availability
-					if (!capt)
-						capt = new CaptureHelper(false);
-					// update lights
-					if (capt->needUpdate) {
-						capt->needUpdate = false;
-						UINT shift = 255 - conf->amb_shift;
-						auto zone = *conf->FindZoneMap(ce->group);
-						// resize grid if zone changed
-						if (capt->gridX != zone.xMax || capt->gridY != zone.yMax)
-							capt->SetLightGridSize(zone.xMax, zone.yMax);
-						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
-							int ind = (lgh->x + (lgh->y * zone.xMax)) * 3;
-							cur.front().r = (capt->imgz[ind + 2] * shift) / 255;
-							cur.front().g = (capt->imgz[ind + 1] * shift) / 255;
-							cur.front().b = (capt->imgz[ind] * shift) / 255;
-							SetLight(lgh->light, &cur);
-						}
-						wasChanged = true;
-					}
-					continue;
-				}
-				if (ce->effect.effectColors.size()) {
-					// prepare vars..
-					grideffop* effop = &ce->gridop;
-					grideffect* eff = &ce->effect;
-					// calculate phase
-					int cTact = effop->current_tact++;
-					int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
-
-					if (phase > effop->effsize * effop->lmp) {
-						effop->passive = true;
-						continue;
-					}
-
-					int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
-
-					AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
-						&eff->effectColors[colorIndex]),
-						to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
-
-					phase %= effop->effsize;
-
-					if (phase >= effop->size) // circle by color and direction
-						phase = effop->effsize - phase - 1;
-
-					if (ce->gaugeflags & GAUGE_REVERSE)
-						phase = effop->size - phase - 1;
-
-					// Set lights
-					if (effop->oldphase != phase) {
-						// Set grid effect
-						double power = 0;
-
-						if (ce->gauge) {
-							auto zone = *conf->FindZoneMap(ce->group);
-							// Old phase cleanup
-							if (!cTact) {
-								cur.front() = from;
-								SetZone(&(*ce), &cur);
-							}
-							else
-								for (int dist = 0; dist < eff->width; dist++)
-									SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
-
-							// Check for gradient zones - in this case all phases updated!
-							if (ce->gaugeflags & GAUGE_GRADIENT) {
-								for (int nf = 0; nf < effop->size - phase; nf++) {
-									power = (double)nf / (effop->size - phase);
-									SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
-								}
-							}
-
-							// Fill new phase colors
-							if (eff->type == 3) { // Filled
-								for (int nf = 0; nf <= phase; nf++) {
-									power = ce->gaugeflags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
-									SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
-								}
-							}
-							else {
-								int halfW = eff->width / 2;
-								for (int dist = 0; dist < eff->width; dist++) {
-									if (phase - dist >= 0) {
-										// make final color for this distance
-										power = 1.0;
-										if (halfW) // do not need if size < 2
-											switch (eff->type) {
-											case 1: // wave
-												power -= (double)abs(halfW - dist) / halfW;
-												break;
-											case 2: // gradient
-												power -= (double)(dist) / eff->width;
-											}
-										SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &from, &to));
-									}
-								}
-							}
-						}
-						else {
-							// flat morph emulation
-							power = (double)phase / eff->width;
-							cur.front() = { BlendPower(power, &from, &to) };
-							SetZone(&(*ce), &cur);
-						}
-						wasChanged = true;
-						effop->oldphase = phase;
-					}
-				}
-			}
-		}
-		eve->modifyProfile.unlock();
-		if (wasChanged)
-			QueryUpdate();
-	}
-}
-
-void FXHelper::QueryCommand(LightQueryElement lqe) {
-	if (updateThread)
-		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
-			if (wasLFX) {
-				wasLFX = false;
-				SetState();
-			}
-			modifyQuery.lock();
-			lightQuery.push(lqe);
-			modifyQuery.unlock();
-			SetEvent(haveNewElement);
-		}
-		else
-			wasLFX = true;
-}
-
-void FXHelper::QueryUpdate(bool force) {
-	QueryCommand({ force, 1 });
-}
-
-void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
-{
-	if (actions->size()) {
-		LightQueryElement newBlock{ lgh, 0, (byte)actions->size() };
-		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
-		QueryCommand(newBlock);
-	}
-}
-
-void FXHelper::SetState(bool force) {
-	bool oldStateOn = conf->stateOn, oldStateDim = conf->stateDimmed, oldStateEffect = stateEffects;
-	// Lights on state...
-	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
-	// Dim state...
-	conf->stateDimmed = conf->dimmed || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
-	// Effects state...
-	stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
-	// Brightness
-	finalBrightness = (byte)(conf->stateOn ? conf->stateDimmed ? 255 - conf->dimmingPower : 255 : 0);
-	// Power button state
-	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
-
-	if (force || oldStateOn != conf->stateOn || oldStateDim != conf->stateDimmed || oldStateEffect != stateEffects) {
-		if (mDlg)
-			conf-> SetIconState();
-		QueryCommand({ force, 2 });
-	}
-}
-
-void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
-	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++)
-	{
-		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;
-
-		if (cdev && (cdev->pid == it->pid && cdev->vid == it->vid)) {
-			// set this effect for device
-			if (reset)
-				cdev->SetGlobalEffects(0, it->globalMode, it->globalDelay, { 0 }, { 0 });
-			else
-				cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->globalDelay,
-					{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
-					{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
-		}
-	}
-}
-
-void FXHelper::Start() {
-	if (!updateThread) {
-		lightsNoDelay = true;
-		updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
-		DebugPrint("Light updates started.\n");
-	}
-}
-
-void FXHelper::Stop() {
-	if (updateThread) {
-		if (lightQuery.size())
-			QueryUpdate();
-		SetEvent(stopQuery);
-		WaitForSingleObject(updateThread, 20000);
-		CloseHandle(updateThread);
-		updateThread = NULL;
-		DebugPrint("Light updates stopped.\n");
-	}
-}
-
-void FXHelper::Refresh(bool forced)
-{
-
-#ifdef _DEBUG
-	if (forced)
-		DebugPrint("Forced ");
-	DebugPrint("Refresh initiated.\n");
-#endif
-
-	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
-		RefreshOne(&(*it), false);
-	}
-	if (!forced) {
-		RefreshCounters();
-		RefreshAmbient();
-		RefreshHaptics();
-		RefreshGrid();
-	}
-	QueryUpdate(forced);
-}
-
-void FXHelper::RefreshOne(groupset* map, bool update) {
-
-	if (map && map->color.size()) {
-		SetZone(map, &map->color, 0);
-		if (update)
-			QueryUpdate();
-	}
-}
-
 void FXHelper::RefreshAmbient() {
-	auto capt = (CaptureHelper*)eve->capt;
-	if (capt) {
-		UCHAR* img = capt->imgz;
+	if (eve->capt) {
+		UCHAR* img = ((CaptureHelper*)eve->capt)->imgz;
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 		vector<AlienFX_SDK::Afx_action> actions{ {0} };
 		bool wasChanged = false;
@@ -619,6 +490,130 @@ void FXHelper::RefreshHaptics() {
 	}
 }
 
+void FXHelper::RefreshGrid() {
+	if (eve->grid) {
+		bool wasChanged = false, noAmb = true;
+		vector<AlienFX_SDK::Afx_action> cur{ {0} };
+		eve->modifyProfile.lock();
+		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
+			if (!ce->gridop.passive) {
+				if (ce->effect.trigger == 4) { // ambient
+					CaptureHelper* capt = ((GridHelper*)eve->grid)->capt;
+					// update lights
+					if (capt->needUpdate && noAmb) {
+						capt->needUpdate = false;
+						UINT shift = 255 - conf->amb_shift;
+						auto zone = *conf->FindZoneMap(ce->group);
+						// resize grid if zone changed
+						if (capt->gridX != zone.xMax || capt->gridY != zone.yMax)
+							capt->SetLightGridSize(zone.xMax, zone.yMax);
+						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
+							int ind = (lgh->x + (lgh->y * zone.xMax)) * 3;
+							cur.front().r = (capt->imgz[ind + 2] * shift) / 255;
+							cur.front().g = (capt->imgz[ind + 1] * shift) / 255;
+							cur.front().b = (capt->imgz[ind] * shift) / 255;
+							SetLight(lgh->light, &cur);
+						}
+						wasChanged = true;
+						noAmb = false;
+					}
+					continue;
+				}
+				if (ce->effect.effectColors.size()) {
+					// prepare vars..
+					grideffop* effop = &ce->gridop;
+					grideffect* eff = &ce->effect;
+					// calculate phase
+					int cTact = effop->current_tact++;
+					int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
+
+					if (phase > effop->effsize * effop->lmp) {
+						effop->passive = true;
+						continue;
+					}
+
+					int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
+
+					AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
+						&eff->effectColors[colorIndex]),
+						to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
+
+					phase %= effop->effsize;
+
+					if (phase >= effop->size) // circle by color and direction
+						phase = effop->effsize - phase - 1;
+
+					if (ce->gaugeflags & GAUGE_REVERSE)
+						phase = effop->size - phase - 1;
+
+					// Set lights
+					if (effop->oldphase != phase) {
+						// Set grid effect
+						double power = 0;
+
+						if (ce->gauge) {
+							auto zone = *conf->FindZoneMap(ce->group);
+							// Old phase cleanup
+							if (!cTact) {
+								cur.front() = from;
+								SetZone(&(*ce), &cur);
+							}
+							else
+								for (int dist = 0; dist < eff->width; dist++)
+									SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
+
+							// Check for gradient zones - in this case all phases updated!
+							if (ce->gaugeflags & GAUGE_GRADIENT) {
+								for (int nf = 0; nf < effop->size - phase; nf++) {
+									power = (double)nf / (effop->size - phase);
+									SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
+								}
+							}
+
+							// Fill new phase colors
+							if (eff->type == 3) { // Filled
+								for (int nf = 0; nf <= phase; nf++) {
+									power = ce->gaugeflags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
+									SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
+								}
+							}
+							else {
+								int halfW = eff->width / 2;
+								for (int dist = 0; dist < eff->width; dist++) {
+									if (phase - dist >= 0) {
+										// make final color for this distance
+										power = 1.0;
+										if (halfW) // do not need if size < 2
+											switch (eff->type) {
+											case 1: // wave
+												power -= (double)abs(halfW - dist) / halfW;
+												break;
+											case 2: // gradient
+												power -= (double)(dist) / eff->width;
+											}
+										SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &from, &to));
+									}
+								}
+							}
+						}
+						else {
+							// flat morph emulation
+							power = (double)phase / eff->width;
+							cur.front() = { BlendPower(power, &from, &to) };
+							SetZone(&(*ce), &cur);
+						}
+						wasChanged = true;
+						effop->oldphase = phase;
+					}
+				}
+			}
+		}
+		eve->modifyProfile.unlock();
+		if (wasChanged)
+			QueryUpdate();
+	}
+}
+
 DWORD WINAPI CLightsProc(LPVOID param) {
 	FXHelper* src = (FXHelper*) param;
 	LightQueryElement current;
@@ -634,7 +629,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		while (src->lightQuery.size()) {
 
 			src->modifyQuery.lock();
-			current = src->lightQuery.front();
+			if (&src->lightQuery.front())
+				current = src->lightQuery.front();
+			else
+				DebugPrint("Null in query!\n");
 			src->lightQuery.pop();
 			src->modifyQuery.unlock();
 

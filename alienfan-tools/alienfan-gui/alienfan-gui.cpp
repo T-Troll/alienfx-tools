@@ -321,7 +321,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             mInfo.wID = ID_TRAYMENU_POWER_SELECTED;
             for (int i = 0; i < mon->acpi->powers.size(); i++) {
                 mInfo.dwTypeData = (LPSTR)fan_conf->powers.find(mon->acpi->powers[i])->second.c_str();
-                mInfo.fState = i == fan_conf->lastProf->powerStage ? MF_CHECKED : MF_UNCHECKED;
+                mInfo.fState = (i == fan_conf->lastProf->powerStage) ? MF_CHECKED : MF_UNCHECKED;
                 InsertMenuItem(pMenu, i, false, &mInfo);
             }
             ModifyMenu(tMenu, ID_MENU_POWER, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Power mode - " +

@@ -20,17 +20,14 @@ MonHelper::MonHelper() {
 		boostRaw.resize(fansize);
 		lastBoost.resize(fansize);
 		fanSleep.resize(fansize);
-		// deprecated, remove soon
-		if (fan_conf->prof.gmode_stage) {
-			fan_conf->prof.gmode_stage = 0;
-			fan_conf->prof.powerSet = (WORD)acpi->powers.size();
-		}
+		oldPower = GetPowerMode();
 		Start();
 	}
 }
 
 MonHelper::~MonHelper() {
 	Stop();
+	SetCurrentMode(oldPower);
 	delete acpi;
 }
 
@@ -49,9 +46,6 @@ bool MonHelper::IsGMode() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		if (oldPower < 0)
-			oldPower = acpi->GetGMode() > 0 ? (WORD)acpi->powers.size() : acpi->GetPower();
-		SetCurrentMode(fan_conf->lastProf->powerStage);
 		ResetBoost();
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
@@ -64,7 +58,6 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
-		SetCurrentMode(oldPower);
 		ResetBoost();
 #ifdef _DEBUG
 		OutputDebugString("Mon thread stop.\n");
@@ -75,7 +68,7 @@ void MonHelper::Stop() {
 void MonHelper::SetCurrentMode(size_t newMode) {
 	if (newMode < acpi->powers.size()) {
 		if (acpi->GetGMode()) {
-			acpi->SetGMode(0);
+			acpi->SetGMode(false);
 		}
 		acpi->SetPower(acpi->powers[newMode]);
 	}
@@ -83,21 +76,20 @@ void MonHelper::SetCurrentMode(size_t newMode) {
 		if (!acpi->GetGMode()) {
 			if (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
 				acpi->SetPower(0xa0);
-			acpi->SetGMode(1);
+			acpi->SetGMode(true);
 		}
 	}
 }
-
-//void MonHelper::SetCurrentGmode(bool newMode) {
-//	fan_conf->lastProf->gmode = acpi->isGmode ? newMode : 0;
-//	SetCurrentMode(newMode ? acpi->powers.size() : fan_conf->lastProf->powerStage);
-//}
 
 byte MonHelper::GetFanPercent(byte fanID)
 {
 	if (!fan_conf->boosts[fanID].maxRPM)
 		fan_conf->boosts[fanID].maxRPM = acpi->GetMaxRPM(fanID);
 	return (fanRpm[fanID] * 100) / fan_conf->boosts[fanID].maxRPM;
+}
+
+int MonHelper::GetPowerMode() {
+	return acpi->GetGMode() ? (int)acpi->powers.size() : acpi->GetPower();
 }
 
 void CMonProc(LPVOID param) {
@@ -129,7 +121,7 @@ void CMonProc(LPVOID param) {
 
 	if (src->inControl) {
 		// check power mode
-		if (prof->powerStage != (acpi->GetGMode() > 0 ? acpi->powers.size() : acpi->GetPower()))
+		if (prof->powerStage != src->GetPowerMode())
 			src->SetCurrentMode(prof->powerStage);
 		if (!prof->powerStage && modified) {
 			int cBoost;

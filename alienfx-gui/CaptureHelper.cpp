@@ -136,7 +136,7 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	HANDLE waitArray[2]{ cap->sEvent, src->pEvent };
 	DWORD res;
 	while ((res = WaitForMultipleObjects(2, waitArray, false, 150)) != WAIT_OBJECT_0)
-		if (res != WAIT_TIMEOUT) {
+		if (res != WAIT_TIMEOUT && src->dst) {
 			UINT idx = src->idx;
 			ULONG64 r = 0, g = 0, b = 0;
 			byte* freqval = NULL; 
@@ -208,8 +208,6 @@ void CInProc(LPVOID param)
 #endif
 			}
 			src->callData[tInd].idx = (ptr / src->gridX) * src->hh * stride + (ptr % src->gridX) * src->ww * 4;
-			//src->callData[tInd].dx = dx;
-			//src->callData[tInd].dy = dy;
 			src->callData[tInd].dst = src->imgo + ptr * 3;
 			SetEvent(src->callData[tInd].pEvent);
 			ptr++;

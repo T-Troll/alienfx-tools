@@ -133,7 +133,7 @@ void GridHelper::Stop() {
 		kEvent = NULL;
 	}
 	if (capt) {
-		delete capt; capt = NULL;
+		delete (CaptureHelper*)capt; capt = NULL;
 	}
 	if (sysmon) {
 		delete sysmon; sysmon = NULL;

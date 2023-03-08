@@ -210,7 +210,7 @@ namespace AlienFan_SDK {
 #endif
 
 						// check G-mode...
-						isGmode = GetGMode() >= 0;
+						isGmode = RunMainCommand(dev_controls.getGMode) >= 0;
 
 						int fIndex = 0, funcID = 0;
 						// Scan for available fans...
@@ -450,10 +450,7 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		if (GetPower() < 0)
-			return 1;
-		else
-			return RunMainCommand(dev_controls.getGMode);
+		return isGmode ? GetPower() < 0 || RunMainCommand(dev_controls.getGMode) : 0;
 	}
 
 	int Control::GetMaxRPM(int fanID) {
@@ -462,12 +459,12 @@ namespace AlienFan_SDK {
 
 	int Control::GetCharge() {
 		PACPI_EVAL_OUTPUT_BUFFER res = NULL;
+		int res_int = -1;
 		if (EvalAcpiMethod(acc, pathCHRG, (PVOID*)&res, NULL) && res) {
-			int res_int = res->Argument[0].Argument;
+			res_int = res->Argument[0].Argument;
 			free(res);
-			return res_int;
 		}
-		return -1;
+		return res_int;
 	}
 
 	int Control::SetCharge(byte val) {

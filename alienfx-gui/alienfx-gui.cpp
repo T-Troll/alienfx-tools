@@ -423,7 +423,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case IDC_BUTTON_REFRESH:
 			fxhl->Refresh();
-			ReloadProfileList();
 			break;
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();
@@ -553,7 +552,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case WM_MOUSEMOVE: {
 			string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
 			string effName;
-			if (fxhl->stateEffects) {
+			if (conf->stateEffects) {
 				effName += eve->sysmon ? "Monitoring " : "";
 				effName += eve->capt ? "Ambient " : "";
 				effName += eve->audio ? "Haptics " : "";
@@ -670,7 +669,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				activeDevice = NULL;
 				if (conf->afx_dev.activeDevices && !dDlg) {
 					fxhl->Start();
-					//fxhl->SetState();
 					fxhl->Refresh();
 				}
 				SetMainTabs();
@@ -689,7 +687,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		fxhl->Refresh(true);
 		fxhl->Stop();
 		if (mon)
-			mon->Stop();
+			delete mon;
 		exit(0);
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 21) { // Profile switch
