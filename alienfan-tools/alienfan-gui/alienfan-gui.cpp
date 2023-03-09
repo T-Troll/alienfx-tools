@@ -50,6 +50,7 @@ extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList);
 extern string GetFanName(int ind, bool forTray = false);
 extern void AlterGMode(HWND);
+extern void DrawFan();
 
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
@@ -120,6 +121,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 }
 
 void RestoreApp() {
+    SetTimer(mDlg, 0, 500, NULL);
     ShowWindow(mDlg, SW_RESTORE);
     ShowWindow(fanWindow, SW_RESTORE);
     SendMessage(fanWindow, WM_PAINT, 0, 0);
@@ -168,7 +170,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         ReloadFanView(fanList);
 
         SetTimer(hDlg, 0, 500, NULL);
-        SetTimer(fanWindow, 1, 500, NULL);
+        //SetTimer(fanWindow, 1, 500, NULL);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -206,16 +208,15 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                fan_conf->lastProf->powerStage = ComboBox_GetCurSel(power_list);
-                mon->SetCurrentMode(fan_conf->lastProf->powerStage);
+                mon->SetPowerMode(ComboBox_GetCurSel(power_list));
             } break;
             case CBN_EDITCHANGE:
-                if (fan_conf->lastProf->powerStage < mon->acpi->powers.size() && !fan_conf->lastProf->powerStage) {
+                if (mon->powerMode < mon->acpi->powers.size() && !mon->powerMode) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
-                    fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
-                    ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
-                    ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
+                    fan_conf->powers[mon->acpi->powers[mon->powerMode]] = buffer;
+                    ComboBox_DeleteString(power_list, mon->powerMode);
+                    ComboBox_InsertString(power_list, mon->powerMode, buffer);
                 }
                 break;
             }
@@ -290,6 +291,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_SIZE:
         if (wParam == SIZE_MINIMIZED) {
             // go to tray...
+            KillTimer(hDlg, 0);
             ShowWindow(fanWindow, SW_HIDE);
             ShowWindow(hDlg, SW_HIDE);
         }
@@ -325,9 +327,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 InsertMenuItem(pMenu, i, false, &mInfo);
             }
             ModifyMenu(tMenu, ID_MENU_POWER, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Power mode - " +
-                fan_conf->powers.find(mon->acpi->powers[fan_conf->lastProf->powerStage])->second).c_str());
+                fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]]).c_str());
             EnableMenuItem(tMenu, ID_MENU_GMODE, mon->acpi->isGmode ? MF_ENABLED : MF_DISABLED);
-            CheckMenuItem(tMenu, ID_MENU_GMODE, mon->IsGMode() ? MF_CHECKED : MF_UNCHECKED);
+            CheckMenuItem(tMenu, ID_MENU_GMODE, fan_conf->lastProf->gmode_stage ? MF_CHECKED : MF_UNCHECKED);
 
             GetCursorPos(&lpClickPoint);
             SetForegroundWindow(hDlg);
@@ -356,10 +358,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case WM_MOVE: {
             string name = "Power mode: ";
-            if (mon->IsGMode())
+            if (fan_conf->lastProf->gmode_stage)
                 name += "G-mode";
             else
-                name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
+                name += fan_conf->powers[mon->acpi->powers[mon->powerMode]];
 
             for (int i = 0; i < mon->acpi->fans.size(); i++) {
                 name += "\n" + GetFanName(i, true);
@@ -372,7 +374,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     } break;
     case WM_HOTKEY: {
         if (wParam > 19 && wParam - 20 < mon->acpi->powers.size()) {
-            fan_conf->lastProf->powerStage = (WORD)wParam - 20;
+            //mon->powerMode = (WORD)wParam - 30;
+            mon->SetPowerMode((WORD)wParam - 30);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             BlinkNumLock((int)wParam - 19);
         }
@@ -439,21 +442,20 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         break;
     case WM_TIMER:
-        if (IsWindowVisible(hDlg)) {
-            //DebugPrint("Fans UI update...\n");
-            for (int i = 0; i < mon->acpi->sensors.size(); i++) {
-                string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
-                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
-            }
-            RECT cArea;
-            GetClientRect(tempList, &cArea);
-            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-            for (int i = 0; i < mon->acpi->fans.size(); i++) {
-                string name = GetFanName(i);
-                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-            }
+        //DebugPrint("Fans UI update...\n");
+        for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+            string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
+            ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
+        RECT cArea;
+        GetClientRect(tempList, &cArea);
+        ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+        ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+        for (int i = 0; i < mon->acpi->fans.size(); i++) {
+            string name = GetFanName(i);
+            ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+        }
+        DrawFan();
         break;
     default: return false;
     }

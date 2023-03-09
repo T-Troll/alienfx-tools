@@ -66,6 +66,9 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
 		modifyProfile.unlock();
 
+		if (mon)
+			mon->SetProfilePower();
+
 		ChangeEffectMode();
 
 		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");
@@ -90,42 +93,38 @@ void EventHandler::ChangeEffectMode() {
 }
 
 void EventHandler::ChangeEffects(bool stop) {
-	bool haveMon = false, haveAmb = false, haveHap = false, haveGrid = false;
+	bool noMon = true, noAmb = true, noHap = true, noGrid = true;
 	// Effects state...
 	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
 	if (!stop && conf->stateEffects) {
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
-			if (it->events.size() && !sysmon) {
-				haveMon = true;
+			noMon = noMon && it->events.empty();
+			noAmb = noAmb && it->ambients.empty();
+			noHap = noHap && it->haptics.empty();
+			noGrid = noGrid && !it->effect.trigger;
+			if (!(noMon || sysmon))
 				sysmon = new SysMonHelper();
-			}
-			if (it->ambients.size() && !capt) {
-				haveAmb = true;
+			if (!(noAmb || capt))
 				capt = new CaptureHelper(true);
-			}
-			if (it->haptics.size() && !audio) {
-				haveHap = true;
+			if (!(noHap || audio))
 				audio = new WSAudioIn();
-			}
-			if (it->effect.trigger) {
-				haveGrid = true;
+			if (!noGrid)
 				if (!grid)
 					grid = new GridHelper();
 				else
 					((GridHelper*)grid)->RestartWatch();
-			}
 		}
 	}
-	if (!haveMon && sysmon) {	// System monitoring
+	if (noMon && sysmon) {	// System monitoring
 		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
-	if (!haveAmb && capt) {		// Ambient
+	if (noAmb && capt) {		// Ambient
 			delete (CaptureHelper*)capt; capt = NULL;
 		}
-	if (!haveHap && audio) {	// Haptics
+	if (noHap && audio) {	// Haptics
 			delete (WSAudioIn*)audio; audio = NULL;
 		}
-	if (!haveGrid && grid) {
+	if (noGrid && grid) {
 		delete (GridHelper*)grid; grid = NULL;
 	}
 	fxhl->Refresh();

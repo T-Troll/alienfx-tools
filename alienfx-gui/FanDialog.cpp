@@ -21,6 +21,7 @@ extern void TempUIEvent(NMLVDISPINFO* lParam, HWND fanList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList);
 extern string GetFanName(int ind, bool forTray = false);
 extern HANDLE ocStopEvent;
+extern void DrawFan();
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -54,7 +55,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         // Start UI update thread...
         SetTimer(hDlg, 0, 500, NULL);
-        SetTimer(fanWindow, 1, 500, NULL);
+        //SetTimer(fanWindow, 1, 500, NULL);
 
         //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
         //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
@@ -88,19 +89,15 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             switch (HIWORD(wParam)) {
             case CBN_SELCHANGE:
             {
-                fan_conf->lastProf->powerStage = ComboBox_GetCurSel(power_list);
-                //fan_conf->lastProf->gmode = (newMode == mon->acpi->powers.size());
-                //if (newMode < mon->acpi->powers.size())
-                //    fan_conf->lastProf->powerStage = newMode;
-                //mon->SetCurrentMode(newMode);
+                mon->SetPowerMode(ComboBox_GetCurSel(power_list));
             } break;
             case CBN_EDITCHANGE:
-                if (fan_conf->lastProf->powerStage < mon->acpi->powers.size() && !fan_conf->lastProf->powerStage) {
+                if (mon->powerMode < mon->acpi->powers.size() && !mon->powerMode) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
-                    fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]] = buffer;
-                    ComboBox_DeleteString(power_list, fan_conf->lastProf->powerStage);
-                    ComboBox_InsertString(power_list, fan_conf->lastProf->powerStage, buffer);
+                    fan_conf->powers[mon->acpi->powers[mon->powerMode]] = buffer;
+                    ComboBox_DeleteString(power_list, mon->powerMode);
+                    ComboBox_InsertString(power_list, mon->powerMode, buffer);
                 }
                 break;
             }
@@ -144,22 +141,21 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             TempUIEvent((NMLVDISPINFO*)lParam, tempList);
             break;
         } break;
-    case WM_TIMER: {
-        if (IsWindowVisible(hDlg) && mon) {
-            for (int i = 0; i < mon->acpi->sensors.size(); i++) {
-                string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
-                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
-            }
-            RECT cArea;
-            GetClientRect(tempList, &cArea);
-            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-            for (int i = 0; i < mon->acpi->fans.size(); i++) {
-                string name = GetFanName(i);
-                ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
-            }
+    case WM_TIMER:
+        for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+            string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
+            ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
         }
-    } break;
+        RECT cArea;
+        GetClientRect(tempList, &cArea);
+        ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+        ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
+        for (int i = 0; i < mon->acpi->fans.size(); i++) {
+            string name = GetFanName(i);
+            ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
+        }
+        DrawFan();
+        break;
     case WM_DESTROY:
         LocalFree(sch_guid);
         break;

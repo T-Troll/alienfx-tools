@@ -203,21 +203,26 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 }
 
 void FXHelper::SetState(bool force) {
-	bool oldStateOn = conf->stateOn, oldStateDim = conf->stateDimmed;
+	byte oldBr = finalBrightness; bool oldPM = finalPBState;
 	// Lights on state...
 	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
 	// Dim state...
 	conf->stateDimmed = conf->dimmed || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
 	// Brightness
-	finalBrightness = (byte)(conf->stateOn ? 255 - conf->stateDimmed ? conf->dimmingPower : 0 : 0);
+	//byte forceDim = 255 - (conf->stateDimmed ? conf->dimmingPower : 0);
+	finalBrightness = (byte)(conf->lightsOn ? 255 - (conf->stateDimmed ? conf->dimmingPower : 0) : 0);
 	// Power button state
 	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
 
-	if (force || oldStateOn != conf->stateOn || oldStateDim != conf->stateDimmed) {
-		if (mDlg)
-			conf->SetIconState();
+	if (force) {
 		QueryCommand({ force, 2 });
-	}
+		QueryCommand({ 0, 2 });
+	} else
+		if (oldBr != finalBrightness || oldPM != finalPBState) {
+			if (mDlg)
+				conf->SetIconState();
+			QueryCommand({ 0, 2 });
+		}
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
@@ -249,8 +254,6 @@ void FXHelper::Stop() {
 	if (updateThread) {
 		HANDLE oldUpate = updateThread;
 		updateThread = NULL;
-		//if (lightQuery.size())
-		//	QueryUpdate();
 		SetEvent(stopQuery);
 		WaitForSingleObject(oldUpate, 20000);
 		CloseHandle(oldUpate);
@@ -629,24 +632,21 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		while (src->lightQuery.size()) {
 
 			src->modifyQuery.lock();
-			if (&src->lightQuery.front())
-				current = src->lightQuery.front();
-			else
-				DebugPrint("Null in query!\n");
+			current = src->lightQuery.front();
 			src->lightQuery.pop();
 			src->modifyQuery.unlock();
 
 			switch (current.command) {
 			case 2: { // set brightness
 				bool pbstate = current.light || src->finalPBState, needRefresh = false;
-				byte fbright = current.light ? 255 : src->finalBrightness;
+				byte fbright = (byte)(current.light ? 255 - (!conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : 0) : src->finalBrightness);
 				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++)
 					if (dev->dev) {
 						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
 						switch (dev->version) {
 						case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
 							// They don't have hardware brightness, so need to set each light again.
-							needRefresh = needRefresh || fbright || dev->version > AlienFX_SDK::API_V3;
+							needRefresh = needRefresh || src->finalBrightness || dev->version > AlienFX_SDK::API_V3;
 						}
 					}
 				if (needRefresh)

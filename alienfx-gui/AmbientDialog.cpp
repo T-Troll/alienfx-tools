@@ -170,7 +170,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         }
     } break;
     case WM_TIMER:
-        if (eve->capt && IsWindowVisible(hDlg)) {
+        if (eve->capt) {
             //DebugPrint("Ambient UI update...\n");
             RedrawButtonZone(hDlg);
         }

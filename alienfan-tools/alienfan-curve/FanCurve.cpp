@@ -109,6 +109,7 @@ void DrawFan()
                                     LineTo(hdc, mark.x, mark.y);
                                     Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
                                 }
+                                DeleteObject(linePen);
                                 // Dots
                                 if (mon->lastBoost[lastFan] == senI->first) {
                                     SetDCPenColor(hdc, RGB(255, 0, 0));
@@ -126,7 +127,6 @@ void DrawFan()
                                 SelectObject(hdc, GetStockObject(DC_BRUSH));
                                 mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[lastFan][senI->first]);
                                 Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
-                                DeleteObject(linePen);
                             }
                         }
                         break;
@@ -235,9 +235,6 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             + ": Final boost " + to_string(bestBoostPoint.maxBoost)
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
     }
-    // Restore mode
-    //mon->acpi->SetFanBoost(fan_conf->lastSelectedFan, oldBoost);
-    //mon->SetCurrentGmode(fan_conf->lastProf->gmode);
     mon->inControl = true;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
     return 0;
@@ -260,10 +257,6 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         //SetFanWindow();
         break;
     case WM_ERASEBKGND:
-        return true;
-    case WM_TIMER:
-        if (IsWindowVisible(hDlg))
-            DrawFan();
         return true;
     default:
         if (mon->inControl) {
@@ -293,17 +286,6 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 break;
                             }
                         }
-                        //lastFanPoint = find_if(cFan->points.begin(), cFan->points.end(),
-                        //    [clk](auto t) {
-                        //        return abs(t.temp - clk.temp) <= DRAG_ZONE && abs(t.boost - clk.boost) <= DRAG_ZONE;
-                        //    });
-                        //if (lastFanPoint == cFan->points.end()) {
-                        //    // insert element
-                        //    lastFanPoint = cFan->points.insert(find_if(cFan->points.begin(), cFan->points.end(),
-                        //        [clk](auto t) {
-                        //            return t.temp > clk.temp;
-                        //        }), clk);
-                        //}
                         break;
                     case WM_LBUTTONUP:
                         ReleaseCapture();
@@ -381,16 +363,11 @@ void ReloadFanView(HWND list) {
 
 void ReloadPowerList(HWND list) {
     ComboBox_ResetContent(list);
-    for (auto i = mon->acpi->powers.begin(); i != mon->acpi->powers.end(); i++) {
-        int pos = ComboBox_AddString(list, (LPARAM)(fan_conf->GetPowerName(*i).c_str()));
-        if (pos == fan_conf->lastProf->powerStage)
-            ComboBox_SetCurSel(list, pos);
-    }
-    if (mon->acpi->isGmode) {
-        int pos = ComboBox_AddString(list, (LPARAM)("G-Mode"));
-        if (mon->IsGMode())
-            ComboBox_SetCurSel(list, pos);
-    }
+    for (auto i = mon->acpi->powers.begin(); i != mon->acpi->powers.end(); i++)
+        ComboBox_AddString(list, (LPARAM)(fan_conf->GetPowerName(*i).c_str()));
+    if (mon->acpi->isGmode)
+        ComboBox_AddString(list, (LPARAM)("G-Mode"));
+    ComboBox_SetCurSel(list, mon->powerMode);
 }
 
 void ReloadTempView(HWND list) {
@@ -501,9 +478,9 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList) {
 
 void AlterGMode(HWND power_list) {
     if (mon->acpi->isGmode) {
-        fan_conf->lastProf->powerStage = mon->IsGMode() ? 0 : (WORD)mon->acpi->powers.size();
-        //mon->SetCurrentMode(fan_conf->lastProf->powerStage);
-        ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
-        BlinkNumLock(2 + mon->IsGMode());
+        fan_conf->lastProf->gmode_stage = !fan_conf->lastProf->gmode_stage;
+        mon->SetProfilePower();
+        ComboBox_SetCurSel(power_list, mon->powerMode);
+        BlinkNumLock(2 + fan_conf->lastProf->gmode_stage);
     }
 }

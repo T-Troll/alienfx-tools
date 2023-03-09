@@ -100,21 +100,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_OFFPOWERBUTTON:
 			conf->offPowerButton = !state;
 			if (!conf->stateOn) {
-				conf->stateOn = true;
-				if (state) {
-					fxhl->SetState(true);
-				}
-				fxhl->SetState();
+				fxhl->SetState(state);
 			}
 			break;
 		case IDC_POWER_DIM:
 			conf->dimPowerButton = state;
 			if (conf->stateDimmed) {
-				conf->stateDimmed = false;
-				if (!state) {
-					fxhl->SetState(true);
-				}
-				fxhl->SetState();
+				fxhl->SetState(!state);
 			}
 			break;
 		case IDC_OFFONBATTERY:
@@ -124,11 +116,6 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_AWCC:
 			conf->awcc_disable = state;
 			conf->Save();
-			// Was, disabled = start
-			// Was, enabled = nothing
-			// Not, disabled = nothing
-			// Not, enabled = stop
-			// 1st - nothing, 2nd - function
 			conf->wasAWCC = DoStopService((bool)conf->awcc_disable != conf->wasAWCC, conf->wasAWCC);
 			break;
 		case IDC_ESIFTEMP:
@@ -142,7 +129,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_DIM:
 			conf->dimmed = state;
-			fxhl->SetState();
+			fxhl->SetState(!(conf->lightsOn || conf->offPowerButton || !conf->dimPowerButton));
 			break;
 		case IDC_FANCONTROL:
 			conf->fanControl = state;
@@ -166,10 +153,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SetMainTabs();
 			break;
 		case IDC_CHECK_LIGHTNAMES:
-			conf->showGridNames = !conf->showGridNames;
+			conf->showGridNames = state;
 			break;
 		case IDC_HOTKEYS:
-			conf->keyShortcuts = !conf->keyShortcuts;
+			conf->keyShortcuts = state;
 			SetHotkeys();
 			break;
 		default: return false;

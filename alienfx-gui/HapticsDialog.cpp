@@ -162,7 +162,7 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		DrawFreq(hDlg);
 		break;
 	case WM_TIMER:
-		if (eve->audio && IsWindowVisible(hDlg)) {
+		if (eve->audio) {
 			//DebugPrint("Haptics UI update...\n");
 			DrawFreq(hDlg);
 		}

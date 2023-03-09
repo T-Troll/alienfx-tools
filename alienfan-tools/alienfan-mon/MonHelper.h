@@ -6,7 +6,7 @@
 class MonHelper {
 private:
 	ThreadHelper* monThread = NULL;
-	short oldPower;
+	short oldPower = 0;
 public:
 	AlienFan_SDK::Control* acpi;
 	bool inControl = true;
@@ -14,15 +14,18 @@ public:
 	vector<byte> boostRaw, fanSleep;
 	map<WORD, short> senValues, maxTemps;
 	vector<map<WORD, byte>> senBoosts;
+	WORD powerMode = 0;
 
 	MonHelper();
 	~MonHelper();
 	void Start();
 	void Stop();
-	void SetCurrentMode(size_t newMode);
+	void SetCurrentMode(WORD newMode);
 	byte GetFanPercent(byte fanID);
 	int GetPowerMode();
+	void SetPowerMode(WORD newMode);
 	void ResetBoost();
-	bool IsGMode();
+	void SetProfilePower();
+	//bool IsGMode();
 };
 

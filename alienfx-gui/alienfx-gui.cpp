@@ -278,7 +278,7 @@ void OnSelChanged(HWND hwndDlg)
 
 void ReloadModeList() {
 	CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
-	EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
+	//EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
 	if (tabSel == TAB_LIGHTS) {
 		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 	}
@@ -294,7 +294,7 @@ void ReloadProfileList() {
 			if ((*i)->id == conf->activeProfile->id) {
 				ComboBox_SetCurSel(profile_list, id);
 				ReloadModeList();
-				if (tabSel == TAB_FANS && conf->activeProfile->flags & PROF_FANS) {
+				if (tabSel == TAB_FANS) {
 					OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 				}
 			}
@@ -316,6 +316,7 @@ void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
 	ReloadProfileList();
+	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
 }
 
 void ClearOldTabs(HWND tab) {
@@ -494,7 +495,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case SIZE_MINIMIZED: {
 			// go to tray...
 			ShowWindow(hDlg, SW_HIDE);
-			SendMessage(dDlg, WM_DESTROY, 0, 0);
+			DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(tab_list, GWLP_USERDATA);
+			DestroyWindow(pHdr->hwndDisplay);
+			pHdr->hwndDisplay = NULL;
 		} break;
 		}
 		break;
@@ -700,7 +703,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		if (mon && wParam > 29 && wParam - 30 < mon->acpi->powers.size()) { // PowerMode switch
-			fan_conf->lastProf->powerStage = (WORD)wParam - 30;
+			//mon->powerMode = (WORD)wParam - 30;
+			mon->SetPowerMode((WORD)wParam - 30);
 			if (tabSel == TAB_FANS)
 				OnSelChanged(tab_list);
 			BlinkNumLock((int)wParam - 29);
