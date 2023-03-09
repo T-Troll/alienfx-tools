@@ -5,13 +5,13 @@
 #include "common.h"
 #include <Shlwapi.h>
 
-extern void ReloadProfileList();
+extern void UpdateProfileList();
 extern void UpdateState(bool checkMode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveUnused(vector<groupset>* lightsets);
+//extern void RemoveUnused(vector<groupset>* lightsets);
 extern bool IsGroupUnused(DWORD gid);
 
 extern AlienFX_SDK::Afx_light* keySetLight;
@@ -221,7 +221,7 @@ void ReloadProfileView(HWND hDlg) {
 		lItem.lParam = prof->id;
 		lItem.pszText = (char*)prof->name.c_str();
 		if (prof->id == pCid) {
-			lItem.state = LVIS_SELECTED;
+			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			rpos = i;
 		}
 		else
@@ -272,8 +272,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			prof->flags &= ~PROF_DEFAULT;
 			prof->name = "Profile " + to_string(vacID);
 			pCid = vacID;
-			ReloadProfileView(hDlg);
-			ReloadProfileList();
+			//ReloadProfileView(hDlg);
+			UpdateProfileList();
 		} break;
 		case IDC_REMOVEPROFILE:
 			if (!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
@@ -290,8 +290,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 							delete prof;
 							pCid = newpCid;
 							RemoveUnusedGroups();
-							ReloadProfileView(hDlg);
-							ReloadProfileList();
+							//ReloadProfileView(hDlg);
+							UpdateProfileList();
 							break;
 						}
 				}
@@ -325,7 +325,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					delete prof->fansets;// = { };
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
-					ReloadProfileView(hDlg);
+					//ReloadProfileView(hDlg);
 				}
 				if (conf->activeProfile->id == prof->id)
 					UpdateState(true);
@@ -359,7 +359,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						delete prof->fansets;
 					prof->fansets = conf->activeProfile->fansets ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
 					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) > 0);
-					ReloadProfileView(hDlg);
+					//ReloadProfileView(hDlg);
 				}
 			}
 			break;
@@ -395,8 +395,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					if ((*op)->flags & PROF_DEFAULT && conf->SamePower(*op, prof))
 						(*op)->flags &= ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
-			} else
-				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
+			} /*else
+				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);*/
 		} break;
 		case IDC_CHECK_PRIORITY:
 			SetBitMask(prof->flags, PROF_PRIORITY, state);
@@ -436,9 +436,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			}
 			else
 				prof->triggerkey = 0;
-			ReloadProfSettings(hDlg, prof);
+			//ReloadProfSettings(hDlg, prof);
 			break;
 		}
+		ReloadProfileView(hDlg);
 	} break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
@@ -451,32 +452,21 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
-				if (lPoint->uNewState & (LVIS_FOCUSED | LVIS_SELECTED) && lPoint->iItem != -1) {
-					// Select other item...
-					pCid = (int) lPoint->lParam;
-					//ReloadProfSettings(hDlg, conf->FindProfile(pCid));
-				} else {
-					pCid = -1;
-					//CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_UNCHECKED);
-					//CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, BST_UNCHECKED);
-					//CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, BST_UNCHECKED);
-					//CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, BST_UNCHECKED);
-					//CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, BST_UNCHECKED);
-					//CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, BST_UNCHECKED);
-					//ListBox_ResetContent(app_list);
-					//ComboBox_SetCurSel(mode_list, 0);
+				if (lPoint->uChanged & LVIF_STATE) {
+					if (lPoint->uNewState & (LVIS_FOCUSED | LVIS_SELECTED))
+						pCid = (int)lPoint->lParam;
+					else
+						pCid = -1;
+					ReloadProfSettings(hDlg, conf->FindProfile(pCid));
 				}
-				ReloadProfSettings(hDlg, conf->FindProfile(pCid));
 			} break;
 			case LVN_ENDLABELEDIT:
 			{
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*) lParam;
 				if (prof && sItem->item.pszText) {
 					prof->name = sItem->item.pszText;
-					//ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
-					ReloadProfileList();
+					UpdateProfileList();
 					ReloadProfileView(hDlg);
-					//ReloadProfSettings(hDlg, prof);
 				}
 			} break;
 			}

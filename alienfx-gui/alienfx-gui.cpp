@@ -100,8 +100,6 @@ void SetHotkeys() {
 	}
 }
 
-void ReloadProfileList();
-
 void FillAllDevs() {
 	fxhl->Stop();
 	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
@@ -158,8 +156,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		RegisterPowerSettingNotification(mDlg, &GUID_LIDSWITCH_STATE_CHANGE, 0);
 
 		ShowWindow(mDlg, conf->startMinimized ? SW_HIDE : SW_SHOW);
-
-		ReloadProfileList();
 
 		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
@@ -258,8 +254,9 @@ void ResizeTab(HWND tab) {
 		SWP_SHOWWINDOW);
 }
 
-void OnSelChanged(HWND hwndDlg)
+void OnSelChanged()
 {
+	HWND hwndDlg = GetDlgItem(mDlg, IDC_TAB_MAIN);
 	// Get the dialog header data.
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr( hwndDlg, GWLP_USERDATA);
 
@@ -276,47 +273,50 @@ void OnSelChanged(HWND hwndDlg)
 	ResizeTab(pHdr->hwndDisplay);
 }
 
-void ReloadModeList() {
-	CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
-	//EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
-	if (tabSel == TAB_LIGHTS) {
-		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+//void ReloadModeList() {
+//	CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
+//	if (tabSel == TAB_LIGHTS) {
+//		OnSelChanged();
+//	}
+//}
+
+void UpdateProfileList() {
+	HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
+	ComboBox_ResetContent(profile_list);
+	int id;
+	for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
+		id = ComboBox_AddString(profile_list, (*i)->name.c_str());
+		if ((*i)->id == conf->activeProfile->id) {
+			ComboBox_SetCurSel(profile_list, id);
+			CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
+		}
 	}
+	DebugPrint("Profile list reloaded.\n");
 }
 
-void ReloadProfileList() {
-	if (IsWindowVisible(mDlg)) {
-		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
-		ComboBox_ResetContent(profile_list);
-		for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
-			int id;
-			ComboBox_SetItemData(profile_list, id = ComboBox_AddString(profile_list, (*i)->name.c_str()), (*i)->id);
-			if ((*i)->id == conf->activeProfile->id) {
-				ComboBox_SetCurSel(profile_list, id);
-				ReloadModeList();
-				if (tabSel == TAB_FANS) {
-					OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
-				}
-			}
-		}
-		DebugPrint("Profile list reloaded.\n");
-	}
+void SelectProfile(profile* prof = conf->activeProfile) {
+	eve->SwitchActiveProfile(prof);
+	UpdateProfileList();
+	if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
+		OnSelChanged();
 }
 
 void UpdateState(bool checkMode) {
 	eve->ChangeEffectMode();
 	if (checkMode) {
-		ReloadModeList();
+		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
+		if (tabSel == TAB_LIGHTS)
+			OnSelChanged();
 	}
 	if (tabSel == TAB_SETTINGS)
-		OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+		OnSelChanged();
 }
 
 void RestoreApp() {
 	ShowWindow(mDlg, SW_RESTORE);
 	SetForegroundWindow(mDlg);
-	ReloadProfileList();
-	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+	UpdateProfileList();
+	OnSelChanged();
 }
 
 void ClearOldTabs(HWND tab) {
@@ -370,7 +370,7 @@ void SetMainTabs() {
 		{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS },
 		{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
 	);
-	OnSelChanged(GetDlgItem(mDlg, IDC_TAB_MAIN));
+	OnSelChanged();
 }
 
 HWND tip;
@@ -380,8 +380,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
 
 	// Started/restarted explorer...
-	if (message == newTaskBar && AddTrayIcon(&conf->niData, conf->updateCheck)) {
-		conf->SetIconState();
+	if (message == newTaskBar) {
+		conf->SetIconState(conf->updateCheck);
 		return true;
 	}
 
@@ -391,11 +391,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	{
 		conf->niData.hWnd = mDlg = hDlg;
 		SetMainTabs();
-
-		if (AddTrayIcon(&conf->niData, conf->updateCheck)) {
-			conf->SetIconState();
-		}
-
+		UpdateProfileList();
+		conf->SetIconState(conf->updateCheck);
 	} break;
 	case WM_COMMAND:
 	{
@@ -438,18 +435,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_PROFILES: {
 			switch (HIWORD(wParam))
 			{
-			case CBN_SELCHANGE: {
-				eve->SwitchActiveProfile(conf->FindProfile((int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list))));
-				ReloadModeList();
-				OnSelChanged(tab_list);
-			} break;
+			case CBN_SELCHANGE:
+				SelectProfile(conf->profiles[ComboBox_GetCurSel(profile_list)]);
+			break;
 			}
 		} break;
 		} break;
 	} break;
 	case WM_NOTIFY:
 		if (((NMHDR*)lParam)->idFrom == IDC_TAB_MAIN && ((NMHDR*)lParam)->code == TCN_SELCHANGE) {
-			OnSelChanged(tab_list);
+			OnSelChanged();
 		}
 		break;
 	case WM_WINDOWPOSCHANGING: {
@@ -603,14 +598,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->StopProfiles();
 			conf->enableProfSwitch = !conf->enableProfSwitch;
 			eve->StartProfiles();
-			ReloadProfileList();
+			SelectProfile();
 			break;
 		case ID_TRAYMENU_RESTORE:
 			RestoreApp();
 			break;
 		case ID_TRAYMENU_PROFILE_SELECTED: {
-			eve->SwitchActiveProfile(conf->profiles[idx]);
-			ReloadProfileList();
+			SelectProfile(conf->profiles[idx]);
 		} break;
 		}
 	} break;
@@ -694,19 +688,20 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		exit(0);
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam < 21) { // Profile switch
-			if (wParam == 10)
-				eve->SwitchActiveProfile(conf->FindDefaultProfile());
-			else
-				if (wParam - 10 < conf->profiles.size())
-					eve->SwitchActiveProfile(conf->profiles[wParam - 10]);
-			ReloadProfileList();
+			if (wParam - 10 <= conf->profiles.size())
+				SelectProfile(wParam == 10 ? conf->FindDefaultProfile() : conf->profiles[wParam - 11]);
+			//if (wParam == 10)
+			//	SelectProfile(conf->FindDefaultProfile());
+			//else
+			//	if (wParam - 10 < conf->profiles.size())
+			//		SelectProfile(conf->profiles[wParam - 10]);
 			break;
 		}
 		if (mon && wParam > 29 && wParam - 30 < mon->acpi->powers.size()) { // PowerMode switch
 			//mon->powerMode = (WORD)wParam - 30;
 			mon->SetPowerMode((WORD)wParam - 30);
 			if (tabSel == TAB_FANS)
-				OnSelChanged(tab_list);
+				OnSelChanged();
 			BlinkNumLock((int)wParam - 29);
 			break;
 		}
@@ -738,13 +733,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->StopProfiles();
 			conf->enableProfSwitch = !conf->enableProfSwitch;
 			eve->StartProfiles();
-			ReloadProfileList();
+			SelectProfile();
 			break;
 		case 6: // G-key for Dell G-series power switch
 			if (mon) {
 				AlterGMode(NULL);
 				if (tabSel == TAB_FANS)
-					OnSelChanged(tab_list);
+					OnSelChanged();
 			}
 			break;
 		default: return false;

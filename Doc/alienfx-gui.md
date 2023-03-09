@@ -345,22 +345,26 @@ Application behavior control block at right:
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Use BIOS sensors" - Read additional hardware data from Windows WMI and Alienware BIOS (if fan control enabled). It will require "Run as administrator" privilege (default - off).
 - "Enable fan control" - Enables fan and power control functionality, as well as some additional (Alienware BIOS) temperature sensors. It will require "Run as administrator" privilege (default - off).
+- - "Light names on grid" - Shows/hide light names at grid buttons (default - off).
 
 Light system control options at the left:
 - "Turn on lights" - Global light control system switch. All lights will be off and black if disabled (default - on).
   - "Keep Power/indicator on" - Power and Indicator lights stay on even if lights turned off (default - on).
-  - "Turn off for battery" - Lights will turned off at battery power and back on at AC. (default - off). 
 - "Lights follow screen state" - Dim/Fade to black lights then system screen dimmed/off (default - off).
 - "Colour Gamma correction" - Enables colour correction to make them looks close to screen one. It keeps original LED colours if disabled (default - on).
 - "Enable software effects" - Global software effect switch. If it's off, effects always disabled, otherwise effect mode defined by current profile (default - on).
-  - "Effects on battery" - If disabled, switching to battery power will stop all software effects (for lower CPU usage and longer battery life).
 - "Profile auto switch" - Switch between profiles according of their trigger applications start and finish (default - off).
   - "Do not switch for desktop" - Profile will not be changed in case start menu/tray/desktop activated by user (default - off).
 
-Light dimming control at bottom:
+Light dimming control at left-bottom:
 - "Dim lights" - Dim system lights brightness to desired level (default - off). Slider at the right select desired dimming level (left - lower dimming, right - higher dimming).
   - "Dim Power/Indicator lights" - Power Button and Indicator lights will be dimmed as well - and have full brightness otherwise (default - off).
-  - "Dim lights on battery" - Dim lights if system running at battery power, decreasing energy usage. Returns to full brightness if AC connected (default - on).
+
+Battery operations (power save options) at right-bottom:
+- "Turn off lights" - Lights will turned off at battery power (default - off).
+- "Dim lights" - Dim lights if system running at battery power (default - on).
+- "Pause Fan control" - Fan control and monitoring will be stopped at battery power (default - off).
+- "Pause Effects" - Software effects will be stopped at battery power (default - off).
 
 Interface settings:
 - "Light names on grid" - Shows/hide light names at grid buttons.

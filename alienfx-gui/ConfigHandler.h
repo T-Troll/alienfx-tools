@@ -227,5 +227,5 @@ public:
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	bool IsPriorityProfile(profile* prof = NULL);
 	bool IsActiveOnly(profile* prof = NULL);
-	void SetIconState();
+	void SetIconState(bool check = false);
 };

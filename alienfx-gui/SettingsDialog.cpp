@@ -4,7 +4,7 @@
 #include "MonHelper.h"
 #include "common.h"
 
-extern void ReloadProfileList();
+//extern void UpdateProfileList();
 extern bool DetectFans();
 extern void SetHotkeys();
 extern void SetMainTabs();
@@ -72,10 +72,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->offWithScreen = state;
 			break;
 		case IDC_BUT_PROFILESWITCH:
-			eve->StopProfiles();
+			//eve->StopProfiles();
 			conf->enableProfSwitch = state;
-			eve->StartProfiles();
-			ReloadProfileList();
+			//eve->StartProfiles();
+			//UpdateProfileList();
 			break;
 		case IDC_CHECK_LON:
 			conf->lightsOn = state;
