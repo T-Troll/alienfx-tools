@@ -10,7 +10,7 @@ extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
 extern FXHelper* fxhl;
 
-//extern void RedrawZoneGrid(DWORD grpid, bool rec);
+extern void RedrawZoneGrid(DWORD grpid, bool rec);
 
 int effID = 0;
 
@@ -103,6 +103,7 @@ void ChangeAddColor(HWND hDlg, int newEffID) {
 			}		
 		}
 		RebuildEffectList(hDlg);
+		RedrawZoneGrid(eItem, true);
 		UpdateZoneList();
 	}
 }
@@ -164,6 +165,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						effID--;
 				}
 				RebuildEffectList(hDlg);
+				RedrawZoneGrid(eItem, true);
 				UpdateZoneList();
 				fxhl->Refresh();
 			}

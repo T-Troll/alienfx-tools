@@ -154,7 +154,7 @@ void RedrawZoneGrid(DWORD grpID, bool recalc = true) {
         RECT zRect = { zone->gMinX, zone->gMinY, zone->gMaxX + 1, zone->gMaxY + 1 };
         if (recalc)
             RecalcGridZone(&zRect);
-        RedrawGridButtonZone(&zRect);
+        RedrawGridButtonZone(NULL);
     }
 }
 

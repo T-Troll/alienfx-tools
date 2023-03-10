@@ -44,12 +44,16 @@ void SenMonHelper::ModifyMon()
 			PdhAddCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
 			PdhAddCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
 			PdhAddCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
+			PdhAddCounter(hQuery, COUNTER_PATH_BATT_CHARGE, 0, &hBCCounter);
+			PdhAddCounter(hQuery, COUNTER_PATH_BATT_DISCHARGE, 0, &hBDCounter);
 			PdhAddCounter(hQuery, COUNTER_PATH_TEMP, 0, &hTempCounter);
 		}
 		else {
 			PdhRemoveCounter(hCPUCounter);
 			PdhRemoveCounter(hHDDCounter);
 			PdhRemoveCounter(hGPUCounter);
+			PdhRemoveCounter(hBCCounter);
+			PdhRemoveCounter(hBDCounter);
 			PdhRemoveCounter(hTempCounter);
 		}
 		if (conf->eSensors) {
@@ -139,6 +143,20 @@ void SenMonHelper::UpdateSensors()
 		if (GetSystemPowerStatus(&state) && // Battery, code 3
 			(sen = UpdateSensor({ 0, 3, 0 }, state.BatteryLifePercent)))
 			sen->sname = "Battery";
+
+		// New: battery charge/discharge rate
+		valCount = GetValuesArray(hBDCounter); // Temps, code 5
+		for (WORD i = 0; i < valCount; i++) {
+			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
+				(sen = UpdateSensor({ (WORD)(i + 1), 3, 0 }, counterValues[i].FmtValue.longValue / 1000)))
+				sen->sname = "Battery " + to_string(i+1) + " Discharge rate";
+		}
+		valCount = GetValuesArray(hBCCounter); // Temps, code 5
+		for (WORD i = 0; i < valCount; i++) {
+			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
+				(sen = UpdateSensor({ (WORD)(i + 0x101), 3, 0 }, counterValues[i].FmtValue.longValue / 1000)))
+				sen->sname = "Battery " + to_string(i + 1) + " Charge rate";
+		}
 
 		valCount = GetValuesArray(hGPUCounter); // GPU, code 4
 		for (DWORD i = 0; i < valCount; i++) {

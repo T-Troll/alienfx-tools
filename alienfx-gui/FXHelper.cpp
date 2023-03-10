@@ -5,7 +5,7 @@
 #include "GridHelper.h"
 #include "WSAudioIn.h"
 
-extern AlienFX_SDK::Afx_action* Code2Act(AlienFX_SDK::Afx_colorcode* c);
+extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 extern EventHandler* eve;
@@ -536,9 +536,9 @@ void FXHelper::RefreshGrid() {
 
 					int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
 
-					AlienFX_SDK::Afx_action from = *Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
+					AlienFX_SDK::Afx_action from = Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
 						&eff->effectColors[colorIndex]),
-						to = *Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
+						to = Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
 
 					phase %= effop->effsize;
 
@@ -631,6 +631,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		while (src->lightQuery.size()) {
 
 			src->modifyQuery.lock();
+#ifdef _DEBUG
 			if (&src->lightQuery.front())
 				current = src->lightQuery.front();
 			else {
@@ -639,6 +640,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				src->modifyQuery.unlock();
 				continue;
 			}
+#else
+			current = src->lightQuery.front();
+#endif // _DEBUG
 			src->lightQuery.pop();
 			src->modifyQuery.unlock();
 
