@@ -18,8 +18,8 @@ public:
 	void startSampling();
 	void stopSampling();
 	void RestartDevice();
-	void init();
-	void release();
+	void Start();
+	void Stop();
 	void SetSilence();
 
 	double waveD[NUMPTS];

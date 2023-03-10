@@ -7,7 +7,7 @@ extern FXHelper* fxhl;
 extern int tabLightSel;
 extern void RecalcGridZone(RECT* what = NULL);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
-extern void RedrawZoneGrid(DWORD);
+extern void RedrawZoneGrid(DWORD, bool);
 
 HWND zsDlg;
 
@@ -194,9 +194,9 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				}
 				if (!(eItem = neItem))
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+				RecalcGridZone();
 				UpdateZoneList();
 				fxhl->Refresh();
-				RecalcGridZone();
 			}
 			break;
 		case IDC_CHECK_SPECTRUM:
@@ -246,7 +246,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						if (mmap = conf->FindMapping(eItem)) {
 							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
 							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
-							RedrawZoneGrid(mmap->group);
+							RedrawZoneGrid(mmap->group, false);
 							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
 							SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 						}

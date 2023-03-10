@@ -5,9 +5,9 @@
 #include "common.h"
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
-extern AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action*);
+extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawZoneGrid(DWORD grpid);
+extern void RedrawZoneGrid(DWORD grpid, bool rec = true);
 extern void UpdateZoneList();
 
 extern FXHelper* fxhl;
@@ -163,7 +163,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
 				eventID = (int)mmap->events.size() - 1;
-				eve->ChangeEffectMode();
+				eve->ChangeEffects();
 				RebuildEventList(hDlg);
 				UpdateZoneList();
 				fxhl->RefreshCounters();
@@ -174,7 +174,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				mmap->events.erase(mmap->events.begin() + eventID);
 				if (eventID)
 					eventID--;
-				eve->ChangeEffectMode();
+				eve->ChangeEffects();
 				RebuildEventList(hDlg);
 				UpdateZoneList();
 				fxhl->RefreshCounters();
@@ -209,10 +209,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		if (ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:
-				c = Act2Code(mmap->fromColor && mmap->color.size() ? &mmap->color[0] : &ev->from);
+				c = &Act2Code(mmap->fromColor && mmap->color.size() ? &mmap->color[0] : &ev->from);
 				break;
 			case IDC_BUTTON_COLORTO:
-				c = Act2Code(&ev->to);
+				c = &Act2Code(&ev->to);
 				break;
 			}
 		}

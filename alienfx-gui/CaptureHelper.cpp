@@ -2,7 +2,7 @@
 #include "EventHandler.h"
 #include "FXHelper.h"
 
-void CInProc(LPVOID);
+void CScreenProc(LPVOID);
 DWORD WINAPI ColorCalc(LPVOID inp);
 
 // debug print
@@ -105,7 +105,7 @@ CaptureHelper::~CaptureHelper()
 void CaptureHelper::Start()
 {
 	if (!dwHandle) {
-		dwHandle = new ThreadHelper(CInProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
+		dwHandle = new ThreadHelper(CScreenProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
 	}
 }
 
@@ -187,7 +187,7 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	return 0;
 }
 
-void CInProc(LPVOID param)
+void CScreenProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
 

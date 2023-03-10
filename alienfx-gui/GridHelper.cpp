@@ -115,8 +115,6 @@ void GridTriggerWatch(LPVOID param) {
 }
 
 GridHelper::GridHelper() {
-	if (eve->capt)
-		Sleep(150);
 	RestartWatch();
 }
 
@@ -126,23 +124,25 @@ GridHelper::~GridHelper()
 }
 
 void GridHelper::Stop() {
-	delete gridTrigger;
-	delete gridThread;
-	if (kEvent) {
-		UnhookWindowsHookEx(kEvent);
-		kEvent = NULL;
-	}
-	if (capt) {
-		delete (CaptureHelper*)capt; capt = NULL;
-	}
-	if (sysmon) {
-		delete sysmon; sysmon = NULL;
+	if (gridTrigger) {
+		delete gridTrigger;
+		gridTrigger = NULL;
+		delete gridThread;
+		if (kEvent) {
+			UnhookWindowsHookEx(kEvent);
+			kEvent = NULL;
+		}
+		if (capt) {
+			delete (CaptureHelper*)capt; capt = NULL;
+		}
+		if (sysmon) {
+			delete sysmon; sysmon = NULL;
+		}
 	}
 }
 
 void GridHelper::RestartWatch() {
 	Stop();
-
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		ce->gridop.passive = true;
 		switch (ce->effect.trigger) {

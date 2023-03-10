@@ -3,7 +3,7 @@
 
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action* act);
+extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
 extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
@@ -107,14 +107,8 @@ void RecalcGridZone(RECT* what = NULL) {
     RECT full = what ? *what : RECT({ 0, 0, conf->mainGrid->x, conf->mainGrid->y });
 
     if (!colorGrid)
-        colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y]{};
-    else
-        // clear grid
-        for (int x = full.left; x < full.right; x++)
-            for (int y = full.top; y < full.bottom; y++) {
-                int ind = ind(x, y);
-                colorGrid[ind].first = colorGrid[ind].last = NULL;
-            }
+        colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y];
+    memset(colorGrid, 0xff, conf->mainGrid->x * conf->mainGrid->y * 2 * sizeof(DWORD));
     AlienFX_SDK::Afx_group* grp;
     for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
         if (grp = conf->afx_dev.GetGroupById(cs->group))
@@ -124,41 +118,43 @@ void RecalcGridZone(RECT* what = NULL) {
                     if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
                         if (conf->stateEffects) {
                             if (cs->events.size()) {
-                                if (!colorGrid[ind].first && !(cs->fromColor && cs->color.size()))
+                                if (colorGrid[ind].first.br == 0xff && !(cs->fromColor && cs->color.size()))
                                     colorGrid[ind].first = Act2Code(&cs->events.front().from);
                                 colorGrid[ind].last = Act2Code(&cs->events.back().to);
                             }
                             if (cs->haptics.size()) {
-                                colorGrid[ind] = { &cs->haptics.front().colorfrom, &cs->haptics.back().colorto };
+                                colorGrid[ind] = { cs->haptics.front().colorfrom, cs->haptics.back().colorto };
                             }
                             if (cs->ambients.size()) {
-                                colorGrid[ind].first = colorGrid[ind].last = &ambient_grid;
+                                colorGrid[ind].first = colorGrid[ind].last = ambient_grid;
                             }
                             if (cs->effect.trigger) {
                                 if (cs->effect.trigger == 4)
-                                    colorGrid[ind].first = colorGrid[ind].last = &ambient_grid;
+                                    colorGrid[ind].first = colorGrid[ind].last = ambient_grid;
                                 else
                                     if (cs->effect.effectColors.size())
-                                        colorGrid[ind] = { &cs->effect.effectColors.front(), &cs->effect.effectColors.back() };
+                                        colorGrid[ind] = { cs->effect.effectColors.front(), cs->effect.effectColors.back() };
                             }
                         }
                         if (cs->color.size()) {
-                            if (!colorGrid[ind].first)
+                            if (colorGrid[ind].first.br == 0xff)
                                 colorGrid[ind].first = Act2Code(&cs->color.front());
-                            if (!colorGrid[ind].last)
+                            if (colorGrid[ind].last.br == 0xff)
                                 colorGrid[ind].last = Act2Code(&cs->color.back());
                         }
                     }
                 }
     }
-    RedrawGridButtonZone(&full);
+    //RedrawGridButtonZone(&full);
 }
 
-void RedrawZoneGrid(DWORD grpID) {
+void RedrawZoneGrid(DWORD grpID, bool recalc = true) {
     zonemap* zone = conf->FindZoneMap(grpID);
     if (zone->gridID == conf->mainGrid->id) {
         RECT zRect = { zone->gMinX, zone->gMinY, zone->gMaxX + 1, zone->gMaxY + 1 };
-        RecalcGridZone(&zRect);
+        if (recalc)
+            RecalcGridZone(&zRect);
+        RedrawGridButtonZone(&zRect);
     }
 }
 
@@ -266,6 +262,7 @@ void RepaintGrid() {
     SendMessage(GetDlgItem(cgDlg, IDC_SLIDER_VSCALE), TBM_SETPOS, true, conf->mainGrid->y);
     SetSlider(tipV, conf->mainGrid->y);
     RecalcGridZone();
+    RedrawGridButtonZone();
 }
 
 BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -299,14 +296,13 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     for (int ind = 0; ind < conf->mainGrid->x * conf->mainGrid->y; ind++)
                         if (conf->mainGrid->grid[ind].lgh == cur.lgh)
                             conf->mainGrid->grid[ind].lgh = 0;
-                    RepaintGrid();
                 }
             }
             else
                 if (eItem > 0) {
                     conf->afx_dev.GetGroupById(eItem)->lights.clear();
-                    RecalcGridZone();
                 }
+            RepaintGrid();
             break;
         }
     } break;
@@ -409,15 +405,15 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 else {
                     RECT rectClip = ditem->rcItem;
                     gridClr lightcolors = colorGrid[ind];
-                    if (lightcolors.first) {
+                    if (lightcolors.first.br != 0xff) {
                         // active
                         GRADIENT_RECT gRect{ 0,1 };
-                        TRIVERTEX vertex[2]{ { rectClip.left, rectClip.top, (COLOR16)(lightcolors.first->r << 8),
-                            (COLOR16)(lightcolors.first->g << 8),
-                            (COLOR16)(lightcolors.first->b << 8) },
-                        { rectClip.right, rectClip.bottom, (COLOR16)(lightcolors.last->r << 8),
-                            (COLOR16)(lightcolors.last->g << 8),
-                            (COLOR16)(lightcolors.last->b << 8) } };
+                        TRIVERTEX vertex[2]{ { rectClip.left, rectClip.top, (COLOR16)(lightcolors.first.r << 8),
+                            (COLOR16)(lightcolors.first.g << 8),
+                            (COLOR16)(lightcolors.first.b << 8) },
+                        { rectClip.right, rectClip.bottom, (COLOR16)(lightcolors.last.r << 8),
+                            (COLOR16)(lightcolors.last.g << 8),
+                            (COLOR16)(lightcolors.last.b << 8) } };
                         GradientFill(wDC, vertex, 2, &gRect, 1, GRADIENT_FILL_RECT_H);
                     }
                     else {

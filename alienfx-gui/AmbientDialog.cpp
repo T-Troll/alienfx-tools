@@ -102,7 +102,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 mmap->ambients.push_back(id);
             else
                 mmap->ambients.erase(pos);
-            eve->ChangeEffectMode();
+            eve->ChangeEffects();
             UpdateZoneList();
             break;
         }

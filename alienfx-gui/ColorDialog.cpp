@@ -3,14 +3,14 @@
 #include "common.h"
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
-extern AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action*);
+extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
 extern FXHelper* fxhl;
 
-extern void RedrawZoneGrid(DWORD grpid);
+//extern void RedrawZoneGrid(DWORD grpid, bool rec);
 
 int effID = 0;
 
@@ -28,7 +28,7 @@ void SetEffectData(HWND hDlg) {
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : 0);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ? &Act2Code(&mmap->color[effID]) : NULL);
 }
 
 void RebuildEffectList(HWND hDlg) {
@@ -187,7 +187,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		} break;
 	case WM_DRAWITEM: {
-		AlienFX_SDK::Afx_colorcode* c = mmap && effID < mmap->color.size() ? c = Act2Code(&mmap->color[effID]) : NULL;
+		AlienFX_SDK::Afx_colorcode* c;
+		c = mmap && effID < mmap->color.size() ? &Act2Code(&mmap->color[effID]) : NULL;
 		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, c);
 	} break;
 	case WM_NOTIFY:

@@ -26,6 +26,5 @@ public:
 	void SetPowerMode(WORD newMode);
 	void ResetBoost();
 	void SetProfilePower();
-	//bool IsGMode();
 };
 

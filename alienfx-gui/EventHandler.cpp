@@ -96,7 +96,9 @@ void EventHandler::ChangeEffects(bool stop) {
 	bool noMon = true, noAmb = true, noHap = true, noGrid = true;
 	// Effects state...
 	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
+	modifyEffects.lock();
 	if (!stop && conf->stateEffects) {
+		modifyProfile.lock();
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			noMon = noMon && it->events.empty();
 			noAmb = noAmb && it->ambients.empty();
@@ -108,25 +110,27 @@ void EventHandler::ChangeEffects(bool stop) {
 				capt = new CaptureHelper(true);
 			if (!(noHap || audio))
 				audio = new WSAudioIn();
-			if (!noGrid)
-				if (!grid)
-					grid = new GridHelper();
-				else
-					((GridHelper*)grid)->RestartWatch();
+			if (!(noGrid || grid))
+				grid = new GridHelper();
 		}
+		modifyProfile.unlock();
+
 	}
+	if (noGrid && grid) {
+		delete (GridHelper*)grid; grid = NULL;
+	}
+	if (grid)
+		((GridHelper*)grid)->RestartWatch();
 	if (noMon && sysmon) {	// System monitoring
 		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
 	if (noAmb && capt) {		// Ambient
-			delete (CaptureHelper*)capt; capt = NULL;
-		}
-	if (noHap && audio) {	// Haptics
-			delete (WSAudioIn*)audio; audio = NULL;
-		}
-	if (noGrid && grid) {
-		delete (GridHelper*)grid; grid = NULL;
+		delete (CaptureHelper*)capt; capt = NULL;
 	}
+	if (noHap && audio) {	// Haptics
+		delete (WSAudioIn*)audio; audio = NULL;
+	}
+	modifyEffects.unlock();
 	fxhl->Refresh();
 }
 
@@ -273,9 +277,6 @@ static VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent,
 }
 
 LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
-
-	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
-
 	switch (wParam) {
 	case WM_KEYDOWN: case WM_SYSKEYDOWN:
 		if (!eve->keyboardSwitchActive) {
@@ -295,5 +296,5 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 		break;
 	}
 
-	return res;
+	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }

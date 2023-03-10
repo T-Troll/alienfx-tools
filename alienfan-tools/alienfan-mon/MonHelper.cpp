@@ -42,6 +42,7 @@ void MonHelper::ResetBoost() {
 
 void MonHelper::SetProfilePower() {
 	powerMode = fan_conf->lastProf->gmode_stage ? (WORD)acpi->powers.size() : fan_conf->lastProf->powerStage;
+	SetCurrentMode(powerMode);
 }
 
 void MonHelper::Start() {
@@ -98,6 +99,7 @@ void MonHelper::SetPowerMode(WORD newMode) {
 	fan_conf->lastProf->gmode_stage = newMode == acpi->powers.size();
 	if (!fan_conf->lastProf->gmode_stage)
 		fan_conf->lastProf->powerStage = newMode;
+	SetCurrentMode(newMode);
 }
 
 void CMonProc(LPVOID param) {

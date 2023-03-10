@@ -64,8 +64,8 @@ struct zonemap {
 };
 
 struct gridClr {
-	AlienFX_SDK::Afx_colorcode* first;
-	AlienFX_SDK::Afx_colorcode* last;
+	AlienFX_SDK::Afx_colorcode first;
+	AlienFX_SDK::Afx_colorcode last;
 };
 
 struct grideffect {

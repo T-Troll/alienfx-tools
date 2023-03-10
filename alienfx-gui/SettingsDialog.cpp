@@ -87,11 +87,11 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_EFFECTS:
 			conf->enableEffects = state;
-			eve->ChangeEffectMode();
+			eve->ChangeEffects();
 			break;
 		case IDC_CHECK_EFFBAT:
 			conf->effectsOnBattery = !state;
-			eve->ChangeEffectMode();
+			eve->ChangeEffects();
 			break;
 		case IDC_BAT_FAN:
 			conf->fansOnBattery = !state;

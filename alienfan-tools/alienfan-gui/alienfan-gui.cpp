@@ -170,7 +170,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         ReloadFanView(fanList);
 
         SetTimer(hDlg, 0, 500, NULL);
-        //SetTimer(fanWindow, 1, 500, NULL);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -357,7 +356,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case WM_MOVE: {
-            string name = "Power mode: ";
+            string name = "Power: ";
             if (fan_conf->lastProf->gmode_stage)
                 name += "G-mode";
             else
@@ -374,7 +373,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     } break;
     case WM_HOTKEY: {
         if (wParam > 19 && wParam - 20 < mon->acpi->powers.size()) {
-            //mon->powerMode = (WORD)wParam - 30;
             mon->SetPowerMode((WORD)wParam - 30);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             BlinkNumLock((int)wParam - 19);

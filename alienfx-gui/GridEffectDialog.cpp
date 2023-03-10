@@ -6,7 +6,7 @@
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawZoneGrid(DWORD id);
+extern void RedrawZoneGrid(DWORD id, bool rec = true);
 extern void UpdateZoneList();
 
 extern EventHandler* eve;
@@ -139,7 +139,6 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				eve->ChangeEffectMode();
 				if (grid)
 					grid->RestartWatch();
 				UpdateZoneList();

@@ -273,13 +273,6 @@ void OnSelChanged()
 	ResizeTab(pHdr->hwndDisplay);
 }
 
-//void ReloadModeList() {
-//	CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
-//	if (tabSel == TAB_LIGHTS) {
-//		OnSelChanged();
-//	}
-//}
-
 void UpdateProfileList() {
 	HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
 	ComboBox_ResetContent(profile_list);
@@ -506,12 +499,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_AUTODISMISS };
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_MODELESS };
 			SetMenuInfo(tMenu, &mi);
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
 			// add profiles...
-			if (!conf->enableProfSwitch) {
+			//if (!conf->enableProfSwitch) {
 				pMenu = CreatePopupMenu();
 				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
 				for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
@@ -519,8 +512,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					mInfo.fState = (*i)->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
 					InsertMenuItem(pMenu, (UINT)(i - conf->profiles.begin()), false, &mInfo);
 				}
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, "Profiles...");
-			}
+				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Profiles (" + 
+					conf->activeProfile->name + ")").c_str());
+			//}
 
 			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableEffects ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, conf->lightsOn ? MF_CHECKED : MF_UNCHECKED);
@@ -548,17 +542,18 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			break;
 		case WM_MOUSEMOVE: {
-			string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + "\nProfile: " + conf->activeProfile->name;
-			string effName;
+			string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + 
+				"\nProfile: " + conf->activeProfile->name + "\nEffects: ";
 			if (conf->stateEffects) {
-				effName += eve->sysmon ? "Monitoring " : "";
-				effName += eve->capt ? "Ambient " : "";
-				effName += eve->audio ? "Haptics " : "";
-				effName += eve->grid ? "Grid" : "";
+				if (eve->sysmon) name += "Monitoring ";
+				if (eve->capt) name += "Ambient ";
+				if (eve->audio) name += "Haptics ";
+				if (eve->grid) name += "Grid";
 			}
-			name += "\nEffects: " + (effName.empty() ? "Off" : effName);
+			else
+				name += "Off";
 			if (mon) {
-				name += "\nPower mode: ";
+				name += "\nPower: ";
 				if (fan_conf->lastProf->powerStage == mon->acpi->powers.size())
 					name += "G-mode";
 				else
@@ -687,18 +682,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			delete mon;
 		exit(0);
 	case WM_HOTKEY:
-		if (wParam > 9 && wParam < 21) { // Profile switch
-			if (wParam - 10 <= conf->profiles.size())
-				SelectProfile(wParam == 10 ? conf->FindDefaultProfile() : conf->profiles[wParam - 11]);
-			//if (wParam == 10)
-			//	SelectProfile(conf->FindDefaultProfile());
-			//else
-			//	if (wParam - 10 < conf->profiles.size())
-			//		SelectProfile(conf->profiles[wParam - 10]);
+		if (wParam > 9 && wParam - 10 <= conf->profiles.size()) { // Profile switch
+			SelectProfile(wParam == 10 ? conf->FindDefaultProfile() : conf->profiles[wParam - 11]);
 			break;
 		}
 		if (mon && wParam > 29 && wParam - 30 < mon->acpi->powers.size()) { // PowerMode switch
-			//mon->powerMode = (WORD)wParam - 30;
 			mon->SetPowerMode((WORD)wParam - 30);
 			if (tabSel == TAB_FANS)
 				OnSelChanged();
@@ -715,12 +703,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(false);
 			break;
 		case 3: // off-dim-full circle
-			if (conf->lightsOn) {
-				if (conf->stateDimmed)
+			if (conf->lightsOn)
+				if (conf->stateDimmed) {
 					conf->lightsOn = false;
+					conf->dimmed = false;
+				}
 				else
 					conf->dimmed = true;
-			}
 			else
 				conf->lightsOn = true;
 			UpdateState(false);
@@ -760,8 +749,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 }
 
 
-AlienFX_SDK::Afx_colorcode* Act2Code(AlienFX_SDK::Afx_action *act) {
-	return new AlienFX_SDK::Afx_colorcode({act->b,act->g,act->r});
+AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action *act) {
+	AlienFX_SDK::Afx_colorcode c = { act->b, act->g, act->r };
+	return c;
 }
 
 AlienFX_SDK::Afx_action *Code2Act(AlienFX_SDK::Afx_colorcode *c) {
@@ -810,8 +800,7 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 		delete colorUpdate;
 		fxhl->Refresh();
 	}
-
-	RedrawButton(ctrl, Act2Code(map));
+	RedrawButton(ctrl, &Act2Code(map));
 	return ret;
 }
 
@@ -819,7 +808,7 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode *clr) {
 	bool ret;
 	AlienFX_SDK::Afx_action* savedColor = Code2Act(clr);
 	if (ret = SetColor(ctrl, savedColor, false))
-		*clr = *Act2Code(savedColor);
+		*clr = Act2Code(savedColor);
 	return ret;
 }
 

@@ -5,7 +5,7 @@
 
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawZoneGrid(DWORD id);
+extern void RedrawZoneGrid(DWORD id, bool rec = true);
 extern void UpdateZoneList();
 
 extern EventHandler* eve;
@@ -96,7 +96,6 @@ void SetMappingData(HWND hDlg) {
 
 void SetFreqGroups(HWND hDlg) {
 	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
-	//groupset* map = conf->FindMapping(eItem);
 	ListBox_ResetContent(grp_list);
 	freqItem = 0;
 	if (mmap && mmap->haptics.size()) {
@@ -115,7 +114,6 @@ void SetFreqGroups(HWND hDlg) {
 INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	RECT pos;
-	//groupset* map = conf->FindMapping(eItem);
 	GetClientRect(hDlg, &pos);
 	pos.right--;
 	pos.bottom;
@@ -218,7 +216,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				int pos = ListBox_AddString(grp_list, ("Group " + to_string(mmap->haptics.size())).c_str());
 				ListBox_SetCurSel(grp_list, pos);
 				freqBlock = &mmap->haptics.back();
-				eve->ChangeEffectMode();
+				eve->ChangeEffects();
 				SetMappingData(hDlg);
 				UpdateZoneList();
 			}
@@ -238,7 +236,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 				else {
 					freqBlock = NULL;
-					eve->ChangeEffectMode();
+					eve->ChangeEffects();
 				}
 				SetMappingData(hDlg);
 				UpdateZoneList();

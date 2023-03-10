@@ -124,14 +124,13 @@ namespace AlienFX_SDK {
 
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
-		byte bright = 64; // Brightness for some APIs (APIv4 and v6)
 
 		// support function for mask-based devices (v1-v3, v6)
 		vector<Afx_icommand>* SetMaskAndColor(DWORD index, byte type, Afx_action c1, Afx_action c2 = { 0 }, byte tempo = 0);
 
 		// Support function to send data to USB device
-		bool PrepareAndSend(const byte *command, vector<Afx_icommand> *mods = NULL);
-		bool PrepareAndSend(const byte* command, vector<Afx_icommand> mods);
+		bool PrepareAndSend(const byte *command, vector<Afx_icommand> mods);
+		bool PrepareAndSend(const byte* command, vector<Afx_icommand> *mods = NULL);
 
 		// Add new light effect block for v8
 		byte AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act);
@@ -158,6 +157,7 @@ namespace AlienFX_SDK {
 		WORD vid = 0; // Device VID
 		WORD pid = 0; // Device PID
 		int version = API_UNKNOWN; // interface version, will stay at API_UNKNOWN if not initialized
+		byte bright = 64; // Last brightness set for device
 
 		~Functions();
 
