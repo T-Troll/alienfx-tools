@@ -96,9 +96,8 @@ void EventHandler::ChangeEffects(bool stop) {
 	bool noMon = true, noAmb = true, noHap = true, noGrid = true;
 	// Effects state...
 	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
-	modifyEffects.lock();
 	if (!stop && conf->stateEffects) {
-		modifyProfile.lock();
+		//modifyProfile.lock();
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			noMon = noMon && it->events.empty();
 			noAmb = noAmb && it->ambients.empty();
@@ -113,10 +112,10 @@ void EventHandler::ChangeEffects(bool stop) {
 			if (!(noGrid || grid))
 				grid = new GridHelper();
 		}
-		modifyProfile.unlock();
+		//modifyProfile.unlock();
 
 	}
-	if (noGrid && grid) {
+	if (noGrid && grid) {	// Grid
 		delete (GridHelper*)grid; grid = NULL;
 	}
 	if (grid)
@@ -124,13 +123,12 @@ void EventHandler::ChangeEffects(bool stop) {
 	if (noMon && sysmon) {	// System monitoring
 		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
-	if (noAmb && capt) {		// Ambient
+	if (noAmb && capt) {	// Ambient
 		delete (CaptureHelper*)capt; capt = NULL;
 	}
 	if (noHap && audio) {	// Haptics
 		delete (WSAudioIn*)audio; audio = NULL;
 	}
-	modifyEffects.unlock();
 	fxhl->Refresh();
 }
 
@@ -191,15 +189,15 @@ void EventHandler::CheckProfileChange() {
 	DebugPrint("TaskScan initiated.\n");
 	profile* finalP = conf->FindDefaultProfile();
 	if (EnumProcesses(aProcesses, maxProcess << 2, &cbNeeded)) {
-		while (cbNeeded >> 2 == maxProcess) {
+		while ((cbNeeded >> 2) == maxProcess) {
 			maxProcess = maxProcess << 1;
 			delete[] aProcesses;
 			aProcesses = new DWORD[maxProcess];
 			EnumProcesses(aProcesses, maxProcess << 2 , &cbNeeded);
 		}
-
-		for (UINT i = 0; i < cbNeeded >> 2; i++) {
-			if (aProcesses[i] && (newProf = conf->FindProfileByApp(GetProcessName(aProcesses[i])))) {
+		cbNeeded = cbNeeded >> 2;
+		for (UINT i = 0; i < cbNeeded; i++) {
+			if (aProcesses[i] > 0 && (newProf = conf->FindProfileByApp(GetProcessName(aProcesses[i])))) {
 				finalP = newProf;
 				if (conf->IsPriorityProfile(newProf))
 					break;

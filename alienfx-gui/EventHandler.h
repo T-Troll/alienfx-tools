@@ -17,7 +17,7 @@ public:
 
 	bool keyboardSwitchActive = false;
 
-	CustomMutex modifyProfile, modifyEffects;
+	CustomMutex modifyProfile;
 
 	void ChangePowerState();
 

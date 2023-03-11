@@ -46,9 +46,9 @@ public:
 
 	// light states
 	bool stateScreen = true,
-		finalPBState = false;
+		finalPBState = true;
 	bool lightsNoDelay = true;
-	byte finalBrightness = 255;
+	int finalBrightness = -1;
 
 	FXHelper();
 

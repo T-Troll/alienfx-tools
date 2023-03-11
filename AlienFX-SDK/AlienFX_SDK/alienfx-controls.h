@@ -11,7 +11,7 @@ namespace AlienFX_SDK {
 	//	Chicony = 0x4f2
 	//};
 	//						  v0 1 2 3 4 5    6 7 8
-	const byte reportIDList[]{ 0,2,2,2,0,0xcc,0,0,0xe };
+	const byte reportIDList[]{ 0,2,2,2,0,0xcc,0,0,0 };
 
 	// V1-V3, old devices
 		const byte COMMV1_color[]{ 1, 0x03 };
@@ -105,7 +105,7 @@ namespace AlienFX_SDK {
 		// light modes operation codes
 
 	// V8, external keyboards
-		const byte COMMV8_effectReady[]{4, 0x5,0x1,0x51,0x00};
+		const byte COMMV8_effectReady[]{4, 0x5,0x1,0x51,0};
 		// [2] - profile number
 		const byte COMMV8_effectSet[]{14, 0x5,0x1,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 };
 		// [2] - profile number
@@ -117,10 +117,10 @@ namespace AlienFX_SDK {
 		// [12] - ???
 		// [13] - mode (1 - permanent, 2 - key press)
 		// [14] - NumColors (0..3) into block?
-		const byte COMMV8_readyToColor[]{4, 0xe,0x1,0x0,0x1 };
+		const byte COMMV8_readyToColor[]{4, 0xe,0x1,0x1,0x0 };
 		// [2] - how much lights into next color block(s)
 		// [3] - profile number
-		// [4] - ???
+		// [4] - ??? (default 1)
 		const byte COMMV8_colorSet[]{10, 0xe,0x01,0x00,0x01,0x0,0x81,0x00,0xa5,0x00,0x0a };
 		// [4] - packet number in group
 		// [5] - light id
@@ -136,4 +136,5 @@ namespace AlienFX_SDK {
 		const byte COMMV8_setBrightness[]{4, 0x17,0x00,0x00,0x00 };
 		// [1] - brightness (0..a)
 		const byte v8OpCodes[]{ 0x81, 0x82, 0x83, 0x87, 0x88, 0x84, 0x81 };
+		// 09 03, 0a 03 - set profiles
 }

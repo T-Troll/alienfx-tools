@@ -133,7 +133,7 @@ namespace AlienFX_SDK {
 		bool PrepareAndSend(const byte* command, vector<Afx_icommand> *mods = NULL);
 
 		// Add new light effect block for v8
-		byte AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act);
+		void AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act);
 
 		// Add new color block for v5
 		byte AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* act);

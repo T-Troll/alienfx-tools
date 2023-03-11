@@ -104,48 +104,48 @@ void RedrawGridButtonZone(RECT* what = NULL) {
 static AlienFX_SDK::Afx_colorcode ambient_grid{ 0xff,0xff,0xff };
 
 void RecalcGridZone(RECT* what = NULL) {
-    RECT full = what ? *what : RECT({ 0, 0, conf->mainGrid->x, conf->mainGrid->y });
-
-    if (!colorGrid)
+    RECT full{ 0, 0, conf->mainGrid->x, conf->mainGrid->y };
+    if (colorGrid) {
+        if (what)
+            full = *what;
+    } else
         colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y];
-    memset(colorGrid, 0xff, conf->mainGrid->x * conf->mainGrid->y * 2 * sizeof(DWORD));
+       
     AlienFX_SDK::Afx_group* grp;
-    for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
-        if (grp = conf->afx_dev.GetGroupById(cs->group))
-            for (int x = full.left; x < full.right; x++)
-                for (int y = full.top; y < full.bottom; y++) {
-                    int ind = ind(x, y);
-                    if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
-                        if (conf->stateEffects) {
-                            if (cs->events.size()) {
-                                if (colorGrid[ind].first.br == 0xff && !(cs->fromColor && cs->color.size()))
-                                    colorGrid[ind].first = Act2Code(&cs->events.front().from);
-                                colorGrid[ind].last = Act2Code(&cs->events.back().to);
-                            }
-                            if (cs->haptics.size()) {
-                                colorGrid[ind] = { cs->haptics.front().colorfrom, cs->haptics.back().colorto };
-                            }
-                            if (cs->ambients.size()) {
-                                colorGrid[ind].first = colorGrid[ind].last = ambient_grid;
-                            }
-                            if (cs->effect.trigger) {
-                                if (cs->effect.trigger == 4)
-                                    colorGrid[ind].first = colorGrid[ind].last = ambient_grid;
-                                else
-                                    if (cs->effect.effectColors.size())
-                                        colorGrid[ind] = { cs->effect.effectColors.front(), cs->effect.effectColors.back() };
-                            }
+    for (int x = full.left; x < full.right; x++)
+        for (int y = full.top; y < full.bottom; y++) {
+            int ind = ind(x, y);
+            colorGrid[ind].first.br = colorGrid[ind].last.br = 0xff;
+            for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++)
+                if ((grp = conf->afx_dev.GetGroupById(cs->group)) && IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
+                    if (conf->stateEffects) {
+                        if (cs->events.size()) {
+                            if (colorGrid[ind].first.br == 0xff && !(cs->fromColor && cs->color.size()))
+                                colorGrid[ind].first = Act2Code(&cs->events.front().from);
+                            colorGrid[ind].last = Act2Code(&cs->events.back().to);
                         }
-                        if (cs->color.size()) {
-                            if (colorGrid[ind].first.br == 0xff)
-                                colorGrid[ind].first = Act2Code(&cs->color.front());
-                            if (colorGrid[ind].last.br == 0xff)
-                                colorGrid[ind].last = Act2Code(&cs->color.back());
+                        if (cs->haptics.size()) {
+                            colorGrid[ind] = { cs->haptics.front().colorfrom, cs->haptics.back().colorto };
+                        }
+                        if (cs->ambients.size()) {
+                            colorGrid[ind].first = colorGrid[ind].last = ambient_grid;
+                        }
+                        if (cs->effect.trigger) {
+                            if (cs->effect.trigger == 4)
+                                colorGrid[ind].first = colorGrid[ind].last = ambient_grid;
+                            else
+                                if (cs->effect.effectColors.size())
+                                    colorGrid[ind] = { cs->effect.effectColors.front(), cs->effect.effectColors.back() };
                         }
                     }
+                    if (cs->color.size()) {
+                        if (colorGrid[ind].first.br == 0xff)
+                            colorGrid[ind].first = Act2Code(&cs->color.front());
+                        if (colorGrid[ind].last.br == 0xff)
+                            colorGrid[ind].last = Act2Code(&cs->color.back());
+                    }
                 }
-    }
-    //RedrawGridButtonZone(&full);
+        }
 }
 
 void RedrawZoneGrid(DWORD grpID, bool recalc = true) {

@@ -109,8 +109,8 @@ namespace AlienFX_SDK {
 		case API_V8: {
 			if (size == 4) {
 				bool res = HidD_SetFeature(devHandle, buffer, length);
-				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(7); // Need wait for ACK
+				//bool res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
+				Sleep(6); // Need wait for ACK
 				return res;
 			}
 			else {
@@ -273,6 +273,7 @@ chain++;
 		} break;
 		case API_V4:
 		{
+			WaitForReady();
 			PrepareAndSend(COMMV4_control, { {4, 4}/*, { 5, 0xff }*/ });
 			inSet = PrepareAndSend(COMMV4_control, { {4, 1}/*, { 5, 0xff }*/ });
 		} break;
@@ -283,6 +284,8 @@ chain++;
 			WaitForReady();
 			DebugPrint("Post-Reset status: " + to_string(GetDeviceStatus()) + "\n");
 		} break;
+		case API_V8:
+			WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 		default: inSet = true;
 		}
 		return inSet;
@@ -298,16 +301,18 @@ chain++;
 			case API_V4:
 			{
 				inSet = !PrepareAndSend(COMMV4_control);
-				WaitForReady();
 			} break;
 			case API_V3: case API_V2: 
 			{
 				inSet = !PrepareAndSend(COMMV1_update);
 				DebugPrint("Post-update status: " + to_string(GetDeviceStatus()) + "\n");
 			} break;
+			//case API_V8:
+				//PrepareAndSend(COMMV8_readyToColor, { {2,0} });
+			//	//Sleep(5);
+				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 			default: inSet = false;
 			}
-			Sleep(5); // Fix for ultra-fast updates, or next command will fail sometimes.
 		}
 		return !inSet;
 
@@ -318,13 +323,12 @@ chain++;
 		return SetAction(index, &act);
 	}
 
-	byte Functions::AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act) {
+	void Functions::AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act) {
 		mods->insert(mods->end(), { {bPos,index},{(byte)(bPos + 1),v8OpCodes[act->front().type]},
 			{(byte)(bPos + 2),act->front().tempo},
 			{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),act->front().time }, {(byte)(bPos + 5), 0xa},
 			{ (byte)(bPos + 6),act->front().r},{ (byte)(bPos + 7),act->front().g},{ (byte)(bPos + 8),act->front().b},
 			{ (byte)(bPos + 9),act->back().r },{ (byte)(bPos + 10),act->back().g},{ (byte)(bPos + 11),act->back().b} });
-		return bPos + 15;
 	}
 
 	byte Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
@@ -340,21 +344,30 @@ chain++;
 		if (!inSet) Reset();
 		switch (version) {
 		case API_V8: {
-			byte bPos = 5, cnt = 1;
+			//byte bPos = 5, cnt = 1;
 			PrepareAndSend(COMMV8_readyToColor, { {2,(byte)lights->size()} });
-			for (auto nc = lights->begin(); nc != lights->end(); nc++) {
-				if (bPos + 15 > length) {
-					// Send command and clear buffer...
-					mods.push_back({ 4, cnt++ });
-					val = PrepareAndSend(COMMV8_colorSet, &mods);
-					bPos = 5;
+			auto nc = lights->begin();
+			for (byte cnt = 1; nc != lights->end(); cnt++) {
+				for (byte bPos = 5; bPos < length && nc != lights->end(); bPos += 15) {
+					AddV8DataBlock(bPos, &mods, *nc, &act);
+					nc++;
 				}
-				bPos = AddV8DataBlock(bPos, &mods, *nc, &act);
-			}
-			if (bPos > 5) {
 				mods.push_back({ 4, cnt });
 				val = PrepareAndSend(COMMV8_colorSet, &mods);
 			}
+			//for (auto nc = lights->begin(); nc != lights->end(); nc++) {
+			//	if (bPos + 15 > length) {
+			//		// Send command and clear buffer...
+			//		mods.push_back({ 4, cnt++ });
+			//		val = PrepareAndSend(COMMV8_colorSet, &mods);
+			//		bPos = 5;
+			//	}
+			//	bPos = AddV8DataBlock(bPos, &mods, *nc, &act);
+			//}
+			//if (bPos > 5) {
+			//	mods.push_back({ 4, cnt });
+			//	val = PrepareAndSend(COMMV8_colorSet, &mods);
+			//}
 		} break;
 		case API_V5:
 		{
@@ -414,21 +427,30 @@ chain++;
 			if (!inSet) Reset();
 			switch (version) {
 			case API_V8: {
-				byte bPos = 5, cnt = 1;
+				//byte bPos = 5, cnt = 0;
 				PrepareAndSend(COMMV8_readyToColor, { {2,(byte)act->size()} });
-				for (auto nc = act->begin(); nc != act->end(); nc++) {
-					if (bPos + 15 > length) {
-						// Send command and clear buffer...
-						mods.push_back({ 4, cnt++ });
-						val = PrepareAndSend(COMMV8_colorSet, &mods);
-						bPos = 5;
+				auto nc = act->begin();
+				for (byte cnt = 1; nc != act->end(); cnt++) {
+					for (byte bPos = 5; bPos < length && nc != act->end(); bPos+=15) {
+						AddV8DataBlock(bPos, &mods, nc->index, &nc->act);
+						nc++;
 					}
-					bPos = AddV8DataBlock(bPos, &mods, nc->index, &nc->act);
-				}
-				if (bPos > 5) {
 					mods.push_back({ 4, cnt });
 					val = PrepareAndSend(COMMV8_colorSet, &mods);
 				}
+				//for (auto nc = act->begin(); nc != act->end(); nc++) {
+				//	if (bPos + 15 > length) {
+				//		// Send command and clear buffer...
+				//		mods.push_back({ 4, cnt++ });
+				//		val = PrepareAndSend(COMMV8_colorSet, &mods);
+				//		bPos = 5;
+				//	}
+				//	bPos = AddV8DataBlock(bPos, &mods, nc->index, &nc->act);
+				//}
+				//if (bPos > 5) {
+				//	mods.push_back({ 4, cnt });
+				//	val = PrepareAndSend(COMMV8_colorSet, &mods);
+				//}
 			} break;
 			case API_V5:
 			{
@@ -857,11 +879,8 @@ chain++;
 	}
 
 	Mappings::~Mappings() {
-		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++) {
-			if (i->dev) {
-				delete i->dev;
-			}
-		}
+		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++)
+			if (i->dev) delete i->dev;
 	}
 
 	vector<Functions*> Mappings::AlienFXEnumDevices(void* acc) {
@@ -1114,24 +1133,18 @@ chain++;
 
 	Afx_light *Mappings::GetMappingByID(WORD pid, WORD lid) {
 		Afx_device* dev = GetDeviceById(pid);
-		if (dev)
-			return GetMappingByDev(dev, lid);
-		return nullptr;
+		return dev ? GetMappingByDev(dev, lid) : nullptr;
 	}
 
 	int Mappings::GetFlags(Afx_device* dev, WORD lightid) {
 		Afx_light* lgh = GetMappingByDev(dev, lightid);
-		if (lgh)
-			return lgh->flags;
-		return 0;
+		return lgh ? lgh->flags : 0;
 	}
 
 	int Mappings::GetFlags(DWORD devID, WORD lightid)
 	{
 		Afx_device* dev = GetDeviceById(LOWORD(devID), HIWORD(devID));
-		if (dev)
-			return GetFlags(dev, lightid);
-		return 0;
+		return dev ? GetFlags(dev, lightid) : 0;
 	}
 
 	bool Functions::IsHaveGlobal()

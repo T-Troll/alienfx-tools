@@ -631,18 +631,11 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		while (src->lightQuery.size()) {
 
 			src->modifyQuery.lock();
-#ifdef _DEBUG
-			if (&src->lightQuery.front())
-				current = src->lightQuery.front();
-			else {
-				DebugPrint("Null in query!\n");
+			while (!&src->lightQuery.front()) {
 				src->lightQuery.pop();
-				src->modifyQuery.unlock();
-				continue;
+				DebugPrint("Null in query!\n");
 			}
-#else
 			current = src->lightQuery.front();
-#endif // _DEBUG
 			src->lightQuery.pop();
 			src->modifyQuery.unlock();
 

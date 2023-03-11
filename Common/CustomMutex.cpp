@@ -12,10 +12,8 @@ CustomMutex::~CustomMutex()
 
 void CustomMutex::lock()
 {
-	if (WaitForSingleObject(mutexEvent, 5000) == WAIT_OBJECT_0)
-		ResetEvent(mutexEvent);
-	else
-		int i = 0;
+	WaitForSingleObject(mutexEvent, INFINITE);
+	ResetEvent(mutexEvent);
 }
 
 void CustomMutex::unlock()

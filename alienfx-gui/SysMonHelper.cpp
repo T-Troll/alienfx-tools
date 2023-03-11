@@ -78,7 +78,7 @@ int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, 
 void CEventProc(LPVOID param)
 {
 	static HKL locIDs[10];
-	static map<string, map<byte, int>> gpusubs;
+	static map<string, map<string, int>> gpusubs;
 
 	if (fxhl->lightsNoDelay) {
 		SysMonHelper* src = (SysMonHelper*)param;
@@ -104,8 +104,7 @@ void CEventProc(LPVOID param)
 		for (DWORD i = 0; i < count; i++) {
 			if (src->counterValues[0][i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
 				string path = src->counterValues[0][i].szName;
-				//string phys = path.substr(path.find("phys_") + 5, 1);
-				int physID = atoi(path.substr(path.find("phys_") + 5, 1).c_str());
+				string physID = path.substr(path.find("phys_") + 5, 1);
 				string type = path.substr(path.find("type_") + 5);
 				gpusubs[type][physID] += src->counterValues[0][i].FmtValue.longValue;
 			}
