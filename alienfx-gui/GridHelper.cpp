@@ -57,10 +57,10 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 				AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(it->group);
 				for (auto lgh = grp->lights.begin(); lgh != grp->lights.end(); lgh++)
 					if ((conf->afx_dev.GetMappingByID(lgh->did, lgh->lid)->scancode & 0xff) == ((LPKBDLLHOOKSTRUCT)lParam)->vkCode) {
-						zonemap* zone = conf->FindZoneMap(it->group);
-						for (auto pos = zone->lightMap.begin(); pos != zone->lightMap.end(); pos++)
+						zonemap zone = *conf->FindZoneMap(it->group);
+						for (auto pos = zone.lightMap.begin(); pos != zone.lightMap.end(); pos++)
 							if (pos->light == lgh->lgh) {
-								((GridHelper*)eve->grid)->StartGridRun(&(*it), zone, pos->x, pos->y);
+								((GridHelper*)eve->grid)->StartGridRun(&(*it), &zone, pos->x, pos->y);
 								break;
 							}
 					}
@@ -77,18 +77,18 @@ void GridUpdate(LPVOID param) {
 }
 
 void GridHelper::StartCommonRun(groupset* ce) {
-	zonemap* cz = conf->FindZoneMap(ce->group);
+	zonemap cz = *conf->FindZoneMap(ce->group);
 	int srX = 0, srY = 0;
 	if (ce->effect.flags & GE_FLAG_RPOS) {
-		uniform_int_distribution<int> pntX(0, cz->xMax - 1);
-		uniform_int_distribution<int> pntY(0, cz->yMax - 1);
+		uniform_int_distribution<int> pntX(0, cz.xMax - 1);
+		uniform_int_distribution<int> pntY(0, cz.yMax - 1);
 		srX = pntX(conf->rnd); srY = pntY(conf->rnd);
 	}
 	else
 		if (ce->gauge == 5) {
-			srX = cz->xMax / 2; srY = cz->yMax / 2;
+			srX = cz.xMax / 2; srY = cz.yMax / 2;
 		}
-	StartGridRun(&(*ce), cz, srX, srY);
+	StartGridRun(&(*ce), &cz, srX, srY);
 }
 
 void GridTriggerWatch(LPVOID param) {

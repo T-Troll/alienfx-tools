@@ -44,12 +44,12 @@ SysMonHelper::~SysMonHelper() {
 }
 
 int SysMonHelper::GetCounterValues(HCOUNTER counter, int index) {
-	DWORD cs = counterSizes[index] * sizeof(PDH_FMT_COUNTERVALUE_ITEM);
+	DWORD cs = counterSizes[index];
 	DWORD count;
-	while (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, counterValues[index]) == PDH_MORE_DATA) {
+	while (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues[index]) == PDH_MORE_DATA) {
 		delete[] counterValues[index];
-		counterSizes[index] = cs / sizeof(PDH_FMT_COUNTERVALUE_ITEM) + 1;
-		counterValues[index] = new PDH_FMT_COUNTERVALUE_ITEM[counterSizes[index]];
+		counterSizes[index] = cs;
+		counterValues[index] = new byte[cs];
 	}
 	return count;
 }
@@ -64,9 +64,10 @@ int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, 
 	DWORD count = GetCounterValues(counter);
 
 	for (DWORD i = 0; i < count; i++) {
-		int cval = c2 && counterValues[1][i].FmtValue.longValue ?
-			counterValues[0][i].FmtValue.longValue * 800 / counterValues[1][i].FmtValue.longValue :
-			counterValues[0][i].FmtValue.longValue / divider - delta;
+		int cval = c2 && ((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[1])[i].FmtValue.longValue ?
+			((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[0])[i].FmtValue.longValue * 800 / 
+				((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[1])[i].FmtValue.longValue :
+				((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[0])[i].FmtValue.longValue / divider - delta;
 		retVal = max(retVal, cval);
 	}
 
@@ -102,11 +103,11 @@ void CEventProc(LPVOID param)
 		DWORD count = src->GetCounterValues(src->hGPUCounter);
 		// now sort...
 		for (DWORD i = 0; i < count; i++) {
-			if (src->counterValues[0][i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
-				string path = src->counterValues[0][i].szName;
+			if (((PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues[0])[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
+				string path = ((PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues[0])[i].szName;
 				string physID = path.substr(path.find("phys_") + 5, 1);
 				string type = path.substr(path.find("type_") + 5);
-				gpusubs[type][physID] += src->counterValues[0][i].FmtValue.longValue;
+				gpusubs[type][physID] += ((PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues[0])[i].FmtValue.longValue;
 			}
 		}
 		for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {

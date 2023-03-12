@@ -19,8 +19,9 @@ private:
 		COUNTER_PATH_BATT_DISCHARGE = "\\BatteryStatus(*)\\DischargeRate"
 		;
 
-	PDH_FMT_COUNTERVALUE_ITEM* counterValues = new PDH_FMT_COUNTERVALUE_ITEM[1];
-	DWORD counterSize = sizeof(PDH_FMT_COUNTERVALUE_ITEM);
+	byte* counterValues = new byte[1];
+	PDH_FMT_COUNTERVALUE_ITEM* cv=(PDH_FMT_COUNTERVALUE_ITEM*)counterValues;
+	DWORD counterSize = 1;
 
 	HQUERY hQuery = NULL;
 	HCOUNTER hCPUCounter, hHDDCounter, /*hNETCounter,*/ hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter, hBCCounter, hBDCounter;

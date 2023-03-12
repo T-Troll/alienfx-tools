@@ -45,18 +45,18 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	} break;
 	case WM_APP + 2: {
 		if (mmap) {
-			zonemap* zone = conf->FindZoneMap(mmap->group);
-			if (zone->gridID != conf->mainGrid->id) {
+			zonemap zone = *conf->FindZoneMap(mmap->group);
+			if (zone.gridID != conf->mainGrid->id) {
 				// Switch grid tab
 				vector<AlienFX_SDK::Afx_grid>* grids = conf->afx_dev.GetGrids();
 				for (int i = 0; i < grids->size(); i++)
-					if (zone->gridID == (*grids)[i].id) {
+					if (zone.gridID == (*grids)[i].id) {
 						TabCtrl_SetCurSel(gridTab, i);
 						OnGridSelChanged(gridTab);
+						break;
 					}
 			}
 		}
-		//RedrawZoneGrid(mmap->group, false);
 		RedrawGridButtonZone();
 		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 1);
 	} break;

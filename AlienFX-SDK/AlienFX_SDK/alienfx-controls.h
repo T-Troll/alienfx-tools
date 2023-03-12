@@ -44,7 +44,7 @@ namespace AlienFX_SDK {
 		// [3] - 1 - loop, 0 - once
 		// [5] - count of lights need to be set,
 		// [6-33] - LightID (index, not mask) - it can be COUNT of them.
-		const byte COMMV4_colorSet[]{7, 0x03 ,0x24 ,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa};
+		const byte COMMV4_colorSet[]{2, 0x03 ,0x24 /*,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa*/};
 		// [3] - action type ( 0 - light, 1 - pulse, 2 - morph)
 		// [4] - how long phase keeps
 		// [5] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph, 0x82 - spectrum, 0xac - rainbow
@@ -105,7 +105,14 @@ namespace AlienFX_SDK {
 		// light modes operation codes
 
 	// V8, external keyboards
-		const byte COMMV8_effectReady[]{4, 0x5,0x1,0x51,0};
+		// { 3,1,1 } - bulk set ?
+		// { 3,1,1,1,1 } - set block:
+		// [2] - profile
+		// [3] - report number (1..9)
+		// [5] - flag?
+		// [6..8] - rgb
+		// block [5-8] repeated
+		const byte COMMV8_effectReady[]{4, 0x5,0x1,0x51,0}; // Select profile, in fact!
 		// [2] - profile number
 		const byte COMMV8_effectSet[]{14, 0x5,0x1,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 };
 		// [2] - profile number
@@ -117,18 +124,17 @@ namespace AlienFX_SDK {
 		// [12] - ???
 		// [13] - mode (1 - permanent, 2 - key press)
 		// [14] - NumColors (0..3) into block?
-		const byte COMMV8_readyToColor[]{4, 0xe,0x1,0x1,0x0 };
+		const byte COMMV8_readyToColor[]{4, 0xe,0x1,0x0,0x1 };
 		// [2] - how much lights into next color block(s)
-		// [3] - profile number
+		// [3] - profile number???
 		// [4] - ??? (default 1)
-		const byte COMMV8_colorSet[]{10, 0xe,0x01,0x00,0x01,0x0,0x81,0x00,0xa5,0x00,0x0a };
+		const byte COMMV8_colorSet[]{5, 0xe,0x01,0x00,0x01,0x0/*,0x81,0x00,0xa5,0x00,0x00*/ };
 		// [4] - packet number in group
 		// [5] - light id
-		// [6] - Effect type (80 - off, 81 - color, 82 - Pulse, 83 - morph, 87 - breath, 88 - spectrum (undocumented))
-		// 84 - default blue
+		// [6] - Effect type (80 - off, 81 - color, 82 - Pulse, 83 - morph, 84 - default blue, 87 - breath, 88 - spectrum (undocumented))
 		// [7] - Effect speed (tempo)
 		// [9] - Effect length (time)
-		// [10] - brightness?
+		// [10] - brightness? (0xa)
 		// [11-13] - RGB
 		// [14-16] - RGB2
 		// [18] - Number of RGB? (0,1,2)

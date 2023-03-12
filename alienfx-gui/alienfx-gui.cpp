@@ -499,22 +499,20 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_MODELESS };
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_MODELESS | MNS_AUTODISMISS};
 			SetMenuInfo(tMenu, &mi);
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
 			// add profiles...
-			//if (!conf->enableProfSwitch) {
-				pMenu = CreatePopupMenu();
-				mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
-				for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
-					mInfo.dwTypeData = (LPSTR)(*i)->name.c_str();
-					mInfo.fState = (*i)->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
-					InsertMenuItem(pMenu, (UINT)(i - conf->profiles.begin()), false, &mInfo);
-				}
-				ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Profiles (" + 
-					conf->activeProfile->name + ")").c_str());
-			//}
+			pMenu = CreatePopupMenu();
+			mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
+			for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
+				mInfo.dwTypeData = (LPSTR)(*i)->name.c_str();
+				mInfo.fState = (*i)->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
+				InsertMenuItem(pMenu, (UINT)(i - conf->profiles.begin()), false, &mInfo);
+			}
+			ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Profiles (" + 
+				conf->activeProfile->name + ")").c_str());
 
 			CheckMenuItem(tMenu, ID_TRAYMENU_ENABLEEFFECTS, conf->enableEffects ? MF_CHECKED : MF_UNCHECKED);
 			CheckMenuItem(tMenu, ID_TRAYMENU_LIGHTSON, conf->lightsOn ? MF_CHECKED : MF_UNCHECKED);
@@ -524,7 +522,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			GetCursorPos(&lpClickPoint);
 			SetForegroundWindow(hDlg);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
-				lpClickPoint.x, lpClickPoint.y, 0, hDlg, NULL);
+				lpClickPoint.x, lpClickPoint.y - 20, 0, hDlg, NULL);
 			PostMessage(hDlg, WM_NULL, 0, 0);
 		} break;
 		case NIN_BALLOONTIMEOUT:
@@ -542,7 +540,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			break;
 		case WM_MOUSEMOVE: {
-			string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") + 
+			string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") +
 				"\nProfile: " + conf->activeProfile->name + "\nEffects: ";
 			if (conf->stateEffects) {
 				if (eve->sysmon) name += "Monitoring ";

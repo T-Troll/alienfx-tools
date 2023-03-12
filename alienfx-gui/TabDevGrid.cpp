@@ -149,9 +149,9 @@ void RecalcGridZone(RECT* what = NULL) {
 }
 
 void RedrawZoneGrid(DWORD grpID, bool recalc = true) {
-    zonemap* zone = conf->FindZoneMap(grpID);
-    if (zone->gridID == conf->mainGrid->id) {
-        RECT zRect = { zone->gMinX, zone->gMinY, zone->gMaxX + 1, zone->gMaxY + 1 };
+    zonemap zone = *conf->FindZoneMap(grpID);
+    if (zone.gridID == conf->mainGrid->id) {
+        RECT zRect = { zone.gMinX, zone.gMinY, zone.gMaxX + 1, zone.gMaxY + 1 };
         if (recalc)
             RecalcGridZone(&zRect);
         RedrawGridButtonZone(NULL);
@@ -233,7 +233,7 @@ void ModifyColorDragZone(bool clear = false) {
         }
 
         conf->FindZoneMap(grp->gid, true);
-        RecalcGridZone();
+        RecalcGridZone(&dragZone);
         UpdateZoneList();
     }
 }

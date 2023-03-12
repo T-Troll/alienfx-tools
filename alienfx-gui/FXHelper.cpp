@@ -191,6 +191,11 @@ void FXHelper::QueryCommand(LightQueryElement &lqe) {
 
 void FXHelper::QueryUpdate(bool force) {
 	QueryCommand(LightQueryElement({ force, 1 }));
+	lightsNoDelay = lightQuery.size() < (conf->afx_dev.activeLights << 3);
+#ifdef _DEBUG
+	if (!lightsNoDelay)
+		DebugPrint("Query so big, delayed!\n");
+#endif // _DEBUG
 }
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
@@ -634,6 +639,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			while (!&src->lightQuery.front()) {
 				src->lightQuery.pop();
 				DebugPrint("Null in query!\n");
+				MessageBox(mDlg, "Zero in query!", "Alert!", 0);
 			}
 			current = src->lightQuery.front();
 			src->lightQuery.pop();
@@ -667,13 +673,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						if (dev->dev->IsHaveGlobal())
 							src->UpdateGlobalEffect(dev->dev);
 					}
-
-				src->lightsNoDelay = src->lightQuery.size() < (conf->afx_dev.activeLights << 3);
-#ifdef _DEBUG
-				if (!src->lightsNoDelay)
-					DebugPrint("Query so big, delayed!\n");
-#endif // _DEBUG
-
 				break;
 			case 0: { // set light
 				WORD pid = LOWORD(current.light);
@@ -745,6 +744,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			}
 			}
 		}
+		src->lightsNoDelay = true;
 	}
 	return 0;
 }

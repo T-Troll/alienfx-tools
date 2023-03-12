@@ -108,13 +108,19 @@ namespace AlienFX_SDK {
 			//break;
 		case API_V8: {
 			if (size == 4) {
+				WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 				bool res = HidD_SetFeature(devHandle, buffer, length);
 				//bool res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(6); // Need wait for ACK
+				Sleep(8);
+				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+				//Sleep(6); // Need wait for ACK
 				return res;
 			}
 			else {
-				return WriteFile(devHandle, buffer, length, &written, NULL);
+				bool res = WriteFile(devHandle, buffer, length, &written, NULL);
+				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+				//Sleep(1);
+				return res;
 			}
 		}
 		}
@@ -169,7 +175,7 @@ chain++;
 		deviceInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 		if (SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, deviceInterfaceDetailData, dwRequiredSize, NULL, NULL)
 			&& (devHandle = CreateFile(deviceInterfaceDetailData->DevicePath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
-				NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL)) != INVALID_HANDLE_VALUE) {
+				NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN /*| FILE_FLAG_WRITE_THROUGH*/, NULL)) != INVALID_HANDLE_VALUE) {
 			HIDD_ATTRIBUTES attributes{ sizeof(HIDD_ATTRIBUTES) };
 			PHIDP_PREPARSED_DATA prep_caps;
 			HIDP_CAPS caps;
@@ -274,7 +280,7 @@ chain++;
 		case API_V4:
 		{
 			WaitForReady();
-			PrepareAndSend(COMMV4_control, { {4, 4}/*, { 5, 0xff }*/ });
+			PrepareAndSend(COMMV4_control, {Afx_icommand({ 4, 4 })/*, { 5, 0xff }*/});
 			inSet = PrepareAndSend(COMMV4_control, { {4, 1}/*, { 5, 0xff }*/ });
 		} break;
 		case API_V3: case API_V2:
@@ -284,8 +290,9 @@ chain++;
 			WaitForReady();
 			DebugPrint("Post-Reset status: " + to_string(GetDeviceStatus()) + "\n");
 		} break;
-		case API_V8:
-			WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+		//case API_V8:
+		//	//FlushFileBuffers(devHandle);
+		//	WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 		default: inSet = true;
 		}
 		return inSet;
@@ -309,7 +316,7 @@ chain++;
 			} break;
 			//case API_V8:
 				//PrepareAndSend(COMMV8_readyToColor, { {2,0} });
-			//	//Sleep(5);
+				//Sleep(6);
 				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 			default: inSet = false;
 			}
@@ -331,10 +338,10 @@ chain++;
 			{ (byte)(bPos + 9),act->back().r },{ (byte)(bPos + 10),act->back().g},{ (byte)(bPos + 11),act->back().b} });
 	}
 
-	byte Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
+	void Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
 		mods->insert(mods->end(), { {bPos,(byte)(index + 1)},
 			{(byte)(bPos + 1),c->r}, {(byte)(bPos + 2),c->g}, {(byte)(bPos + 3),c->b} });
-		return bPos + 4;
+		//return bPos + 4;
 	}
 
 	bool Functions::SetMultiColor(vector<UCHAR> *lights, Afx_action c) {
@@ -344,7 +351,6 @@ chain++;
 		if (!inSet) Reset();
 		switch (version) {
 		case API_V8: {
-			//byte bPos = 5, cnt = 1;
 			PrepareAndSend(COMMV8_readyToColor, { {2,(byte)lights->size()} });
 			auto nc = lights->begin();
 			for (byte cnt = 1; nc != lights->end(); cnt++) {
@@ -355,39 +361,23 @@ chain++;
 				mods.push_back({ 4, cnt });
 				val = PrepareAndSend(COMMV8_colorSet, &mods);
 			}
-			//for (auto nc = lights->begin(); nc != lights->end(); nc++) {
-			//	if (bPos + 15 > length) {
-			//		// Send command and clear buffer...
-			//		mods.push_back({ 4, cnt++ });
-			//		val = PrepareAndSend(COMMV8_colorSet, &mods);
-			//		bPos = 5;
-			//	}
-			//	bPos = AddV8DataBlock(bPos, &mods, *nc, &act);
-			//}
-			//if (bPos > 5) {
-			//	mods.push_back({ 4, cnt });
-			//	val = PrepareAndSend(COMMV8_colorSet, &mods);
-			//}
 		} break;
 		case API_V5:
-		{
-			byte bPos = 4;
-			for (auto nc = lights->begin(); nc < lights->end(); nc++) {
-				if (bPos + 4 > length) {
-					val = PrepareAndSend(COMMV5_colorSet, &mods);
-					bPos = 4;
+			for (auto nc = lights->begin(); nc != lights->end();) {
+				for (byte bPos = 4; bPos < length && nc != lights->end(); bPos += 4) {
+					AddV5DataBlock(bPos, &mods, *nc, &c);
+					nc++;
 				}
-				bPos = AddV5DataBlock(bPos, &mods, *nc, &c);
-			}
-			if (bPos > 4)
 				val = PrepareAndSend(COMMV5_colorSet, &mods);
+			}
 			PrepareAndSend(COMMV5_loop);
-		} break;
+			break;
 		case API_V4:
 		{
 			mods = { { 3, c.r }, { 4, c.g }, { 5, c.b }, {7, (byte)lights->size()} };
-			for (int nc = 0; nc < lights->size(); nc++)
-				mods.push_back({ (byte)(8 + nc), lights->at(nc)});
+			int cnt = 8;
+			for (auto nc = lights->begin(); nc != lights->end(); nc++)
+				mods.push_back({ (byte)(cnt++), *nc});
 			val = PrepareAndSend(COMMV4_setOneColor, &mods);
 		} break;
 		case API_V3: case API_V2: case API_V6: case API_ACPI:
@@ -404,11 +394,10 @@ chain++;
 				val = ((AlienFan_SDK::Lights*)ACPIdevice)->SetColor((byte)fmask, c.r, c.g, c.b);
 				break;
 #endif
-			default: {
+			default:
 				PrepareAndSend(COMMV1_color, SetMaskAndColor(fmask, 3, c));
 				val = PrepareAndSend(COMMV1_loop);
 				chain++;
-			}
 			}
 		} break;
 		default:
@@ -438,33 +427,17 @@ chain++;
 					mods.push_back({ 4, cnt });
 					val = PrepareAndSend(COMMV8_colorSet, &mods);
 				}
-				//for (auto nc = act->begin(); nc != act->end(); nc++) {
-				//	if (bPos + 15 > length) {
-				//		// Send command and clear buffer...
-				//		mods.push_back({ 4, cnt++ });
-				//		val = PrepareAndSend(COMMV8_colorSet, &mods);
-				//		bPos = 5;
-				//	}
-				//	bPos = AddV8DataBlock(bPos, &mods, nc->index, &nc->act);
-				//}
-				//if (bPos > 5) {
-				//	mods.push_back({ 4, cnt });
-				//	val = PrepareAndSend(COMMV8_colorSet, &mods);
-				//}
 			} break;
 			case API_V5:
 			{
-				byte bPos = 4;
-				for (auto nc = act->begin(); nc != act->end(); nc++) {
-					if (bPos + 4 > length) {
-						PrepareAndSend(COMMV5_colorSet, &mods);
-						bPos = 4;
+				for (auto nc = act->begin(); nc != act->end();) {
+					for (byte bPos = 4; bPos < length && nc != act->end(); bPos += 4) {
+						AddV5DataBlock(bPos, &mods, nc->index, &nc->act.front());
+						nc++;
 					}
-					bPos = AddV5DataBlock(bPos, &mods, nc->index, &nc->act.front());
+					val = PrepareAndSend(COMMV5_colorSet, &mods);
 				}
-				if (bPos > 4)
-					PrepareAndSend(COMMV5_colorSet, &mods);
-				val = PrepareAndSend(COMMV5_loop);
+				PrepareAndSend(COMMV5_loop);
 			} break;
 			default:
 			{
@@ -1063,8 +1036,8 @@ chain++;
 				RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
 				groups.push_back({dID, name});
 				for (unsigned i = 0; i < len; i += 2) {
-					groups.back().lights.push_back({ LOWORD(maps[i]), (WORD)maps[i + 1] });
-					if (GetFlags(LOWORD(maps[i]), (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
+					groups.back().lights.push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
+					if (GetFlags(maps[i], (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
 						groups.back().have_power = true;
 				}
 				delete[] maps;
@@ -1106,13 +1079,13 @@ chain++;
 			RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
 			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.size());
 
-			DWORD *grLights = new DWORD[i->lights.size() * 2];
+			DWORD *grLights = new DWORD[i->lights.size() << 1];
 
 			for (int j = 0; j < i->lights.size(); j++) {
 				grLights[j * 2] = i->lights[j].did;
 				grLights[j * 2 + 1] = i->lights[j].lid;
 			}
-			RegSetValueEx(hKeyStore, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (DWORD)i->lights.size() * sizeof(DWORD) );
+			RegSetValueEx(hKeyStore, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (WORD)i->lights.size() * sizeof(DWORD) );
 
 			delete[] grLights;
 			RegCloseKey(hKeyStore);

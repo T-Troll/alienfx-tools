@@ -107,9 +107,12 @@ SENSOR* SenMonHelper::UpdateSensor(SENID sid, long val) {
 int SenMonHelper::GetValuesArray(HCOUNTER counter) {
 	PDH_STATUS pdhStatus;
 	DWORD count;
-	while ((pdhStatus = PdhGetFormattedCounterArray(counter, PDH_FMT_LONG /*| PDH_FMT_NOSCALE*/, &counterSize, &count, counterValues)) == PDH_MORE_DATA) {
+	DWORD cs = counterSize;
+	while ((pdhStatus = PdhGetFormattedCounterArray(counter, PDH_FMT_LONG /*| PDH_FMT_NOSCALE*/, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues)) == PDH_MORE_DATA) {
 		delete[] counterValues;
-		counterValues = new PDH_FMT_COUNTERVALUE_ITEM[(counterSize / sizeof(PDH_FMT_COUNTERVALUE_ITEM)) + 1];
+		counterSize = cs;
+		counterValues = new byte[counterSize];
+		cv = (PDH_FMT_COUNTERVALUE_ITEM*)counterValues;
 	}
 
 	if (pdhStatus != ERROR_SUCCESS) {
@@ -147,25 +150,25 @@ void SenMonHelper::UpdateSensors()
 		// New: battery charge/discharge rate
 		valCount = GetValuesArray(hBDCounter); // Temps, code 5
 		for (WORD i = 0; i < valCount; i++) {
-			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
-				(sen = UpdateSensor({ (WORD)(i + 1), 3, 0 }, counterValues[i].FmtValue.longValue / 1000)))
+			if (cv[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
+				(sen = UpdateSensor({ (WORD)(i + 1), 3, 0 }, cv[i].FmtValue.longValue / 1000)))
 				sen->sname = "Battery " + to_string(i+1) + " Discharge rate";
 		}
 		valCount = GetValuesArray(hBCCounter); // Temps, code 5
 		for (WORD i = 0; i < valCount; i++) {
-			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
-				(sen = UpdateSensor({ (WORD)(i + 0x101), 3, 0 }, counterValues[i].FmtValue.longValue / 1000)))
+			if (cv[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
+				(sen = UpdateSensor({ (WORD)(i + 0x101), 3, 0 }, cv[i].FmtValue.longValue / 1000)))
 				sen->sname = "Battery " + to_string(i + 1) + " Charge rate";
 		}
 
 		valCount = GetValuesArray(hGPUCounter); // GPU, code 4
 		for (DWORD i = 0; i < valCount; i++) {
-			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
-				string path = counterValues[i].szName;
+			if (cv[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
+				string path = cv[i].szName;
 				string phys = path.substr(path.find("luid_") + 18, 8);
 				int physID = strtol(path.substr(path.find("luid_") + 18, 8).c_str(), NULL, 16);
 				string type = path.substr(path.find("type_") + 5);
-				gpusubs[type][physID] += counterValues[i].FmtValue.longValue;
+				gpusubs[type][physID] += cv[i].FmtValue.longValue;
 			}
 		}
 		WORD sstype = 0;
@@ -183,9 +186,9 @@ void SenMonHelper::UpdateSensors()
 
 		valCount = GetValuesArray(hTempCounter); // Temps, code 5
 		for (WORD i = 0; i < valCount; i++) {
-			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
-				(sen = UpdateSensor({ i, 5, 0 }, counterValues[i].FmtValue.longValue - 273)))
-				sen->sname = counterValues[i].szName;
+			if (cv[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
+				(sen = UpdateSensor({ i, 5, 0 }, cv[i].FmtValue.longValue - 273)))
+				sen->sname = cv[i].szName;
 		}
 	}
 
@@ -209,8 +212,8 @@ void SenMonHelper::UpdateSensors()
 			// ESIF temperatures...
 			valCount = GetValuesArray(hTempCounter2); // Esif temps, code 0
 			for (WORD i = 0; i < valCount; i++) {
-				if ((counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && counterValues[i].FmtValue.longValue &&
-					(sen = UpdateSensor({ i, 0, 1 }, counterValues[i].FmtValue.longValue)))
+				if ((cv[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && cv[i].FmtValue.longValue &&
+					(sen = UpdateSensor({ i, 0, 1 }, cv[i].FmtValue.longValue)))
 					sen->sname = "ESIF " + to_string(i + 1);
 			}
 		}
@@ -219,8 +222,8 @@ void SenMonHelper::UpdateSensors()
 		// ESIF temperatures and power
 		valCount = GetValuesArray(hPwrCounter); // Esif powers, code 1
 		for (WORD i = 0; i < valCount; i++) {
-			if (counterValues[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
-				(sen = UpdateSensor({ i, 1, 1 }, counterValues[i].FmtValue.longValue / 10)))
+			if (cv[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA &&
+				(sen = UpdateSensor({ i, 1, 1 }, cv[i].FmtValue.longValue / 10)))
 				sen->sname = "ESIF Power " + to_string(i + 1);
 		}
 	}

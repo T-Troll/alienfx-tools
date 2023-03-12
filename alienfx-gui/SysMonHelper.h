@@ -19,7 +19,8 @@ public:
 
 	HQUERY hQuery = NULL;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
-	PDH_FMT_COUNTERVALUE_ITEM* counterValues[2]{ new PDH_FMT_COUNTERVALUE_ITEM[1], new PDH_FMT_COUNTERVALUE_ITEM[1] };
+	byte* counterValues[2]{ new byte[1], new byte[1] };
+	//PDH_FMT_COUNTERVALUE_ITEM* cv[2]{ (PDH_FMT_COUNTERVALUE_ITEM*)counterValues[0],(PDH_FMT_COUNTERVALUE_ITEM*)counterValues[1] };
 	DWORD counterSizes[2]{ 1,1 };
 	LightEventData cData;
 

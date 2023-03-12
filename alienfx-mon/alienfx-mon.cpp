@@ -526,7 +526,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDC_MON_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE | MIM_HELPID, MNS_NOTIFYBYPOS };
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE | MIM_HELPID, MNS_NOTIFYBYPOS | MNS_AUTODISMISS };
 			mi.dwContextHelpID = (DWORD)wParam;
 			SetMenuInfo(tMenu, &mi);
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID };
