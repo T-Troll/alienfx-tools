@@ -34,22 +34,22 @@ AlienFX_SDK::Afx_action FXHelper::BlendPower(double power, AlienFX_SDK::Afx_acti
 	};
 }
 
-void FXHelper::SetZoneLight(DWORD id, int x, int max, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power)
+void FXHelper::SetZoneLight(DWORD id, int x, int max, int scale, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power)
 {
 	vector<AlienFX_SDK::Afx_action> fAct;
 	if (flags & GAUGE_REVERSE)
 		x = max - x - 1;
 	if (flags & GAUGE_GRADIENT)
-		fAct.push_back(BlendPower((double)x / (max - 1), &actions->front(), &actions->back()));
+		fAct.push_back(BlendPower((double)x / max, &actions->front(), &actions->back()));
 	else {
-		//max++;
+		double powerStep = 1.0 / scale;
 		double pos = (double)x / max;
 		if (pos > power) {
 			fAct.push_back(actions->front());
 		}
 		else
-			if (double(x+1) / max > power) {
-				fAct.push_back(BlendPower((power - pos) * max, &actions->front(), &actions->back()));
+			if (pos + powerStep > power) {
+				fAct.push_back(BlendPower((power - pos) * scale, &actions->front(), &actions->back()));
 			}
 			else {
 				fAct.push_back(actions->back());
@@ -70,22 +70,28 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 			for (auto t = zone.lightMap.begin(); t < zone.lightMap.end(); t++)
 				switch (grp->gauge) {
 				case 1: // horizontal
-					SetZoneLight(t->light, t->x, zone.xMax, grp->gaugeflags, actions, power);
+					SetZoneLight(t->light, t->x, zone.gMaxX, zone.scaleX, grp->gaugeflags, actions, power);
 					break;
 				case 2: // vertical
-					SetZoneLight(t->light, t->y, zone.yMax, grp->gaugeflags, actions, power);
+					SetZoneLight(t->light, t->y, zone.gMaxY, zone.scaleY, grp->gaugeflags, actions, power);
 					break;
 				case 3: // diagonal
-					SetZoneLight(t->light, t->x + t->y, zone.xMax + zone.yMax, grp->gaugeflags, actions, power);
+					SetZoneLight(t->light, t->x + t->y, zone.gMaxX + zone.gMaxY, zone.scaleX + zone.scaleY, grp->gaugeflags, actions, power);
 					break;
 				case 4: // back diagonal
-					SetZoneLight(t->light, zone.xMax - t->x + t->y, zone.xMax + zone.yMax, grp->gaugeflags, actions, power);
+					SetZoneLight(t->light, zone.gMaxX - 1 - t->x + t->y, zone.gMaxX + zone.gMaxY, zone.scaleX + zone.scaleY, grp->gaugeflags, actions, power);
 					break;
 				case 5: // radial
-					float px = abs(((float)zone.xMax)/2 - t->x), py = abs(((float)zone.yMax)/2 - t->y);
-					int radius = (int)(sqrt(zone.xMax * zone.xMax + zone.yMax * zone.yMax) / 2),
-						weight = (int)sqrt(px * px + py * py);
-					SetZoneLight(t->light, weight, radius, grp->gaugeflags, actions, power);
+					//float px = abs(((float)zone.gMaxX)/2 - t->x), py = abs(((float)zone.gMaxY)/2 - t->y);
+					//int radius = (int)(sqrt(zone.gMaxX * zone.gMaxX + zone.gMaxY * zone.gMaxY) / 2),
+					//	weight = (int)sqrt(px * px + py * py),
+					//	scale = (int)(sqrt(zone.scaleX * zone.scaleX + zone.scaleY * zone.scaleY) / 2);
+					//SetZoneLight(t->light, weight, radius, scale, grp->gaugeflags, actions, power);
+					SetZoneLight(t->light, 
+						abs(zone.gMaxX / 2 - t->x) + abs(zone.gMaxY / 2 - t->y),
+						zone.gMaxX + zone.gMaxY,
+						zone.scaleX + zone.scaleY,
+						grp->gaugeflags, actions, power);
 					break;
 				}
 		}
@@ -161,7 +167,7 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 			needSet = lgh->x + lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
 			break;
 		case 4: // back diagonal
-			needSet = lgh->x + zone->yMax - lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
+			needSet = lgh->x + zone->gMaxX - lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
 			break;
 		case 5: // radial
 			needSet = (abs(lgh->x - grp->gridop.gridX) == phase && abs(lgh->y - grp->gridop.gridY) <= phase)
@@ -179,9 +185,9 @@ void FXHelper::QueryCommand(LightQueryElement &lqe) {
 			modifyQuery.lock();
 			if (wasLFX) {
 				wasLFX = false;
-				lightQuery.push({ 0, 2 });
+				lightQuery.push_back({ 0, 2 });
 			}
-			lightQuery.push(lqe);
+			lightQuery.push_back(lqe);
 			modifyQuery.unlock();
 			SetEvent(haveNewElement);
 		}
@@ -297,7 +303,7 @@ void FXHelper::RefreshOne(groupset* map, bool update) {
 
 void FXHelper::RefreshCounters(LightEventData* data)
 {
-	if (conf->stateEffects) {
+	if (eve->sysmon) {
 		bool force = !data, wasChanged = false;
 		AlienFX_SDK::Afx_group* grp;
 		if (!data)
@@ -512,10 +518,10 @@ void FXHelper::RefreshGrid() {
 						UINT shift = 255 - conf->amb_shift;
 						auto zone = *conf->FindZoneMap(ce->group);
 						// resize grid if zone changed
-						if (capt->gridX != zone.xMax || capt->gridY != zone.yMax)
-							capt->SetLightGridSize(zone.xMax, zone.yMax);
+						if (capt->gridX != zone.gMaxX || capt->gridY != zone.gMaxY)
+							capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
 						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
-							int ind = (lgh->x + (lgh->y * zone.xMax)) * 3;
+							int ind = (lgh->x + (lgh->y * zone.gMaxX)) * 3;
 							cur.front().r = (capt->imgz[ind + 2] * shift) / 255;
 							cur.front().g = (capt->imgz[ind + 1] * shift) / 255;
 							cur.front().b = (capt->imgz[ind] * shift) / 255;
@@ -636,13 +642,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		while (src->lightQuery.size()) {
 
 			src->modifyQuery.lock();
-			while (!&src->lightQuery.front()) {
-				src->lightQuery.pop();
-				DebugPrint("Null in query!\n");
-				MessageBox(mDlg, "Zero in query!", "Alert!", 0);
+			for (LightQueryElement& t : src->lightQuery) {
+				if (!&t) {
+					DebugPrint("Null in query!\n");
+					MessageBox(mDlg, "Zero in query!", "Alert!", 0);
+				}
 			}
+			//while (!&src->lightQuery.front()) {
+			//	DebugPrint("Null in query!\n");
+			//	MessageBox(mDlg, "Zero in query!", "Alert!", 0);
+			//	src->lightQuery.pop_front();
+			//}
 			current = src->lightQuery.front();
-			src->lightQuery.pop();
+			src->lightQuery.pop_front();
 			src->modifyQuery.unlock();
 
 			switch (current.command) {
@@ -678,7 +690,11 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				WORD pid = LOWORD(current.light);
 				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
 					WORD lid = HIWORD(current.light);
-					WORD flags = conf->afx_dev.GetFlags(dev, lid);
+					auto lgh = conf->afx_dev.GetMappingByDev(dev, lid);
+					if (!lgh) {
+						DebugPrint("Wrong light!\n");
+						MessageBox(mDlg, "Wrong light!", "Alert!", 0);
+					}
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
 						// gamma-correction...
@@ -689,7 +705,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						}
 						// Dimming...
 						// For v7 devices only, other have hardware dimming
-						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
+						if (conf->stateDimmed && (!lgh->flags || conf->dimPowerButton))
 							switch (dev->version) {
 								/*case AlienFX_SDK::API_V2:
 								case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
@@ -702,7 +718,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 
 					// Is it power button?
-					if ((flags & ALIENFX_FLAG_POWER) && dev->version && dev->version < AlienFX_SDK::API_V5) {
+					if ((lgh->flags & ALIENFX_FLAG_POWER) && dev->version && dev->version < AlienFX_SDK::API_V5) {
 						// Should we update it?
 						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						current.actsize = 2;

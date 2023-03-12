@@ -5,13 +5,12 @@
 #include "common.h"
 #include <Shlwapi.h>
 
-extern void UpdateProfileList();
+extern void UpdateProfileList(bool force = false);
 extern void UpdateState(bool checkMode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-//extern void RemoveUnused(vector<groupset>* lightsets);
 extern bool IsGroupUnused(DWORD gid);
 
 extern AlienFX_SDK::Afx_light* keySetLight;
@@ -313,16 +312,15 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						it->haptics.clear();
 					if (IsDlgButtonChecked(hDlg, IDC_CP_GRID) == BST_CHECKED)
 						it->effect.type = 0;
-					// remove if unused now
-					if (!(it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)) {
-						it = prof->lightsets.erase(it);
-					}
-					else
+					// remove if unused
+					if (it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)
 						it++;
+					else
+						it = prof->lightsets.erase(it);
 				}
 				RemoveUnusedGroups();
-				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
-					delete prof->fansets;// = { };
+				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED && prof->fansets) {
+					delete (fan_profile*)prof->fansets;
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
 					//ReloadProfileView(hDlg);
@@ -356,7 +354,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
 					if (prof->fansets) 
-						delete prof->fansets;
+						delete (fan_profile*)prof->fansets;
 					prof->fansets = conf->activeProfile->fansets ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
 					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) > 0);
 					//ReloadProfileView(hDlg);
@@ -412,10 +410,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_FANPROFILE:
 			SetBitMask(prof->flags, PROF_FANS, state);
-			if (state) {
+			if (state && !prof->fansets) {
 				// add current fan profile...
-				if (!prof->fansets)
-					prof->fansets = new fan_profile(*fan_conf->lastProf);
+				prof->fansets = new fan_profile(*fan_conf->lastProf);
 			}
 			// Switch fan control if needed
 			if (prof->id == conf->activeProfile->id)

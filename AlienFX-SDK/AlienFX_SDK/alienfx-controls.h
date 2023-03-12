@@ -44,7 +44,7 @@ namespace AlienFX_SDK {
 		// [3] - 1 - loop, 0 - once
 		// [5] - count of lights need to be set,
 		// [6-33] - LightID (index, not mask) - it can be COUNT of them.
-		const byte COMMV4_colorSet[]{2, 0x03 ,0x24 /*,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa*/};
+		const byte COMMV4_colorSet[]{7, 0x03 ,0x24,0x00 ,0x07 ,0xd0 ,0x00 ,0xfa};
 		// [3] - action type ( 0 - light, 1 - pulse, 2 - morph)
 		// [4] - how long phase keeps
 		// [5] - mode (action type) - 0xd0 - light, 0xdc - pulse, 0xcf - morph, 0xe8 - power morph, 0x82 - spectrum, 0xac - rainbow

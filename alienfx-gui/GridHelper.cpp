@@ -9,7 +9,7 @@ extern FXHelper* fxhl;
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (grp->effect.trigger == 4 || grp->effect.effectColors.size()) {
 		grideffop* gridop = &grp->gridop;
-		int cx = max(x + 1, cz->xMax - x), cy = max(y + 1, cz->yMax - y), esize = 0;
+		int cx = max(x + 1, cz->gMaxX - x), cy = max(y + 1, cz->gMaxY - y), esize = 0;
 		if (grp->gauge) {
 			switch (grp->gauge) {
 			case 1:
@@ -80,13 +80,13 @@ void GridHelper::StartCommonRun(groupset* ce) {
 	zonemap cz = *conf->FindZoneMap(ce->group);
 	int srX = 0, srY = 0;
 	if (ce->effect.flags & GE_FLAG_RPOS) {
-		uniform_int_distribution<int> pntX(0, cz.xMax - 1);
-		uniform_int_distribution<int> pntY(0, cz.yMax - 1);
+		uniform_int_distribution<int> pntX(0, cz.gMaxX - 1);
+		uniform_int_distribution<int> pntY(0, cz.gMaxX - 1);
 		srX = pntX(conf->rnd); srY = pntY(conf->rnd);
 	}
 	else
 		if (ce->gauge == 5) {
-			srX = cz.xMax / 2; srY = cz.yMax / 2;
+			srX = cz.gMaxX / 2; srY = cz.gMaxX / 2;
 		}
 	StartGridRun(&(*ce), &cz, srX, srY);
 }

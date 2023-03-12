@@ -97,7 +97,7 @@ void EventHandler::ChangeEffects(bool stop) {
 	// Effects state...
 	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
 	if (!stop && conf->stateEffects) {
-		//modifyProfile.lock();
+		modifyProfile.lock();
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			noMon = noMon && it->events.empty();
 			noAmb = noAmb && it->ambients.empty();
@@ -112,7 +112,7 @@ void EventHandler::ChangeEffects(bool stop) {
 			if (!(noGrid || grid))
 				grid = new GridHelper();
 		}
-		//modifyProfile.unlock();
+		modifyProfile.unlock();
 
 	}
 	if (noGrid && grid) {	// Grid

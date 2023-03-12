@@ -240,7 +240,12 @@ namespace AlienFX_SDK {
 	};
 
 	struct Afx_device { // Single device data
-		WORD vid, pid;			// IDs
+		union {
+			struct {
+				WORD pid, vid;			// IDs
+			};
+			DWORD devID;
+		};
 		Functions* dev = NULL;  // device control object pointer
 		string name;			// device name
 		Afx_colorcode white = { 255,255,255 }; // white point

@@ -48,7 +48,7 @@ groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 }
 
 profile* ConfigHandler::FindProfile(int id) {
-	for (auto prof : profiles)
+	for (profile* prof : profiles)
 		if (prof->id == id) {
 			return prof;
 		}
@@ -58,7 +58,7 @@ profile* ConfigHandler::FindProfile(int id) {
 profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
 	profile* fprof = NULL;
-	for (auto prof : profiles)
+	for (profile* prof : profiles)
 		if (SamePower(prof) && (active || !IsActiveOnly(prof))) {
 			for (auto name : prof->triggerapp)
 				if (name == appName) {
@@ -193,8 +193,6 @@ void ConfigHandler::Load() {
 			if (!prof->fansets)
 				prof->fansets = new fan_profile();
 			((fan_profile*)prof->fansets)->powerSet = *(DWORD*)data;
-			//((fan_profile*)prof->fansets)->powerStage = ((WORD*)data)[0];
-			//((fan_profile*)prof->fansets)->gmode = HIBYTE(((WORD*)data)[1]);
 		}
 	}
 	// Loading zones...
@@ -252,8 +250,6 @@ void ConfigHandler::Load() {
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			auto ce = &gset->effect;
 			memcpy(ce, data, 7);
-			//ce->effectColors.resize(gset->effect.numclr);
-			//memcpy(ce->effectColors.data(), data + 7, gset->effect.numclr);
 			for (unsigned pos = 7; pos < lend; pos += sizeof(DWORD)) {
 				ce->effectColors.push_back(*(AlienFX_SDK::Afx_colorcode*)(data+pos));
 			}
@@ -276,9 +272,9 @@ bool ConfigHandler::SamePower(profile* cur, profile* prof) {
 }
 
 profile* ConfigHandler::FindDefaultProfile() {
-	for (auto prof = profiles.begin(); prof != profiles.end(); prof++)
-		if ((*prof)->flags & PROF_DEFAULT && SamePower(*prof, NULL))
-			return (*prof);
+	for (profile* prof : profiles)
+		if (prof->flags & PROF_DEFAULT && SamePower(prof, NULL))
+			return prof;
 	return profiles.front();
 }
 
@@ -327,7 +323,7 @@ void ConfigHandler::Save() {
 	RegDeleteTree(hKeyMain, "Zones");
 	RegCreateKeyEx(hKeyMain, "Zones", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 
-	for (auto prof : profiles) {
+	for (profile* prof : profiles) {
 		string profID = to_string(prof->id);
 		string name = "Profile-" + profID;
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)prof->name.c_str(), (DWORD)prof->name.size());
@@ -398,12 +394,10 @@ void ConfigHandler::Save() {
 		// Fans....
 		if (prof->flags & PROF_FANS) {
 			// save powers..
-			name = "Profile-power-" +profID;
-			//WORD ps = MAKEWORD(0, prof->fansets.gmode);
-			//DWORD pvalue = MAKELONG(prof->fansets.powerStage, ps);
+			name = "Profile-power-" + profID;
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&((fan_profile*)prof->fansets)->powerSet, sizeof(DWORD));
 			// save fans...
-			fan_conf->SaveSensorBlocks(hKeyProfiles, "Profile-fan-" +profID, ((fan_profile*)prof->fansets));
+			fan_conf->SaveSensorBlocks(hKeyProfiles, "Profile-fan-" + profID, ((fan_profile*)prof->fansets));
 		}
 	}
 }
@@ -466,47 +460,28 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 			}
 
 			// now shrink axis...
-			for (auto t : zone->lightMap) {
+			for (zonelight& t : zone->lightMap) {
 				t.x -= zone->gMinX; t.y -= zone->gMinY;
 			}
-			zone->xMax = zone->gMaxX - zone->gMinX + 1; zone->yMax = zone->gMaxY - zone->gMinY + 1;
-			for (int x = 1; x < zone->xMax; x++) {
-				if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
+			// Scales...
+			zone->scaleX = zone->gMaxX = zone->gMaxX + 1 - zone->gMinX;
+			zone->scaleY = zone->gMaxY = zone->gMaxY + 1 - zone->gMinY;
+			for (int x = 1; x < zone->gMaxX - zone->gMinX; x++)
+				if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
 					[x](auto t) {
 						return t.x == x;
-					}) == zone->lightMap.end()) {
-					byte minDelta = 255;
-					for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
-						if (t->x > x) minDelta = min(minDelta, t->x - x);
-					if (minDelta < 255) {
-						for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
-							if (t->x > x) t->x -= minDelta;
-						zone->xMax -= minDelta;
-					}
-					else
-						zone->xMax = x;
+					})) {
+					zone->scaleX--;
 				}
-			}
-			for (int y = 1; y < zone->yMax; y++) {
-				if (find_if(zone->lightMap.begin(), zone->lightMap.end(),
+			for (int y = 1; y < zone->gMaxY - zone->gMinX; y++)
+				if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
 					[y](auto t) {
 						return t.y == y;
-					}) == zone->lightMap.end()) {
-					byte minDelta = 255;
-					for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
-						if (t->y > y) minDelta = min(minDelta, t->y - y);
-					if (minDelta < 255) {
-						for (auto t = zone->lightMap.begin(); t != zone->lightMap.end(); t++)
-							if (t->y > y) t->y -= minDelta;
-						zone->yMax -= minDelta;
-					}
-					else
-						zone->yMax = y;
+					})) {
+					zone->scaleY--;
 				}
-			}
 		}
 	}
-	zoneUpdate.unlock();
 	return zone;
 }
 
@@ -514,9 +489,9 @@ groupset* ConfigHandler::FindMapping(int mid, vector<groupset>* set)
 {
 	if (!set)
 		set = &activeProfile->lightsets;
-	for (auto res = set->begin(); res < set->end(); res++)
-		if (res->group == mid)
-			return &(*res);
+	for (groupset& res : *set)
+		if (res.group == mid)
+			return &res;
 	return nullptr;
 }
 

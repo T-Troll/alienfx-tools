@@ -130,21 +130,21 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_BUTTON_COLORFROM:
 			if (ev && (!mmap->fromColor || mmap->color.size())) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), &ev->from);
-				RedrawZoneGrid(mmap->group);
+				//RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTTON_COLORTO:
 			if (ev) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), &ev->to);
-				RedrawZoneGrid(mmap->group);
+				//RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_EVENT_SOURCE:
 			if (ev && HIWORD(wParam) == CBN_SELCHANGE) {
 				ev->source = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE));
-				RebuildEventList(hDlg);
+				//RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -154,7 +154,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (ev) {
 				ev->state = ctype;
 				ev->source = 0;
-				RebuildEventList(hDlg);
+				//RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 		} break;
@@ -164,9 +164,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
 				eventID = (int)mmap->events.size() - 1;
 				eve->ChangeEffects();
-				RebuildEventList(hDlg);
+				//RebuildEventList(hDlg);
+				//RedrawZoneGrid(mmap->group);
 				UpdateZoneList();
-				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
@@ -175,9 +175,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				if (eventID)
 					eventID--;
 				eve->ChangeEffects();
-				RebuildEventList(hDlg);
+				//RebuildEventList(hDlg);
+				//RedrawZoneGrid(mmap->group);
 				UpdateZoneList();
-				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTT_EVENT_UP:
@@ -186,8 +186,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				eventID--;
 				*ev = mmap->events[eventID];
 				mmap->events[eventID] = t;
-				RebuildEventList(hDlg);
-				RedrawZoneGrid(mmap->group);
+				//RebuildEventList(hDlg);
+				//RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -197,12 +197,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				eventID++;
 				*ev = mmap->events[eventID];
 				mmap->events[eventID] = t;
-				RebuildEventList(hDlg);
-				RedrawZoneGrid(mmap->group);
+				//RebuildEventList(hDlg);
+				//RedrawZoneGrid(mmap->group);
 				fxhl->RefreshCounters();
 			}
 			break;
 		}
+		RebuildEventList(hDlg);
+		RedrawZoneGrid(mmap->group);
 	} break;
 	case WM_DRAWITEM: {
 		AlienFX_SDK::Afx_colorcode* c = NULL;

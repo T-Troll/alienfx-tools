@@ -29,6 +29,7 @@ MonHelper::MonHelper() {
 MonHelper::~MonHelper() {
 	Stop();
 	SetCurrentMode(oldPower);
+	ResetBoost();
 	delete acpi;
 }
 
@@ -48,7 +49,7 @@ void MonHelper::SetProfilePower() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		ResetBoost();
+		//ResetBoost();
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -81,6 +82,9 @@ void MonHelper::SetCurrentMode(WORD newMode) {
 			acpi->SetGMode(true);
 		}
 	}
+	// clear boosts
+	for (int i = 0; i < acpi->fans.size(); i++)
+		boostRaw[i] = newMode ? 0 : acpi->GetFanBoost(i);
 }
 
 byte MonHelper::GetFanPercent(byte fanID)
@@ -124,7 +128,7 @@ void CMonProc(LPVOID param) {
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
-	if (src->inControl && fan_conf->lastProf) {
+	if (src->inControl /*&& fan_conf->lastProf*/) {
 		// check power mode
 		if (src->powerMode != src->GetPowerMode())
 			src->SetCurrentMode(src->powerMode);

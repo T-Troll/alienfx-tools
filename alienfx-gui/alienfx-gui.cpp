@@ -254,37 +254,41 @@ void ResizeTab(HWND tab) {
 		SWP_SHOWWINDOW);
 }
 
-void OnSelChanged()
+void OnSelChanged(bool force = false)
 {
-	HWND hwndDlg = GetDlgItem(mDlg, IDC_TAB_MAIN);
-	// Get the dialog header data.
-	DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr( hwndDlg, GWLP_USERDATA);
+	if (force || IsWindowVisible(mDlg)) {
+		HWND hwndDlg = GetDlgItem(mDlg, IDC_TAB_MAIN);
+		// Get the dialog header data.
+		DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
 
-	// Get the index of the selected tab.
-	TCITEM tie{ TCIF_PARAM };
-	TabCtrl_GetItem(hwndDlg, TabCtrl_GetCurSel(hwndDlg), &tie);
-	tabSel = (int)tie.lParam;
+		// Get the index of the selected tab.
+		TCITEM tie{ TCIF_PARAM };
+		TabCtrl_GetItem(hwndDlg, TabCtrl_GetCurSel(hwndDlg), &tie);
+		tabSel = (int)tie.lParam;
 
-	// Destroy the current child dialog box, if any.
-	if (pHdr->hwndDisplay)
-		DestroyWindow(pHdr->hwndDisplay);
+		// Destroy the current child dialog box, if any.
+		if (pHdr->hwndDisplay)
+			DestroyWindow(pHdr->hwndDisplay);
 
-	pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
-	ResizeTab(pHdr->hwndDisplay);
+		pHdr->hwndDisplay = CreateDialogIndirect(hInst, (DLGTEMPLATE*)pHdr->apRes[tabSel], hwndDlg, pHdr->apProc[tabSel]);
+		ResizeTab(pHdr->hwndDisplay);
+	}
 }
 
-void UpdateProfileList() {
-	HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
-	ComboBox_ResetContent(profile_list);
-	int id;
-	for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
-		id = ComboBox_AddString(profile_list, (*i)->name.c_str());
-		if ((*i)->id == conf->activeProfile->id) {
-			ComboBox_SetCurSel(profile_list, id);
-			CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
+void UpdateProfileList(bool force = true) {
+	if (force || IsWindowVisible(mDlg)) {
+		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
+		ComboBox_ResetContent(profile_list);
+		int id;
+		for (profile* prof : conf->profiles) {
+			id = ComboBox_AddString(profile_list, prof->name.c_str());
+			if (prof->id == conf->activeProfile->id) {
+				ComboBox_SetCurSel(profile_list, id);
+				CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
+			}
 		}
+		DebugPrint("Profile list reloaded.\n");
 	}
-	DebugPrint("Profile list reloaded.\n");
 }
 
 void SelectProfile(profile* prof = conf->activeProfile) {
@@ -447,48 +451,53 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		} else
 			if (pos->flags & SWP_HIDEWINDOW) {
 				eve->StartProfiles();
+				DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(tab_list, GWLP_USERDATA);
+				DestroyWindow(pHdr->hwndDisplay);
+				pHdr->hwndDisplay = NULL;
 			}
 			else
 				if (!(pos->flags & SWP_NOSIZE) && (pos->cx || pos->cy)) {
 					RECT oldRect;
 					GetWindowRect(mDlg, &oldRect);
-					int deltax = pos->cx - oldRect.right + oldRect.left,
-						deltay = pos->cy - oldRect.bottom + oldRect.top;
-					if (deltax || deltay) {
-						GetWindowRect(tab_list, &oldRect);
-						SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-						GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
-						SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
-						GetWindowRect(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), &oldRect);
-						ScreenToClient(mDlg, (LPPOINT)&oldRect);
-						SetWindowPos(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-						//GetWindowRect(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), &oldRect);
-						//ScreenToClient(mDlg, (LPPOINT)&oldRect);
-						//SetWindowPos(GetDlgItem(mDlg, IDC_STATIC_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-						GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
-						ScreenToClient(mDlg, (LPPOINT)&oldRect);
-						SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, oldRect.left, oldRect.top + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-						GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &oldRect);
-						ScreenToClient(mDlg, (LPPOINT)&oldRect);
-						SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-						GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &oldRect);
-						ScreenToClient(mDlg, (LPPOINT)&oldRect);
-						SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+					if (oldRect.bottom > 0 && oldRect.right > 0) {
+						int deltax = pos->cx - oldRect.right + oldRect.left,
+							deltay = pos->cy - oldRect.bottom + oldRect.top;
+						if (deltax || deltay) {
+							GetWindowRect(tab_list, &oldRect);
+							SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
+							SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), &oldRect);
+							ScreenToClient(mDlg, (LPPOINT)&oldRect);
+							SetWindowPos(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
+							ScreenToClient(mDlg, (LPPOINT)&oldRect);
+							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, oldRect.left, oldRect.top + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &oldRect);
+							ScreenToClient(mDlg, (LPPOINT)&oldRect);
+							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &oldRect);
+							ScreenToClient(mDlg, (LPPOINT)&oldRect);
+							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+						}
 					}
 				}
 		return false;
 	} break;
 	case WM_SIZE:
-		switch (wParam) {
-		case SIZE_MINIMIZED: {
-			// go to tray...
+		if (wParam == SIZE_MINIMIZED)
 			ShowWindow(hDlg, SW_HIDE);
-			DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(tab_list, GWLP_USERDATA);
-			DestroyWindow(pHdr->hwndDisplay);
-			pHdr->hwndDisplay = NULL;
-		} break;
-		}
 		break;
+	//	switch (wParam) {
+	//	case SIZE_MINIMIZED: {
+	//		// go to tray...
+	//		ShowWindow(hDlg, SW_HIDE);
+	//		//DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(tab_list, GWLP_USERDATA);
+	//		//DestroyWindow(pHdr->hwndDisplay);
+	//		//pHdr->hwndDisplay = NULL;
+	//	} break;
+	//	}
+	//	break;
 	case WM_APP + 1: {
 		switch (LOWORD(lParam)) {
 		case WM_LBUTTONDBLCLK: case WM_LBUTTONUP:

@@ -1,4 +1,4 @@
-//#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #include "AlienFX_SDK.h"
 #include "alienfx-controls.h"
 extern "C" {
@@ -70,7 +70,7 @@ namespace AlienFX_SDK {
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
 		byte buffer[MAX_BUFFERSIZE]{ reportIDList[version] };
 		DWORD written, size = command[0];
-		BOOL res = false;
+		//BOOL res = false;
 
 		if (version == API_V6 /*&& size != 3*/)
 			memset(buffer + 1, 0xff, MAX_BUFFERSIZE - 1);
@@ -87,41 +87,44 @@ namespace AlienFX_SDK {
 		case API_V2: case API_V3:
 			//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
 			return HidD_SetOutputReport(devHandle, buffer, length);
-			break;
+			//break;
 		case API_V4:
 			//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
 			return HidD_SetOutputReport(devHandle, buffer, length);
 			//res &= DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL);
-			break;
+			//break;
 		case API_V5:
 			//res =  DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
 			return HidD_SetFeature(devHandle, buffer, length);
-			break;
+			//break;
 		case API_V6:
 			/*res =*/return WriteFile(devHandle, buffer, length, &written, NULL);
 			//if (size == 3)
 			//	res &= ReadFile(devHandle, buffer, length, &written, NULL);
-			break;
+			//break;
 		case API_V7:
 			WriteFile(devHandle, buffer, length, &written, NULL);
-			res = ReadFile(devHandle, buffer, length, &written, NULL);
-			break;
+			return ReadFile(devHandle, buffer, length, &written, NULL);
+			//break;
 		case API_V8: {
 			if (size == 4) {
 				WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
-				res = HidD_SetFeature(devHandle, buffer, length);
-				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(6);
+				bool res = HidD_SetFeature(devHandle, buffer, length);
+				//bool res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
+				Sleep(8);
 				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 				//Sleep(6); // Need wait for ACK
+				return res;
 			}
 			else {
 				bool res = WriteFile(devHandle, buffer, length, &written, NULL);
 				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+				//Sleep(1);
+				return res;
 			}
 		}
 		}
-		return res;
+		return false;
 	}
 
 	bool Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse) {
@@ -277,7 +280,7 @@ chain++;
 		case API_V4:
 		{
 			WaitForReady();
-			PrepareAndSend(COMMV4_control, {{ 4, 4 }/*, { 5, 0xff }*/});
+			PrepareAndSend(COMMV4_control, {Afx_icommand({ 4, 4 })/*, { 5, 0xff }*/});
 			inSet = PrepareAndSend(COMMV4_control, { {4, 1}/*, { 5, 0xff }*/ });
 		} break;
 		case API_V3: case API_V2:
@@ -373,15 +376,15 @@ chain++;
 		{
 			mods = { { 3, c.r }, { 4, c.g }, { 5, c.b }, {7, (byte)lights->size()} };
 			int cnt = 8;
-			for (auto nc = lights->begin(); nc != lights->end(); nc++)
-				mods.push_back({ (byte)(cnt++), *nc});
+			for (auto nc : *lights)
+				mods.push_back({ (byte)(cnt++), nc});
 			val = PrepareAndSend(COMMV4_setOneColor, &mods);
 		} break;
 		case API_V3: case API_V2: case API_V6: case API_ACPI:
 		{
 			DWORD fmask = 0;
-			for (auto nc = lights->begin(); nc < lights->end(); nc++)
-				fmask |= 1 << (*nc);
+			for (auto nc : *lights)
+				fmask |= 1 << nc;
 			switch (version) {
 			case API_V6:
 				val = PrepareAndSend(COMMV6_colorSet, SetMaskAndColor(fmask, AlienFX_A_Color, c));
@@ -398,8 +401,8 @@ chain++;
 			}
 		} break;
 		default:
-			for (auto nc = lights->begin(); nc < lights->end(); nc++)
-				val = SetAction(*nc, &act);
+			for (auto nc : *lights)
+				val = SetAction(nc, &act);
 		}
 		return val;
 	}
@@ -563,9 +566,9 @@ chain++;
 			if (save) {
 				PrepareAndSend(COMMV4_control, { { 4, 4 }, { 6, 0x61 } });
 				PrepareAndSend(COMMV4_control, { { 4, 1 }, { 6, 0x61 } });
-				for (auto ca = act->begin(); ca != act->end(); ca++)
-					if (ca->act.front().type != AlienFX_A_Power)
-						SetV4Action(ca->index, &ca->act);
+				for (auto ca : *act)
+					if (ca.act.front().type != AlienFX_A_Power)
+						SetV4Action(ca.index, &ca.act);
 				PrepareAndSend(COMMV4_control, { { 4, 2 }, { 6, 0x61 } });
 				PrepareAndSend(COMMV4_control, { { 4, 6 }, { 6, 0x61 }});
 			}
@@ -621,11 +624,11 @@ chain++;
 		case API_V3: case API_V2:
 		{
 			if (!inSet) Reset();
-			for (auto ca = act->begin(); ca != act->end(); ca++)
-				if (ca->act.front().type != AlienFX_A_Power)
-					SavePowerBlock(1, &(*ca), false);
+			for (auto ca : *act)
+				if (ca.act.front().type != AlienFX_A_Power)
+					SavePowerBlock(1, &ca, false);
 				else
-					pwr = &(*ca);
+					pwr = &ca;
 			if (pwr) {
 				chain = 1;
 				if (save) {
@@ -689,9 +692,9 @@ chain++;
 		case API_V4: {
 			vector<Afx_icommand> mods{ {3,(byte)(0x64 - bright)} };
 			byte pos = 6;
-			for (auto i = mappings->begin(); i < mappings->end(); i++)
-				if (pos < length && (!i->flags || power)) {
-					mods.push_back({ pos,(byte)i->lightid });
+			for (auto i : *mappings)
+				if (pos < length && (!i.flags || power)) {
+					mods.push_back({ pos,(byte)i.lightid });
 					pos++;
 				}
 			mods.push_back({ 5,(byte)mappings->size() });
@@ -776,10 +779,14 @@ chain++;
 		case API_V3: case API_V2:
 			if (!GetDeviceStatus())
 				Reset();
-			for (; i < 200 && GetDeviceStatus() != ALIENFX_V2_READY; i++) Sleep(10);
-			return i < 200;
+			for (; i < 200 && GetDeviceStatus() != ALIENFX_V2_READY; i++) {
+				Sleep(10);
+			}
+			return i != 200;
 		case API_V4:
-			while (!IsDeviceReady()) Sleep(20);
+			for (; !IsDeviceReady(); i++) {
+				Sleep(20);
+			}
 			return 1;
 		default:
 			return GetDeviceStatus();
@@ -790,12 +797,16 @@ chain++;
 		int i = 0;
 		switch (version) {
 		case API_V3: case API_V2:
-			if (GetDeviceStatus())
-				for (; i < 200 && GetDeviceStatus() != ALIENFX_V2_BUSY; i++) Sleep(10);
+			if (!GetDeviceStatus())
+				return 0;
+			for (; i < 200 && GetDeviceStatus() != ALIENFX_V2_BUSY; i++) {
+				Sleep(10);
+			}
 			return i != 200;
 			break;
 		case API_V4: {
-			for (; i < 500 && GetDeviceStatus() != ALIENFX_V4_BUSY; i++) Sleep(20);
+			for (; i < 500 && GetDeviceStatus() != ALIENFX_V4_BUSY; i++)
+				Sleep(20);
 			return i != 500;
 		} break;
 		default:
@@ -836,8 +847,10 @@ chain++;
 	}
 
 	Mappings::~Mappings() {
-		for (auto i = fxdevs.begin(); i < fxdevs.end(); i++)
-			if (i->dev) delete i->dev;
+		for (Afx_device& i : fxdevs)
+			if (i.dev) delete i.dev;
+		//for (auto i = fxdevs.begin(); i < fxdevs.end(); i++)
+		//	if (i->dev) delete i->dev;
 	}
 
 	vector<Functions*> Mappings::AlienFXEnumDevices(void* acc) {
@@ -900,11 +913,11 @@ chain++;
 		}
 
 		// add new devices...
-		for (auto i = devList.begin(); i != devList.end(); i++) {
-			Afx_device* dev = AddDeviceById((*i)->pid, (*i)->vid);
+		for (Functions* i : devList) {
+			Afx_device* dev = AddDeviceById(i->pid, i->vid);
 			if (!dev->dev) {
-				dev->dev = *i;
-				dev->version = (*i)->version;
+				dev->dev = i;
+				dev->version = i->version;
 			}
 			activeLights += (int)dev->lights.size();
 		}
@@ -916,18 +929,18 @@ chain++;
 	}
 
 	Afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {
-		for (auto pos = fxdevs.begin(); pos < fxdevs.end(); pos++)
-			if (pos->pid == pid && (!vid || pos->vid == vid)) {
-				return &(*pos);
+		for (Afx_device& pos : fxdevs)
+			if (pos.pid == pid && (!vid || pos.vid == vid)) {
+				return &pos;
 			}
 		return nullptr;
 	}
 
 	Afx_grid* Mappings::GetGridByID(byte id)
 	{
-		for (auto pos = grids.begin(); pos < grids.end(); pos++)
-			if (pos->id == id)
-				return &(*pos);
+		for (Afx_grid& pos : grids)
+			if (pos.id == id)
+				return &pos;
 		return nullptr;
 	}
 
@@ -943,9 +956,9 @@ chain++;
 
 	Afx_light *Mappings::GetMappingByDev(Afx_device* dev, WORD LightID) {
 		if (dev) {
-			for (auto pos = dev->lights.begin(); pos < dev->lights.end(); pos++)
-				if (pos->lightid == LightID)
-					return &(*pos);
+			for (Afx_light& pos : dev->lights)
+				if (pos.lightid == LightID)
+					return &pos;
 		}
 		return nullptr;
 	}
@@ -966,9 +979,9 @@ chain++;
 	}
 
 	Afx_group *Mappings::GetGroupById(DWORD gID) {
-		for (auto pos = groups.begin(); pos != groups.end(); pos++)
-			if (pos->gid == gID)
-				return &(*pos);
+		for (Afx_group& pos : groups)
+			if (pos.gid == gID)
+				return &pos;
 		return nullptr;
 	}
 
@@ -1011,17 +1024,13 @@ chain++;
 				grids.push_back({ (byte)dID, x, y, name, grid });
 			}
 		}
-		for (vindex = 0; RegEnumKey(mainKey, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
+		for (vindex = 0; RegEnumKey(mainKey, vindex, kName, 255) == ERROR_SUCCESS; vindex++)  {
 			if (sscanf_s(kName, "Group%d", &dID) == 1) {
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
 				groups.push_back({ dID, name });
-				if (RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
-					groups.back().lights.resize(lend / sizeof(DWORD));
-					RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, groups.back().lights.data(), &lend);
-					for (Afx_groupLight& lgh : groups.back().lights)
-						if (GetFlags(lgh.did, lgh.lid) & ALIENFX_FLAG_POWER)
-							groups.back().have_power = true;
-				}
+				RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, NULL, &lend);
+				groups.back().lights.resize(lend / sizeof(DWORD));
+				RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, groups.back().lights.data(), &lend);
 				// Deprecated, will remove soon
 				if (RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
 					len = lend / sizeof(DWORD);
@@ -1049,39 +1058,48 @@ chain++;
 		RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"));
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeybase, NULL);
 
-		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
+		for (Afx_device& i : fxdevs) {
 			// Saving device data..
-			string devID = to_string(i->vid) + "_" + to_string(i->pid);
+			string devID = to_string(i.vid) + "_" + to_string(i.pid);
 			string name = "Dev#" + devID;
-			RegSetValueEx(hKeybase, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
+			RegSetValueEx(hKeybase, name.c_str(), 0, REG_SZ, (BYTE *) i.name.c_str(), (DWORD) i.name.size() );
 			name = "DevWhite#" + devID;
-			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
-			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {
+			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i.white.ci, sizeof(DWORD));
+			for (auto cl : i.lights) {
 				// Saving all lights from current device
-				string name = "Light" + to_string(MAKELONG(i->pid, i->vid)) + "-" + to_string(cl->lightid);
+				string name = "Light" + to_string(i.devID) + "-" + to_string(cl.lightid);
 				RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
-				RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
-				RegSetValueEx(hKeyStore, "Flags", 0, REG_DWORD, (BYTE*)&cl->data, sizeof(DWORD));
+				RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)cl.name.c_str(), (DWORD)cl.name.size());
+				RegSetValueEx(hKeyStore, "Flags", 0, REG_DWORD, (BYTE*)&cl.data, sizeof(DWORD));
 				RegCloseKey(hKeyStore);
 			}
 		}
-
-		for (auto i = groups.begin(); i != groups.end(); i++) {
-			string name = "Group" + to_string(i->gid);
+		for (Afx_group& i : groups) {
+			string name = "Group" + to_string(i.gid);
 
 			RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
-			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.size());
-			RegSetValueEx(hKeyStore, "LightList", 0, REG_BINARY, (BYTE*)i->lights.data(), (DWORD)i->lights.size() * sizeof(DWORD));
+			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE *) i.name.c_str(), (DWORD) i.name.size());
+			RegSetValueEx(hKeyStore, "LightList", 0, REG_BINARY, (BYTE*)i.lights.data(), (DWORD)i.lights.size() * sizeof(DWORD));
+
+			//DWORD *grLights = new DWORD[i.lights.size() << 1];
+
+			//for (int j = 0; j < i.lights.size(); j++) {
+			//	grLights[j * 2] = i.lights[j].did;
+			//	grLights[j * 2 + 1] = i.lights[j].lid;
+			//}
+			//RegSetValueEx(hKeyStore, "Lights", 0, REG_BINARY, (BYTE *) grLights, 2 * (WORD)i.lights.size() * sizeof(DWORD) );
+
+			//delete[] grLights;
 			RegCloseKey(hKeyStore);
 		}
 
-		for (auto i = grids.begin(); i != grids.end(); i++) {
-			string name = "Grid" + to_string(i->id);
+		for (Afx_grid& i : grids) {
+			string name = "Grid" + to_string(i.id);
 			RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
-			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)i->name.c_str(), (DWORD)i->name.length());
-			DWORD sizes = ((DWORD)i->x << 8) | i->y;
+			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)i.name.c_str(), (DWORD)i.name.size());
+			DWORD sizes = ((DWORD)i.x << 8) | i.y;
 			RegSetValueEx(hKeyStore, "Size", 0, REG_DWORD, (BYTE*)&sizes, sizeof(DWORD));
-			RegSetValueEx(hKeyStore, "Grid", 0, REG_BINARY, (BYTE*)i->grid, i->x * i->y * sizeof(DWORD));
+			RegSetValueEx(hKeyStore, "Grid", 0, REG_BINARY, (BYTE*)i.grid, i.x * i.y * sizeof(DWORD));
 			RegCloseKey(hKeyStore);
 		}
 

@@ -59,7 +59,9 @@ struct zonelight {
 struct zonemap {
 	DWORD gID;
 	DWORD gridID;
-	byte xMax = 0, yMax = 0, gMinX = 255, gMaxX = 0, gMinY = 255, gMaxY = 0;
+	byte /*xMax = 0, yMax = 0, */
+		scaleX = 1, scaleY = 1,
+		gMinX = 255, gMaxX = 0, gMinY = 255, gMaxY = 0;
 	vector<zonelight> lightMap;
 };
 
@@ -129,7 +131,7 @@ struct profile {
 	};
 	vector<string> triggerapp;
 	vector<groupset> lightsets;
-	/*fan_profile*/void *fansets = NULL;
+	void *fansets = NULL;
 	vector<deviceeffect> effects;
 };
 
@@ -206,7 +208,6 @@ public:
 
 	// Grid-related
 	AlienFX_SDK::Afx_grid* mainGrid = NULL;
-	//gridClr* colorGrid = NULL;
 	int gridTabSel = 0;
 
 	// mapping block from FX SDK

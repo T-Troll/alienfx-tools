@@ -151,7 +151,7 @@ void RecalcGridZone(RECT* what = NULL) {
 void RedrawZoneGrid(DWORD grpID, bool recalc = true) {
     zonemap zone = *conf->FindZoneMap(grpID);
     if (zone.gridID == conf->mainGrid->id) {
-        RECT zRect = { zone.gMinX, zone.gMinY, zone.gMaxX + 1, zone.gMaxY + 1 };
+        RECT zRect = { zone.gMinX, zone.gMinY, zone.gMaxX + zone.gMinX, zone.gMaxY + zone.gMinY };
         if (recalc)
             RecalcGridZone(&zRect);
         RedrawGridButtonZone(NULL);
