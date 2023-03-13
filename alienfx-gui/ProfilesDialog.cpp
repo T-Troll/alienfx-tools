@@ -41,9 +41,13 @@ void RemoveUnusedGroups() {
 }
 
 const static vector<string> ge_names[2]{ // 0 - v8, 1 - v5
-	{ "Off", "Morph", "Pulse", "Back morph", "Breath", "Rainbow", "Wave", "Rainbow wave", "Circle wave", "Reset" },
+	{ "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
+	"One key (K)", "Circle out (K)", "Wave out (K)", "Right wave (K)", "Default", "Rain Drop (K)",
+	"Wave", "Rainbow wave", "Circle wave", "Random white (K)", "Reset" },
 	{ "Off", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" } };
-const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,15,16,17,19 }, { 0,2,3,4,8,9,10,11 } };
+const static vector<string> cModeNames{ "One color", "Two colors", "Rainbow" };
+const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18,19 }, { 0,2,3,4,8,9,10,11 } };
+const static vector<int> cModeTypes{ 1, 2, 3 };
 
 void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DE_LIST);
@@ -52,6 +56,8 @@ void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
 		if (i->dev && i->dev->IsHaveGlobal()) {
 			int pos = (int)(i - conf->afx_dev.fxdevs.begin());
 			int ind = ListBox_AddString(dev_list, i->name.c_str());
+			if (devNum < 0)
+				devNum = pos;
 			ListBox_SetItemData(dev_list, ind, pos);
 			if (pos == devNum) {
 				ListBox_SetCurSel(dev_list, ind);
@@ -59,7 +65,13 @@ void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
 					b2 = FindDevEffect(prof, devNum, 2);
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), ge_names[i->version == 5],	b1 == prof->effects.end() ? 0 : b1->globalEffect, ge_types[i->version == 5]);
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), ge_names[i->version == 5], b2 == prof->effects.end() ? 0 : b2->globalEffect, ge_types[i->version == 5]);
+
+				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b1 == prof->effects.end() ? 2 : b1->colorMode, cModeTypes);
+				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b2 == prof->effects.end() ? 2 : b2->colorMode, cModeTypes);
+
 				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8);
+				EnableWindow(GetDlgItem(hDlg, IDC_CMODE), i->version == 8);
+				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->version == 8);
 
 				if (b1 != prof->effects.end()) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b1->globalDelay);
@@ -109,21 +121,31 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		sTip2 = CreateToolTip(eff_keytempo, sTip2);
 		RefreshDeviceList(hDlg, devNum, prof);
 	}
-	case WM_COMMAND:
+	case WM_COMMAND: {
 		switch (LOWORD(wParam))
 		{
 		case IDCLOSE: case IDCANCEL: EndDialog(hDlg, IDCLOSE); break;
-		case IDC_DE_LIST: {
-			devNum = (int) ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list));
+		case IDC_DE_LIST:
+			devNum = (int)ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list));
 			RefreshDeviceList(hDlg, devNum, prof);
-		} break;
+			break;
+		case IDC_CMODE: case IDC_CMODE_KEY:
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+			{
+				vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_CMODE ? b1 : b2;
+				if (b != prof->effects.end())
+					b->colorMode = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
+				if (devNum >= 0 && pCid == conf->activeProfile->id)
+					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+			}
+			}
+			break;
 		case IDC_GLOBAL_EFFECT: case IDC_GLOBAL_KEYEFFECT: {
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
 				vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_GLOBAL_EFFECT ? b1 : b2;
-				if (pCid == conf->activeProfile->id)
-					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev, true);
 				byte newEffect = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
 				if (b != prof->effects.end())
 					b->globalEffect = newEffect;
@@ -133,10 +155,13 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 						newEffect, 5, (byte)(LOWORD(wParam) == IDC_GLOBAL_EFFECT ? 1 : 2) });
 					b = prof->effects.end() - 1;
 				}
-				if (!newEffect)
+				if (!newEffect) {
+					if (pCid == conf->activeProfile->id)
+						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev, true);
 					prof->effects.erase(b);
-				if (pCid == conf->activeProfile->id)
-					fxhl->Refresh();
+				} else
+					if (devNum >= 0 && pCid == conf->activeProfile->id)
+						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 				RefreshDeviceList(hDlg, devNum, prof);
 			} break;
 			}
@@ -147,11 +172,12 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			if (b != prof->effects.end()) {
 				SetColor(GetDlgItem(hDlg, LOWORD(wParam)), LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR3 ?
 					&b->effColor1 : &b->effColor2);
-				if (pCid == conf->activeProfile->id)
-					fxhl->Refresh();
+				if (devNum >= 0 && pCid == conf->activeProfile->id)
+					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 			}
 		} break;
-		} break;
+		}
+	} break;
 	case WM_DRAWITEM: {
 		UINT CtlID = ((DRAWITEMSTRUCT*)lParam)->CtlID;
 		switch (CtlID) {
@@ -175,11 +201,14 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					b->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
 					SetSlider((HWND)lParam == eff_tempo ? sTip1 : sTip2, b->globalDelay);
 					if (prof->id == conf->activeProfile->id)
-						fxhl->Refresh();
+						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 				}
 			} break;
 			}
 	} break;
+	case WM_DESTROY:
+		fxhl->Refresh();
+		break;
 	default: return false;
 	}
 	return true;

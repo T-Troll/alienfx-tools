@@ -312,8 +312,8 @@ The settings are:
 
 "Device effects" button open profile settings for device effect (supported for some devices like RGB keyboards):  
 ![Device Effects](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui_deviceeffect.png?raw=true)  
-At this dialog, you can select device supporting per-device effects and set it parameters - types, colors, tempo.  
-APIv5 (per-key RGB notebook keyboards) support hardware effect, and APIv8 (external keyboards) support both hardware and key press effects.
+At this dialog, you can select device supporting per-device effects and set it parameters - types, colors, tempo, color mode.  
+APIv5 (per-key RGB notebook keyboards) support hardware effect, APIv8 (external keyboards) support both hardware and key press effects.
 
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
 - "Keyboard" check box define this profile can be switched by pressing keyboard key. Upon selected, it will provide key selection dialog to choose the key.

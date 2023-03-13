@@ -84,7 +84,7 @@ void ChangeAddColor(HWND hDlg, int newEffID) {
 			SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]);
 		else {
 			AlienFX_SDK::Afx_action act{ 0 };
-			bool isPower = conf->afx_dev.GetGroupById(mmap->group)->have_power;
+			bool isPower = conf->FindZoneMap(eItem)->havePower;
 			// add new effect
 			if (isPower && mmap->color.empty())
 				mmap->color.push_back({ AlienFX_SDK::AlienFX_A_Power, 3, 0x64 });
@@ -155,7 +155,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_BUT_REMOVE_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap && effID < mmap->color.size()) {
-				if (conf->afx_dev.GetGroupById(mmap->group)->have_power && mmap->color.size() == 2) {
+				if (conf->FindZoneMap(eItem)->havePower && mmap->color.size() == 2) {
 					mmap->color.clear();
 					effID = 0;
 				}

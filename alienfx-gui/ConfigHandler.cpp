@@ -184,7 +184,7 @@ void ConfigHandler::Load() {
 			((ConfigFan*)fan_conf)->AddSensorCurve(((fan_profile*)FindCreateProfile(pid)->fansets), fanid, senid, data, lend);
 			continue;
 		}
-		if (sscanf_s(name, "Profile-device-%d-%d", &pid, &senid) == 2) {
+		if (sscanf_s(name, "Profile-effect-%d-%d", &pid, &senid) == 2) {
 			FindCreateProfile(pid)->effects.push_back(*(deviceeffect*)data);
 			continue;
 		}
@@ -388,7 +388,7 @@ void ConfigHandler::Save() {
 
 		// Global effects
 		for (auto it = prof->effects.begin(); it != prof->effects.end(); it++) {
-			name = "Profile-device-" +profID + "-" + to_string(it - prof->effects.begin());
+			name = "Profile-effect-" + profID + "-" + to_string(it - prof->effects.begin());
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*it), sizeof(deviceeffect));
 		}
 		// Fans....
@@ -419,7 +419,6 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	// create new zoneMap
 	zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
 	auto zone = &zoneMaps.back();
-	zoneUpdate.unlock();
 
 	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
 	if (grp && grp->lights.size()) {
@@ -435,8 +434,11 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 				}
 
 		if (opGrid) {
-			// scan light positions in grid...
-			for (auto lgh : grp->lights) {
+			// scan light positions in grid and set power
+			zone->havePower = false;
+			for (AlienFX_SDK::Afx_groupLight& lgh : grp->lights) {
+				if (afx_dev.GetFlags(lgh.did, lgh.lid) & ALIENFX_FLAG_POWER)
+					zone->havePower = true;
 				zonelight cl{ lgh.lgh, 255, 255 };
 				for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
 					if (opGrid->grid[ind].lgh == lgh.lgh) {
@@ -466,14 +468,14 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 			// Scales...
 			zone->scaleX = zone->gMaxX = zone->gMaxX + 1 - zone->gMinX;
 			zone->scaleY = zone->gMaxY = zone->gMaxY + 1 - zone->gMinY;
-			for (int x = 1; x < zone->gMaxX - zone->gMinX; x++)
+			for (int x = 1; x < zone->gMaxX; x++)
 				if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
 					[x](auto t) {
 						return t.x == x;
 					})) {
 					zone->scaleX--;
 				}
-			for (int y = 1; y < zone->gMaxY - zone->gMinX; y++)
+			for (int y = 1; y < zone->gMaxY; y++)
 				if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
 					[y](auto t) {
 						return t.y == y;
@@ -481,7 +483,9 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 					zone->scaleY--;
 				}
 		}
+		zoneUpdate.unlock();
 	}
+
 	return zone;
 }
 

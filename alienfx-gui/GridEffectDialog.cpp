@@ -83,7 +83,6 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 		}
 		RebuildGEColorsList(hDlg);
 		UpdateZoneList();
-		//RedrawZoneGrid(mmap->group);
 	}
 }
 
@@ -141,7 +140,10 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				if (grid)
 					grid->RestartWatch();
+				RedrawZoneGrid(eItem, true);
 				UpdateZoneList();
+				if (!mmap->effect.trigger)
+					fxhl->Refresh();
 			}
 			break;
 		case IDC_COMBO_GEFFTYPE:
@@ -184,7 +186,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 						clrListID--;
 				}
 				RebuildGEColorsList(hDlg);
-				RedrawZoneGrid(mmap->group);
+				RedrawZoneGrid(eItem);
 			}
 			break;
 		}

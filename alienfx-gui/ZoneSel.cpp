@@ -257,7 +257,6 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
 							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
 							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
-							//RedrawZoneGrid(mmap->group, false);
 							SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 						}
 					}

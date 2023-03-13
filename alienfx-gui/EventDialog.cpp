@@ -204,7 +204,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		}
 		RebuildEventList(hDlg);
-		RedrawZoneGrid(mmap->group);
+		RedrawZoneGrid(eItem);
 	} break;
 	case WM_DRAWITEM: {
 		AlienFX_SDK::Afx_colorcode* c = NULL;

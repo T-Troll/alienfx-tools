@@ -245,20 +245,20 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_LPC:
 			if (freqBlock) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_LPC), &freqBlock->colorfrom);
-				RedrawZoneGrid(mmap->group);
+				RedrawZoneGrid(eItem);
 			}
 			break;
 		case IDC_BUTTON_HPC:
 			if (freqBlock) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_HPC), &freqBlock->colorto);
-				RedrawZoneGrid(mmap->group);
+				RedrawZoneGrid(eItem);
 			}
 			break;
 		case IDC_BUTTON_REMOVE:
 			if (freqBlock) {
 				freqBlock->freqID.clear();
 				SetMappingData(hDlg);
-				RedrawZoneGrid(mmap->group);
+				RedrawZoneGrid(eItem);
 			}
 		case IDC_CHECK_RANDOM:
 			if (freqBlock) {

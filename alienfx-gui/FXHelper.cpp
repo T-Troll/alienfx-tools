@@ -167,7 +167,7 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 			needSet = lgh->x + lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
 			break;
 		case 4: // back diagonal
-			needSet = lgh->x + zone->gMaxX - lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
+			needSet = zone->gMaxX - lgh->x - 1 + lgh->y - grp->gridop.gridX - grp->gridop.gridY == phase;
 			break;
 		case 5: // radial
 			needSet = (abs(lgh->x - grp->gridop.gridX) == phase && abs(lgh->y - grp->gridop.gridY) <= phase)
@@ -185,9 +185,9 @@ void FXHelper::QueryCommand(LightQueryElement &lqe) {
 			modifyQuery.lock();
 			if (wasLFX) {
 				wasLFX = false;
-				lightQuery.push_back({ 0, 2 });
+				lightQuery.push({ 0, 2 });
 			}
-			lightQuery.push_back(lqe);
+			lightQuery.push(lqe);
 			modifyQuery.unlock();
 			SetEvent(haveNewElement);
 		}
@@ -214,7 +214,7 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 }
 
 void FXHelper::SetState(bool force) {
-	byte oldBr = finalBrightness; bool oldPM = finalPBState;
+	int oldBr = finalBrightness; bool oldPM = finalPBState;
 	// Lights on state...
 	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
 	// Dim state...
@@ -243,9 +243,9 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
 		if (cdev && (cdev->pid == it->pid && cdev->vid == it->vid)) {
 			// set this effect for device
 			if (reset)
-				cdev->SetGlobalEffects(0, it->globalMode, it->globalDelay, { 0 }, { 0 });
+				cdev->SetGlobalEffects(0, it->globalMode, it->colorMode, it->globalDelay, { 0 }, { 0 });
 			else
-				cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->globalDelay,
+				cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
 					{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
 					{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
 		}
@@ -314,12 +314,13 @@ void FXHelper::RefreshCounters(LightEventData* data)
 		eve->modifyProfile.lock();
 		for (auto Iter = conf->activeProfile->lightsets.begin(); Iter != conf->activeProfile->lightsets.end(); Iter++) {
 			if (Iter->events.size() && (grp = conf->afx_dev.GetGroupById(Iter->group))) {
+				bool havePower = conf->FindZoneMap(Iter->group)->havePower;
 				vector<AlienFX_SDK::Afx_action> actions;
 				bool hasDiff = false;
 				int lVal = 0, cVal = 0;
 				double fCoeff = 0.0;
 				if (Iter->fromColor && Iter->color.size()) {
-					actions.push_back(grp->have_power && conf->statePower ? Iter->color.back() : Iter->color.front());
+					actions.push_back(havePower && conf->statePower ? Iter->color.back() : Iter->color.front());
 					actions.back().type = 0;
 				}
 				for (auto e = Iter->events.begin(); e != Iter->events.end(); e++) {
@@ -381,7 +382,8 @@ void FXHelper::RefreshCounters(LightEventData* data)
 				if (hasDiff) {
 					wasChanged = true;
 
-					if (grp->have_power)
+					if (havePower)
+						// ToDo: check about 2 lights in actions
 						if (conf->statePower) {
 							actions.push_back(Iter->color.back());
 						}
@@ -642,19 +644,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 		while (src->lightQuery.size()) {
 
 			src->modifyQuery.lock();
-			for (LightQueryElement& t : src->lightQuery) {
-				if (!&t) {
-					DebugPrint("Null in query!\n");
-					MessageBox(mDlg, "Zero in query!", "Alert!", 0);
-				}
-			}
-			//while (!&src->lightQuery.front()) {
-			//	DebugPrint("Null in query!\n");
-			//	MessageBox(mDlg, "Zero in query!", "Alert!", 0);
-			//	src->lightQuery.pop_front();
-			//}
 			current = src->lightQuery.front();
-			src->lightQuery.pop_front();
+			src->lightQuery.pop();
 			src->modifyQuery.unlock();
 
 			switch (current.command) {
@@ -681,20 +672,16 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							dev->dev->SetMultiAction(&devQ->second, current.light);
 							dev->dev->UpdateColors();
 							devQ->second.clear();
+							if (dev->dev->IsHaveGlobal())
+								src->UpdateGlobalEffect(dev->dev);
 						}
-						if (dev->dev->IsHaveGlobal())
-							src->UpdateGlobalEffect(dev->dev);
 					}
 				break;
 			case 0: { // set light
 				WORD pid = LOWORD(current.light);
 				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
 					WORD lid = HIWORD(current.light);
-					auto lgh = conf->afx_dev.GetMappingByDev(dev, lid);
-					if (!lgh) {
-						DebugPrint("Wrong light!\n");
-						MessageBox(mDlg, "Wrong light!", "Alert!", 0);
-					}
+					WORD flags = conf->afx_dev.GetMappingByDev(dev, lid)->flags;
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
 						// gamma-correction...
@@ -705,7 +692,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						}
 						// Dimming...
 						// For v7 devices only, other have hardware dimming
-						if (conf->stateDimmed && (!lgh->flags || conf->dimPowerButton))
+						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
 							switch (dev->version) {
 								/*case AlienFX_SDK::API_V2:
 								case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
@@ -718,7 +705,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 
 					// Is it power button?
-					if ((lgh->flags & ALIENFX_FLAG_POWER) && dev->version && dev->version < AlienFX_SDK::API_V5) {
+					if ((flags & ALIENFX_FLAG_POWER) && dev->version && dev->version < AlienFX_SDK::API_V5) {
 						// Should we update it?
 						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 						current.actsize = 2;

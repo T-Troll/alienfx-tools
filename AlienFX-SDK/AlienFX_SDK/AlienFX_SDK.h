@@ -69,7 +69,7 @@ namespace AlienFX_SDK {
 		DWORD gid;
 		string name;
 		vector<Afx_groupLight> lights;
-		bool have_power = false;
+		//bool have_power = false;
 	};
 
 	struct Afx_grid {
@@ -218,10 +218,11 @@ namespace AlienFX_SDK {
 		// Global (whole device) effect control for APIv5, v8
 		// effType - effect type
 		// mode - effect mode (off, steady, keypress, etc)
+		// nc - number of colors (3 - spectrum)
 		// tempo - effect tempo
 		// act1 - first effect color
 		// act2 - second effect color (not for all effects)
-		bool SetGlobalEffects(byte effType, byte mode, byte tempo, Afx_action act1, Afx_action act2);
+		bool SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_action act1, Afx_action act2);
 
 		// Apply changes and update colors
 		bool UpdateColors();

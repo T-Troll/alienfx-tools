@@ -65,7 +65,7 @@ const COMMAND commands[]{
 	{COMMANDS::setpower,"setpower","dev,light,r,g,b,r2,g2,b2 - set power button colors (low-level only)",8},
 	{COMMANDS::settempo,"settempo","tempo[,length] - set tempo and effect length for actions",1},
 	{COMMANDS::setdim,"setdim","\t[dev,]br - set brightness level",1},
-	{COMMANDS::setglobal,"setglobal","dev,type,mode,r,g,b,r,g,b - set global effect (v5, v8, v9 devices)",9},
+	{COMMANDS::setglobal,"setglobal","dev,type,mode[,r,g,b[,r,g,b]] - set global effect (v5, v8 devices)",3},
 	{COMMANDS::lowlevel,"lowlevel","switch to low-level SDK (USB)"},
 	{COMMANDS::highlevel,"highlevel","switch to high-level SDK (LightFX)"},
 	{COMMANDS::probe,"probe","\t[l][d][,lights][,devID[,lightID]] - probe lights and set names"},

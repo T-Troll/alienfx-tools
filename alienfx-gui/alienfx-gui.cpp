@@ -794,7 +794,7 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	ThreadHelper* colorUpdate = NULL;
 
 	if (needUpdate)
-		colorUpdate = new ThreadHelper(CColorRefreshProc, &lastcolor, conf->afx_dev.GetGroupById(mmap->group)->have_power ? 1000 : 200);
+		colorUpdate = new ThreadHelper(CColorRefreshProc, &lastcolor, 200);
 
 	if (!(ret = ChooseColor(&cc)))
 		(*map) = savedColor;
@@ -837,8 +837,8 @@ void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid)
 	AlienFX_SDK::Afx_groupLight cur{ devid, lightid };
 	for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
 		if (pos->lgh == cur.lgh) {
-			if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
-				grp->have_power = false;
+			//if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
+			//	grp->have_power = false;
 			grp->lights.erase(pos);
 			break;
 		}

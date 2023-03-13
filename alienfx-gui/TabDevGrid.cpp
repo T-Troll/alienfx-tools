@@ -6,6 +6,7 @@ extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
 extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
+extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid);
 
 extern void SetLightInfo();
 extern void RedrawDevList();
@@ -216,21 +217,22 @@ void ModifyColorDragZone(bool clear = false) {
             }
         // now clear by remove list and add new...
         for (auto tr = markRemove.begin(); tr < markRemove.end(); tr++) {
-            for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-                if (pos->lgh == tr->lgh) {
-                    grp->lights.erase(pos);
-                    break;
-                }
+            RemoveLightFromGroup(grp, tr->did, tr->lid);
+            //for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
+            //    if (pos->lgh == tr->lgh) {
+            //        grp->lights.erase(pos);
+            //        break;
+            //    }
         }
         for (auto tr = markAdd.begin(); tr < markAdd.end(); tr++) {
             if (!IsLightInGroup(tr->lgh, grp))
                 grp->lights.push_back(*tr);
         }
         // now check for power...
-        for (auto gpos = grp->lights.begin(); gpos != grp->lights.end(); gpos++) {
-            if (grp->have_power = conf->afx_dev.GetFlags(gpos->did, gpos->lid) & ALIENFX_FLAG_POWER)
-                break;
-        }
+        //for (auto gpos = grp->lights.begin(); gpos != grp->lights.end(); gpos++) {
+        //    if (grp->have_power = conf->afx_dev.GetFlags(gpos->did, gpos->lid) & ALIENFX_FLAG_POWER)
+        //        break;
+        //}
 
         conf->FindZoneMap(grp->gid, true);
         RecalcGridZone(&dragZone);

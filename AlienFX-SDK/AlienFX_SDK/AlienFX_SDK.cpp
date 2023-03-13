@@ -108,7 +108,7 @@ namespace AlienFX_SDK {
 			break;
 		case API_V8: {
 			if (size == 4) {
-				WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 				res = HidD_SetFeature(devHandle, buffer, length);
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
 				Sleep(6);
@@ -682,10 +682,12 @@ chain++;
 		if (inSet) UpdateColors();
 		switch (version) {
 		case API_V8:
-			return PrepareAndSend(COMMV8_setBrightness, { {2, (byte)(brightness * 10 / 0xff)} });
+			bright = brightness * 10 / 0xff;
+			return PrepareAndSend(COMMV8_setBrightness, { {2, bright} });
 		case API_V5:
 			Reset();
-			return PrepareAndSend(COMMV5_turnOnSet, {{4,brightness}});
+			bright = brightness;
+			return PrepareAndSend(COMMV5_turnOnSet, {{4, bright}});
 		case API_V4: {
 			vector<Afx_icommand> mods{ {3,(byte)(0x64 - bright)} };
 			byte pos = 6;
@@ -712,7 +714,7 @@ chain++;
 		return false;
 	}
 
-	bool Functions::SetGlobalEffects(byte effType, byte mode, byte tempo, Afx_action act1, Afx_action act2) {
+	bool Functions::SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_action act1, Afx_action act2) {
 		vector<Afx_icommand> mods;
 		switch (version) {
 		case API_V8:
@@ -720,7 +722,9 @@ chain++;
 			return PrepareAndSend(COMMV8_effectSet, {{3, effType},
 				{4, act1.r}, {5, act1.g}, {6, act1.b},
 				{7, act2.r}, {8, act2.g}, {9, act2.b},
-				{10, tempo}, {13, mode}, {14, 2}});
+				{10, tempo},
+				{11, bright},
+				{13, mode}, {14, nc}});
 		case API_V5:
 			if (inSet)
 				UpdateColors();
@@ -1018,9 +1022,9 @@ chain++;
 				if (RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
 					groups.back().lights.resize(lend / sizeof(DWORD));
 					RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, groups.back().lights.data(), &lend);
-					for (Afx_groupLight& lgh : groups.back().lights)
-						if (GetFlags(lgh.did, lgh.lid) & ALIENFX_FLAG_POWER)
-							groups.back().have_power = true;
+					//for (Afx_groupLight& lgh : groups.back().lights)
+					//	if (GetFlags(lgh.did, lgh.lid) & ALIENFX_FLAG_POWER)
+					//		groups.back().have_power = true;
 				}
 				// Deprecated, will remove soon
 				if (RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
@@ -1029,8 +1033,8 @@ chain++;
 					RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
 					for (unsigned i = 0; i < len; i += 2) {
 						groups.back().lights.push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
-						if (GetFlags(maps[i], (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
-							groups.back().have_power = true;
+						//if (GetFlags(maps[i], (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
+						//	groups.back().have_power = true;
 					}
 					delete[] maps;
 				}

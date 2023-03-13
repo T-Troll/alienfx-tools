@@ -38,8 +38,8 @@ public:
 	HANDLE updateThread = NULL;
 	HANDLE stopQuery;
 	HANDLE haveNewElement;
-	CustomMutex modifyQuery;
-	deque<LightQueryElement> lightQuery;
+	mutex modifyQuery;
+	queue<LightQueryElement> lightQuery;
 	LightEventData eData, maxData;
 	// Power button state...
 	map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;

@@ -7,7 +7,6 @@ extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid);
 extern void RemoveLightAndClean(int dPid, int eLid);
 extern void SetMainTabs();
 
@@ -16,7 +15,7 @@ extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL);
 
-extern /*AlienFX_SDK::Afx_light**/ void FindCreateMapping();
+extern void FindCreateMapping();
 
 BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern AlienFX_SDK::Afx_light* keySetLight;
@@ -26,7 +25,6 @@ extern FXHelper* fxhl;
 extern EventHandler* eve;
 extern HWND mDlg;
 extern int tabSel;
-//extern bool noLightFX;
 
 BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 

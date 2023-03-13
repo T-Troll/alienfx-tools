@@ -3,7 +3,7 @@
 #include <string>
 #include <random>
 #include "AlienFX_SDK.h"
-#include "CustomMutex.h"
+#include <mutex>
 
 // Profile flags
 #define PROF_DEFAULT		0x1
@@ -63,6 +63,7 @@ struct zonemap {
 		scaleX = 1, scaleY = 1,
 		gMinX = 255, gMaxX = 0, gMinY = 255, gMaxY = 0;
 	vector<zonelight> lightMap;
+	bool havePower = false;
 };
 
 struct gridClr {
@@ -109,7 +110,8 @@ struct groupset {
 struct deviceeffect {
 	WORD vid, pid;
 	AlienFX_SDK::Afx_colorcode effColor1, effColor2;
-	byte globalEffect, globalDelay,	globalMode;
+	byte globalEffect=0, globalDelay=5, globalMode = 1, colorMode = 2;
+	DWORD reserved;
 };
 
 struct profile {
@@ -152,7 +154,7 @@ private:
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id); 
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
-	CustomMutex zoneUpdate;
+	mutex zoneUpdate;
 public:
 	DWORD startWindows;
 	DWORD startMinimized;
