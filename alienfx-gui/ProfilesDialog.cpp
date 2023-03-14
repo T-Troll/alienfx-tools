@@ -11,7 +11,7 @@ extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern bool IsGroupUnused(DWORD gid);
+extern void RemoveUnusedGroups();
 
 extern AlienFX_SDK::Afx_light* keySetLight;
 extern string GetKeyName(WORD vkcode);
@@ -20,24 +20,17 @@ extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPAR
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
-int pCid = -1;
+//int /*pCid = -1, */devNum = -1;
+profile* prof = NULL;
+AlienFX_SDK::Afx_device* activeEffectDevice = NULL;
 
-vector<deviceeffect>::iterator FindDevEffect(profile* prof, int devNum, int type) {
-	for (auto effect = prof->effects.begin(); devNum >=0 && effect != prof->effects.end(); effect++)
-		if (conf->afx_dev.fxdevs[devNum].pid == effect->pid &&
-			conf->afx_dev.fxdevs[devNum].vid == effect->vid &&
+vector<deviceeffect>::iterator FindDevEffect(int type) {
+	for (auto effect = prof->effects.begin(); activeEffectDevice && effect != prof->effects.end(); effect++)
+		if (activeEffectDevice->pid == effect->pid &&
+			activeEffectDevice->vid == effect->vid &&
 			effect->globalMode == type)
 			return effect;
 	return prof->effects.end();
-}
-
-void RemoveUnusedGroups() {
-	for (auto i = conf->afx_dev.GetGroups()->begin(); i != conf->afx_dev.GetGroups()->end();)
-		if (IsGroupUnused(i->gid)) {
-			i = conf->afx_dev.GetGroups()->erase(i);
-		}
-		else
-			i++;
 }
 
 const static vector<string> ge_names[2]{ // 0 - v8, 1 - v5
@@ -49,20 +42,19 @@ const static vector<string> cModeNames{ "One color", "Two colors", "Rainbow" };
 const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18,19 }, { 0,2,3,4,8,9,10,11 } };
 const static vector<int> cModeTypes{ 1, 2, 3 };
 
-void RefreshDeviceList(HWND hDlg, int devNum, profile* prof) {
+void RefreshDeviceList(HWND hDlg) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DE_LIST);
 	ListBox_ResetContent(dev_list);
 	for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) 
 		if (i->dev && i->dev->IsHaveGlobal()) {
 			int pos = (int)(i - conf->afx_dev.fxdevs.begin());
 			int ind = ListBox_AddString(dev_list, i->name.c_str());
-			if (devNum < 0)
-				devNum = pos;
+			if (!activeEffectDevice)
+				activeEffectDevice = &(*i);
 			ListBox_SetItemData(dev_list, ind, pos);
-			if (pos == devNum) {
+			if (i->devID == activeEffectDevice->devID) {
 				ListBox_SetCurSel(dev_list, ind);
-				vector<deviceeffect>::iterator b1 = FindDevEffect(prof, devNum, 1),
-					b2 = FindDevEffect(prof, devNum, 2);
+				vector<deviceeffect>::iterator b1 = FindDevEffect(1), b2 = FindDevEffect(2);
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), ge_names[i->version == 5],	b1 == prof->effects.end() ? 0 : b1->globalEffect, ge_types[i->version == 5]);
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), ge_names[i->version == 5], b2 == prof->effects.end() ? 0 : b2->globalEffect, ge_types[i->version == 5]);
 
@@ -103,11 +95,21 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	HWND dev_list = GetDlgItem(hDlg, IDC_DE_LIST),
 		eff_tempo = GetDlgItem(hDlg, IDC_SLIDER_TEMPO),
 		eff_keytempo = GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO);
-	profile* prof = conf->FindProfile(pCid);
-	static int devNum = -1;
 
-	vector<deviceeffect>::iterator b1 = FindDevEffect(prof, devNum, 1),
-		b2 = FindDevEffect(prof, devNum, 2);
+	vector<deviceeffect>::iterator b;
+
+	switch (LOWORD(wParam)) {
+	case IDC_CMODE:
+	case IDC_GLOBAL_EFFECT:
+	case IDC_BUTTON_EFFCLR1:
+	case IDC_BUTTON_EFFCLR2:
+	case IDC_SLIDER_TEMPO:
+		// b1
+		b = FindDevEffect(1);
+		break;
+	default: // b2
+		b = FindDevEffect(2);
+	}
 
 	switch (message)
 	{
@@ -119,25 +121,22 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		SendMessage(eff_keytempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xff));
 		SendMessage(eff_keytempo, TBM_SETTICFREQ, 16, 0);
 		sTip2 = CreateToolTip(eff_keytempo, sTip2);
-		RefreshDeviceList(hDlg, devNum, prof);
+		RefreshDeviceList(hDlg);
 	}
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
 		{
 		case IDCLOSE: case IDCANCEL: EndDialog(hDlg, IDCLOSE); break;
 		case IDC_DE_LIST:
-			devNum = (int)ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list));
-			RefreshDeviceList(hDlg, devNum, prof);
+			activeEffectDevice = &conf->afx_dev.fxdevs[ListBox_GetItemData(dev_list, ListBox_GetCurSel(dev_list))];
+			RefreshDeviceList(hDlg);
 			break;
 		case IDC_CMODE: case IDC_CMODE_KEY:
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_CMODE ? b1 : b2;
 				if (b != prof->effects.end())
 					b->colorMode = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
-				if (devNum >= 0 && pCid == conf->activeProfile->id)
-					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 			}
 			}
 			break;
@@ -145,44 +144,40 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_GLOBAL_EFFECT ? b1 : b2;
 				byte newEffect = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
 				if (b != prof->effects.end())
 					b->globalEffect = newEffect;
 				else {
-					prof->effects.push_back({ conf->afx_dev.fxdevs[devNum].vid,
-						conf->afx_dev.fxdevs[devNum].pid, {0}, {0},
+					prof->effects.push_back({ activeEffectDevice->vid,
+						activeEffectDevice->pid, {0}, {0},
 						newEffect, 5, (byte)(LOWORD(wParam) == IDC_GLOBAL_EFFECT ? 1 : 2) });
 					b = prof->effects.end() - 1;
 				}
 				if (!newEffect) {
-					if (pCid == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev, true);
+					if (prof->id == conf->activeProfile->id)
+						fxhl->UpdateGlobalEffect(activeEffectDevice->dev, true);
 					prof->effects.erase(b);
-				} else
-					if (devNum >= 0 && pCid == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
-				RefreshDeviceList(hDlg, devNum, prof);
+				}
+				RefreshDeviceList(hDlg);
 			} break;
 			}
 		} break;
 		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR4:
 		{
-			vector<deviceeffect>::iterator b = LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR2 ? b1 : b2;
 			if (b != prof->effects.end()) {
 				SetColor(GetDlgItem(hDlg, LOWORD(wParam)), LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR3 ?
 					&b->effColor1 : &b->effColor2);
-				if (devNum >= 0 && pCid == conf->activeProfile->id)
-					fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
 			}
 		} break;
+		default: return false;
 		}
+		if (activeEffectDevice && prof->id == conf->activeProfile->id)
+			fxhl->UpdateGlobalEffect(activeEffectDevice->dev);
 	} break;
 	case WM_DRAWITEM: {
 		UINT CtlID = ((DRAWITEMSTRUCT*)lParam)->CtlID;
 		switch (CtlID) {
 		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR4:
-			vector<deviceeffect>::iterator b = CtlID == IDC_BUTTON_EFFCLR1 || CtlID == IDC_BUTTON_EFFCLR2 ? b1 : b2;
 			if (b != prof->effects.end()) {
 				RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, CtlID == IDC_BUTTON_EFFCLR1 || CtlID == IDC_BUTTON_EFFCLR3 ?
 					&b->effColor1 : &b->effColor2);
@@ -196,25 +191,25 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (LOWORD(wParam)) {
 			case TB_THUMBPOSITION: case TB_ENDTRACK:
 			{
-				vector<deviceeffect>::iterator b = (HWND)lParam == eff_tempo ? b1 : b2;
 				if (b != prof->effects.end()) {
 					b->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
 					SetSlider((HWND)lParam == eff_tempo ? sTip1 : sTip2, b->globalDelay);
 					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(conf->afx_dev.fxdevs[devNum].dev);
+						fxhl->UpdateGlobalEffect(activeEffectDevice->dev);
 				}
 			} break;
 			}
 	} break;
 	case WM_DESTROY:
-		fxhl->Refresh();
+		if (prof->id == conf->activeProfile->id)
+			fxhl->Refresh();
 		break;
 	default: return false;
 	}
 	return true;
 }
 
-void ReloadProfSettings(HWND hDlg, profile *prof) {
+void ReloadProfSettings(HWND hDlg) {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS);
 
 	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof && prof->flags & PROF_DEFAULT);
@@ -244,11 +239,11 @@ void ReloadProfileView(HWND hDlg) {
 	ListView_DeleteColumn(profile_list, 0);
 	ListView_InsertColumn(profile_list, 0, &lCol);
 	for (int i = 0; i < conf->profiles.size(); i++) {
-		auto prof = conf->profiles[i];
+		auto cprof = conf->profiles[i];
 		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i};
-		lItem.lParam = prof->id;
-		lItem.pszText = (char*)prof->name.c_str();
-		if (prof->id == pCid) {
+		lItem.lParam = cprof->id;
+		lItem.pszText = (char*)cprof->name.c_str();
+		if (cprof->id == prof->id) {
 			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			rpos = i;
 		}
@@ -264,14 +259,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS);
 
-	profile *prof = conf->FindProfile(pCid);
+	//profile *prof = conf->FindProfile(pCid);
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-		if (pCid < 0)
-			pCid = conf->activeProfile->id;
+		if (!prof)
+			prof = conf->activeProfile;
 		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
@@ -299,7 +294,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			prof->id = vacID;
 			prof->flags &= ~PROF_DEFAULT;
 			prof->name = "Profile " + to_string(vacID);
-			pCid = vacID;
+			//pCid = vacID;
 			//ReloadProfileView(hDlg);
 			UpdateProfileList();
 		} break;
@@ -308,15 +303,15 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning",
 							   MB_YESNO | MB_ICONWARNING) == IDYES) {
 					for (auto pf = conf->profiles.begin(); pf != conf->profiles.end(); pf++)
-						if ((*pf)->id == pCid) {
-							int newpCid = pf + 1 == conf->profiles.end() ? (*(pf - 1))->id : (*(pf + 1))->id;
+						if ((*pf)->id == prof->id) {
+							profile* newpCid = (pf + 1) == conf->profiles.end() ? *(pf - 1) : *(pf + 1);
 							conf->profiles.erase(pf);
-							if (conf->activeProfile->id == pCid) {
+							if (conf->activeProfile->id == prof->id) {
 								// switch to default profile..
 								eve->SwitchActiveProfile(conf->FindDefaultProfile());
 							}
 							delete prof;
-							pCid = newpCid;
+							prof = newpCid;
 							RemoveUnusedGroups();
 							//ReloadProfileView(hDlg);
 							UpdateProfileList();
@@ -349,6 +344,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 				RemoveUnusedGroups();
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED && prof->fansets) {
+					if (conf->activeProfile->id == prof->id)
+						fan_conf->lastProf = &fan_conf->prof;
 					delete (fan_profile*)prof->fansets;
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
@@ -462,7 +459,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			}
 			else
 				prof->triggerkey = 0;
-			//ReloadProfSettings(hDlg, prof);
 			break;
 		}
 		ReloadProfileView(hDlg);
@@ -480,10 +476,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
 				if (lPoint->uChanged & LVIF_STATE) {
 					if (lPoint->uNewState & (LVIS_FOCUSED | LVIS_SELECTED))
-						pCid = (int)lPoint->lParam;
+						prof = conf->FindProfile((int)lPoint->lParam);
 					else
-						pCid = -1;
-					ReloadProfSettings(hDlg, conf->FindProfile(pCid));
+						prof = NULL;
+					ReloadProfSettings(hDlg);
 				}
 			} break;
 			case LVN_ENDLABELEDIT:

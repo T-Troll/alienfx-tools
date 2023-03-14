@@ -141,7 +141,7 @@ string ConfigFan::GetPowerName(int index) {
 }
 
 void ConfigFan::UpdateBoost(byte fanID, byte boost, WORD rpm) {
-	boosts[fanID] = { (byte)max(boost, 100), max(rpm, boosts[fanID].maxRPM) };
+	boosts[fanID] = { (byte)boost, max(rpm, boosts[fanID].maxRPM) };
 	Save();
 }
 

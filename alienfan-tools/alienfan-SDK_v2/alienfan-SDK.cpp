@@ -164,7 +164,7 @@ namespace AlienFan_SDK {
 						printf("%d Fans found, last reply %d\n", fIndex, funcID);
 #endif
 						// AWCC temperature sensors.
-						while (funcID && funcID < 0xa0) {
+						while (funcID > 0 && funcID < 0xa0) {
 #ifdef _TRACE_
 							printf("Sensor ID=%x found\n", funcID);
 #endif
@@ -186,7 +186,7 @@ namespace AlienFan_SDK {
 #endif
 						// Power modes.
 						powers.push_back(0); // Manual mode
-						while (funcID && funcID != 0xff) {
+						while (funcID > 0 && funcID != 0xff) {
 							powers.push_back(funcID);
 #ifdef _TRACE_
 							printf("Power ID=%x found\n", funcID);

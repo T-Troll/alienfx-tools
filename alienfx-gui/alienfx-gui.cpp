@@ -74,19 +74,22 @@ bool DetectFans() {
 }
 
 void SetHotkeys() {
+	RegisterHotKey(mDlg, 3, 0, VK_F18);
+	if (mon)
+		RegisterHotKey(mDlg, 6, 0, VK_F17);
+	else
+		UnregisterHotKey(mDlg, 6);
 	if (conf->keyShortcuts) {
 		//register global hotkeys...
 		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
 		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
-		RegisterHotKey(mDlg, 3, 0, VK_F18);
 		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9);
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		if (mon) {
-			for (int i = 0; i < mon->acpi->powers.size(); i++)
+			for (int i = 0; i < mon->powerSize; i++)
 				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
-			RegisterHotKey(mDlg, 6, 0, VK_F17);
 		}
 	}
 	else {
@@ -561,12 +564,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				name += "Off";
 			if (mon) {
 				name += "\nPower: ";
-				if (fan_conf->lastProf->powerStage == mon->acpi->powers.size())
+				if (fan_conf->lastProf->powerStage == mon->powerSize)
 					name += "G-mode";
 				else
 					name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
 
-				for (int i = 0; i < mon->acpi->fans.size(); i++) {
+				for (int i = 0; i < mon->fansize; i++) {
 					name += "\n" + GetFanName(i, true);
 				}
 			}
@@ -693,7 +696,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			SelectProfile(wParam == 10 ? conf->FindDefaultProfile() : conf->profiles[wParam - 11]);
 			break;
 		}
-		if (mon && wParam > 29 && wParam - 30 < mon->acpi->powers.size()) { // PowerMode switch
+		if (mon && wParam > 29 && wParam - 30 < mon->powerSize) { // PowerMode switch
 			mon->SetPowerMode((WORD)wParam - 30);
 			if (tabSel == TAB_FANS)
 				OnSelChanged();
@@ -833,27 +836,32 @@ bool IsGroupUnused(DWORD gid) {
 	return true;
 }
 
-void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid) {
-	AlienFX_SDK::Afx_groupLight cur{ devid, lightid };
+void RemoveUnusedGroups() {
+	for (auto i = conf->afx_dev.GetGroups()->begin(); i != conf->afx_dev.GetGroups()->end();)
+		if (IsGroupUnused(i->gid)) {
+			i = conf->afx_dev.GetGroups()->erase(i);
+		}
+		else
+			i++;
+}
+
+void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh) {
 	for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
-		if (pos->lgh == cur.lgh) {
-			//if (conf->afx_dev.GetFlags(devid, lightid) & ALIENFX_FLAG_POWER)
-			//	grp->have_power = false;
+		if (pos->lgh == lgh.lgh) {
 			grp->lights.erase(pos);
 			break;
 		}
 }
 
-void RemoveLightAndClean(int dPid, int eLid) {
+void RemoveLightAndClean(AlienFX_SDK::Afx_groupLight lgh) {
 	// delete from all groups...
 	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
-		RemoveLightFromGroup(&(*iter), dPid, eLid);
+		RemoveLightFromGroup(&(*iter), lgh);
 	}
 	// Clean from grids...
-	DWORD lcode = MAKELPARAM(dPid, eLid);
 	for (auto g = conf->afx_dev.GetGrids()->begin(); g < conf->afx_dev.GetGrids()->end(); g++) {
 		for (int ind = 0; ind < g->x * g->y; ind++)
-			if (g->grid[ind].lgh == lcode)
+			if (g->grid[ind].lgh == lgh.lgh)
 				g->grid[ind].lgh = 0;
 	}
 }

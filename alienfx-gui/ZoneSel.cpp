@@ -128,8 +128,9 @@ BOOL CALLBACK SelectLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++)
 			for (auto lgh = dev->lights.begin(); lgh != dev->lights.end(); lgh++) {
 				int pos = ListBox_AddString(llist, (LPSTR)lgh->name.c_str());
-				ListBox_SetItemData(llist, pos , MAKELPARAM(dev->pid, lgh->lightid));
-				if (IsLightInGroup(MAKELPARAM(dev->pid, lgh->lightid), grp))
+				AlienFX_SDK::Afx_groupLight lgt{ dev->pid, lgh->lightid };
+				ListBox_SetItemData(llist, pos , lgt.lgh);
+				if (IsLightInGroup(lgt.lgh, grp))
 					ListBox_SetSel(llist, true, pos);
 			}
 		break;

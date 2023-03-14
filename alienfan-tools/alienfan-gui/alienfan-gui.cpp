@@ -56,16 +56,17 @@ extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 
 void SetHotkeys() {
+    RegisterHotKey(mDlg, 6, 0, VK_F17);
     //power mode hotkeys
-    for (int i = 0; i < mon->acpi->powers.size(); i++)
+    for (int i = 0; i < mon->powerSize; i++)
         if (fan_conf->keyShortcuts)
             RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
         else
             UnregisterHotKey(mDlg, 20 + i);
-    if (fan_conf->keyShortcuts)
-        RegisterHotKey(mDlg, 6, 0, VK_F17);
-    else
-        UnregisterHotKey(mDlg, 6);
+    //if (fan_conf->keyShortcuts)
+    //    RegisterHotKey(mDlg, 6, 0, VK_F17);
+    //else
+    //    UnregisterHotKey(mDlg, 6);
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -210,7 +211,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 mon->SetPowerMode(ComboBox_GetCurSel(power_list));
             } break;
             case CBN_EDITCHANGE:
-                if (mon->powerMode < mon->acpi->powers.size() && !mon->powerMode) {
+                if (mon->powerMode < mon->powerSize && !mon->powerMode) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
                     fan_conf->powers[mon->acpi->powers[mon->powerMode]] = buffer;
@@ -320,7 +321,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             HMENU pMenu;
             pMenu = CreatePopupMenu();
             mInfo.wID = ID_TRAYMENU_POWER_SELECTED;
-            for (int i = 0; i < mon->acpi->powers.size(); i++) {
+            for (int i = 0; i < mon->powerSize; i++) {
                 mInfo.dwTypeData = (LPSTR)fan_conf->powers.find(mon->acpi->powers[i])->second.c_str();
                 mInfo.fState = (i == fan_conf->lastProf->powerStage) ? MF_CHECKED : MF_UNCHECKED;
                 InsertMenuItem(pMenu, i, false, &mInfo);
@@ -362,7 +363,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             else
                 name += fan_conf->powers[mon->acpi->powers[mon->powerMode]];
 
-            for (int i = 0; i < mon->acpi->fans.size(); i++) {
+            for (int i = 0; i < mon->fansize; i++) {
                 name += "\n" + GetFanName(i, true);
             }
             strcpy_s(niData->szTip, 127, name.c_str());
@@ -372,8 +373,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     } break;
     case WM_HOTKEY: {
-        if (wParam > 19 && wParam - 20 < mon->acpi->powers.size()) {
-            mon->SetPowerMode((WORD)wParam - 30);
+        if (wParam > 19 && wParam - 20 < mon->powerSize) {
+            mon->SetPowerMode((WORD)wParam - 20);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             BlinkNumLock((int)wParam - 19);
         }
@@ -449,7 +450,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         GetClientRect(tempList, &cArea);
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
         ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-        for (int i = 0; i < mon->acpi->fans.size(); i++) {
+        for (int i = 0; i < mon->fansize; i++) {
             string name = GetFanName(i);
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }

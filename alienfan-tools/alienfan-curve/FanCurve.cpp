@@ -111,9 +111,11 @@ void DrawFan()
                                 }
                                 DeleteObject(linePen);
                                 // Dots
+                                byte cBoost = mon->senBoosts[lastFan][senI->first];
                                 if (mon->lastBoost[lastFan] == senI->first) {
                                     SetDCPenColor(hdc, RGB(255, 0, 0));
                                     SetDCBrushColor(hdc, RGB(255, 0, 0));
+                                    cBoost = mon->boostRaw[lastFan];
                                 } else
                                     if (fan_conf->lastSelectedSensor == senI->first) {
                                         SetDCPenColor(hdc, RGB(0, 255, 0));
@@ -125,7 +127,7 @@ void DrawFan()
                                     }
                                 SelectObject(hdc, GetStockObject(DC_PEN));
                                 SelectObject(hdc, GetStockObject(DC_BRUSH));
-                                mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[lastFan][senI->first]);
+                                mark = Fan2Screen(mon->senValues[senI->first], cBoost);
                                 Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
                             }
                         }
@@ -230,7 +232,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
         boost = bestBoostPoint.maxBoost;
     }
     if (crpm >= 0) {
-        fan_conf->UpdateBoost(fan_conf->lastSelectedFan, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+        fan_conf->UpdateBoost(fan_conf->lastSelectedFan, max(bestBoostPoint.maxBoost, 100), bestBoostPoint.maxRPM);
         ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1)
             + ": Final boost " + to_string(bestBoostPoint.maxBoost)
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
@@ -348,7 +350,7 @@ void ReloadFanView(HWND list) {
         LVCOLUMNA lCol{ LVCF_FMT, LVCFMT_LEFT };
         ListView_InsertColumn(list, 0, &lCol);
     }
-    for (int i = 0; i < mon->acpi->fans.size(); i++) {
+    for (int i = 0; i < mon->fansize; i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
         string name = GetFanName(i);
         lItem.pszText = (LPSTR)name.c_str();

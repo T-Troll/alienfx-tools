@@ -140,7 +140,7 @@ void CEventProc(LPVOID param)
 			for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
 				cData->Temp = max(cData->Temp, i->second);
 			// Power mode
-			cData->PWM = fan_conf->lastProf->powerStage * 100 /	((byte)mon->acpi->powers.size() + mon->acpi->isGmode - 1);
+			cData->PWM = mon->powerMode * 100 /	(mon->powerSize + mon->acpi->isGmode - 1);
 		}
 
 		// ESIF powers and temps

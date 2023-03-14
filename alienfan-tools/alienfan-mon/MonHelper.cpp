@@ -14,13 +14,14 @@ extern ConfigFan* fan_conf;
 MonHelper::MonHelper() {
 	if ((acpi = new AlienFan_SDK::Control())->Probe()) {
 		fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
-		size_t fansize = acpi->fans.size();
+		fansize = (WORD)acpi->fans.size();
+		powerSize = (WORD)acpi->powers.size();
 		senBoosts.resize(fansize);
 		fanRpm.resize(fansize);
 		boostRaw.resize(fansize);
 		lastBoost.resize(fansize);
 		fanSleep.resize(fansize);
-		oldPower = GetPowerMode();
+		oldPower = powerMode = GetPowerMode();
 		SetProfilePower();
 		Start();
 	}
@@ -34,16 +35,16 @@ MonHelper::~MonHelper() {
 }
 
 void MonHelper::ResetBoost() {
-	if (!acpi->GetPower())
-		for (int i = 0; i < acpi->fans.size(); i++) {
+	if (!acpi->GetPower()) {
+		boostRaw.assign(boostRaw.size(), 0);
+		for (int i = 0; i < fansize; i++) {
 			acpi->SetFanBoost(i, 0);
-			boostRaw[i] = 0;
 		}
+	}
 }
 
 void MonHelper::SetProfilePower() {
-	powerMode = fan_conf->lastProf->gmode_stage ? (WORD)acpi->powers.size() : fan_conf->lastProf->powerStage;
-	SetCurrentMode(powerMode);
+	SetCurrentMode(fan_conf->lastProf->gmode_stage ? powerSize : fan_conf->lastProf->powerStage);
 }
 
 void MonHelper::Start() {
@@ -69,22 +70,23 @@ void MonHelper::Stop() {
 }
 
 void MonHelper::SetCurrentMode(WORD newMode) {
-	if (newMode < acpi->powers.size()) {
-		if (acpi->GetGMode()) {
-			acpi->SetGMode(false);
+	if (newMode != powerMode) {
+		if (newMode < powerSize) {
+			if (acpi->GetGMode()) {
+				acpi->SetGMode(false);
+			}
+			acpi->SetPower(acpi->powers[newMode]);
 		}
-		acpi->SetPower(acpi->powers[newMode]);
-	}
-	else {
-		if (!acpi->GetGMode()) {
-			if (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
-				acpi->SetPower(0xa0);
-			acpi->SetGMode(true);
+		else {
+			if (!acpi->GetGMode()) {
+				if (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
+					acpi->SetPower(0xa0);
+				acpi->SetGMode(true);
+			}
 		}
+		boostRaw.assign(boostRaw.size(),0);
+		powerMode = newMode;
 	}
-	// clear boosts
-	for (int i = 0; i < acpi->fans.size(); i++)
-		boostRaw[i] = newMode ? 0 : acpi->GetFanBoost(i);
 }
 
 byte MonHelper::GetFanPercent(byte fanID)
@@ -95,13 +97,11 @@ byte MonHelper::GetFanPercent(byte fanID)
 }
 
 int MonHelper::GetPowerMode() {
-	return acpi->GetGMode() ? (int)acpi->powers.size() : acpi->GetPower();
+	return acpi->GetGMode() ? powerSize : acpi->GetPower();
 }
 
 void MonHelper::SetPowerMode(WORD newMode) {
-	powerMode = newMode;
-	fan_conf->lastProf->gmode_stage = newMode == acpi->powers.size();
-	if (!fan_conf->lastProf->gmode_stage)
+	if (!(fan_conf->lastProf->gmode_stage = newMode == powerSize))
 		fan_conf->lastProf->powerStage = newMode;
 	SetCurrentMode(newMode);
 }
@@ -123,19 +123,20 @@ void CMonProc(LPVOID param) {
 		}
 	}
 	// fans...
-	for (byte i = 0; i < acpi->fans.size(); i++) {
+	for (byte i = 0; i < src->fansize; i++) {
 		//src->boostRaw[i] = acpi->GetFanBoost(i);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
-	if (src->inControl /*&& fan_conf->lastProf*/) {
+	if (src->inControl) {
 		// check power mode
 		if (src->powerMode != src->GetPowerMode())
 			src->SetCurrentMode(src->powerMode);
 
 		if (!src->powerMode && modified) {
 			int cBoost;
-			for (auto cIter = fan_conf->lastProf->fanControls.begin(); cIter != fan_conf->lastProf->fanControls.end(); cIter++) {
+			fan_profile* active = fan_conf->lastProf; // protection from change profile
+			for (auto cIter = active->fanControls.begin(); cIter != active->fanControls.end(); cIter++) {
 				// Check boost
 				byte i = cIter->first;
 				int curBoost = 0, boostCooked = (int)round(src->boostRaw[i] * 100.0 / fan_conf->GetFanScale(i));

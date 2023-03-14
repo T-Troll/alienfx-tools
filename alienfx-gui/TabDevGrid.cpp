@@ -6,7 +6,7 @@ extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
 extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
-extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, WORD devid, WORD lightid);
+extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh);
 
 extern void SetLightInfo();
 extern void RedrawDevList();
@@ -186,15 +186,14 @@ void SetLightGridSize(int x, int y) {
     InitGridButtonZone();
 }
 
-void ModifyDragZone(WORD did, WORD lid) {
-    DWORD newVal = MAKELPARAM(did, lid);
+void ModifyDragZone(AlienFX_SDK::Afx_groupLight lgh) {
     for (int x = dragZone.left; x < dragZone.right; x++)
         for (int y = dragZone.top; y < dragZone.bottom; y++) {
-            if (!newVal || conf->mainGrid->grid[ind(x, y)].lgh == newVal)
+            if (!lgh.lgh || conf->mainGrid->grid[ind(x, y)].lgh == lgh.lgh)
                 conf->mainGrid->grid[ind(x, y)].lgh = 0;
             else
                 if (!conf->mainGrid->grid[ind(x,y)].lgh)
-                    conf->mainGrid->grid[ind(x,y)].lgh = newVal;
+                    conf->mainGrid->grid[ind(x,y)] = lgh;
         }
     conf->zoneMaps.clear();
     InitGridButtonZone();
@@ -217,22 +216,12 @@ void ModifyColorDragZone(bool clear = false) {
             }
         // now clear by remove list and add new...
         for (auto tr = markRemove.begin(); tr < markRemove.end(); tr++) {
-            RemoveLightFromGroup(grp, tr->did, tr->lid);
-            //for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-            //    if (pos->lgh == tr->lgh) {
-            //        grp->lights.erase(pos);
-            //        break;
-            //    }
+            RemoveLightFromGroup(grp, *tr);
         }
         for (auto tr = markAdd.begin(); tr < markAdd.end(); tr++) {
             if (!IsLightInGroup(tr->lgh, grp))
                 grp->lights.push_back(*tr);
         }
-        // now check for power...
-        //for (auto gpos = grp->lights.begin(); gpos != grp->lights.end(); gpos++) {
-        //    if (grp->have_power = conf->afx_dev.GetFlags(gpos->did, gpos->lid) & ALIENFX_FLAG_POWER)
-        //        break;
-        //}
 
         conf->FindZoneMap(grp->gid, true);
         RecalcGridZone(&dragZone);
@@ -312,7 +301,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         // remove grid mapping
         if (dragZone.top >= 0)
             if (tabLightSel == TAB_DEVICES)
-                ModifyDragZone(0, 0);
+                ModifyDragZone({ 0 });
             else
                 ModifyColorDragZone(true);
         dragZone = { -1, -1, -1, -1 };
@@ -340,7 +329,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     }
                     RedrawDevList();
                 } else {
-                    ModifyDragZone(activeDevice->pid, eLid);
+                    ModifyDragZone({ activeDevice->pid, (byte)eLid });
                     FindCreateMapping();
                     SetLightInfo();
                 }

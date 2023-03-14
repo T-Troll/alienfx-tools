@@ -15,6 +15,7 @@ public:
 	map<WORD, short> senValues, maxTemps;
 	vector<map<WORD, byte>> senBoosts;
 	WORD powerMode = 0;
+	WORD fansize, powerSize;
 
 	MonHelper();
 	~MonHelper();

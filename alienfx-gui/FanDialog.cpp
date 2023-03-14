@@ -92,7 +92,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 mon->SetPowerMode(ComboBox_GetCurSel(power_list));
             } break;
             case CBN_EDITCHANGE:
-                if (mon->powerMode < mon->acpi->powers.size() && !mon->powerMode) {
+                if (mon->powerMode < mon->powerSize && !mon->powerMode) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
                     fan_conf->powers[mon->acpi->powers[mon->powerMode]] = buffer;
@@ -150,7 +150,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         GetClientRect(tempList, &cArea);
         ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
         ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
-        for (int i = 0; i < mon->acpi->fans.size(); i++) {
+        for (int i = 0; i < mon->fansize; i++) {
             string name = GetFanName(i);
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }

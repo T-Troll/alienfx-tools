@@ -58,7 +58,7 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 }
 
 void CheckFanOverboost(byte num, byte boost) {
-    int rpm = acpi.GetFanRPM(num), cSteps = 8/*, boost = boostval : 100*/,
+    int rpm = acpi.GetFanRPM(num), cSteps = 8,
         oldBoost = acpi.GetFanBoost(num), downScale, crpm;
     printf("Checking Fan#%d:\n", num);
     bestBoostPoint = { (byte)boost, (WORD)rpm };
@@ -90,10 +90,12 @@ void CheckFanOverboost(byte num, byte boost) {
                 boost -= steps;
                 printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
             }
-            if (boost > 100)
+            if (boost > 100) {
                 printf("(Step back)\n");
-            boost = bestBoostPoint.maxBoost;
+                boost = bestBoostPoint.maxBoost;
+            }
         }
+        bestBoostPoint.maxBoost = max(bestBoostPoint.maxBoost, 100);
     }
     printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
     acpi.SetFanBoost(num, oldBoost);
@@ -137,7 +139,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v8.1.4\n");
+    printf("AlienFan-CLI v8.2.2.1\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -247,7 +249,7 @@ int main(int argc, char* argv[])
             for (int i = 0; i < acpi.fans.size(); i++)
                 if (args.empty() || i == args[0].num)
                     CheckFanOverboost(i, boost);
-            if (oldMode >= 0)
+            if (oldMode > 0)
                 acpi.SetPower(acpi.powers[oldMode]);
             continue;
         }

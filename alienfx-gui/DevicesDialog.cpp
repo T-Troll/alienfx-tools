@@ -7,7 +7,7 @@ extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveLightAndClean(int dPid, int eLid);
+extern void RemoveLightAndClean(AlienFX_SDK::Afx_groupLight lgh);
 extern void SetMainTabs();
 
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -419,7 +419,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// remove all lights
 				for (auto lgh = activeDevice->lights.begin(); lgh != activeDevice->lights.end(); lgh++) {
-					RemoveLightAndClean(activeDevice->pid, lgh->lightid);
+					RemoveLightAndClean({ activeDevice->pid, lgh->lightid });
 				}
 				// remove device if not active
 				if (!activeDevice->dev) {
@@ -456,7 +456,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!");
 					}
 					// delete from all groups and grids...
-					RemoveLightAndClean(activeDevice->pid, eLid);
+					RemoveLightAndClean({ activeDevice->pid, (byte)eLid });
 					// delete from mappings...
 					conf->afx_dev.RemoveMapping(activeDevice, eLid);
 					if (activeDevice->dev)
