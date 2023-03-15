@@ -59,7 +59,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 {
 	if (!newID) newID = conf->FindDefaultProfile();
 	if (!(keyboardSwitchActive || newID == conf->activeProfile)) {
-		// reset effects
 		fxhl->UpdateGlobalEffect(NULL, true);
 		modifyProfile.lock();
 		conf->activeProfile = newID;

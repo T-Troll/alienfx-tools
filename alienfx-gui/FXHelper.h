@@ -67,5 +67,5 @@ public:
 	void RefreshGrid();
 	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0);
 	void SetState(bool force = false);
-	void UpdateGlobalEffect(AlienFX_SDK::Functions* dev = NULL, bool reset = false);
+	void UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev = NULL, bool reset = false);
 };

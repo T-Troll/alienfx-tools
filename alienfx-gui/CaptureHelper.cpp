@@ -222,8 +222,7 @@ void CScreenProc(LPVOID param)
 		if (memcmp(src->imgz, src->imgo, src->gridDataSize)) {
 			memcpy(src->imgz, src->imgo, src->gridDataSize);
 			src->needUpdate = true;
-			if (src->needLightsUpdate && fxhl->lightsNoDelay)
-				fxhl->RefreshAmbient();
+			fxhl->RefreshAmbient();
 		}
 	}
 }

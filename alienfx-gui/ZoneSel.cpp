@@ -7,7 +7,6 @@ extern FXHelper* fxhl;
 extern int tabLightSel;
 extern void RecalcGridZone(RECT* what = NULL);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
-extern void RedrawZoneGrid(DWORD, bool);
 
 HWND zsDlg;
 
@@ -203,8 +202,6 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					eItem = 0;
 					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 				}
-				//if (!(eItem = neItem))
-				//	SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
 				RecalcGridZone();
 				UpdateZoneList();
 				fxhl->Refresh();
@@ -232,9 +229,9 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			break;
 		case IDC_BUT_FROMLIST:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_SELECTFROMLIST), hDlg, (DLGPROC)SelectLightsDialog);
+			RecalcGridZone();
 			UpdateZoneList();
 			fxhl->Refresh();
-			//RecalcGridZone();
 			break;
 		}
 	} break;

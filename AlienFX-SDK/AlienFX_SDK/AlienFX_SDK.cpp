@@ -111,7 +111,7 @@ namespace AlienFX_SDK {
 				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 				res = HidD_SetFeature(devHandle, buffer, length);
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(6);
+				Sleep(7);
 				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 				//Sleep(6); // Need wait for ACK
 			}
@@ -719,6 +719,7 @@ chain++;
 		switch (version) {
 		case API_V8:
 			PrepareAndSend(COMMV8_effectReady);
+			WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 			return PrepareAndSend(COMMV8_effectSet, {{3, effType},
 				{4, act1.r}, {5, act1.g}, {6, act1.b},
 				{7, act2.r}, {8, act2.g}, {9, act2.b},

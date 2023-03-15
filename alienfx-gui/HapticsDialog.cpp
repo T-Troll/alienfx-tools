@@ -5,8 +5,7 @@
 
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawZoneGrid(DWORD id, bool rec = true);
-extern void UpdateZoneList();
+extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
 
@@ -218,7 +217,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				freqBlock = &mmap->haptics.back();
 				eve->ChangeEffects();
 				SetMappingData(hDlg);
-				UpdateZoneList();
+				UpdateZoneAndGrid();
 			}
 		} break;
 		case IDC_BUT_REM_GROUP:
@@ -239,26 +238,26 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					eve->ChangeEffects();
 				}
 				SetMappingData(hDlg);
-				UpdateZoneList();
+				UpdateZoneAndGrid();
 			}
 			break;
 		case IDC_BUTTON_LPC:
 			if (freqBlock) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_LPC), &freqBlock->colorfrom);
-				RedrawZoneGrid(eItem);
+				UpdateZoneAndGrid();
 			}
 			break;
 		case IDC_BUTTON_HPC:
 			if (freqBlock) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_HPC), &freqBlock->colorto);
-				RedrawZoneGrid(eItem);
+				UpdateZoneAndGrid();
 			}
 			break;
 		case IDC_BUTTON_REMOVE:
 			if (freqBlock) {
 				freqBlock->freqID.clear();
 				SetMappingData(hDlg);
-				RedrawZoneGrid(eItem);
+				//UpdateZoneAndGrid();
 			}
 		case IDC_CHECK_RANDOM:
 			if (freqBlock) {

@@ -8,13 +8,14 @@ extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
+extern void UpdateZoneAndGrid();
 extern FXHelper* fxhl;
 
 extern void RedrawZoneGrid(DWORD grpid, bool rec);
 
 int effID = 0;
 
-const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
+const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow"/*, "Power"*/ };
 
 void SetEffectData(HWND hDlg) {
 	bool hasEffects = mmap && mmap->color.size();
@@ -85,9 +86,8 @@ void ChangeAddColor(HWND hDlg, int newEffID) {
 		else {
 			AlienFX_SDK::Afx_action act{ 0 };
 			bool isPower = conf->FindZoneMap(eItem)->havePower;
-			// add new effect
 			if (isPower && mmap->color.empty())
-				mmap->color.push_back({ AlienFX_SDK::AlienFX_A_Power, 3, 0x64 });
+				mmap->color.push_back(act);
 			if (mmap->color.size() < 9) {
 				if (effID < mmap->color.size())
 					act = mmap->color[effID];
@@ -100,11 +100,10 @@ void ChangeAddColor(HWND hDlg, int newEffID) {
 					else
 						mmap->color.pop_back();
 				}
-			}		
+			}
 		}
 		RebuildEffectList(hDlg);
-		RedrawZoneGrid(eItem, true);
-		UpdateZoneList();
+		UpdateZoneAndGrid();
 	}
 }
 
@@ -165,8 +164,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 						effID--;
 				}
 				RebuildEffectList(hDlg);
-				RedrawZoneGrid(eItem, true);
-				UpdateZoneList();
+				UpdateZoneAndGrid();
 				fxhl->Refresh();
 			}
 			break;

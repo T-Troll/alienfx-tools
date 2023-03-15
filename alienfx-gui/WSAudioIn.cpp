@@ -13,7 +13,6 @@ extern FXHelper* fxhl;
 
 DWORD WINAPI WSwaveInProc(LPVOID);
 DWORD WINAPI FFTProc(LPVOID);
-void UpdateLights(LPVOID);
 
 //const static CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 //const static IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
@@ -54,7 +53,6 @@ void WSAudioIn::startSampling()
 {
 	// creating listener thread...
 	if (pAudioClient && !dwHandle) {
-		lightUpdate = new ThreadHelper(UpdateLights, this, 75, 0);
 		fftHandle = CreateThread(NULL, 0, FFTProc, this, 0, NULL);
 		dwHandle = CreateThread( NULL, 0, WSwaveInProc, this, 0, NULL);
 		pAudioClient->Start();
@@ -64,7 +62,7 @@ void WSAudioIn::startSampling()
 void WSAudioIn::stopSampling()
 {
 	if (dwHandle) {
-		delete lightUpdate;
+		//delete lightUpdate;
 		SetEvent(stopEvent);
 		WaitForSingleObject(dwHandle, 6000);
 		WaitForSingleObject(fftHandle, 6000);
@@ -138,7 +136,7 @@ void WSAudioIn::SetSilence() {
 	if (!clearBuffer) {
 		memset(freqs, 0, NUMBARS * sizeof(int));
 		clearBuffer = true;
-		needUpdate = true;
+		fxhl->RefreshHaptics();
 	}
 }
 
@@ -201,16 +199,6 @@ DWORD WINAPI WSwaveInProc(LPVOID lpParam)
 	return 0;
 }
 
-void UpdateLights(LPVOID lpParam)
-{
-	WSAudioIn *src = (WSAudioIn *) lpParam;
-
-	if (fxhl->lightsNoDelay && src->needUpdate) {
-		src->needUpdate = false;
-		fxhl->RefreshHaptics();
-	}
-}
-
 DWORD WINAPI FFTProc(LPVOID lpParam)
 {
 	WSAudioIn* src = (WSAudioIn*)lpParam;
@@ -271,7 +259,8 @@ DWORD WINAPI FFTProc(LPVOID lpParam)
 			for (int n = 0; n < NUMBARS; n++) {
 				src->freqs[n] = (int)(x2[n] * coeff);
 			}
-			src->needUpdate = true;
+
+			fxhl->RefreshHaptics();
 		}
 	}
 	delete[] padded_in;

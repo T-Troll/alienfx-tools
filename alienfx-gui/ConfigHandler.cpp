@@ -442,19 +442,21 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 				zonelight cl{ lgh.lgh, 255, 255 };
 				for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
 					if (opGrid->grid[ind].lgh == lgh.lgh) {
-						//cl.x = ind % opGrid->x;
 						cl.x = min(cl.x, ind % opGrid->x);
-						//cl.y = ind / opGrid->x;
 						cl.y = min(cl.y, ind / opGrid->x);
-						zone->gMaxX = max(zone->gMaxX, ind % opGrid->x);
-						zone->gMaxY = max(zone->gMaxY, ind / opGrid->x);
-						zone->gMinX = min(zone->gMinX, cl.x);
-						zone->gMinY = min(zone->gMinY, cl.y);
+						zone->xMax = max(zone->xMax, ind % opGrid->x);
+						zone->yMax = max(zone->yMax, ind / opGrid->x);
+						//zone->gMaxX = max(zone->gMaxX, cl.x);
+						//zone->gMaxY = max(zone->gMaxY, cl.y);
+						//zone->gMinX = min(zone->gMinX, cl.x);
+						//zone->gMinY = min(zone->gMinY, cl.y);
 						//zone->lightMap.push_back(cl);
-						break;
+						//break;
 					}
 				// Ignore light if not in grid
 				if (cl.x < 255) {
+					zone->gMaxX = max(zone->gMaxX, cl.x);
+					zone->gMaxY = max(zone->gMaxY, cl.y);
 					zone->gMinX = min(zone->gMinX, cl.x);
 					zone->gMinY = min(zone->gMinY, cl.y);
 					zone->lightMap.push_back(cl);
@@ -483,9 +485,8 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 					zone->scaleY--;
 				}
 		}
-		zoneUpdate.unlock();
 	}
-
+	zoneUpdate.unlock();
 	return zone;
 }
 

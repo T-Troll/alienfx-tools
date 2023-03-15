@@ -7,13 +7,14 @@
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawZoneGrid(DWORD grpid, bool rec = true);
+extern void UpdateZoneAndGrid();
 extern void UpdateZoneList();
 
 extern FXHelper* fxhl;
 extern MonHelper* mon;
-//extern AlienFan_SDK::Control* acpi;
 extern EventHandler* eve;
+
+event* ev = NULL;
 
 const static vector<string> eventTypeNames{ "Performance", "Indicator" };
 const static vector<vector<string>> eventNames{
@@ -24,16 +25,9 @@ const static vector<vector<string>> eventNames{
 
 int eventID = 0;
 
-event* GetEventData() {
-	if (mmap && mmap->events.size() > eventID)
-		return &mmap->events[eventID];
-	return NULL;
-}
-
-void SetEventData(HWND hDlg, event* ev) {
+void SetEventData(HWND hDlg) {
 	if (ev) {
 		CheckDlgButton(hDlg, IDC_STATUS_BLINK, ev->mode ? BST_CHECKED : BST_UNCHECKED);
-		//ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_EVENT_TYPE), ev->state);
 		CheckDlgButton(hDlg, IDC_RADIO_PERF, ev->state == MON_TYPE_PERF ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_RADIO_IND, ev->state == MON_TYPE_IND ? BST_CHECKED : BST_UNCHECKED);
 		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ev->state-1], ev->source);
@@ -50,7 +44,7 @@ void SetEventData(HWND hDlg, event* ev) {
 	RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), NULL, NULL, RDW_INVALIDATE);
 }
 
-void RebuildEventList(HWND hDlg/*, groupset* mmap*/) {
+void RebuildEventList(HWND hDlg) {
 	HWND eff_list = GetDlgItem(hDlg, IDC_EVENTS_LIST);
 
 	ListView_DeleteAllItems(eff_list);
@@ -79,17 +73,15 @@ void RebuildEventList(HWND hDlg/*, groupset* mmap*/) {
 				lItem.state = 0;
 			ListView_InsertItem(eff_list, &lItem);
 		}
-		//RedrawZoneGrid(mmap->group);
 	}
 	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, mmap && mmap->fromColor ? BST_CHECKED : BST_UNCHECKED);
-	SetEventData(hDlg, GetEventData());
+	SetEventData(hDlg);
 	ListView_EnsureVisible(eff_list, eventID, false);
 }
 
 BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND s2_slider = GetDlgItem(hDlg, IDC_CUTLEVEL);
-	event* ev = GetEventData();
 
 	switch (message)
 	{
@@ -99,10 +91,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
 		SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
 		sTip2 = CreateToolTip(s2_slider, sTip2);
-
 		// Start UI update thread...
 		SetTimer(hDlg, 0, 300, NULL);
-
 	} break;
 	case WM_APP + 2: {
 		if (mmap && !(eventID < mmap->events.size()))
@@ -116,10 +106,12 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_CHECK_NOEVENT:
 			if (mmap) {
 				mmap->fromColor = state;
-				fxhl->RefreshCounters();
 			}
 			else
 				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
+			RebuildEventList(hDlg);
+			UpdateZoneAndGrid();
+			fxhl->RefreshCounters();
 			break;
 		case IDC_STATUS_BLINK:
 			if (ev)
@@ -130,21 +122,20 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_BUTTON_COLORFROM:
 			if (ev && (!mmap->fromColor || mmap->color.size())) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), &ev->from);
-				//RedrawZoneGrid(mmap->group);
+				RebuildEventList(hDlg);
+				UpdateZoneAndGrid();
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTTON_COLORTO:
 			if (ev) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORTO), &ev->to);
-				//RedrawZoneGrid(mmap->group);
-				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_EVENT_SOURCE:
 			if (ev && HIWORD(wParam) == CBN_SELCHANGE) {
 				ev->source = ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE));
-				//RebuildEventList(hDlg);
+				RebuildEventList(hDlg);
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -154,9 +145,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (ev) {
 				ev->state = ctype;
 				ev->source = 0;
-				//RebuildEventList(hDlg);
-				fxhl->RefreshCounters();
 			}
+			RebuildEventList(hDlg);
+			fxhl->RefreshCounters();
 		} break;
 		case IDC_BUT_ADD_EVENT:
 			if (mmap) {
@@ -164,9 +155,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)) });
 				eventID = (int)mmap->events.size() - 1;
 				eve->ChangeEffects();
-				//RebuildEventList(hDlg);
-				//RedrawZoneGrid(mmap->group);
-				UpdateZoneList();
+				RebuildEventList(hDlg);
+				UpdateZoneAndGrid();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
@@ -175,9 +166,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				if (eventID)
 					eventID--;
 				eve->ChangeEffects();
-				//RebuildEventList(hDlg);
-				//RedrawZoneGrid(mmap->group);
-				UpdateZoneList();
+				RebuildEventList(hDlg);
+				UpdateZoneAndGrid();
+				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUTT_EVENT_UP:
@@ -186,8 +177,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				eventID--;
 				*ev = mmap->events[eventID];
 				mmap->events[eventID] = t;
-				//RebuildEventList(hDlg);
-				//RedrawZoneGrid(mmap->group);
+				RebuildEventList(hDlg);
+				UpdateZoneAndGrid();
 				fxhl->RefreshCounters();
 			}
 			break;
@@ -197,14 +188,12 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				eventID++;
 				*ev = mmap->events[eventID];
 				mmap->events[eventID] = t;
-				//RebuildEventList(hDlg);
-				//RedrawZoneGrid(mmap->group);
+				RebuildEventList(hDlg);
+				UpdateZoneAndGrid();
 				fxhl->RefreshCounters();
 			}
 			break;
 		}
-		RebuildEventList(hDlg);
-		RedrawZoneGrid(eItem);
 	} break;
 	case WM_DRAWITEM: {
 		AlienFX_SDK::Afx_colorcode* c = NULL;
@@ -240,9 +229,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					// Select other item...
 					eventID = lPoint->iItem;
 				}
-				//else
-				//	eventID = -1;
-				SetEventData(hDlg, GetEventData());
+				ev = mmap && mmap->events.size() > eventID ? &mmap->events[eventID] : NULL;
+				SetEventData(hDlg);
 			} break;
 			}
 			break;

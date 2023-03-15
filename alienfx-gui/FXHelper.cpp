@@ -235,20 +235,13 @@ void FXHelper::SetState(bool force) {
 		}
 }
 
-void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Functions* dev, bool reset) {
-	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++)
-	{
-		AlienFX_SDK::Functions* cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid)->dev;
-
-		if (cdev && (cdev->pid == it->pid && cdev->vid == it->vid)) {
-			// set this effect for device
-			if (reset)
-				cdev->SetGlobalEffects(0, it->globalMode, it->colorMode, it->globalDelay, { 0 }, { 0 });
-			else
-				cdev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
-					{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
-					{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
-		}
+void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
+	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
+		auto cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid);
+		if (cdev->dev)
+			cdev->dev->SetGlobalEffects(reset ? 0 : it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
+				{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
+				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
 	}
 }
 
@@ -303,7 +296,7 @@ void FXHelper::RefreshOne(groupset* map, bool update) {
 
 void FXHelper::RefreshCounters(LightEventData* data)
 {
-	if (eve->sysmon) {
+	if (lightsNoDelay && eve->sysmon) {
 		bool force = !data, wasChanged = false;
 		AlienFX_SDK::Afx_group* grp;
 		if (!data)
@@ -403,7 +396,7 @@ void FXHelper::RefreshCounters(LightEventData* data)
 }
 
 void FXHelper::RefreshAmbient() {
-	if (eve->capt) {
+	if (lightsNoDelay && eve->capt) {
 		UCHAR* img = ((CaptureHelper*)eve->capt)->imgz;
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 		vector<AlienFX_SDK::Afx_action> actions{ {0} };
@@ -442,7 +435,7 @@ void FXHelper::RefreshAmbient() {
 }
 
 void FXHelper::RefreshHaptics() {
-	if (eve->audio) {
+	if (lightsNoDelay && eve->audio) {
 		int* freq = ((WSAudioIn*)eve->audio)->freqs;
 		vector<AlienFX_SDK::Afx_action> actions;
 		bool wasChanged = false;
@@ -506,7 +499,7 @@ void FXHelper::RefreshHaptics() {
 }
 
 void FXHelper::RefreshGrid() {
-	if (eve->grid) {
+	if (lightsNoDelay && eve->grid) {
 		bool wasChanged = false, noAmb = true;
 		vector<AlienFX_SDK::Afx_action> cur{ {0} };
 		eve->modifyProfile.lock();
@@ -542,40 +535,40 @@ void FXHelper::RefreshGrid() {
 					int cTact = effop->current_tact++;
 					int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
 
-					if (phase > effop->effsize * effop->lmp) {
+					if (phase == effop->effsize * effop->lmp) {
 						effop->passive = true;
 						continue;
 					}
 
-					int colorIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
-
+					int backIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
 					AlienFX_SDK::Afx_action from = Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
-						&eff->effectColors[colorIndex]),
-						to = Code2Act(&eff->effectColors[colorIndex + 1 < eff->effectColors.size() ? colorIndex + 1 : 0]);
+						&eff->effectColors[backIndex]);
+					backIndex++;
+					AlienFX_SDK::Afx_action to = Code2Act(&eff->effectColors[backIndex != eff->effectColors.size() ? backIndex : 0]);
 
 					phase %= effop->effsize;
 
-					if (phase >= effop->size) // circle by color and direction
+					if (phase > effop->size) // circle by color and direction
 						phase = effop->effsize - phase - 1;
 
 					if (ce->gaugeflags & GAUGE_REVERSE)
-						phase = effop->size - phase - 1;
+						phase = effop->size - phase - 2;
 
 					// Set lights
-					if (effop->oldphase != phase) {
+					if (effop->oldphase != phase || !ce->gauge) {
 						// Set grid effect
 						double power = 0;
 
 						if (ce->gauge) {
 							auto zone = *conf->FindZoneMap(ce->group);
 							// Old phase cleanup
-							if (!cTact) {
-								cur.front() = from;
-								SetZone(&(*ce), &cur);
-							}
-							else
-								for (int dist = 0; dist < eff->width; dist++)
-									SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
+							//if (!cTact) {
+							//	cur.front() = from;
+							//	SetZone(&(*ce), &cur);
+							//}
+							//else
+							for (int dist = 0; dist < eff->width; dist++)
+								SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
 
 							// Check for gradient zones - in this case all phases updated!
 							if (ce->gaugeflags & GAUGE_GRADIENT) {
@@ -588,7 +581,7 @@ void FXHelper::RefreshGrid() {
 							// Fill new phase colors
 							if (eff->type == 3) { // Filled
 								for (int nf = 0; nf <= phase; nf++) {
-									power = ce->gaugeflags & GAUGE_GRADIENT && phase ? (double)(nf) / (phase) : 1.0;
+									power = ce->gaugeflags & GAUGE_GRADIENT && phase ? (double)nf / phase : 1.0;
 									SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
 								}
 							}
@@ -614,7 +607,7 @@ void FXHelper::RefreshGrid() {
 						else {
 							// flat morph emulation
 							power = (double)phase / eff->width;
-							cur.front() = { BlendPower(power, &from, &to) };
+							cur.front() = { BlendPower((double)phase / eff->width, &from, &to) };
 							SetZone(&(*ce), &cur);
 						}
 						wasChanged = true;
@@ -672,9 +665,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							dev->dev->SetMultiAction(&devQ->second, current.light);
 							dev->dev->UpdateColors();
 							devQ->second.clear();
-							if (dev->dev->IsHaveGlobal())
-								src->UpdateGlobalEffect(dev->dev);
 						}
+						if (dev->dev->IsHaveGlobal())
+							src->UpdateGlobalEffect(dev);
 					}
 				break;
 			case 0: { // set light

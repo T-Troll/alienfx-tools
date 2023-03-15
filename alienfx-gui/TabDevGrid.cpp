@@ -111,7 +111,7 @@ void RecalcGridZone(RECT* what = NULL) {
             full = *what;
     } else
         colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y];
-       
+
     AlienFX_SDK::Afx_group* grp;
     for (int x = full.left; x < full.right; x++)
         for (int y = full.top; y < full.bottom; y++) {
@@ -149,15 +149,15 @@ void RecalcGridZone(RECT* what = NULL) {
         }
 }
 
-void RedrawZoneGrid(DWORD grpID, bool recalc = true) {
-    zonemap zone = *conf->FindZoneMap(grpID);
-    if (zone.gridID == conf->mainGrid->id) {
-        RECT zRect = { zone.gMinX, zone.gMinY, zone.gMaxX + zone.gMinX, zone.gMaxY + zone.gMinY };
-        if (recalc)
-            RecalcGridZone(&zRect);
-        RedrawGridButtonZone(NULL);
-    }
-}
+//void RedrawZoneGrid(DWORD grpID, bool repaint, bool recalc = false) {
+//    zonemap zone = *conf->FindZoneMap(grpID, recalc);
+//    if (zone.gridID == conf->mainGrid->id) {
+//        RECT zRect = { zone.gMinX, zone.gMinY, zone.xMax + 1, zone.yMax + 1 };
+//        RecalcGridZone(&zRect);
+//        if (repaint)
+//            RedrawGridButtonZone(&zRect);
+//    }
+//}
 
 void SetLightGridSize(int x, int y) {
     int minX = 0, minY = 0;
@@ -222,9 +222,9 @@ void ModifyColorDragZone(bool clear = false) {
             if (!IsLightInGroup(tr->lgh, grp))
                 grp->lights.push_back(*tr);
         }
-
+        //RedrawZoneGrid(grp->gid, false, true);
         conf->FindZoneMap(grp->gid, true);
-        RecalcGridZone(&dragZone);
+        RecalcGridZone();
         UpdateZoneList();
     }
 }

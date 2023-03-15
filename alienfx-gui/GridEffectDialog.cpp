@@ -6,8 +6,7 @@
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawZoneGrid(DWORD id, bool rec = true);
-extern void UpdateZoneList();
+extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
@@ -82,7 +81,7 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 				clr->pop_back();
 		}
 		RebuildGEColorsList(hDlg);
-		UpdateZoneList();
+		UpdateZoneAndGrid();
 	}
 }
 
@@ -138,12 +137,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				if (grid)
-					grid->RestartWatch();
-				RedrawZoneGrid(eItem, true);
-				UpdateZoneList();
-				if (!mmap->effect.trigger)
-					fxhl->Refresh();
+				eve->ChangeEffects();
+				UpdateZoneAndGrid();
 			}
 			break;
 		case IDC_COMBO_GEFFTYPE:
@@ -186,7 +181,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 						clrListID--;
 				}
 				RebuildGEColorsList(hDlg);
-				RedrawZoneGrid(eItem);
+				UpdateZoneAndGrid();
 			}
 			break;
 		}

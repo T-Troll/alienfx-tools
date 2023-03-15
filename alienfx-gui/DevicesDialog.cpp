@@ -129,8 +129,9 @@ void UpdateLightsList() {
 
 void UpdateDeviceInfo() {
 	char descript[128];
-	sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, APIv%d %s",
-		activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), activeDevice->version, activeDevice->dev ? "" : "(inactive)");
+	sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, %s",
+		activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(),
+		activeDevice->dev ? ("APIv" + to_string(activeDevice->version)).c_str() : "(inactive)");
 	SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 	EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->version && activeDevice->version < 5); // v5 and higher doesn't support power button
 	UpdateLightsList();
@@ -206,7 +207,7 @@ void LoadCSV(string name) {
 							pid = (WORD)atoi(fields[2].c_str());
 						DebugPrint("Device " + tGear.name + " - " + to_string(vid) + "/" + to_string(pid) + ": ");
 						if (tGear.found = conf->afx_dev.GetDeviceById(pid, vid)) {
-							tGear.devs.push_back({ vid, pid, NULL, fields[3] });
+							tGear.devs.push_back({ pid, vid, NULL, fields[3] });
 							DebugPrint("Matched.\n")
 						}
 #ifdef _DEBUG

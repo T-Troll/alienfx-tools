@@ -59,7 +59,7 @@ struct zonelight {
 struct zonemap {
 	DWORD gID;
 	DWORD gridID;
-	byte /*xMax = 0, yMax = 0, */
+	byte xMax = 0, yMax = 0,
 		scaleX = 1, scaleY = 1,
 		gMinX = 255, gMaxX = 0, gMinY = 255, gMaxY = 0;
 	vector<zonelight> lightMap;
@@ -87,7 +87,7 @@ struct grideffop {
 	bool passive = true;
 	//void* capt = NULL; // capture object if present in operation
 	int gridX, gridY,
-		oldphase=-1,
+		oldphase,
 		size,
 		effsize,
 		lmp,

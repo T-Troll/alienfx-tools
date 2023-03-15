@@ -31,10 +31,9 @@ public:
 
 	HANDLE stopEvent, hEvent, cEvent;
 
-	bool needUpdate = false, clearBuffer = false;
+	bool clearBuffer = false;
 
 	// FFT variables
-	//int sampleRate = 44100;
 	double blackman[NUMPTS];// , * hanning;
 
 private:

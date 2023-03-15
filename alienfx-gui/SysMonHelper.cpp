@@ -163,9 +163,7 @@ void CEventProc(LPVOID param)
 		fxhl->maxData.CPU = max(fxhl->maxData.CPU, cData->CPU = (byte)cCPUVal.longValue);
 		fxhl->maxData.GPU = max(fxhl->maxData.GPU, cData->GPU);
 
-		if (fxhl->lightsNoDelay) { // update lights
-			fxhl->RefreshCounters(cData);
-			memcpy(&fxhl->eData, cData, sizeof(LightEventData));
-		}
+		fxhl->RefreshCounters(cData);
+		memcpy(&fxhl->eData, cData, sizeof(LightEventData));
 	}
 }

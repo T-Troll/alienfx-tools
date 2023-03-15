@@ -5,6 +5,7 @@
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
+extern void UpdateZoneAndGrid();
 extern void dxgi_Restart();
 
 extern EventHandler* eve;
@@ -103,7 +104,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             else
                 mmap->ambients.erase(pos);
             eve->ChangeEffects();
-            UpdateZoneList();
+            UpdateZoneAndGrid();
             break;
         }
         switch (LOWORD(wParam)) {

@@ -74,17 +74,15 @@ bool DetectFans() {
 }
 
 void SetHotkeys() {
-	RegisterHotKey(mDlg, 3, 0, VK_F18);
-	if (mon)
-		RegisterHotKey(mDlg, 6, 0, VK_F17);
-	else
-		UnregisterHotKey(mDlg, 6);
+	RegisterHotKey(mDlg, 1, 0, VK_F18);
+	RegisterHotKey(mDlg, 2, 0, VK_F17);
+
 	if (conf->keyShortcuts) {
 		//register global hotkeys...
-		RegisterHotKey(mDlg, 1, MOD_CONTROL | MOD_SHIFT, VK_F12);
-		RegisterHotKey(mDlg, 2, MOD_CONTROL | MOD_SHIFT, VK_F11);
-		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F10);
-		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F9);
+		RegisterHotKey(mDlg, 3, MOD_CONTROL | MOD_SHIFT, VK_F12);
+		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F11);
+		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F10);
+		RegisterHotKey(mDlg, 6, MOD_CONTROL | MOD_SHIFT, VK_F9);
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		if (mon) {
@@ -94,7 +92,7 @@ void SetHotkeys() {
 	}
 	else {
 		//unregister global hotkeys...
-		for (int i = 1; i < 7; i++)
+		for (int i = 3; i < 7; i++)
 			UnregisterHotKey(mDlg, i);
 		for (int i = 0; i < 10; i++) {
 			UnregisterHotKey(mDlg, 10 + i);
@@ -106,9 +104,17 @@ void SetHotkeys() {
 void FillAllDevs() {
 	fxhl->Stop();
 	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
-	if (conf->afx_dev.activeDevices)
+	if (conf->afx_dev.activeDevices) {
+		// reset effects
+		for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++)
+			if (cdev->dev && cdev->dev->IsHaveGlobal()) {
+				cdev->dev->SetGlobalEffects(0, 1, 0, 0, { 0 }, { 0 });
+				if (cdev->dev->version == AlienFX_SDK::API_V8)
+					cdev->dev->SetGlobalEffects(0, 2, 0, 0, { 0 }, { 0 });
+			}
 		fxhl->Start();
-	fxhl->SetState();
+		fxhl->SetState();
+	}
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -491,16 +497,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		if (wParam == SIZE_MINIMIZED)
 			ShowWindow(hDlg, SW_HIDE);
 		break;
-	//	switch (wParam) {
-	//	case SIZE_MINIMIZED: {
-	//		// go to tray...
-	//		ShowWindow(hDlg, SW_HIDE);
-	//		//DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(tab_list, GWLP_USERDATA);
-	//		//DestroyWindow(pHdr->hwndDisplay);
-	//		//pHdr->hwndDisplay = NULL;
-	//	} break;
-	//	}
-	//	break;
 	case WM_APP + 1: {
 		switch (LOWORD(lParam)) {
 		case WM_LBUTTONDBLCLK: case WM_LBUTTONUP:
@@ -704,15 +700,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		switch (wParam) {
-		case 1: // on/off
+		case 3: // on/off
 			conf->lightsOn = !conf->lightsOn;
 			UpdateState(false);
 			break;
-		case 2: // dim
+		case 4: // dim
 			conf->dimmed = !conf->dimmed;
 			UpdateState(false);
 			break;
-		case 3: // off-dim-full circle
+		case 1: // off-dim-full circle
 			if (conf->lightsOn)
 				if (conf->stateDimmed) {
 					conf->lightsOn = false;
@@ -724,17 +720,17 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				conf->lightsOn = true;
 			UpdateState(false);
 			break;
-		case 4: // effects
+		case 5: // effects
 			conf->enableEffects = !conf->enableEffects;
 			UpdateState(true);
 			break;
-		case 5: // profile autoswitch
+		case 6: // profile autoswitch
 			eve->StopProfiles();
 			conf->enableProfSwitch = !conf->enableProfSwitch;
 			eve->StartProfiles();
 			SelectProfile();
 			break;
-		case 6: // G-key for Dell G-series power switch
+		case 2: // G-key for Dell G-series power switch
 			if (mon) {
 				AlterGMode(NULL);
 				if (tabSel == TAB_FANS)

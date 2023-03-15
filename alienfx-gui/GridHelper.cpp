@@ -25,7 +25,7 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 				esize = max(cx, cy);
 				break;
 			}
-			gridop->size = max(esize + grp->effect.width - 1, 1);
+			gridop->size = max(esize + grp->effect.width/* - 1*/, 1);
 		}
 		else
 			gridop->size = grp->effect.width;
@@ -39,7 +39,7 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 		gridop->gridY = y;
 		gridop->current_tact = 0;
 		gridop->oldphase = -1;
-		gridop->lmp = grp->effect.flags & GE_FLAG_PHASE ? 1 : ((int)grp->effect.effectColors.size() - 1);
+		gridop->lmp = grp->effect.flags & GE_FLAG_PHASE ? 1 : ((int)grp->effect.effectColors.size() - ((grp->effect.flags & GE_FLAG_BACK) != 0));
 		gridop->effsize = grp->effect.flags & GE_FLAG_CIRCLE ? gridop->size << 1 : gridop->size;
 		grp->gridop.passive = false;
 	}
@@ -72,8 +72,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 void GridUpdate(LPVOID param) {
-	if (fxhl->lightsNoDelay)
-		fxhl->RefreshGrid();
+	fxhl->RefreshGrid();
 }
 
 void GridHelper::StartCommonRun(groupset* ce) {
@@ -159,5 +158,5 @@ void GridHelper::RestartWatch() {
 	}
 
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, conf->geTact);
-	gridThread = new ThreadHelper(GridUpdate, NULL/*(LPVOID)this*/, conf->geTact);
+	gridThread = new ThreadHelper(GridUpdate, NULL, conf->geTact);
 }

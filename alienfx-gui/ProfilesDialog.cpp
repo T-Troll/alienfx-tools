@@ -155,7 +155,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 				if (!newEffect) {
 					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(activeEffectDevice->dev, true);
+						fxhl->UpdateGlobalEffect(activeEffectDevice, true);
 					prof->effects.erase(b);
 				}
 				RefreshDeviceList(hDlg);
@@ -172,7 +172,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		default: return false;
 		}
 		if (activeEffectDevice && prof->id == conf->activeProfile->id)
-			fxhl->UpdateGlobalEffect(activeEffectDevice->dev);
+			fxhl->UpdateGlobalEffect(activeEffectDevice);
 	} break;
 	case WM_DRAWITEM: {
 		UINT CtlID = ((DRAWITEMSTRUCT*)lParam)->CtlID;
@@ -195,7 +195,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 					b->globalDelay = (BYTE) SendMessage((HWND) lParam, TBM_GETPOS, 0, 0);
 					SetSlider((HWND)lParam == eff_tempo ? sTip1 : sTip2, b->globalDelay);
 					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(activeEffectDevice->dev);
+						fxhl->UpdateGlobalEffect(activeEffectDevice);
 				}
 			} break;
 			}

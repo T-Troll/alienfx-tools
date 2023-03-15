@@ -63,10 +63,6 @@ void SetHotkeys() {
             RegisterHotKey(mDlg, 20 + i, MOD_CONTROL | MOD_ALT, 0x30 + i);
         else
             UnregisterHotKey(mDlg, 20 + i);
-    //if (fan_conf->keyShortcuts)
-    //    RegisterHotKey(mDlg, 6, 0, VK_F17);
-    //else
-    //    UnregisterHotKey(mDlg, 6);
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
