@@ -674,7 +674,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				WORD pid = LOWORD(current.light);
 				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
 					WORD lid = HIWORD(current.light);
-					WORD flags = conf->afx_dev.GetMappingByDev(dev, lid)->flags;
+					auto map = conf->afx_dev.GetMappingByDev(dev, lid);
+					WORD flags = conf->afx_dev.GetFlags(dev, lid);
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
 						// gamma-correction...

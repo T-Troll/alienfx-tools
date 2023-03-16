@@ -2,7 +2,8 @@
 #include "FXHelper.h"
 #include "common.h"
 
-extern bool IsGroupUnused(DWORD gid);
+//extern bool IsGroupUnused(DWORD gid);
+extern void RemoveUnusedGroups();
 extern FXHelper* fxhl;
 extern int tabLightSel;
 extern void RecalcGridZone(RECT* what = NULL);
@@ -180,29 +181,30 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		} break;
 		case IDC_BUT_DEL_ZONE:
 			if (mmap) {
-				int neItem = eItem;
 				for (auto iter = conf->activeProfile->lightsets.begin(); iter != conf->activeProfile->lightsets.end(); iter++) {
 					if (iter->group == eItem) {
-						neItem = iter == conf->activeProfile->lightsets.begin() ?
+						eItem = iter == conf->activeProfile->lightsets.begin() ?
 							conf->activeProfile->lightsets.size() > 1 ?
 								(iter + 1)->group :	0 : (iter - 1)->group;
 						conf->activeProfile->lightsets.erase(iter);
 						break;
 					}
 				}
-				if (IsGroupUnused(eItem)) {
-					for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
-						if (Iter->gid == eItem) {
-							conf->afx_dev.GetGroups()->erase(Iter);
-							break;
-						}
-				}
-				if (conf->activeProfile->lightsets.empty()) {
-					mmap = NULL;
-					eItem = 0;
-					SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
-				}
-				RecalcGridZone();
+				RemoveUnusedGroups();
+				//if (IsGroupUnused(eItem)) {
+				//	for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
+				//		if (Iter->gid == eItem) {
+				//			conf->afx_dev.GetGroups()->erase(Iter);
+				//			break;
+				//		}
+				//}
+				mmap = conf->FindMapping(eItem);
+				//if (conf->activeProfile->lightsets.empty()) {
+				//	mmap = NULL;
+				//	eItem = 0;
+				//	SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+				//}
+				//RecalcGridZone();
 				UpdateZoneList();
 				fxhl->Refresh();
 			}

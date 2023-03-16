@@ -117,6 +117,8 @@ void FillAllDevs() {
 	}
 }
 
+void SelectProfile(profile* prof = conf->activeProfile);
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -165,6 +167,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		RegisterPowerSettingNotification(mDlg, &GUID_LIDSWITCH_STATE_CHANGE, 0);
 
 		ShowWindow(mDlg, conf->startMinimized ? SW_HIDE : SW_SHOW);
+
+		if (!conf->startMinimized)
+			SelectProfile();
 
 		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ALIENFXGUI));
 
@@ -300,7 +305,7 @@ void UpdateProfileList(bool force = true) {
 	}
 }
 
-void SelectProfile(profile* prof = conf->activeProfile) {
+void SelectProfile(profile* prof) {
 	eve->SwitchActiveProfile(prof);
 	UpdateProfileList();
 	if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
@@ -850,16 +855,22 @@ void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLig
 		}
 }
 
-void RemoveLightAndClean(AlienFX_SDK::Afx_groupLight lgh) {
+void RemoveLightAndClean() {
 	// delete from all groups...
 	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
-		RemoveLightFromGroup(&(*iter), lgh);
-	}
-	// Clean from grids...
-	for (auto g = conf->afx_dev.GetGrids()->begin(); g < conf->afx_dev.GetGrids()->end(); g++) {
-		for (int ind = 0; ind < g->x * g->y; ind++)
-			if (g->grid[ind].lgh == lgh.lgh)
-				g->grid[ind].lgh = 0;
+		for (auto lgh = iter->lights.begin(); lgh != iter->lights.end();)
+			if (lgh->did == activeDevice->pid && !conf->afx_dev.GetMappingByDev(activeDevice, lgh->lid)) {
+				// Clean from grids...
+				for (auto g = conf->afx_dev.GetGrids()->begin(); g < conf->afx_dev.GetGrids()->end(); g++) {
+					for (int ind = 0; ind < g->x * g->y; ind++)
+						if (g->grid[ind].lgh == lgh->lgh)
+							g->grid[ind].lgh = 0;
+				}
+				iter->lights.erase(lgh);
+				lgh = iter->lights.begin();
+			}
+			else
+				lgh++;
 	}
 }
 

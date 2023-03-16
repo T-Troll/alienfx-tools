@@ -7,7 +7,7 @@ extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveLightAndClean(AlienFX_SDK::Afx_groupLight lgh);
+extern void RemoveLightAndClean();
 extern void SetMainTabs();
 
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -419,9 +419,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all device information?", "Warning",
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// remove all lights
-				for (auto lgh = activeDevice->lights.begin(); lgh != activeDevice->lights.end(); lgh++) {
-					RemoveLightAndClean({ activeDevice->pid, lgh->lightid });
-				}
+				auto ls = (int)activeDevice->lights.size();
+				activeDevice->lights.clear();
+				RemoveLightAndClean();
 				// remove device if not active
 				if (!activeDevice->dev) {
 					for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++)
@@ -442,8 +442,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 				else {
 					// decrease active lights
-					conf->afx_dev.activeLights -= (int)activeDevice->lights.size();
-					activeDevice->lights.clear();
+					conf->afx_dev.activeLights -= ls;
 					UpdateDeviceInfo();
 				}
 			}
@@ -457,7 +456,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!");
 					}
 					// delete from all groups and grids...
-					RemoveLightAndClean({ activeDevice->pid, (byte)eLid });
+					RemoveLightAndClean();
 					// delete from mappings...
 					conf->afx_dev.RemoveMapping(activeDevice, eLid);
 					if (activeDevice->dev)
@@ -628,6 +627,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					activeDevice = &conf->afx_dev.fxdevs[lPoint->iItem];
 					fxhl->TestLight(activeDevice, eLid, true);
+					// clear unused lights...
+					RemoveLightAndClean();
 					UpdateDeviceInfo();
 				}
 				else {
