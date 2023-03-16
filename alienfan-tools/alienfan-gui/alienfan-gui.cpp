@@ -134,7 +134,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     if (message == newTaskBar) {
         // Started/restarted explorer...
         AddTrayIcon(niData, fan_conf->updateCheck);
-        return true;
     }
 
     switch (message) {
@@ -142,7 +141,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         niData->hWnd = hDlg;
 
-        AddTrayIcon(niData, fan_conf->updateCheck);
+        //AddTrayIcon(niData, fan_conf->updateCheck);
+        while (!AddTrayIcon(niData, fan_conf->updateCheck))
+            Sleep(50);
 
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);

@@ -386,9 +386,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
 
 	// Started/restarted explorer...
-	if (message == newTaskBar) {
-		conf->SetIconState(conf->updateCheck);
-		return true;
+	if (message == newTaskBar && AddTrayIcon(&conf->niData, conf->updateCheck)) {
+		conf->SetIconState();
 	}
 
 	switch (message)
@@ -398,7 +397,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		conf->niData.hWnd = mDlg = hDlg;
 		SetMainTabs();
 		UpdateProfileList();
-		conf->SetIconState(conf->updateCheck);
+		while (!AddTrayIcon(&conf->niData, conf->updateCheck))
+			Sleep(50);
+		conf->SetIconState();
 	} break;
 	case WM_COMMAND:
 	{

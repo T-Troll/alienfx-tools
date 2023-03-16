@@ -79,12 +79,12 @@ bool ConfigHandler::IsActiveOnly(profile* prof) {
 	return (prof ? prof->flags : activeProfile->flags) & PROF_ACTIVE;
 }
 
-void ConfigHandler::SetIconState(bool check) {
+void ConfigHandler::SetIconState() {
 	// change tray icon...
 	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
 						stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
 						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
-	AddTrayIcon(&niData, check);
+	AddTrayIcon(&niData, false);
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
