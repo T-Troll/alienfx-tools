@@ -36,8 +36,8 @@ EventHandler::EventHandler()
 
 EventHandler::~EventHandler()
 {
-	StopProfiles();
-	ChangeEffects(true);
+	//StopProfiles();
+	//ChangeEffects(true);
 	delete[] aProcesses;
 }
 
@@ -59,7 +59,6 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 {
 	if (!newID) newID = conf->FindDefaultProfile();
 	if (!(keyboardSwitchActive || newID == conf->activeProfile)) {
-		fxhl->UpdateGlobalEffect(NULL, true);
 		modifyProfile.lock();
 		conf->activeProfile = newID;
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
@@ -96,7 +95,6 @@ void EventHandler::ChangeEffects(bool stop) {
 	// Effects state...
 	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
 	if (!stop && conf->stateEffects) {
-		modifyProfile.lock();
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			noMon = noMon && it->events.empty();
 			noAmb = noAmb && it->ambients.empty();
@@ -108,17 +106,16 @@ void EventHandler::ChangeEffects(bool stop) {
 				capt = new CaptureHelper(true);
 			if (!(noHap || audio))
 				audio = new WSAudioIn();
-			if (!(noGrid || grid))
-				grid = new GridHelper();
+			if (!noGrid)
+				if (grid)
+					((GridHelper*)grid)->RestartWatch();
+				else
+					grid = new GridHelper();
 		}
-		modifyProfile.unlock();
-
 	}
 	if (noGrid && grid) {	// Grid
 		delete (GridHelper*)grid; grid = NULL;
 	}
-	if (grid)
-		((GridHelper*)grid)->RestartWatch();
 	if (noMon && sysmon) {	// System monitoring
 		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
@@ -152,37 +149,29 @@ void EventHandler::CheckProfileChange() {
 
 	profile* newProf;
 
-	if (procName.size()) {
-		DebugPrint("Foreground switched to " + procName + "\n");
-
-		if (conf->noDesktop && conf->IsActiveOnly() && (procName == "ShellExperienceHost.exe" || procName == "explorer.exe" || procName == "SearchApp.exe"
+	if (procName.empty() || (conf->noDesktop && /*conf->IsActiveOnly() && */
+		(procName == "ShellExperienceHost.exe" || procName == "explorer.exe" || procName == "SearchApp.exe" || procName == "alienfx-gui.exe"
 #ifdef _DEBUG
 			|| procName == "devenv.exe"
 #endif
-			)) {
-			DebugPrint("Forbidden app name\n");
+			))) {
+			DebugPrint("Forbidden app name " + procName + "\n");
 			return;
-		}
-
-		if ((newProf = conf->FindProfileByApp(procName, true)) &&
-			(conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile())) {
-			SwitchActiveProfile(newProf);
-			return;
-		} 
-#ifdef _DEBUG
-		else {
-			if (newProf) {
-				DebugPrint("Blocked by priority\n");
-			}
-			else
-				DebugPrint("No foreground profile\n");
-
-		}
-#endif
+	}
+	DebugPrint("Foreground switched to " + procName + "\n");
+	if ((newProf = conf->FindProfileByApp(procName, true)) &&
+		(conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile())) {
+		SwitchActiveProfile(newProf);
+		return;
 	}
 #ifdef _DEBUG
 	else {
-		DebugPrint("Incorrect active app name\n");
+		if (newProf) {
+			DebugPrint("Blocked by priority\n");
+		}
+		else
+			DebugPrint("No foreground profile\n");
+
 	}
 #endif
 	DebugPrint("TaskScan initiated.\n");
@@ -250,21 +239,23 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 
 	GetWindowThreadProcessId(hwnd, &prcId);
 
-	if (!GetParent(hwnd) && (szProcessName = eve->GetProcessName(prcId)).size() &&
-		(prof = conf->FindProfileByApp(szProcessName))) {
+	if (prcId && !GetParent(hwnd) && (szProcessName = eve->GetProcessName(prcId)).size()) {
 		//DebugPrint(("C/D: " + to_string(dwEvent) + " - " + szProcessName + "\n").c_str());
+		prof = conf->FindProfileByApp(szProcessName);
 		if (dwEvent == EVENT_OBJECT_DESTROY) {
-			if (prof->id == conf->activeProfile->id) {
+			if (prof && prof->id == conf->activeProfile->id) {
 				DebugPrint("C/D: Active profile app closed, delay activated.\n");
 				// Wait for termination
 				HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, prcId);
-				WaitForSingleObject(hProcess, 1000);
+				WaitForSingleObject(hProcess, 500);
 				CloseHandle(hProcess);
-				DebugPrint("C/D: Delay done.\n");
+				//DebugPrint("C/D: Delay done.\n");
 				eve->CheckProfileChange();
 			}
-		} else 
-			eve->CheckProfileChange();
+		} else
+			// check have app or forbidden list
+			if (prof || conf->noDesktop)
+				eve->CheckProfileChange();
 	}
 }
 

@@ -82,6 +82,12 @@ struct grideffect {
 	vector<AlienFX_SDK::Afx_colorcode> effectColors;
 };
 
+struct starmap {
+	DWORD lightID = 0;
+	int colorIndex = 0;
+	int count = 0, maxCount = 0;
+};
+
 struct grideffop {
 	// operational info
 	bool passive = true;
@@ -92,6 +98,7 @@ struct grideffop {
 		effsize,
 		lmp,
 		current_tact;
+	vector<starmap> stars;
 };
 
 struct groupset {

@@ -85,7 +85,7 @@ CaptureHelper::~CaptureHelper()
 	Stop();
 	// Stop and remove processing threads
 	SetEvent(sEvent);
-	WaitForMultipleObjects(16, pThread, true, 1000);
+	WaitForMultipleObjects(16, pThread, true, INFINITE);
 	CloseHandle(sEvent);
 	for (DWORD i = 0; i < 16; i++) {
 		CloseHandle(callData[i].pEvent);
@@ -135,8 +135,8 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	CaptureHelper* cap = (CaptureHelper*)src->cap;
 	HANDLE waitArray[2]{ cap->sEvent, src->pEvent };
 	DWORD res;
-	while ((res = WaitForMultipleObjects(2, waitArray, false, 150)) != WAIT_OBJECT_0)
-		if (res != WAIT_TIMEOUT && src->dst) {
+	while ((res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_OBJECT_0)
+		if (/*res != WAIT_TIMEOUT &&*/ src->dst) {
 			UINT idx = src->idx;
 			ULONG64 r = 0, g = 0, b = 0;
 			byte* freqval = NULL; 
@@ -213,16 +213,17 @@ void CScreenProc(LPVOID param)
 			ptr++;
 		}
 #ifndef _DEBUG
-		WaitForMultipleObjects(tInd + 1, src->pfEvent, true, 1000);
+		WaitForMultipleObjects(tInd + 1, src->pfEvent, true, INFINITE);
 #else
-		if (WaitForMultipleObjects(tInd+1, src->pfEvent, true, 1000) != WAIT_OBJECT_0)
+		if (WaitForMultipleObjects(tInd+1, src->pfEvent, true, INFINITE) != WAIT_OBJECT_0)
 			DebugPrint("Ambient thread execution fails at last set\n");
 #endif
 
 		if (memcmp(src->imgz, src->imgo, src->gridDataSize)) {
 			memcpy(src->imgz, src->imgo, src->gridDataSize);
 			src->needUpdate = true;
-			fxhl->RefreshAmbient();
+			if (src->needLightsUpdate)
+				fxhl->RefreshAmbient();
 		}
 	}
 }

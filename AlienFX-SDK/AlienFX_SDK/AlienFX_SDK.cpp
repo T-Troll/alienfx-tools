@@ -718,14 +718,29 @@ chain++;
 		vector<Afx_icommand> mods;
 		switch (version) {
 		case API_V8:
-			PrepareAndSend(COMMV8_effectReady);
-			WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
-			return PrepareAndSend(COMMV8_effectSet, {{3, effType},
-				{4, act1.r}, {5, act1.g}, {6, act1.b},
-				{7, act2.r}, {8, act2.g}, {9, act2.b},
-				{10, tempo},
-				{11, bright},
-				{13, mode}, {14, nc}});
+			if (mode == 2) {
+				PrepareAndSend(COMMV8_effectReady);
+				/*return*/ PrepareAndSend(COMMV8_effectSet, { {3, effType},
+					{4, act1.r}, {5, act1.g}, {6, act1.b},
+					{7, act2.r}, {8, act2.g}, {9, act2.b},
+					{10, tempo},
+					{11, bright},
+					{12, 1},
+					{13, mode}, {14, nc} });
+				Sleep(10);
+			} else
+			for (byte i = 1; i < 4; i++) {
+				PrepareAndSend(COMMV8_effectReady, { {2, i/*(byte)(mode == 1 ? 1 : 0)*/ } });
+				/*return*/ PrepareAndSend(COMMV8_effectSet, { {3, effType}, {2, i/*(byte)(mode == 1? 1: 0)*/},
+					{4, act1.r}, {5, act1.g}, {6, act1.b},
+					{7, act2.r}, {8, act2.g}, {9, act2.b},
+					{10, tempo},
+					{11, bright},
+					//{12, (byte)(mode - 1)},
+					{13, mode}, {14, nc} });
+				Sleep(10);
+			}
+			return true;
 		case API_V5:
 			if (inSet)
 				UpdateColors();

@@ -19,7 +19,7 @@ void ThreadHelper::Stop()
 {
 	if (tHandle) {
 		SetEvent(tEvent);
-		int code = WaitForSingleObject(tHandle, delay << 2);
+		int code = WaitForSingleObject(tHandle, INFINITE/*delay << 2*/);
 		CloseHandle(tHandle);
 		CloseHandle(tEvent);
 		tHandle = NULL;

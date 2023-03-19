@@ -96,7 +96,7 @@ void GridTriggerWatch(LPVOID param) {
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 		if (ce->gridop.passive) {
 			switch (ce->effect.trigger) {
-			case 4: case 1:
+			case 5: case 4: case 1:
 				src->StartCommonRun(&(*ce));
 				break;
 			case 3:
@@ -142,6 +142,7 @@ void GridHelper::Stop() {
 
 void GridHelper::RestartWatch() {
 	Stop();
+	eve->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		ce->gridop.passive = true;
 		switch (ce->effect.trigger) {
@@ -151,11 +152,14 @@ void GridHelper::RestartWatch() {
 		case 3: if (!sysmon)
 			sysmon = new SysMonHelper();
 			break;
-		case 4: if (!capt)
+		case 4: if (!capt) {
 			capt = new CaptureHelper(false);
-			break;
+			auto zone = *conf->FindZoneMap(ce->group);
+			capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+		} break;
 		}
 	}
+	eve->modifyProfile.unlock();
 
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, conf->geTact);
 	gridThread = new ThreadHelper(GridUpdate, NULL, conf->geTact);

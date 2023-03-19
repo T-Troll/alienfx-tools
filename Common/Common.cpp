@@ -138,7 +138,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 		Sleep(10000);
 	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
 		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
-			NULL, 0, 0, NULL)) {
+			NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE, NULL)) {
 			if (InternetReadFile(req, buf, 254, &byteRead)) {
 				buf[byteRead] = 0;
 				string res = buf;

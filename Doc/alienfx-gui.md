@@ -170,12 +170,13 @@ First, you should define trigger - the event which launch effect for selected zo
 - Keyboard - grid effect start from the position of the light with the name same as pressed key, run one time then stop until key is pressed again. 
 - Event - grid effect start if one of monitoring event happened (see Event Monitoring tab) and continues until event off. Key codes for lights should be defined at "Devices" tab (pressing "Key" button for each light).
 - Ambient - zone lights color follow screen color, like "Ambient" effect mode, other settings are ignored. It does not recommended to set it for more, then one zone.
+- Star Field - zone light will emulate random night sky view.
 
 Effect processing driven by phases, you can use "Global effect" slider to change phase length (default is 100ms, 10 changes per second).  
 Please keep in mind - the shorted length you set, the higher CPU load it will provide!
 
 "Speed" slider is about how fast an effect runs (change it state). Possible value is from -80 (condition changed every 80 phases) to +80 (condition changed to 80 each phase).  
-"Width" slider defines how many lights will be involved into color change.
+"Width/Length" slider defines the width of the wave in lights, length of flat morph effect or how many star you see in sky for "Star filed" effect.
 
 "Random position" check box select new random start point inside zone each time effect start/re-start.  
 "Circle" check box make effect round - effect reverse direction until initial state after reaching zone size limit.

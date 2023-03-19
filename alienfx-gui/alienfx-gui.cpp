@@ -106,12 +106,11 @@ void FillAllDevs() {
 	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
 	if (conf->afx_dev.activeDevices) {
 		// reset effects
-		for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++)
-			if (cdev->dev && cdev->dev->IsHaveGlobal()) {
-				cdev->dev->SetGlobalEffects(0, 1, 0, 0, { 0 }, { 0 });
-				if (cdev->dev->version == AlienFX_SDK::API_V8)
-					cdev->dev->SetGlobalEffects(0, 2, 0, 0, { 0 }, { 0 });
-			}
+		//for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++)
+		//	if (cdev->dev && cdev->dev->IsHaveGlobal()) {
+		//		if (cdev->dev->version == AlienFX_SDK::API_V8)
+		//			cdev->dev->SetGlobalEffects(0, 2, 0, 0, { 0 }, { 0 });
+		//	}
 		fxhl->Start();
 		fxhl->SetState();
 	}
@@ -184,9 +183,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
+	eve->StopProfiles();
+	eve->ChangeEffects(true);
 	fxhl->Refresh(true);
-	delete eve;
 	delete fxhl;
+	delete eve;
 
 	DoStopService(conf->wasAWCC, false);
 
@@ -644,7 +645,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
 				(sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
 				+ ")\n");
-			fxhl->SetState();
+			eve->ChangeEffectMode();
 		} break;
 		case PBT_APMSUSPEND:
 			// Sleep initiated.
@@ -687,14 +688,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
 		conf->Save();
-		delete eve;
+		eve->StopProfiles();
+		eve->ChangeEffects(true);
 		fxhl->Refresh(true);
 		fxhl->Stop();
 		if (mon)
 			delete mon;
 		exit(0);
 	case WM_HOTKEY:
-		if (wParam > 9 && wParam - 10 <= conf->profiles.size()) { // Profile switch
+		if (wParam > 9 && wParam - 11 <= conf->profiles.size()) { // Profile switch
 			SelectProfile(wParam == 10 ? conf->FindDefaultProfile() : conf->profiles[wParam - 11]);
 			break;
 		}

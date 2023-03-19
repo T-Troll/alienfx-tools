@@ -112,16 +112,16 @@ namespace AlienFX_SDK {
 		// [5] - flag?
 		// [6..8] - rgb
 		// block [5-8] repeated
-		const byte COMMV8_effectReady[]{4, 0x5,0x0,0x51,0}; // Select profile, in fact!
-		// [2] - profile number
-		const byte COMMV8_effectSet[]{2, 0x5,0x0/*,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 */ };
-		// [2] - profile number
+		const byte COMMV8_effectReady[]{4, 0x5,0x00,0x51,0}; // Select profile, in fact!
+		// [2] - chain number, ff for reset
+		const byte COMMV8_effectSet[]{2, 0x5,0x00/*,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 */ };
+		// [2] - chain number
 		// [3] - effect type (0x13 - color reset, valid from 0 to it)
 		// [4-6] - RGB1
 		// [7-9] - RGB2
 		// [10] - tempo
 		// [11] - brightness
-		// [12] - ???
+		// [12] - Blend type?
 		// [13] - mode (1 - permanent, 2 - key press)
 		// [14] - Color mode (0,1 - 1 color, 2 - 2 color, 3 - spectrum)
 		const byte COMMV8_readyToColor[]{4, 0xe,0x1,0x0,0x1 };

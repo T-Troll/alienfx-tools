@@ -155,7 +155,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 				if (!newEffect) {
 					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(activeEffectDevice, true);
+						fxhl->UpdateGlobalEffect(activeEffectDevice);
 					prof->effects.erase(b);
 				}
 				RefreshDeviceList(hDlg);
