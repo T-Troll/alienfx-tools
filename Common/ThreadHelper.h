@@ -15,3 +15,14 @@ public:
 	void Start();
 };
 
+class CustomMutex
+{
+private:
+	CRITICAL_SECTION mHandle;
+public:
+	CustomMutex();
+	~CustomMutex();
+	void lock();
+	void unlock();
+};
+

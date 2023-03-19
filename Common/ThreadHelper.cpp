@@ -42,3 +42,22 @@ DWORD WINAPI ThreadFunc(LPVOID lpParam) {
 	} while (WaitForSingleObject(src->tEvent, src->delay) == WAIT_TIMEOUT);
 	return 0;
 }
+
+CustomMutex::CustomMutex()
+{
+	InitializeCriticalSection(&mHandle);
+}
+
+CustomMutex::~CustomMutex()
+{
+	DeleteCriticalSection(&mHandle);
+}
+
+void CustomMutex::lock() {
+	EnterCriticalSection(&mHandle);
+}
+
+void CustomMutex::unlock() {
+	LeaveCriticalSection(&mHandle);
+}
+

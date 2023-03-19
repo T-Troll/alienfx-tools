@@ -251,7 +251,6 @@ void ResizeTab(HWND tab) {
 		dRect.bottom + GetSystemMetrics(SM_CYSMSIZE) + 1 - dRect.top) - (rcDisplay.bottom -rcDisplay.top) };
 	if (delta.x || delta.y) {
 		GetWindowRect(GetParent(frame), &rcDisplay);
-		// ToDo: client 2 screen!
 		SetWindowPos(GetParent(frame), NULL, 0, 0, rcDisplay.right - rcDisplay.left + delta.x, rcDisplay.bottom - rcDisplay.top + delta.y, SWP_NOZORDER | SWP_NOMOVE);
 	}
 	SetWindowPos(tab, NULL,

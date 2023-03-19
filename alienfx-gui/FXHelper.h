@@ -38,7 +38,7 @@ public:
 	HANDLE updateThread = NULL;
 	HANDLE stopQuery;
 	HANDLE haveNewElement;
-	mutex modifyQuery;
+	CustomMutex modifyQuery;
 	queue<LightQueryElement> lightQuery;
 	LightEventData eData, maxData;
 	// Power button state...

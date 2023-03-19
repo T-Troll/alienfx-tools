@@ -3,7 +3,8 @@
 #include <string>
 #include <random>
 #include "AlienFX_SDK.h"
-#include <mutex>
+#include <ThreadHelper.h>
+//#include <mutex>
 
 // Profile flags
 #define PROF_DEFAULT		0x1
@@ -161,7 +162,7 @@ private:
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id); 
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
-	mutex zoneUpdate;
+	CustomMutex zoneUpdate;
 public:
 	DWORD startWindows;
 	DWORD startMinimized;
