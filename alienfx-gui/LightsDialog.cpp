@@ -23,7 +23,7 @@ extern void RecalcGridZone(RECT*);
 extern void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func);
 extern void ClearOldTabs(HWND);
 
-bool firstInit = false;
+//bool firstInit = false;
 extern int tabLightSel;
 extern HWND zsDlg;
 
@@ -150,7 +150,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	{
 	case WM_INITDIALOG:
 	{
-		firstInit = true;
+		//firstInit = true;
 		CreateTabControl(tab_list,
 			{"Colors", "Events Monitoring", "Ambient", "Haptics", "Grid Effect", "Devices and Grids"},
 			{ IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_GRIDEFFECT, IDD_DIALOG_DEVICES},
@@ -161,7 +161,7 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	} break;
 	case WM_WINDOWPOSCHANGING: {
 		WINDOWPOS* pos = (WINDOWPOS*)lParam;
-		if (!(pos->flags & (SWP_SHOWWINDOW | SWP_NOSIZE)) && (pos->cx || pos->cy)) {
+		if (!(pos->flags & SWP_NOSIZE) && (pos->cx > 0 || pos->cy > 0)) {
 			RECT oldRect;
 			GetWindowRect(hDlg, &oldRect);
 			int deltax = pos->cx - oldRect.right + oldRect.left,
@@ -169,11 +169,11 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (deltax || deltay) {
 				GetWindowRect(tab_list, &oldRect);
 				SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-				if (!firstInit) {
+				//if (!firstInit) {
 					GetWindowRect(GetParent(GetParent(hDlg)), &oldRect);
 					SetWindowPos(GetParent(GetParent(hDlg)), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-				}
-				firstInit = false;
+				//}
+				//firstInit = false;
 			}
 		}
 		else

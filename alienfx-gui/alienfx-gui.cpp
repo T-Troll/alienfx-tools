@@ -105,12 +105,6 @@ void FillAllDevs() {
 	fxhl->Stop();
 	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
 	if (conf->afx_dev.activeDevices) {
-		// reset effects
-		//for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++)
-		//	if (cdev->dev && cdev->dev->IsHaveGlobal()) {
-		//		if (cdev->dev->version == AlienFX_SDK::API_V8)
-		//			cdev->dev->SetGlobalEffects(0, 2, 0, 0, { 0 }, { 0 });
-		//	}
 		fxhl->Start();
 		fxhl->SetState();
 	}
@@ -248,25 +242,23 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 void ResizeTab(HWND tab) {
 	RECT dRect, rcDisplay;
-	GetClientRect(GetParent(tab), &rcDisplay);
-	rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
-	rcDisplay.top = GetSystemMetrics(SM_CYSMSIZE) - GetSystemMetrics(SM_CYBORDER);
-	rcDisplay.right -= 2 * GetSystemMetrics(SM_CXBORDER) + 1;
-	rcDisplay.bottom -= GetSystemMetrics(SM_CYBORDER) + 1;
-	GetClientRect(tab, &dRect);
-	int deltax = dRect.right - (rcDisplay.right - rcDisplay.left),
-		deltay = dRect.bottom - (rcDisplay.bottom - rcDisplay.top);
-	if (deltax || deltay) {
-		GetWindowRect(GetParent(GetParent(tab)), &dRect);
-		SetWindowPos(GetParent(GetParent(tab)), NULL, 0, 0, dRect.right - dRect.left + deltax, dRect.bottom - dRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-		rcDisplay.right += deltax;
-		rcDisplay.bottom += deltay;
+	HWND frame = GetParent(tab);
+	GetWindowRect(tab, &dRect);
+	GetWindowRect(frame, &rcDisplay);
+	//POINT newSize{ dRect.right + 4/*+ 3 * GetSystemMetrics(SM_CXBORDER)*/, 
+	//	dRect.bottom + GetSystemMetrics(SM_CYSMSIZE) + 1/*+ GetSystemMetrics(SM_CYBORDER)*/ };
+	POINT delta = { (dRect.right + 4 - dRect.left) - (rcDisplay.right - rcDisplay.left), (
+		dRect.bottom + GetSystemMetrics(SM_CYSMSIZE) + 1 - dRect.top) - (rcDisplay.bottom -rcDisplay.top) };
+	if (delta.x || delta.y) {
+		GetWindowRect(GetParent(frame), &rcDisplay);
+		// ToDo: client 2 screen!
+		SetWindowPos(GetParent(frame), NULL, 0, 0, rcDisplay.right - rcDisplay.left + delta.x, rcDisplay.bottom - rcDisplay.top + delta.y, SWP_NOZORDER | SWP_NOMOVE);
 	}
 	SetWindowPos(tab, NULL,
-		rcDisplay.left, rcDisplay.top,
-		rcDisplay.right - rcDisplay.left,
-		rcDisplay.bottom - rcDisplay.top,
-		SWP_SHOWWINDOW);
+		1/*GetSystemMetrics(SM_CXBORDER)*/, GetSystemMetrics(SM_CYSMSIZE) - 1/*- GetSystemMetrics(SM_CYBORDER)*/,
+		dRect.right - dRect.left,
+		dRect.bottom - dRect.top,
+		SWP_SHOWWINDOW | SWP_NOZORDER);
 }
 
 void OnSelChanged(bool force = false)
@@ -475,26 +467,34 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				if (!(pos->flags & SWP_NOSIZE) && (pos->cx || pos->cy)) {
 					RECT oldRect;
 					GetWindowRect(mDlg, &oldRect);
-					if (oldRect.bottom > 0 && oldRect.right > 0) {
+					if (pos->cx > 0 && pos->cy > 0) {
 						int deltax = pos->cx - oldRect.right + oldRect.left,
 							deltay = pos->cy - oldRect.bottom + oldRect.top;
 						if (deltax || deltay) {
-							GetWindowRect(tab_list, &oldRect);
-							SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-							GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &oldRect);
-							SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
-							GetWindowRect(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), &oldRect);
-							ScreenToClient(mDlg, (LPPOINT)&oldRect);
-							SetWindowPos(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), NULL, oldRect.left + deltax, oldRect.top, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &oldRect);
-							ScreenToClient(mDlg, (LPPOINT)&oldRect);
-							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, oldRect.left, oldRect.top + deltay, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
-							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &oldRect);
-							ScreenToClient(mDlg, (LPPOINT)&oldRect);
-							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &oldRect);
-							ScreenToClient(mDlg, (LPPOINT)&oldRect);
-							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, oldRect.left + deltax, oldRect.top + deltay, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+							RECT probe;
+							GetWindowRect(tab_list, &probe);
+							int width = probe.right - probe.left + deltax;
+							// bottom border - 3CU, make pixels
+							SetWindowPos(tab_list, NULL, 0, 0, width,
+								probe.bottom - probe.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_PROFILES), &probe);
+							SetWindowPos(GetDlgItem(mDlg, IDC_PROFILES), NULL, 0, 0, width, probe.bottom - probe.top, SWP_NOOWNERZORDER | SWP_NOMOVE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), &probe);
+							POINT topLine{ probe.left + deltax, probe.top };
+							ScreenToClient(mDlg, &topLine);
+							SetWindowPos(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), NULL, topLine.x, topLine.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), &probe);
+							POINT botLine{ probe.left, probe.top + deltay };
+							ScreenToClient(mDlg, &botLine);
+							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_REFRESH), NULL, botLine.x, botLine.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), &probe);
+							POINT mLine{ deltax + probe.left, probe.top };
+							ScreenToClient(mDlg, &mLine);
+							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_MINIMIZE), NULL, mLine.x, botLine.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+							GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_SAVE), &probe);
+							mLine = { deltax + probe.left, probe.top };
+							ScreenToClient(mDlg, &mLine);
+							SetWindowPos(GetDlgItem(mDlg, IDC_BUTTON_SAVE), NULL, mLine.x, botLine.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 						}
 					}
 				}
