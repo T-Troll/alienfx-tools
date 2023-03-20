@@ -6,8 +6,14 @@ extern EventHandler* eve;
 extern ConfigHandler* conf;
 extern FXHelper* fxhl;
 
+extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode* c);
+
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (grp->effect.trigger == 4 || grp->effect.effectColors.size()) {
+		//if (grp->effect.effectColors.size()) {
+		//	vector<AlienFX_SDK::Afx_action> act = { Code2Act(&grp->effect.effectColors.front()) };
+		//	fxhl->SetZone(&(*grp), &act);
+		//}
 		grideffop* gridop = &grp->gridop;
 		int cx = max(x + 1, cz->gMaxX - x), cy = max(y + 1, cz->gMaxY - y), esize = 0;
 		if (grp->gauge) {
@@ -25,13 +31,14 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 				esize = max(cx, cy);
 				break;
 			}
-			gridop->size = max(esize + grp->effect.width/* - 1*/, 1);
+			gridop->size = max(esize + grp->effect.width, 1);
 		}
 		else
 			gridop->size = grp->effect.width;
 		if (grp->effect.flags & GE_FLAG_RANDOM) {
 			// set color to random
-			for (auto cl = grp->effect.effectColors.begin(); cl != grp->effect.effectColors.end(); cl++)
+			for (auto cl = grp->effect.effectColors.begin() + ((grp->effect.flags & GE_FLAG_BACK) > 0);
+				cl != grp->effect.effectColors.end(); cl++)
 				conf->SetRandomColor(&(*cl));
 		}
 		// prepare data
@@ -96,7 +103,7 @@ void GridTriggerWatch(LPVOID param) {
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 		if (ce->gridop.passive) {
 			switch (ce->effect.trigger) {
-			case 5: case 4: case 1:
+			case 4: case 1:
 				src->StartCommonRun(&(*ce));
 				break;
 			case 3:

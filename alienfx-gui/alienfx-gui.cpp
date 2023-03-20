@@ -376,7 +376,18 @@ void SetMainTabs() {
 	OnSelChanged();
 }
 
-HWND tip;
+void PauseSystem() {
+	conf->Save();
+	eve->StopProfiles();
+	// need to restore lights if followed screen
+	fxhl->stateScreen = true;
+	fxhl->SetState();
+	eve->ChangeEffects(true);
+	fxhl->Refresh(true);
+	fxhl->Stop();
+	if (mon)
+		mon->Stop();
+}
 
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
@@ -649,16 +660,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case PBT_APMSUSPEND:
 			// Sleep initiated.
 			DebugPrint("Sleep/hibernate initiated\n");
-			conf->Save();
-			eve->StopProfiles();
-			eve->ChangeEffects(true);
-			// need to restore lights if followed screen
-			fxhl->stateScreen = true;
-			fxhl->SetState();
-			fxhl->Refresh(true);
-			fxhl->Stop();
-			if (mon)
-				mon->Stop();
+			PauseSystem();
 			break;
 		}
 		break;
@@ -686,13 +688,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
-		conf->Save();
-		eve->StopProfiles();
-		eve->ChangeEffects(true);
-		fxhl->Refresh(true);
-		fxhl->Stop();
-		if (mon)
-			delete mon;
+		PauseSystem();
+		//if (mon)
+		//	delete mon;
 		exit(0);
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam - 11 <= conf->profiles.size()) { // Profile switch

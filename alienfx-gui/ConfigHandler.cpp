@@ -250,6 +250,7 @@ void ConfigHandler::Load() {
 			(gset = FindCreateGroupSet(profID, groupID))) {
 			auto ce = &gset->effect;
 			memcpy(ce, data, 7);
+			ce->trigger = min(ce->trigger, 4);
 			for (unsigned pos = 7; pos < lend; pos += sizeof(DWORD)) {
 				ce->effectColors.push_back(*(AlienFX_SDK::Afx_colorcode*)(data+pos));
 			}

@@ -170,10 +170,16 @@ First, you should define trigger - the event which launch effect for selected zo
 - Keyboard - grid effect start from the position of the light with the name same as pressed key, run one time then stop until key is pressed again. 
 - Event - grid effect start if one of monitoring event happened (see Event Monitoring tab) and continues until event off. Key codes for lights should be defined at "Devices" tab (pressing "Key" button for each light).
 - Ambient - zone lights color follow screen color, like "Ambient" effect mode, other settings are ignored. It does not recommended to set it for more, then one zone.
-- Star Field - zone light will emulate random night sky view.
 
 Effect processing driven by phases, you can use "Global effect" slider to change phase length (default is 100ms, 10 changes per second).  
 Please keep in mind - the shorted length you set, the higher CPU load it will provide!
+
+Effect types define how the zone should be changed (defined by point and width):
+- Running light - simple moving color change.
+- Wave - colors will fade to background at the borders of the changed area.
+- Gradient - colors will fade to background inside the changed area.
+- Fill - space between start point and current active point will be filled by color or gradient.
+- Star Field - zone lights will emulate night sky view (blink randomly in and out).
 
 "Speed" slider is about how fast an effect runs (change it state). Possible value is from -80 (condition changed every 80 phases) to +80 (condition changed to 80 each phase).  
 "Width/Length" slider defines the width of the wave in lights, length of flat morph effect or how many star you see in sky for "Star filed" effect.
@@ -189,12 +195,6 @@ Check boxes defines how colors will be used in phase sequence:
 - "Per phase" - each new phase will use next color. If it off, effect will run full cycle with one color, then full cycle next one.
 - "Keep background" - first color ("background") will be always used. Otherwise, previous color in sequence will be used as a background.
 - "Random" - all colors will be randomized every new cycle.
-
-Effect types define how the zone should be changed (defined by point and width):
-- Running light - simple color change.
-- Wave - colors will fade to background at the borders of the changed area.
-- Gradient - colors will fade to background inside the changed area.
-- Fill - space between start point and current active point will be filled by color or gradient.
 
 If the zone Gauge settings have "Gradient" enabled, zone outside changed area will be filled with gradient color between background at borders and active color at changed area border.  
 If the zone Gauge type set to "Off", all zone lights will morph between background and active colors as phase changed ("width" slider defines how many grades it will have), otherwise gauge settings used for direction and style.

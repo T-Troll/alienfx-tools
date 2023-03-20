@@ -111,8 +111,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	{
 	case WM_INITDIALOG:
 	{
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Keyboard", "Event", "Ambient", "Star field" });
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient", "Fill" });
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Keyboard", "Event", "Ambient" });
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient", "Fill", "Star field" });
 		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(-80, 80));
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
 		SendMessage(gs_slider, TBM_SETRANGE, true, MAKELPARAM(5, 1000));
@@ -191,6 +191,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			if (mmap) {
+				mmap->gridop.passive = true;
 				if ((HWND)lParam == speed_slider) {
 					mmap->effect.speed = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0) + 80;
 					SetSlider(sTip2, mmap->effect.speed - 80);
@@ -199,7 +200,6 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					mmap->effect.width = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip3, mmap->effect.width);
 				}
-				mmap->gridop.passive = true;
 			}
 		} break;
 	case WM_VSCROLL:

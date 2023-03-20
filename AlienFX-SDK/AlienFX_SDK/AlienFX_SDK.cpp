@@ -13,9 +13,8 @@ extern "C" {
 
 // debug print
 #ifdef _DEBUG
-#define DebugPrint(_x_) printf("%s",string(_x_).c_str());
-//#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
-//#endif
+//#define DebugPrint(_x_) printf("%s",string(_x_).c_str());
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 #else
 #define DebugPrint(_x_)
 #endif
@@ -677,16 +676,14 @@ chain++;
 
 		DebugPrint("State update: PID: " + to_string(pid) + ", brightness: " + to_string(brightness) + ", power: " + to_string(power) + "\n");
 
-		byte oldBright = bright;
-		bright = ((UINT)brightness * 0x64) / 0xff;
 		if (inSet) UpdateColors();
+		int oldBr = bright;
+		bright = (brightness * brightnessScale[version]) / 0xff;
 		switch (version) {
 		case API_V8:
-			bright = brightness * 10 / 0xff;
 			return PrepareAndSend(COMMV8_setBrightness, { {2, bright} });
 		case API_V5:
 			Reset();
-			bright = brightness;
 			return PrepareAndSend(COMMV5_turnOnSet, {{4, bright}});
 		case API_V4: {
 			vector<Afx_icommand> mods{ {3,(byte)(0x64 - bright)} };
@@ -700,8 +697,8 @@ chain++;
 			return PrepareAndSend(COMMV4_turnOn, &mods);
 		}
 		case API_V3: case API_V2:
-			if (!oldBright || !bright) {
-				PrepareAndSend(COMMV1_reset, { {2,(byte)(bright ? 4 : power ? 3 : 1)} });
+			if (!bright || !oldBr) {
+				PrepareAndSend(COMMV1_reset, { {2,(byte)(brightness ? 4 : power ? 3 : 1)} });
 				WaitForReady();
 			}
 			return PrepareAndSend(COMMV1_dim, { { 2,bright } });
@@ -1035,12 +1032,10 @@ chain++;
 			if (sscanf_s(kName, "Group%d", &dID) == 1) {
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
 				groups.push_back({ dID, name });
+				vector<Afx_groupLight>* gl = &groups.back().lights;
 				if (RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
-					groups.back().lights.resize(lend / sizeof(DWORD));
-					RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, groups.back().lights.data(), &lend);
-					//for (Afx_groupLight& lgh : groups.back().lights)
-					//	if (GetFlags(lgh.did, lgh.lid) & ALIENFX_FLAG_POWER)
-					//		groups.back().have_power = true;
+					gl->resize(lend / sizeof(DWORD));
+					RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, gl->data(), &lend);
 				}
 				// Deprecated, will remove soon
 				if (RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
@@ -1048,9 +1043,7 @@ chain++;
 					DWORD* maps = new DWORD[len];
 					RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
 					for (unsigned i = 0; i < len; i += 2) {
-						groups.back().lights.push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
-						//if (GetFlags(maps[i], (WORD)maps[i + 1]) & ALIENFX_FLAG_POWER)
-						//	groups.back().have_power = true;
+						gl->push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
 					}
 					delete[] maps;
 				}

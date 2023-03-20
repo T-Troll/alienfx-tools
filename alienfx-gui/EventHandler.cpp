@@ -59,6 +59,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 {
 	if (!newID) newID = conf->FindDefaultProfile();
 	if (!(keyboardSwitchActive || newID == conf->activeProfile)) {
+		fxhl->UpdateGlobalEffect(NULL, true);
 		modifyProfile.lock();
 		conf->activeProfile = newID;
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;

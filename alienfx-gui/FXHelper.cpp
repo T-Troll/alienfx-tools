@@ -236,14 +236,15 @@ void FXHelper::SetState(bool force) {
 		}
 }
 
-void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev) {
+void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 	eve->modifyProfile.lock();
 	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
 		auto cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid);
-		if (cdev->dev)
-			cdev->dev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
+		if (cdev->dev) {
+			cdev->dev->SetGlobalEffects(reset && it->globalMode == 2 ? 0 : it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
 				{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
 				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
+		}
 	}
 	eve->modifyProfile.unlock();
 }
@@ -509,45 +510,13 @@ void FXHelper::RefreshGrid() {
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 			if (!ce->gridop.passive) {
 				switch (ce->effect.trigger) {
-				case 5: { // Star field
-					if (ce->effect.effectColors.size()) {
-						grideffop* effop = &ce->gridop;
-						grideffect* eff = &ce->effect;
-						auto grp = conf->afx_dev.GetGroupById(ce->group);
-						uniform_int_distribution<int> id(0, (int)grp->lights.size() - 1);
-						uniform_int_distribution<int> count(4, 20);
-						uniform_int_distribution<int> clr(1, (int)eff->effectColors.size() - 1);
-						effop->stars.resize(eff->width);
-						for (auto star = effop->stars.begin(); star != effop->stars.end(); star++) {
-							if (star->count >= 0 && star->lightID) {
-								// change star color phase
-								int halfW = star->maxCount / 2;
-								double power = 1.0 - (double)abs(halfW - star->count) / halfW;
-								cur.front() = { BlendPower(power,
-									&Code2Act(&eff->effectColors.front()),
-									&Code2Act(&eff->effectColors.at(star->colorIndex))) };
-								SetLight(star->lightID, &cur);
-								star->count--;
-							}
-							else {
-								star->lightID = grp->lights.at(id(conf->rnd)).lgh;
-								star->maxCount = star->count = count(conf->rnd) * 2;
-								star->colorIndex = clr(conf->rnd);
-							}
-						}
-						wasChanged = true;
-					}
-				} break;
 				case 4: { // ambient
 					CaptureHelper* capt = ((GridHelper*)eve->grid)->capt;
 					// update lights
-					if (capt->needUpdate && noAmb) {
+					if (capt && capt->needUpdate && noAmb) {
 						capt->needUpdate = false;
 						UINT shift = 255 - conf->amb_shift;
 						auto zone = *conf->FindZoneMap(ce->group);
-						// resize grid if zone changed
-						//if (capt->gridX != zone.gMaxX || capt->gridY != zone.gMaxY)
-						//	capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
 						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
 							int ind = (lgh->x + (lgh->y * zone.gMaxX)) * 3;
 							cur.front().r = (capt->imgz[ind + 2] * shift) / 255;
@@ -558,7 +527,7 @@ void FXHelper::RefreshGrid() {
 						wasChanged = true;
 						noAmb = false;
 					}
-					continue;
+					break;
 				}
 				default:
 					if (ce->effect.effectColors.size()) {
@@ -589,60 +558,81 @@ void FXHelper::RefreshGrid() {
 							phase = effop->size - phase - 2;
 
 						// Set lights
-						if (effop->oldphase != phase || !ce->gauge) {
+						if (effop->oldphase != phase) {
 							// Set grid effect
 							double power = 0;
-
-							if (ce->gauge) {
-								auto zone = *conf->FindZoneMap(ce->group);
-								// Old phase cleanup
-								//if (!cTact) {
-								//	cur.front() = from;
-								//	SetZone(&(*ce), &cur);
-								//}
-								//else
-								for (int dist = 0; dist < eff->width; dist++)
-									SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
-
-								// Check for gradient zones - in this case all phases updated!
-								if (ce->gaugeflags & GAUGE_GRADIENT) {
-									for (int nf = 0; nf < effop->size - phase; nf++) {
-										power = (double)nf / (effop->size - phase);
-										SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
+							if (eff->type == 4) {
+								// Star field
+								auto grp = conf->afx_dev.GetGroupById(ce->group);
+								uniform_int_distribution<int> id(0, (int)grp->lights.size() - 1);
+								uniform_int_distribution<int> count(4, 20);
+								uniform_int_distribution<int> clr(1, (int)eff->effectColors.size() - 1);
+								effop->stars.resize(eff->width);
+								for (auto star = effop->stars.begin(); star != effop->stars.end(); star++) {
+									if (star->count >= 0 && star->lightID) {
+										// change star color phase
+										int halfW = star->maxCount / 2;
+										power = 1.0 - (double)abs(halfW - star->count) / halfW;
+										cur.front() = { BlendPower(power,
+											&Code2Act(&eff->effectColors.front()),
+											&Code2Act(&eff->effectColors.at(star->colorIndex))) };
+										SetLight(star->lightID, &cur);
+										star->count--;
 									}
-								}
-
-								// Fill new phase colors
-								if (eff->type == 3) { // Filled
-									for (int nf = 0; nf <= phase; nf++) {
-										power = ce->gaugeflags & GAUGE_GRADIENT && phase ? (double)nf / phase : 1.0;
-										SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
-									}
-								}
-								else {
-									int halfW = eff->width / 2;
-									for (int dist = 0; dist < eff->width; dist++) {
-										if (phase - dist >= 0) {
-											// make final color for this distance
-											power = 0;
-											if (halfW) // do not need if size < 2
-												switch (eff->type) {
-												case 1: // wave
-													power = (double)abs(halfW - dist) / halfW;
-													break;
-												case 2: // gradient
-													power = (double)(dist) / eff->width;
-												}
-											SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &to, &from));
-										}
+									else {
+										star->lightID = grp->lights.at(id(conf->rnd)).lgh;
+										star->maxCount = count(conf->rnd) * 2;
+										star->count = eff->flags & GE_FLAG_CIRCLE ? star->maxCount : (star->maxCount >> 1);
+										star->colorIndex = clr(conf->rnd);
 									}
 								}
 							}
 							else {
-								// flat morph emulation
-								//power = (double)phase / eff->width;
-								cur.front() = { BlendPower((double)phase / eff->width, &from, &to) };
-								SetZone(&(*ce), &cur);
+								if (ce->gauge) {
+									auto zone = *conf->FindZoneMap(ce->group);
+									for (int dist = 0; dist < eff->width; dist++)
+										SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
+
+									// Check for gradient zones - in this case all phases updated!
+									if (ce->gaugeflags & GAUGE_GRADIENT) {
+										for (int nf = 0; nf < effop->size - phase; nf++) {
+											power = (double)nf / (effop->size - phase);
+											SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower(power, &from, &to));
+										}
+									}
+
+									// Fill new phase colors
+									if (eff->type == 3) { // Filled
+										for (int nf = 0; nf <= phase; nf++) {
+											power = ce->gaugeflags & GAUGE_GRADIENT && phase ? (double)nf / phase : 1.0;
+											SetGaugeGrid(&(*ce), &zone, nf, &BlendPower(power, &from, &to));
+										}
+									}
+									else {
+										int halfW = eff->width / 2;
+										for (int dist = 0; dist < eff->width; dist++) {
+											if (phase - dist >= 0) {
+												// make final color for this distance
+												power = 0;
+												if (halfW) // do not need if size < 2
+													switch (eff->type) {
+													case 1: // wave
+														power = (double)abs(halfW - dist) / halfW;
+														break;
+													case 2: // gradient
+														power = (double)(dist) / eff->width;
+													}
+												SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &to, &from));
+											}
+										}
+									}
+								}
+								else {
+									// flat morph emulation
+									//power = (double)phase / eff->width;
+									cur.front() = { BlendPower((double)phase / eff->width, &from, &to) };
+									SetZone(&(*ce), &cur);
+								}
 							}
 							wasChanged = true;
 							effop->oldphase = phase;
@@ -696,10 +686,11 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			case 1: // update command
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++)
 					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
-						if (!current.light && dev->dev->version == AlienFX_SDK::API_V8) {
-							dev->dev->SetGlobalEffects(0, 2, 1, 0x10, { 0 }, { 0 });
-							src->UpdateGlobalEffect(dev);
-						}
+						//if (!current.light && dev->dev->version == AlienFX_SDK::API_V8) {
+						//	//dev->dev->SetGlobalEffects(13, 1, 1, 0x10, { 0 }, { 0 });
+						//	//dev->dev->SetGlobalEffects(0, 2, 1, 0x10, { 0 }, { 0 });
+						//	src->UpdateGlobalEffect(dev);
+						//}
 						if (devQ->second.size()) {
 							dev->dev->SetMultiAction(&devQ->second, current.light);
 							dev->dev->UpdateColors();
@@ -713,8 +704,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			case 0: { // set light
 				WORD pid = LOWORD(current.light);
 				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
-					WORD lid = HIWORD(current.light);
-					auto map = conf->afx_dev.GetMappingByDev(dev, lid);
+					byte lid = (byte)HIWORD(current.light);
+					//auto map = conf->afx_dev.GetMappingByDev(dev, lid);
 					WORD flags = conf->afx_dev.GetFlags(dev, lid);
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
@@ -763,7 +754,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 
 					// form actblock...
-					AlienFX_SDK::Afx_lightblock ablock{ (byte)lid };
+					AlienFX_SDK::Afx_lightblock ablock{ lid };
 					ablock.act.resize(current.actsize);
 					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
 					// do we have another set for same light?

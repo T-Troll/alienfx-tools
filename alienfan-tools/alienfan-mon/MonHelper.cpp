@@ -29,8 +29,6 @@ MonHelper::MonHelper() {
 
 MonHelper::~MonHelper() {
 	Stop();
-	SetCurrentMode(oldPower);
-	ResetBoost();
 	delete acpi;
 }
 
@@ -62,6 +60,7 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
+		SetCurrentMode(oldPower);
 		ResetBoost();
 #ifdef _DEBUG
 		OutputDebugString("Mon thread stop.\n");
@@ -70,21 +69,24 @@ void MonHelper::Stop() {
 }
 
 void MonHelper::SetCurrentMode(WORD newMode) {
-	if (newMode != powerMode) {
+	int cmode = GetPowerMode();
+	if (newMode != cmode) {
 		if (newMode < powerSize) {
-			if (acpi->GetGMode()) {
+			if (cmode == powerSize) {
 				acpi->SetGMode(false);
 			}
 			acpi->SetPower(acpi->powers[newMode]);
 		}
 		else {
-			if (!acpi->GetGMode()) {
-				if (acpi->GetSystemID() == 2933 || acpi->GetSystemID() == 3200) // m15R5 && G5 5510 fix
+			//if (!cmode < powerSize) {
+				switch (acpi->GetSystemID()) {
+				case 2933: case 3200:
 					acpi->SetPower(0xa0);
+				}
 				acpi->SetGMode(true);
-			}
+			//}
 		}
-		boostRaw.assign(boostRaw.size(),0);
+		boostRaw.assign(boostRaw.size(), 0);
 		powerMode = newMode;
 	}
 }
@@ -101,7 +103,7 @@ int MonHelper::GetPowerMode() {
 }
 
 void MonHelper::SetPowerMode(WORD newMode) {
-	if (!(fan_conf->lastProf->gmode_stage = newMode == powerSize))
+	if (!(fan_conf->lastProf->gmode_stage = (newMode == powerSize)))
 		fan_conf->lastProf->powerStage = newMode;
 	SetCurrentMode(newMode);
 }
@@ -130,12 +132,13 @@ void CMonProc(LPVOID param) {
 
 	if (src->inControl) {
 		// check power mode
-		if (src->powerMode != src->GetPowerMode())
-			src->SetCurrentMode(src->powerMode);
+		fan_profile* active = fan_conf->lastProf; // protection from change profile
+		//WORD prof_mode = active->gmode_stage ? src->powerSize : active->powerStage;
+		//if (prof_mode != src->GetPowerMode())
+			src->SetCurrentMode(active->gmode_stage ? src->powerSize : active->powerStage);
 
 		if (!src->powerMode && modified) {
 			int cBoost;
-			fan_profile* active = fan_conf->lastProf; // protection from change profile
 			for (auto cIter = active->fanControls.begin(); cIter != active->fanControls.end(); cIter++) {
 				// Check boost
 				byte i = cIter->first;

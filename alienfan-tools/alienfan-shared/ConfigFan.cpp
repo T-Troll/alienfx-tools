@@ -27,11 +27,10 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 }
 
 void ConfigFan::AddSensorCurve(fan_profile *prof, byte fid, WORD sid, byte* data, DWORD lend) {
-	if (!prof) prof = lastProf;
-	sen_block curve = { true };
-	curve.points.resize(lend / 2);
-	memcpy(curve.points.data(), data, lend);
-	prof->fanControls[fid][sid] = curve;
+	//if (!prof) prof = lastProf;
+	vector<fan_point>* cp = &prof->fanControls[fid][sid].points;
+	cp->resize(lend / 2);
+	memcpy(cp->data(), data, lend);
 }
 
 DWORD ConfigFan::GetRegData(HKEY key, int vindex, char* name, byte** data) {

@@ -9,7 +9,7 @@ string GetKeyName(WORD vkcode) {
 	UINT scancode = MapVirtualKey(vkcode & 0xff, MAPVK_VK_TO_VSC_EX) | (vkcode & KF_EXTENDED);
 	res.resize(128);
 	res.resize(GetKeyNameText(scancode << 16, (LPSTR)res.c_str(), 127));
-	res.shrink_to_fit();
+	//res.shrink_to_fit();
 	if (res.empty())
 		res = "Unknown key";
 	return res;
@@ -23,7 +23,7 @@ LRESULT CALLBACK DetectKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 		keySetLight->name.resize(GetKeyNameText(
 			(keyblock->scanCode | ((keyblock->flags & 1) << 8)) << 16,
 			(LPSTR)keySetLight->name.c_str(), 127));
-		keySetLight->name.shrink_to_fit();
+		//keySetLight->name.shrink_to_fit();
 		if (keySetLight->name.empty())
 			keySetLight->name = "Unknown key";
 		keySetLight->scancode = (WORD)(keyblock->vkCode | ((keyblock->flags & 1) << 8));

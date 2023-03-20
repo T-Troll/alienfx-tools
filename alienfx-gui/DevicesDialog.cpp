@@ -298,7 +298,7 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 
 void SetNewGridName(HWND hDlg) {
 	// set text and close
-	conf->mainGrid->name.resize(GetWindowTextLength(hDlg) + 1);
+	conf->mainGrid->name.resize(GetWindowTextLength(hDlg));
 	Edit_GetText(hDlg, (LPSTR)conf->mainGrid->name.c_str(), 255);
 	ShowWindow(hDlg, SW_HIDE);
 	// change tab text
@@ -405,9 +405,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						activeDevice->lights.push_back({ (byte)eLid });
 						keySetLight = &activeDevice->lights.back();
 					}
-					keySetLight->name.resize(128);
-					keySetLight->name.resize(GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)keySetLight->name.data(), 127));
-					keySetLight->name.shrink_to_fit();
+					int textsize = GetWindowTextLength(GetDlgItem(hDlg, IDC_EDIT_NAME));
+					keySetLight->name.resize(textsize);
+					GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)keySetLight->name.data(), textsize+1);
 				}
 				break;
 			case EN_KILLFOCUS:
