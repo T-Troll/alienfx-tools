@@ -64,7 +64,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		conf->activeProfile = newID;
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
 		modifyProfile.unlock();
-
+		fxhl->UpdateGlobalEffect(NULL);
 		if (mon)
 			mon->SetProfilePower();
 
