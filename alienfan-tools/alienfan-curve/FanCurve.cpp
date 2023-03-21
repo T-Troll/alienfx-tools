@@ -115,7 +115,7 @@ void DrawFan()
                                 if (mon->lastBoost[lastFan] == senI->first) {
                                     SetDCPenColor(hdc, RGB(255, 0, 0));
                                     SetDCBrushColor(hdc, RGB(255, 0, 0));
-                                    cBoost = mon->boostRaw[lastFan];
+                                    //cBoost = mon->boostRaw[lastFan];
                                 } else
                                     if (fan_conf->lastSelectedSensor == senI->first) {
                                         SetDCPenColor(hdc, RGB(0, 255, 0));
@@ -198,10 +198,9 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->inControl = false;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
-    mon->ResetBoost();
     mon->SetCurrentMode(0);
-    int rpm = mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100/*,
-        oldBoost = mon->boostRaw[fan_conf->lastSelectedFan]*//*mon->acpi->GetFanBoost(fan_conf->lastSelectedFan)*/, downScale;
+    mon->ResetBoost();
+    int rpm = mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100, downScale;
     boostCheck.clear();
     bestBoostPoint = { (byte)boost, (unsigned short)rpm };
     boostScale = 10;
@@ -256,7 +255,6 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     } break;
     case WM_SIZE:
         cArea.right = 0;
-        //SetFanWindow();
         break;
     case WM_ERASEBKGND:
         return true;
@@ -292,12 +290,14 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     case WM_LBUTTONUP:
                         ReleaseCapture();
                         // re-sort and de-duplicate array.
-                        for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; fPi++) {
+                        for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; ) {
                             auto nfPi = fPi + 1;
                             if (fPi->temp > nfPi->temp)
                                 swap(*fPi, *nfPi);
                             if (fPi->temp == nfPi->temp && fPi->boost == nfPi->boost && cFan->points.size() > 2)
-                                cFan->points.erase(nfPi);
+                                fPi = cFan->points.erase(nfPi);
+                            else
+                                fPi++;
                         }
                         cFan->points.front().temp = 0;
                         cFan->points.back().temp = 100;

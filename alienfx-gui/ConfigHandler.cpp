@@ -5,12 +5,14 @@
 
 extern HWND mDlg;
 extern ConfigFan* fan_conf;
+extern int eItem;
 
 ConfigHandler::ConfigHandler() {
 
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
+	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
 }
 
@@ -32,12 +34,23 @@ profile* ConfigHandler::FindCreateProfile(unsigned id) {
 	return prof;
 }
 
+AlienFX_SDK::Afx_group* ConfigHandler::FindCreateGroup(int groupID) {
+	AlienFX_SDK::Afx_group* grp = nullptr;
+	if (groupID) {
+		if (!(grp = afx_dev.GetGroupById(groupID))) {
+			afx_dev.GetGroups()->push_back({ (DWORD)groupID, "New zone #" + to_string((groupID & 0xffff) + 1) });
+			grp = &afx_dev.GetGroups()->back();
+		}
+	}
+	return grp;
+}
+
 groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 {
 	profile* prof = FindProfile(profID);
-	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(groupID);
-	if (prof && grp) {
+	if (prof) {
 		groupset* gset = FindMapping(groupID, &prof->lightsets);
+		FindCreateGroup(groupID);
 		if (!gset) {
 			prof->lightsets.push_back({ groupID });
 			gset = &prof->lightsets.back();
@@ -112,8 +125,6 @@ DWORD ConfigHandler::GetRegData(HKEY key, int vindex, char* name, byte** data) {
 }
 
 void ConfigHandler::Load() {
-
-	afx_dev.LoadMappings();
 
 	DWORD size_c = 16*sizeof(DWORD);// 4 * 16
 	DWORD activeProfileID = 0;

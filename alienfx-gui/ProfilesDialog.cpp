@@ -36,10 +36,10 @@ vector<deviceeffect>::iterator FindDevEffect(int type) {
 const static vector<string> ge_names[2]{ // 0 - v8, 1 - v5
 	{ "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
 	"One key (K)", "Circle out (K)", "Wave out (K)", "Right wave (K)", "Default", "Rain Drop (K)",
-	"Wave", "Rainbow wave", "Circle wave", "Random white (K)", "Reset" },
+	"Wave", "Rainbow wave", "Circle wave", "Random white (K)" },
 	{ "Off", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" } };
 const static vector<string> cModeNames{ "One color", "Two colors", "Rainbow" };
-const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18,19 }, { 0,2,3,4,8,9,10,11 } };
+const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 }, { 0,2,3,4,8,9,10,11 } };
 const static vector<int> cModeTypes{ 1, 2, 3 };
 
 void RefreshDeviceList(HWND hDlg) {
@@ -379,7 +379,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						lset->effect = t->effect;
 				}
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
-					if (prof->fansets) 
+					if (prof->fansets)
 						delete (fan_profile*)prof->fansets;
 					prof->fansets = conf->activeProfile->fansets ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
 					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) > 0);
@@ -427,9 +427,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_PROFDIM:
 			SetBitMask(prof->flags, PROF_DIMMED, state);
-			if (prof->id == conf->activeProfile->id) {
+			if (prof->id == conf->activeProfile->id)
 				fxhl->SetState();
-			}
 			break;
 		case IDC_CHECK_FOREGROUND:
 			SetBitMask(prof->flags, PROF_ACTIVE, state);

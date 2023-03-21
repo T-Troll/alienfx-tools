@@ -17,20 +17,17 @@ extern void UpdateZoneList();
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL);
-//extern void RedrawZoneGrid(DWORD grpID, bool repaint, bool recalc);
 extern void RecalcGridZone(RECT*);
 
 extern void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func);
 extern void ClearOldTabs(HWND);
 
-//bool firstInit = false;
 extern int tabLightSel;
 extern HWND zsDlg;
 
 void OnLightSelChanged(HWND hwndDlg);
 
 void UpdateZoneAndGrid() {
-	//RedrawZoneGrid(eItem, false, false);
 	zonemap zone = *conf->FindZoneMap(eItem);
 	if (zone.gridID == conf->mainGrid->id) {
 		RECT zRect = { zone.gMinX, zone.gMinY, zone.xMax + 1, zone.yMax + 1 };
@@ -69,7 +66,7 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			}
 		}
 		RedrawGridButtonZone();
-		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 1);
+		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 0);
 	} break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {

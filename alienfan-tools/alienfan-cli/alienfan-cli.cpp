@@ -139,7 +139,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v8.2.5\n");
+    printf("AlienFan-CLI v8.2.5.1\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 
@@ -191,9 +191,13 @@ int main(int argc, char* argv[])
         if (command == "temp") {
             for (int i = 0; i < acpi.sensors.size(); i++)
                 if (args.empty() || i == args[0].num) {
-                    auto sname = fan_conf.sensors.find(acpi.sensors[i].sid);
-                    printf("%s: %d\n", (sname == fan_conf.sensors.end() ? acpi.sensors[i].name.c_str() :
-                        sname->second.c_str()), acpi.GetTempValue(i));
+                    string sname;
+                    for (auto sn = fan_conf.sensors.begin(); sn != fan_conf.sensors.end(); sn++)
+                        if (sn->first == acpi.sensors[i].sid) {
+                            sname = sn->second;
+                            break;
+                        }
+                    printf("%s: %d\n", (sname.empty() ? acpi.sensors[i].name : sname).c_str(), acpi.GetTempValue(i));
                 }
             continue;
         }

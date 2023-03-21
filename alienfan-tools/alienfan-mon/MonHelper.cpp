@@ -22,7 +22,6 @@ MonHelper::MonHelper() {
 		lastBoost.resize(fansize);
 		fanSleep.resize(fansize);
 		oldPower = powerMode = GetPowerMode();
-		SetProfilePower();
 		Start();
 	}
 }
@@ -33,8 +32,9 @@ MonHelper::~MonHelper() {
 }
 
 void MonHelper::ResetBoost() {
-	if (!acpi->GetPower()) {
-		boostRaw.assign(boostRaw.size(), 0);
+	boostRaw.assign(fansize, 0);
+	lastBoost.assign(fansize, 0);
+	if (!powerMode) {
 		for (int i = 0; i < fansize; i++) {
 			acpi->SetFanBoost(i, 0);
 		}
@@ -48,7 +48,7 @@ void MonHelper::SetProfilePower() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		//ResetBoost();
+		SetProfilePower();
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -71,23 +71,23 @@ void MonHelper::Stop() {
 void MonHelper::SetCurrentMode(WORD newMode) {
 	int cmode = GetPowerMode();
 	if (newMode != cmode) {
+		switch (acpi->GetSystemID()) {
+		case 2933: case 3200: case 0:
+			acpi->SetPower(0xa0);
+		}
 		if (newMode < powerSize) {
 			if (cmode == powerSize) {
 				acpi->SetGMode(false);
 			}
 			acpi->SetPower(acpi->powers[newMode]);
 		}
-		else {
-			//if (!cmode < powerSize) {
-				switch (acpi->GetSystemID()) {
-				case 2933: case 3200:
-					acpi->SetPower(0xa0);
-				}
-				acpi->SetGMode(true);
-			//}
-		}
-		boostRaw.assign(boostRaw.size(), 0);
+		else
+			acpi->SetGMode(true);
 		powerMode = newMode;
+		//for (int i = 0; i < fansize; i++)
+		//	boostRaw[i] = acpi->GetFanBoost(i);
+		//boostRaw.assign(fansize, 0);
+		ResetBoost();
 	}
 }
 
@@ -130,12 +130,16 @@ void CMonProc(LPVOID param) {
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
-	if (src->inControl) {
+	fan_profile* active = fan_conf->lastProf; // protection from change profile
+
+#ifdef _DEBUG
+	if (!active)
+		DebugPrint("Zero fan profile!");
+#endif
+
+	if (src->inControl && active) {
 		// check power mode
-		fan_profile* active = fan_conf->lastProf; // protection from change profile
-		//WORD prof_mode = active->gmode_stage ? src->powerSize : active->powerStage;
-		//if (prof_mode != src->GetPowerMode())
-			src->SetCurrentMode(active->gmode_stage ? src->powerSize : active->powerStage);
+		src->SetProfilePower();
 
 		if (!src->powerMode && modified) {
 			int cBoost;
@@ -146,8 +150,9 @@ void CMonProc(LPVOID param) {
 				for (auto fIter = cIter->second.begin(); fIter != cIter->second.end(); fIter++) {
 					sen_block* cur = &fIter->second;
 					if (cur->active) {
+						cBoost = cur->points.back().boost;
 						auto k = cur->points.begin() + 1;
-						for (; k != cur->points.end() && src->senValues[fIter->first] >= k->temp; k++);
+						for (; k != cur->points.end() && src->senValues[fIter->first] > k->temp; k++);
 						if (k != cur->points.end())
 							cBoost = (k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[fIter->first] - (k - 1)->temp))
 							/ (k->temp - (k - 1)->temp);

@@ -132,7 +132,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v8.2.5\n");
+	printf("alienfx-cli v8.2.5.1\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -282,6 +282,7 @@ int main(int argc, char* argv[])
 				// set-global
 				if (devType && args[0].num < afx_map.fxdevs.size()) {
 					byte cmode = args.size() < 6 ? 3 : args.size() < 9 ? 1 : 2;
+					args.resize(9);
 					afx_map.fxdevs[args[0].num].dev->SetGlobalEffects(args[1].num, args[2].num, cmode, sleepy,
 						{ 0,0,0, (byte)args[3].num, (byte)args[4].num, (byte)args[5].num },
 						{ 0,0,0, (byte)args[6].num, (byte)args[7].num, (byte)args[8].num });

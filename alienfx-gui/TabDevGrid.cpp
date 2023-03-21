@@ -117,8 +117,9 @@ void RecalcGridZone(RECT* what = NULL) {
         for (int y = full.top; y < full.bottom; y++) {
             int ind = ind(x, y);
             colorGrid[ind].first.br = colorGrid[ind].last.br = 0xff;
+            conf->modifyProfile.lock();
             for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++)
-                if ((grp = conf->afx_dev.GetGroupById(cs->group)) && IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
+                if ((grp = conf->FindCreateGroup(cs->group)) && IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
                     if (conf->stateEffects) {
                         if (cs->events.size()) {
                             if (colorGrid[ind].first.br == 0xff && !(cs->fromColor && cs->color.size()))
@@ -146,18 +147,9 @@ void RecalcGridZone(RECT* what = NULL) {
                             colorGrid[ind].last = Act2Code(&cs->color.back());
                     }
                 }
+            conf->modifyProfile.unlock();
         }
 }
-
-//void RedrawZoneGrid(DWORD grpID, bool repaint, bool recalc = false) {
-//    zonemap zone = *conf->FindZoneMap(grpID, recalc);
-//    if (zone.gridID == conf->mainGrid->id) {
-//        RECT zRect = { zone.gMinX, zone.gMinY, zone.xMax + 1, zone.yMax + 1 };
-//        RecalcGridZone(&zRect);
-//        if (repaint)
-//            RedrawGridButtonZone(&zRect);
-//    }
-//}
 
 void SetLightGridSize(int x, int y) {
     int minX = 0, minY = 0;
@@ -290,7 +282,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 }
             }
             else
-                if (eItem > 0) {
+                if (mmap) {
                     conf->afx_dev.GetGroupById(eItem)->lights.clear();
                 }
             RepaintGrid();
@@ -336,6 +328,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             }
             else {
                 ModifyColorDragZone();
+                // ToDo: smart refresh
                 fxhl->Refresh();
             }
             dragZone = { -1 , -1, -1, -1 };
@@ -413,7 +406,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                         FillRect(wDC, &ditem->rcItem, Brush);
                         DeleteObject(Brush);
                     }
-                    if (IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem))) {
+                    if (mmap && IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem))) {
                         for (int cx = 0; cx < size; cx++) {
                             rectClip.right = rectClip.left + buttonZone.right;
                             int border = (cx == 0 * BF_LEFT) |

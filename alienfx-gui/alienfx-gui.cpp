@@ -107,6 +107,7 @@ void FillAllDevs() {
 	if (conf->afx_dev.activeDevices) {
 		fxhl->Start();
 		fxhl->SetState();
+		fxhl->UpdateGlobalEffect(NULL);
 	}
 }
 
@@ -298,17 +299,22 @@ void UpdateProfileList(bool force = true) {
 }
 
 void SelectProfile(profile* prof) {
-	eve->SwitchActiveProfile(prof);
+	if (!dDlg) {
+		eve->SwitchActiveProfile(prof);
+		if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
+			OnSelChanged();
+	}
 	UpdateProfileList();
-	if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
-		OnSelChanged();
 }
 
-void UpdateState(bool checkMode) {
-	eve->ChangeEffectMode();
+void UpdateState(bool checkMode = false) {
+	if (!dDlg)
+		eve->ChangeEffectMode();
+	else
+		fxhl->SetState();
 	if (checkMode) {
 		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
-		if (tabSel == TAB_LIGHTS)
+		if (!dDlg && tabSel == TAB_LIGHTS)
 			OnSelChanged();
 	}
 	if (tabSel == TAB_SETTINGS)
@@ -524,7 +530,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_MODELESS | MNS_AUTODISMISS};
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_MODELESS /*| MNS_AUTODISMISS*/};
 			SetMenuInfo(tMenu, &mi);
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
@@ -602,11 +608,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
-			UpdateState(false);
+			UpdateState();
 			break;
 		case ID_TRAYMENU_DIMLIGHTS:
 			conf->dimmed = !conf->dimmed;
-			UpdateState(false);
+			UpdateState();
 			break;
 		case ID_TRAYMENU_ENABLEEFFECTS:
 			conf->enableEffects = !conf->enableEffects;
@@ -648,14 +654,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
-			POWERBROADCAST_SETTING* sParams = (POWERBROADCAST_SETTING*) lParam;
-			fxhl->stateScreen = !conf->offWithScreen || sParams->Data[0];
-			if (sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE)
-				fxhl->stateScreen = fxhl->stateScreen || GetSystemMetrics(SM_CMONITORS) > 1;
-			DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
-				(sParams->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
-				+ ")\n");
-			eve->ChangeEffectMode();
+			bool stateScreen = !conf->offWithScreen || ((POWERBROADCAST_SETTING*)lParam)->Data[0] ||
+				(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE && GetSystemMetrics(SM_CMONITORS) > 1);
+			if (stateScreen != fxhl->stateScreen) {
+				fxhl->stateScreen = stateScreen;
+				DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
+					(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
+					+ ")\n");
+				eve->ChangeEffectMode();
+			}
 		} break;
 		case PBT_APMSUSPEND:
 			// Sleep initiated.
@@ -707,11 +714,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		switch (wParam) {
 		case 3: // on/off
 			conf->lightsOn = !conf->lightsOn;
-			UpdateState(false);
+			UpdateState();
 			break;
 		case 4: // dim
 			conf->dimmed = !conf->dimmed;
-			UpdateState(false);
+			UpdateState();
 			break;
 		case 1: // off-dim-full circle
 			if (conf->lightsOn)
@@ -723,7 +730,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					conf->dimmed = true;
 			else
 				conf->lightsOn = true;
-			UpdateState(false);
+			UpdateState();
 			break;
 		case 5: // effects
 			conf->enableEffects = !conf->enableEffects;
@@ -865,8 +872,7 @@ void RemoveLightAndClean() {
 						if (g->grid[ind].lgh == lgh->lgh)
 							g->grid[ind].lgh = 0;
 				}
-				iter->lights.erase(lgh);
-				lgh = iter->lights.begin();
+				lgh = iter->lights.erase(lgh);
 			}
 			else
 				lgh++;

@@ -9,7 +9,7 @@ extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
 
-int freqItem;
+int freqItem = 0;
 freq_map* freqBlock = NULL;
 HWND hToolTip = NULL;
 int cutMove = 0;
@@ -96,17 +96,17 @@ void SetMappingData(HWND hDlg) {
 void SetFreqGroups(HWND hDlg) {
 	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
 	ListBox_ResetContent(grp_list);
-	freqItem = 0;
+	freqBlock = NULL;
 	if (mmap && mmap->haptics.size()) {
 		// Set groups
 		for (int j = 0; j < mmap->haptics.size(); j++) {
-			ListBox_AddString(grp_list, ("Group " + to_string(j + 1)).c_str());
+			int pos = ListBox_AddString(grp_list, ("Group " + to_string(j + 1)).c_str());
+			if (freqItem == pos) {
+				ListBox_SetCurSel(grp_list, pos);
+				freqBlock = &mmap->haptics[pos];
+			}
 		}
-		ListBox_SetCurSel(grp_list, 0);
-		freqBlock = &mmap->haptics.front();
 	}
-	else
-		freqBlock = NULL;
 	SetMappingData(hDlg);
 }
 
@@ -122,35 +122,44 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	switch (message) {
 	case WM_LBUTTONDOWN: {
 		if (freqBlock)
-			if (find(freqBlock->freqID.begin(), freqBlock->freqID.end(), cIndex) != freqBlock->freqID.end()) {
+			for (auto idx = freqBlock->freqID.begin(); idx != freqBlock->freqID.end(); idx++)
+				if (*idx == cIndex) {
 					if (abs(clickLevel - freqBlock->hicut) < 10)
 						cutMove = 1;
-					if (abs(clickLevel - freqBlock->lowcut) < 10)
-						cutMove = 2;
+					else
+						if (abs(clickLevel - freqBlock->lowcut) < 10)
+							cutMove = 2;
 					break;
-			}
+				}
 	} break;
 	case WM_LBUTTONUP: {
 		if (freqBlock) {
-			auto idx = find(freqBlock->freqID.begin(), freqBlock->freqID.end(), cIndex);
-			if (idx != freqBlock->freqID.end()) {
-				if (!cutMove)
-					freqBlock->freqID.erase(idx);
+			if (cutMove) {
+				if (freqBlock->lowcut > freqBlock->hicut)
+					swap(freqBlock->lowcut, freqBlock->hicut);
+				cutMove = 0;
 			}
-			else
+			else {
+				for (auto idx = freqBlock->freqID.begin(); idx != freqBlock->freqID.end(); idx++)
+					if (*idx == cIndex) {
+						freqBlock->freqID.erase(idx);
+						DrawFreq(hDlg);
+						return true;
+					}
 				freqBlock->freqID.push_back(cIndex);
+			}
+			DrawFreq(hDlg);
 		}
-		cutMove = 0;
 	} break;
 	case WM_MOUSEMOVE: {
-		if (wParam & MK_LBUTTON) {
+		if (freqBlock && wParam & MK_LBUTTON) {
 			switch (cutMove) {
 			case 1: freqBlock->hicut = clickLevel; break;
 			case 2: freqBlock->lowcut = clickLevel; break;
 			}
+			DrawFreq(hDlg);
 		}
-		WSAudioIn* audio = (WSAudioIn*)eve->audio;
-		int freq = audio ? audio->pwfx->nSamplesPerSec >> 1 : 22050;
+		int freq = eve->audio ? ((WSAudioIn*)eve->audio)->pwfx->nSamplesPerSec >> 1 : 22050;
 		SetToolTip(hToolTip, "Freq: " + to_string(cIndex ? freq - (int)round((log(21 - cIndex) * freq / log_divider)) : 20) +
 			"-" + to_string(freq - (int)round((log(20 - cIndex) * freq / log_divider))) + " Hz, Level: " +
 			to_string(clickLevel * 100 / 255));
@@ -167,7 +176,7 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_ERASEBKGND:
 		return true;
 	}
-	return DefWindowProc(hDlg, message, wParam, lParam);;
+	return DefWindowProc(hDlg, message, wParam, lParam);
 }
 
 BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -182,9 +191,9 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		SetWindowLongPtr(GetDlgItem(hDlg, IDC_LEVELS), GWLP_WNDPROC, (LONG_PTR)FreqLevels);
 		hToolTip = CreateToolTip(GetDlgItem(hDlg, IDC_LEVELS), hToolTip);
 
-		SetFreqGroups(hDlg);
+		//SetFreqGroups(hDlg);
 
-		// Start UI update thread...
+		// Start UI update...
 		SetTimer(GetDlgItem(hDlg, IDC_LEVELS), 0, 50, NULL);
 	}
 	break;
@@ -193,9 +202,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (LOWORD(wParam)) {
 		case IDC_RADIO_OUTPUT: case IDC_RADIO_INPUT: {
 			conf->hap_inpType = LOWORD(wParam) == IDC_RADIO_INPUT;
-			WSAudioIn* audio = (WSAudioIn*)eve->audio;
-			if (audio)
-				audio->RestartDevice();
+			if (eve->audio)
+				((WSAudioIn*)eve->audio)->RestartDevice();
 		} break;
 		case IDC_FREQ_GROUP:
 			switch (HIWORD(wParam)) {
@@ -212,32 +220,25 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			if (mmap) {
 				mmap->haptics.push_back({0,0,255});
-				int pos = ListBox_AddString(grp_list, ("Group " + to_string(mmap->haptics.size())).c_str());
-				ListBox_SetCurSel(grp_list, pos);
-				freqBlock = &mmap->haptics.back();
+				freqItem = (int)mmap->haptics.size() - 1;
 				eve->ChangeEffects();
-				SetMappingData(hDlg);
+				//SetMappingData(hDlg);
 				UpdateZoneAndGrid();
 			}
 		} break;
 		case IDC_BUT_REM_GROUP:
-			if (freqBlock) {
+			if (mmap && freqBlock) {
 				mmap->haptics.erase(mmap->haptics.begin() + freqItem);
 				ListBox_DeleteString(grp_list, freqItem);
 				if (mmap->haptics.size()) {
 					if (freqItem) {
 						freqItem--;
-						freqBlock = &(*(mmap->haptics.begin() + freqItem));
 					}
-					else
-						freqBlock = &mmap->haptics.front();
-					ListBox_SetCurSel(grp_list, freqItem);
 				}
 				else {
-					freqBlock = NULL;
 					eve->ChangeEffects();
 				}
-				SetMappingData(hDlg);
+				//SetMappingData(hDlg);
 				UpdateZoneAndGrid();
 			}
 			break;

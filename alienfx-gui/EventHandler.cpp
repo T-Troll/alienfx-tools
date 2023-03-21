@@ -60,10 +60,10 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 	if (!newID) newID = conf->FindDefaultProfile();
 	if (!(keyboardSwitchActive || newID == conf->activeProfile)) {
 		fxhl->UpdateGlobalEffect(NULL, true);
-		modifyProfile.lock();
+		conf->modifyProfile.lock();
 		conf->activeProfile = newID;
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
-		modifyProfile.unlock();
+		conf->modifyProfile.unlock();
 		fxhl->UpdateGlobalEffect(NULL);
 		if (mon)
 			mon->SetProfilePower();
@@ -156,7 +156,7 @@ void EventHandler::CheckProfileChange() {
 			|| procName == "devenv.exe"
 #endif
 			))) {
-			DebugPrint("Forbidden app name " + procName + "\n");
+			//DebugPrint("Forbidden app name " + procName + "\n");
 			return;
 	}
 	DebugPrint("Foreground switched to " + procName + "\n");

@@ -319,7 +319,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             pMenu = CreatePopupMenu();
             mInfo.wID = ID_TRAYMENU_POWER_SELECTED;
             for (int i = 0; i < mon->powerSize; i++) {
-                mInfo.dwTypeData = (LPSTR)fan_conf->powers.find(mon->acpi->powers[i])->second.c_str();
+                mInfo.dwTypeData = (LPSTR)fan_conf->powers[mon->acpi->powers[i]].c_str();
                 mInfo.fState = (i == fan_conf->lastProf->powerStage) ? MF_CHECKED : MF_UNCHECKED;
                 InsertMenuItem(pMenu, i, false, &mInfo);
             }
@@ -417,8 +417,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_ENDSESSION:
         // Shutdown/restart scheduled....
-        mon->Stop();
         fan_conf->Save();
+        mon->Stop();
         LocalFree(sch_guid);
         exit(0);
     case WM_POWERBROADCAST:

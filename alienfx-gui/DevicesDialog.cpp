@@ -342,6 +342,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
+		//EnableWindow(GetDlgItem(mDlg, IDC_PROFILES), false);
+		//EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), false);
 		eve->StopProfiles();
 		eve->ChangeEffects(true);
 		fxhl->Stop();
@@ -427,18 +429,18 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++)
 						if (i->pid == activeDevice->pid) {
 							conf->afx_dev.fxdevs.erase(i);
+							if (conf->afx_dev.fxdevs.empty()) {
+								// switch tab
+								tabSel = TAB_SETTINGS;
+								SetMainTabs();
+								break;
+							}
+							else {
+								activeDevice = &conf->afx_dev.fxdevs.front();
+								RedrawDevList();
+							}
 							break;
 						}
-					if (conf->afx_dev.fxdevs.empty()) {
-						// switch tab
-						tabSel = TAB_SETTINGS;
-						SetMainTabs();
-						break;
-					}
-					else {
-						activeDevice = &conf->afx_dev.fxdevs.front();
-						RedrawDevList();
-					}
 				}
 				else {
 					// decrease active lights

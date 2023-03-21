@@ -106,7 +106,7 @@ namespace AlienFX_SDK {
 			res = ReadFile(devHandle, buffer, length, &written, NULL);
 			break;
 		case API_V8: {
-			if (size == 4) {
+			if (size == 4 || size == 8) {
 				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 				res = HidD_SetFeature(devHandle, buffer, length);
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
@@ -220,7 +220,7 @@ chain++;
 			}
 			if (version == API_UNKNOWN)
 				CloseHandle(devHandle);
-			DebugPrint("Probe done, type " + to_string(version) + "\n");
+			//DebugPrint("Probe done, type " + to_string(version) + "\n");
 		}
 		delete[] deviceInterfaceDetailData;
 		return version != API_UNKNOWN;
@@ -331,7 +331,8 @@ chain++;
 			{(byte)(bPos + 2),act->front().tempo},
 			{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),act->front().time }, {(byte)(bPos + 5), 0xa},
 			{ (byte)(bPos + 6),act->front().r},{ (byte)(bPos + 7),act->front().g},{ (byte)(bPos + 8),act->front().b},
-			{ (byte)(bPos + 9),act->back().r },{ (byte)(bPos + 10),act->back().g},{ (byte)(bPos + 11),act->back().b} });
+			{ (byte)(bPos + 9),act->back().r },{ (byte)(bPos + 10),act->back().g},{ (byte)(bPos + 11),act->back().b},
+			{ (byte)(bPos + 12), 2} });
 	}
 
 	void Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
@@ -715,29 +716,15 @@ chain++;
 		vector<Afx_icommand> mods;
 		switch (version) {
 		case API_V8:
-			if (mode == 2) {
-				PrepareAndSend(COMMV8_effectReady);
-				/*return*/ PrepareAndSend(COMMV8_effectSet, { {3, effType},
-					{4, act1.r}, {5, act1.g}, {6, act1.b},
-					{7, act2.r}, {8, act2.g}, {9, act2.b},
-					{10, tempo},
-					{11, bright},
-					{12, 1},
-					{13, mode}, {14, nc} });
-				Sleep(10);
-			} else
-			for (byte i = 1; i < 4; i++) {
-				PrepareAndSend(COMMV8_effectReady, { {2, i/*(byte)(mode == 1 ? 1 : 0)*/ } });
-				/*return*/ PrepareAndSend(COMMV8_effectSet, { {3, effType}, {2, i/*(byte)(mode == 1? 1: 0)*/},
-					{4, act1.r}, {5, act1.g}, {6, act1.b},
-					{7, act2.r}, {8, act2.g}, {9, act2.b},
-					{10, tempo},
-					{11, bright},
-					//{12, (byte)(mode - 1)},
-					{13, mode}, {14, nc} });
-				Sleep(10);
-			}
-			return true;
+			PrepareAndSend(COMMV8_effectReset);
+			PrepareAndSend(COMMV8_effectReady, { {2, 1/*(byte)(mode == 1 ? 1 : 0)*/ } });
+			return PrepareAndSend(COMMV8_effectSet, { {3, effType}, {2, 1/*(byte)(mode == 1? 1: 0)*/},
+				{4, act1.r}, {5, act1.g}, {6, act1.b},
+				{7, act2.r}, {8, act2.g}, {9, act2.b},
+				{10, tempo},
+				{11, bright},
+				//{12, 0/*(byte)(mode - 1)*/},
+				{13, mode}, {14, nc} });
 		case API_V5:
 			if (inSet)
 				UpdateColors();
@@ -1038,15 +1025,15 @@ chain++;
 					RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, gl->data(), &lend);
 				}
 				// Deprecated, will remove soon
-				if (RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
-					len = lend / sizeof(DWORD);
-					DWORD* maps = new DWORD[len];
-					RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
-					for (unsigned i = 0; i < len; i += 2) {
-						gl->push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
-					}
-					delete[] maps;
-				}
+				//if (RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
+				//	len = lend / sizeof(DWORD);
+				//	DWORD* maps = new DWORD[len];
+				//	RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
+				//	for (unsigned i = 0; i < len; i += 2) {
+				//		gl->push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
+				//	}
+				//	delete[] maps;
+				//}
 			}
 		}
 		RegCloseKey(mainKey);

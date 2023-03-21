@@ -237,16 +237,16 @@ void FXHelper::SetState(bool force) {
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
-	eve->modifyProfile.lock();
+	conf->modifyProfile.lock();
 	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
 		auto cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid);
 		if (cdev->dev) {
-			cdev->dev->SetGlobalEffects(reset && it->globalMode == 2 ? 0 : it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
+			cdev->dev->SetGlobalEffects(reset ? 0 : it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
 				{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
 				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
 		}
 	}
-	eve->modifyProfile.unlock();
+	conf->modifyProfile.unlock();
 }
 
 void FXHelper::Start() {
@@ -276,10 +276,11 @@ void FXHelper::Refresh(bool forced)
 		DebugPrint("Forced ");
 	DebugPrint("Refresh initiated.\n");
 #endif
-
+	conf->modifyProfile.lock();
 	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 		RefreshOne(&(*it), false);
 	}
+	conf->modifyProfile.unlock();
 	if (!forced) {
 		RefreshCounters();
 		RefreshAmbient();
@@ -308,7 +309,7 @@ void FXHelper::RefreshCounters(LightEventData* data)
 		else
 			blinkStage = !blinkStage;
 
-		eve->modifyProfile.lock();
+		conf->modifyProfile.lock();
 		for (auto Iter = conf->activeProfile->lightsets.begin(); Iter != conf->activeProfile->lightsets.end(); Iter++) {
 			if (Iter->events.size() && (grp = conf->afx_dev.GetGroupById(Iter->group))) {
 				bool havePower = conf->FindZoneMap(Iter->group)->havePower;
@@ -392,7 +393,7 @@ void FXHelper::RefreshCounters(LightEventData* data)
 				}
 			}
 		}
-		eve->modifyProfile.unlock();
+		conf->modifyProfile.unlock();
 		if (wasChanged) {
 			QueryUpdate();
 		}
@@ -405,7 +406,7 @@ void FXHelper::RefreshAmbient() {
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 		vector<AlienFX_SDK::Afx_action> actions{ {0} };
 		bool wasChanged = false;
-		eve->modifyProfile.lock();
+		conf->modifyProfile.lock();
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->ambients.size()) {
 				ULONG r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size();
@@ -432,7 +433,7 @@ void FXHelper::RefreshAmbient() {
 					SetZone(&(*it), &actions);
 				}
 			}
-		eve->modifyProfile.unlock();
+		conf->modifyProfile.unlock();
 		if (wasChanged)
 			QueryUpdate();
 	}
@@ -443,7 +444,7 @@ void FXHelper::RefreshHaptics() {
 		int* freq = ((WSAudioIn*)eve->audio)->freqs;
 		vector<AlienFX_SDK::Afx_action> actions;
 		bool wasChanged = false;
-		eve->modifyProfile.lock();
+		conf->modifyProfile.lock();
 		for (auto mIter = conf->activeProfile->lightsets.begin(); mIter != conf->activeProfile->lightsets.end(); mIter++) {
 			if (mIter->haptics.size()) {
 				// Now for each freq block...
@@ -496,7 +497,7 @@ void FXHelper::RefreshHaptics() {
 				}
 			}
 		}
-		eve->modifyProfile.unlock();
+		conf->modifyProfile.unlock();
 		if (wasChanged)
 			QueryUpdate();
 	}
@@ -506,7 +507,7 @@ void FXHelper::RefreshGrid() {
 	if (lightsNoDelay && eve->grid) {
 		bool wasChanged = false, noAmb = true;
 		vector<AlienFX_SDK::Afx_action> cur{ {0} };
-		eve->modifyProfile.lock();
+		conf->modifyProfile.lock();
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 			if (!ce->gridop.passive) {
 				switch (ce->effect.trigger) {
@@ -641,7 +642,7 @@ void FXHelper::RefreshGrid() {
 				}
 			}
 		}
-		eve->modifyProfile.unlock();
+		conf->modifyProfile.unlock();
 		if (wasChanged)
 			QueryUpdate();
 	}
@@ -686,11 +687,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			case 1: // update command
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++)
 					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
-						//if (!current.light && dev->dev->version == AlienFX_SDK::API_V8) {
-						//	//dev->dev->SetGlobalEffects(13, 1, 1, 0x10, { 0 }, { 0 });
-						//	//dev->dev->SetGlobalEffects(0, 2, 1, 0x10, { 0 }, { 0 });
-						//	src->UpdateGlobalEffect(dev);
-						//}
 						if (devQ->second.size()) {
 							dev->dev->SetMultiAction(&devQ->second, current.light);
 							dev->dev->UpdateColors();

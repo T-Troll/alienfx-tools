@@ -52,8 +52,6 @@ void RebuildGEColorsList(HWND hDlg) {
 			if (i == clrListID) {
 				lItem.state = LVIS_SELECTED;
 			}
-			else
-				lItem.state = 0;
 			ListView_InsertItem(eff_list, &lItem);
 		}
 		ListView_SetImageList(eff_list, hSmall, LVSIL_SMALL);
@@ -171,7 +169,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			break;
 		case IDC_BUT_REMOVE_COLOR:
 			if (HIWORD(wParam) == BN_CLICKED && clrListID < mmap->effect.effectColors.size()) {
-				if (mmap->effect.effectColors.size() <= 2) {
+				if (mmap->effect.effectColors.size() == 2) {
 					mmap->effect.effectColors.clear();
 					clrListID = 0;
 				}

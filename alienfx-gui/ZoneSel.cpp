@@ -2,7 +2,6 @@
 #include "FXHelper.h"
 #include "common.h"
 
-//extern bool IsGroupUnused(DWORD gid);
 extern void RemoveUnusedGroups();
 extern FXHelper* fxhl;
 extern int tabLightSel;
@@ -14,7 +13,6 @@ HWND zsDlg;
 void UpdateZoneList() {
 	int rpos = -1, pos = 0;
 	HWND zone_list = GetDlgItem(zsDlg, IDC_LIST_ZONES);
-	LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE };
 	ListView_DeleteAllItems(zone_list);
 	ListView_SetExtendedListViewStyle(zone_list, LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
 	if (!ListView_GetColumnWidth(zone_list, 0)) {
@@ -24,7 +22,8 @@ void UpdateZoneList() {
 		ListView_InsertColumn(zone_list, 1, &lCol);
 	}
 	for (auto i = conf->activeProfile->lightsets.begin(); i < conf->activeProfile->lightsets.end(); i++) {
-		AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(i->group);
+		AlienFX_SDK::Afx_group* grp = conf->FindCreateGroup(i->group);
+		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE };
 		bool active = false;
 		switch (tabLightSel) {
 		case TAB_COLOR: active = i->color.size(); break;
@@ -41,8 +40,6 @@ void UpdateZoneList() {
 			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			rpos = pos;
 		}
-		else
-			lItem.state = 0;
 		ListView_InsertItem(zone_list, &lItem);
 		ListView_SetItemText(zone_list, pos, 1, (LPSTR)name.c_str());
 		pos++;
@@ -51,10 +48,16 @@ void UpdateZoneList() {
 	GetClientRect(zone_list, &cArea);
 	ListView_SetColumnWidth(zone_list, 1, LVSCW_AUTOSIZE);
 	ListView_SetColumnWidth(zone_list, 0, cArea.right - ListView_GetColumnWidth(zone_list, 1));
-	if (rpos < 0 && conf->activeProfile->lightsets.size()) { // no selection
-		mmap = &conf->activeProfile->lightsets.front();
-		eItem = mmap->group;
-		ListView_SetItemState(zone_list, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+	if (rpos < 0) { // no selection
+		if (conf->activeProfile->lightsets.size()) {
+			mmap = &conf->activeProfile->lightsets.front();
+			eItem = mmap->group;
+			ListView_SetItemState(zone_list, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+		}
+		else {
+			mmap = NULL;
+			SendMessage(GetParent(zsDlg), WM_APP + 2, 0, 0);
+		}
 	} else
 		ListView_EnsureVisible(zone_list, rpos, false);
 }
@@ -66,18 +69,16 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_INITDIALOG:
 	{
 		unsigned maxGrpID = 0x10000;
-		while (conf->afx_dev.GetGroupById(maxGrpID))
-			maxGrpID++;
 		if (conf->afx_dev.GetGroups()->empty()) {
 			// No groups in list, exit
-			AlienFX_SDK::Afx_group* grp = new AlienFX_SDK::Afx_group({ (DWORD)maxGrpID, "New zone #" + to_string((maxGrpID & 0xffff) + 1) });
-			conf->afx_dev.GetGroups()->push_back(*grp);
-			eItem = grp->gid;
+			conf->FindCreateGroup(eItem = maxGrpID);
 			conf->activeProfile->lightsets.push_back({ eItem });
 			EndDialog(hDlg, IDOK);
 		}
 		else
 		{
+			while (conf->afx_dev.GetGroupById(maxGrpID))
+				maxGrpID++;
 			ListBox_SetItemData(grouplist, ListBox_AddString(grouplist, "<New Zone>"), maxGrpID);
 			for (auto t = conf->afx_dev.GetGroups()->begin(); t < conf->afx_dev.GetGroups()->end(); t++) {
 				if (!conf->FindMapping(t->gid))
@@ -97,9 +98,10 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			case LBN_SELCHANGE:
 			{
 				eItem = (int)ListBox_GetItemData(grouplist, ListBox_GetCurSel(grouplist));
-				if (!conf->afx_dev.GetGroupById(eItem))
-					conf->afx_dev.GetGroups()->push_back({ (DWORD)eItem, "New zone #" + to_string((eItem & 0xffff) + 1) });
+				conf->FindCreateGroup(eItem);
+				conf->modifyProfile.lock();
 				conf->activeProfile->lightsets.push_back({ eItem });
+				conf->modifyProfile.unlock();
 				EndDialog(hDlg, IDOK);
 			} break;
 			}
@@ -137,8 +139,8 @@ BOOL CALLBACK SelectLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
-		case IDCLOSE: case IDCANCEL: case IDC_BUT_LIGHTSAPPLY: {
-			int numSel = ListBox_GetSelCount(llist), *buf = new int[numSel];
+		case IDCLOSE: case IDCANCEL: {
+			int numSel = ListBox_GetSelCount(llist), * buf = new int[numSel];
 			ListBox_GetSelItems(llist, numSel, buf);
 			grp->lights.clear();
 			AlienFX_SDK::Afx_groupLight t;
@@ -181,6 +183,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		} break;
 		case IDC_BUT_DEL_ZONE:
 			if (mmap) {
+				conf->modifyProfile.lock();
 				for (auto iter = conf->activeProfile->lightsets.begin(); iter != conf->activeProfile->lightsets.end(); iter++) {
 					if (iter->group == eItem) {
 						eItem = iter == conf->activeProfile->lightsets.begin() ?
@@ -190,21 +193,9 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						break;
 					}
 				}
+				conf->modifyProfile.unlock();
 				RemoveUnusedGroups();
-				//if (IsGroupUnused(eItem)) {
-				//	for (auto Iter = conf->afx_dev.GetGroups()->begin(); Iter != conf->afx_dev.GetGroups()->end(); Iter++)
-				//		if (Iter->gid == eItem) {
-				//			conf->afx_dev.GetGroups()->erase(Iter);
-				//			break;
-				//		}
-				//}
 				mmap = conf->FindMapping(eItem);
-				//if (conf->activeProfile->lightsets.empty()) {
-				//	mmap = NULL;
-				//	eItem = 0;
-				//	SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
-				//}
-				//RecalcGridZone();
 				UpdateZoneList();
 				fxhl->Refresh();
 			}
@@ -250,14 +241,14 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
 				if (lPoint->uChanged & LVIF_STATE) {
 					if (lPoint->uNewState & LVIS_SELECTED) {
-						// Select other item...
 						eItem = (int)lPoint->lParam;
 						// gauge and spectrum.
 						if (mmap = conf->FindMapping(eItem)) {
+							conf->FindCreateGroup(eItem);
 							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
 							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
 							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
-							SendMessage(GetParent(hDlg), WM_APP + 2, 0, 1);
+							SendMessage(GetParent(hDlg), WM_APP + 2, 0, 0);
 						}
 					}
 					else
@@ -269,8 +260,8 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			case LVN_ENDLABELEDIT:
 			{
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-				AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById((int)sItem->item.lParam);
-				if (grp && sItem->item.pszText) {
+				AlienFX_SDK::Afx_group* grp = conf->FindCreateGroup((int)sItem->item.lParam);
+				if (sItem->item.pszText) {
 					grp->name = sItem->item.pszText;
 					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
 					RECT cArea;

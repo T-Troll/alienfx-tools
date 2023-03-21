@@ -57,10 +57,11 @@ void RebuildEventList(HWND hDlg) {
 		ListView_InsertColumn(eff_list, 0, &lCol);
 		ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	}
+	ev = NULL;
 	if (mmap) {
-		LVITEMA lItem{ LVIF_TEXT | LVIF_STATE };
 		for (int i = 0; i < mmap->events.size(); i++) {
 			int type = mmap->events[i].state - 1;
+			LVITEMA lItem{ LVIF_TEXT | LVIF_STATE };
 			string itemName = eventTypeNames[type] + ", " +
 				eventNames[type][mmap->events[i].source];
 			lItem.iItem = i;
@@ -69,8 +70,6 @@ void RebuildEventList(HWND hDlg) {
 			if (i == eventID) {
 				lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			}
-			else
-				lItem.state = 0;
 			ListView_InsertItem(eff_list, &lItem);
 		}
 	}
@@ -107,8 +106,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (mmap) {
 				mmap->fromColor = state;
 			}
-			else
-				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
+			//else
+			//	CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 			RebuildEventList(hDlg);
 			UpdateZoneAndGrid();
 			fxhl->RefreshCounters();
@@ -116,11 +115,11 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_STATUS_BLINK:
 			if (ev)
 				ev->mode = state;
-			else
-				CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
+			//else
+			//	CheckDlgButton(hDlg, LOWORD(wParam), BST_UNCHECKED);
 			break;
 		case IDC_BUTTON_COLORFROM:
-			if (ev && (!mmap->fromColor || mmap->color.size())) {
+			if (mmap && ev && (!mmap->fromColor || mmap->color.size())) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), &ev->from);
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
@@ -161,7 +160,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
-			if (ev) {
+			if (mmap && ev) {
 				mmap->events.erase(mmap->events.begin() + eventID);
 				if (eventID)
 					eventID--;
@@ -172,22 +171,18 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 			break;
 		case IDC_BUTT_EVENT_UP:
-			if (ev && eventID) {
-				event t = *ev;
+			if (mmap && ev && eventID) {
 				eventID--;
-				*ev = mmap->events[eventID];
-				mmap->events[eventID] = t;
+				swap(*ev, mmap->events[eventID]);
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
 				fxhl->RefreshCounters();
 			}
 			break;
 		case IDC_BUT_EVENT_DOWN:
-			if (ev && eventID < mmap->events.size() - 1) {
-				event t = *ev;
+			if (mmap && ev && eventID < mmap->events.size() - 1) {
 				eventID++;
-				*ev = mmap->events[eventID];
-				mmap->events[eventID] = t;
+				swap(*ev, mmap->events[eventID]);
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
 				fxhl->RefreshCounters();
@@ -197,7 +192,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	} break;
 	case WM_DRAWITEM: {
 		AlienFX_SDK::Afx_colorcode* c = NULL;
-		if (ev) {
+		if (mmap && ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:
 				c = &Act2Code(mmap->fromColor && mmap->color.size() ? &mmap->color[0] : &ev->from);

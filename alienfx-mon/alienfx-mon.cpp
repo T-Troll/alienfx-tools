@@ -41,7 +41,10 @@ bool IsSensorValid(map<DWORD, SENSOR>::iterator sen) {
 }
 
 void FindValidSensor() {
-	auto sen = selSensor == 0xffffffff ? conf->active_sensors.begin() : conf->active_sensors.find(selSensor);
+	auto sen = conf->active_sensors.begin();
+	for (; selSensor != 0xffffffff && sen != conf->active_sensors.end(); sen++)
+		if (sen->first == selSensor)
+			break;
 	bool forward = sen != conf->active_sensors.end();
 	while (!IsSensorValid(sen)) {
 		if (forward)
@@ -367,10 +370,17 @@ void UpdateTrayData(SENSOR* sen) {
 	ReleaseDC(mDlg, hdc);
 }
 
+SENSOR* FindSensor() {
+	for (auto sen = conf->active_sensors.begin(); sen != conf->active_sensors.end(); sen++)
+		if (sen->first == selSensor)
+			return &sen->second;
+	return nullptr;
+}
+
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND senList = GetDlgItem(hDlg, IDC_SENSOR_LIST);
-	auto pos = conf->active_sensors.find(selSensor);
-	SENSOR* sen = pos == conf->active_sensors.end() ? NULL : &pos->second;
+	//auto pos = conf->active_sensors.find(selSensor);
+	SENSOR* sen = FindSensor();
 
 	if (message == newTaskBar) {
 		// Started/restarted explorer...

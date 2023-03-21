@@ -145,9 +145,7 @@ void ConfigFan::UpdateBoost(byte fanID, byte boost, WORD rpm) {
 }
 
 int ConfigFan::GetFanScale(byte fanID) {
-	if (!boosts[fanID].maxBoost)
-		boosts[fanID].maxBoost = 100;
-	return boosts[fanID].maxBoost;
+	return max(boosts[fanID].maxBoost, 100);
 }
 
 string ConfigFan::GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi) {

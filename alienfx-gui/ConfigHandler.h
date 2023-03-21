@@ -198,6 +198,7 @@ public:
 		 statePower = true,
 		 wasAWCC = false;
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
+	CustomMutex modifyProfile;
 
 	// Ambient...
 	DWORD amb_mode;
@@ -236,6 +237,7 @@ public:
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
+	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
 	bool IsPriorityProfile(profile* prof = NULL);
 	bool IsActiveOnly(profile* prof = NULL);
 	void SetIconState();

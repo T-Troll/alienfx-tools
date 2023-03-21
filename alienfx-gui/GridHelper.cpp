@@ -57,7 +57,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	LRESULT res = CallNextHookEx(NULL, nCode, wParam, lParam);
 
 	if (wParam == WM_KEYDOWN && !(GetAsyncKeyState(((LPKBDLLHOOKSTRUCT)lParam)->vkCode) & 0xf000)) {
-		eve->modifyProfile.lock();
+		conf->modifyProfile.lock();
  		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->effect.trigger == 2 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
@@ -72,7 +72,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 							}
 					}
 			}
-		eve->modifyProfile.unlock();
+		conf->modifyProfile.unlock();
 	}
 
 	return res;
@@ -99,7 +99,7 @@ void GridHelper::StartCommonRun(groupset* ce) {
 
 void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
-	eve->modifyProfile.lock();
+	conf->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 		if (ce->gridop.passive) {
 			switch (ce->effect.trigger) {
@@ -117,7 +117,7 @@ void GridTriggerWatch(LPVOID param) {
 			}
 		}
 	}
-	eve->modifyProfile.unlock();
+	conf->modifyProfile.unlock();
 }
 
 GridHelper::GridHelper() {
@@ -149,7 +149,7 @@ void GridHelper::Stop() {
 
 void GridHelper::RestartWatch() {
 	Stop();
-	eve->modifyProfile.lock();
+	conf->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		ce->gridop.passive = true;
 		switch (ce->effect.trigger) {
@@ -166,7 +166,7 @@ void GridHelper::RestartWatch() {
 		} break;
 		}
 	}
-	eve->modifyProfile.unlock();
+	conf->modifyProfile.unlock();
 
 	gridTrigger = new ThreadHelper(GridTriggerWatch, (LPVOID)this, conf->geTact);
 	gridThread = new ThreadHelper(GridUpdate, NULL, conf->geTact);
