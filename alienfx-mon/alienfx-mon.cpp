@@ -604,7 +604,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				runUIUpdate = false;
 				Edit_SetText(ListView_GetEditControl(senList), GetSensorName(sen));
 			} break;
-			case LVN_ITEMACTIVATE: case NM_RETURN:// case NM_CLICK:
+			case LVN_ITEMACTIVATE: case NM_RETURN:
 			{
 				int pos = ListView_GetSelectionMark(senList);
 				RECT rect;

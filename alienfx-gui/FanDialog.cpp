@@ -55,7 +55,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         // Start UI update thread...
         SetTimer(hDlg, 0, 500, NULL);
-        //SetTimer(fanWindow, 1, 500, NULL);
 
         //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
         //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);

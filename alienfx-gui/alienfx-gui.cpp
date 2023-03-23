@@ -261,9 +261,9 @@ void ResizeTab(HWND tab) {
 		SWP_SHOWWINDOW | SWP_NOZORDER);
 }
 
-void OnSelChanged(bool force = false)
+void OnSelChanged()
 {
-	if (force || IsWindowVisible(mDlg)) {
+	if (IsWindowVisible(mDlg)) {
 		HWND hwndDlg = GetDlgItem(mDlg, IDC_TAB_MAIN);
 		// Get the dialog header data.
 		DLGHDR* pHdr = (DLGHDR*)GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
@@ -282,8 +282,8 @@ void OnSelChanged(bool force = false)
 	}
 }
 
-void UpdateProfileList(bool force = true) {
-	if (force || IsWindowVisible(mDlg)) {
+void UpdateProfileList() {
+	if (IsWindowVisible(mDlg)) {
 		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
 		ComboBox_ResetContent(profile_list);
 		int id;
@@ -294,7 +294,7 @@ void UpdateProfileList(bool force = true) {
 				CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
 			}
 		}
-		DebugPrint("Profile list reloaded.\n");
+		//DebugPrint("Profile list reloaded.\n");
 	}
 }
 
@@ -310,8 +310,8 @@ void SelectProfile(profile* prof) {
 void UpdateState(bool checkMode = false) {
 	if (!dDlg)
 		eve->ChangeEffectMode();
-	else
-		fxhl->SetState();
+	//else
+	//	fxhl->SetState();
 	if (checkMode) {
 		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
 		if (!dDlg && tabSel == TAB_LIGHTS)
@@ -654,15 +654,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
-			bool stateScreen = !conf->offWithScreen || ((POWERBROADCAST_SETTING*)lParam)->Data[0] ||
+			fxhl->stateScreen = !conf->offWithScreen || ((POWERBROADCAST_SETTING*)lParam)->Data[0] ||
 				(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE && GetSystemMetrics(SM_CMONITORS) > 1);
-			if (stateScreen != fxhl->stateScreen) {
-				fxhl->stateScreen = stateScreen;
-				DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
-					(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
-					+ ")\n");
-				eve->ChangeEffectMode();
-			}
+			DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
+				(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
+				+ ")\n");
+			eve->ChangeEffectMode();
 		} break;
 		case PBT_APMSUSPEND:
 			// Sleep initiated.

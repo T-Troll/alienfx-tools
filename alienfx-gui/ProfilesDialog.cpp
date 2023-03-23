@@ -5,7 +5,7 @@
 #include "common.h"
 #include <Shlwapi.h>
 
-extern void UpdateProfileList(bool force = false);
+extern void UpdateProfileList();
 extern void UpdateState(bool checkMode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
@@ -234,7 +234,7 @@ void ReloadProfileView(HWND hDlg) {
 	int rpos = 0;
 	HWND profile_list = GetDlgItem(hDlg, IDC_LIST_PROFILES);
 	ListView_DeleteAllItems(profile_list);
-	ListView_SetExtendedListViewStyle(profile_list, LVS_EX_FULLROWSELECT);
+	ListView_SetExtendedListViewStyle(profile_list, LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
 	LVCOLUMNA lCol{ LVCF_WIDTH, LVCFMT_LEFT, 100 };
 	ListView_DeleteColumn(profile_list, 0);
 	ListView_InsertColumn(profile_list, 0, &lCol);
@@ -247,8 +247,6 @@ void ReloadProfileView(HWND hDlg) {
 			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			rpos = i;
 		}
-		else
-			lItem.state = 0;
 		ListView_InsertItem(profile_list, &lItem);
 	}
 	ListView_SetColumnWidth(profile_list, 0, LVSCW_AUTOSIZE);
@@ -258,8 +256,6 @@ void ReloadProfileView(HWND hDlg) {
 BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS);
-
-	//profile *prof = conf->FindProfile(pCid);
 
 	switch (message)
 	{
@@ -294,8 +290,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			prof->id = vacID;
 			prof->flags &= ~PROF_DEFAULT;
 			prof->name = "Profile " + to_string(vacID);
-			//pCid = vacID;
-			//ReloadProfileView(hDlg);
 			UpdateProfileList();
 		} break;
 		case IDC_REMOVEPROFILE:
@@ -313,7 +307,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 							delete prof;
 							prof = newpCid;
 							RemoveUnusedGroups();
-							//ReloadProfileView(hDlg);
 							UpdateProfileList();
 							break;
 						}
@@ -459,6 +452,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			else
 				prof->triggerkey = 0;
 			break;
+		default: return false;
 		}
 		ReloadProfileView(hDlg);
 	} break;
@@ -466,15 +460,14 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		switch (((NMHDR*)lParam)->idFrom) {
 		case IDC_LIST_PROFILES:
 			switch (((NMHDR*) lParam)->code) {
-			case LVN_ITEMACTIVATE: {
+			case LVN_ITEMACTIVATE: case NM_RETURN: {
 				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
 			} break;
-
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW) lParam;
 				if (lPoint->uChanged & LVIF_STATE) {
-					if (lPoint->uNewState & (LVIS_FOCUSED | LVIS_SELECTED))
+					if (lPoint->uNewState & LVIS_SELECTED)
 						prof = conf->FindProfile((int)lPoint->lParam);
 					else
 						prof = NULL;
@@ -489,6 +482,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					UpdateProfileList();
 					ReloadProfileView(hDlg);
 				}
+				else
+					return false;
 			} break;
 			}
 			break;

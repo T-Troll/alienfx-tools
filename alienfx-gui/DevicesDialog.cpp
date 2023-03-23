@@ -455,7 +455,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					MB_YESNO | MB_ICONWARNING) == IDYES) {
 					if (keySetLight->flags & ALIENFX_FLAG_POWER) {
 						fxhl->ResetPower(activeDevice);
-						ShowNotification(&conf->niData, "Warning", "Hardware Power button removed, you may need to reset light system!");
 					}
 					// delete from all groups and grids...
 					RemoveLightAndClean();
@@ -478,7 +477,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				SetBitMask(keySetLight->flags, ALIENFX_FLAG_POWER, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				if (!(keySetLight->flags & ALIENFX_FLAG_POWER)) {
 					// remove power button config from chip config
-					ShowNotification(&conf->niData, "Warning", "You may need to reset light system hardware!");
 					fxhl->ResetPower(activeDevice);
 				}
 				//RemoveLightAndClean(activeDevice->pid, eLid);
@@ -619,9 +617,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_LIST_DEV:
 			switch (((NMHDR*)lParam)->code) {
-			case LVN_ITEMACTIVATE: {
-				NMITEMACTIVATE* sItem = (NMITEMACTIVATE*)lParam;
-				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, sItem->iItem);
+			case LVN_ITEMACTIVATE: case NM_RETURN: {
+				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
 			} break;
 			case LVN_ITEMCHANGED:
 			{

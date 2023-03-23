@@ -194,7 +194,6 @@
 #define IDC_BUT_REMOVE_COLOR            1188
 #define IDC_LIGHTS_LIST                 1191
 #define IDC_BUT_FROMLIST                1192
-#define IDC_BUT_LIGHTSAPPLY             1194
 #define IDC_BUT_LIGHTSRESET             1195
 #define IDC_RADIO_PERF                  1196
 #define IDC_RADIO_IND                   1197
@@ -208,7 +207,6 @@
 #define IDC_RADIO_PREVEALING            1206
 #define IDC_BAT_FAN                     1207
 #define IDC_CMODE                       1209
-#define IDC_CMODE2                      1210
 #define IDC_CMODE_KEY                   1210
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773

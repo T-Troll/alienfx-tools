@@ -231,11 +231,9 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	case WM_NOTIFY:
 		if (((NMHDR*)lParam)->idFrom == IDC_LIST_ZONES) {
 			switch (((NMHDR*)lParam)->code) {
-			case LVN_ITEMACTIVATE: {
-				NMITEMACTIVATE* item = (NMITEMACTIVATE*)lParam;
+			case LVN_ITEMACTIVATE: case NM_RETURN: {
 				ListView_EditLabel(((NMHDR*)lParam)->hwndFrom, ((NMITEMACTIVATE*)lParam)->iItem);
 			} break;
-
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
@@ -268,7 +266,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					GetClientRect(((NMHDR*)lParam)->hwndFrom, &cArea);
 					ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 1, LVSCW_AUTOSIZE);
 					ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 0, cArea.right - ListView_GetColumnWidth(((NMHDR*)lParam)->hwndFrom, 1));
-					return true;
+					//return true;
 				}
 				else
 					return false;

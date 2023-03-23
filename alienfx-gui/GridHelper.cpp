@@ -10,10 +10,6 @@ extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode* c);
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (grp->effect.trigger == 4 || grp->effect.effectColors.size()) {
-		//if (grp->effect.effectColors.size()) {
-		//	vector<AlienFX_SDK::Afx_action> act = { Code2Act(&grp->effect.effectColors.front()) };
-		//	fxhl->SetZone(&(*grp), &act);
-		//}
 		grideffop* gridop = &grp->gridop;
 		int cx = max(x + 1, cz->gMaxX - x), cy = max(y + 1, cz->gMaxY - y), esize = 0;
 		if (grp->gauge) {
@@ -101,7 +97,7 @@ void GridTriggerWatch(LPVOID param) {
 	GridHelper* src = (GridHelper*)param;
 	conf->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
-		if (ce->gridop.passive) {
+		if (ce->effect.trigger && ce->gridop.passive) {
 			switch (ce->effect.trigger) {
 			case 4: case 1:
 				src->StartCommonRun(&(*ce));
@@ -116,6 +112,7 @@ void GridTriggerWatch(LPVOID param) {
 				break;
 			}
 		}
+
 	}
 	conf->modifyProfile.unlock();
 }
@@ -151,19 +148,21 @@ void GridHelper::RestartWatch() {
 	Stop();
 	conf->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
-		ce->gridop.passive = true;
-		switch (ce->effect.trigger) {
-		case 2: if (!kEvent)
-			kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
-			break;
-		case 3: if (!sysmon)
-			sysmon = new SysMonHelper();
-			break;
-		case 4: if (!capt) {
-			capt = new CaptureHelper(false);
-			auto zone = *conf->FindZoneMap(ce->group);
-			capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
-		} break;
+		if (ce->effect.trigger) {
+			ce->gridop.passive = true;
+			switch (ce->effect.trigger) {
+			case 2: if (!kEvent)
+				kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);
+				break;
+			case 3: if (!sysmon)
+				sysmon = new SysMonHelper();
+				break;
+			case 4: if (!capt) {
+				capt = new CaptureHelper(false);
+				auto zone = *conf->FindZoneMap(ce->group);
+				capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+			} break;
+			}
 		}
 	}
 	conf->modifyProfile.unlock();

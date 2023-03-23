@@ -175,11 +175,12 @@ Effect processing driven by phases, you can use "Global effect" slider to change
 Please keep in mind - the shorted length you set, the higher CPU load it will provide!
 
 Effect types define how the zone should be changed (defined by point and width):
-- Running light - simple moving color change.
-- Wave - colors will fade to background at the borders of the changed area.
-- Gradient - colors will fade to background inside the changed area.
-- Fill - space between start point and current active point will be filled by color or gradient.
-- Star Field - zone lights will emulate night sky view (blink randomly in and out).
+- Running light - Single color moving zone (Width define it's size).
+- Wave - Color of moving zone fade to background on borders. Size is 2 x width.
+- Gradient - Color from starting point to moving position is a gradient between active and background.
+- Fill - Color from starting point to moving position is an active color.
+- Star Field - Zone lights will emulate night sky view (blink randomly in and out).
+- Fade - Color of moving zone fades between active and background (Width define how wide is the fade).
 
 "Speed" slider is about how fast an effect runs (change it state). Possible value is from -80 (condition changed every 80 phases) to +80 (condition changed to 80 each phase).  
 "Width/Length" slider defines the width of the wave in lights, length of flat morph effect or how many star you see in sky for "Star filed" effect.
