@@ -158,6 +158,7 @@ namespace AlienFX_SDK {
 		WORD pid = 0; // Device PID
 		int version = API_UNKNOWN; // interface version, will stay at API_UNKNOWN if not initialized
 		byte bright = 64; // Last brightness set for device
+		string description; // device description
 
 		~Functions();
 

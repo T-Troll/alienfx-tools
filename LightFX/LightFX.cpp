@@ -151,19 +151,30 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumDevices(unsigned int *const num) {
 	return LFX_ERROR_NOINIT;
 }
 
+static const unsigned char devTypes[]{
+	LFX_DEVTYPE_DESKTOP,
+	LFX_DEVTYPE_NOTEBOOK,
+	LFX_DEVTYPE_NOTEBOOK,
+	LFX_DEVTYPE_NOTEBOOK,
+	LFX_DEVTYPE_UNKNOWN,
+	LFX_DEVTYPE_KEYBOARD,
+	LFX_DEVTYPE_DISPLAY,
+	LFX_DEVTYPE_MOUSE,
+	LFX_DEVTYPE_KEYBOARD
+};
+
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, char *const name, const unsigned int namelen, unsigned char *const devtype) {
 	LFX_RESULT state = CheckState(dev);
 	if (!state) {
-		string devName = afx_map->fxdevs[dev].name.length() ? afx_map->fxdevs[dev].name : "Device #" + to_string(dev);
-		*devtype = LFX_DEVTYPE_UNKNOWN;
-		switch (afx_map->fxdevs[dev].version) {
-		case AlienFX_SDK::API_ACPI: *devtype = LFX_DEVTYPE_DESKTOP; break;
-		case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
-		case AlienFX_SDK::API_V5: case AlienFX_SDK::API_V8: *devtype = LFX_DEVTYPE_KEYBOARD; break;
-		case AlienFX_SDK::API_V6: *devtype = LFX_DEVTYPE_DISPLAY; break;
-		case AlienFX_SDK::API_V7: *devtype = LFX_DEVTYPE_MOUSE; break;
-		}
-
+		string devName = afx_map->fxdevs[dev].name.length() ? afx_map->fxdevs[dev].name : afx_map->fxdevs[dev].dev->description;
+		*devtype = devTypes[afx_map->fxdevs[dev].version];// LFX_DEVTYPE_UNKNOWN;
+		//switch (afx_map->fxdevs[dev].version) {
+		//case AlienFX_SDK::API_ACPI: *devtype = LFX_DEVTYPE_DESKTOP; break;
+		//case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
+		//case AlienFX_SDK::API_V5: case AlienFX_SDK::API_V8: *devtype = LFX_DEVTYPE_KEYBOARD; break;
+		//case AlienFX_SDK::API_V6: *devtype = LFX_DEVTYPE_DISPLAY; break;
+		//case AlienFX_SDK::API_V7: *devtype = LFX_DEVTYPE_MOUSE; break;
+		//}
 		if (namelen > devName.length()) {
 			strcpy_s(name, namelen, devName.data());
 		} else

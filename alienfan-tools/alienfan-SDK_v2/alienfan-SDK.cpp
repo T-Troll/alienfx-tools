@@ -71,11 +71,10 @@ namespace AlienFan_SDK {
 	}
 
 	void Control::EnumSensors(IEnumWbemClassObject* enum_obj, byte type) {
-		IWbemClassObject* spInstance[64];
+		IWbemClassObject* spInstance[32];
 		ULONG uNumOfInstances = 0;
-		//BSTR instansePath{ (BSTR)L"__Path" }, valuePath{ (BSTR)L"Temperature" };
 		LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
-		VARIANT cTemp, instPath;
+		VARIANT cTemp{ 0 }, instPath{ 0 };
 		string name;
 
 		switch (type) {
@@ -90,17 +89,20 @@ namespace AlienFan_SDK {
 			valuePath = L"Value";
 		}
 
-		enum_obj->Next(3000, 64, spInstance, &uNumOfInstances);
+		enum_obj->Next(3000, 32, spInstance, &uNumOfInstances);
 		byte senID = 0;
 		for (byte ind = 0; ind < uNumOfInstances; ind++) {
 			if (type == 4) { // OHM sensors
-				VARIANT type;
+				VARIANT type{ 0 };
 				spInstance[ind]->Get(L"SensorType", 0, &type, 0, 0);
-				if (type.bstrVal == wstring(L"Temperature")) {
-					VARIANT vname;
+				if (!wcscmp(type.bstrVal,L"Temperature")) {
+					VARIANT vname{ 0 };
 					spInstance[ind]->Get(L"Name", 0, &vname, 0, 0);
-					wstring sname{ vname.bstrVal };
-					name = string(sname.begin(), sname.end());
+					/*wstring sname{ vname.bstrVal };
+					name = string(sname.begin(), sname.end());*/
+					name.clear();
+					for (int i = 0; i < wcslen(vname.bstrVal); i++)
+						name += vname.bstrVal[i];
 				}
 				else {
 					continue;
@@ -109,7 +111,7 @@ namespace AlienFan_SDK {
 			spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
 			spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
 			spInstance[ind]->Release();
-			if (cTemp.uintVal > 0 || cTemp.fltVal > 0)
+			if (cTemp.intVal > 0 || cTemp.fltVal > 0)
 				sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
 		}
 		enum_obj->Release();
@@ -260,7 +262,7 @@ namespace AlienFan_SDK {
 			if (serviceObject->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
 				sensorObject->Get(sensors[TempID].valueName, 0, &temp, 0, 0);
 				sensorObject->Release();
-				return sensors[TempID].type == 4 ? (int)temp.fltVal : temp.uintVal;
+				return sensors[TempID].type == 4 ? (int)temp.fltVal : temp.intVal;
 			}
 		}
 		return -1;

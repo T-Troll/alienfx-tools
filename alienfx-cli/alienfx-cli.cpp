@@ -21,33 +21,24 @@ byte globalBright = 255;
 byte sleepy = 5, longer = 5;
 int devType = -1;
 
-string GetDeviceType(int version) {
-	switch (version) {
-	case 0: return "Desktop";
-	case 4: return "Desktop/Notebook";
-	case 5: case 8: return "Keyboard";
-	case 6: return "Display";
-	case 7: return "Mouse";
-	default: return "Notebook";
-	}
-}
+//string GetDeviceType(int version) {
+//	switch (version) {
+//	case 0: return "Desktop";
+//	case 4: return "Desktop/Notebook";
+//	case 5: case 8: return "Keyboard";
+//	case 6: return "Display";
+//	case 7: return "Mouse";
+//	default: return "Notebook";
+//	}
+//}
 
-void CheckDevices() {
-
-	for (auto i = afx_map.fxdevs.begin(); i != afx_map.fxdevs.end(); i++) {
-		printf("===== Device VID_%04x, PID_%04x =====\n", i->vid, i->pid);
-		printf("+++++ Detected as: ");
-		switch (i->vid) {
-		case 0x187c: printf("Alienware,"); break;
-		case 0x0d62: printf("Darfon,"); break;
-		case 0x0424: printf("Microchip,"); break;
-		case 0x0461: printf("Primax,"); break;
-		case 0x04f2: printf("Chicony,"); break;
-		}
-		printf(" %s,", GetDeviceType(i->version).c_str());
-		printf(" APIv%d +++++\n", i->version);
-	}
-}
+//void CheckDevices() {
+//
+//	for (auto i = afx_map.fxdevs.begin(); i != afx_map.fxdevs.end(); i++) {
+//		printf("===== Device VID_%04x, PID_%04x =====\n+++++ Detected as: %s, APIv%d +++++\n", 
+//			i->vid, i->pid, i->dev->description.c_str(), i->version);
+//	}
+//}
 
 unsigned GetZoneCode(ARG name) {
 	if (devType) 
@@ -306,8 +297,9 @@ int main(int argc, char* argv[])
 				// status
 				if (devType) {
 					for (auto i = afx_map.fxdevs.begin(); i < afx_map.fxdevs.end(); i++) {
-						printf("Device #%d - %s, %s, VID#%d, PID#%d, APIv%d, %d lights\n", (int)(i - afx_map.fxdevs.begin()), i->name.c_str(),
-							GetDeviceType(i->version).c_str(), i->vid, i->pid, i->version, (int)i->lights.size());
+						printf("Device #%d - %s, VID#%d, PID#%d, APIv%d, %d lights\n", (int)(i - afx_map.fxdevs.begin()), 
+							(i->name.empty() ? i->dev->description : i->name).c_str(),
+							i->vid, i->pid, i->version, (int)i->lights.size());
 
 						for (int k = 0; k < i->lights.size(); k++) {
 							printf("  Light ID#%d - %s%s%s\n", i->lights[k].lightid,
@@ -343,10 +335,14 @@ int main(int argc, char* argv[])
 							lightID = args[pos + 1].num;
 					}
 				}
-				char name[256]{ 0 };
-				CheckDevices();
+				for (auto i = afx_map.fxdevs.begin(); i != afx_map.fxdevs.end(); i++) {
+					printf("===== Device VID_%04x, PID_%04x =====\n+++++ Detected as: %s, APIv%d +++++\n",
+						i->vid, i->pid, i->dev->description.c_str(), i->version);
+				}
 				printf("Do you want to set devices and lights names?");
-				gets_s(name, 255);
+				char name[256];
+				name[0] = getchar();
+				//gets_s(name, 1);
 				if (name[0] == 'y' || name[0] == 'Y') {
 					printf("\nFor each light please enter LightFX SDK light ID or light name if ID is not available\n\
 Tested light become green, and turned off after testing.\n\

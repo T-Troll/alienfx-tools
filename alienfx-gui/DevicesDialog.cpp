@@ -149,18 +149,19 @@ void RedrawDevList() {
 	for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) {
 		int pos = (int)(i - conf->afx_dev.fxdevs.begin());
 		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, pos};
-		if (!i->name.length()) {
+		if (i->name.empty() && i->dev) {
+			i->name = i->dev->description;
 			//string typeName;
-			switch (i->version) {
-			case 0: i->name = "Desktop"; break;
-			case 1: case 2: case 3: i->name = "Notebook"; break;
-			case 4: i->name = "Notebook/Chassis"; break;
-			case 5: case 8: i->name = "Keyboard"; break;
-			case 6: i->name = "Display"; break;
-			case 7: i->name = "Mouse"; break;
-			default: i->name = "Unknown";
-			}
-			i->name += ", #" + to_string(i->pid);
+			//switch (i->version) {
+			//case 0: i->name = "Desktop"; break;
+			//case 1: case 2: case 3: i->name = "Notebook"; break;
+			//case 4: i->name = "Notebook/Chassis"; break;
+			//case 5: case 8: i->name = "Keyboard"; break;
+			//case 6: i->name = "Display"; break;
+			//case 7: i->name = "Mouse"; break;
+			//default: i->name = "Unknown";
+			//}
+			//i->name += ", #" + to_string(i->pid);
 		}
 		lItem.pszText = (LPSTR)i->name.c_str();
 		if (activeDevice->pid == i->pid) {

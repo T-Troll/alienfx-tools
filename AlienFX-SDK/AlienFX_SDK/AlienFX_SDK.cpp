@@ -176,7 +176,8 @@ chain++;
 			PHIDP_PREPARSED_DATA prep_caps;
 			HIDP_CAPS caps;
 			if (HidD_GetAttributes(devHandle, &attributes) && (!vidd || attributes.VendorID == vidd) && (!pidd || attributes.ProductID == pidd)
-				&& HidD_GetPreparsedData(devHandle, &prep_caps) && HidP_GetCaps(prep_caps, &caps) == HIDP_STATUS_SUCCESS) {
+				&& HidD_GetPreparsedData(devHandle, &prep_caps)) {
+				HidP_GetCaps(prep_caps, &caps);
 				HidD_FreePreparsedData(prep_caps);
 				length = caps.OutputReportByteLength;
 				pid = attributes.ProductID;
@@ -220,6 +221,19 @@ chain++;
 			}
 			if (version == API_UNKNOWN)
 				CloseHandle(devHandle);
+			else {
+				wchar_t descbuf[256];
+				HidD_GetManufacturerString(devHandle, descbuf, 255);
+				for (int i = 0; i < wcslen(descbuf); i++)
+					description += descbuf[i];
+				//wstring wdesc{ descbuf };
+				HidD_GetProductString(devHandle, descbuf, 255);
+				description += " ";
+				for (int i = 0; i < wcslen(descbuf); i++)
+					description += descbuf[i];
+				//wdesc += L" " + wstring(descbuf);
+				//this->description = string(wdesc.begin(), wdesc.end());
+			}
 			//DebugPrint("Probe done, type " + to_string(version) + "\n");
 		}
 		delete[] deviceInterfaceDetailData;

@@ -662,12 +662,14 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangeEffectMode();
 		} break;
 		case PBT_APMSUSPEND:
-			// Sleep initiated.
 			DebugPrint("Sleep/hibernate initiated\n");
 			PauseSystem();
 			break;
 		}
 		break;
+	//case WM_SYSCOLORCHANGE: case WM_SETTINGCHANGE:
+	//	DebugPrint("Device config changed!\n");
+	//	break;
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
@@ -687,6 +689,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_DISPLAYCHANGE:
 		// Monitor configuration changed
+		DebugPrint("Display config changed!\n");
 	    dxgi_Restart();
 		break;
 	case WM_ENDSESSION:
