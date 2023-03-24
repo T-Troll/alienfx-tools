@@ -1085,7 +1085,7 @@ chain++;
 			string name = "Group" + to_string(i->gid);
 
 			RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
-			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.size());
+			RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length());
 			RegSetValueEx(hKeyStore, "LightList", 0, REG_BINARY, (BYTE*)i->lights.data(), (DWORD)i->lights.size() * sizeof(DWORD));
 			RegCloseKey(hKeyStore);
 		}
