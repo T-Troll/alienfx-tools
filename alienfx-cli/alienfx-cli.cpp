@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 				}
 				printf("Do you want to set devices and lights names?");
 				char name[256];
-				gets_s(name, 1);
+				gets_s(name, 255);
 				if (name[0] == 'y' || name[0] == 'Y') {
 //					printf("\nFor each light please enter LightFX SDK light ID or light name if ID is not available\n\
 //Tested light become green, and turned off after testing.\n\
@@ -339,7 +339,7 @@ int main(int argc, char* argv[])
 						printf("Found %d device(s)\n", (int)afx_map.fxdevs.size());
 						if (have_high) {
 							lfxUtil.FillInfo();
-							lfxUtil.GetStatus();
+							//lfxUtil.GetStatus();
 						}
 
 						for (auto cDev = afx_map.fxdevs.begin(); cDev != afx_map.fxdevs.end(); cDev++) {

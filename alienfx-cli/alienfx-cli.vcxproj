@@ -103,6 +103,9 @@
     <ProjectReference Include="..\AlienFX-SDK\AlienFX_SDK\AlienFX_SDK_noACPI.vcxproj">
       <Project>{2fc5da06-339f-48b8-acdf-34faa8dbfbb7}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\LightFX\LightFX.vcxproj">
+      <Project>{9e86c7e5-6e4c-4120-b8a5-9ab53b57f918}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

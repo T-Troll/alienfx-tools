@@ -185,7 +185,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, 
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumLights(const unsigned int dev, unsigned int *const numlights) {
 	LFX_RESULT state = CheckState(dev);
-	if (state) {
+	*numlights = 0;
+	if (!state) {
 		*numlights = (unsigned)afx_map->fxdevs[dev].lights.size();
 	}
 	return state;

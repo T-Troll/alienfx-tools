@@ -197,7 +197,7 @@ namespace LFXUtil
 			d.id = i;
 			devlist.push_back(d);
 
-			std::string type = "Unknown";
+			//std::string type = "Unknown";
 
 			std::vector<lightinfo> d_l;
 
