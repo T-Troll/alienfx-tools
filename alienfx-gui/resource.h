@@ -208,6 +208,7 @@
 #define IDC_BAT_FAN                     1207
 #define IDC_CMODE                       1209
 #define IDC_CMODE_KEY                   1210
+#define IDC_KEEPSYSTEM                  1210
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -228,7 +229,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1210
+#define _APS_NEXT_CONTROL_VALUE         1211
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

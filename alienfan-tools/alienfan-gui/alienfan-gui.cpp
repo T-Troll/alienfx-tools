@@ -125,6 +125,11 @@ void RestoreApp() {
     SetForegroundWindow(mDlg);
 }
 
+void ToggleValue(DWORD& value, int cID) {
+    value = !value;
+    CheckMenuItem(GetMenu(niData->hWnd), cID, value ? MF_CHECKED : MF_UNCHECKED);
+}
+
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -174,6 +179,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_RESTOREPOWERMODE, fan_conf->keepSystem ? MF_CHECKED : MF_UNCHECKED);
 
         return true;
     } break;
@@ -232,32 +238,28 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ShowNotification(niData, "Configuration saved!", "Configuration saved successfully.");
             break;
         case IDM_SETTINGS_STARTWITHWINDOWS:
-        {
-            fan_conf->startWithWindows = !fan_conf->startWithWindows;
-            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
+            ToggleValue(fan_conf->startWithWindows, wmId);
             WindowsStartSet(fan_conf->startWithWindows, "AlienFan-GUI");
-        } break;
+            break;
         case IDM_SETTINGS_STARTMINIMIZED:
-        {
-            fan_conf->startMinimized = !fan_conf->startMinimized;
-            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
-        } break;
-        case IDM_SETTINGS_UPDATE: {
-            fan_conf->updateCheck = !fan_conf->updateCheck;
-            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
+            ToggleValue(fan_conf->startMinimized, wmId);
+            break;
+        case IDM_SETTINGS_UPDATE:
+            ToggleValue(fan_conf->updateCheck, wmId);
             if (fan_conf->updateCheck)
                 CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
-        } break;
-        case IDM_SETTINGS_KEYBOARDSHORTCUTS:
-            fan_conf->keyShortcuts = !fan_conf->keyShortcuts;
-            SetHotkeys();
-            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
             break;
-        case IDM_SETTINGS_DISABLEAWCC: {
-            fan_conf->awcc_disable = !fan_conf->awcc_disable;
-            CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
+        case IDM_SETTINGS_KEYBOARDSHORTCUTS:
+            ToggleValue(fan_conf->keyShortcuts, wmId);
+            SetHotkeys();
+            break;
+        case IDM_SETTINGS_DISABLEAWCC:
+            ToggleValue(fan_conf->awcc_disable, wmId);
             fan_conf->wasAWCC = DoStopService((bool)fan_conf->awcc_disable != fan_conf->wasAWCC, fan_conf->wasAWCC);
-        } break;
+            break;
+        case IDM_SETTINGS_RESTOREPOWERMODE:
+            ToggleValue(fan_conf->keepSystem, wmId);
+            break;
         case IDC_FAN_RESET:
         {
             if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all fan curves?", "Warning",

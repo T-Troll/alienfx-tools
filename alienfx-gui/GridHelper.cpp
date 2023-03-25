@@ -149,7 +149,9 @@ void GridHelper::RestartWatch() {
 	conf->modifyProfile.lock();
 	for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 		if (ce->effect.trigger) {
+			// Reset zone
 			ce->gridop.passive = true;
+			ce->gridop.stars.clear();
 			switch (ce->effect.trigger) {
 			case 2: if (!kEvent)
 				kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, GridKeyProc, NULL, 0);

@@ -68,7 +68,7 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 		if (mon)
 			mon->SetProfilePower();
 
-		ChangeEffectMode();
+		ChangeEffectMode(true);
 
 		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");
 	}
@@ -86,9 +86,12 @@ void EventHandler::ToggleFans() {
 			mon->Stop();
 }
 
-void EventHandler::ChangeEffectMode() {
+void EventHandler::ChangeEffectMode(bool profile) {
 	fxhl->SetState();
+	bool oldgrid = grid;
 	ChangeEffects();
+	if (profile && oldgrid && grid)
+		((GridHelper*)grid)->RestartWatch();
 }
 
 void EventHandler::ChangeEffects(bool stop) {
@@ -107,11 +110,8 @@ void EventHandler::ChangeEffects(bool stop) {
 				capt = new CaptureHelper(true);
 			if (!(noHap || audio))
 				audio = new WSAudioIn();
-			if (!noGrid)
-				if (grid)
-					((GridHelper*)grid)->RestartWatch();
-				else
-					grid = new GridHelper();
+			if (!(noGrid || grid))
+				grid = new GridHelper();
 		}
 	}
 	if (noGrid && grid) {	// Grid

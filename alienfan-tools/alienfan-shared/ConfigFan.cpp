@@ -55,6 +55,7 @@ void ConfigFan::Load() {
 	GetReg("LastPowerStage", &prof.powerSet/*power*/);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
+	GetReg("KeepSystemMode", &keepSystem, 1);
 	GetReg("DPTF", &needDPTF, 1);
 
 	// Now load sensor mappings...
@@ -105,6 +106,7 @@ void ConfigFan::Save() {
 	SetReg("UpdateCheck", updateCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);
+	SetReg("KeepSystemMode", keepSystem);
 	SetReg("DPTF", needDPTF);
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");

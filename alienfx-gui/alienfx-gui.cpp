@@ -654,12 +654,14 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
-			fxhl->stateScreen = !conf->offWithScreen || ((POWERBROADCAST_SETTING*)lParam)->Data[0] ||
-				(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE && GetSystemMetrics(SM_CMONITORS) > 1);
-			DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
-				(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
-				+ ")\n");
-			eve->ChangeEffectMode();
+			if (fxhl->stateScreen != (!conf->offWithScreen || ((POWERBROADCAST_SETTING*)lParam)->Data[0] ||
+				(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE && GetSystemMetrics(SM_CMONITORS) > 1))) {
+				fxhl->stateScreen = !fxhl->stateScreen;
+				DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
+					(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
+					+ ")\n");
+				eve->ChangeEffectMode();
+			}
 		} break;
 		case PBT_APMSUSPEND:
 			DebugPrint("Sleep/hibernate initiated\n");

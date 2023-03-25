@@ -48,6 +48,7 @@ public:
 	DWORD updateCheck;
 	DWORD awcc_disable;
 	DWORD keyShortcuts;
+	DWORD keepSystem;
 	bool wasAWCC;
 
 	fan_profile prof;

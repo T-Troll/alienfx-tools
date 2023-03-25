@@ -13,6 +13,7 @@ extern void FillAllDevs();
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
+extern ConfigFan* fan_conf;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -36,6 +37,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_AWCC, conf->awcc_disable);
 		CheckDlgButton(hDlg, IDC_ESIFTEMP, conf->esif_temp);
 		CheckDlgButton(hDlg, IDC_FANCONTROL, conf->fanControl);
+		CheckDlgButton(hDlg, IDC_KEEPSYSTEM, fan_conf->keepSystem);
 		CheckDlgButton(hDlg, IDC_BAT_FAN, !conf->fansOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_EXCEPTION, conf->noDesktop);
 		CheckDlgButton(hDlg, IDC_CHECK_DIM, conf->dimmed);
@@ -72,10 +74,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->offWithScreen = state;
 			break;
 		case IDC_BUT_PROFILESWITCH:
-			//eve->StopProfiles();
 			conf->enableProfSwitch = state;
-			//eve->StartProfiles();
-			//UpdateProfileList();
 			break;
 		case IDC_CHECK_LON:
 			conf->lightsOn = state;
@@ -152,6 +151,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SetHotkeys();
 			SetMainTabs();
 			break;
+		case IDC_KEEPSYSTEM:
+			fan_conf->keepSystem = state;
+			break;
 		case IDC_CHECK_LIGHTNAMES:
 			conf->showGridNames = state;
 			break;
@@ -159,7 +161,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->keyShortcuts = state;
 			SetHotkeys();
 			break;
-		default: return false;
+		//default: return false;
 		}
 	} break;
 	case WM_HSCROLL:

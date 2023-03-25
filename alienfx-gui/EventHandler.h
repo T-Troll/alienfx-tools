@@ -28,7 +28,7 @@ public:
 	void CheckProfileChange();
 
 	// Effects
-	void ChangeEffectMode();
+	void ChangeEffectMode(bool profile = false);
 	void ChangeEffects(bool stop=false);
 
 	EventHandler();

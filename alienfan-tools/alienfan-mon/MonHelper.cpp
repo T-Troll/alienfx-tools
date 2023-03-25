@@ -60,7 +60,8 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
-		SetCurrentMode(oldPower);
+		if (fan_conf->keepSystem)
+			SetCurrentMode(oldPower);
 		ResetBoost();
 #ifdef _DEBUG
 		OutputDebugString("Mon thread stop.\n");

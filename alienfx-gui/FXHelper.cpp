@@ -535,6 +535,12 @@ void FXHelper::RefreshGrid() {
 						// prepare vars..
 						grideffop* effop = &ce->gridop;
 						grideffect* eff = &ce->effect;
+						// check for initial repaint
+						if (effop->stars.empty()) {
+							vector<AlienFX_SDK::Afx_action> act = { Code2Act(&eff->effectColors.front()) };
+							SetZone(&(*ce), &act);
+							effop->stars.resize(1);
+						}
 						// calculate phase
 						int cTact = effop->current_tact++;
 						int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
@@ -567,8 +573,12 @@ void FXHelper::RefreshGrid() {
 								// Star field
 								auto grp = conf->afx_dev.GetGroupById(ce->group);
 								uniform_int_distribution<int> id(0, (int)grp->lights.size() - 1);
-								uniform_int_distribution<int> count(3, 20);
+								uniform_int_distribution<int> count(5, 25);
 								uniform_int_distribution<int> clr(1, (int)eff->effectColors.size() - 1);
+								//if (effop->stars.empty()) {
+								//	vector<AlienFX_SDK::Afx_action> act = { Code2Act(&eff->effectColors.front()) };
+								//	SetZone(&(*ce), &act);
+								//}
 								effop->stars.resize(eff->width);
 								for (auto star = effop->stars.begin(); star != effop->stars.end(); star++) {
 									if (star->count >= 0 && star->lightID) {
