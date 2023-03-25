@@ -347,7 +347,8 @@ Application behavior control block at right:
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Use BIOS sensors" - Read additional hardware data from Windows WMI and Alienware BIOS (if fan control enabled). It will require "Run as administrator" privilege (default - off).
 - "Enable fan control" - Enables fan and power control functionality, as well as some additional (Alienware BIOS) temperature sensors. It will require "Run as administrator" privilege (default - off).
-- - "Light names on grid" - Shows/hide light names at grid buttons (default - off).
+  - "Restore power mode" - System power mode will be stored at application start and restored at quit/sleep/hibernate/restart.
+- "Light names on grid" - Shows/hide light names at grid buttons (default - off).
 
 Light system control options at the left:
 - "Turn on lights" - Global light control system switch. All lights will be off and black if disabled (default - on).
@@ -372,7 +373,7 @@ Interface settings:
 - "Light names on grid" - Shows/hide light names at grid buttons.
 
 
-## Keyboard shortcuts 
+## Keyboard shortcuts
 
 Global shortcuts (can be operated if application running):
 - CTRL+SHIFT+F12 - enable/disable lights.

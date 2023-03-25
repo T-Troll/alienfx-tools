@@ -49,6 +49,7 @@ There are some settings into application top menu under "Settings":
 - "Keyboard shortcuts" - Global keyboard hotkeys enabled.
 - "Check for update" - Application will made online update check at start.
 - "Disable AWCC" - In case AWCC service running, it will be stopped and started back then application quit.
+- "Restore power mode" - System power mode will be stored at application start and restored at quit/sleep/hibernate/restart.
 
 ## Keyboard shortcuts
 
