@@ -260,18 +260,19 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     default:
         if (mon->inControl) {
             auto clk = Screen2Fan(lParam);
+            if (message == WM_MOUSEMOVE)
+                SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
             for (auto sen = fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].begin();
                 sen != fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].end(); sen++)
                 if (sen->first == fan_conf->lastSelectedSensor) {
                     auto cFan = &sen->second;
                     switch (message) {
-                    case WM_MOUSEMOVE: {
+                    case WM_MOUSEMOVE:
                         if (wParam & MK_LBUTTON) {
                             *lastFanPoint = clk;
                             DrawFan();
                         }
-                        SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
-                    } break;
+                        break;
                     case WM_LBUTTONDOWN:
                         SetCapture(hDlg);
                         // check and add point

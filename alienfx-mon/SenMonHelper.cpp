@@ -214,7 +214,7 @@ void SenMonHelper::UpdateSensors()
 			for (WORD i = 0; i < valCount; i++) {
 				if ((cv[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) && cv[i].FmtValue.longValue &&
 					(sen = UpdateSensor({ i, 0, 1 }, cv[i].FmtValue.longValue)))
-					sen->sname = "ESIF " + to_string(i + 1);
+					sen->sname = conf->fan_conf.sensors[i].empty() ? "ESIF " + to_string(i + 1) : conf->fan_conf.sensors[i];
 			}
 		}
 

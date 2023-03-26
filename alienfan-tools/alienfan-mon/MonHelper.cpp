@@ -94,9 +94,10 @@ void MonHelper::SetCurrentMode(WORD newMode) {
 
 byte MonHelper::GetFanPercent(byte fanID)
 {
-	if (!fan_conf->boosts[fanID].maxRPM)
-		fan_conf->boosts[fanID].maxRPM = acpi->GetMaxRPM(fanID);
-	return (fanRpm[fanID] * 100) / fan_conf->boosts[fanID].maxRPM;
+	auto bst = &fan_conf->boosts[fanID].maxRPM;
+	if (!(*bst))
+		*bst = acpi->GetMaxRPM(fanID);
+	return (fanRpm[fanID] * 100) / (*bst);
 }
 
 int MonHelper::GetPowerMode() {

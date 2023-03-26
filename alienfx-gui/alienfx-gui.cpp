@@ -65,7 +65,11 @@ extern void AlterGMode(HWND);
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin(mDlg))) {
 		mon = new MonHelper();
-		if (!(conf->fanControl = mon->acpi->isSupported)) {
+		if (conf->fanControl = mon->acpi->isSupported) {
+			if (fan_conf->needDPTF)
+				CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
+		}
+		else {
 			delete mon;
 			mon = NULL;
 		}
@@ -409,11 +413,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_INITDIALOG:
 	{
 		conf->niData.hWnd = mDlg = hDlg;
-		SetMainTabs();
-		UpdateProfileList();
 		while (!AddTrayIcon(&conf->niData, conf->updateCheck))
 			Sleep(50);
 		conf->SetIconState();
+		SetMainTabs();
+		UpdateProfileList();
 	} break;
 	case WM_COMMAND:
 	{
@@ -423,8 +427,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (dDlg)
 				SendMessage(dDlg, message, wParam, lParam);
 			break;
-		case IDOK: case IDCANCEL: case IDCLOSE: case IDM_EXIT:
-			SendMessage(hDlg, WM_CLOSE, 0, 0);
+		case IDM_EXIT: case IDC_BUTTON_MINIMIZE:
+			DestroyWindow(hDlg);
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
@@ -437,9 +441,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			needUpdateFeedback = true;
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 			break;
-		case IDC_BUTTON_MINIMIZE:
-			SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
-			break;
+		//case IDC_BUTTON_MINIMIZE:
+		//	SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
+		//	break;
 		case IDC_BUTTON_REFRESH:
 			fxhl->Refresh();
 			break;
@@ -601,8 +605,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		int idx = LOWORD(wParam);
 		switch (GetMenuItemID((HMENU)lParam, idx)) {
 		case ID_TRAYMENU_EXIT:
-			SendMessage(hDlg, WM_CLOSE, 0, 0);
-		    return true;
+			DestroyWindow(hDlg);
+			break;
 		case ID_TRAYMENU_REFRESH:
 			fxhl->Refresh();
 			break;
@@ -755,7 +759,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	case WM_CLOSE:
-		DestroyWindow(hDlg);
+		SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
+		//DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);

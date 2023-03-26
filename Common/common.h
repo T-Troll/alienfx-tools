@@ -20,3 +20,4 @@ void SetBitMask(WORD& val, WORD mask, bool state);
 bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck);
 //void OpenAbout(int res, int vt, int link);
 void BlinkNumLock(int howmany);
+

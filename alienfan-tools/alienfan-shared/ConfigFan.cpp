@@ -6,8 +6,6 @@ ConfigFan::ConfigFan() {
 	RegCreateKeyEx(keyMain, TEXT("Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
 	RegCreateKeyEx(keyMain, TEXT("Powers"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 	Load();
-	if (needDPTF)
-		DPTFInit();
 }
 
 ConfigFan::~ConfigFan() {
@@ -157,7 +155,7 @@ string ConfigFan::GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi) {
 	return *sen;
 }
 
-string ConfigFan::GetTag(string xml, string tag, size_t& pos) {
+string GetTag(string xml, string tag, size_t& pos) {
 	size_t firstpos = xml.find("<" + tag + ">", pos);
 	if (firstpos != string::npos) {
 		firstpos += tag.length() + 2;
@@ -170,7 +168,7 @@ string ConfigFan::GetTag(string xml, string tag, size_t& pos) {
 	}
 }
 
-string ConfigFan::ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
+string ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc) {
 	DWORD written;
 	string outpart;
 	WriteFile(g_hChildStd_IN_Wr, command.c_str(), (DWORD)command.length(), &written, NULL);
@@ -190,7 +188,8 @@ string ConfigFan::ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE 
 		return "";
 }
 
-void ConfigFan::DPTFInit() {
+DWORD WINAPI DPTFInit(LPVOID lparam) {
+	ConfigFan* conf = (ConfigFan*)lparam;
 	string wdName;
 	SECURITY_ATTRIBUTES attr{ sizeof(SECURITY_ATTRIBUTES), NULL, true };
 	STARTUPINFO sinfo{ sizeof(STARTUPINFO), 0 };
@@ -201,7 +200,7 @@ void ConfigFan::DPTFInit() {
 	wdName += "\\system32\\DriverStore\\FileRepository\\";
 	WIN32_FIND_DATA file;
 	HANDLE search_handle = FindFirstFile((wdName + "dptf_cpu*").c_str(), &file);
-	if (needDPTF = (search_handle != INVALID_HANDLE_VALUE))
+	if (conf->needDPTF = (search_handle != INVALID_HANDLE_VALUE))
 	{
 		wdName += string(file.cFileName) + "\\esif_uf.exe";
 		FindClose(search_handle);
@@ -213,13 +212,13 @@ void ConfigFan::DPTFInit() {
 		sinfo.wShowWindow = SW_HIDE;
 		sinfo.hStdError = sinfo.hStdOutput;
 		HWND cur = GetForegroundWindow();
-		if (needDPTF = CreateProcess(NULL, (LPSTR)(wdName + " client").c_str(), NULL, NULL, true,
+		if (conf->needDPTF = CreateProcess(NULL, (LPSTR)(wdName + " client").c_str(), NULL, NULL, true,
 			CREATE_NEW_CONSOLE, NULL, NULL, &sinfo, &proc)) {
 			SetForegroundWindow(cur);
 			// Start init...
 			string parts = ReadFromESIF("format xml\nparticipants\nexit\n", g_hChildStd_IN_Wr, g_hChildStd_OUT_Rd, &proc);
 			if (parts.size()) {
-				needDPTF = 0;
+				conf->needDPTF = 0;
 				size_t pos = 0;
 				WORD sid = 0;
 				while (pos != string::npos) {
@@ -234,7 +233,7 @@ void ConfigFan::DPTFInit() {
 						string domain = GetTag(part, "domain", descpos);
 						string dName = GetTag(domain, "name", dPos);
 						if (strtol(GetTag(domain, "capability", dPos).c_str(), NULL, 16) & 0x80) {
-							sensors[sid++] = name + (dcount > 1 ? " (" + dName + ")" : "");
+							conf->sensors[sid++] = name + (dcount > 1 ? " (" + dName + ")" : "");
 						}
 					}
 				}
@@ -247,4 +246,5 @@ void ConfigFan::DPTFInit() {
 		CloseHandle(g_hChildStd_OUT_Rd);
 		CloseHandle(sinfo.hStdOutput);
 	}
+	return 0;
 }

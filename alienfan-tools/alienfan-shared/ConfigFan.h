@@ -6,6 +6,8 @@
 
 using namespace std;
 
+DWORD WINAPI DPTFInit(LPVOID lparam);
+
 struct fan_point {
 	byte temp, boost;
 };
@@ -36,10 +38,6 @@ private:
 	HKEY keyMain, keySensors, keyPowers;
 	void GetReg(const char *name, DWORD *value, DWORD defValue = 0);
 	void SetReg(const char *text, DWORD value);
-	void DPTFInit();
-	string ReadFromESIF(string command, HANDLE g_hChildStd_IN_Wr, HANDLE g_hChildStd_OUT_Rd, PROCESS_INFORMATION* proc);
-	string GetTag(string xml, string tag, size_t& pos);
-	DWORD needDPTF;
 public:
 	byte lastSelectedFan = 0;
 	WORD lastSelectedSensor;
@@ -49,6 +47,7 @@ public:
 	DWORD awcc_disable;
 	DWORD keyShortcuts;
 	DWORD keepSystem;
+	DWORD needDPTF;
 	bool wasAWCC;
 
 	fan_profile prof;

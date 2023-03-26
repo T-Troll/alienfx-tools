@@ -183,13 +183,10 @@ void ReloadSensorView() {
 		sid.sid = i->first;
 		SENSOR* sen = &i->second;
 		if (IsSensorValid(i)) {
-			//string name = sen->min > NO_SEN_VALUE ? to_string(sen->min) : "--";
 			LVITEMA lItem{ /*LVIF_TEXT | */LVIF_PARAM | LVIF_STATE, pos };
 			lItem.lParam = sid.sid;
-			//lItem.pszText = (LPSTR)name.c_str();
 			if (sid.sid == selSensor) {
 				lItem.state = LVIS_SELECTED;
-				//ListView_SetItemState(list, pos, LVIS_SELECTED, LVIS_SELECTED);
 				rpos = pos;
 				UpdateItemInfo();
 			}
@@ -219,13 +216,9 @@ void ReloadSensorView() {
 				switch (sid.type) {
 				case 0: name += "T"; break;
 				default: name += "F"; break;
-				//case 1: name += "R"; break;
-				//case 2: name += "P"; break;
-				//case 3: name += "B"; break;
 				}
 				break;
 			}
-			//name += " " + to_string(sid.id);
 			ListView_SetItemText(list, pos, 3, (LPSTR)name.c_str());
 			ListView_SetItemText(list, pos, 4, GetSensorName(sen));
 			pos++;
@@ -245,7 +238,6 @@ void ReloadSensorView() {
 
 void RemoveTrayIcons() {
 	// Remove icons from tray...
-	//Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 	for (auto i = conf->active_sensors.begin(); i != conf->active_sensors.end(); i++)
 		if (i->second.niData) {
 			Shell_NotifyIcon(NIM_DELETE, i->second.niData);
@@ -271,7 +263,6 @@ void ModifySensors() {
 	senmon->ModifyMon();
 	CheckDlgButton(mDlg, IDC_ESENSORS, conf->eSensors);
 	CheckDlgButton(mDlg, IDC_BSENSORS, conf->bSensors);
-	//AddTrayIcon(&conf->niData, false);
 	ResetTraySensors();
 	conf->paused = false;
 }
@@ -351,8 +342,6 @@ void UpdateTrayData(SENSOR* sen) {
 		DrawText(hdcMem, val, -1, &clip, DT_RIGHT | DT_SINGLELINE /*| DT_VCENTER*/ | DT_NOCLIP);
 	}
 
-	//DeleteObject(brush);
-
 	ICONINFO iconInfo{ true, 0, 0, hBitmap, hBitmapMask };
 	HICON hIcon = CreateIconIndirect(&iconInfo);
 
@@ -379,7 +368,6 @@ SENSOR* FindSensor() {
 
 BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND senList = GetDlgItem(hDlg, IDC_SENSOR_LIST);
-	//auto pos = conf->active_sensors.find(selSensor);
 	SENSOR* sen = FindSensor();
 
 	if (message == newTaskBar) {
@@ -418,9 +406,9 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			ListView_GetSubItemRect(senList, ListView_GetSelectionMark(senList), 4, LVIR_LABEL, &rect);
 			SetWindowPos(ListView_GetEditControl(senList), HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 		} break;
-		case IDCLOSE: case IDC_CLOSE: case IDM_EXIT:
+		case IDC_CLOSE: case IDM_EXIT:
 		{
-			SendMessage(hDlg, WM_CLOSE, 0, 0);
+			DestroyWindow(hDlg);
 		} break;
 		case IDC_STARTM:
 			conf->startMinimized = state;
@@ -567,7 +555,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_MENUCOMMAND: {
 		switch (GetMenuItemID((HMENU)lParam, (int)wParam)) {
 		case ID__EXIT:
-			SendMessage(hDlg, WM_CLOSE, 0, 0);
+			DestroyWindow(hDlg);
 			break;
 		case ID__RESTORE:
 			RestoreWindow(GetMenuContextHelpId((HMENU)lParam));
@@ -582,17 +570,16 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	} break;
 	case WM_SIZE:
 		if (wParam == SIZE_MINIMIZED) {
-			// go to tray...
 			ShowWindow(hDlg, SW_HIDE);
 		}
 		break;
 	case WM_CLOSE:
+		ShowWindow(hDlg, SW_HIDE);
+		break;
+	case WM_DESTROY:
 		KillTimer(hDlg, 0);
 		RemoveTrayIcons();
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-		DestroyWindow(hDlg);
-		break;
-	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
 	case WM_NOTIFY:
@@ -674,7 +661,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					}
 					// Update tray icons...
 					if (sen->intray) {
-						if (!sen->niData) {
+						if (!sen->niData && sen->cur != NO_SEN_VALUE) {
 							// add tray icon
 							sen->niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), hDlg, (DWORD)(i->first),
 								NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });

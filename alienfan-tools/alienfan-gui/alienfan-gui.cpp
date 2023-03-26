@@ -85,6 +85,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     niData = &niDataFC;
 
     if (mon->acpi->isSupported) {
+        if (fan_conf->needDPTF)
+            CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
         if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
 
             SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
@@ -146,7 +148,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         niData->hWnd = hDlg;
 
-        //AddTrayIcon(niData, fan_conf->updateCheck);
         while (!AddTrayIcon(niData, fan_conf->updateCheck))
             Sleep(50);
 
@@ -163,8 +164,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         // So open fan control window...
         RECT cDlg;
         GetWindowRect(hDlg, &cDlg);
-        int wh = cDlg.bottom - cDlg.top;// -2 * GetSystemMetrics(SM_CYBORDER);
-        tipWindow = fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP | WS_SIZEBOX,//WS_OVERLAPPED,
+        int wh = cDlg.bottom - cDlg.top;
+        tipWindow = fanWindow = CreateWindow("STATIC", "Fan curve", WS_CAPTION | WS_POPUP | WS_SIZEBOX,
                                  cDlg.right, cDlg.top, wh, wh,
                                  hDlg, NULL, hInst, 0);
         SetWindowLongPtr(fanWindow, GWLP_WNDPROC, (LONG_PTR) FanCurve);
@@ -225,13 +226,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case IDC_BUT_MINIMIZE:
-            SendMessage(hDlg, SW_SHOW, SIZE_MINIMIZED, 0);
+            SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
             break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, About);
             break;
         case IDC_BUT_CLOSE: case IDM_EXIT:
-            SendMessage(hDlg, WM_CLOSE, 0, 0);
+            DestroyWindow(hDlg);
             break;
         case IDM_SAVE:
             fan_conf->Save();
@@ -376,19 +377,17 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             mon->SetPowerMode((WORD)wParam - 20);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             BlinkNumLock((int)wParam - 19);
-        }
-        switch (wParam) {
-        case 6: // G-key for Dell G-series power switch
-            AlterGMode(power_list);
-            break;
-        }
+        } else
+            if (wParam == 6) { // G-key for Dell G-series power switch
+                AlterGMode(power_list);
+            }
     } break;
     case WM_MENUCOMMAND: {
         int idx = LOWORD(wParam);
         switch (GetMenuItemID((HMENU)lParam, idx)) {
         case ID_MENU_EXIT:
-            SendMessage(hDlg, WM_CLOSE, 0, 0);
-            return true;
+            DestroyWindow(hDlg);
+            break;
         case ID_MENU_RESTORE:
             RestoreApp();
             break;
@@ -411,7 +410,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         } break;
     case WM_CLOSE:
-        DestroyWindow(hDlg);
+        SendMessage(hDlg, SW_SHOW, SIZE_MINIMIZED, 0);
         break;
     case WM_DESTROY:
         LocalFree(sch_guid);
@@ -444,6 +443,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         for (int i = 0; i < mon->acpi->sensors.size(); i++) {
             string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+            name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
+            ListView_SetItemText(tempList, i, 1, (LPSTR)name.c_str());
         }
         RECT cArea;
         GetClientRect(tempList, &cArea);

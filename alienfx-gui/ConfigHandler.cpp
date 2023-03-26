@@ -14,6 +14,7 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
+	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFX_ON),	IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -95,8 +96,8 @@ bool ConfigHandler::IsActiveOnly(profile* prof) {
 void ConfigHandler::SetIconState() {
 	// change tray icon...
 	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
-						stateOn ? stateDimmed ? MAKEINTRESOURCE(IDI_ALIENFX_DIM) : MAKEINTRESOURCE(IDI_ALIENFX_ON) : MAKEINTRESOURCE(IDI_ALIENFX_OFF),
-						IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+		MAKEINTRESOURCE(stateOn ? stateDimmed ? IDI_ALIENFX_DIM : IDI_ALIENFX_ON : IDI_ALIENFX_OFF),
+		IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	AddTrayIcon(&niData, false);
 }
 

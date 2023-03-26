@@ -3,6 +3,7 @@
 #include <string>
 #include <random>
 #include "AlienFX_SDK.h"
+#include "resource.h"
 #include <ThreadHelper.h>
 //#include <mutex>
 
@@ -160,7 +161,7 @@ private:
 	void SetReg(char *text, DWORD value);
 	DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
 	groupset* FindCreateGroupSet(int profID, int groupID);
-	profile* FindCreateProfile(unsigned id); 
+	profile* FindCreateProfile(unsigned id);
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
 	CustomMutex zoneUpdate;
 public:
@@ -224,7 +225,7 @@ public:
 	// mapping block from FX SDK
 	AlienFX_SDK::Mappings afx_dev;
 
-	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP, WM_APP + 1};
+	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP, WM_APP + 1 };
 
 	ConfigHandler();
 	~ConfigHandler();
