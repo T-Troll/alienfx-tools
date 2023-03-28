@@ -31,6 +31,7 @@ namespace AlienFan_SDK {
 			//ULONG uNumOfInstances = 0;
 			//enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 			enum_obj->Release();
+			//spInstance->Release();
 		}
 		m_DiskService->Release();
 		// End Windows bugfix
@@ -74,7 +75,7 @@ namespace AlienFan_SDK {
 		IWbemClassObject* spInstance[32];
 		ULONG uNumOfInstances = 0;
 		LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
-		VARIANT cTemp{ 0 }, instPath{ 0 };
+		VARIANT cTemp{ VT_I4 }, instPath{ VT_BSTR };
 		string name;
 
 		switch (type) {
@@ -111,7 +112,7 @@ namespace AlienFan_SDK {
 			spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
 			spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
 			spInstance[ind]->Release();
-			if (cTemp.intVal > 0 || cTemp.fltVal > 0)
+			if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
 				sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
 		}
 		enum_obj->Release();

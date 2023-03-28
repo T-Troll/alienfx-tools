@@ -166,17 +166,9 @@ static const unsigned char devTypes[]{
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, char *const name, const unsigned int namelen, unsigned char *const devtype) {
 	LFX_RESULT state = CheckState(dev);
 	if (!state) {
-		string devName = afx_map->fxdevs[dev].name.length() ? afx_map->fxdevs[dev].name : afx_map->fxdevs[dev].dev->description;
-		*devtype = devTypes[afx_map->fxdevs[dev].version];// LFX_DEVTYPE_UNKNOWN;
-		//switch (afx_map->fxdevs[dev].version) {
-		//case AlienFX_SDK::API_ACPI: *devtype = LFX_DEVTYPE_DESKTOP; break;
-		//case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V4: *devtype = LFX_DEVTYPE_NOTEBOOK; break;
-		//case AlienFX_SDK::API_V5: case AlienFX_SDK::API_V8: *devtype = LFX_DEVTYPE_KEYBOARD; break;
-		//case AlienFX_SDK::API_V6: *devtype = LFX_DEVTYPE_DISPLAY; break;
-		//case AlienFX_SDK::API_V7: *devtype = LFX_DEVTYPE_MOUSE; break;
-		//}
-		if (namelen > devName.length()) {
-			strcpy_s(name, namelen, devName.data());
+		*devtype = devTypes[afx_map->fxdevs[dev].version];
+		if (namelen > afx_map->fxdevs[dev].name.length()) {
+			strcpy_s(name, namelen, afx_map->fxdevs[dev].name.data());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}
@@ -275,8 +267,8 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColor(const unsigned int dev, c
 FN_DECLSPEC LFX_RESULT STDCALL LFX_SetLightActionColorEx(const unsigned int dev, const unsigned int lid, const unsigned int act, const PLFX_COLOR clr1, const PLFX_COLOR clr2) {
 	LFX_RESULT state = CheckState(dev, lid);
 	if (!state) {
-		vector<AlienFX_SDK::Afx_action> actions{ {TranslateColor(clr1, act), TranslateColor(clr2, act)} };
-		afx_map->fxdevs[dev].dev->SetAction((byte)afx_map->fxdevs[dev].lights[lid].lightid, &actions);
+		AlienFX_SDK::Afx_lightblock actions{ (byte)afx_map->fxdevs[dev].lights[lid].lightid, {TranslateColor(clr1, act), TranslateColor(clr2, act)} };
+		afx_map->fxdevs[dev].dev->SetAction(&actions);
 	}
 	return state;
 }

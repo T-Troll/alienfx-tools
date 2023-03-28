@@ -149,20 +149,6 @@ void RedrawDevList() {
 	for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) {
 		int pos = (int)(i - conf->afx_dev.fxdevs.begin());
 		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, pos};
-		if (i->name.empty() && i->dev) {
-			i->name = i->dev->description;
-			//string typeName;
-			//switch (i->version) {
-			//case 0: i->name = "Desktop"; break;
-			//case 1: case 2: case 3: i->name = "Notebook"; break;
-			//case 4: i->name = "Notebook/Chassis"; break;
-			//case 5: case 8: i->name = "Keyboard"; break;
-			//case 6: i->name = "Display"; break;
-			//case 7: i->name = "Mouse"; break;
-			//default: i->name = "Unknown";
-			//}
-			//i->name += ", #" + to_string(i->pid);
-		}
 		lItem.pszText = (LPSTR)i->name.c_str();
 		if (activeDevice->pid == i->pid) {
 			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
@@ -353,7 +339,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			activeDevice = &conf->afx_dev.fxdevs.front();
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
-		fxhl->TestLight(activeDevice, -1);
+		//fxhl->TestLight(activeDevice, -1);
 		RedrawDevList();
 
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);
@@ -625,6 +611,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
+					fxhl->TestLight(activeDevice, -1);
 					activeDevice = &conf->afx_dev.fxdevs[lPoint->iItem];
 					fxhl->TestLight(activeDevice, eLid, true);
 					// clear unused lights...
@@ -636,7 +623,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, LVIS_SELECTED, LVIS_SELECTED);
 					}
 					else {
-						fxhl->TestLight(activeDevice, -1);
+						//fxhl->TestLight(activeDevice, -1);
 						ListView_SetItemState(((NMHDR*)lParam)->hwndFrom, lPoint->iItem, 0, LVIS_SELECTED);
 					}
 				}

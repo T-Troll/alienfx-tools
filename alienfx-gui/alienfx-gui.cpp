@@ -108,6 +108,11 @@ void SetHotkeys() {
 void FillAllDevs() {
 	fxhl->Stop();
 	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
+	//// DEBUG: fake device test
+	//AlienFX_SDK::Functions* fakedev = new AlienFX_SDK::Functions();
+	//fakedev->version = AlienFX_SDK::API_V2;
+	//conf->afx_dev.fxdevs.push_back({ 0x64, 0x64, fakedev, "Fake device" });
+	//conf->afx_dev.fxdevs.back().version = fakedev->version;
 	if (conf->afx_dev.activeDevices) {
 		fxhl->Start();
 		fxhl->SetState();

@@ -115,7 +115,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v8.2.6\n");
+	printf("alienfx-cli v8.2.6.2\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -173,8 +173,10 @@ int main(int argc, char* argv[])
 			} break;
 			case COMMANDS::setone: {
 				if (devType) {
-					if (args[0].num < afx_map.fxdevs.size())
-						afx_map.fxdevs[args[0].num].dev->SetAction(args[1].num, &ParseActions(&args, 2));
+					if (args[0].num < afx_map.fxdevs.size()) {
+						AlienFX_SDK::Afx_lightblock act{ (byte)args[1].num, ParseActions(&args, 2) };
+						afx_map.fxdevs[args[0].num].dev->SetAction(&act);
+					}
 				}
 				else {
 					lfxUtil.SetOneLFXColor(args[0].num, args[1].num, &Act2Lfx(&ParseActions(&args, 2).front()));
@@ -202,34 +204,35 @@ int main(int argc, char* argv[])
 				Update();
 			} break;
 			case COMMANDS::setaction: {
-				vector<AlienFX_SDK::Afx_action> act = ParseActions(&args, 2);
+				AlienFX_SDK::Afx_lightblock act{ (byte)args[1].num, ParseActions(&args, 2) };
 				if (devType) {
 					if (args[0].num < afx_map.fxdevs.size())
-						afx_map.fxdevs[args[0].num].dev->SetAction(args[1].num, &act);
+						afx_map.fxdevs[args[0].num].dev->SetAction(&act);
 				}
 				else {
-					lfxUtil.SetLFXAction(act.front().type, args[0].num, args[1].num,
-						&Act2Lfx(&act.front()), &Act2Lfx(&act.back()));
+					lfxUtil.SetLFXAction(act.act.front().type, args[0].num, act.index,
+						&Act2Lfx(&act.act.front()), &Act2Lfx(&act.act.back()));
 				}
 				//delete act;
 				Update();
 			} break;
 			case COMMANDS::setzoneact: {
 				unsigned zoneCode = GetZoneCode(args[0]);
-				vector<AlienFX_SDK::Afx_action> act = ParseActions(&args, 1);
+				AlienFX_SDK::Afx_lightblock act = { 0, ParseActions(&args, 1) };
 				if (devType) {
 					AlienFX_SDK::Afx_group* grp = afx_map.GetGroupById(zoneCode);
 					if (grp) {
 						AlienFX_SDK::Afx_device* dev;
 						for (auto i = grp->lights.begin(); i != grp->lights.end(); i++) {
 							if (dev = afx_map.GetDeviceById(i->did)) {
-								dev->dev->SetAction((byte)i->lid, &act);
+								act.index = (byte)i->lid;
+								dev->dev->SetAction(&act);
 							}
 						}
 					}
 				}
 				else {
-					lfxUtil.SetLFXZoneAction(act.front().type, zoneCode, Act2Code(&act.front()).ci, Act2Code(&act.back()).ci);
+					lfxUtil.SetLFXZoneAction(act.act.front().type, zoneCode, Act2Code(&act.act.front()).ci, Act2Code(&act.act.back()).ci);
 				}
 				//delete act;
 				Update();
@@ -290,8 +293,7 @@ int main(int argc, char* argv[])
 				if (devType) {
 					for (auto i = afx_map.fxdevs.begin(); i < afx_map.fxdevs.end(); i++) {
 						printf("Device #%d - %s, VID#%d, PID#%d, APIv%d, %d lights\n", (int)(i - afx_map.fxdevs.begin()),
-							(i->name.empty() ? i->dev->description : i->name).c_str(),
-							i->vid, i->pid, i->version, (int)i->lights.size());
+							i->name.c_str(), i->vid, i->pid, i->version, (int)i->lights.size());
 						for (int k = 0; k < i->lights.size(); k++)
 							printf("  Light ID#%d - %s%s%s\n", i->lights[k].lightid, i->lights[k].name.c_str(),
 								(i->lights[k].flags & ALIENFX_FLAG_POWER) ? " (Power button)" : "",
@@ -337,34 +339,34 @@ int main(int argc, char* argv[])
 //Just press Enter if no visible light at this ID to skip it.\n");
 					if (afx_map.fxdevs.size() > 0) {
 						printf("Found %d device(s)\n", (int)afx_map.fxdevs.size());
-						if (have_high) {
-							lfxUtil.FillInfo();
-							//lfxUtil.GetStatus();
-						}
+						//if (have_high) {
+						//	lfxUtil.FillInfo();
+						//	//lfxUtil.GetStatus();
+						//}
 
 						for (auto cDev = afx_map.fxdevs.begin(); cDev != afx_map.fxdevs.end(); cDev++) {
 							printf("Probing device VID_%04x, PID_%04x", cDev->vid, cDev->pid);
-							printf(", current name %s", (cDev->name.empty() ? cDev->dev->description : cDev->name).c_str());
-							printf(", New name or LightFX ID (ENTER to keep): ");
+							printf(", current name %s", cDev->name.c_str());
+							printf(", New name (ENTER to skip): ");
 							gets_s(name, 255);
 							if (name[0])
-								cDev->name = isdigit(name[0]) && have_high ? lfxUtil.GetDevInfo(atoi(name))->desc : name;
-							else
-								if (cDev->name.empty())
-									cDev->name = cDev->dev->description;
+								//cDev->name = isdigit(name[0]) && have_high ? lfxUtil.GetDevInfo(atoi(name))->desc : name;
+								cDev->name = name;
 							printf("New name %s\n", cDev->name.c_str());
 							// How many lights to check?
 							int fnumlights = numlights == -1 ? cDev->vid == 0x0d62 ? 0x88 : 23 : numlights;
+							AlienFX_SDK::Afx_lightblock lon{ 0, { { 0 } } };
 							for (byte i = 0; i < fnumlights; i++)
 								if (lightID == -1 || lightID == i) {
 									printf("Testing light #%d", i);
+									lon.index = i;
+									lon.act.front().g = 255;
 									AlienFX_SDK::Afx_light* lmap = afx_map.GetMappingByDev(&(*cDev), i);
 									if (lmap)
 										printf(", current name %s", lmap->name.c_str());
-									printf(", New name (ENTER to keep): ");
-									cDev->dev->SetAction(i, &vector<AlienFX_SDK::Afx_action>{ { 0, 0, 0, 0, 0, 0 }});
+									printf(", New name (ENTER to skip): ");
+									cDev->dev->SetAction(&lon);
 									cDev->dev->UpdateColors();
-									Sleep(100);
 									gets_s(name, 255);
 									if (name[0]) {
 										if (lmap)
@@ -376,9 +378,9 @@ int main(int argc, char* argv[])
 									}
 									else
 										printf("Skipped, ");
-									cDev->dev->SetAction(i, &vector<AlienFX_SDK::Afx_action>{ { 0, 0, 0, 255, 0, 0 }});
+									lon.act.front().g = 0;
+									cDev->dev->SetAction(&lon);
 									cDev->dev->UpdateColors();
-									Sleep(100);
 									afx_map.SaveMappings();
 								}
 						}

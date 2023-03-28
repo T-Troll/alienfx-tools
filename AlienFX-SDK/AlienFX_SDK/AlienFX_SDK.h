@@ -126,14 +126,14 @@ namespace AlienFX_SDK {
 		byte chain = 1; // seq. number for APIv1-v3
 
 		// support function for mask-based devices (v1-v3, v6)
-		vector<Afx_icommand>* SetMaskAndColor(DWORD index, byte type, Afx_action c1, Afx_action c2 = { 0 }, byte tempo = 0);
+		vector<Afx_icommand>* SetMaskAndColor(vector<Afx_icommand>* mods, DWORD index, Afx_action c1, Afx_action c2 = { 0 }, byte tempo = 0);
 
 		// Support function to send data to USB device
 		bool PrepareAndSend(const byte* command, vector<Afx_icommand> mods);
 		bool PrepareAndSend(const byte* command, vector<Afx_icommand> *mods = NULL);
 
 		// Add new light effect block for v8
-		void AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, vector<Afx_action>* act);
+		void AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, Afx_lightblock* act);
 
 		// Add new color block for v5
 		void AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* act);
@@ -142,7 +142,7 @@ namespace AlienFX_SDK {
 		bool SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse = false);
 
 		// Support function for APIv4 action set
-		bool SetV4Action(byte index, vector<Afx_action>* act);
+		bool SetV4Action(Afx_lightblock* act);
 
 		// return current device state
 		BYTE GetDeviceStatus();
@@ -204,7 +204,7 @@ namespace AlienFX_SDK {
 		// Set color to action
 		// index - light ID
 		// act - pointer to light actions vector
-		bool SetAction(byte index, vector<Afx_action>* act);
+		bool SetAction(Afx_lightblock* act);
 
 		// Set action for Power button and store other light colors as default
 		// act - pointer to vector of light control blocks

@@ -92,7 +92,6 @@
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
       <StringPooling>true</StringPooling>
       <ControlFlowGuard>false</ControlFlowGuard>
-      <FloatingPointModel>Fast</FloatingPointModel>
       <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>

@@ -102,7 +102,6 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <FloatingPointModel>Fast</FloatingPointModel>
       <ControlFlowGuard>false</ControlFlowGuard>
     </ClCompile>
     <Link>

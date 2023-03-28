@@ -101,33 +101,36 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 
 void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool wp)
 {
+	DebugPrint("Testing light #" + to_string(id));
 	if (dev && dev->dev) {
+		DebugPrint(", have device");
+		AlienFX_SDK::Afx_lightblock c = { (byte)oldtest, { wp ? Code2Act(&dev->white) : AlienFX_SDK::Afx_action({0})} };
 
-		vector<AlienFX_SDK::Afx_action> c{ {0} };
-		if (wp)
-			c.front() = { 0, 0, 0, dev->white.r, dev->white.g, dev->white.b };
-
-		if (force) {
+		if (force && dev->lights.size()) {
 			vector<byte> opLights;
+			DebugPrint(", cleanup");
 			for (auto lIter = dev->lights.begin(); lIter != dev->lights.end(); lIter++)
 				if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
 					opLights.push_back((byte)lIter->lightid);
-			dev->dev->SetMultiColor(&opLights, c.front());
+			dev->dev->SetMultiColor(&opLights, c.act.front());
 			dev->dev->UpdateColors();
 		}
 
 		if (id != oldtest) {
-			if (oldtest != -1)
-				dev->dev->SetAction(oldtest, &c);
-			oldtest = id;
-
-			if (id != -1) {
-				c.front() = { 0,0,0,conf->testColor.r,conf->testColor.g,conf->testColor.b };
-				dev->dev->SetAction(id, &c);
+			if (oldtest >= 0) {
+				DebugPrint(", remove old");
+				dev->dev->SetAction(&c);
+			}
+			c.index = (byte)(oldtest = id);
+			if (id >= 0) {
+				DebugPrint(", set");
+				c.act.front() = Code2Act(&conf->testColor);
+				dev->dev->SetAction(&c);
 			}
 			dev->dev->UpdateColors();
 		}
 	}
+	DebugPrint("\n");
 }
 
 void FXHelper::ResetPower(AlienFX_SDK::Afx_device* dev)
@@ -198,7 +201,7 @@ void FXHelper::QueryCommand(LightQueryElement &lqe) {
 
 void FXHelper::QueryUpdate(bool force) {
 	QueryCommand(LightQueryElement({ force, 1 }));
-	lightsNoDelay = lightQuery.size() < (conf->afx_dev.activeLights << 3);
+	lightsNoDelay = lightQuery.size() < (conf->afx_dev.activeLights + 1) << 3;
 #ifdef _DEBUG
 	if (!lightsNoDelay)
 		DebugPrint("Query so big, delayed!\n");
@@ -218,14 +221,13 @@ void FXHelper::SetState(bool force) {
 	int oldBr = finalBrightness; bool oldPM = finalPBState;
 	// Lights on state...
 	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
-	DebugPrint("Status: " + to_string(conf->stateOn));
 	// Dim state...
 	conf->stateDimmed = conf->dimmed || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
 	// Brightness
 	finalBrightness = (byte)(conf->stateOn ? 255 - (conf->stateDimmed ? conf->dimmingPower : 0) : 0);
 	// Power button state
 	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
-	DebugPrint(", " + to_string(finalBrightness) + "\n");
+	DebugPrint(string("Status: ") + (force ? "Forced, " : "") + to_string(conf->stateOn) + ", " + to_string(finalBrightness) + "\n");
 	if (force) {
 		QueryCommand(LightQueryElement({ 1, 2 }));
 		QueryCommand(LightQueryElement({ 0, 2 }));
@@ -537,8 +539,8 @@ void FXHelper::RefreshGrid() {
 						grideffect* eff = &ce->effect;
 						// check for initial repaint
 						if (effop->stars.empty()) {
-							vector<AlienFX_SDK::Afx_action> act = { Code2Act(&eff->effectColors.front()) };
-							SetZone(&(*ce), &act);
+							cur.front() = Code2Act(&eff->effectColors.front());
+							SetZone(&(*ce), &cur);
 							effop->stars.resize(1);
 						}
 						// calculate phase
@@ -575,10 +577,6 @@ void FXHelper::RefreshGrid() {
 								uniform_int_distribution<int> id(0, (int)grp->lights.size() - 1);
 								uniform_int_distribution<int> count(5, 25);
 								uniform_int_distribution<int> clr(1, (int)eff->effectColors.size() - 1);
-								//if (effop->stars.empty()) {
-								//	vector<AlienFX_SDK::Afx_action> act = { Code2Act(&eff->effectColors.front()) };
-								//	SetZone(&(*ce), &act);
-								//}
 								effop->stars.resize(eff->width);
 								for (auto star = effop->stars.begin(); star != effop->stars.end(); star++) {
 									if (star->count >= 0 && star->lightID) {
