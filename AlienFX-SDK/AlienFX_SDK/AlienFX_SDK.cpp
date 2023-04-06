@@ -1025,6 +1025,16 @@ chain++;
 					gl->resize(lend / sizeof(DWORD));
 					RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, gl->data(), &lend);
 				}
+				// Deprecated, will remove soon
+				//if (RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
+				//	len = lend / sizeof(DWORD);
+				//	DWORD* maps = new DWORD[len];
+				//	RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
+				//	for (unsigned i = 0; i < len; i += 2) {
+				//		gl->push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
+				//	}
+				//	delete[] maps;
+				//}
 			}
 		}
 		RegCloseKey(mainKey);

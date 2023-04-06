@@ -60,6 +60,8 @@ void RebuildEventList(HWND hDlg) {
 	ev = NULL;
 	if (mmap) {
 		for (int i = 0; i < mmap->events.size(); i++) {
+			if (!mmap->events[i].state)
+				mmap->events[i].state = 2;
 			int type = mmap->events[i].state - 1;
 			LVITEMA lItem{ LVIF_TEXT | LVIF_STATE };
 			string itemName = eventTypeNames[type] + ", " +
@@ -139,14 +141,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 			break;
 		case IDC_RADIO_PERF: case IDC_RADIO_IND: {
-			int ctype = LOWORD(wParam) == IDC_RADIO_PERF ? 1 : 2;
-			UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype - 1], 0);
+			int ctype = LOWORD(wParam) == IDC_RADIO_IND;
+			UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype], 0);
 			if (ev) {
-				ev->state = ctype;
+				ev->state = ctype + 1;
 				ev->source = 0;
+				RebuildEventList(hDlg);
+				fxhl->RefreshCounters();
 			}
-			RebuildEventList(hDlg);
-			fxhl->RefreshCounters();
 		} break;
 		case IDC_BUT_ADD_EVENT:
 			if (mmap) {
@@ -220,11 +222,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			case LVN_ITEMCHANGED:
 			{
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-				if (lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem >= 0) {
+				if (mmap && lPoint->uNewState & LVIS_FOCUSED && lPoint->iItem >= 0) {
 					// Select other item...
 					eventID = lPoint->iItem;
+					ev = &mmap->events[eventID];
 				}
-				ev = mmap && mmap->events.size() > eventID ? &mmap->events[eventID] : NULL;
+				else {
+					ev = NULL; eventID = 0;
+				}
 				SetEventData(hDlg);
 			} break;
 			}
@@ -242,8 +247,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		SetDlgItemText(hDlg, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
 		if (mon) {
 			int maxFans = 0;
-			for (auto i = mon->fanRpm.begin(); i < mon->fanRpm.end(); i++)
-				maxFans = max(maxFans, *i);
+			for (auto i = mon->fanRpm.begin(); i != mon->fanRpm.end(); i++)
+				maxFans = max(maxFans, i->first);
 			SetDlgItemText(hDlg, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
 		}
 		else

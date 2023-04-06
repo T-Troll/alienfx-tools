@@ -16,11 +16,11 @@ MonHelper::MonHelper() {
 		fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();
-		senBoosts.resize(fansize);
-		fanRpm.resize(fansize);
-		boostRaw.resize(fansize);
-		lastBoost.resize(fansize);
-		fanSleep.resize(fansize);
+		//senBoosts.resize(fansize);
+		//fanRpm.resize(fansize);
+		//boostRaw.resize(fansize);
+		//lastBoost.resize(fansize);
+		//fanSleep.resize(fansize);
 		oldPower = powerMode = GetPowerMode();
 		Start();
 	}
@@ -32,8 +32,10 @@ MonHelper::~MonHelper() {
 }
 
 void MonHelper::ResetBoost() {
-	boostRaw.assign(fansize, 0);
-	lastBoost.assign(fansize, 0);
+	//boostRaw.assign(fansize, 0);
+	//lastBoost.assign(fansize, 0);
+	boostRaw.clear();
+	lastBoost.clear();
 	if (!powerMode) {
 		for (int i = 0; i < fansize; i++) {
 			acpi->SetFanBoost(i, 0);
@@ -148,25 +150,26 @@ void CMonProc(LPVOID param) {
 			for (auto cIter = active->fanControls.begin(); cIter != active->fanControls.end(); cIter++) {
 				// Check boost
 				byte i = cIter->first;
-				int curBoost = 0, boostCooked = (int)round(src->boostRaw[i] * 100.0 / fan_conf->GetFanScale(i));
+				int curBoost = -1, boostCooked = (int)round(src->boostRaw[i] * 100.0 / fan_conf->GetFanScale(i));
 				for (auto fIter = cIter->second.begin(); fIter != cIter->second.end(); fIter++) {
 					sen_block* cur = &fIter->second;
+					WORD senID = fIter->first;
 					if (cur->active) {
-						cBoost = cur->points.back().boost;
+						//cBoost = cur->points.back().boost;
 						auto k = cur->points.begin() + 1;
-						for (; k != cur->points.end() && src->senValues[fIter->first] > k->temp; k++);
+						for (; k != cur->points.end() && src->senValues[senID] > k->temp; k++);
 						if (k != cur->points.end())
-							cBoost = (k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[fIter->first] - (k - 1)->temp))
+							cBoost = (k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[senID] - (k - 1)->temp))
 							/ (k->temp - (k - 1)->temp);
 						else
 							cBoost = cur->points.back().boost;
+						src->senBoosts[i][senID] = cBoost;
 						if (cBoost > curBoost) {
 							if (cBoost < boostCooked)
 								cBoost += 7 * ((boostCooked - cBoost) >> 3);
 							curBoost = cBoost;
-							src->lastBoost[i] = fIter->first;
+							src->lastBoost[i] = senID;
 						}
-						src->senBoosts[i][fIter->first] = cBoost;
 					}
 				}
 				// Set boost

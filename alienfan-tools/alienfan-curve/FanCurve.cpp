@@ -88,54 +88,43 @@ void DrawFan()
 
         if (mon->inControl) {
             // curve...
-            byte lastFan = fan_conf->lastSelectedFan;
-            if (lastFan < mon->boostRaw.size()) {
-                for (auto fan = fan_conf->lastProf->fanControls.begin(); fan != fan_conf->lastProf->fanControls.end(); fan++)
-                    if (fan->first == lastFan) {
-                        HPEN linePen;
-                        for (auto senI = fan->second.begin(); senI != fan->second.end(); senI++) {
-                            sen_block* sen = &senI->second;
-                            if (sen->active) {
-                                // Select line style
-                                if (senI->first == fan_conf->lastSelectedSensor)
-                                    linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-                                else
-                                    linePen = CreatePen(PS_DOT, 1, RGB(255, 255, 0));
-                                SelectObject(hdc, linePen);
-                                // Draw curve
-                                MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
-                                for (auto i = sen->points.begin(); i != sen->points.end(); i++) {
-                                    mark = Fan2Screen(i->temp, i->boost);
-                                    LineTo(hdc, mark.x, mark.y);
-                                    Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
-                                }
-                                DeleteObject(linePen);
-                                // Dots
-                                byte cBoost = mon->senBoosts[lastFan][senI->first];
-                                if (mon->lastBoost[lastFan] == senI->first) {
-                                    SetDCPenColor(hdc, RGB(255, 0, 0));
-                                    SetDCBrushColor(hdc, RGB(255, 0, 0));
-                                    //cBoost = mon->boostRaw[lastFan];
-                                } else
-                                    if (fan_conf->lastSelectedSensor == senI->first) {
-                                        SetDCPenColor(hdc, RGB(0, 255, 0));
-                                        SetDCBrushColor(hdc, RGB(0, 255, 0));
-                                    }
-                                    else {
-                                        SetDCPenColor(hdc, RGB(255, 255, 0));
-                                        SetDCBrushColor(hdc, RGB(255, 255, 0));
-                                    }
-                                SelectObject(hdc, GetStockObject(DC_PEN));
-                                SelectObject(hdc, GetStockObject(DC_BRUSH));
-                                mark = Fan2Screen(mon->senValues[senI->first], cBoost);
-                                Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
-                            }
-                        }
-                        break;
+            HPEN linePen;
+            for (auto senI = fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].begin();
+                senI != fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].end(); senI++) {
+                sen_block* sen = &senI->second;
+                if (sen->active) {
+                    // Select line style
+                    if (senI->first == fan_conf->lastSelectedSensor) {
+                        linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
+                        SetDCBrushColor(hdc, RGB(0, 255, 0));
                     }
-                SetWindowText(tipWindow, ("Fan curve (scale " + to_string(fan_conf->GetFanScale(lastFan))
-                    + ", boost " + to_string(mon->boostRaw[lastFan]) + ", " + to_string(mon->GetFanPercent(lastFan)) + "%)").c_str());
+                    else {
+                        linePen = CreatePen(PS_DOT, 1, RGB(255, 255, 0));
+                        SetDCBrushColor(hdc, RGB(255, 255, 0));
+                    }
+                    SelectObject(hdc, linePen);
+                    // Draw curve
+                    MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
+                    for (auto i = sen->points.begin(); i != sen->points.end(); i++) {
+                        mark = Fan2Screen(i->temp, i->boost);
+                        LineTo(hdc, mark.x, mark.y);
+                        Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
+                    }
+                    DeleteObject(linePen);
+                    // Dots
+                    if (mon->lastBoost[fan_conf->lastSelectedFan] == senI->first) {
+                        SetDCPenColor(hdc, RGB(255, 0, 0));
+                        SetDCBrushColor(hdc, RGB(255, 0, 0));
+                        SelectObject(hdc, GetStockObject(DC_PEN));
+                        SelectObject(hdc, GetStockObject(DC_BRUSH));
+                    }
+                    mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[fan_conf->lastSelectedFan][senI->first]);
+                    Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
+                }
             }
+            SetWindowText(tipWindow, ("Fan curve (scale " + to_string(fan_conf->GetFanScale(fan_conf->lastSelectedFan))
+                + ", boost " + to_string(mon->boostRaw[fan_conf->lastSelectedFan]) + ", " +
+                to_string(mon->GetFanPercent(fan_conf->lastSelectedFan)) + "%)").c_str());
         }
         else {
             SetDCPenColor(hdc, RGB(0, 255, 0));

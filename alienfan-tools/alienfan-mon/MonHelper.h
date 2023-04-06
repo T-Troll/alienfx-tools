@@ -10,10 +10,10 @@ private:
 public:
 	AlienFan_SDK::Control* acpi;
 	bool inControl = true;
-	vector<WORD> fanRpm, lastBoost;
-	vector<byte> boostRaw, fanSleep;
+	map<byte,WORD> fanRpm, lastBoost;
+	map<byte,byte> boostRaw, fanSleep;
 	map<WORD, short> senValues, maxTemps;
-	vector<map<WORD, byte>> senBoosts;
+	map<byte,map<WORD, byte>> senBoosts;
 	WORD powerMode = 0;
 	WORD fansize, powerSize;
 
