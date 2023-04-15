@@ -417,21 +417,27 @@ void ConfigHandler::Save() {
 
 zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	zoneUpdate.lock();
-	for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
-		if (gpos->gID == gid) {
-			if (reset) {
-				zoneMaps.erase(gpos);
-				break;
-			}
-			else {
-				zoneUpdate.unlock();
-				return &(*gpos);
-			}
-		}
+	//for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
+	//	if (gpos->first == gid) {
+	//		if (reset) {
+	//			zoneMaps.erase(gpos);
+	//			break;
+	//		}
+	//		else {
+	//			zoneUpdate.unlock();
+	//			return &(*gpos);
+	//		}
+	//	}
+	if (!(zoneMaps[gid].gMinX == 255 || reset)) {
+		zoneUpdate.unlock();
+		return &zoneMaps[gid];
+	}
 
 	// create new zoneMap
-	zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
-	auto zone = &zoneMaps.back();
+	//zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
+	//auto zone = &zoneMaps.back();
+	auto zone = &zoneMaps[gid];
+	*zone = { mainGrid->id };
 
 	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
 	if (grp && grp->lights.size()) {

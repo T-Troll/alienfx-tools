@@ -59,8 +59,8 @@ struct zonelight {
 };
 
 struct zonemap {
-	DWORD gID;
-	DWORD gridID;
+	//DWORD gID;
+	byte gridID;
 	byte xMax = 0, yMax = 0,
 		scaleX = 1, scaleY = 1,
 		gMinX = 255, gMaxX = 0, gMinY = 255, gMaxY = 0;
@@ -212,7 +212,7 @@ public:
 
 	// Profiles and zones
 	vector<profile*> profiles;
-	vector<zonemap> zoneMaps;
+	map<DWORD, zonemap> zoneMaps;
 	profile* activeProfile = NULL;
 
 	// Random

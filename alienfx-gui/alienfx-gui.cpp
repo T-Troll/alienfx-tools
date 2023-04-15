@@ -532,9 +532,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case WM_RBUTTONUP: case NIN_KEYSELECT: case WM_CONTEXTMENU:
 		{
 			POINT lpClickPoint;
-			HMENU tMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY));
-			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS | MNS_MODELESS /*| MNS_AUTODISMISS*/};
+			HMENU cMenu = LoadMenu(hInst, MAKEINTRESOURCEA(IDR_MENU_TRAY)),
+			tMenu = GetSubMenu(cMenu, 0);
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS /*| MNS_MODELESS | MNS_AUTODISMISS*/};
 			SetMenuInfo(tMenu, &mi);
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
@@ -558,6 +558,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			SetForegroundWindow(hDlg);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y - 20, 0, hDlg, NULL);
+			//DestroyMenu(pMenu);
+			//DestroyMenu(cMenu);
 			PostMessage(hDlg, WM_NULL, 0, 0);
 		} break;
 		case NIN_BALLOONTIMEOUT:

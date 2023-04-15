@@ -1,6 +1,7 @@
 #pragma once
 #include <wtypes.h>
 #include <vector>
+#include <map>
 #include <string>
 
 #ifndef NOACPILIGHTS
@@ -257,8 +258,8 @@ namespace AlienFX_SDK {
 
 	class Mappings {
 	private:
-		vector <Afx_group> groups; // Defined light groups
-		vector <Afx_grid> grids; // Grid zones info
+		vector<Afx_group> groups; // Defined light groups
+		vector<Afx_grid> grids; // Grid zones info
 
 	public:
 
@@ -296,7 +297,7 @@ namespace AlienFX_SDK {
 		vector <Afx_group>* GetGroups();
 
 		// get defined grids vector
-		vector <Afx_grid>* GetGrids() { return &grids; };
+		vector<Afx_grid>* GetGrids() { return &grids; };
 
 		// get grid object by it's ID
 		Afx_grid* GetGridByID(byte id);

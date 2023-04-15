@@ -248,7 +248,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		if (mon) {
 			int maxFans = 0;
 			for (auto i = mon->fanRpm.begin(); i != mon->fanRpm.end(); i++)
-				maxFans = max(maxFans, i->first);
+				maxFans = max(maxFans, i->second);
 			SetDlgItemText(hDlg, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
 		}
 		else

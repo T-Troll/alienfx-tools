@@ -114,6 +114,10 @@ void EventHandler::ChangeEffects(bool stop) {
 				grid = new GridHelper();
 		}
 	}
+	DebugPrint("Profile state: " + noGrid ? "" : "Grid, " +
+		noMon ? "" : "Mon, " +
+		noAmb ? "" : "Amb, " +
+		noHap ? "\n" : "Hap\n");
 	if (noGrid && grid) {	// Grid
 		delete (GridHelper*)grid; grid = NULL;
 	}

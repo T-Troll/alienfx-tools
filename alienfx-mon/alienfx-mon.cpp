@@ -524,7 +524,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			POINT lpClickPoint;
 			HMENU tMenu = LoadMenuA(hInst, MAKEINTRESOURCEA(IDC_MON_TRAY));
 			tMenu = GetSubMenu(tMenu, 0);
-			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE | MIM_HELPID, MNS_NOTIFYBYPOS | MNS_AUTODISMISS };
+			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE | MIM_HELPID, MNS_NOTIFYBYPOS /*| MNS_AUTODISMISS*/ };
 			mi.dwContextHelpID = (DWORD)wParam;
 			SetMenuInfo(tMenu, &mi);
 			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID };
@@ -660,8 +660,8 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 						pos++;
 					}
 					// Update tray icons...
-					if (sen->intray) {
-						if (!sen->niData && sen->cur != NO_SEN_VALUE) {
+					if (sen->intray && sen->cur != NO_SEN_VALUE) {
+						if (!sen->niData) {
 							// add tray icon
 							sen->niData = new NOTIFYICONDATA({ sizeof(NOTIFYICONDATA), hDlg, (DWORD)(i->first),
 								NIF_ICON | NIF_TIP | NIF_MESSAGE, WM_APP + 1 });

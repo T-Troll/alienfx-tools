@@ -64,6 +64,8 @@ void RebuildEffectList(HWND hDlg) {
 			ImageList_Add(hSmall, colorBox, NULL);
 			DeleteObject(colorBox);
 			lItem.iImage = i;
+			// Patch for incorrect type
+			mmap->color[i].type = mmap->color[i].type < AlienFX_SDK::Action::AlienFX_A_Power ? mmap->color[i].type : 0;
 			lItem.pszText = (LPSTR)lightEffectNames[mmap->color[i].type].c_str();
 			// check selection...
 			if (i == effID) {

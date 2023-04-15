@@ -87,44 +87,45 @@ namespace AlienFX_SDK {
 			mods->clear();
 		}
 
-		switch (version) {
-		case API_V2: case API_V3:
-			//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
-			return HidD_SetOutputReport(devHandle, buffer, length);
-			break;
-		case API_V4:
-			//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
-			return HidD_SetOutputReport(devHandle, buffer, length);
-			//res &= DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL);
-			break;
-		case API_V5:
-			//res =  DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-			return HidD_SetFeature(devHandle, buffer, length);
-			break;
-		case API_V6:
-			/*res =*/return WriteFile(devHandle, buffer, length, &written, NULL);
-			//if (size == 3)
-			//	res &= ReadFile(devHandle, buffer, length, &written, NULL);
-			break;
-		case API_V7:
-			WriteFile(devHandle, buffer, length, &written, NULL);
-			res = ReadFile(devHandle, buffer, length, &written, NULL);
-			break;
-		case API_V8: {
-			if (size == 4 || size == 8) {
-				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
-				res = HidD_SetFeature(devHandle, buffer, length);
-				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
-				Sleep(7);
-				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
-				//Sleep(6); // Need wait for ACK
+		if (devHandle) // Is device initialized?
+			switch (version) {
+			case API_V2: case API_V3:
+				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
+				return HidD_SetOutputReport(devHandle, buffer, length);
+				break;
+			case API_V4:
+				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
+				return HidD_SetOutputReport(devHandle, buffer, length);
+				//res &= DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL);
+				break;
+			case API_V5:
+				//res =  DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
+				return HidD_SetFeature(devHandle, buffer, length);
+				break;
+			case API_V6:
+				/*res =*/return WriteFile(devHandle, buffer, length, &written, NULL);
+				//if (size == 3)
+				//	res &= ReadFile(devHandle, buffer, length, &written, NULL);
+				break;
+			case API_V7:
+				WriteFile(devHandle, buffer, length, &written, NULL);
+				res = ReadFile(devHandle, buffer, length, &written, NULL);
+				break;
+			case API_V8: {
+				if (size == 4 || size == 8) {
+					//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+					res = HidD_SetFeature(devHandle, buffer, length);
+					//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
+					Sleep(7);
+					//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+					//Sleep(6); // Need wait for ACK
+				}
+				else {
+					bool res = WriteFile(devHandle, buffer, length, &written, NULL);
+					//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+				}
 			}
-			else {
-				bool res = WriteFile(devHandle, buffer, length, &written, NULL);
-				//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
 			}
-		}
-		}
 		return res;
 	}
 
@@ -211,8 +212,10 @@ chain++;
 						}
 				}
 			}
-			if (version == API_UNKNOWN)
+			if (version == API_UNKNOWN) {
 				CloseHandle(devHandle);
+				devHandle = NULL;
+			}
 			else {
 				wchar_t descbuf[256];
 				description.clear();
@@ -745,29 +748,29 @@ chain++;
 
 		byte buffer[MAX_BUFFERSIZE];
 		//DWORD written;
-		switch (version) {
-		case API_V5:
-		{
-			PrepareAndSend(COMMV5_status);
-			if (HidD_GetFeature(devHandle, buffer, length))
-			//if (DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, &written, NULL))
-				return buffer[2];
-		} break;
-		case API_V4:
-		{
-			if (HidD_GetInputReport(devHandle, buffer, length))
-			//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				return buffer[2];
-		} break;
-		case API_V3: case API_V2:
-		{
-			PrepareAndSend(COMMV1_status);
-			if (HidD_GetInputReport(devHandle, buffer, length))
-			//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
-				return buffer[0];
-		} break;
-		}
-
+		if (devHandle)
+			switch (version) {
+			case API_V5:
+			{
+				PrepareAndSend(COMMV5_status);
+				if (HidD_GetFeature(devHandle, buffer, length))
+				//if (DeviceIoControl(devHandle, IOCTL_HID_GET_FEATURE, 0, 0, buffer, length, &written, NULL))
+					return buffer[2];
+			} break;
+			case API_V4:
+			{
+				if (HidD_GetInputReport(devHandle, buffer, length))
+				//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
+					return buffer[2];
+			} break;
+			case API_V3: case API_V2:
+			{
+				PrepareAndSend(COMMV1_status);
+				if (HidD_GetInputReport(devHandle, buffer, length))
+				//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
+					return buffer[0];
+			} break;
+			}
 		return 0;
 	}
 
@@ -930,7 +933,8 @@ chain++;
 
 	Afx_grid* Mappings::GetGridByID(byte id)
 	{
-		for (auto pos = grids.begin(); pos < grids.end(); pos++)
+		//return &grids[id];
+		for (auto pos = grids.begin(); pos != grids.end(); pos++)
 			if (pos->id == id)
 				return &(*pos);
 		return nullptr;

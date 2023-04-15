@@ -683,6 +683,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				byte fbright = (byte)(current.light ? 255 - (!conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : 0) : src->finalBrightness);
 				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++)
 					if (dev->dev) {
+						//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
 						byte oldBr = dev->dev->bright;
 						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
 						switch (dev->version) {
@@ -695,17 +696,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					src->Refresh();
 			} break;
 			case 1: // update command
-				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++)
+				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++) {
 					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
+						//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
 						if (devQ->second.size()) {
 							dev->dev->SetMultiAction(&devQ->second, current.light);
 							dev->dev->UpdateColors();
-							devQ->second.clear();
 						}
-						if (!current.light && dev->dev->version == AlienFX_SDK::API_V5) {
+						if (/*!current.light &&*/ dev->dev->version == AlienFX_SDK::API_V5) {
 							src->UpdateGlobalEffect(dev);
 						}
 					}
+					devQ->second.clear();
+				}
 				break;
 			case 0: { // set light
 				WORD pid = LOWORD(current.light);
