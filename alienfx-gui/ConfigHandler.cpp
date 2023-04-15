@@ -442,17 +442,18 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
 	if (grp && grp->lights.size()) {
 		// find operational grid...
-		AlienFX_SDK::Afx_groupLight lgt = grp->lights.front();
+		DWORD lgt = grp->lights.front().lgh;
 		AlienFX_SDK::Afx_grid* opGrid = NULL;
 		for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
 			for (int ind = 0; ind < t->x * t->y; ind++)
-				if (t->grid[ind].lgh == lgt.lgh) {
+				if (t->grid[ind].lgh == lgt) {
 					zone->gridID = t->id;
 					opGrid = &(*t);
 					break;
 				}
 
 		if (opGrid) {
+
 			// scan light positions in grid and set power
 			zone->havePower = false;
 			for (AlienFX_SDK::Afx_groupLight& lgh : grp->lights) {
@@ -504,6 +505,8 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 					zone->scaleY--;
 				}
 		}
+		else
+			zone->gMinX = 0;
 	}
 	zoneUpdate.unlock();
 	return zone;
