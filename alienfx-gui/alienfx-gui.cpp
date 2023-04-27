@@ -577,16 +577,18 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			break;
 		case WM_MOUSEMOVE: {
-			string name = (string)"Lights: " + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") +
-				"\nProfile: " + conf->activeProfile->name + "\nEffects: ";
+			string name; //= string("Lights: ") + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") +
+			if (conf->activeProfile)
+				name = "Profile: " + conf->activeProfile->name + "\n";// +"\nEffects: ";
 			if (conf->stateEffects) {
+				name += "Effects: ";
 				if (eve->sysmon) name += "Monitoring ";
 				if (eve->capt) name += "Ambient ";
 				if (eve->audio) name += "Haptics ";
 				if (eve->grid) name += "Grid";
 			}
-			else
-				name += "Off";
+			//else
+			//	name += "Off";
 			if (mon) {
 				name += "\nPower: ";
 				if (fan_conf->lastProf->powerStage == mon->powerSize)

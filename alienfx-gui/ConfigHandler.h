@@ -5,7 +5,7 @@
 #include "AlienFX_SDK.h"
 #include "resource.h"
 #include <ThreadHelper.h>
-//#include <mutex>
+#include <map>
 
 // Profile flags
 #define PROF_DEFAULT		0x1

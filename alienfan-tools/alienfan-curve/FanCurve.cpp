@@ -319,14 +319,14 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 string GetFanName(int ind, bool forTray = false) {
-    char ftype[4];
+    string fname;
     switch (mon->acpi->fans[ind].type)
     {
-    case 0: strcpy_s(ftype, "CPU"); break;
-    case 1: strcpy_s(ftype, "GPU"); break;
-    default: strcpy_s(ftype, "Fan");
+    case 0: fname = "CPU"; break;
+    case 1: fname = "GPU"; break;
+    default: fname = "Fan";
     }
-    string fname = (string)ftype + " " + to_string(ind + 1) + " - " + to_string(mon->fanRpm[ind]);
+    fname += " " + to_string(ind + 1) + " - " + to_string(mon->fanRpm[ind]);
     if (forTray && !fan_conf->lastProf->powerStage)
         fname += " (" + to_string(mon->boostRaw[ind]) + ")";
     return fname;

@@ -1113,7 +1113,7 @@ chain++;
 	bool Functions::IsHaveGlobal()
 	{
 		switch (version) {
-		case API_V5: case API_V8: return true;
+		case API_V5: /*case API_V8: */return true;
 		}
 		return false;
 	}

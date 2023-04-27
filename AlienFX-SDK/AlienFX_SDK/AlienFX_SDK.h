@@ -1,7 +1,6 @@
 #pragma once
 #include <wtypes.h>
 #include <vector>
-#include <map>
 #include <string>
 
 #ifndef NOACPILIGHTS

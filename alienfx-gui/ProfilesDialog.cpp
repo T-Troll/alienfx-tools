@@ -263,6 +263,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	{
 		if (!prof)
 			prof = conf->activeProfile;
+		for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++)
+			if (i->dev && i->dev->IsHaveGlobal()) {
+				EnableWindow(GetDlgItem(hDlg, IDC_DEV_EFFECT), true);
+				break;
+			}
 		ReloadProfileView(hDlg);
 	} break;
 	case WM_COMMAND:
