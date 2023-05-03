@@ -89,6 +89,7 @@ void DrawFan()
         if (mon->inControl) {
             // curve...
             HPEN linePen;
+            SelectObject(hdc, GetStockObject(DC_BRUSH));
             for (auto senI = fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].begin();
                 senI != fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].end(); senI++) {
                 sen_block* sen = &senI->second;
@@ -110,16 +111,15 @@ void DrawFan()
                         LineTo(hdc, mark.x, mark.y);
                         Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
                     }
-                    DeleteObject(linePen);
                     // Dots
                     if (mon->lastBoost[fan_conf->lastSelectedFan] == senI->first) {
                         SetDCPenColor(hdc, RGB(255, 0, 0));
                         SetDCBrushColor(hdc, RGB(255, 0, 0));
                         SelectObject(hdc, GetStockObject(DC_PEN));
-                        SelectObject(hdc, GetStockObject(DC_BRUSH));
                     }
                     mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[fan_conf->lastSelectedFan][senI->first]);
                     Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
+                    DeleteObject(linePen);
                 }
             }
             SetWindowText(tipWindow, ("Fan curve (scale " + to_string(fan_conf->GetFanScale(fan_conf->lastSelectedFan))

@@ -390,8 +390,8 @@ void PauseSystem() {
 	conf->Save();
 	eve->StopProfiles();
 	// need to restore lights if followed screen
-	fxhl->stateScreen = true;
-	fxhl->SetState();
+	//fxhl->stateScreen = true;
+	//fxhl->SetState();
 	eve->ChangeEffects(true);
 	fxhl->Refresh(true);
 	fxhl->Stop();
@@ -586,11 +586,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				if (eve->capt) name += "Ambient ";
 				if (eve->audio) name += "Haptics ";
 				if (eve->grid) name += "Grid";
+				name += "\n";
 			}
 			//else
 			//	name += "Off";
 			if (mon) {
-				name += "\nPower: ";
+				name += "Power: ";
 				if (fan_conf->lastProf->powerStage == mon->powerSize)
 					name += "G-mode";
 				else
@@ -645,11 +646,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case PBT_APMRESUMEAUTOMATIC: {
 			// resume from sleep/hibernate
 			DebugPrint("Resume from Sleep/hibernate initiated\n");
-			fxhl->stateScreen = true; // patch for later StateScreen update
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			eve->ChangeEffects();
+			fxhl->stateScreen = true; // patch for later StateScreen update
+			eve->ChangeEffectMode();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
 				needUpdateFeedback = false;

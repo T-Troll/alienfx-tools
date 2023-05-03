@@ -82,12 +82,7 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 					SetZoneLight(t->light, zone.gMaxX - 1 - t->x + t->y, zone.gMaxX + zone.gMaxY, zone.scaleX + zone.scaleY, grp->gaugeflags, actions, power);
 					break;
 				case 5: // radial
-					//float px = abs(((float)zone.gMaxX)/2 - t->x), py = abs(((float)zone.gMaxY)/2 - t->y);
-					//int radius = (int)(sqrt(zone.gMaxX * zone.gMaxX + zone.gMaxY * zone.gMaxY) / 2),
-					//	weight = (int)sqrt(px * px + py * py),
-					//	scale = (int)(sqrt(zone.scaleX * zone.scaleX + zone.scaleY * zone.scaleY) / 2);
-					//SetZoneLight(t->light, weight, radius, scale, grp->gaugeflags, actions, power);
-					SetZoneLight(t->light, 
+					SetZoneLight(t->light,
 						abs(zone.gMaxX / 2 - t->x) + abs(zone.gMaxY / 2 - t->y),
 						zone.gMaxX + zone.gMaxY,
 						zone.scaleX + zone.scaleY,
@@ -200,8 +195,8 @@ void FXHelper::QueryCommand(LightQueryElement &lqe) {
 }
 
 void FXHelper::QueryUpdate(bool force) {
-	QueryCommand(LightQueryElement({ force, 1 }));
-	lightsNoDelay = lightQuery.size() < (conf->afx_dev.activeLights + 1) << 3;
+	QueryCommand(LightQueryElement({ NULL, force, 1 }));
+	lightsNoDelay = lightQuery.size() < (conf->afx_dev.activeLights << 3);
 #ifdef _DEBUG
 	if (!lightsNoDelay)
 		DebugPrint("Query so big, delayed!\n");
@@ -210,8 +205,9 @@ void FXHelper::QueryUpdate(bool force) {
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
-	if (actions->size()) {
-		LightQueryElement newBlock{ lgh, 0, (byte)actions->size() };
+	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
+	if (dev && dev->dev && actions->size()) {
+		LightQueryElement newBlock{ dev, (byte)HIWORD(lgh), 0, (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		QueryCommand(newBlock);
 	}
@@ -229,13 +225,13 @@ void FXHelper::SetState(bool force) {
 	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
 	DebugPrint(string("Status: ") + (force ? "Forced, " : "") + to_string(conf->stateOn) + ", " + to_string(finalBrightness) + "\n");
 	if (force) {
-		QueryCommand(LightQueryElement({ 1, 2 }));
-		QueryCommand(LightQueryElement({ 0, 2 }));
+		QueryCommand(LightQueryElement({ NULL, 1, 2 }));
+		QueryCommand(LightQueryElement({ NULL, 0, 2 }));
 	} else
 		if (oldBr != finalBrightness || oldPM != finalPBState) {
 			if (mDlg)
 				conf->SetIconState();
-			QueryCommand(LightQueryElement({ 0, 2 }));
+			QueryCommand(LightQueryElement({ NULL, 0, 2 }));
 		}
 }
 
@@ -665,7 +661,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	HANDLE waitArray[2]{ src->haveNewElement, src->stopQuery };
 	map<WORD, vector<AlienFX_SDK::Afx_lightblock>> devs_query;
 
-	AlienFX_SDK::Afx_device* dev;
+	//AlienFX_SDK::Afx_device* dev;
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
@@ -695,7 +691,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				if (needRefresh)
 					src->Refresh();
 			} break;
-			case 1: // update command
+			case 1: { // update command
+				AlienFX_SDK::Afx_device* dev;
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++) {
 					if ((dev = conf->afx_dev.GetDeviceById(devQ->first)) && dev->dev) {
 						//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
@@ -709,75 +706,71 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 					devQ->second.clear();
 				}
-				break;
+			} break;
 			case 0: { // set light
-				WORD pid = LOWORD(current.light);
-				if ((dev = conf->afx_dev.GetDeviceById(pid)) && dev->dev) {
-					byte lid = (byte)HIWORD(current.light);
-					//auto map = conf->afx_dev.GetMappingByDev(dev, lid);
-					WORD flags = conf->afx_dev.GetFlags(dev, lid);
-					for (int i = 0; i < current.actsize; i++) {
-						AlienFX_SDK::Afx_action* action = &current.actions[i];
-						// gamma-correction...
-						if (conf->gammaCorrection) {
-							action->r = ((UINT)action->r * action->r * dev->white.r) / 65025; // (255 * 255);
-							action->g = ((UINT)action->g * action->g * dev->white.g) / 65025; // (255 * 255);
-							action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
-						}
-						// Dimming...
-						// For v7 devices only, other have hardware dimming
-						if (conf->stateDimmed && (!flags || conf->dimPowerButton))
-							switch (dev->version) {
-								/*case AlienFX_SDK::API_V2:
-								case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
-									unsigned delta = 255 - conf->dimmingPower;
-									action->r = ((UINT)action->r * delta) / 255;// >> 8;
-									action->g = ((UINT)action->g * delta) / 255;// >> 8;
-									action->b = ((UINT)action->b * delta) / 255;// >> 8;
-								}
-							}
+				WORD flags = conf->afx_dev.GetFlags(current.dev, current.light);
+				for (int i = 0; i < current.actsize; i++) {
+					AlienFX_SDK::Afx_action* action = &current.actions[i];
+					// gamma-correction...
+					if (conf->gammaCorrection) {
+						action->r = ((UINT)action->r * action->r * current.dev->white.r) / 65025; // (255 * 255);
+						action->g = ((UINT)action->g * action->g * current.dev->white.g) / 65025; // (255 * 255);
+						action->b = ((UINT)action->b * action->b * current.dev->white.b) / 65025; // (255 * 255);
 					}
-
-					// Is it power button?
-					if ((flags & ALIENFX_FLAG_POWER) && dev->version && dev->version < AlienFX_SDK::API_V5) {
-						// Should we update it?
-						current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
-						current.actsize = 2;
-						if (memcmp(src->pbstate[pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action))) {
-
-							DebugPrint("Power button set to " +
-								to_string(current.actions[0].r) + "-" +
-								to_string(current.actions[0].g) + "-" +
-								to_string(current.actions[0].b) + "/" +
-								to_string(current.actions[1].r) + "-" +
-								to_string(current.actions[1].g) + "-" +
-								to_string(current.actions[1].b) +
-								"\n");
-
-							memcpy(src->pbstate[pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
-						}
-						else {
-							DebugPrint("Power button update skipped (blocked or same colors)\n");
-							continue;
-						}
-					}
-
-					// form actblock...
-					AlienFX_SDK::Afx_lightblock ablock{ lid };
-					ablock.act.resize(current.actsize);
-					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
-					// do we have another set for same light?
-					auto dv = &devs_query[pid];
-					auto lp = dv->begin();
-					for (; lp != dv->end(); lp++)
-						if (lp->index == lid) {
-							//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
-							lp->act = ablock.act;
-							break;
-						}
-					if (lp == dv->end())
-						dv->push_back(ablock);
+					// Dimming...
+					// For v7 devices only, other have hardware dimming
+					//if (conf->stateDimmed && (!flags || conf->dimPowerButton))
+					//	switch (dev->version) {
+					//		/*case AlienFX_SDK::API_V2:
+					//		case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
+					//			unsigned delta = 255 - conf->dimmingPower;
+					//			action->r = ((UINT)action->r * delta) / 255;// >> 8;
+					//			action->g = ((UINT)action->g * delta) / 255;// >> 8;
+					//			action->b = ((UINT)action->b * delta) / 255;// >> 8;
+					//		}
+					//	}
 				}
+
+				// Is it power button?
+				if ((flags & ALIENFX_FLAG_POWER) /*&& dev->version && dev->version < AlienFX_SDK::API_V5*/) {
+					// Should we update it?
+					current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
+					current.actsize = 2;
+					if (memcmp(src->pbstate[current.dev->pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action))) {
+
+						DebugPrint("Power button set to " +
+							to_string(current.actions[0].r) + "-" +
+							to_string(current.actions[0].g) + "-" +
+							to_string(current.actions[0].b) + "/" +
+							to_string(current.actions[1].r) + "-" +
+							to_string(current.actions[1].g) + "-" +
+							to_string(current.actions[1].b) +
+							"\n");
+
+						memcpy(src->pbstate[current.dev->pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
+					}
+					else {
+						DebugPrint("Power button update skipped (blocked or same colors)\n");
+						continue;
+					}
+				}
+
+				// form actblock...
+				AlienFX_SDK::Afx_lightblock ablock{ current.light };
+				ablock.act.resize(current.actsize);
+				memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
+				// do we have another set for same light?
+				auto dv = &devs_query[current.dev->pid];
+				auto lp = dv->begin();
+				for (; lp != dv->end(); lp++)
+					if (lp->index == current.light) {
+						//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
+						lp->act = ablock.act;
+						break;
+					}
+				if (lp == dv->end())
+					dv->push_back(ablock);
+				//}
 			}
 			}
 		}
