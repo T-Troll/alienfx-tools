@@ -215,7 +215,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 mon->SetPowerMode(ComboBox_GetCurSel(power_list));
             } break;
             case CBN_EDITCHANGE:
-                if (mon->powerMode < mon->powerSize && !mon->powerMode) {
+                if (mon->powerMode < mon->powerSize && mon->powerMode) {
                     char buffer[MAX_PATH];
                     GetWindowText(power_list, buffer, MAX_PATH);
                     fan_conf->powers[mon->acpi->powers[mon->powerMode]] = buffer;

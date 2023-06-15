@@ -224,15 +224,13 @@ void FXHelper::SetState(bool force) {
 	// Power button state
 	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
 	DebugPrint(string("Status: ") + (force ? "Forced, " : "") + to_string(conf->stateOn) + ", " + to_string(finalBrightness) + "\n");
-	if (force) {
-		QueryCommand(LightQueryElement({ NULL, 1, 2 }));
+	if (force || oldBr != finalBrightness || oldPM != finalPBState) {
+		if (mDlg)
+			conf->SetIconState();
+		if (force)
+			QueryCommand(LightQueryElement({ NULL, 1, 2 }));
 		QueryCommand(LightQueryElement({ NULL, 0, 2 }));
-	} else
-		if (oldBr != finalBrightness || oldPM != finalPBState) {
-			if (mDlg)
-				conf->SetIconState();
-			QueryCommand(LightQueryElement({ NULL, 0, 2 }));
-		}
+	}
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {

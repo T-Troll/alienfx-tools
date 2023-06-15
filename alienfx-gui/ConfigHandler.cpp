@@ -73,7 +73,7 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 {
 	profile* fprof = NULL;
 	for (profile* prof : profiles)
-		if (SamePower(prof) && (active || !IsActiveOnly(prof))) {
+		if (SamePower(prof) && (active || !(prof->flags & PROF_ACTIVE))) {
 			for (auto name : prof->triggerapp)
 				if (name == appName) {
 					if (IsPriorityProfile(prof))
@@ -86,12 +86,12 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 }
 
 bool ConfigHandler::IsPriorityProfile(profile* prof) {
-	return (prof ? prof->flags : activeProfile->flags) & PROF_PRIORITY;
+	return prof->flags & PROF_PRIORITY;
 }
 
-bool ConfigHandler::IsActiveOnly(profile* prof) {
-	return (prof ? prof->flags : activeProfile->flags) & PROF_ACTIVE;
-}
+//bool ConfigHandler::IsActiveOnly(profile* prof) {
+//	return prof->flags & PROF_ACTIVE;
+//}
 
 void ConfigHandler::SetIconState() {
 	// change tray icon...

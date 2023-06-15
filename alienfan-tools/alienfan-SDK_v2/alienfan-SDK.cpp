@@ -154,52 +154,94 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 						printf("System ID = %d\n", systemID);
 #endif
-						int fIndex = 0; byte funcID;
-						// Scan for available fans...
-						while ((funcID = CallWMIMethod(getPowerID, fIndex) & 0xff) > 0x2f) {
-							fans.push_back({ funcID, 0xff });
+						int fIndex = 0; unsigned funcID = CallWMIMethod(getPowerID, fIndex);
+						powers.push_back(0); // Manual mode
+						// Scan for avaliable data
+						while (funcID && (funcID + 1)) {
+							byte vkind = funcID & 0xff;
+							if (funcID > 0x100) {
+								// sensor
 #ifdef _TRACE_
-							printf("Fan ID=%x found\n", funcID);
+								printf("Sensor ID=%x found\n", funcID);
 #endif
-							fIndex++;
-						}
+								string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
+								// fan mappings...
+								for (auto fan = fans.begin(); fan != fans.end(); fan++)
+									if (vkind == CallWMIMethod(getFanSensor, fan->id)) {
+										fan->type = (byte)sensors.size();
 #ifdef _TRACE_
-						printf("%d Fans found, last reply %d\n", fIndex, funcID);
+										printf("Fan %x belong to it!\n", fan->id);
 #endif
-						// AWCC temperature sensors.
-						while (funcID > 0 && funcID < 0xa0) {
+									}
+								sensors.push_back({ { vkind, 1 }, sName });
+							}
+							else {
+								if (funcID > 0x8f) {
+									// power mode
+									powers.push_back(vkind);
 #ifdef _TRACE_
-							printf("Sensor ID=%x found\n", funcID);
-#endif
-							string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
-							// fan mappings...
-							for (auto fan = fans.begin(); fan != fans.end(); fan++)
-								if (funcID == CallWMIMethod(getFanSensor, fan->id)) {
-									fan->type = (byte)sensors.size();
-#ifdef _TRACE_
-									printf("Fan %d belong to it!\n", fan->id);
+									printf("Power ID=%x found\n", funcID);
 #endif
 								}
-							sensors.push_back({ { funcID, 1 }, sName });
+								else {
+									// fan
+									fans.push_back({ vkind, 0xff });
+#ifdef _TRACE_
+									printf("Fan ID=%x found\n", funcID);
+#endif
+								}
+							}
 							fIndex++;
-							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
+							funcID = CallWMIMethod(getPowerID, fIndex);
 						}
 #ifdef _TRACE_
-						printf("%d AWCC Temperature sensors found, last reply %d\n", (int)sensors.size(), funcID);
+						printf("%d fans, %d sensors, %d Power modes found, last reply %x\n", (int) fans.size(), (int) sensors.size(), (int)powers.size(), funcID);
 #endif
-						// Power modes.
-						powers.push_back(0); // Manual mode
-						while (funcID > 0 && funcID != 0xff) {
-							powers.push_back(funcID);
-#ifdef _TRACE_
-							printf("Power ID=%x found\n", funcID);
-#endif
-							fIndex++;
-							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
-						}
-#ifdef _TRACE_
-						printf("%d Power modes found, last reply %d\n", (int)powers.size(), funcID);
-#endif
+//						// Scan for available fans...
+//						while ((funcID = CallWMIMethod(getPowerID, fIndex) & 0xff) > 0x2f) {
+//							fans.push_back({ funcID, 0xff });
+//#ifdef _TRACE_
+//							printf("Fan ID=%x found\n", funcID);
+//#endif
+//							fIndex++;
+//						}
+//#ifdef _TRACE_
+//						printf("%d Fans found, last reply %d\n", fIndex, funcID);
+//#endif
+//						// AWCC temperature sensors.
+//						while (funcID > 0 && funcID < 0xa0) {
+//#ifdef _TRACE_
+//							printf("Sensor ID=%x found\n", funcID);
+//#endif
+//							string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
+//							// fan mappings...
+//							for (auto fan = fans.begin(); fan != fans.end(); fan++)
+//								if (funcID == CallWMIMethod(getFanSensor, fan->id)) {
+//									fan->type = (byte)sensors.size();
+//#ifdef _TRACE_
+//									printf("Fan %d belong to it!\n", fan->id);
+//#endif
+//								}
+//							sensors.push_back({ { funcID, 1 }, sName });
+//							fIndex++;
+//							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
+//						}
+//#ifdef _TRACE_
+//						printf("%d AWCC Temperature sensors found, last reply %d\n", (int)sensors.size(), funcID);
+//#endif
+//						// Power modes.
+//						powers.push_back(0); // Manual mode
+//						while (funcID > 0 && funcID != 0xff) {
+//							powers.push_back(funcID);
+//#ifdef _TRACE_
+//							printf("Power ID=%x found\n", funcID);
+//#endif
+//							fIndex++;
+//							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
+//						}
+//#ifdef _TRACE_
+//						printf("%d Power modes found, last reply %d\n", (int)powers.size(), funcID);
+//#endif
 
 						if (sysType) {
 							// Modes 1 and 2 for R7 desktop

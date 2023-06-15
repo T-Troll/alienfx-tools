@@ -239,7 +239,7 @@ public:
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
-	bool IsPriorityProfile(profile* prof = NULL);
-	bool IsActiveOnly(profile* prof = NULL);
+	bool IsPriorityProfile(profile* prof);
+	//bool IsActiveOnly(profile* prof);
 	void SetIconState();
 };

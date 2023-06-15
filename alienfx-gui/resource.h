@@ -209,6 +209,15 @@
 #define IDC_CMODE                       1209
 #define IDC_CMODE_KEY                   1210
 #define IDC_KEEPSYSTEM                  1210
+#define IDC_BUTADDLEFT                  1211
+#define IDC_BUTREMRGH                   1228
+#define IDC_BUTREMBOT                   1229
+#define IDC_BUTADDTOP                   1230
+#define IDC_BUTADDRGH                   1231
+#define IDC_BUTTON7                     1232
+#define IDC_BUTREMLEFT                  1232
+#define IDC_BUTADDBOT                   1233
+#define IDC_BUTREMTOP                   1234
 #define ID_TRAYMENU_RESTORE             32772
 #define ID_TRAYMENU_LIGHTSON            32773
 #define ID_TRAYMENU_DIMLIGHTS           32774
@@ -229,7 +238,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1211
+#define _APS_NEXT_CONTROL_VALUE         1212
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

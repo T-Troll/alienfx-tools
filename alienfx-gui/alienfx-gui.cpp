@@ -650,7 +650,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				mon->Start();
 			fxhl->Start();
 			fxhl->stateScreen = true; // patch for later StateScreen update
-			eve->ChangeEffectMode();
+			fxhl->SetState(true);
+			eve->ChangeEffects();
+			//eve->ChangeEffectMode();
 			eve->StartProfiles();
 			if (conf->updateCheck) {
 				needUpdateFeedback = false;
