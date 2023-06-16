@@ -625,10 +625,8 @@ void FXHelper::RefreshGrid() {
 											case 0: case 3: power = 0; break;
 											case 1: power = (double)abs(halfW - dist) / halfW; break;
 											case 2: power = (maxPhase ? (double)dist / maxPhase : 0.0); break;
-											//case 3: power = (maxPhase ? (double)dist / maxPhase : 0.0); break;
 											case 5: power = (double)(dist) / eff->width; break;
 											}
-											//SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
 											SetGaugeGrid(&(*ce), &zone, phase - dist, &BlendPower(power, &to, &from));
 										}
 									}
@@ -661,7 +659,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 	//AlienFX_SDK::Afx_device* dev;
 
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
 	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) == WAIT_OBJECT_0) {
 		while (src->lightQuery.size()) {

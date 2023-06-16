@@ -166,11 +166,8 @@ BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			if (deltax || deltay) {
 				GetWindowRect(tab_list, &oldRect);
 				SetWindowPos(tab_list, NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-				//if (!firstInit) {
-					GetWindowRect(GetParent(GetParent(hDlg)), &oldRect);
-					SetWindowPos(GetParent(GetParent(hDlg)), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
-				//}
-				//firstInit = false;
+				GetWindowRect(GetParent(GetParent(hDlg)), &oldRect);
+				SetWindowPos(GetParent(GetParent(hDlg)), NULL, 0, 0, oldRect.right - oldRect.left + deltax, oldRect.bottom - oldRect.top + deltay, SWP_NOZORDER | SWP_NOMOVE);
 			}
 		}
 		else

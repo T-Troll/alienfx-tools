@@ -329,8 +329,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
-		//EnableWindow(GetDlgItem(mDlg, IDC_PROFILES), false);
-		//EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), false);
 		eve->StopProfiles();
 		eve->ChangeEffects(true);
 		fxhl->Stop();
@@ -339,7 +337,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			activeDevice = &conf->afx_dev.fxdevs.front();
 
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid, true);
-		//fxhl->TestLight(activeDevice, -1);
 		RedrawDevList();
 
 		oldproc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg, IDC_EDIT_GRID), GWLP_WNDPROC, (LONG_PTR)GridNameEdit);

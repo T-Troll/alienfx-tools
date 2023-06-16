@@ -31,6 +31,8 @@
 #define IDD_DIALOG_KEY                  164
 #define IDD_DIALOG_DEVICEEFFECTS        165
 #define IDD_SELECTFROMLIST              166
+#define IDD_GRIDBLOCK1                  167
+#define IDD_GRIDBLOCK_SIMPLE            167
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
 #define IDC_TEMP_LIST                   1002
@@ -214,7 +216,6 @@
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230
 #define IDC_BUTADDRGH                   1231
-#define IDC_BUTTON7                     1232
 #define IDC_BUTREMLEFT                  1232
 #define IDC_BUTADDBOT                   1233
 #define IDC_BUTREMTOP                   1234
