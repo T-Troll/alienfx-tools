@@ -164,16 +164,16 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 								printf("Sensor ID=%x found\n", funcID);
 #endif
-								string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
-								// fan mappings...
-								for (auto fan = fans.begin(); fan != fans.end(); fan++)
-									if (vkind == CallWMIMethod(getFanSensor, fan->id)) {
-										fan->type = (byte)sensors.size();
-#ifdef _TRACE_
-										printf("Fan %x belong to it!\n", fan->id);
-#endif
-									}
-								sensors.push_back({ { vkind, 1 }, sName });
+//								string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
+//								// fan mappings...
+//								for (auto fan = fans.begin(); fan != fans.end(); fan++)
+//									if (vkind == CallWMIMethod(getFanSensor, fan->id)) {
+//										fan->type = (byte)sensors.size();
+//#ifdef _TRACE_
+//										printf("Fan %x belong to it!\n", fan->id);
+//#endif
+//									}
+								sensors.push_back({ { vkind, 1 }, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
 							}
 							else {
 								if (funcID > 0x8f) {
@@ -185,7 +185,7 @@ namespace AlienFan_SDK {
 								}
 								else {
 									// fan
-									fans.push_back({ vkind, 0xff });
+									fans.push_back({ vkind, (byte)CallWMIMethod(getFanSensor, vkind) });
 #ifdef _TRACE_
 									printf("Fan ID=%x found\n", funcID);
 #endif

@@ -35,6 +35,7 @@ private:
 	map<string, map<byte, DWORD>> gpusubs;
 
 	int GetValuesArray(HCOUNTER counter);
+	string GetFanName(int index);
 	SENSOR* UpdateSensor(SENID sid, long val);
 public:
 	HANDLE stopEvents = NULL;

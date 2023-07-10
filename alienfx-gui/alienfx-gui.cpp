@@ -577,9 +577,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			break;
 		case WM_MOUSEMOVE: {
-			string name; //= string("Lights: ") + (conf->stateOn ? conf->stateDimmed ? "Dimmed" : "On" : "Off") +
+			string name;
 			if (conf->activeProfile)
-				name = "Profile: " + conf->activeProfile->name + "\n";// +"\nEffects: ";
+				name = "Profile: " + conf->activeProfile->name + "\n";
 			if (conf->stateEffects) {
 				name += "Effects: ";
 				if (eve->sysmon) name += "Monitoring ";
@@ -588,20 +588,18 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				if (eve->grid) name += "Grid";
 				name += "\n";
 			}
-			//else
-			//	name += "Off";
 			if (mon) {
 				name += "Power: ";
-				if (fan_conf->lastProf->powerStage == mon->powerSize)
+				if (fan_conf->lastProf->gmode_stage)
 					name += "G-mode";
 				else
-					name += fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]];
+					name += fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]);
 
 				for (int i = 0; i < mon->fansize; i++) {
 					name += "\n" + GetFanName(i, true);
 				}
 			}
-			strcpy_s(conf->niData.szTip, 127, name.c_str());
+			strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
 			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 		} break;
 		}

@@ -105,8 +105,8 @@ void CheckFanOverboost(byte num, byte boost) {
 void PrintFanType(int index, int val, const char* type) {
     const char* res;
     switch (acpi.fans[index].type) {
-    case 0: res = " CPU"; break;
-    case 1: res = " GPU"; break;
+    case 1: res = " CPU"; break;
+    case 6: res = " GPU"; break;
     default: res = "";
     }
     printf("Fan%s %d %s: %d\n", res, index, type, val);
@@ -139,7 +139,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v8.3.0\n");
+    printf("AlienFan-CLI v8.3.0.1\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 

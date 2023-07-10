@@ -121,6 +121,17 @@ int SenMonHelper::GetValuesArray(HCOUNTER counter) {
 	return count;
 }
 
+string SenMonHelper::GetFanName(int index) {
+	string fname;
+	switch (acpi->fans[index].type)
+	{
+	case 1: fname = "CPU"; break;
+	case 6: fname = "GPU"; break;
+	default: fname = "";
+	}
+	return fname + " Fan " + to_string(index + 1);
+}
+
 void SenMonHelper::UpdateSensors()
 {
 	PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
@@ -201,11 +212,11 @@ void SenMonHelper::UpdateSensors()
 		// Fan data
 		for (WORD i = 0; i < acpi->fans.size(); i++) { // BIOS fans, code 1-3
 			if (sen = UpdateSensor({ i, 1, 2 }, acpi->GetFanRPM(i)))
-				sen->sname = "Fan " + to_string(i + 1) + " RPM";
+				sen->sname = GetFanName(i) + " RPM";
 			if (sen = UpdateSensor({ i, 2, 2 }, acpi->GetFanPercent(i)))
-				sen->sname = "Fan " + to_string(i + 1) + " percent";
+				sen->sname = GetFanName(i) + " percent";
 			if (sen = UpdateSensor({ i, 3, 2 }, acpi->GetFanBoost(i)))
-				sen->sname = "Fan " + to_string(i + 1) + " boost";
+				sen->sname = GetFanName(i) + " boost";
 		}
 	} else
 		if (conf->eSensors) {

@@ -361,12 +361,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (fan_conf->lastProf->gmode_stage)
                 name += "G-mode";
             else
-                name += fan_conf->powers[mon->acpi->powers[mon->powerMode]];
+                name += fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]);
 
             for (int i = 0; i < mon->fansize; i++) {
                 name += "\n" + GetFanName(i, true);
             }
-            strcpy_s(niData->szTip, 127, name.c_str());
+            strcpy_s(niData->szTip, min(127, name.length() + 1), name.c_str());
             Shell_NotifyIcon(NIM_MODIFY, niData);
         } break;
         }
