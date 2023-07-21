@@ -390,7 +390,7 @@ void ReloadTempView(HWND list) {
         name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
         ListView_SetItemText(list, i, 1, (LPSTR)name.c_str());
         for (auto sc = fanControls->begin(); sc != fanControls->end(); sc++)
-            if (sc->first == sid) {
+            if (sc->first == sid && sc->second.active) {
                 ListView_SetCheckState(list, i, true);
                 break;
             }

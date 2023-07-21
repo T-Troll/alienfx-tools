@@ -142,7 +142,7 @@ void CMonProc(LPVOID param) {
 			for (auto cIter = active->fanControls.begin(); cIter != active->fanControls.end(); cIter++) {
 				// Check boost
 				byte i = cIter->first;
-				int curBoost = -1, boostCooked = (int)round(src->boostRaw[i] * 100.0 / fan_conf->GetFanScale(i));
+				int curBoost = 0;
 				for (auto fIter = cIter->second.begin(); fIter != cIter->second.end(); fIter++) {
 					sen_block* cur = &fIter->second;
 					WORD senID = fIter->first;
@@ -157,27 +157,28 @@ void CMonProc(LPVOID param) {
 							cBoost = cur->points.back().boost;
 						src->senBoosts[i][senID] = cBoost;
 						if (cBoost > curBoost) {
-							if (cBoost < boostCooked)
-								cBoost += 7 * ((boostCooked - cBoost) >> 3);
+							if (cBoost < src->boostCooked[i])
+								cBoost += 7 * ((src->boostCooked[i] - cBoost) >> 3);
 							curBoost = cBoost;
 							src->lastBoost[i] = senID;
 						}
 					}
 				}
 				// Set boost
-				curBoost = (int)round((fan_conf->GetFanScale(i) * curBoost) / 100.0);
-				if (curBoost < 100 || !src->fanSleep[i]) {
+				int curBoostRaw = (int)round((fan_conf->GetFanScale(i) * curBoost) / 100.0);
+				if (curBoostRaw < 100 || !src->fanSleep[i]) {
 					byte boostOld = src->boostRaw[i];
 					// Check overboost tricks...
-					if (boostOld < 90 && curBoost > 100) {
-						curBoost = 100;
+					if (boostOld < 90 && curBoostRaw > 100) {
+						curBoostRaw = 100;
 						src->fanSleep[i] = ((100 - boostOld) >> 3) + 2;
 						DebugPrint("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts (old "
-							+ to_string(boostOld) + ", new " + to_string(curBoost) + ")!\n");
+							+ to_string(boostOld) + ", new " + to_string(curBoostRaw) + ")!\n");
 					}
-					if (curBoost != boostOld) {
-						acpi->SetFanBoost(i, curBoost);
-						src->boostRaw[i] = curBoost;
+					if (curBoostRaw != boostOld) {
+						acpi->SetFanBoost(i, curBoostRaw);
+						src->boostRaw[i] = curBoostRaw;
+						src->boostCooked[i] = (int)round(curBoostRaw * 100.0 / fan_conf->GetFanScale(i));
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}
