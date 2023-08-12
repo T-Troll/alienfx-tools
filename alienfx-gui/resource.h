@@ -31,7 +31,6 @@
 #define IDD_DIALOG_KEY                  164
 #define IDD_DIALOG_DEVICEEFFECTS        165
 #define IDD_SELECTFROMLIST              166
-#define IDD_GRIDBLOCK1                  167
 #define IDD_GRIDBLOCK_SIMPLE            167
 #define IDC_TAB_MAIN                    1000
 #define IDC_COMBO_POWER                 1000
@@ -96,6 +95,7 @@
 #define IDC_CHECK_DEFPROFILE            1056
 #define IDC_APP_RESET                   1059
 #define IDC_APP_BROWSE                  1060
+#define IDC_SCRIPT_BROWSE               1061
 #define IDC_LEFFECTS_LIST               1066
 #define IDC_BUT_ADD_EFFECT              1068
 #define IDC_BUT_REMOVE_EFFECT           1069
@@ -117,6 +117,7 @@
 #define IDC_CHECK_EFFECTS               1099
 #define IDC_CHECK_PRIORITY              1100
 #define IDC_CHECK_EXCEPTION             1101
+#define IDC_CHECK_SCRIPT                1101
 #define IDC_BUT_DETECT                  1104
 #define IDC_CHECK_DIM                   1105
 #define IDC_INFO_VID                    1106
@@ -212,6 +213,8 @@
 #define IDC_CMODE_KEY                   1210
 #define IDC_KEEPSYSTEM                  1210
 #define IDC_BUTADDLEFT                  1211
+#define IDC_EDIT1                       1212
+#define IDC_SCRIPT_NAME                 1212
 #define IDC_BUTREMRGH                   1228
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230
@@ -239,7 +242,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1212
+#define _APS_NEXT_CONTROL_VALUE         1213
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

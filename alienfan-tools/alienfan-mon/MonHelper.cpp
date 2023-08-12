@@ -178,7 +178,7 @@ void CMonProc(LPVOID param) {
 					if (curBoostRaw != boostOld) {
 						acpi->SetFanBoost(i, curBoostRaw);
 						src->boostRaw[i] = curBoostRaw;
-						src->boostCooked[i] = (int)round(curBoostRaw * 100.0 / fan_conf->GetFanScale(i));
+						src->boostCooked[i] = curBoost;
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}

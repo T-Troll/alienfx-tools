@@ -217,6 +217,7 @@ void ReloadProfSettings(HWND hDlg) {
 	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof && prof->flags & PROF_DIMMED);
 	CheckDlgButton(hDlg, IDC_CHECK_FOREGROUND, prof && prof->flags & PROF_ACTIVE);
 	CheckDlgButton(hDlg, IDC_CHECK_FANPROFILE, prof && prof->flags & PROF_FANS);
+	CheckDlgButton(hDlg, IDC_CHECK_SCRIPT, prof && prof->flags & PROF_RUN_SCRIPT);
 	CheckDlgButton(hDlg, IDC_CHECK_EFFECTS, prof && prof->effmode);
 
 	CheckDlgButton(hDlg, IDC_TRIGGER_POWER_AC, prof && prof->triggerFlags & PROF_TRIGGER_AC);
@@ -224,6 +225,7 @@ void ReloadProfSettings(HWND hDlg) {
 	CheckDlgButton(hDlg, IDC_TRIGGER_KEYS, prof && prof->triggerkey);
 
 	SetDlgItemText(hDlg, IDC_TRIGGER_KEYS, ("Keyboard (" + (prof && prof->triggerkey ? GetKeyName(prof->triggerkey) : "Off") + ")").c_str());
+	SetDlgItemText(hDlg, IDC_SCRIPT_NAME, prof ? prof->script.c_str() : NULL);
 	ListBox_ResetContent(app_list);
 	if (prof)
 		for (auto j = prof->triggerapp.begin(); j != prof->triggerapp.end(); j++)
@@ -402,9 +404,33 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (GetOpenFileNameA(&fstruct)) {
 				PathStripPath(fstruct.lpstrFile);
 				prof->triggerapp.push_back(appName);
-				ListBox_AddString(app_list, prof->triggerapp.back().c_str());
+				//ListBox_AddString(app_list, prof->triggerapp.back().c_str());
 			}
 		} break;
+		case IDC_SCRIPT_BROWSE: {
+			OPENFILENAMEA fstruct{ sizeof(OPENFILENAMEA), hDlg, hInst, "All files (*.*)\0*.*\0\0" };
+			static char appName[4096]; appName[0] = 0;
+			fstruct.lpstrFile = (LPSTR)appName;
+			fstruct.nMaxFile = 4095;
+			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
+			if (GetOpenFileNameA(&fstruct)) {
+				prof->script = fstruct.lpstrFile;
+				//SetDlgItemText(hDlg, IDC_SCRIPT_NAME, fstruct.lpstrFile);
+			}
+		} break;
+		//case IDC_SCRIPT_NAME:
+		//	switch (HIWORD(wParam)) {
+		//	case EN_CHANGE:
+		//		if (Edit_GetModify(GetDlgItem(hDlg, IDC_SCRIPT_NAME))) {
+		//			int textsize = GetWindowTextLength(GetDlgItem(hDlg, IDC_SCRIPT_NAME));
+		//			prof->script.resize(textsize);
+		//			GetDlgItemText(hDlg, IDC_SCRIPT_NAME, (LPSTR)prof->script.data(), textsize + 1);
+		//		}
+		//		else
+		//			return false;
+		//		break;
+		//	}
+		//	break;
 		case IDC_CHECK_EFFECTS:
 			prof->effmode = state;
 			if (prof->id == conf->activeProfile->id)
@@ -430,6 +456,9 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_FOREGROUND:
 			SetBitMask(prof->flags, PROF_ACTIVE, state);
+			break;
+		case IDC_CHECK_SCRIPT:
+			SetBitMask(prof->flags, PROF_RUN_SCRIPT, state);
 			break;
 		case IDC_CHECK_FANPROFILE:
 			SetBitMask(prof->flags, PROF_FANS, state);

@@ -20,7 +20,7 @@ public:
 	void ChangePowerState();
 
 	// Profiles
-	void SwitchActiveProfile(profile* newID);
+	void SwitchActiveProfile(profile* newID, bool force = false);
 	void ToggleFans();
 	void StartProfiles();
 	void StopProfiles();

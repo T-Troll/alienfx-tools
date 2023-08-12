@@ -29,7 +29,7 @@ EventHandler::EventHandler()
 	eve = this;
 	aProcesses = new DWORD[maxProcess];
 	ChangePowerState();
-	ChangeEffectMode();
+	SwitchActiveProfile(conf->activeProfile, true);
 	if (conf->startMinimized)
 		StartProfiles();
 }
@@ -49,16 +49,17 @@ void EventHandler::ChangePowerState()
 		conf->statePower = state.ACLineStatus;
 		DebugPrint("Power state changed!\n");
 		ToggleFans();
-		ChangeEffectMode();
+		//ChangeEffectMode();
+		SwitchActiveProfile(conf->activeProfile, true);
 		if (conf->enableProfSwitch)
 			CheckProfileChange();
 	}
 }
 
-void EventHandler::SwitchActiveProfile(profile* newID)
+void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 {
 	if (!newID) newID = conf->FindDefaultProfile();
-	if (!(keyboardSwitchActive || newID == conf->activeProfile)) {
+	if (!keyboardSwitchActive && (force || newID != conf->activeProfile)) {
 		fxhl->UpdateGlobalEffect(NULL, true);
 		conf->modifyProfile.lock();
 		conf->activeProfile = newID;
@@ -69,6 +70,9 @@ void EventHandler::SwitchActiveProfile(profile* newID)
 			mon->SetProfilePower();
 
 		ChangeEffectMode(true);
+
+		if (newID->flags & PROF_RUN_SCRIPT && !(newID->flags & PROF_ACTIVE) && newID->script.size())
+			ShellExecute(NULL, NULL, newID->script.c_str(), NULL, NULL, SW_SHOWDEFAULT);
 
 		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");
 	}

@@ -14,6 +14,7 @@
 #define PROF_ACTIVE			0x8
 #define PROF_FANS			0x10
 #define PROF_GLOBAL_EFFECTS 0x20
+#define PROF_RUN_SCRIPT		0x40
 
 // Profile power triggers
 #define PROF_TRIGGER_AC		 0x1
@@ -131,7 +132,7 @@ struct profile {
 			WORD flags;
 			WORD effmode;
 		};
-		DWORD gflags;
+		DWORD gflags = 0;
 	};
 	union {
 		struct {
@@ -144,6 +145,7 @@ struct profile {
 	vector<groupset> lightsets;
 	void *fansets = NULL;
 	vector<deviceeffect> effects;
+	string script = "";
 };
 
 union ambgrid {

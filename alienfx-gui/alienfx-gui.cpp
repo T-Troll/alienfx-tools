@@ -389,9 +389,6 @@ void SetMainTabs() {
 void PauseSystem() {
 	conf->Save();
 	eve->StopProfiles();
-	// need to restore lights if followed screen
-	//fxhl->stateScreen = true;
-	//fxhl->SetState();
 	eve->ChangeEffects(true);
 	fxhl->Refresh(true);
 	fxhl->Stop();
@@ -590,7 +587,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			if (mon) {
 				name += "Power: ";
-				if (fan_conf->lastProf->gmode_stage)
+				if (fan_conf->lastProf->gmode_stage || fan_conf->lastProf->powerStage >= mon->powerSize)
 					name += "G-mode";
 				else
 					name += fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]);
@@ -652,6 +649,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangeEffects();
 			//eve->ChangeEffectMode();
 			eve->StartProfiles();
+			//eve->ChangePowerState();
 			if (conf->updateCheck) {
 				needUpdateFeedback = false;
 				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);

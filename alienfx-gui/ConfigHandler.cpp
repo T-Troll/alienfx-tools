@@ -191,6 +191,10 @@ void ConfigHandler::Load() {
 			FindCreateProfile(pid)->triggerapp.push_back((char*)data);
 			continue;
 		}
+		if (sscanf_s(name, "Profile-script-%d", &pid) == 1) {
+			FindCreateProfile(pid)->script = (char*)data;
+			continue;
+		}
 		int senid, fanid;
 		if (sscanf_s(name, "Profile-fan-%d-%d-%d", &pid, &fanid, &senid) == 3) {
 			((ConfigFan*)fan_conf)->AddSensorCurve(((fan_profile*)FindCreateProfile(pid)->fansets), fanid, senid, data, lend);
@@ -344,6 +348,10 @@ void ConfigHandler::Save() {
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->gflags, sizeof(DWORD));
 		name = "Profile-triggers-" + profID;
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->triggers, sizeof(DWORD));
+		if (prof->script.size()) {
+			name = "Profile-script-" + profID;
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)prof->script.c_str(), (DWORD)prof->script.size());
+		}
 		// Trigger applications
 		for (int i = 0; i < prof->triggerapp.size(); i++) {
 			name = "Profile-app-" +profID + "-" + to_string(i);
