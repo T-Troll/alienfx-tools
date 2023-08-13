@@ -349,7 +349,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					delete (fan_profile*)prof->fansets;
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
-					//ReloadProfileView(hDlg);
+					ReloadProfileView(hDlg);
 				}
 				if (conf->activeProfile->id == prof->id)
 					UpdateState(true);
@@ -383,7 +383,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						delete (fan_profile*)prof->fansets;
 					prof->fansets = conf->activeProfile->fansets ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
 					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) > 0);
-					//ReloadProfileView(hDlg);
+					ReloadProfileView(hDlg);
 				}
 			}
 			break;
@@ -404,7 +404,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (GetOpenFileNameA(&fstruct)) {
 				PathStripPath(fstruct.lpstrFile);
 				prof->triggerapp.push_back(appName);
-				//ListBox_AddString(app_list, prof->triggerapp.back().c_str());
+				ListBox_AddString(app_list, prof->triggerapp.back().c_str());
 			}
 		} break;
 		case IDC_SCRIPT_BROWSE: {
@@ -415,22 +415,22 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
 			if (GetOpenFileNameA(&fstruct)) {
 				prof->script = fstruct.lpstrFile;
-				//SetDlgItemText(hDlg, IDC_SCRIPT_NAME, fstruct.lpstrFile);
+				SetDlgItemText(hDlg, IDC_SCRIPT_NAME, fstruct.lpstrFile);
 			}
 		} break;
-		//case IDC_SCRIPT_NAME:
-		//	switch (HIWORD(wParam)) {
-		//	case EN_CHANGE:
-		//		if (Edit_GetModify(GetDlgItem(hDlg, IDC_SCRIPT_NAME))) {
-		//			int textsize = GetWindowTextLength(GetDlgItem(hDlg, IDC_SCRIPT_NAME));
-		//			prof->script.resize(textsize);
-		//			GetDlgItemText(hDlg, IDC_SCRIPT_NAME, (LPSTR)prof->script.data(), textsize + 1);
-		//		}
-		//		else
-		//			return false;
-		//		break;
-		//	}
-		//	break;
+		case IDC_SCRIPT_NAME:
+			switch (HIWORD(wParam)) {
+			case EN_CHANGE:
+				if (Edit_GetModify(GetDlgItem(hDlg, IDC_SCRIPT_NAME))) {
+					int textsize = GetWindowTextLength(GetDlgItem(hDlg, IDC_SCRIPT_NAME));
+					prof->script.resize(textsize);
+					GetDlgItemText(hDlg, IDC_SCRIPT_NAME, (LPSTR)prof->script.data(), textsize + 1);
+				}
+				else
+					return false;
+				break;
+			}
+			break;
 		case IDC_CHECK_EFFECTS:
 			prof->effmode = state;
 			if (prof->id == conf->activeProfile->id)
@@ -443,8 +443,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					if ((*op)->flags & PROF_DEFAULT && conf->SamePower(*op, prof))
 						(*op)->flags &= ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
-			} /*else
-				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);*/
+			} else
+				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
 		} break;
 		case IDC_CHECK_PRIORITY:
 			SetBitMask(prof->flags, PROF_PRIORITY, state);
@@ -488,7 +488,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		default: return false;
 		}
-		ReloadProfileView(hDlg);
+		//ReloadProfileView(hDlg);
 	} break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
