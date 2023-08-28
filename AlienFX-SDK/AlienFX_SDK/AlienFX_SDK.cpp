@@ -22,16 +22,9 @@ extern "C" {
 namespace AlienFX_SDK {
 
 	vector<Afx_icommand> *Functions::SetMaskAndColor(vector<Afx_icommand>* mods, DWORD index, Afx_action c1, Afx_action c2, byte tempo) {
-		if (version == API_V6)
-			*mods = { {9,(byte)index}, { 10,c1.r }, { 11,c1.g }, { 12,c1.b } };
-		else {
+		if (version < API_V4) {
 			Afx_colorcode c; c.ci = index;
-			byte type = 3;
-			switch (c1.type) {
-			case AlienFX_A_Morph: type = 1; break;
-			case AlienFX_A_Pulse: type = 2; break;
-			}
-			*mods = { {1, type}, { 2, (byte)chain }, { 3, c.r }, { 4, c.g }, { 5, c.b } };
+			*mods = { {1, v1OpCodes[c1.type]}, { 2, (byte)chain }, { 3, c.r }, { 4, c.g }, { 5, c.b } };
 		}
 		switch (version) {
 		case API_V3:
@@ -42,24 +35,29 @@ namespace AlienFX_SDK {
 						{7,(byte)((c1.b & 0xf0) | ((c2.r & 0xf0) >> 4))},
 						{8,(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
 			break;
-		case API_V6: {
+		case API_V6: case API_V9: {
+			byte pos = 9, lpos = 3, cpos = 5;
+			if (version == API_V9) {
+				pos = 0x45; lpos = 7; cpos = 0x41;
+			}
+			*mods = { {cpos, 0x51}, {(byte)(cpos + 2), 0xd}, {pos++,(byte)index}, { pos++,c1.r }, { pos++,c1.g }, { pos++,c1.b } };
 			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
 			switch (c1.type) {
 			case AlienFX_A_Color:
 				mask ^= 8;
-				mods->insert(mods->end(), { {13, bright}, {14,mask} });
+				mods->insert(mods->end(), { {(byte)(cpos+1), 0x87}, {byte(cpos + 3), 4}, {pos++, bright}, {pos,mask} });
 				break;
 			case AlienFX_A_Pulse:
 				mask ^= byte(tempo ^ 1);
-				mods->insert(mods->end(), { {3, 0xb}, {6, 0x88}, {8, 2}, {13, bright}, {14, tempo}, {15,mask} });
+				mods->insert(mods->end(), { {lpos, 0xb}, {(byte)(cpos + 1), 0x88}, {byte(cpos+3), 2}, {pos++, bright}, {pos++, tempo}, {pos,mask} });
 				break;
 			case AlienFX_A_Breathing:
 				c2 = { 0 };
 			case AlienFX_A_Morph:
 				mask ^= (byte)(c2.r ^ c2.g ^c2.b ^ tempo ^ 4);
-				mods->insert(mods->end(), { {3, 0xf}, {6, 0x8c}, {8, 1},
-					{13,c2.r},{14,c2.g},{15,c2.b},
-					{16, bright}, {17, 2}, {18, tempo}, {19,mask} });
+				mods->insert(mods->end(), { {lpos, 0xf}, {(byte)(cpos + 1), 0x8c}, {byte(cpos + 3), 1},
+					{pos++,c2.r},{pos++,c2.g},{pos++,c2.b},
+					{pos++, bright}, {pos++, 2}, {pos++, tempo}, {pos,mask} });
 				break;
 			}
 		} break;
@@ -89,14 +87,9 @@ namespace AlienFX_SDK {
 
 		if (devHandle) // Is device initialized?
 			switch (version) {
-			case API_V2: case API_V3:
+			case API_V2: case API_V3: case API_V4: case API_V9:
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
 				return HidD_SetOutputReport(devHandle, buffer, length);
-				break;
-			case API_V4:
-				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
-				return HidD_SetOutputReport(devHandle, buffer, length);
-				//res &= DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL);
 				break;
 			case API_V5:
 				//res =  DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
@@ -195,6 +188,8 @@ chain++;
 					case 65:
 						version = API_V6;
 						break;
+					case 193:
+						version = API_V9;
 					}
 					break;
 				default:
@@ -379,7 +374,7 @@ chain++;
 				mods.push_back({ (byte)(cnt++), *nc});
 			val = PrepareAndSend(COMMV4_setOneColor, &mods);
 		} break;
-		case API_V3: case API_V2: case API_V6: case API_ACPI:
+		case API_V3: case API_V2: case API_V6: case API_V9: case API_ACPI:
 		{
 			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
@@ -387,6 +382,9 @@ chain++;
 			switch (version) {
 			case API_V6:
 				val = PrepareAndSend(COMMV6_colorSet, SetMaskAndColor(&mods, fmask, c));
+				break;
+			case API_V9:
+				val = PrepareAndSend(COMMV9_colorSet, SetMaskAndColor(&mods, fmask, c));
 				break;
 #ifndef NOACPILIGHTS
 			case API_ACPI:
@@ -497,6 +495,8 @@ chain++;
 		}
 		case API_V6:
 			return PrepareAndSend(COMMV6_colorSet, SetMaskAndColor(&mods, 1 << act->index, act->act.front(), act->act.back(), act->act.front().tempo));
+		case API_V9:
+			return PrepareAndSend(COMMV9_colorSet, SetMaskAndColor(&mods, 1 << act->index, act->act.front(), act->act.back(), act->act.front().tempo));
 		case API_V5:
 			AddV5DataBlock(4, &mods, act->index, &act->act.front());
 			PrepareAndSend(COMMV5_colorSet, &mods);

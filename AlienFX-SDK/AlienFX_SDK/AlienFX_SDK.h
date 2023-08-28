@@ -31,7 +31,7 @@ namespace AlienFX_SDK {
     #define ALIENFX_FLAG_INDICATOR	2 // This is indicator light (keep at lights off)
 
 	// Maximal buffer size across all device types
-    #define MAX_BUFFERSIZE 65
+    #define MAX_BUFFERSIZE 193
 
 	union Afx_colorcode // Atomic color structure
 	{
@@ -93,6 +93,7 @@ namespace AlienFX_SDK {
 
 	enum Afx_Version {
 		API_ACPI = 0, //128
+		API_V9 = 9, //193
 		API_V8 = 8, //65
 		API_V7 = 7, //65
 		API_V6 = 6, //65

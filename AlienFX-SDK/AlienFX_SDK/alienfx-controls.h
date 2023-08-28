@@ -2,7 +2,7 @@
 
 namespace AlienFX_SDK {
 
-	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microship (monitors), Primax (mouses), Chicony (external keyboards)
+	//This is VIDs for different devices: Alienware (common), Darfon (RGB keyboards), Microchip (monitors), Primax (mouses), Chicony (external keyboards)
 	//enum Afx_VIDs {
 	//	Aleinware = 0x187c,
 	//	Darfon = 0x0d62,
@@ -10,9 +10,9 @@ namespace AlienFX_SDK {
 	//	Primax = 0x461,
 	//	Chicony = 0x4f2
 	//};
-	//						       v0    1    2    3    4    5    6    7   8
-	const byte    reportIDList[]{   0,   2,   2,   2,   0,0xcc,   0,   0,  1 };
-	const byte brightnessScale[]{ 0xf,0x64,0x64,0x64,0x64,0xff,0x64,0x64,0xa };
+	//						       v0    1    2    3    4    5    6    7   8     9
+	const byte    reportIDList[]{   0,   2,   2,   2,   0,0xcc,   0,   0,  1,   0 };
+	const byte brightnessScale[]{ 0xf,0x64,0x64,0x64,0x64,0xff,0x64,0x64,0xa,0x64 };
 
 	// V1-V3, old devices
 		const byte COMMV1_color[]{ 1, 0x03 };
@@ -36,6 +36,7 @@ namespace AlienFX_SDK {
 		const byte COMMV1_apply[]{2, 0x1d, 0x03};
 		const byte COMMV1_dim[]{3, 0x1c, 0x64, 0x1 };
 		// dimming. [2] - brightness, [3] - 1 - always, 0 - battery only
+		const byte v1OpCodes[]{ 3, 2, 1, 1, 1, 1, 1 };
 
 	// V4, common tron/desktop
 		const byte COMMV4_control[]{6, 0x03 ,0x21 ,0x00 ,0x03 ,0x00 ,0xff };
@@ -86,7 +87,7 @@ namespace AlienFX_SDK {
 		//reply: 94 37 (command) XX.....XX - status
 		const byte COMMV6_systemReset[]{ 4, 0x95,0,0,0 };
 		//const byte colorReset[11]{ 0x92,0x37,0x07,0x00,0x51,0x84,0xd0,0x03,0x64,0x55,0x59 };
-		const byte COMMV6_colorSet[]{8, 0x92,0x37,0x0a,0x00,0x51,0x87,0xd0,0x04};
+		const byte COMMV6_colorSet[]{3, 0x92,0x37,0x0a};
 		//[3] - command length (a - color, b - pulse, f - morph, 7 - timing),
 		//[6] - command (87 - color, 88 - Pulse, 8c - morph/breath, 84 - timing?),
 		//[8] - command type - 4 - color, 1 - morph, 2 - pulse, 3 - timing?
@@ -145,4 +146,22 @@ namespace AlienFX_SDK {
 		// [1] - brightness (0..a)
 		const byte v8OpCodes[]{ 0x81, 0x82, 0x83, 0x87, 0x88, 0x84, 0x81 };
 		// 09 03, 0a 03 - set profiles
+	// V9, new monitors
+		const byte COMMV9_colorSet[]{ 11,0x40, 0xc6,00,00,00,00,0xa,00,0x6e,00,0x82 };
+		// 40c6000000000a006e00820000000000 0
+		// 00000000000000000000000000000000 1
+		// 00000000000000000000000000000000 2
+		// 00000000000000000000000000000000 3
+		// 5187d0040b33bbff6474000000000000 4
+		//[6] - command length (a - color, b - pulse, f - morph, 7 - timing),
+		//[8] - 6e ?
+		//[a] - 82 ?
+		//[40] - 51 ?
+		//[41] - command (87 - color, 88 - Pulse, 8c - morph/breath, 84 - timing?),
+		//[43] - command type - 4 - color, 1 - morph, 2 - pulse, 3 - timing?
+		//[44] - light mask,
+		// 3,84 - [45] - Brightness, [46] - ???, [47] - checksum
+		// 4,87 - [45,46,47] - RGB, [48] - Brightness (0..64), [49] - checksum
+		// 2,88 - [45,46,47] - RGB, [48] - Brightness (0..64), [49] - Tempo?, [4a] - checksum
+		// 1,8c - [45,46,47] - RGB, [48,49,4a] - RGB2, [4b] - brightness, [4c,4d] - tempo, [4e] - checksum
 }
