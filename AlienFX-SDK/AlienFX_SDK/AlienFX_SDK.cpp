@@ -262,6 +262,9 @@ chain++;
 
 	bool Functions::Reset() {
 		switch (version) {
+		case API_V9:
+			inSet = PrepareAndSend(COMMV9_update, { {3,2} });
+			break;
 		case API_V6:
 			// need initial reset if not done
 			if (chain) {
@@ -296,6 +299,10 @@ chain++;
 	bool Functions::UpdateColors() {
 		if (inSet) {
 			switch (version) {
+			case API_V9:
+				inSet = !PrepareAndSend(COMMV9_update);
+				GetDeviceStatus();
+				break;
 			case API_V5:
 			{
 				inSet = !PrepareAndSend(COMMV5_update);
@@ -750,6 +757,9 @@ chain++;
 		//DWORD written;
 		if (devHandle)
 			switch (version) {
+			case API_V9:
+				HidD_GetInputReport(devHandle, buffer, length);
+				return 1;
 			case API_V5:
 			{
 				PrepareAndSend(COMMV5_status);
