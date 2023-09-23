@@ -575,29 +575,34 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case WM_MOUSEMOVE: {
 			string name;
+			//DebugPrint("Printing profile...\n");
 			if (conf->activeProfile)
-				name = "Profile: " + conf->activeProfile->name + "\n";
+				name = conf->activeProfile->name;
+			//DebugPrint("Printing effects...\n");
 			if (conf->stateEffects) {
-				name += "Effects: ";
-				if (eve->sysmon) name += "Monitoring ";
-				if (eve->capt) name += "Ambient ";
-				if (eve->audio) name += "Haptics ";
-				if (eve->grid) name += "Grid";
-				name += "\n";
+				name += string("\nEffects: ") + (eve->sysmon ? "M" : "m")
+					+ (eve->capt ? "A" : "a")
+					+ (eve->audio ? "H" : "h")
+					+ (eve->grid ? "G" : "g");
 			}
 			if (mon) {
-				name += "Power: ";
+				//DebugPrint("Printing power mode...\n");
+				name += "\n";
 				if (fan_conf->lastProf->gmode_stage || fan_conf->lastProf->powerStage >= mon->powerSize)
 					name += "G-mode";
 				else
 					name += fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]);
-
+				name += " power";
 				for (int i = 0; i < mon->fansize; i++) {
+					//DebugPrint("Printing fan " + to_string(i) + "...\n");
 					name += "\n" + GetFanName(i, true);
 				}
 			}
+			//DebugPrint("Printing done, length " + to_string(name.length()) + "\n");
+			conf->niData.szTip[127] = 0;
 			strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
 			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+			//DebugPrint("Pos: " + to_string(GET_X_LPARAM(lParam)) + ", " + to_string(GET_Y_LPARAM(lParam)) + "\n");
 		} break;
 		}
 	} break;
@@ -644,9 +649,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			fxhl->stateScreen = true; // patch for later StateScreen update
-			fxhl->SetState(true);
-			eve->ChangeEffects();
+			//fxhl->stateScreen = true; // patch for later StateScreen update
+			//fxhl->SetState(true);
+			//eve->ChangeEffects();
 			//eve->ChangeEffectMode();
 			eve->StartProfiles();
 			//eve->ChangePowerState();
@@ -690,6 +695,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				activeDevice = NULL;
 				if (conf->afx_dev.activeDevices && !dDlg) {
 					fxhl->Start();
+					fxhl->SetState(true);
 					fxhl->Refresh();
 				}
 				SetMainTabs();

@@ -188,7 +188,6 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->inControl = false;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
     mon->SetCurrentMode(0);
-    mon->ResetBoost();
     int rpm = mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100, downScale;
     boostCheck.clear();
     bestBoostPoint = { (byte)boost, (unsigned short)rpm };
@@ -225,6 +224,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             + ": Final boost " + to_string(bestBoostPoint.maxBoost)
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
     }
+    mon->ResetBoost();
     mon->inControl = true;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
     return 0;

@@ -139,7 +139,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v8.3.0.1\n");
+    printf("AlienFan-CLI v8.4.1.1\n");
 
     AlienFan_SDK::Lights* lights = NULL;
 

@@ -58,7 +58,7 @@ namespace AlienFan_SDK {
 	private:
 		DWORD systemID = 0;
 		byte sysType = -1;
-		void EnumSensors(IEnumWbemClassObject* enum_obj, byte type);
+		void EnumSensors(IWbemServices* srv, const wchar_t* sname, byte type);
 	public:
 		VARIANT m_instancePath{};
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;

@@ -366,6 +366,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             for (int i = 0; i < mon->fansize; i++) {
                 name += "\n" + GetFanName(i, true);
             }
+            niData->szTip[127] = 0;
             strcpy_s(niData->szTip, min(127, name.length() + 1), name.c_str());
             Shell_NotifyIcon(NIM_MODIFY, niData);
         } break;

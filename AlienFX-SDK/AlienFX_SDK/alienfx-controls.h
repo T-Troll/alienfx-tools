@@ -10,7 +10,7 @@ namespace AlienFX_SDK {
 	//	Primax = 0x461,
 	//	Chicony = 0x4f2
 	//};
-	//						       v0    1    2    3    4    5    6    7   8     9
+	//						       v0    1    2    3    4    5    6    7   8    9
 	const byte    reportIDList[]{   0,   2,   2,   2,   0,0xcc,   0,   0,  1,   0 };
 	const byte brightnessScale[]{ 0xf,0x64,0x64,0x64,0x64,0xff,0x64,0x64,0xa,0x64 };
 
@@ -156,9 +156,9 @@ namespace AlienFX_SDK {
 		// 5187d0040b33bbff6474000000000000 4
 		//[6] - command length (a - color, b - pulse, f - morph, 7 - timing),
 		//[8] - 6e ?
-		//[a] - 82 ?
+		//[a] - 82, 80  (command?)
 		//[40] - 51 ?
-		//[41] - command (87 - color, 88 - Pulse, 8c - morph/breath, 84 - timing?),
+		//[41] - command (87 - color, 88 - Pulse, 8c - morph/breath, 84 - timing?, 85?),
 		//[43] - command type - 4 - color, 1 - morph, 2 - pulse, 3 - timing?
 		//[44] - light mask,
 		// 3,84 - [45] - Brightness, [46] - ???, [47] - checksum

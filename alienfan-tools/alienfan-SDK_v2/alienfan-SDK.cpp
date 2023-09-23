@@ -25,13 +25,9 @@ namespace AlienFan_SDK {
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
 		// Windows bug with disk drives list
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
-		IEnumWbemClassObject* enum_obj = NULL;
+		IEnumWbemClassObject* enum_obj;
 		if (m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDisk", 0, NULL, &enum_obj) == S_OK) {
-			//IWbemClassObject* spInstance;
-			//ULONG uNumOfInstances = 0;
-			//enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 			enum_obj->Release();
-			//spInstance->Release();
 		}
 		m_DiskService->Release();
 		// End Windows bugfix
@@ -71,51 +67,54 @@ namespace AlienFan_SDK {
 		return result.intVal;
 	}
 
-	void Control::EnumSensors(IEnumWbemClassObject* enum_obj, byte type) {
-		IWbemClassObject* spInstance[32];
-		ULONG uNumOfInstances = 0;
-		LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
-		VARIANT cTemp{ VT_I4 }, instPath{ VT_BSTR };
-		string name;
+	void Control::EnumSensors(IWbemServices* srv, const wchar_t* s_name, byte type) {
+		IEnumWbemClassObject* enum_obj;
+		if (srv->CreateInstanceEnum((BSTR)s_name, /*WBEM_FLAG_SHALLOW |*/ WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+			IWbemClassObject* spInstance[32];
+			ULONG uNumOfInstances;
+			LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
+			VARIANT cTemp{ VT_I4 }, instPath{ VT_BSTR };
+			string name;
 
-		switch (type) {
-		case 0:
-			name = "ESIF sensor ";
-			break;
-		case 2:
-			name = "SSD sensor ";
-			instansePath = L"StorageReliabilityCounter";
-			break;
-		case 4:
-			valuePath = L"Value";
-		}
+			switch (type) {
+			case 0:
+				name = "ESIF";
+				break;
+			case 2:
+				name = "SSD";
+				instansePath = L"StorageReliabilityCounter";
+				break;
+			case 4:
+				valuePath = L"Value";
+			}
+			name += " sensor ";
 
-		enum_obj->Next(3000, 32, spInstance, &uNumOfInstances);
-		byte senID = 0;
-		for (byte ind = 0; ind < uNumOfInstances; ind++) {
-			if (type == 4) { // OHM sensors
-				VARIANT type{ 0 };
-				spInstance[ind]->Get(L"SensorType", 0, &type, 0, 0);
-				if (!wcscmp(type.bstrVal,L"Temperature")) {
-					VARIANT vname{ 0 };
-					spInstance[ind]->Get(L"Name", 0, &vname, 0, 0);
-					/*wstring sname{ vname.bstrVal };
-					name = string(sname.begin(), sname.end());*/
-					name.clear();
-					for (int i = 0; i < wcslen(vname.bstrVal); i++)
-						name += vname.bstrVal[i];
-				}
-				else {
-					continue;
+			byte senID = 0;
+			while (enum_obj->Next(3000, 32, spInstance, &uNumOfInstances) != WBEM_S_FALSE || uNumOfInstances) {
+				for (byte ind = 0; ind < uNumOfInstances; ind++) {
+					if (type == 4) { // OHM sensors
+						VARIANT type{ 0 };
+						spInstance[ind]->Get(L"SensorType", 0, &type, 0, 0);
+						if (!wcscmp(type.bstrVal, L"Temperature")) {
+							VARIANT vname{ 0 };
+							spInstance[ind]->Get(L"Name", 0, &vname, 0, 0);
+							name.clear();
+							for (int i = 0; i < wcslen(vname.bstrVal); i++)
+								name += vname.bstrVal[i];
+						}
+						else {
+							continue;
+						}
+					}
+					spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
+					spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
+					spInstance[ind]->Release();
+					if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
+						sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
 				}
 			}
-			spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
-			spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
-			spInstance[ind]->Release();
-			if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
-				sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
+			enum_obj->Release();
 		}
-		enum_obj->Release();
 #ifdef _TRACE_
 		printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
 #endif
@@ -164,15 +163,6 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 								printf("Sensor ID=%x found\n", funcID);
 #endif
-//								string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
-//								// fan mappings...
-//								for (auto fan = fans.begin(); fan != fans.end(); fan++)
-//									if (vkind == CallWMIMethod(getFanSensor, fan->id)) {
-//										fan->type = (byte)sensors.size();
-//#ifdef _TRACE_
-//										printf("Fan %x belong to it!\n", fan->id);
-//#endif
-//									}
 								sensors.push_back({ { vkind, 1 }, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
 							}
 							else {
@@ -197,52 +187,6 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 						printf("%d fans, %d sensors, %d Power modes found, last reply %x\n", (int) fans.size(), (int) sensors.size(), (int)powers.size(), funcID);
 #endif
-//						// Scan for available fans...
-//						while ((funcID = CallWMIMethod(getPowerID, fIndex) & 0xff) > 0x2f) {
-//							fans.push_back({ funcID, 0xff });
-//#ifdef _TRACE_
-//							printf("Fan ID=%x found\n", funcID);
-//#endif
-//							fIndex++;
-//						}
-//#ifdef _TRACE_
-//						printf("%d Fans found, last reply %d\n", fIndex, funcID);
-//#endif
-//						// AWCC temperature sensors.
-//						while (funcID > 0 && funcID < 0xa0) {
-//#ifdef _TRACE_
-//							printf("Sensor ID=%x found\n", funcID);
-//#endif
-//							string sName = sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size());
-//							// fan mappings...
-//							for (auto fan = fans.begin(); fan != fans.end(); fan++)
-//								if (funcID == CallWMIMethod(getFanSensor, fan->id)) {
-//									fan->type = (byte)sensors.size();
-//#ifdef _TRACE_
-//									printf("Fan %d belong to it!\n", fan->id);
-//#endif
-//								}
-//							sensors.push_back({ { funcID, 1 }, sName });
-//							fIndex++;
-//							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
-//						}
-//#ifdef _TRACE_
-//						printf("%d AWCC Temperature sensors found, last reply %d\n", (int)sensors.size(), funcID);
-//#endif
-//						// Power modes.
-//						powers.push_back(0); // Manual mode
-//						while (funcID > 0 && funcID != 0xff) {
-//							powers.push_back(funcID);
-//#ifdef _TRACE_
-//							printf("Power ID=%x found\n", funcID);
-//#endif
-//							fIndex++;
-//							funcID = CallWMIMethod(getPowerID, fIndex) & 0xff;
-//						}
-//#ifdef _TRACE_
-//						printf("%d Power modes found, last reply %d\n", (int)powers.size(), funcID);
-//#endif
-
 						if (sysType) {
 							// Modes 1 and 2 for R7 desktop
 							powers.push_back(1);
@@ -253,16 +197,12 @@ namespace AlienFan_SDK {
 					}
 			}
 			// ESIF sensors
-			if (m_WbemServices->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
-				EnumSensors(enum_obj, 0);
-			}
+			EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
 			// SSD sensors
-			if (/*m_DiskService && */m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDiskToStorageReliabilityCounter", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
-				EnumSensors(enum_obj, 2);
-			}
+			EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
 			// OHM sensors
-			if (m_OHMService && m_OHMService->CreateInstanceEnum((BSTR)L"Sensor", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
-				EnumSensors(enum_obj, 4);
+			if (m_OHMService) {
+				EnumSensors(m_OHMService, L"Sensor", 4);
 			}
 		}
 		return isSupported;
