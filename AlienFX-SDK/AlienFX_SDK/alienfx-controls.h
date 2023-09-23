@@ -87,7 +87,7 @@ namespace AlienFX_SDK {
 		//reply: 94 37 (command) XX.....XX - status
 		const byte COMMV6_systemReset[]{ 4, 0x95,0,0,0 };
 		//const byte colorReset[11]{ 0x92,0x37,0x07,0x00,0x51,0x84,0xd0,0x03,0x64,0x55,0x59 };
-		const byte COMMV6_colorSet[]{3, 0x92,0x37,0x0a};
+		const byte COMMV6_colorSet[]{2, 0x92,0x37};
 		//[3] - command length (a - color, b - pulse, f - morph, 7 - timing),
 		//[6] - command (87 - color, 88 - Pulse, 8c - morph/breath, 84 - timing?),
 		//[8] - command type - 4 - color, 1 - morph, 2 - pulse, 3 - timing?
@@ -96,6 +96,9 @@ namespace AlienFX_SDK {
 		// 4,87 - [10,11,12] - RGB, [13] - Brightness (0..64), [14] - checksum
 		// 2,88 - [10,11,12] - RGB, [13] - Brightness (0..64), [14] - Tempo?, [15] - checksum
 		// 1,8c - [10,11,12] - RGB, [13,14,15] - RGB2, [16] - brightness, [17,18] - tempo, [19] - checksum
+		const byte v6OpCodes[]{ 0x87, 0x88, 0x8c,0x8c,0x8c,0x8c,0x8c };
+		const byte v6TCodes[]{     4,    2,    1,   1,   1,   1,   1 };
+		//const byte v6CLen[]{ 0xa,  0xb,  0xf, 0xf, 0xf, 0xf, 0xf };
 
 	// V7, mouses
 		const byte COMMV7_update[]{8, 0x40,0x60,0x07,0x00,0xc0,0x4e,0x00,0x01};

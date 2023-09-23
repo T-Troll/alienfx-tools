@@ -23,43 +23,60 @@ namespace AlienFX_SDK {
 
 	vector<Afx_icommand> *Functions::SetMaskAndColor(vector<Afx_icommand>* mods, DWORD index, Afx_action c1, Afx_action c2, byte tempo) {
 		if (version < API_V4) {
+			// index mask generation
 			Afx_colorcode c; c.ci = index;
-			*mods = { {1, v1OpCodes[c1.type]}, { 2, (byte)chain }, { 3, c.r }, { 4, c.g }, { 5, c.b } };
+			*mods = { {1, { v1OpCodes[c1.type], (byte)chain, c.r, c.g, c.b } } };
 		}
 		switch (version) {
 		case API_V3:
-			mods->insert(mods->end(),{{6,c1.r},{7,c1.g},{8,c1.b},{9,c2.r},{10,c2.g},{11,c2.b}});
+			mods->push_back({6, {c1.r, c1.g,c1.b,c2.r,c2.g,c2.b}});
 			break;
 		case API_V2:
-			mods->insert(mods->end(),{{6,(byte)((c1.r & 0xf0) | ((c1.g & 0xf0) >> 4))},
-						{7,(byte)((c1.b & 0xf0) | ((c2.r & 0xf0) >> 4))},
-						{8,(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
+			mods->push_back({6, {(byte)((c1.r & 0xf0) | ((c1.g & 0xf0) >> 4)),
+						(byte)((c1.b & 0xf0) | ((c2.r & 0xf0) >> 4)),
+						(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
 			break;
 		case API_V6: case API_V9: {
-			byte pos = 9, lpos = 3, cpos = 5;
-			if (version == API_V9) {
-				pos = 0x45; lpos = 7; cpos = 0x41;
-			}
-			*mods = { {cpos, 0x51}, {(byte)(cpos + 2), 0xd}, {pos++,(byte)index}, { pos++,c1.r }, { pos++,c1.g }, { pos++,c1.b } };
+			vector<byte> command{ v6OpCodes[c1.type], 0xd0, v6TCodes[c1.type], (byte)index, c1.r, c1.g, c1.b };
 			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
 			switch (c1.type) {
 			case AlienFX_A_Color:
 				mask ^= 8;
-				mods->insert(mods->end(), { {(byte)(cpos+1), 0x87}, {byte(cpos + 3), 4}, {pos++, bright}, {pos,mask} });
+				command.insert(command.end(), {bright, mask});
 				break;
 			case AlienFX_A_Pulse:
 				mask ^= byte(tempo ^ 1);
-				mods->insert(mods->end(), { {lpos, 0xb}, {(byte)(cpos + 1), 0x88}, {byte(cpos+3), 2}, {pos++, bright}, {pos++, tempo}, {pos,mask} });
+				command.insert(command.end(), { bright, tempo, mask} );
 				break;
 			case AlienFX_A_Breathing:
 				c2 = { 0 };
 			case AlienFX_A_Morph:
-				mask ^= (byte)(c2.r ^ c2.g ^c2.b ^ tempo ^ 4);
-				mods->insert(mods->end(), { {lpos, 0xf}, {(byte)(cpos + 1), 0x8c}, {byte(cpos + 3), 1},
-					{pos++,c2.r},{pos++,c2.g},{pos++,c2.b},
-					{pos++, bright}, {pos++, 2}, {pos++, tempo}, {pos,mask} });
+				mask ^= (byte)(c2.r ^ c2.g ^ c2.b ^ tempo ^ 4);
+				command.insert(command.end(), { c2.r,c2.g,c2.b, bright, 2, tempo, mask} );
 				break;
 			}
+			byte lpos = 3, cpos = 5;
+			if (version == API_V9) {
+				lpos = 7; cpos = 0x41;
+			}
+			*mods = { {cpos, { command } }, {lpos, {(byte)command.size()} } };
+			//byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
+			//switch (c1.type) {
+			//case AlienFX_A_Color:
+			//	mask ^= 8;
+			//	mods->push_back( {cpos + 8, {bright, mask} });
+			//	break;
+			//case AlienFX_A_Pulse:
+			//	mask ^= byte(tempo ^ 1);
+			//	mods->push_back( {cpos + 8, { bright, tempo, mask} });
+			//	break;
+			//case AlienFX_A_Breathing:
+			//	c2 = { 0 };
+			//case AlienFX_A_Morph:
+			//	mask ^= (byte)(c2.r ^ c2.g ^c2.b ^ tempo ^ 4);
+			//	mods->push_back({cpos + 8, { c2.r,c2.g,c2.b, bright, 2, tempo, mask}});
+			//	break;
+			//}
 		} break;
 		}
 		return mods;
@@ -81,7 +98,7 @@ namespace AlienFX_SDK {
 
 		if (mods) {
 			for (auto i = mods->begin(); i < mods->end(); i++)
-				buffer[i->i] = i->val;
+				memcpy(buffer + i->i, i->vval.data(), i->vval.size());
 			mods->clear();
 		}
 
@@ -124,19 +141,19 @@ namespace AlienFX_SDK {
 
 	bool Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse) {
 		vector<Afx_icommand> mods;
-		PrepareAndSend(COMMV1_saveGroup, { {2, blID} });
+		PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
 		if (act->act.size() < 2)
 			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, 1 << act->index, act->act.front()));
 		else
 			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, 1 << act->index, act->act.front(), act->act.back()));
-		PrepareAndSend(COMMV1_saveGroup, { {2, blID} });
+		PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
 		PrepareAndSend(COMMV1_loop);
 		chain++;
 
 		if (needInverse) {
-			PrepareAndSend(COMMV1_saveGroup, { {2, blID} });
+			PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
 			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, ~((1 << act->index)), act->act.front(), act->act.back()));
-			PrepareAndSend(COMMV1_saveGroup, { {2, blID} });
+			PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
 			PrepareAndSend(COMMV1_loop);
 chain++;
 		}
@@ -263,7 +280,7 @@ chain++;
 	bool Functions::Reset() {
 		switch (version) {
 		case API_V9:
-			inSet = PrepareAndSend(COMMV9_update, { {3,2} });
+			inSet = PrepareAndSend(COMMV9_update, { {3,{2}} });
 			break;
 		case API_V6:
 			// need initial reset if not done
@@ -281,8 +298,8 @@ chain++;
 		case API_V4:
 		{
 			WaitForReady();
-			PrepareAndSend(COMMV4_control, {{ 4, 4 }/*, { 5, 0xff }*/});
-			inSet = PrepareAndSend(COMMV4_control, { {4, 1}/*, { 5, 0xff }*/ });
+			PrepareAndSend(COMMV4_control, { { 4, {4} }/*, { 5, 0xff }*/ });
+			inSet = PrepareAndSend(COMMV4_control, { {4, {1}}/*, { 5, 0xff }*/ });
 		} break;
 		case API_V3: case API_V2:
 		{
@@ -330,18 +347,14 @@ chain++;
 	}
 
 	void Functions::AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, Afx_lightblock* act) {
-		mods->insert(mods->end(), { {bPos,act->index},{(byte)(bPos + 1),v8OpCodes[act->act.front().type]},
-			{(byte)(bPos + 2),act->act.front().tempo},
-			{ (byte)(bPos + 3), 0xa5}, {(byte)(bPos + 4),act->act.front().time }, {(byte)(bPos + 5), 0xa},
-			{ (byte)(bPos + 6),act->act.front().r},{ (byte)(bPos + 7),act->act.front().g},{ (byte)(bPos + 8),act->act.front().b},
-			{ (byte)(bPos + 9),act->act.back().r },{ (byte)(bPos + 10),act->act.back().g},{ (byte)(bPos + 11),act->act.back().b},
-			{ (byte)(bPos + 12), 2} });
+		mods->push_back( {bPos, {act->index,v8OpCodes[act->act.front().type], act->act.front().tempo, 0xa5, act->act.front().time, 0xa,
+			act->act.front().r, act->act.front().g,act->act.front().b,
+			act->act.back().r,act->act.back().g,act->act.back().b,
+			2} } );
 	}
 
 	void Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
-		mods->insert(mods->end(), { {bPos,(byte)(index + 1)},
-			{(byte)(bPos + 1),c->r}, {(byte)(bPos + 2),c->g}, {(byte)(bPos + 3),c->b} });
-		//return bPos + 4;
+		mods->push_back( {bPos, { (byte)(index + 1),c->r,c->g,c->b} });
 	}
 
 	bool Functions::SetMultiColor(vector<UCHAR> *lights, Afx_action c) {
@@ -351,7 +364,7 @@ chain++;
 		if (!inSet) Reset();
 		switch (version) {
 		case API_V8: {
-			PrepareAndSend(COMMV8_readyToColor, { {2,(byte)lights->size()} });
+			PrepareAndSend(COMMV8_readyToColor, { {2,{(byte)lights->size()}} });
 			auto nc = lights->begin();
 			for (byte cnt = 1; nc != lights->end(); cnt++) {
 				for (byte bPos = 5; bPos < length && nc != lights->end(); bPos += 15) {
@@ -359,7 +372,7 @@ chain++;
 					AddV8DataBlock(bPos, &mods, &act);
 					nc++;
 				}
-				mods.push_back({ 4, cnt });
+				mods.push_back({ 4, {cnt} });
 				val = PrepareAndSend(COMMV8_colorSet, &mods);
 			}
 		} break;
@@ -375,10 +388,8 @@ chain++;
 			break;
 		case API_V4:
 		{
-			mods = { { 3, c.r }, { 4, c.g }, { 5, c.b }, {7, (byte)lights->size()} };
-			int cnt = 8;
-			for (auto nc = lights->begin(); nc != lights->end(); nc++)
-				mods.push_back({ (byte)(cnt++), *nc});
+			mods = { { 3, {c.r, c.g, c.b, 0, (byte)lights->size()} },
+				{8, *lights} };
 			val = PrepareAndSend(COMMV4_setOneColor, &mods);
 		} break;
 		case API_V3: case API_V2: case API_V6: case API_V9: case API_ACPI:
@@ -423,14 +434,14 @@ chain++;
 			switch (version) {
 			case API_V8: {
 				//byte bPos = 5, cnt = 0;
-				PrepareAndSend(COMMV8_readyToColor, { {2,(byte)act->size()} });
+				PrepareAndSend(COMMV8_readyToColor, { {2,{(byte)act->size()}} });
 				auto nc = act->begin();
 				for (byte cnt = 1; nc != act->end(); cnt++) {
 					for (byte bPos = 5; bPos < length && nc != act->end(); bPos+=15) {
 						AddV8DataBlock(bPos, &mods, &(*nc));
 						nc++;
 					}
-					mods.push_back({ 4, cnt });
+					mods.push_back({ 4, {cnt} });
 					val = PrepareAndSend(COMMV8_colorSet, &mods);
 				}
 			} break;
@@ -458,18 +469,13 @@ chain++;
 	bool Functions::SetV4Action(Afx_lightblock* act) {
 		bool res = false;
 		vector<Afx_icommand> mods;
-		PrepareAndSend(COMMV4_colorSel, { {6,act->index} });
+		PrepareAndSend(COMMV4_colorSel, { {6,{act->index}} });
 		for (auto ca = act->act.begin(); ca != act->act.end();) {
 			// 3 actions per record..
 			for (byte bPos = 3; bPos < length && ca != act->act.end(); bPos += 8) {
-				mods.insert(mods.end(), {
-					{bPos,(byte)(ca->type < AlienFX_A_Breathing ? ca->type : AlienFX_A_Morph) },
-							{(byte)(bPos + 1), ca->time},
-							{(byte)(bPos + 2), v4OpCodes[ca->type]},
-							{(byte)(bPos + 4), (byte)(ca->type == AlienFX_A_Color ? 0xfa : ca->tempo) },
-							{(byte)(bPos + 5), ca->r},
-							{(byte)(bPos + 6), ca->g},
-							{(byte)(bPos + 7), ca->b} });
+				mods.push_back(
+					{bPos, {(byte)(ca->type < AlienFX_A_Breathing ? ca->type : AlienFX_A_Morph), ca->time, v4OpCodes[ca->type], 0,
+					(byte)(ca->type == AlienFX_A_Color ? 0xfa : ca->tempo), ca->r, ca->g, ca->b} });
 				ca++;
 			}
 			res = PrepareAndSend(COMMV4_colorSet, &mods);
@@ -490,13 +496,10 @@ chain++;
 			return PrepareAndSend(COMMV8_colorSet, &mods);
 		case API_V7:
 		{
-			mods = {{5,v7OpCodes[act->act.front().type]},{6,bright},{7,act->index}};
+			mods = { {5,{v7OpCodes[act->act.front().type],bright,act->index}} };
 			for (int ca = 0; ca < act->act.size(); ca++) {
-				if (ca*3+10 < length)
-					mods.insert(mods.end(), {
-						{(byte)(ca*3+8), act->act.at(ca).r},
-						{(byte)(ca*3+9), act->act.at(ca).g},
-						{(byte)(ca*3+10), act->act.at(ca).b}});
+				if (ca * 3 + 10 < length)
+					mods.push_back({ ca * 3 + 8, {	act->act.at(ca).r, act->act.at(ca).g, act->act.at(ca).b} });
 			}
 			return PrepareAndSend(COMMV7_control, &mods);
 		}
@@ -512,8 +515,7 @@ chain++;
 			// check types and call
 			switch (act->act.front().type) {
 			case AlienFX_A_Color: // it's a color, so set as color
-				return PrepareAndSend(COMMV4_setOneColor,
-					{ {3,act->act.front().r}, {4,act->act.front().g}, {5,act->act.front().b}, {7, 1}, {8, (byte)act->index } });
+				return PrepareAndSend(COMMV4_setOneColor, { {3, {act->act.front().r,act->act.front().g,act->act.front().b, 0, 1, (byte)act->index } } });
 			case AlienFX_A_Power: { // Set power
 				vector<Afx_lightblock> t = { *act };
 				return SetPowerAction(&t);
@@ -534,10 +536,10 @@ chain++;
 				break;
 			default:
 				PrepareAndSend(COMMV1_setTempo,
-					{ {2,(byte)(((WORD)act->act.front().tempo << 3 & 0xff00) >> 8)},
-						{3,(byte)((WORD)act->act.front().tempo << 3 & 0xff)},
-						{4,(byte)(((WORD)act->act.front().time << 5 & 0xff00) >> 8)},
-						{5,(byte)((WORD)act->act.front().time << 5 & 0xff)} });
+					{ {2, { (byte)(((WORD)act->act.front().tempo << 3 & 0xff00) >> 8),
+						(byte)((WORD)act->act.front().tempo << 3 & 0xff),
+						(byte)(((WORD)act->act.front().time << 5 & 0xff00) >> 8),
+						(byte)((WORD)act->act.front().time << 5 & 0xff)} } });
 			}
 			Afx_action c2{ 0 };
 			for (auto ca = act->act.begin(); ca != act->act.end(); ca++) {
@@ -568,21 +570,21 @@ chain++;
 		{
 			UpdateColors();
 			if (save) {
-				PrepareAndSend(COMMV4_control, { { 4, 4 }, { 6, 0x61 } });
-				PrepareAndSend(COMMV4_control, { { 4, 1 }, { 6, 0x61 } });
+				PrepareAndSend(COMMV4_control, { { 4, {4} }, { 6, {0x61} } });
+				PrepareAndSend(COMMV4_control, { { 4, {1} }, { 6, {0x61} } });
 				for (auto ca = act->begin(); ca != act->end(); ca++)
 					if (ca->act.front().type != AlienFX_A_Power)
 						SetV4Action(&(*ca));
-				PrepareAndSend(COMMV4_control, { { 4, 2 }, { 6, 0x61 } });
-				PrepareAndSend(COMMV4_control, { { 4, 6 }, { 6, 0x61 }});
+				PrepareAndSend(COMMV4_control, { { 4, {2} }, { 6, {0x61} } });
+				PrepareAndSend(COMMV4_control, { { 4, {6} }, { 6, {0x61} } });
 			}
 			else {
 				pwr = &act->front();
 				// Now set power button....
 				for (BYTE cid = 0x5b; cid < 0x61; cid++) {
 					// Init query...
-					PrepareAndSend(COMMV4_setPower, { {6,cid},{4,4} });
-					PrepareAndSend(COMMV4_setPower, { {6,cid},{4,1} });
+					PrepareAndSend(COMMV4_setPower, { {6,{cid}},{4,{4}} });
+					PrepareAndSend(COMMV4_setPower, { {6,{cid}},{4,{1}} });
 					// Now set color by type...
 					Afx_lightblock tact{ pwr->index };
 					switch (cid) {
@@ -612,10 +614,10 @@ chain++;
 					}
 					SetV4Action(&tact);
 					// And finish
-					PrepareAndSend(COMMV4_setPower, { {6,cid},{4,2} });
+					PrepareAndSend(COMMV4_setPower, { {6,{cid}},{4,{2}} });
 				}
 
-				PrepareAndSend(COMMV4_control, { { 4, 5 }/*, { 6, 0x61 }*/ });
+				PrepareAndSend(COMMV4_control, { { 4, {5} }/*, { 6, 0x61 }*/ });
 #ifdef _DEBUG
 				if (!WaitForBusy())
 					DebugPrint("Power device busy timeout!\n");
@@ -689,27 +691,26 @@ chain++;
 		bright = (brightness * brightnessScale[version]) / 0xff;
 		switch (version) {
 		case API_V8:
-			return PrepareAndSend(COMMV8_setBrightness, { {2, bright} });
+			return PrepareAndSend(COMMV8_setBrightness, { {2, {bright}} });
 		case API_V5:
 			Reset();
-			return PrepareAndSend(COMMV5_turnOnSet, {{4, bright}});
+			return PrepareAndSend(COMMV5_turnOnSet, { {4, {bright}} });
 		case API_V4: {
-			vector<Afx_icommand> mods{ {3,(byte)(0x64 - bright)} };
-			byte pos = 6;
+			vector<byte> idlist;
 			for (auto i = mappings->begin(); i < mappings->end(); i++)
-				if (pos < length && (!i->flags || power)) {
-					mods.push_back({ pos,(byte)i->lightid });
-					pos++;
+				if (!i->flags || power) {
+					idlist.push_back((byte)i->lightid);
 				}
-			mods.push_back({ 5,(byte)mappings->size() });
+			vector<Afx_icommand> mods{ {3,{(byte)(0x64 - bright), 0, (byte)mappings->size()}},
+										{ 6, idlist} };
 			return PrepareAndSend(COMMV4_turnOn, &mods);
 		}
 		case API_V3: case API_V2:
 			if (!bright || !oldBr) {
-				PrepareAndSend(COMMV1_reset, { {2,(byte)(brightness ? 4 : power ? 3 : 1)} });
+				PrepareAndSend(COMMV1_reset, { {2,{(byte)(brightness ? 4 : power ? 3 : 1)}} });
 				WaitForReady();
 			}
-			return PrepareAndSend(COMMV1_dim, { { 2,bright } });
+			return PrepareAndSend(COMMV1_dim, { { 2,{bright} } });
 #ifndef NOACPILIGHTS
 		case API_ACPI:
 			bright = brightness * 0xf / 0xff;
@@ -724,27 +725,20 @@ chain++;
 		switch (version) {
 		case API_V8:
 			PrepareAndSend(COMMV8_effectReset);
-			PrepareAndSend(COMMV8_effectReady, { {2, 1/*(byte)(mode == 1 ? 1 : 0)*/ } });
-			return PrepareAndSend(COMMV8_effectSet, { {3, effType}, {2, 1/*(byte)(mode == 1? 1: 0)*/},
-				{4, act1.r}, {5, act1.g}, {6, act1.b},
-				{7, act2.r}, {8, act2.g}, {9, act2.b},
-				{10, tempo},
-				{11, bright},
-				//{12, 0/*(byte)(mode - 1)*/},
-				{13, mode}, {14, nc} });
+			PrepareAndSend(COMMV8_effectReady, { {2, {1}} });
+			return PrepareAndSend(COMMV8_effectSet, { {2, {1, effType, act1.r, act1.g, act1.b, act2.r, act2.g, act2.b,
+				tempo, bright, 0, mode, nc} }});
 		case API_V5:
 			if (inSet)
 				UpdateColors();
 			Reset();
 			if (effType < 2)
-				PrepareAndSend(COMMV5_setEffect, { {2,1}, {11,0xff}, {12,0xff}, {14,0xff}, {15,0xff}});
+				PrepareAndSend(COMMV5_setEffect, { {2,{1}}, {11,{0xff,12,0xff}}, {14,{0xff,0xff} } });
 			else
-				PrepareAndSend(COMMV5_setEffect, { {2,effType}, {3,tempo},
-						   {10,act1.r}, {11,act1.g}, {12,act1.b},
-						   {13,act2.r}, {14,act2.g}, {15,act2.b},
-						   {16,5}});
+				PrepareAndSend(COMMV5_setEffect, { {2, {effType,tempo}},
+						   {10,{ act1.r,act1.g,act1.b,act2.r,act2.g,act2.b, 5}}});
 			if (effType < 2)
-				return PrepareAndSend(COMMV5_update, { {3,0xfe}, {6,0xff}, {7,0xff} });
+				return PrepareAndSend(COMMV5_update, { {3,{0xfe}}, {6,{0xff,0xff}} });
 			else
 				return UpdateColors();
 		}

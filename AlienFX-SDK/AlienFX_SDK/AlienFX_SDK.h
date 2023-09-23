@@ -43,7 +43,8 @@ namespace AlienFX_SDK {
 	};
 
 	struct Afx_icommand {
-		byte i, val;
+		int i;
+		vector<byte> vval;
 	};
 
 	struct Afx_light { // Light information block
@@ -134,10 +135,10 @@ namespace AlienFX_SDK {
 		bool PrepareAndSend(const byte* command, vector<Afx_icommand> *mods = NULL);
 
 		// Add new light effect block for v8
-		void AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, Afx_lightblock* act);
+		inline void AddV8DataBlock(byte bPos, vector<Afx_icommand>* mods, Afx_lightblock* act);
 
 		// Add new color block for v5
-		void AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* act);
+		inline void AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* act);
 
 		// Support function to send whole power block for v1-v3
 		bool SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse = false);
