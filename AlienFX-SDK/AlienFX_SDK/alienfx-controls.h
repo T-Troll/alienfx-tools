@@ -117,12 +117,12 @@ namespace AlienFX_SDK {
 		// [5] - flag?
 		// [6..8] - rgb
 		// block [5-8] repeated
-		const byte COMMV8_effectReset[]{8, 8, 0, 1, 1, 1, 1, 0xfc, 1 };
-		const byte COMMV8_effectReady[]{4, 0x5,0x00,0x51,0}; // Select profile, in fact!
+		//const byte COMMV8_effectReset[]{8, 8, 0, 1, 1, 1, 1, 0xfc, 1 };
+		const byte COMMV8_effectReady[]{3, 0x5,0x01,0x51}; // Select profile, in fact!
 		// [2] - chain number, ff for reset
-		const byte COMMV8_effectSet[]{2, 0x5,0x00/*,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 */ };
+		//const byte COMMV8_effectSet[]{2, 0x5,0x00/*,0x13,0x00,0xf0,0xf0,0x00,0x00,0x00,0x10,0x0a,0x00,0x01,0x01 */ };
 		// [2] - chain number
-		// [3] - effect type (0x13 - color reset, valid from 0 to it)
+		// [3] - effect type (0x13 - color reset, valid from 0 to it or 51?)
 		// [4-6] - RGB1
 		// [7-9] - RGB2
 		// [10] - tempo
@@ -134,7 +134,7 @@ namespace AlienFX_SDK {
 		// [2] - how much lights into next color block(s)
 		// [3] - profile number???
 		// [4] - ??? (default 1)
-		const byte COMMV8_colorSet[]{5, 0xe,0x01,0x00,0x01,0x0/*,0x81,0x00,0xa5,0x00,0x00*/ };
+		//const byte COMMV8_colorSet[]{2, 0xe,0x01/*,0x00,0x01,0x0,0x81,0x00,0xa5,0x00,0x00 */ };
 		// [4] - packet number in group
 		// [5] - light id
 		// [6] - Effect type (80 - off, 81 - color, 82 - Pulse, 83 - morph, 84 - default blue, 87 - breath, 88 - spectrum (undocumented))
@@ -145,7 +145,7 @@ namespace AlienFX_SDK {
 		// [14-16] - RGB2
 		// [18] - Number of RGB? (0,1,2)
 		// [20-33],[35-48],[50-63] - same block [5..18] (so total 4 blocks per command)
-		const byte COMMV8_setBrightness[]{4, 0x17,0x00,0x00,0x00 };
+		const byte COMMV8_setBrightness[]{1, 0x17/*,0x00,0x00,0x00*/ };
 		// [1] - brightness (0..a)
 		const byte v8OpCodes[]{ 0x81, 0x82, 0x83, 0x87, 0x88, 0x84, 0x81 };
 		// 09 03, 0a 03 - set profiles

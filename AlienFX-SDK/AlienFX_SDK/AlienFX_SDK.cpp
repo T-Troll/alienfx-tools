@@ -60,23 +60,6 @@ namespace AlienFX_SDK {
 				lpos = 7; cpos = 0x41;
 			}
 			*mods = { {cpos, { command } }, {lpos, {(byte)command.size()} } };
-			//byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
-			//switch (c1.type) {
-			//case AlienFX_A_Color:
-			//	mask ^= 8;
-			//	mods->push_back( {cpos + 8, {bright, mask} });
-			//	break;
-			//case AlienFX_A_Pulse:
-			//	mask ^= byte(tempo ^ 1);
-			//	mods->push_back( {cpos + 8, { bright, tempo, mask} });
-			//	break;
-			//case AlienFX_A_Breathing:
-			//	c2 = { 0 };
-			//case AlienFX_A_Morph:
-			//	mask ^= (byte)(c2.r ^ c2.g ^c2.b ^ tempo ^ 4);
-			//	mods->push_back({cpos + 8, { c2.r,c2.g,c2.b, bright, 2, tempo, mask}});
-			//	break;
-			//}
 		} break;
 		}
 		return mods;
@@ -99,7 +82,11 @@ namespace AlienFX_SDK {
 		if (mods) {
 			for (auto i = mods->begin(); i < mods->end(); i++)
 				memcpy(buffer + i->i, i->vval.data(), i->vval.size());
-			mods->clear();
+			if (mods->begin()->vval.size() == 1) { // patch for V8
+				mods->clear();
+				mods = NULL;
+			} else
+				mods->clear();
 		}
 
 		if (devHandle) // Is device initialized?
@@ -121,20 +108,16 @@ namespace AlienFX_SDK {
 				WriteFile(devHandle, buffer, length, &written, NULL);
 				res = ReadFile(devHandle, buffer, length, &written, NULL);
 				break;
-			case API_V8: {
-				if (size == 4 || size == 8) {
-					//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
+			case API_V8:
+				if (mods) {
+					res = WriteFile(devHandle, buffer, length, &written, NULL);
+				}
+				else
+				{
 					res = HidD_SetFeature(devHandle, buffer, length);
-					//res = DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
 					Sleep(7);
-					//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
-					//Sleep(6); // Need wait for ACK
 				}
-				else {
-					bool res = WriteFile(devHandle, buffer, length, &written, NULL);
-					//WaitForSingleObjectEx(devHandle, INFINITE, TRUE);
-				}
-			}
+//				if (size == 4 || size == 8) {
 			}
 		return res;
 	}
@@ -373,7 +356,7 @@ chain++;
 					nc++;
 				}
 				mods.push_back({ 4, {cnt} });
-				val = PrepareAndSend(COMMV8_colorSet, &mods);
+				val = PrepareAndSend(COMMV8_readyToColor, &mods);
 			}
 		} break;
 		case API_V5:
@@ -442,7 +425,7 @@ chain++;
 						nc++;
 					}
 					mods.push_back({ 4, {cnt} });
-					val = PrepareAndSend(COMMV8_colorSet, &mods);
+					val = PrepareAndSend(COMMV8_readyToColor, &mods);
 				}
 			} break;
 			case API_V5:
@@ -493,7 +476,7 @@ chain++;
 		case API_V8:
 			AddV8DataBlock(5, &mods, act);
 			PrepareAndSend(COMMV8_readyToColor);
-			return PrepareAndSend(COMMV8_colorSet, &mods);
+			return PrepareAndSend(COMMV8_readyToColor, &mods);
 		case API_V7:
 		{
 			mods = { {5,{v7OpCodes[act->act.front().type],bright,act->index}} };
@@ -724,10 +707,11 @@ chain++;
 		vector<Afx_icommand> mods;
 		switch (version) {
 		case API_V8:
-			PrepareAndSend(COMMV8_effectReset);
-			PrepareAndSend(COMMV8_effectReady, { {2, {1}} });
-			return PrepareAndSend(COMMV8_effectSet, { {2, {1, effType, act1.r, act1.g, act1.b, act2.r, act2.g, act2.b,
-				tempo, bright, 0, mode, nc} }});
+			//PrepareAndSend(COMMV8_effectReset);
+			PrepareAndSend(COMMV8_effectReady);
+			//PrepareAndSend(COMMV8_effectReady, { {3, {0}} });
+			return PrepareAndSend(COMMV8_effectReady, { {3, { effType, act1.r, act1.g, act1.b, act2.r, act2.g, act2.b,
+				tempo, bright, 1, mode, nc} }});
 		case API_V5:
 			if (inSet)
 				UpdateColors();
@@ -1033,16 +1017,6 @@ chain++;
 					gl->resize(lend / sizeof(DWORD));
 					RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, gl->data(), &lend);
 				}
-				// Deprecated, will remove soon
-				//if (RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
-				//	len = lend / sizeof(DWORD);
-				//	DWORD* maps = new DWORD[len];
-				//	RegGetValue(mainKey, kName, "Lights", RRF_RT_REG_BINARY, 0, maps, &lend);
-				//	for (unsigned i = 0; i < len; i += 2) {
-				//		gl->push_back({ (WORD)maps[i], (WORD)maps[i + 1] });
-				//	}
-				//	delete[] maps;
-				//}
 			}
 		}
 		RegCloseKey(mainKey);
@@ -1116,9 +1090,10 @@ chain++;
 
 	bool Functions::IsHaveGlobal()
 	{
-		switch (version) {
-		case API_V5: /*case API_V8: */return true;
-		}
-		return false;
+		return version == API_V5 || version == API_V8;
+		//switch (version) {
+		//case API_V5: case API_V8: return true;
+		//}
+		//return false;
 	}
 }
