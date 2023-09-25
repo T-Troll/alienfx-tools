@@ -87,7 +87,7 @@ namespace AlienFX_SDK {
 		//reply: 94 37 (command) XX.....XX - status
 		const byte COMMV6_systemReset[]{ 4, 0x95,0,0,0 };
 		//const byte colorReset[11]{ 0x92,0x37,0x07,0x00,0x51,0x84,0xd0,0x03,0x64,0x55,0x59 };
-		const byte COMMV6_colorSet[]{2, 0x92,0x37};
+		const byte COMMV6_colorSet[]{2, 0x92,0x37 };
 		//[3] - command length (a - color, b - pulse, f - morph, 7 - timing),
 		//[6] - command (87 - color, 88 - Pulse, 8c - morph/breath, 84 - timing?),
 		//[8] - command type - 4 - color, 1 - morph, 2 - pulse, 3 - timing?

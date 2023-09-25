@@ -25,7 +25,7 @@ namespace AlienFX_SDK {
 		if (version < API_V4) {
 			// index mask generation
 			Afx_colorcode c; c.ci = index;
-			*mods = { {1, { v1OpCodes[c1.type], (byte)chain, c.r, c.g, c.b } } };
+			*mods = { {1, { v1OpCodes[c1.type], chain, c.r, c.g, c.b } } };
 		}
 		switch (version) {
 		case API_V3:
@@ -37,7 +37,7 @@ namespace AlienFX_SDK {
 						(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
 			break;
 		case API_V6: case API_V9: {
-			vector<byte> command{ v6OpCodes[c1.type], 0xd0, v6TCodes[c1.type], (byte)index, c1.r, c1.g, c1.b };
+			vector<byte> command{ 0x51, v6OpCodes[c1.type], 0xd0, v6TCodes[c1.type], (byte)index, c1.r, c1.g, c1.b };
 			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
 			switch (c1.type) {
 			case AlienFX_A_Color:
@@ -70,14 +70,13 @@ namespace AlienFX_SDK {
 	}
 
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
-		byte buffer[MAX_BUFFERSIZE]{ reportIDList[version] };
-		DWORD written, size = command[0];
+		byte buffer[MAX_BUFFERSIZE];
+		DWORD written;
 		BOOL res = false;
 
-		if (version == API_V6 /*&& size != 3*/)
-			memset(buffer + 1, 0xff, MAX_BUFFERSIZE - 1);
-
-		memcpy(buffer+1, command+1, size);
+		memset(buffer, version == API_V6 ? 0xff :0, length);
+		memcpy(buffer, command, command[0] + 1);
+		buffer[0] = reportIDList[version];
 
 		if (mods) {
 			for (auto i = mods->begin(); i < mods->end(); i++)
@@ -94,7 +93,7 @@ namespace AlienFX_SDK {
 			case API_V2: case API_V3: case API_V4: case API_V9:
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
 				return HidD_SetOutputReport(devHandle, buffer, length);
-				break;
+				//break;
 			case API_V5:
 				//res =  DeviceIoControl(devHandle, IOCTL_HID_SET_FEATURE, buffer, length, 0, 0, &written, NULL);
 				return HidD_SetFeature(devHandle, buffer, length);
@@ -103,14 +102,14 @@ namespace AlienFX_SDK {
 				/*res =*/return WriteFile(devHandle, buffer, length, &written, NULL);
 				//if (size == 3)
 				//	res &= ReadFile(devHandle, buffer, length, &written, NULL);
-				break;
+				//break;
 			case API_V7:
 				WriteFile(devHandle, buffer, length, &written, NULL);
-				res = ReadFile(devHandle, buffer, length, &written, NULL);
-				break;
+				return ReadFile(devHandle, buffer, length, &written, NULL);
+				//break;
 			case API_V8:
 				if (mods) {
-					res = WriteFile(devHandle, buffer, length, &written, NULL);
+					return WriteFile(devHandle, buffer, length, &written, NULL);
 				}
 				else
 				{
