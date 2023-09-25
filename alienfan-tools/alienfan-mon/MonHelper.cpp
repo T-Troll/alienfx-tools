@@ -165,7 +165,6 @@ void CMonProc(LPVOID param) {
 					}
 				}
 				// Set boost
-				SUCCEEDED(status)
 				int curBoostRaw = (int)round((fan_conf->GetFanScale(i) * curBoost) / 100.0);
 				if (curBoostRaw < 100 || !src->fanSleep[i]) {
 					byte boostOld = src->boostRaw[i], boostBios = src->acpi->GetFanBoost(i);
