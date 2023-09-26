@@ -59,7 +59,7 @@ namespace AlienFX_SDK {
 			if (version == API_V9) {
 				lpos = 7; cpos = 0x41;
 			}
-			*mods = { {cpos, { command } }, {lpos, {(byte)command.size()} } };
+			*mods = { {cpos, { command } }, {lpos, {(byte)command.size(), 0} } };
 		} break;
 		}
 		return mods;
@@ -262,7 +262,11 @@ chain++;
 	bool Functions::Reset() {
 		switch (version) {
 		case API_V9:
-			inSet = PrepareAndSend(COMMV9_update, { {3,{2}} });
+			if (chain) {
+				PrepareAndSend(COMMV9_update);
+				GetDeviceStatus();
+				chain = 0;
+			}
 			break;
 		case API_V6:
 			// need initial reset if not done
@@ -298,10 +302,10 @@ chain++;
 	bool Functions::UpdateColors() {
 		if (inSet) {
 			switch (version) {
-			case API_V9:
-				inSet = !PrepareAndSend(COMMV9_update);
-				GetDeviceStatus();
-				break;
+			//case API_V9:
+			//	inSet = !PrepareAndSend(COMMV9_update);
+			//	GetDeviceStatus();
+			//	break;
 			case API_V5:
 			{
 				inSet = !PrepareAndSend(COMMV5_update);
@@ -354,8 +358,10 @@ chain++;
 					AddV8DataBlock(bPos, &mods, &act);
 					nc++;
 				}
-				mods.push_back({ 4, {cnt} });
-				val = PrepareAndSend(COMMV8_readyToColor, &mods);
+				if (mods.size()) {
+					mods.push_back({ 4, {cnt} });
+					val = PrepareAndSend(COMMV8_readyToColor, &mods);
+				}
 			}
 		} break;
 		case API_V5:
@@ -364,9 +370,10 @@ chain++;
 					AddV5DataBlock(bPos, &mods, *nc, &c);
 					nc++;
 				}
-				val = PrepareAndSend(COMMV5_colorSet, &mods);
+				if (mods.size())
+					PrepareAndSend(COMMV5_colorSet, &mods);
 			}
-			PrepareAndSend(COMMV5_loop);
+			val = PrepareAndSend(COMMV5_loop);
 			break;
 		case API_V4:
 		{
@@ -379,12 +386,13 @@ chain++;
 			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
+			SetMaskAndColor(&mods, fmask, c);
 			switch (version) {
 			case API_V6:
-				val = PrepareAndSend(COMMV6_colorSet, SetMaskAndColor(&mods, fmask, c));
+				val = PrepareAndSend(COMMV6_colorSet, &mods);
 				break;
 			case API_V9:
-				val = PrepareAndSend(COMMV9_colorSet, SetMaskAndColor(&mods, fmask, c));
+				val = PrepareAndSend(COMMV9_colorSet, &mods);
 				break;
 #ifndef NOACPILIGHTS
 			case API_ACPI:
@@ -392,7 +400,7 @@ chain++;
 				break;
 #endif
 			default:
-				PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, fmask, c));
+				PrepareAndSend(COMMV1_color, &mods);
 				val = PrepareAndSend(COMMV1_loop);
 				chain++;
 			}
@@ -410,41 +418,41 @@ chain++;
 		bool val = true;
 		vector<Afx_icommand> mods;
 		if (save)
-			SetPowerAction(act, save);
-		else {
-			if (!inSet) Reset();
-			switch (version) {
-			case API_V8: {
-				//byte bPos = 5, cnt = 0;
-				PrepareAndSend(COMMV8_readyToColor, { {2,{(byte)act->size()}} });
-				auto nc = act->begin();
-				for (byte cnt = 1; nc != act->end(); cnt++) {
-					for (byte bPos = 5; bPos < length && nc != act->end(); bPos+=15) {
-						AddV8DataBlock(bPos, &mods, &(*nc));
-						nc++;
-					}
-					mods.push_back({ 4, {cnt} });
-					val = PrepareAndSend(COMMV8_readyToColor, &mods);
+			return SetPowerAction(act, save);
+
+		if (!inSet) Reset();
+		switch (version) {
+		case API_V8: {
+			//byte bPos = 5, cnt = 0;
+			PrepareAndSend(COMMV8_readyToColor, { {2,{(byte)act->size()}} });
+			auto nc = act->begin();
+			for (byte cnt = 1; nc != act->end(); cnt++) {
+				for (byte bPos = 5; bPos < length && nc != act->end(); bPos+=15) {
+					AddV8DataBlock(bPos, &mods, &(*nc));
+					nc++;
 				}
-			} break;
-			case API_V5:
-			{
-				for (auto nc = act->begin(); nc != act->end();) {
-					for (byte bPos = 4; bPos < length && nc != act->end(); bPos += 4) {
-						AddV5DataBlock(bPos, &mods, nc->index, &nc->act.front());
-						nc++;
-					}
-					val = PrepareAndSend(COMMV5_colorSet, &mods);
-				}
-				PrepareAndSend(COMMV5_loop);
-			} break;
-			default:
-			{
-				for (auto nc = act->begin(); nc != act->end(); nc++)
-					val = SetAction(&(*nc));
-			} break;
+				mods.push_back({ 4, {cnt} });
+				val = PrepareAndSend(COMMV8_readyToColor, &mods);
 			}
+		} break;
+		case API_V5:
+		{
+			for (auto nc = act->begin(); nc != act->end();) {
+				for (byte bPos = 4; bPos < length && nc != act->end(); bPos += 4) {
+					AddV5DataBlock(bPos, &mods, nc->index, &nc->act.front());
+					nc++;
+				}
+				PrepareAndSend(COMMV5_colorSet, &mods);
+			}
+			val = PrepareAndSend(COMMV5_loop);
+		} break;
+		default:
+		{
+			for (auto nc = act->begin(); nc != act->end(); nc++)
+				val = SetAction(&(*nc));
+		} break;
 		}
+
 		return val;
 	}
 
@@ -552,21 +560,21 @@ chain++;
 		{
 			UpdateColors();
 			if (save) {
-				PrepareAndSend(COMMV4_control, { { 4, {4} }, { 6, {0x61} } });
-				PrepareAndSend(COMMV4_control, { { 4, {1} }, { 6, {0x61} } });
+				PrepareAndSend(COMMV4_control, { { 4, {4,0,0x61} } });
+				PrepareAndSend(COMMV4_control, { { 4, {1,0,0x61} } });
 				for (auto ca = act->begin(); ca != act->end(); ca++)
 					if (ca->act.front().type != AlienFX_A_Power)
 						SetV4Action(&(*ca));
-				PrepareAndSend(COMMV4_control, { { 4, {2} }, { 6, {0x61} } });
-				PrepareAndSend(COMMV4_control, { { 4, {6} }, { 6, {0x61} } });
+				PrepareAndSend(COMMV4_control, { { 4, {2,0,0x61} } });
+				PrepareAndSend(COMMV4_control, { { 4, {6,0,0x61} } });
 			}
 			else {
 				pwr = &act->front();
 				// Now set power button....
 				for (BYTE cid = 0x5b; cid < 0x61; cid++) {
 					// Init query...
-					PrepareAndSend(COMMV4_setPower, { {6,{cid}},{4,{4}} });
-					PrepareAndSend(COMMV4_setPower, { {6,{cid}},{4,{1}} });
+					PrepareAndSend(COMMV4_setPower, { {4,{4,0,cid}} });
+					PrepareAndSend(COMMV4_setPower, { {4,{1,0,cid}} });
 					// Now set color by type...
 					Afx_lightblock tact{ pwr->index };
 					switch (cid) {
@@ -596,7 +604,7 @@ chain++;
 					}
 					SetV4Action(&tact);
 					// And finish
-					PrepareAndSend(COMMV4_setPower, { {6,{cid}},{4,{2}} });
+					PrepareAndSend(COMMV4_setPower, { {4,{2,0,cid}} });
 				}
 
 				PrepareAndSend(COMMV4_control, { { 4, {5} }/*, { 6, 0x61 }*/ });

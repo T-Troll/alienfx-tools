@@ -69,10 +69,7 @@ void MonHelper::Stop() {
 void MonHelper::SetCurrentMode(WORD newMode) {
 	int cmode = GetPowerMode();
 	if (newMode != cmode) {
-		//switch (acpi->GetSystemID()) {
-		//case 2933: case 3200: case 4800: case 0:
-			acpi->SetPower(0xa0);
-		//}
+		acpi->SetPower(0xa0);
 		if (newMode < powerSize) {
 			if (cmode == powerSize) {
 				acpi->SetGMode(false);
@@ -122,7 +119,6 @@ void CMonProc(LPVOID param) {
 	}
 	// fans...
 	for (byte i = 0; i < src->fansize; i++) {
-		//src->boostRaw[i] = acpi->GetFanBoost(i);
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
@@ -167,7 +163,7 @@ void CMonProc(LPVOID param) {
 				// Set boost
 				int curBoostRaw = (int)round((fan_conf->GetFanScale(i) * curBoost) / 100.0);
 				if (curBoostRaw < 100 || !src->fanSleep[i]) {
-					byte boostOld = src->boostRaw[i], boostBios = src->acpi->GetFanBoost(i);
+					byte boostOld = src->boostRaw[i] = src->acpi->GetFanBoost(i);
 					// Check overboost tricks...
 					if (boostOld < 90 && curBoostRaw > 100) {
 						curBoostRaw = 100;
@@ -175,10 +171,7 @@ void CMonProc(LPVOID param) {
 						DebugPrint("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts (old "
 							+ to_string(boostOld) + ", new " + to_string(curBoostRaw) + ")!\n");
 					}
-					if (curBoostRaw != boostOld || curBoostRaw != boostBios) {
-						if (curBoostRaw == boostOld) {
-							DebugPrint("Boost mismatch - current " + to_string(curBoostRaw) + ", BIOS " + to_string(boostBios) + "\n");
-						}
+					if (curBoostRaw != boostOld) {
 						acpi->SetFanBoost(i, curBoostRaw);
 						src->boostRaw[i] = curBoostRaw;
 						src->boostCooked[i] = curBoost;
