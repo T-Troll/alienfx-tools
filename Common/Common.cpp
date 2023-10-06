@@ -114,29 +114,25 @@ void ResetDPIScale(LPWSTR cmdLine) {
 }
 
 void ShowNotification(NOTIFYICONDATA* niData, string title, string message) {
-	//QUERY_USER_NOTIFICATION_STATE cns;
-	//SHQueryUserNotificationState(&cns);
-	//if (cns == QUNS_ACCEPTS_NOTIFICATIONS) {
-		strcpy_s(niData->szInfoTitle, title.c_str());
-		strcpy_s(niData->szInfo, message.c_str());
-		niData->uFlags |= NIF_INFO;
-		//niData->dwInfoFlags = NIIF_ERROR;
-		if (!Shell_NotifyIcon(NIM_MODIFY, niData))
-			Shell_NotifyIcon(NIM_ADD, niData);
-		niData->uFlags &= ~NIF_INFO;
-	//}
+	strcpy_s(niData->szInfoTitle, title.c_str());
+	strcpy_s(niData->szInfo, message.c_str());
+	niData->uFlags |= NIF_INFO;
+	//niData->dwInfoFlags = NIIF_ERROR;
+	if (!Shell_NotifyIcon(NIM_MODIFY, niData))
+		Shell_NotifyIcon(NIM_ADD, niData);
+	niData->uFlags &= ~NIF_INFO;
 }
 
 DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	NOTIFYICONDATA* niData = (NOTIFYICONDATA*)lparam;
-	HINTERNET session, req;
+	HINTERNET session, req = NULL;
 	char* buf = new char[255];
 	DWORD byteRead;
-	bool isConnectionFailed = true;
-	// Wait connection for a while
 	if (!needUpdateFeedback)
-		Sleep(10000);
-	if (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0)) {
+		// check connection for some seconds
+		for (int delay = 0; delay < 15 && !InternetGetConnectedState(&byteRead, 0); delay++)
+			Sleep(1000);
+	if (InternetGetConnectedState(&byteRead, 0) && (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0))) {
 		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
 			NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE, NULL)) {
 			if (InternetReadFile(req, buf, 254, &byteRead)) {
@@ -144,7 +140,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 				string res = buf;
 				size_t pos = res.find("\"name\":");
 				if (pos != string::npos) {
-					isConnectionFailed = false;
+					//isConnectionFailed = false;
 					res = res.substr(pos + 8);
 					res = res.substr(0, res.find("\""));
 					int ndots = 0;
@@ -166,7 +162,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 		}
 		InternetCloseHandle(session);
 	}
-	if (needUpdateFeedback && isConnectionFailed)
+	if (needUpdateFeedback && !req)
 			ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.");
 	delete[] buf;
 	return 0;

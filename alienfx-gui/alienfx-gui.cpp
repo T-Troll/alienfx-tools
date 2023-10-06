@@ -649,12 +649,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			//fxhl->stateScreen = true; // patch for later StateScreen update
-			//fxhl->SetState(true);
-			//eve->ChangeEffects();
-			//eve->ChangeEffectMode();
+			fxhl->stateScreen = true; // patch for later StateScreen update
+			fxhl->SetState(true);
 			eve->StartProfiles();
-			//eve->ChangePowerState();
 			if (conf->updateCheck) {
 				needUpdateFeedback = false;
 				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
