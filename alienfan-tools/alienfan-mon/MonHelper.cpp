@@ -16,6 +16,7 @@ MonHelper::MonHelper() {
 		fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();
+		sensorSize = (WORD)acpi->sensors.size();
 		oldPower = powerMode = GetPowerMode();
 		Start();
 	}
@@ -36,16 +37,12 @@ void MonHelper::ResetBoost() {
 	}
 }
 
-void MonHelper::SetProfilePower() {
-	SetCurrentMode(fan_conf->lastProf->gmode_stage ? powerSize : fan_conf->lastProf->powerStage);
-}
-
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
 		// Stuck fan fix
 		acpi->SetPower(0xa0);
-		SetProfilePower();
+		SetCurrentMode();
 		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -66,14 +63,16 @@ void MonHelper::Stop() {
 	}
 }
 
-void MonHelper::SetCurrentMode(WORD newMode) {
+void MonHelper::SetCurrentMode(int newMode) {
+	if (newMode < 0)
+		newMode = fan_conf->lastProf->gmode_stage ? powerSize : fan_conf->lastProf->powerStage;
 	int cmode = GetPowerMode();
 	if (newMode != cmode) {
-		acpi->SetPower(0xa0);
 		if (newMode < powerSize) {
 			if (cmode == powerSize) {
 				acpi->SetGMode(false);
 			}
+			acpi->SetPower(0xa0);
 			acpi->SetPower(acpi->powers[newMode]);
 		}
 		else
@@ -108,7 +107,7 @@ void CMonProc(LPVOID param) {
 
 	// update values:
 	// temps..
-	for (int i = 0; i < acpi->sensors.size(); i++) {
+	for (int i = 0; i < src->sensorSize; i++) {
 		int temp = acpi->GetTempValue(i);
 		WORD sid = acpi->sensors[i].sid;
 		if (temp != src->senValues[sid]) {
@@ -131,7 +130,7 @@ void CMonProc(LPVOID param) {
 
 	if (src->inControl && active) {
 		// check power mode
-		src->SetProfilePower();
+		src->SetCurrentMode();
 
 		if (!src->powerMode && modified) {
 			int cBoost;
@@ -180,7 +179,7 @@ void CMonProc(LPVOID param) {
 					}
 				}
 				else
-					src->fanSleep[i]--;
+					--src->fanSleep[i];
 			}
 		}
 	}

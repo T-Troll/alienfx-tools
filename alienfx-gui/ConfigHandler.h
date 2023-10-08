@@ -175,6 +175,7 @@ public:
 	DWORD offWithScreen;
 	DWORD dimPowerButton;
 	DWORD dimmingPower;
+	DWORD fullPower;
 	DWORD enableProfSwitch;
 	DWORD offPowerButton;
 	DWORD awcc_disable;

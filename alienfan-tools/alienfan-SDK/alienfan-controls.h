@@ -52,35 +52,35 @@ namespace AlienFan_SDK {
 		{ // Alienware m15/m17
 			"\\_SB.AMW1.WMAX", // main command
 			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
-			true, // command controlled
+			//true, // command controlled
 			0, // controlID
 			0x14,   2, // Probe command
 		},
 		{ // Dell G15
 			"\\_SB.AMW3.WMAX", // main command
 			"\\_SB.PCI0.GPP0.PEGP.GPS", // GPU command
-			true, // command controlled
+			//true, // command controlled
 			0, // controlID
 			0x14,   2, // Probe command
 		},
 		{ // Dell G5 SE and Alienware m15R6
 			"\\_SB.AMWW.WMAX", // main command
 			"\\_SB.PC00.PEG1.PEGP.GPS", // GPU command
-			true, // command controlled
+			//true, // command controlled
 			0, // controlID
 			0x14,   2, // Probe command
 		},
 		{ // Aurora R7
 			"\\_SB.AMW1.WMAX", // main command
 			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
-			true, // command controlled
+			//true, // command controlled
 			4, // controlID
 			0x14,   2, // Probe command
 		},
 		{ // Area 51R4
 			"\\_SB.WMI2.WMAX", // main command
 			"\\_SB.PCI0.PEG0.PEGP.GPS", // GPU command
-			true, // command controlled
+			//true, // command controlled
 			4, // controlID
 			0x14,   2, // Probe command
 		}//,

@@ -87,6 +87,9 @@ void SetHotkeys() {
 		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F11);
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F10);
 		RegisterHotKey(mDlg, 6, MOD_CONTROL | MOD_SHIFT, VK_F9);
+		// brightness
+		RegisterHotKey(mDlg, 7, MOD_CONTROL | MOD_ALT, VK_OEM_PLUS);
+		RegisterHotKey(mDlg, 8, MOD_CONTROL | MOD_ALT, VK_OEM_MINUS);
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		if (mon) {
@@ -96,7 +99,7 @@ void SetHotkeys() {
 	}
 	else {
 		//unregister global hotkeys...
-		for (int i = 3; i < 7; i++)
+		for (int i = 3; i < 9; i++)
 			UnregisterHotKey(mDlg, i);
 		for (int i = 0; i < 10; i++) {
 			UnregisterHotKey(mDlg, 10 + i);
@@ -759,6 +762,22 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				AlterGMode(NULL);
 				if (tabSel == TAB_FANS)
 					OnSelChanged();
+			}
+			break;
+		case 7: case 8: // Brightness up/down
+			if (conf->lightsOn) {
+				DWORD bright = conf->stateDimmed ? conf->dimmingPower : conf->fullPower;
+				if (wParam == 7 && bright <= 0xf0) {
+					bright += 0xf;
+				} else
+					if (wParam == 8 && bright >= 0xf) {
+						bright -= 0xf;
+					}
+				if (conf->stateDimmed)
+					conf->dimmingPower = bright;
+				else
+					conf->fullPower = bright;
+				UpdateState();
 			}
 			break;
 		default: return false;

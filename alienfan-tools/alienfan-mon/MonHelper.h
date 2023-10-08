@@ -15,17 +15,16 @@ public:
 	map<WORD, short> senValues, maxTemps;
 	map<byte,map<WORD, byte>> senBoosts;
 	WORD powerMode = 0;
-	WORD fansize, powerSize;
+	WORD fansize, powerSize, sensorSize;
 
 	MonHelper();
 	~MonHelper();
 	void Start();
 	void Stop();
-	void SetCurrentMode(WORD newMode);
+	void SetCurrentMode(int newMode = -1);
 	byte GetFanPercent(byte fanID);
 	int GetPowerMode();
 	void SetPowerMode(WORD newMode);
 	void ResetBoost();
-	void SetProfilePower();
 };
 

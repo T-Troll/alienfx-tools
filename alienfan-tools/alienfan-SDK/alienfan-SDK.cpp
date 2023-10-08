@@ -200,7 +200,6 @@ namespace AlienFan_SDK {
 					// Alienware device detected!
 					isAlienware = isSupported = true;
 
-					powers.push_back(0); // Unlocked power
 					//if (devs[aDev].commandControlled) {
 
 						systemID = RunMainCommand(dev_controls.getSystemID, 2);
@@ -241,7 +240,8 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 						printf("%d sensors detected, last reply %d\n", (int)sensors.size(), funcID);
 #endif
-						if (aDev != 3 && funcID > 0) {
+						powers.push_back(0); // Unlocked power
+						if (!devs[aDev].delta && funcID > 0) {
 							do {
 								// Power modes.
 								powers.push_back(funcID & 0xff);
@@ -251,12 +251,10 @@ namespace AlienFan_SDK {
 							printf("%d power modes detected, last reply %d\n", (int)powers.size(), funcID);
 #endif
 						}
-						// patches...
-						switch (aDev) {
-						case 3: case 4: // for Aurora R7 and Area 51 - powers is 1..2
+						else {
+							// for Aurora R7 and Area 51 - powers is 1..2
 							powers.push_back(1);
-							powers.push_back(2);
-							break;
+							//powers.push_back(2);
 						}
 					//}
 					//else {
@@ -410,16 +408,22 @@ namespace AlienFan_SDK {
 		return SetPower(0);
 	}
 	int Control::SetPower(byte level) {
-		if (level < powers.size())
+		// ToDo: make correct mode set for devs[aDev].delta
+		lastMode = level;
+		if (devs[aDev].delta && !level)
+			++level;
+		//if (level < powers.size())
 			//if (devs[aDev].commandControlled)
 			return RunMainCommand(dev_controls.setPower, level);
 		//else {
 		//	return WriteRamDirect(dev_c_controls.unlock, level);
 		//}
-		return -1;
+		//return -1;
 	}
 	int Control::GetPower() {
 		//if (devs[aDev].commandControlled) {
+		if (devs[aDev].delta)
+			return lastMode;
 		int pl = RunMainCommand(dev_controls.getPower);
 		for (int i = 0; pl >= 0 && i < powers.size(); i++)
 			if (powers[i] == pl)

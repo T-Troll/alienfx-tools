@@ -376,7 +376,7 @@ void ReloadTempView(HWND list) {
         ListView_InsertColumn(list, 1, &lCol);
     }
     auto fanControls = &fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan];
-    for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+    for (int i = 0; i < mon->sensorSize; i++) {
         WORD sid = mon->acpi->sensors[i].sid;
         LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
         string name = to_string(mon->senValues[sid]) + " (" + to_string(mon->maxTemps[sid]) + ")";
@@ -472,7 +472,7 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList) {
 void AlterGMode(HWND power_list) {
     if (mon->acpi->isGmode) {
         fan_conf->lastProf->gmode_stage = !fan_conf->lastProf->gmode_stage;
-        mon->SetProfilePower();
+        mon->SetCurrentMode();
         ComboBox_SetCurSel(power_list, mon->powerMode);
         BlinkNumLock(2 + fan_conf->lastProf->gmode_stage);
     }

@@ -35,7 +35,7 @@ namespace AlienFan_SDK {
 	struct ALIENFAN_DEVICE {
 		string mainCommand;
 		string gpuCommand;
-		bool commandControlled;
+		//bool commandControlled;
 		short delta;
 		ALIENFAN_COMMAND probe;
 	};
@@ -72,6 +72,7 @@ namespace AlienFan_SDK {
 		short aDev = -1;
 		bool activated = false;
 		DWORD systemID = 0;
+		bool lastMode = 0;
 #ifdef _SERVICE_WAY_
 		SC_HANDLE scManager = NULL;
 #endif

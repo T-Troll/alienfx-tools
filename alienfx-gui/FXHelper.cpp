@@ -220,7 +220,7 @@ void FXHelper::SetState(bool force) {
 	// Dim state...
 	conf->stateDimmed = conf->dimmed || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
 	// Brightness
-	finalBrightness = (byte)(conf->stateOn ? 255 - (conf->stateDimmed ? conf->dimmingPower : 0) : 0);
+	finalBrightness = (byte)(conf->stateOn ? conf->stateDimmed ? conf->dimmingPower : conf->fullPower : 0);
 	// Power button state
 	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
 	DebugPrint(string("Status: ") + (force ? "Forced, " : "") + to_string(conf->stateOn) + ", " + to_string(finalBrightness) + "\n");
@@ -672,7 +672,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			switch (current.command) {
 			case 2: { // set brightness
 				bool pbstate = current.light || src->finalPBState, needRefresh = false;
-				byte fbright = (byte)(current.light ? 255 - (!conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : 0) : src->finalBrightness);
+				byte fbright = (byte)(current.light ? !conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower : src->finalBrightness);
 				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++)
 					if (dev->dev) {
 						//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");

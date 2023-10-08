@@ -67,7 +67,7 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 		conf->modifyProfile.unlock();
 		fxhl->UpdateGlobalEffect(NULL);
 		if (mon)
-			mon->SetProfilePower();
+			mon->SetCurrentMode();
 
 		ChangeEffectMode(true);
 

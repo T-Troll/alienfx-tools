@@ -147,7 +147,8 @@ void ConfigHandler::Load() {
 	GetReg("ActiveProfile", &activeProfileID);
 	GetReg("OffPowerButton", &offPowerButton);
 	GetReg("EsifTemp", &esif_temp);
-	GetReg("DimmingPower", &dimmingPower, 92);
+	GetReg("DimmingPower", &dimmingPower, 164);
+	GetReg("FullPower", &fullPower, 255);
 	GetReg("OffOnBattery", &offOnBattery);
 	GetReg("FanControl", &fanControl, 1);
 	GetReg("FansOnBattery", &fansOnBattery, 1);
@@ -313,6 +314,7 @@ void ConfigHandler::Save() {
 	SetReg("OffPowerButton", offPowerButton);
 	SetReg("OffOnBattery", offOnBattery);
 	SetReg("DimmingPower", dimmingPower);
+	SetReg("FullPower", fullPower);
 	SetReg("ActiveProfile", activeProfile->id);
 	SetReg("GammaCorrection", gammaCorrection);
 	SetReg("ProfileAutoSwitch", enableProfSwitch);

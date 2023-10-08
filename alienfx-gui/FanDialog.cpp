@@ -141,7 +141,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         } break;
     case WM_TIMER:
-        for (int i = 0; i < mon->acpi->sensors.size(); i++) {
+        for (int i = 0; i < mon->sensorSize; i++) {
             string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
             ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
             name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
