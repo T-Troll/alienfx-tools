@@ -88,8 +88,8 @@ void SetHotkeys() {
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F10);
 		RegisterHotKey(mDlg, 6, MOD_CONTROL | MOD_SHIFT, VK_F9);
 		// brightness
-		RegisterHotKey(mDlg, 7, MOD_CONTROL | MOD_ALT, VK_OEM_PLUS);
-		RegisterHotKey(mDlg, 8, MOD_CONTROL | MOD_ALT, VK_OEM_MINUS);
+		RegisterHotKey(mDlg, 7, MOD_CONTROL | MOD_SHIFT, VK_OEM_PLUS);
+		RegisterHotKey(mDlg, 8, MOD_CONTROL | MOD_SHIFT, VK_OEM_MINUS);
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
 		if (mon) {

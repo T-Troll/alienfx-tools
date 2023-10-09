@@ -215,7 +215,7 @@ Top-left zone is about devices control - you can select device from list (double
 You can see selected device parameters (IDs, number of assigned lights and API version - or "inactive" if device not connected now).
 
 Pressing "Clear device" button removes all lights from current device, and, in case the device is in "inactive" status, remove it completely.  
-Press "Set white balance" button to change white color correction for selected device (useful for some old 4-bit-per-color devices).
+Press "Set white balance" button to change white color correction for selected device (useful for some old 4-bit-per-color devices). White balance will only works if "Gamma correction" setting is enabled.
 
 Button block into the center is about settings management - press "Detect devices" to look for your devices into application database, use "Save Grids and Lights" and "Load Grids and Lights" to save/load current settings into .csv file (for backup or sharing).
 
@@ -360,7 +360,7 @@ Light system control options at the left:
   - "Do not switch for desktop" - Profile will not be changed in case start menu/tray/desktop activated by user (default - off).
 
 Light dimming control at left-bottom:
-- "Dim lights" - Dim system lights brightness to desired level (default - off). Slider at the right select desired dimming level (left - lower dimming, right - higher dimming).
+- "Dim lights" - Dim system lights brightness to desired level (default - off). Slider at the right select desired dimming level (left - high dimming, right - low dimming).
   - "Dim Power/Indicator lights" - Power Button and Indicator lights will be dimmed as well - and have full brightness otherwise (default - off).
 
 Battery operations (power save options) at right-bottom:
@@ -380,6 +380,8 @@ Global shortcuts (can be operated if application running):
 - CTRL+SHIFT+F11 - enable/disable light dimming.
 - CTRL+SHIFT+F10 - enable/disable software effects.
 - CTRL+SHIFT+F9 - enable/disable profile auto switch.
+- CTRL+SHIFT+[+] - increase lights brigtness
+- CTRL+SHIFT+[-] - decrease lights brightness
 - CTRL+SHIFT+0..9 - switch active profile to profile #N (profile order is the same as at "Profiles" tab). "0" is switch to default profile.
 - CTRL+ALT+0..9 - switch active power mode (in case fan control enabled). 0 is for Manual, 1..9 for system-defined modes.
 - F18 (Fn+AlienFX) - cycle light mode (on-dim-off).
