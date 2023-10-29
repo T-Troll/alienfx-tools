@@ -225,6 +225,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
     }
     mon->ResetBoost();
+    mon->SetCurrentMode();
     mon->inControl = true;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 1);
     return 0;

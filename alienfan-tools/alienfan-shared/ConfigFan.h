@@ -48,6 +48,7 @@ public:
 	DWORD keyShortcuts;
 	DWORD keepSystem;
 	DWORD needDPTF;
+	DWORD pollingRate;
 	bool wasAWCC;
 
 	fan_profile prof;

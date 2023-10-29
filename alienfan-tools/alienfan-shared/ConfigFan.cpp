@@ -55,6 +55,7 @@ void ConfigFan::Load() {
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("KeepSystemMode", &keepSystem, 1);
 	GetReg("DPTF", &needDPTF, 1);
+	GetReg("PollingRate", &pollingRate, 750);
 
 	// Now load sensor mappings...
 	char name[256];
@@ -106,6 +107,7 @@ void ConfigFan::Save() {
 	SetReg("KeyboardShortcut", keyShortcuts);
 	SetReg("KeepSystemMode", keepSystem);
 	SetReg("DPTF", needDPTF);
+	SetReg("PollingRate", pollingRate);
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");
 	RegCreateKeyEx(keyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);

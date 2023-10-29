@@ -389,7 +389,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		CheckDlgButton(hDlg, IDC_ESENSORS, conf->eSensors);
 		CheckDlgButton(hDlg, IDC_BSENSORS, conf->bSensors);
 
-		Edit_SetText(GetDlgItem(hDlg, IDC_REFRESH_TIME), to_string(conf->refreshDelay).c_str());
+		SetDlgItemInt(hDlg, IDC_REFRESH_TIME, conf->refreshDelay, false);
 
 		AddTrayIcon(&conf->niData, conf->updateCheck);
 		senmon->UpdateSensors();

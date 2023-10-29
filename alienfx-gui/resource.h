@@ -215,6 +215,7 @@
 #define IDC_BUTADDLEFT                  1211
 #define IDC_EDIT1                       1212
 #define IDC_SCRIPT_NAME                 1212
+#define IDC_EDIT_POLLING                1212
 #define IDC_BUTREMRGH                   1228
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230

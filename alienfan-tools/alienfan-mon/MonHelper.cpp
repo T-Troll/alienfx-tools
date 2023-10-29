@@ -24,6 +24,8 @@ MonHelper::MonHelper() {
 
 MonHelper::~MonHelper() {
 	Stop();
+	if (fan_conf->keepSystem)
+		SetCurrentMode(oldPower);
 	delete acpi;
 }
 
@@ -41,12 +43,16 @@ void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
 		// Stuck fan fix
-		acpi->SetPower(0xa0);
-		SetCurrentMode();
-		monThread = new ThreadHelper(CMonProc, this, 750, THREAD_PRIORITY_BELOW_NORMAL);
+		//acpi->SetPower(0xa0);
+		//SetCurrentMode();
+		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
 #endif
+	}
+	else {
+		Stop();
+		Start();
 	}
 }
 
@@ -54,8 +60,8 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
-		if (fan_conf->keepSystem)
-			SetCurrentMode(oldPower);
+		//if (fan_conf->keepSystem)
+		//	SetCurrentMode(oldPower);
 		ResetBoost();
 #ifdef _DEBUG
 		OutputDebugString("Mon thread stop.\n");
@@ -68,11 +74,11 @@ void MonHelper::SetCurrentMode(int newMode) {
 		newMode = fan_conf->lastProf->gmode_stage ? powerSize : fan_conf->lastProf->powerStage;
 	int cmode = GetPowerMode();
 	if (newMode != cmode) {
+		acpi->SetPower(0xa0);
 		if (newMode < powerSize) {
 			if (cmode == powerSize) {
 				acpi->SetGMode(false);
 			}
-			acpi->SetPower(0xa0);
 			acpi->SetPower(acpi->powers[newMode]);
 		}
 		else
@@ -152,8 +158,8 @@ void CMonProc(LPVOID param) {
 							cBoost = cur->points.back().boost;
 						src->senBoosts[i][senID] = cBoost;
 						if (cBoost > curBoost) {
-							if (cBoost < src->boostCooked[i])
-								cBoost += 7 * ((src->boostCooked[i] - cBoost) >> 3);
+							//if (cBoost < src->boostCooked[i])
+							//	cBoost += 7 * ((src->boostCooked[i] - cBoost) >> 3);
 							curBoost = cBoost;
 							src->lastBoost[i] = senID;
 						}
@@ -173,7 +179,7 @@ void CMonProc(LPVOID param) {
 					if (curBoostRaw != boostOld) {
 						acpi->SetFanBoost(i, curBoostRaw);
 						src->boostRaw[i] = curBoostRaw;
-						src->boostCooked[i] = curBoost;
+						//src->boostCooked[i] = curBoost;
 						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
 						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
 					}
