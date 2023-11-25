@@ -169,8 +169,12 @@
 #define IDC_CP_FANS                     1155
 #define IDC_LIST_FOUND                  1156
 #define IDC_CP_GRID                     1156
+#define IDC_CP_SETTINGS                 1157
 #define IDC_BUT_WHITE                   1158
+#define IDC_CP_TRIGGERS                 1158
 #define IDC_CHECK_REVERSE               1159
+#define IDC_CP_TRIGGERS2                1159
+#define IDC_CP_APPS                     1159
 #define IDC_CHECK_LIGHTNAMES            1161
 #define IDC_TRIGGER_POWER_AC            1163
 #define IDC_TRIGGER_POWER_BATTERY       1164

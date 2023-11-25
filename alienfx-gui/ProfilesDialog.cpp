@@ -298,6 +298,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			prof->flags &= ~PROF_DEFAULT;
 			prof->name = "Profile " + to_string(vacID);
 			UpdateProfileList();
+			ReloadProfileView(hDlg);
 		} break;
 		case IDC_REMOVEPROFILE:
 			if (!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
@@ -315,6 +316,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 							prof = newpCid;
 							RemoveUnusedGroups();
 							UpdateProfileList();
+							ReloadProfileView(hDlg);
 							break;
 						}
 				}
@@ -336,12 +338,22 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						it->haptics.clear();
 					if (IsDlgButtonChecked(hDlg, IDC_CP_GRID) == BST_CHECKED)
 						it->effect.type = 0;
+					if (IsDlgButtonChecked(hDlg, IDC_CP_GRID) == BST_CHECKED)
+						it->effect.type = 0;
 					// remove if unused
 					if (it->color.size() + it->events.size() + it->ambients.size() + it->haptics.size() + it->effect.type)
 						it++;
 					else
 						it = prof->lightsets.erase(it);
 				}
+				if (IsDlgButtonChecked(hDlg, IDC_CP_SETTINGS) == BST_CHECKED)
+					prof->flags &= PROF_DEFAULT;
+				if (IsDlgButtonChecked(hDlg, IDC_CP_TRIGGERS) == BST_CHECKED) {
+					prof->triggerFlags = 0;
+					prof->triggerkey = 0;
+				}
+				if (IsDlgButtonChecked(hDlg, IDC_CP_APPS) == BST_CHECKED)
+					prof->triggerapp.clear();
 				RemoveUnusedGroups();
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED && prof->fansets) {
 					if (conf->activeProfile->id == prof->id)
@@ -349,10 +361,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					delete (fan_profile*)prof->fansets;
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
-					ReloadProfileView(hDlg);
+					//ReloadProfileView(hDlg);
 				}
 				if (conf->activeProfile->id == prof->id)
 					UpdateState(true);
+				ReloadProfSettings(hDlg);
 			}
 			break;
 		case IDC_BUT_COPYACTIVE:
@@ -378,13 +391,22 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					if (IsDlgButtonChecked(hDlg, IDC_CP_GRID) == BST_CHECKED)
 						lset->effect = t->effect;
 				}
+				if (IsDlgButtonChecked(hDlg, IDC_CP_SETTINGS) == BST_CHECKED)
+					prof->flags = conf->activeProfile->flags & ~PROF_DEFAULT;
+				if (IsDlgButtonChecked(hDlg, IDC_CP_TRIGGERS) == BST_CHECKED) {
+					prof->triggerFlags = conf->activeProfile->triggerFlags;
+					prof->triggerkey = conf->activeProfile->triggerkey;
+				}
+				if (IsDlgButtonChecked(hDlg, IDC_CP_APPS) == BST_CHECKED)
+					prof->triggerapp = conf->activeProfile->triggerapp;
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
 					if (prof->fansets)
 						delete (fan_profile*)prof->fansets;
 					prof->fansets = conf->activeProfile->fansets ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
 					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) > 0);
-					ReloadProfileView(hDlg);
+					//ReloadProfileView(hDlg);
 				}
+				ReloadProfSettings(hDlg);
 			}
 			break;
 		case IDC_APP_RESET:
@@ -488,7 +510,6 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		default: return false;
 		}
-		//ReloadProfileView(hDlg);
 	} break;
 	case WM_NOTIFY:
 		switch (((NMHDR*)lParam)->idFrom) {
