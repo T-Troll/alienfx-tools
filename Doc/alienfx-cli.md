@@ -14,7 +14,7 @@ alienfx-cli.exe [command=option,option,option] ... [command=option,option,option
 The following commands are available:
 - `status` Showing AlienFX device IDs and their lights IDs and status. Output is different for low- and high- level SDKs.
 - `setall=r,g,b` Sets all AlienFX lights found into the system to the specified color. Ex: `setall=255,0,0` for red lights. For low-level, it requires lights setup using `alienfx-probe`/-gui to work correctly!
-- `setone=<dev>,<light>,r,g,b` Set one light to color provided. Ex: `setone=0,1,0,0` - set light #2 at the device #1 to blue color.
+- `setone=<dev>,<light>,r,g,b` Set one light to color provided. Ex: `setone=0,1,0,0,255` - set light #2 at the device #1 to blue color.
 - `setzone=<zone>,r,g,b` Set zone (see possible zones list below) light to color provided.
 - `setaction=<dev>,<light>,<action>,r,g,b[,<action>,r,g,b]` Set light to color provided and enable action. You can define up to 9 actions in this command, but only first and last will be used for devices without APIv4.
 - `setzoneaction=<zone>,,<action>,r,g,b[,<action>,r,g,b]` Set zone light to color provided and enable action.
