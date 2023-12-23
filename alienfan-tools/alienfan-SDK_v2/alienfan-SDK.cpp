@@ -144,7 +144,7 @@ namespace AlienFan_SDK {
 #endif
 				// check system type and fill inParams
 				for (int type = 0; type < 2; type++)
-					if ((isSupported = m_AWCCGetObj->GetMethod(commandList[functionID[type][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK) && m_InParamaters) {
+					if (isSupported = (m_AWCCGetObj->GetMethod(commandList[functionID[type][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)) {
 						sysType = type;
 #ifdef _TRACE_
 						printf("Fan Control available, system type %d\n", sysType);
@@ -193,19 +193,19 @@ namespace AlienFan_SDK {
 							powers.push_back(2);
 						}
 
-						break;
+						// ESIF sensors
+						EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
+						// SSD sensors
+						EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
+						// OHM sensors
+						if (m_OHMService) {
+							EnumSensors(m_OHMService, L"Sensor", 4);
+						}
+						return true;
 					}
 			}
-			// ESIF sensors
-			EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
-			// SSD sensors
-			EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
-			// OHM sensors
-			if (m_OHMService) {
-				EnumSensors(m_OHMService, L"Sensor", 4);
-			}
 		}
-		return isSupported;
+		return false;
 	}
 
 	int Control::GetFanRPM(int fanID) {

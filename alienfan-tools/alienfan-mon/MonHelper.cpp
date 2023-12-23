@@ -23,9 +23,11 @@ MonHelper::MonHelper() {
 }
 
 MonHelper::~MonHelper() {
-	Stop();
-	if (fan_conf->keepSystem)
-		SetCurrentMode(oldPower);
+	if (acpi->isSupported) {
+		Stop();
+		if (fan_conf->keepSystem)
+			SetCurrentMode(oldPower);
+	}
 	delete acpi;
 }
 
