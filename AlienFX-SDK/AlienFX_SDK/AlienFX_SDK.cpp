@@ -195,7 +195,8 @@ chain++;
 					if (length == 65)
 						switch (vid) {
 						case 0x0424: // Microchip
-							version = API_V6;
+							if (pid != 0x274c)
+								version = API_V6;
 							break;
 						case 0x0461: // Primax
 							version = API_V7;
