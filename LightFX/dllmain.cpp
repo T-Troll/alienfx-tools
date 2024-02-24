@@ -12,7 +12,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH: {
         guiEvent = OpenEvent(EVENT_MODIFY_STATE, false, "LightFXActive");
-        DWORD ret = GetLastError();
         if (guiEvent)
             SetEvent(guiEvent);
     } break;

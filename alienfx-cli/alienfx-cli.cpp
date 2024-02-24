@@ -75,10 +75,11 @@ int CheckCommand(string name, int args) {
 }
 
 void Update() {
-	for (int i = 0; i < afx_map.fxdevs.size(); i++)
-		afx_map.fxdevs[i].dev->UpdateColors();
 	if (have_high)
 		lfxUtil.Update();
+	else
+		for (int i = 0; i < afx_map.fxdevs.size(); i++)
+			afx_map.fxdevs[i].dev->UpdateColors();
 }
 
 AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act) {
