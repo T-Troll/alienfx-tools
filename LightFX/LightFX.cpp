@@ -63,27 +63,27 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			} break;
 			case 0: { // set light
 				WORD flags = afx_dev->GetFlags(current.dev, current.light);
-				for (int i = 0; i < current.actsize; i++) {
-					AlienFX_SDK::Afx_action* action = &current.actions[i];
-					// gamma-correction...
-					//if (conf->gammaCorrection) {
-						//action->r = ((UINT)action->r * action->r * current.dev->white.r) / 65025; // (255 * 255);
-						//action->g = ((UINT)action->g * action->g * current.dev->white.g) / 65025; // (255 * 255);
-						//action->b = ((UINT)action->b * action->b * current.dev->white.b) / 65025; // (255 * 255);
-					//}
-					// Dimming...
-					// For v7 devices only, other have hardware dimming
-					//if (conf->stateDimmed && (!flags || conf->dimPowerButton))
-					//	switch (dev->version) {
-					//		/*case AlienFX_SDK::API_V2:
-					//		case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
-					//			unsigned delta = 255 - conf->dimmingPower;
-					//			action->r = ((UINT)action->r * delta) / 255;// >> 8;
-					//			action->g = ((UINT)action->g * delta) / 255;// >> 8;
-					//			action->b = ((UINT)action->b * delta) / 255;// >> 8;
-					//		}
-					//	}
-				}
+				//for (int i = 0; i < current.actsize; i++) {
+				//	AlienFX_SDK::Afx_action* action = &current.actions[i];
+				//	// gamma-correction...
+				//	//if (conf->gammaCorrection) {
+				//		//action->r = ((UINT)action->r * action->r * current.dev->white.r) / 65025; // (255 * 255);
+				//		//action->g = ((UINT)action->g * action->g * current.dev->white.g) / 65025; // (255 * 255);
+				//		//action->b = ((UINT)action->b * action->b * current.dev->white.b) / 65025; // (255 * 255);
+				//	//}
+				//	// Dimming...
+				//	// For v7 devices only, other have hardware dimming
+				//	//if (conf->stateDimmed && (!flags || conf->dimPowerButton))
+				//	//	switch (dev->version) {
+				//	//		/*case AlienFX_SDK::API_V2:
+				//	//		case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
+				//	//			unsigned delta = 255 - conf->dimmingPower;
+				//	//			action->r = ((UINT)action->r * delta) / 255;// >> 8;
+				//	//			action->g = ((UINT)action->g * delta) / 255;// >> 8;
+				//	//			action->b = ((UINT)action->b * delta) / 255;// >> 8;
+				//	//		}
+				//	//	}
+				//}
 
 				// Is it NOT power button?
 				if (!(flags & ALIENFX_FLAG_POWER)) {
@@ -121,8 +121,8 @@ void QueryCommand(LightQueryElement& lqe) {
 	}
 }
 
-void QueryUpdate(bool force) {
-	static LightQueryElement upd{ NULL, force, 1 };
+void QueryUpdate() {
+	static LightQueryElement upd{ NULL, 0, 1 };
 	QueryCommand(upd);
 	lightsNoDelay = lightQuery.size() < (afx_dev->activeLights << 3);
 }
@@ -151,12 +151,12 @@ AlienFX_SDK::Afx_action TranslateColor(unsigned int src, byte type) {
 	return TranslateColor(c, type);
 }
 
-LFX_RESULT CheckState(int did = -1, int lid = -1) {
+LFX_RESULT CheckState(int did, int lid = -1) {
 	if (!afx_dev)
 		return LFX_ERROR_NOINIT;
-	if (!afx_dev->activeDevices || !(did < (int)afx_dev->activeDevices))
+	if (did >= afx_dev->fxdevs.size())
 		return LFX_ERROR_NODEVS;
-	if (did < 0 || lid < (int)afx_dev->fxdevs[did].lights.size())
+	if (lid < 0 || lid < (int)afx_dev->fxdevs[did].lights.size())
 		return LFX_SUCCESS;
 	return LFX_ERROR_NOLIGHTS;
 }
@@ -184,8 +184,9 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 		afx_dev->LoadMappings();
 	}
 	afx_dev->AlienFXAssignDevices();
-	for (auto dev = afx_dev->fxdevs.begin(); dev != afx_dev->fxdevs.end(); dev++) {
-		dev->dev->SetBrightness(255, &dev->lights, false);
+	for (AlienFX_SDK::Afx_device& j : afx_dev->fxdevs) {
+		if (j.dev)
+			j.dev->SetBrightness(255, &j.lights, false);
 	}
 	if (!updateThread) {
 		stopQuery = CreateEvent(NULL, false, false, NULL);
@@ -232,8 +233,6 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Release() {
 		CloseHandle(oldUpate);
 		CloseHandle(stopQuery);
 		CloseHandle(haveNewElement);
-	}
-	if (afx_dev) {
 		delete afx_dev;
 		afx_dev = NULL;
 		return LFX_SUCCESS;
@@ -257,18 +256,12 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetVersion(char *const name, const unsigned i
 
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Reset() {
-	if (updateThread) {
-		QueryUpdate(false);
-		return LFX_SUCCESS;
-	}
-	return LFX_ERROR_NOINIT;
+	return LFX_Light(LFX_ALL, 0);
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Update() {
 	if (updateThread) {
-		QueryUpdate(false);
-		//for (auto i = afx_map->fxdevs.begin(); i < afx_map->fxdevs.end(); i++)
-		//	i->dev->UpdateColors();
+		QueryUpdate();
 		return LFX_SUCCESS;
 	}
 	return LFX_ERROR_NOINIT;
@@ -280,7 +273,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_UpdateDefault() {
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumDevices(unsigned int *const num) {
 	if (afx_dev) {
-		*num = afx_dev->activeDevices;
+		*num = (unsigned) afx_dev->fxdevs.size(); // afx_dev->activeDevices;
 		return LFX_SUCCESS;
 	}
 	return LFX_ERROR_NOINIT;
@@ -295,7 +288,8 @@ static const unsigned char devTypes[]{
 	LFX_DEVTYPE_KEYBOARD,
 	LFX_DEVTYPE_DISPLAY,
 	LFX_DEVTYPE_MOUSE,
-	LFX_DEVTYPE_KEYBOARD
+	LFX_DEVTYPE_KEYBOARD,
+	LFX_DEVTYPE_DISPLAY
 };
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, char *const name, const unsigned int namelen, unsigned char *const devtype) {
@@ -303,7 +297,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, 
 	if (!state) {
 		*devtype = devTypes[afx_dev->fxdevs[dev].version];
 		if (namelen > afx_dev->fxdevs[dev].name.length()) {
-			strcpy_s(name, namelen, afx_dev->fxdevs[dev].name.data());
+			strcpy_s(name, afx_dev->fxdevs[dev].name.length()+1, afx_dev->fxdevs[dev].name.data());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}
@@ -322,8 +316,9 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumLights(const unsigned int dev, unsigned
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightDescription(const unsigned int dev, const unsigned int lid, char *const name, const unsigned int namelen) {
 	LFX_RESULT state = CheckState(dev, lid);
 	if (!state) {
-		if (namelen > afx_dev->fxdevs[dev].lights[lid].name.length()) {
-			strcpy_s(name, namelen, afx_dev->fxdevs[dev].lights[lid].name.data());
+		auto nameLen = afx_dev->fxdevs[dev].lights[lid].name.length();
+		if (namelen > nameLen) {
+			strcpy_s(name, nameLen+1, afx_dev->fxdevs[dev].lights[lid].name.data());
 		} else
 			return LFX_ERROR_BUFFSIZE;
 	}
@@ -369,14 +364,14 @@ void SetLightList(unsigned pos, vector<AlienFX_SDK::Afx_action>* actions) {
 	else
 	{
 		for (AlienFX_SDK::Afx_device& j : afx_dev->fxdevs)
-			for (AlienFX_SDK::Afx_light& i : j.lights) {
-				SetLight(MAKELPARAM(j.pid, i.lightid), actions);
-			}
+			if (j.dev)
+				for (AlienFX_SDK::Afx_light& i : j.lights)
+					SetLight(MAKELPARAM(j.pid, i.lightid), actions);
 	}
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Light(const unsigned int pos, const unsigned int color) {
-	if (afx_dev) {
+	if (updateThread) {
 		vector<AlienFX_SDK::Afx_action> action{ TranslateColor(color, 0) };
 		SetLightList(pos, &action);
 		return LFX_SUCCESS;
@@ -402,7 +397,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColor(const unsigned int pos, const uns
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_ActionColorEx(const unsigned int pos, const unsigned int act, const unsigned int clr1, const unsigned int clr2) {
-	if (afx_dev) {
+	if (updateThread) {
 		vector<AlienFX_SDK::Afx_action> actions{ {TranslateColor(clr1, act), TranslateColor(clr2, act)} };
 		SetLightList(pos, &actions);
 		return LFX_SUCCESS;
