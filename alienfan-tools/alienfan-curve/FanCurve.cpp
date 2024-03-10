@@ -330,7 +330,7 @@ string GetFanName(int ind, bool forTray = false) {
         }
         fname += " " + to_string(ind + 1) + " - " + to_string(mon->fanRpm[ind]);
         if (forTray && !fan_conf->lastProf->powerStage)
-            fname += " (" + to_string(mon->boostRaw[ind]) + ")";
+            fname += " (" + to_string(mon->senValues[mon->lastBoost[ind]]/*mon->boostRaw[ind]*/) + ")";
     }
     return fname;
 }
