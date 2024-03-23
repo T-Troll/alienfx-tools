@@ -1,6 +1,7 @@
 #include "ConfigHandler.h"
 #include "ConfigFan.h"
-#include "common.h"
+#include "RegHelper.h"
+#include "Common.h"
 #include "resource.h"
 
 extern HWND mDlg;
@@ -111,20 +112,6 @@ void ConfigHandler::SetReg(char *text, DWORD value) {
 	RegSetValueEx( hKeyMain, text, 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD) );
 }
 
-DWORD ConfigHandler::GetRegData(HKEY key, int vindex, char* name, byte** data) {
-	DWORD len, lend;
-	if (*data) {
-		delete[] * data;
-		*data = NULL;
-	}
-	if (RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS) {
-		*data = new byte[lend];
-		RegEnumValue(key, vindex, name, &(len = 255), NULL, NULL, *data, &lend);
-		return lend;
-	}
-	return 0;
-}
-
 void ConfigHandler::Load() {
 
 	DWORD size_c = 16*sizeof(DWORD);// 4 * 16
@@ -177,7 +164,7 @@ void ConfigHandler::Load() {
 	// Profiles...
 	for (int vindex = 0; lend = GetRegData(hKeyProfiles, vindex, name, &data); vindex++) {
 		if (sscanf_s(name, "Profile-%d", &pid) == 1) {
-			FindCreateProfile(pid)->name = (char*)data;
+			FindCreateProfile(pid)->name = GetRegString(data, lend);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-triggers-%d", &pid) == 1) {
@@ -189,11 +176,11 @@ void ConfigHandler::Load() {
 			continue;
 		}
 		if (sscanf_s(name, "Profile-app-%d-%d", &pid, &appid) == 2) {
-			FindCreateProfile(pid)->triggerapp.push_back((char*)data);
+			FindCreateProfile(pid)->triggerapp.push_back(GetRegString(data, lend));
 			continue;
 		}
 		if (sscanf_s(name, "Profile-script-%d", &pid) == 1) {
-			FindCreateProfile(pid)->script = (char*)data;
+			FindCreateProfile(pid)->script = GetRegString(data, lend);
 			continue;
 		}
 		int senid, fanid;

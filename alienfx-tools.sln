@@ -62,20 +62,27 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-low", "alienfan-to
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common", "Common\Common.vcxproj", "{3D4EF0C4-282C-4318-8FBB-133514A8F0DC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RegHelper", "RegHelper\RegHelper.vcxitems", "{89BA1116-FA79-4D8B-815F-9D4C8C22EA93}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{05a1d711-23f5-4b90-9f62-ec3de2419b4d}*SharedItemsImports = 9
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
+		RegHelper\RegHelper.vcxitems*{3b208a8c-0e41-4830-a2b8-1319cfc778a7}*SharedItemsImports = 4
 		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{3e950e09-5324-4c38-929a-93215f83efaa}*SharedItemsImports = 9
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
+		RegHelper\RegHelper.vcxitems*{583d215b-c1a5-4607-a26c-823eb6b28155}*SharedItemsImports = 4
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{79be1884-5fdb-4851-bc17-39fb58101cba}*SharedItemsImports = 9
+		RegHelper\RegHelper.vcxitems*{89ba1116-fa79-4d8b-815f-9d4c8c22ea93}*SharedItemsImports = 9
 		alienfx-LFX\alienfx-LFX.vcxitems*{cc4108ae-d644-45f9-95aa-67940d0fbeda}*SharedItemsImports = 9
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{d6ad2e10-f61c-43f1-87ea-e77dea12dd42}*SharedItemsImports = 4
+		RegHelper\RegHelper.vcxitems*{d6ad2e10-f61c-43f1-87ea-e77dea12dd42}*SharedItemsImports = 4
 		alienfan-tools\alienfan-curve\alienfan-curve.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		alienfan-tools\alienfan-mon\alienfan-mon.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		alienfan-tools\alienfan-shared\alienfan-shared.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
+		RegHelper\RegHelper.vcxitems*{e47811d5-e492-4b51-ad9a-a9b00939e3ec}*SharedItemsImports = 4
 		alienfx-LFX\alienfx-LFX.vcxitems*{ff6119ea-878f-4e7b-9fcd-8410a5d3fbf8}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -177,6 +184,7 @@ Global
 		{9321A480-9118-4173-B79D-45D8253C2C47} = {32336D37-A0A7-4F78-BE8D-D18666E992F1}
 		{41343B7C-6C9F-4AD4-9D27-050B3D76290D} = {32336D37-A0A7-4F78-BE8D-D18666E992F1}
 		{CC889C0D-369A-46F0-87B2-956DA96DDEFD} = {32336D37-A0A7-4F78-BE8D-D18666E992F1}
+		{89BA1116-FA79-4D8B-815F-9D4C8C22EA93} = {E5255A7D-1A72-4A39-BCF9-E7AB0AD7F58E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC1E1EF4-CAA0-4056-8067-A66F6680D024}

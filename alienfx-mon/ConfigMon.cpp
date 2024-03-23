@@ -1,5 +1,6 @@
 #include "ConfigMon.h"
 #include "resource.h"
+#include "RegHelper.h"
 
 // debug print
 #ifdef _DEBUG
@@ -43,17 +44,13 @@ void ConfigMon::Load() {
 
 	char name[256];
 	int src;
-	DWORD id, len, lend = 0;
+	DWORD id, lend = 0;
 	byte* data = NULL;
 
-	for (int vindex = 0; RegEnumValue(hKeySensors, vindex, name, &(len = 255), NULL, NULL, NULL, &lend) == ERROR_SUCCESS; vindex++) {
-		if (data)
-			delete[] data;
-		data = new BYTE[lend];
-		RegEnumValue(hKeySensors, vindex, name, &(len = 255), NULL, NULL, data, &lend);
+	for (int vindex = 0; lend = GetRegData(hKeySensors, vindex, name, &data); vindex++) {
 		if (sscanf_s(name, "%d-%ud", &src, &id) == 2) {
 			switch (src) {
-			case 0: active_sensors[id].name = string((char*)data); break;
+			case 0: active_sensors[id].name = GetRegString(data,lend); break;
 			case 1: active_sensors[id].flags = *(DWORD*)data; break;
 			case 2: active_sensors[id].traycolor = *(DWORD*)data; break;
 			case 3: active_sensors[id].alarmPoint = *(DWORD*)data;
