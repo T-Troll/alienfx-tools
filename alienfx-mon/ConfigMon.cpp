@@ -1,6 +1,6 @@
 #include "ConfigMon.h"
 #include "resource.h"
-#include "RegHelper.h"
+#include "RegHelperLib.h"
 
 // debug print
 #ifdef _DEBUG

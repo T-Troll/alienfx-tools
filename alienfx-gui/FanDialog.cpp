@@ -54,7 +54,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         tipWindow = GetDlgItem(hDlg, IDC_FC_LABEL);
 
         // Start UI update thread...
-        SetTimer(hDlg, 0, 500, NULL);
+        SetTimer(hDlg, 0, fan_conf->pollingRate, NULL);
 
         //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
         //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);

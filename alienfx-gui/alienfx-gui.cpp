@@ -577,35 +577,22 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			break;
 		case WM_MOUSEMOVE: {
-			string name;
-			//DebugPrint("Printing profile...\n");
-			if (conf->activeProfile)
-				name = conf->activeProfile->name;
-			//DebugPrint("Printing effects...\n");
+			string name = conf->activeProfile->name;
 			if (conf->stateEffects) {
-				name += string("\nEffects: ") + (eve->sysmon ? "M" : "m")
+				name.append(string("\nEffects: ") + (eve->sysmon ? "M" : "m")
 					+ (eve->capt ? "A" : "a")
 					+ (eve->audio ? "H" : "h")
-					+ (eve->grid ? "G" : "g");
+					+ (eve->grid ? "G" : "g"));
 			}
 			if (mon) {
-				//DebugPrint("Printing power mode...\n");
-				name += "\n";
-				if (fan_conf->lastProf->gmode_stage || fan_conf->lastProf->powerStage >= mon->powerSize)
-					name += "G-mode";
-				else
-					name += fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]);
-				name += " power";
+				name.append(string("\n") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage])) + " power");
 				for (int i = 0; i < mon->fansize; i++) {
-					//DebugPrint("Printing fan " + to_string(i) + "...\n");
-					name += "\n" + GetFanName(i, true);
+					name.append("\n" + GetFanName(i, true));
 				}
 			}
-			//DebugPrint("Printing done, length " + to_string(name.length()) + "\n");
 			conf->niData.szTip[127] = 0;
 			strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
 			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
-			//DebugPrint("Pos: " + to_string(GET_X_LPARAM(lParam)) + ", " + to_string(GET_Y_LPARAM(lParam)) + "\n");
 		} break;
 		}
 	} break;

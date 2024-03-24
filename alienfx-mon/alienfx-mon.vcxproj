@@ -47,7 +47,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="..\alienfan-tools\alienfan-shared\alienfan-shared.vcxitems" Label="Shared" />
-    <Import Project="..\RegHelper\RegHelper.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -153,6 +152,9 @@
     </ProjectReference>
     <ProjectReference Include="..\Common\Common.vcxproj">
       <Project>{3d4ef0c4-282c-4318-8fbb-133514a8f0dc}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\RegHelperLib\RegHelperLib.vcxproj">
+      <Project>{5dcb3394-1906-4fef-8543-83a3fb8a25f8}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

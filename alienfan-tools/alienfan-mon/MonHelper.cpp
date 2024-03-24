@@ -44,9 +44,7 @@ void MonHelper::ResetBoost() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
-		// Stuck fan fix
-		//acpi->SetPower(0xa0);
-		//SetCurrentMode();
+		SetCurrentMode();
 		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_BELOW_NORMAL);
 #ifdef _DEBUG
 		OutputDebugString("Mon thread start.\n");
@@ -62,8 +60,6 @@ void MonHelper::Stop() {
 	if (monThread) {
 		delete monThread;
 		monThread = NULL;
-		//if (fan_conf->keepSystem)
-		//	SetCurrentMode(oldPower);
 		ResetBoost();
 #ifdef _DEBUG
 		OutputDebugString("Mon thread stop.\n");
@@ -73,7 +69,7 @@ void MonHelper::Stop() {
 
 void MonHelper::SetCurrentMode(int newMode) {
 	if (newMode < 0)
-		newMode = fan_conf->lastProf->gmode_stage ? powerSize : fan_conf->lastProf->powerStage;
+		newMode = fan_conf->lastProf->gmodeStage ? powerSize : fan_conf->lastProf->powerStage;
 	int cmode = GetPowerMode();
 	if (newMode != cmode) {
 		acpi->SetPower(0xa0);
@@ -103,8 +99,9 @@ int MonHelper::GetPowerMode() {
 }
 
 void MonHelper::SetPowerMode(WORD newMode) {
-	if (!(fan_conf->lastProf->gmode_stage = (newMode == powerSize)))
+	if (newMode < powerSize)
 		fan_conf->lastProf->powerStage = newMode;
+	fan_conf->lastProf->gmodeStage = newMode == powerSize;
 	SetCurrentMode(newMode);
 }
 

@@ -1,5 +1,5 @@
 #include "ConfigFan.h"
-#include "RegHelper.h"
+#include "RegHelperLib.h"
 
 ConfigFan::ConfigFan() {
 
@@ -37,7 +37,7 @@ void ConfigFan::Load() {
 	GetReg("StartAtBoot", &startWithWindows);
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
-	GetReg("LastPowerStage", &prof.powerSet/*power*/);
+	GetReg("LastPowerStage", &prof.powerSet);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("KeepSystemMode", &keepSystem, 1);
@@ -121,11 +121,11 @@ void ConfigFan::Save() {
 	}
 }
 
-string ConfigFan::GetPowerName(int index) {
-	auto pwr = &powers[index];
+string* ConfigFan::GetPowerName(int index) {
+	string* pwr = &powers[index];
 	if (pwr->empty())
 		*pwr = "Level " + to_string(index);
-	return *pwr;
+	return pwr;
 }
 
 void ConfigFan::UpdateBoost(byte fanID, byte boost, WORD rpm) {

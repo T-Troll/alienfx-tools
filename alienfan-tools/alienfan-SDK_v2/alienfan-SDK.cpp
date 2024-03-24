@@ -342,4 +342,5 @@ namespace AlienFan_SDK {
 		param[7] = save ? 0 : 0xff;
 		return CallWMIMethod(0, param) >= 0;
 	}
+
 }

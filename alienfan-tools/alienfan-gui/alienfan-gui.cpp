@@ -1,5 +1,5 @@
 #include <windowsx.h>
-#include <wtypes.h>
+#include <windows.h>
 #include <powrprof.h>
 #include "Resource.h"
 #include "ConfigFan.h"
@@ -120,7 +120,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 }
 
 void RestoreApp() {
-    SetTimer(mDlg, 0, 500, NULL);
+    SetTimer(mDlg, 0, fan_conf->pollingRate, NULL);
     ShowWindow(mDlg, SW_RESTORE);
     ShowWindow(fanWindow, SW_RESTORE);
     SendMessage(fanWindow, WM_PAINT, 0, 0);
@@ -173,7 +173,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         ReloadPowerList(power_list);
         ReloadFanView(fanList);
 
-        SetTimer(hDlg, 0, 500, NULL);
+        SetTimer(hDlg, 0, fan_conf->pollingRate, NULL);
 
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTWITHWINDOWS, fan_conf->startWithWindows ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_STARTMINIMIZED, fan_conf->startMinimized ? MF_CHECKED : MF_UNCHECKED);
@@ -336,7 +336,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ModifyMenu(tMenu, ID_MENU_POWER, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Power mode - " +
                 fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]]).c_str());
             EnableMenuItem(tMenu, ID_MENU_GMODE, mon->acpi->isGmode ? MF_ENABLED : MF_DISABLED);
-            CheckMenuItem(tMenu, ID_MENU_GMODE, fan_conf->lastProf->gmode_stage ? MF_CHECKED : MF_UNCHECKED);
+            CheckMenuItem(tMenu, ID_MENU_GMODE, fan_conf->lastProf->gmodeStage ? MF_CHECKED : MF_UNCHECKED);
 
             GetCursorPos(&lpClickPoint);
             SetForegroundWindow(hDlg);
@@ -364,17 +364,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case WM_MOUSEMOVE: {
-            string name = "Power: ";
-            if (fan_conf->lastProf->gmode_stage)
-                name += "G-mode";
-            else
-                name += fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]);
-
+            string tooltip = string("Power: ") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]));
             for (int i = 0; i < mon->fansize; i++) {
-                name += "\n" + GetFanName(i, true);
+                tooltip.append("\n" + GetFanName(i, true));
             }
             niData->szTip[127] = 0;
-            strcpy_s(niData->szTip, min(127, name.length() + 1), name.c_str());
+            strcpy_s(niData->szTip, min(127, tooltip.length() + 1), tooltip.c_str());
             Shell_NotifyIcon(NIM_MODIFY, niData);
         } break;
         }

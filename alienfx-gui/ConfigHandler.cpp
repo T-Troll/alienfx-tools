@@ -1,6 +1,6 @@
 #include "ConfigHandler.h"
 #include "ConfigFan.h"
-#include "RegHelper.h"
+#include "RegHelperLib.h"
 #include "Common.h"
 #include "resource.h"
 

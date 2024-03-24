@@ -1,4 +1,4 @@
-#include "RegHelper.h"
+#include "RegHelperLib.h"
 
 DWORD GetRegData(HKEY key, int vindex, char* name, byte** data) {
 	DWORD len, lend;
@@ -16,6 +16,8 @@ DWORD GetRegData(HKEY key, int vindex, char* name, byte** data) {
 
 string GetRegString(byte* data, int len) {
 	string res;
+	if (!data[len - 1])
+		len--;
 	res.resize(len);
 	memcpy((void*)res.data(), data, len);
 	return res;

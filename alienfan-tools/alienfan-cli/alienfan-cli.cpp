@@ -140,15 +140,21 @@ setbrightness=<brightness>\tSet lights brightness\n\
 int main(int argc, char* argv[])
 {
     printf("AlienFan-CLI v8.5.1\n");
-
+#ifndef NOLIGHTS
     AlienFan_SDK::Lights* lights = NULL;
-
+#endif
     if (acpi.Probe()) {
+#ifndef NOLIGHTS
         lights = new AlienFan_SDK::Lights(&acpi);
+#endif
         printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s.\n",
             acpi.GetSystemID(), (int)acpi.fans.size(), (int)acpi.sensors.size(), (int)acpi.powers.size(),
             (acpi.isGmode ? ", G-Mode" : ""),
-            (lights->isActivated ? ", Lights" : ""));
+            (
+#ifndef NOLIGHTS
+                lights->isActivated ? ", Lights" :
+#endif
+                ""));
     }
     else {
         if (acpi.isAlienware)
@@ -204,7 +210,7 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "setpower" && CheckArgs(1, acpi.powers.size()) && acpi.SetPower(acpi.powers[args[0].num]) >= 0) {
-            printf("Power mode set to %s (%d)\n", fan_conf.GetPowerName(args[0].num).c_str(), acpi.powers[args[0].num]);
+            printf("Power mode set to %s (%d)\n", fan_conf.GetPowerName(args[0].num)->c_str(), acpi.powers[args[0].num]);
             continue;
         }
         if (command == "setperf" && CheckArgs(2, 5)) {
@@ -221,7 +227,7 @@ int main(int argc, char* argv[])
         if (command == "getpower") {
             int res = acpi.GetPower();
             if (res >= 0)
-                printf("Power mode: %s (%d)\n", fan_conf.GetPowerName(res).c_str(), acpi.powers[res]);
+                printf("Power mode: %s (%d)\n", fan_conf.GetPowerName(res)->c_str(), acpi.powers[res]);
             continue;
         }
         if (command == "getfans") {
@@ -262,6 +268,7 @@ int main(int argc, char* argv[])
             }
             continue;
         }
+#ifndef NOLIGHTS
         if (command == "setcolor" && lights->isActivated && CheckArgs(4, 255)) { // Set light color for Aurora
             printf("SetColor result %d.\n", lights->SetColor(args[0].num, args[1].num, args[2].num, args[3].num));
             continue;
@@ -270,7 +277,7 @@ int main(int argc, char* argv[])
             printf("SetBrightness result %d.\n", lights->SetBrightness(args[0].num));
             continue;
         }
-
+#endif
 #ifndef ALIENFAN_SDK_V1
         if (command == "dump" && acpi.isAlienware) { // dump WMI functions
             BSTR name;
@@ -295,14 +302,14 @@ int main(int argc, char* argv[])
         //    continue;
         //}
 #else
-        if (command == "getcharge" && acpi.isCharge) { // dump WMI functions
-            printf("Charge is %s\n", acpi.GetCharge() & 0x10 ? "Off" : "On");
-            continue;
-        }
-        if (command == "setcharge" && acpi.isCharge && CheckArgs(1, 255)) { // dump WMI functions
-            printf("Charge set to %d\n", acpi.SetCharge(args[0].num ? 0 : 0x10));
-            continue;
-        }
+        //if (command == "getcharge" && acpi.isCharge) { // dump WMI functions
+        //    printf("Charge is %s\n", acpi.GetCharge() & 0x10 ? "Off" : "On");
+        //    continue;
+        //}
+        //if (command == "setcharge" && acpi.isCharge && CheckArgs(1, 255)) { // dump WMI functions
+        //    printf("Charge set to %d\n", acpi.SetCharge(args[0].num ? 0 : 0x10));
+        //    continue;
+        //}
 #endif // !ALIENFAN_SDK_V1
 
         //if (command == "test") { // Test
@@ -315,7 +322,8 @@ int main(int argc, char* argv[])
     {
         Usage();
     }
-
+#ifndef NOLIGHTS
     if (lights)
         delete lights;
+#endif
 }
