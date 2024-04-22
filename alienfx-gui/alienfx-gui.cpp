@@ -653,12 +653,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			eve->ChangePowerState();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
-			if (fxhl->stateScreen != (!conf->offWithScreen || ((POWERBROADCAST_SETTING*)lParam)->Data[0] ||
-				(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE && GetSystemMetrics(SM_CMONITORS) > 1))) {
-				fxhl->stateScreen = !fxhl->stateScreen;
-				DebugPrint("Screen state changed to " + to_string(fxhl->stateScreen) + " (source: " +
-					(((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE ? "Lid" : "Monitor")
-					+ ")\n");
+			if (conf->offWithScreen &&
+				((((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_LIDSWITCH_STATE_CHANGE && GetSystemMetrics(SM_CMONITORS) == 1) ||
+				((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_CONSOLE_DISPLAY_STATE ||
+				((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_SESSION_DISPLAY_STATUS ||
+				((POWERBROADCAST_SETTING*)lParam)->PowerSetting == GUID_MONITOR_POWER_ON)) {
+				// react state change state
+				fxhl->stateScreen = ((POWERBROADCAST_SETTING*)lParam)->Data[0] > 0;
+				fxhl->stateDim = ((POWERBROADCAST_SETTING*)lParam)->Data[0] == 2;
+				DebugPrint("Screen state " + to_string(((POWERBROADCAST_SETTING*)lParam)->Data[0]) + "\n");
 				eve->ChangeEffectMode();
 			}
 		} break;

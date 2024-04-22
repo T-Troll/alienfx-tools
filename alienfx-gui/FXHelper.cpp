@@ -218,7 +218,7 @@ void FXHelper::SetState(bool force) {
 	// Lights on state...
 	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
 	// Dim state...
-	conf->stateDimmed = conf->dimmed || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
+	conf->stateDimmed = conf->dimmed || stateDim || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
 	// Brightness
 	finalBrightness = (byte)(conf->stateOn ? conf->stateDimmed ? conf->dimmingPower : conf->fullPower : 0);
 	// Power button state
