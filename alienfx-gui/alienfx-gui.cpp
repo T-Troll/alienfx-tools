@@ -113,8 +113,9 @@ void FillAllDevs() {
 	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
 	if (conf->afx_dev.activeDevices) {
 		fxhl->Start();
-		fxhl->SetState();
+		fxhl->SetState(true);
 		fxhl->UpdateGlobalEffect(NULL);
+		fxhl->Refresh(true); // Fix for 0x551
 	}
 }
 
@@ -441,9 +442,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			needUpdateFeedback = true;
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 			break;
-		//case IDC_BUTTON_MINIMIZE:
-		//	SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
-		//	break;
 		case IDC_BUTTON_REFRESH:
 			fxhl->Refresh();
 			break;

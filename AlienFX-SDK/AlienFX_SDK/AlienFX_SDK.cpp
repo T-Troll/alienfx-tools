@@ -72,7 +72,7 @@ namespace AlienFX_SDK {
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
 		byte buffer[MAX_BUFFERSIZE];
 		DWORD written;
-		BOOL res = false;
+		BOOL res = false, needV8Feature = true;
 
 		memset(buffer, version == API_V6 ? 0xff :0, length);
 		memcpy(buffer, command, command[0] + 1);
@@ -81,11 +81,8 @@ namespace AlienFX_SDK {
 		if (mods) {
 			for (auto i = mods->begin(); i < mods->end(); i++)
 				memcpy(buffer + i->i, i->vval.data(), i->vval.size());
-			if (mods->begin()->vval.size() == 1) { // patch for V8
-				mods->clear();
-				mods = NULL;
-			} else
-				mods->clear();
+			needV8Feature = mods->front().vval.size() == 1;
+			mods->clear();
 		}
 
 		if (devHandle) // Is device initialized?
@@ -108,15 +105,14 @@ namespace AlienFX_SDK {
 				return ReadFile(devHandle, buffer, length, &written, NULL);
 				//break;
 			case API_V8:
-				if (mods) {
-					return WriteFile(devHandle, buffer, length, &written, NULL);
-				}
-				else
-				{
+				if (needV8Feature) {
 					res = HidD_SetFeature(devHandle, buffer, length);
 					Sleep(7);
 				}
-//				if (size == 4 || size == 8) {
+				else
+				{
+					return WriteFile(devHandle, buffer, length, &written, NULL);
+				}
 			}
 		return res;
 	}

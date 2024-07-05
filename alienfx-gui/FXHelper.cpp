@@ -99,7 +99,7 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 	DebugPrint("Testing light #" + to_string(id));
 	if (dev && dev->dev) {
 		DebugPrint(", have device");
-		AlienFX_SDK::Afx_lightblock c = { (byte)oldtest, { wp ? Code2Act(&dev->white) : AlienFX_SDK::Afx_action({0})} };
+		AlienFX_SDK::Afx_action c = { wp ? Code2Act(&dev->white) : AlienFX_SDK::Afx_action({0})};
 
 		if (force && dev->lights.size()) {
 			vector<byte> opLights;
@@ -107,20 +107,18 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 			for (auto lIter = dev->lights.begin(); lIter != dev->lights.end(); lIter++)
 				if (lIter->lightid != id && !(lIter->flags & ALIENFX_FLAG_POWER))
 					opLights.push_back((byte)lIter->lightid);
-			dev->dev->SetMultiColor(&opLights, c.act.front());
+			dev->dev->SetMultiColor(&opLights, c);
 			dev->dev->UpdateColors();
 		}
 
 		if (id != oldtest) {
 			if (oldtest >= 0) {
 				DebugPrint(", remove old");
-				dev->dev->SetAction(&c);
+				dev->dev->SetColor(oldtest, c);
 			}
-			c.index = (byte)(oldtest = id);
 			if (id >= 0) {
 				DebugPrint(", set");
-				c.act.front() = Code2Act(&conf->testColor);
-				dev->dev->SetAction(&c);
+				dev->dev->SetColor(id, Code2Act(&conf->testColor));
 			}
 			dev->dev->UpdateColors();
 		}

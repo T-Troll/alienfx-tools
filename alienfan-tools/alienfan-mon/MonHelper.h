@@ -7,6 +7,7 @@ class MonHelper {
 private:
 	ThreadHelper* monThread = NULL;
 	short oldPower = 0;
+	int systemID;
 public:
 	AlienFan_SDK::Control* acpi;
 	bool inControl = true;

@@ -202,10 +202,10 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "unlock") {
-            printf("%s", acpi.Unlock() < 0 ? "Unlock failed!\n" : "Unlocked.\n");
+            printf("%s", acpi.SetPower(0) < 0 ? "Unlock failed!\n" : "Unlocked.\n");
             continue;
         }
-        if (command == "gmode" /*&& acpi.isGmode*/) {
+        if (command == "gmode") {
             printf("G-mode is %s\n", acpi.GetGMode() ? "On" : "Off");
             continue;
         }

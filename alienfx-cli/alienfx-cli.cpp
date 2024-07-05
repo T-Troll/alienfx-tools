@@ -21,17 +21,6 @@ byte globalBright = 255;
 byte sleepy = 5, longer = 5;
 int devType = -1;
 
-//string GetDeviceType(int version) {
-//	switch (version) {
-//	case 0: return "Desktop";
-//	case 4: return "Desktop/Notebook";
-//	case 5: case 8: return "Keyboard";
-//	case 6: return "Display";
-//	case 7: return "Mouse";
-//	default: return "Notebook";
-//	}
-//}
-
 unsigned GetZoneCode(ARG name) {
 	if (devType)
 		return name.num | 0x10000;
@@ -116,7 +105,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v8.6.0\n");
+	printf("alienfx-cli v8.6.1.1\n");
 	if (argc < 2)
 	{
 		printUsage();

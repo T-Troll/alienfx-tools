@@ -258,7 +258,7 @@ namespace AlienFan_SDK {
 	}
 	int Control::GetPower() {
 		int pl = CallWMIMethod(getPowerMode);
-		for (int i = 0; pl >= 0 && i < powers.size(); i++)
+		for (int i = 0; /*pl >= 0 &&*/ i < powers.size(); i++)
 			if (powers[i] == pl)
 				return i;
 		return -1;

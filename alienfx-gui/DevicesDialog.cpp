@@ -440,10 +440,10 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					if (keySetLight->flags & ALIENFX_FLAG_POWER) {
 						fxhl->ResetPower(activeDevice);
 					}
-					// delete from all groups and grids...
-					RemoveLightAndClean();
 					// delete from mappings...
 					conf->afx_dev.RemoveMapping(activeDevice, eLid);
+					// delete from all groups and grids...
+					RemoveLightAndClean();
 					if (activeDevice->dev)
 						conf->afx_dev.activeLights--;
 					UpdateDeviceInfo();
@@ -608,7 +608,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			{
 				NMLISTVIEW* lPoint = (NMLISTVIEW*)lParam;
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
-					fxhl->TestLight(activeDevice, -1);
+					fxhl->TestLight(activeDevice, -1, true);
 					activeDevice = &conf->afx_dev.fxdevs[lPoint->iItem];
 					fxhl->TestLight(activeDevice, eLid, true);
 					// clear unused lights...

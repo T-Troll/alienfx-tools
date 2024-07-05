@@ -18,6 +18,7 @@ MonHelper::MonHelper() {
 		powerSize = (WORD)acpi->powers.size();
 		sensorSize = (WORD)acpi->sensors.size();
 		oldPower = powerMode = GetPowerMode();
+		systemID = acpi->GetSystemID();
 		Start();
 	}
 }
@@ -35,6 +36,7 @@ void MonHelper::ResetBoost() {
 	boostRaw.clear();
 	lastBoost.clear();
 	if (!powerMode) {
+		DebugPrint("Mon: Boost reset\n");
 		for (int i = 0; i < fansize; i++) {
 			acpi->SetFanBoost(i, 0);
 		}
@@ -46,9 +48,7 @@ void MonHelper::Start() {
 	if (!monThread) {
 		SetCurrentMode();
 		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_BELOW_NORMAL);
-#ifdef _DEBUG
-		OutputDebugString("Mon thread start.\n");
-#endif
+		DebugPrint("Mon thread start.\n");
 	}
 	else {
 		Stop();
@@ -61,9 +61,7 @@ void MonHelper::Stop() {
 		delete monThread;
 		monThread = NULL;
 		ResetBoost();
-#ifdef _DEBUG
-		OutputDebugString("Mon thread stop.\n");
-#endif
+		DebugPrint("Mon thread stop.\n");
 	}
 }
 
@@ -72,17 +70,20 @@ void MonHelper::SetCurrentMode(int newMode) {
 		newMode = fan_conf->lastProf->gmodeStage ? powerSize : fan_conf->lastProf->powerStage;
 	int cmode = GetPowerMode();
 	if (newMode != cmode) {
-		acpi->SetPower(0xa0);
 		if (newMode < powerSize) {
 			if (cmode == powerSize) {
-				acpi->SetGMode(false);
+				acpi->SetGMode(0);
 			}
 			acpi->SetPower(acpi->powers[newMode]);
+			ResetBoost();
+			DebugPrint("Mon: Power mode switch from " + to_string(cmode) + " to " + to_string(newMode) + "\n");
 		}
-		else
-			acpi->SetGMode(true);
+		else {
+			acpi->SetPower(0xa0);
+			acpi->SetGMode(1);
+			DebugPrint("Mon: Power mode switch from " + to_string(cmode) + " to G-mode\n");
+		}
 		powerMode = newMode;
-		ResetBoost();
 	}
 }
 
@@ -95,7 +96,7 @@ byte MonHelper::GetFanPercent(byte fanID)
 }
 
 int MonHelper::GetPowerMode() {
-	return acpi->GetGMode() ? powerSize : acpi->GetPower();
+	return acpi->GetGMode() ? (systemID == 4800 && acpi->GetPower() == (powerSize - 1)) ? powerSize : acpi->GetPower() : acpi->GetPower();
 }
 
 void MonHelper::SetPowerMode(WORD newMode) {
@@ -176,11 +177,10 @@ void CMonProc(LPVOID param) {
 							+ to_string(boostOld) + ", new " + to_string(curBoostRaw) + ")!\n");
 					}
 					if (curBoostRaw != boostOld) {
-						acpi->SetFanBoost(i, curBoostRaw);
+						int res = acpi->SetFanBoost(i, curBoostRaw);
 						src->boostRaw[i] = curBoostRaw;
-						//src->boostCooked[i] = curBoost;
-						//DebugPrint(("Boost for fan#" + to_string(i) + " changed from " + to_string(src->boostRaw[i])
-						//	+ " to " + to_string(src->boostSets[i]) + "\n").c_str());
+						//DebugPrint("Boost for fan#" + to_string(i) + " changed from " + to_string(boostOld)
+						//	+ " to " + to_string(curBoostRaw) + ", result " + to_string(res) + "\n");
 					}
 				}
 				else
