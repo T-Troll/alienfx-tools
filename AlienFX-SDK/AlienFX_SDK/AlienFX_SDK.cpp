@@ -535,7 +535,7 @@ chain++;
 				DebugPrint("SDK: Set light " + to_string(act->index) + "\n");
 				PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, 1 << act->index, *ca, c2));
 			}
-			DebugPrint("SDK: Loop\n");
+			//DebugPrint("SDK: Loop\n");
 			res = PrepareAndSend(COMMV1_loop);
 			chain++;
 			return res;

@@ -115,7 +115,7 @@ void FillAllDevs() {
 		fxhl->Start();
 		fxhl->SetState(true);
 		fxhl->UpdateGlobalEffect(NULL);
-		fxhl->Refresh(true); // Fix for 0x551
+		fxhl->Refresh(true);
 	}
 }
 

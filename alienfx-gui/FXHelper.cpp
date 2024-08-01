@@ -115,10 +115,12 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 			if (oldtest >= 0) {
 				DebugPrint(", remove old");
 				dev->dev->SetColor(oldtest, c);
+				oldtest = -1;
 			}
 			if (id >= 0) {
 				DebugPrint(", set");
 				dev->dev->SetColor(id, Code2Act(&conf->testColor));
+				oldtest = id;
 			}
 			dev->dev->UpdateColors();
 		}
@@ -273,7 +275,12 @@ void FXHelper::Refresh(bool forced)
 #endif
 	conf->modifyProfile.lock();
 	for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
-		RefreshOne(&(*it), false);
+		groupset set = *it;
+		// Hack for m16/18/g5525
+		if (set.color.size() == 1 && set.color.front().type == AlienFX_SDK::AlienFX_A_Color) {
+			set.color.push_back(set.color.front());
+		}
+		RefreshOne(/*&(*it)*/&set, false);
 	}
 	conf->modifyProfile.unlock();
 	if (!forced) {
