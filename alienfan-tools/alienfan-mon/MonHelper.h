@@ -7,7 +7,6 @@ class MonHelper {
 private:
 	ThreadHelper* monThread = NULL;
 	short oldPower = 0;
-	int systemID;
 public:
 	AlienFan_SDK::Control* acpi;
 	bool inControl = true;
@@ -17,6 +16,7 @@ public:
 	map<byte,map<WORD, byte>> senBoosts;
 	WORD powerMode = 0;
 	WORD fansize, powerSize, sensorSize;
+	int systemID;
 
 	MonHelper();
 	~MonHelper();

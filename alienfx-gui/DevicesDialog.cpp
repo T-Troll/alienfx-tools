@@ -610,7 +610,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					fxhl->TestLight(activeDevice, -1, true);
 					activeDevice = &conf->afx_dev.fxdevs[lPoint->iItem];
-					fxhl->TestLight(activeDevice, eLid, true);
+					fxhl->TestLight(activeDevice, -1, true);
 					// clear unused lights...
 					RemoveLightAndClean();
 					UpdateDeviceInfo();

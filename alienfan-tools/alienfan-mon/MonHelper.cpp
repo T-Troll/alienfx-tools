@@ -97,7 +97,7 @@ byte MonHelper::GetFanPercent(byte fanID)
 
 int MonHelper::GetPowerMode() {
 	int cmode = acpi->GetPower();
-	return acpi->GetGMode() ? (systemID != 4800 || acpi->GetPower() != (powerSize - 1)) ? powerSize : cmode : cmode;
+	return acpi->GetGMode() ? (systemID != 4800 || cmode == (powerSize - 1) || cmode < 0) ? powerSize : cmode : cmode;
 }
 
 void MonHelper::SetPowerMode(WORD newMode) {

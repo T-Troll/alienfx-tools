@@ -220,6 +220,7 @@
 #define IDC_EDIT1                       1212
 #define IDC_SCRIPT_NAME                 1212
 #define IDC_EDIT_POLLING                1212
+#define IDC_FC_ID                       1213
 #define IDC_BUTREMRGH                   1228
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230
@@ -247,7 +248,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1213
+#define _APS_NEXT_CONTROL_VALUE         1214
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

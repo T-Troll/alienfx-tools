@@ -183,6 +183,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_RESTOREPOWERMODE, fan_conf->keepSystem ? MF_CHECKED : MF_UNCHECKED);
         SetDlgItemInt(hDlg, IDC_EDIT_POLLING, fan_conf->pollingRate, false);
 
+        //char wheader[256];
+        //GetWindowText(hDlg, wheader, 255);
+        //SetWindowText(hDlg, (string(wheader) + " (ID: " + to_string(mon->systemID) + ")").c_str());
+
         return true;
     } break;
     case WM_COMMAND:
