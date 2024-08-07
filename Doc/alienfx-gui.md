@@ -347,6 +347,7 @@ Application behavior control block at right:
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Use BIOS sensors" - Read additional hardware data from Windows WMI and Alienware BIOS (if fan control enabled). It will require "Run as administrator" privilege (default - off).
 - "Enable fan control" - Enables fan and power control functionality, as well as some additional (Alienware BIOS) temperature sensors. It will require "Run as administrator" privilege (default - off).
+  - "polling" - Polling interval, in milliseconds (ms) of any sensors set to affect the current speed of the fan(s) via the fan curve. (default - 750)
   - "Restore power mode" - System power mode will be stored at application start and restored at quit/sleep/hibernate/restart.
 - "Light names on grid" - Shows/hide light names at grid buttons (default - off).
 
