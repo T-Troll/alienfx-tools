@@ -256,9 +256,10 @@ namespace AlienFan_SDK {
 	int Control::SetPower(byte level) {
 		return CallWMIMethod(setPowerMode, level);
 	}
-	int Control::GetPower() {
+	int Control::GetPower(bool raw) {
 		int pl = CallWMIMethod(getPowerMode);
-		for (int i = 0; /*pl >= 0 &&*/ i < powers.size(); i++)
+		if (raw || pl < 0) return pl;
+		for (int i = 0; i < powers.size(); i++)
 			if (powers[i] == pl)
 				return i;
 		return -1;
@@ -275,7 +276,7 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		return isGmode ? GetPower() < 0 || CallWMIMethod(getGMode) : 0;
+		return isGmode ? GetPower(true) < 0 || CallWMIMethod(getGMode) : 0;
 	}
 
 	Lights::Lights(Control *ac) {

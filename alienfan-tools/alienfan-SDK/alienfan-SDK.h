@@ -121,7 +121,7 @@ namespace AlienFan_SDK {
 
 		// Get current system power value index at powers[]
 		// Result: power value index in powers[]
-		int GetPower();
+		int GetPower(bool raw = false);
 
 		// Set system GPU limit level (0 - no limit, 3 - min. limit)
 		// Result: success or error

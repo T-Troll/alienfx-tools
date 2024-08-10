@@ -105,9 +105,9 @@ namespace AlienFan_SDK {
 		// Result: raw value set or error
 		int SetPower(byte level);
 
-		// Get current system power value index at powers[]
-		// Result: power value index in powers[] or error
-		int GetPower();
+		// Get current system power value.
+		// Result: power value (raw true) or index in powers[] (raw false) or error
+		int GetPower(bool raw = false);
 
 		// Set system GPU limit level (0 - no limit, 3 - min. limit)
 		// Result: success or error

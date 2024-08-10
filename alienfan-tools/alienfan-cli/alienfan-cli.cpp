@@ -100,6 +100,7 @@ void CheckFanOverboost(byte num, byte boost) {
     printf("Final boost - %d, %d RPM\n\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
     acpi.SetFanBoost(num, oldBoost);
     fan_conf.UpdateBoost(num, bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
+    fan_conf.Save();
 }
 
 void PrintFanType(int index, int val, const char* type) {
@@ -139,7 +140,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v8.5.1\n");
+    printf("AlienFan-CLI v8.6.1.3\n");
 #ifndef NOLIGHTS
     AlienFan_SDK::Lights* lights = NULL;
 #endif
@@ -210,7 +211,7 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "setpower" && CheckArgs(1, acpi.powers.size()) && acpi.SetPower(acpi.powers[args[0].num]) >= 0) {
-            printf("Power mode set to %s (%d)\n", fan_conf.GetPowerName(args[0].num)->c_str(), acpi.powers[args[0].num]);
+            printf("Power mode set to %s (%x)\n", fan_conf.GetPowerName(acpi.powers[args[0].num])->c_str(), acpi.powers[args[0].num]);
             continue;
         }
         if (command == "setperf" && CheckArgs(2, 5)) {
@@ -225,9 +226,9 @@ int main(int argc, char* argv[])
             continue;
         }
         if (command == "getpower") {
-            int res = acpi.GetPower();
+            int res = acpi.GetPower(true);
             if (res >= 0)
-                printf("Power mode: %s (%d)\n", fan_conf.GetPowerName(res)->c_str(), acpi.powers[res]);
+                printf("Power mode: %s (%x)\n", fan_conf.GetPowerName(res)->c_str(), res);
             continue;
         }
         if (command == "getfans") {

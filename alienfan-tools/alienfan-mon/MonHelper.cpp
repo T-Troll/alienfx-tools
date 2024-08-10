@@ -68,20 +68,20 @@ void MonHelper::Stop() {
 void MonHelper::SetCurrentMode(int newMode) {
 	if (newMode < 0)
 		newMode = fan_conf->lastProf->gmodeStage ? powerSize : fan_conf->lastProf->powerStage;
-	int cmode = GetPowerMode();
-	if (newMode != cmode) {
+	//int cmode = GetPowerMode();
+	if (newMode != powerMode) {
 		if (newMode < powerSize) {
-			if (cmode == powerSize) {
+			if (powerMode == powerSize) {
 				acpi->SetGMode(0);
 			}
 			acpi->SetPower(acpi->powers[newMode]);
 			ResetBoost();
-			DebugPrint("Mon: Power mode switch from " + to_string(cmode) + " to " + to_string(newMode) + "\n");
+			DebugPrint("Mon: Power mode switch from " + (powerMode == powerSize ? "G-mode" : to_string(powerMode)) + " to " + to_string(newMode) + "\n");
 		}
 		else {
 			acpi->SetPower(0xa0);
 			acpi->SetGMode(1);
-			DebugPrint("Mon: Power mode switch from " + to_string(cmode) + " to G-mode\n");
+			DebugPrint("Mon: Power mode switch from " + to_string(powerMode) + " to G-mode\n");
 		}
 		powerMode = newMode;
 	}
@@ -96,8 +96,16 @@ byte MonHelper::GetFanPercent(byte fanID)
 }
 
 int MonHelper::GetPowerMode() {
-	int cmode = acpi->GetPower();
-	return acpi->GetGMode() ? (systemID != 4800 || cmode == (powerSize - 1) || cmode < 0) ? powerSize : cmode : cmode;
+	if (acpi->GetGMode()) {
+		if (systemID != 4800) { // buggy G25 BIOS fix
+			return powerSize;
+		} else {
+			int cmode = acpi->GetPower(true);
+			if (cmode == 0xab || cmode < 0)
+				return powerSize;
+		}
+	}
+	return acpi->GetPower();
 }
 
 void MonHelper::SetPowerMode(WORD newMode) {
@@ -137,6 +145,7 @@ void CMonProc(LPVOID param) {
 
 	if (src->inControl && active) {
 		// check power mode
+		src->powerMode = src->GetPowerMode();
 		src->SetCurrentMode();
 
 		if (!src->powerMode && modified) {
