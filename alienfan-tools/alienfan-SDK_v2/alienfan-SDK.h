@@ -28,22 +28,6 @@ namespace AlienFan_SDK {
 		byte id, type;
 	};
 
-	enum {
-		getPowerID	 =	0,
-		getFanRPM	 =	1,
-		getFanPercent=	2,
-		getFanBoost	 =	3,
-		getTemp		 =	4,
-		getPowerMode =	5,
-		setFanBoost	 =	6,
-		setPowerMode =	7,
-		getGMode	 =	8,
-		setGMode	 =	9,
-		getSysID	 =	10,
-		getFanSensor =	11,
-		getMaxRPM	 =	12
-	};
-
 	union ALIENFAN_INTERFACE {
 		struct {
 			byte sub,
@@ -65,7 +49,9 @@ namespace AlienFan_SDK {
 		IWbemClassObject* m_InParamaters = NULL;
 		bool isAlienware = false,
 			 isSupported = false,
+			 isTcc = false,
 			 isGmode = false;
+		byte maxTCC, maxOffset;
 
 		Control();
 		~Control();
@@ -118,6 +104,12 @@ namespace AlienFan_SDK {
 
 		// Check G-mode state
 		int GetGMode();
+
+		// Get current TCC value
+		int GetTCC();
+
+		// Set TCC value, if possible
+		int SetTCC(byte tccValue);
 
 		// Return current device ID
 		inline DWORD GetSystemID() { return systemID; };

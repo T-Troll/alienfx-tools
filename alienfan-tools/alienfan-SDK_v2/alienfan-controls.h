@@ -3,22 +3,23 @@
 
 namespace AlienFan_SDK {
 
-	static const BSTR commandList[7]{
+	static const BSTR commandList[]{
 		(BSTR)L"Thermal_Information",	// 0x14
 		(BSTR)L"Thermal_Control",		// 0x15
 		(BSTR)L"GameShiftStatus",		// 0x25
 		(BSTR)L"SystemInformation",		// 0x1A
 		(BSTR)L"GetFanSensors",			// 0x13
 		(BSTR)L"GetThermalInfo2",		// 0x10
-		(BSTR)L"SetThermalControl2"		// 0x11
+		(BSTR)L"SetThermalControl2",	// 0x11
+		(BSTR)L"TccControl"				// 0x1e
 	};
 
-	static const byte functionID[2][13]{
-		{ 0,0,0,0,0,0,1,1,2,2,3,4,0 },
-		{ 5,5,5,5,5,5,6,6,2,2,3,4,5 }
+	static const byte functionID[2][17]{
+		{ 0,0,0,0,0,0,1,1,2,2,3,4,0,7,7,7,7 },
+		{ 5,5,5,5,5,5,6,6,2,2,3,4,5,7,7,7,7 }
 	};
 
-	static const byte dev_controls[13]{
+	static const byte dev_controls[]{
 		3, // PowerID
 		5, // RPM
 		6, // Percent
@@ -31,7 +32,31 @@ namespace AlienFan_SDK {
 		1, // Toggle G-Mode
 		2, // Get system ID
 		2, // Get fan sensor ID
-		9  // Get Max. RPM
+		9, // Get Max. RPM
+		1, // Get max TCC
+		2, // Get max offset
+		3, // Get current offset
+		4, // Set current offset
+	};
+
+	enum { // devcontrol names
+		getPowerID = 0,
+		getFanRPM = 1,
+		getFanPercent = 2,
+		getFanBoost = 3,
+		getTemp = 4,
+		getPowerMode = 5,
+		setFanBoost = 6,
+		setPowerMode = 7,
+		getGMode = 8,
+		setGMode = 9,
+		getSysID = 10,
+		getFanSensor = 11,
+		getMaxRPM = 12,
+		getMaxTCC = 13,
+		getMaxOffset = 14,
+		getCurrentOffset = 15,
+		setOffset = 16
 	};
 
 	static const char* temp_names[2]{

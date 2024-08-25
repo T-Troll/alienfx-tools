@@ -137,11 +137,6 @@ namespace AlienFan_SDK {
 				enum_obj->Release();
 				isAlienware = true;
 
-				isGmode = m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK;
-#ifdef _TRACE_
-				if (isGmode)
-					printf("G-Mode available\n");
-#endif
 				// check system type and fill inParams
 				for (int type = 0; type < 2; type++)
 					if (isSupported = (m_AWCCGetObj->GetMethod(commandList[functionID[type][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)) {
@@ -153,7 +148,21 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 						printf("System ID = %d\n", systemID);
 #endif
+						isGmode = m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK;
+#ifdef _TRACE_
+						if (isGmode)
+							printf("G-Mode available\n");
+#endif
+						if (isTcc = (CallWMIMethod(getMaxTCC, 0) > 0)) {
+							maxTCC = CallWMIMethod(getMaxTCC);
+							maxOffset = CallWMIMethod(getMaxOffset);
+						}
+#ifdef _TRACE_
+						if (isTcc)
+							printf("TCC control available\n");
+#endif
 						int fIndex = 0; unsigned funcID = CallWMIMethod(getPowerID, fIndex);
+
 						powers.push_back(0); // Manual mode
 						// Scan for avaliable data
 						while (funcID && (funcID + 1)) {
@@ -277,6 +286,24 @@ namespace AlienFan_SDK {
 
 	int Control::GetGMode() {
 		return isGmode ? GetPower(true) < 0 || CallWMIMethod(getGMode) : 0;
+	}
+
+	int Control::GetTCC()
+	{
+		if (isTcc) {
+			int curOffset = CallWMIMethod(getCurrentOffset);
+			return maxTCC - curOffset;
+		}
+		return -1;
+	}
+
+	int Control::SetTCC(byte tccValue)
+	{
+		if (isTcc) {
+			if (maxTCC - tccValue <= maxOffset)
+				return CallWMIMethod(setOffset, maxTCC - tccValue);
+		}
+		return -1;
 	}
 
 	Lights::Lights(Control *ac) {
