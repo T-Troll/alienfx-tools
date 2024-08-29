@@ -130,7 +130,9 @@ setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or au
 setgmode=<mode>\t\t\tSet G-mode on/off (1-on, 0-off)\n\
 gmode\t\t\t\tShow G-mode state\n\
 gettcc\t\t\t\tShow current TCC level\n\
-settcc=<level>\t\t\t\tSet new TCC level\n\
+settcc=<level>\t\t\t\tSet TCC level\n\
+getxmp\t\t\t\tShow current memory XMP profile level\n\
+setxmp=<level>\t\t\t\tSet memory XMP profile level\n\
 setcolor=id,r,g,b\t\tSet light to color\n\
 setbrightness=<brightness>\tSet lights brightness\n\
 \tPower mode can be in 0..N - according to power states detected\n\
@@ -142,7 +144,7 @@ setbrightness=<brightness>\tSet lights brightness\n\
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v8.6.1.3\n");
+    printf("AlienFan-CLI v9.0.0.0\n");
 #ifndef NOLIGHTS
     AlienFan_SDK::Lights* lights = NULL;
 #endif
@@ -150,10 +152,11 @@ int main(int argc, char* argv[])
 #ifndef NOLIGHTS
         lights = new AlienFan_SDK::Lights(&acpi);
 #endif
-        printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s%s.\n",
+        printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s%s%s.\n",
             acpi.GetSystemID(), (int)acpi.fans.size(), (int)acpi.sensors.size(), (int)acpi.powers.size(),
             (acpi.isGmode ? ", G-Mode" : ""),
             (acpi.isTcc ? ", TCC" : ""),
+            (acpi.isXMP ? ", XMP" : ""),
             (
 #ifndef NOLIGHTS
                 lights->isActivated ? ", Lights" :
@@ -295,6 +298,17 @@ int main(int argc, char* argv[])
             else
                 printf("Incorrect TCC value - should be in [%d..%d]\n", acpi.maxTCC - acpi.maxOffset, acpi.maxTCC);
 
+            continue;
+        }
+        if (command == "getxmp") {
+            printf("Current XMP profile is %d\n", acpi.GetXMP());
+            continue;
+        }
+        if (command == "setxmp" && CheckArgs(1, 3)) {
+            if (!acpi.SetXMP(args[0].num))
+                printf("XMP profile set to %d\n", args[0].num);
+            else
+                printf("XMP switch locked");
             continue;
         }
         if (command == "dump" && acpi.isAlienware) { // dump WMI functions

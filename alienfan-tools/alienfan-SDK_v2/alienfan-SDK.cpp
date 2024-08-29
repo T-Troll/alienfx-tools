@@ -153,13 +153,17 @@ namespace AlienFan_SDK {
 						if (isGmode)
 							printf("G-Mode available\n");
 #endif
-						if (isTcc = (CallWMIMethod(getMaxTCC, 0) > 0)) {
-							maxTCC = CallWMIMethod(getMaxTCC);
+						if (isTcc = ((maxTCC = CallWMIMethod(getMaxTCC)) > 0)) {
 							maxOffset = CallWMIMethod(getMaxOffset);
 						}
 #ifdef _TRACE_
 						if (isTcc)
 							printf("TCC control available\n");
+#endif
+						isXMP = CallWMIMethod(getXMP) >= 0;
+#ifdef _TRACE_
+						if (isXMP)
+							printf("Memory XMP available\n");
 #endif
 						int fIndex = 0; unsigned funcID = CallWMIMethod(getPowerID, fIndex);
 
@@ -302,6 +306,21 @@ namespace AlienFan_SDK {
 		if (isTcc) {
 			if (maxTCC - tccValue <= maxOffset)
 				return CallWMIMethod(setOffset, maxTCC - tccValue);
+		}
+		return -1;
+	}
+
+	int Control::GetXMP()
+	{	if (isXMP)
+			return CallWMIMethod(getXMP);
+		return -1;
+	}
+
+	int Control::SetXMP(byte memXMP)
+	{
+		if (isXMP) {
+			int res = CallWMIMethod(setXMP, memXMP);
+			return res ? -1 : res;
 		}
 		return -1;
 	}

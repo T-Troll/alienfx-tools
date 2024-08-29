@@ -26,6 +26,14 @@ struct fan_profile {
 		DWORD powerSet = 0;
 	};
 	map<byte,map<WORD, sen_block>> fanControls;
+	// OC block
+	union {
+		struct {
+			byte currentTCC;
+			byte memoryXMP;
+		};
+		DWORD ocSettings = 100;
+	};
 };
 
 struct fan_overboost {

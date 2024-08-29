@@ -48,9 +48,10 @@ namespace AlienFan_SDK {
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
 		IWbemClassObject* m_InParamaters = NULL;
 		bool isAlienware = false,
-			 isSupported = false,
-			 isTcc = false,
-			 isGmode = false;
+			isSupported = false,
+			isTcc = false,
+			isXMP = false,
+			isGmode = false;
 		byte maxTCC, maxOffset;
 
 		Control();
@@ -110,6 +111,12 @@ namespace AlienFan_SDK {
 
 		// Set TCC value, if possible
 		int SetTCC(byte tccValue);
+
+		// Get current XMP profile
+		int GetXMP();
+
+		// Set current XMP profile
+		int SetXMP(byte memXMP);
 
 		// Return current device ID
 		inline DWORD GetSystemID() { return systemID; };

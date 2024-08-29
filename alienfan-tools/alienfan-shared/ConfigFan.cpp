@@ -38,6 +38,7 @@ void ConfigFan::Load() {
 	GetReg("StartMinimized", &startMinimized);
 	GetReg("UpdateCheck", &updateCheck, 1);
 	GetReg("LastPowerStage", &prof.powerSet);
+	GetReg("OC", &prof.ocSettings, 100);
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("KeepSystemMode", &keepSystem, 1);
@@ -89,6 +90,7 @@ void ConfigFan::Save() {
 	SetReg("StartAtBoot", startWithWindows);
 	SetReg("StartMinimized", startMinimized);
 	SetReg("LastPowerStage", prof.powerSet);
+	SetReg("OC", prof.ocSettings);
 	SetReg("UpdateCheck", updateCheck);
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);

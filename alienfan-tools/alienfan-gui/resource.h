@@ -21,10 +21,13 @@
 #define IDC_BUT_RESETBOOST              1017
 #define IDC_EDIT1                       1018
 #define IDC_EDIT_POLLING                1018
+#define IDC_FC_ID                       1019
 #define IDC_AC_BOOST                    1124
 #define IDC_DC_BOOST                    1125
 #define IDC_BUT_OVER                    1130
 #define IDC_FAN_RESET                   1132
+#define IDC_SLIDER_TCC                  1214
+#define IDC_SLIDER_XMP                  1215
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDM_SETTINGS_UPDATE             32782
@@ -46,7 +49,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         32801
-#define _APS_NEXT_CONTROL_VALUE         1019
+#define _APS_NEXT_CONTROL_VALUE         1020
 #define _APS_NEXT_SYMED_VALUE           111
 #endif
 #endif

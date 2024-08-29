@@ -15,6 +15,7 @@ using namespace std;
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
+HWND sTip1 = 0, sTip2 = 0;
 
 ConfigFan* fan_conf = NULL;                     // Config...
 MonHelper* mon = NULL;                          // Monitoring object
@@ -135,6 +136,8 @@ void ToggleValue(DWORD& value, int cID) {
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
+        tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC),
+        xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP),
         tempList = GetDlgItem(hDlg, IDC_TEMP_LIST),
         fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
 
@@ -183,9 +186,18 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_RESTOREPOWERMODE, fan_conf->keepSystem ? MF_CHECKED : MF_UNCHECKED);
         SetDlgItemInt(hDlg, IDC_EDIT_POLLING, fan_conf->pollingRate, false);
 
-        //char wheader[256];
-        //GetWindowText(hDlg, wheader, 255);
-        //SetWindowText(hDlg, (string(wheader) + " (ID: " + to_string(mon->systemID) + ")").c_str());
+        // Set SystemID
+        SetDlgItemText(hDlg, IDC_FC_ID, ("ID: " + to_string(mon->systemID)).c_str());
+
+        // OC block
+        SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
+        SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
+        sTip1 = CreateToolTip(tcc_slider, sTip1);
+        SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+        sTip2 = CreateToolTip(xmp_slider, sTip2);
+        SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
+        SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
+        SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
 
         return true;
     } break;
@@ -415,6 +427,21 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDC_TEMP_LIST:
             TempUIEvent((NMLVDISPINFO*)lParam, tempList);
             break;
+        } break;
+    case WM_HSCROLL:
+        switch (LOWORD(wParam)) {
+        case TB_THUMBTRACK: case TB_ENDTRACK: {
+            if ((HWND)lParam == tcc_slider) {
+                fan_conf->lastProf->currentTCC = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+                mon->acpi->SetTCC(fan_conf->lastProf->currentTCC);
+            }
+            if ((HWND)lParam == xmp_slider) {
+                fan_conf->lastProf->memoryXMP = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
+                mon->acpi->SetXMP(fan_conf->lastProf->memoryXMP);
+            }
+        } break;
         } break;
     case WM_CLOSE:
         SendMessage(hDlg, SW_SHOW, SIZE_MINIMIZED, 0);

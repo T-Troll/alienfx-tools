@@ -27,5 +27,6 @@ public:
 	int GetPowerMode();
 	void SetPowerMode(WORD newMode);
 	void ResetBoost();
+	void SetOC();
 };
 

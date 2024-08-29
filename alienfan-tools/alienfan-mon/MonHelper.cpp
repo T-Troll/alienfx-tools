@@ -19,6 +19,7 @@ MonHelper::MonHelper() {
 		sensorSize = (WORD)acpi->sensors.size();
 		oldPower = powerMode = GetPowerMode();
 		systemID = acpi->GetSystemID();
+		SetOC();
 		Start();
 	}
 }
@@ -30,6 +31,12 @@ MonHelper::~MonHelper() {
 			SetCurrentMode(oldPower);
 	}
 	delete acpi;
+}
+
+void MonHelper::SetOC()
+{
+	acpi->SetTCC(fan_conf->lastProf->currentTCC);
+	acpi->SetXMP(fan_conf->lastProf->memoryXMP);
 }
 
 void MonHelper::ResetBoost() {
@@ -119,6 +126,7 @@ void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
 	AlienFan_SDK::Control* acpi = src->acpi;
 	bool modified = false;
+	fan_profile* active = NULL;
 
 	// update values:
 	// temps..
@@ -136,7 +144,10 @@ void CMonProc(LPVOID param) {
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
-	fan_profile* active = fan_conf->lastProf; // protection from change profile
+	if (active != fan_conf->lastProf) {
+		active = fan_conf->lastProf; // protection from change profile
+		src->SetOC();
+	}
 
 #ifdef _DEBUG
 	if (!active)

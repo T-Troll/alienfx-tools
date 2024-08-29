@@ -11,12 +11,13 @@ namespace AlienFan_SDK {
 		(BSTR)L"GetFanSensors",			// 0x13
 		(BSTR)L"GetThermalInfo2",		// 0x10
 		(BSTR)L"SetThermalControl2",	// 0x11
-		(BSTR)L"TccControl"				// 0x1e
+		(BSTR)L"TccControl",			// 0x1e
+		(BSTR)L"MemoryOCControl"		// 0x17
 	};
 
-	static const byte functionID[2][17]{
-		{ 0,0,0,0,0,0,1,1,2,2,3,4,0,7,7,7,7 },
-		{ 5,5,5,5,5,5,6,6,2,2,3,4,5,7,7,7,7 }
+	static const byte functionID[2][19]{
+		{ 0,0,0,0,0,0,1,1,2,2,3,4,0,7,7,7,7,8,8 },
+		{ 5,5,5,5,5,5,6,6,2,2,3,4,5,7,7,7,7,8,8 }
 	};
 
 	static const byte dev_controls[]{
@@ -37,6 +38,8 @@ namespace AlienFan_SDK {
 		2, // Get max offset
 		3, // Get current offset
 		4, // Set current offset
+		2, // Get XMP
+		3, // Set XMP
 	};
 
 	enum { // devcontrol names
@@ -56,7 +59,9 @@ namespace AlienFan_SDK {
 		getMaxTCC = 13,
 		getMaxOffset = 14,
 		getCurrentOffset = 15,
-		setOffset = 16
+		setOffset = 16,
+		getXMP = 17,
+		setXMP = 18
 	};
 
 	static const char* temp_names[2]{

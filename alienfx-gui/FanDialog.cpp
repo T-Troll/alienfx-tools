@@ -26,6 +26,8 @@ extern void DrawFan();
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
+        tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC),
+        xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP),
         tempList = GetDlgItem(hDlg, IDC_TEMP_LIST),
         fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
 
@@ -58,6 +60,16 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         // Start UI update thread...
         SetTimer(hDlg, 0, fan_conf->pollingRate, NULL);
+
+        // OC block
+        SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
+        SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
+        sTip1 = CreateToolTip(tcc_slider, sTip1);
+        SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+        sTip2 = CreateToolTip(xmp_slider, sTip2);
+        SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
+        SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
+        SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
 
         //SendMessage(power_gpu, TBM_SETRANGE, true, MAKELPARAM(0, 4));
         //SendMessage(power_gpu, TBM_SETTICFREQ, 1, 0);
@@ -142,6 +154,21 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDC_TEMP_LIST:
             TempUIEvent((NMLVDISPINFO*)lParam, tempList);
             break;
+        } break;
+    case WM_HSCROLL:
+        switch (LOWORD(wParam)) {
+        case TB_THUMBTRACK: case TB_ENDTRACK: {
+            if ((HWND)lParam == tcc_slider) {
+                fan_conf->lastProf->currentTCC = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+                mon->acpi->SetTCC(fan_conf->lastProf->currentTCC);
+            }
+            if ((HWND)lParam == xmp_slider) {
+                fan_conf->lastProf->memoryXMP = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+                SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
+                mon->acpi->SetXMP(fan_conf->lastProf->memoryXMP);
+            }
+        } break;
         } break;
     case WM_TIMER:
         for (int i = 0; i < mon->sensorSize; i++) {
