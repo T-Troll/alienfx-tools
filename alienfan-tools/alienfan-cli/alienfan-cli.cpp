@@ -323,14 +323,14 @@ int main(int argc, char* argv[])
             result.intVal = -1;
             IWbemClassObject* m_outParameters = NULL;
             VARIANT parameters = { VT_I4 };
-            parameters.uintVal = AlienFan_SDK::ALIENFAN_INTERFACE{ (byte)args[0].num, (byte)args[1].num, (byte)args[2].num, 0 }.args;
+            parameters.uintVal = AlienFan_SDK::ALIENFAN_INTERFACE{ (byte)args[0].num, 0, 0, 0 }.args;
             acpi.m_InParamaters->Put((BSTR)L"arg2", NULL, &parameters, 0);
             if (acpi.m_WbemServices->ExecMethod(acpi.m_instancePath.bstrVal,
                 (BSTR)L"Set_OCUIBIOSControl", 0, NULL, acpi.m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
                 m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
                 m_outParameters->Release();
             }
-            printf("Subcommand %d, arg %d - result %x\n", args[0].num, args[1].num, result.intVal);
+            printf("Subcommand %d - result %x\n", args[0].num, result.intVal);
             continue;
         }
         if (command == "test") { // Test
