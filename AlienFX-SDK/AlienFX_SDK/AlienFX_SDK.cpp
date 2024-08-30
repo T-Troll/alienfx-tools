@@ -767,12 +767,14 @@ chain++;
 	}
 
 	BYTE Functions::WaitForReady() {
-		int i = 0;
+
 		switch (version) {
 		case API_V3: case API_V2:
 			//if (!GetDeviceStatus())
 			//	Reset();
-			for (; i < 100 && GetDeviceStatus() != ALIENFX_V2_READY; i++) Sleep(10);
+			int i = 0;
+			for (; i < 100 && GetDeviceStatus() != ALIENFX_V2_READY; i++) 
+				Sleep(10);
 			return i < 100;
 		case API_V4:
 			while (!IsDeviceReady()) Sleep(20);
@@ -787,12 +789,13 @@ chain++;
 		switch (version) {
 		case API_V3: case API_V2:
 			if (GetDeviceStatus())
-				for (; i < 100 && GetDeviceStatus() != ALIENFX_V2_BUSY; i++) Sleep(10);
-			return i != 100;
+				for (; i < 100 && GetDeviceStatus() != ALIENFX_V2_BUSY; i++) 
+					Sleep(10);
+			return i < 100;
 			break;
 		case API_V4: {
 			for (; i < 500 && GetDeviceStatus() != ALIENFX_V4_BUSY; i++) Sleep(20);
-			return i != 500;
+			return i < 500;
 		} break;
 		default:
 			return GetDeviceStatus();

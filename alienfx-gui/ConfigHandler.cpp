@@ -422,25 +422,12 @@ void ConfigHandler::Save() {
 
 zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	zoneUpdate.lock();
-	//for (auto gpos = zoneMaps.begin(); gpos != zoneMaps.end(); gpos++)
-	//	if (gpos->first == gid) {
-	//		if (reset) {
-	//			zoneMaps.erase(gpos);
-	//			break;
-	//		}
-	//		else {
-	//			zoneUpdate.unlock();
-	//			return &(*gpos);
-	//		}
-	//	}
-	if (!(zoneMaps[gid].gMinX == 255 || reset)) {
+		if (!(zoneMaps[gid].gMinX == 255 || reset)) {
 		zoneUpdate.unlock();
 		return &zoneMaps[gid];
 	}
 
 	// create new zoneMap
-	//zoneMaps.push_back({ (DWORD)gid, mainGrid->id });
-	//auto zone = &zoneMaps.back();
 	auto zone = &zoneMaps[gid];
 	*zone = { mainGrid->id };
 
@@ -479,7 +466,7 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 						//break;
 					}
 				// Ignore light if not in grid
-				if (cl.x < 255) {
+				if (cl.x < 255 && cl.y < 255) {
 					zone->gMaxX = max(zone->gMaxX, cl.x);
 					zone->gMaxY = max(zone->gMaxY, cl.y);
 					zone->gMinX = min(zone->gMinX, cl.x);

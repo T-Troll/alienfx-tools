@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
             wprintf(L"Names:\n%s\n", name);
             continue;
         }
-        if (command == "probe" && acpi.isAlienware && CheckArgs(3, 255)) { // manual detection dump
+        if (command == "probe" && acpi.isAlienware && CheckArgs(1, 2)) { // manual detection dump
             VARIANT result{ VT_I4 };
             result.intVal = -1;
             IWbemClassObject* m_outParameters = NULL;

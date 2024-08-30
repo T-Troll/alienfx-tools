@@ -9,7 +9,7 @@ extern FXHelper* fxhl;
 extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode* c);
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
-	if (grp->effect.trigger == 4 || grp->effect.effectColors.size()) {
+	if (cz->lightMap.size() && (grp->effect.trigger == 4 || grp->effect.effectColors.size())) {
 		grideffop* gridop = &grp->gridop;
 		int cx = max(x + 1, cz->gMaxX - x), cy = max(y + 1, cz->gMaxY - y), esize = 0;
 		if (grp->gauge) {
