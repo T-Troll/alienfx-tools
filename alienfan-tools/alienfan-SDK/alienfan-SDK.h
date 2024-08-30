@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <wtypes.h>
-#include "alienfan-low/alienfan-low.h"
 
 using namespace std;
 
@@ -83,6 +82,9 @@ namespace AlienFan_SDK {
 		Control();
 		~Control();
 
+		bool isTcc = false, isXMP = false;
+		byte maxTCC = 100, maxOffset = 16;
+
 #ifdef _SERVICE_WAY_
 		// Stop and unload service if driver loaded from service
 		void UnloadService();
@@ -143,24 +145,15 @@ namespace AlienFan_SDK {
 
 		int SetCharge(byte val);
 
+		// Fake OC
+		int GetTCC() { return -1; };
+		int SetTCC(byte temp) { return -1; };
+		int GetXMP() { return -1; };
+		int SetXMP(byte xmp) { return -1; };
+
 		// Get low-level driver handle for direct operations
 		// Result: handle to driver or NULL
 		//HANDLE GetHandle();
-
-		//// True if driver activated and ready, false if not
-		//bool IsActivated();
-
-		//// Return number of fans into fans[] detected at Probe()
-		//int HowManyFans();
-
-		//// Return number of power levels into powers[] detected at Probe()
-		//int HowManyPower();
-
-		//// Return number of temperature sensors into sensors[] detected at Probe()
-		//int HowManySensors();
-
-		//// Return internal module version
-		//int GetVersion();
 
 		// Call ACPI system control method with given parameters - see ALIENFAN_DEVICE for details
 		// Result: reply from the driver or error

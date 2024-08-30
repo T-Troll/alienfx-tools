@@ -190,14 +190,20 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SetDlgItemText(hDlg, IDC_FC_ID, ("ID: " + to_string(mon->systemID)).c_str());
 
         // OC block
-        SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
-        SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
-        sTip1 = CreateToolTip(tcc_slider, sTip1);
-        SetSlider(sTip1, fan_conf->lastProf->currentTCC);
-        sTip2 = CreateToolTip(xmp_slider, sTip2);
-        SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
-        SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
-        SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
+        EnableWindow(tcc_slider, mon->acpi->isTcc);
+        if (mon->acpi->isTcc) {
+            SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
+            sTip1 = CreateToolTip(tcc_slider, sTip1);
+            SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+            SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
+        }
+        EnableWindow(xmp_slider, mon->acpi->isXMP);
+        if (mon->acpi->isXMP) {
+            SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
+            sTip2 = CreateToolTip(xmp_slider, sTip2);
+            SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
+            SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
+        }
 
         return true;
     } break;

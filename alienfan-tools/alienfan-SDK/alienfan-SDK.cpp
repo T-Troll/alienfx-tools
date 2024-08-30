@@ -1,8 +1,9 @@
-// alienfan-SDK.cpp : Defines the functions for the static library.
-//
 
+#include "alienfan-low.h"
 #include "alienfan-SDK.h"
 #include "alienfan-controls.h"
+
+#pragma warning(disable:4242)
 
 //#define _TRACE_
 

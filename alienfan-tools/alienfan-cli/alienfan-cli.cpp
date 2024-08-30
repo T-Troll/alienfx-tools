@@ -333,6 +333,19 @@ int main(int argc, char* argv[])
             printf("Subcommand %d, arg %d - result %x\n", args[0].num, args[1].num, result.intVal);
             continue;
         }
+        if (command == "test") { // Test
+            IWbemClassObject* m_outParameters = NULL;
+            VARIANT result{ VT_I4 };
+            result.intVal = -1;
+            if (acpi.m_WbemServices->ExecMethod(acpi.m_instancePath.bstrVal,
+                (BSTR)L"Return_OverclockingReport", 0, NULL, NULL, &m_outParameters, NULL) == S_OK && m_outParameters) {
+                m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
+                m_outParameters->Release();
+            }
+            printf("Subcommand %d - result %x\n", 0, result.intVal);
+            continue;
+        }
+        printf("Unknown command - %s, run without parameters for help.\n", command.c_str());
 #else
         //if (command == "getcharge" && acpi.isCharge) { // dump WMI functions
         //    printf("Charge is %s\n", acpi.GetCharge() & 0x10 ? "Off" : "On");
@@ -343,20 +356,6 @@ int main(int argc, char* argv[])
         //    continue;
         //}
 #endif // !ALIENFAN_SDK_V1
-
-        if (command == "test") { // Test
-            IWbemClassObject* m_outParameters = NULL;
-            VARIANT result{ VT_I4 };
-            result.intVal = -1;
-            if (acpi.m_WbemServices->ExecMethod(acpi.m_instancePath.bstrVal,
-                        (BSTR)L"Return_OverclockingReport", 0, NULL, NULL, &m_outParameters, NULL) == S_OK && m_outParameters) {
-                        m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
-                        m_outParameters->Release();
-            }
-            printf("Subcommand %d - result %x\n", 0, result.intVal);
-            continue;
-        }
-        printf("Unknown command - %s, run without parameters for help.\n", command.c_str());
     }
 
     if (argc < 2)

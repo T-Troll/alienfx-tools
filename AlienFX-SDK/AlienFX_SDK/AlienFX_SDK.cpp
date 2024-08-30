@@ -767,12 +767,11 @@ chain++;
 	}
 
 	BYTE Functions::WaitForReady() {
-
+		int i = 0;
 		switch (version) {
 		case API_V3: case API_V2:
 			//if (!GetDeviceStatus())
 			//	Reset();
-			int i = 0;
 			for (; i < 100 && GetDeviceStatus() != ALIENFX_V2_READY; i++) 
 				Sleep(10);
 			return i < 100;
