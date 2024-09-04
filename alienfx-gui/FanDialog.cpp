@@ -71,7 +71,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         EnableWindow(xmp_slider, mon->acpi->isXMP);
         if (mon->acpi->isXMP) {
-            SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
+            SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(-1, 2));
             sTip2 = CreateToolTip(xmp_slider, sTip2);
             SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
             SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);

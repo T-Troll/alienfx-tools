@@ -318,6 +318,7 @@ namespace AlienFan_SDK {
 
 	int Control::SetXMP(byte memXMP)
 	{
+		if (memXMP == -1)return 0;//set a value to bypass Xmp function
 		if (isXMP) {
 			int res = CallWMIMethod(setXMP, memXMP);
 			return res ? -1 : res;
