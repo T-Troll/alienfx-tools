@@ -30,9 +30,9 @@ struct fan_profile {
 	union {
 		struct {
 			byte currentTCC;
-			byte memoryXMP;
+			signed char memoryXMP;
 		};
-		DWORD ocSettings = 100;
+		DWORD ocSettings = (0xff <<8|100);
 	};
 };
 

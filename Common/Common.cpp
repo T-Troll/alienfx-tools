@@ -241,6 +241,10 @@ void SetToolTip(HWND tt, string value) {
 }
 
 void SetSlider(HWND tt, int value) {
+	if (value == -1) {
+		SetToolTip(tt, string("OFF"));
+		return;
+	}
 	SetToolTip(tt, to_string(value));
 }
 
