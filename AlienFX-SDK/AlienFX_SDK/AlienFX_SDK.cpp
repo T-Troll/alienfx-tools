@@ -333,7 +333,7 @@ chain++;
 		mods->push_back( {bPos, {act->index,v8OpCodes[act->act.front().type], act->act.front().tempo, 0xa5, act->act.front().time, 0xa,
 			act->act.front().r, act->act.front().g,act->act.front().b,
 			act->act.back().r,act->act.back().g,act->act.back().b,
-			2} } );
+			(byte)(act->act.size() > 1 ? 2 : 1)} } );
 	}
 
 	void Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {

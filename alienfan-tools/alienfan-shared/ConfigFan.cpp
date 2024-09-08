@@ -124,10 +124,9 @@ void ConfigFan::Save() {
 }
 
 string* ConfigFan::GetPowerName(int index) {
-	string* pwr = &powers[index];
-	if (pwr->empty())
-		*pwr = "Level " + to_string(index);
-	return pwr;
+	if (powers[index].empty())
+		powers[index] = "Level " + to_string(index);
+	return &powers[index];
 }
 
 void ConfigFan::UpdateBoost(byte fanID, byte boost, WORD rpm) {
