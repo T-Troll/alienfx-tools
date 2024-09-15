@@ -77,6 +77,7 @@ void MonHelper::SetCurrentMode(int newMode) {
 		newMode = fan_conf->lastProf->gmodeStage ? powerSize : fan_conf->lastProf->powerStage;
 	//int cmode = GetPowerMode();
 	if (newMode != powerMode) {
+		acpi->SetPower(0xa0);
 		if (newMode < powerSize) {
 			if (powerMode == powerSize) {
 				acpi->SetGMode(0);
@@ -86,7 +87,7 @@ void MonHelper::SetCurrentMode(int newMode) {
 			DebugPrint("Mon: Power mode switch from " + (powerMode == powerSize ? "G-mode" : to_string(powerMode)) + " to " + to_string(newMode) + "\n");
 		}
 		else {
-			acpi->SetPower(0xa0);
+			//acpi->SetPower(0xa0);
 			acpi->SetGMode(1);
 			DebugPrint("Mon: Power mode switch from " + to_string(powerMode) + " to G-mode\n");
 		}

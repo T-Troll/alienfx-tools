@@ -141,7 +141,7 @@ namespace AlienFX_SDK {
 		inline void AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* act);
 
 		// Support function to send whole power block for v1-v3
-		bool SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse = false);
+		void SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse = false);
 
 		// Support function for APIv4 action set
 		bool SetV4Action(Afx_lightblock* act);

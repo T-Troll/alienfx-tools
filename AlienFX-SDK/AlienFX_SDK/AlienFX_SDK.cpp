@@ -107,7 +107,7 @@ namespace AlienFX_SDK {
 			case API_V8:
 				if (needV8Feature) {
 					res = HidD_SetFeature(devHandle, buffer, length);
-					Sleep(7);
+					Sleep(8);
 				}
 				else
 				{
@@ -117,7 +117,7 @@ namespace AlienFX_SDK {
 		return res;
 	}
 
-	bool Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse) {
+	void Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse) {
 		vector<Afx_icommand> mods;
 		PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
 		if (act->act.size() < 2)
@@ -133,7 +133,7 @@ namespace AlienFX_SDK {
 			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, ~((1 << act->index)), act->act.front(), act->act.back()));
 			PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
 			PrepareAndSend(COMMV1_loop);
-chain++;
+			chain++;
 		}
 
 		if (needSave) {
@@ -141,11 +141,12 @@ chain++;
 			Reset();
 		}
 
-		return true;
+		//return true;
 	}
 
 	bool Functions::AlienFXProbeDevice(void* hDevInfo, void* devData, WORD vidd, WORD pidd) {
 		DWORD dwRequiredSize = 0;
+		COMMTIMEOUTS timeouts = {100,0,0,10,0};
 		version = API_UNKNOWN;
 		SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, NULL, 0, &dwRequiredSize, NULL);
 		SP_DEVICE_INTERFACE_DETAIL_DATA* deviceInterfaceDetailData = (SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize];
@@ -217,6 +218,7 @@ chain++;
 				if (HidD_GetProductString(devHandle, descbuf, 255))
 					for (int i = 0; i < wcslen(descbuf); i++)
 						description += descbuf[i];
+				SetCommTimeouts(devHandle, &timeouts);
 			}
 			//DebugPrint("Probe done, type " + to_string(version) + "\n");
 		}
@@ -333,7 +335,7 @@ chain++;
 		mods->push_back( {bPos, {act->index,v8OpCodes[act->act.front().type], act->act.front().tempo, 0xa5, act->act.front().time, 0xa,
 			act->act.front().r, act->act.front().g,act->act.front().b,
 			act->act.back().r,act->act.back().g,act->act.back().b,
-			(byte)(act->act.size() > 1 ? 2 : 1)} } );
+			/*(byte)(act->act.size() > 1 ?*/ 2 /*: 1)*/} } );
 	}
 
 	void Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
@@ -623,15 +625,13 @@ chain++;
 				else
 					pwr = &(*ca);
 			if (pwr) {
+				if (act->size() > 1)
+					PrepareAndSend(COMMV1_save);
 				chain = 1;
 				if (save) {
 					// 08 02 - AC standby
 					Afx_lightblock tact{ pwr->index,
 								   {{AlienFX_A_Morph, 0 , 0, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b}, {2}} };
-					/*SavePowerBlock(2, tact, false);*/
-					//tact = {pwr->index,
-					//	   {{AlienFX_A_Morph, 0 , 0, 0, 0, 0},
-					//	   {2,0,0,pwr->act.back().r, pwr->act.back().g, pwr->act.back().b}}};
 					SavePowerBlock(2, &tact, true, true);
 					// 08 05 - AC power
 					tact = { pwr->index,
@@ -657,13 +657,11 @@ chain++;
 					tact.act.front().type = AlienFX_A_Pulse;
 					SavePowerBlock(9, &tact, true);
 				}
-				//int pind = powerMode ? 0 : 1;
-				//SetColor(pwr->index, { pwr->act[pind].b, pwr->act[pind].g, pwr->act[pind].r });
-			}
-			if (act->size())
 				PrepareAndSend(COMMV1_save);
-			if (pwr)
 				SetAction(pwr);
+			} else
+				if (act->size())
+					PrepareAndSend(COMMV1_save);
 		} break;
 		}
 		return true;

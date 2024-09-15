@@ -76,7 +76,7 @@ AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act) {
 }
 
 LFX_COLOR Act2Lfx(AlienFX_SDK::Afx_action* act) {
-	return { act->r,act->g,act->b, 255 };
+	return { act->r,act->g,act->b, globalBright };
 }
 
 vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
@@ -92,11 +92,14 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 			argPos++;
 		}
 		actions.push_back({ acttype, sleepy, longer, 
-				(byte)args->at(argPos).num, (byte)args->at(argPos + 1).num, (byte)args->at(argPos + 2).num });
-		AlienFX_SDK::Afx_action* color = &actions.back();
-		color->r = ((unsigned)color->r * globalBright) / 255;// >> 8;
-		color->g = ((unsigned)color->g * globalBright) / 255;// >> 8;
-		color->b = ((unsigned)color->b * globalBright) / 255;// >> 8;
+				(byte)((args->at(argPos).num * globalBright) / 255), //r
+			(byte)((args->at(argPos + 1).num * globalBright) / 255), //g
+			(byte)((args->at(argPos + 2).num * globalBright) / 255) //b
+			});
+		//AlienFX_SDK::Afx_action* color = &actions.back();
+		//color->r = ((unsigned)color->r * globalBright) / 255;// >> 8;
+		//color->g = ((unsigned)color->g * globalBright) / 255;// >> 8;
+		//color->b = ((unsigned)color->b * globalBright) / 255;// >> 8;
 	}
 	if (actions.size() < 2 && actions.front().type != (devType ? AlienFX_SDK::Action::AlienFX_A_Color : LFX_ACTION_COLOR))
 		actions.push_back({ actions.front().type, (BYTE)sleepy, longer, 0, 0, 0 });
@@ -105,7 +108,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v8.6.1.1\n");
+	printf("alienfx-cli v9.0.0.2\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -268,7 +271,7 @@ int main(int argc, char* argv[])
 				// low-level
 				if (afx_map.fxdevs.size()) {
 					devType = 1;
-					printf("Device access selected\n");
+					printf("USB Device selected\n");
 				}
 				break;
 			case COMMANDS::highlevel:
@@ -387,7 +390,7 @@ int main(int argc, char* argv[])
 		}
 		printf("Done.");
 	} else
-		printf("Both low-level and high-level devices not found, exiting!\n");
+		printf("Light devices not found, exiting!\n");
 
 	if (have_high)
 		lfxUtil.Release();
