@@ -17,9 +17,9 @@ MonHelper::MonHelper() {
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();
 		sensorSize = (WORD)acpi->sensors.size();
-		oldPower = powerMode = GetPowerMode();
+		//oldPower = powerMode = GetPowerMode();
 		systemID = acpi->GetSystemID();
-		SetOC();
+		//SetOC();
 		Start();
 	}
 }
@@ -27,8 +27,8 @@ MonHelper::MonHelper() {
 MonHelper::~MonHelper() {
 	if (acpi->isSupported) {
 		Stop();
-		if (fan_conf->keepSystem)
-			SetCurrentMode(oldPower);
+		//if (fan_conf->keepSystem)
+		//	SetCurrentMode(oldPower);
 	}
 	delete acpi;
 }
@@ -53,6 +53,8 @@ void MonHelper::ResetBoost() {
 void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
+		oldPower = powerMode = GetPowerMode();
+		SetOC();
 		SetCurrentMode();
 		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_BELOW_NORMAL);
 		DebugPrint("Mon thread start.\n");
@@ -68,6 +70,8 @@ void MonHelper::Stop() {
 		delete monThread;
 		monThread = NULL;
 		ResetBoost();
+		if (fan_conf->keepSystem)
+			SetCurrentMode(oldPower);
 		DebugPrint("Mon thread stop.\n");
 	}
 }

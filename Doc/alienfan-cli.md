@@ -19,7 +19,11 @@ Available commands:
 - `setover[=fanID[,boost]]` - Set maximal boost level for selected fan (manual or auto).
 - `setgmode=<mode>` - Switch G-mode (power boost) on and off for supported hardware. 1 is on, 0 is off.
 - `gmode` - Show current G-mode status (on, off, error - if not supported).
-- `dump` - List all available Alienware methods (it's useful for new devices support)
+- `gettcc` - Show current CPU TCC offset level.
+- `settcc=<value>` - Set CPU TCC offset to desired level (celsius degree).
+- `getxmp` - Show selected memory XMP profile (0 - disabled).
+- `setxmp` - Set memory XMP profile (0..2, 0 is disable)/
+- `dump` - List all available Alienware methods (it's useful for new devices support).
 
 In case you system have ACPI light control, 2 more commands available:
 - `setcolor=<id>,r,g,b` - Set light with this ID to selected color. Id's depends of the system, try from 0 to 4.

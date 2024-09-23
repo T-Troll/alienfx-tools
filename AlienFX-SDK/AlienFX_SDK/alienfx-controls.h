@@ -16,6 +16,10 @@ namespace AlienFX_SDK {
 
 	// V1-V3, old devices
 		const byte COMMV1_color[]{ 1, 0x03 };
+		// [1] - 1-3 as a effect type type
+		// [2] - chain
+		// [4-6] - light mask
+		// [rest] - RGB, RGB2
 		const byte COMMV1_loop[]{ 1, 0x04 };
 		const byte COMMV1_update[]{ 1, 0x05 };
 		const byte COMMV1_status[]{ 1, 0x06 };

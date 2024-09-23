@@ -21,7 +21,7 @@ The following commands are available:
 - `setpower=<dev>,<light>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `settempo=<tempo>[,length]` Set next action tempo (0..255) and phase length (for low-level, 0..255).
 - `setglobal=<dev>,<type>,<mode>[,r,g,b[,r2,g2,b2]]` Set global effect mode (v5 and v8 devices)
-- `setdim=[<dev>,]brightness` if device provided, set device hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only). If device not provided, set software brightness level for all lights.
+- `setdim=[<dev>,]brightness` if device provided, set device hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only). If device not provided, set software brightness level for next light operations.
 - `lowlevel` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `highlevel` Next commands pass trough high-level API (Alienware LightFX), if it's available.
 - `loop` Special command to continue all command query endlessly, until user interrupt it. It's provide possibility to keep colors even if awcc reset it. Should be last command in chain.

@@ -21,15 +21,21 @@ extern "C" {
 
 namespace AlienFX_SDK {
 
-	vector<Afx_icommand> *Functions::SetMaskAndColor(vector<Afx_icommand>* mods, DWORD index, Afx_action c1, Afx_action c2, byte tempo) {
+	vector<Afx_icommand> *Functions::SetMaskAndColor(vector<Afx_icommand>* mods, Afx_lightblock* act, bool needInverse, DWORD index) {
+		Afx_colorcode c;
+		c.ci = index ? index : needInverse ? ~((1 << act->index)) : 1 << act->index;
 		if (version < API_V4) {
 			// index mask generation
-			Afx_colorcode c; c.ci = index;
-			*mods = { {1, { v1OpCodes[c1.type], chain, c.r, c.g, c.b } } };
+			*mods = { {1, { v1OpCodes[act->act.front().type], chain, c.r, c.g, c.b } } };
 		}
+		Afx_action c1 = act->act.front(), c2 = { 0 };
+		byte tempo = act->act.front().tempo;
+		if (act->act.size() >= 2)
+			c2 = act->act.back();
 		switch (version) {
 		case API_V3:
-			mods->push_back({6, {c1.r, c1.g,c1.b,c2.r,c2.g,c2.b}});
+			mods->push_back({6, {c1.r, c1.g,c1.b,
+				c2.r,c2.g,c2.b}});
 			break;
 		case API_V2:
 			mods->push_back({6, {(byte)((c1.r & 0xf0) | ((c1.g & 0xf0) >> 4)),
@@ -117,24 +123,27 @@ namespace AlienFX_SDK {
 		return res;
 	}
 
-	void Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse) {
-		vector<Afx_icommand> mods;
-		PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
-		if (act->act.size() < 2)
-			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, 1 << act->index, act->act.front()));
-		else
-			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, 1 << act->index, act->act.front(), act->act.back()));
-		PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
-		PrepareAndSend(COMMV1_loop);
-		chain++;
-
+	void Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needSecondary, bool needInverse) {
+		vector<Afx_icommand> mods, group = { {2, {blID}} };
+		PrepareAndSend(COMMV1_saveGroup, &group);
+		PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, act));
+		if (needSecondary) {
+			Afx_lightblock t = *act;
+			swap(t.act.front(), t.act.back());
+			PrepareAndSend(COMMV1_saveGroup, &group);
+			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, &t));
+		}
 		if (needInverse) {
-			PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
-			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, ~((1 << act->index)), act->act.front(), act->act.back()));
-			PrepareAndSend(COMMV1_saveGroup, { {2, {blID}} });
+			Afx_lightblock t = { act->index, { {AlienFX_A_Color}, {AlienFX_A_Color}} };
+			PrepareAndSend(COMMV1_saveGroup, &group);
 			PrepareAndSend(COMMV1_loop);
 			chain++;
+			PrepareAndSend(COMMV1_saveGroup, &group);
+			PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, &t, true));
 		}
+		PrepareAndSend(COMMV1_saveGroup, &group);
+		PrepareAndSend(COMMV1_loop);
+		chain++;
 
 		if (needSave) {
 			PrepareAndSend(COMMV1_save);
@@ -335,7 +344,7 @@ namespace AlienFX_SDK {
 		mods->push_back( {bPos, {act->index,v8OpCodes[act->act.front().type], act->act.front().tempo, 0xa5, act->act.front().time, 0xa,
 			act->act.front().r, act->act.front().g,act->act.front().b,
 			act->act.back().r,act->act.back().g,act->act.back().b,
-			/*(byte)(act->act.size() > 1 ?*/ 2 /*: 1)*/} } );
+			(byte)(act->act.size() > 1 ? 2 : 1) } } );
 	}
 
 	void Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
@@ -385,7 +394,7 @@ namespace AlienFX_SDK {
 			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
 				fmask |= 1 << (*nc);
-			SetMaskAndColor(&mods, fmask, c);
+			SetMaskAndColor(&mods, &act, false, fmask);
 			switch (version) {
 			case API_V6:
 				val = PrepareAndSend(COMMV6_colorSet, &mods);
@@ -493,9 +502,9 @@ namespace AlienFX_SDK {
 			return PrepareAndSend(COMMV7_control, &mods);
 		}
 		case API_V6:
-			return PrepareAndSend(COMMV6_colorSet, SetMaskAndColor(&mods, 1 << act->index, act->act.front(), act->act.back(), act->act.front().tempo));
+			return PrepareAndSend(COMMV6_colorSet, SetMaskAndColor(&mods, act));
 		case API_V9:
-			return PrepareAndSend(COMMV9_colorSet, SetMaskAndColor(&mods, 1 << act->index, act->act.front(), act->act.back(), act->act.front().tempo));
+			return PrepareAndSend(COMMV9_colorSet, SetMaskAndColor(&mods, act));
 		case API_V5:
 			AddV5DataBlock(4, &mods, act->index, &act->act.front());
 			PrepareAndSend(COMMV5_colorSet, &mods);
@@ -518,8 +527,11 @@ namespace AlienFX_SDK {
 			// check types and call
 			switch (act->act.front().type) {
 			case AlienFX_A_Power: { // SetPowerAction for power!
-				vector<Afx_lightblock> t = { {*act} };
-				return SetPowerAction(&t);
+				if (act->act.size() > 1) {
+					vector<Afx_lightblock> t = { {*act} };
+					return SetPowerAction(&t);
+				}
+				break;
 			}
 			case AlienFX_A_Color:
 				break;
@@ -529,13 +541,14 @@ namespace AlienFX_SDK {
 						(byte)((WORD)act->act.front().tempo << 3 & 0xff),
 						(byte)(((WORD)act->act.front().time << 5 & 0xff00) >> 8),
 						(byte)((WORD)act->act.front().time << 5 & 0xff)} } });
+				PrepareAndSend(COMMV1_loop);
 			}
-			Afx_action c2{ 0 };
 			for (auto ca = act->act.begin(); ca != act->act.end(); ca++) {
+				Afx_lightblock t = { act->index, {*ca} };
 				if (act->act.size() > 1)
-					c2 = ca + 1 != act->act.end() ? *(ca + 1) : act->act.front();
+					t.act.push_back(ca + 1 != act->act.end() ? *(ca + 1) : act->act.front());
 				DebugPrint("SDK: Set light " + to_string(act->index) + "\n");
-				PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, 1 << act->index, *ca, c2));
+				PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, &t));
 			}
 			//DebugPrint("SDK: Loop\n");
 			res = PrepareAndSend(COMMV1_loop);
@@ -625,31 +638,29 @@ namespace AlienFX_SDK {
 				else
 					pwr = &(*ca);
 			if (pwr) {
-				if (act->size() > 1)
+				if (act->size() > 1) {
 					PrepareAndSend(COMMV1_save);
+					Reset();
+				}
 				chain = 1;
 				if (save) {
 					// 08 02 - AC standby
-					Afx_lightblock tact{ pwr->index,
-								   {{AlienFX_A_Morph, 0 , 0, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b}, {2}} };
-					SavePowerBlock(2, &tact, true, true);
+					Afx_lightblock tact = *pwr;
+					tact.act.front().type = AlienFX_A_Morph;
+					tact.act.back() = { AlienFX_A_Morph };
+					SavePowerBlock(2, &tact, true, true, true);
 					// 08 05 - AC power
-					tact = { pwr->index,
-							{{AlienFX_A_Color, 0 , 0, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b}, {0}} };
+					tact.act.front().type = AlienFX_A_Color;
 					SavePowerBlock(5, &tact, true);
 					// 08 06 - charge
-					tact = { pwr->index,
-							{{AlienFX_A_Morph, 0 , 0, pwr->act.front().r, pwr->act.front().g, pwr->act.front().b},
-							{0,0,0,pwr->act.back().r, pwr->act.back().g, pwr->act.back().b}} };
-					SavePowerBlock(6, &tact, false);
-					tact = { pwr->index,
-							{{AlienFX_A_Morph, 0 , 0, pwr->act.back().r, pwr->act.back().g, pwr->act.back().b},
-							{0,0,0,pwr->act.front().r, pwr->act.front().g, pwr->act.front().b}} };
-					SavePowerBlock(6, &tact, true);
+					tact.act.back() = pwr->act.back();
+					tact.act.front().type = tact.act.back().type = AlienFX_A_Morph;
+					SavePowerBlock(6, &tact, true, true);
 					// 08 07 - Battery standby
-					tact = { pwr->index,
-							{{AlienFX_A_Morph, 0 , 0, pwr->act.back().r, pwr->act.back().g, pwr->act.back().b},	{2}} };
-					SavePowerBlock(7, &tact, true, true);
+					tact.act.front() = pwr->act.back();
+					tact.act.front().type = AlienFX_A_Morph;
+					tact.act.back() = { AlienFX_A_Morph };
+					SavePowerBlock(7, &tact, true, true, true);
 					// 08 08 - battery
 					tact.act.front().type = AlienFX_A_Color;
 					SavePowerBlock(8, &tact, true);
@@ -657,11 +668,13 @@ namespace AlienFX_SDK {
 					tact.act.front().type = AlienFX_A_Pulse;
 					SavePowerBlock(9, &tact, true);
 				}
+				SetColor(pwr->index, pwr->act.front() );
+				UpdateColors();
+			}
+			else {
 				PrepareAndSend(COMMV1_save);
-				SetAction(pwr);
-			} else
-				if (act->size())
-					PrepareAndSend(COMMV1_save);
+				Reset();
+			}
 		} break;
 		}
 		return true;

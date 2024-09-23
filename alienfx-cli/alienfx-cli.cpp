@@ -108,7 +108,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v9.0.0.2\n");
+	printf("alienfx-cli v9.0.0.3\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
 									  (byte)args[2].num, (byte)args[3].num, (byte)args[4].num},
 									  {AlienFX_SDK::AlienFX_A_Power, 3, 0x64,
 									  (byte)args[5].num, (byte)args[6].num, (byte)args[7].num}}} };
-					afx_map.fxdevs[args[0].num].dev->SetPowerAction(&act);
+					afx_map.fxdevs[args[0].num].dev->SetPowerAction(&act, true);
 				}
 				break;
 			case COMMANDS::settempo:

@@ -128,7 +128,7 @@ namespace AlienFX_SDK {
 		byte chain = 1; // seq. number for APIv1-v3
 
 		// support function for mask-based devices (v1-v3, v6)
-		vector<Afx_icommand>* SetMaskAndColor(vector<Afx_icommand>* mods, DWORD index, Afx_action c1, Afx_action c2 = { 0 }, byte tempo = 0);
+		vector<Afx_icommand>* SetMaskAndColor(vector<Afx_icommand>* mods, Afx_lightblock* act, bool needInverse = false, DWORD index = 0);
 
 		// Support function to send data to USB device
 		bool PrepareAndSend(const byte* command, vector<Afx_icommand> mods);
@@ -141,7 +141,7 @@ namespace AlienFX_SDK {
 		inline void AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* act);
 
 		// Support function to send whole power block for v1-v3
-		void SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needInverse = false);
+		void SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needSecondary = false, bool needInverse = false);
 
 		// Support function for APIv4 action set
 		bool SetV4Action(Afx_lightblock* act);
