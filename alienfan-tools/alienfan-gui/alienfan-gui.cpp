@@ -133,6 +133,26 @@ void ToggleValue(DWORD& value, int cID) {
     CheckMenuItem(GetMenu(niData->hWnd), cID, value ? MF_CHECKED : MF_UNCHECKED);
 }
 
+void SetOCUI(HWND hDlg) {
+    HWND tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC),
+        xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP);
+    // OC block
+    EnableWindow(tcc_slider, fan_conf->ocEnable && mon->acpi->isTcc);
+    if (fan_conf->ocEnable && mon->acpi->isTcc) {
+        SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
+        sTip1 = CreateToolTip(tcc_slider, sTip1);
+        SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+        SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
+    }
+    EnableWindow(xmp_slider, fan_conf->ocEnable && mon->acpi->isXMP);
+    if (fan_conf->ocEnable && mon->acpi->isXMP) {
+        SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
+        sTip2 = CreateToolTip(xmp_slider, sTip2);
+        SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
+        SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
+    }
+}
+
 LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
@@ -190,20 +210,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SetDlgItemText(hDlg, IDC_FC_ID, ("ID: " + to_string(mon->systemID)).c_str());
 
         // OC block
-        EnableWindow(tcc_slider, mon->acpi->isTcc);
-        if (mon->acpi->isTcc) {
-            SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
-            sTip1 = CreateToolTip(tcc_slider, sTip1);
-            SetSlider(sTip1, fan_conf->lastProf->currentTCC);
-            SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
-        }
-        EnableWindow(xmp_slider, mon->acpi->isXMP);
-        if (mon->acpi->isXMP) {
-            SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
-            sTip2 = CreateToolTip(xmp_slider, sTip2);
-            SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
-            SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
-        }
+        SetOCUI(hDlg);
 
         return true;
     } break;
@@ -289,6 +296,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SETTINGS_RESTOREPOWERMODE:
             ToggleValue(fan_conf->keepSystem, wmId);
+            break;
+        case IDM_SETTINGS_ENABLEOC:
+            ToggleValue(fan_conf->ocEnable, wmId);
+            mon->SetOC();
+            SetOCUI(hDlg);
             break;
         case IDC_FAN_RESET:
         {

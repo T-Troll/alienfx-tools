@@ -57,6 +57,7 @@ public:
 	DWORD keepSystem;
 	DWORD needDPTF;
 	DWORD pollingRate;
+	DWORD ocEnable;
 	bool wasAWCC;
 
 	fan_profile prof;

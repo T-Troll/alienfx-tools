@@ -40,6 +40,8 @@
 #define IDM_SETTINGS_KEYBOARDSHORTCUTS  32798
 #define ID_SETTINGS_RESTOREPOWERMODE    32799
 #define IDM_SETTINGS_RESTOREPOWERMODE   32800
+#define ID_SETTINGS_ENABLEOC            32801
+#define IDM_SETTINGS_ENABLEOC           32802
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -48,7 +50,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        135
-#define _APS_NEXT_COMMAND_VALUE         32801
+#define _APS_NEXT_COMMAND_VALUE         32803
 #define _APS_NEXT_CONTROL_VALUE         1020
 #define _APS_NEXT_SYMED_VALUE           111
 #endif

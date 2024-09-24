@@ -152,15 +152,18 @@ namespace AlienFan_SDK {
 #ifdef _TRACE_
 						if (isGmode)
 							printf("G-Mode available\n");
+
 #endif
-						if (isTcc = ((maxTCC = CallWMIMethod(getMaxTCC)) > 0)) {
+						int ocres = CallWMIMethod(getMaxTCC);
+						if (isTcc = (ocres >= 0)) {
+							maxTCC = ocres;
 							maxOffset = CallWMIMethod(getMaxOffset);
 						}
 #ifdef _TRACE_
 						if (isTcc)
 							printf("TCC control available\n");
 #endif
-						isXMP = CallWMIMethod(getXMP) >= 0;
+						isXMP = (CallWMIMethod(getXMP) >= 0);
 #ifdef _TRACE_
 						if (isXMP)
 							printf("Memory XMP available\n");

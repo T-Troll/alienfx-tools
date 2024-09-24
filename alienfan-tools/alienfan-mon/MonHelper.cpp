@@ -17,9 +17,7 @@ MonHelper::MonHelper() {
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();
 		sensorSize = (WORD)acpi->sensors.size();
-		//oldPower = powerMode = GetPowerMode();
 		systemID = acpi->GetSystemID();
-		//SetOC();
 		Start();
 	}
 }
@@ -27,16 +25,16 @@ MonHelper::MonHelper() {
 MonHelper::~MonHelper() {
 	if (acpi->isSupported) {
 		Stop();
-		//if (fan_conf->keepSystem)
-		//	SetCurrentMode(oldPower);
 	}
 	delete acpi;
 }
 
 void MonHelper::SetOC()
 {
-	acpi->SetTCC(fan_conf->lastProf->currentTCC);
-	acpi->SetXMP(fan_conf->lastProf->memoryXMP);
+	if (fan_conf->ocEnable) {
+		acpi->SetTCC(fan_conf->lastProf->currentTCC);
+		acpi->SetXMP(fan_conf->lastProf->memoryXMP);
+	}
 }
 
 void MonHelper::ResetBoost() {
