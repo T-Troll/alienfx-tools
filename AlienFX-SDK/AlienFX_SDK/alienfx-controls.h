@@ -81,7 +81,7 @@ namespace AlienFX_SDK {
 		const byte COMMV5_update[]{3, 0x8b, 0x01, 0xff};
 		const byte COMMV5_turnOnSet[]{3, 0x83,0x38,0x9c};
 		const byte COMMV5_setEffect[]{8, 0x80,0x02,0x07,0x00,0x00,0x01,0x01,0x01};
-		// [2],[3]=type, [9]=?, [10..12]=RGB1, [13..15]=RGB2, [16]=?
+		// [2] = type, [3]=tempo, [9]=?, [10..12]=RGB1, [13..15]=RGB2, [16]=?
 		// 0 - color, 1 - reset, 2 - Breathing, 3 - Single-color Wave, 4 - dual color wave, 5-7 - off?, 8 - pulse, 9 - mix pulse (2 colors), a - night rider, b - lazer
 		// Mask command (purpose unknown) - 0x79, next can be 0x7b or 0x88, then bitmask.
 

@@ -17,11 +17,6 @@ struct LightQueryElement {
 	AlienFX_SDK::Afx_action actions[9];
 };
 
-struct deviceQuery {
-	WORD pid;
-	vector<AlienFX_SDK::Afx_lightblock> dev_query;
-};
-
 class FXHelper
 {
 private:

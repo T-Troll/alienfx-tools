@@ -54,7 +54,7 @@ void MonHelper::Start() {
 		oldPower = powerMode = GetPowerMode();
 		SetOC();
 		SetCurrentMode();
-		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_BELOW_NORMAL);
+		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_NORMAL/*THREAD_PRIORITY_BELOW_NORMAL*/);
 		DebugPrint("Mon thread start.\n");
 	}
 	else {

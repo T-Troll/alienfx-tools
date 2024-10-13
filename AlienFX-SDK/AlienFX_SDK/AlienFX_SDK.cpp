@@ -722,24 +722,19 @@ namespace AlienFX_SDK {
 		vector<Afx_icommand> mods;
 		switch (version) {
 		case API_V8:
-			//PrepareAndSend(COMMV8_effectReset);
 			PrepareAndSend(COMMV8_effectReady);
-			//PrepareAndSend(COMMV8_effectReady, { {3, {0}} });
 			return PrepareAndSend(COMMV8_effectReady, { {3, { effType, act1.r, act1.g, act1.b, act2.r, act2.g, act2.b,
 				tempo, bright, 1, mode, nc} }});
 		case API_V5:
 			if (inSet)
 				UpdateColors();
 			Reset();
-			if (effType < 2)
-				PrepareAndSend(COMMV5_setEffect, { {2,{1}}, {11,{0xff,12,0xff}}, {14,{0xff,0xff} } });
+			if (!effType)
+				PrepareAndSend(COMMV5_setEffect, { {2,{1, 0xfe}} });
 			else
-				PrepareAndSend(COMMV5_setEffect, { {2, {effType,tempo}},
-						   {10,{ act1.r,act1.g,act1.b,act2.r,act2.g,act2.b, 5}}});
-			if (effType < 2)
-				return PrepareAndSend(COMMV5_update, { {3,{0xfe}}, {6,{0xff,0xff}} });
-			else
-				return UpdateColors();
+				PrepareAndSend(COMMV5_setEffect, { {2, {effType,tempo}}, { 9, {(byte)(nc - 1)} },
+						   {10,{ act1.r,act1.g,act1.b,act2.r,act2.g,act2.b/*, mode*/}}});
+			return UpdateColors();
 		}
 		return false;
 	}

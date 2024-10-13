@@ -37,9 +37,22 @@ const static vector<string> ge_names[2]{ // 0 - v8, 1 - v5
 	{ "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
 	"One key (K)", "Circle out (K)", "Wave out (K)", "Right wave (K)", "Default", "Rain Drop (K)",
 	"Wave", "Rainbow wave", "Circle wave", "Random white (K)" },
-	{ "Off", "Breathing", "Single-color Wave", "Dual-color Wave", "Pulse", "Mixed Pulse", "Night Rider", "Laser" } };
-const static vector<string> cModeNames{ "One color", "Two colors", "Rainbow" };
-const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 }, { 0,2,3,4,8,9,10,11 } };
+	{ "Off", "Static", "Breathing", "Side Wave", "Dual Wave", "Pulse", "Morph", "Bounce", "Laser", "Rainbow" }};
+/*
+	0 - off
+	1 - static color
+	2 - single color breath
+	3 - one side wave
+	4 - stop animation (?)
+	8 - pulse
+	9 - 2-color morph
+	10 - dobule-side wave
+	12 - off
+	14 - rainbow
+*/
+const static vector<string> cModeNames{ "Single-color", "Multi-color", "Rainbow" };
+const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 },
+	{ 0,1,2,3,4,8,9,10,11,14 } };
 const static vector<int> cModeTypes{ 1, 2, 3 };
 
 void RefreshDeviceList(HWND hDlg) {
@@ -58,11 +71,11 @@ void RefreshDeviceList(HWND hDlg) {
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), ge_names[i->version == 5],	b1 == prof->effects.end() ? 0 : b1->globalEffect, ge_types[i->version == 5]);
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), ge_names[i->version == 5], b2 == prof->effects.end() ? 0 : b2->globalEffect, ge_types[i->version == 5]);
 
-				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b1 == prof->effects.end() ? 2 : b1->colorMode, cModeTypes);
-				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b2 == prof->effects.end() ? 2 : b2->colorMode, cModeTypes);
+				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b1 == prof->effects.end() ? 1 : b1->colorMode, cModeTypes);
+				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b2 == prof->effects.end() ? 1 : b2->colorMode, cModeTypes);
 
 				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8);
-				EnableWindow(GetDlgItem(hDlg, IDC_CMODE), i->version == 8);
+				//EnableWindow(GetDlgItem(hDlg, IDC_CMODE), i->version == 8);
 				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->version == 8);
 
 				if (b1 != prof->effects.end()) {
@@ -135,8 +148,9 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch (HIWORD(wParam)) {
 			case CBN_SELCHANGE:
 			{
-				if (b != prof->effects.end())
+				if (b != prof->effects.end()) {
 					b->colorMode = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
+				}
 			}
 			}
 			break;
@@ -155,7 +169,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 				if (!newEffect) {
 					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(activeEffectDevice);
+						fxhl->UpdateGlobalEffect(activeEffectDevice, true);
 					prof->effects.erase(b);
 				}
 				RefreshDeviceList(hDlg);

@@ -120,7 +120,7 @@ struct groupset {
 struct deviceeffect {
 	WORD vid, pid;
 	AlienFX_SDK::Afx_colorcode effColor1, effColor2;
-	byte globalEffect=0, globalDelay=5, globalMode = 1, colorMode = 2;
+	byte globalEffect=0, globalDelay=5, globalMode = 1, colorMode = 1;
 	DWORD reserved;
 };
 
