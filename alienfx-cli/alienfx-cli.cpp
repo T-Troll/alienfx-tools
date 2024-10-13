@@ -261,6 +261,8 @@ int main(int argc, char* argv[])
 				// set-global
 				if (devType && args[0].num < afx_map.fxdevs.size()) {
 					byte cmode = args.size() < 6 ? 3 : args.size() < 9 ? 1 : 2;
+					if (afx_map.fxdevs[args[0].num].dev->version == 5)
+						cmode = args[2].num + 1;
 					args.resize(9);
 					afx_map.fxdevs[args[0].num].dev->SetGlobalEffects(args[1].num, args[2].num, cmode, sleepy,
 						{ 0,0,0, (byte)args[3].num, (byte)args[4].num, (byte)args[5].num },
