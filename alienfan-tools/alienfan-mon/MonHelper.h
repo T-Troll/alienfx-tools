@@ -17,6 +17,7 @@ public:
 	WORD powerMode = 0;
 	WORD fansize, powerSize, sensorSize;
 	int systemID;
+	bool modified;
 
 	MonHelper();
 	~MonHelper();

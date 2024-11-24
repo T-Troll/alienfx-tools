@@ -492,16 +492,18 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_TIMER:
         //DebugPrint("Fans UI update...\n");
-        for (int i = 0; i < mon->sensorSize; i++) {
-            string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
-            ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
-            name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
-            ListView_SetItemText(tempList, i, 1, (LPSTR)name.c_str());
+        if (mon->modified) {
+            for (int i = 0; i < mon->sensorSize; i++) {
+                string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
+                ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
+                name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
+                ListView_SetItemText(tempList, i, 1, (LPSTR)name.c_str());
+            }
+            RECT cArea;
+            GetClientRect(tempList, &cArea);
+            ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
+            ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         }
-        RECT cArea;
-        GetClientRect(tempList, &cArea);
-        ListView_SetColumnWidth(tempList, 0, LVSCW_AUTOSIZE);
-        ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         for (int i = 0; i < mon->fansize; i++) {
             string name = GetFanName(i);
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());

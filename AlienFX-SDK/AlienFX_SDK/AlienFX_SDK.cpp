@@ -882,40 +882,82 @@ namespace AlienFX_SDK {
 		activeLights = 0;
 		activeDevices = (int)devList.size();
 
-		// check old devices...
-		for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
-			auto nDev = devList.begin();
-			for (; nDev != devList.end(); nDev++)
-				if (i->vid == (*nDev)->vid && i->pid == (*nDev)->pid) {
-					// Still present
-					i++;
-					break;
-				}
-			if (nDev == devList.end()) {
-				// not found
-				if (activeOnly)
-					i = fxdevs.erase(i);
-				else {
-					delete i->dev;
-					i->dev = NULL;
-					i++;
-				}
+		// clear old devices
+		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
+			if (i->dev) {
+				delete i->dev;
+				i->dev = NULL;
 			}
 		}
 
-		// add new devices...
-		for (auto i = devList.begin(); i != devList.end(); i++) {
-			Afx_device* dev = AddDeviceById((*i)->pid, (*i)->vid);
-			if (dev->name.empty())
-				dev->name = (*i)->description;
-			if (!dev->dev) {
-				dev->dev = *i;
-				dev->version = (*i)->version;
+		// check if device present and update it
+		for (auto nDev = devList.begin(); nDev != devList.end(); nDev++) {
+			auto dev = GetDeviceById((*nDev)->pid, (*nDev)->vid);
+			if (dev) {
+				// update device
+				dev->dev = (*nDev);
+				dev->version = (*nDev)->version;
+				activeLights += (unsigned)dev->lights.size();
 			}
-			else
-				delete (*i);
-			activeLights += (int)dev->lights.size();
+			else {
+				// add new device
+				fxdevs.push_back({ (*nDev)->pid, (*nDev)->vid, *nDev, (*nDev)->description, (*nDev)->version });
+			}
 		}
+
+		// clear absent devices, if needed
+		if (activeOnly)
+			for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
+				if (i->dev)
+					i++;
+				else
+					i = fxdevs.erase(i);
+			}
+
+		// check old devices...
+		//for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
+		//	auto nDev = devList.begin();
+		//	for (; nDev != devList.end(); )
+		//		if (i->vid == (*nDev)->vid && i->pid == (*nDev)->pid) {
+		//			// Still present
+		//			activeLights += (int)i->lights.size();
+		//			if (i->dev)
+		//				delete i->dev;
+		//			i->dev = *nDev;
+		//			i++;
+		//			//delete (*nDev);
+		//			nDev = devList.erase(nDev);
+		//			break;
+		//		}
+		//		else
+		//			nDev++;
+		//	if (nDev == devList.end() && i != fxdevs.end()) {
+		//		// not found
+		//		if (activeOnly)
+		//			i = fxdevs.erase(i);
+		//		else {
+		//			delete i->dev;
+		//			i->dev = NULL;
+		//			i++;
+		//		}
+		//	}
+		//}
+
+		//// add new devices...
+		//for (auto i = devList.begin(); i != devList.end(); i++) {
+		//	fxdevs.push_back({ (*i)->pid, (*i)->vid, *i, (*i)->description });
+		//	fxdevs.back().version = (*i)->version;
+		//	//Afx_device* dev = AddDeviceById((*i)->pid, (*i)->vid);
+		//	//if (dev->name.empty())
+		//	//	dev->name = (*i)->description;
+		//	//if (!dev->dev) {
+		//	//	dev->dev = *i;
+		//	//	dev->version = (*i)->version;
+		//	//}
+		//	//else
+		//	//	delete (*i);
+		//	//activeLights += (int)dev->lights.size();
+		//}
 		devList.clear();
 	}
 

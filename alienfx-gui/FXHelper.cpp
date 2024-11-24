@@ -206,9 +206,9 @@ void FXHelper::QueryUpdate(bool force) {
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
-	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
-	if (dev && dev->dev && actions->size()) {
-		LightQueryElement newBlock{ dev, (byte)HIWORD(lgh), 0, (byte)actions->size() };
+	//auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
+	if (/*dev && dev->dev &&*/ actions->size()) {
+		LightQueryElement newBlock{ conf->afx_dev.GetDeviceById(LOWORD(lgh)), (byte)HIWORD(lgh), 0, (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		QueryCommand(newBlock);
 	}
@@ -707,7 +707,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} break;
 			case 0: { // set light
-				WORD flags = conf->afx_dev.GetFlags(current.dev, current.light);
+				//WORD flags = conf->afx_dev.GetFlags(current.dev, current.light);
 				if (conf->gammaCorrection) {
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
@@ -719,7 +719,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 
 				// Is it power button?
-				if ((flags & ALIENFX_FLAG_POWER) /*&& dev->version && dev->version < AlienFX_SDK::API_V5*/) {
+				if (conf->afx_dev.GetFlags(current.dev, current.light) & ALIENFX_FLAG_POWER) {
 					// Should we update it?
 					current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 					current.actsize = 2;

@@ -679,13 +679,14 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
 			if (devList.size() != conf->afx_dev.activeDevices) {
 				DebugPrint("Active device list changed!\n");
+				eve->ChangeEffects(true);
 				fxhl->Stop();
 				conf->afx_dev.AlienFXApplyDevices(false, devList);
 				activeDevice = NULL;
 				if (conf->afx_dev.activeDevices && !dDlg) {
 					fxhl->Start();
 					fxhl->SetState(true);
-					fxhl->Refresh();
+					eve->ChangeEffects();
 				}
 				SetMainTabs();
 			}

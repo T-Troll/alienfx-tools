@@ -252,9 +252,9 @@ namespace AlienFX_SDK {
 		};
 		Functions* dev = NULL;  // device control object pointer
 		string name;			// device name
+		int version = API_UNKNOWN; // API version used for this device
 		Afx_colorcode white = { 255,255,255 }; // white point
 		vector <Afx_light> lights; // vector of lights defined
-		int version = API_UNKNOWN; // API version used for this device
 	};
 
 	class Mappings {

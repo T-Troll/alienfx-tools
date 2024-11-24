@@ -128,7 +128,7 @@ void MonHelper::SetPowerMode(WORD newMode) {
 void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
 	AlienFan_SDK::Control* acpi = src->acpi;
-	bool modified = false;
+	src->modified = false;
 	fan_profile* active = NULL;
 
 	// update values:
@@ -137,7 +137,7 @@ void CMonProc(LPVOID param) {
 		int temp = acpi->GetTempValue(i);
 		WORD sid = acpi->sensors[i].sid;
 		if (temp != src->senValues[sid]) {
-			modified = true;
+			src->modified = true;
 			src->senValues[sid] = temp;
 			src->maxTemps[sid] = max(src->maxTemps[sid], temp);
 		}
@@ -162,17 +162,16 @@ void CMonProc(LPVOID param) {
 		src->powerMode = src->GetPowerMode();
 		src->SetCurrentMode();
 
-		if (!src->powerMode && modified) {
+		if (!src->powerMode && src->modified) {
 			int cBoost;
 			for (auto cIter = active->fanControls.begin(); cIter != active->fanControls.end(); cIter++) {
 				// Check boost
 				byte i = cIter->first;
 				int curBoost = 0;
 				for (auto fIter = cIter->second.begin(); fIter != cIter->second.end(); fIter++) {
-					sen_block* cur = &fIter->second;
-					WORD senID = fIter->first;
-					if (cur->active) {
-						//cBoost = cur->points.back().boost;
+					if (fIter->second.active) {
+						sen_block* cur = &fIter->second;
+						WORD senID = fIter->first;
 						auto k = cur->points.begin() + 1;
 						for (; k != cur->points.end() && src->senValues[senID] > k->temp; k++);
 						if (k != cur->points.end())
@@ -182,8 +181,6 @@ void CMonProc(LPVOID param) {
 							cBoost = cur->points.back().boost;
 						src->senBoosts[i][senID] = cBoost;
 						if (cBoost > curBoost) {
-							//if (cBoost < src->boostCooked[i])
-							//	cBoost += 7 * ((src->boostCooked[i] - cBoost) >> 3);
 							curBoost = cBoost;
 							src->lastBoost[i] = senID;
 						}
@@ -191,7 +188,7 @@ void CMonProc(LPVOID param) {
 				}
 				// Set boost
 				int curBoostRaw = (int)round((fan_conf->GetFanScale(i) * curBoost) / 100.0);
-				if (curBoostRaw < 100 || !src->fanSleep[i]) {
+				if (curBoostRaw < 101 || !src->fanSleep[i]) {
 					byte boostOld = src->boostRaw[i] = src->acpi->GetFanBoost(i);
 					// Check overboost tricks...
 					if (boostOld < 90 && curBoostRaw > 100) {
@@ -200,6 +197,8 @@ void CMonProc(LPVOID param) {
 						DebugPrint("Overboost started, fan " + to_string(i) + " locked for " + to_string(src->fanSleep[i]) + " tacts (old "
 							+ to_string(boostOld) + ", new " + to_string(curBoostRaw) + ")!\n");
 					}
+					else
+						src->fanSleep[i] = 0;
 					if (curBoostRaw != boostOld) {
 						int res = acpi->SetFanBoost(i, curBoostRaw);
 						src->boostRaw[i] = curBoostRaw;
