@@ -22,7 +22,8 @@ Available commands:
 - `gettcc` - Show current CPU TCC offset level.
 - `settcc=<value>` - Set CPU TCC offset to desired level (celsius degree).
 - `getxmp` - Show selected memory XMP profile (0 - disabled).
-- `setxmp` - Set memory XMP profile (0..2, 0 is disable)/
+- `setxmp` - Set memory XMP profile (0..2, 0 is disable).
+- `nodisksensor` - Do not query disk sensors (used to prevent alienfan-cli from freezing on some systems).
 - `dump` - List all available Alienware methods (it's useful for new devices support).
 
 In case you system have ACPI light control, 2 more commands available:

@@ -132,7 +132,8 @@ gmode\t\t\t\tShow G-mode state\n\
 gettcc\t\t\t\tShow current TCC level\n\
 settcc=<level>\t\t\tSet TCC level\n\
 getxmp\t\t\t\tShow current memory XMP profile level\n\
-setxmp=<level>\t\t\tSet memory XMP profile level\n");
+setxmp=<level>\t\t\tSet memory XMP profile level\n\
+nodisksensor\t\t\tDo not query disk sensors (used to prevent alienfan-cli from freezing on some systems)\n");
 #ifndef NOLIGHTS
     printf("setcolor = id, r, g, b\t\tSet light to color\n\
 setbrightness=<brightness>\tSet lights brightness\n");
@@ -150,6 +151,13 @@ int main(int argc, char* argv[])
 #ifndef NOLIGHTS
     AlienFan_SDK::Lights* lights = NULL;
 #endif
+    // acpi.Probe and other calls to acpi will freeze on some systems that have faulty drivers.
+    // So we check the presence of "nodisksensor" option here before the first call to acpi is made
+    for (int cc = 1; cc < argc; cc++) {
+        string arg = argv[cc];
+        if (arg == "nodisksensor")
+            acpi.DisableDiskSensor();
+    }
     if (acpi.Probe()) {
 #ifndef NOLIGHTS
         lights = new AlienFan_SDK::Lights(&acpi);
@@ -316,6 +324,10 @@ int main(int argc, char* argv[])
                     printf("XMP switch locked");
                 continue;
             }
+
+            if (command == "nodisksensor")
+                continue;   // nodisksensor command already processed, ignore it at this point
+
             if (command == "dump" && acpi.isAlienware) { // dump WMI functions
                 BSTR name;
                 // Command dump

@@ -212,7 +212,8 @@ namespace AlienFan_SDK {
 						// ESIF sensors
 						EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
 						// SSD sensors
-						EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
+						if (useDiskSensor)
+							EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
 						// OHM sensors
 						if (m_OHMService) {
 							EnumSensors(m_OHMService, L"Sensor", 4);

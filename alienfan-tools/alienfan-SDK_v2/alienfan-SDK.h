@@ -43,6 +43,7 @@ namespace AlienFan_SDK {
 		DWORD systemID = 0;
 		byte sysType = -1;
 		void EnumSensors(IWbemServices* srv, const wchar_t* sname, byte type);
+		bool useDiskSensor = true;
 	public:
 		VARIANT m_instancePath{};
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
@@ -117,6 +118,9 @@ namespace AlienFan_SDK {
 
 		// Set current XMP profile
 		int SetXMP(byte memXMP);
+
+		// Disable the query of the disk sensors to prevent freeze on some systems
+		void DisableDiskSensor() { useDiskSensor = false; };
 
 		// Return current device ID
 		inline DWORD GetSystemID() { return systemID; };
