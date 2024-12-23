@@ -120,7 +120,7 @@ namespace AlienFan_SDK {
 #endif
 	}
 
-	bool Control::Probe() {
+	bool Control::Probe(bool diskSensors) {
 		if (m_WbemServices && m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK) {
 #ifdef _TRACE_
 			printf("AWCC section detected!\n");
@@ -212,7 +212,8 @@ namespace AlienFan_SDK {
 						// ESIF sensors
 						EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
 						// SSD sensors
-						EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
+						if (diskSensors)
+							EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
 						// OHM sensors
 						if (m_OHMService) {
 							EnumSensors(m_OHMService, L"Sensor", 4);

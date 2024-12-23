@@ -12,7 +12,7 @@ void CMonProc(LPVOID);
 extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper() {
-	if ((acpi = new AlienFan_SDK::Control())->Probe()) {
+	if ((acpi = new AlienFan_SDK::Control())->Probe(fan_conf->diskSensors)) {
 		fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();
@@ -23,9 +23,7 @@ MonHelper::MonHelper() {
 }
 
 MonHelper::~MonHelper() {
-	if (acpi->isSupported) {
-		Stop();
-	}
+	Stop();
 	delete acpi;
 }
 

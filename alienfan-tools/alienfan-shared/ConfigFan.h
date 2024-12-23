@@ -58,6 +58,7 @@ public:
 	DWORD needDPTF;
 	DWORD pollingRate;
 	DWORD ocEnable;
+	DWORD diskSensors;
 	bool wasAWCC;
 
 	fan_profile prof;

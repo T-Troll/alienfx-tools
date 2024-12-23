@@ -76,7 +76,7 @@ void SenMonHelper::ModifyMon()
 	if (conf->bSensors) {
 		if (!acpi) {
 			acpi = new AlienFan_SDK::Control();
-			if (!(conf->bSensors = acpi->Probe())) {
+			if (!(conf->bSensors = acpi->Probe(true))) {
 				delete acpi;
 				acpi = NULL;
 			}

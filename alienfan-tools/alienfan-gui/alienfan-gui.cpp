@@ -171,8 +171,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         niData->hWnd = hDlg;
 
-        while (!AddTrayIcon(niData, fan_conf->updateCheck))
-            Sleep(50);
+        AddTrayIcon(niData, fan_conf->updateCheck);
 
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
@@ -204,6 +203,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_RESTOREPOWERMODE, fan_conf->keepSystem ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_ENABLEOC, fan_conf->ocEnable ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISKSENSORS, fan_conf->diskSensors ? MF_CHECKED : MF_UNCHECKED);
         SetDlgItemInt(hDlg, IDC_EDIT_POLLING, fan_conf->pollingRate, false);
 
         // Set SystemID
@@ -301,6 +302,14 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ToggleValue(fan_conf->ocEnable, wmId);
             mon->SetOC();
             SetOCUI(hDlg);
+            break;
+        case IDM_SETTINGS_DISKSENSORS:
+            ToggleValue(fan_conf->diskSensors, wmId);
+            KillTimer(hDlg, 0);
+            delete mon;
+            mon = new MonHelper();
+            ReloadTempView(tempList);
+            SetTimer(hDlg, 0, fan_conf->pollingRate, NULL);
             break;
         case IDC_FAN_RESET:
         {

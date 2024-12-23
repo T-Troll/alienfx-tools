@@ -183,7 +183,7 @@ namespace AlienFan_SDK {
 		return -1;
 	}
 
-	bool Control::Probe() {
+	bool Control::Probe(bool diskSensors) {
 		if (activated) {
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;

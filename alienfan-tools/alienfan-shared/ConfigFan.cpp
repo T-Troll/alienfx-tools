@@ -45,6 +45,7 @@ void ConfigFan::Load() {
 	GetReg("DPTF", &needDPTF, 1);
 	GetReg("PollingRate", &pollingRate, 750);
 	GetReg("OCEnable", &ocEnable);
+	GetReg("DiskSensors", &diskSensors, 1);
 
 	// Now load sensor mappings...
 	char name[256];
@@ -99,6 +100,8 @@ void ConfigFan::Save() {
 	SetReg("DPTF", needDPTF);
 	SetReg("PollingRate", pollingRate);
 	SetReg("OCEnable", ocEnable);
+	SetReg("DiskSensors", diskSensors);
+
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");
 	RegCreateKeyEx(keyMain, "Sensors", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);

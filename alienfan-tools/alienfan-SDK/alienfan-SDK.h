@@ -91,7 +91,7 @@ namespace AlienFan_SDK {
 #endif
 		// Probe hardware, sensors, fans, power modes and fill structures.
 		// Result: true - compatible hardware found, false - not found.
-		bool Probe();
+		bool Probe(bool diskSensors);
 
 		// Get RPM for the fan index fanID at fans[]
 		// Result: fan RPM

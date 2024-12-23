@@ -224,8 +224,9 @@
 #define IDC_SLIDER_TCC                  1214
 #define IDC_SLIDER_TCC2                 1215
 #define IDC_SLIDER_XMP                  1215
-#define IDC_CHECK1                      1215
 #define IDC_OCENABLE                    1215
+#define IDC_OCENABLE2                   1216
+#define IDC_DISKSENSORS                 1216
 #define IDC_BUTREMRGH                   1228
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230

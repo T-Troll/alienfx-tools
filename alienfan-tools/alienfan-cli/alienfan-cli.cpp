@@ -129,6 +129,7 @@ setfans=<fan1>[,<fanN>][,mode]\tSet fans boost level (0..100 - in percent) with 
 setover[=fanID[,boost]]\t\tSet overboost for selected fan to boost (manual or auto)\n\
 setgmode=<mode>\t\t\tSet G-mode on/off (1-on, 0-off)\n\
 gmode\t\t\t\tShow G-mode state\n\
+toggledisk\t\t\tToggle disk sensors\n\
 gettcc\t\t\t\tShow current TCC level\n\
 settcc=<level>\t\t\tSet TCC level\n\
 getxmp\t\t\t\tShow current memory XMP profile level\n\
@@ -146,11 +147,11 @@ setbrightness=<brightness>\tSet lights brightness\n");
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v9.0.1\n");
+    printf("AlienFan-CLI v9.1.0\n");
 #ifndef NOLIGHTS
     AlienFan_SDK::Lights* lights = NULL;
 #endif
-    if (acpi.Probe()) {
+    if (acpi.Probe(fan_conf.diskSensors)) {
 #ifndef NOLIGHTS
         lights = new AlienFan_SDK::Lights(&acpi);
 #endif
@@ -290,6 +291,12 @@ int main(int argc, char* argv[])
                 continue;
             }
 #endif
+            if (command == "toggledisk") {
+                fan_conf.diskSensors = !fan_conf.diskSensors;
+                printf("Disk sensors %s\n", fan_conf.diskSensors ? "ON" : "OFF");
+                fan_conf.Save();
+                continue;
+            }
 #ifndef ALIENFAN_SDK_V1
             if (command == "gettcc") {
                 printf("Current TCC is %d (max %d)\n", acpi.GetTCC(), acpi.maxTCC);

@@ -39,6 +39,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_FANCONTROL, conf->fanControl);
 		CheckDlgButton(hDlg, IDC_KEEPSYSTEM, fan_conf->keepSystem);
 		CheckDlgButton(hDlg, IDC_OCENABLE, fan_conf->ocEnable);
+		CheckDlgButton(hDlg, IDC_DISKSENSORS, fan_conf->diskSensors);
 		CheckDlgButton(hDlg, IDC_BAT_FAN, !conf->fansOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_EXCEPTION, conf->noDesktop);
 		CheckDlgButton(hDlg, IDC_CHECK_DIM, conf->dimmed);
@@ -158,6 +159,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			FillAllDevs();
 			SetHotkeys();
 			SetMainTabs();
+			break;
+		case IDC_DISKSENSORS:
+			fan_conf->diskSensors = state;
+			if (mon) {
+				delete mon;
+				mon = new MonHelper();
+			}
 			break;
 		case IDC_KEEPSYSTEM:
 			fan_conf->keepSystem = state;
