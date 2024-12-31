@@ -422,7 +422,7 @@ void ConfigHandler::Save() {
 
 zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	zoneUpdate.lock();
-		if (!(zoneMaps[gid].gMinX == 255 || reset)) {
+	if (!(zoneMaps[gid].gMinX == 255/* || zoneMaps[gid].gMinY == 255 */|| reset)) {
 		zoneUpdate.unlock();
 		return &zoneMaps[gid];
 	}
@@ -497,8 +497,8 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 					zone->scaleY--;
 				}
 		}
-		else
-			zone->gMinX = 0;
+		//else
+		//	zone->gMinX = 255;
 	}
 	zoneUpdate.unlock();
 	return zone;

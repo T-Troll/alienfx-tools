@@ -160,9 +160,11 @@ void GridHelper::RestartWatch() {
 				sysmon = new SysMonHelper();
 				break;
 			case 4: if (!capt) {
-				capt = new CaptureHelper(false);
 				auto zone = *conf->FindZoneMap(ce->group);
-				capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+				if (zone.gMinX != 255/* && zone.gMinY != 255*/) {
+					capt = new CaptureHelper(false);
+					capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+				}
 			} break;
 			}
 		}

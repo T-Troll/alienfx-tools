@@ -681,12 +681,12 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					if (dev->dev) {
 						//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
 						byte oldBr = dev->dev->bright;
-						dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
-						switch (dev->version) {
-						case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
-							// They don't have hardware brightness, so need to set each light again.
-							needRefresh = needRefresh || !oldBr || dev->version > AlienFX_SDK::API_V3;
-						}
+						needRefresh = needRefresh || dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
+						//switch (dev->version) {
+						//case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
+						//	// They don't have device brightness, so need to set each light again.
+						//	needRefresh = needRefresh || !oldBr || dev->version > AlienFX_SDK::API_V3;
+						//}
 					}
 				if (needRefresh)
 					src->Refresh();
@@ -707,7 +707,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} break;
 			case 0: { // set light
-				//WORD flags = conf->afx_dev.GetFlags(current.dev, current.light);
+				if (!current.dev)
+					continue;
 				if (conf->gammaCorrection) {
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];

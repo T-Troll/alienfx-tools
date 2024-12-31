@@ -62,31 +62,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} break;
 			case 0: { // set light
-				WORD flags = afx_dev->GetFlags(current.dev, current.light);
-				//for (int i = 0; i < current.actsize; i++) {
-				//	AlienFX_SDK::Afx_action* action = &current.actions[i];
-				//	// gamma-correction...
-				//	//if (conf->gammaCorrection) {
-				//		//action->r = ((UINT)action->r * action->r * current.dev->white.r) / 65025; // (255 * 255);
-				//		//action->g = ((UINT)action->g * action->g * current.dev->white.g) / 65025; // (255 * 255);
-				//		//action->b = ((UINT)action->b * action->b * current.dev->white.b) / 65025; // (255 * 255);
-				//	//}
-				//	// Dimming...
-				//	// For v7 devices only, other have hardware dimming
-				//	//if (conf->stateDimmed && (!flags || conf->dimPowerButton))
-				//	//	switch (dev->version) {
-				//	//		/*case AlienFX_SDK::API_V2:
-				//	//		case AlienFX_SDK::API_V3: */case AlienFX_SDK::API_V7: {
-				//	//			unsigned delta = 255 - conf->dimmingPower;
-				//	//			action->r = ((UINT)action->r * delta) / 255;// >> 8;
-				//	//			action->g = ((UINT)action->g * delta) / 255;// >> 8;
-				//	//			action->b = ((UINT)action->b * delta) / 255;// >> 8;
-				//	//		}
-				//	//	}
-				//}
-
+				//WORD flags = afx_dev->GetFlags(current.dev, current.light);
 				// Is it NOT power button?
-				if (!(flags & ALIENFX_FLAG_POWER)) {
+				if (!(afx_dev->GetFlags(current.dev, current.light) & ALIENFX_FLAG_POWER) && current.dev) {
 					// form actblock...
 					AlienFX_SDK::Afx_lightblock ablock{ current.light };
 					ablock.act.resize(current.actsize);

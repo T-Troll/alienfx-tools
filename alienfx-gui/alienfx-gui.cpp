@@ -414,9 +414,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_INITDIALOG:
 	{
 		conf->niData.hWnd = mDlg = hDlg;
-		while (!AddTrayIcon(&conf->niData, conf->updateCheck))
-			Sleep(50);
-		conf->SetIconState();
+		if (AddTrayIcon(&conf->niData, conf->updateCheck))
+			conf->SetIconState();
 		SetMainTabs();
 		UpdateProfileList();
 	} break;
@@ -638,7 +637,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				mon->Start();
 			fxhl->Start();
 			fxhl->stateScreen = true; // patch for later StateScreen update
-			//fxhl->SetState(true);
+			fxhl->SetState(true);
 			eve->ChangeEffectMode();
 			eve->StartProfiles();
 			if (conf->updateCheck) {

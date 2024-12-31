@@ -155,7 +155,7 @@ namespace AlienFX_SDK {
 
 	bool Functions::AlienFXProbeDevice(void* hDevInfo, void* devData, WORD vidd, WORD pidd) {
 		DWORD dwRequiredSize = 0;
-		COMMTIMEOUTS timeouts = {100,0,0,10,0};
+		COMMTIMEOUTS timeouts = {100,0,0,10,200};
 		version = API_UNKNOWN;
 		SetupDiGetDeviceInterfaceDetail(hDevInfo, (PSP_DEVICE_INTERFACE_DATA)devData, NULL, 0, &dwRequiredSize, NULL);
 		SP_DEVICE_INTERFACE_DETAIL_DATA* deviceInterfaceDetailData = (SP_DEVICE_INTERFACE_DETAIL_DATA*)new byte[dwRequiredSize];
@@ -681,7 +681,7 @@ namespace AlienFX_SDK {
 	}
 
 	bool Functions::SetBrightness(BYTE brightness, vector<Afx_light> *mappings, bool power) {
-
+		// return true if update needed
 		DebugPrint("State update: PID: " + to_string(pid) + ", brightness: " + to_string(brightness) + ", power: " + to_string(power) + "\n");
 
 		if (inSet) UpdateColors();
@@ -689,10 +689,12 @@ namespace AlienFX_SDK {
 		bright = (brightness * brightnessScale[version]) / 0xff;
 		switch (version) {
 		case API_V8:
-			return PrepareAndSend(COMMV8_setBrightness, { {2, {bright}} });
+			PrepareAndSend(COMMV8_setBrightness, { {2, {bright}} });
+			break;
 		case API_V5:
 			Reset();
-			return PrepareAndSend(COMMV5_turnOnSet, { {4, {bright}} });
+			PrepareAndSend(COMMV5_turnOnSet, { {4, {bright}} });
+			break;
 		case API_V4: {
 			vector<byte> idlist;
 			for (auto i = mappings->begin(); i < mappings->end(); i++)
@@ -701,18 +703,23 @@ namespace AlienFX_SDK {
 				}
 			vector<Afx_icommand> mods{ {3,{(byte)(0x64 - bright), 0, (byte)mappings->size()}},
 										{ 6, idlist} };
-			return PrepareAndSend(COMMV4_turnOn, &mods);
+			PrepareAndSend(COMMV4_turnOn, &mods);
+			break;
 		}
 		case API_V3: case API_V2:
 			if (!bright || !oldBr) {
 				PrepareAndSend(COMMV1_reset, { {2,{(byte)(brightness ? 4 : power ? 3 : 1)}} });
 				WaitForReady();
 			}
-			return PrepareAndSend(COMMV1_dim, { { 2,{bright} } });
+			PrepareAndSend(COMMV1_dim, { { 2,{bright} } });
+			return bright && !oldBr;
+		case API_V6: case API_V7: case API_V9:
+			return true;
 #ifndef NOACPILIGHTS
 		case API_ACPI:
 			bright = brightness * 0xf / 0xff;
-			return ((AlienFan_SDK::Lights*)ACPIdevice)->SetBrightness(bright);
+			((AlienFan_SDK::Lights*)ACPIdevice)->SetBrightness(bright);
+			break;
 #endif // !NOACPILIGHTS
 		}
 		return false;
