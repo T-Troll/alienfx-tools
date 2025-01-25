@@ -6,7 +6,7 @@
 
 using namespace std;
 
-DWORD WINAPI DPTFInit(LPVOID lparam);
+//DWORD WINAPI DPTFInit(LPVOID lparam);
 
 struct fan_point {
 	byte temp, boost;

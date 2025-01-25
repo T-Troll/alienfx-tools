@@ -50,8 +50,8 @@ void UpdateZoneList() {
 	ListView_SetColumnWidth(zone_list, 0, cArea.right - ListView_GetColumnWidth(zone_list, 1));
 	if (rpos < 0) { // no selection
 		if (conf->activeProfile->lightsets.size()) {
-			mmap = &conf->activeProfile->lightsets.front();
-			eItem = mmap->group;
+			//mmap = &conf->activeProfile->lightsets.front();
+			//eItem = mmap->group;
 			ListView_SetItemState(zone_list, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		}
 		else {
@@ -170,9 +170,9 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	{
 		zsDlg = hDlg;
 		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), { "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)", "Radial" });
-		if (conf->activeProfile->lightsets.size() && !mmap)
-			eItem = conf->activeProfile->lightsets.front().group;
-		mmap = conf->FindMapping(eItem);
+		//if (conf->activeProfile->lightsets.size() && !mmap)
+		//	eItem = conf->activeProfile->lightsets.front().group;
+		//mmap = conf->FindMapping(eItem);
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -239,14 +239,15 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
 				if (lPoint->uChanged & LVIF_STATE) {
 					if (lPoint->uNewState & LVIS_SELECTED) {
-						eItem = (int)lPoint->lParam;
+						int neweItem = (int)lPoint->lParam;
 						// gauge and spectrum.
-						if (mmap = conf->FindMapping(eItem)) {
-							conf->FindCreateGroup(eItem);
+						if (mmap = conf->FindMapping(neweItem)) {
+							conf->FindCreateGroup(neweItem);
 							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
 							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
 							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
-							SendMessage(GetParent(hDlg), WM_APP + 2, 0, 0);
+							SendMessage(GetParent(hDlg), WM_APP + 2, 0, neweItem != eItem);
+							eItem = neweItem;
 						}
 					}
 					else

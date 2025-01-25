@@ -7,6 +7,7 @@
 extern HWND mDlg;
 extern ConfigFan* fan_conf;
 extern int eItem;
+extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 ConfigHandler::ConfigHandler() {
 
@@ -131,6 +132,8 @@ void ConfigHandler::Load() {
 	GetReg("NoDesktopSwitch", &noDesktop);
 	GetReg("DimPower", &dimPowerButton);
 	GetReg("DimmedOnBattery", &dimmedBatt);
+	GetReg("TimeoutOn", &actionLights);
+	GetReg("TimeoutLength", &actionTimeout, 30);
 	GetReg("ActiveProfile", &activeProfileID);
 	GetReg("OffPowerButton", &offPowerButton);
 	GetReg("EsifTemp", &esif_temp);
@@ -304,6 +307,8 @@ void ConfigHandler::Save() {
 	SetReg("NoDesktopSwitch", noDesktop);
 	SetReg("DimPower", dimPowerButton);
 	SetReg("DimmedOnBattery", dimmedBatt);
+	SetReg("TimeoutOn", actionLights);
+	SetReg("TimeoutLength", actionTimeout);
 	SetReg("OffPowerButton", offPowerButton);
 	SetReg("OffOnBattery", offOnBattery);
 	SetReg("DimmingPower", dimmingPower);
@@ -434,11 +439,11 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
 	if (grp && grp->lights.size()) {
 		// find operational grid...
-		DWORD lgt = grp->lights.front().lgh;
+		//DWORD lgt = grp->lights.front().lgh;
 		AlienFX_SDK::Afx_grid* opGrid = NULL;
 		for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
 			for (int ind = 0; ind < t->x * t->y; ind++)
-				if (t->grid[ind].lgh == lgt) {
+				if (IsLightInGroup(t->grid[ind].lgh, grp)) {
 					zone->gridID = t->id;
 					opGrid = &(*t);
 					break;

@@ -217,7 +217,7 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 void FXHelper::SetState(bool force) {
 	int oldBr = finalBrightness; bool oldPM = finalPBState;
 	// Lights on state...
-	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower);
+	conf->stateOn = conf->lightsOn && stateScreen && (!conf->offOnBattery || conf->statePower) && stateAction;
 	// Dim state...
 	conf->stateDimmed = conf->dimmed || stateDim || conf->activeProfile->flags & PROF_DIMMED || (conf->dimmedBatt && !conf->statePower);
 	// Brightness

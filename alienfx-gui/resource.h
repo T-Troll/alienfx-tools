@@ -173,7 +173,6 @@
 #define IDC_BUT_WHITE                   1158
 #define IDC_CP_TRIGGERS                 1158
 #define IDC_CHECK_REVERSE               1159
-#define IDC_CP_TRIGGERS2                1159
 #define IDC_CP_APPS                     1159
 #define IDC_CHECK_LIGHTNAMES            1161
 #define IDC_TRIGGER_POWER_AC            1163
@@ -217,16 +216,16 @@
 #define IDC_CMODE_KEY                   1210
 #define IDC_KEEPSYSTEM                  1210
 #define IDC_BUTADDLEFT                  1211
-#define IDC_EDIT1                       1212
 #define IDC_SCRIPT_NAME                 1212
 #define IDC_EDIT_POLLING                1212
 #define IDC_FC_ID                       1213
+#define IDC_EDIT_POLLING2               1213
+#define IDC_EDIT_ACTION                 1213
 #define IDC_SLIDER_TCC                  1214
-#define IDC_SLIDER_TCC2                 1215
 #define IDC_SLIDER_XMP                  1215
 #define IDC_OCENABLE                    1215
-#define IDC_OCENABLE2                   1216
 #define IDC_DISKSENSORS                 1216
+#define IDC_LIGHTACTION                 1217
 #define IDC_BUTREMRGH                   1228
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230
@@ -254,7 +253,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1216
+#define _APS_NEXT_CONTROL_VALUE         1218
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

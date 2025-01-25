@@ -47,7 +47,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_OFFONBATTERY, conf->offOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 		CheckDlgButton(hDlg, IDC_HOTKEYS, conf->keyShortcuts);
+		CheckDlgButton(hDlg, IDC_LIGHTACTION, conf->actionLights);
 		SetDlgItemInt(hDlg, IDC_EDIT_POLLING, fan_conf->pollingRate, false);
+		SetDlgItemInt(hDlg, IDC_EDIT_ACTION, conf->actionTimeout, false);
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -62,6 +64,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (HIWORD(wParam) == EN_KILLFOCUS) {
 				fan_conf->pollingRate = GetDlgItemInt(hDlg, IDC_EDIT_POLLING, NULL, false);
 				if (mon) mon->Start();
+			}
+			break;
+		case IDC_EDIT_ACTION:
+			if (HIWORD(wParam) == EN_KILLFOCUS) {
+				conf->actionTimeout = GetDlgItemInt(hDlg, IDC_EDIT_ACTION, NULL, false);
+				eve->ChangeAction();
 			}
 			break;
 		case IDC_STARTM:
@@ -181,6 +189,10 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_HOTKEYS:
 			conf->keyShortcuts = state;
 			SetHotkeys();
+			break;
+		case IDC_LIGHTACTION:
+			conf->actionLights = state;
+			eve->ChangeAction();
 			break;
 		//default: return false;
 		}

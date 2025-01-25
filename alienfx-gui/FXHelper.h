@@ -43,6 +43,7 @@ public:
 	// light states
 	bool stateScreen = true,
 		stateDim = false,
+		stateAction = true,
 		finalPBState = true;
 	bool lightsNoDelay = true;
 	int finalBrightness = -1;

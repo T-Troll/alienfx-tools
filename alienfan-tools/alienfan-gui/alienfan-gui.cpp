@@ -86,8 +86,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     niData = &niDataFC;
 
     if (mon->acpi->isSupported) {
-        if (fan_conf->needDPTF)
-            CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
+        //if (fan_conf->needDPTF)
+        //    CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
         if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
 
             SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
@@ -171,7 +171,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     {
         niData->hWnd = hDlg;
 
-        AddTrayIcon(niData, fan_conf->updateCheck);
+        while (!AddTrayIcon(niData, fan_conf->updateCheck))
+            Sleep(100);
 
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
@@ -423,9 +424,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             mon->SetPowerMode((WORD)wParam - 20);
             ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
             BlinkNumLock((int)wParam - 19);
+            ShowNotification(niData, "Power mode switched!", "New power mode - " + *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode]));
         } else
             if (wParam == 6) { // G-key for Dell G-series power switch
                 AlterGMode(power_list);
+                BlinkNumLock(1 + mon->powerMode);
+                ShowNotification(niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
             }
     } break;
     case WM_MENUCOMMAND: {

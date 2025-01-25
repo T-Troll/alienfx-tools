@@ -5,7 +5,7 @@ class EventHandler
 {
 private:
 	HWINEVENTHOOK hEvent = NULL, cEvent;
-	HHOOK kEvent;
+	HHOOK kEvent, ackEvent = NULL, acmEvent;
 	DWORD maxProcess = 256;
 	DWORD* aProcesses;
 
@@ -16,6 +16,8 @@ public:
 	void* sysmon = NULL;
 
 	bool keyboardSwitchActive = false;
+
+	HANDLE wasAction, acThread, acStop;
 
 	void ChangePowerState();
 
@@ -30,6 +32,9 @@ public:
 	// Effects
 	void ChangeEffectMode(bool profile = false);
 	void ChangeEffects(bool stop=false);
+
+	// Timeout Action
+	void ChangeAction();
 
 	EventHandler();
 	~EventHandler();

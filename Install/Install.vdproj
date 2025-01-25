@@ -75,12 +75,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_B4932E3EC8B7452DBBEC8DA4A5FBAE58"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_B829425435A04EFB81D071102204D8B4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -88,12 +82,6 @@
         "Entry"
         {
         "MsmKey" = "8:_C4B1307E827A4442ACD87D8B7EAF7F24"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1274EA0886743F198EA0B3CD91A61C2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -331,26 +319,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B4932E3EC8B7452DBBEC8DA4A5FBAE58"
-            {
-            "SourcePath" = "8:..\\DPTF\\startup.dvx"
-            "TargetName" = "8:startup.dvx"
-            "Tag" = "8:"
-            "Folder" = "8:_0EB1AFD930FC423E85CDB69073A108B3"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C4B1307E827A4442ACD87D8B7EAF7F24"
             {
             "SourcePath" = "8:..\\Doc\\alienfx-mon.md"
@@ -371,112 +339,15 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D1274EA0886743F198EA0B3CD91A61C2"
-            {
-            "SourcePath" = "8:..\\DPTF\\remoteui.dvx"
-            "TargetName" = "8:remoteui.dvx"
-            "Tag" = "8:"
-            "Folder" = "8:_0EB1AFD930FC423E85CDB69073A108B3"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
         }
         "FileType"
         {
         }
         "Folder"
         {
-            "{1525181F-901A-416C-8A58-119130FE478E}:_3F01CA0AA8AB40D3A075BE23B7B80DF6"
-            {
-            "Name" = "8:#1924"
-            "AlwaysCreate" = "11:FALSE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Property" = "8:WindowsFolder"
-                "Folders"
-                {
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_AF2658F15B774A5A87E890D44F92D0FB"
-                    {
-                    "Name" = "8:System32"
-                    "AlwaysCreate" = "11:FALSE"
-                    "Condition" = "8:"
-                    "Transitive" = "11:FALSE"
-                    "Property" = "8:_55A00AAB1D714D1EA0F67477C1AABB8D"
-                        "Folders"
-                        {
-                            "{9EF0B969-E518-4E46-987F-47570745A589}:_C3243B19E1EC40F7A52EC666A60C1F2B"
-                            {
-                            "Name" = "8:drivers"
-                            "AlwaysCreate" = "11:FALSE"
-                            "Condition" = "8:"
-                            "Transitive" = "11:FALSE"
-                            "Property" = "8:_20E81AFB163E49A091A5E2D2C03A05A1"
-                                "Folders"
-                                {
-                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_67659365103B45A9BA3C3A3F3C096162"
-                                    {
-                                    "Name" = "8:DriverData"
-                                    "AlwaysCreate" = "11:FALSE"
-                                    "Condition" = "8:"
-                                    "Transitive" = "11:FALSE"
-                                    "Property" = "8:_DD2B8FC0BC754BE8AB2981727B55AF05"
-                                        "Folders"
-                                        {
-                                            "{9EF0B969-E518-4E46-987F-47570745A589}:_42B8D60441A845F48C5E06FB53C542C6"
-                                            {
-                                            "Name" = "8:Intel"
-                                            "AlwaysCreate" = "11:FALSE"
-                                            "Condition" = "8:"
-                                            "Transitive" = "11:FALSE"
-                                            "Property" = "8:_FD1AD375DFB646A0A74A1B77CAE687DE"
-                                                "Folders"
-                                                {
-                                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_52FD3806A7104B138B0AA76563BC2B59"
-                                                    {
-                                                    "Name" = "8:DPTF"
-                                                    "AlwaysCreate" = "11:FALSE"
-                                                    "Condition" = "8:"
-                                                    "Transitive" = "11:FALSE"
-                                                    "Property" = "8:_9DE71408735E4B878BB4139B11D96B39"
-                                                        "Folders"
-                                                        {
-                                                            "{9EF0B969-E518-4E46-987F-47570745A589}:_0EB1AFD930FC423E85CDB69073A108B3"
-                                                            {
-                                                            "Name" = "8:dv"
-                                                            "AlwaysCreate" = "11:FALSE"
-                                                            "Condition" = "8:"
-                                                            "Transitive" = "11:FALSE"
-                                                            "Property" = "8:_59F4F4253A5D4470B16D4A315E498B5A"
-                                                                "Folders"
-                                                                {
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_77CCC7F3944A4B009D9231F8B41DFD6D"
             {
-            "DefaultLocation" = "8:[ProgramFiles64Folder]\\[ProductName]"
+            "DefaultLocation" = "8:[LocalAppDataFolder]\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
@@ -557,15 +428,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{D9E36154-68C0-4ED3-9B70-230FFCFDA6A4}"
-        "PackageCode" = "8:{1C5E1A44-5F07-40BB-8E45-101D3FC5CC51}"
+        "ProductCode" = "8:{D190AEC6-F4BA-44FC-9203-A73CCCA99758}"
+        "PackageCode" = "8:{E59C90E5-4EBB-4B40-82E1-2E6F1F71246C}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:9.1.1"
+        "ProductVersion" = "8:9.1.100"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"

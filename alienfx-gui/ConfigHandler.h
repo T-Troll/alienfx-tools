@@ -192,8 +192,10 @@ public:
 	DWORD dimmedBatt;
 	DWORD effectsOnBattery;
 	DWORD fansOnBattery;
+	DWORD actionLights;
+	DWORD actionTimeout;
 
-	COLORREF customColors[16]{ 0 };
+	COLORREF customColors[16];
 
 	// States
 	bool stateDimmed = false,

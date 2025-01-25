@@ -32,12 +32,15 @@ EventHandler::EventHandler()
 	SwitchActiveProfile(conf->activeProfile, true);
 	if (conf->startMinimized)
 		StartProfiles();
+	acStop = CreateEvent(NULL, false, false, NULL);
+	ChangeAction();
 }
 
 EventHandler::~EventHandler()
 {
 	//StopProfiles();
 	//ChangeEffects(true);
+	CloseHandle(acStop);
 	delete[] aProcesses;
 }
 
@@ -248,6 +251,56 @@ void EventHandler::StopProfiles()
 	}
 }
 
+DWORD WINAPI acFunc(LPVOID lpParam) {
+	DWORD res = 0;
+	HANDLE hArray[2]{ eve->acStop, eve->wasAction };
+	while ((res = WaitForMultipleObjects(2, hArray, false, conf->actionTimeout * 1000)) != WAIT_OBJECT_0) {
+		switch (res) {
+			case WAIT_OBJECT_0 + 1: // was action
+				if (!fxhl->stateAction) {
+					fxhl->stateAction = true;
+					fxhl->SetState();
+				}
+				break;
+			case WAIT_TIMEOUT: // timeout expired
+				if (fxhl->stateAction) {
+					fxhl->stateAction = false;
+					fxhl->SetState();
+				}
+				break;
+		}
+	}
+	fxhl->stateAction = true;
+	fxhl->SetState();
+	return 0;
+}
+
+LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam) {
+	if (nCode >= 0)
+		SetEvent(eve->wasAction);
+	return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+void EventHandler::ChangeAction()
+{
+	if (ackEvent) {
+		// stop hooks and waiting procedure
+		SetEvent(acStop);
+		UnhookWindowsHookEx(ackEvent);
+		UnhookWindowsHookEx(acmEvent);
+		ackEvent = NULL;
+		CloseHandle(wasAction);
+	}
+
+	if (conf->actionLights) {
+		// Set hooks and waiting procedure
+		wasAction = CreateEvent(NULL, false, false, NULL);
+		ackEvent = SetWindowsHookEx(WH_KEYBOARD_LL, acProc, NULL, 0);
+		acmEvent = SetWindowsHookEx(WH_MOUSE_LL, acProc, NULL, 0);
+		acThread = CreateThread(NULL, 0, acFunc, this, 0, NULL);
+	}
+}
+
 // Create/destroy callback - switch profile if new/closed process in app list
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 
@@ -281,24 +334,25 @@ static VOID CALLBACK CForegroundProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent,
 }
 
 LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
-	switch (wParam) {
-	case WM_KEYDOWN: case WM_SYSKEYDOWN:
-		if (!eve->keyboardSwitchActive) {
-			for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++)
-				if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == ((*prof)->triggerkey & 0xff) && conf->SamePower(*prof)) {
-					eve->SwitchActiveProfile(*prof);
-					eve->keyboardSwitchActive = true;
-					break;
-				}
+	if (nCode >= 0)
+		switch (wParam) {
+		case WM_KEYDOWN: case WM_SYSKEYDOWN:
+			if (!eve->keyboardSwitchActive) {
+				for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++)
+					if (((LPKBDLLHOOKSTRUCT)lParam)->vkCode == ((*prof)->triggerkey & 0xff) && conf->SamePower(*prof)) {
+						eve->SwitchActiveProfile(*prof);
+						eve->keyboardSwitchActive = true;
+						break;
+					}
+			}
+			break;
+		case WM_KEYUP: case WM_SYSKEYUP:
+			if (eve->keyboardSwitchActive && ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == (conf->activeProfile->triggerkey & 0xff)) {
+				eve->keyboardSwitchActive = false;
+				eve->CheckProfileChange();
+			}
+			break;
 		}
-		break;
-	case WM_KEYUP: case WM_SYSKEYUP:
-		if (eve->keyboardSwitchActive && ((LPKBDLLHOOKSTRUCT)lParam)->vkCode == (conf->activeProfile->triggerkey & 0xff)) {
-			eve->keyboardSwitchActive = false;
-			eve->CheckProfileChange();
-		}
-		break;
-	}
 
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }

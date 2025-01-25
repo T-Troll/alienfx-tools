@@ -65,14 +65,16 @@ extern void AlterGMode(HWND);
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin(mDlg))) {
 		mon = new MonHelper();
-		if (conf->fanControl = mon->acpi->isSupported) {
-			if (fan_conf->needDPTF)
-				CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
-		}
-		else {
+		if (!(conf->fanControl = mon->acpi->isSupported)) {
 			delete mon;
 			mon = NULL;
+			//if (fan_conf->needDPTF)
+			//	CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
 		}
+		//else {
+		//	delete mon;
+		//	mon = NULL;
+		//}
 	}
 	return conf->fanControl;
 }
@@ -407,6 +409,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	// Started/restarted explorer...
 	if (message == newTaskBar && AddTrayIcon(&conf->niData, conf->updateCheck)) {
 		conf->SetIconState();
+		return true;
 	}
 
 	switch (message)
@@ -414,8 +417,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_INITDIALOG:
 	{
 		conf->niData.hWnd = mDlg = hDlg;
-		if (AddTrayIcon(&conf->niData, conf->updateCheck))
-			conf->SetIconState();
+		while (!AddTrayIcon(&conf->niData, conf->updateCheck))
+			Sleep(100);
+		conf->SetIconState();
 		SetMainTabs();
 		UpdateProfileList();
 	} break;
@@ -713,6 +717,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (tabSel == TAB_FANS)
 				OnSelChanged();
 			BlinkNumLock((int)wParam - 29);
+			ShowNotification(&conf->niData, "Power mode switched!", "New power mode - " + *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode]));
 			break;
 		}
 		switch (wParam) {
@@ -751,6 +756,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				AlterGMode(NULL);
 				if (tabSel == TAB_FANS)
 					OnSelChanged();
+				BlinkNumLock(1 + mon->powerMode);
+				ShowNotification(&conf->niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : * fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
 			}
 			break;
 		case 7: case 8: // Brightness up/down

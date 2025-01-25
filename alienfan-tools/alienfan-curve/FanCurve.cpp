@@ -475,6 +475,5 @@ void AlterGMode(HWND power_list) {
         fan_conf->lastProf->gmodeStage = !fan_conf->lastProf->gmodeStage;
         mon->SetCurrentMode();
         ComboBox_SetCurSel(power_list, mon->powerMode);
-        BlinkNumLock(2 + fan_conf->lastProf->gmodeStage);
     }
 }
