@@ -76,6 +76,8 @@ namespace AlienFX_SDK {
 	}
 
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
+		if (!this) // unexpected device removal protection
+			return false;
 		byte buffer[MAX_BUFFERSIZE];
 		DWORD written;
 		BOOL res = false, needV8Feature = true;
@@ -112,8 +114,9 @@ namespace AlienFX_SDK {
 				//break;
 			case API_V8:
 				if (needV8Feature) {
+					Sleep(3);
 					res = HidD_SetFeature(devHandle, buffer, length);
-					Sleep(10);
+					Sleep(7);
 				}
 				else
 				{
@@ -851,9 +854,15 @@ namespace AlienFX_SDK {
 			if (i->dev) delete i->dev;
 	}
 
-	vector<Functions*> Mappings::AlienFXEnumDevices(void* acc) {
-		vector<Functions*> devs;
+	bool Mappings::AlienFXEnumDevices(void* acc) {
+		//vector<Functions*> devs;
 		Functions* dev;
+		bool isListChanged = false;
+
+		// Reset active status
+		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
+			i->version = API_UNKNOWN;
+		activeDevices = 0;
 
 		HDEVINFO hDevInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_HID, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 		if (hDevInfo != INVALID_HANDLE_VALUE) {
@@ -863,9 +872,26 @@ namespace AlienFX_SDK {
 				//DebugPrint("Testing device #" + to_string(dw) + ", ID=" + to_string(deviceInterfaceData.Reserved) + "\n");
 				if ((deviceInterfaceData.Flags & SPINT_ACTIVE) && dev->AlienFXProbeDevice(hDevInfo, &deviceInterfaceData))
 				{
-					devs.push_back(dev);
+					auto devInfo = GetDeviceById(dev->pid, dev->vid);
+					if (devInfo) {
+						devInfo->version = dev->version;
+						activeLights += (unsigned)devInfo->lights.size();
+						if (devInfo->dev)
+							delete dev;
+						else {
+							devInfo->dev = dev;
+							isListChanged = true;
+						}
+					}
+					else {
+						// add new device
+						fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description, dev->version });
+						isListChanged = true;
+					}
+					//devs.push_back(dev);
 					DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
 						+ to_string(dev->version) + "\n");
+					activeDevices++;
 				}
 				else
 					delete dev;
@@ -876,42 +902,81 @@ namespace AlienFX_SDK {
 		// add ACPI, if any
 		if (acc) {
 			dev = new AlienFX_SDK::Functions();
-			if (dev->AlienFXInitialize((AlienFan_SDK::Control*)acc))
-				devs.push_back(dev);
+			if (dev->AlienFXInitialize((AlienFan_SDK::Control*)acc)) {
+				auto devInfo = GetDeviceById(dev->pid, dev->vid);
+				if (devInfo) {
+					devInfo->version = dev->version;
+					activeLights += (unsigned)devInfo->lights.size();
+					if (devInfo->dev)
+						delete dev;
+					else {
+						devInfo->dev = dev;
+						isListChanged = true;
+					}
+				} else {
+					fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description, dev->version });
+					isListChanged = true;
+				}
+			}
 			else
 				delete dev;
 		}
 #endif
-		return devs;
+		// Mark inactive devices
+		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
+			if (i->version == API_UNKNOWN && i->dev) {
+				isListChanged = true;
+			}
+		return isListChanged;
 	}
 
-	void Mappings::AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList) {
-		activeLights = 0;
-		activeDevices = (int)devList.size();
-
-		// clear old devices
-		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
-			if (i->dev) {
+	void Mappings::AlienFXApplyDevices() {
+		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
+			if (i->version == API_UNKNOWN && i->dev) {
 				delete i->dev;
 				i->dev = NULL;
 			}
-		}
+	}
+	//	activeLights = 0;
+	//	activeDevices = (int)devList.size();
 
-		// check if device present and update it
-		for (auto nDev = devList.begin(); nDev != devList.end(); nDev++) {
-			auto dev = GetDeviceById((*nDev)->pid, (*nDev)->vid);
-			if (dev) {
-				// update device
-				dev->dev = (*nDev);
-				dev->version = (*nDev)->version;
-				activeLights += (unsigned)dev->lights.size();
-			}
-			else {
-				// add new device
-				fxdevs.push_back({ (*nDev)->pid, (*nDev)->vid, *nDev, (*nDev)->description, (*nDev)->version });
-			}
-		}
+	//	// clear old devices control
+	//	for (auto i = fxdevs.begin(); i != fxdevs.end(); i++) {
+	//		if (i->dev) {
+	//			delete i->dev;
+	//			i->dev = NULL;
+	//		}
+	//	}
 
+	//	// check if device present and update it
+	//	for (auto nDev = devList.begin(); nDev != devList.end(); nDev++) {
+	//		auto dev = GetDeviceById((*nDev)->pid, (*nDev)->vid);
+	//		if (dev) {
+	//			// update device control
+	//			dev->dev = (*nDev);
+	//			dev->version = (*nDev)->version;
+	//			activeLights += (unsigned)dev->lights.size();
+	//		}
+	//		else {
+	//			// add new device
+	//			fxdevs.push_back({ (*nDev)->pid, (*nDev)->vid, *nDev, (*nDev)->description, (*nDev)->version });
+	//		}
+	//	}
+
+	//	// clear absent devices, if needed
+	//	if (activeOnly)
+	//		for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
+	//			if (i->dev)
+	//				i++;
+	//			else
+	//				i = fxdevs.erase(i);
+	//		}
+
+	//	devList.clear();
+	//}
+
+	void Mappings::AlienFXAssignDevices(bool activeOnly, void* acc) {
+		AlienFXEnumDevices(acc);
 		// clear absent devices, if needed
 		if (activeOnly)
 			for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
@@ -920,61 +985,19 @@ namespace AlienFX_SDK {
 				else
 					i = fxdevs.erase(i);
 			}
-
-		// check old devices...
-		//for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
-		//	auto nDev = devList.begin();
-		//	for (; nDev != devList.end(); )
-		//		if (i->vid == (*nDev)->vid && i->pid == (*nDev)->pid) {
-		//			// Still present
-		//			activeLights += (int)i->lights.size();
-		//			if (i->dev)
-		//				delete i->dev;
-		//			i->dev = *nDev;
-		//			i++;
-		//			//delete (*nDev);
-		//			nDev = devList.erase(nDev);
-		//			break;
-		//		}
-		//		else
-		//			nDev++;
-		//	if (nDev == devList.end() && i != fxdevs.end()) {
-		//		// not found
-		//		if (activeOnly)
-		//			i = fxdevs.erase(i);
-		//		else {
-		//			delete i->dev;
-		//			i->dev = NULL;
-		//			i++;
-		//		}
-		//	}
-		//}
-
-		//// add new devices...
-		//for (auto i = devList.begin(); i != devList.end(); i++) {
-		//	fxdevs.push_back({ (*i)->pid, (*i)->vid, *i, (*i)->description });
-		//	fxdevs.back().version = (*i)->version;
-		//	//Afx_device* dev = AddDeviceById((*i)->pid, (*i)->vid);
-		//	//if (dev->name.empty())
-		//	//	dev->name = (*i)->description;
-		//	//if (!dev->dev) {
-		//	//	dev->dev = *i;
-		//	//	dev->version = (*i)->version;
-		//	//}
-		//	//else
-		//	//	delete (*i);
-		//	//activeLights += (int)dev->lights.size();
-		//}
-		devList.clear();
-	}
-
-	void Mappings::AlienFXAssignDevices(bool activeOnly, void* acc) {
-		AlienFXApplyDevices(activeOnly, AlienFXEnumDevices(acc));
 	}
 
 	Afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {
 		for (auto pos = fxdevs.begin(); pos < fxdevs.end(); pos++)
 			if (pos->pid == pid && (!vid || pos->vid == vid)) {
+				return &(*pos);
+			}
+		return nullptr;
+	}
+
+	Afx_device* Mappings::GetDeviceById(DWORD devID) {
+		for (auto pos = fxdevs.begin(); pos < fxdevs.end(); pos++)
+			if (pos->devID == devID) {
 				return &(*pos);
 			}
 		return nullptr;
@@ -1145,7 +1168,7 @@ namespace AlienFX_SDK {
 
 	int Mappings::GetFlags(DWORD devID, WORD lightid)
 	{
-		Afx_device* dev = GetDeviceById(LOWORD(devID), HIWORD(devID));
+		Afx_device* dev = GetDeviceById(devID);
 		return dev ? GetFlags(dev, lightid) : 0;
 	}
 

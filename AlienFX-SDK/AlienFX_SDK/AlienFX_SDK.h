@@ -273,12 +273,12 @@ namespace AlienFX_SDK {
 		// Enumerate all alienware devices into the system
 		// acc - link to AlienFan_SDK::Control object for ACPI lights
 		// returns vector of active device objects
-		vector<Functions*> AlienFXEnumDevices(void* acc);
+		bool AlienFXEnumDevices(void* acc);
 
 		// Apply device vector to fxdevs structure
 		// activeOnly - clear inactive devices from list
 		// devList - list of active devices
-		void AlienFXApplyDevices(bool activeOnly, vector<Functions*> devList);
+		void AlienFXApplyDevices();
 
 		// Load device data and assign it to structure, as well as init devices and set brightness
 		// activeOnly - clear inactive devices from list
@@ -306,6 +306,9 @@ namespace AlienFX_SDK {
 		// get device structure by PID/VID.
 		// VID can be zero for any VID
 		Afx_device* GetDeviceById(WORD pid, WORD vid = 0);
+
+		// get device by VID/PID DWORD.
+		Afx_device* GetDeviceById(DWORD devID);
 
 		// get or add device structure by PID/VID
 		// VID can be zero for any VID

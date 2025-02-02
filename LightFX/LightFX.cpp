@@ -8,7 +8,8 @@
 using namespace std;
 
 struct LightQueryElement {
-	AlienFX_SDK::Afx_device* dev;
+	//AlienFX_SDK::Afx_device* dev;
+	WORD pid;
 	byte light;
 	byte command; // 0 - color, 1 - update, 2 - set brightness
 	byte actsize;
@@ -62,24 +63,25 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} break;
 			case 0: { // set light
-				//WORD flags = afx_dev->GetFlags(current.dev, current.light);
+				AlienFX_SDK::Afx_device* dev = afx_dev->GetDeviceById(current.pid);
 				// Is it NOT power button?
-				if (!(afx_dev->GetFlags(current.dev, current.light) & ALIENFX_FLAG_POWER) && current.dev) {
+				if (dev && !(afx_dev->GetFlags(dev, current.light) & ALIENFX_FLAG_POWER)) {
 					// form actblock...
 					AlienFX_SDK::Afx_lightblock ablock{ current.light };
 					ablock.act.resize(current.actsize);
 					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
 					// do we have another set for same light?
-					auto dv = &devs_query[current.dev->pid];
-					auto lp = dv->begin();
-					for (; lp != dv->end(); lp++)
+					auto dv = &devs_query[current.pid];
+					//auto lp = dv->begin();
+					for (auto lp = dv->begin(); lp != dv->end(); lp++)
 						if (lp->index == current.light) {
 							//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
-							lp->act = ablock.act;
+							//lp->act = ablock.act;
+							dv->erase(lp);
 							break;
 						}
-					if (lp == dv->end())
-						dv->push_back(ablock);
+					//if (lp == dv->end())
+					dv->push_back(ablock);
 
 				}
 			}
@@ -107,9 +109,9 @@ void QueryUpdate() {
 
 void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
-	auto dev = afx_dev->GetDeviceById(LOWORD(lgh));
-	if (dev && dev->dev && actions->size()) {
-		LightQueryElement newBlock{ dev, (byte)HIWORD(lgh), 0, (byte)actions->size() };
+	//auto dev = afx_dev->GetDeviceById(LOWORD(lgh));
+	if (actions->size()) {
+		LightQueryElement newBlock{ LOWORD(lgh), (byte)HIWORD(lgh), 0, (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		QueryCommand(newBlock);
 	}

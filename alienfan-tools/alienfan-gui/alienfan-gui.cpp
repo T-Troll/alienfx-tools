@@ -492,7 +492,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case PBT_APMRESUMEAUTOMATIC:
             mon->Start();
             if (fan_conf->updateCheck) {
-                needUpdateFeedback = false;
+                //needUpdateFeedback = false;
                 CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
             }
             break;

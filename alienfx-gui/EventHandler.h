@@ -31,10 +31,10 @@ public:
 
 	// Effects
 	void ChangeEffectMode(bool profile = false);
-	void ChangeEffects(bool stop=false);
+	void ChangeEffects(bool stop = false);
 
 	// Timeout Action
-	void ChangeAction();
+	void ChangeAction(bool run = true);
 
 	EventHandler();
 	~EventHandler();

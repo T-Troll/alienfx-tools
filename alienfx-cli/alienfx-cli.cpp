@@ -108,7 +108,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v9.0.3\n");
+	printf("alienfx-cli v9.1.2\n");
 	if (argc < 2)
 	{
 		printUsage();

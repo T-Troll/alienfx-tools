@@ -110,18 +110,17 @@ void SetHotkeys() {
 	}
 }
 
-void FillAllDevs() {
-	fxhl->Stop();
-	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
-	if (conf->afx_dev.activeDevices) {
-		fxhl->Start();
-		fxhl->SetState(true);
-		fxhl->UpdateGlobalEffect(NULL);
-		fxhl->Refresh(true);
-	}
-}
+void OnSelChanged();
+void UpdateProfileList();
 
-void SelectProfile(profile* prof = conf->activeProfile);
+void SelectProfile(profile* prof = conf->activeProfile) {
+	if (!dDlg) {
+		eve->SwitchActiveProfile(prof);
+		if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
+			OnSelChanged();
+	}
+	UpdateProfileList();
+}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -157,8 +156,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 	fxhl = new FXHelper();
-	FillAllDevs();
 	eve = new EventHandler();
+	fxhl->FillAllDevs();
 
 	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
 
@@ -308,15 +307,6 @@ void UpdateProfileList() {
 	}
 }
 
-void SelectProfile(profile* prof) {
-	if (!dDlg) {
-		eve->SwitchActiveProfile(prof);
-		if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
-			OnSelChanged();
-	}
-	UpdateProfileList();
-}
-
 void UpdateState(bool checkMode = false) {
 	if (!dDlg)
 		eve->ChangeEffectMode();
@@ -396,6 +386,7 @@ void PauseSystem() {
 	conf->Save();
 	eve->StopProfiles();
 	eve->ChangeEffects(true);
+	eve->ChangeAction(false);
 	fxhl->Refresh(true);
 	fxhl->Stop();
 	if (mon)
@@ -407,8 +398,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
 
 	// Started/restarted explorer...
-	if (message == newTaskBar && AddTrayIcon(&conf->niData, conf->updateCheck)) {
-		conf->SetIconState();
+	if (message == newTaskBar) {
+		conf->SetIconState(conf->updateCheck);
 		return true;
 	}
 
@@ -417,11 +408,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_INITDIALOG:
 	{
 		conf->niData.hWnd = mDlg = hDlg;
-		while (!AddTrayIcon(&conf->niData, conf->updateCheck))
+		while (!conf->SetIconState(conf->updateCheck))
 			Sleep(100);
-		conf->SetIconState();
 		SetMainTabs();
-		UpdateProfileList();
+		//SelectProfile();
+		//UpdateProfileList();
 	} break;
 	case WM_COMMAND:
 	{
@@ -640,14 +631,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			fxhl->stateScreen = true; // patch for later StateScreen update
-			fxhl->SetState(true);
+			//fxhl->stateScreen = true; // patch for later StateScreen update
+			//fxhl->SetState(true);
 			eve->ChangeEffectMode();
+			conf->SetIconState(conf->updateCheck);
 			eve->StartProfiles();
-			if (conf->updateCheck) {
-				needUpdateFeedback = false;
-				CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
-			}
+			eve->ChangeAction();
+			//if (conf->updateCheck) {
+			//	needUpdateFeedback = false;
+			//	CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
+			//}
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
 			// ac/batt change
@@ -673,23 +666,20 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		break;
-	//case WM_SYSCOLORCHANGE: case WM_SETTINGCHANGE:
-	//	DebugPrint("Device config changed!\n");
-	//	break;
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
-			vector<AlienFX_SDK::Functions*> devList = conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
-			if (devList.size() != conf->afx_dev.activeDevices) {
+			if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
 				DebugPrint("Active device list changed!\n");
-				eve->ChangeEffects(true);
-				fxhl->Stop();
-				conf->afx_dev.AlienFXApplyDevices(false, devList);
-				activeDevice = NULL;
+				//eve->ChangeEffects(true);
+				//fxhl->Stop();
+				conf->afx_dev.AlienFXApplyDevices();
 				if (conf->afx_dev.activeDevices && !dDlg) {
-					fxhl->Start();
+					//fxhl->Start();
 					fxhl->SetState(true);
-					eve->ChangeEffects();
+					fxhl->UpdateGlobalEffect(NULL);
+					fxhl->Refresh();
+					//eve->ChangeEffects();
 				}
 				SetMainTabs();
 			}
@@ -704,9 +694,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Shutdown/restart scheduled....
 		DebugPrint("Shutdown initiated\n");
 		PauseSystem();
-		//if (mon)
-		//	delete mon;
-		exit(0);
+		break;
+		//exit(0);
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam - 11 <= conf->profiles.size()) { // Profile switch
 			SelectProfile(wParam == 10 ? conf->FindDefaultProfile() : conf->profiles[wParam - 11]);

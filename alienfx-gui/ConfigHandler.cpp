@@ -4,6 +4,13 @@
 #include "Common.h"
 #include "resource.h"
 
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
+#else
+#define DebugPrint(_x_)
+#endif
+
 extern HWND mDlg;
 extern ConfigFan* fan_conf;
 extern int eItem;
@@ -95,12 +102,12 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 //	return prof->flags & PROF_ACTIVE;
 //}
 
-void ConfigHandler::SetIconState() {
+bool ConfigHandler::SetIconState(bool needCheck) {
 	// change tray icon...
 	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
 		MAKEINTRESOURCE(stateOn ? stateDimmed ? IDI_ALIENFX_DIM : IDI_ALIENFX_ON : IDI_ALIENFX_OFF),
 		IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
-	AddTrayIcon(&niData, false);
+	return AddTrayIcon(&niData, needCheck);
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {

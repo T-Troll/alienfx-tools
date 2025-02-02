@@ -40,6 +40,7 @@ EventHandler::~EventHandler()
 {
 	//StopProfiles();
 	//ChangeEffects(true);
+	ChangeAction(false);
 	CloseHandle(acStop);
 	delete[] aProcesses;
 }
@@ -281,7 +282,7 @@ LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-void EventHandler::ChangeAction()
+void EventHandler::ChangeAction(bool run)
 {
 	if (ackEvent) {
 		// stop hooks and waiting procedure
@@ -292,7 +293,7 @@ void EventHandler::ChangeAction()
 		CloseHandle(wasAction);
 	}
 
-	if (conf->actionLights) {
+	if (run && conf->actionLights) {
 		// Set hooks and waiting procedure
 		wasAction = CreateEvent(NULL, false, false, NULL);
 		ackEvent = SetWindowsHookEx(WH_KEYBOARD_LL, acProc, NULL, 0);

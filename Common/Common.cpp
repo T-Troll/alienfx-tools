@@ -165,6 +165,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	if (needUpdateFeedback && !req)
 			ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.");
 	delete[] buf;
+	needUpdateFeedback = false;
 	return 0;
 }
 

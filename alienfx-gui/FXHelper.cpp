@@ -4,7 +4,7 @@
 #include "common.h"
 #include "GridHelper.h"
 #include "WSAudioIn.h"
-#include <iterator>
+//#include <iterator>
 
 extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode* c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
@@ -26,6 +26,17 @@ FXHelper::~FXHelper() {
 	CloseHandle(haveNewElement);
 	CloseHandle(haveLightFX);
 };
+
+void FXHelper::FillAllDevs() {
+	Stop();
+	conf->afx_dev.AlienFXAssignDevices(false, mon ? mon->acpi : NULL);
+	if (conf->afx_dev.activeDevices) {
+		Start();
+		SetState(true);
+		UpdateGlobalEffect(NULL);
+		Refresh();
+	}
+}
 
 AlienFX_SDK::Afx_action FXHelper::BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to) {
 	return { 0,0,0,
@@ -208,7 +219,7 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
 	//auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
 	if (/*dev && dev->dev &&*/ actions->size()) {
-		LightQueryElement newBlock{ conf->afx_dev.GetDeviceById(LOWORD(lgh)), (byte)HIWORD(lgh), 0, (byte)actions->size() };
+		LightQueryElement newBlock{ LOWORD(lgh), (byte)HIWORD(lgh), 0, (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		QueryCommand(newBlock);
 	}
@@ -237,8 +248,8 @@ void FXHelper::SetState(bool force) {
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 	conf->modifyProfile.lock();
 	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
-		auto cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->pid, it->vid);
-		if (cdev->dev) {
+		auto cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->devID);
+		if (cdev->dev && cdev->devID == it->devID) {
 			cdev->dev->SetGlobalEffects(reset ? 0 : it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
 				{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
 				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
@@ -276,11 +287,6 @@ void FXHelper::Refresh(bool forced)
 #endif
 	conf->modifyProfile.lock();
 	for (groupset& it : conf->activeProfile->lightsets) {
-		//groupset set = *it;
-		// Hack for m16/18/g5525
-		//if (set.color.size() == 1 && set.color.front().type == AlienFX_SDK::AlienFX_A_Color) {
-		//	set.color.push_back(set.color.front());
-		//}
 		RefreshOne(&it, false);
 	}
 	conf->modifyProfile.unlock();
@@ -304,7 +310,7 @@ void FXHelper::RefreshOne(groupset* map, bool update) {
 
 void FXHelper::RefreshCounters(LightEventData* data)
 {
-	if (lightsNoDelay && eve->sysmon) {
+	if (lightsNoDelay && eve && eve->sysmon) {
 		bool force = !data, wasChanged = false;
 		AlienFX_SDK::Afx_group* grp;
 		if (!data)
@@ -404,7 +410,7 @@ void FXHelper::RefreshCounters(LightEventData* data)
 }
 
 void FXHelper::RefreshAmbient() {
-	if (lightsNoDelay && eve->capt) {
+	if (lightsNoDelay && eve && eve->capt) {
 		UCHAR* img = ((CaptureHelper*)eve->capt)->imgz;
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 		vector<AlienFX_SDK::Afx_action> actions{ {0} };
@@ -443,7 +449,7 @@ void FXHelper::RefreshAmbient() {
 }
 
 void FXHelper::RefreshHaptics() {
-	if (lightsNoDelay && eve->audio) {
+	if (lightsNoDelay && eve && eve->audio) {
 		int* freq = ((WSAudioIn*)eve->audio)->freqs;
 		vector<AlienFX_SDK::Afx_action> actions;
 		bool wasChanged = false;
@@ -507,7 +513,7 @@ void FXHelper::RefreshHaptics() {
 }
 
 void FXHelper::RefreshGrid() {
-	if (lightsNoDelay && eve->grid) {
+	if (lightsNoDelay && eve && eve->grid) {
 		bool wasChanged = false, noAmb = true;
 		vector<AlienFX_SDK::Afx_action> cur{ {0} };
 		conf->modifyProfile.lock();
@@ -661,7 +667,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	LightQueryElement current;
 
 	HANDLE waitArray[2]{ src->haveNewElement, src->stopQuery };
-	map<AlienFX_SDK::Afx_device*, vector<AlienFX_SDK::Afx_lightblock>> devs_query;
+	map<WORD, vector<AlienFX_SDK::Afx_lightblock>> devs_query;
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
@@ -693,38 +699,41 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			} break;
 			case 1: { // update command
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++) {
-					if (devQ->first->dev) {
+					AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(devQ->first);
+					if (dev->dev) {
 						//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
 						if (devQ->second.size()) {
-							devQ->first->dev->SetMultiAction(&devQ->second, current.light);
-							devQ->first->dev->UpdateColors();
+							dev->dev->SetMultiAction(&devQ->second, current.light);
+							dev->dev->UpdateColors();
 						}
-						if (devQ->first->dev->version == AlienFX_SDK::API_V5) {
-							src->UpdateGlobalEffect(devQ->first);
+						if (dev->version == AlienFX_SDK::API_V5) {
+							src->UpdateGlobalEffect(dev);
 						}
 					}
 					devQ->second.clear();
 				}
 			} break;
 			case 0: { // set light
-				if (!current.dev)
-					continue;
+				//if (!current.dev)
+				//	continue;
+				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(current.pid);
+				if (!dev) continue;
 				if (conf->gammaCorrection) {
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
 						// gamma-correction...
-						action->r = ((UINT)action->r * action->r * current.dev->white.r) / 65025; // (255 * 255);
-						action->g = ((UINT)action->g * action->g * current.dev->white.g) / 65025; // (255 * 255);
-						action->b = ((UINT)action->b * action->b * current.dev->white.b) / 65025; // (255 * 255);
+						action->r = ((UINT)action->r * action->r * dev->white.r) / 65025; // (255 * 255);
+						action->g = ((UINT)action->g * action->g * dev->white.g) / 65025; // (255 * 255);
+						action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
 					}
 				}
 
 				// Is it power button?
-				if (conf->afx_dev.GetFlags(current.dev, current.light) & ALIENFX_FLAG_POWER) {
+				if (conf->afx_dev.GetFlags(dev, current.light) & ALIENFX_FLAG_POWER) {
 					// Should we update it?
 					current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
 					current.actsize = 2;
-					if (memcmp(src->pbstate[current.dev->pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action))) {
+					if (memcmp(src->pbstate[current.pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action))) {
 
 						DebugPrint("Power button set to " +
 							to_string(current.actions[0].r) + "-" +
@@ -734,7 +743,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							to_string(current.actions[1].g) + "-" +
 							to_string(current.actions[1].b) + "\n");
 
-						memcpy(src->pbstate[current.dev->pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
+						memcpy(src->pbstate[current.pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
 					}
 					else {
 						DebugPrint("Power button update skipped (blocked or same colors)\n");
@@ -747,17 +756,18 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				ablock.act.resize(current.actsize);
 				memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
 				// do we have another set for same light?
-				bool noSameLight = true;
-				for (AlienFX_SDK::Afx_lightblock& lp : devs_query[current.dev]) {
-					if (lp.index == current.light) {
-						lp.act = ablock.act;
-						noSameLight = false;
+				//bool noSameLight = true;
+				for (auto lp = devs_query[current.pid].begin(); lp != devs_query[current.pid].end(); lp++) {
+					if (lp->index == current.light) {
+						devs_query[current.pid].erase(lp);
+						//lp.act = ablock.act;
+						//noSameLight = false;
 						break;
 					}
 				}
-				if (noSameLight) {
-					devs_query[current.dev].push_back(ablock);
-				}
+				//if (noSameLight) {
+					devs_query[current.pid].push_back(ablock);
+				//}
 			}
 			}
 		}

@@ -118,7 +118,12 @@ struct groupset {
 };
 
 struct deviceeffect {
-	WORD vid, pid;
+	union {
+		struct {
+			WORD pid, vid;			// IDs
+		};
+		DWORD devID;
+	};
 	AlienFX_SDK::Afx_colorcode effColor1, effColor2;
 	byte globalEffect=0, globalDelay=5, globalMode = 1, colorMode = 1;
 	DWORD reserved;
@@ -246,5 +251,5 @@ public:
 	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
 	bool IsPriorityProfile(profile* prof);
 	//bool IsActiveOnly(profile* prof);
-	void SetIconState();
+	bool SetIconState(bool needCheck = false);
 };

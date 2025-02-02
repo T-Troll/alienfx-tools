@@ -1,18 +1,15 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "FXHelper.h"
-#include "MonHelper.h"
 #include "common.h"
 
 //extern void UpdateProfileList();
 extern bool DetectFans();
 extern void SetHotkeys();
 extern void SetMainTabs();
-extern void FillAllDevs();
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
-extern MonHelper* mon;
 extern ConfigFan* fan_conf;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -164,7 +161,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				mon = NULL;
 				eve->ChangeEffects();
 			}
-			FillAllDevs();
+			fxhl->FillAllDevs();
 			SetHotkeys();
 			SetMainTabs();
 			break;

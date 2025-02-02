@@ -10,7 +10,8 @@ struct LightEventData {
 };
 
 struct LightQueryElement {
-	AlienFX_SDK::Afx_device* dev;
+	//AlienFX_SDK::Afx_device* dev;
+	WORD pid;
 	byte light;
 	byte command; // 0 - color, 1 - update, 2 - set brightness
 	byte actsize;
@@ -49,8 +50,8 @@ public:
 	int finalBrightness = -1;
 
 	FXHelper();
-
 	~FXHelper();
+	void FXHelper::FillAllDevs();
 	AlienFX_SDK::Afx_action BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to);
 	void Start();
 	void Stop();
