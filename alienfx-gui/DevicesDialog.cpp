@@ -260,7 +260,7 @@ void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 	for (auto i = csv_devs.begin(); i < csv_devs.end(); i++) {
 		if (force || i->selected) {
 			for (auto td = i->devs.begin(); td < i->devs.end(); td++) {
-				AlienFX_SDK::Afx_device* cDev = conf->afx_dev.AddDeviceById(td->pid, td->vid);
+				AlienFX_SDK::Afx_device* cDev = conf->afx_dev.AddDeviceById(td->devID);
 				cDev->name = td->name;
 				if (cDev->dev)
 					conf->afx_dev.activeLights += (int)td->lights.size() - (int)cDev->lights.size();

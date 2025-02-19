@@ -631,16 +631,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			//fxhl->stateScreen = true; // patch for later StateScreen update
-			//fxhl->SetState(true);
 			eve->ChangeEffectMode();
 			conf->SetIconState(conf->updateCheck);
 			eve->StartProfiles();
 			eve->ChangeAction();
-			//if (conf->updateCheck) {
-			//	needUpdateFeedback = false;
-			//	CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
-			//}
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
 			// ac/batt change
@@ -671,15 +665,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Device list changed \n");
 			if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
 				DebugPrint("Active device list changed!\n");
-				//eve->ChangeEffects(true);
-				//fxhl->Stop();
 				conf->afx_dev.AlienFXApplyDevices();
 				if (conf->afx_dev.activeDevices && !dDlg) {
-					//fxhl->Start();
 					fxhl->SetState(true);
 					fxhl->UpdateGlobalEffect(NULL);
 					fxhl->Refresh();
-					//eve->ChangeEffects();
 				}
 				SetMainTabs();
 			}
@@ -695,7 +685,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		DebugPrint("Shutdown initiated\n");
 		PauseSystem();
 		break;
-		//exit(0);
 	case WM_HOTKEY:
 		if (wParam > 9 && wParam - 11 <= conf->profiles.size()) { // Profile switch
 			SelectProfile(wParam == 10 ? conf->FindDefaultProfile() : conf->profiles[wParam - 11]);

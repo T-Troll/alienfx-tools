@@ -46,12 +46,14 @@ profile* ConfigHandler::FindCreateProfile(unsigned id) {
 
 AlienFX_SDK::Afx_group* ConfigHandler::FindCreateGroup(int groupID) {
 	AlienFX_SDK::Afx_group* grp = nullptr;
-	if (groupID) {
-		if (!(grp = afx_dev.GetGroupById(groupID))) {
-			afx_dev.GetGroups()->push_back({ (DWORD)groupID, "New zone #" + to_string((groupID & 0xffff) + 1) });
-			grp = &afx_dev.GetGroups()->back();
-		}
+	if (groupID < 0)
+		groupID = 0x1ffff;
+
+	if (!(grp = afx_dev.GetGroupById(groupID))) {
+		afx_dev.GetGroups()->push_back({ (DWORD)groupID, "New zone #" + to_string((groupID & 0xffff) + 1) });
+		grp = &afx_dev.GetGroups()->back();
 	}
+
 	return grp;
 }
 
@@ -59,8 +61,12 @@ groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 {
 	profile* prof = FindProfile(profID);
 	if (prof) {
+		// -1 group patch
+		if (groupID < 0) {
+			groupID = 0x1ffff;
+		}
 		groupset* gset = FindMapping(groupID, &prof->lightsets);
-		FindCreateGroup(groupID);
+		//FindCreateGroup(groupID);
 		if (!gset) {
 			prof->lightsets.push_back({ groupID });
 			gset = &prof->lightsets.back();

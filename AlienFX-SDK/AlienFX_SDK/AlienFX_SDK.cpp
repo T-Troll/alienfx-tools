@@ -42,7 +42,7 @@ namespace AlienFX_SDK {
 						(byte)((c1.b & 0xf0) | ((c2.r & 0xf0) >> 4)),
 						(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
 			break;
-		case API_V6: case API_V9: {
+		case API_V6: { //case API_V9: {
 			vector<byte> command{ 0x51, v6OpCodes[c1.type], 0xd0, v6TCodes[c1.type], (byte)index, c1.r, c1.g, c1.b };
 			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
 			switch (c1.type) {
@@ -62,9 +62,9 @@ namespace AlienFX_SDK {
 				break;
 			}
 			byte lpos = 3, cpos = 5;
-			if (version == API_V9) {
-				lpos = 7; cpos = 0x41;
-			}
+			//if (version == API_V9) {
+			//	lpos = 7; cpos = 0x41;
+			//}
 			*mods = { {cpos, { command } }, {lpos, {(byte)command.size(), 0} } };
 		} break;
 		}
@@ -95,7 +95,7 @@ namespace AlienFX_SDK {
 
 		if (devHandle) // Is device initialized?
 			switch (version) {
-			case API_V2: case API_V3: case API_V4: case API_V9:
+			case API_V2: case API_V3: case API_V4: //case API_V9:
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
 				return HidD_SetOutputReport(devHandle, buffer, length);
 				//break;
@@ -196,8 +196,8 @@ namespace AlienFX_SDK {
 					case 65:
 						version = API_V6;
 						break;
-					case 193:
-						version = API_V9;
+					//case 193:
+					//	version = API_V9;
 					}
 					break;
 				default:
@@ -272,13 +272,13 @@ namespace AlienFX_SDK {
 
 	bool Functions::Reset() {
 		switch (version) {
-		case API_V9:
-			if (chain) {
-				PrepareAndSend(COMMV9_update);
-				GetDeviceStatus();
-				chain = 0;
-			}
-			break;
+		//case API_V9:
+		//	if (chain) {
+		//		PrepareAndSend(COMMV9_update);
+		//		GetDeviceStatus();
+		//		chain = 0;
+		//	}
+		//	break;
 		case API_V6:
 			// need initial reset if not done
 			if (chain) {
@@ -392,7 +392,8 @@ namespace AlienFX_SDK {
 				{8, *lights} };
 			val = PrepareAndSend(COMMV4_setOneColor, &mods);
 		} break;
-		case API_V3: case API_V2: case API_V6: case API_V9: case API_ACPI:
+		case API_V3: case API_V2: case API_V6: //case API_V9: 
+		case API_ACPI:
 		{
 			DWORD fmask = 0;
 			for (auto nc = lights->begin(); nc < lights->end(); nc++)
@@ -402,9 +403,9 @@ namespace AlienFX_SDK {
 			case API_V6:
 				val = PrepareAndSend(COMMV6_colorSet, &mods);
 				break;
-			case API_V9:
-				val = PrepareAndSend(COMMV9_colorSet, &mods);
-				break;
+			//case API_V9:
+			//	val = PrepareAndSend(COMMV9_colorSet, &mods);
+			//	break;
 #ifndef NOACPILIGHTS
 			case API_ACPI:
 				val = ((AlienFan_SDK::Lights*)ACPIdevice)->SetColor((byte)fmask, c.r, c.g, c.b);
@@ -506,8 +507,8 @@ namespace AlienFX_SDK {
 		}
 		case API_V6:
 			return PrepareAndSend(COMMV6_colorSet, SetMaskAndColor(&mods, act));
-		case API_V9:
-			return PrepareAndSend(COMMV9_colorSet, SetMaskAndColor(&mods, act));
+		//case API_V9:
+		//	return PrepareAndSend(COMMV9_colorSet, SetMaskAndColor(&mods, act));
 		case API_V5:
 			AddV5DataBlock(4, &mods, act->index, &act->act.front());
 			PrepareAndSend(COMMV5_colorSet, &mods);
@@ -716,7 +717,7 @@ namespace AlienFX_SDK {
 			}
 			PrepareAndSend(COMMV1_dim, { { 2,{bright} } });
 			return bright && !oldBr;
-		case API_V6: case API_V7: case API_V9:
+		case API_V6: case API_V7: //case API_V9:
 			return true;
 #ifndef NOACPILIGHTS
 		case API_ACPI:
@@ -755,9 +756,9 @@ namespace AlienFX_SDK {
 		//DWORD written;
 		if (devHandle)
 			switch (version) {
-			case API_V9:
-				HidD_GetInputReport(devHandle, buffer, length);
-				return 1;
+			//case API_V9:
+			//	HidD_GetInputReport(devHandle, buffer, length);
+			//	return 1;
 			case API_V5:
 			{
 				PrepareAndSend(COMMV5_status);
@@ -1012,11 +1013,11 @@ namespace AlienFX_SDK {
 		return nullptr;
 	}
 
-	Afx_device* Mappings::AddDeviceById(WORD pid, WORD vid)
+	Afx_device* Mappings::AddDeviceById(DWORD devID)
 	{
-		Afx_device* dev = GetDeviceById(pid, vid);
+		Afx_device* dev = GetDeviceById(devID);
 		if (!dev) {
-			fxdevs.push_back({ pid, vid, NULL });
+			fxdevs.push_back({ LOWORD(devID), HIWORD(devID), NULL });
 			dev = &fxdevs.back();
 		}
 		return dev;
@@ -1064,16 +1065,17 @@ namespace AlienFX_SDK {
 		RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfx_SDK"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &mainKey, NULL);
 		unsigned vindex;
 		char kName[255], name[255];
-		DWORD len, lend, dID;
+		DWORD len, lend;
+		int dID;
 		WORD vid, pid;
 		byte lID;
 		for (vindex = 0; RegEnumValue(mainKey, vindex, kName, &(len = 255), NULL, NULL, (LPBYTE)name, &(lend = 255)) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Dev#%hd_%hd", &vid, &pid) == 2) {
-				AddDeviceById(pid, vid)->name = string(name);
+				AddDeviceById(MAKELPARAM(pid, vid))->name = string(name);
 				continue;
 			}
 			if (sscanf_s(kName, "DevWhite#%hd_%hd", &vid, &pid) == 2) {
-				AddDeviceById(pid, vid)->white.ci = ((DWORD*)name)[0];
+				AddDeviceById(MAKELPARAM(pid, vid))->white.ci = ((DWORD*)name)[0];
 				continue;
 			}
 		}
@@ -1081,7 +1083,7 @@ namespace AlienFX_SDK {
 			if (sscanf_s(kName, "Light%d-%hhd", &dID, &lID) == 2) {
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
 				RegGetValue(mainKey, kName, "Flags", RRF_RT_REG_DWORD, 0, &len, &(lend = sizeof(DWORD)));
-				AddDeviceById(LOWORD(dID), HIWORD(dID))->lights.push_back({ lID, { LOWORD(len), HIWORD(len) }, name });
+				AddDeviceById(dID)->lights.push_back({ lID, { LOWORD(len), HIWORD(len) }, name });
 			}
 			if (sscanf_s(kName, "Grid%d", &dID) == 1) {
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
@@ -1095,7 +1097,11 @@ namespace AlienFX_SDK {
 		for (vindex = 0; RegEnumKey(mainKey, vindex, kName, 255) == ERROR_SUCCESS; vindex++) {
 			if (sscanf_s(kName, "Group%d", &dID) == 1) {
 				RegGetValue(mainKey, kName, "Name", RRF_RT_REG_SZ, 0, name, &(lend = 255));
-				groups.push_back({ dID, name });
+				// -1 patch
+				if (dID < 0) {
+					dID = 0x1ffff;
+				}
+				groups.push_back({ (DWORD)dID, name });
 				vector<Afx_groupLight>* gl = &groups.back().lights;
 				if (RegGetValue(mainKey, kName, "LightList", RRF_RT_REG_BINARY, 0, NULL, &lend) != ERROR_FILE_NOT_FOUND) {
 					gl->resize(lend / sizeof(DWORD));
@@ -1126,7 +1132,7 @@ namespace AlienFX_SDK {
 			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
 			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {
 				// Saving all lights from current device
-				string name = "Light" + to_string(MAKELONG(i->pid, i->vid)) + "-" + to_string(cl->lightid);
+				string name = "Light" + to_string(i->devID) + "-" + to_string(cl->lightid);
 				RegCreateKey(hKeybase, name.c_str(), &hKeyStore);
 				RegSetValueEx(hKeyStore, "Name", 0, REG_SZ, (BYTE*)cl->name.c_str(), (DWORD)cl->name.length());
 				RegSetValueEx(hKeyStore, "Flags", 0, REG_DWORD, (BYTE*)&cl->data, sizeof(DWORD));

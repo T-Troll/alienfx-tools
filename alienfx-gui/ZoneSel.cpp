@@ -68,18 +68,11 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	{
 	case WM_INITDIALOG:
 	{
-		unsigned maxGrpID = 0x10000;
+		ListBox_SetItemData(grouplist, ListBox_AddString(grouplist, "<New Zone>"), -1);
 		if (conf->afx_dev.GetGroups()->empty()) {
-			// No groups in list, exit
-			conf->FindCreateGroup(eItem = maxGrpID);
-			conf->activeProfile->lightsets.push_back({ eItem });
-			EndDialog(hDlg, IDOK);
+			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_LIST_GROUPS, LBN_SELCHANGE), 0);
 		}
-		else
-		{
-			while (conf->afx_dev.GetGroupById(maxGrpID))
-				maxGrpID++;
-			ListBox_SetItemData(grouplist, ListBox_AddString(grouplist, "<New Zone>"), maxGrpID);
+		else {
 			for (auto t = conf->afx_dev.GetGroups()->begin(); t < conf->afx_dev.GetGroups()->end(); t++) {
 				if (!conf->FindMapping(t->gid))
 					ListBox_SetItemData(grouplist, ListBox_AddString(grouplist, t->name.c_str()), t->gid);
@@ -98,10 +91,15 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			case LBN_SELCHANGE:
 			{
 				eItem = (int)ListBox_GetItemData(grouplist, ListBox_GetCurSel(grouplist));
+				if (eItem < 0) {
+					eItem = 0x10000;
+					while (conf->afx_dev.GetGroupById(eItem))
+						eItem++;
+				}
 				conf->FindCreateGroup(eItem);
-				conf->modifyProfile.lock();
+				//conf->modifyProfile.lock();
 				conf->activeProfile->lightsets.push_back({ eItem });
-				conf->modifyProfile.unlock();
+				//conf->modifyProfile.unlock();
 				EndDialog(hDlg, IDOK);
 			} break;
 			}

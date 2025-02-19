@@ -70,7 +70,6 @@ namespace AlienFX_SDK {
 		DWORD gid;
 		string name;
 		vector<Afx_groupLight> lights;
-		//bool have_power = false;
 	};
 
 	struct Afx_grid {
@@ -94,7 +93,7 @@ namespace AlienFX_SDK {
 
 	enum Afx_Version {
 		API_ACPI = 0, //128
-		API_V9 = 9, //193
+	//	API_V9 = 9, //193
 		API_V8 = 8, //65
 		API_V7 = 7, //65
 		API_V6 = 6, //65
@@ -156,8 +155,12 @@ namespace AlienFX_SDK {
 		BYTE WaitForBusy();
 
 	public:
-		WORD vid = 0; // Device VID
-		WORD pid = 0; // Device PID
+		union {
+			struct {
+				WORD pid, vid;			// Device IDs
+			};
+			DWORD devID;
+		};
 		int version = API_UNKNOWN; // interface version, will stay at API_UNKNOWN if not initialized
 		byte bright = 64; // Last brightness set for device
 		string description; // device description
@@ -229,15 +232,6 @@ namespace AlienFX_SDK {
 
 		// Apply changes and update colors
 		bool UpdateColors();
-
-		//// get PID for current device
-		//int GetPID();
-
-		//// get VID for current device
-		//int GetVID();
-
-		//// get API version for current device
-		//int GetVersion();
 
 		// check global effects availability
 		bool IsHaveGlobal();
@@ -312,7 +306,7 @@ namespace AlienFX_SDK {
 
 		// get or add device structure by PID/VID
 		// VID can be zero for any VID
-		Afx_device* AddDeviceById(WORD pid, WORD vid);
+		Afx_device* AddDeviceById(DWORD devID);
 
 		// find light mapping into device structure by light ID
 		Afx_light* GetMappingByDev(Afx_device* dev, WORD LightID);

@@ -152,8 +152,8 @@ namespace AlienFX_SDK {
 		const byte v8OpCodes[]{ 0x81, 0x82, 0x83, 0x87, 0x88, 0x84, 0x81 };
 		// 09 03, 0a 03 - set profiles
 	// V9, new monitors
-		const byte COMMV9_update[]{ 3,0x40,0xe1,0x01 };
-		const byte COMMV9_colorSet[]{ 11,0x40, 0xc6,00,00,00,00,0xa,00,0x6e,00,0x82 };
+		//const byte COMMV9_update[]{ 3,0x40,0xe1,0x01 };
+		//const byte COMMV9_colorSet[]{ 11,0x40, 0xc6,00,00,00,00,0xa,00,0x6e,00,0x82 };
 		// 40c6000000000a006e00820000000000 0
 		// 00000000000000000000000000000000 1
 		// 00000000000000000000000000000000 2
