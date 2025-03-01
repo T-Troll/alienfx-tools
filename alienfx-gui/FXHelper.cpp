@@ -33,7 +33,7 @@ void FXHelper::FillAllDevs() {
 	if (conf->afx_dev.activeDevices) {
 		Start();
 		SetState(true);
-		UpdateGlobalEffect(NULL);
+		UpdateGlobalEffect(NULL, true);
 		Refresh();
 	}
 }
@@ -239,7 +239,7 @@ void FXHelper::SetState(bool force) {
 	if (force || oldBr != finalBrightness || oldPM != finalPBState) {
 		if (mDlg)
 			conf->SetIconState();
-		if (force)
+		if (force && !finalPBState)
 			QueryCommand(LightQueryElement({ NULL, 1, 2 }));
 		QueryCommand(LightQueryElement({ NULL, 0, 2 }));
 	}
@@ -247,14 +247,27 @@ void FXHelper::SetState(bool force) {
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 	conf->modifyProfile.lock();
-	for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
-		auto cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->devID);
-		if (cdev->dev && cdev->devID == it->devID) {
-			cdev->dev->SetGlobalEffects(reset ? 0 : it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
-				{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
-				{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
+
+	for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++) {
+		if (cdev->dev && cdev->dev->IsHaveGlobal() && (!dev || (dev->devID == cdev->devID))) {
+			if (reset)
+				cdev->dev->SetGlobalEffects(0, 1, 1, 5, { 0 }, { 0 });
+			for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
+				if (cdev->devID == it->devID)
+					cdev->dev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
+						{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
+						{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
+			}
 		}
 	}
+	//for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
+	//	auto cdev = dev ? dev : conf->afx_dev.GetDeviceById(it->devID);
+	//	if (cdev && cdev->dev && cdev->devID == it->devID) {
+	//		cdev->dev->SetGlobalEffects(reset ? 0 : it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
+	//			{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
+	//			{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
+	//	}
+	//}
 	conf->modifyProfile.unlock();
 }
 
@@ -310,10 +323,10 @@ void FXHelper::RefreshOne(groupset* map, bool update) {
 
 void FXHelper::RefreshCounters(LightEventData* data)
 {
-	if (lightsNoDelay && eve && eve->sysmon) {
-		bool force = !data, wasChanged = false;
+	if (lightsNoDelay && conf->stateEffects/*eve && eve->sysmon*/) {
+		bool force = !data, wasChanged = false, havePower;
 		AlienFX_SDK::Afx_group* grp;
-		if (!data)
+		if (force)
 			data = &eData;
 		else
 			blinkStage = !blinkStage;
@@ -321,7 +334,7 @@ void FXHelper::RefreshCounters(LightEventData* data)
 		conf->modifyProfile.lock();
 		for (auto Iter = conf->activeProfile->lightsets.begin(); Iter != conf->activeProfile->lightsets.end(); Iter++) {
 			if (Iter->events.size() && (grp = conf->afx_dev.GetGroupById(Iter->group))) {
-				bool havePower = conf->FindZoneMap(Iter->group)->havePower;
+				havePower = conf->FindZoneMap(Iter->group)->havePower;
 				vector<AlienFX_SDK::Afx_action> actions;
 				bool hasDiff = false;
 				int lVal = 0, cVal = 0;
@@ -524,7 +537,7 @@ void FXHelper::RefreshGrid() {
 					CaptureHelper* capt = ((GridHelper*)eve->grid)->capt;
 					// update lights
 					if (capt && capt->needUpdate && noAmb) {
-						capt->needUpdate = false;
+						//capt->needUpdate = false;
 						UINT shift = 255 - conf->amb_shift;
 						auto zone = *conf->FindZoneMap(ce->group);
 						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
@@ -682,17 +695,14 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			switch (current.command) {
 			case 2: { // set brightness
 				bool pbstate = current.light || src->finalPBState, needRefresh = false;
-				byte fbright = (byte)(current.light ? !conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower : src->finalBrightness);
+				byte fbright = (byte)(current.light ?
+					conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower
+					: src->finalBrightness);
+					//(byte)(current.light ? !conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower : src->finalBrightness);
 				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++)
 					if (dev->dev) {
 						//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
-						byte oldBr = dev->dev->bright;
-						needRefresh = needRefresh || dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
-						//switch (dev->version) {
-						//case AlienFX_SDK::API_V2: case AlienFX_SDK::API_V3: case AlienFX_SDK::API_V6: case AlienFX_SDK::API_V7:
-						//	// They don't have device brightness, so need to set each light again.
-						//	needRefresh = needRefresh || !oldBr || dev->version > AlienFX_SDK::API_V3;
-						//}
+						needRefresh |= dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
 					}
 				if (needRefresh)
 					src->Refresh();
@@ -706,7 +716,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 							dev->dev->SetMultiAction(&devQ->second, current.light);
 							dev->dev->UpdateColors();
 						}
-						if (dev->version == AlienFX_SDK::API_V5) {
+						if (dev->dev->IsHaveGlobal()/*dev->version == AlienFX_SDK::API_V5*/) {
 							src->UpdateGlobalEffect(dev);
 						}
 					}
@@ -714,8 +724,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} break;
 			case 0: { // set light
-				//if (!current.dev)
-				//	continue;
 				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(current.pid);
 				if (!dev) continue;
 				if (conf->gammaCorrection) {
@@ -756,18 +764,13 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				ablock.act.resize(current.actsize);
 				memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
 				// do we have another set for same light?
-				//bool noSameLight = true;
 				for (auto lp = devs_query[current.pid].begin(); lp != devs_query[current.pid].end(); lp++) {
 					if (lp->index == current.light) {
 						devs_query[current.pid].erase(lp);
-						//lp.act = ablock.act;
-						//noSameLight = false;
 						break;
 					}
 				}
-				//if (noSameLight) {
-					devs_query[current.pid].push_back(ablock);
-				//}
+				devs_query[current.pid].push_back(ablock);
 			}
 			}
 		}

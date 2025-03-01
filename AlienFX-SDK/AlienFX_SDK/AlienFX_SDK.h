@@ -285,6 +285,12 @@ namespace AlienFX_SDK {
 		// save light names into registry
 		void SaveMappings();
 
+		// Set device brightness
+		// dev - point to AFX device info
+		// br - brightness level
+		// power - set power/indicator lights too
+		void SetDeviceBrightness(Afx_device* dev, BYTE br, bool power);
+
 		// get saved light structure by device ID and light ID
 		Afx_light* GetMappingByID(WORD pid, WORD vid);
 
@@ -320,8 +326,8 @@ namespace AlienFX_SDK {
 		// get light flags (Power, indicator, etc) from light structure
 		int GetFlags(Afx_device* dev, WORD lightid);
 
-		// get light flags (Power, indicator) by DevID (PID/VID)
-		int GetFlags(DWORD devID, WORD lightid);
+		// get light flags (Power, indicator) by PID
+		int GetFlags(WORD pid, WORD lightid);
 	};
 
 }

@@ -76,7 +76,7 @@ namespace AlienFX_SDK {
 	}
 
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
-		if (!this) // unexpected device removal protection
+		if (!command) // unexpected device removal protection
 			return false;
 		byte buffer[MAX_BUFFERSIZE];
 		DWORD written;
@@ -700,13 +700,17 @@ namespace AlienFX_SDK {
 			PrepareAndSend(COMMV5_turnOnSet, { {4, {bright}} });
 			break;
 		case API_V4: {
-			vector<byte> idlist;
+			//vector<byte> idlist;
+			//for (auto i = mappings->begin(); i < mappings->end(); i++)
+			//	if (!i->flags || power) {
+			//		idlist.push_back((byte)i->lightid);
+			//	}
+			int pos = 6;
+			vector<Afx_icommand> mods{ {3,{(byte)(0x64 - bright), 0, (byte)mappings->size()}}/*, { 6, idlist}*/ };
 			for (auto i = mappings->begin(); i < mappings->end(); i++)
 				if (!i->flags || power) {
-					idlist.push_back((byte)i->lightid);
+					mods.push_back({ pos++, {(byte)i->lightid} });
 				}
-			vector<Afx_icommand> mods{ {3,{(byte)(0x64 - bright), 0, (byte)mappings->size()}},
-										{ 6, idlist} };
 			PrepareAndSend(COMMV4_turnOn, &mods);
 			break;
 		}
@@ -1036,6 +1040,13 @@ namespace AlienFX_SDK {
 		return &groups;
 	}
 
+	void Mappings::SetDeviceBrightness(Afx_device* dev, BYTE br, bool power)
+	{
+		if (dev->dev) {
+			dev->dev->SetBrightness(br, &dev->lights, power);
+		}
+	}
+
 	void Mappings::RemoveMapping(Afx_device* dev, WORD lightID)
 	{
 		if (dev) {
@@ -1172,9 +1183,9 @@ namespace AlienFX_SDK {
 		return lgh ? lgh->flags : 0;
 	}
 
-	int Mappings::GetFlags(DWORD devID, WORD lightid)
+	int Mappings::GetFlags(WORD pid, WORD lightid)
 	{
-		Afx_device* dev = GetDeviceById(devID);
+		Afx_device* dev = GetDeviceById(pid);
 		return dev ? GetFlags(dev, lightid) : 0;
 	}
 

@@ -85,7 +85,7 @@ void CheckFanOverboost(byte num, byte boost) {
         for (int steps = cSteps; steps; steps = steps >> 1) {
             // Check for downtrend
             boost -= steps;
-            while (boost > 100 && SetFanSteady(num, boost) > bestBoostPoint.maxRPM - downScale) {
+            while (boost >= 100 && SetFanSteady(num, boost) > bestBoostPoint.maxRPM - downScale) {
                 bestBoostPoint.maxBoost = boost;
                 boost -= steps;
                 printf("(New best: %d @ %d RPM)\n", bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
@@ -147,7 +147,7 @@ setbrightness=<brightness>\tSet lights brightness\n");
 
 int main(int argc, char* argv[])
 {
-    printf("AlienFan-CLI v9.1.0\n");
+    printf("AlienFan-CLI v9.1.3\n");
 #ifndef NOLIGHTS
     AlienFan_SDK::Lights* lights = NULL;
 #endif

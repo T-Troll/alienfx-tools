@@ -55,7 +55,7 @@ public:
 	DWORD awcc_disable;
 	DWORD keyShortcuts;
 	DWORD keepSystem;
-	DWORD needDPTF;
+	//DWORD needDPTF;
 	DWORD pollingRate;
 	DWORD ocEnable;
 	DWORD diskSensors;

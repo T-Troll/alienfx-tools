@@ -162,8 +162,8 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				if (b != prof->effects.end())
 					b->globalEffect = newEffect;
 				else {
-					prof->effects.push_back({ activeEffectDevice->vid,
-						activeEffectDevice->pid, {0}, {0},
+					prof->effects.push_back({ activeEffectDevice->pid,
+						activeEffectDevice->vid, {0}, {0},
 						newEffect, 5, (byte)(LOWORD(wParam) == IDC_GLOBAL_EFFECT ? 1 : 2) });
 					b = prof->effects.end() - 1;
 				}

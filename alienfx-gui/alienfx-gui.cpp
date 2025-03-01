@@ -156,8 +156,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 	fxhl = new FXHelper();
-	eve = new EventHandler();
 	fxhl->FillAllDevs();
+	eve = new EventHandler();
 
 	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
 
@@ -582,8 +582,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					name.append("\n" + GetFanName(i, true));
 				}
 			}
-			conf->niData.szTip[127] = 0;
-			strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
+			//conf->niData.szTip[127] = 0;
+			strcpy_s(conf->niData.szTip, min(128, name.length() + 1), name.c_str());
+			//conf->niData.uFlags = NIF_TIP | NIF_SHOWTIP;
 			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 		} break;
 		}
@@ -631,7 +632,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			eve->ChangeEffectMode();
+			fxhl->SetState(true);
+			//eve->ChangeEffectMode();
 			conf->SetIconState(conf->updateCheck);
 			eve->StartProfiles();
 			eve->ChangeAction();
@@ -650,7 +652,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				// react state change state
 				fxhl->stateScreen = ((POWERBROADCAST_SETTING*)lParam)->Data[0] > 0;
 				fxhl->stateDim = ((POWERBROADCAST_SETTING*)lParam)->Data[0] == 2;
-				DebugPrint("Screen state " + to_string(((POWERBROADCAST_SETTING*)lParam)->Data[0]) + "\n");
+				DebugPrint("Screen state changed to " + to_string(((POWERBROADCAST_SETTING*)lParam)->Data[0]) + "\n");
 				eve->ChangeEffectMode();
 			}
 		} break;

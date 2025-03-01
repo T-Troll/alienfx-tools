@@ -91,7 +91,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 				}
 			argPos++;
 		}
-		actions.push_back({ acttype, sleepy, longer, 
+		actions.push_back({ acttype, sleepy, longer,
 				(byte)((args->at(argPos).num * globalBright) / 255), //r
 			(byte)((args->at(argPos + 1).num * globalBright) / 255), //g
 			(byte)((args->at(argPos + 2).num * globalBright) / 255) //b
@@ -108,7 +108,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v9.1.2.1\n");
+	printf("alienfx-cli v9.1.3\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -118,25 +118,24 @@ int main(int argc, char* argv[])
 	afx_map.LoadMappings();
 	afx_map.AlienFXAssignDevices();
 
+	printf("Dell API ");
 	if (have_high = (lfxUtil.InitLFX() == -1)) {
-		printf("Dell API ready");
+		printf("ready");
 		devType = 0;
-	} else
-		printf("Dell API not found");
+	}
+	else
+		printf("not found");
 
 	if (afx_map.activeDevices) {
-		printf(", %d devices found.\n", afx_map.activeDevices);
 		devType = 1;
 		// set brightness
 		for (auto dev = afx_map.fxdevs.begin(); dev != afx_map.fxdevs.end(); dev++)
-			dev->dev->SetBrightness(255, &dev->lights, true);
-	} else
-		printf(", devices not found.\n");
+			afx_map.SetDeviceBrightness(&(*dev), 255, true);
+	}
+	printf(", %d low-level devices found.\n", afx_map.activeDevices);
 
 	if (devType >= 0) {
-
 		for (int cc = 1; cc < argc; cc++) {
-
 			string arg = string(argv[cc]);
 			size_t vid = arg.find_first_of('=');
 			string command = arg.substr(0, vid);
@@ -253,7 +252,7 @@ int main(int argc, char* argv[])
 			case COMMANDS::setdim:
 				// set-dim
 				if (devType && args.size() > 1 && args[0].num < afx_map.fxdevs.size())
-					afx_map.fxdevs[args.front().num].dev->SetBrightness(args.back().num, &afx_map.fxdevs[args.front().num].lights, false);
+					afx_map.SetDeviceBrightness(&afx_map.fxdevs[args.front().num], args.back().num, false);
 				else
 					globalBright = args.front().num;
 				break;
@@ -296,9 +295,9 @@ int main(int argc, char* argv[])
 					}
 					// now groups...
 					if (afx_map.GetGroups()->size()) {
-						printf("%d groups:\n", (int)afx_map.GetGroups()->size());
+						printf("%d zones:\n", (int)afx_map.GetGroups()->size());
 						for (int i = 0; i < afx_map.GetGroups()->size(); i++)
-							printf("  Group #%d (%d lights) - %s\n", (afx_map.GetGroups()->at(i).gid & 0xffff),
+							printf("  Zone #%d (%d lights) - %s\n", (afx_map.GetGroups()->at(i).gid & 0xffff),
 								(int)afx_map.GetGroups()->at(i).lights.size(),
 								afx_map.GetGroups()->at(i).name.c_str());
 					}
@@ -329,9 +328,9 @@ int main(int argc, char* argv[])
 				char name[256];
 				gets_s(name, 255);
 				if (name[0] == 'y' || name[0] == 'Y') {
-//					printf("\nFor each light please enter LightFX SDK light ID or light name if ID is not available\n\
-//Tested light become green, and turned off after testing.\n\
-//Just press Enter if no visible light at this ID to skip it.\n");
+					//					printf("\nFor each light please enter LightFX SDK light ID or light name if ID is not available\n\
+					//Tested light become green, and turned off after testing.\n\
+					//Just press Enter if no visible light at this ID to skip it.\n");
 					if (afx_map.fxdevs.size() > 0) {
 						printf("Found %d device(s)\n", (int)afx_map.fxdevs.size());
 						//if (have_high) {
@@ -391,7 +390,8 @@ int main(int argc, char* argv[])
 			}
 		}
 		printf("Done.");
-	} else
+	}
+	else
 		printf("Light devices not found, exiting!\n");
 
 	if (have_high)
@@ -399,4 +399,3 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
-

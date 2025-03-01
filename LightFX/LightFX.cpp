@@ -165,8 +165,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 	}
 	afx_dev->AlienFXAssignDevices();
 	for (AlienFX_SDK::Afx_device& j : afx_dev->fxdevs) {
-		if (j.dev)
-			j.dev->SetBrightness(255, &j.lights, false);
+		afx_dev->SetDeviceBrightness(&j, 255, false);
 	}
 	if (!updateThread) {
 		stopQuery = CreateEvent(NULL, false, false, NULL);

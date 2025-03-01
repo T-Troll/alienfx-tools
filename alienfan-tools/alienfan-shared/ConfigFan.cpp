@@ -42,7 +42,7 @@ void ConfigFan::Load() {
 	GetReg("DisableAWCC", &awcc_disable);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("KeepSystemMode", &keepSystem, 1);
-	GetReg("DPTF", &needDPTF, 1);
+	//GetReg("DPTF", &needDPTF, 1);
 	GetReg("PollingRate", &pollingRate, 750);
 	GetReg("OCEnable", &ocEnable);
 	GetReg("DiskSensors", &diskSensors, 1);
@@ -97,7 +97,7 @@ void ConfigFan::Save() {
 	SetReg("DisableAWCC", awcc_disable);
 	SetReg("KeyboardShortcut", keyShortcuts);
 	SetReg("KeepSystemMode", keepSystem);
-	SetReg("DPTF", needDPTF);
+	//SetReg("DPTF", needDPTF);
 	SetReg("PollingRate", pollingRate);
 	SetReg("OCEnable", ocEnable);
 	SetReg("DiskSensors", diskSensors);
