@@ -725,7 +725,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			} break;
 			case 0: { // set light
 				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(current.pid);
-				if (!dev) continue;
+				if (!dev || !dev->dev) continue;
 				if (conf->gammaCorrection) {
 					for (int i = 0; i < current.actsize; i++) {
 						AlienFX_SDK::Afx_action* action = &current.actions[i];
@@ -736,22 +736,30 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 				}
 
+				// form actblock...
+				AlienFX_SDK::Afx_lightblock ablock{ current.light };
+				ablock.act.resize(current.actsize);
+				memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
+
 				// Is it power button?
 				if (conf->afx_dev.GetFlags(dev, current.light) & ALIENFX_FLAG_POWER) {
+					// Does it have 2 colors?
+					if (ablock.act.size() < 2)
+						ablock.act.push_back(ablock.act.front());
 					// Should we update it?
-					current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
-					current.actsize = 2;
-					if (memcmp(src->pbstate[current.pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action))) {
+					ablock.act.resize(2);
+					ablock.act[0].type = ablock.act[1].type = AlienFX_SDK::AlienFX_A_Power;
+					if (memcmp(src->pbstate[current.pid], ablock.act.data(), 2 * sizeof(AlienFX_SDK::Afx_action))) {
 
 						DebugPrint("Power button set to " +
-							to_string(current.actions[0].r) + "-" +
-							to_string(current.actions[0].g) + "-" +
-							to_string(current.actions[0].b) + "/" +
-							to_string(current.actions[1].r) + "-" +
-							to_string(current.actions[1].g) + "-" +
-							to_string(current.actions[1].b) + "\n");
+							to_string(ablock.act[0].r) + "-" +
+							to_string(ablock.act[0].g) + "-" +
+							to_string(ablock.act[0].b) + "/" +
+							to_string(ablock.act[1].r) + "-" +
+							to_string(ablock.act[1].g) + "-" +
+							to_string(ablock.act[1].b) + "\n");
 
-						memcpy(src->pbstate[current.pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
+						memcpy(src->pbstate[current.pid], ablock.act.data(), 2 * sizeof(AlienFX_SDK::Afx_action));
 					}
 					else {
 						DebugPrint("Power button update skipped (blocked or same colors)\n");
@@ -759,10 +767,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					}
 				}
 
-				// form actblock...
-				AlienFX_SDK::Afx_lightblock ablock{ current.light };
-				ablock.act.resize(current.actsize);
-				memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
 				// do we have another set for same light?
 				for (auto lp = devs_query[current.pid].begin(); lp != devs_query[current.pid].end(); lp++) {
 					if (lp->index == current.light) {

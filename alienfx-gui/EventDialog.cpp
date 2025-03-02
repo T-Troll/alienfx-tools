@@ -236,24 +236,23 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		}
 		break;
-	case WM_TIMER:
+	case WM_TIMER: {
 		//DebugPrint("Events UI update...\n");
-		SetDlgItemText(hDlg, IDC_VAL_CPU, (to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%").c_str());
-		SetDlgItemText(hDlg, IDC_VAL_RAM, (to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%").c_str());
-		SetDlgItemText(hDlg, IDC_VAL_GPU, (to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%").c_str());
-		SetDlgItemText(hDlg, IDC_VAL_PWR, (to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " (" + to_string(fxhl->maxData.PWR) + ")W").c_str());
-		SetDlgItemText(hDlg, IDC_VAL_BAT, (to_string(fxhl->eData.Batt) + " %").c_str());
-		SetDlgItemText(hDlg, IDC_VAL_NET, (to_string(fxhl->eData.NET) + " %").c_str());
-		SetDlgItemText(hDlg, IDC_VAL_TEMP, (to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C").c_str());
+		int maxFans = 0;
 		if (mon) {
-			int maxFans = 0;
 			for (auto i = mon->fanRpm.begin(); i != mon->fanRpm.end(); i++)
 				maxFans = max(maxFans, i->second);
-			SetDlgItemText(hDlg, IDC_VAL_FAN, (to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)").c_str());
 		}
-		else
-			SetDlgItemText(hDlg, IDC_VAL_FAN, "disabled");
-		break;
+		string usage = to_string(fxhl->eData.CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%\n" +
+			to_string(fxhl->eData.RAM) + " (" + to_string(fxhl->maxData.RAM) + ")%\n" +
+			to_string(fxhl->eData.GPU) + " (" + to_string(fxhl->maxData.GPU) + ")%\n" +
+			to_string(fxhl->eData.Temp) + " (" + to_string(fxhl->maxData.Temp) + ")C\n" +
+			to_string(fxhl->eData.Batt) + " %\n" +
+			to_string(fxhl->eData.PWR * fxhl->maxData.PWR / 100) + " (" + to_string(fxhl->maxData.PWR) + ")W\n" +
+			to_string(maxFans) + " RPM (" + to_string(fxhl->eData.Fan) + "%)\n" +
+			to_string(fxhl->eData.NET) + " %";
+		SetDlgItemText(hDlg, IDC_VAL_USAGE, usage.c_str());
+	} break;
 	default: return false;
 	}
 	return true;
