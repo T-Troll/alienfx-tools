@@ -137,7 +137,7 @@ void DrawFan()
             }
             DeleteObject(linePen);
             SetWindowText(tipWindow, ("Fan curve (scale " + to_string(fan_conf->GetFanScale(fan_conf->lastSelectedFan))
-                + ", boost " + to_string(mon->boostRaw[fan_conf->lastSelectedFan]) + /*" (" + to_string(mon->acpi->GetFanBoost(fan_conf->lastSelectedFan)) + ")" +*/ ", " +
+                + ", boost " + /*to_string(mon->boostRaw[fan_conf->lastSelectedFan]) + " (" + */to_string(mon->acpi->GetFanBoost(fan_conf->lastSelectedFan))/* + ")"*/ + ", " +
                 to_string(mon->GetFanPercent(fan_conf->lastSelectedFan)) + "%)").c_str());
         }
         else {

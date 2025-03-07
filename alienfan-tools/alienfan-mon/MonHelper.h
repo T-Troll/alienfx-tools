@@ -11,7 +11,7 @@ public:
 	AlienFan_SDK::Control* acpi;
 	bool inControl = true;
 	map<byte,WORD> fanRpm, lastBoost;
-	map<byte,byte> boostRaw, /*boostCooked,*/ fanSleep;
+	map<byte,byte> /*boostRaw, */fanSleep;
 	map<WORD, short> senValues, maxTemps;
 	map<byte,map<WORD, byte>> senBoosts;
 	WORD powerMode = 0;
@@ -26,7 +26,7 @@ public:
 	void SetCurrentMode(int newMode = -1);
 	byte GetFanPercent(byte fanID);
 	int GetPowerMode();
-	void SetPowerMode(WORD newMode);
+	void SetPowerMode(byte newMode);
 	void ResetBoost();
 	void SetOC();
 };

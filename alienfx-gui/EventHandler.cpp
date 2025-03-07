@@ -27,7 +27,6 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 EventHandler::EventHandler()
 {
 	eve = this;
-	aProcesses = new DWORD[maxProcess];
 	ChangePowerState();
 	SwitchActiveProfile(conf->activeProfile, true);
 	if (conf->startMinimized)
@@ -39,10 +38,8 @@ EventHandler::EventHandler()
 EventHandler::~EventHandler()
 {
 	//StopProfiles();
-	//ChangeEffects(true);
-	ChangeAction(false);
+	//ChangeAction(false);
 	CloseHandle(acStop);
-	delete[] aProcesses;
 }
 
 void EventHandler::ChangePowerState()
@@ -50,10 +47,9 @@ void EventHandler::ChangePowerState()
 	SYSTEM_POWER_STATUS state;
 	GetSystemPowerStatus(&state);
 	if (conf->statePower != (bool)state.ACLineStatus) {
-		conf->statePower = state.ACLineStatus;
+		conf->statePower = fan_conf->acPower = state.ACLineStatus;	 
 		DebugPrint("Power state changed!\n");
 		ToggleFans();
-		//ChangeEffectMode();
 		SwitchActiveProfile(conf->activeProfile, true);
 		if (conf->enableProfSwitch)
 			CheckProfileChange();
@@ -221,7 +217,7 @@ void EventHandler::StartProfiles()
 {
 	if (conf->enableProfSwitch && !hEvent) {
 		DebugPrint("Profile hooks starting.\n");
-
+		aProcesses = new DWORD[maxProcess];
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 			EVENT_SYSTEM_FOREGROUND, NULL,
 			CForegroundProc, 0, 0,
@@ -249,6 +245,7 @@ void EventHandler::StopProfiles()
 		UnhookWindowsHookEx(kEvent);
 		hEvent = NULL;
 		keyboardSwitchActive = false;
+		delete aProcesses;
 	}
 }
 

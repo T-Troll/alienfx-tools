@@ -71,10 +71,6 @@ bool DetectFans() {
 			//if (fan_conf->needDPTF)
 			//	CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
 		}
-		//else {
-		//	delete mon;
-		//	mon = NULL;
-		//}
 	}
 	return conf->fanControl;
 }
@@ -189,6 +185,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	eve->StopProfiles();
 	eve->ChangeEffects(true);
+	eve->ChangeAction(false);
 	fxhl->Refresh(true);
 	delete fxhl;
 	delete eve;
@@ -411,8 +408,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		while (!conf->SetIconState(conf->updateCheck))
 			Sleep(100);
 		SetMainTabs();
-		//SelectProfile();
-		//UpdateProfileList();
 	} break;
 	case WM_COMMAND:
 	{
@@ -642,6 +637,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			// ac/batt change
 			DebugPrint("Power source change initiated\n");
 			eve->ChangePowerState();
+			if (tabSel == TAB_FANS)
+				OnSelChanged();
 			break;
 		case PBT_POWERSETTINGCHANGE: {
 			if (conf->offWithScreen &&

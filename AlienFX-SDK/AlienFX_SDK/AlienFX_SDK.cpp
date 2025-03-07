@@ -700,11 +700,6 @@ namespace AlienFX_SDK {
 			PrepareAndSend(COMMV5_turnOnSet, { {4, {bright}} });
 			break;
 		case API_V4: {
-			//vector<byte> idlist;
-			//for (auto i = mappings->begin(); i < mappings->end(); i++)
-			//	if (!i->flags || power) {
-			//		idlist.push_back((byte)i->lightid);
-			//	}
 			int pos = 6;
 			vector<Afx_icommand> mods{ {3,{(byte)(0x64 - bright), 0, (byte)mappings->size()}}/*, { 6, idlist}*/ };
 			for (auto i = mappings->begin(); i < mappings->end(); i++)
@@ -881,22 +876,27 @@ namespace AlienFX_SDK {
 					if (devInfo) {
 						devInfo->version = dev->version;
 						activeLights += (unsigned)devInfo->lights.size();
-						if (devInfo->dev)
+						if (devInfo->dev) {
 							delete dev;
+							DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
+								+ to_string(devInfo->version) + " - present already\n");
+						}
 						else {
 							devInfo->dev = dev;
 							isListChanged = true;
+							DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
+								+ to_string(devInfo->version) + " - return back\n");
 						}
+						activeDevices++;
 					}
 					else {
 						// add new device
 						fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description, dev->version });
 						isListChanged = true;
+						activeDevices++;
+						DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
+							+ to_string(dev->version) + " - new device added\n");
 					}
-					//devs.push_back(dev);
-					DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
-						+ to_string(dev->version) + "\n");
-					activeDevices++;
 				}
 				else
 					delete dev;
@@ -931,6 +931,8 @@ namespace AlienFX_SDK {
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
 			if (i->version == API_UNKNOWN && i->dev) {
 				isListChanged = true;
+				delete i->dev;
+				i->dev = NULL;
 			}
 		return isListChanged;
 	}

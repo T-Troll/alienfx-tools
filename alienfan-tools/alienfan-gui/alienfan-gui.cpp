@@ -66,6 +66,12 @@ void SetHotkeys() {
             UnregisterHotKey(mDlg, 20 + i);
 }
 
+void SetPowerState() {
+    SYSTEM_POWER_STATUS state;
+    GetSystemPowerStatus(&state);
+    fan_conf->acPower = state.ACLineStatus;
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -81,6 +87,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     fan_conf = new ConfigFan();
     fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
+    SetPowerState();
     mon = new MonHelper();
     hInst = hInstance;
     niData = &niDataFC;
@@ -419,19 +426,20 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         break;
     } break;
-    case WM_HOTKEY: {
-        if (wParam > 19 && wParam - 20 < mon->powerSize) {
-            mon->SetPowerMode((WORD)wParam - 20);
-            ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
-            BlinkNumLock((int)wParam - 19);
-            ShowNotification(niData, "Power mode switched!", "New power mode - " + *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode]));
-        } else
+    case WM_HOTKEY:
+        if (wParam == 6 || wParam > 19 && wParam - 20 < mon->powerSize) {
             if (wParam == 6) { // G-key for Dell G-series power switch
                 AlterGMode(power_list);
                 BlinkNumLock(1 + mon->powerMode);
-                ShowNotification(niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
             }
-    } break;
+            else { // Power mode shortcut
+                mon->SetPowerMode((WORD)wParam - 20);
+                BlinkNumLock((int)wParam - 19);
+            }
+            ComboBox_SetCurSel(power_list, mon->powerMode);
+            ShowNotification(niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
+        }
+        break;
     case WM_MENUCOMMAND: {
         int idx = LOWORD(wParam);
         switch (GetMenuItemID((HMENU)lParam, idx)) {
@@ -445,8 +453,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             AlterGMode(power_list);
             break;
         case ID_TRAYMENU_POWER_SELECTED:
-            fan_conf->lastProf->powerStage = idx;
-            ComboBox_SetCurSel(power_list, fan_conf->lastProf->powerStage);
+            mon->SetPowerMode(idx);
+            ComboBox_SetCurSel(power_list, mon->powerMode);
             break;
         }
     } break;
@@ -490,6 +498,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_POWERBROADCAST:
         switch (wParam) {
         case PBT_APMRESUMEAUTOMATIC:
+            SetPowerState();
             mon->Start();
             if (fan_conf->updateCheck) {
                 //needUpdateFeedback = false;
@@ -500,6 +509,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             // Sleep initiated.
             mon->Stop();
             fan_conf->Save();
+            break;
+        case PBT_APMPOWERSTATUSCHANGE:
+            // ac/batt change
+            SetPowerState();
+            mon->SetCurrentMode();
+            ComboBox_SetCurSel(power_list, mon->powerMode);
             break;
         }
         break;

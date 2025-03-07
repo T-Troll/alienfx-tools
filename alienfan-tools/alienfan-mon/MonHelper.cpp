@@ -36,7 +36,7 @@ void MonHelper::SetOC()
 }
 
 void MonHelper::ResetBoost() {
-	boostRaw.clear();
+	//boostRaw.clear();
 	lastBoost.clear();
 	if (!powerMode) {
 		DebugPrint("Mon: Boost reset\n");
@@ -74,10 +74,10 @@ void MonHelper::Stop() {
 
 void MonHelper::SetCurrentMode(int newMode) {
 	if (newMode < 0)
-		newMode = fan_conf->lastProf->gmodeStage ? powerSize : fan_conf->lastProf->powerStage;
-	//int cmode = GetPowerMode();
+		newMode = fan_conf->lastProf->gmodeStage ? powerSize : 
+			fan_conf->acPower ? fan_conf->lastProf->powerStage : fan_conf->lastProf->PowerStageDC;
 	if (newMode != powerMode) {
-		acpi->SetPower(0xa0);
+		acpi->SetPower(0xab);
 		if (newMode < powerSize) {
 			if (powerMode == powerSize) {
 				acpi->SetGMode(0);
@@ -116,9 +116,12 @@ int MonHelper::GetPowerMode() {
 	return acpi->GetPower();
 }
 
-void MonHelper::SetPowerMode(WORD newMode) {
+void MonHelper::SetPowerMode(byte newMode) {
 	if (newMode < powerSize)
-		fan_conf->lastProf->powerStage = newMode;
+		if (fan_conf->acPower)
+			fan_conf->lastProf->powerStage = newMode;
+		else
+			fan_conf->lastProf->PowerStageDC = newMode;
 	fan_conf->lastProf->gmodeStage = newMode == powerSize;
 	SetCurrentMode(newMode);
 }
@@ -187,7 +190,7 @@ void CMonProc(LPVOID param) {
 				// Set boost
 				int curBoostRaw = (int)round((fan_conf->GetFanScale(i) * curBoost) / 100.0);
 				if (curBoostRaw < 101 || !src->fanSleep[i]) {
-					byte boostOld = src->boostRaw[i] = src->acpi->GetFanBoost(i);
+					byte boostOld = src->acpi->GetFanBoost(i);
 					// Check overboost tricks...
 					if (boostOld < 90 && curBoostRaw > 100) {
 						curBoostRaw = 100;
@@ -199,7 +202,7 @@ void CMonProc(LPVOID param) {
 						src->fanSleep[i] = 0;
 					if (curBoostRaw != boostOld) {
 						int res = acpi->SetFanBoost(i, curBoostRaw);
-						src->boostRaw[i] = curBoostRaw;
+						//src->boostRaw[i] = curBoostRaw;
 						//DebugPrint("Boost for fan#" + to_string(i) + " changed from " + to_string(boostOld)
 						//	+ " to " + to_string(curBoostRaw) + ", result " + to_string(res) + "\n");
 					}

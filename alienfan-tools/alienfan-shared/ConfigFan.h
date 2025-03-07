@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+//#include <vector>
 #include <map>
 #include "alienfan-sdk.h"
 
@@ -20,7 +20,8 @@ struct sen_block {
 struct fan_profile {
 	union {
 		struct {
-			WORD powerStage;
+			byte powerStage;
+			byte PowerStageDC;
 			WORD gmodeStage;
 		};
 		DWORD powerSet = 0;
@@ -60,6 +61,7 @@ public:
 	DWORD ocEnable;
 	DWORD diskSensors;
 	bool wasAWCC;
+	bool acPower = true;
 
 	fan_profile prof;
 	fan_profile* lastProf = &prof;
@@ -73,7 +75,6 @@ public:
 
 	void AddSensorCurve(fan_profile* prof, byte fid, WORD sid, byte* data, DWORD lend);
 	void SaveSensorBlocks(HKEY key, string pname, fan_profile* data);
-	//DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
 	string* GetPowerName(int index);
 	string GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi);
 	void UpdateBoost(byte fanID, byte boost, WORD rpm);

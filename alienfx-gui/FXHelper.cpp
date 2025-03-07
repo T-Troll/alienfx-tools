@@ -217,10 +217,21 @@ void FXHelper::QueryUpdate(bool force) {
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
-	//auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
-	if (/*dev && dev->dev &&*/ actions->size()) {
-		LightQueryElement newBlock{ LOWORD(lgh), (byte)HIWORD(lgh), 0, (byte)actions->size() };
+	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
+	if (dev && dev->dev && actions->size()) {
+		LightQueryElement newBlock{ LOWORD(lgh), (byte)HIWORD(lgh), (byte)
+			(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 3 : 0),
+			(byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
+		if (conf->gammaCorrection) {
+			for (int i = 0; i < newBlock.actsize; i++) {
+				AlienFX_SDK::Afx_action* action = &newBlock.actions[i];
+				// gamma-correction...
+				action->r = ((UINT)action->r * action->r * dev->white.r) / 65025; // (255 * 255);
+				action->g = ((UINT)action->g * action->g * dev->white.g) / 65025; // (255 * 255);
+				action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
+			}
+		}
 		QueryCommand(newBlock);
 	}
 }
@@ -723,49 +734,36 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					devQ->second.clear();
 				}
 			} break;
-			case 0: { // set light
-				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(current.pid);
-				if (!dev || !dev->dev) continue;
-				if (conf->gammaCorrection) {
-					for (int i = 0; i < current.actsize; i++) {
-						AlienFX_SDK::Afx_action* action = &current.actions[i];
-						// gamma-correction...
-						action->r = ((UINT)action->r * action->r * dev->white.r) / 65025; // (255 * 255);
-						action->g = ((UINT)action->g * action->g * dev->white.g) / 65025; // (255 * 255);
-						action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
-					}
+			case 3: { // set power button
+				// Does it have 2 colors?
+				if (current.actsize < 2)
+					memcpy(&current.actions[1], current.actions, sizeof(AlienFX_SDK::Afx_action));
+				// Should we update it?
+				current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
+				current.actsize = 2;
+				if (memcmp(src->pbstate[current.pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action))) {
+
+					DebugPrint("Power button set to " +
+						to_string(current.actions[0].r) + "-" +
+						to_string(current.actions[0].g) + "-" +
+						to_string(current.actions[0].b) + "/" +
+						to_string(current.actions[1].r) + "-" +
+						to_string(current.actions[1].g) + "-" +
+						to_string(current.actions[1].b) + "\n");
+
+					memcpy(src->pbstate[current.pid], current.actions, 2 * sizeof(AlienFX_SDK::Afx_action));
 				}
+				else {
+					DebugPrint("Power button update skipped (blocked or same colors)\n");
+					continue;
+				}
+			} // no break here, need set light!
+			case 0: { // set light
 
 				// form actblock...
 				AlienFX_SDK::Afx_lightblock ablock{ current.light };
 				ablock.act.resize(current.actsize);
 				memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
-
-				// Is it power button?
-				if (conf->afx_dev.GetFlags(dev, current.light) & ALIENFX_FLAG_POWER) {
-					// Does it have 2 colors?
-					if (ablock.act.size() < 2)
-						ablock.act.push_back(ablock.act.front());
-					// Should we update it?
-					ablock.act.resize(2);
-					ablock.act[0].type = ablock.act[1].type = AlienFX_SDK::AlienFX_A_Power;
-					if (memcmp(src->pbstate[current.pid], ablock.act.data(), 2 * sizeof(AlienFX_SDK::Afx_action))) {
-
-						DebugPrint("Power button set to " +
-							to_string(ablock.act[0].r) + "-" +
-							to_string(ablock.act[0].g) + "-" +
-							to_string(ablock.act[0].b) + "/" +
-							to_string(ablock.act[1].r) + "-" +
-							to_string(ablock.act[1].g) + "-" +
-							to_string(ablock.act[1].b) + "\n");
-
-						memcpy(src->pbstate[current.pid], ablock.act.data(), 2 * sizeof(AlienFX_SDK::Afx_action));
-					}
-					else {
-						DebugPrint("Power button update skipped (blocked or same colors)\n");
-						continue;
-					}
-				}
 
 				// do we have another set for same light?
 				for (auto lp = devs_query[current.pid].begin(); lp != devs_query[current.pid].end(); lp++) {
@@ -774,6 +772,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 						break;
 					}
 				}
+
 				devs_query[current.pid].push_back(ablock);
 			}
 			}
