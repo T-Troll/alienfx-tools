@@ -118,12 +118,12 @@ struct groupset {
 };
 
 struct deviceeffect {
-	union {
-		struct {
-			WORD pid, vid;			// IDs
-		};
-		DWORD devID;
-	};
+	//union {
+	//	struct {
+	//		WORD pid, vid;			// IDs
+	//	};
+	//	DWORD devID;
+	//};
 	AlienFX_SDK::Afx_colorcode effColor1, effColor2;
 	byte globalEffect=0, globalDelay=5, globalMode = 1, colorMode = 1;
 	DWORD reserved;
@@ -149,7 +149,7 @@ struct profile {
 	vector<string> triggerapp;
 	vector<groupset> lightsets;
 	void *fansets = NULL;
-	vector<deviceeffect> effects;
+	map<DWORD, vector<deviceeffect>> effects;
 	string script = "";
 };
 

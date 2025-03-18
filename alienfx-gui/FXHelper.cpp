@@ -33,8 +33,8 @@ void FXHelper::FillAllDevs() {
 	if (conf->afx_dev.activeDevices) {
 		Start();
 		SetState(true);
-		UpdateGlobalEffect(NULL, true);
-		Refresh();
+		//UpdateGlobalEffect(NULL, true);
+		//Refresh();
 	}
 }
 
@@ -261,13 +261,12 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 
 	for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++) {
 		if (cdev->dev && cdev->dev->IsHaveGlobal() && (!dev || (dev->devID == cdev->devID))) {
-			if (reset)
-				cdev->dev->SetGlobalEffects(0, 1, 1, 5, { 0 }, { 0 });
-			for (auto it = conf->activeProfile->effects.begin(); it < conf->activeProfile->effects.end(); it++) {
-				if (cdev->devID == it->devID)
-					cdev->dev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
-						{ 0,0,0,it->effColor1.r, it->effColor1.g, it->effColor1.b },
-						{ 0,0,0,it->effColor2.r, it->effColor2.g, it->effColor2.b });
+			if (reset && cdev->version == AlienFX_SDK::API_V5)
+				cdev->dev->SetGlobalEffects(0, 1, 1, 0, { 0 }, { 0 });
+			for (auto it = conf->activeProfile->effects[cdev->devID].begin(); it != conf->activeProfile->effects[cdev->devID].end(); it++) {
+				cdev->dev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
+					it->effColor1,
+					it->effColor2);
 			}
 		}
 	}
@@ -721,15 +720,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			case 1: { // update command
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++) {
 					AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(devQ->first);
-					if (dev->dev) {
+					if (dev->dev && conf->activeProfile->effects[dev->devID].empty() && devQ->second.size()) {
 						//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
-						if (devQ->second.size()) {
-							dev->dev->SetMultiAction(&devQ->second, current.light);
-							dev->dev->UpdateColors();
-						}
-						if (dev->dev->IsHaveGlobal()/*dev->version == AlienFX_SDK::API_V5*/) {
-							src->UpdateGlobalEffect(dev);
-						}
+						dev->dev->SetMultiAction(&devQ->second, current.light);
+						dev->dev->UpdateColors();
 					}
 					devQ->second.clear();
 				}

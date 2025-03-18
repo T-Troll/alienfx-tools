@@ -228,7 +228,7 @@ namespace AlienFX_SDK {
 		// tempo - effect tempo
 		// act1 - first effect color
 		// act2 - second effect color (not for all effects)
-		bool SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_action act1, Afx_action act2);
+		bool SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_colorcode act1, Afx_colorcode act2);
 
 		// Apply changes and update colors
 		bool UpdateColors();

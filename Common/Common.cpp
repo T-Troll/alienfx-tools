@@ -205,10 +205,10 @@ string GetAppVersion() {
 
 				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
 
-				res = to_string(HIWORD(lpFfi->dwProductVersionMS)) + "."
-					+ to_string(LOWORD(lpFfi->dwProductVersionMS)) + "."
-					+ to_string(HIWORD(lpFfi->dwProductVersionLS)) + "."
-					+ to_string(LOWORD(lpFfi->dwProductVersionLS));
+				res = to_string(HIWORD(lpFfi->dwFileVersionMS)) + "."
+					+ to_string(LOWORD(lpFfi->dwFileVersionMS)) + "."
+					+ to_string(HIWORD(lpFfi->dwFileVersionLS)) + "."
+					+ to_string(LOWORD(lpFfi->dwFileVersionLS));
 
 				LocalFree(pResCopy);
 			}

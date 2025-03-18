@@ -347,7 +347,7 @@ namespace AlienFX_SDK {
 		mods->push_back( {bPos, {act->index,v8OpCodes[act->act.front().type], act->act.front().tempo, 0xa5, act->act.front().time, 0xa,
 			act->act.front().r, act->act.front().g,act->act.front().b,
 			act->act.back().r,act->act.back().g,act->act.back().b,
-			(byte)(act->act.size() > 1 ? 2 : 1) } } );
+			2/*(byte)(act->act.size() > 1 ? 2 : 1)*/ } } );
 	}
 
 	void Functions::AddV5DataBlock(byte bPos, vector<Afx_icommand>* mods, byte index, Afx_action* c) {
@@ -728,7 +728,7 @@ namespace AlienFX_SDK {
 		return false;
 	}
 
-	bool Functions::SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_action act1, Afx_action act2) {
+	bool Functions::SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_colorcode act1, Afx_colorcode act2) {
 		vector<Afx_icommand> mods;
 		switch (version) {
 		case API_V8:
@@ -742,8 +742,8 @@ namespace AlienFX_SDK {
 			if (!effType)
 				PrepareAndSend(COMMV5_setEffect, { {2,{1, 0xfe}} });
 			else
-				PrepareAndSend(COMMV5_setEffect, { {2, {effType,tempo}}, { 9, {(byte)(nc - 1)} },
-						   {10,{ act1.r,act1.g,act1.b,act2.r,act2.g,act2.b/*, mode*/}}});
+				PrepareAndSend(COMMV5_setEffect, { {2, {effType,tempo}}, { 9, {(byte)(nc - 1),
+					act1.r,act1.g,act1.b,act2.r,act2.g,act2.b/*, mode*/}}});
 			return UpdateColors();
 		}
 		return false;

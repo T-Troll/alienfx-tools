@@ -204,8 +204,8 @@ void ConfigHandler::Load() {
 			((ConfigFan*)fan_conf)->AddSensorCurve(((fan_profile*)FindCreateProfile(pid)->fansets), fanid, senid, data, lend);
 			continue;
 		}
-		if (sscanf_s(name, "Profile-effect-%d-%d", &pid, &senid) == 2) {
-			FindCreateProfile(pid)->effects.push_back(*(deviceeffect*)data);
+		if (sscanf_s(name, "Profile-effect-%d-%ud-%d", &pid, &groupID, &senid) == 2) {
+			FindCreateProfile(pid)->effects[groupID].push_back(*(deviceeffect*)data);
 			continue;
 		}
 		if (sscanf_s(name, "Profile-power-%d", &pid) == 1) {
@@ -422,8 +422,10 @@ void ConfigHandler::Save() {
 
 		// Global effects
 		for (auto it = prof->effects.begin(); it != prof->effects.end(); it++) {
-			name = "Profile-effect-" + profID + "-" + to_string(it - prof->effects.begin());
-			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*it), sizeof(deviceeffect));
+			for (auto i = it->second.begin(); i != it->second.end(); i++) {
+				name = "Profile-effect-" + profID + "-" + to_string(it->first) + "-" + to_string(i->globalMode);
+				RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_BINARY, (byte*)&(*i), sizeof(deviceeffect));
+			}
 		}
 		// Fans....
 		if (prof->flags & PROF_FANS) {

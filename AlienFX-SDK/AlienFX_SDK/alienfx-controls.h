@@ -122,7 +122,7 @@ namespace AlienFX_SDK {
 		// [6..8] - rgb
 		// block [5-8] repeated
 		//const byte COMMV8_effectReset[]{8, 8, 0, 1, 1, 1, 1, 0xfc, 1 };
-		const byte COMMV8_effectReady[]{3, 0x5,0x01,0x51}; // Select profile, in fact!
+		const byte COMMV8_effectReady[]{3, 0x5,0x01,0x51}; 
 		// [2] - chain number, ff for reset
 		// [3] - effect type (0x13 - color reset, valid from 0 to it or 51?)
 		// [4-6] - RGB1

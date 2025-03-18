@@ -162,6 +162,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				eve->ChangeEffects();
 			}
 			fxhl->FillAllDevs();
+			fxhl->Refresh();
 			SetHotkeys();
 			SetMainTabs();
 			break;
