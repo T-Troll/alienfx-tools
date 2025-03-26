@@ -298,6 +298,7 @@ void UpdateProfileList() {
 			if (prof->id == conf->activeProfile->id) {
 				ComboBox_SetCurSel(profile_list, id);
 				CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
+				EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
 			}
 		}
 		//DebugPrint("Profile list reloaded.\n");
@@ -664,6 +665,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DebugPrint("Device list changed \n");
 			if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
 				DebugPrint("Active device list changed!\n");
+				//fxhl->QueryUpdate();
 				conf->afx_dev.AlienFXApplyDevices();
 				if (conf->afx_dev.activeDevices && !dDlg) {
 					fxhl->SetState(true);

@@ -7,6 +7,7 @@
 extern bool DetectFans();
 extern void SetHotkeys();
 extern void SetMainTabs();
+extern void UpdateProfileList();
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
@@ -101,6 +102,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_CHECK_EFFECTS:
 			conf->enableEffects = state;
 			eve->ChangeEffects();
+			UpdateProfileList();
 			break;
 		case IDC_CHECK_EFFBAT:
 			conf->effectsOnBattery = !state;

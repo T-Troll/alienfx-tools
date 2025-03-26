@@ -104,16 +104,16 @@ byte MonHelper::GetFanPercent(byte fanID)
 }
 
 int MonHelper::GetPowerMode() {
-	if (acpi->GetGMode()) {
-		if (systemID != 4800) { // buggy G25 BIOS fix
-			return powerSize;
-		} else {
-			int cmode = acpi->GetPower(true);
-			if (cmode == 0xab || cmode < 0)
-				return powerSize;
-		}
-	}
-	return acpi->GetPower();
+	//if (acpi->GetGMode()) {
+	//	if (systemID != 4800) { // buggy G25 BIOS fix
+	//		return powerSize;
+	//	} else {
+	//		int cmode = acpi->GetPower(true);
+	//		if (cmode == 0xab || cmode < 0)
+	//			return powerSize;
+	//	}
+	//}
+	return acpi->GetGMode() ? powerSize : acpi->GetPower();
 }
 
 void MonHelper::SetPowerMode(byte newMode) {

@@ -21,8 +21,8 @@ public:
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 	byte* counterValues[2]{ new byte[1], new byte[1] };
 	//PDH_FMT_COUNTERVALUE_ITEM* cv[2]{ (PDH_FMT_COUNTERVALUE_ITEM*)counterValues[0],(PDH_FMT_COUNTERVALUE_ITEM*)counterValues[1] };
-	DWORD counterSizes[2]{ 1,1 };
-	LightEventData cData;
+	//DWORD counterSizes[2]{ 1,1 };
+	//LightEventData cData;
 
 	SysMonHelper();
 	~SysMonHelper();

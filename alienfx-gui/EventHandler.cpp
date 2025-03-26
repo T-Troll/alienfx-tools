@@ -27,6 +27,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 EventHandler::EventHandler()
 {
 	eve = this;
+	aProcesses = new DWORD[maxProcess];
 	ChangePowerState();
 	SwitchActiveProfile(conf->activeProfile, true);
 	if (conf->startMinimized)
@@ -39,6 +40,7 @@ EventHandler::~EventHandler()
 {
 	//StopProfiles();
 	//ChangeAction(false);
+	delete aProcesses;
 	CloseHandle(acStop);
 }
 
@@ -49,10 +51,11 @@ void EventHandler::ChangePowerState()
 	if (conf->statePower != (bool)state.ACLineStatus) {
 		conf->statePower = fan_conf->acPower = state.ACLineStatus;	 
 		DebugPrint("Power state changed!\n");
-		ToggleFans();
-		SwitchActiveProfile(conf->activeProfile, true);
-		if (conf->enableProfSwitch)
+		if (conf->enableProfSwitch && hEvent) {
 			CheckProfileChange();
+			ToggleFans();
+		} else
+			SwitchActiveProfile(NULL, true);
 	}
 }
 
@@ -66,9 +69,7 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
 		conf->modifyProfile.unlock();
 		fxhl->UpdateGlobalEffect(NULL, true);
-		if (mon)
-			mon->SetCurrentMode();
-
+		ToggleFans();
 		ChangeEffectMode(true);
 
 		if (newID->flags & PROF_RUN_SCRIPT && !(newID->flags & PROF_ACTIVE) && newID->script.size())
@@ -83,11 +84,13 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 }
 
 void EventHandler::ToggleFans() {
-	if (mon)
+	if (mon) {
+		mon->SetCurrentMode();
 		if (conf->fansOnBattery || conf->statePower)
 			mon->Start();
 		else
 			mon->Stop();
+	}
 }
 
 void EventHandler::ChangeEffectMode(bool profile) {
@@ -118,10 +121,10 @@ void EventHandler::ChangeEffects(bool stop) {
 				grid = new GridHelper();
 		}
 	}
-	DebugPrint("Profile state: " + noGrid ? "" : "Grid, " +
-		noMon ? "" : "Mon, " +
-		noAmb ? "" : "Amb, " +
-		noHap ? "\n" : "Hap\n");
+	DebugPrint(string("Profile state: ") + (noGrid ? "" : "Grid") +
+		(noMon ? "" : ", Mon") +
+		(noAmb ? "" : ", Amb") +
+		(noHap ? "\n" : ", Hap\n"));
 	if (noGrid && grid) {	// Grid
 		delete (GridHelper*)grid; grid = NULL;
 	}
@@ -195,7 +198,7 @@ void EventHandler::CheckProfileChange(bool isRun) {
 	profile* finalP = NULL;// conf->FindDefaultProfile();
 	DWORD cbNeeded;
 	if (EnumProcesses(aProcesses, maxProcess << 2, &cbNeeded)) {
-		while ((cbNeeded >> 2) == maxProcess) {
+		while (cbNeeded == (maxProcess << 2)) {
 			maxProcess = maxProcess << 1;
 			delete[] aProcesses;
 			aProcesses = new DWORD[maxProcess];
@@ -217,7 +220,6 @@ void EventHandler::StartProfiles()
 {
 	if (conf->enableProfSwitch && !hEvent) {
 		DebugPrint("Profile hooks starting.\n");
-		aProcesses = new DWORD[maxProcess];
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 			EVENT_SYSTEM_FOREGROUND, NULL,
 			CForegroundProc, 0, 0,
@@ -245,7 +247,6 @@ void EventHandler::StopProfiles()
 		UnhookWindowsHookEx(kEvent);
 		hEvent = NULL;
 		keyboardSwitchActive = false;
-		delete aProcesses;
 	}
 }
 

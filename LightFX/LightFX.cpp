@@ -38,7 +38,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	HANDLE waitArray[2]{ haveNewElement, stopQuery };
 	map<WORD, vector<AlienFX_SDK::Afx_lightblock>> devs_query;
 
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 
 	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) == WAIT_OBJECT_0) {
 		while (lightQuery.size()) {
@@ -52,37 +52,30 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			case 1: { // update command
 				AlienFX_SDK::Afx_device* dev;
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++) {
-					if ((dev = afx_dev->GetDeviceById(devQ->first)) && dev->dev) {
+					if (devQ->second.size() && (dev = afx_dev->GetDeviceById(devQ->first)) && dev->dev) {
 						//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
-						if (devQ->second.size()) {
-							dev->dev->SetMultiAction(&devQ->second, current.light);
-							dev->dev->UpdateColors();
-						}
+						dev->dev->SetMultiAction(&devQ->second, current.light);
+						dev->dev->UpdateColors();
 					}
 					devQ->second.clear();
 				}
 			} break;
 			case 0: { // set light
 				AlienFX_SDK::Afx_device* dev = afx_dev->GetDeviceById(current.pid);
-				// Is it NOT power button?
-				if (dev && !(afx_dev->GetFlags(dev, current.light) & ALIENFX_FLAG_POWER)) {
+				// Is it NOT power or indicator button?
+				if (dev && !(afx_dev->GetFlags(dev, current.light))) {
 					// form actblock...
 					AlienFX_SDK::Afx_lightblock ablock{ current.light };
 					ablock.act.resize(current.actsize);
 					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
-					// do we have another set for same light?
 					auto dv = &devs_query[current.pid];
-					//auto lp = dv->begin();
 					for (auto lp = dv->begin(); lp != dv->end(); lp++)
 						if (lp->index == current.light) {
 							//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
-							//lp->act = ablock.act;
 							dv->erase(lp);
 							break;
 						}
-					//if (lp == dv->end())
 					dv->push_back(ablock);
-
 				}
 			}
 			}
@@ -163,7 +156,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 		afx_dev = new AlienFX_SDK::Mappings();
 		afx_dev->LoadMappings();
 	}
-	afx_dev->AlienFXAssignDevices();
+	afx_dev->AlienFXEnumDevices();
 	for (AlienFX_SDK::Afx_device& j : afx_dev->fxdevs) {
 		afx_dev->SetDeviceBrightness(&j, 255, false);
 	}

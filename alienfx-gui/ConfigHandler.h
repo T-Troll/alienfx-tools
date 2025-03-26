@@ -170,7 +170,6 @@ private:
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id);
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);
-	CustomMutex zoneUpdate;
 public:
 	DWORD startWindows;
 	DWORD startMinimized;
@@ -210,6 +209,7 @@ public:
 		 wasAWCC = false;
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 	CustomMutex modifyProfile;
+	CustomMutex zoneUpdate;
 
 	// Ambient...
 	DWORD amb_mode;

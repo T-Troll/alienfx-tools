@@ -29,7 +29,6 @@ private:
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
 	void QueryCommand(LightQueryElement &lqe);
 	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions);
-	void QueryUpdate(bool force = false);
 
 public:
 	HANDLE updateThread = NULL;
@@ -67,4 +66,5 @@ public:
 	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0);
 	void SetState(bool force = false);
 	void UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev = NULL, bool reset = false);
+	void QueryUpdate(bool force = false);
 };

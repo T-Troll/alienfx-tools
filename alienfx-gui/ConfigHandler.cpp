@@ -448,7 +448,7 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	}
 
 	// create new zoneMap
-	auto zone = &zoneMaps[gid];
+	zonemap* zone = &zoneMaps[gid];
 	*zone = { mainGrid->id };
 
 	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);

@@ -4,7 +4,6 @@
 
 #pragma comment(lib, "pdh.lib")
 
-// debug print
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
 #else
@@ -13,7 +12,6 @@
 
 extern FXHelper* fxhl;
 extern MonHelper* mon;
-//extern ConfigFan* fan_conf;
 extern ConfigHandler* conf;
 
 static SYSTEM_POWER_STATUS state;
@@ -25,6 +23,8 @@ static HKL curLocale;
 void CEventProc(LPVOID);
 
 SysMonHelper::SysMonHelper() {
+	DebugPrint("Starting Event thread\n");
+	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
 	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
 		// Set data source...
 		PdhAddEnglishCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
@@ -46,18 +46,19 @@ SysMonHelper::SysMonHelper() {
 
 SysMonHelper::~SysMonHelper() {
 	delete eventProc;
-	memset(&fxhl->eData, 0, sizeof(LightEventData));
+	ZeroMemory(&fxhl->eData, sizeof(LightEventData));
 	DebugPrint("Event thread stop.\n");
 	PdhCloseQuery(hQuery);
 }
 
 int SysMonHelper::GetCounterValues(HCOUNTER counter, int index) {
-	DWORD cs = counterSizes[index];
-	DWORD count;
-	while (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues[index]) == PDH_MORE_DATA) {
+	DWORD cs = 0;// counterSizes[index];
+	DWORD count = 0;
+	if (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, NULL) == PDH_MORE_DATA) {
 		delete[] counterValues[index];
-		counterSizes[index] = cs;
+		//counterSizes[index] = cs;
 		counterValues[index] = new byte[cs];
+		PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues[index]);
 	}
 	return count;
 }
@@ -84,91 +85,90 @@ int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, 
 	return retVal;
 }
 
+static LightEventData sData;
+
 void CEventProc(LPVOID param)
 {
-	if (fxhl->lightsNoDelay) {
+	DebugPrint("Event values update started\n");
+	SysMonHelper* src = (SysMonHelper*)param;
 
-		SysMonHelper* src = (SysMonHelper*)param;
-		LightEventData* sData = &src->cData;
+	PdhCollectQueryData(src->hQuery);
+	ZeroMemory(&sData, sizeof(LightEventData));
 
-		PdhCollectQueryData(src->hQuery);
-		ZeroMemory(sData, sizeof(LightEventData));
-		//memset(sData,0,sizeof(LightEventData));
-
-		// CPU load
-		PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);
-		// HDD load
-		PdhGetFormattedCounterValue(src->hHDDCounter, PDH_FMT_LONG, NULL, &cHDDVal);
-		// Network load
-		sData->NET = src->GetValuesArray(src->hNETCounter, fxhl->maxData.NET, 0, 1, src->hNETMAXCounter);
-		// GPU load
-		DWORD count = src->GetCounterValues(src->hGPUCounter);
-		// now sort...
-		map<string, map<char, int>> gpusubs;
-		PDH_FMT_COUNTERVALUE_ITEM* va = (PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues[0];
-		for (DWORD i = 0; i < count; i++) {
-			if (va[i].FmtValue.longValue && va[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
-				string path = va[i].szName;
-				char physID = path[path.find("phys_") + 5];
-				string type = path.substr(path.find("type_"));
-				gpusubs[type][physID] += va[i].FmtValue.longValue;
-			}
+	// CPU load
+	PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);
+	// HDD load
+	PdhGetFormattedCounterValue(src->hHDDCounter, PDH_FMT_LONG, NULL, &cHDDVal);
+	// Network load
+	sData.NET = src->GetValuesArray(src->hNETCounter, fxhl->maxData.NET, 0, 1, src->hNETMAXCounter);
+	// GPU load
+	DWORD count = src->GetCounterValues(src->hGPUCounter);
+	// now sort...
+	map<string, map<char, int>> gpusubs;
+	PDH_FMT_COUNTERVALUE_ITEM* va = (PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues[0];
+	for (DWORD i = 0; i < count; i++) {
+		if (va[i].FmtValue.longValue && va[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
+			string path = va[i].szName;
+			char physID = path[path.find("phys_") + 5];
+			string type = path.substr(path.find("type_"));
+			gpusubs[type][physID] += va[i].FmtValue.longValue;
 		}
-		for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
-			// per-adapter
-			for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
-				sData->GPU = min(max(sData->GPU, sub->second), 100);
-				//DebugPrint("Adapter " + to_string(sub->first) + ", system " + it->first + ": " + to_string(sub->second) + "\n");
-				//sub->second = 0;
-			}
-		}
-		// Temperatures
-		sData->Temp = src->GetValuesArray(src->hTempCounter, fxhl->maxData.Temp, 273);
-		// RAM load
-		GlobalMemoryStatusEx(&memStat);
-		// Power state
-		GetSystemPowerStatus(&state);
-		// Locale
-		if (curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL))) {
-			GetKeyboardLayoutList(10, locIDs);
-			sData->KBD = curLocale == locIDs[0] ? 0 : 100;
-		}
-
-		if (mon) {
-			// Check fan RPMs
-			for (unsigned i = 0; i < mon->fansize; i++) {
-				sData->Fan = max(sData->Fan, mon->GetFanPercent(i));
-			}
-			sData->Fan = min(100, sData->Fan);
-			// Sensors
-			for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
-				sData->Temp = max(sData->Temp, i->second);
-			fxhl->maxData.Temp = max(sData->Temp, fxhl->maxData.Temp);
-			// Power mode
-			sData->PWM = mon->powerMode * 100 /	(mon->powerSize + mon->acpi->isGmode - 1);
-		}
-
-		// ESIF powers and temps
-		if (conf->esif_temp) {
-			if (!mon) {
-				// ESIF temps (already in fans)
-				sData->Temp = max(sData->Temp, src->GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
-			}
-			// Powers
-			sData->PWR = src->GetValuesArray(src->hPwrCounter, fxhl->maxData.PWR, 0, 10) * 100 / fxhl->maxData.PWR;
-		}
-
-		// Leveling...
-		sData->Temp = min(100, max(0, sData->Temp));
-		sData->Batt = state.BatteryLifePercent;
-		sData->ACP = state.ACLineStatus;
-		sData->BST = state.BatteryFlag;
-		sData->HDD = (byte)max(0, 99 - cHDDVal.longValue);
-		fxhl->maxData.RAM = max(fxhl->maxData.RAM, sData->RAM = (byte)memStat.dwMemoryLoad);
-		fxhl->maxData.CPU = max(fxhl->maxData.CPU, sData->CPU = (byte)cCPUVal.longValue);
-		fxhl->maxData.GPU = max(fxhl->maxData.GPU, sData->GPU);
-
-		fxhl->RefreshCounters(sData);
-		memcpy(&fxhl->eData, sData, sizeof(LightEventData));
 	}
+	for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
+		// per-adapter
+		for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
+			sData.GPU = min(max(sData.GPU, sub->second), 100);
+			//DebugPrint("Adapter " + to_string(sub->first) + ", system " + it->first + ": " + to_string(sub->second) + "\n");
+			//sub->second = 0;
+		}
+	}
+	// Temperatures
+	sData.Temp = src->GetValuesArray(src->hTempCounter, fxhl->maxData.Temp, 273);
+	// RAM load
+	GlobalMemoryStatusEx(&memStat);
+	// Power state
+	GetSystemPowerStatus(&state);
+	// Locale
+	if (curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL))) {
+		GetKeyboardLayoutList(10, locIDs);
+		sData.KBD = curLocale == locIDs[0] ? 0 : 100;
+	}
+
+	if (mon) {
+		// Check fan RPMs
+		for (unsigned i = 0; i < mon->fansize; i++) {
+			sData.Fan = max(sData.Fan, mon->GetFanPercent(i));
+		}
+		sData.Fan = min(100, sData.Fan);
+		// Sensors
+		for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
+			sData.Temp = max(sData.Temp, i->second);
+		fxhl->maxData.Temp = max(sData.Temp, fxhl->maxData.Temp);
+		// Power mode
+		sData.PWM = mon->powerMode * 100 /	(mon->powerSize + mon->acpi->isGmode - 1);
+	}
+
+	// ESIF powers and temps
+	if (conf->esif_temp) {
+		if (!mon) {
+			// ESIF temps (already in fans)
+			sData.Temp = max(sData.Temp, src->GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
+		}
+		// Powers
+		sData.PWR = src->GetValuesArray(src->hPwrCounter, fxhl->maxData.PWR, 0, 10) * 100 / fxhl->maxData.PWR;
+	}
+
+	// Leveling...
+	sData.Temp = min(100, max(0, sData.Temp));
+	sData.Batt = state.BatteryLifePercent;
+	sData.ACP = state.ACLineStatus;
+	sData.BST = state.BatteryFlag;
+	sData.HDD = (byte)max(0, 99 - cHDDVal.longValue);
+	fxhl->maxData.RAM = max(fxhl->maxData.RAM, sData.RAM = (byte)memStat.dwMemoryLoad);
+	fxhl->maxData.CPU = max(fxhl->maxData.CPU, sData.CPU = (byte)cCPUVal.longValue);
+	fxhl->maxData.GPU = max(fxhl->maxData.GPU, sData.GPU);
+
+	fxhl->RefreshCounters(&sData);
+	memcpy(&fxhl->eData, &sData, sizeof(LightEventData));
+	DebugPrint("Event values update finished\n");
 }

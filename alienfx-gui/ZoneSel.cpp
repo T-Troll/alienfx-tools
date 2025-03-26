@@ -240,7 +240,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						int neweItem = (int)lPoint->lParam;
 						// gauge and spectrum.
 						if (mmap = conf->FindMapping(neweItem)) {
-							conf->FindCreateGroup(neweItem);
+							//conf->FindCreateGroup(neweItem);
 							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
 							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
 							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);

@@ -292,7 +292,17 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		return isGmode ? GetPower(true) < 0 || CallWMIMethod(getGMode) : 0;
+		if (isGmode) {
+			switch (systemID) { // hacks for buggy G5515/5525 BIOS
+				case 4800: // g-mode only on if power AB
+				case 3200: { // g-mode only off if power not AB
+					int pm = GetPower(true);
+					return pm == 0xab || pm < 0;
+				}
+				default: return GetPower(true) < 0 || CallWMIMethod(getGMode);
+			}
+		}
+		return -1;
 	}
 
 	int Control::GetTCC()
