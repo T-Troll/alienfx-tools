@@ -4,8 +4,8 @@
 #include "FXHelper.h"
 #include "GridHelper.h"
 
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
@@ -64,7 +64,7 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 	if (mmap) {
 		vector<AlienFX_SDK::Afx_colorcode>* clr = &mmap->effect.effectColors;
 		if (newColorID < clr->size())
-			SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), &clr->at(newColorID));
+			SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID));
 		else {
 			AlienFX_SDK::Afx_colorcode act{ 0 };
 			// add new color
@@ -73,7 +73,7 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 			if (clr->empty())
 				clr->push_back(act);
 			clr->push_back(act);
-			if (SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), &clr->at(newColorID)))
+			if (SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID)))
 				clrListID = newColorID;
 			else
 				clr->pop_back();
@@ -212,7 +212,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_DRAWITEM:
 		if (mmap && clrListID < mmap->effect.effectColors.size()) {
-			RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), &mmap->effect.effectColors[clrListID]);
+			RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), mmap->effect.effectColors[clrListID]);
 		}
 	    break;
 	case WM_NOTIFY:
@@ -225,7 +225,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					// Select other item...
 					clrListID = lPoint->iItem;
 					if (clrListID < mmap->effect.effectColors.size())
-						RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), &mmap->effect.effectColors[clrListID]);
+						RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), mmap->effect.effectColors[clrListID]);
 				}
 			} break;
 			case NM_DBLCLK:

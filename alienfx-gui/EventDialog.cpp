@@ -6,7 +6,7 @@
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern void UpdateZoneAndGrid();
 extern void UpdateZoneList();
 
@@ -185,14 +185,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		}
 	} break;
 	case WM_DRAWITEM: {
-		AlienFX_SDK::Afx_colorcode* c = NULL;
+		AlienFX_SDK::Afx_colorcode c = { 0,0,0,0xff };
 		if (mmap && ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:
-				c = &Act2Code(mmap->fromColor && mmap->color.size() ? &mmap->color.front() : &ev->from);
+				c = Act2Code(mmap->fromColor && mmap->color.size() ? &mmap->color.front() : &ev->from);
 				break;
 			case IDC_BUTTON_COLORTO:
-				c = &Act2Code(&ev->to);
+				c = Act2Code(&ev->to);
 				break;
 			}
 		}

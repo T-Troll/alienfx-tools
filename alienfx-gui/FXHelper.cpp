@@ -6,7 +6,7 @@
 #include "WSAudioIn.h"
 //#include <iterator>
 
-extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode* c);
+extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c);
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 extern EventHandler* eve;
@@ -114,7 +114,7 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 	DebugPrint("Testing light #" + to_string(id));
 	if (dev && dev->dev) {
 		DebugPrint(", have device");
-		AlienFX_SDK::Afx_action c = { wp ? Code2Act(&dev->white) : AlienFX_SDK::Afx_action({0})};
+		AlienFX_SDK::Afx_action c = { wp ? Code2Act(dev->white) : AlienFX_SDK::Afx_action({0})};
 
 		if (force && dev->lights.size()) {
 			vector<byte> opLights;
@@ -134,7 +134,7 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 			}
 			if (id >= 0) {
 				DebugPrint(", set");
-				dev->dev->SetColor(id, Code2Act(&conf->testColor));
+				dev->dev->SetColor(id, Code2Act(conf->testColor));
 				oldtest = id;
 			}
 			dev->dev->UpdateColors();
@@ -567,7 +567,7 @@ void FXHelper::RefreshGrid() {
 						grideffect* eff = &ce->effect;
 						// check for initial repaint
 						if (effop->stars.empty()) {
-							cur.front() = Code2Act(&eff->effectColors.front());
+							cur.front() = Code2Act(eff->effectColors.front());
 							SetZone(&(*ce), &cur);
 							effop->stars.resize(1);
 						}
@@ -582,10 +582,10 @@ void FXHelper::RefreshGrid() {
 						}
 
 						int backIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
-						AlienFX_SDK::Afx_action from = Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
-							&eff->effectColors[backIndex]);
+						AlienFX_SDK::Afx_action from = Code2Act(eff->flags & GE_FLAG_BACK ? eff->effectColors.front() :
+							eff->effectColors[backIndex]);
 						backIndex++;
-						AlienFX_SDK::Afx_action to = Code2Act(&eff->effectColors[backIndex != eff->effectColors.size() ? backIndex : 0]);
+						AlienFX_SDK::Afx_action to = Code2Act(eff->effectColors[backIndex != eff->effectColors.size() ? backIndex : 0]);
 
 						phase %= effop->effsize;
 
@@ -612,8 +612,8 @@ void FXHelper::RefreshGrid() {
 										int halfW = star->maxCount >> 1;
 										power = 1.0 - (double)abs(halfW - star->count) / halfW;
 										cur.front() = { BlendPower(power,
-											&Code2Act(&eff->effectColors.front()),
-											&Code2Act(&eff->effectColors.at(star->colorIndex))) };
+											&Code2Act(eff->effectColors.front()),
+											&Code2Act(eff->effectColors.at(star->colorIndex))) };
 										SetLight(star->lightID, &cur);
 										star->count--;
 									}
@@ -645,8 +645,8 @@ void FXHelper::RefreshGrid() {
 
 									if (ce->gaugeflags & GAUGE_GRADIENT) {
 										// Gradient fill
-										AlienFX_SDK::Afx_action grad = Code2Act(eff->flags & GE_FLAG_BACK ? &eff->effectColors.front() :
-											backIndex > 0 ? &eff->effectColors[backIndex - 1] : &eff->effectColors.back());
+										AlienFX_SDK::Afx_action grad = Code2Act(eff->flags & GE_FLAG_BACK ? eff->effectColors.front() :
+											backIndex > 0 ? eff->effectColors[backIndex - 1] : eff->effectColors.back());
 										for (int nf = 0; nf < effop->size - phase; nf++) {
 											// Gradient to previous color
 											SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower((double)nf / (effop->size - phase), &grad, &to));

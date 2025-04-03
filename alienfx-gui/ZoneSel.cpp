@@ -140,7 +140,8 @@ BOOL CALLBACK SelectLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDCLOSE: case IDCANCEL: {
 			int numSel = ListBox_GetSelCount(llist), * buf = new int[numSel];
 			ListBox_GetSelItems(llist, numSel, buf);
-			grp->lights.clear();
+			if (grp)
+				grp->lights.clear();
 			AlienFX_SDK::Afx_groupLight t;
 			for (int i = 0; i < numSel; i++) {
 				t.lgh = (DWORD)ListBox_GetItemData(llist, buf[i]);

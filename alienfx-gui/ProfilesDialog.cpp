@@ -7,8 +7,8 @@
 
 extern void UpdateProfileList();
 extern void UpdateState(bool checkMode);
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveUnusedGroups();
@@ -87,23 +87,23 @@ void RefreshDeviceList(HWND hDlg) {
 				if (b1) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b1->globalDelay);
 					SetSlider(sTip1, b1->globalDelay);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), &b1->effColor1);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), &b1->effColor2);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), b1->effColor1);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), b1->effColor2);
 				}
 				else {
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), NULL);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), NULL);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
 				}
 
 				if (b2) {
 					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b2->globalDelay);
 					SetSlider(sTip2, b2->globalDelay);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), &b2->effColor1);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), &b2->effColor2);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), b2->effColor1);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), b2->effColor2);
 				}
 				else {
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), NULL);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), NULL);
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
+					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
 				}
 			}
 		}
@@ -184,7 +184,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		{
 			if (b) {
 				SetColor(GetDlgItem(hDlg, LOWORD(wParam)), LOWORD(wParam) == IDC_BUTTON_EFFCLR1 || LOWORD(wParam) == IDC_BUTTON_EFFCLR3 ?
-					&b->effColor1 : &b->effColor2);
+					b->effColor1 : b->effColor2);
 			}
 		} break;
 		default: return false;
@@ -198,7 +198,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR4:
 			if (b) {
 				RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, CtlID == IDC_BUTTON_EFFCLR1 || CtlID == IDC_BUTTON_EFFCLR3 ?
-					&b->effColor1 : &b->effColor2);
+					b->effColor1 : b->effColor2);
 			}
 			break;
 		}

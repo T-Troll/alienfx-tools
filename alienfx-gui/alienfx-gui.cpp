@@ -201,9 +201,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
-void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode* act) {
+void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode act) {
 	RECT rect;
-	HBRUSH Brush = act ? CreateSolidBrush(RGB(act->r, act->g, act->b)) : CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+	HBRUSH Brush = CreateSolidBrush(act.br ? GetSysColor(COLOR_BTNFACE) : RGB(act.r, act.g, act.b));
 	GetClientRect(ctrl, &rect);
 	HDC cnt = GetWindowDC(ctrl);
 	FillRect(cnt, &rect, Brush);
@@ -779,8 +779,8 @@ AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action *act) {
 	return c;
 }
 
-AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode *c) {
-	AlienFX_SDK::Afx_action a{ 0,0,0,c->r,c->g,c->b };
+AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c) {
+	AlienFX_SDK::Afx_action a{ 0,0,0,c.r,c.g,c.b };
 	return a;
 }
 
@@ -821,15 +821,15 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 		delete colorUpdate;
 		fxhl->Refresh();
 	}
-	RedrawButton(ctrl, &Act2Code(map));
+	RedrawButton(ctrl, Act2Code(map));
 	return ret;
 }
 
-bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode *clr) {
+bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode clr) {
 	bool ret;
 	AlienFX_SDK::Afx_action savedColor = Code2Act(clr);
 	if (ret = SetColor(ctrl, &savedColor, false))
-		*clr = Act2Code(&savedColor);
+		clr = Act2Code(&savedColor);
 	return ret;
 }
 

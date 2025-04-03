@@ -3,8 +3,8 @@
 #include "FXHelper.h"
 #include "common.h"
 
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveLightAndClean();
@@ -451,7 +451,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUTTON_TESTCOLOR: {
-			SetColor(GetDlgItem(hDlg, IDC_BUTTON_TESTCOLOR), &conf->testColor);
+			SetColor(GetDlgItem(hDlg, IDC_BUTTON_TESTCOLOR), conf->testColor);
 			fxhl->TestLight(activeDevice, -1);
 			fxhl->TestLight(activeDevice, eLid);
 			RedrawGridButtonZone();
@@ -642,7 +642,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 	} break;
 	case WM_DRAWITEM:
-		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, &conf->testColor);
+		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, conf->testColor);
 		break;
 	case WM_DESTROY:
 	{

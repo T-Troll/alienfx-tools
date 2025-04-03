@@ -3,8 +3,8 @@
 #include "WSAudioIn.h"
 #include "Common.h"
 
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode*);
+extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
@@ -88,8 +88,8 @@ void DrawFreq(HWND hysto) {
 
 void SetMappingData(HWND hDlg) {
 	DrawFreq(GetDlgItem(hDlg, IDC_LEVELS));
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_LPC), freqBlock ? &freqBlock->colorfrom : NULL);
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_HPC), freqBlock ? &freqBlock->colorto : NULL);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_LPC), freqBlock ? freqBlock->colorfrom : AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_HPC), freqBlock ? freqBlock->colorto : AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
 	CheckDlgButton(hDlg, IDC_CHECK_RANDOM, freqBlock ? freqBlock->colorto.br : 0);
 }
 
@@ -244,13 +244,13 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUTTON_LPC:
 			if (freqBlock) {
-				SetColor(GetDlgItem(hDlg, IDC_BUTTON_LPC), &freqBlock->colorfrom);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_LPC), freqBlock->colorfrom);
 				UpdateZoneAndGrid();
 			}
 			break;
 		case IDC_BUTTON_HPC:
 			if (freqBlock) {
-				SetColor(GetDlgItem(hDlg, IDC_BUTTON_HPC), &freqBlock->colorto);
+				SetColor(GetDlgItem(hDlg, IDC_BUTTON_HPC), freqBlock->colorto);
 				UpdateZoneAndGrid();
 			}
 			break;
@@ -273,12 +273,12 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
 		{
-			AlienFX_SDK::Afx_colorcode* c = NULL;
+			AlienFX_SDK::Afx_colorcode c = { 0,0,0,0xff };
 			if (freqBlock)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
-					c = &freqBlock->colorfrom;
+					c = freqBlock->colorfrom;
 				else
-					c = &freqBlock->colorto;
+					c = freqBlock->colorto;
 			RedrawButton(((DRAWITEMSTRUCT *) lParam)->hwndItem, c);
 			return true;
 		}
