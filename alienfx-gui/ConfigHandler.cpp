@@ -101,7 +101,7 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 }
 
 bool ConfigHandler::IsPriorityProfile(profile* prof) {
-	return prof->flags & PROF_PRIORITY;
+	return prof ? prof->flags & PROF_PRIORITY : false;
 }
 
 //bool ConfigHandler::IsActiveOnly(profile* prof) {

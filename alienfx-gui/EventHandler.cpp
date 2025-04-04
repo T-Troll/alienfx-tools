@@ -27,7 +27,7 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 EventHandler::EventHandler()
 {
 	eve = this;
-	aProcesses = new DWORD[maxProcess];
+	aProcesses = new DWORD[maxProcess >> 2];
 	ChangePowerState();
 	SwitchActiveProfile(conf->activeProfile, true);
 	if (conf->startMinimized)
@@ -157,7 +157,7 @@ static const vector<string> forbiddenApps{ ""
 									,"explorer.exe"
 									,"SearchApp.exe"
 									,"StartMenuExperienceHost.exe"
-									,"alienfx-gui.exe"
+//									,"alienfx-gui.exe"
 #ifdef _DEBUG
 									,"devenv.exe"
 #endif
@@ -196,18 +196,19 @@ void EventHandler::CheckProfileChange(bool isRun) {
 	}
 #endif
 	DebugPrint("TaskScan initiated.\n");
-	profile* finalP = NULL;// conf->FindDefaultProfile();
+	profile* finalP = NULL;
 	DWORD cbNeeded;
-	if (EnumProcesses(aProcesses, maxProcess << 2, &cbNeeded)) {
-		while (cbNeeded == (maxProcess << 2)) {
+	if (EnumProcesses(aProcesses, maxProcess, &cbNeeded)) {
+		while (cbNeeded == maxProcess) {
 			maxProcess = maxProcess << 1;
 			delete[] aProcesses;
-			aProcesses = new DWORD[maxProcess];
-			EnumProcesses(aProcesses, maxProcess << 2 , &cbNeeded);
+			aProcesses = new DWORD[maxProcess >> 2];
+			EnumProcesses(aProcesses, maxProcess , &cbNeeded);
 		}
 		cbNeeded = cbNeeded >> 2;
 		for (UINT i = 0; i < cbNeeded; i++) {
-			if (aProcesses[i] && (newProf = conf->FindProfileByApp(GetProcessName(aProcesses[i])))) {
+			if (aProcesses[i] && 
+					(newProf = conf->FindProfileByApp(GetProcessName(aProcesses[i])))) {
 				finalP = newProf;
 				if (conf->IsPriorityProfile(newProf))
 					break;

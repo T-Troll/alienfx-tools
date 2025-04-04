@@ -7,7 +7,7 @@
 
 extern void UpdateProfileList();
 extern void UpdateState(bool checkMode);
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
@@ -20,9 +20,31 @@ extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPAR
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
-//int /*pCid = -1, */devNum = -1;
+
 profile* prof = NULL;
 AlienFX_SDK::Afx_device* activeEffectDevice = NULL;
+
+const static vector<string> ge_names[2]{ // 0 - v8, 1 - v5
+	{ "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
+	"One key (K)", "Circle out (K)", "Wave out (K)", "Right wave (K)", "Default", "Rain Drop (K)",
+	"Wave", "Rainbow wave", "Circle wave", "Random white (K)" },
+	{ "Off", "Static", "Breathing", "Side Wave", "Dual Wave", "Pulse", "Morph", "Bounce", "Laser", "Rainbow" } };
+/*
+	0 - off
+	1 - static color
+	2 - single color breath
+	3 - one side wave
+	4 - stop animation (?)
+	8 - pulse
+	9 - 2-color morph
+	10 - dobule-side wave
+	12 - off
+	14 - rainbow
+*/
+const static vector<string> cModeNames{ "Single-color", "Multi-color", "Rainbow" };
+const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 },
+	{ 0,1,2,3,4,8,9,10,11,14 } };
+//const static vector<int> cModeTypes{ 1, 2, 3 };
 
 deviceeffect* FindDevEffect(int type, bool remove = false) {
 	if (activeEffectDevice)
@@ -39,28 +61,6 @@ deviceeffect* FindDevEffect(int type, bool remove = false) {
 	return nullptr;
 }
 
-const static vector<string> ge_names[2]{ // 0 - v8, 1 - v5
-	{ "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
-	"One key (K)", "Circle out (K)", "Wave out (K)", "Right wave (K)", "Default", "Rain Drop (K)",
-	"Wave", "Rainbow wave", "Circle wave", "Random white (K)" },
-	{ "Off", "Static", "Breathing", "Side Wave", "Dual Wave", "Pulse", "Morph", "Bounce", "Laser", "Rainbow" }};
-/*
-	0 - off
-	1 - static color
-	2 - single color breath
-	3 - one side wave
-	4 - stop animation (?)
-	8 - pulse
-	9 - 2-color morph
-	10 - dobule-side wave
-	12 - off
-	14 - rainbow
-*/
-const static vector<string> cModeNames{ "Single-color", "Multi-color", "Rainbow" };
-const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 },
-	{ 0,1,2,3,4,8,9,10,11,14 } };
-const static vector<int> cModeTypes{ 1, 2, 3 };
-
 void RefreshDeviceList(HWND hDlg) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DE_LIST);
 	ListBox_ResetContent(dev_list);
@@ -73,38 +73,35 @@ void RefreshDeviceList(HWND hDlg) {
 			ListBox_SetItemData(dev_list, ind, pos);
 			if (i->devID == activeEffectDevice->devID) {
 				ListBox_SetCurSel(dev_list, ind);
-				deviceeffect* b1 = FindDevEffect(1), *b2 = FindDevEffect(2);
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), ge_names[i->version == 5],	b1 ? b1->globalEffect : 0, ge_types[i->version == 5]);
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), ge_names[i->version == 5], b2 ? b2->globalEffect : 0, ge_types[i->version == 5]);
-
-				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b1 ? b1->colorMode : 1, cModeTypes);
-				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b2 ? b2->colorMode : 1, cModeTypes);
+				deviceeffect* b;
+				AlienFX_SDK::Afx_colorcode c1{ 0,0,0,0xff }, c2{ 0,0,0,0xff };
 
 				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8);
-				//EnableWindow(GetDlgItem(hDlg, IDC_CMODE), i->version == 8);
 				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->version == 8);
 
-				if (b1) {
-					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b1->globalDelay);
-					SetSlider(sTip1, b1->globalDelay);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), b1->effColor1);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), b1->effColor2);
-				}
-				else {
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
+				if (b = FindDevEffect(1)) {
+					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b->globalDelay);
+					SetSlider(sTip1, b->globalDelay);
+					c1 = b->effColor1; c2 = b->effColor2;
 				}
 
-				if (b2) {
-					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b2->globalDelay);
-					SetSlider(sTip2, b2->globalDelay);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), b2->effColor1);
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), b2->effColor2);
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), c1);
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), c2);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), ge_names[i->version == 5], b ? b->globalEffect : 0, ge_types[i->version == 5]);
+				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b ? b->colorMode - 1 : 0);
+
+				c1 = c2 = { 0,0,0,0xff };
+
+				if (b = FindDevEffect(2)) {
+					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b->globalDelay);
+					SetSlider(sTip2, b->globalDelay);
+					c1 = b->effColor1; c2 = b->effColor2;
 				}
-				else {
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
-					RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
-				}
+
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), c1);
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), c2);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), ge_names[i->version == 5], b ? b->globalEffect : 0, ge_types[i->version == 5]);
+				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b ? b->colorMode - 1 : 0);
 			}
 		}
 }
@@ -155,7 +152,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case CBN_SELCHANGE:
 			{
 				if (b) {
-					b->colorMode = (byte)ComboBox_GetItemData(GetDlgItem(hDlg, LOWORD(wParam)), ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))));
+					b->colorMode = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam))) + 1;
 				}
 			}
 			}

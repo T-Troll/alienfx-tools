@@ -222,7 +222,7 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
 	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
 	if (dev && dev->dev && actions->size()) {
-		LightQueryElement newBlock{ LOWORD(lgh), (byte)HIWORD(lgh), (byte)
+		LightQueryElement newBlock{ dev->pid, (byte)HIWORD(lgh), (byte)
 			(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 3 : 0),
 			(byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));

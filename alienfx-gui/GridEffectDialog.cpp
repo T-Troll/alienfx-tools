@@ -4,7 +4,7 @@
 #include "FXHelper.h"
 #include "GridHelper.h"
 
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern void UpdateZoneAndGrid();
 

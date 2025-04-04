@@ -11,11 +11,9 @@ extern void UpdateZoneList();
 extern void UpdateZoneAndGrid();
 extern FXHelper* fxhl;
 
-extern void RedrawZoneGrid(DWORD grpid, bool rec);
-
 int effID = 0;
 
-const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow"/*, "Power"*/ };
+const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
 
 void SetEffectData(HWND hDlg) {
 	bool hasEffects = mmap && mmap->color.size();

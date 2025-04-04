@@ -825,7 +825,7 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	return ret;
 }
 
-bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode clr) {
+bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 	bool ret;
 	AlienFX_SDK::Afx_action savedColor = Code2Act(clr);
 	if (ret = SetColor(ctrl, &savedColor, false))

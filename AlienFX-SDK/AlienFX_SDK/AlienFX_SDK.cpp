@@ -995,7 +995,7 @@ namespace AlienFX_SDK {
 
 	Afx_light *Mappings::GetMappingByDev(Afx_device* dev, WORD LightID) {
 		if (dev) {
-			for (auto pos = dev->lights.begin(); pos < dev->lights.end(); pos++)
+			for (auto pos = dev->lights.begin(); pos != dev->lights.end(); pos++)
 				if (pos->lightid == LightID)
 					return &(*pos);
 		}

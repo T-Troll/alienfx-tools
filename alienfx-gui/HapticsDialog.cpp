@@ -4,7 +4,7 @@
 #include "Common.h"
 
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
-extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
@@ -168,10 +168,8 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		DrawFreq(hDlg);
 		break;
 	case WM_TIMER:
-		if (eve->audio) {
-			//DebugPrint("Haptics UI update...\n");
-			DrawFreq(hDlg);
-		}
+		//DebugPrint("Haptics UI update...\n");
+		DrawFreq(hDlg);
 		break;
 	case WM_ERASEBKGND:
 		return true;
@@ -222,7 +220,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				mmap->haptics.push_back({0,0,255});
 				freqItem = (int)mmap->haptics.size() - 1;
 				eve->ChangeEffects();
-				//SetMappingData(hDlg);
 				UpdateZoneAndGrid();
 			}
 		} break;
@@ -238,7 +235,6 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				else {
 					eve->ChangeEffects();
 				}
-				//SetMappingData(hDlg);
 				UpdateZoneAndGrid();
 			}
 			break;
