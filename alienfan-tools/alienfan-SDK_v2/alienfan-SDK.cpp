@@ -364,17 +364,13 @@ namespace AlienFan_SDK {
 			if (!args)
 				printf("Light array creation failed!\n");
 #endif
-			//byte HUGEP* pdFreq;
-			//SafeArrayAccessData(args, (void HUGEP * FAR*) &pdFreq);
 			for (long i = 0; i < 8; i++) {
 				HRESULT res = SafeArrayPutElement(args, &i, &arg1[i]);
 #ifdef _TRACE_
 				if (res != S_OK)
 					printf("Light array element error %x\n", res);
 #endif
-				//pdFreq[i] = arg1[i];
 			}
-			//SafeArrayUnaccessData(args);
 			parameters.pparray = &args;
 			m_InParamaters->Put(L"arg2", NULL, &parameters, 0);
 			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
@@ -395,10 +391,6 @@ namespace AlienFan_SDK {
 
 	bool Lights::SetColor(byte id, byte r, byte g, byte b, bool save) {
 		byte param[8]{ id, 0, 0, 0, b, g, r, (byte)(save ? 0 : 0xff) };
-		//param[4] = b;
-		//param[5] = g;
-		//param[6] = r;
-		//param[7] = save ? 0 : 0xff;
 		return CallWMIMethod(0, param) >= 0;
 	}
 
