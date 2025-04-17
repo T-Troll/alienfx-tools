@@ -775,22 +775,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 
 
 AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action *act) {
-	AlienFX_SDK::Afx_colorcode c = { act->b, act->g, act->r };
-	return c;
+	return AlienFX_SDK::Afx_colorcode({ act->b, act->g, act->r });
 }
 
 AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c) {
-	AlienFX_SDK::Afx_action a{ 0,0,0,c.r,c.g,c.b };
-	return a;
+	return AlienFX_SDK::Afx_action({ 0,0,0,c.r,c.g,c.b });
 }
 
-void CColorRefreshProc(LPVOID param) {
-	AlienFX_SDK::Afx_action* lastcolor = (AlienFX_SDK::Afx_action*)param;
-	if (memcmp(lastcolor, mod, sizeof(AlienFX_SDK::Afx_action))) {
-		*lastcolor = *mod;
-		if (mmap) fxhl->RefreshOne(mmap);
-	}
-}
+AlienFX_SDK::Afx_action lastColor; // last selected color in CS dialogue
+bool needColorUpdate; // is needed to update group after color change?
 
 UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	if (message == WM_CTLCOLOREDIT)
@@ -798,29 +791,30 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		mod->r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
 		mod->g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
 		mod->b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
+		if (needColorUpdate && mmap && memcmp(&lastColor, mod, sizeof(AlienFX_SDK::Afx_action))) {
+			memcpy(&lastColor, mod, sizeof(AlienFX_SDK::Afx_action));
+			fxhl->RefreshOne(mmap);
+		}
 	}
 	return 0;
 }
 
 bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
-		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, NULL/*(LPARAM)map*/, Lpcchookproc };
+		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, NULL, Lpcchookproc };
 
 	bool ret;
-	AlienFX_SDK::Afx_action savedColor = *map, lastcolor = *map;
+	AlienFX_SDK::Afx_action savedColor = *map;
+	lastColor = savedColor;
 	mod = map;
-	ThreadHelper* colorUpdate = NULL;
+	needColorUpdate = needUpdate;
 
-	if (needUpdate)
-		colorUpdate = new ThreadHelper(CColorRefreshProc, &lastcolor, 200);
-
-	if (!(ret = ChooseColor(&cc)))
+	if (!(ret = ChooseColor(&cc))) {
 		(*map) = savedColor;
-
-	if (needUpdate) {
-		delete colorUpdate;
-		fxhl->Refresh();
+		if (needUpdate && mmap)
+			fxhl->RefreshOne(mmap);
 	}
+
 	RedrawButton(ctrl, Act2Code(map));
 	return ret;
 }
@@ -835,29 +829,42 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 
 bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {
 	if (grp)
+		//return find(grp->lights.begin(), grp->lights.end(), lgh) != grp->lights.end();
 		for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
 			if (pos->lgh == lgh)
 				return true;
 	return false;
 }
 
-bool IsGroupUnused(DWORD gid) {
-	for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++) {
-		for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
-			if (ls->group == gid) {
-				return false;
-			}
-	}
-	return true;
-}
+//bool IsGroupUnused(DWORD gid) {
+//	for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++) {
+//		for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
+//			if (ls->group == gid) {
+//				return false;
+//			}
+//	}
+//	return true;
+//}
 
 void RemoveUnusedGroups() {
-	for (auto i = conf->afx_dev.GetGroups()->begin(); i != conf->afx_dev.GetGroups()->end();)
-		if (IsGroupUnused(i->gid)) {
-			i = conf->afx_dev.GetGroups()->erase(i);
+	for (auto i = conf->afx_dev.GetGroups()->begin(); i != conf->afx_dev.GetGroups()->end();) {
+		for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++) {
+			for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
+				if (ls->group == i->gid) {
+					//i++;
+					goto nextgroup;
+				}
 		}
-		else
-			i++;
+		i = conf->afx_dev.GetGroups()->erase(i);
+		continue;
+		//if (IsGroupUnused(i->gid)) {
+		//	i = conf->afx_dev.GetGroups()->erase(i);
+		//}
+		//else
+		//	i++;
+	nextgroup:
+		i++;
+	}
 }
 
 void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh) {
