@@ -60,7 +60,6 @@ struct zonelight {
 };
 
 struct zonemap {
-	//DWORD gID;
 	byte gridID;
 	byte xMax = 0, yMax = 0,
 		scaleX = 1, scaleY = 1,
@@ -94,7 +93,6 @@ struct starmap {
 struct grideffop {
 	// operational info
 	bool passive = true;
-	//void* capt = NULL; // capture object if present in operation
 	int gridX, gridY,
 		oldphase,
 		size,
@@ -160,7 +158,6 @@ private:
 	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
-	//DWORD GetRegData(HKEY key, int vindex, char* name, byte** data);
 	groupset* FindCreateGroupSet(int profID, int groupID);
 	profile* FindCreateProfile(unsigned id);
 	uniform_int_distribution<WORD> rclr = uniform_int_distribution<WORD>(0x20, 0xff);

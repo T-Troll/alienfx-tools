@@ -6,7 +6,7 @@ extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
 extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
-extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh);
+//extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh);
 
 extern void SetLightInfo();
 extern void RedrawDevList();
@@ -188,7 +188,12 @@ void ModifyColorDragZone(bool clear = false) {
             }
         // now clear by remove list and add new...
         for (auto tr = markRemove.begin(); tr < markRemove.end(); tr++) {
-            RemoveLightFromGroup(grp, *tr);
+            //RemoveLightFromGroup(grp, *tr);
+            for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
+                if (pos->lgh == tr->lgh) {
+                    grp->lights.erase(pos);
+                    break;
+                }
         }
         for (auto tr = markAdd.begin(); tr < markAdd.end(); tr++) {
             if (!IsLightInGroup(tr->lgh, grp))

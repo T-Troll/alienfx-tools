@@ -86,7 +86,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg{0};
 
     fan_conf = new ConfigFan();
-    fan_conf->wasAWCC = DoStopService(fan_conf->awcc_disable, true);
+    fan_conf->wasAWCC = DoStopAWCC(fan_conf->awcc_disable, true);
     SetPowerState();
     mon = new MonHelper();
     hInst = hInstance;
@@ -120,7 +120,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
     }
     delete mon;
-    DoStopService(fan_conf->wasAWCC, false);
+    DoStopAWCC(fan_conf->wasAWCC, false);
     Shell_NotifyIcon(NIM_DELETE, niData);
     fan_conf->Save();
     delete fan_conf;
@@ -301,7 +301,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SETTINGS_DISABLEAWCC:
             ToggleValue(fan_conf->awcc_disable, wmId);
-            fan_conf->wasAWCC = DoStopService((bool)fan_conf->awcc_disable != fan_conf->wasAWCC, fan_conf->wasAWCC);
+            fan_conf->wasAWCC = DoStopAWCC((bool)fan_conf->awcc_disable != fan_conf->wasAWCC, fan_conf->wasAWCC);
             break;
         case IDM_SETTINGS_RESTOREPOWERMODE:
             ToggleValue(fan_conf->keepSystem, wmId);

@@ -144,7 +144,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
 		if (EvaluteToAdmin()) {
-			conf->wasAWCC = DoStopService(conf->awcc_disable, true);
+			conf->wasAWCC = DoStopAWCC(conf->awcc_disable, true);
 			DetectFans();
 		}
 		else {
@@ -190,7 +190,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	delete fxhl;
 	delete eve;
 
-	DoStopService(conf->wasAWCC, false);
+	DoStopAWCC(conf->wasAWCC, false);
 
 	if (mon) {
 		delete mon;
@@ -867,30 +867,13 @@ void RemoveUnusedGroups() {
 	}
 }
 
-void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh) {
-	for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
-		if (pos->lgh == lgh.lgh) {
-			grp->lights.erase(pos);
-			break;
-		}
-}
+//void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh) {
+//	for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
+//		if (pos->lgh == lgh.lgh) {
+//			grp->lights.erase(pos);
+//			break;
+//		}
+//}
 
-void RemoveLightAndClean() {
-	// delete from all groups...
-	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
-		for (auto lgh = iter->lights.begin(); lgh != iter->lights.end();)
-			if (lgh->did == activeDevice->pid && !conf->afx_dev.GetMappingByDev(activeDevice, lgh->lid)) {
-				// Clean from grids...
-				for (auto g = conf->afx_dev.GetGrids()->begin(); g < conf->afx_dev.GetGrids()->end(); g++) {
-					for (int ind = 0; ind < g->x * g->y; ind++)
-						if (g->grid[ind].lgh == lgh->lgh)
-							g->grid[ind].lgh = 0;
-				}
-				lgh = iter->lights.erase(lgh);
-			}
-			else
-				lgh++;
-	}
-}
 
 

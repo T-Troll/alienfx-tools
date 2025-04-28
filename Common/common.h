@@ -6,7 +6,7 @@
 using namespace std;
 
 bool EvaluteToAdmin(HWND dlg = NULL);
-bool DoStopService(bool flag, bool kind);
+bool DoStopAWCC(bool flag, bool kind);
 void ResetDPIScale(LPWSTR cmdLine);
 DWORD WINAPI CUpdateCheck(LPVOID);
 bool WindowsStartSet(bool, string);

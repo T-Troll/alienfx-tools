@@ -926,13 +926,11 @@ namespace AlienFX_SDK {
 				delete dev;
 		}
 #endif
-		// Mark inactive devices
+		// Check removed devices
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
 			if (i->version == API_UNKNOWN && i->dev) {
 				isListChanged = true;
 				break;
-				//delete i->dev;
-				//i->dev = NULL;
 			}
 		return isListChanged;
 	}
@@ -945,18 +943,6 @@ namespace AlienFX_SDK {
 				i->dev = NULL;
 			}
 	}
-
-	//void Mappings::AlienFXAssignDevices(bool activeOnly, void* acc) {
-	//	AlienFXEnumDevices(acc);
-	//	// clear absent devices, if needed
-	//	if (activeOnly)
-	//		for (auto i = fxdevs.begin(); i != fxdevs.end(); ) {
-	//			if (i->dev)
-	//				i++;
-	//			else
-	//				i = fxdevs.erase(i);
-	//		}
-	//}
 
 	Afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {
 		for (auto pos = fxdevs.begin(); pos < fxdevs.end(); pos++)

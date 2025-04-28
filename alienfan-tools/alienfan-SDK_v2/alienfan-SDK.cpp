@@ -285,7 +285,7 @@ namespace AlienFan_SDK {
 	{
 		if (isGmode) {
 			if (state)
-				SetPower(0xAB);
+				SetPower(0xab);
 			return CallWMIMethod(setGMode, state);
 		}
 		return -1;
@@ -293,13 +293,13 @@ namespace AlienFan_SDK {
 
 	int Control::GetGMode() {
 		if (isGmode) {
+			int pm = GetPower(true);
 			switch (systemID) { // hacks for buggy G5515/5525 BIOS
 				case 4800: // g-mode only on if power AB
 				case 3200: { // g-mode only off if power not AB
-					int pm = GetPower(true);
 					return pm == 0xab || pm < 0;
 				}
-				default: return GetPower(true) < 0 || CallWMIMethod(getGMode);
+				default: return pm < 0 || CallWMIMethod(getGMode);
 			}
 		}
 		return -1;

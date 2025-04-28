@@ -83,16 +83,29 @@ bool EvaluteToAdmin(HWND dlg) {
 	return true;
 }
 
-bool DoStopService(bool flag, bool kind) {
+bool TryStopService(SC_HANDLE handle, bool kind, const char* name) {
+	bool rCode = false;
+	SC_HANDLE schService = OpenService(handle, name, SERVICE_ALL_ACCESS);
+	if (schService) {
+		SERVICE_STATUS  serviceStatus;
+		rCode = kind ? ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus) :
+			StartService(schService, 0, NULL);
+		CloseServiceHandle(schService);
+	}
+	return rCode;
+}
+
+bool DoStopAWCC(bool flag, bool kind) {
 	bool rCode = false;
 	if (flag && EvaluteToAdmin()) {
 		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
-		SC_HANDLE schService = schSCManager ? OpenService(schSCManager, "AWCCService", SERVICE_ALL_ACCESS) : NULL;
-		SERVICE_STATUS  serviceStatus;
-		if (schSCManager && schService) {
-			rCode = kind ? ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus) :
-				StartService(schService, 0, NULL);
-			CloseServiceHandle(schService);
+		if (schSCManager) {
+			if (!(rCode = TryStopService(schSCManager, kind, "AWCCService"))) {
+				if (rCode = TryStopService(schSCManager, kind, "DellClientManagementService")) {
+					rCode = TryStopService(schSCManager, kind, "DellTechHub");
+				}
+			}
+			CloseServiceHandle(schSCManager);
 		}
 	}
 	return rCode;

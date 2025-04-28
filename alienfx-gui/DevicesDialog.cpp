@@ -7,7 +7,6 @@ extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
-extern void RemoveLightAndClean();
 extern void SetMainTabs();
 
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -42,6 +41,24 @@ vector<gearInfo> csv_devs;
 WNDPROC oldproc;
 
 extern AlienFX_SDK::Afx_device* activeDevice;
+
+void RemoveLightAndClean() {
+	// delete from all groups...
+	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
+		for (auto lgh = iter->lights.begin(); lgh != iter->lights.end();)
+			if (lgh->did == activeDevice->pid && !conf->afx_dev.GetMappingByDev(activeDevice, lgh->lid)) {
+				// Clean from grids...
+				for (auto g = conf->afx_dev.GetGrids()->begin(); g < conf->afx_dev.GetGrids()->end(); g++) {
+					for (int ind = 0; ind < g->x * g->y; ind++)
+						if (g->grid[ind].lgh == lgh->lgh)
+							g->grid[ind].lgh = 0;
+				}
+				lgh = iter->lights.erase(lgh);
+			}
+			else
+				lgh++;
+	}
+}
 
 BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 

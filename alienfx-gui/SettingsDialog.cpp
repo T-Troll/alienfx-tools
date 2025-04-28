@@ -131,7 +131,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_AWCC:
 			conf->awcc_disable = state;
 			conf->Save();
-			conf->wasAWCC = DoStopService((bool)conf->awcc_disable != conf->wasAWCC, conf->wasAWCC);
+			conf->wasAWCC = DoStopAWCC((bool)conf->awcc_disable != conf->wasAWCC, conf->wasAWCC);
 			break;
 		case IDC_ESIFTEMP:
 			if (conf->esif_temp = state) {

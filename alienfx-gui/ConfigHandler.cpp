@@ -66,8 +66,8 @@ groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 			groupID = 0x1ffff;
 		}
 		groupset* gset = FindMapping(groupID, &prof->lightsets);
-		//FindCreateGroup(groupID);
 		if (!gset) {
+			FindCreateGroup(groupID);
 			prof->lightsets.push_back({ groupID });
 			gset = &prof->lightsets.back();
 		}
@@ -103,10 +103,6 @@ profile* ConfigHandler::FindProfileByApp(string appName, bool active)
 bool ConfigHandler::IsPriorityProfile(profile* prof) {
 	return prof ? prof->flags & PROF_PRIORITY : false;
 }
-
-//bool ConfigHandler::IsActiveOnly(profile* prof) {
-//	return prof->flags & PROF_ACTIVE;
-//}
 
 bool ConfigHandler::SetIconState(bool needCheck) {
 	// change tray icon...
@@ -448,13 +444,12 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	}
 
 	// create new zoneMap
+	zoneMaps.erase(gid);
 	zonemap* zone = &zoneMaps[gid];
-	*zone = { mainGrid->id };
 
 	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
 	if (grp && grp->lights.size()) {
 		// find operational grid...
-		//DWORD lgt = grp->lights.front().lgh;
 		AlienFX_SDK::Afx_grid* opGrid = NULL;
 		for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
 			for (int ind = 0; ind < t->x * t->y; ind++)
