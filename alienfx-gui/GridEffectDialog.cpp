@@ -100,6 +100,9 @@ void UpdateEffectInfo(HWND hDlg) {
 	RebuildGEColorsList(hDlg);
 }
 
+static const string triggerNames[] = { "Off", "Continues", "Keyboard", "Event", "Ambient", "" },
+	effectTypeNames[] = { "Running light", "Wave", "Gradient", "Fill", "Star field", "Fade", ""};
+
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
 		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH),
@@ -109,8 +112,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	{
 	case WM_INITDIALOG:
 	{
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), { "Off", "Continues", "Keyboard", "Event", "Ambient" });
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), { "Running light", "Wave", "Gradient", "Fill", "Star field", "Fade"});
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), triggerNames/*{ "Off", "Continues", "Keyboard", "Event", "Ambient" }*/);
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), effectTypeNames/*{ "Running light", "Wave", "Gradient", "Fill", "Star field", "Fade"}*/);
 		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(-80, 80));
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
 		SendMessage(gs_slider, TBM_SETRANGE, true, MAKELPARAM(5, 1000));

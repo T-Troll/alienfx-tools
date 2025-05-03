@@ -13,7 +13,7 @@ extern FXHelper* fxhl;
 
 int effID = 0;
 
-const static vector<string> lightEffectNames{ "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow" };
+const static string lightEffectNames[] { "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow", "" };
 
 void SetEffectData(HWND hDlg) {
 	bool hasEffects = mmap && mmap->color.size();

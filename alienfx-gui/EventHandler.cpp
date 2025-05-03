@@ -152,8 +152,7 @@ string EventHandler::GetProcessName(DWORD proc) {
 	return szProcessName;
 }
 
-static const vector<string> forbiddenApps{ ""
-									,"ShellExperienceHost.exe"
+static const string forbiddenApps[] = { "ShellExperienceHost.exe"
 									,"explorer.exe"
 									,"SearchApp.exe"
 									,"StartMenuExperienceHost.exe"
@@ -161,6 +160,7 @@ static const vector<string> forbiddenApps{ ""
 #ifdef _DEBUG
 									,"devenv.exe"
 #endif
+									, ""
 									};
 
 void EventHandler::CheckProfileChange(bool isRun) {
@@ -174,10 +174,13 @@ void EventHandler::CheckProfileChange(bool isRun) {
 
 	//if (procName.empty() && isRun)
 	//	return;
-	if (conf->noDesktop && isRun)
-		for (auto i = forbiddenApps.begin(); i != forbiddenApps.end(); i++)
-			if (*i == procName)
+	if (conf->noDesktop && isRun) {
+		if (procName.empty())
+			return;
+		for (int i = 0; forbiddenApps[i].size(); i++)
+			if (forbiddenApps[i] == procName)
 				return;
+	}
 
 	DebugPrint("Foreground switched to " + procName + "\n");
 	if ((newProf = conf->FindProfileByApp(procName, true)) &&

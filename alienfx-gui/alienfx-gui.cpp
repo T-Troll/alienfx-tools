@@ -16,6 +16,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
+int idc_version = IDC_STATIC_VERSION, idc_homepage = IDC_SYSLINK_HOMEPAGE; // for About
 
 extern void dxgi_Restart();
 
@@ -212,41 +213,6 @@ void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode act) {
 	ReleaseDC(ctrl, cnt);
 }
 
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG: {
-		SetDlgItemText(hDlg, IDC_STATIC_VERSION, ("Version: " + GetAppVersion()).c_str());
-		return (INT_PTR)TRUE;
-	} break;
-	case WM_COMMAND:
-		switch (LOWORD(wParam)) {
-		case IDOK: case IDCANCEL:
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		} break;
-		}
-		break;
-	case WM_NOTIFY:
-		switch (LOWORD(wParam)) {
-		case IDC_SYSLINK_HOMEPAGE:
-			switch (((LPNMHDR)lParam)->code)
-			{
-			case NM_CLICK:
-			case NM_RETURN:
-			{
-				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
-			} break;
-			} break;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
-}
-
 void ResizeTab(HWND tab) {
 	RECT dRect, rcDisplay;
 	HWND frame = GetParent(tab);
@@ -340,17 +306,17 @@ void ClearOldTabs(HWND tab) {
 	}
 }
 
-void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, vector<DLGPROC> func) {
+void CreateTabControl(HWND parent, int tabsize, const string* names, const DWORD* resID, DLGPROC* func) {
 
 	ClearOldTabs(parent);
 
-	DLGHDR* pHdr = new DLGHDR{ 0 };// (DLGHDR*)LocalAlloc(LPTR, sizeof(DLGHDR));
+	DLGHDR* pHdr = new DLGHDR{ 0 };
 	SetWindowLongPtr(parent, GWLP_USERDATA, (LONG_PTR)pHdr);
 
-	int tabsize = (int)names.size();
+	//int tabsize = (int)names.size();
 
-	pHdr->apRes = new DLGTEMPLATE*[tabsize];// (DLGTEMPLATE**)LocalAlloc(LPTR, tabsize * sizeof(DLGTEMPLATE*));
-	pHdr->apProc = new DLGPROC[tabsize];// (DLGPROC*)LocalAlloc(LPTR, tabsize * sizeof(DLGPROC));
+	pHdr->apRes = new DLGTEMPLATE*[tabsize];
+	pHdr->apProc = new DLGPROC[tabsize];
 
 	TCITEM tie{ TCIF_TEXT | TCIF_PARAM };
 
@@ -371,12 +337,12 @@ void CreateTabControl(HWND parent, vector<string> names, vector<DWORD> resID, ve
 	}
 }
 
+const static string mainTabs[] = { "Lights", "Fans and Power", "Profiles", "Settings" };
+const static DWORD resTabs[] = { IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS };
+static DLGPROC procTabs[] = { (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog };
+
 void SetMainTabs() {
-	CreateTabControl(GetDlgItem(mDlg, IDC_TAB_MAIN),
-		{ "Lights", "Fans and Power", "Profiles", "Settings" },
-		{ IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS },
-		{ (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog }
-	);
+	CreateTabControl(GetDlgItem(mDlg, IDC_TAB_MAIN), 4, mainTabs, resTabs, procTabs);
 	OnSelChanged();
 }
 
@@ -573,7 +539,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					+ (eve->grid ? "G" : "g"));
 			}
 			if (mon) {
-				name.append(string("\n") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage])) + " power");
+				name.append(string("\n") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage])));
 				for (int i = 0; i < mon->fansize; i++) {
 					name.append("\n" + GetFanName(i, true));
 				}

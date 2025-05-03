@@ -438,85 +438,80 @@ void ConfigHandler::Save() {
 
 zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 	zoneUpdate.lock();
-	if (!(zoneMaps[gid].gMinX == 255/* || zoneMaps[gid].gMinY == 255 */|| reset)) {
-		zoneUpdate.unlock();
-		return &zoneMaps[gid];
-	}
 
-	// create new zoneMap
-	zoneMaps.erase(gid);
-	zonemap* zone = &zoneMaps[gid];
+	if (reset || zoneMaps.find(gid) == zoneMaps.end()) {
+		// create new zoneMap
+		zoneMaps.erase(gid);
+		zonemap* zone = &zoneMaps[gid];
 
-	AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
-	if (grp && grp->lights.size()) {
-		// find operational grid...
-		AlienFX_SDK::Afx_grid* opGrid = NULL;
-		for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
-			for (int ind = 0; ind < t->x * t->y; ind++)
-				if (IsLightInGroup(t->grid[ind].lgh, grp)) {
-					zone->gridID = t->id;
-					opGrid = &(*t);
-					break;
-				}
-
-		if (opGrid) {
-
-			// scan light positions in grid and set power
-			zone->havePower = false;
-			for (AlienFX_SDK::Afx_groupLight& lgh : grp->lights) {
-				if (afx_dev.GetFlags(lgh.did, lgh.lid) & ALIENFX_FLAG_POWER)
-					zone->havePower = true;
-				zonelight cl{ lgh.lgh, 255, 255 };
-				for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
-					if (opGrid->grid[ind].lgh == lgh.lgh) {
-						cl.x = min(cl.x, ind % opGrid->x);
-						cl.y = min(cl.y, ind / opGrid->x);
-						zone->xMax = max(zone->xMax, ind % opGrid->x);
-						zone->yMax = max(zone->yMax, ind / opGrid->x);
-						//zone->gMaxX = max(zone->gMaxX, cl.x);
-						//zone->gMaxY = max(zone->gMaxY, cl.y);
-						//zone->gMinX = min(zone->gMinX, cl.x);
-						//zone->gMinY = min(zone->gMinY, cl.y);
-						//zone->lightMap.push_back(cl);
-						//break;
+		AlienFX_SDK::Afx_group* grp = afx_dev.GetGroupById(gid);
+		if (grp && grp->lights.size()) {
+			// find operational grid...
+			AlienFX_SDK::Afx_grid* opGrid = NULL;
+			for (auto t = afx_dev.GetGrids()->begin(); !opGrid && t < afx_dev.GetGrids()->end(); t++)
+				for (int ind = 0; ind < t->x * t->y; ind++)
+					if (IsLightInGroup(t->grid[ind].lgh, grp)) {
+						zone->gridID = t->id;
+						opGrid = &(*t);
+						break;
 					}
-				// Ignore light if not in grid
-				if (cl.x < 255 && cl.y < 255) {
-					zone->gMaxX = max(zone->gMaxX, cl.x);
-					zone->gMaxY = max(zone->gMaxY, cl.y);
-					zone->gMinX = min(zone->gMinX, cl.x);
-					zone->gMinY = min(zone->gMinY, cl.y);
-					zone->lightMap.push_back(cl);
-				}
-			}
 
-			// now shrink axis...
-			for (zonelight& t : zone->lightMap) {
-				t.x -= zone->gMinX; t.y -= zone->gMinY;
+			if (opGrid) {
+				// scan light positions in grid and set power
+				zone->havePower = false;
+				for (AlienFX_SDK::Afx_groupLight& lgh : grp->lights) {
+					if (afx_dev.GetFlags(lgh.did, lgh.lid) & ALIENFX_FLAG_POWER)
+						zone->havePower = true;
+					zonelight cl{ lgh.lgh, 255, 255 };
+					for (int ind = 0; ind < opGrid->x * opGrid->y; ind++)
+						if (opGrid->grid[ind].lgh == lgh.lgh) {
+							cl.x = min(cl.x, ind % opGrid->x);
+							cl.y = min(cl.y, ind / opGrid->x);
+							zone->xMax = max(zone->xMax, ind % opGrid->x);
+							zone->yMax = max(zone->yMax, ind / opGrid->x);
+							//zone->gMaxX = max(zone->gMaxX, cl.x);
+							//zone->gMaxY = max(zone->gMaxY, cl.y);
+							//zone->gMinX = min(zone->gMinX, cl.x);
+							//zone->gMinY = min(zone->gMinY, cl.y);
+							//zone->lightMap.push_back(cl);
+							//break;
+						}
+					// Ignore light if not in grid
+					if (cl.x < 255 && cl.y < 255) {
+						zone->gMaxX = max(zone->gMaxX, cl.x);
+						zone->gMaxY = max(zone->gMaxY, cl.y);
+						zone->gMinX = min(zone->gMinX, cl.x);
+						zone->gMinY = min(zone->gMinY, cl.y);
+						zone->lightMap.push_back(cl);
+					}
+				}
+
+				// now shrink axis...
+				for (zonelight& t : zone->lightMap) {
+					t.x -= zone->gMinX; t.y -= zone->gMinY;
+				}
+				// Scales...
+				zone->scaleX = zone->gMaxX = zone->gMaxX + 1 - zone->gMinX;
+				zone->scaleY = zone->gMaxY = zone->gMaxY + 1 - zone->gMinY;
+				for (int x = 1; x < zone->gMaxX; x++)
+					if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
+						[x](auto t) {
+							return t.x == x;
+						})) {
+						zone->scaleX--;
+					}
+				for (int y = 1; y < zone->gMaxY; y++)
+					if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
+						[y](auto t) {
+							return t.y == y;
+						})) {
+						zone->scaleY--;
+					}
 			}
-			// Scales...
-			zone->scaleX = zone->gMaxX = zone->gMaxX + 1 - zone->gMinX;
-			zone->scaleY = zone->gMaxY = zone->gMaxY + 1 - zone->gMinY;
-			for (int x = 1; x < zone->gMaxX; x++)
-				if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
-					[x](auto t) {
-						return t.x == x;
-					})) {
-					zone->scaleX--;
-				}
-			for (int y = 1; y < zone->gMaxY; y++)
-				if (none_of(zone->lightMap.begin(), zone->lightMap.end(),
-					[y](auto t) {
-						return t.y == y;
-					})) {
-					zone->scaleY--;
-				}
 		}
-		//else
-		//	zone->gMinX = 255;
 	}
 	zoneUpdate.unlock();
-	return zone;
+	return &zoneMaps[gid];
 }
 
 groupset* ConfigHandler::FindMapping(int mid, vector<groupset>* set)

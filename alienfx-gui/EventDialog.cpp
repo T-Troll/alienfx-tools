@@ -16,12 +16,16 @@ extern EventHandler* eve;
 
 event* ev = NULL;
 
-const static vector<string> eventTypeNames{ "Performance", "Indicator" };
-const static vector<vector<string>> eventNames{
-		{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
-			"Fans RPM", "Power usage", "Power mode"},
-		{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
-			"BIOS Power mode", "Power source" }};
+const static string eventTypeNames[] = { "Performance", "Indicator" };
+const static string eventNamesP[] = { "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
+			"Fans RPM", "Power usage", "Power mode", ""},
+			eventNamesI[] = { "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
+				"BIOS Power mode", "Power source", ""};
+//const static vector<vector<string>> eventNames{
+//		{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
+//			"Fans RPM", "Power usage", "Power mode"},
+//		{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
+//			"BIOS Power mode", "Power source" }};
 
 int eventID = 0;
 
@@ -30,14 +34,14 @@ void SetEventData(HWND hDlg) {
 		CheckDlgButton(hDlg, IDC_STATUS_BLINK, ev->mode ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_RADIO_PERF, ev->state == MON_TYPE_PERF ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_RADIO_IND, ev->state == MON_TYPE_IND ? BST_CHECKED : BST_UNCHECKED);
-		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ev->state-1], ev->source);
+		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), ev->state < 2 ? eventNamesP : eventNamesI, ev->source);
 		SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_SETPOS, true, ev->cut);
 		SetSlider(sTip2, ev->cut);
 	}
 	else {
 		CheckDlgButton(hDlg, IDC_RADIO_PERF, BST_CHECKED);
 		CheckDlgButton(hDlg, IDC_RADIO_IND, BST_UNCHECKED);
-		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[0], 0);
+		UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNamesP, 0);
 	}
 
 	RedrawWindow(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), NULL, NULL, RDW_INVALIDATE);
@@ -65,7 +69,8 @@ void RebuildEventList(HWND hDlg) {
 				mmap->events[i].state = 2;
 			int type = mmap->events[i].state - 1;
 			string itemName = eventTypeNames[type] + ", " +
-				eventNames[type][mmap->events[i].source];
+				(type ? eventNamesI[mmap->events[i].source] : eventNamesP[mmap->events[i].source]);
+				//eventNames[type][mmap->events[i].source];
 			lItem.iItem = i;
 			lItem.pszText = (LPSTR) itemName.c_str();
 			lItem.state = i == eventID ? LVIS_SELECTED | LVIS_FOCUSED : 0;
@@ -137,7 +142,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		case IDC_RADIO_PERF: case IDC_RADIO_IND: {
 			int ctype = LOWORD(wParam) == IDC_RADIO_IND;
-			UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), eventNames[ctype], 0);
+			UpdateCombo(GetDlgItem(hDlg, IDC_EVENT_SOURCE), ctype ? eventNamesI : eventNamesP, 0);
 			if (ev) {
 				ev->state = ctype + 1;
 				ev->source = 0;

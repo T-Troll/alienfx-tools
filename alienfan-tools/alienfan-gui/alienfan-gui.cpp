@@ -17,13 +17,15 @@ using namespace std;
 HINSTANCE hInst;                                // current instance
 HWND sTip1 = 0, sTip2 = 0;
 
+int idc_version = IDC_STATIC_VERSION, idc_homepage = IDC_SYSLINK_HOMEPAGE; // for About
+
 ConfigFan* fan_conf = NULL;                     // Config...
 MonHelper* mon = NULL;                          // Monitoring object
 
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
 
-static const vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
+static const string pModes[] = { "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive", ""};
 
 GUID* sch_guid, perfset;
 
@@ -41,7 +43,6 @@ bool needUpdateFeedback = false;
 
 // Forward declarations of functions included in this code module:
 LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FanCurve(HWND, UINT, WPARAM, LPARAM);
 
 extern void ReloadFanView(HWND list);
@@ -541,40 +542,4 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     default: return false;
     }
     return true;
-}
-
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG: {
-        SetDlgItemText(hDlg, IDC_STATIC_VERSION, ("Version: " + GetAppVersion()).c_str());
-        return (INT_PTR)TRUE;
-    } break;
-    case WM_COMMAND:
-        switch (LOWORD(wParam)) {
-        case IDOK: case IDCANCEL:
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        } break;
-        }
-        break;
-    case WM_NOTIFY:
-        switch (LOWORD(wParam)) {
-        case IDC_SYSLINK_HOMEPAGE:
-            switch (((LPNMHDR)lParam)->code)
-            {
-            case NM_CLICK:
-            case NM_RETURN:
-            {
-                ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
-            } break;
-            } break;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
 }

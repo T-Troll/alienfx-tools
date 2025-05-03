@@ -21,7 +21,7 @@ namespace AlienFan_SDK {
 			0x14,	9  // Get Max. RPM
 		};
 
-	static vector<string> temp_names{
+	static const char* temp_names[3]{
 			"CPU Internal Thermistor",
 			"GPU Internal Thermistor",
 			"Motherboard Thermistor"/*,

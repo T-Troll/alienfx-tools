@@ -18,6 +18,8 @@ bool isNewVersion = false;
 bool runUIUpdate = true;
 DWORD selSensor = 0xffffffff;
 
+int idc_version = IDC_STATIC_VERSION, idc_homepage = IDC_SYSLINK_HOMEPAGE; // for About
+
 AlienFan_SDK::Control* acpi = NULL;
 
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
@@ -28,7 +30,6 @@ SenMonHelper* senmon;
 // Forward declarations of functions included in this code module:
 HWND                InitInstance(HINSTANCE, int);
 BOOL CALLBACK       DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 bool IsSensorValid(map<DWORD, SENSOR>::iterator sen) {
 	if (sen != conf->active_sensors.end()) {
@@ -100,41 +101,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return 0;
 }
 
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG: {
-		SetDlgItemText(hDlg, IDC_STATIC_VERSION, ("Version: " + GetAppVersion()).c_str());
-		return (INT_PTR)TRUE;
-	} break;
-	case WM_COMMAND:
-		switch (LOWORD(wParam)) {
-		case IDOK: case IDCANCEL:
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		} break;
-		}
-		break;
-	case WM_NOTIFY:
-		switch (LOWORD(wParam)) {
-		case IDC_SYSLINK_HOMEPAGE:
-			switch (((LPNMHDR)lParam)->code)
-			{
-			case NM_CLICK:
-			case NM_RETURN:
-			{
-				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
-			} break;
-			} break;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
-}
-
 void RedrawButton(unsigned id, DWORD clr) {
 	RECT rect;
 	GetWindowRect(GetDlgItem(mDlg, IDC_BUTTON_COLOR), &rect);
@@ -157,7 +123,7 @@ char* GetSensorName(SENSOR* id) {
 	return (LPSTR)(id->name.length() ? id->name : id->sname).c_str();
 }
 
-const static vector<string> uiColumns{ "Min", "Cur", "Max", "Source", "Name" };
+const static string uiColumns[] = { "Min", "Cur", "Max", "Source", "Name" };
 
 void SetNumValue(HWND list, int pos, int col, int val) {
 	string name = val > NO_SEN_VALUE ? to_string(val) : "--";
@@ -171,7 +137,7 @@ void ReloadSensorView() {
 	ListView_SetExtendedListViewStyle(list, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
 	if (!ListView_GetColumnWidth(list, 0)) {
 		LVCOLUMNA lCol{ LVCF_TEXT | LVCF_SUBITEM };
-		for (int i = 0; i < uiColumns.size(); i++) {
+		for (int i = 0; i < 5; i++) {
 			lCol.iSubItem = i;
 			lCol.pszText = (LPSTR)uiColumns[i].c_str();
 			ListView_InsertColumn(list, i, &lCol);

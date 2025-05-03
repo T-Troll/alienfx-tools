@@ -9,46 +9,40 @@ using namespace std;
 
 extern HWND mDlg;
 extern bool needUpdateFeedback, isNewVersion;
+extern int idc_version, idc_homepage;
 
-//int versionTag, linkControl;
-//
-//INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-//{
-//	UNREFERENCED_PARAMETER(lParam);
-//	switch (message)
-//	{
-//	case WM_INITDIALOG: {
-//		SetDlgItemText(hDlg, versionTag, ("Version: " + GetAppVersion()).c_str());
-//	} break;
-//	case WM_COMMAND:
-//		switch (LOWORD(wParam)) {
-//		case IDOK: case IDCANCEL:
-//		{
-//			EndDialog(hDlg, LOWORD(wParam));
-//		} break;
-//		}
-//		break;
-//	case WM_NOTIFY:
-//		if (LOWORD(wParam) == linkControl) {
-//			switch (((LPNMHDR)lParam)->code)
-//			{
-//			case NM_CLICK:
-//			case NM_RETURN:
-//			{
-//				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
-//			} break;
-//			} break;
-//		}
-//		break;
-//	default: return (INT_PTR)FALSE;
-//	}
-//	return (INT_PTR)TRUE;
-//}
-//
-//void OpenAbout(int res, int vt, int link) {
-//	versionTag = vt; linkControl = link;
-//	DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(res), mDlg, About);
-//}
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG: {
+		SetDlgItemText(hDlg, idc_version, ("Version: " + GetAppVersion()).c_str());
+	} break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDOK: case IDCANCEL:
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+		} break;
+		}
+		break;
+	case WM_NOTIFY:
+		if (LOWORD(wParam) == idc_homepage) {
+			switch (((LPNMHDR)lParam)->code)
+			{
+			case NM_CLICK:
+			case NM_RETURN:
+			{
+				ShellExecute(NULL, "open", "https://github.com/T-Troll/alienfx-tools", NULL, NULL, SW_SHOWNORMAL);
+			} break;
+			} break;
+		}
+		break;
+	default: return (INT_PTR)FALSE;
+	}
+	return (INT_PTR)TRUE;
+}
 
 DWORD WINAPI Blinker(LPVOID lparam) {
 	int howmany = (int)(ULONGLONG)lparam << 1;
@@ -85,7 +79,7 @@ bool EvaluteToAdmin(HWND dlg) {
 
 bool TryStopService(SC_HANDLE handle, bool kind, const char* name) {
 	bool rCode = false;
-	SC_HANDLE schService = OpenService(handle, name, SERVICE_ALL_ACCESS);
+	SC_HANDLE schService = OpenService(handle, name, SERVICE_START | SERVICE_STOP);
 	if (schService) {
 		SERVICE_STATUS  serviceStatus;
 		rCode = kind ? ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus) :
@@ -218,10 +212,10 @@ string GetAppVersion() {
 
 				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
 
-				res = to_string(HIWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionMS)) + "."
-					+ to_string(HIWORD(lpFfi->dwFileVersionLS)) + "."
-					+ to_string(LOWORD(lpFfi->dwFileVersionLS));
+				res = to_string(HIWORD(lpFfi->dwProductVersionMS)) + "."
+					+ to_string(LOWORD(lpFfi->dwProductVersionMS)) + "."
+					+ to_string(HIWORD(lpFfi->dwProductVersionLS)) + "."
+					+ to_string(LOWORD(lpFfi->dwProductVersionLS));
 
 				LocalFree(pResCopy);
 			}
@@ -258,19 +252,34 @@ void SetSlider(HWND tt, int value) {
 	SetToolTip(tt, to_string(value));
 }
 
-void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
+void UpdateCombo(HWND ctrl, const string* items, int sel, vector<int> val) {
 	ComboBox_ResetContent(ctrl);
-	for (int i = 0; i < items.size(); i++) {
+	for (int i = 0; items[i].size(); i++) {
 		ComboBox_AddString(ctrl, items[i].c_str());
 		if (val.size()) {
 			ComboBox_SetItemData(ctrl, i, val[i]);
 			if (sel == val[i])
 				ComboBox_SetCurSel(ctrl, i);
-		} else
+		}
+		else
 			if (sel == i)
 				ComboBox_SetCurSel(ctrl, sel);
 	}
 }
+
+//void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
+//	ComboBox_ResetContent(ctrl);
+//	for (int i = 0; i < items.size(); i++) {
+//		ComboBox_AddString(ctrl, items[i].c_str());
+//		if (val.size()) {
+//			ComboBox_SetItemData(ctrl, i, val[i]);
+//			if (sel == val[i])
+//				ComboBox_SetCurSel(ctrl, i);
+//		} else
+//			if (sel == i)
+//				ComboBox_SetCurSel(ctrl, sel);
+//	}
+//}
 
 void SetBitMask(WORD& val, WORD mask, bool state) {
 	val = (val & ~mask) | (state * mask);

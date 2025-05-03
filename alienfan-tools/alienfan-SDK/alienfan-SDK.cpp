@@ -229,7 +229,7 @@ namespace AlienFan_SDK {
 							int sIndex = fIndex - firstSenIndex;
 							// Check temperature, disable if -1
 							if (RunMainCommand(dev_controls.getTemp, (byte) funcID) > 0) {
-								if (sIndex < temp_names.size()) {
+								if (sIndex < 3) {
 									name = temp_names[sIndex];
 								} else
 									name = "Sensor #" + to_string(sIndex);

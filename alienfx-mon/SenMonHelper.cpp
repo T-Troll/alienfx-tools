@@ -127,7 +127,7 @@ string SenMonHelper::GetFanName(int index) {
 	{
 	case 1: fname = "CPU"; break;
 	case 6: fname = "GPU"; break;
-	default: fname = "";
+	//default: fname = "";
 	}
 	return fname + " Fan " + to_string(index + 1);
 }
