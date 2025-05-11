@@ -182,9 +182,9 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
     int pRpm, bRpm = mon->acpi->GetFanRPM(fanID), maxRPM;
     boostCheck.push_back({ boost, (USHORT)bRpm });
     lastBoostPoint = &boostCheck.back();
-    if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
-        return -1;
-    lastBoostPoint->maxRPM = mon->acpi->GetFanRPM(fanID);
+    //if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
+    //    return -1;
+    //lastBoostPoint->maxRPM = bRpm;// mon->acpi->GetFanRPM(fanID);
     do {
         pRpm = bRpm;
         bRpm = lastBoostPoint->maxRPM;

@@ -244,6 +244,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_EDIT_POLLING:
             if (HIWORD(wParam) == EN_KILLFOCUS) {
+                mon->Stop();
                 fan_conf->pollingRate = GetDlgItemInt(hDlg, IDC_EDIT_POLLING, NULL, false);
                 mon->Start();
             }
@@ -474,12 +475,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if ((HWND)lParam == tcc_slider) {
                 fan_conf->lastProf->currentTCC = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 SetSlider(sTip1, fan_conf->lastProf->currentTCC);
-                mon->acpi->SetTCC(fan_conf->lastProf->currentTCC);
+                mon->SetOC();
             }
             if ((HWND)lParam == xmp_slider) {
                 fan_conf->lastProf->memoryXMP = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
-                mon->acpi->SetXMP(fan_conf->lastProf->memoryXMP);
+                mon->SetOC();
             }
         } break;
         } break;

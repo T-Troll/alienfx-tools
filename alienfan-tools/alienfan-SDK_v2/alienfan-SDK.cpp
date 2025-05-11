@@ -241,10 +241,8 @@ namespace AlienFan_SDK {
 		return fanID < fans.size() ? CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value) : -1;
 	}
 	int Control::GetTempValue(int TempID) {
-		IWbemClassObject* sensorObject = NULL;
-		IWbemServices* serviceObject = m_WbemServices;
-		VARIANT temp;
 		if (TempID < sensors.size()) {
+			IWbemServices* serviceObject = m_WbemServices;
 			switch (sensors[TempID].type) {
 			case 1: { // AWCC
 				int awt = CallWMIMethod(getTemp, sensors[TempID].index);
@@ -258,7 +256,9 @@ namespace AlienFan_SDK {
 				serviceObject = m_OHMService;
 				break;
 			}
+			IWbemClassObject* sensorObject = NULL;
 			if (serviceObject->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
+				VARIANT temp;
 				sensorObject->Get(sensors[TempID].valueName, 0, &temp, 0, 0);
 				sensorObject->Release();
 				return sensors[TempID].type == 4 ? (int)temp.fltVal : temp.intVal;

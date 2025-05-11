@@ -230,8 +230,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		//DebugPrint("Events UI update...\n");
 		int maxFans = 0;
 		if (mon) {
-			for (auto i = mon->fanRpm.begin(); i != mon->fanRpm.end(); i++)
-				maxFans = max(maxFans, i->second);
+			for (int i = 0; i < mon->fansize; i++)
+				maxFans = max(maxFans, mon->fanRpm[i]);
 		}
 		LightEventData* eData = &fxhl->eData;
 		string usage = to_string(eData->CPU) + " (" + to_string(fxhl->maxData.CPU) + ")%\n" +

@@ -409,11 +409,10 @@ namespace AlienFan_SDK {
 		return SetPower(0);
 	}
 	int Control::SetPower(byte level) {
-		// ToDo: make correct mode set for devs[aDev].delta
 		lastMode = level;
 		if (devs[aDev].delta && !level)
 			++level;
-		//if (level < powers.size())
+		//if (level < powers.size()) {
 			//if (devs[aDev].commandControlled)
 			return RunMainCommand(dev_controls.setPower, level);
 		//else {
@@ -452,7 +451,17 @@ namespace AlienFan_SDK {
 	}
 
 	int Control::GetGMode() {
-		return isGmode ? GetPower() < 0 || RunMainCommand(dev_controls.getGMode) : 0;
+		if (isGmode) {
+			int pm = GetPower(true);
+			switch (systemID) { // hacks for buggy G5515/5525 BIOS
+			case 4800: // g-mode only on if power AB
+			case 3200: { // g-mode only off if power not AB
+				return pm == 0xab || pm < 0;
+			}
+			default: return pm < 0 || RunMainCommand(dev_controls.getGMode);
+			}
+		}
+		return -1;
 	}
 
 	int Control::GetMaxRPM(int fanID) {
