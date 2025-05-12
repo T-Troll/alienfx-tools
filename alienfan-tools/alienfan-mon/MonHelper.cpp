@@ -84,8 +84,8 @@ void MonHelper::SetCurrentMode(int newMode) {
 				acpi->SetGMode(0);
 				acpi->SetPower(0xa0);
 			}
-			acpi->SetPower(acpi->powers[newMode]);
 			ResetBoost();
+			acpi->SetPower(acpi->powers[newMode]);
 			DebugPrint("Mon: Power mode switch from " + (powerMode == powerSize ? "G-mode" : to_string(powerMode)) + " to " + to_string(newMode) + "\n");
 		}
 		else {

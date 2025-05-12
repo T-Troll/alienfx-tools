@@ -21,6 +21,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
+        "OwnerKey" = "8:_B829425435A04EFB81D071102204D8B4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_09B1992F95E748E1845109AD2B634C5A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -197,6 +203,26 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_055E075BF224A12F432351DF93952E0E"
+            {
+            "SourcePath" = "8:POWRPROF.dll"
+            "TargetName" = "8:POWRPROF.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_09B1992F95E748E1845109AD2B634C5A"
@@ -428,15 +454,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{9EC7915E-A688-4134-B49F-04ED02AB5EEE}"
-        "PackageCode" = "8:{62FB56E2-A7C4-4D5A-A0F1-298D073EEDDA}"
+        "ProductCode" = "8:{C681B2C5-80B8-4243-8091-6C4F769FF891}"
+        "PackageCode" = "8:{F35C2ECA-B3A3-4C66-BC94-F364EA062B8F}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:9.1.500"
+        "ProductVersion" = "8:9.1.501"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"

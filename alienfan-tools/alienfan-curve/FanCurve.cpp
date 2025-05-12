@@ -201,6 +201,7 @@ int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
 DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     mon->inControl = false;
     SendMessage((HWND)lpParam, WM_APP + 2, 0, 0);
+    mon->ResetBoost(); // for manual mode before check
     mon->SetCurrentMode(0);
     int rpm = mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan), cSteps = 8, boost = 100, downScale;
     boostCheck.clear();
