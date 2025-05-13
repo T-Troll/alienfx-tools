@@ -31,7 +31,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC),
         xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP),
         tempList = GetDlgItem(hDlg, IDC_TEMP_LIST),
-        fanList = GetDlgItem(hDlg, IDC_FAN_LIST);
+        fanList = GetDlgItem(hDlg, IDC_FAN_LIST),
+        tcc_edit = GetDlgItem(hDlg, IDC_EDIT_TCC);
 
     switch (message) {
     case WM_INITDIALOG:
@@ -65,11 +66,15 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
         // OC block
         EnableWindow(tcc_slider, fan_conf->ocEnable && mon->acpi->isTcc);
+        EnableWindow(tcc_edit, fan_conf->ocEnable && mon->acpi->isTcc);
         if (fan_conf->ocEnable && mon->acpi->isTcc) {
             SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
             sTip1 = CreateToolTip(tcc_slider, sTip1);
             SetSlider(sTip1, fan_conf->lastProf->currentTCC);
             SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
+
+            // Set edit box value to match slider
+			SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
         }
         EnableWindow(xmp_slider, fan_conf->ocEnable && mon->acpi->isXMP);
         if (fan_conf->ocEnable && mon->acpi->isXMP) {
@@ -145,6 +150,25 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
             break;
         }
+        case IDC_EDIT_TCC:
+            switch (HIWORD(wParam)) {
+                case EN_KILLFOCUS: {
+                    BOOL translated = FALSE;
+                    int val = GetDlgItemInt(hDlg, IDC_EDIT_TCC, &translated, FALSE);
+                    if (translated) {
+                        // Clamp value to slider range
+                        int min = mon->acpi->maxTCC - mon->acpi->maxOffset;
+                        int max = mon->acpi->maxTCC;
+                        if (val < min) val = min;
+                        if (val > max) val = max;
+                        SendMessage(tcc_slider, TBM_SETPOS, TRUE, val);
+                        fan_conf->lastProf->currentTCC = (BYTE)val;
+                        SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+                        SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
+                        mon->SetOC();
+                    } break;
+                }
+            } break;
     } break;
     case WM_APP + 2:
         EnableWindow(power_list, (bool)lParam);
@@ -166,6 +190,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 fan_conf->lastProf->currentTCC = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 SetSlider(sTip1, fan_conf->lastProf->currentTCC);
                 mon->SetOC();
+                // Update edit box
+				SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
             }
             if ((HWND)lParam == xmp_slider) {
                 fan_conf->lastProf->memoryXMP = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
