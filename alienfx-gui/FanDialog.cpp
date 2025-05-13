@@ -163,7 +163,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         if (val > max) val = max;
                         SendMessage(tcc_slider, TBM_SETPOS, TRUE, val);
                         fan_conf->lastProf->currentTCC = (BYTE)val;
-                        SetSlider(sTip1, fan_conf->lastProf->currentTCC);
                         SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
                         mon->SetOC();
                     } break;
