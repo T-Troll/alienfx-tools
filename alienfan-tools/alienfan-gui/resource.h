@@ -28,6 +28,7 @@
 #define IDC_FAN_RESET                   1132
 #define IDC_SLIDER_TCC                  1214
 #define IDC_SLIDER_XMP                  1215
+#define IDC_EDIT_TCC                    1218
 #define IDM_SETTINGS_STARTWITHWINDOWS   32776
 #define IDM_SETTINGS_STARTMINIMIZED     32779
 #define IDM_SETTINGS_UPDATE             32782
