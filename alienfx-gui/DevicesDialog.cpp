@@ -42,6 +42,17 @@ WNDPROC oldproc;
 
 extern AlienFX_SDK::Afx_device* activeDevice;
 
+void ResetPower()
+{
+	if (activeDevice->dev && activeDevice->version < AlienFX_SDK::API_V5) {
+		ShowNotification(&conf->niData, "Warning", "Reassigning power button, please wait...");
+		vector<AlienFX_SDK::Afx_lightblock> act{ { (byte)(keySetLight->flags & ALIENFX_FLAG_POWER ?
+			 keySetLight->lightid : 127), {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} } };
+		activeDevice->dev->SetPowerAction(&act);
+		ShowNotification(&conf->niData, "Warning", "You may need to reset light system hardware!");
+	}
+}
+
 void RemoveLightAndClean() {
 	// delete from all groups...
 	for (auto iter = conf->afx_dev.GetGroups()->begin(); iter < conf->afx_dev.GetGroups()->end(); iter++) {
@@ -422,7 +433,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all device information?", "Warning",
 				MB_YESNO | MB_ICONWARNING) == IDYES) {
 				// remove all lights
-				auto ls = (int)activeDevice->lights.size();
+				int ls = (int)activeDevice->lights.size();
 				activeDevice->lights.clear();
 				RemoveLightAndClean();
 				// remove device if not active
@@ -434,7 +445,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 								// switch tab
 								tabSel = TAB_SETTINGS;
 								SetMainTabs();
-								break;
 							}
 							else {
 								activeDevice = &conf->afx_dev.fxdevs.front();
@@ -455,7 +465,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to remove light?", "Warning",
 					MB_YESNO | MB_ICONWARNING) == IDYES) {
 					if (keySetLight->flags & ALIENFX_FLAG_POWER) {
-						fxhl->ResetPower(activeDevice);
+						keySetLight->flags = 0;
+						ResetPower();
 					}
 					// delete from mappings...
 					conf->afx_dev.RemoveMapping(activeDevice, eLid);
@@ -476,11 +487,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case IDC_ISPOWERBUTTON: {
 			if (keySetLight) {
 				SetBitMask(keySetLight->flags, ALIENFX_FLAG_POWER, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
-				if (!(keySetLight->flags & ALIENFX_FLAG_POWER)) {
-					// remove power button config from chip config
-					fxhl->ResetPower(activeDevice);
-				}
-				//RemoveLightAndClean(activeDevice->pid, eLid);
+				// reassign power button at chip config
+				ResetPower();
 			}
 		} break;
 		case IDC_CHECK_INDICATOR:

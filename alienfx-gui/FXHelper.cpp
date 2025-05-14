@@ -143,15 +143,6 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 	DebugPrint("\n");
 }
 
-void FXHelper::ResetPower(AlienFX_SDK::Afx_device* dev)
-{
-	if (dev && dev->dev && dev->version < AlienFX_SDK::API_V5) {
-		vector<AlienFX_SDK::Afx_lightblock> act{ { (byte)63, {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} } };
-		dev->dev->SetPowerAction(&act);
-		ShowNotification(&conf->niData, "Warning", "You may need to reset light system hardware!");
-	}
-}
-
 bool FXHelper::CheckEvent(LightEventData* eData, event* e) {
 	byte ccut = e->cut;
 	switch (e->source) {

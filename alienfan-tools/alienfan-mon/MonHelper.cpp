@@ -108,13 +108,13 @@ byte MonHelper::GetFanPercent(byte fanID)
 }
 
 int MonHelper::GetPowerMode() {
-#ifdef _DEBUG
-	int res = acpi->GetGMode() ? powerSize : acpi->GetPower();
-	DebugPrint("Mon: BIOS mode " + to_string(res) + ", current " + to_string(powerMode) + "\n");
-	return res;
-#else
+//#ifdef _DEBUG
+//	int res = acpi->GetGMode() ? powerSize : acpi->GetPower();
+//	DebugPrint("Mon: BIOS mode " + to_string(res) + ", current " + to_string(powerMode) + "\n");
+//	return res;
+//#else
 	return acpi->GetGMode() ? powerSize : acpi->GetPower();
-#endif // _DEBUG
+//#endif // _DEBUG
 }
 
 void MonHelper::SetPowerMode(byte newMode) {

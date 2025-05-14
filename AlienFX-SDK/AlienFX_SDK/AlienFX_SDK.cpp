@@ -767,9 +767,11 @@ namespace AlienFX_SDK {
 			} break;
 			case API_V4:
 			{
-				if (HidD_GetInputReport(devHandle, buffer, length))
-				//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
+				if (HidD_GetInputReport(devHandle, buffer, length)) {
+					//if (DeviceIoControl(devHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, length, &written, NULL))
+					//DebugPrint("Status: " + to_string(buffer[2]) + "\n");
 					return buffer[2];
+				}
 			} break;
 			case API_V3: case API_V2:
 			{
@@ -809,8 +811,12 @@ namespace AlienFX_SDK {
 			return i < 100;
 			break;
 		case API_V4: {
-			for (; i < 500 && GetDeviceStatus() != ALIENFX_V4_BUSY; i++) Sleep(20);
-			return i < 500;
+			if (pid == 0x551) // patch for newer v4
+				return true;
+			else {
+				for (; i < 500 && GetDeviceStatus() != ALIENFX_V4_BUSY; i++) Sleep(20);
+				return i < 500;
+			}
 		} break;
 		default:
 			return GetDeviceStatus();
