@@ -366,6 +366,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                         fan_conf->lastProf->currentTCC = (BYTE)val;
                         SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
                         mon->SetOC();
+                    }
+                    else {
+                        // Reset value in tcc box.
+                        SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
                     } break;
                 }
             } break;
