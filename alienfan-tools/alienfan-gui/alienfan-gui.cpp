@@ -353,25 +353,22 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_EDIT_TCC:
             switch (HIWORD(wParam)) {
-                case EN_KILLFOCUS: {
-                    BOOL translated = FALSE;
-                    int val = GetDlgItemInt(hDlg, IDC_EDIT_TCC, &translated, FALSE);
-                    if (translated) {
-                        // Clamp value to slider range
-                        int min = mon->acpi->maxTCC - mon->acpi->maxOffset;
-                        int max = mon->acpi->maxTCC;
-                        if (val < min) val = min;
-                        if (val > max) val = max;
-                        SendMessage(tcc_slider, TBM_SETPOS, TRUE, val);
-                        fan_conf->lastProf->currentTCC = (BYTE)val;
-                        SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
-                        mon->SetOC();
-                    }
-                    else {
-                        // Reset value in tcc box.
-                        SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
-                    } break;
+            case EN_CHANGE: {
+                // Doesn't need to check success, 0 will be out of range and not changed
+                int val = GetDlgItemInt(hDlg, IDC_EDIT_TCC, NULL, FALSE);
+                byte finalval = max(min(val, mon->acpi->maxTCC), mon->acpi->maxTCC - mon->acpi->maxOffset);
+                // Did it in range?
+                if (val == finalval) {
+                    // Set slider and value
+                    SendMessage(tcc_slider, TBM_SETPOS, TRUE, fan_conf->lastProf->currentTCC = finalval);
+                    SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+                    mon->SetOC();
                 }
+            } break;
+            case EN_KILLFOCUS:
+                // Just set resulted value
+                SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
+                break;
             } break;
         }
     }
