@@ -157,7 +157,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 int val = GetDlgItemInt(hDlg, IDC_EDIT_TCC, NULL, FALSE);
                 byte finalval = max(min(val, mon->acpi->maxTCC), mon->acpi->maxTCC - mon->acpi->maxOffset);
                 // Did it in range?
-                if (val == finalval) {
+                if (val && val == finalval) {
                     // Set slider and value
                     SendMessage(tcc_slider, TBM_SETPOS, TRUE, fan_conf->lastProf->currentTCC = finalval);
                     SetSlider(sTip1, fan_conf->lastProf->currentTCC);
