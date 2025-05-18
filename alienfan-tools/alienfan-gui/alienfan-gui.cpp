@@ -356,12 +356,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case EN_CHANGE: {
                 // Doesn't need to check success, 0 will be out of range and not changed
                 int val = GetDlgItemInt(hDlg, IDC_EDIT_TCC, NULL, FALSE);
-                byte finalval = max(min(val, mon->acpi->maxTCC), mon->acpi->maxTCC - mon->acpi->maxOffset);
                 // Did it in range?
-                if (val && val == finalval) {
+                if (val && val == max(min(val, mon->acpi->maxTCC), mon->acpi->maxTCC - mon->acpi->maxOffset)) {
                     // Set slider and value
-                    SendMessage(tcc_slider, TBM_SETPOS, TRUE, fan_conf->lastProf->currentTCC = finalval);
-                    SetSlider(sTip1, fan_conf->lastProf->currentTCC);
+                    SendMessage(tcc_slider, TBM_SETPOS, TRUE, fan_conf->lastProf->currentTCC = val);
+                    SetSlider(sTip1, val);
                     mon->SetOC();
                 }
             } break;
