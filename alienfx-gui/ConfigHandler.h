@@ -155,7 +155,7 @@ union ambgrid {
 class ConfigHandler
 {
 private:
-	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL;
+	HKEY hKeyMain = NULL, hKeyZones = NULL, hKeyProfiles = NULL, hKeyAccent = NULL;
 	void GetReg(char *, DWORD *, DWORD def = 0);
 	void SetReg(char *text, DWORD value);
 	groupset* FindCreateGroupSet(int profID, int groupID);
@@ -243,4 +243,5 @@ public:
 	bool IsPriorityProfile(profile* prof);
 	//bool IsActiveOnly(profile* prof);
 	bool SetIconState(bool needCheck = false);
+	DWORD GetAccentColor();
 };

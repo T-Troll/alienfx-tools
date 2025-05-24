@@ -768,6 +768,8 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, NULL, Lpcchookproc };
+	// Let's change CC 15 to accent color
+	conf->customColors[15] = conf->GetAccentColor();
 
 	bool ret;
 	AlienFX_SDK::Afx_action savedColor = *map;

@@ -21,6 +21,9 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfxgui"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMain, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
+	// for accent color
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\History\\Colors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ, NULL, &hKeyAccent, NULL);
+
 	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
 	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFX_ON),	IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
@@ -33,6 +36,7 @@ ConfigHandler::~ConfigHandler() {
 	RegCloseKey(hKeyMain);
 	RegCloseKey(hKeyZones);
 	RegCloseKey(hKeyProfiles);
+	RegCloseKey(hKeyAccent);
 }
 
 profile* ConfigHandler::FindCreateProfile(unsigned id) {
@@ -110,6 +114,12 @@ bool ConfigHandler::SetIconState(bool needCheck) {
 		MAKEINTRESOURCE(stateOn ? stateDimmed ? IDI_ALIENFX_DIM : IDI_ALIENFX_ON : IDI_ALIENFX_OFF),
 		IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	return AddTrayIcon(&niData, needCheck);
+}
+
+DWORD ConfigHandler::GetAccentColor() {
+	DWORD size = sizeof(DWORD), value = 0;
+	RegGetValue(hKeyAccent, NULL, "ColorHistory0", RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, &value, &size);
+	return value;
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
