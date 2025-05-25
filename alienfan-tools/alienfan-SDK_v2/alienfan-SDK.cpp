@@ -302,7 +302,7 @@ namespace AlienFan_SDK {
 				default: return pm < 0 || CallWMIMethod(getGMode);
 			}
 		}
-		return -1;
+		return 0;
 	}
 
 	int Control::GetTCC()

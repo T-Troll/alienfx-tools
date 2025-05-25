@@ -53,10 +53,9 @@ void EventHandler::ChangePowerState()
 		DebugPrint("Power state changed!\n");
 		if (conf->enableProfSwitch && hEvent) {
 			CheckProfileChange();
-			//ToggleFans();
 			SwitchActiveProfile(conf->activeProfile, true);
 		} else
-			SwitchActiveProfile(NULL, true);
+			SwitchActiveProfile(conf->SamePower(conf->activeProfile) ? conf->activeProfile : NULL, true);
 	}
 }
 

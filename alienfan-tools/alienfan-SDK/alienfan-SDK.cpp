@@ -461,7 +461,7 @@ namespace AlienFan_SDK {
 			default: return pm < 0 || RunMainCommand(dev_controls.getGMode);
 			}
 		}
-		return -1;
+		return 0;
 	}
 
 	int Control::GetMaxRPM(int fanID) {
