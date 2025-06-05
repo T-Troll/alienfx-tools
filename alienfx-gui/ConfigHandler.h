@@ -81,6 +81,7 @@ struct grideffect {
 	byte numclr = 0;
 	byte width = 1;
 	WORD flags;
+	void* capt = NULL;
 	vector<AlienFX_SDK::Afx_colorcode> effectColors;
 };
 

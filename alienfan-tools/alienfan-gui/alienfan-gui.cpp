@@ -349,7 +349,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_BUT_RESETBOOST:
             if (mon->inControl)
-                fan_conf->boosts[fan_conf->lastSelectedFan] = { 100, (unsigned short)mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan) };
+                fan_conf->boosts[fan_conf->lastSelectedFan].maxBoost = 100;
             break;
         case IDC_EDIT_TCC:
             switch (HIWORD(wParam)) {

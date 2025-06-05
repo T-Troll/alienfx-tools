@@ -98,13 +98,14 @@ void MonHelper::SetCurrentMode(int newMode) {
 
 byte MonHelper::GetFanPercent(byte fanID)
 {
-	auto bst = fan_conf->boosts[fanID];
+	auto bst = &fan_conf->boosts[fanID];
 	WORD rpm = fanRpm[fanID];
-	if (!bst.maxRPM) // no MaxRPM yet
-		bst.maxRPM = acpi->GetMaxRPM(fanID);
-	if (bst.maxRPM < rpm) // current RPM higher, then BIOS high
-		bst.maxRPM = rpm;
-	return (rpm * 100) / bst.maxRPM;
+	if (!bst->maxRPM) // no MaxRPM yet
+		*bst = { 100, (WORD)max(acpi->GetMaxRPM(fanID), 1000) };
+		//bst->maxRPM = max(acpi->GetMaxRPM(fanID), 3000);
+	if (bst->maxRPM < rpm) // current RPM higher, then BIOS high
+		bst->maxRPM = rpm;
+	return (rpm * 100) / bst->maxRPM;
 }
 
 int MonHelper::GetPowerMode() {

@@ -6,8 +6,6 @@ extern EventHandler* eve;
 extern ConfigHandler* conf;
 extern FXHelper* fxhl;
 
-extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode* c);
-
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (cz->lightMap.size() && (grp->effect.trigger == 4 || grp->effect.effectColors.size())) {
 		grideffop* gridop = &grp->gridop;
@@ -135,11 +133,16 @@ void GridHelper::Stop() {
 			UnhookWindowsHookEx(kEvent);
 			kEvent = NULL;
 		}
-		if (capt) {
-			delete (CaptureHelper*)capt; capt = NULL;
-		}
+		//if (capt) {
+		//	delete (CaptureHelper*)capt; capt = NULL;
+		//}
 		if (sysmon) {
 			delete sysmon; sysmon = NULL;
+		}
+		for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
+			if (ce->effect.trigger == 4) {
+				delete (CaptureHelper*)ce->effect.capt;
+			}
 		}
 	}
 }
@@ -159,11 +162,11 @@ void GridHelper::RestartWatch() {
 			case 3: if (!sysmon)
 				sysmon = new SysMonHelper();
 				break;
-			case 4: if (!capt) {
+			case 4: {
 				auto zone = *conf->FindZoneMap(ce->group);
 				if (zone.gMinX != 255/* && zone.gMinY != 255*/) {
-					capt = new CaptureHelper(false);
-					capt->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+					ce->effect.capt = new CaptureHelper(false);
+					((CaptureHelper*)ce->effect.capt)->SetLightGridSize(zone.gMaxX, zone.gMaxY);
 				}
 			} break;
 			}

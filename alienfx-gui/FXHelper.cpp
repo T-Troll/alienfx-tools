@@ -527,17 +527,17 @@ void FXHelper::RefreshHaptics() {
 
 void FXHelper::RefreshGrid() {
 	if (lightsNoDelay && eve && eve->grid) {
-		bool wasChanged = false, noAmb = true;
+		bool wasChanged = false;
 		vector<AlienFX_SDK::Afx_action> cur{ {0} };
 		conf->modifyProfile.lock();
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 			if (ce->effect.trigger && !ce->gridop.passive) {
 				switch (ce->effect.trigger) {
 				case 4: { // ambient
-					CaptureHelper* capt = ((GridHelper*)eve->grid)->capt;
+					CaptureHelper* capt = (CaptureHelper*)ce->effect.capt;
 					// update lights
-					if (capt && capt->needUpdate && noAmb) {
-						//capt->needUpdate = false;
+					if (capt->needUpdate) {
+						capt->needUpdate = false;
 						UINT shift = 255 - conf->amb_shift;
 						auto zone = *conf->FindZoneMap(ce->group);
 						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {
@@ -548,7 +548,6 @@ void FXHelper::RefreshGrid() {
 							SetLight(lgh->light, &cur);
 						}
 						wasChanged = true;
-						noAmb = false;
 					}
 				} break;
 				default:
@@ -561,6 +560,7 @@ void FXHelper::RefreshGrid() {
 							cur.front() = Code2Act(eff->effectColors.front());
 							SetZone(&(*ce), &cur);
 							effop->stars.resize(1);
+							wasChanged = true;
 						}
 						// calculate phase
 						int cTact = effop->current_tact++;
@@ -568,7 +568,6 @@ void FXHelper::RefreshGrid() {
 
 						if (phase == effop->effsize * effop->lmp) {
 							effop->passive = true;
-							// ToDo: clean zone
 							continue;
 						}
 

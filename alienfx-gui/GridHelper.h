@@ -11,7 +11,6 @@ private:
 	SysMonHelper* sysmon = NULL;
 	void Stop();
 public:
-	CaptureHelper* capt = NULL;
 	GridHelper();
 	~GridHelper();
 	void RestartWatch();
