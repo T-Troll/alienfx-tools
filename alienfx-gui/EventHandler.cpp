@@ -111,15 +111,15 @@ void EventHandler::ChangeEffects(bool stop) {
 			noAmb = noAmb && it->ambients.empty();
 			noHap = noHap && it->haptics.empty();
 			noGrid = noGrid && !it->effect.trigger;
-			if (!(noMon || sysmon))
-				sysmon = new SysMonHelper();
-			if (!(noAmb || capt))
-				capt = new CaptureHelper(true);
-			if (!(noHap || audio))
-				audio = new WSAudioIn();
-			if (!(noGrid || grid))
-				grid = new GridHelper();
 		}
+		if (!(noMon || sysmon))
+			sysmon = new SysMonHelper();
+		if (!(noAmb || capt))
+			capt = new CaptureHelper(true);
+		if (!(noHap || audio))
+			audio = new WSAudioIn();
+		if (!(noGrid || grid))
+			grid = new GridHelper();
 	}
 	DebugPrint(string("Profile state: ") + (noGrid ? "" : "Grid") +
 		(noMon ? "" : ", Mon") +

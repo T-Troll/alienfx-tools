@@ -5,7 +5,8 @@
 #include "GridHelper.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
+extern void RedrawButton(HWND hDlg, DWORD);
 extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
@@ -40,7 +41,7 @@ void RebuildGEColorsList(HWND hDlg) {
 			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
 			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON),
-				RGB(colors->at(i).b, colors->at(i).g, colors->at(i).r));
+				/*MakeRGB(*/colors->at(i).ci);
 			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 1, 32, picData);
 			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);
@@ -215,7 +216,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_DRAWITEM:
 		if (mmap && clrListID < mmap->effect.effectColors.size()) {
-			RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), mmap->effect.effectColors[clrListID]);
+			RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), MakeRGB(mmap->effect.effectColors[clrListID]));
 		}
 	    break;
 	case WM_NOTIFY:
@@ -228,7 +229,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					// Select other item...
 					clrListID = lPoint->iItem;
 					if (clrListID < mmap->effect.effectColors.size())
-						RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), mmap->effect.effectColors[clrListID]);
+						RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), MakeRGB(mmap->effect.effectColors[clrListID]));
 				}
 			} break;
 			case NM_DBLCLK:

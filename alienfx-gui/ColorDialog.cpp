@@ -4,7 +4,8 @@
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
-extern void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode);
+extern DWORD MakeRGB(AlienFX_SDK::Afx_action* act);
+extern void RedrawButton(HWND ctrl, DWORD);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
@@ -18,16 +19,21 @@ const static string lightEffectNames[] { "Color", "Pulse", "Morph", "Breath", "S
 void SetEffectData(HWND hDlg) {
 	bool hasEffects = mmap && mmap->color.size();
 	if (hasEffects) {
-			ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->color[effID].type);
+			ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->color[effID].type & 0xf);
 			SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->color[effID].tempo);
 			SetSlider(sTip1, mmap->color[effID].tempo);
 			SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
 			SetSlider(sTip2, mmap->color[effID].time);
+			CheckDlgButton(hDlg, IDC_ACCENT, mmap->color[effID].type & 0xf0);
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ? Act2Code(&mmap->color[effID]) : AlienFX_SDK::Afx_colorcode({ 0, 0, 0, 0xff}) );
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ?
+		mmap->color[effID].type & 0xf0 ?
+			conf->accentColor :
+			MakeRGB(&mmap->color[effID]) :
+		0xff000000);
 }
 
 void RebuildEffectList(HWND hDlg) {
@@ -54,17 +60,17 @@ void RebuildEffectList(HWND hDlg) {
 								  ILC_COLOR32, 1, 1);
 		for (int i = 0; i < mmap->color.size(); i++) {
 			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
-			//char efName[16]{ 0 };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
-			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), RGB(mmap->color[i].b, mmap->color[i].g, mmap->color[i].r));
+			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), Act2Code(&mmap->color[i]).ci);
 			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 1, 32, picData);
 			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);
 			DeleteObject(colorBox);
 			lItem.iImage = i;
 			// Patch for incorrect type
-			mmap->color[i].type = mmap->color[i].type < AlienFX_SDK::Action::AlienFX_A_Power ? mmap->color[i].type : 0;
-			lItem.pszText = (LPSTR)lightEffectNames[mmap->color[i].type].c_str();
+			if (mmap->color[i].type == AlienFX_SDK::Action::AlienFX_A_Power)
+				mmap->color[i].type = 0;
+			lItem.pszText = (LPSTR)lightEffectNames[mmap->color[i].type & 0xf].c_str();
 			// check selection...
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
@@ -136,9 +142,18 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		{
 		case IDC_TYPE1:
 			if (HIWORD(wParam) == CBN_SELCHANGE && mmap) {
-				int lType1 = (int)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
-				mmap->color[effID].type = lType1;
+				mmap->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
+					0x10 : 0 | ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				RebuildEffectList(hDlg);
+				fxhl->RefreshOne(mmap);
+			}
+			break;
+		case IDC_ACCENT:
+			if (mmap) {
+				mmap->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
+					mmap->color[effID].type | 0x10 :
+					mmap->color[effID].type & 0xf;
+				SetEffectData(hDlg);
 				fxhl->RefreshOne(mmap);
 			}
 			break;
@@ -187,7 +202,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		} break;
 	case WM_DRAWITEM: {
-		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, mmap && effID < mmap->color.size() ? Act2Code(&mmap->color[effID]) : AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
+		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, mmap && effID < mmap->color.size() ? MakeRGB(&mmap->color[effID]) : 0xff000000);
 	} break;
 	case WM_NOTIFY:
 		if (((NMHDR*)lParam)->idFrom == IDC_LEFFECTS_LIST) {

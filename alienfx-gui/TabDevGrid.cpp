@@ -4,6 +4,7 @@
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
+extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void UpdateZoneList();
 extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 //extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh);
@@ -235,16 +236,6 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_INITDIALOG:
 	{
         cgDlg = hDlg;
-        //if (tabLightSel != TAB_DEVICES) {
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTADDTOP), SW_HIDE);
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTREMTOP), SW_HIDE);
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTADDBOT), SW_HIDE);
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTREMBOT), SW_HIDE);
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTADDLEFT), SW_HIDE);
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTREMLEFT), SW_HIDE);
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTADDRGH), SW_HIDE);
-        //    ShowWindow(GetDlgItem(hDlg, IDC_BUTREMRGH), SW_HIDE);
-        //}
         RepaintGrid();
 	} break;
     case WM_COMMAND: {
@@ -364,7 +355,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             if (gridVal) {
                 if (tabLightSel == TAB_DEVICES) {
                     HBRUSH Brush = CreateSolidBrush(gridVal == MAKELPARAM(activeDevice->pid, eLid) ?
-                        RGB(conf->testColor.r, conf->testColor.g, conf->testColor.b) :
+                        MakeRGB(conf->testColor) :
                         RGB(0xff - (HIWORD(gridVal) << 5), LOWORD(gridVal), HIWORD(gridVal) << 1));
                     FillRect(wDC, &ditem->rcItem, Brush);
                     DeleteObject(Brush);

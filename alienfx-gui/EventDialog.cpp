@@ -5,8 +5,9 @@
 #include "common.h"
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
-extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+DWORD MakeRGB(AlienFX_SDK::Afx_action* act);
+//extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
+extern void RedrawButton(HWND hDlg, DWORD);
 extern void UpdateZoneAndGrid();
 extern void UpdateZoneList();
 
@@ -21,11 +22,6 @@ const static string eventNamesP[] = { "CPU load", "RAM load", "Storage load", "G
 			"Fans RPM", "Power usage", "Power mode", ""},
 			eventNamesI[] = { "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
 				"BIOS Power mode", "Power source", ""};
-//const static vector<vector<string>> eventNames{
-//		{ "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
-//			"Fans RPM", "Power usage", "Power mode"},
-//		{ "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
-//			"BIOS Power mode", "Power source" }};
 
 int eventID = 0;
 
@@ -190,14 +186,14 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		}
 	} break;
 	case WM_DRAWITEM: {
-		AlienFX_SDK::Afx_colorcode c = { 0,0,0,0xff };
+		DWORD c = 0xff000000;
 		if (mmap && ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:
-				c = Act2Code(mmap->fromColor && mmap->color.size() ? &mmap->color.front() : &ev->from);
+				c = MakeRGB(mmap->fromColor && mmap->color.size() ? &mmap->color.front() : &ev->from);
 				break;
 			case IDC_BUTTON_COLORTO:
-				c = Act2Code(&ev->to);
+				c = MakeRGB(&ev->to);
 				break;
 			}
 		}

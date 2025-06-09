@@ -51,16 +51,10 @@ void MonHelper::Start() {
 	// start thread...
 	if (!monThread) {
 		oldPower = GetPowerMode();
-		//SetOC();
-		//SetCurrentMode();
 		active = NULL;
 		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_NORMAL/*THREAD_PRIORITY_BELOW_NORMAL*/);
 		DebugPrint("Mon thread start.\n");
 	}
-	//else {
-	//	Stop();
-	//	Start();
-	//}
 }
 
 void MonHelper::Stop() {
@@ -75,9 +69,11 @@ void MonHelper::Stop() {
 }
 
 void MonHelper::SetCurrentMode(int newMode) {
-	if (newMode < 0)
-		newMode = fan_conf->lastProf->gmodeStage ? powerSize : 
+	if (newMode < 0) {
+		DebugPrint("Mon: Switching from profile\n");
+		newMode = fan_conf->lastProf->gmodeStage ? powerSize :
 			fan_conf->acPower ? fan_conf->lastProf->powerStage : fan_conf->lastProf->зowerStageDC;
+	}
 	if (newMode != powerMode) {
 		if (newMode < powerSize) {
 			if (powerMode == powerSize) {
@@ -94,6 +90,11 @@ void MonHelper::SetCurrentMode(int newMode) {
 		}
 		powerMode = newMode;
 	}
+#ifdef _DEBUG
+	else {
+		DebugPrint("Mon: Same power mode\n");
+	}
+#endif
 }
 
 byte MonHelper::GetFanPercent(byte fanID)
@@ -109,13 +110,13 @@ byte MonHelper::GetFanPercent(byte fanID)
 }
 
 int MonHelper::GetPowerMode() {
-//#ifdef _DEBUG
-//	int res = acpi->GetGMode() ? powerSize : acpi->GetPower();
-//	DebugPrint("Mon: BIOS mode " + to_string(res) + ", current " + to_string(powerMode) + "\n");
-//	return res;
-//#else
+#ifdef _DEBUG
+	int res = acpi->GetGMode() ? powerSize : acpi->GetPower();
+	DebugPrint("Mon: BIOS mode " + to_string(res) + ", current " + to_string(powerMode) + "\n");
+	return res;
+#else
 	return acpi->GetGMode() ? powerSize : acpi->GetPower();
-//#endif // _DEBUG
+#endif // _DEBUG
 }
 
 void MonHelper::SetPowerMode(byte newMode) {
@@ -132,7 +133,6 @@ void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*) param;
 	AlienFan_SDK::Control* acpi = src->acpi;
 	src->modified = false;
-	//fan_profile* active = src->active;
 
 	// update values:
 	// temps..
@@ -152,7 +152,6 @@ void CMonProc(LPVOID param) {
 
 	if (active != fan_conf->lastProf) {
 		active = fan_conf->lastProf; // profile changed
-		//src->SetCurrentMode();
 		src->SetOC();
 	}
 
@@ -161,7 +160,7 @@ void CMonProc(LPVOID param) {
 		DebugPrint("Zero fan profile!");
 #endif
 
-	if (src->inControl /*&& active*/) {
+	if (src->inControl && active) {
 		// check power mode
 		src->powerMode = src->GetPowerMode();
 		src->SetCurrentMode();

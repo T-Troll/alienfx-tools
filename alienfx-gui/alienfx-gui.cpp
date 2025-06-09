@@ -202,9 +202,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 
-void RedrawButton(HWND ctrl, AlienFX_SDK::Afx_colorcode act) {
+void RedrawButton(HWND ctrl, DWORD act) {
 	RECT rect;
-	HBRUSH Brush = CreateSolidBrush(act.br ? GetSysColor(COLOR_BTNFACE) : RGB(act.r, act.g, act.b));
+	HBRUSH Brush = CreateSolidBrush(act & 0xff000000 ? GetSysColor(COLOR_BTNFACE) : act);
 	GetClientRect(ctrl, &rect);
 	HDC cnt = GetWindowDC(ctrl);
 	FillRect(cnt, &rect, Brush);
@@ -626,6 +626,14 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		break;
+	case WM_SETTINGCHANGE: {
+		// Get accent color
+		DWORD acc = conf->GetAccentColor();
+		if (acc != conf->accentColor) {
+			conf->accentColor = acc;
+			fxhl->Refresh();
+		}
+		} break;
 	case WM_DEVICECHANGE:
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
@@ -739,6 +747,13 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	return true;
 }
 
+DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c) {
+	return RGB(c.r, c.g, c.b);
+}
+
+DWORD MakeRGB(AlienFX_SDK::Afx_action* act) {
+	return RGB(act->r, act->g, act->b);
+}
 
 AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action *act) {
 	return AlienFX_SDK::Afx_colorcode({ act->b, act->g, act->r });
@@ -766,10 +781,10 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
-	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, RGB(map->r, map->g, map->b), (LPDWORD)conf->customColors,
+	CHOOSECOLOR cc{ sizeof(cc), ctrl, NULL, MakeRGB(map), (LPDWORD)conf->customColors,
 		CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR | CC_ENABLEHOOK, NULL, Lpcchookproc };
 	// Let's change CC 15 to accent color
-	conf->customColors[15] = conf->GetAccentColor();
+	conf->customColors[15] = conf->accentColor;
 
 	bool ret;
 	AlienFX_SDK::Afx_action savedColor = *map;
@@ -783,7 +798,7 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 			fxhl->RefreshOne(mmap);
 	}
 
-	RedrawButton(ctrl, Act2Code(map));
+	RedrawButton(ctrl, MakeRGB(map));
 	return ret;
 }
 
@@ -804,16 +819,6 @@ bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {
 	return false;
 }
 
-//bool IsGroupUnused(DWORD gid) {
-//	for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++) {
-//		for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
-//			if (ls->group == gid) {
-//				return false;
-//			}
-//	}
-//	return true;
-//}
-
 void RemoveUnusedGroups() {
 	for (auto i = conf->afx_dev.GetGroups()->begin(); i != conf->afx_dev.GetGroups()->end();) {
 		for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++) {
@@ -825,23 +830,11 @@ void RemoveUnusedGroups() {
 		}
 		i = conf->afx_dev.GetGroups()->erase(i);
 		continue;
-		//if (IsGroupUnused(i->gid)) {
-		//	i = conf->afx_dev.GetGroups()->erase(i);
-		//}
-		//else
-		//	i++;
 	nextgroup:
 		i++;
 	}
 }
 
-//void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh) {
-//	for (auto pos = grp->lights.begin(); pos != grp->lights.end(); pos++)
-//		if (pos->lgh == lgh.lgh) {
-//			grp->lights.erase(pos);
-//			break;
-//		}
-//}
 
 
 

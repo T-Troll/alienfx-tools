@@ -59,10 +59,10 @@ public:
 	void TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force = false, bool wp=false);
 	//void ResetPower(AlienFX_SDK::Afx_device* dev);
 	bool CheckEvent(LightEventData* eData, event* e);
-	void RefreshCounters(LightEventData *data = NULL);
-	void RefreshAmbient();
-	void RefreshHaptics();
-	void RefreshGrid();
+	void RefreshCounters(LightEventData *data = NULL, bool fromRefresh = false);
+	void RefreshAmbient(bool fromRefresh = false);
+	void RefreshHaptics(bool fromRefresh = false);
+	void RefreshGrid(bool fromRefresh = false);
 	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0);
 	void SetState(bool force = false);
 	void UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev = NULL, bool reset = false);

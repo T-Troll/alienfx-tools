@@ -64,10 +64,10 @@ namespace AlienFan_SDK {
 		setXMP = 18
 	};
 
-	static const char* temp_names[2]{
+	static const char* temp_names[3]{
 			"CPU Internal Thermistor",
-			"GPU Internal Thermistor"//,
-			//"Motherboard Thermistor",
+			"GPU Internal Thermistor",
+			"Motherboard Thermistor"//,
 			//"CPU External Thermistor",
 			//"Memory Thermistor",
 			//"GPU External Thermistor"

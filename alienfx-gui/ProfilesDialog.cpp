@@ -8,7 +8,8 @@
 extern void UpdateProfileList();
 extern void UpdateState(bool checkMode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
+extern void RedrawButton(HWND hDlg, DWORD);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void RemoveUnusedGroups();
@@ -84,8 +85,8 @@ void RefreshDeviceList(HWND hDlg) {
 					c1 = b->effColor1; c2 = b->effColor2;
 				}
 
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), c1);
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), c2);
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), MakeRGB(c1));
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), MakeRGB(c2));
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, ge_types[i->version == 5]);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b ? b->colorMode - 1 : 0);
 
@@ -97,8 +98,8 @@ void RefreshDeviceList(HWND hDlg) {
 					c1 = b->effColor1; c2 = b->effColor2;
 				}
 
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), c1);
-				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), c2);
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), MakeRGB(c1));
+				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), MakeRGB(c2));
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, ge_types[i->version == 5]);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b ? b->colorMode - 1 : 0);
 			}
@@ -193,8 +194,8 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (CtlID) {
 		case IDC_BUTTON_EFFCLR1: case IDC_BUTTON_EFFCLR2: case IDC_BUTTON_EFFCLR3: case IDC_BUTTON_EFFCLR4:
 			if (b) {
-				RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, CtlID == IDC_BUTTON_EFFCLR1 || CtlID == IDC_BUTTON_EFFCLR3 ?
-					b->effColor1 : b->effColor2);
+				RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, MakeRGB(CtlID == IDC_BUTTON_EFFCLR1 || CtlID == IDC_BUTTON_EFFCLR3 ?
+					b->effColor1 : b->effColor2));
 			}
 			break;
 		}

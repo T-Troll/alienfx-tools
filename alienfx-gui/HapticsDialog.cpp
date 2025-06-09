@@ -3,8 +3,9 @@
 #include "WSAudioIn.h"
 #include "Common.h"
 
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern void RedrawButton(HWND hDlg, DWORD);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
+extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void UpdateZoneAndGrid();
 
 extern EventHandler* eve;
@@ -88,8 +89,8 @@ void DrawFreq(HWND hysto) {
 
 void SetMappingData(HWND hDlg) {
 	DrawFreq(GetDlgItem(hDlg, IDC_LEVELS));
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_LPC), freqBlock ? freqBlock->colorfrom : AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_HPC), freqBlock ? freqBlock->colorto : AlienFX_SDK::Afx_colorcode({ 0,0,0,0xff }));
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_LPC), freqBlock ? MakeRGB(freqBlock->colorfrom) : 0xff000000);
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_HPC), freqBlock ? MakeRGB(freqBlock->colorto) : 0xff000000);
 	CheckDlgButton(hDlg, IDC_CHECK_RANDOM, freqBlock ? freqBlock->colorto.br : 0);
 }
 
@@ -269,12 +270,12 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (((DRAWITEMSTRUCT *) lParam)->CtlID) {
 		case IDC_BUTTON_LPC: case IDC_BUTTON_HPC:
 		{
-			AlienFX_SDK::Afx_colorcode c = { 0,0,0,0xff };
+			DWORD c = 0xff000000;
 			if (freqBlock)
 				if (((DRAWITEMSTRUCT *) lParam)->CtlID == IDC_BUTTON_LPC)
-					c = freqBlock->colorfrom;
+					c = MakeRGB(freqBlock->colorfrom);
 				else
-					c = freqBlock->colorto;
+					c = MakeRGB(freqBlock->colorto);
 			RedrawButton(((DRAWITEMSTRUCT *) lParam)->hwndItem, c);
 			return true;
 		}

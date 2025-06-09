@@ -22,7 +22,7 @@ ConfigHandler::ConfigHandler() {
 	RegCreateKeyEx(hKeyMain, TEXT("Profiles"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyProfiles, NULL);
 	RegCreateKeyEx(hKeyMain, TEXT("Zones"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyZones, NULL);
 	// for accent color
-	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\History\\Colors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ, NULL, &hKeyAccent, NULL);
+	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\DWM"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ, NULL, &hKeyAccent, NULL);
 
 	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
@@ -118,8 +118,8 @@ bool ConfigHandler::SetIconState(bool needCheck) {
 
 DWORD ConfigHandler::GetAccentColor() {
 	DWORD size = sizeof(DWORD), value = 0;
-	RegGetValue(hKeyAccent, NULL, "ColorHistory0", RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, &value, &size);
-	return value;
+	RegGetValue(hKeyAccent, NULL, "AccentColor", RRF_RT_DWORD | RRF_ZEROONFAILURE, NULL, &value, &size);
+	return value & 0xffffff;
 }
 
 void ConfigHandler::GetReg(char *name, DWORD *value, DWORD defValue) {
@@ -174,6 +174,8 @@ void ConfigHandler::Load() {
 
 	// Haptics....
 	GetReg("Haptics-Input", &hap_inpType);
+
+	accentColor = GetAccentColor();
 
 	char name[256];
 	int pid, appid, profID, groupID, recSize;

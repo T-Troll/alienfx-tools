@@ -191,6 +191,8 @@ public:
 	DWORD actionLights;
 	DWORD actionTimeout;
 
+	DWORD accentColor;
+
 	COLORREF customColors[16];
 
 	// States
@@ -242,7 +244,6 @@ public:
 	profile* FindProfileByApp(std::string appName, bool active = false);
 	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
 	bool IsPriorityProfile(profile* prof);
-	//bool IsActiveOnly(profile* prof);
 	bool SetIconState(bool needCheck = false);
 	DWORD GetAccentColor();
 };

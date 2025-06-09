@@ -167,18 +167,18 @@ namespace AlienFan_SDK {
 						if (isXMP)
 							printf("Memory XMP available\n");
 #endif
-						int fIndex = 0; unsigned funcID = CallWMIMethod(getPowerID, fIndex);
+						int fIndex = 0, funcID; //= CallWMIMethod(getPowerID, fIndex);
 
 						powers.push_back(0); // Manual mode
 						// Scan for avaliable data
-						while (funcID && (funcID + 1)) {
+						while ((funcID = CallWMIMethod(getPowerID, fIndex)) && (funcID + 1)) {
 							byte vkind = funcID & 0xff;
-							if (funcID > 0x100) {
+							if (funcID > 0x100 && funcID < 0x110) {
 								// sensor
 #ifdef _TRACE_
 								printf("Sensor ID=%x found\n", funcID);
 #endif
-								sensors.push_back({ { vkind, 1 }, sensors.size() < 2 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
+								sensors.push_back({ { vkind, 1 }, sensors.size() < 3 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
 							}
 							else {
 								if (funcID > 0x8f) {
@@ -197,7 +197,7 @@ namespace AlienFan_SDK {
 								}
 							}
 							fIndex++;
-							funcID = CallWMIMethod(getPowerID, fIndex);
+							//funcID = CallWMIMethod(getPowerID, fIndex);
 						}
 #ifdef _TRACE_
 						printf("%d fans, %d sensors, %d Power modes found, last reply %x\n", (int) fans.size(), (int) sensors.size(), (int)powers.size(), funcID);

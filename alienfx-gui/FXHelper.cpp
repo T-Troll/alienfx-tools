@@ -217,10 +217,17 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 			(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 3 : 0),
 			(byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
-		if (conf->gammaCorrection) {
-			for (int i = 0; i < newBlock.actsize; i++) {
-				AlienFX_SDK::Afx_action* action = &newBlock.actions[i];
-				// gamma-correction...
+		for (int i = 0; i < newBlock.actsize; i++) {
+			AlienFX_SDK::Afx_action* action = &newBlock.actions[i];
+			// Check and change if Accent
+			if (action->type & 0xf0) {
+				action->type &= 0xf;
+				AlienFX_SDK::Afx_colorcode c;
+				c.ci = conf->accentColor;
+				action->r = c.b; action->g = c.g; action->b = c.r;
+			}
+			// gamma-correction...
+			if (conf->gammaCorrection) {
 				action->r = ((UINT)action->r * action->r * dev->white.r) / 65025; // (255 * 255);
 				action->g = ((UINT)action->g * action->g * dev->white.g) / 65025; // (255 * 255);
 				action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
@@ -300,10 +307,10 @@ void FXHelper::Refresh(bool forced)
 	}
 	conf->modifyProfile.unlock();
 	if (!forced) {
-		RefreshCounters();
-		RefreshAmbient();
-		RefreshHaptics();
-		RefreshGrid();
+		RefreshCounters(NULL, true);
+		RefreshAmbient(true);
+		RefreshHaptics(true);
+		RefreshGrid(true);
 	}
 	QueryUpdate(forced);
 }
@@ -317,7 +324,7 @@ void FXHelper::RefreshOne(groupset* map, bool update) {
 	}
 }
 
-void FXHelper::RefreshCounters(LightEventData* data)
+void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 {
 	DebugPrint("Counter refresh started\n");
 	if (lightsNoDelay && conf->stateEffects) {
@@ -412,7 +419,7 @@ void FXHelper::RefreshCounters(LightEventData* data)
 				}
 			}
 		}
-		if (wasChanged) {
+		if (wasChanged && !fromRefresh) {
 			DebugPrint("Counters changed, updating\n");
 			QueryUpdate();
 			//memcpy(&eData, data, sizeof(LightEventData));
@@ -422,7 +429,7 @@ void FXHelper::RefreshCounters(LightEventData* data)
 	DebugPrint("Counters update finished\n");
 }
 
-void FXHelper::RefreshAmbient() {
+void FXHelper::RefreshAmbient(bool fromRefresh) {
 	if (lightsNoDelay && eve && eve->capt) {
 		UCHAR* img = ((CaptureHelper*)eve->capt)->imgz;
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
@@ -456,12 +463,12 @@ void FXHelper::RefreshAmbient() {
 				}
 			}
 		conf->modifyProfile.unlock();
-		if (wasChanged)
+		if (wasChanged && !fromRefresh)
 			QueryUpdate();
 	}
 }
 
-void FXHelper::RefreshHaptics() {
+void FXHelper::RefreshHaptics(bool fromRefresh) {
 	if (lightsNoDelay && eve && eve->audio) {
 		int* freq = ((WSAudioIn*)eve->audio)->freqs;
 		vector<AlienFX_SDK::Afx_action> actions;
@@ -520,20 +527,19 @@ void FXHelper::RefreshHaptics() {
 			}
 		}
 		conf->modifyProfile.unlock();
-		if (wasChanged)
+		if (wasChanged && !fromRefresh)
 			QueryUpdate();
 	}
 }
 
-void FXHelper::RefreshGrid() {
+void FXHelper::RefreshGrid(bool fromRefresh) {
 	if (lightsNoDelay && eve && eve->grid) {
 		bool wasChanged = false;
 		vector<AlienFX_SDK::Afx_action> cur{ {0} };
 		conf->modifyProfile.lock();
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 			if (ce->effect.trigger && !ce->gridop.passive) {
-				switch (ce->effect.trigger) {
-				case 4: { // ambient
+				if (ce->effect.trigger == 4) { // ambient
 					CaptureHelper* capt = (CaptureHelper*)ce->effect.capt;
 					// update lights
 					if (capt->needUpdate) {
@@ -549,17 +555,16 @@ void FXHelper::RefreshGrid() {
 						}
 						wasChanged = true;
 					}
-				} break;
-				default:
+				} else {
 					if (ce->effect.effectColors.size()) {
 						// prepare vars..
 						grideffop* effop = &ce->gridop;
 						grideffect* eff = &ce->effect;
 						// check for initial repaint
-						if (effop->stars.empty()) {
+						if (effop->stars.empty() || fromRefresh) {
 							cur.front() = Code2Act(eff->effectColors.front());
 							SetZone(&(*ce), &cur);
-							effop->stars.resize(1);
+							effop->stars.resize(eff->width);
 							wasChanged = true;
 						}
 						// calculate phase
@@ -595,7 +600,6 @@ void FXHelper::RefreshGrid() {
 								uniform_int_distribution<int> id(0, (int)grp->lights.size() - 1);
 								uniform_int_distribution<int> count(5, 25);
 								uniform_int_distribution<int> clr(1, (int)eff->effectColors.size() - 1);
-								effop->stars.resize(eff->width);
 								for (auto star = effop->stars.begin(); star != effop->stars.end(); star++) {
 									if (star->count >= 0 && star->lightID) {
 										// change star color phase
@@ -669,7 +673,7 @@ void FXHelper::RefreshGrid() {
 			}
 		}
 		conf->modifyProfile.unlock();
-		if (wasChanged)
+		if (wasChanged && !fromRefresh)
 			QueryUpdate();
 	}
 }

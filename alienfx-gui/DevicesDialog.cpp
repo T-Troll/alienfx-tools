@@ -4,7 +4,8 @@
 #include "common.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
-extern void RedrawButton(HWND hDlg, AlienFX_SDK::Afx_colorcode);
+extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
+extern void RedrawButton(HWND hDlg, DWORD);
 extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
 extern void SetSlider(HWND tt, int value);
 extern void SetMainTabs();
@@ -667,7 +668,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 	} break;
 	case WM_DRAWITEM:
-		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, conf->testColor);
+		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, MakeRGB(conf->testColor));
 		break;
 	case WM_DESTROY:
 	{
