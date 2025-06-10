@@ -17,10 +17,10 @@ extern EventHandler* eve;
 
 event* ev = NULL;
 
-const static string eventTypeNames[] = { "Performance", "Indicator" };
-const static string eventNamesP[] = { "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
+const char* eventTypeNames[] = { "Performance", "Indicator" };
+const char* eventNamesP[] = { "CPU load", "RAM load", "Storage load", "GPU load", "Network", "Temperature", "Battery level",
 			"Fans RPM", "Power usage", "Power mode", ""},
-			eventNamesI[] = { "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
+			*eventNamesI[] = { "Storage activity", "Network activity", "System overheat", "Out of memory", "Low battery", "Selected language",
 				"BIOS Power mode", "Power source", ""};
 
 int eventID = 0;
@@ -64,7 +64,7 @@ void RebuildEventList(HWND hDlg) {
 			if (!mmap->events[i].state)
 				mmap->events[i].state = 2;
 			int type = mmap->events[i].state - 1;
-			string itemName = eventTypeNames[type] + ", " +
+			string itemName = string(eventTypeNames[type]) + ", " +
 				(type ? eventNamesI[mmap->events[i].source] : eventNamesP[mmap->events[i].source]);
 				//eventNames[type][mmap->events[i].source];
 			lItem.iItem = i;

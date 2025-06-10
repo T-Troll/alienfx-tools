@@ -38,10 +38,11 @@ ThreadHelper* updateUI = NULL;
 HWND mDlg = NULL, dDlg = NULL;
 
 // color selection:
-AlienFX_SDK::Afx_action* mod;
+AlienFX_SDK::Afx_action* mod; //  Current user-selected color
+AlienFX_SDK::Afx_action lastColor; // last selected color
+bool needColorUpdate; // is needed to update group after color change?
 
 HANDLE haveLightFX;
-//bool noLightFX = true;
 
 // tooltips
 HWND sTip1 = 0, sTip2 = 0, sTip3 = 0;
@@ -57,8 +58,6 @@ UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 int eItem = 0;
 // last zone selected
 groupset* mmap = NULL;
-// last device selected
-AlienFX_SDK::Afx_device* activeDevice = NULL;
 
 extern string GetFanName(int ind, bool forTray = false);
 extern void AlterGMode(HWND);
@@ -306,14 +305,12 @@ void ClearOldTabs(HWND tab) {
 	}
 }
 
-void CreateTabControl(HWND parent, int tabsize, const string* names, const DWORD* resID, DLGPROC* func) {
+void CreateTabControl(HWND parent, int tabsize, const char* names[], const DWORD* resID, const DLGPROC* func) {
 
 	ClearOldTabs(parent);
 
 	DLGHDR* pHdr = new DLGHDR{ 0 };
 	SetWindowLongPtr(parent, GWLP_USERDATA, (LONG_PTR)pHdr);
-
-	//int tabsize = (int)names.size();
 
 	pHdr->apRes = new DLGTEMPLATE*[tabsize];
 	pHdr->apProc = new DLGPROC[tabsize];
@@ -328,7 +325,7 @@ void CreateTabControl(HWND parent, int tabsize, const string* names, const DWORD
 			case 1: if (!mon) continue;
 			}
 		pHdr->apRes[i] = (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, MAKEINTRESOURCE(resID[i]), RT_DIALOG)));
-		tie.pszText = (LPSTR)names[i].c_str();
+		tie.pszText = (LPSTR)names[i]/*.c_str()*/;
 		tie.lParam = i;
 		pHdr->apProc[i] = func[i];
 		int pos = TabCtrl_InsertItem(parent, i, (LPARAM)&tie);
@@ -337,9 +334,9 @@ void CreateTabControl(HWND parent, int tabsize, const string* names, const DWORD
 	}
 }
 
-const static string mainTabs[] = { "Lights", "Fans and Power", "Profiles", "Settings" };
-const static DWORD resTabs[] = { IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS };
-static DLGPROC procTabs[] = { (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog };
+const char* mainTabs[] = { "Lights", "Fans and Power", "Profiles", "Settings" };
+const DWORD resTabs[] = { IDD_DIALOG_LIGHTS, IDD_DIALOG_FAN, IDD_DIALOG_PROFILES, IDD_DIALOG_SETTINGS };
+const DLGPROC procTabs[] = { (DLGPROC)TabLightsDialog, (DLGPROC)TabFanDialog, (DLGPROC)TabProfilesDialog, (DLGPROC)TabSettingsDialog };
 
 void SetMainTabs() {
 	CreateTabControl(GetDlgItem(mDlg, IDC_TAB_MAIN), 4, mainTabs, resTabs, procTabs);
@@ -763,9 +760,6 @@ AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c) {
 	return AlienFX_SDK::Afx_action({ 0,0,0,c.r,c.g,c.b });
 }
 
-AlienFX_SDK::Afx_action lastColor; // last selected color in CS dialogue
-bool needColorUpdate; // is needed to update group after color change?
-
 UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	if (message == WM_CTLCOLOREDIT)
 	{
@@ -774,7 +768,7 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		mod->b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
 		if (needColorUpdate && mmap && memcmp(&lastColor, mod, sizeof(AlienFX_SDK::Afx_action))) {
 			memcpy(&lastColor, mod, sizeof(AlienFX_SDK::Afx_action));
-			fxhl->RefreshOne(mmap);
+			fxhl->RefreshZone(mmap);
 		}
 	}
 	return 0;
@@ -795,7 +789,7 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 	if (!(ret = ChooseColor(&cc))) {
 		(*map) = savedColor;
 		if (needUpdate && mmap)
-			fxhl->RefreshOne(mmap);
+			fxhl->RefreshZone(mmap);
 	}
 
 	RedrawButton(ctrl, MakeRGB(map));
@@ -810,30 +804,6 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 	return ret;
 }
 
-bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {
-	if (grp)
-		//return find(grp->lights.begin(), grp->lights.end(), lgh) != grp->lights.end();
-		for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-			if (pos->lgh == lgh)
-				return true;
-	return false;
-}
-
-void RemoveUnusedGroups() {
-	for (auto i = conf->afx_dev.GetGroups()->begin(); i != conf->afx_dev.GetGroups()->end();) {
-		for (auto prof = conf->profiles.begin(); prof != conf->profiles.end(); prof++) {
-			for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
-				if (ls->group == i->gid) {
-					//i++;
-					goto nextgroup;
-				}
-		}
-		i = conf->afx_dev.GetGroups()->erase(i);
-		continue;
-	nextgroup:
-		i++;
-	}
-}
 
 
 

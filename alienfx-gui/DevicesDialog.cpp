@@ -41,7 +41,8 @@ int eLid = 0;
 vector<gearInfo> csv_devs;
 WNDPROC oldproc;
 
-extern AlienFX_SDK::Afx_device* activeDevice;
+// last device selected
+AlienFX_SDK::Afx_device* activeDevice = NULL;
 
 void ResetPower()
 {

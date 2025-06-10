@@ -3,12 +3,11 @@
 #include "AlienFX_SDK.h"
 #include <map>
 #include <queue>
-#include <ThreadHelper.h>
+#include <CustomMutex.h>
 
 using namespace std;
 
 struct LightQueryElement {
-	//AlienFX_SDK::Afx_device* dev;
 	WORD pid;
 	byte light;
 	byte command; // 0 - color, 1 - update, 2 - set brightness

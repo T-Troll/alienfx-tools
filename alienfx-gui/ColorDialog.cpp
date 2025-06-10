@@ -14,7 +14,7 @@ extern FXHelper* fxhl;
 
 int effID = 0;
 
-const static string lightEffectNames[] { "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow", "" };
+const char* lightEffectNames[] { "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow", "" };
 
 void SetEffectData(HWND hDlg) {
 	bool hasEffects = mmap && mmap->color.size();
@@ -70,7 +70,7 @@ void RebuildEffectList(HWND hDlg) {
 			// Patch for incorrect type
 			if (mmap->color[i].type == AlienFX_SDK::Action::AlienFX_A_Power)
 				mmap->color[i].type = 0;
-			lItem.pszText = (LPSTR)lightEffectNames[mmap->color[i].type & 0xf].c_str();
+			lItem.pszText = (LPSTR)lightEffectNames[mmap->color[i].type & 0xf];
 			// check selection...
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
@@ -145,7 +145,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				mmap->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
 					0x10 : 0 | ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				RebuildEffectList(hDlg);
-				fxhl->RefreshOne(mmap);
+				fxhl->RefreshZone(mmap);
 			}
 			break;
 		case IDC_ACCENT:
@@ -154,7 +154,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					mmap->color[effID].type | 0x10 :
 					mmap->color[effID].type & 0xf;
 				SetEffectData(hDlg);
-				fxhl->RefreshOne(mmap);
+				fxhl->RefreshZone(mmap);
 			}
 			break;
 		case IDC_BUTTON_C1:

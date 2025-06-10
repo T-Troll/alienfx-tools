@@ -69,10 +69,10 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 		else {
 			AlienFX_SDK::Afx_colorcode act{ 0 };
 			// add new color
-			if (clrListID < clr->size())
-				act = clr->at(clrListID);
 			if (clr->empty())
 				clr->push_back(act);
+			if (clrListID < clr->size())
+				act = clr->at(clrListID);
 			clr->push_back(act);
 			if (SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID)))
 				clrListID = newColorID;
@@ -101,8 +101,8 @@ void UpdateEffectInfo(HWND hDlg) {
 	RebuildGEColorsList(hDlg);
 }
 
-static const string triggerNames[] = { "Off", "Continues", "Keyboard", "Event", "Ambient", "" },
-	effectTypeNames[] = { "Running light", "Wave", "Gradient", "Fill", "Star field", "Fade", ""};
+const char* triggerNames[] = { "Off", "Continues", "Keyboard", "Event", "Ambient", "" },
+	*effectTypeNames[] = { "Running light", "Wave", "Gradient", "Fill", "Star field", "Fade", ""};
 
 BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
@@ -113,8 +113,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	{
 	case WM_INITDIALOG:
 	{
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), triggerNames/*{ "Off", "Continues", "Keyboard", "Event", "Ambient" }*/);
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), effectTypeNames/*{ "Running light", "Wave", "Gradient", "Fill", "Star field", "Fade"}*/);
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), triggerNames);
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), effectTypeNames);
 		SendMessage(speed_slider, TBM_SETRANGE, true, MAKELPARAM(-80, 80));
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
 		SendMessage(gs_slider, TBM_SETRANGE, true, MAKELPARAM(5, 1000));

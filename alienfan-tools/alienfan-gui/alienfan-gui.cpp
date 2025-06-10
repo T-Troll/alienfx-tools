@@ -25,7 +25,7 @@ MonHelper* mon = NULL;                          // Monitoring object
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 HWND mDlg = NULL, fanWindow = NULL, tipWindow = NULL;
 
-static const string pModes[] = { "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive", ""};
+const string pModes[] = { "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive", ""};
 
 GUID* sch_guid, perfset;
 

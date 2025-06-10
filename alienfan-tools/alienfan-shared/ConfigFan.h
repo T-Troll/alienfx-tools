@@ -1,6 +1,5 @@
 #pragma once
 
-//#include <vector>
 #include <map>
 #include "alienfan-sdk.h"
 

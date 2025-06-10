@@ -2,11 +2,9 @@
 #include "FXHelper.h"
 #include "common.h"
 
-extern void RemoveUnusedGroups();
 extern FXHelper* fxhl;
 extern int tabLightSel;
 extern void RecalcGridZone(RECT* what = NULL);
-extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 HWND zsDlg;
 
@@ -130,7 +128,7 @@ BOOL CALLBACK SelectLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				int pos = ListBox_AddString(llist, (LPSTR)lgh->name.c_str());
 				AlienFX_SDK::Afx_groupLight lgt{ dev->pid, lgh->lightid };
 				ListBox_SetItemData(llist, pos , lgt.lgh);
-				if (IsLightInGroup(lgt.lgh, grp))
+				if (conf->IsLightInGroup(lgt.lgh, grp))
 					ListBox_SetSel(llist, true, pos);
 			}
 		break;
@@ -195,7 +193,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					}
 				}
 				conf->modifyProfile.unlock();
-				RemoveUnusedGroups();
+				conf->RemoveUnusedGroups();
 				mmap = conf->FindMapping(eItem);
 				UpdateZoneList();
 				fxhl->Refresh();

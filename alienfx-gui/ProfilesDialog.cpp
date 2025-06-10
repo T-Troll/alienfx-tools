@@ -10,9 +10,6 @@ extern void UpdateState(bool checkMode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void RedrawButton(HWND hDlg, DWORD);
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
-extern void RemoveUnusedGroups();
 
 extern AlienFX_SDK::Afx_light* keySetLight;
 extern string GetKeyName(WORD vkcode);
@@ -25,10 +22,10 @@ extern ConfigFan* fan_conf;
 profile* prof = NULL;
 AlienFX_SDK::Afx_device* activeEffectDevice = NULL;
 
-const static string ge_names8[] = { "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
+const char* ge_names8[] = { "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
 	"One key (K)", "Circle out (K)", "Wave out (K)", "Right wave (K)", "Default", "Rain Drop (K)",
 	"Wave", "Rainbow wave", "Circle wave", "Random white (K)", ""},
-	ge_names5[] = { "Off", "Static", "Breathing", "Side Wave", "Dual Wave", "Pulse", "Morph", "Bounce", "Laser", "Rainbow", ""};
+	*ge_names5[] = { "Off", "Static", "Breathing", "Side Wave", "Dual Wave", "Pulse", "Morph", "Bounce", "Laser", "Rainbow", ""};
 /*
 	0 - off
 	1 - static color
@@ -41,10 +38,8 @@ const static string ge_names8[] = { "Off", "Color or Morph", "Pulse", "Back Morp
 	12 - off
 	14 - rainbow
 */
-const static string cModeNames[] = { "Single-color", "Multi-color", "Rainbow", ""};
-const static vector<int> ge_types[2]{ { 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 },
-	{ 0,1,2,3,4,8,9,10,11,14 } };
-//const static vector<int> cModeTypes{ 1, 2, 3 };
+const char* cModeNames[] = { "Single-color", "Multi-color", "Rainbow", ""};
+const int ge_types8[]{ 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 }, ge_types5[]{ 0,1,2,3,4,8,9,10,11,14 };
 
 deviceeffect* FindDevEffect(int type, bool remove = false) {
 	if (activeEffectDevice)
@@ -87,7 +82,7 @@ void RefreshDeviceList(HWND hDlg) {
 
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), MakeRGB(c1));
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), MakeRGB(c2));
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, ge_types[i->version == 5]);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->version == 8 ? ge_types8 : ge_types5);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b ? b->colorMode - 1 : 0);
 
 				c1 = c2 = { 0,0,0,0xff };
@@ -100,7 +95,7 @@ void RefreshDeviceList(HWND hDlg) {
 
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), MakeRGB(c1));
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), MakeRGB(c2));
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, ge_types[i->version == 5]);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->version == 8 ? ge_types8 : ge_types5);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b ? b->colorMode - 1 : 0);
 			}
 		}
@@ -329,7 +324,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 							}
 							delete prof;
 							prof = newpCid;
-							RemoveUnusedGroups();
+							conf->RemoveUnusedGroups();
 							UpdateProfileList();
 							ReloadProfileView(hDlg);
 							break;
@@ -369,14 +364,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				}
 				if (IsDlgButtonChecked(hDlg, IDC_CP_APPS) == BST_CHECKED)
 					prof->triggerapp.clear();
-				RemoveUnusedGroups();
+				conf->RemoveUnusedGroups();
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED && prof->fansets) {
 					if (conf->activeProfile->id == prof->id)
 						fan_conf->lastProf = &fan_conf->prof;
 					delete (fan_profile*)prof->fansets;
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
-					//ReloadProfileView(hDlg);
 				}
 				if (conf->activeProfile->id == prof->id)
 					UpdateState(true);

@@ -19,7 +19,7 @@ void ThreadHelper::Stop()
 {
 	if (tHandle) {
 		SetEvent(tEvent);
-		int code = WaitForSingleObject(tHandle, INFINITE/*delay << 2*/);
+		WaitForSingleObject(tHandle, INFINITE/*delay << 2*/);
 		CloseHandle(tHandle);
 		CloseHandle(tEvent);
 		tHandle = NULL;
@@ -31,33 +31,16 @@ void ThreadHelper::Start()
 	if (!tHandle) {
 		tEvent = CreateEvent(NULL, true, false, NULL);
 		tHandle = CreateThread(NULL, 0, ThreadFunc, this, 0, NULL);
-		SetThreadPriority(tHandle, priority);
 	}
 }
 
 DWORD WINAPI ThreadFunc(LPVOID lpParam) {
 	ThreadHelper* src = (ThreadHelper*)lpParam;
+	SetThreadPriority(src->tHandle, src->priority);
 	do {
 		src->func(src->param);
 	} while (WaitForSingleObject(src->tEvent, src->delay) == WAIT_TIMEOUT);
 	return 0;
 }
 
-CustomMutex::CustomMutex()
-{
-	InitializeCriticalSection(&mHandle);
-}
-
-CustomMutex::~CustomMutex()
-{
-	DeleteCriticalSection(&mHandle);
-}
-
-void CustomMutex::lock() {
-	EnterCriticalSection(&mHandle);
-}
-
-void CustomMutex::unlock() {
-	LeaveCriticalSection(&mHandle);
-}
 

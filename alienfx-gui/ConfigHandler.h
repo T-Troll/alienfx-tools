@@ -4,7 +4,7 @@
 #include <random>
 #include "AlienFX_SDK.h"
 #include "resource.h"
-#include <ThreadHelper.h>
+#include <CustomMutex.h>
 #include <map>
 
 // Profile flags
@@ -237,7 +237,9 @@ public:
 	bool SamePower(profile* cur, profile* prof = NULL);
 	void Save();
 	groupset* FindMapping(int mid, vector<groupset>* set = NULL);
+	bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 	void SetRandomColor(AlienFX_SDK::Afx_colorcode* clr);
+	void RemoveUnusedGroups();
 	zonemap* FindZoneMap(int gid, bool reset=false);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();

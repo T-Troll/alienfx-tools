@@ -5,7 +5,6 @@
 #include <windowsx.h>
 #include "resource.h"
 #include "ConfigHandler.h"
-#include "MonHelper.h"
 
 // debug print
 #ifdef _DEBUG
@@ -39,7 +38,6 @@ typedef struct tag_dlghdr {
 
 extern HINSTANCE hInst;
 extern ConfigHandler* conf;
-extern MonHelper* mon;
 extern HWND sTip1, sTip2, sTip3;
 extern HWND mDlg;
 

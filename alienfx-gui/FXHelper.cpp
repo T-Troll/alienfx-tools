@@ -4,13 +4,13 @@
 #include "common.h"
 #include "GridHelper.h"
 #include "WSAudioIn.h"
-//#include <iterator>
+#include "MonHelper.h"
 
 extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c);
-extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
 
 extern EventHandler* eve;
 extern HANDLE haveLightFX;
+extern MonHelper* mon;
 
 DWORD WINAPI CLightsProc(LPVOID param);
 
@@ -34,8 +34,6 @@ void FXHelper::FillAllDevs() {
 	if (conf->afx_dev.activeDevices) {
 		Start();
 		SetState(true);
-		//UpdateGlobalEffect(NULL, true);
-		//Refresh();
 	}
 }
 
@@ -303,7 +301,7 @@ void FXHelper::Refresh(bool forced)
 #endif
 	conf->modifyProfile.lock();
 	for (groupset& it : conf->activeProfile->lightsets) {
-		RefreshOne(&it, false);
+		RefreshZone(&it, false);
 	}
 	conf->modifyProfile.unlock();
 	if (!forced) {
@@ -315,7 +313,7 @@ void FXHelper::Refresh(bool forced)
 	QueryUpdate(forced);
 }
 
-void FXHelper::RefreshOne(groupset* map, bool update) {
+void FXHelper::RefreshZone(groupset* map, bool update) {
 
 	if (map && map->color.size()) {
 		SetZone(map, &map->color, 0.0);

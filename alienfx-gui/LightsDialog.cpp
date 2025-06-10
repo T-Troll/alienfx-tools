@@ -19,7 +19,7 @@ extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL);
 extern void RecalcGridZone(RECT*);
 
-extern void CreateTabControl(HWND parent, int tabsize, const string* names, const DWORD* resID, DLGPROC* func);
+extern void CreateTabControl(HWND parent, int tabsize, const char* names[], const DWORD* resID, const DLGPROC* func);
 extern void ClearOldTabs(HWND);
 
 extern int tabLightSel;
@@ -141,9 +141,9 @@ void OnLightSelChanged(HWND hwndDlg)
 	}
 }
 
-const static string lightTabNames[] = { "Colors", "Events Monitoring", "Ambient", "Haptics", "Grid Effect", "Devices and Grids" };
-const static DWORD lightRes[] = { IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_GRIDEFFECT, IDD_DIALOG_DEVICES };
-static DLGPROC lightsProc[] = { (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog,
+const char* lightTabNames[] = { "Colors", "Events Monitoring", "Ambient", "Haptics", "Grid Effect", "Devices and Grids" };
+const DWORD lightRes[] = { IDD_DIALOG_COLORS, IDD_DIALOG_EVENTS, IDD_DIALOG_AMBIENT, IDD_DIALOG_HAPTICS, IDD_DIALOG_GRIDEFFECT, IDD_DIALOG_DEVICES };
+const DLGPROC lightsProc[] = { (DLGPROC)TabColorDialog, (DLGPROC)TabEventsDialog, (DLGPROC)TabAmbientDialog, (DLGPROC)TabHapticsDialog,
 			(DLGPROC)TabGridDialog, (DLGPROC)TabDevicesDialog };
 
 BOOL CALLBACK TabLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {

@@ -13,8 +13,7 @@
 
 extern HWND mDlg;
 extern ConfigFan* fan_conf;
-extern int eItem;
-extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
+//extern int eItem;
 
 ConfigHandler::ConfigHandler() {
 
@@ -536,8 +535,33 @@ groupset* ConfigHandler::FindMapping(int mid, vector<groupset>* set)
 	return nullptr;
 }
 
+bool ConfigHandler::IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {
+	if (grp)
+		//return find(grp->lights.begin(), grp->lights.end(), lgh) != grp->lights.end();
+		for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
+			if (pos->lgh == lgh)
+				return true;
+	return false;
+}
+
 void ConfigHandler::SetRandomColor(AlienFX_SDK::Afx_colorcode* clr) {
 	clr->r = (byte)rclr(rnd);
 	clr->g = (byte)rclr(rnd);
 	clr->b = (byte)rclr(rnd);
+}
+
+void ConfigHandler::RemoveUnusedGroups() {
+	for (auto i = afx_dev.GetGroups()->begin(); i != afx_dev.GetGroups()->end();) {
+		for (auto prof = profiles.begin(); prof != profiles.end(); prof++) {
+			for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
+				if (ls->group == i->gid) {
+					//i++;
+					goto nextgroup;
+				}
+		}
+		i = afx_dev.GetGroups()->erase(i);
+		continue;
+	nextgroup:
+		i++;
+	}
 }

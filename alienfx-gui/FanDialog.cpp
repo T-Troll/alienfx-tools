@@ -23,7 +23,7 @@ extern string GetFanName(int ind, bool forTray = false);
 extern HANDLE ocStopEvent;
 extern void DrawFan();
 
-const string pModes[] = { "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive", "" };
+const char* pModes[] = { "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive", "" };
 
 BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {

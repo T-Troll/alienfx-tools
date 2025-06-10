@@ -968,7 +968,6 @@ namespace AlienFX_SDK {
 
 	Afx_grid* Mappings::GetGridByID(byte id)
 	{
-		//return &grids[id];
 		for (auto pos = grids.begin(); pos != grids.end(); pos++)
 			if (pos->id == id)
 				return &(*pos);

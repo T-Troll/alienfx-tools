@@ -1,6 +1,7 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "FXHelper.h"
+#include "MonHelper.h"
 #include "common.h"
 
 //extern void UpdateProfileList();
@@ -9,17 +10,19 @@ extern void SetHotkeys();
 extern void SetMainTabs();
 extern void UpdateProfileList();
 
+extern MonHelper* mon;
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HWND dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
+	//HWND dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
+		HWND dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
 		// system settings...
 		CheckDlgButton(hDlg, IDC_STARTW, conf->startWindows);
 		CheckDlgButton(hDlg, IDC_STARTM, conf->startMinimized);
@@ -201,12 +204,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBPOSITION: case TB_ENDTRACK: {
-			if ((HWND)lParam == dim_slider) {
+			//if ((HWND)lParam == dim_slider) {
 				conf->dimmingPower = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip1, conf->dimmingPower);
 				conf->stateDimmed = false;
 				fxhl->SetState();
-			}
+			//}
 		} break;
 		} break;
 	default: return false;

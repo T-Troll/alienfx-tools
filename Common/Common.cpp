@@ -156,7 +156,7 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 							ndots++;
 					while (ndots++ < 3)
 						res += ".0";
-					if (res.compare(GetAppVersion()) > 0) {
+					if (res.compare(GetAppVersion(false)) > 0) {
 						// new version detected!
 						ShowNotification(niData, "Update available!", "Latest version is " + res);
 						isNewVersion = true;
@@ -190,38 +190,37 @@ bool WindowsStartSet(bool kind, string name) {
 	}
 }
 
-string GetAppVersion() {
-
-	HMODULE hInst = GetModuleHandle(NULL);
-
-	HRSRC hResInfo = FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-
+string GetAppVersion(bool isFile) {
 	string res;
 
-	if (hResInfo) {
-		DWORD dwSize = SizeofResource(hInst, hResInfo);
-		HGLOBAL hResData = LoadResource(hInst, hResInfo);
-		if (hResData) {
-			LPVOID pRes = LockResource(hResData),
-				pResCopy = LocalAlloc(LMEM_FIXED, dwSize);
-			if (pResCopy) {
-				UINT uLen = 0;
-				VS_FIXEDFILEINFO* lpFfi = NULL;
+	HMODULE hInst = GetModuleHandle(NULL);
+	HGLOBAL hResData = LoadResource(hInst, FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION));
 
-				CopyMemory(pResCopy, pRes, dwSize);
+	if (hResData) {
+		LPVOID pRes = LockResource(hResData);
+		UINT uLen = 0;
+		DWORD MS, LS;
+		VS_FIXEDFILEINFO* lpFfi = NULL;
 
-				VerQueryValue(pResCopy, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
+		VerQueryValue(pRes/*Copy*/, TEXT("\\"), (LPVOID*)&lpFfi, &uLen);
 
-				res = to_string(HIWORD(lpFfi->dwProductVersionMS)) + "."
-					+ to_string(LOWORD(lpFfi->dwProductVersionMS)) + "."
-					+ to_string(HIWORD(lpFfi->dwProductVersionLS)) + "."
-					+ to_string(LOWORD(lpFfi->dwProductVersionLS));
-
-				LocalFree(pResCopy);
-			}
-			FreeResource(hResData);
+		if (isFile) {
+			MS = lpFfi->dwFileVersionMS;
+			LS = lpFfi->dwFileVersionLS;
 		}
+		else {
+			MS = lpFfi->dwProductVersionMS;
+			LS = lpFfi->dwProductVersionLS;
+		}
+
+		res = to_string(HIWORD(MS)) + "."
+			+ to_string(LOWORD(MS)) + "."
+			+ to_string(HIWORD(LS)) + "."
+			+ to_string(LOWORD(LS));
+
+		FreeResource(hResData);
 	}
+
 	return res;
 }
 
@@ -252,6 +251,21 @@ void SetSlider(HWND tt, int value) {
 	SetToolTip(tt, to_string(value));
 }
 
+void UpdateCombo(HWND ctrl, const char* items[], int sel, const int val[]) {
+	ComboBox_ResetContent(ctrl);
+	for (int i = 0; strlen(items[i]); i++) {
+		ComboBox_AddString(ctrl, items[i]);
+		if (val) {
+			ComboBox_SetItemData(ctrl, i, val[i]);
+			if (sel == val[i])
+				ComboBox_SetCurSel(ctrl, i);
+		}
+		else
+			if (sel == i)
+				ComboBox_SetCurSel(ctrl, sel);
+	}
+}
+
 void UpdateCombo(HWND ctrl, const string* items, int sel, vector<int> val) {
 	ComboBox_ResetContent(ctrl);
 	for (int i = 0; items[i].size(); i++) {
@@ -266,20 +280,6 @@ void UpdateCombo(HWND ctrl, const string* items, int sel, vector<int> val) {
 				ComboBox_SetCurSel(ctrl, sel);
 	}
 }
-
-//void UpdateCombo(HWND ctrl, vector<string> items, int sel, vector<int> val) {
-//	ComboBox_ResetContent(ctrl);
-//	for (int i = 0; i < items.size(); i++) {
-//		ComboBox_AddString(ctrl, items[i].c_str());
-//		if (val.size()) {
-//			ComboBox_SetItemData(ctrl, i, val[i]);
-//			if (sel == val[i])
-//				ComboBox_SetCurSel(ctrl, i);
-//		} else
-//			if (sel == i)
-//				ComboBox_SetCurSel(ctrl, sel);
-//	}
-//}
 
 void SetBitMask(WORD& val, WORD mask, bool state) {
 	val = (val & ~mask) | (state * mask);

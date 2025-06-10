@@ -55,9 +55,8 @@ public:
 	void Start();
 	void Stop();
 	void Refresh(bool force = false);
-	void RefreshOne(groupset* map, bool update = true);
+	void RefreshZone(groupset* map, bool update = true);
 	void TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force = false, bool wp=false);
-	//void ResetPower(AlienFX_SDK::Afx_device* dev);
 	bool CheckEvent(LightEventData* eData, event* e);
 	void RefreshCounters(LightEventData *data = NULL, bool fromRefresh = false);
 	void RefreshAmbient(bool fromRefresh = false);

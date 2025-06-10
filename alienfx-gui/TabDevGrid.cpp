@@ -6,8 +6,6 @@ extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void UpdateZoneList();
-extern bool IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp);
-//extern void RemoveLightFromGroup(AlienFX_SDK::Afx_group* grp, AlienFX_SDK::Afx_groupLight lgh);
 
 extern void SetLightInfo();
 extern void RedrawDevList();
@@ -106,7 +104,7 @@ void RecalcGridZone(RECT* what = NULL) {
             colorGrid[ind].first.br = colorGrid[ind].last.br = 0xff;
             conf->modifyProfile.lock();
             for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++)
-                if ((grp = conf->FindCreateGroup(cs->group)) && IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
+                if ((grp = conf->FindCreateGroup(cs->group)) && conf->IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
                     if (conf->stateEffects) {
                         if (cs->events.size()) {
                             if (colorGrid[ind].first.br == 0xff && !(cs->fromColor && cs->color.size()))
@@ -180,7 +178,7 @@ void ModifyColorDragZone(bool clear = false) {
             for (int y = dragZone.top; y < dragZone.bottom; y++) {
                 int ind = ind(x, y);
                 if (conf->mainGrid->grid[ind].lgh) {
-                    if (IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp))
+                    if (conf->IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp))
                         markRemove.push_back(conf->mainGrid->grid[ind]);
                     else
                         if (!clear)
@@ -197,10 +195,9 @@ void ModifyColorDragZone(bool clear = false) {
                 }
         }
         for (auto tr = markAdd.begin(); tr < markAdd.end(); tr++) {
-            if (!IsLightInGroup(tr->lgh, grp))
+            if (!conf->IsLightInGroup(tr->lgh, grp))
                 grp->lights.push_back(*tr);
         }
-        //RedrawZoneGrid(grp->gid, false, true);
         conf->FindZoneMap(grp->gid, true);
         RecalcGridZone();
         UpdateZoneList();
@@ -380,7 +377,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                         FillRect(wDC, &ditem->rcItem, Brush);
                         DeleteObject(Brush);
                     }
-                    if (mmap && IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem))) {
+                    if (mmap && conf->IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem))) {
                         for (int cx = 0; cx < size; cx++) {
                             rectClip.right = rectClip.left + buttonZone.right;
                             int border = (cx == 0 * BF_LEFT) |
