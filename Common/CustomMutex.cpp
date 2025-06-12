@@ -2,18 +2,33 @@
 
 CustomMutex::CustomMutex()
 {
-	InitializeCriticalSection(&mHandle);
+	//InitializeCriticalSection(&mHandle);
+	InitializeSRWLock(&mHandle);
 }
 
-CustomMutex::~CustomMutex()
+//CustomMutex::~CustomMutex()
+//{
+//	//DeleteCriticalSection(&mHandle);
+//}
+
+
+
+void CustomMutex::lockRead()
 {
-	DeleteCriticalSection(&mHandle);
+	AcquireSRWLockShared(&mHandle);
 }
 
-void CustomMutex::lock() {
-	EnterCriticalSection(&mHandle);
+void CustomMutex::lockWrite() {
+	//EnterCriticalSection(&mHandle);
+	AcquireSRWLockExclusive(&mHandle);
 }
 
-void CustomMutex::unlock() {
-	LeaveCriticalSection(&mHandle);
+void CustomMutex::unlockRead()
+{
+	ReleaseSRWLockShared(&mHandle);
+}
+
+void CustomMutex::unlockWrite() {
+	//LeaveCriticalSection(&mHandle);
+	ReleaseSRWLockExclusive(&mHandle);
 }

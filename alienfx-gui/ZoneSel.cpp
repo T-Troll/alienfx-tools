@@ -182,7 +182,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		} break;
 		case IDC_BUT_DEL_ZONE:
 			if (mmap) {
-				conf->modifyProfile.lock();
+				conf->modifyProfile.lockWrite();
 				for (auto iter = conf->activeProfile->lightsets.begin(); iter != conf->activeProfile->lightsets.end(); iter++) {
 					if (iter->group == eItem) {
 						eItem = iter == conf->activeProfile->lightsets.begin() ?
@@ -192,7 +192,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						break;
 					}
 				}
-				conf->modifyProfile.unlock();
+				conf->modifyProfile.unlockWrite();
 				conf->RemoveUnusedGroups();
 				mmap = conf->FindMapping(eItem);
 				UpdateZoneList();

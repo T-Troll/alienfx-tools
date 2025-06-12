@@ -58,6 +58,10 @@ void BlinkNumLock(int howmany) {
 	CreateThread(NULL, 0, Blinker, (LPVOID)(ULONGLONG)howmany, 0, NULL);
 }
 
+bool WarningBox(HWND hDlg, const char* msg) {
+	return GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, msg, "Warning", MB_YESNO | MB_ICONWARNING) == IDYES;
+}
+
 bool EvaluteToAdmin(HWND dlg) {
 	// Evaluation attempt...
 	if (!IsUserAnAdmin()) {

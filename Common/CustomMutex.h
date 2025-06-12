@@ -1,13 +1,17 @@
 #pragma once
 #include <wtypes.h>
+//#include <synchapi.h>
 
 class CustomMutex
 {
 private:
-	CRITICAL_SECTION mHandle;
+	//CRITICAL_SECTION mHandle;
+	SRWLOCK mHandle;
 public:
 	CustomMutex();
-	~CustomMutex();
-	void lock();
-	void unlock();
+	//~CustomMutex();
+	void lockRead();
+	void lockWrite();
+	void unlockRead();
+	void unlockWrite();
 };

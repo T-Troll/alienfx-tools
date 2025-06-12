@@ -432,8 +432,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		case IDC_BUT_DEVCLEAR:
-			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all device information?", "Warning",
-				MB_YESNO | MB_ICONWARNING) == IDYES) {
+			if (WarningBox(hDlg, "Do you want to clear all device information?")) {
 				// remove all lights
 				int ls = (int)activeDevice->lights.size();
 				activeDevice->lights.clear();
@@ -464,8 +463,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case IDC_BUT_CLEAR:
 			if (keySetLight) {
-				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to remove light?", "Warning",
-					MB_YESNO | MB_ICONWARNING) == IDYES) {
+				if (WarningBox(hDlg, "Do you want to remove light?")) {
 					if (keySetLight->flags & ALIENFX_FLAG_POWER) {
 						keySetLight->flags = 0;
 						ResetPower();

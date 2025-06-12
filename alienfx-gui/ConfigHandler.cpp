@@ -448,7 +448,7 @@ void ConfigHandler::Save() {
 }
 
 zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
-	zoneUpdate.lock();
+	zoneUpdate.lockWrite();
 
 	if (reset || zoneMaps.find(gid) == zoneMaps.end()) {
 		// create new zoneMap
@@ -521,7 +521,7 @@ zonemap* ConfigHandler::FindZoneMap(int gid, bool reset) {
 			}
 		}
 	}
-	zoneUpdate.unlock();
+	zoneUpdate.unlockWrite();
 	return &zoneMaps[gid];
 }
 

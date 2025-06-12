@@ -134,6 +134,7 @@ void CMonProc(LPVOID param) {
 	AlienFan_SDK::Control* acpi = src->acpi;
 	src->modified = false;
 
+	DebugPrint("Mon: Poll started\n");
 	// update values:
 	// temps..
 	for (int i = 0; i < src->sensorSize; i++) {
@@ -166,6 +167,7 @@ void CMonProc(LPVOID param) {
 		src->SetCurrentMode();
 
 		if (!src->powerMode && src->modified) {
+			DebugPrint("Mon: Boost calc started\n");
 			int cBoost;
 			for (auto cIter = active->fanControls.begin(); cIter != active->fanControls.end(); cIter++) {
 				// Check boost
@@ -213,4 +215,5 @@ void CMonProc(LPVOID param) {
 			}
 		}
 	}
+	DebugPrint("Mon: poll ended\n");
 }

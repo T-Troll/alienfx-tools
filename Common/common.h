@@ -21,5 +21,6 @@ void SetBitMask(WORD& val, WORD mask, bool state);
 bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck);
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 void BlinkNumLock(int howmany);
+bool WarningBox(HWND hDlg, const char* msg);
 
 

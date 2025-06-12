@@ -77,7 +77,7 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 				SetLight(i->lgh, actions);
 		}
 		else {
-			conf->zoneUpdate.lock();
+			conf->zoneUpdate.lockRead();
 			zonemap* zone = conf->FindZoneMap(grp->group);
 			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
 				switch (grp->gauge) {
@@ -101,7 +101,7 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 						grp->gaugeflags, actions, power);
 					break;
 				}
-			conf->zoneUpdate.unlock();
+			conf->zoneUpdate.unlockRead();
 		}
 	}
 }
@@ -185,13 +185,13 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 void FXHelper::QueryCommand(LightQueryElement &lqe) {
 	if (updateThread)
 		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
-			modifyQuery.lock();
+			modifyQuery.lockWrite();
 			if (wasLFX) {
 				wasLFX = false;
 				lightQuery.push({ 0, 2 });
 			}
 			lightQuery.push(lqe);
-			modifyQuery.unlock();
+			modifyQuery.unlockWrite();
 			SetEvent(haveNewElement);
 		}
 		else
@@ -256,7 +256,7 @@ void FXHelper::SetState(bool force) {
 }
 
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
-	conf->modifyProfile.lock();
+	conf->modifyProfile.lockRead();
 
 	for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++) {
 		if (cdev->dev && cdev->dev->IsHaveGlobal() && (!dev || (dev->devID == cdev->devID))) {
@@ -269,7 +269,7 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 			}
 		}
 	}
-	conf->modifyProfile.unlock();
+	conf->modifyProfile.unlockRead();
 }
 
 void FXHelper::Start() {
@@ -299,11 +299,11 @@ void FXHelper::Refresh(bool forced)
 		DebugPrint("Forced ");
 	DebugPrint("Refresh initiated.\n");
 #endif
-	conf->modifyProfile.lock();
+	conf->modifyProfile.lockRead();
 	for (groupset& it : conf->activeProfile->lightsets) {
 		RefreshZone(&it, false);
 	}
-	conf->modifyProfile.unlock();
+	conf->modifyProfile.unlockRead();
 	if (!forced) {
 		RefreshCounters(NULL, true);
 		RefreshAmbient(true);
@@ -326,7 +326,7 @@ void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 {
 	DebugPrint("Counter refresh started\n");
 	if (lightsNoDelay && conf->stateEffects) {
-		conf->modifyProfile.lock();
+		conf->modifyProfile.lockRead();
 		bool force = !data, wasChanged = false, havePower;
 		AlienFX_SDK::Afx_group* grp;
 		if (force)
@@ -422,7 +422,7 @@ void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 			QueryUpdate();
 			//memcpy(&eData, data, sizeof(LightEventData));
 		}
-		conf->modifyProfile.unlock();
+		conf->modifyProfile.unlockRead();
 	}
 	DebugPrint("Counters update finished\n");
 }
@@ -433,7 +433,7 @@ void FXHelper::RefreshAmbient(bool fromRefresh) {
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 		vector<AlienFX_SDK::Afx_action> actions{ {0} };
 		bool wasChanged = false;
-		conf->modifyProfile.lock();
+		conf->modifyProfile.lockRead();
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->ambients.size()) {
 				ULONG r = 0, g = 0, b = 0, dsize = (UINT)it->ambients.size();
@@ -460,7 +460,7 @@ void FXHelper::RefreshAmbient(bool fromRefresh) {
 					SetZone(&(*it), &actions);
 				}
 			}
-		conf->modifyProfile.unlock();
+		conf->modifyProfile.unlockRead();
 		if (wasChanged && !fromRefresh)
 			QueryUpdate();
 	}
@@ -471,7 +471,7 @@ void FXHelper::RefreshHaptics(bool fromRefresh) {
 		int* freq = ((WSAudioIn*)eve->audio)->freqs;
 		vector<AlienFX_SDK::Afx_action> actions;
 		bool wasChanged = false;
-		conf->modifyProfile.lock();
+		conf->modifyProfile.lockRead();
 		for (auto mIter = conf->activeProfile->lightsets.begin(); mIter != conf->activeProfile->lightsets.end(); mIter++) {
 			if (mIter->haptics.size()) {
 				// Now for each freq block...
@@ -524,7 +524,7 @@ void FXHelper::RefreshHaptics(bool fromRefresh) {
 				}
 			}
 		}
-		conf->modifyProfile.unlock();
+		conf->modifyProfile.unlockRead();
 		if (wasChanged && !fromRefresh)
 			QueryUpdate();
 	}
@@ -534,7 +534,7 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 	if (lightsNoDelay && eve && eve->grid) {
 		bool wasChanged = false;
 		vector<AlienFX_SDK::Afx_action> cur{ {0} };
-		conf->modifyProfile.lock();
+		conf->modifyProfile.lockRead();
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce != conf->activeProfile->lightsets.end(); ce++) {
 			if (ce->effect.trigger && !ce->gridop.passive) {
 				if (ce->effect.trigger == 4) { // ambient
@@ -670,7 +670,7 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 				}
 			}
 		}
-		conf->modifyProfile.unlock();
+		conf->modifyProfile.unlockRead();
 		if (wasChanged && !fromRefresh)
 			QueryUpdate();
 	}
@@ -688,10 +688,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) == WAIT_OBJECT_0) {
 		while (src->lightQuery.size()) {
 
-			src->modifyQuery.lock();
+			src->modifyQuery.lockWrite();
 			current = src->lightQuery.front();
 			src->lightQuery.pop();
-			src->modifyQuery.unlock();
+			src->modifyQuery.unlockWrite();
 
 			switch (current.command) {
 			case 2: { // set brightness

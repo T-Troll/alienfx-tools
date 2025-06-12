@@ -312,8 +312,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_REMOVEPROFILE:
 			if (!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
-				if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove selected profile and all settings for it?", "Warning",
-							   MB_YESNO | MB_ICONWARNING) == IDYES) {
+				if (WarningBox(hDlg, "Do you really want to remove selected profile and all settings for it?")) {
 					for (auto pf = conf->profiles.begin(); pf != conf->profiles.end(); pf++)
 						if ((*pf)->id == prof->id) {
 							profile* newpCid = (pf + 1) == conf->profiles.end() ? *(pf - 1) : *(pf + 1);
@@ -335,8 +334,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				ShowNotification(&conf->niData, "Error", "Can't delete last or default profile!");
 			break;
 		case IDC_BUT_PROFRESET:
-			if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you really want to remove selected settings from this profile?", "Warning",
-										   MB_YESNO | MB_ICONWARNING) == IDYES) {
+			if (WarningBox(hDlg, "Do you really want to remove selected settings from this profile?")) {
 				for (auto it = prof->lightsets.begin(); it != prof->lightsets.end();) {
 					if (IsDlgButtonChecked(hDlg, IDC_CP_COLORS) == BST_CHECKED)
 						it->color.clear();

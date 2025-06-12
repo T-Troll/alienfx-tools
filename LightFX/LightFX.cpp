@@ -42,10 +42,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) == WAIT_OBJECT_0) {
 		while (lightQuery.size()) {
 
-			modifyQuery.lock();
+			modifyQuery.lockWrite();
 			current = lightQuery.front();
 			lightQuery.pop();
-			modifyQuery.unlock();
+			modifyQuery.unlockWrite();
 
 			switch (current.command) {
 			case 1: { // update command
@@ -86,9 +86,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 void QueryCommand(LightQueryElement& lqe) {
 	if (updateThread) {
-			modifyQuery.lock();
+			modifyQuery.lockWrite();
 			lightQuery.push(lqe);
-			modifyQuery.unlock();
+			modifyQuery.unlockWrite();
 			SetEvent(haveNewElement);
 	}
 }

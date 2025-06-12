@@ -330,8 +330,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDC_FAN_RESET:
         {
-            if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all curves for this fan?", "Warning",
-                MB_YESNO | MB_ICONWARNING) == IDYES) {
+            if (WarningBox(hDlg, "Do you want to clear all curves for this fan?")) {
                 fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].clear();
                 ReloadTempView(tempList);
             }

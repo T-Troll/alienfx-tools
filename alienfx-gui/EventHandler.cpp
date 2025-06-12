@@ -64,10 +64,10 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 	if (!newID) newID = conf->FindDefaultProfile();
 	if (!keyboardSwitchActive && (force || newID != conf->activeProfile)) {
 		//fxhl->UpdateGlobalEffect(NULL, true);
-		conf->modifyProfile.lock();
+		conf->modifyProfile.lockWrite();
 		conf->activeProfile = newID;
 		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
-		conf->modifyProfile.unlock();
+		conf->modifyProfile.unlockWrite();
 		fxhl->UpdateGlobalEffect(NULL, true);
 		ToggleFans();
 		ChangeEffectMode(true);

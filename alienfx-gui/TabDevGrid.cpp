@@ -102,7 +102,7 @@ void RecalcGridZone(RECT* what = NULL) {
         for (int y = full.top; y < full.bottom; y++) {
             int ind = ind(x, y);
             colorGrid[ind].first.br = colorGrid[ind].last.br = 0xff;
-            conf->modifyProfile.lock();
+            conf->modifyProfile.lockRead();
             for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++)
                 if ((grp = conf->FindCreateGroup(cs->group)) && conf->IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
                     if (conf->stateEffects) {
@@ -132,7 +132,7 @@ void RecalcGridZone(RECT* what = NULL) {
                             colorGrid[ind].last = Act2Code(&cs->color.back());
                     }
                 }
-            conf->modifyProfile.unlock();
+            conf->modifyProfile.unlockRead();
         }
 }
 

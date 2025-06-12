@@ -7,12 +7,14 @@ ThreadHelper::ThreadHelper(LPVOID function, LPVOID param, int delay, int prt) {
 	priority = prt;
 	func = (void (*)(LPVOID))function;
 	this->param = param;
+	tEvent = CreateEvent(NULL, true, false, NULL);
 	Start();
 }
 
 ThreadHelper::~ThreadHelper()
 {
 	Stop();
+	CloseHandle(tEvent);
 }
 
 void ThreadHelper::Stop()
@@ -20,8 +22,7 @@ void ThreadHelper::Stop()
 	if (tHandle) {
 		SetEvent(tEvent);
 		WaitForSingleObject(tHandle, INFINITE/*delay << 2*/);
-		CloseHandle(tHandle);
-		CloseHandle(tEvent);
+		CloseHandle(tHandle);		
 		tHandle = NULL;
 	}
 }
@@ -29,9 +30,9 @@ void ThreadHelper::Stop()
 void ThreadHelper::Start()
 {
 	if (!tHandle) {
-		tEvent = CreateEvent(NULL, true, false, NULL);
 		tHandle = CreateThread(NULL, 0, ThreadFunc, this, 0, NULL);
-		SetThreadPriority(tHandle, priority);
+		if (tHandle)
+			SetThreadPriority(tHandle, priority);
 	}
 }
 

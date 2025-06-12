@@ -127,8 +127,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         case IDC_FAN_RESET:
         {
-            if (GetKeyState(VK_SHIFT) & 0xf0 || MessageBox(hDlg, "Do you want to clear all fan curves?", "Warning",
-                MB_YESNO | MB_ICONWARNING) == IDYES) {
+            if (WarningBox(hDlg, "Do you want to clear all fan curves?")) {
                 fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].clear();
                 ReloadTempView(tempList);
             }
