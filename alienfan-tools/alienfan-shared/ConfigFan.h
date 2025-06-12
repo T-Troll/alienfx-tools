@@ -59,7 +59,7 @@ public:
 	DWORD pollingRate;
 	DWORD ocEnable;
 	DWORD diskSensors;
-	bool wasAWCC;
+	//bool wasAWCC;
 	bool acPower = true;
 
 	fan_profile prof;

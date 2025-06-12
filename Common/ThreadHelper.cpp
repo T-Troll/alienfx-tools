@@ -31,12 +31,12 @@ void ThreadHelper::Start()
 	if (!tHandle) {
 		tEvent = CreateEvent(NULL, true, false, NULL);
 		tHandle = CreateThread(NULL, 0, ThreadFunc, this, 0, NULL);
+		SetThreadPriority(tHandle, priority);
 	}
 }
 
 DWORD WINAPI ThreadFunc(LPVOID lpParam) {
 	ThreadHelper* src = (ThreadHelper*)lpParam;
-	SetThreadPriority(src->tHandle, src->priority);
 	do {
 		src->func(src->param);
 	} while (WaitForSingleObject(src->tEvent, src->delay) == WAIT_TIMEOUT);

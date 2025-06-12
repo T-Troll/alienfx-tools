@@ -123,7 +123,8 @@ char* GetSensorName(SENSOR* id) {
 	return (LPSTR)(id->name.length() ? id->name : id->sname).c_str();
 }
 
-const static string uiColumns[] = { "Min", "Cur", "Max", "Source", "Name" };
+const char* uiColumns[] = { "Min", "Cur", "Max", "Source", "Name" };
+const char sid0[] = { 'C', 'R', 'H', 'B', 'G', 'T' };
 
 void SetNumValue(HWND list, int pos, int col, int val) {
 	string name = val > NO_SEN_VALUE ? to_string(val) : "--";
@@ -139,7 +140,7 @@ void ReloadSensorView() {
 		LVCOLUMNA lCol{ LVCF_TEXT | LVCF_SUBITEM };
 		for (int i = 0; i < 5; i++) {
 			lCol.iSubItem = i;
-			lCol.pszText = (LPSTR)uiColumns[i].c_str();
+			lCol.pszText = (LPSTR)uiColumns[i];
 			ListView_InsertColumn(list, i, &lCol);
 		}
 	}
@@ -162,15 +163,7 @@ void ReloadSensorView() {
 			SetNumValue(list, pos, 2, sen->max);
 			string name;
 			switch (sid.source) {
-			case 0: name = "W";
-				switch (sid.type) {
-				case 0: name += "C"; break;
-				case 1: name += "R"; break;
-				case 2: name += "H"; break;
-				case 3: name += "B"; break;
-				case 4: name += "G"; break;
-				case 5: name += "T"; break;
-				}
+			case 0: name = string("W") + sid0[sid.type];
 				break;
 			case 1: name = "I";
 				switch (sid.type) {

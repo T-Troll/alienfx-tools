@@ -16,6 +16,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 HINSTANCE hInst;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
+bool wasAWCC = false;
 int idc_version = IDC_STATIC_VERSION, idc_homepage = IDC_SYSLINK_HOMEPAGE; // for About
 
 extern void dxgi_Restart();
@@ -144,7 +145,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
 		if (EvaluteToAdmin()) {
-			conf->wasAWCC = DoStopAWCC(conf->awcc_disable, true);
+			wasAWCC = DoStopAWCC(conf->awcc_disable, true);
 			DetectFans();
 		}
 		else {
@@ -190,7 +191,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	delete fxhl;
 	delete eve;
 
-	DoStopAWCC(conf->wasAWCC, false);
+	DoStopAWCC(wasAWCC, false);
 
 	if (mon) {
 		delete mon;
@@ -731,12 +732,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_CLOSE:
 		SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
-		//DestroyWindow(hDlg);
 		break;
 	case WM_DESTROY:
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-		conf->Save();
-		mDlg = NULL;
+		//conf->Save();
+		//mDlg = NULL;
 		PostQuitMessage(0);
 		break;
 	default: return false;

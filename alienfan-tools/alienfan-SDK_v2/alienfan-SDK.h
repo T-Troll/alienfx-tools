@@ -40,8 +40,8 @@ namespace AlienFan_SDK {
 
 	class Control {
 	private:
-		DWORD systemID = 0;
-		byte sysType = -1;
+		DWORD systemID;
+		byte sysType;
 		void EnumSensors(IWbemServices* srv, const wchar_t* sname, byte type);
 	public:
 		VARIANT m_instancePath{};

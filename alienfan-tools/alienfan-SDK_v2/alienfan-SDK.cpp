@@ -138,9 +138,9 @@ namespace AlienFan_SDK {
 				isAlienware = true;
 
 				// check system type and fill inParams
-				for (int type = 0; type < 2; type++)
-					if (isSupported = (m_AWCCGetObj->GetMethod(commandList[functionID[type][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)) {
-						sysType = type;
+				for (sysType = 0; sysType < 2; sysType++)
+					if (isSupported = (m_AWCCGetObj->GetMethod(commandList[functionID[sysType][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)) {
+						//sysType = type;
 #ifdef _TRACE_
 						printf("Fan Control available, system type %d\n", sysType);
 #endif

@@ -15,6 +15,8 @@ extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
 
+extern bool wasAWCC;
+
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	//HWND dim_slider = GetDlgItem(hDlg, IDC_SLIDER_DIMMING);
@@ -135,7 +137,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_AWCC:
 			conf->awcc_disable = state;
 			conf->Save();
-			conf->wasAWCC = DoStopAWCC((bool)conf->awcc_disable != conf->wasAWCC, conf->wasAWCC);
+			wasAWCC = DoStopAWCC((bool)conf->awcc_disable != wasAWCC, wasAWCC);
 			break;
 		case IDC_ESIFTEMP:
 			if (conf->esif_temp = state) {

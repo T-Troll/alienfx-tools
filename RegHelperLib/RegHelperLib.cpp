@@ -1,7 +1,7 @@
 #include "RegHelperLib.h"
 
 DWORD GetRegData(HKEY key, int vindex, char* name, byte** data) {
-	DWORD len, lend;
+	DWORD len, lend = 0;
 	if (*data) {
 		delete[] * data;
 		*data = NULL;

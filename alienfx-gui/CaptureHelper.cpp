@@ -31,7 +31,8 @@ void dxgi_SetDimensions() {
 	w = dimensions.right - dimensions.left;
 	h = dimensions.bottom - dimensions.top;
 	stride = w * 4;
-	divider = w > 1920 ? 2 : 1;
+	// Adopt to any screen
+	divider = max(w / 480 - 3, 1);
 }
 
 void dxgi_Restart() {
@@ -136,16 +137,14 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	HANDLE waitArray[2]{ cap->sEvent, src->pEvent };
 	DWORD res;
 	while ((res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_OBJECT_0)
-		if (/*res != WAIT_TIMEOUT &&*/ src->dst) {
+		if (src->dst) {
 			UINT idx = src->idx;
 			ULONG64 r = 0, g = 0, b = 0;
-			byte* freqval = NULL; 
+			byte* freqval = scrImg;
 			int freqcount = 0;
-			//map<DWORD, int> counters;
 			for (UINT y = 0; y < cap->hh; y += divider) {
 				UINT pos = idx;
 				for (UINT x = 0; x < cap->ww; x += divider) {
-					//counters[*(DWORD*)(scrImg + pos)]++;
 					switch (conf->amb_calc) {
 					case 0: // medium
 						r += scrImg[pos++];
@@ -168,11 +167,6 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 				}
 				idx += stride;
 			}
-			//for (auto cc = counters.begin(); cc != counters.end(); cc++)
-			//	if (cc->second > freqcount) {
-			//		freqcount = cc->second;
-			//		memcpy(src->dst, &cc->first, 3);
-			//	}
 			switch (conf->amb_calc) {
 			case 0: // medium
 				src->dst[0] = (byte)(r / cap->div);

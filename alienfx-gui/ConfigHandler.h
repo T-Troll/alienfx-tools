@@ -197,10 +197,10 @@ public:
 
 	// States
 	bool stateDimmed = false,
-		 stateOn = true,
-		 stateEffects = true,
-		 statePower = true,
-		 wasAWCC = false;
+		stateOn = true,
+		stateEffects = true,
+		statePower = true;/*,
+		 wasAWCC = false;*/
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 	CustomMutex modifyProfile;
 	CustomMutex zoneUpdate;

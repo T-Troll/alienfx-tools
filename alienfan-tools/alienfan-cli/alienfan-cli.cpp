@@ -5,7 +5,6 @@
 #include <combaseapi.h>
 #include <PowrProf.h>
 #include "alienfan-SDK.h"
-#include "alienfan-controls.h"
 #include "ConfigFan.h"
 
 #pragma comment(lib, "PowrProf.lib")
