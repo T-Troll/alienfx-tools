@@ -1,10 +1,10 @@
-#include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "MonHelper.h"
 #include "SysMonHelper.h"
 #include "CaptureHelper.h"
 #include "GridHelper.h"
 #include "WSAudioIn.h"
+#include "FXHelper.h"
 #include <Psapi.h>
 
 // debug print
@@ -17,6 +17,7 @@
 extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern MonHelper* mon;
+extern ConfigHandler* conf;
 extern ConfigFan* fan_conf;
 
 void CEventProc(LPVOID);

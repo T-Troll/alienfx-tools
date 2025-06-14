@@ -153,6 +153,11 @@ union ambgrid {
 	DWORD ag;
 };
 
+struct LightEventData {
+	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255,
+		PWM = 0, Fan = 0;
+};
+
 class ConfigHandler
 {
 private:
@@ -228,6 +233,8 @@ public:
 
 	// mapping block from FX SDK
 	AlienFX_SDK::Mappings afx_dev;
+
+	LightEventData maxData;
 
 	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0, NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP, WM_APP + 1 };
 

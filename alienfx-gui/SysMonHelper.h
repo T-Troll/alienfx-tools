@@ -1,6 +1,5 @@
 #pragma once
 #include <pdh.h>
-#include "FXHelper.h"
 #include "ThreadHelper.h"
 
 class SysMonHelper {
@@ -13,19 +12,15 @@ private:
 		COUNTER_PATH_HOT2 = "\\EsifDeviceInformation(*)\\Temperature",
 		COUNTER_PATH_PWR = "\\EsifDeviceInformation(*)\\RAPL Power",
 		COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time";
-
 	ThreadHelper* eventProc = NULL;
 public:
 
-	HQUERY hQuery = NULL;
+	HQUERY hQuery;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
-	byte* counterValues[2]{ new byte[1], new byte[1] };
-	//PDH_FMT_COUNTERVALUE_ITEM* cv[2]{ (PDH_FMT_COUNTERVALUE_ITEM*)counterValues[0],(PDH_FMT_COUNTERVALUE_ITEM*)counterValues[1] };
-	//DWORD counterSizes[2]{ 1,1 };
-	//LightEventData cData;
+	byte* counterValues{ new byte[1] };
 
 	SysMonHelper();
 	~SysMonHelper();
-	int GetCounterValues(HCOUNTER counter, int index = 0);
-	int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta, int divider, HCOUNTER c2);
+	int GetCounterValues(HCOUNTER counter);
+	int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta, int divider);
 };

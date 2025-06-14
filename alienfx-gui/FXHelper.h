@@ -3,12 +3,6 @@
 #include <map>
 #include "ConfigHandler.h"
 
-struct LightEventData {
-	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255,
-		PWM = 0;
-	short Fan = 0;
-};
-
 struct LightQueryElement {
 	//AlienFX_SDK::Afx_device* dev;
 	WORD pid;
@@ -36,7 +30,7 @@ public:
 	HANDLE haveNewElement;
 	CustomMutex modifyQuery;
 	queue<LightQueryElement> lightQuery;
-	LightEventData eData, maxData;
+	LightEventData eData;// , maxData;
 	// Power button state...
 	map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;
 

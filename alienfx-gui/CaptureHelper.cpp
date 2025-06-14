@@ -1,5 +1,4 @@
 #include "CaptureHelper.h"
-#include "EventHandler.h"
 #include "FXHelper.h"
 
 void CScreenProc(LPVOID);
@@ -14,7 +13,6 @@ DWORD WINAPI ColorCalc(LPVOID inp);
 
 extern ConfigHandler *conf;
 extern FXHelper *fxhl;
-extern EventHandler* eve;
 
 DXGIManager* dxgi_manager = NULL;
 int dxgi_counter = 0;

@@ -1,6 +1,7 @@
 #include "GridHelper.h"
 #include "EventHandler.h"
 #include "FXHelper.h"
+#include "CaptureHelper.h"
 
 extern EventHandler* eve;
 extern ConfigHandler* conf;
@@ -110,7 +111,6 @@ void GridTriggerWatch(LPVOID param) {
 				break;
 			}
 		}
-
 	}
 	conf->modifyProfile.unlockRead();
 }

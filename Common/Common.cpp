@@ -99,7 +99,7 @@ bool DoStopAWCC(bool flag, bool kind) {
 		SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 		if (schSCManager) {
 			if (!(rCode = TryStopService(schSCManager, kind, "AWCCService"))) {
-				if (rCode = TryStopService(schSCManager, kind, "DellClientManagementService")) {
+				if (TryStopService(schSCManager, kind, "DellClientManagementService")) {
 					rCode = TryStopService(schSCManager, kind, "DellTechHub");
 				}
 			}

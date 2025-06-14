@@ -1,8 +1,7 @@
 #pragma once
-#include "ConfigHandler.h"
 #include "ThreadHelper.h"
-#include "CaptureHelper.h"
 #include "SysMonHelper.h"
+#include "ConfigHandler.h"
 
 class GridHelper {
 private:

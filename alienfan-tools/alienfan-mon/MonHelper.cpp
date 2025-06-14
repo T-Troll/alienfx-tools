@@ -72,7 +72,7 @@ void MonHelper::SetCurrentMode(int newMode) {
 	if (newMode < 0) {
 		DebugPrint("Mon: Switching from profile\n");
 		newMode = fan_conf->lastProf->gmodeStage ? powerSize :
-			fan_conf->acPower ? fan_conf->lastProf->powerStage : fan_conf->lastProf->зowerStageDC;
+			fan_conf->acPower ? fan_conf->lastProf->powerStage : fan_conf->lastProf->powerStageDC;
 	}
 	if (newMode != powerMode) {
 		if (newMode < powerSize) {
@@ -124,7 +124,7 @@ void MonHelper::SetPowerMode(byte newMode) {
 		if (fan_conf->acPower)
 			fan_conf->lastProf->powerStage = newMode;
 		else
-			fan_conf->lastProf->зowerStageDC = newMode;
+			fan_conf->lastProf->powerStageDC = newMode;
 	fan_conf->lastProf->gmodeStage = newMode == powerSize;
 	SetCurrentMode(newMode);
 }

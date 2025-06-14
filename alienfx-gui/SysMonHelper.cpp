@@ -1,5 +1,6 @@
 #include "SysMonHelper.h"
 #include "MonHelper.h"
+#include "FXHelper.h"
 #include <PdhMsg.h>
 
 #pragma comment(lib, "pdh.lib")
@@ -13,6 +14,8 @@
 extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigHandler* conf;
+
+static LightEventData sData;
 
 static SYSTEM_POWER_STATUS state;
 static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
@@ -45,47 +48,39 @@ SysMonHelper::SysMonHelper() {
 }
 
 SysMonHelper::~SysMonHelper() {
-	delete eventProc;
-	ZeroMemory(&fxhl->eData, sizeof(LightEventData));
-	DebugPrint("Event thread stop.\n");
-	PdhCloseQuery(hQuery);
+	if (eventProc) {
+		delete eventProc;
+		delete[] counterValues;
+		ZeroMemory(&fxhl->eData, sizeof(LightEventData));
+		DebugPrint("Event thread stop.\n");
+		PdhCloseQuery(hQuery);
+	}
 }
 
-int SysMonHelper::GetCounterValues(HCOUNTER counter, int index) {
-	DWORD cs = 0;// counterSizes[index];
+int SysMonHelper::GetCounterValues(HCOUNTER counter) {
+	DWORD cs = 0;
 	DWORD count = 0;
+
 	if (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, NULL) == PDH_MORE_DATA) {
-		delete[] counterValues[index];
-		//counterSizes[index] = cs;
-		counterValues[index] = new byte[cs];
-		PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues[index]);
+		delete[] counterValues;
+		counterValues = new byte[cs];
+		PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues);
 	}
 	return count;
 }
 
-int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, int divider = 1, HCOUNTER c2 = NULL) {
+int SysMonHelper::GetValuesArray(HCOUNTER counter, byte& maxVal, int delta = 0, int divider = 1) {
 	int retVal = 0;
-
-	if (c2) {
-		GetCounterValues(c2, 1);
-	}
-
 	DWORD count = GetCounterValues(counter);
 
 	for (DWORD i = 0; i < count; i++) {
-		int cval = c2 && ((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[1])[i].FmtValue.longValue ?
-			((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[0])[i].FmtValue.longValue * 800 / 
-				((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[1])[i].FmtValue.longValue :
-				((PDH_FMT_COUNTERVALUE_ITEM*)counterValues[0])[i].FmtValue.longValue / divider - delta;
-		retVal = max(retVal, cval);
+		retVal = max(retVal, ((PDH_FMT_COUNTERVALUE_ITEM*)counterValues)[i].FmtValue.longValue / divider - delta);
 	}
 
 	maxVal = max(maxVal, retVal);
 
 	return retVal;
 }
-
-static LightEventData sData;
 
 void CEventProc(LPVOID param)
 {
@@ -100,12 +95,18 @@ void CEventProc(LPVOID param)
 	// HDD load
 	PdhGetFormattedCounterValue(src->hHDDCounter, PDH_FMT_LONG, NULL, &cHDDVal);
 	// Network load
-	sData.NET = src->GetValuesArray(src->hNETCounter, fxhl->maxData.NET, 0, 1, src->hNETMAXCounter);
+	byte maxNet;
+	int maxBand = src->GetValuesArray(src->hNETMAXCounter, maxNet, 0, 2048),
+		curBand = src->GetValuesArray(src->hNETCounter, maxNet);
+	if (maxBand) {
+		sData.NET = min(100, curBand / maxBand);
+		conf->maxData.NET = max(sData.NET, conf->maxData.NET);
+	}
 	// GPU load
 	DWORD count = src->GetCounterValues(src->hGPUCounter);
 	// now sort...
 	map<string, map<char, int>> gpusubs;
-	PDH_FMT_COUNTERVALUE_ITEM* va = (PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues[0];
+	PDH_FMT_COUNTERVALUE_ITEM* va = (PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues;
 	for (DWORD i = 0; i < count; i++) {
 		if (va[i].FmtValue.longValue && va[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
 			string path = va[i].szName;
@@ -123,7 +124,7 @@ void CEventProc(LPVOID param)
 		}
 	}
 	// Temperatures
-	sData.Temp = src->GetValuesArray(src->hTempCounter, fxhl->maxData.Temp, 273);
+	sData.Temp = src->GetValuesArray(src->hTempCounter, conf->maxData.Temp, 273);
 	// RAM load
 	GlobalMemoryStatusEx(&memStat);
 	// Power state
@@ -143,7 +144,7 @@ void CEventProc(LPVOID param)
 		// Sensors
 		for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
 			sData.Temp = max(sData.Temp, i->second);
-		fxhl->maxData.Temp = max(sData.Temp, fxhl->maxData.Temp);
+		conf->maxData.Temp = max(sData.Temp, conf->maxData.Temp);
 		// Power mode
 		sData.PWM = mon->powerMode * 100 /	(mon->powerSize + mon->acpi->isGmode - 1);
 	}
@@ -152,10 +153,10 @@ void CEventProc(LPVOID param)
 	if (conf->esif_temp) {
 		if (!mon) {
 			// ESIF temps (already in fans)
-			sData.Temp = max(sData.Temp, src->GetValuesArray(src->hTempCounter2, fxhl->maxData.Temp));
+			sData.Temp = max(sData.Temp, src->GetValuesArray(src->hTempCounter2, conf->maxData.Temp));
 		}
 		// Powers
-		sData.PWR = src->GetValuesArray(src->hPwrCounter, fxhl->maxData.PWR, 0, 10) * 100 / fxhl->maxData.PWR;
+		sData.PWR = src->GetValuesArray(src->hPwrCounter, conf->maxData.PWR, 0, 10) * 100 / conf->maxData.PWR;
 	}
 
 	// Leveling...
@@ -164,9 +165,9 @@ void CEventProc(LPVOID param)
 	sData.ACP = state.ACLineStatus;
 	sData.BST = state.BatteryFlag;
 	sData.HDD = (byte)max(0, 99 - cHDDVal.longValue);
-	fxhl->maxData.RAM = max(fxhl->maxData.RAM, sData.RAM = (byte)memStat.dwMemoryLoad);
-	fxhl->maxData.CPU = max(fxhl->maxData.CPU, sData.CPU = (byte)cCPUVal.longValue);
-	fxhl->maxData.GPU = max(fxhl->maxData.GPU, sData.GPU);
+	conf->maxData.RAM = max(conf->maxData.RAM, sData.RAM = (byte)memStat.dwMemoryLoad);
+	conf->maxData.CPU = max(conf->maxData.CPU, sData.CPU = (byte)cCPUVal.longValue);
+	conf->maxData.GPU = max(conf->maxData.GPU, sData.GPU);
 
 	fxhl->RefreshCounters(&sData);
 	memcpy(&fxhl->eData, &sData, sizeof(LightEventData));

@@ -20,7 +20,7 @@ struct fan_profile {
 	union {
 		struct {
 			byte powerStage;
-			byte зowerStageDC;
+			byte powerStageDC;
 			WORD gmodeStage;
 		};
 		DWORD powerSet = 0;
