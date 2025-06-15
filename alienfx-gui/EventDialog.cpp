@@ -229,15 +229,17 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			for (int i = 0; i < mon->fansize; i++)
 				maxFans = max(maxFans, mon->fanRpm[i]);
 		}
-		LightEventData* eData = &fxhl->eData, *maxData = &conf->maxData;
-		string usage = to_string(eData->CPU) + " (" + to_string(maxData->CPU) + ")%\n" +
-			to_string(eData->RAM) + " (" + to_string(maxData->RAM) + ")%\n" +
-			to_string(eData->GPU) + " (" + to_string(maxData->GPU) + ")%\n" +
-			to_string(eData->Temp) + " (" + to_string(maxData->Temp) + ")C\n" +
-			to_string(eData->Batt) + " %\n" +
-			to_string(eData->PWR * conf->maxData.PWR / 100) + " (" + to_string(maxData->PWR) + ")W\n" +
-			to_string(maxFans) + " RPM (" + to_string(eData->Fan) + "%)\n" +
-			to_string(eData->NET) + " (" + to_string(maxData->NET) + ")%";
+		//LightEventData* eData = &fxhl->eData, *maxData = &fxhl->maxData;
+#define eData fxhl->eData
+#define maxData fxhl->maxData
+		string usage = to_string(eData.CPU) + " (" + to_string(maxData.CPU) + ")%\n" +
+			to_string(eData.RAM) + " (" + to_string(maxData.RAM) + ")%\n" +
+			to_string(eData.GPU) + " (" + to_string(maxData.GPU) + ")%\n" +
+			to_string(eData.Temp) + " (" + to_string(maxData.Temp) + ")C\n" +
+			to_string(eData.Batt) + " %\n" +
+			to_string(eData.PWR * maxData.PWR / 100) + " (" + to_string(maxData.PWR) + ")W\n" +
+			to_string(maxFans) + " RPM (" + to_string(eData.Fan) + "%)\n" +
+			to_string(eData.NET) /*+ " (" + to_string(maxData.NET)*/ + " %";
 		SetDlgItemText(hDlg, IDC_VAL_USAGE, usage.c_str());
 	} break;
 	default: return false;

@@ -22,5 +22,5 @@ public:
 	SysMonHelper();
 	~SysMonHelper();
 	int GetCounterValues(HCOUNTER counter);
-	int GetValuesArray(HCOUNTER counter, byte& maxVal, int delta, int divider);
+	int GetValuesArray(HCOUNTER counter, int delta, int divider);
 };

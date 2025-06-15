@@ -143,7 +143,8 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 }
 
 bool FXHelper::CheckEvent(LightEventData* eData, event* e) {
-	byte ccut = e->cut;
+#define ccut e->cut
+//	byte ccut = e->cut;
 	switch (e->source) {
 	case 0: return eData->HDD; break;
 	case 1: return eData->NET; break;
