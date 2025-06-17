@@ -78,8 +78,8 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 				SetLight(i->lgh, actions);
 		}
 		else {
-			conf->zoneUpdate.lockRead();
 			zonemap* zone = conf->FindZoneMap(grp->group);
+			conf->zoneUpdate.lockRead();
 			for (auto t = zone->lightMap.begin(); t < zone->lightMap.end(); t++)
 				switch (grp->gauge) {
 				case 1: // horizontal
