@@ -7,6 +7,8 @@
 
 using namespace std;
 
+extern HINSTANCE hInst;
+
 #define NO_SEN_VALUE -1
 
 struct SENID {
