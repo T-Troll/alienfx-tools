@@ -73,7 +73,7 @@ public:
 
 	map<DWORD,SENSOR> active_sensors;
 
-	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0xffffffff, NIF_ICON | NIF_MESSAGE, WM_APP + 1, (HICON)LoadImage(GetModuleHandle(NULL),
+	NOTIFYICONDATA niData{ sizeof(NOTIFYICONDATA), 0, 0xffffffff, NIF_ICON | NIF_MESSAGE, WM_APP + 1, (HICON)LoadImage(hInst,
 					MAKEINTRESOURCE(IDI_ALIENFXMON),
 					IMAGE_ICON,
 					GetSystemMetrics(SM_CXSMICON),

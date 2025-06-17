@@ -8,6 +8,7 @@ using namespace std;
 #pragma comment(lib,"Version.lib")
 
 extern HWND mDlg;
+extern HMODULE hInst;
 extern bool needUpdateFeedback, isNewVersion;
 extern int idc_version, idc_homepage;
 
@@ -197,7 +198,7 @@ bool WindowsStartSet(bool kind, string name) {
 string GetAppVersion(bool isFile) {
 	string res;
 
-	HMODULE hInst = GetModuleHandle(NULL);
+	//HMODULE hInst = GetModuleHandle(NULL);
 	HGLOBAL hResData = LoadResource(hInst, FindResource(hInst, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION));
 
 	if (hResData) {
@@ -235,7 +236,7 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 
 	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
 		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-		0, 0, 0, 0, hwndParent, NULL, GetModuleHandle(NULL), NULL);
+		0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
 	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
 	GetClientRect(hwndParent, &ti.rect);
 	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);

@@ -13,6 +13,7 @@
 
 extern HWND mDlg;
 extern ConfigFan* fan_conf;
+extern HINSTANCE hInst;
 //extern int eItem;
 
 ConfigHandler::ConfigHandler() {
@@ -25,7 +26,7 @@ ConfigHandler::ConfigHandler() {
 
 	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
-	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALIENFX_ON),	IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+	niData.hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_ALIENFX_ON),	IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -109,7 +110,7 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 
 bool ConfigHandler::SetIconState(bool needCheck) {
 	// change tray icon...
-	niData.hIcon = (HICON)LoadImage(GetModuleHandle(NULL),
+	niData.hIcon = (HICON)LoadImage(hInst,
 		MAKEINTRESOURCE(stateOn ? stateDimmed ? IDI_ALIENFX_DIM : IDI_ALIENFX_ON : IDI_ALIENFX_OFF),
 		IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	return AddTrayIcon(&niData, needCheck);

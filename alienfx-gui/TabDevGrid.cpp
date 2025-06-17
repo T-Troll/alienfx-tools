@@ -64,7 +64,7 @@ void InitGridButtonZone() {
                 conf->mainGrid->grid[ind(x, y)].lgh == conf->mainGrid->grid[ind(x + size, y)].lgh) size++;
             HWND btn = CreateWindow("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW | WS_DISABLED,
                 buttonZone.left + x * buttonZone.right, buttonZone.top + y * buttonZone.bottom, size * buttonZone.right, buttonZone.bottom, cgDlg, (HMENU)bId++,
-                GetModuleHandle(NULL), NULL);
+                hInst, NULL);
             SetWindowLongPtr(btn, GWLP_USERDATA, (LONG_PTR)(ind(x,y)));
             x+=size-1;
         }
@@ -422,7 +422,6 @@ void CreateGridBlock(HWND gridTab, DLGPROC func, bool needAddDel) {
     TCITEM tie{ TCIF_TEXT };
 
     TabCtrl_DeleteAllItems(gridTab);
-
     GetClientRect(gridTab, &rcDisplay);
 
     rcDisplay.left = GetSystemMetrics(SM_CXBORDER);
@@ -446,8 +445,8 @@ void CreateGridBlock(HWND gridTab, DLGPROC func, bool needAddDel) {
     TabCtrl_SetMinTabWidth(gridTab, 10);
 
     if (!GetWindowLongPtr(gridTab, GWLP_USERDATA)) {
-        HWND hwndDisplay = CreateDialogIndirect(GetModuleHandle(NULL),
-            (DLGTEMPLATE*)LockResource(LoadResource(GetModuleHandle(NULL), FindResource(NULL, 
+        HWND hwndDisplay = CreateDialogIndirect(hInst,
+            (DLGTEMPLATE*)LockResource(LoadResource(hInst, FindResource(NULL, 
                 MAKEINTRESOURCE(needAddDel ? IDD_GRIDBLOCK : IDD_GRIDBLOCK_SIMPLE), RT_DIALOG))),
             gridTab, func);
 
