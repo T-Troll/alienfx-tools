@@ -327,14 +327,13 @@ void FXHelper::RefreshZone(groupset* map, bool update) {
 void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 {
 	DebugPrint("Counter refresh started\n");
-	conf->modifyProfile.lockRead();
 	bool force = !data, wasChanged = false, havePower;
 	AlienFX_SDK::Afx_group* grp;
 	if (force)
 		data = &eData;
 	else
 		blinkStage = !blinkStage;
-
+	conf->modifyProfile.lockRead();
 	for (auto& Iter : conf->activeProfile->lightsets) {
 		if (Iter.events.size() && (grp = conf->afx_dev.GetGroupById(Iter.group))) {
 			havePower = conf->FindZoneMap(Iter.group)->havePower;
@@ -414,12 +413,12 @@ void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 			}
 		}
 	}
+	conf->modifyProfile.unlockRead();
 	if (wasChanged && !fromRefresh) {
 		DebugPrint("Counters changed, updating\n");
 		QueryUpdate();
 		//memcpy(&eData, data, sizeof(LightEventData));
 	}
-	conf->modifyProfile.unlockRead();
 	DebugPrint("Counters update finished\n");
 }
 
