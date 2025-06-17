@@ -19,6 +19,7 @@ extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigHandler* conf;
 extern ConfigFan* fan_conf;
+extern ThreadHelper* dxgi_thread;
 
 void CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -132,7 +133,7 @@ void EventHandler::ChangeEffects(bool stop) {
 	if (noMon && sysmon) {	// System monitoring
 		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
-	if (noAmb && capt) {	// Ambient
+	if ((noAmb || !dxgi_thread) && capt) {	// Ambient
 		delete (CaptureHelper*)capt; capt = NULL;
 	}
 	if (noHap && audio) {	// Haptics

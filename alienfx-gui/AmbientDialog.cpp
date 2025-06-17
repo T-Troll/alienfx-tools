@@ -10,6 +10,13 @@ extern void dxgi_Restart();
 
 extern EventHandler* eve;
 
+void RedrawButtonZone(HWND dlg) {
+    RECT pRect;
+    GetWindowRect(GetDlgItem(dlg, IDC_AMB_BUTTON_ZONE), &pRect);
+    MapWindowPoints(HWND_DESKTOP, dlg, (LPPOINT)&pRect, 2);
+    RedrawWindow(dlg, &pRect, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+}
+
 void InitButtonZone(HWND dlg) {
     // delete zone buttons...
     for (DWORD bID = 2000; GetDlgItem(dlg, bID); bID++)
@@ -28,26 +35,17 @@ void InitButtonZone(HWND dlg) {
                 bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, dlg, (HMENU)bId, hInst, NULL);
             bId++;
         }
-}
-
-void RedrawButtonZone(HWND dlg) {
-    RECT pRect;
-    GetWindowRect(GetDlgItem(dlg, IDC_AMB_BUTTON_ZONE), &pRect);
-    MapWindowPoints(HWND_DESKTOP, dlg, (LPPOINT)&pRect, 2);
-    RedrawWindow(dlg, &pRect, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+    //RedrawButtonZone(dlg);
 }
 
 void SetGridSize(HWND dlg, WORD x, WORD y) {
-    KillTimer(dlg, 0);
-    CaptureHelper* capt = (CaptureHelper*)eve->capt;
-    if (capt) {
-        capt->SetLightGridSize(x, y);
+    //KillTimer(dlg, 0);
+    if (eve->capt) {
+        ((CaptureHelper*)eve->capt)->SetLightGridSize(x, y);
     }
-    else {
-        conf->amb_grid = { x, y };
-    }
+    conf->amb_grid = { x, y };
     InitButtonZone(dlg);
-    SetTimer(dlg, 0, 200, NULL);
+    //SetTimer(dlg, 0, 300, NULL);
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -88,13 +86,14 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         InitButtonZone(hDlg);
 
         // Start UI update thread...
-        SetTimer(hDlg, 0, 200, NULL);
+        SetTimer(hDlg, 0, 300, NULL);
 
     } break;
     case WM_COMMAND:
         if (LOWORD(wParam) >= 2000 && mmap && HIWORD(wParam) == BN_CLICKED) { // grid button
             UINT id = LOWORD(wParam) - 2000;
             // add/remove mapping
+            conf->modifyProfile.lockWrite();
             auto pos = mmap->ambients.begin();
             for (; pos != mmap->ambients.end(); pos++)
                 if (*pos == id)
@@ -103,6 +102,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 mmap->ambients.push_back(id);
             else
                 mmap->ambients.erase(pos);
+            conf->modifyProfile.unlockWrite();
             eve->ChangeEffects();
             UpdateZoneAndGrid();
             break;
@@ -128,9 +128,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         case TB_THUMBPOSITION: case TB_ENDTRACK:
             if ((HWND)lParam == brSlider) {
                 conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                CaptureHelper* capt = (CaptureHelper*)eve->capt;
-                if (capt)
-                    capt->needUpdate = true;
+                if ((CaptureHelper*)eve->capt)
+                    ((CaptureHelper*)eve->capt)->needUpdate = true;
                 break;
             }
             if ((HWND)lParam == gridX) {
@@ -159,7 +158,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         if (ditem->CtlID >= 2000) {
             int idx = ditem->CtlID - 2000;
             CaptureHelper* capt = (CaptureHelper*)eve->capt;
-            HBRUSH Brush = CreateSolidBrush(eve->capt ?
+            HBRUSH Brush = CreateSolidBrush(capt ?
                 RGB(capt->imgz[idx * 3 + 2], capt->imgz[idx * 3 + 1], capt->imgz[idx * 3]) :
                 GetSysColor(COLOR_BTNFACE));
             FillRect(ditem->hDC, &ditem->rcItem, Brush);

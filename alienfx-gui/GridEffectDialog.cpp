@@ -138,7 +138,9 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		{
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				conf->modifyProfile.lockWrite();
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				conf->modifyProfile.unlockWrite();
 				eve->ChangeEffects();
 				UpdateZoneAndGrid();
 			}

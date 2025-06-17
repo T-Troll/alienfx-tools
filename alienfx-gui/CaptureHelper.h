@@ -13,18 +13,14 @@ struct procData {
 class CaptureHelper
 {
 public:
-	CaptureHelper(bool needLights);
+	CaptureHelper(bool needLights = false);
 	~CaptureHelper();
-	void Start();
 	void Stop();
-	//void Restart();
 	void SetLightGridSize(int, int);
-	//void SetDimensions();
 	bool needUpdate = false, needLightsUpdate = false;
 	byte *imgz = NULL, *imgo;
 	byte gridX, gridY;
 	DWORD gridDataSize;
-	//DXGIManager* dxgi_manager = NULL;
 	HANDLE pfEvent[16], sEvent;
 	procData callData[16];
 	UINT ww, hh, div;

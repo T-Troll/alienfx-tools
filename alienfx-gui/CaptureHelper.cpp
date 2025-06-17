@@ -16,11 +16,12 @@ extern FXHelper *fxhl;
 
 DXGIManager* dxgi_manager = NULL;
 int dxgi_counter = 0;
-ThreadHelper* dxgi_thread;
+ThreadHelper* dxgi_thread = NULL;
 
 byte* scrImg = NULL;
 UINT w, h, stride, divider;
 int capRes = CR_TIMEOUT;
+size_t buf_size;
 
 void dxgi_loop(LPVOID param);
 
@@ -30,22 +31,20 @@ void dxgi_SetDimensions() {
 	h = dimensions.bottom - dimensions.top;
 	stride = w * 4;
 	// Adopt to any screen
-	divider = max(w / 480 - 3, 1);
+	divider = h/1601 + h/2160 + 1;
 }
 
 void dxgi_Restart() {
-	if (dxgi_manager) {
+	if (dxgi_thread)
 		delete dxgi_thread;
-		capRes = CR_TIMEOUT;
-		dxgi_manager->set_capture_source((WORD)conf->amb_mode);
-		Sleep(150);
-		dxgi_SetDimensions();
-		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_LOWEST);
-	}
+	capRes = CR_TIMEOUT;
+	dxgi_manager->set_capture_source((WORD)conf->amb_mode);
+	Sleep(150);
+	dxgi_SetDimensions();
+	dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_NORMAL);
 }
 
 void dxgi_loop(LPVOID param) {
-	size_t buf_size;
 	if ((capRes = dxgi_manager->get_output_data(&scrImg, &buf_size)) != CR_OK && capRes != CR_TIMEOUT) {
 		// restart capture
 		DebugPrint("Ambient feed restart!\n");
@@ -60,12 +59,18 @@ CaptureHelper::CaptureHelper(bool needLights)
 	if (!dxgi_manager) {
 		DebugPrint("Startinging screen capture\n");
 		CoInitializeEx(NULL, COINIT_MULTITHREADED);
-		dxgi_manager = new DXGIManager();
+		try {
+			dxgi_manager = new DXGIManager();
+		}
+		catch (exception e) {
+			// No DirectX or GPU
+			dxgi_manager = NULL;
+			CoUninitialize();
+			return;
+		}
 		dxgi_manager->set_timeout(100);
-		dxgi_manager->set_capture_source((WORD)conf->amb_mode);
-		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_NORMAL);
-		dxgi_SetDimensions();
 	}
+	dxgi_Restart();
 	dxgi_counter++;
 	// prepare threads and data...
 	sEvent = CreateEvent(NULL, true, false, NULL);
@@ -81,30 +86,26 @@ CaptureHelper::CaptureHelper(bool needLights)
 
 CaptureHelper::~CaptureHelper()
 {
-	Stop();
-	// Stop and remove processing threads
-	SetEvent(sEvent);
-	WaitForMultipleObjects(16, pThread, true, INFINITE);
-	CloseHandle(sEvent);
-	for (DWORD i = 0; i < 16; i++) {
-		CloseHandle(callData[i].pEvent);
-		CloseHandle(pfEvent[i]);
-	}
-	delete[] imgz;
-	if (!(--dxgi_counter)) {
-		DebugPrint("Deleting screen capture\n");
-		delete dxgi_thread;
-		delete dxgi_manager;
-		dxgi_manager = NULL;
-		scrImg = NULL;
-		CoUninitialize();
-	}
-}
-
-void CaptureHelper::Start()
-{
-	if (!dwHandle) {
-		dwHandle = new ThreadHelper(CScreenProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
+	if (dxgi_manager) {
+		Stop();
+		// Stop and remove processing threads
+		SetEvent(sEvent);
+		WaitForMultipleObjects(16, pThread, true, INFINITE);
+		CloseHandle(sEvent);
+		for (DWORD i = 0; i < 16; i++) {
+			CloseHandle(callData[i].pEvent);
+			CloseHandle(pfEvent[i]);
+		}
+		delete[] imgz;
+		if (!(--dxgi_counter)) {
+			DebugPrint("Deleting screen capture\n");
+			delete dxgi_thread;
+			delete dxgi_manager;
+			dxgi_manager = NULL;
+			dxgi_thread = NULL;
+			scrImg = NULL;
+			CoUninitialize();
+		}
 	}
 }
 
@@ -125,16 +126,16 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 	imgz = new byte[gridX * gridY * 6];
 	gridDataSize = gridX * gridY * 3;
 	imgo = imgz + gridDataSize;
-	needUpdate = true;
-	Start();
+	needUpdate = false;
+	dwHandle = new ThreadHelper(CScreenProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
 }
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*)inp;
 	CaptureHelper* cap = (CaptureHelper*)src->cap;
 	HANDLE waitArray[2]{ cap->sEvent, src->pEvent };
-	DWORD res;
-	while ((res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_OBJECT_0)
+	//DWORD res;
+	while ((/*res = */WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_OBJECT_0)
 		if (src->dst) {
 			UINT idx = src->idx;
 			ULONG64 r = 0, g = 0, b = 0;

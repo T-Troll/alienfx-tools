@@ -6,6 +6,7 @@
 extern EventHandler* eve;
 extern ConfigHandler* conf;
 extern FXHelper* fxhl;
+extern ThreadHelper* dxgi_thread;
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (cz->lightMap.size() && (grp->effect.trigger == 4 || grp->effect.effectColors.size())) {
@@ -140,7 +141,7 @@ void GridHelper::Stop() {
 			delete sysmon; sysmon = NULL;
 		}
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
-			if (ce->effect.trigger == 4) {
+			if (ce->effect.trigger == 4 && ce->effect.capt) {
 				delete (CaptureHelper*)ce->effect.capt;
 			}
 		}
@@ -165,8 +166,13 @@ void GridHelper::RestartWatch() {
 			case 4: {
 				auto zone = *conf->FindZoneMap(ce->group);
 				if (zone.gMinX != 255/* && zone.gMinY != 255*/) {
-					ce->effect.capt = new CaptureHelper(false);
-					((CaptureHelper*)ce->effect.capt)->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+					ce->effect.capt = new CaptureHelper();
+					if (dxgi_thread)
+						((CaptureHelper*)ce->effect.capt)->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+					else {
+						delete (CaptureHelper*)ce->effect.capt;
+						ce->effect.capt = NULL;
+					}
 				}
 			} break;
 			}

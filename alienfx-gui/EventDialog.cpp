@@ -116,7 +116,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		case IDC_STATUS_BLINK:
 			if (ev)
-				ev->mode = IsDlgButtonChecked(hDlg, IDC_STATUS_BLINK) == BST_CHECKED;;
+				ev->mode = IsDlgButtonChecked(hDlg, IDC_STATUS_BLINK) == BST_CHECKED;
 			break;
 		case IDC_BUTTON_COLORFROM:
 			if (mmap && ev && (!mmap->fromColor || mmap->color.size())) {
@@ -147,11 +147,13 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		} break;
 		case IDC_BUT_ADD_EVENT:
 			if (mmap) {
+				conf->modifyProfile.lockWrite();
 				mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
 					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)),
 					(byte)SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_GETPOS, 0, 0),
 					(byte)IsDlgButtonChecked(hDlg, IDC_STATUS_BLINK) == BST_CHECKED	});
 				eventID = (int)mmap->events.size() - 1;
+				conf->modifyProfile.unlockWrite();
 				eve->ChangeEffects();
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
@@ -159,7 +161,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
 			if (mmap && ev) {
+				conf->modifyProfile.lockWrite();
 				mmap->events.erase(mmap->events.begin() + eventID);
+				conf->modifyProfile.unlockWrite();
 				if (eventID)
 					eventID--;
 				eve->ChangeEffects();
@@ -170,7 +174,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_BUTT_EVENT_UP:
 			if (mmap && ev && eventID) {
 				eventID--;
+				conf->modifyProfile.lockWrite();
 				swap(*ev, mmap->events[eventID]);
+				conf->modifyProfile.unlockWrite();
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
 			}
@@ -178,7 +184,9 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_BUT_EVENT_DOWN:
 			if (mmap && ev && eventID < mmap->events.size() - 1) {
 				eventID++;
+				conf->modifyProfile.lockWrite();
 				swap(*ev, mmap->events[eventID]);
+				conf->modifyProfile.unlockWrite();
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
 			}

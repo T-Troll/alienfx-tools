@@ -536,7 +536,7 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 				if (ce->effect.trigger == 4) { // ambient
 					CaptureHelper* capt = (CaptureHelper*)ce->effect.capt;
 					// update lights
-					if (capt->needUpdate) {
+					if (capt && capt->needUpdate) {
 						capt->needUpdate = false;
 						UINT shift = 255 - conf->amb_shift;
 						auto zone = *conf->FindZoneMap(ce->group);
