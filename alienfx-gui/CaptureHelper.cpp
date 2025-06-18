@@ -26,22 +26,26 @@ size_t buf_size;
 void dxgi_loop(LPVOID param);
 
 void dxgi_SetDimensions() {
-	RECT dimensions = dxgi_manager->get_output_rect();
-	w = dimensions.right - dimensions.left;
-	h = dimensions.bottom - dimensions.top;
-	stride = w * 4;
-	// Adopt to any screen
-	divider = h/1601 + h/2160 + 1;
+	if (dxgi_manager) {
+		RECT dimensions = dxgi_manager->get_output_rect();
+		w = dimensions.right - dimensions.left;
+		h = dimensions.bottom - dimensions.top;
+		stride = w * 4;
+		// Adopt to any screen
+		divider = h / 1601 + h / 2160 + 1;
+	}
 }
 
 void dxgi_Restart() {
-	if (dxgi_thread)
-		delete dxgi_thread;
-	capRes = CR_TIMEOUT;
-	dxgi_manager->set_capture_source((WORD)conf->amb_mode);
-	Sleep(150);
-	dxgi_SetDimensions();
-	dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_NORMAL);
+	if (dxgi_manager) {
+		if (dxgi_thread)
+			delete dxgi_thread;
+		capRes = CR_TIMEOUT;
+		dxgi_manager->set_capture_source((WORD)conf->amb_mode);
+		Sleep(150);
+		dxgi_SetDimensions();
+		dxgi_thread = new ThreadHelper(dxgi_loop, NULL, 100, THREAD_PRIORITY_NORMAL);
+	}
 }
 
 void dxgi_loop(LPVOID param) {
@@ -64,6 +68,7 @@ CaptureHelper::CaptureHelper(bool needLights)
 		}
 		catch (exception e) {
 			// No DirectX or GPU
+			delete dxgi_manager;
 			dxgi_manager = NULL;
 			CoUninitialize();
 			return;

@@ -651,7 +651,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DISPLAYCHANGE:
 		// Monitor configuration changed
 		DebugPrint("Display config changed!\n");
-	    dxgi_Restart();
+		dxgi_Restart();
 		break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
