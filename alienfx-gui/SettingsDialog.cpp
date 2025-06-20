@@ -15,6 +15,8 @@ extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
 
+extern const char* freqNames[];
+const int freqValues[] = { 0, 60, 90, 120, 144, 240 };
 extern bool wasAWCC;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -51,8 +53,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 		CheckDlgButton(hDlg, IDC_HOTKEYS, conf->keyShortcuts);
 		CheckDlgButton(hDlg, IDC_LIGHTACTION, conf->actionLights);
+
 		SetDlgItemInt(hDlg, IDC_EDIT_POLLING, fan_conf->pollingRate, false);
 		SetDlgItemInt(hDlg, IDC_EDIT_ACTION, conf->actionTimeout, false);
+
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_FREQ), freqNames, conf->dcFreq, freqValues);
+
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
@@ -163,7 +169,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					}
 					break;
 				}
-			} else {
+			}
+			else {
 				eve->ChangeEffects(true);
 				delete mon;
 				mon = NULL;
@@ -200,7 +207,13 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->actionLights = state;
 			eve->ChangeAction();
 			break;
-		//default: return false;
+		case IDC_COMBO_FREQ:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				conf->dcFreq = (DWORD)ComboBox_GetItemData(GetDlgItem(hDlg, IDC_COMBO_FREQ), ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_COMBO_FREQ)));
+				if (!conf->statePower)
+					eve->SetDisplayFreq(conf->dcFreq);
+			}
+			break;
 		}
 	} break;
 	case WM_HSCROLL:

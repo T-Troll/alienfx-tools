@@ -19,6 +19,9 @@ extern EventHandler* eve;
 extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
 
+extern const char* freqNames[];
+const int freqValues[] = { 0, 60, 90, 120, 144, 240 };
+
 profile* prof = NULL;
 AlienFX_SDK::Afx_device* activeEffectDevice = NULL;
 
@@ -236,6 +239,9 @@ void ReloadProfSettings(HWND hDlg) {
 
 	SetDlgItemText(hDlg, IDC_TRIGGER_KEYS, ("Keyboard (" + (prof && prof->triggerkey ? GetKeyName(prof->triggerkey) : "Off") + ")").c_str());
 	SetDlgItemText(hDlg, IDC_SCRIPT_NAME, prof ? prof->script.c_str() : NULL);
+
+	UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_FREQ), freqNames, prof && prof->freqMode, freqValues);
+
 	ListBox_ResetContent(app_list);
 	if (prof)
 		for (auto j = prof->triggerapp.begin(); j != prof->triggerapp.end(); j++)
@@ -458,6 +464,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				else
 					return false;
 				break;
+			}
+			break;
+		case IDC_COMBO_FREQ:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				prof->freqMode = (DWORD)ComboBox_GetItemData(GetDlgItem(hDlg, IDC_COMBO_FREQ), ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_COMBO_FREQ)));
+				if (prof->id == conf->activeProfile->id)
+					eve->SetDisplayFreq(prof->freqMode);
 			}
 			break;
 		case IDC_CHECK_EFFECTS:

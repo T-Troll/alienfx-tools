@@ -122,8 +122,6 @@ void SelectProfile(profile* prof = conf->activeProfile) {
 	UpdateProfileList();
 }
 
-void SetDisplayFreq(int freq);
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -134,9 +132,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	hInst = hInstance;
 
 	ResetDPIScale(lpCmdLine);
-
-	// Test!
-	SetDisplayFreq(120);
 
 	conf = new ConfigHandler();
 	conf->Load();
@@ -814,13 +809,6 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 	return ret;
 }
 
-void SetDisplayFreq(int freq) {
-	DEVMODE params;
-	params.dmSize = sizeof(DEVMODE);
-	params.dmFields = DM_DISPLAYFREQUENCY;
-	if (params.dmDisplayFrequency = freq ? freq : conf->currentFreq)
-		ChangeDisplaySettings(&params, CDS_UPDATEREGISTRY);
-}
 
 
 

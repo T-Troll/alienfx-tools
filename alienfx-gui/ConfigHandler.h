@@ -203,8 +203,8 @@ public:
 		statePower = true;/*,
 		 wasAWCC = false;*/
 
-	//Freqs for monitor
-	DWORD currentFreq, dcFreq;
+	// Freqs for monitor
+	DWORD dcFreq;
 
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 	CustomMutex modifyProfile;

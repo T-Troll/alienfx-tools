@@ -8,6 +8,7 @@ private:
 	HHOOK kEvent, ackEvent = NULL, acmEvent;
 	DWORD maxProcess = 1024;
 	DWORD* aProcesses = NULL;
+	DWORD currentFreq = 0;
 
 public:
 	void* capt = NULL;
@@ -19,7 +20,9 @@ public:
 
 	HANDLE wasAction, acThread, acStop;
 
+	// Power and display
 	void ChangePowerState();
+	void SetDisplayFreq(int freq);
 
 	// Profiles
 	void SwitchActiveProfile(profile* newID, bool force = false);

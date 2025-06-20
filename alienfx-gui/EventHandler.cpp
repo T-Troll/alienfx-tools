@@ -30,6 +30,13 @@ EventHandler::EventHandler()
 {
 	eve = this;
 	aProcesses = new DWORD[maxProcess >> 2];
+
+	// Check display...
+	DEVMODE current;
+	current.dmSize = sizeof(DEVMODE);
+	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &current))
+		currentFreq = current.dmDisplayFrequency;
+
 	ChangePowerState();
 	SwitchActiveProfile(conf->activeProfile, true);
 	if (conf->startMinimized)
@@ -42,6 +49,7 @@ EventHandler::~EventHandler()
 {
 	//StopProfiles();
 	//ChangeAction(false);
+	SetDisplayFreq(currentFreq);
 	delete aProcesses;
 	CloseHandle(acStop);
 }
@@ -61,6 +69,15 @@ void EventHandler::ChangePowerState()
 	}
 }
 
+void EventHandler::SetDisplayFreq(int freq) {
+	DEVMODE params;
+	params.dmSize = sizeof(DEVMODE);
+	params.dmFields = DM_DISPLAYFREQUENCY;
+	if (params.dmDisplayFrequency = !conf->statePower && conf->dcFreq ? conf->dcFreq :
+		freq ? freq : currentFreq)
+		ChangeDisplaySettings(&params, CDS_UPDATEREGISTRY);
+}
+
 void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 {
 	if (!newID) newID = conf->FindDefaultProfile();
@@ -76,6 +93,9 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 
 		if (newID->flags & PROF_RUN_SCRIPT && !(newID->flags & PROF_ACTIVE) && newID->script.size())
 			ShellExecute(NULL, NULL, newID->script.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+
+		// Freqs
+		SetDisplayFreq(newID->freqMode);
 
 		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");
 	}

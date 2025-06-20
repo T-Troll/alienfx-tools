@@ -44,5 +44,3 @@ extern HWND mDlg;
 extern int eItem;
 extern groupset* mmap;
 
-
-

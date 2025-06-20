@@ -27,12 +27,6 @@ ConfigHandler::ConfigHandler() {
 	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
 	niData.hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_ALIENFX_ON),	IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
-
-	// Check display...
-	DEVMODE current;
-	current.dmSize = sizeof(DEVMODE);
-	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &current))
-		currentFreq = current.dmDisplayFrequency;
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -170,6 +164,8 @@ void ConfigHandler::Load() {
 	GetReg("ShowGridNames", &showGridNames);
 	GetReg("KeyboardShortcut", &keyShortcuts, 1);
 	GetReg("GESpeed", &geTact, 100);
+	GetReg("MonDC", &dcFreq, 0);
+
 	RegGetValue(hKeyMain, NULL, TEXT("CustomColors"), RRF_RT_REG_BINARY | RRF_ZEROONFAILURE, NULL, customColors, &size_c);
 
 	// Ambient....
@@ -213,6 +209,10 @@ void ConfigHandler::Load() {
 			FindCreateProfile(pid)->script = GetRegString(data, lend);
 			continue;
 		}
+		if (sscanf_s(name, "Profile-freq-%d", &pid) == 1) {
+			FindCreateProfile(pid)->freqMode = *(DWORD*)data;
+			continue;
+		}
 		int senid, fanid;
 		if (sscanf_s(name, "Profile-fan-%d-%d-%d", &pid, &fanid, &senid) == 3) {
 			((ConfigFan*)fan_conf)->AddSensorCurve(((fan_profile*)FindCreateProfile(pid)->fansets), fanid, senid, data, lend);
@@ -227,12 +227,14 @@ void ConfigHandler::Load() {
 			if (!prof->fansets)
 				prof->fansets = new fan_profile();
 			((fan_profile*)prof->fansets)->powerSet = *(DWORD*)data;
+			continue;
 		}
 		if (sscanf_s(name, "Profile-OC-%d", &pid) == 1) {
 			prof = FindCreateProfile(pid);
 			if (!prof->fansets)
 				prof->fansets = new fan_profile();
 			((fan_profile*)prof->fansets)->ocSettings = *(DWORD*)data;
+			continue;
 		}
 	}
 	// Loading zones...
@@ -350,6 +352,8 @@ void ConfigHandler::Save() {
 	SetReg("ShowGridNames", showGridNames);
 	SetReg("KeyboardShortcut", keyShortcuts);
 	SetReg("GESpeed", geTact);
+	SetReg("MonDC", dcFreq);
+
 	RegSetValueEx(hKeyMain, TEXT("CustomColors"), 0, REG_BINARY, (BYTE*)customColors, sizeof(DWORD) * 16);
 
 	// Ambient
@@ -375,6 +379,8 @@ void ConfigHandler::Save() {
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->gflags, sizeof(DWORD));
 		name = "Profile-triggers-" + profID;
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->triggers, sizeof(DWORD));
+		name = "Profile-freq-" + profID;
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->freqMode, sizeof(DWORD));
 		if (prof->script.size()) {
 			name = "Profile-script-" + profID;
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)prof->script.c_str(), (DWORD)prof->script.size());
