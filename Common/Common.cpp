@@ -47,7 +47,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 DWORD WINAPI Blinker(LPVOID lparam) {
 	int howmany = (int)(ULONGLONG)lparam << 1;
-	for (int i = 0; i < howmany; i++) {
+	for (int i = 0; i <= howmany; i++) {
 		keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0);
 		keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
 		Sleep(300);
@@ -258,7 +258,7 @@ void SetSlider(HWND tt, int value) {
 
 void UpdateCombo(HWND ctrl, const char* items[], int sel, const int val[]) {
 	ComboBox_ResetContent(ctrl);
-	for (int i = 0; strlen(items[i]); i++) {
+	for (int i = 0; items[i][0]; i++) {
 		ComboBox_AddString(ctrl, items[i]);
 		if (val) {
 			ComboBox_SetItemData(ctrl, i, val[i]);

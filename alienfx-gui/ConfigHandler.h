@@ -144,6 +144,7 @@ struct profile {
 	void *fansets = NULL;
 	map<DWORD, vector<deviceeffect>> effects;
 	string script = "";
+	DWORD freqMode = 0;
 };
 
 union ambgrid {
@@ -201,6 +202,10 @@ public:
 		stateEffects = true,
 		statePower = true;/*,
 		 wasAWCC = false;*/
+
+	//Freqs for monitor
+	DWORD currentFreq, dcFreq;
+
 	AlienFX_SDK::Afx_colorcode testColor{0,255};
 	CustomMutex modifyProfile;
 	CustomMutex zoneUpdate;

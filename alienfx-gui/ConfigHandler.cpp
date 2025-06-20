@@ -27,6 +27,12 @@ ConfigHandler::ConfigHandler() {
 	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
 	niData.hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_ALIENFX_ON),	IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+
+	// Check display...
+	DEVMODE current;
+	current.dmSize = sizeof(DEVMODE);
+	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &current))
+		currentFreq = current.dmDisplayFrequency;
 }
 
 ConfigHandler::~ConfigHandler() {

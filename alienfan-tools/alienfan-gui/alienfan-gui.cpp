@@ -29,13 +29,7 @@ const char* pModes[] = { "Off", "Enabled", "Aggressive", "Efficient", "Efficient
 
 GUID* sch_guid, perfset;
 
-NOTIFYICONDATA niDataFC{ sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP, WM_APP + 1,
-        (HICON)LoadImage(hInst,
-            MAKEINTRESOURCE(IDI_ALIENFANGUI),
-            IMAGE_ICON,
-            GetSystemMetrics(SM_CXSMICON),
-            GetSystemMetrics(SM_CYSMICON),
-            LR_DEFAULTCOLOR) };
+NOTIFYICONDATA niDataFC;
 extern NOTIFYICONDATA* niData;
 
 bool isNewVersion = false;
@@ -92,6 +86,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     SetPowerState();
     mon = new MonHelper();
     hInst = hInstance;
+
+    niDataFC = { sizeof(NOTIFYICONDATA), 0, IDI_ALIENFANGUI, NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP, WM_APP + 1,
+        (HICON)LoadImage(hInst,
+            MAKEINTRESOURCE(IDI_ALIENFANGUI),
+            IMAGE_ICON,
+            GetSystemMetrics(SM_CXSMICON),
+            GetSystemMetrics(SM_CYSMICON),
+            LR_DEFAULTCOLOR) };
+
     niData = &niDataFC;
 
     if (mon->acpi->isSupported) {
@@ -456,11 +459,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (wParam == 6 || wParam > 19 && wParam - 20 < mon->powerSize) {
             if (wParam == 6) { // G-key for Dell G-series power switch
                 AlterGMode(power_list);
-                BlinkNumLock(1 + mon->powerMode);
+                BlinkNumLock(mon->powerMode);
             }
             else { // Power mode shortcut
                 mon->SetPowerMode((WORD)wParam - 20);
-                BlinkNumLock((int)wParam - 19);
+                BlinkNumLock(mon->powerMode);
             }
             ComboBox_SetCurSel(power_list, mon->powerMode);
             ShowNotification(niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));

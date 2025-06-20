@@ -60,6 +60,9 @@ int eItem = 0;
 // last zone selected
 groupset* mmap = NULL;
 
+const char* freqNames[] = { "Default", "60Hz", "90Hz", "120Hz", "144Hz", "240Hz", ""};
+const int freqValues[] = { 0, 60, 90, 120, 144, 240 };
+
 extern string GetFanName(int ind, bool forTray = false);
 extern void AlterGMode(HWND);
 
@@ -119,6 +122,8 @@ void SelectProfile(profile* prof = conf->activeProfile) {
 	UpdateProfileList();
 }
 
+void SetDisplayFreq(int freq);
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -129,6 +134,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	hInst = hInstance;
 
 	ResetDPIScale(lpCmdLine);
+
+	// Test!
+	SetDisplayFreq(120);
 
 	conf = new ConfigHandler();
 	conf->Load();
@@ -274,8 +282,7 @@ void UpdateProfileList() {
 void UpdateState(bool checkMode = false) {
 	if (!dDlg)
 		eve->ChangeEffectMode();
-	//else
-	//	fxhl->SetState();
+
 	if (checkMode) {
 		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
 		if (!dDlg && tabSel == TAB_LIGHTS)
@@ -652,6 +659,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		// Monitor configuration changed
 		DebugPrint("Display config changed!\n");
 		dxgi_Restart();
+		//ChangeDisplaySettings() - ToDo - change freqs using it.
 		break;
 	case WM_ENDSESSION:
 		// Shutdown/restart scheduled....
@@ -667,7 +675,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			mon->SetPowerMode((WORD)wParam - 30);
 			if (tabSel == TAB_FANS)
 				OnSelChanged();
-			BlinkNumLock((int)wParam - 29);
+			BlinkNumLock(mon->powerMode);
 			ShowNotification(&conf->niData, "Power mode switched!", "New power mode - " + *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode]));
 			break;
 		}
@@ -707,9 +715,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				AlterGMode(NULL);
 				if (tabSel == TAB_FANS)
 					OnSelChanged();
-				BlinkNumLock(1 + mon->powerMode);
+				BlinkNumLock(mon->powerMode);
 				ShowNotification(&conf->niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : * fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
 			}
+			else
+				return false;
 			break;
 		case 7: case 8: // Brightness up/down
 			if (conf->lightsOn) {
@@ -802,6 +812,14 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 	if (ret = SetColor(ctrl, &savedColor, false))
 		clr = Act2Code(&savedColor);
 	return ret;
+}
+
+void SetDisplayFreq(int freq) {
+	DEVMODE params;
+	params.dmSize = sizeof(DEVMODE);
+	params.dmFields = DM_DISPLAYFREQUENCY;
+	if (params.dmDisplayFrequency = freq ? freq : conf->currentFreq)
+		ChangeDisplaySettings(&params, CDS_UPDATEREGISTRY);
 }
 
 
