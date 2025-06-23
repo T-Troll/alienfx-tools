@@ -16,7 +16,7 @@ public:
 	map<byte,map<WORD, byte>> senBoosts;
 	WORD powerMode = 0;
 	WORD fansize, powerSize, sensorSize;
-	int systemID;
+	DWORD systemID;
 	bool modified;
 
 	MonHelper();

@@ -453,13 +453,14 @@ namespace AlienFan_SDK {
 	int Control::GetGMode() {
 		if (isGmode) {
 			int pm = GetPower(true);
-			switch (systemID) { // hacks for buggy G5515/5525 BIOS
-			case 4800: // g-mode only on if power AB
-			case 3200: { // g-mode only off if power not AB
-				return pm == 0xab || pm < 0;
-			}
-			default: return pm < 0 || RunMainCommand(dev_controls.getGMode);
-			}
+			return pm == 0xab || pm < 0 || RunMainCommand(dev_controls.getGMode) > 0;
+			//switch (systemID) { // hacks for buggy G5515/5525 BIOS
+			//case 4800: // g-mode only on if power AB
+			//case 3200: { // g-mode only off if power not AB
+			//	return pm == 0xab || pm < 0;
+			//}
+			//default: return pm < 0 || RunMainCommand(dev_controls.getGMode);
+			//}
 		}
 		return 0;
 	}

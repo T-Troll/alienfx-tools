@@ -1,26 +1,27 @@
 #pragma once
 
-
 namespace AlienFan_SDK {
 
-	static const BSTR commandList[]{
-		(BSTR)L"Thermal_Information",	// 0x14
-		(BSTR)L"Thermal_Control",		// 0x15
-		(BSTR)L"GameShiftStatus",		// 0x25
-		(BSTR)L"SystemInformation",		// 0x1A
-		(BSTR)L"GetFanSensors",			// 0x13
-		(BSTR)L"GetThermalInfo2",		// 0x10
-		(BSTR)L"SetThermalControl2",	// 0x11
-		(BSTR)L"TccControl",			// 0x1e
-		(BSTR)L"MemoryOCControl"		// 0x17
+	const BSTR commandList[] = {
+		(BSTR)L"Thermal_Information",	// 0 0x14
+		(BSTR)L"Thermal_Control",		// 1 0x15
+		(BSTR)L"GameShiftStatus",		// 2 0x25
+		//(BSTR)L"SystemInformation",		// 3 0x1A
+		(BSTR)L"GetFanSensors",			// 3 0x13
+		(BSTR)L"GetThermalInfo2",		// 4 0x10
+		(BSTR)L"SetThermalControl2",	// 5 0x11
+		(BSTR)L"TccControl",			// 6 0x1e
+		(BSTR)L"MemoryOCControl"		// 7 0x17
 	};
 
-	static const byte functionID[2][19]{
-		{ 0,0,0,0,0,0,1,1,2,2,3,4,0,7,7,7,7,8,8 },
-		{ 5,5,5,5,5,5,6,6,2,2,3,4,5,7,7,7,7,8,8 }
+	const byte functionID[2][19] = {
+		{ 0,0,0,0,0,0,1,1,2,2,0,3,0,6,6,6,6,7,7 },
+		{ 5,5,5,5,5,5,6,6,2,2,5,4,5,6,6,6,6,7,7 }
+		//{ 0,0,0,0,0,0,1,1,2,2,3,4,0,7,7,7,7,8,8 },
+		//{ 5,5,5,5,5,5,6,6,2,2,3,4,5,7,7,7,7,8,8 }
 	};
 
-	static const byte dev_controls[]{
+	const byte dev_controls[] = {
 		3, // PowerID
 		5, // RPM
 		6, // Percent
@@ -64,7 +65,7 @@ namespace AlienFan_SDK {
 		setXMP = 18
 	};
 
-	static const char* temp_names[3]{
+	const char* temp_names[] = {
 			"CPU Internal Thermistor",
 			"GPU Internal Thermistor",
 			"Motherboard Thermistor"//,

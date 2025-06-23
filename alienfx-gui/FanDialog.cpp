@@ -59,7 +59,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         tipWindow = GetDlgItem(hDlg, IDC_FC_LABEL);
 
         // Set SystemID
-        SetDlgItemText(hDlg, IDC_FC_ID, ("ID: " + to_string(mon->systemID)).c_str());
+        SetDlgItemText(hDlg, IDC_FC_ID, ("ID: " + to_string((unsigned int)mon->systemID)).c_str());
 
         // Start UI update thread...
         SetTimer(hDlg, 0, fan_conf->pollingRate, NULL);

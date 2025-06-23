@@ -24,12 +24,12 @@ namespace AlienFan_SDK {
 		CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
 		// Windows bug with disk drives list
-		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
-		IEnumWbemClassObject* enum_obj;
-		if (m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDisk", 0, NULL, &enum_obj) == S_OK) {
-			enum_obj->Release();
-		}
-		m_DiskService->Release();
+		//m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
+		//IEnumWbemClassObject* enum_obj;
+		//if (m_DiskService->CreateInstanceEnum((BSTR)L"MSFT_PhysicalDisk", 0, NULL, &enum_obj) == S_OK) {
+		//	enum_obj->Release();
+		//}
+		//m_DiskService->Release();
 		// End Windows bugfix
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage\\Providers_v2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
 		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\LibreHardwareMonitor", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_OHMService);
@@ -69,7 +69,7 @@ namespace AlienFan_SDK {
 
 	void Control::EnumSensors(IWbemServices* srv, const wchar_t* s_name, byte type) {
 		IEnumWbemClassObject* enum_obj;
-		if (srv->CreateInstanceEnum((BSTR)s_name, /*WBEM_FLAG_SHALLOW |*/ WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+		if (srv && srv->CreateInstanceEnum((BSTR)s_name, /*WBEM_FLAG_SHALLOW |*/ WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 			IWbemClassObject* spInstance[32];
 			ULONG uNumOfInstances;
 			LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
@@ -107,10 +107,12 @@ namespace AlienFan_SDK {
 						}
 					}
 					spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
-					spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
-					spInstance[ind]->Release();
-					if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
-						sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
+					if (instPath.bstrVal) {
+						spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
+						spInstance[ind]->Release();
+						if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
+							sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
+					}
 				}
 			}
 			enum_obj->Release();
@@ -121,26 +123,25 @@ namespace AlienFan_SDK {
 	}
 
 	bool Control::Probe(bool diskSensors) {
-		if (m_WbemServices && m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK) {
+		IEnumWbemClassObject* enum_obj;
+		if (m_WbemServices && (isAlienware = (m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK))) {
 #ifdef _TRACE_
 			printf("AWCC section detected!\n");
 #endif
 			// need to get instance
-			IEnumWbemClassObject* enum_obj;
 
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+
 				IWbemClassObject* spInstance;
 				ULONG uNumOfInstances = 0;
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
 				spInstance->Release();
 				enum_obj->Release();
-				isAlienware = true;
 
 				// check system type and fill inParams
 				for (sysType = 0; sysType < 2; sysType++)
 					if (isSupported = (m_AWCCGetObj->GetMethod(commandList[functionID[sysType][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)) {
-						//sysType = type;
 #ifdef _TRACE_
 						printf("Fan Control available, system type %d\n", sysType);
 #endif
@@ -154,20 +155,20 @@ namespace AlienFan_SDK {
 							printf("G-Mode available\n");
 
 #endif
-						maxTCC = CallWMIMethod(getMaxTCC);
-						if (isTcc = (maxTCC > 0)) {
+						if (isTcc = (m_AWCCGetObj->GetMethod(commandList[6], NULL, nullptr, nullptr) == S_OK)) {
+							maxTCC = CallWMIMethod(getMaxTCC);
 							maxOffset = CallWMIMethod(getMaxOffset);
 						}
 #ifdef _TRACE_
 						if (isTcc)
 							printf("TCC control available\n");
 #endif
-						isXMP = CallWMIMethod(getXMP) >= 0;
+						isXMP = m_AWCCGetObj->GetMethod(commandList[7], NULL, nullptr, nullptr) == S_OK;
 #ifdef _TRACE_
 						if (isXMP)
 							printf("Memory XMP available\n");
 #endif
-						int fIndex = 0, funcID; //= CallWMIMethod(getPowerID, fIndex);
+						int fIndex = 0, funcID;
 
 						powers.push_back(0); // Manual mode
 						// Scan for avaliable data
@@ -197,7 +198,6 @@ namespace AlienFan_SDK {
 								}
 							}
 							fIndex++;
-							//funcID = CallWMIMethod(getPowerID, fIndex);
 						}
 #ifdef _TRACE_
 						printf("%d fans, %d sensors, %d Power modes found, last reply %x\n", (int) fans.size(), (int) sensors.size(), (int)powers.size(), funcID);
@@ -294,13 +294,14 @@ namespace AlienFan_SDK {
 	int Control::GetGMode() {
 		if (isGmode) {
 			int pm = GetPower(true);
-			switch (systemID) { // hacks for buggy G5515/5525 BIOS
-				case 4800: // g-mode only on if power AB
-				case 3200: { // g-mode only off if power not AB
-					return pm == 0xab || pm < 0;
-				}
-				default: return pm < 0 || CallWMIMethod(getGMode);
-			}
+			return pm == 0xab || pm < 0 || CallWMIMethod(getGMode) > 0;
+			//switch (systemID) { // hacks for buggy G5515/5525 BIOS
+			//	case 4800: // g-mode only on if power AB
+			//	case 3200: { // g-mode only off if power not AB
+			//		return pm == 0xab || pm < 0;
+			//	}
+			//	default: return pm < 0 || CallWMIMethod(getGMode);
+			//}
 		}
 		return 0;
 	}

@@ -19,7 +19,6 @@
 #define IDC_SYSLINK_HOMEPAGE            1010
 #define IDC_MAX_RESET                   1016
 #define IDC_BUT_RESETBOOST              1017
-#define IDC_EDIT1                       1018
 #define IDC_EDIT_POLLING                1018
 #define IDC_FC_ID                       1019
 #define IDC_AC_BOOST                    1124

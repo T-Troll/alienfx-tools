@@ -46,7 +46,7 @@ namespace AlienFan_SDK {
 	public:
 		VARIANT m_instancePath{};
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
-		IWbemClassObject* m_InParamaters = NULL;
+		IWbemClassObject* m_InParamaters;
 		bool isAlienware = false,
 			isSupported = false,
 			isTcc = false,

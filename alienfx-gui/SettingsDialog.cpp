@@ -16,7 +16,7 @@ extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
 
 extern const char* freqNames[];
-const int freqValues[] = { 0, 60, 90, 120, 144, 240 };
+extern const int* freqValues;
 extern bool wasAWCC;
 
 BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

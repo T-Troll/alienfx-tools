@@ -20,7 +20,7 @@ extern FXHelper* fxhl;
 extern ConfigFan* fan_conf;
 
 extern const char* freqNames[];
-const int freqValues[] = { 0, 60, 90, 120, 144, 240 };
+extern const int* freqValues;
 
 profile* prof = NULL;
 AlienFX_SDK::Afx_device* activeEffectDevice = NULL;

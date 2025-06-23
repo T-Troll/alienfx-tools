@@ -60,8 +60,9 @@ int eItem = 0;
 // last zone selected
 groupset* mmap = NULL;
 
-const char* freqNames[] = { "Default", "60Hz", "90Hz", "120Hz", "144Hz", "240Hz", ""};
-const int freqValues[] = { 0, 60, 90, 120, 144, 240 };
+const char* freqNames[] = { "Default", "60Hz", "90Hz", "120Hz", "144Hz", "165Hz", "240Hz", "360Hz", ""};
+const int fvArray[] = { 0, 60, 90, 120, 144, 165, 240, 360 };
+const int* freqValues = fvArray;
 
 extern string GetFanName(int ind, bool forTray = false);
 extern void AlterGMode(HWND);
@@ -81,7 +82,10 @@ bool DetectFans() {
 
 void SetHotkeys() {
 	RegisterHotKey(mDlg, 1, 0, VK_F18);
-	RegisterHotKey(mDlg, 2, 0, VK_F17);
+	if (conf->fanControl)
+		RegisterHotKey(mDlg, 2, 0, VK_F17);
+	else
+		UnregisterHotKey(mDlg, 2);
 
 	if (conf->keyShortcuts) {
 		//register global hotkeys...
@@ -713,8 +717,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				BlinkNumLock(mon->powerMode);
 				ShowNotification(&conf->niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : * fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
 			}
-			else
-				return false;
 			break;
 		case 7: case 8: // Brightness up/down
 			if (conf->lightsOn) {
@@ -740,8 +742,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_DESTROY:
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
-		//conf->Save();
-		//mDlg = NULL;
 		PostQuitMessage(0);
 		break;
 	default: return false;
