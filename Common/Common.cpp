@@ -237,23 +237,28 @@ HWND CreateToolTip(HWND hwndParent, HWND oldTip)
 	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
 		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
 		0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
-	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS, hwndParent };
+	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS | TTF_TRANSPARENT, hwndParent };
 	GetClientRect(hwndParent, &ti.rect);
-	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)&ti);
 	return hwndTT;
 }
 
-void SetToolTip(HWND tt, string value) {
-	TOOLINFO ti{ sizeof(TOOLINFO) };
+HWND SetToolTip(HWND tt, string value) {
 	if (tt) {
+		TOOLINFO ti{ sizeof(TOOLINFO) };
 		SendMessage(tt, TTM_ENUMTOOLS, 0, (LPARAM)&ti);
 		ti.lpszText = (LPTSTR)value.c_str();
 		SendMessage(tt, TTM_SETTOOLINFO, 0, (LPARAM)&ti);
+		return ti.hwnd;
 	}
+	return NULL;
 }
 
 void SetSlider(HWND tt, int value) {
-	SetToolTip(tt, to_string(value));
+	HWND parent = SetToolTip(tt, to_string(value));
+	if (parent) {
+		SendMessage(parent, TBM_SETPOS, true, value);
+	}
 }
 
 void UpdateCombo(HWND ctrl, const char* items[], int sel, const int val[]) {

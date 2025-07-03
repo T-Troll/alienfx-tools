@@ -264,15 +264,14 @@ void OnSelChanged()
 void UpdateProfileList() {
 	if (IsWindowVisible(mDlg)) {
 		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
+		EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
+		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
 		ComboBox_ResetContent(profile_list);
 		int id;
 		for (profile* prof : conf->profiles) {
 			id = ComboBox_AddString(profile_list, prof->name.c_str());
-			if (prof->id == conf->activeProfile->id) {
+			if (prof->id == conf->activeProfile->id)
 				ComboBox_SetCurSel(profile_list, id);
-				CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
-				EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
-			}
 		}
 		//DebugPrint("Profile list reloaded.\n");
 	}

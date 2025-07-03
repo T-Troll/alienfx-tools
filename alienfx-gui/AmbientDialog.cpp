@@ -62,15 +62,15 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         CheckDlgButton(hDlg, conf->amb_calc ? IDC_RADIO_PREVEALING : IDC_RADIO_MEDIUM, BST_CHECKED);
 
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-        SendMessage(brSlider, TBM_SETPOS, true, conf->amb_shift);
+        //SendMessage(brSlider, TBM_SETPOS, true, conf->amb_shift);
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
 
         SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(1, 20));
-        SendMessage(gridX, TBM_SETPOS, true, conf->amb_grid.x);
+        //SendMessage(gridX, TBM_SETPOS, true, conf->amb_grid.x);
         //SendMessage(gridX, TBM_SETTICFREQ, 16, 0);
 
         SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(1, 12));
-        SendMessage(gridY, TBM_SETPOS, true, conf->amb_grid.y);
+        //SendMessage(gridY, TBM_SETPOS, true, conf->amb_grid.y);
         //SendMessage(gridY, TBM_SETTICFREQ, 16, 0);
 
         sTip1 = CreateToolTip(brSlider, sTip1);

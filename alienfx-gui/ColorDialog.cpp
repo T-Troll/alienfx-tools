@@ -20,9 +20,9 @@ void SetEffectData(HWND hDlg) {
 	bool hasEffects = mmap && mmap->color.size();
 	if (hasEffects) {
 			ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->color[effID].type & 0xf);
-			SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->color[effID].tempo);
+			//SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->color[effID].tempo);
 			SetSlider(sTip1, mmap->color[effID].tempo);
-			SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
+			//SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
 			SetSlider(sTip2, mmap->color[effID].time);
 			CheckDlgButton(hDlg, IDC_ACCENT, mmap->color[effID].type & 0xf0);
 	}

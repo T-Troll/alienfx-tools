@@ -88,9 +88,9 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1);
 		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2);
 		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, activeDevice->white.r);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, activeDevice->white.g);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, activeDevice->white.b);
+		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, activeDevice->white.r);
+		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, activeDevice->white.g);
+		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, activeDevice->white.b);
 		SetSlider(sTip1, activeDevice->white.r);
 		SetSlider(sTip2, activeDevice->white.r);
 		SetSlider(sTip3, activeDevice->white.r);

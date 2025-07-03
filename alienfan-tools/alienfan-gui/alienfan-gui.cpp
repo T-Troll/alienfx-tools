@@ -146,27 +146,25 @@ void ToggleValue(DWORD& value, int cID) {
 }
 
 void SetOCUI(HWND hDlg) {
-    HWND tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC),
-        xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP),
-        tcc_edit = GetDlgItem(hDlg, IDC_EDIT_TCC);
     // OC block
-    EnableWindow(tcc_slider, fan_conf->ocEnable && mon->acpi->isTcc);
-    EnableWindow(tcc_edit, fan_conf->ocEnable && mon->acpi->isTcc);
     if (fan_conf->ocEnable && mon->acpi->isTcc) {
+        HWND tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC);
+        EnableWindow(tcc_slider, true);
+        EnableWindow(GetDlgItem(hDlg, IDC_EDIT_TCC), true);
         SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
         sTip1 = CreateToolTip(tcc_slider, sTip1);
         SetSlider(sTip1, fan_conf->lastProf->currentTCC);
-        SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
-
+        //SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
         // Set edit box value to match slider
         SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
     }
-    EnableWindow(xmp_slider, fan_conf->ocEnable && mon->acpi->isXMP);
     if (fan_conf->ocEnable && mon->acpi->isXMP) {
+        HWND xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP);
+        EnableWindow(xmp_slider, true);
         SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
         sTip2 = CreateToolTip(xmp_slider, sTip2);
         SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
-        SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
+        //SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
     }
 }
 
@@ -362,8 +360,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 // Did it in range?
                 if (val && val == max(min(val, mon->acpi->maxTCC), mon->acpi->maxTCC - mon->acpi->maxOffset)) {
                     // Set slider and value
-                    SendMessage(tcc_slider, TBM_SETPOS, TRUE, fan_conf->lastProf->currentTCC = val);
-                    SetSlider(sTip1, val);
+                    //SendMessage(tcc_slider, TBM_SETPOS, TRUE, fan_conf->lastProf->currentTCC = val);
+                    SetSlider(sTip1, fan_conf->lastProf->currentTCC = val);
                     mon->SetOC();
                 }
             } break;
@@ -504,13 +502,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 SetSlider(sTip1, fan_conf->lastProf->currentTCC);
                 // Update edit box
                 SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
-                mon->SetOC();
             }
             if ((HWND)lParam == xmp_slider) {
                 fan_conf->lastProf->memoryXMP = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
                 SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
-                mon->SetOC();
             }
+            mon->SetOC();
         } break;
         } break;
     case WM_CLOSE:

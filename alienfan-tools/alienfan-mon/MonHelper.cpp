@@ -48,13 +48,17 @@ void MonHelper::ResetBoost() {
 }
 
 void MonHelper::Start() {
+	// Set profile and initial modes
+	active = fan_conf->lastProf;
+	SetOC();
 	// start thread...
 	if (!monThread) {
 		oldPower = GetPowerMode();
-		active = NULL;
+		//active = NULL;
 		monThread = new ThreadHelper(CMonProc, this, fan_conf->pollingRate, THREAD_PRIORITY_NORMAL/*THREAD_PRIORITY_BELOW_NORMAL*/);
 		DebugPrint("Mon thread start.\n");
 	}
+	SetCurrentMode();
 }
 
 void MonHelper::Stop() {
@@ -70,7 +74,7 @@ void MonHelper::Stop() {
 
 void MonHelper::SetCurrentMode(int newMode) {
 	if (newMode < 0) {
-		DebugPrint("Mon: Switching from profile\n");
+		//DebugPrint("Mon: Switching from profile\n");
 		newMode = fan_conf->lastProf->gmodeStage ? powerSize :
 			fan_conf->acPower ? fan_conf->lastProf->powerStage : fan_conf->lastProf->powerStageDC;
 	}
@@ -82,18 +86,18 @@ void MonHelper::SetCurrentMode(int newMode) {
 			}
 			ResetBoost();
 			acpi->SetPower(acpi->powers[newMode]);
-			DebugPrint("Mon: Power mode switch from " + (powerMode == powerSize ? "G-mode" : to_string(powerMode)) + " to " + to_string(newMode) + "\n");
+			//DebugPrint("Mon: Power mode switch from " + (powerMode == powerSize ? "G-mode" : to_string(powerMode)) + " to " + to_string(newMode) + "\n");
 		}
 		else {
 			acpi->SetGMode(1);
-			DebugPrint("Mon: Power mode switch from " + to_string(powerMode) + " to G-mode\n");
+			//DebugPrint("Mon: Power mode switch from " + to_string(powerMode) + " to G-mode\n");
 		}
 		powerMode = newMode;
 	}
 #ifdef _DEBUG
-	else {
-		DebugPrint("Mon: Same power mode\n");
-	}
+	//else {
+	//	DebugPrint("Mon: Same power mode\n");
+	//}
 #endif
 }
 
@@ -112,7 +116,7 @@ byte MonHelper::GetFanPercent(byte fanID)
 int MonHelper::GetPowerMode() {
 #ifdef _DEBUG
 	int res = acpi->GetGMode() ? powerSize : acpi->GetPower();
-	DebugPrint("Mon: BIOS mode " + to_string(res) + ", current " + to_string(powerMode) + "\n");
+	//DebugPrint("Mon: BIOS mode " + to_string(res) + ", current " + to_string(powerMode) + "\n");
 	return res;
 #else
 	return acpi->GetGMode() ? powerSize : acpi->GetPower();
@@ -134,7 +138,7 @@ void CMonProc(LPVOID param) {
 	AlienFan_SDK::Control* acpi = src->acpi;
 	src->modified = false;
 
-	DebugPrint("Mon: Poll started\n");
+	//DebugPrint("Mon: Poll started\n");
 	// update values:
 	// temps..
 	for (int i = 0; i < src->sensorSize; i++) {
@@ -151,14 +155,15 @@ void CMonProc(LPVOID param) {
 		src->fanRpm[i] = acpi->GetFanRPM(i);
 	}
 
-	if (active != fan_conf->lastProf) {
-		active = fan_conf->lastProf; // profile changed
-		src->SetOC();
-	}
+	//if (active != fan_conf->lastProf) {
+	//	active = fan_conf->lastProf; // profile changed
+	//	DebugPrint("Mon: Fan profile was switched\n")
+	//	src->SetOC();
+	//}
 
 #ifdef _DEBUG
 	if (!active)
-		DebugPrint("Zero fan profile!");
+		DebugPrint("Mon: Zero fan profile!");
 #endif
 
 	if (src->inControl && active) {
@@ -167,7 +172,7 @@ void CMonProc(LPVOID param) {
 		src->SetCurrentMode();
 
 		if (!src->powerMode && src->modified) {
-			DebugPrint("Mon: Boost calc started\n");
+			//DebugPrint("Mon: Boost calc started\n");
 			int cBoost;
 			for (auto cIter = active->fanControls.begin(); cIter != active->fanControls.end(); cIter++) {
 				// Check boost
@@ -215,5 +220,5 @@ void CMonProc(LPVOID param) {
 			}
 		}
 	}
-	DebugPrint("Mon: poll ended\n");
+	//DebugPrint("Mon: poll ended\n");
 }

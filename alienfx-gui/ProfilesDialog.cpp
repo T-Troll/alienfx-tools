@@ -78,7 +78,7 @@ void RefreshDeviceList(HWND hDlg) {
 				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->version == 8);
 
 				if (b = FindDevEffect(1)) {
-					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b->globalDelay);
+					//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b->globalDelay);
 					SetSlider(sTip1, b->globalDelay);
 					c1 = b->effColor1; c2 = b->effColor2;
 				}
@@ -91,7 +91,7 @@ void RefreshDeviceList(HWND hDlg) {
 				c1 = c2 = { 0,0,0,0xff };
 
 				if (b = FindDevEffect(2)) {
-					SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b->globalDelay);
+					//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b->globalDelay);
 					SetSlider(sTip2, b->globalDelay);
 					c1 = b->effColor1; c2 = b->effColor2;
 				}
@@ -281,8 +281,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	{
 		if (!prof)
 			prof = conf->activeProfile;
-		for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++)
-			if (i->dev && i->dev->IsHaveGlobal()) {
+		for (auto& i : conf->afx_dev.fxdevs)
+			if (i.dev && i.dev->IsHaveGlobal()) {
 				EnableWindow(GetDlgItem(hDlg, IDC_DEV_EFFECT), true);
 				break;
 			}
@@ -309,10 +309,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				else
 					prof++;
 			prof = new profile(prof ? *prof : *conf->activeProfile);
-			conf->profiles.push_back(prof);
 			prof->id = vacID;
 			prof->flags &= ~PROF_DEFAULT;
 			prof->name = "Profile " + to_string(vacID);
+			conf->profiles.push_back(prof);
 			UpdateProfileList();
 			ReloadProfileView(hDlg);
 		} break;
@@ -320,13 +320,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			if (!(prof->flags & PROF_DEFAULT) && conf->profiles.size() > 1) {
 				if (WarningBox(hDlg, "Do you really want to remove selected profile and all settings for it?")) {
 					for (auto pf = conf->profiles.begin(); pf != conf->profiles.end(); pf++)
-						if ((*pf)->id == prof->id) {
+						if (*pf == prof) {
 							profile* newpCid = (pf + 1) == conf->profiles.end() ? *(pf - 1) : *(pf + 1);
-							conf->profiles.erase(pf);
-							if (conf->activeProfile->id == prof->id) {
+							if (conf->activeProfile == prof) {
 								// switch to default profile..
 								eve->SwitchActiveProfile(conf->FindDefaultProfile());
 							}
+							conf->profiles.erase(pf);
 							delete prof;
 							prof = newpCid;
 							conf->RemoveUnusedGroups();
@@ -370,19 +370,19 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					prof->triggerapp.clear();
 				conf->RemoveUnusedGroups();
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED && prof->fansets) {
-					if (conf->activeProfile->id == prof->id)
+					if (conf->activeProfile == prof)
 						fan_conf->lastProf = &fan_conf->prof;
 					delete (fan_profile*)prof->fansets;
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
 				}
-				if (conf->activeProfile->id == prof->id)
+				if (conf->activeProfile == prof)
 					UpdateState(true);
 				ReloadProfSettings(hDlg);
 			}
 			break;
 		case IDC_BUT_COPYACTIVE:
-			if (conf->activeProfile->id != prof->id) {
+			if (conf->activeProfile != prof) {
 				for (auto t = conf->activeProfile->lightsets.begin(); t < conf->activeProfile->lightsets.end(); t++) {
 					groupset* lset = conf->FindMapping(t->group, &prof->lightsets);
 					if (!lset) {
@@ -469,21 +469,21 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_COMBO_FREQ:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				prof->freqMode = (DWORD)ComboBox_GetItemData(GetDlgItem(hDlg, IDC_COMBO_FREQ), ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_COMBO_FREQ)));
-				if (prof->id == conf->activeProfile->id)
+				if (prof == conf->activeProfile)
 					eve->SetDisplayFreq(prof->freqMode);
 			}
 			break;
 		case IDC_CHECK_EFFECTS:
 			prof->effmode = state;
-			if (prof->id == conf->activeProfile->id)
+			if (prof == conf->activeProfile)
 				UpdateState(true);
 			break;
 		case IDC_CHECK_DEFPROFILE:
 		{
 			if (state) {
-				for (auto op = conf->profiles.begin(); op != conf->profiles.end(); op++)
-					if ((*op)->flags & PROF_DEFAULT && conf->SamePower(*op, prof))
-						(*op)->flags &= ~PROF_DEFAULT;
+				for (auto& op : conf->profiles)
+					if (op->flags & PROF_DEFAULT && conf->SamePower(op, prof))
+						op->flags &= ~PROF_DEFAULT;
 				prof->flags |= PROF_DEFAULT;
 			} else
 				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
@@ -493,7 +493,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_CHECK_PROFDIM:
 			SetBitMask(prof->flags, PROF_DIMMED, state);
-			if (prof->id == conf->activeProfile->id)
+			if (prof == conf->activeProfile)
 				fxhl->SetState();
 			break;
 		case IDC_CHECK_FOREGROUND:
@@ -509,7 +509,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				prof->fansets = new fan_profile(*fan_conf->lastProf);
 			}
 			// Switch fan control if needed
-			if (prof->id == conf->activeProfile->id)
+			if (prof == conf->activeProfile)
 				fan_conf->lastProf = state ? (fan_profile*)prof->fansets : &fan_conf->prof;
 			break;
 		case IDC_TRIGGER_POWER_AC:

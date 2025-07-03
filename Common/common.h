@@ -12,7 +12,7 @@ DWORD WINAPI CUpdateCheck(LPVOID);
 bool WindowsStartSet(bool, string);
 string GetAppVersion(bool isFile = true);
 HWND CreateToolTip(HWND, HWND);
-void SetToolTip(HWND, string);
+HWND SetToolTip(HWND, string);
 void SetSlider(HWND, int);
 void UpdateCombo(HWND ctrl, const string* items, int sel = 0, vector<int> val = {});
 void UpdateCombo(HWND ctrl, const char* items[], int sel = 0, const int val[] = NULL);

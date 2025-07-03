@@ -145,10 +145,6 @@ int ConfigFan::GetFanScale(byte fanID) {
 
 string ConfigFan::GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi) {
 	return sensors.count(acpi->sid) ? sensors[acpi->sid] : acpi->name;
-	//auto sen = &sensors[acpi->sid];
-	//if (sen->empty())
-	//	*sen = acpi->name;
-	//return *sen;
 }
 
 //string GetTag(string xml, string tag, size_t& pos) {
