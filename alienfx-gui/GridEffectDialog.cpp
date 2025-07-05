@@ -120,10 +120,10 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		SendMessage(gs_slider, TBM_SETRANGE, true, MAKELPARAM(5, 1000));
 		SendMessage(gs_slider, TBM_SETTICFREQ, 50, 0);
 		//SendMessage(gs_slider, TBM_SETPOS, true, conf->geTact);
-		sTip1 = CreateToolTip(gs_slider, sTip1);
-		SetSlider(sTip1, conf->geTact);
-		sTip2 = CreateToolTip(speed_slider, sTip2);
-		sTip3 = CreateToolTip(width_slider, sTip3);
+		CreateToolTip(gs_slider, sTip1, conf->geTact);
+		//SetSlider(sTip1, conf->geTact);
+		CreateToolTip(speed_slider, sTip2);
+		CreateToolTip(width_slider, sTip3);
 		UpdateEffectInfo(hDlg);
 
 	} break;

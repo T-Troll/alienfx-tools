@@ -1,9 +1,8 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "CaptureHelper.h"
+#include "Common.h"
 
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
 extern void UpdateZoneAndGrid();
 extern void dxgi_Restart();
@@ -73,14 +72,14 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         //SendMessage(gridY, TBM_SETPOS, true, conf->amb_grid.y);
         //SendMessage(gridY, TBM_SETTICFREQ, 16, 0);
 
-        sTip1 = CreateToolTip(brSlider, sTip1);
-        SetSlider(sTip1, conf->amb_shift);
+        CreateToolTip(brSlider, sTip1, conf->amb_shift);
+        //SetSlider(sTip1, conf->amb_shift);
 
-        sTip2 = CreateToolTip(gridX, sTip2);
-        SetSlider(sTip2, conf->amb_grid.x);
+        CreateToolTip(gridX, sTip2, conf->amb_grid.x);
+        //SetSlider(sTip2, conf->amb_grid.x);
 
-        sTip3 = CreateToolTip(gridY, sTip3);
-        SetSlider(sTip3, conf->amb_grid.y);
+        CreateToolTip(gridY, sTip3, conf->amb_grid.y);
+        //SetSlider(sTip3, conf->amb_grid.y);
 
         // init grids...
         InitButtonZone(hDlg);

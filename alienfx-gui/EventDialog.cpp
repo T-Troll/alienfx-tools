@@ -95,7 +95,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		// Set slider
 		SendMessage(s2_slider, TBM_SETRANGE, true, MAKELPARAM(0, 100));
 		SendMessage(s2_slider, TBM_SETTICFREQ, 10, 0);
-		sTip2 = CreateToolTip(s2_slider, sTip2);
+		CreateToolTip(s2_slider, sTip2);
 		// Start UI update thread...
 		SetTimer(hDlg, 0, 500, NULL);
 	} break;

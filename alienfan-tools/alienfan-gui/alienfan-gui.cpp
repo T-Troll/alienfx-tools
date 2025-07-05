@@ -146,25 +146,22 @@ void ToggleValue(DWORD& value, int cID) {
 }
 
 void SetOCUI(HWND hDlg) {
-    // OC block
-    if (fan_conf->ocEnable && mon->acpi->isTcc) {
-        HWND tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC);
-        EnableWindow(tcc_slider, true);
-        EnableWindow(GetDlgItem(hDlg, IDC_EDIT_TCC), true);
-        SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
-        sTip1 = CreateToolTip(tcc_slider, sTip1);
-        SetSlider(sTip1, fan_conf->lastProf->currentTCC);
-        //SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
-        // Set edit box value to match slider
-        SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
-    }
-    if (fan_conf->ocEnable && mon->acpi->isXMP) {
-        HWND xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP);
-        EnableWindow(xmp_slider, true);
-        SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
-        sTip2 = CreateToolTip(xmp_slider, sTip2);
-        SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
-        //SendMessage(xmp_slider, TBM_SETPOS, true, fan_conf->lastProf->memoryXMP);
+    HWND tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC), xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP);
+    EnableWindow(tcc_slider, fan_conf->ocEnable && mon->acpi->isTcc);
+    EnableWindow(GetDlgItem(hDlg, IDC_EDIT_TCC), fan_conf->ocEnable && mon->acpi->isTcc);
+    EnableWindow(xmp_slider, fan_conf->ocEnable && mon->acpi->isXMP);
+
+    if (fan_conf->ocEnable) {
+        if (mon->acpi->isTcc) {
+            SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
+            CreateToolTip(tcc_slider, sTip1, fan_conf->lastProf->currentTCC);
+            // Set edit box value to match slider
+            SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
+        }
+        if (mon->acpi->isXMP) {
+            SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
+            CreateToolTip(xmp_slider, sTip2, fan_conf->lastProf->memoryXMP);
+        }
     }
 }
 

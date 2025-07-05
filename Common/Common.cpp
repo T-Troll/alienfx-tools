@@ -229,18 +229,24 @@ string GetAppVersion(bool isFile) {
 	return res;
 }
 
-HWND CreateToolTip(HWND hwndParent, HWND oldTip)
+void CreateToolTip(HWND hwndParent, HWND& oldTip)
 {
 	// Create a tool tip.
 	if (oldTip) DestroyWindow(oldTip);
 
-	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+	oldTip = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
 		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
 		0, 0, 0, 0, hwndParent, NULL, hInst, NULL);
 	TOOLINFO ti{ sizeof(TOOLINFO), TTF_SUBCLASS | TTF_TRANSPARENT, hwndParent };
 	GetClientRect(hwndParent, &ti.rect);
-	SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)&ti);
-	return hwndTT;
+	SendMessage(oldTip, TTM_ADDTOOL, 0, (LPARAM)&ti);
+}
+
+void CreateToolTip(HWND hwndParent, HWND& oldTip, int value)
+{
+	// Create a tool tip and init it
+	CreateToolTip(hwndParent, oldTip);
+	SetSlider(oldTip, value);
 }
 
 HWND SetToolTip(HWND tt, string value) {

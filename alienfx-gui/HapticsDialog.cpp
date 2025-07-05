@@ -188,10 +188,7 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		CheckDlgButton(hDlg, conf->hap_inpType ? IDC_RADIO_INPUT : IDC_RADIO_OUTPUT, BST_CHECKED);
 
 		SetWindowLongPtr(GetDlgItem(hDlg, IDC_LEVELS), GWLP_WNDPROC, (LONG_PTR)FreqLevels);
-		hToolTip = CreateToolTip(GetDlgItem(hDlg, IDC_LEVELS), hToolTip);
-
-		//SetFreqGroups(hDlg);
-
+		CreateToolTip(GetDlgItem(hDlg, IDC_LEVELS), hToolTip);
 		// Start UI update...
 		SetTimer(GetDlgItem(hDlg, IDC_LEVELS), 0, 50, NULL);
 	}

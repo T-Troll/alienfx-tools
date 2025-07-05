@@ -1,13 +1,11 @@
 #include "alienfx-gui.h"
 #include "FXHelper.h"
-#include "common.h"
+#include "Common.h"
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_action* act);
 extern void RedrawButton(HWND ctrl, DWORD);
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
 extern void UpdateZoneList();
 extern void UpdateZoneAndGrid();
 extern FXHelper* fxhl;
@@ -129,8 +127,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		//TBM_SETTICFREQ
 		SendMessage(s1_slider, TBM_SETTICFREQ, 32, 0);
 		SendMessage(l1_slider, TBM_SETTICFREQ, 32, 0);
-		sTip1 = CreateToolTip(s1_slider, sTip1);
-		sTip2 = CreateToolTip(l1_slider, sTip2);
+		CreateToolTip(s1_slider, sTip1);
+		CreateToolTip(l1_slider, sTip2);
 		RebuildEffectList(hDlg);
 	} break;
 	case WM_APP + 2: {

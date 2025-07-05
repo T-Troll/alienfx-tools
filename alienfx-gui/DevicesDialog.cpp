@@ -1,13 +1,11 @@
 #include "alienfx-gui.h"
 #include "EventHandler.h"
 #include "FXHelper.h"
-#include "common.h"
+#include "Common.h"
 
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void RedrawButton(HWND hDlg, DWORD);
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
 extern void SetMainTabs();
 
 extern BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -85,15 +83,15 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETTICFREQ, 16, 0);
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETTICFREQ, 16, 0);
-		sTip1 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1);
-		sTip2 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2);
-		sTip3 = CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3);
+		CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1, activeDevice->white.r);
+		CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2, activeDevice->white.g);
+		CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3, activeDevice->white.b);
 		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, activeDevice->white.r);
 		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, activeDevice->white.g);
 		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, activeDevice->white.b);
-		SetSlider(sTip1, activeDevice->white.r);
-		SetSlider(sTip2, activeDevice->white.r);
-		SetSlider(sTip3, activeDevice->white.r);
+		//SetSlider(sTip1, activeDevice->white.r);
+		//SetSlider(sTip2, activeDevice->white.r);
+		//SetSlider(sTip3, activeDevice->white.r);
 		fxhl->TestLight(activeDevice, eLid, true, true);
 		RECT pRect;
 		GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);

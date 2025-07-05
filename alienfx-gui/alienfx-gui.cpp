@@ -598,7 +598,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				mon->Start();
 			fxhl->Start();
 			fxhl->SetState(true);
-			//eve->ChangeEffectMode();
 			conf->SetIconState(conf->updateCheck);
 			eve->StartProfiles();
 			eve->ChangeAction();

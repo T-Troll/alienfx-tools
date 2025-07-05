@@ -161,8 +161,8 @@
     <ClCompile Include="AlienFX_SDK.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\alienfan-tools\alienfan-SDK_v2\alienfan-SDK_v2.vcxproj">
-      <Project>{9321a480-9118-4173-b79d-45d8253c2c47}</Project>
+    <ProjectReference Include="..\..\alienfan-tools\alienfan-SDK\alienfan-SDK.vcxproj">
+      <Project>{41343b7c-6c9f-4ad4-9d27-050b3d76290d}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

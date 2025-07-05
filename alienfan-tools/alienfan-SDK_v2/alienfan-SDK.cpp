@@ -294,14 +294,7 @@ namespace AlienFan_SDK {
 	int Control::GetGMode() {
 		if (isGmode) {
 			int pm = GetPower(true);
-			return pm == 0xab || pm < 0 || CallWMIMethod(getGMode) > 0;
-			//switch (systemID) { // hacks for buggy G5515/5525 BIOS
-			//	case 4800: // g-mode only on if power AB
-			//	case 3200: { // g-mode only off if power not AB
-			//		return pm == 0xab || pm < 0;
-			//	}
-			//	default: return pm < 0 || CallWMIMethod(getGMode);
-			//}
+			return pm == 0xab || pm < 0 /*|| CallWMIMethod(getGMode) > 0*/;
 		}
 		return 0;
 	}
@@ -339,60 +332,60 @@ namespace AlienFan_SDK {
 		return -1;
 	}
 
-	Lights::Lights(Control *ac) {
-		if (ac && ac->isAlienware &&
-			ac->m_AWCCGetObj->GetMethod(colorList[0], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
-			m_WbemServices = ac->m_WbemServices;
-			m_instancePath = ac->m_instancePath;
-#ifdef _TRACE_
-			VARIANT res{ VT_UNKNOWN };
-			CIMTYPE restype;
-			m_InParamaters->Get(L"arg2", 0, &res, &restype, nullptr);
-			printf("Light parameter type %x(%x)\n", restype, res.vt);
-#endif
-			isActivated = true;
-		}
-	}
-
-	int Lights::CallWMIMethod(byte com, byte* arg1) {
-		VARIANT result{ VT_I4 };
-		result.intVal = -1;
-		if (m_InParamaters) {
-			IWbemClassObject* m_outParameters = NULL;
-			VARIANT parameters{ VT_ARRAY | VT_UI1 };
-			SAFEARRAY* args = SafeArrayCreateVector(VT_UI1, 0, 8);
-#ifdef _TRACE_
-			if (!args)
-				printf("Light array creation failed!\n");
-#endif
-			for (long i = 0; i < 8; i++) {
-				HRESULT res = SafeArrayPutElement(args, &i, &arg1[i]);
-#ifdef _TRACE_
-				if (res != S_OK)
-					printf("Light array element error %x\n", res);
-#endif
-			}
-			parameters.pparray = &args;
-			m_InParamaters->Put(L"arg2", NULL, &parameters, 0);
-			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
-				colorList[com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
-				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
-				m_outParameters->Release();
-			}
-			SafeArrayDestroy(args);
-		}
-		return result.intVal;
-	}
-
-	bool Lights::SetBrightness(byte brightness) {
-		byte param[8]{ 0 };
-		param[4] = brightness;
-		return CallWMIMethod(1, param) >= 0;
-	}
-
-	bool Lights::SetColor(byte id, byte r, byte g, byte b, bool save) {
-		byte param[8]{ id, 0, 0, 0, b, g, r, (byte)(save ? 0 : 0xff) };
-		return CallWMIMethod(0, param) >= 0;
-	}
+//	Lights::Lights(Control *ac) {
+//		if (ac && ac->isAlienware &&
+//			ac->m_AWCCGetObj->GetMethod(colorList[0], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters) {
+//			m_WbemServices = ac->m_WbemServices;
+//			m_instancePath = ac->m_instancePath;
+//#ifdef _TRACE_
+//			VARIANT res{ VT_UNKNOWN };
+//			CIMTYPE restype;
+//			m_InParamaters->Get(L"arg2", 0, &res, &restype, nullptr);
+//			printf("Light parameter type %x(%x)\n", restype, res.vt);
+//#endif
+//			isActivated = true;
+//		}
+//	}
+//
+//	int Lights::CallWMIMethod(byte com, byte* arg1) {
+//		VARIANT result{ VT_I4 };
+//		result.intVal = -1;
+//		if (m_InParamaters) {
+//			IWbemClassObject* m_outParameters = NULL;
+//			VARIANT parameters{ VT_ARRAY | VT_UI1 };
+//			SAFEARRAY* args = SafeArrayCreateVector(VT_UI1, 0, 8);
+//#ifdef _TRACE_
+//			if (!args)
+//				printf("Light array creation failed!\n");
+//#endif
+//			for (long i = 0; i < 8; i++) {
+//				HRESULT res = SafeArrayPutElement(args, &i, &arg1[i]);
+//#ifdef _TRACE_
+//				if (res != S_OK)
+//					printf("Light array element error %x\n", res);
+//#endif
+//			}
+//			parameters.pparray = &args;
+//			m_InParamaters->Put(L"arg2", NULL, &parameters, 0);
+//			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
+//				colorList[com], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
+//				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
+//				m_outParameters->Release();
+//			}
+//			SafeArrayDestroy(args);
+//		}
+//		return result.intVal;
+//	}
+//
+//	bool Lights::SetBrightness(byte brightness) {
+//		byte param[8]{ 0 };
+//		param[4] = brightness;
+//		return CallWMIMethod(1, param) >= 0;
+//	}
+//
+//	bool Lights::SetColor(byte id, byte r, byte g, byte b, bool save) {
+//		byte param[8]{ id, 0, 0, 0, b, g, r, (byte)(save ? 0 : 0xff) };
+//		return CallWMIMethod(0, param) >= 0;
+//	}
 
 }

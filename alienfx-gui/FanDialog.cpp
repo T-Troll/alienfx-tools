@@ -46,7 +46,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
         PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
 
-        //vector<string> pModes{ "Off", "Enabled", "Aggressive", "Efficient", "Efficient aggressive" };
         UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, acMode);
         UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
 
@@ -65,23 +64,21 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SetTimer(hDlg, 0, fan_conf->pollingRate, NULL);
 
         // OC block
-        if (fan_conf->ocEnable && mon->acpi->isTcc) {
-            EnableWindow(tcc_slider, true);
-            EnableWindow(tcc_edit, true);
-            SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
-            sTip1 = CreateToolTip(tcc_slider, sTip1);
-            SetSlider(sTip1, fan_conf->lastProf->currentTCC);
-            //SendMessage(tcc_slider, TBM_SETPOS, true, fan_conf->lastProf->currentTCC);
-            // Set edit box value to match slider
-			SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
+        if (fan_conf->ocEnable) {
+            if (mon->acpi->isTcc) {
+                EnableWindow(tcc_slider, true);
+                EnableWindow(tcc_edit, true);
+                SendMessage(tcc_slider, TBM_SETRANGE, true, MAKELPARAM(mon->acpi->maxTCC - mon->acpi->maxOffset, mon->acpi->maxTCC));
+                CreateToolTip(tcc_slider, sTip1, fan_conf->lastProf->currentTCC);
+                // Set edit box value to match slider
+                SetDlgItemInt(hDlg, IDC_EDIT_TCC, fan_conf->lastProf->currentTCC, FALSE);
+            }
+            if (mon->acpi->isXMP) {
+                EnableWindow(xmp_slider, true);
+                SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
+                CreateToolTip(xmp_slider, sTip2, fan_conf->lastProf->memoryXMP);
+            }
         }
-        if (fan_conf->ocEnable && mon->acpi->isXMP) {
-            EnableWindow(xmp_slider, true);
-            SendMessage(xmp_slider, TBM_SETRANGE, true, MAKELPARAM(0, 2));
-            sTip2 = CreateToolTip(xmp_slider, sTip2);
-            SetSlider(sTip2, fan_conf->lastProf->memoryXMP);
-        }
-
     } break;
     case WM_COMMAND:
     {

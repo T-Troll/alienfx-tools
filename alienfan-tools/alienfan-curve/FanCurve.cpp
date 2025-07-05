@@ -260,7 +260,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         cArea.right = 0;
         break;
     case WM_ERASEBKGND:
-        toolTip = CreateToolTip(hDlg, toolTip);
+        CreateToolTip(hDlg, toolTip);
         return true;
     default:
         if (mon->inControl) {

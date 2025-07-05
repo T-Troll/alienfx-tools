@@ -111,7 +111,7 @@ bool ConfigHandler::IsPriorityProfile(profile* prof) {
 bool ConfigHandler::SetIconState(bool needCheck) {
 	// change tray icon...
 	niData.hIcon = (HICON)LoadImage(hInst,
-		MAKEINTRESOURCE(stateOn ? stateDimmed ? IDI_ALIENFX_DIM : IDI_ALIENFX_ON : IDI_ALIENFX_OFF),
+		MAKEINTRESOURCE(lightsOn ? stateDimmed ? IDI_ALIENFX_DIM : IDI_ALIENFX_ON : IDI_ALIENFX_OFF),
 		IMAGE_ICON,	GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	return AddTrayIcon(&niData, needCheck);
 }

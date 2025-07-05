@@ -62,8 +62,8 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		SendMessage(dim_slider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
 		SendMessage(dim_slider, TBM_SETTICFREQ, 16, 0);
 		//SendMessage(dim_slider, TBM_SETPOS, true, conf->dimmingPower);
-		sTip1 = CreateToolTip(dim_slider, sTip1);
-		SetSlider(sTip1, conf->dimmingPower);
+		CreateToolTip(dim_slider, sTip1, conf->dimmingPower);
+		//SetSlider(sTip1, conf->dimmingPower);
 	} break;
 	case WM_COMMAND: {
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;

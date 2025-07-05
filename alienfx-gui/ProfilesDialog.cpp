@@ -131,10 +131,10 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	{
 		SendMessage(eff_tempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xff));
 		SendMessage(eff_tempo, TBM_SETTICFREQ, 16, 0);
-		sTip1 = CreateToolTip(eff_tempo, sTip1);
+		CreateToolTip(eff_tempo, sTip1);
 		SendMessage(eff_keytempo, TBM_SETRANGE, true, MAKELPARAM(0, 0xff));
 		SendMessage(eff_keytempo, TBM_SETTICFREQ, 16, 0);
-		sTip2 = CreateToolTip(eff_keytempo, sTip2);
+		CreateToolTip(eff_keytempo, sTip2);
 		RefreshDeviceList(hDlg);
 	}
 	case WM_COMMAND: {

@@ -1,8 +1,8 @@
 #include "alienfx-gui.h"
 #include "FXHelper.h"
 
-extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
-extern void SetSlider(HWND tt, int value);
+//extern HWND CreateToolTip(HWND hwndParent, HWND oldTip);
+//extern void SetSlider(HWND tt, int value);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void UpdateZoneList();

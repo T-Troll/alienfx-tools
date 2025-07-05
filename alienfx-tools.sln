@@ -11,8 +11,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-LFX", "alienfx-LFX\alienfx-LFX.vcxitems", "{CC4108AE-D644-45F9-95AA-67940D0FBEDA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-cli", "alienfan-tools\alienfan-cli\alienfan-tools.vcxproj", "{D6AD2E10-F61C-43F1-87EA-E77DEA12DD42}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41343B7C-6C9F-4AD4-9D27-050B3D76290D} = {41343B7C-6C9F-4AD4-9D27-050B3D76290D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfan-gui", "alienfan-tools\alienfan-gui\alienfan-gui.vcxproj", "{3B208A8C-0E41-4830-A2B8-1319CFC778A7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41343B7C-6C9F-4AD4-9D27-050B3D76290D} = {41343B7C-6C9F-4AD4-9D27-050B3D76290D}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{C02B116D-3DDE-4326-B934-C192CCF0B368}"
 	ProjectSection(SolutionItems) = preProject
@@ -35,12 +41,25 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AlienFX", "AlienFX", "{2CDD2140-AE19-4B03-8FE4-C502A8830B0C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-cli", "alienfx-cli\alienfx-cli.vcxproj", "{FF6119EA-878F-4E7B-9FCD-8410A5D3FBF8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{90879993-7449-4A28-972E-7228D4C4D0A8} = {90879993-7449-4A28-972E-7228D4C4D0A8}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-gui", "alienfx-gui\alienfx-gui.vcxproj", "{E47811D5-E492-4B51-AD9A-A9B00939E3EC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41343B7C-6C9F-4AD4-9D27-050B3D76290D} = {41343B7C-6C9F-4AD4-9D27-050B3D76290D}
+		{90879993-7449-4A28-972E-7228D4C4D0A8} = {90879993-7449-4A28-972E-7228D4C4D0A8}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alienfx-mon", "alienfx-mon\alienfx-mon.vcxproj", "{583D215B-C1A5-4607-A26C-823EB6B28155}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41343B7C-6C9F-4AD4-9D27-050B3D76290D} = {41343B7C-6C9F-4AD4-9D27-050B3D76290D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFX_SDK", "AlienFX-SDK\AlienFX_SDK\AlienFX_SDK.vcxproj", "{90879993-7449-4A28-972E-7228D4C4D0A8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41343B7C-6C9F-4AD4-9D27-050B3D76290D} = {41343B7C-6C9F-4AD4-9D27-050B3D76290D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlienFX_SDK_noACPI", "AlienFX-SDK\AlienFX_SDK\AlienFX_SDK_noACPI.vcxproj", "{2FC5DA06-339F-48B8-ACDF-34FAA8DBFBB7}"
 EndProject
