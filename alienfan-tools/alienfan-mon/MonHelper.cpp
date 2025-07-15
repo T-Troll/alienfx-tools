@@ -19,7 +19,6 @@ MonHelper::MonHelper() {
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();
 		sensorSize = (WORD)acpi->sensors.size();
-		systemID = acpi->GetSystemID();
 		Start();
 	}
 }

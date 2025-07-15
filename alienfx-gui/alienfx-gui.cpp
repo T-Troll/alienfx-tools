@@ -60,8 +60,8 @@ int eItem = 0;
 // last zone selected
 groupset* mmap = NULL;
 
-const char* freqNames[] = { "Default", "60Hz", "90Hz", "120Hz", "144Hz", "165Hz", "240Hz", "360Hz", ""};
-const int fvArray[] = { 0, 60, 90, 120, 144, 165, 240, 360 };
+const char* freqNames[] = { "Keep", "60Hz", "90Hz", "120Hz", "144Hz", "165Hz", "240Hz", "300Hz", "360Hz", ""};
+const int fvArray[] = { 0, 60, 90, 120, 144, 165, 240, 300, 360 };
 const int* freqValues = fvArray;
 
 extern string GetFanName(int ind, bool forTray = false);
@@ -493,16 +493,15 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			tMenu = GetSubMenu(cMenu, 0);
 			MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS /*| MNS_MODELESS | MNS_AUTODISMISS*/};
 			SetMenuInfo(tMenu, &mi);
-			MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
 			HMENU pMenu;
 			// add profiles...
 			pMenu = CreatePopupMenu();
-			mInfo.wID = ID_TRAYMENU_PROFILE_SELECTED;
-			for (auto i = conf->profiles.begin(); i != conf->profiles.end(); i++) {
-				mInfo.dwTypeData = (LPSTR)(*i)->name.c_str();
-				mInfo.fState = (*i)->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED;
-				InsertMenuItem(pMenu, (UINT)(i - conf->profiles.begin()), false, &mInfo);
+
+			for (auto& i : conf->profiles) {
+				AppendMenu(pMenu, MF_STRING | (i->id == conf->activeProfile->id ? MF_CHECKED : MF_UNCHECKED),
+					i->id, (LPSTR)i->name.c_str());
 			}
+
 			ModifyMenu(tMenu, ID_TRAYMENU_PROFILES, MF_ENABLED | MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Profiles (" + 
 				conf->activeProfile->name + ")").c_str());
 
@@ -515,17 +514,16 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			SetForegroundWindow(hDlg);
 			TrackPopupMenu(tMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN,
 				lpClickPoint.x, lpClickPoint.y - 20, 0, hDlg, NULL);
-			//DestroyMenu(pMenu);
-			//DestroyMenu(cMenu);
 			PostMessage(hDlg, WM_NULL, 0, 0);
 		} break;
 		case NIN_BALLOONTIMEOUT:
-			if (!isNewVersion) {
+			if (isNewVersion) 
+				isNewVersion = false;
+			else
+			{
 				Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 				Shell_NotifyIcon(NIM_ADD, &conf->niData);
 			}
-			else
-				isNewVersion = false;
 			break;
 		case NIN_BALLOONUSERCLICK:
 			if (isNewVersion) {
@@ -555,8 +553,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 	} break;
 	case WM_MENUCOMMAND: {
-		int idx = LOWORD(wParam);
-		switch (GetMenuItemID((HMENU)lParam, idx)) {
+		int idx = GetMenuItemID((HMENU)lParam, LOWORD(wParam));
+		switch (idx) {
 		case ID_TRAYMENU_EXIT:
 			DestroyWindow(hDlg);
 			break;
@@ -584,9 +582,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case ID_TRAYMENU_RESTORE:
 			RestoreApp();
 			break;
-		case ID_TRAYMENU_PROFILE_SELECTED: {
-			SelectProfile(conf->profiles[idx]);
-		} break;
+		default: {
+			// profile selected
+			SelectProfile(conf->FindProfile(idx));
+		}
 		}
 	} break;
 	case WM_POWERBROADCAST:
@@ -718,17 +717,11 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case 7: case 8: // Brightness up/down
 			if (conf->lightsOn) {
-				DWORD bright = conf->stateDimmed ? conf->dimmingPower : conf->fullPower;
-				if (wParam == 7 && bright <= 0xf0) {
-					bright += 0xf;
-				} else
-					if (wParam == 8 && bright >= 0xf) {
-						bright -= 0xf;
-					}
-				if (conf->stateDimmed)
-					conf->dimmingPower = bright;
-				else
-					conf->fullPower = bright;
+				DWORD& bright = conf->stateDimmed ? conf->dimmingPower : conf->fullPower;
+				switch (wParam) {
+				case 7: bright = min(bright + 0x10, 0xff); break;
+				case 8: bright = max((int)bright - 0x10, 0);
+				}
 				UpdateState();
 			}
 			break;

@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
         lights = new AlienFan_SDK::Lights(&acpi);
 #endif
         printf("Supported hardware (%d) detected, %d fans, %d sensors, %d power states%s%s%s%s.\n",
-            acpi.GetSystemID(), (int)acpi.fans.size(), (int)acpi.sensors.size(), (int)acpi.powers.size(),
+            acpi.systemID, (int)acpi.fans.size(), (int)acpi.sensors.size(), (int)acpi.powers.size(),
             (acpi.isGmode ? ", G-Mode" : ""),
             (acpi.isTcc ? ", TCC" : ""),
             (acpi.isXMP ? ", XMP" : ""),

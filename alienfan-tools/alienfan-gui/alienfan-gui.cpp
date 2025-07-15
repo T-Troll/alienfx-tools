@@ -222,7 +222,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SetDlgItemInt(hDlg, IDC_EDIT_POLLING, fan_conf->pollingRate, false);
 
         // Set SystemID
-        SetDlgItemText(hDlg, IDC_FC_ID, ("ID: " + to_string(mon->systemID)).c_str());
+        SetDlgItemText(hDlg, IDC_FC_ID, ("ID: " + to_string(mon->acpi->systemID)).c_str());
 
         // OC block
         SetOCUI(hDlg);
@@ -399,15 +399,13 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             tMenu = GetSubMenu(tMenu, 0);
             MENUINFO mi{ sizeof(MENUINFO), MIM_STYLE, MNS_NOTIFYBYPOS /*| MNS_AUTODISMISS*/ };
             SetMenuInfo(tMenu, &mi);
-            MENUITEMINFO mInfo{ sizeof(MENUITEMINFO), MIIM_STRING | MIIM_ID | MIIM_STATE };
             HMENU pMenu;
             pMenu = CreatePopupMenu();
-            mInfo.wID = ID_TRAYMENU_POWER_SELECTED;
             for (int i = 0; i < mon->powerSize; i++) {
-                mInfo.dwTypeData = (LPSTR)fan_conf->powers[mon->acpi->powers[i]].c_str();
-                mInfo.fState = (i == fan_conf->lastProf->powerStage) ? MF_CHECKED : MF_UNCHECKED;
-                InsertMenuItem(pMenu, i, false, &mInfo);
+                AppendMenu(pMenu, MF_STRING | (i == fan_conf->lastProf->powerStage ? MF_CHECKED : MF_UNCHECKED),
+                    i, (LPSTR)fan_conf->powers[mon->acpi->powers[i]].c_str());
             }
+
             ModifyMenu(tMenu, ID_MENU_POWER, MF_BYCOMMAND | MF_STRING | MF_POPUP, (UINT_PTR)pMenu, ("Power mode - " +
                 fan_conf->powers[mon->acpi->powers[fan_conf->lastProf->powerStage]]).c_str());
             EnableMenuItem(tMenu, ID_MENU_GMODE, mon->acpi->isGmode ? MF_ENABLED : MF_DISABLED);
@@ -465,8 +463,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         }
         break;
     case WM_MENUCOMMAND: {
-        int idx = LOWORD(wParam);
-        switch (GetMenuItemID((HMENU)lParam, idx)) {
+        int idx = GetMenuItemID((HMENU)lParam, LOWORD(wParam));
+        switch (idx) {
         case ID_MENU_EXIT:
             DestroyWindow(hDlg);
             break;
@@ -476,10 +474,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case ID_MENU_GMODE:
             AlterGMode(power_list);
             break;
-        case ID_TRAYMENU_POWER_SELECTED:
+        default:
             mon->SetPowerMode(idx);
             ComboBox_SetCurSel(power_list, mon->powerMode);
-            break;
         }
     } break;
     case WM_NOTIFY:

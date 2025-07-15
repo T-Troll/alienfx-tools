@@ -40,7 +40,6 @@ namespace AlienFan_SDK {
 
 	class Control {
 	private:
-		DWORD systemID;
 		byte sysType;
 		void EnumSensors(IWbemServices* srv, const wchar_t* sname, byte type);
 	public:
@@ -53,7 +52,7 @@ namespace AlienFan_SDK {
 			isXMP = false,
 			isGmode = false;
 		byte maxTCC, maxOffset;
-
+		DWORD systemID;
 		Control();
 		~Control();
 
@@ -119,7 +118,7 @@ namespace AlienFan_SDK {
 		int SetXMP(byte memXMP);
 
 		// Return current device ID
-		inline DWORD GetSystemID() { return systemID; };
+		//inline DWORD GetSystemID() { return systemID; };
 
 		// Call custom Alienware method trough WMI
 		int CallWMIMethod(byte com, byte arg1 = 0, byte arg2 = 0);

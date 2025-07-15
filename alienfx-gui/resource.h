@@ -221,7 +221,6 @@
 #define IDC_EDIT_TCC                    1218
 #define IDC_ACCENT                      1219
 #define IDC_COMBO_FREQ                  1220
-#define IDC_COMBO1                      1221
 #define IDC_BUTREMRGH                   1228
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230
@@ -236,7 +235,6 @@
 #define ID_TRAYMENU_REFRESH             32776
 #define ID_TRAYMENU_PROFILESWITCH       32788
 #define ID_TRAYMENU_PROFILES            32789
-#define ID_TRAYMENU_PROFILE_SELECTED    32791
 #define ID_TRAYMENU_ENABLEEFFECTS       32802
 #define IDM_CHECKUPDATE                 32804
 #define IDM_HELP                        32807

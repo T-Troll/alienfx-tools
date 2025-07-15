@@ -7,7 +7,6 @@
 #define IDM_EXIT                        105
 #define IDI_ALIENFANGUI                 107
 #define IDC_MAINMENU                    108
-#define ID_TRAYMENU_POWER_SELECTED      110
 #define IDD_MAIN_VIEW                   129
 #define IDR_TRAYMENU                    134
 #define IDC_COMBO_POWER                 1000
@@ -38,11 +37,8 @@
 #define IDM_SAVE                        32795
 #define IDM_SETTINGS_DISABLEAWCC        32796
 #define IDM_SETTINGS_KEYBOARDSHORTCUTS  32798
-#define ID_SETTINGS_RESTOREPOWERMODE    32799
 #define IDM_SETTINGS_RESTOREPOWERMODE   32800
-#define ID_SETTINGS_ENABLEOC            32801
 #define IDM_SETTINGS_ENABLEOC           32802
-#define ID_SETTINGS_USEDISKSENSORS      32803
 #define IDM_SETTINGS_DISKSENSORS        32804
 #define IDC_STATIC                      -1
 

@@ -495,6 +495,7 @@ void AlterGMode(HWND power_list) {
     if (mon->acpi->isGmode) {
         fan_conf->lastProf->gmodeStage = !fan_conf->lastProf->gmodeStage;
         mon->SetCurrentMode();
-        ComboBox_SetCurSel(power_list, mon->powerMode);
+        if (power_list)
+            ComboBox_SetCurSel(power_list, mon->powerMode);
     }
 }
