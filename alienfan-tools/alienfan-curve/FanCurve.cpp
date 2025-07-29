@@ -25,20 +25,20 @@ int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
 
 HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
 
-void SetFanWindow() {
-    if (!cArea.right) {
-        GetClientRect(fanWindow, &cArea);
-        cArea.right--; cArea.bottom--;
-    }
-}
+//void SetFanWindow() {
+//    if (!cArea.right) {
+//        GetClientRect(fanWindow, &cArea);
+//        cArea.right--; cArea.bottom--;
+//    }
+//}
 
-fan_point Screen2Fan(LPARAM lParam) {
-    SetFanWindow();
-    return {
-        (byte)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
-        (byte)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
-    };
-}
+//fan_point Screen2Fan(LPARAM lParam) {
+//    SetFanWindow();
+//    return {
+//        (byte)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
+//        (byte)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
+//    };
+//}
 
 POINT Fan2Screen(short temp, short boost) {
     return {
@@ -62,8 +62,9 @@ POINT Boost2Screen(fan_overboost* boost) {
 
 void DrawFan()
 {
-    if (fanWindow && mon) {
-        SetFanWindow();
+    if (fanWindow /*&& mon*/) {
+        //GetClientRect(fanWindow, &cArea);
+        //cArea.right--; cArea.bottom--;
         POINT mark;
         HDC hdc_r = GetDC(fanWindow);
         // Double buff...
@@ -90,12 +91,11 @@ void DrawFan()
             // curve...
             HPEN linePen;
             SelectObject(hdc, GetStockObject(DC_BRUSH));
-            for (auto senI = fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].begin();
-                senI != fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].end(); senI++) {
-                sen_block* sen = &senI->second;
+            for (auto& senI : fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan]) {
+                sen_block* sen = &senI.second;
                 if (sen->active) {
                     // Select line style
-                    if (senI->first == fan_conf->lastSelectedSensor) {
+                    if (senI.first == fan_conf->lastSelectedSensor) {
                         linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
                         SetDCBrushColor(hdc, RGB(0, 255, 0));
                     }
@@ -113,12 +113,12 @@ void DrawFan()
                     }
                     // Dots
                     if (!mon->powerMode) {
-                        if (mon->lastBoost[fan_conf->lastSelectedFan] == senI->first) {
+                        if (mon->lastBoost[fan_conf->lastSelectedFan] == senI.first) {
                             SetDCPenColor(hdc, RGB(255, 0, 0));
                             SetDCBrushColor(hdc, RGB(255, 0, 0));
                             SelectObject(hdc, GetStockObject(DC_PEN));
                         }
-                        mark = Fan2Screen(mon->senValues[senI->first], mon->senBoosts[fan_conf->lastSelectedFan][senI->first]);
+                        mark = Fan2Screen(mon->senValues[senI.first], mon->senBoosts[fan_conf->lastSelectedFan][senI.first]);
                         Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
                         DeleteObject(linePen);
                     }
@@ -256,21 +256,27 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         EndPaint(hDlg, &ps);
         return true;
     } break;
-    case WM_SIZE:
-        cArea.right = 0;
-        break;
+    //case WM_SIZE:
+    //    cArea.right = 0;
+    //    break;
     case WM_ERASEBKGND:
         CreateToolTip(hDlg, toolTip);
         return true;
     default:
+        GetClientRect(fanWindow, &cArea);
+        cArea.right--; cArea.bottom--;
+        fan_point clk{
+        (byte)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
+        (byte)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
+        }; //Screen2Fan(lParam);
+        if (message == WM_MOUSEMOVE)
+            SetToolTip(toolTip, mon->inControl ? "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost) :
+                "Boost " + to_string((cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100) + " @ " +
+                to_string(GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale) + " RPM");
         if (mon->inControl) {
-            auto clk = Screen2Fan(lParam);
-            if (message == WM_MOUSEMOVE)
-                SetToolTip(toolTip, "Temp: " + to_string(clk.temp) + ", Boost: " + to_string(clk.boost));
-            for (auto sen = fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].begin();
-                sen != fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan].end(); sen++)
-                if (sen->first == fan_conf->lastSelectedSensor) {
-                    auto cFan = &sen->second;
+            for (auto& sen : fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan])
+                if (sen.first == fan_conf->lastSelectedSensor) {
+                    auto cFan = &sen.second;
                     switch (message) {
                     case WM_MOUSEMOVE:
                         if (wParam & MK_LBUTTON) {
@@ -326,10 +332,10 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
         }
-        else
-            if (message == WM_MOUSEMOVE)
-                SetToolTip(toolTip, "Boost " + to_string((cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100) + " @ " +
-                    to_string(GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale) + " RPM");
+        //else
+        //    if (message == WM_MOUSEMOVE)
+        //        SetToolTip(toolTip, "Boost " + to_string((cArea.bottom - GET_Y_LPARAM(lParam)) * boostScale / cArea.bottom + 100) + " @ " +
+        //            to_string(GET_X_LPARAM(lParam) * fanMaxScale / cArea.right + fanMinScale) + " RPM");
     }
     return DefWindowProc(hDlg, message, wParam, lParam);
 }

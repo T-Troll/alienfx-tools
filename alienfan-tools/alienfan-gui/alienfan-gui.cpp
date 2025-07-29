@@ -98,8 +98,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     niData = &niDataFC;
 
     if (mon->acpi->isSupported) {
-        //if (fan_conf->needDPTF)
-        //    CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
         if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
 
             SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));

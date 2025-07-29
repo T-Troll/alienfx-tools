@@ -117,9 +117,6 @@ namespace AlienFan_SDK {
 		// Set current XMP profile
 		int SetXMP(byte memXMP);
 
-		// Return current device ID
-		//inline DWORD GetSystemID() { return systemID; };
-
 		// Call custom Alienware method trough WMI
 		int CallWMIMethod(byte com, byte arg1 = 0, byte arg2 = 0);
 

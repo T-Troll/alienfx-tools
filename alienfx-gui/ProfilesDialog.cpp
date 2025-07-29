@@ -225,6 +225,9 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 void ReloadProfSettings(HWND hDlg) {
 	HWND app_list = GetDlgItem(hDlg, IDC_LIST_APPLICATIONS);
 
+	if (prof && prof->flags & PROF_FANS && !prof->fansets)
+		prof->flags &= ~PROF_FANS;
+
 	CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, prof && prof->flags & PROF_DEFAULT);
 	CheckDlgButton(hDlg, IDC_CHECK_PRIORITY, prof && prof->flags & PROF_PRIORITY);
 	CheckDlgButton(hDlg, IDC_CHECK_PROFDIM, prof && prof->flags & PROF_DIMMED);
@@ -369,10 +372,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (IsDlgButtonChecked(hDlg, IDC_CP_APPS) == BST_CHECKED)
 					prof->triggerapp.clear();
 				conf->RemoveUnusedGroups();
-				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED && prof->fansets) {
+				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
 					if (conf->activeProfile == prof)
 						fan_conf->lastProf = &fan_conf->prof;
-					delete (fan_profile*)prof->fansets;
+					if (prof->fansets)
+						delete (fan_profile*)prof->fansets;
 					prof->fansets = NULL;
 					prof->flags &= ~PROF_FANS;
 				}
@@ -415,9 +419,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (IsDlgButtonChecked(hDlg, IDC_CP_FANS) == BST_CHECKED) {
 					if (prof->fansets)
 						delete (fan_profile*)prof->fansets;
-					prof->fansets = conf->activeProfile->fansets ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
-					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) > 0);
-					//ReloadProfileView(hDlg);
+					prof->fansets = conf->activeProfile->flags & PROF_FANS ? new fan_profile(*(fan_profile*)conf->activeProfile->fansets) : NULL;
+					SetBitMask(prof->flags, PROF_FANS, (conf->activeProfile->flags & PROF_FANS) != 0);
 				}
 				ReloadProfSettings(hDlg);
 			}
@@ -509,8 +512,8 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				prof->fansets = new fan_profile(*fan_conf->lastProf);
 			}
 			// Switch fan control if needed
-			if (prof == conf->activeProfile)
-				fan_conf->lastProf = state ? (fan_profile*)prof->fansets : &fan_conf->prof;
+			if (conf->activeProfile == prof)
+				UpdateState(true);
 			break;
 		case IDC_TRIGGER_POWER_AC:
 			SetBitMask(prof->triggerFlags, PROF_TRIGGER_AC, state);

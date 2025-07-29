@@ -303,9 +303,10 @@ void ConfigHandler::Load() {
 		// need new profile
 		profile* prof = new profile({ 0, "Default", {PROF_DEFAULT, 1} });
 		profiles.push_back(prof);
+		activeProfileID = 0;
 	}
 
-	if (!(activeProfile = FindProfile(activeProfileID))) activeProfile = FindDefaultProfile();
+	activeProfile = FindProfile(activeProfileID);
 
 }
 
@@ -448,7 +449,7 @@ void ConfigHandler::Save() {
 			}
 		}
 		// Fans....
-		if (prof->flags & PROF_FANS) {
+		if (prof->flags & PROF_FANS && prof->fansets) {
 			// save powers..
 			name = "Profile-power-" + profID;
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&((fan_profile*)prof->fansets)->powerSet, sizeof(DWORD));

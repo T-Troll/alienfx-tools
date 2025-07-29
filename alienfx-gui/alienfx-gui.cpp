@@ -73,8 +73,6 @@ bool DetectFans() {
 		if (!(conf->fanControl = mon->acpi->isSupported)) {
 			delete mon;
 			mon = NULL;
-			//if (fan_conf->needDPTF)
-			//	CreateThread(NULL, 0, DPTFInit, fan_conf, 0, NULL);
 		}
 	}
 	return conf->fanControl;
@@ -147,8 +145,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	conf->mainGrid = &conf->afx_dev.GetGrids()->front();
 
-	if (conf->activeProfile->flags & PROF_FANS)
-		fan_conf->lastProf = (fan_profile*)conf->activeProfile->fansets;
+	//if (conf->activeProfile->flags & PROF_FANS)
+	//	fan_conf->lastProf = (fan_profile*)conf->activeProfile->fansets;
 
 	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
 		if (EvaluteToAdmin()) {
@@ -279,7 +277,8 @@ void UpdateProfileList() {
 
 void UpdateState(bool checkMode = false) {
 	if (!dDlg)
-		eve->ChangeEffectMode();
+		//eve->ChangeEffectMode();
+		eve->SwitchActiveProfile(conf->activeProfile, true);
 
 	if (checkMode) {
 		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);

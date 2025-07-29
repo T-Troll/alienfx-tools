@@ -172,7 +172,7 @@ namespace AlienFan_SDK {
 
 						powers.push_back(0); // Manual mode
 						// Scan for avaliable data
-						while ((funcID = CallWMIMethod(getPowerID, fIndex)) && (funcID + 1)) {
+						while ((funcID = CallWMIMethod(getPowerID, fIndex)) > 0) {
 							byte vkind = funcID & 0xff;
 							if (funcID > 0x100 && funcID < 0x110) {
 								// sensor

@@ -13,7 +13,7 @@ extern void CreateGridBlock(HWND gridTab, DLGPROC, bool);
 extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL);
 
-extern void FindCreateMapping();
+extern void FindCreateMapping(bool key);
 
 BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern AlienFX_SDK::Afx_light* keySetLight;
@@ -399,7 +399,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			if (keySetLight)
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), hDlg, (DLGPROC)KeyPressDialog);
 			else {
-				FindCreateMapping();
+				FindCreateMapping(true);
 				UpdateDeviceInfo();
 			}
 			break;
@@ -415,10 +415,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			switch (HIWORD(wParam)) {
 			case EN_CHANGE:
 				if (Edit_GetModify(GetDlgItem(hDlg, IDC_EDIT_NAME))) {
-					if (!(keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid))) {
-						activeDevice->lights.push_back({ (byte)eLid });
-						keySetLight = &activeDevice->lights.back();
-					}
+					FindCreateMapping(false);
 					int textsize = GetWindowTextLength(GetDlgItem(hDlg, IDC_EDIT_NAME));
 					keySetLight->name.resize(textsize);
 					GetDlgItemText(hDlg, IDC_EDIT_NAME, (LPSTR)keySetLight->name.data(), textsize+1);

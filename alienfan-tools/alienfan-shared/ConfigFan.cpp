@@ -1,12 +1,16 @@
 #include "ConfigFan.h"
 #include "RegHelperLib.h"
 
+//DWORD WINAPI DPTFInit(LPVOID lparam);
+
 ConfigFan::ConfigFan() {
 
 	RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Alienfan"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyMain, NULL);
 	RegCreateKeyEx(keyMain, TEXT("Sensors"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keySensors, NULL);
 	RegCreateKeyEx(keyMain, TEXT("Powers"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &keyPowers, NULL);
 	Load();
+	//if (needDPTF)
+	//	CreateThread(NULL, 0, DPTFInit, this, 0, NULL);
 }
 
 ConfigFan::~ConfigFan() {
@@ -27,8 +31,8 @@ void ConfigFan::SetReg(const char *text, DWORD value) {
 
 void ConfigFan::AddSensorCurve(fan_profile *prof, byte fid, WORD sid, byte* data, DWORD lend) {
 	//if (!prof) prof = lastProf;
-	vector<fan_point>* cp = &prof->fanControls[fid][sid].points;
-	cp->resize(lend / 2);
+	auto cp = &prof->fanControls[fid][sid].points;
+	cp->resize(lend >> 1);
 	memcpy(cp->data(), data, lend);
 }
 

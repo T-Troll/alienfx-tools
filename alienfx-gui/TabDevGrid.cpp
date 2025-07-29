@@ -29,15 +29,15 @@ extern BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPAR
 extern AlienFX_SDK::Afx_light* keySetLight;
 extern AlienFX_SDK::Afx_device* activeDevice;
 
-void FindCreateMapping() {
+void FindCreateMapping(bool key) {
     if (!(keySetLight = conf->afx_dev.GetMappingByDev(activeDevice, eLid))) {
         // create new mapping
-        activeDevice->lights.push_back({ (byte)eLid, {0,0}, "Light " + to_string(eLid + 1) });
+        activeDevice->lights.push_back({ (byte)eLid, {0,0}, "" });
         keySetLight = &activeDevice->lights.back();
         if (activeDevice->dev) {
             conf->afx_dev.activeLights++;
             // for rgb keyboards, check key...
-            if (activeDevice->dev->IsHaveGlobal()) {
+            if (key && activeDevice->dev->IsHaveGlobal()) {
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
             }
         }
@@ -312,7 +312,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     RedrawDevList();
                 } else {
                     ModifyDragZone({ activeDevice->pid, (byte)eLid });
-                    FindCreateMapping();
+                    FindCreateMapping(true);
                     SetLightInfo();
                 }
             }

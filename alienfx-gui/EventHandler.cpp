@@ -85,7 +85,7 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 		//fxhl->UpdateGlobalEffect(NULL, true);
 		conf->modifyProfile.lockWrite();
 		conf->activeProfile = newID;
-		fan_conf->lastProf = newID->flags & PROF_FANS ? (fan_profile*)newID->fansets : &fan_conf->prof;
+		fan_conf->lastProf = newID->flags & PROF_FANS && (fan_profile*)newID->fansets ? (fan_profile*)newID->fansets : &fan_conf->prof;
 		conf->modifyProfile.unlockWrite();
 		fxhl->UpdateGlobalEffect(NULL, true);
 		ToggleFans();
