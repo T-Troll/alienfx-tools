@@ -70,7 +70,6 @@ namespace AlienFan_SDK {
 	private:
 		short aDev = -1;
 		bool activated = false;
-		DWORD systemID = 0;
 		bool lastMode = 0;
 #ifdef _SERVICE_WAY_
 		SC_HANDLE scManager = NULL;
@@ -84,6 +83,7 @@ namespace AlienFan_SDK {
 
 		bool isTcc = false, isXMP = false;
 		byte maxTCC = 100, maxOffset = 16;
+		DWORD systemID = 0;
 
 #ifdef _SERVICE_WAY_
 		// Stop and unload service if driver loaded from service
@@ -137,9 +137,6 @@ namespace AlienFan_SDK {
 
 		// Max. RPM for fan
 		int GetMaxRPM(int fanID);
-
-		// Return current device ID
-		inline DWORD GetSystemID() { return systemID; };
 
 		int GetCharge();
 
