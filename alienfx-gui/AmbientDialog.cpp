@@ -5,6 +5,7 @@
 
 extern void UpdateZoneList();
 extern void UpdateZoneAndGrid();
+extern AlienFX_SDK::Afx_group* FindCreateMappingGroup();
 extern void dxgi_Restart();
 
 extern EventHandler* eve;
@@ -89,10 +90,11 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 
     } break;
     case WM_COMMAND:
-        if (LOWORD(wParam) >= 2000 && mmap && HIWORD(wParam) == BN_CLICKED) { // grid button
+        if (LOWORD(wParam) >= 2000 && HIWORD(wParam) == BN_CLICKED) { // grid button
             UINT id = LOWORD(wParam) - 2000;
             // add/remove mapping
             conf->modifyProfile.lockWrite();
+            FindCreateMappingGroup();
             auto pos = mmap->ambients.begin();
             for (; pos != mmap->ambients.end(); pos++)
                 if (*pos == id)

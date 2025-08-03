@@ -63,21 +63,19 @@ AlienFX_SDK::Afx_group* ConfigHandler::FindCreateGroup(int groupID) {
 
 groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 {
-	profile* prof = FindProfile(profID);
-	if (prof) {
-		// -1 group patch
-		if (groupID < 0) {
-			groupID = 0x1ffff;
-		}
-		groupset* gset = FindMapping(groupID, &prof->lightsets);
-		if (!gset) {
-			FindCreateGroup(groupID);
-			prof->lightsets.push_back({ groupID });
-			gset = &prof->lightsets.back();
-		}
-		return gset;
+	profile* prof = FindCreateProfile(profID);
+
+	if (groupID < 0) {
+		groupID = 0x1ffff;
 	}
-	return nullptr;
+	groupset* gset = FindMapping(groupID, &prof->lightsets);
+	if (!gset) {
+		FindCreateGroup(groupID);
+		prof->lightsets.push_back({ groupID });
+		gset = &prof->lightsets.back();
+	}
+	return gset;
+
 }
 
 profile* ConfigHandler::FindProfile(int id) {
@@ -239,15 +237,15 @@ void ConfigHandler::Load() {
 	}
 	// Loading zones...
 	for (int vindex = 0; lend = GetRegData(hKeyZones, vindex, name, &data); vindex++) {
-		if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2 &&
-			(gset = FindCreateGroupSet(profID, groupID))) {
+		if (sscanf_s((char*)name, "Zone-flags-%d-%d", &profID, &groupID) == 2) {
+			gset = FindCreateGroupSet(profID, groupID);
 			gset->fromColor = data[0];
 			gset->gauge = data[1];
 			gset->gaugeflags = ((WORD*)data)[1];
 			continue;
 		}
-		if (sscanf_s((char*)name, "Zone-eventlist-%d-%d", &profID, &groupID) == 2 &&
-			(gset = FindCreateGroupSet(profID, groupID))) {
+		if (sscanf_s((char*)name, "Zone-eventlist-%d-%d", &profID, &groupID) == 2) {
+			gset = FindCreateGroupSet(profID, groupID);
 			event* ev = (event*)data;
 			for (int i = 0; i * sizeof(event) < lend; i++) {
 				// Bugfix for broken events
@@ -257,8 +255,8 @@ void ConfigHandler::Load() {
 			}
 			continue;
 		}
-		if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-			(gset = FindCreateGroupSet(profID, groupID))) {
+		if (sscanf_s((char*)name, "Zone-colors-%d-%d-%d", &profID, &groupID, &recSize) == 3) {
+			gset = FindCreateGroupSet(profID, groupID);
 			AlienFX_SDK::Afx_action* clr = (AlienFX_SDK::Afx_action*)data;
 			for (int i = 0; i < recSize; i++) {
 				// Power mode patch (not used in UI anymore
@@ -268,14 +266,14 @@ void ConfigHandler::Load() {
 			}
 			continue;
 		}
-		if (sscanf_s((char*)name, "Zone-ambient-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-			(gset = FindCreateGroupSet(profID, groupID))) {
+		if (sscanf_s((char*)name, "Zone-ambient-%d-%d-%d", &profID, &groupID, &recSize) == 3) {
+			gset = FindCreateGroupSet(profID, groupID);
 			gset->ambients.resize(recSize);
 			memcpy(gset->ambients.data(), data, recSize);
 			continue;
 		}
-		if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3 &&
-			(gset = FindCreateGroupSet(profID, groupID))) {
+		if (sscanf_s((char*)name, "Zone-haptics-%d-%d-%d", &profID, &groupID, &recSize) == 3) {
+			gset = FindCreateGroupSet(profID, groupID);
 			byte* out = data;
 			freq_map newFreq;
 			for (int i = 0; i < recSize; i++) {
@@ -288,8 +286,8 @@ void ConfigHandler::Load() {
 			}
 			continue;
 		}
-		if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2 &&
-			(gset = FindCreateGroupSet(profID, groupID))) {
+		if (sscanf_s((char*)name, "Zone-effect-%d-%d", &profID, &groupID) == 2) {
+			gset = FindCreateGroupSet(profID, groupID);
 			auto ce = &gset->effect;
 			memcpy(ce, data, 7);
 			ce->trigger = min(ce->trigger, 4);
@@ -376,8 +374,6 @@ void ConfigHandler::Save() {
 		string profID = to_string(prof->id);
 		string name = "Profile-" + profID;
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_SZ, (BYTE*)prof->name.c_str(), (DWORD)prof->name.size());
-		name = "Profile-gflags-" + profID;
-		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->gflags, sizeof(DWORD));
 		name = "Profile-triggers-" + profID;
 		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->triggers, sizeof(DWORD));
 		name = "Profile-freq-" + profID;
@@ -449,7 +445,7 @@ void ConfigHandler::Save() {
 			}
 		}
 		// Fans....
-		if (prof->flags & PROF_FANS && prof->fansets) {
+		if (prof->fansets) {
 			// save powers..
 			name = "Profile-power-" + profID;
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&((fan_profile*)prof->fansets)->powerSet, sizeof(DWORD));
@@ -458,6 +454,11 @@ void ConfigHandler::Save() {
 			// save fans...
 			fan_conf->SaveSensorBlocks(hKeyProfiles, "Profile-fan-" + profID, ((fan_profile*)prof->fansets));
 		}
+		else {
+			prof->flags &= ~PROF_FANS;
+		}
+		name = "Profile-gflags-" + profID;
+		RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&prof->gflags, sizeof(DWORD));
 	}
 }
 
@@ -552,8 +553,8 @@ groupset* ConfigHandler::FindMapping(int mid, vector<groupset>* set)
 bool ConfigHandler::IsLightInGroup(DWORD lgh, AlienFX_SDK::Afx_group* grp) {
 	if (grp)
 		//return find(grp->lights.begin(), grp->lights.end(), lgh) != grp->lights.end();
-		for (auto pos = grp->lights.begin(); pos < grp->lights.end(); pos++)
-			if (pos->lgh == lgh)
+		for (auto& pos : grp->lights)
+			if (pos.lgh == lgh)
 				return true;
 	return false;
 }
@@ -566,13 +567,10 @@ void ConfigHandler::SetRandomColor(AlienFX_SDK::Afx_colorcode* clr) {
 
 void ConfigHandler::RemoveUnusedGroups() {
 	for (auto i = afx_dev.GetGroups()->begin(); i != afx_dev.GetGroups()->end();) {
-		for (auto prof = profiles.begin(); prof != profiles.end(); prof++) {
-			for (auto ls = (*prof)->lightsets.begin(); ls != (*prof)->lightsets.end(); ls++)
-				if (ls->group == i->gid) {
-					//i++;
+		for (auto& prof : profiles)
+			for (auto& ls : prof->lightsets)
+				if (ls.group == i->gid)
 					goto nextgroup;
-				}
-		}
 		i = afx_dev.GetGroups()->erase(i);
 		continue;
 	nextgroup:

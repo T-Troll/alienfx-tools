@@ -243,7 +243,7 @@ void ReloadProfSettings(HWND hDlg) {
 	SetDlgItemText(hDlg, IDC_TRIGGER_KEYS, ("Keyboard (" + (prof && prof->triggerkey ? GetKeyName(prof->triggerkey) : "Off") + ")").c_str());
 	SetDlgItemText(hDlg, IDC_SCRIPT_NAME, prof ? prof->script.c_str() : NULL);
 
-	UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_FREQ), freqNames, prof && prof->freqMode, freqValues);
+	UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_FREQ), freqNames, prof ? prof->freqMode : 0, freqValues);
 
 	ListBox_ResetContent(app_list);
 	if (prof)
@@ -324,14 +324,13 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (WarningBox(hDlg, "Do you really want to remove selected profile and all settings for it?")) {
 					for (auto pf = conf->profiles.begin(); pf != conf->profiles.end(); pf++)
 						if (*pf == prof) {
-							profile* newpCid = (pf + 1) == conf->profiles.end() ? *(pf - 1) : *(pf + 1);
 							if (conf->activeProfile == prof) {
 								// switch to default profile..
 								eve->SwitchActiveProfile(conf->FindDefaultProfile());
 							}
-							conf->profiles.erase(pf);
+							auto newCid = conf->profiles.erase(pf);
 							delete prof;
-							prof = newpCid;
+							prof = newCid == conf->profiles.end() ? *(newCid - 1) : *newCid;
 							conf->RemoveUnusedGroups();
 							UpdateProfileList();
 							ReloadProfileView(hDlg);
@@ -472,7 +471,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_COMBO_FREQ:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				prof->freqMode = (DWORD)ComboBox_GetItemData(GetDlgItem(hDlg, IDC_COMBO_FREQ), ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_COMBO_FREQ)));
-				if (prof == conf->activeProfile)
+				if (prof == conf->activeProfile && prof->freqMode)
 					eve->SetDisplayFreq(prof->freqMode);
 			}
 			break;

@@ -8,6 +8,7 @@ extern DWORD MakeRGB(AlienFX_SDK::Afx_action* act);
 extern void RedrawButton(HWND ctrl, DWORD);
 extern void UpdateZoneList();
 extern void UpdateZoneAndGrid();
+extern AlienFX_SDK::Afx_group* FindCreateMappingGroup();
 extern FXHelper* fxhl;
 
 int effID = 0;
@@ -84,31 +85,30 @@ void RebuildEffectList(HWND hDlg) {
 }
 
 void ChangeAddColor(HWND hDlg, int newEffID) {
-	if (mmap) {
-		if (newEffID < mmap->color.size())
-			SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]);
-		else {
-			AlienFX_SDK::Afx_action act{ 0 };
-			bool isPower = conf->FindZoneMap(eItem)->havePower;
-			if (isPower && mmap->color.empty())
-				mmap->color.push_back(act);
-			if (mmap->color.size() < 9) {
-				if (effID < mmap->color.size())
-					act = mmap->color[effID];
-				mmap->color.push_back(act);
-				if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]))
-					effID = newEffID;
-				else {
-					if (isPower && mmap->color.size() == 2)
-						mmap->color.clear();
-					else
-						mmap->color.pop_back();
-				}
+	FindCreateMappingGroup();
+	if (newEffID < mmap->color.size())
+		SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]);
+	else {
+		AlienFX_SDK::Afx_action act{ 0 };
+		bool isPower = conf->FindZoneMap(mmap->group)->havePower;
+		if (isPower && mmap->color.empty())
+			mmap->color.push_back(act);
+		if (mmap->color.size() < 9) {
+			if (effID < mmap->color.size())
+				act = mmap->color[effID];
+			mmap->color.push_back(act);
+			if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]))
+				effID = newEffID;
+			else {
+				if (isPower && mmap->color.size() > 2)
+					mmap->color.pop_back();
+				else
+					mmap->color.clear();
 			}
 		}
-		RebuildEffectList(hDlg);
-		UpdateZoneAndGrid();
 	}
+	RebuildEffectList(hDlg);
+	UpdateZoneAndGrid();
 }
 
 BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -161,13 +161,14 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			}
 			break;
 		case IDC_BUT_ADD_EFFECT:
-			if (HIWORD(wParam) == BN_CLICKED && mmap) {
+			if (HIWORD(wParam) == BN_CLICKED) {
+				FindCreateMappingGroup();
 				ChangeAddColor(hDlg, (int)mmap->color.size());
 			}
 			break;
 		case IDC_BUT_REMOVE_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && mmap && effID < mmap->color.size()) {
-				if (conf->FindZoneMap(eItem)->havePower && mmap->color.size() == 2) {
+				if (conf->FindZoneMap(mmap->group)->havePower && mmap->color.size() == 2) {
 					mmap->color.clear();
 					effID = 0;
 				}

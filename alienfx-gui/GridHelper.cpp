@@ -57,7 +57,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
  		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->effect.trigger == 2 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
-				AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(it->group);
+				AlienFX_SDK::Afx_group* grp = conf->FindCreateGroup(it->group);
 				for (auto lgh = grp->lights.begin(); lgh != grp->lights.end(); lgh++)
 					if ((conf->afx_dev.GetMappingByID(lgh->did, lgh->lid)->scancode & 0xff) == ((LPKBDLLHOOKSTRUCT)lParam)->vkCode) {
 						zonemap zone = *conf->FindZoneMap(it->group);

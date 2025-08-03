@@ -28,7 +28,7 @@ extern HWND zsDlg;
 void OnLightSelChanged(HWND hwndDlg);
 
 void UpdateZoneAndGrid() {
-	zonemap zone = *conf->FindZoneMap(eItem);
+	zonemap zone = *conf->FindZoneMap(mmap->group);
 	if (zone.gridID == conf->mainGrid->id) {
 		RECT zRect = { zone.gMinX, zone.gMinY, zone.xMax + 1, zone.yMax + 1 };
 		RecalcGridZone(&zRect);

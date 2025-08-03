@@ -6,6 +6,7 @@
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void UpdateZoneList();
+extern AlienFX_SDK::Afx_group* FindCreateMappingGroup();
 
 extern void SetLightInfo();
 extern void RedrawDevList();
@@ -97,14 +98,14 @@ void RecalcGridZone(RECT* what = NULL) {
     } else
         colorGrid = new gridClr[conf->mainGrid->x * conf->mainGrid->y];
 
-    AlienFX_SDK::Afx_group* grp;
-    for (int x = full.left; x < full.right; x++)
+     for (int x = full.left; x < full.right; x++)
         for (int y = full.top; y < full.bottom; y++) {
             int ind = ind(x, y);
-            colorGrid[ind].first.br = colorGrid[ind].last.br = 0xff;
+            colorGrid[ind].first.ci = colorGrid[ind].last.ci = 0xff000000;
             conf->modifyProfile.lockRead();
-            for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++)
-                if ((grp = conf->FindCreateGroup(cs->group)) && conf->IsLightInGroup(conf->mainGrid->grid[ind].lgh, grp)) {
+            for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
+                //AlienFX_SDK::Afx_group* grp = conf->FindCreateGroup(cs->group);
+                if (conf->IsLightInGroup(conf->mainGrid->grid[ind].lgh, conf->FindCreateGroup(cs->group))) {
                     if (conf->stateEffects) {
                         if (cs->events.size()) {
                             if (colorGrid[ind].first.br == 0xff && !(cs->fromColor && cs->color.size()))
@@ -132,6 +133,7 @@ void RecalcGridZone(RECT* what = NULL) {
                             colorGrid[ind].last = Act2Code(&cs->color.back());
                     }
                 }
+            }
             conf->modifyProfile.unlockRead();
         }
 }
@@ -171,9 +173,9 @@ void ModifyDragZone(AlienFX_SDK::Afx_groupLight lgh) {
 }
 
 void ModifyColorDragZone(bool clear = false) {
-    AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(eItem);
     vector<AlienFX_SDK::Afx_groupLight> markRemove, markAdd;
-    if (grp && dragZone.top >= 0) {
+    if (dragZone.top >= 0) {
+        AlienFX_SDK::Afx_group* grp = FindCreateMappingGroup();
         for (int x = dragZone.left; x < dragZone.right; x++)
             for (int y = dragZone.top; y < dragZone.bottom; y++) {
                 int ind = ind(x, y);
@@ -273,7 +275,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             }
             else
                 if (mmap) {
-                    conf->afx_dev.GetGroupById(eItem)->lights.clear();
+                    conf->FindCreateGroup(mmap->group)->lights.clear();
                 }
             RepaintGrid();
             break;
@@ -377,7 +379,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                         FillRect(wDC, &ditem->rcItem, Brush);
                         DeleteObject(Brush);
                     }
-                    if (mmap && conf->IsLightInGroup(gridVal, conf->afx_dev.GetGroupById(eItem))) {
+                    if (mmap && conf->IsLightInGroup(gridVal, conf->FindCreateGroup(mmap->group))) {
                         for (int cx = 0; cx < size; cx++) {
                             rectClip.right = rectClip.left + buttonZone.right;
                             int border = (cx == 0 * BF_LEFT) |

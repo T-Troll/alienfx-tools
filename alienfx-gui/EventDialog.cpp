@@ -6,10 +6,10 @@
 
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 DWORD MakeRGB(AlienFX_SDK::Afx_action* act);
-//extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
 extern void RedrawButton(HWND hDlg, DWORD);
 extern void UpdateZoneAndGrid();
 extern void UpdateZoneList();
+extern AlienFX_SDK::Afx_group* FindCreateMappingGroup();
 
 extern FXHelper* fxhl;
 extern MonHelper* mon;
@@ -146,18 +146,17 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 		} break;
 		case IDC_BUT_ADD_EVENT:
-			if (mmap) {
-				conf->modifyProfile.lockWrite();
-				mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
-					(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)),
-					(byte)SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_GETPOS, 0, 0),
-					(byte)IsDlgButtonChecked(hDlg, IDC_STATUS_BLINK) == BST_CHECKED	});
-				eventID = (int)mmap->events.size() - 1;
-				conf->modifyProfile.unlockWrite();
-				eve->ChangeEffects();
-				RebuildEventList(hDlg);
-				UpdateZoneAndGrid();
-			}
+			FindCreateMappingGroup();
+			conf->modifyProfile.lockWrite();
+			mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
+				(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)),
+				(byte)SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_GETPOS, 0, 0),
+				(byte)IsDlgButtonChecked(hDlg, IDC_STATUS_BLINK) == BST_CHECKED	});
+			eventID = (int)mmap->events.size() - 1;
+			conf->modifyProfile.unlockWrite();
+			eve->ChangeEffects();
+			RebuildEventList(hDlg);
+			UpdateZoneAndGrid();
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
 			if (mmap && ev) {

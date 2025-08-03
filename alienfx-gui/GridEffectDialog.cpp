@@ -8,6 +8,7 @@ extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void RedrawButton(HWND hDlg, DWORD);
 extern void UpdateZoneAndGrid();
+extern AlienFX_SDK::Afx_group* FindCreateMappingGroup();
 
 extern EventHandler* eve;
 extern FXHelper* fxhl;
@@ -62,26 +63,25 @@ void RebuildGEColorsList(HWND hDlg) {
 
 void ChangeAddGEColor(HWND hDlg, int newColorID) {
 	// change color.
-	if (mmap) {
-		vector<AlienFX_SDK::Afx_colorcode>* clr = &mmap->effect.effectColors;
-		if (newColorID < clr->size())
-			SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID));
-		else {
-			AlienFX_SDK::Afx_colorcode act{ 0 };
-			// add new color
-			if (clr->empty())
-				clr->push_back(act);
-			if (clrListID < clr->size())
-				act = clr->at(clrListID);
+	FindCreateMappingGroup();
+	vector<AlienFX_SDK::Afx_colorcode>* clr = &mmap->effect.effectColors;
+	if (newColorID < clr->size())
+		SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID));
+	else {
+		AlienFX_SDK::Afx_colorcode act{ 0 };
+		// add new color
+		if (clr->empty())
 			clr->push_back(act);
-			if (SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID)))
-				clrListID = newColorID;
-			else
-				clr->pop_back();
-		}
-		RebuildGEColorsList(hDlg);
-		UpdateZoneAndGrid();
+		if (clrListID < clr->size())
+			act = clr->at(clrListID);
+		clr->push_back(act);
+		if (SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID)))
+			clrListID = newColorID;
+		else
+			clr->pop_back();
 	}
+	RebuildGEColorsList(hDlg);
+	UpdateZoneAndGrid();
 }
 
 void UpdateEffectInfo(HWND hDlg) {
@@ -138,9 +138,9 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		{
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				conf->modifyProfile.lockWrite();
+				//conf->modifyProfile.lockWrite();
 				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				conf->modifyProfile.unlockWrite();
+				//conf->modifyProfile.unlockWrite();
 				eve->ChangeEffects();
 				UpdateZoneAndGrid();
 			}

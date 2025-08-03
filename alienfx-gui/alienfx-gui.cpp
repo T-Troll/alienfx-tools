@@ -56,7 +56,7 @@ int tabLightSel = 0;
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
 // last light selected
-int eItem = 0;
+//int eItem = 0;
 // last zone selected
 groupset* mmap = NULL;
 
@@ -118,6 +118,7 @@ void UpdateProfileList();
 void SelectProfile(profile* prof = conf->activeProfile) {
 	if (!dDlg) {
 		eve->SwitchActiveProfile(prof);
+		mmap = NULL;
 		if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
 			OnSelChanged();
 	}
@@ -261,6 +262,7 @@ void OnSelChanged()
 
 void UpdateProfileList() {
 	if (IsWindowVisible(mDlg)) {
+		mmap = NULL;
 		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
 		EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
 		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
@@ -797,6 +799,17 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 	if (ret = SetColor(ctrl, &savedColor, false))
 		clr = Act2Code(&savedColor);
 	return ret;
+}
+
+AlienFX_SDK::Afx_group* FindCreateMappingGroup() {
+	if (!mmap) {
+		int eItem = 0x10000;
+		while (conf->afx_dev.GetGroupById(eItem))
+			eItem++;
+		conf->activeProfile->lightsets.push_back({ eItem });
+		mmap = &conf->activeProfile->lightsets.back();
+	}
+	return conf->FindCreateGroup(mmap->group);
 }
 
 
