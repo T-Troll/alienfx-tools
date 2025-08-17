@@ -71,27 +71,31 @@ void RemoveLightAndClean() {
 	}
 }
 
+HWND sTip4 = NULL;
+
 BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	HWND rSl = GetDlgItem(hDlg, IDC_SLIDER_RED),
+		gSl = GetDlgItem(hDlg, IDC_SLIDER_GREEN),
+		bSl = GetDlgItem(hDlg, IDC_SLIDER_BLUE),
+		brSl = GetDlgItem(hDlg, IDC_SLIDER_BRIGHTNESS);
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETTICFREQ, 16, 0);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETTICFREQ, 16, 0);
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETRANGE, true, MAKELPARAM(0, 255));
-		SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETTICFREQ, 16, 0);
-		CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_RED), sTip1, activeDevice->white.r);
-		CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_GREEN), sTip2, activeDevice->white.g);
-		CreateToolTip(GetDlgItem(hDlg, IDC_SLIDER_BLUE), sTip3, activeDevice->white.b);
-		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_RED), TBM_SETPOS, true, activeDevice->white.r);
-		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_GREEN), TBM_SETPOS, true, activeDevice->white.g);
-		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_BLUE), TBM_SETPOS, true, activeDevice->white.b);
-		//SetSlider(sTip1, activeDevice->white.r);
-		//SetSlider(sTip2, activeDevice->white.r);
-		//SetSlider(sTip3, activeDevice->white.r);
+		SendMessage(rSl, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(rSl, TBM_SETTICFREQ, 16, 0);
+		CreateToolTip(rSl, sTip1, activeDevice->white.r);
+		SendMessage(gSl, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(gSl, TBM_SETTICFREQ, 16, 0);
+		CreateToolTip(gSl, sTip2, activeDevice->white.g);
+		SendMessage(bSl, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(bSl, TBM_SETTICFREQ, 16, 0);
+		CreateToolTip(bSl, sTip3, activeDevice->white.b);
+		SendMessage(brSl, TBM_SETRANGE, true, MAKELPARAM(0, 255));
+		SendMessage(brSl, TBM_SETTICFREQ, 16, 0);
+		CreateToolTip(brSl, sTip3, activeDevice->brightness);
 		fxhl->TestLight(activeDevice, eLid, true, true);
 		RECT pRect;
 		GetWindowRect(GetDlgItem(dDlg, IDC_BUT_WHITE), &pRect);
@@ -102,18 +106,23 @@ BOOL CALLBACK WhiteBalanceDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 		{
-			if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_RED)) {
+			if ((HWND)lParam == rSl) {
 				activeDevice->white.r = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 				SetSlider(sTip1, activeDevice->white.r);
 			} else
-				if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_GREEN)) {
+				if ((HWND)lParam == gSl) {
 					activeDevice->white.g = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip2, activeDevice->white.g);
 				} else
-					if ((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER_BLUE)) {
+					if ((HWND)lParam == bSl) {
 						activeDevice->white.b = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 						SetSlider(sTip3, activeDevice->white.b);
-					}
+					} else
+						if ((HWND)lParam == brSl) {
+							activeDevice->brightness = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+							SetSlider(sTip3, activeDevice->brightness);
+							conf->afx_dev.SetDeviceBrightness(activeDevice, 255, true);
+						}
 			fxhl->TestLight(activeDevice, eLid, true, true);
 		} break;
 		}
@@ -360,6 +369,9 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		eve->StopProfiles();
 		eve->ChangeEffects(true);
 		fxhl->Stop();
+		// Reset brightness
+		for (auto& dev : conf->afx_dev.fxdevs)
+			conf->afx_dev.SetDeviceBrightness(&dev, 255, true);
 
 		if (!activeDevice)
 			activeDevice = &conf->afx_dev.fxdevs.front();
@@ -667,6 +679,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_DESTROY:
 	{
 		fxhl->Start();
+		fxhl->SetState(true);
 		eve->ChangeEffectMode();
 		eve->StartProfiles();
 		dDlg = NULL;

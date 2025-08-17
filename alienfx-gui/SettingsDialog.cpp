@@ -9,6 +9,7 @@ extern bool DetectFans();
 extern void SetHotkeys();
 extern void SetMainTabs();
 extern void UpdateProfileList();
+extern void UpdateLightDevices();
 
 extern MonHelper* mon;
 extern EventHandler* eve;
@@ -176,8 +177,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				mon = NULL;
 				eve->ChangeEffects();
 			}
-			fxhl->FillAllDevs();
-			fxhl->Refresh();
+			//fxhl->FillAllDevs();
+			UpdateLightDevices();
+			//fxhl->Refresh();
 			SetHotkeys();
 			SetMainTabs();
 			break;

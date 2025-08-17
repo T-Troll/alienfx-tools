@@ -217,9 +217,10 @@ namespace AlienFX_SDK {
 
 		// Hardware brightness for device, if supported
 		// brightness - desired brightness (0 - off, 255 - full)
+		// gbr - global device brightness from mappings
 		// mappings - mappings list for v4 brightness set (it require light IDs list)
 		// power - if true, power and indicator lights will be set too
-		bool SetBrightness(BYTE brightness, vector <Afx_light>* mappings, bool power);
+		bool SetBrightness(BYTE brightness, BYTE gbr, vector <Afx_light>* mappings, bool power);
 
 		// Global (whole device) effect control for APIv5, v8
 		// effType - effect type
@@ -244,11 +245,12 @@ namespace AlienFX_SDK {
 			};
 			DWORD devID;
 		};
-		Functions* dev = NULL;  // device control object pointer
-		string name;			// device name
-		int version = API_UNKNOWN; // API version used for this device
-		Afx_colorcode white = { 255,255,255 }; // white point
-		vector <Afx_light> lights; // vector of lights defined
+		Functions* dev = NULL;		// device control object pointer
+		string name;				// device name
+		int version = API_UNKNOWN;	// API version used for this device
+		Afx_colorcode white = { 255,255,255 }; // white balance
+		byte brightness = 255;		// global device brightness
+		vector <Afx_light> lights;	// vector of lights defined
 	};
 
 	class Mappings {
@@ -261,23 +263,17 @@ namespace AlienFX_SDK {
 		vector<Afx_device> fxdevs; // main devices/mappings array
 		unsigned activeLights = 0,  // total number of active lights into the system
 				 activeDevices = 0; // total number of active devices
+		bool	 deviceListChanged = false; // device list changed flag
 
 		~Mappings();
 
 		// Enumerate all alienware devices into the system
 		// acc - link to AlienFan_SDK::Control object for ACPI lights
-		// returns vector of active device objects
+		// returns true if light device list was changed
 		bool AlienFXEnumDevices(void* acc = NULL);
 
-		// Apply device vector to fxdevs structure
-		// activeOnly - clear inactive devices from list
-		// devList - list of active devices
-		void AlienFXApplyDevices();
-
-		// Load device data and assign it to structure, as well as init devices and set brightness
-		// activeOnly - clear inactive devices from list
-		// acc - pointer to AlienFan_SDK::Control object for ACPI lights
-		//void AlienFXAssignDevices(bool activeOnly = true, void* acc = NULL);
+		// Remove unused devices from device list, if any
+		void AlienFXCleanDevices();
 
 		// load light names from registry
 		void LoadMappings();
@@ -289,7 +285,7 @@ namespace AlienFX_SDK {
 		// dev - point to AFX device info
 		// br - brightness level
 		// power - set power/indicator lights too
-		void SetDeviceBrightness(Afx_device* dev, BYTE br, bool power);
+		bool SetDeviceBrightness(Afx_device* dev, BYTE br, bool power);
 
 		// get saved light structure by device ID and light ID
 		Afx_light* GetMappingByID(WORD pid, WORD vid);

@@ -114,6 +114,7 @@ void SetHotkeys() {
 
 void OnSelChanged();
 void UpdateProfileList();
+void SetMainTabs();
 
 void SelectProfile(profile* prof = conf->activeProfile) {
 	if (!dDlg) {
@@ -123,6 +124,19 @@ void SelectProfile(profile* prof = conf->activeProfile) {
 			OnSelChanged();
 	}
 	UpdateProfileList();
+}
+
+void UpdateLightDevices() {
+	if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
+		DebugPrint("Active device list changed!\n");
+		if (conf->afx_dev.activeDevices && !dDlg) {
+			fxhl->Start();
+			fxhl->SetState(true);
+			fxhl->UpdateGlobalEffect(NULL);
+			fxhl->Refresh();
+		}
+		SetMainTabs();
+	}
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -159,7 +173,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 	fxhl = new FXHelper();
-	fxhl->FillAllDevs();
+	//fxhl->FillAllDevs();
+	UpdateLightDevices();
 	eve = new EventHandler();
 
 	if (CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAINWINDOW), NULL, (DLGPROC)MainDialog)) {
@@ -636,22 +651,22 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			fxhl->Refresh();
 		}
 		} break;
-	case WM_DEVICECHANGE:
+	case WM_DEVICECHANGE: {
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
-			if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
-				DebugPrint("Active device list changed!\n");
-				//fxhl->QueryUpdate();
-				conf->afx_dev.AlienFXApplyDevices();
-				if (conf->afx_dev.activeDevices && !dDlg) {
-					fxhl->SetState(true);
-					fxhl->UpdateGlobalEffect(NULL);
-					fxhl->Refresh();
-				}
-				SetMainTabs();
-			}
+			UpdateLightDevices();
+			//if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
+			//	DebugPrint("Active device list changed!\n");
+			//	//conf->afx_dev.AlienFXApplyDevices();
+			//	if (conf->afx_dev.activeDevices && !dDlg) {
+			//		fxhl->SetState(true);
+			//		fxhl->UpdateGlobalEffect(NULL);
+			//		fxhl->Refresh();
+			//	}
+			//	SetMainTabs();
+			//}
 		}
-		break;
+	} break;
 	case WM_DISPLAYCHANGE:
 		// Monitor configuration changed
 		DebugPrint("Display config changed!\n");

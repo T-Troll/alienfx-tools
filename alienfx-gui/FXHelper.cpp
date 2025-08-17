@@ -28,15 +28,16 @@ FXHelper::~FXHelper() {
 	CloseHandle(haveLightFX);
 };
 
-void FXHelper::FillAllDevs() {
-	Stop();
-	if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL))
-		conf->afx_dev.AlienFXApplyDevices();
-	if (conf->afx_dev.activeDevices) {
-		Start();
-		SetState(true);
-	}
-}
+//void FXHelper::FillAllDevs() {
+//	Stop();
+//	conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL);
+//	//if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL))
+//	//	conf->afx_dev.AlienFXApplyDevices();
+//	if (conf->afx_dev.activeDevices) {
+//		Start();
+//		SetState(true);
+//	}
+//}
 
 AlienFX_SDK::Afx_action FXHelper::BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to) {
 	return { 0,0,0,
@@ -697,11 +698,12 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower
 					: src->finalBrightness);
 					//(byte)(current.light ? !conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower : src->finalBrightness);
-				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++)
-					if (dev->dev) {
-						//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
-						needRefresh |= dev->dev->SetBrightness(fbright, &dev->lights, pbstate);
-					}
+				conf->afx_dev.AlienFXCleanDevices();
+				conf->afx_dev.deviceListChanged = false;
+				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++) {
+					needRefresh |= conf->afx_dev.SetDeviceBrightness(&(*dev), fbright, pbstate);
+					//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
+				}
 				if (needRefresh)
 					src->Refresh();
 			} break;

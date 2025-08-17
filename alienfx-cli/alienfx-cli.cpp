@@ -71,8 +71,8 @@ void Update() {
 			afx_map.fxdevs[i].dev->UpdateColors();
 }
 
-AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action* act) {
-	return { act->b,act->g,act->r, 255 };
+unsigned int Act2UINT(AlienFX_SDK::Afx_action* act) {
+	return AlienFX_SDK::Afx_colorcode({ act->b,act->g,act->r, 255 }).ci;
 }
 
 LFX_COLOR Act2Lfx(AlienFX_SDK::Afx_action* act) {
@@ -92,10 +92,10 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 			argPos++;
 		}
 		actions.push_back({ acttype, sleepy, longer,
-				(byte)((args->at(argPos).num * globalBright) / 255), //r
-			(byte)((args->at(argPos + 1).num * globalBright) / 255), //g
-			(byte)((args->at(argPos + 2).num * globalBright) / 255) //b
-			});
+				(byte)(args->at(argPos).num),// * globalBright) / 255), //r
+				(byte)(args->at(argPos + 1).num),// * globalBright) / 255), //g
+				(byte)(args->at(argPos + 2).num),// * globalBright) / 255) //b
+		});
 		//AlienFX_SDK::Afx_action* color = &actions.back();
 		//color->r = ((unsigned)color->r * globalBright) / 255;// >> 8;
 		//color->g = ((unsigned)color->g * globalBright) / 255;// >> 8;
@@ -108,7 +108,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v9.3.0.3\n");
+	printf("alienfx-cli v9.3.2\n");
 	if (argc < 2)
 	{
 		printUsage();
@@ -148,6 +148,7 @@ int main(int argc, char* argv[])
 			}
 			switch (CheckCommand(command, (int)args.size())) {
 			case COMMANDS::setall: {
+				auto acts = ParseActions(&args, 0);
 				if (devType) {
 					for (auto cd = afx_map.fxdevs.begin(); cd != afx_map.fxdevs.end(); cd++) {
 						vector<byte> lights;
@@ -155,23 +156,24 @@ int main(int argc, char* argv[])
 							if (!(i->flags & ALIENFX_FLAG_POWER))
 								lights.push_back((byte)i->lightid);
 						}
-						cd->dev->SetMultiColor(&lights, ParseActions(&args, 0).front());
+						cd->dev->SetMultiColor(&lights, acts.front());
 					}
 				}
 				else {
-					lfxUtil.SetLFXColor(LFX_ALL, Act2Code(&ParseActions(&args, 0).front()).ci);
+					lfxUtil.SetLFXColor(LFX_ALL, Act2UINT(&acts.front()));
 				}
 				Update();
 			} break;
 			case COMMANDS::setone: {
+				auto acts = ParseActions(&args, 2);
 				if (devType) {
 					if (args[0].num < afx_map.fxdevs.size()) {
-						AlienFX_SDK::Afx_lightblock act{ (byte)args[1].num, ParseActions(&args, 2) };
+						AlienFX_SDK::Afx_lightblock act{ (byte)args[1].num, acts };
 						afx_map.fxdevs[args[0].num].dev->SetAction(&act);
 					}
 				}
 				else {
-					lfxUtil.SetOneLFXColor(args[0].num, args[1].num, &Act2Lfx(&ParseActions(&args, 2).front()));
+					lfxUtil.SetOneLFXColor(args[0].num, args[1].num, &Act2Lfx(&acts.front()));
 				}
 				Update();
 			} break;
@@ -191,7 +193,7 @@ int main(int argc, char* argv[])
 					}
 				}
 				else {
-					lfxUtil.SetLFXColor(zoneCode, Act2Code(&ParseActions(&args, 1).front()).ci);
+					lfxUtil.SetLFXColor(zoneCode, Act2UINT(&ParseActions(&args, 1).front()));
 				}
 				Update();
 			} break;
@@ -224,7 +226,7 @@ int main(int argc, char* argv[])
 					}
 				}
 				else {
-					lfxUtil.SetLFXZoneAction(act.act.front().type, zoneCode, Act2Code(&act.act.front()).ci, Act2Code(&act.act.back()).ci);
+					lfxUtil.SetLFXZoneAction(act.act.front().type, zoneCode, Act2UINT(&act.act.front()), Act2UINT(&act.act.back()));
 				}
 				//delete act;
 				Update();
@@ -251,8 +253,10 @@ int main(int argc, char* argv[])
 				break;
 			case COMMANDS::setdim:
 				// set-dim
-				if (devType && args.size() > 1 && args[0].num < afx_map.fxdevs.size())
-					afx_map.SetDeviceBrightness(&afx_map.fxdevs[args.front().num], args.back().num, false);
+				if (devType && args.size() > 1 && args[0].num < afx_map.fxdevs.size()) {
+					afx_map.fxdevs[args.front().num].brightness = args.back().num;
+					afx_map.SetDeviceBrightness(&afx_map.fxdevs[args.front().num], globalBright, false);
+				}
 				else
 					globalBright = args.front().num;
 				break;

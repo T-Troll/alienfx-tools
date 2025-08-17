@@ -77,22 +77,23 @@ namespace AlienFX_SDK {
 
 	bool Functions::PrepareAndSend(const byte *command, vector<Afx_icommand> *mods) {
 
-		byte buffer[MAX_BUFFERSIZE];
-		DWORD written;
-		BOOL res = false, needV8Feature = true;
+		if (this && devHandle) { // Is device initialized?
 
-		memset(buffer, version == API_V6 ? 0xff : 0, length);
-		memcpy(buffer, command, command[0] + 1);
-		buffer[0] = reportIDList[version];
+			byte buffer[MAX_BUFFERSIZE];
+			DWORD written;
+			BOOL /*res = false, */needV8Feature = true;
 
-		if (mods) {
-			for (auto i = mods->begin(); i < mods->end(); i++)
-				memcpy(buffer + i->i, i->vval.data(), i->vval.size());
-			needV8Feature = mods->front().vval.size() == 1;
-			mods->clear();
-		}
+			memset(buffer, version == API_V6 ? 0xff : 0, length);
+			memcpy(buffer, command, command[0] + 1);
+			buffer[0] = reportIDList[version];
 
-		if (devHandle) // Is device initialized?
+			if (mods) {
+				for (auto i = mods->begin(); i < mods->end(); i++)
+					memcpy(buffer + i->i, i->vval.data(), i->vval.size());
+				needV8Feature = mods->front().vval.size() == 1;
+				mods->clear();
+			}
+
 			switch (version) {
 			case API_V2: case API_V3: case API_V4: //case API_V9:
 				//res = DeviceIoControl(devHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, length, 0, 0, &written, NULL);
@@ -114,16 +115,17 @@ namespace AlienFX_SDK {
 			case API_V8:
 				if (needV8Feature) {
 					Sleep(3);
-					res = HidD_SetFeature(devHandle, buffer, length);
+					bool res = HidD_SetFeature(devHandle, buffer, length);
 					Sleep(7);
+					return res;
 				}
 				else
 				{
 					return WriteFile(devHandle, buffer, length, &written, NULL);
 				}
 			}
-
-		return res;
+		}
+		return false;
 	}
 
 	void Functions::SavePowerBlock(byte blID, Afx_lightblock* act, bool needSave, bool needSecondary, bool needInverse) {
@@ -684,13 +686,13 @@ namespace AlienFX_SDK {
 		return true;
 	}
 
-	bool Functions::SetBrightness(BYTE brightness, vector<Afx_light> *mappings, bool power) {
+	bool Functions::SetBrightness(BYTE brightness, BYTE gbr, vector<Afx_light> *mappings, bool power) {
 		// return true if update needed
 		DebugPrint("State update: PID: " + to_string(pid) + ", brightness: " + to_string(brightness) + ", power: " + to_string(power) + "\n");
 
 		if (inSet) UpdateColors();
 		int oldBr = bright;
-		bright = (brightness * brightnessScale[version]) / 0xff;
+		bright = (((brightness * gbr) / 255) * brightnessScale[version]) / 0xff;
 		switch (version) {
 		case API_V8:
 			PrepareAndSend(COMMV8_setBrightness, { {2, {bright}} });
@@ -862,7 +864,7 @@ namespace AlienFX_SDK {
 
 	bool Mappings::AlienFXEnumDevices(void* acc) {
 		Functions* dev;
-		bool isListChanged = false;
+		deviceListChanged = false;
 
 		// Reset active status
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
@@ -888,7 +890,7 @@ namespace AlienFX_SDK {
 						}
 						else {
 							devInfo->dev = dev;
-							isListChanged = true;
+							deviceListChanged = true;
 							DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
 								+ to_string(devInfo->version) + " - return back\n");
 						}
@@ -897,7 +899,7 @@ namespace AlienFX_SDK {
 					else {
 						// add new device
 						fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description, dev->version });
-						isListChanged = true;
+						deviceListChanged = true;
 						activeDevices++;
 						DebugPrint("Scan #" + to_string(dw) + ": VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
 							+ to_string(dev->version) + " - new device added\n");
@@ -921,11 +923,11 @@ namespace AlienFX_SDK {
 						delete dev;
 					else {
 						devInfo->dev = dev;
-						isListChanged = true;
+						deviceListChanged = true;
 					}
 				} else {
 					fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description, dev->version });
-					isListChanged = true;
+					deviceListChanged = true;
 				}
 			}
 			else
@@ -935,19 +937,22 @@ namespace AlienFX_SDK {
 		// Check removed devices
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
 			if (i->version == API_UNKNOWN && i->dev) {
-				isListChanged = true;
+				deviceListChanged = true;
 				break;
 			}
-		return isListChanged;
+		return deviceListChanged;
 	}
 
-	void Mappings::AlienFXApplyDevices() {
-		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
-			if (i->version == API_UNKNOWN && i->dev) {
-				DebugPrint("Scan #?: VID: " + to_string(i->vid) + ", PID: " + to_string(i->pid) + " - removed\n");
-				delete i->dev;
-				i->dev = NULL;
-			}
+	void Mappings::AlienFXCleanDevices() {
+		if (deviceListChanged) {
+			for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
+				if (i->version == API_UNKNOWN && i->dev) {
+					DebugPrint("Scan #?: VID: " + to_string(i->vid) + ", PID: " + to_string(i->pid) + " - removed\n");
+					delete i->dev;
+					i->dev = NULL;
+				}
+			deviceListChanged = false;
+		}
 	}
 
 	Afx_device* Mappings::GetDeviceById(WORD pid, WORD vid) {
@@ -997,11 +1002,12 @@ namespace AlienFX_SDK {
 		return &groups;
 	}
 
-	void Mappings::SetDeviceBrightness(Afx_device* dev, BYTE br, bool power)
+	bool Mappings::SetDeviceBrightness(Afx_device* dev, BYTE br, bool power)
 	{
 		if (dev->dev) {
-			dev->dev->SetBrightness(br, &dev->lights, power);
+			return dev->dev->SetBrightness(br, dev->brightness, &dev->lights, power);
 		}
+		return false;
 	}
 
 	void Mappings::RemoveMapping(Afx_device* dev, WORD lightID)
@@ -1044,6 +1050,10 @@ namespace AlienFX_SDK {
 			}
 			if (sscanf_s(kName, "DevWhite#%hd_%hd", &vid, &pid) == 2) {
 				AddDeviceById(MAKELPARAM(pid, vid))->white.ci = ((DWORD*)name)[0];
+				continue;
+			}
+			if (sscanf_s(kName, "DevBright#%hd_%hd", &vid, &pid) == 2) {
+				AddDeviceById(MAKELPARAM(pid, vid))->brightness = ((DWORD*)name)[0];
 				continue;
 			}
 		}
@@ -1098,6 +1108,8 @@ namespace AlienFX_SDK {
 				RegSetValueEx(hKeybase, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
 			name = "DevWhite#" + devID;
 			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
+			name = "DevBright#" + devID; DWORD br = i->brightness;
+			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE*)&br, sizeof(DWORD));
 			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {
 				// Saving all lights from current device
 				string name = "Light" + to_string(i->devID) + "-" + to_string(cl->lightid);
