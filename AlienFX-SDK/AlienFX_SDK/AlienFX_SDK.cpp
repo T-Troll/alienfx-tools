@@ -116,7 +116,7 @@ namespace AlienFX_SDK {
 				if (needV8Feature) {
 					Sleep(3);
 					bool res = HidD_SetFeature(devHandle, buffer, length);
-					Sleep(7);
+					Sleep(6);
 					return res;
 				}
 				else

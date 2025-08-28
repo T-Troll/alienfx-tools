@@ -3,6 +3,7 @@
 #include "RegHelperLib.h"
 #include "Common.h"
 #include "resource.h"
+#include <Psapi.h>
 
 // debug print
 #ifdef _DEBUG
@@ -86,19 +87,59 @@ profile* ConfigHandler::FindProfile(int id) {
 	return NULL;
 }
 
-profile* ConfigHandler::FindProfileByApp(string appName, bool active)
+static const string forbiddenApps[] = { "ShellExperienceHost.exe"
+									,"explorer.exe"
+									,"SearchApp.exe"
+									,"StartMenuExperienceHost.exe"
+									,"SearchHost.exe"
+#ifdef _DEBUG
+									,"devenv.exe"
+#endif
+									, ""
+};
+
+profile* ConfigHandler::FindProfileByApp(DWORD proc, bool active)
 {
 	profile* fprof = NULL;
-	for (profile* prof : profiles)
-		if (SamePower(prof) && (active || !(prof->flags & PROF_ACTIVE))) {
-			for (auto name : prof->triggerapp)
-				if (name == appName) {
-					if (IsPriorityProfile(prof))
-						return prof;
-					else
-						fprof = prof;
+	char szProcessName[MAX_PATH]{ 0 };
+	HANDLE hProcess;
+	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc)) {
+		if (GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH)) {
+			string procName = szProcessName,
+				appName = procName.substr(procName.find_last_of('\\') + 1),
+				appPath = procName.substr(0, procName.length() - appName.length());
+			//PathStripPath(szProcessName);
+			//DebugPrint("Profile: Looking for " + procName + "...");
+			if (noDesktop && active) {
+				for (int i = 0; forbiddenApps[i].size(); i++)
+					if (forbiddenApps[i] == appName) {
+						DebugPrint("Profile: Forbidden!\n");
+						CloseHandle(hProcess);
+						return activeProfile;
+					}
+			}
+			if (active) {
+				DebugPrint("Profile: New foreground " + appName + "\n");
+			}
+			for (profile* prof : profiles)
+				if (SamePower(prof) && (active || !(prof->flags & PROF_ACTIVE))) {
+					for (auto name : prof->triggerapp) {
+						if (name.back() == '\\' ? appPath.find(name) == 0 : name == appName) {
+							DebugPrint("Profile: " + procName + " found in " + prof->name + "\n");
+							if (IsPriorityProfile(prof)) {
+								DebugPrint(" Priority, selected!\n");
+								CloseHandle(hProcess);
+								return prof;
+							}
+							else
+								fprof = prof;
+						}
+					}
 				}
 		}
+		CloseHandle(hProcess);
+		//DebugPrint("Profile: finally is " + (fprof ? fprof->name : "none") + "\n");
+	}
 	return fprof;
 }
 

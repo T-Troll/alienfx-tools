@@ -173,7 +173,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 	fxhl = new FXHelper();
-	//fxhl->FillAllDevs();
 	UpdateLightDevices();
 	eve = new EventHandler();
 
@@ -404,6 +403,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				SendMessage(dDlg, message, wParam, lParam);
 			break;
 		case IDM_EXIT: case IDC_BUTTON_MINIMIZE:
+			eve->notInDestroy = false;
 			DestroyWindow(hDlg);
 			break;
 		case IDM_ABOUT:
@@ -748,6 +748,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 		break;
 	case WM_DESTROY:
+		eve->notInDestroy = false;
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		PostQuitMessage(0);
 		break;
@@ -827,7 +828,67 @@ AlienFX_SDK::Afx_group* FindCreateMappingGroup() {
 	return conf->FindCreateGroup(mmap->group);
 }
 
+bool OpenFileOrDir(string& resname) {
+//	IFileDialog* pfd = NULL;
+//	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog,
+//		NULL,
+//		CLSCTX_INPROC_SERVER,
+//		IID_PPV_ARGS(&pfd));
+//	DWORD dwFlags;
+//	hr = pfd->GetOptions(&dwFlags);
+//	hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM | FOS_DONTADDTORECENT | FOS_PATHMUSTEXIST | 
+//			(selectFolder ? FOS_PICKFOLDERS : 0));
+//	COMDLG_FILTERSPEC fr{ L"Test", L"*.exe" };
+//	pfd->SetFileTypes(1, &fr);
+//	//hr = pfd->SetDefaultExtension(L"doc;docx");
+//	pfd->Show(NULL);
+//	IShellItem* psiResult;
+//	hr = pfd->GetResult(&psiResult);
+//	if (SUCCEEDED(hr))
+//	{
+//		PWSTR pszFilePath = NULL;
+//		hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH,
+//			&pszFilePath);
+//		if (SUCCEEDED(hr))
+//		{
+//#include <locale>
+////#include <codecvt>
+//			//setup converter
+//
+//			locale::facet<std::codecvt<wchar_t, char, std::mbstate_t>> fp;
+//			std::wstring_convert<codecvt_utf8<wchar_t>, wchar_t> converterX;
+//			//use converter (.to_bytes: wstr->str, .from_bytes: str->wstr)
+//			resname = std::wstring_convert::to_bytes(pszFilePath);
+//			resname = converterX.to_bytes(pszFilePath);
+//			CoTaskMemFree(pszFilePath);
+//		}
+//		psiResult->Release();
+//	}
+//
+//	return (SUCCEEDED(hr));
 
+	BROWSEINFO bri{ 0 };
+	char dname[MAX_PATH]{ "" }, fname[MAX_PATH]{ "" };
+	//bri.hwndOwner = hDlg;
+	bri.pszDisplayName = dname;
+	bri.ulFlags = BIF_BROWSEINCLUDEFILES | BIF_DONTGOBELOWDOMAIN | BIF_NONEWFOLDERBUTTON | BIF_NOTRANSLATETARGETS /*| BIF_RETURNFSANCESTORS*/;
+	CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
+	LPITEMIDLIST pIDL = SHBrowseForFolder(&bri);
+	bool isOk = pIDL != NULL;
+	if (isOk) {
+		SHGetPathFromIDList(pIDL, fname);
+		CoTaskMemFree(pIDL);
+		resname = string(fname);
+		if (resname.length() - resname.find_last_of('.') < 5) {
+			resname = dname;// resname.substr(resname.find_last_of('\\') + 1);
+		}
+		else {
+			resname += '\\';
+		}
+	}
+	CoUninitialize();
+	return isOk;
+}
 
 
 

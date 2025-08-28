@@ -17,7 +17,7 @@ public:
 
 	HQUERY hQuery;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
-	byte* counterValues{ new byte[1] };
+	unsigned char* counterValues{ new unsigned char[1] };
 
 	SysMonHelper();
 	~SysMonHelper();

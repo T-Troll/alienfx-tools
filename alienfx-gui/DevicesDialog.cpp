@@ -15,6 +15,8 @@ extern void RedrawGridButtonZone(RECT* what = NULL);
 
 extern void FindCreateMapping(bool key);
 
+extern bool OpenFileOrDir(string& resname);
+
 BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern AlienFX_SDK::Afx_light* keySetLight;
 extern string GetKeyName(WORD vkcode);
@@ -279,17 +281,18 @@ void LoadCSV(string name) {
 	}
 }
 
-string OpenSaveFile(bool isOpen) {
-	// Load/save device and light mappings
-	OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA), dDlg, hInst, "Mapping files (*.csv)\0*.csv\0\0" };
-	char appName[4096]{ "Current.csv" };
-	fstruct.lpstrFile = (LPSTR) appName;
-	fstruct.nMaxFile = 4095;
-	fstruct.lpstrInitialDir = ".\\Mappings";
-	fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT |
-		(isOpen ? OFN_FILEMUSTEXIST : OFN_PATHMUSTEXIST);
-	return (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) ? appName : "";
-}
+//string OpenSaveFile(bool isOpen) {
+//	// Load/save device and light mappings
+//	//OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA), dDlg, hInst, "Mapping files (*.csv)\0*.csv\0\0" };
+//	//char appName[MAX_PATH]{ "Current.csv" };
+//	//fstruct.lpstrFile = (LPSTR) appName;
+//	//fstruct.nMaxFile = 4095;
+//	//fstruct.lpstrInitialDir = ".\\Mappings";
+//	//fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT |
+//	//	(isOpen ? OFN_FILEMUSTEXIST : OFN_PATHMUSTEXIST);
+//	//return (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) ? appName : "";
+//	return "";
+//}
 
 void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 	// save mappings of selected.
@@ -368,6 +371,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		dDlg = hDlg;
 		eve->StopProfiles();
 		eve->ChangeEffects(true);
+		eve->ChangeAction(false);
 		fxhl->Stop();
 		// Reset brightness
 		for (auto& dev : conf->afx_dev.fxdevs)
@@ -515,7 +519,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// Load device and light mappings
 			string appName;
-			if ((appName = OpenSaveFile(true)).length()) {
+			if (OpenFileOrDir(appName) && appName.back() != '\\') {
 				// Now load mappings...
 				LoadCSV(appName);
 				ApplyDeviceMaps(gridTab, true);
@@ -523,38 +527,33 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		} break;
 		case IDC_BUT_SAVEMAP:
 		{
-			// Save device and light mappings
-			if (conf->afx_dev.fxdevs.size()) {
-				string appName;
-				if ((appName = OpenSaveFile(false)).length()) {
-					// Now save mappings...
-					HANDLE file = CreateFile(appName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
-					if (file != INVALID_HANDLE_VALUE) {
-						DWORD writeBytes;
-						char name[] = "'3','Current gear'\r\n";
-						WriteFile(file, name, (DWORD)strlen(name), &writeBytes, NULL);
-						for (auto i = conf->afx_dev.GetGrids()->begin(); i != conf->afx_dev.GetGrids()->end(); i++) {
-							string line = "'2','" + to_string(i->id) + "','" + to_string(i->x) + "','" + to_string(i->y)
-								+ "','" + i->name + "'\r\n";
-							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-						}
-						for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) {
-							string line = "'0','" + to_string(i->vid) + "','" + to_string(i->pid) + "','" + i->name + "'\r\n";
-							WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-							for (auto j = i->lights.begin(); j != i->lights.end(); j++) {
-								line = "'1','" + to_string(j->lightid) + "','" + to_string(j->data) + "','" + j->name;
-								AlienFX_SDK::Afx_groupLight gridid = { i->pid, j->lightid };
-								for (auto k = conf->afx_dev.GetGrids()->begin(); k != conf->afx_dev.GetGrids()->end(); k++)
-									for (int pos = 0; pos < k->x * k->y; pos++)
-										if (gridid.lgh == k->grid[pos].lgh)
-											line += "','" + to_string(k->id) + "','" + to_string(pos);
-								line += "'\r\n";
-								WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
-							}
-						}
-						CloseHandle(file);
+			// Save mappings...
+			HANDLE file = CreateFile(".\\Current.csv", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+			if (file != INVALID_HANDLE_VALUE) {
+				DWORD writeBytes;
+				char name[] = "'3','Current gear'\r\n";
+				WriteFile(file, name, (DWORD)strlen(name), &writeBytes, NULL);
+				for (auto i = conf->afx_dev.GetGrids()->begin(); i != conf->afx_dev.GetGrids()->end(); i++) {
+					string line = "'2','" + to_string(i->id) + "','" + to_string(i->x) + "','" + to_string(i->y)
+						+ "','" + i->name + "'\r\n";
+					WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
+				}
+				for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) {
+					string line = "'0','" + to_string(i->vid) + "','" + to_string(i->pid) + "','" + i->name + "'\r\n";
+					WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
+					for (auto j = i->lights.begin(); j != i->lights.end(); j++) {
+						line = "'1','" + to_string(j->lightid) + "','" + to_string(j->data) + "','" + j->name;
+						AlienFX_SDK::Afx_groupLight gridid = { i->pid, j->lightid };
+						for (auto k = conf->afx_dev.GetGrids()->begin(); k != conf->afx_dev.GetGrids()->end(); k++)
+							for (int pos = 0; pos < k->x * k->y; pos++)
+								if (gridid.lgh == k->grid[pos].lgh)
+									line += "','" + to_string(k->id) + "','" + to_string(pos);
+						line += "'\r\n";
+						WriteFile(file, line.c_str(), (DWORD)line.size(), &writeBytes, NULL);
 					}
 				}
+				CloseHandle(file);
+				ShellExecute(NULL, "open", ".\\", NULL, NULL, SW_SHOWNORMAL);
 			}
 		} break;
 		case IDC_BUT_WHITE:
@@ -681,7 +680,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		fxhl->Start();
 		fxhl->SetState(true);
 		eve->ChangeEffectMode();
-		eve->StartProfiles();
+		//eve->StartProfiles();
+		eve->ChangeAction();
 		dDlg = NULL;
 	} break;
 	default: return false;

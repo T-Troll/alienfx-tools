@@ -21,6 +21,8 @@ extern ConfigHandler* conf;
 extern ConfigFan* fan_conf;
 extern ThreadHelper* dxgi_thread;
 
+extern HWND mDlg;
+
 void CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
 VOID CALLBACK CCreateProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -161,50 +163,26 @@ void EventHandler::ChangeEffects(bool stop) {
 	fxhl->Refresh();
 }
 
-string EventHandler::GetProcessName(DWORD proc) {
-	char szProcessName[MAX_PATH]{ 0 };
-	HANDLE hProcess;
-	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc)) {
-		if (GetProcessImageFileName(hProcess, szProcessName, MAX_PATH))
-			PathStripPath(szProcessName);
-		CloseHandle(hProcess);
-	}
-	return szProcessName;
-}
+//string EventHandler::GetProcessName(DWORD proc) {
+//	char szProcessName[MAX_PATH]{ 0 };
+//	HANDLE hProcess;
+//	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc)) {
+//		if (GetProcessImageFileName(hProcess, szProcessName, MAX_PATH))
+//			PathStripPath(szProcessName);
+//		CloseHandle(hProcess);
+//	}
+//	return szProcessName;
+//}
 
-static const string forbiddenApps[] = { "ShellExperienceHost.exe"
-									,"explorer.exe"
-									,"SearchApp.exe"
-									,"StartMenuExperienceHost.exe"
-//									,"alienfx-gui.exe"
-#ifdef _DEBUG
-									,"devenv.exe"
-#endif
-									, ""
-									};
-
-void EventHandler::CheckProfileChange(bool isRun) {
+void EventHandler::CheckProfileChange() {
 
 	DWORD prcId;
 
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
-	string procName = GetProcessName(prcId);
 
-	profile* newProf;
+	profile* newProf = conf->FindProfileByApp(prcId, true);
 
-	//if (procName.empty() && isRun)
-	//	return;
-	if (conf->noDesktop && isRun) {
-		if (procName.empty())
-			return;
-		for (int i = 0; forbiddenApps[i].size(); i++)
-			if (forbiddenApps[i] == procName)
-				return;
-	}
-
-	DebugPrint("Foreground switched to " + procName + "\n");
-	if ((newProf = conf->FindProfileByApp(procName, true)) &&
-		(conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
+	if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
 		SwitchActiveProfile(newProf);
 		return;
 	}
@@ -219,7 +197,7 @@ void EventHandler::CheckProfileChange(bool isRun) {
 	}
 #endif
 	DebugPrint("TaskScan initiated.\n");
-	profile* finalP = NULL;
+
 	DWORD cbNeeded;
 	if (EnumProcesses(aProcesses, maxProcess, &cbNeeded)) {
 		while (cbNeeded == maxProcess) {
@@ -229,21 +207,21 @@ void EventHandler::CheckProfileChange(bool isRun) {
 			EnumProcesses(aProcesses, maxProcess , &cbNeeded);
 		}
 		cbNeeded = cbNeeded >> 2;
+		profile* cProf;
 		for (UINT i = 0; i < cbNeeded; i++) {
-			if (aProcesses[i] && 
-					(newProf = conf->FindProfileByApp(GetProcessName(aProcesses[i])))) {
-				finalP = newProf;
+			if (aProcesses[i] && (cProf = conf->FindProfileByApp(aProcesses[i]))) {
+				newProf = cProf;
 				if (conf->IsPriorityProfile(newProf))
 					break;
 			}
 		}
 	}
-	SwitchActiveProfile(finalP);
+	SwitchActiveProfile(newProf);
 }
 
 void EventHandler::StartProfiles()
 {
-	if (conf->enableProfSwitch && !hEvent) {
+	if (notInDestroy && conf->enableProfSwitch && !hEvent) {
 		DebugPrint("Profile hooks starting.\n");
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 			EVENT_SYSTEM_FOREGROUND, NULL,
@@ -331,23 +309,23 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 	DWORD prcId;
 	profile* prof = NULL;
 
-	GetWindowThreadProcessId(hwnd, &prcId);
-	string szProcessName = eve->GetProcessName(prcId);
+	//GetWindowThreadProcessId(hwnd, &prcId);
 
-	if (idChild == CHILDID_SELF && szProcessName.size()) {
+	if (idChild == CHILDID_SELF) {
+		GetWindowThreadProcessId(hwnd, &prcId);
 		//DebugPrint("C/D: " + szProcessName + ", child is " + to_string(idChild == CHILDID_SELF) + "\n");
-		if (prof = conf->FindProfileByApp(szProcessName, true)) {
+		if (prof = conf->FindProfileByApp(prcId, true)) {
 			if (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id) {
 				// Wait for termination
 				HANDLE hProcess;
 				if (hProcess = OpenProcess(SYNCHRONIZE, FALSE, prcId)) {
 					DebugPrint("C/D: Active profile app closed, delay activated.\n");
-					WaitForSingleObject(hProcess, 500);
+					WaitForSingleObject(hProcess, 300);
 					CloseHandle(hProcess);
 					DebugPrint("C/D: Quit wait over.\n");
 				}
 			}
-			eve->CheckProfileChange(dwEvent != EVENT_OBJECT_DESTROY);
+			eve->CheckProfileChange();
 		}
 	}
 }

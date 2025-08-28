@@ -248,7 +248,7 @@ public:
 	zonemap* FindZoneMap(int gid, bool reset=false);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
-	profile* FindProfileByApp(std::string appName, bool active = false);
+	profile* ConfigHandler::FindProfileByApp(DWORD proc, bool active = false);
 	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
 	bool IsPriorityProfile(profile* prof);
 	bool SetIconState(bool needCheck = false);

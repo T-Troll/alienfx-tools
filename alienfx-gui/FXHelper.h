@@ -16,24 +16,37 @@ struct LightQueryElement {
 	AlienFX_SDK::Afx_action actions[9];
 };
 
+struct DeviceUpdateQuery {
+	HANDLE haveNewElement = NULL,
+		updateThread = NULL;
+	bool inUpdate = false;
+	queue<LightQueryElement> lightQuery;
+};
+
+struct LightQueryData {
+	WORD pid;
+	void* src;
+};
+
 class FXHelper
 {
 private:
 
-	bool blinkStage = false, wasLFX = false;
+	bool blinkStage = false, wasLFX = false, updateAllowed = false;
 	int oldtest = -1;
 
 	void SetZoneLight(DWORD id, int x, int max, int scale, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
 	void QueryCommand(LightQueryElement &lqe);
+	void QueryAllDevs(LightQueryElement& lqe);
 	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions);
 
 public:
-	HANDLE updateThread = NULL;
+	//HANDLE updateThread = NULL;
 	HANDLE stopQuery;
-	HANDLE haveNewElement;
+	//HANDLE haveNewElement;
 	CustomMutex modifyQuery;
-	queue<LightQueryElement> lightQuery;
+	map<WORD, DeviceUpdateQuery> devLightQuery;
 	LightEventData eData, maxData;
 	// Power button state...
 	map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;
@@ -43,7 +56,7 @@ public:
 		stateDim = false,
 		stateAction = true,
 		finalPBState = true;
-	bool lightsNoDelay = true;
+	//bool lightsNoDelay = true;
 	int finalBrightness = -1;
 
 	FXHelper();
