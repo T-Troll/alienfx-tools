@@ -327,7 +327,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						if (*pf == prof) {
 							if (conf->activeProfile == prof) {
 								// switch to default profile..
-								eve->SwitchActiveProfile(conf->FindDefaultProfile());
+								eve->SwitchActiveProfile(NULL);
 							}
 							auto newCid = conf->profiles.erase(pf);
 							delete prof;

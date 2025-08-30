@@ -234,7 +234,7 @@ void FXHelper::QueryUpdate(bool force) {
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
 	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
-	if (dev && dev->dev && actions->size()) {
+	if (dev && dev->version != AlienFX_SDK::API_UNKNOWN && actions->size()) {
 		LightQueryElement newBlock{ dev->pid, (byte)HIWORD(lgh), (byte)
 			(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 3 : 0),
 			(byte)actions->size() };
@@ -271,6 +271,7 @@ void FXHelper::SetState(bool force) {
 	finalPBState = conf->stateOn ? !conf->stateDimmed || conf->dimPowerButton : conf->offPowerButton;
 	DebugPrint(string("Status: ") + (force ? "Forced, " : "") + to_string(conf->stateOn) + ", " + to_string(finalBrightness) + "\n");
 	if (force || oldBr != finalBrightness || oldPM != finalPBState) {
+		conf->afx_dev.AlienFXCleanDevices();
 		if (mDlg)
 			conf->SetIconState();
 		if (force && !finalPBState)
@@ -729,20 +730,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower
 					: src->finalBrightness);
 					//(byte)(current.light ? !conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower : src->finalBrightness);
-				conf->afx_dev.AlienFXCleanDevices();
-				conf->afx_dev.deviceListChanged = false;
-				for (auto dev = conf->afx_dev.fxdevs.begin(); dev != conf->afx_dev.fxdevs.end(); dev++) {
-					if (dev->pid == pid) {
-						if (conf->afx_dev.SetDeviceBrightness(&(*dev), fbright, pbstate))
-							src->Refresh();
+				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
+				// stop thread if device removed
+				if (dev && dev->version != AlienFX_SDK::API_UNKNOWN) {
+					if (conf->afx_dev.SetDeviceBrightness(&(*dev), fbright, pbstate)) {
+						src->Refresh();
 					}
-					//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
 				}
+				//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
 			} break;
 			case 1: { // update command
 				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
 				//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
-				if (dev_query.size() && dev->version != AlienFX_SDK::API_UNKNOWN && 
+				if (dev && dev_query.size() && dev->version != AlienFX_SDK::API_UNKNOWN && 
 					conf->activeProfile->effects[dev->devID].empty()) {
 					lightQuery->inUpdate = true;
 					dev->dev->SetMultiAction(&dev_query, current.light);

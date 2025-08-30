@@ -31,7 +31,7 @@ public:
 	void StartProfiles();
 	void StopProfiles();
 	//string GetProcessName(DWORD proc);
-	void CheckProfileChange();
+	void CheckProfileChange(bool destroy = false);
 
 	// Effects
 	void ChangeEffectMode(bool profile = false);
